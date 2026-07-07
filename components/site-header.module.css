@@ -1,0 +1,84 @@
+.header {
+  background: #fff;
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-block: 12px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0.95rem;
+}
+
+.nav {
+  display: flex;
+  gap: 18px;
+  margin-left: auto;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.nav a {
+  color: var(--color-slate);
+  text-decoration: none;
+}
+
+.nav a:hover {
+  color: var(--color-primary);
+}
+
+.localeSwitcher {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 3px 6px;
+}
+
+.localeSwitcher a {
+  /* --color-slate (7.92:1 on white) not --color-taupe (3.86:1, sub-AA). Core nav
+     present on every page — the design system reserves taupe for placeholder-only
+     use; this matches .nav a above. */
+  color: var(--color-slate);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.localeSwitcher a:hover {
+  color: var(--color-primary-dark);
+}
+
+.localeActive {
+  background: var(--color-chip-bg);
+  color: var(--color-chip-ink) !important;
+}
