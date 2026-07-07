@@ -9,14 +9,9 @@ const eslintConfig = defineConfig([
   // Disable ESLint rules that conflict with Prettier (Prettier owns formatting).
   // Must stay last so it can turn the relevant rules off.
   prettier,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
+  // Explicitly pin build-output / generated files to ignore. Mirrors
+  // eslint-config-next's own defaults so they hold regardless of preset changes.
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ]);
 
 export default eslintConfig;
