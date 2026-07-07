@@ -17,7 +17,7 @@
   "Footer": {
     "tagline": "A free, open geography education platform.",
     "note": "Content is under active development; sample/placeholder data awaits verification before publication.",
-    "copyright": "© {year} Coğrafya Platformu. All rights reserved."
+    "copyright": "© {year} {siteName}. All rights reserved."
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Geography of Türkiye and the World",
@@ -48,7 +48,6 @@
     "metaDescription": "Sourced information on the geographic location, climate and landforms of {name} province.",
     "heading": "Geography of {name}",
     "placeholderBody": "This page is a content placeholder. Location, population, climate and landform data for {name} will fill this template once the API integration is complete.",
-    "region": "Region",
     "backToProvinces": "Back to all provinces"
   },
   "NotFound": {

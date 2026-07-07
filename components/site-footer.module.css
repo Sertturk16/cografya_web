@@ -24,7 +24,9 @@
 }
 
 .copyright {
-  color: var(--color-taupe);
+  /* --color-slate (6.58:1 on --color-surface) not --color-taupe (3.21:1, sub-AA).
+     Persistent footer text is not placeholder UI. */
+  color: var(--color-slate);
   font-size: 0.8rem;
   margin: 0;
 }

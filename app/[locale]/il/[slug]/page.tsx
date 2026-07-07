@@ -26,6 +26,10 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, slug } = await params;
   const province = findProvinceBySlug(locale, slug);
+  // Unknown slug → the page component throws notFound() (real 404, CONVENTIONS §6 #6).
+  // We intentionally do NOT set a bespoke 404 title here: once notFound() fires, Next
+  // resolves the document title from the not-found boundary (not this metadata), so a
+  // title returned here is discarded. See not-found.tsx for the full rationale.
   if (!province) return {};
 
   const t = await getTranslations({ locale, namespace: "ProvinceDetail" });

@@ -5,7 +5,11 @@ import { env } from "@/lib/env";
  *
  * `name` is a PROVISIONAL placeholder brand — the final brand/domain is not
  * decided yet (CONVENTIONS §3; DEC 2026-07-07 K7, working title "Terraloji").
- * It is single-sourced here so the eventual rename is a one-line change.
+ * It is single-sourced here for all UI chrome (header, footer copyright, og:site_name,
+ * the `%s · brand` title template): those update from this one constant. The brand
+ * also appears woven into localized PROSE (meta titles/descriptions, About body) in
+ * `messages/*.json` — that is crafted per-locale copy, not chrome, and a rebrand must
+ * revisit it by hand rather than by token interpolation.
  */
 export const siteConfig = {
   name: "Coğrafya Platformu",

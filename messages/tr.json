@@ -17,7 +17,7 @@
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
     "note": "İçerik geliştirme aşamasındadır; örnek/yer tutucu veriler yayın öncesi doğrulama bekler.",
-    "copyright": "© {year} Coğrafya Platformu. Tüm hakları saklıdır."
+    "copyright": "© {year} {siteName}. Tüm hakları saklıdır."
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Türkiye ve Dünya Coğrafyası",
@@ -48,7 +48,6 @@
     "metaDescription": "{name} ilinin coğrafi konumu, iklimi ve yüzey şekilleri hakkında kaynaklı bilgiler.",
     "heading": "{name} Coğrafyası",
     "placeholderBody": "Bu sayfa bir içerik yer tutucusudur. {name} iline ait konum, nüfus, iklim ve yüzey şekilleri verileri, API entegrasyonu tamamlandığında bu şablonu dolduracaktır.",
-    "region": "Bölge",
     "backToProvinces": "Tüm illere dön"
   },
   "NotFound": {

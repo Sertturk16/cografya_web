@@ -63,7 +63,10 @@
 }
 
 .localeSwitcher a {
-  color: var(--color-taupe);
+  /* --color-slate (7.92:1 on white) not --color-taupe (3.86:1, sub-AA). Core nav
+     present on every page — the design system reserves taupe for placeholder-only
+     use; this matches .nav a above. */
+  color: var(--color-slate);
   text-decoration: none;
   font-weight: 700;
   font-size: 0.8rem;

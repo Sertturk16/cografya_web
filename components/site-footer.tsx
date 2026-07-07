@@ -13,7 +13,7 @@ export async function SiteFooter() {
           {siteConfig.name} — {t("tagline")}
         </p>
         <p className={styles.note}>{t("note")}</p>
-        <p className={styles.copyright}>{t("copyright", { year })}</p>
+        <p className={styles.copyright}>{t("copyright", { year, siteName: siteConfig.name })}</p>
       </div>
     </footer>
   );
