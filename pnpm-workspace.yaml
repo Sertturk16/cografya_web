@@ -1,0 +1,13 @@
+# NOT a monorepo workspace. This repo is standalone (CONVENTIONS §3: two separate
+# repos, no monorepo) — there is deliberately no `packages:` key here.
+#
+# pnpm 10.4+/11 blocks dependency build/postinstall scripts by default and reads the
+# per-dependency approval decision ONLY from this file (it no longer honors the
+# `pnpm` field in package.json). Without an explicit decision, `pnpm install` exits 1
+# and CI fails. Both native deps below are intentionally NOT built:
+#   - sharp: image-optimization binary; unused in the scaffold (hosting/image strategy TBD)
+#   - unrs-resolver: eslint-import-resolver-typescript's native resolver; ships prebuilt
+#     binaries, so its build script is unnecessary on our platforms (macOS arm64 / CI x64)
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
