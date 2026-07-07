@@ -8,6 +8,12 @@
 #   - sharp: image-optimization binary; unused in the scaffold (hosting/image strategy TBD)
 #   - unrs-resolver: eslint-import-resolver-typescript's native resolver; ships prebuilt
 #     binaries, so its build script is unnecessary on our platforms (macOS arm64 / CI x64)
+#   - @parcel/watcher: optional dev-only file watcher (next dev); Next falls back cleanly
+#     without the native build, so it is not built.
+#   - @swc/core: ships prebuilt platform binaries via optionalDependencies; the postinstall
+#     build is unnecessary, and Next uses its own bundled @next/swc regardless.
 allowBuilds:
+  "@parcel/watcher": false
+  "@swc/core": false
   sharp: false
   unrs-resolver: false

@@ -1,0 +1,60 @@
+{
+  "Common": {
+    "skipToContent": "Ana içeriğe geç",
+    "localeSwitcherLabel": "Dil seçimi",
+    "localeName": "Türkçe"
+  },
+  "Nav": {
+    "label": "Ana gezinme",
+    "home": "Ana Sayfa",
+    "provinces": "İller",
+    "about": "Hakkımızda"
+  },
+  "Breadcrumb": {
+    "label": "Sayfa yolu",
+    "home": "Ana Sayfa"
+  },
+  "Footer": {
+    "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
+    "note": "İçerik geliştirme aşamasındadır; örnek/yer tutucu veriler yayın öncesi doğrulama bekler.",
+    "copyright": "© {year} Coğrafya Platformu. Tüm hakları saklıdır."
+  },
+  "Home": {
+    "metaTitle": "Coğrafya Platformu — Türkiye ve Dünya Coğrafyası",
+    "metaDescription": "Türkiye'nin 81 ili, dünya ülkeleri ve yer şekilleri için ücretsiz, kaynaklı coğrafya içerikleri. Haritalar, konu anlatımları ve daha fazlası.",
+    "heading": "Türkiye'yi ve dünyayı coğrafyayla keşfet",
+    "lede": "Ücretsiz coğrafya sayfaları — il, ülke ve yer şekli detaylarıyla; müfredata uygun konu anlatımlarıyla.",
+    "ctaProvinces": "İlleri Keşfet",
+    "ctaAbout": "Platform Hakkında",
+    "provincesTitle": "Türkiye'nin illeri",
+    "provincesBody": "81 ilin coğrafi konumu, iklimi ve yüzey şekilleri — kaynaklı ve düzenli içeriklerle."
+  },
+  "About": {
+    "metaTitle": "Hakkımızda",
+    "metaDescription": "Coğrafya Platformu; Türkiye ve dünya coğrafyasını ücretsiz, kaynaklı ve erişilebilir içeriklerle anlatmayı amaçlayan bir eğitim projesidir.",
+    "heading": "Hakkımızda",
+    "body1": "Coğrafya Platformu, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir. İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer.",
+    "body2": "Platform geliştirme aşamasındadır. Bu sayfa, çok dilli mimarinin ve SEO altyapısının bir örneğidir; kapsam genişledikçe içerik derinleşecektir."
+  },
+  "Provinces": {
+    "metaTitle": "Türkiye'nin İlleri",
+    "metaDescription": "Türkiye'nin illerinin coğrafi konumu, iklimi ve yüzey şekilleri. Her il için kaynaklı, düzenli detay sayfaları.",
+    "heading": "Türkiye'nin İlleri",
+    "intro": "Bir il seçerek konumu, iklimi ve yüzey şekilleri hakkındaki detay sayfasına ulaşabilirsiniz.",
+    "placeholderNote": "Not: Aşağıdaki liste, çok dilli yönlendirme desenini göstermek için hazırlanmış örnek bir yer tutucudur. Gerçek 81 il verisi API entegrasyonuyla gelecektir."
+  },
+  "ProvinceDetail": {
+    "metaTitle": "{name} Coğrafyası",
+    "metaDescription": "{name} ilinin coğrafi konumu, iklimi ve yüzey şekilleri hakkında kaynaklı bilgiler.",
+    "heading": "{name} Coğrafyası",
+    "placeholderBody": "Bu sayfa bir içerik yer tutucusudur. {name} iline ait konum, nüfus, iklim ve yüzey şekilleri verileri, API entegrasyonu tamamlandığında bu şablonu dolduracaktır.",
+    "region": "Bölge",
+    "backToProvinces": "Tüm illere dön"
+  },
+  "NotFound": {
+    "metaTitle": "Sayfa bulunamadı",
+    "heading": "Sayfa bulunamadı",
+    "body": "Aradığınız sayfa taşınmış veya hiç var olmamış olabilir.",
+    "backHome": "Ana sayfaya dön"
+  }
+}

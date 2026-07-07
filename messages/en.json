@@ -1,0 +1,60 @@
+{
+  "Common": {
+    "skipToContent": "Skip to main content",
+    "localeSwitcherLabel": "Language selection",
+    "localeName": "English"
+  },
+  "Nav": {
+    "label": "Primary navigation",
+    "home": "Home",
+    "provinces": "Provinces",
+    "about": "About"
+  },
+  "Breadcrumb": {
+    "label": "Breadcrumb",
+    "home": "Home"
+  },
+  "Footer": {
+    "tagline": "A free, open geography education platform.",
+    "note": "Content is under active development; sample/placeholder data awaits verification before publication.",
+    "copyright": "© {year} Coğrafya Platformu. All rights reserved."
+  },
+  "Home": {
+    "metaTitle": "Coğrafya Platformu — Geography of Türkiye and the World",
+    "metaDescription": "Free, sourced geography content for the 81 provinces of Türkiye, the countries of the world and landforms. Maps, topic guides and more.",
+    "heading": "Explore Türkiye and the world through geography",
+    "lede": "Free geography pages — province, country and landform details, with curriculum-aligned topic guides.",
+    "ctaProvinces": "Explore Provinces",
+    "ctaAbout": "About the Platform",
+    "provincesTitle": "Provinces of Türkiye",
+    "provincesBody": "The location, climate and landforms of all 81 provinces — in sourced, structured content."
+  },
+  "About": {
+    "metaTitle": "About",
+    "metaDescription": "Coğrafya Platformu is an education project that presents the geography of Türkiye and the world through free, sourced and accessible content.",
+    "heading": "About",
+    "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone. Content is grounded in authoritative sources and passes an independent verification step before publication.",
+    "body2": "The platform is under development. This page is a demonstration of the multilingual architecture and SEO foundations; content will deepen as coverage expands."
+  },
+  "Provinces": {
+    "metaTitle": "Provinces of Türkiye",
+    "metaDescription": "The geographic location, climate and landforms of the provinces of Türkiye. Sourced, structured detail pages for each province.",
+    "heading": "Provinces of Türkiye",
+    "intro": "Select a province to reach its detail page covering location, climate and landforms.",
+    "placeholderNote": "Note: the list below is a sample placeholder built to demonstrate the multilingual routing pattern. Real data for all 81 provinces will arrive with the API integration."
+  },
+  "ProvinceDetail": {
+    "metaTitle": "Geography of {name}",
+    "metaDescription": "Sourced information on the geographic location, climate and landforms of {name} province.",
+    "heading": "Geography of {name}",
+    "placeholderBody": "This page is a content placeholder. Location, population, climate and landform data for {name} will fill this template once the API integration is complete.",
+    "region": "Region",
+    "backToProvinces": "Back to all provinces"
+  },
+  "NotFound": {
+    "metaTitle": "Page not found",
+    "heading": "Page not found",
+    "body": "The page you are looking for may have moved or never existed.",
+    "backHome": "Back to home"
+  }
+}
