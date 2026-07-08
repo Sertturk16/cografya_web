@@ -16,7 +16,7 @@
   },
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
-    "note": "İçerik geliştirme aşamasındadır; örnek/yer tutucu veriler yayın öncesi doğrulama bekler.",
+    "note": "İçerik geliştirme aşamasındadır; yeni iller ve konular sürekli ekleniyor. Yayınlanan veriler resmi kaynaklara (TÜİK, HGM, İçişleri, MGM) dayanır.",
     "copyright": "© {year} {siteName}. Tüm hakları saklıdır."
   },
   "Home": {
@@ -40,15 +40,43 @@
     "metaTitle": "Türkiye'nin İlleri",
     "metaDescription": "Türkiye'nin illerinin coğrafi konumu, iklimi ve yüzey şekilleri. Her il için kaynaklı, düzenli detay sayfaları.",
     "heading": "Türkiye'nin İlleri",
-    "intro": "Bir il seçerek konumu, iklimi ve yüzey şekilleri hakkındaki detay sayfasına ulaşabilirsiniz.",
-    "placeholderNote": "Not: Aşağıdaki liste, çok dilli yönlendirme desenini göstermek için hazırlanmış örnek bir yer tutucudur. Gerçek 81 il verisi API entegrasyonuyla gelecektir."
+    "intro": "Bir il seçerek konumu, nüfusu, iklimi ve yüzey şekilleri hakkındaki detay sayfasına ulaşabilirsiniz.",
+    "coverageNote": "İçerik genişliyor: şu anda öncü iller yayında; kalan iller kaynak doğrulamasından geçtikçe eklenecektir.",
+    "empty": "İl verisi şu anda yüklenemedi. Lütfen kısa süre sonra tekrar deneyin."
   },
   "ProvinceDetail": {
     "metaTitle": "{name} Coğrafyası",
-    "metaDescription": "{name} ilinin coğrafi konumu, iklimi ve yüzey şekilleri hakkında kaynaklı bilgiler.",
+    "metaDescription": "{name}, {region} Bölgesi'nde yer alan ilin coğrafi konumu, iklimi, nüfusu ve yüzölçümü hakkında kaynaklı bilgiler.",
     "heading": "{name} Coğrafyası",
-    "placeholderBody": "Bu sayfa bir içerik yer tutucusudur. {name} iline ait konum, nüfus, iklim ve yüzey şekilleri verileri, API entegrasyonu tamamlandığında bu şablonu dolduracaktır.",
+    "summary": "{name}, Türkiye'nin {region} Bölgesi'nde yer alan bir ildir.",
+    "keyFactsHeading": "Temel Bilgiler",
+    "region": "Bölge",
+    "plateCode": "Plaka Kodu",
+    "population": "Nüfus",
+    "populationWithYear": "Nüfus ({year})",
+    "area": "Yüzölçümü",
+    "districtCount": "İlçe Sayısı",
+    "elevation": "Rakım (il merkezi)",
+    "coordinates": "Koordinatlar (il merkezi)",
+    "areaUnit": "km²",
+    "elevationUnit": "m",
+    "climateHeading": "İklim",
+    "climateValue": "{className} (Köppen: {koppen})",
+    "climateClassOnly": "{className}",
+    "climateNoteLabel": "MGM metodolojik notu",
+    "neighborsHeading": "Komşu İller",
+    "sourcesLabel": "Kaynaklar",
+    "sources": "Veriler resmi kaynaklara dayanır: nüfus TÜİK (ADNKS), yüzölçümü Harita Genel Müdürlüğü (HGM), ilçe sayısı İçişleri Bakanlığı; iklim ile il-merkezi rakım ve koordinatları MGM.",
     "backToProvinces": "Tüm illere dön"
+  },
+  "Regions": {
+    "MARMARA": "Marmara",
+    "EGE": "Ege",
+    "AKDENIZ": "Akdeniz",
+    "IC_ANADOLU": "İç Anadolu",
+    "KARADENIZ": "Karadeniz",
+    "DOGU_ANADOLU": "Doğu Anadolu",
+    "GUNEYDOGU_ANADOLU": "Güneydoğu Anadolu"
   },
   "NotFound": {
     "metaTitle": "Sayfa bulunamadı",

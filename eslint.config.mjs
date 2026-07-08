@@ -11,7 +11,9 @@ const eslintConfig = defineConfig([
   prettier,
   // Explicitly pin build-output / generated files to ignore. Mirrors
   // eslint-config-next's own defaults so they hold regardless of preset changes.
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  // `lib/api/schema.ts` is codegen output (openapi-typescript) — never hand-edited
+  // and not linted (its shape is owned by the OpenAPI contract, not our style rules).
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "lib/api/schema.ts"]),
 ]);
 
 export default eslintConfig;

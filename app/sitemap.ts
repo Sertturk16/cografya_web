@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { getProvinceBySlug, getProvincesResilient, isProductionBuild } from "@/lib/api/provinces";
+import type { ProvinceDetail } from "@/lib/api/types";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
-import { placeholderProvinces } from "@/lib/geo/placeholder-provinces";
 import { absoluteUrl } from "@/lib/seo/site";
 
 /**
@@ -56,7 +57,7 @@ function entriesFor(
   }));
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
   // Hub: static pages.
@@ -66,14 +67,43 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...entriesFor(() => "/hakkimizda", now, 0.5),
   ];
 
-  // Hub: provinces (placeholder set today; real lastmod from api `updated_at`).
-  const provinceEntries: MetadataRoute.Sitemap = placeholderProvinces.flatMap((province) =>
+  // Hub: provinces. Real `lastmod` comes from each province's api `updated_at`,
+  // so we resolve the (lean) list to full detail records. NOTE(follow-up): the
+  // list DTO has no `updated_at`, hence the per-province detail fetch — adding
+  // `updatedAt` to `ProvinceListItemDto` (an additive contract change, via Atlas)
+  // would drop this to a single list call.
+  //
+  // Resilience matches the rest of this PR (see getProvincesResilient): a genuine
+  // 404 omits that province (won't happen for a listed slug, but harmless), while a
+  // TRANSIENT failure is tolerated at BUILD (omit + warn) but RE-THROWN at runtime —
+  // so an api blip during ISR keeps the last good sitemap instead of silently
+  // dropping a province from the index.
+  const provinces = await getProvincesResilient();
+  const details = (
+    await Promise.all(
+      provinces.map(async (province) => {
+        try {
+          return await getProvinceBySlug(province.slugTr); // null ⇒ genuine 404
+        } catch (error) {
+          if (isProductionBuild()) {
+            console.warn(
+              `[sitemap] build-time detail fetch failed for ${province.slugTr}; omitting. ${String(error)}`,
+            );
+            return null;
+          }
+          throw error;
+        }
+      }),
+    )
+  ).filter((detail): detail is ProvinceDetail => detail !== null);
+
+  const provinceEntries: MetadataRoute.Sitemap = details.flatMap((detail) =>
     entriesFor(
       (locale) => ({
         pathname: "/il/[slug]",
-        params: { slug: province.slug[locale] },
+        params: { slug: locale === "en" ? detail.slugEn : detail.slugTr },
       }),
-      new Date(province.updatedAt),
+      new Date(detail.updatedAt),
       0.7,
     ),
   );

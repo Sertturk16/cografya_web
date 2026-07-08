@@ -10,3 +10,8 @@ node_modules/
 # Generated
 next-env.d.ts
 pnpm-lock.yaml
+lib/api/schema.ts
+
+# Committed OpenAPI contract artifact (synced from cografya_api; kept byte-identical
+# to the api's generator output, so Prettier must not reformat it).
+openapi/

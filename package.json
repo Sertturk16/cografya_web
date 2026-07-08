@@ -12,6 +12,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "codegen": "openapi-typescript ./openapi/openapi.json --output ./lib/api/schema.ts",
+    "codegen:check": "pnpm run codegen && git diff --exit-code -- lib/api/schema.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
@@ -21,6 +23,7 @@
     "next-intl": "^4.13.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -34,6 +37,7 @@
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.4",
     "typescript": "~5.9.3"
   }
