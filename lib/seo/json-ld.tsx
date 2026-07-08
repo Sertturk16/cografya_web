@@ -79,18 +79,68 @@ export function collectionPageJsonLd(args: {
   };
 }
 
+/** A single `schema.org/PropertyValue` fact (population, area, …). */
+export interface GeoPropertyValue {
+  name: string;
+  value: string | number;
+  /** Human-readable unit, e.g. "km²". Omit for unit-less counts. */
+  unitText?: string;
+  /** UN/CEFACT unit code, e.g. "KMK" for square kilometre. Optional. */
+  unitCode?: string;
+}
+
 export function administrativeAreaJsonLd(args: {
   name: string;
   path: string;
   locale: Locale;
+  /** Il-merkez coordinates (decimal degrees). Omitted when the api has no value. */
+  geo?: { latitude: number; longitude: number } | null;
+  /** Structured facts (nüfus, yüzölçümü, …) as schema.org PropertyValue nodes. */
+  additionalProperty?: GeoPropertyValue[];
+  /** The containing country (Türkiye) as a schema.org Country node. */
+  containedInPlace?: { name: string } | null;
+  /** ISO date-time of the last data change (api `updated_at`). */
+  dateModified?: string;
 }): JsonLdSchema {
-  // Structural only for now (name + url + language). GeoCoordinates / PropertyValue
-  // (population, area) + FAQPage + LearningResource layers land with real API data.
-  return {
+  const schema: JsonLdSchema = {
     "@context": "https://schema.org",
     "@type": "AdministrativeArea",
     name: args.name,
     url: absoluteUrl(args.path),
     inLanguage: args.locale,
   };
+
+  if (args.geo) {
+    schema.geo = {
+      "@type": "GeoCoordinates",
+      latitude: args.geo.latitude,
+      longitude: args.geo.longitude,
+    };
+  }
+
+  if (args.containedInPlace) {
+    schema.containedInPlace = {
+      "@type": "Country",
+      name: args.containedInPlace.name,
+    };
+  }
+
+  if (args.additionalProperty && args.additionalProperty.length > 0) {
+    schema.additionalProperty = args.additionalProperty.map((property) => {
+      const node: JsonLdObject = {
+        "@type": "PropertyValue",
+        name: property.name,
+        value: property.value,
+      };
+      if (property.unitText !== undefined) node.unitText = property.unitText;
+      if (property.unitCode !== undefined) node.unitCode = property.unitCode;
+      return node;
+    });
+  }
+
+  if (args.dateModified) {
+    schema.dateModified = args.dateModified;
+  }
+
+  return schema;
 }
