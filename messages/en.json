@@ -55,5 +55,10 @@
     "heading": "Page not found",
     "body": "The page you are looking for may have moved or never existed.",
     "backHome": "Back to home"
+  },
+  "Error": {
+    "heading": "Something went wrong",
+    "body": "An unexpected error occurred. You can try reloading the page.",
+    "retry": "Try again"
   }
 }

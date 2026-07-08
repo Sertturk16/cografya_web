@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { brandGlyphSvg } from "@/lib/brand/glyph";
 import { siteConfig } from "@/lib/seo/site";
 import { LocaleSwitcher } from "./locale-switcher";
 import styles from "./site-header.module.css";
@@ -11,9 +12,13 @@ export async function SiteHeader() {
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
         <Link href="/" className={styles.brand}>
-          <span className={styles.glyph} aria-hidden="true">
-            ◭
-          </span>
+          {/* Single-sourced placeholder brand mark (Terra globe); decorative, the
+              adjacent brand name is the accessible label. */}
+          <span
+            className={styles.glyph}
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: brandGlyphSvg({ size: 28, radiusRatio: 0.29 }) }}
+          />
           {siteConfig.name}
         </Link>
         <nav aria-label={t("label")} className={styles.nav}>

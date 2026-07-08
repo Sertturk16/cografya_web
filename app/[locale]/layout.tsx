@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
@@ -18,6 +18,13 @@ interface LocaleLayoutProps {
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
+
+// Root viewport (this locale layout IS the root layout in the next-intl setup).
+// `themeColor` tints mobile browser chrome; the hex mirrors the Terra
+// `--color-primary` token (globals.css) — the metadata layer cannot read CSS vars.
+export const viewport: Viewport = {
+  themeColor: "#b0522e",
+};
 
 export async function generateMetadata({
   params,

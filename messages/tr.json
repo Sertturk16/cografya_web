@@ -55,5 +55,10 @@
     "heading": "Sayfa bulunamadı",
     "body": "Aradığınız sayfa taşınmış veya hiç var olmamış olabilir.",
     "backHome": "Ana sayfaya dön"
+  },
+  "Error": {
+    "heading": "Bir şeyler ters gitti",
+    "body": "Beklenmeyen bir hata oluştu. Sayfayı yeniden yüklemeyi deneyebilirsiniz.",
+    "retry": "Tekrar dene"
   }
 }
