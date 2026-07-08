@@ -77,5 +77,14 @@ export function buildMetadata(args: BuildMetadataArgs): Metadata {
       description,
       url: `${getSiteUrl()}${canonicalPath}`,
     },
+    // Central Twitter Card (CONVENTIONS §6 SEO surface). `images` is intentionally
+    // omitted: the `app/[locale]/opengraph-image.tsx` file convention injects both
+    // `og:image` and `twitter:image` (absolute, via metadataBase) for every page,
+    // so the default share image lives in ONE place and is never hand-duplicated here.
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
