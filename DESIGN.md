@@ -1,0 +1,176 @@
+# DESIGN — Terra design system + data-viz color doctrine (`cografya_web`)
+
+> **Authority & scope.** This is the single source of truth for the platform's visual
+> identity and the **binding color doctrine** for data visualization. The locked identity
+> is **Direction B "Terra"** (→ DEC 2026-07-07). The **owner is the design authority**:
+> every user-visible change ships with **rendered samples (screenshots/preview) before AND
+> after merge** for the owner to eyeball — nothing visible merges unseen.
+>
+> **Doc now, code Faz-2** (→ DEC 2026-07-08). This document ships the _doctrine_. The data
+> scales / map-color module is **not** built in this repo yet — it lands in Faz-2 when the
+> maps and live feeds arrive. The token layer this doc describes already exists in
+> `app/globals.css`; do not duplicate hex values anywhere else.
+>
+> Binding companions: `CLAUDE.md` (§4 SEO, §5 a11y floor), `CONVENTIONS.md` §6.
+
+---
+
+## 1. Terra identity — what it is
+
+Earth / topographic. Warm terracotta primary, olive secondary, water-teal accent, on a
+warm-stone parchment neutral field. Serif display (Fraunces) over a humanist sans body
+(Nunito Sans). The feel is authoritative, natural-science, calm — not "edtech neon."
+
+**The one hard identity rule that governs everything below: brand chrome ≠ data.** Terra's
+warm palette is for UI _chrome_ (header/footer/buttons/links/cards). It must **never** be
+the palette used to encode _data values_ on maps/charts (§6). This separation is a
+correctness boundary, not a preference.
+
+## 2. Color tokens (source: `app/globals.css` `:root` — reference `var(--token)` only)
+
+**Brand**
+
+| Token                  | Hex       | Use                                           |
+| ---------------------- | --------- | --------------------------------------------- |
+| `--color-primary`      | `#b0522e` | terracotta — primary buttons, active brand    |
+| `--color-primary-dark` | `#7e3a1e` | links, hover, headings emphasis, skip-link bg |
+| `--color-secondary`    | `#4f6d30` | olive — secondary brand accents               |
+| `--color-accent`       | `#276b70` | water-teal — focus ring, info                 |
+| `--color-on-primary`   | `#ffffff` | text/marks on brand fills                     |
+
+**Warm-stone neutrals**
+
+| Token             | Hex       | Use                                                       |
+| ----------------- | --------- | --------------------------------------------------------- |
+| `--color-ink`     | `#2b2622` | body text, headings                                       |
+| `--color-slate`   | `#57504a` | secondary/essential text (lede, nav, footer, captions)    |
+| `--color-taupe`   | `#8a8078` | **placeholder / secondary-UI / decorative ONLY** (see §5) |
+| `--color-border`  | `#ddd5cc` | hairlines, card borders                                   |
+| `--color-surface` | `#f1e9de` | raised surfaces, hero band                                |
+| `--color-bg`      | `#fbf8f3` | parchment page background                                 |
+
+**Chips / semantic**
+
+| Token                                  | Hex                   | Use                                         |
+| -------------------------------------- | --------------------- | ------------------------------------------- |
+| `--color-chip-bg` / `--color-chip-ink` | `#ede3d5` / `#7e3a1e` | pill chips                                  |
+| `--color-success`                      | `#4f7a3a`             | success                                     |
+| `--color-warning`                      | `#c9860f`             | warning (e.g. placeholder-note left border) |
+| `--color-danger`                       | `#b23b2e`             | error/destructive                           |
+| `--color-info`                         | `#276b70`             | info (= accent)                             |
+
+**Hypsometric map ramp** (`--map-1 … --map-6`, `#e8efce → #6e3a1c`) — reserved for
+elevation/choropleth data; **Faz-2 code**. See §6 for why it is a green→brown _sequential_
+ramp and not the Terra brand hues.
+
+**Layout tokens:** `--container-max: 1120px`, `--radius: 10px`, `--radius-lg: 16px`.
+
+## 3. Typography
+
+- **Display / headings:** Fraunces (variable serif) → `--font-heading`. **Body / UI:**
+  Nunito Sans (variable sans) → `--font-body`. Loaded via `next/font` (`lib/fonts.ts`),
+  self-hosted + preloaded, `latin` + **`latin-ext`** (Turkish glyphs İ ı ğ ş ç ö ü) — never
+  a render-blocking Google Fonts `<link>` (CWV, `CLAUDE.md` §4 #9).
+- **Scale** (fluid `clamp`): `h1` `clamp(1.9rem, 1.2rem+2.6vw, 2.6rem)`/700 · `h2`
+  `clamp(1.4rem, 1rem+1.4vw, 1.8rem)`/600 (primary-dark) · body `16px`/`1.6` · `.lede`
+  `1.15rem` slate. Headings: `line-height 1.15`, `letter-spacing -0.01em`. One `h1` per
+  page, headings in document order (a11y + SEO).
+
+## 4. Spacing, layout & components
+
+- **Rhythm:** page padding `40px 56px` (`.page`); section gap `40px` (`.section`); container
+  `max 1120px`, inline padding `20px`. Radii: `10px` controls, `16px` cards/hero.
+- **Components (all in `app/globals.css` / CSS Modules):** `.btn` (`.btn-primary` filled
+  terracotta, `.btn-ghost` bordered), `.card`, `.hero` (surface→bg gradient), `.chip`,
+  `.province-card` grid, `.breadcrumb` (visual, pairs with `BreadcrumbList` JSON-LD),
+  `.placeholder-note` (dev-content flag, warning left-border). Component styling uses CSS
+  Modules + the global token layer — **no hardcoded brand hex outside the token layer.**
+- **Brand mark:** single-sourced neutral globe in `lib/brand/glyph.ts`; `app/icon.svg`
+  mirrors it by hand (a static file can't import) — keep the two in step. Still a
+  placeholder pending the brand/logo decision (K7).
+
+## 5. Accessibility (WCAG 2.1 AA — binding; see `CLAUDE.md` §5)
+
+- **Skip-to-content link** (`.skip-link`) whose target `<main>` is programmatically
+  focusable (`tabIndex={-1}` — Safari/VoiceOver need it).
+- **Visible focus everywhere:** `:focus-visible` = `3px` accent (`#276b70`) outline,
+  `2px` offset. Never remove focus without a compliant replacement.
+- **`prefers-reduced-motion: reduce`** disables transitions / smooth-scroll globally.
+- **State changes announce to AT** (WCAG 4.1.3): error boundaries move focus to the error
+  heading (`tabIndex={-1}` + `focus()`); last-resort boundaries use `role="alert"`.
+- **Contrast — verified AA/AAA table** (WCAG 2.x sRGB; foreground on the real background):
+
+  | Pair                                              | Ratio       | Verdict                       |
+  | ------------------------------------------------- | ----------- | ----------------------------- |
+  | ink `#2b2622` on bg `#fbf8f3`                     | **14.13:1** | AAA                           |
+  | ink on surface `#f1e9de`                          | 12.44:1     | AAA                           |
+  | slate `#57504a` on bg                             | 7.48:1      | AAA                           |
+  | slate on white                                    | 7.92:1      | AAA                           |
+  | slate on surface                                  | 6.58:1      | AA (AAA large)                |
+  | primary-dark `#7e3a1e` link on bg                 | 7.89:1      | AAA                           |
+  | on-primary `#fff` on primary `#b0522e` (button)   | 5.13:1      | AA                            |
+  | on-primary on primary-dark `#7e3a1e` (hover/skip) | 8.36:1      | AAA                           |
+  | chip-ink on chip-bg                               | 6.59:1      | AA (AAA large)                |
+  | **taupe `#8a8078` on white**                      | **3.86:1**  | **SUB-AA — placeholder only** |
+  | **taupe on surface `#f1e9de`**                    | **3.21:1**  | **SUB-AA — placeholder only** |
+
+  **The taupe rule (hard):** `--color-taupe` is **decorative / placeholder / secondary-UI
+  ONLY** — never body, nav, footer, or any essential text. Use `--color-slate` for
+  essential secondary text. (PR#2 caught taupe in the live locale switcher at 3.86:1 and the
+  footer at 3.21:1 — both moved to slate.) A purely decorative taupe mark (e.g. the
+  breadcrumb `::after "/"` separator) is exempt under WCAG 1.4.3.
+
+- Never encode meaning by color alone — pair with text/icon/pattern (ties into §6).
+
+## 6. Data-viz color doctrine (A4 — a correctness boundary, treated like SEO)
+
+Doctrine now; **map/chart color code is Faz-2** (no scales module in this repo yet). When
+maps and live feeds arrive, data color MUST follow these rules. Violating them is a
+correctness bug, not a style nit.
+
+### 6.1 The five hard rules
+
+1. **Brand ≠ data.** Terra chrome tokens (`--color-primary/secondary/accent`, neutrals)
+   **never** encode data values. Reserve dedicated data ramps (below). This is the
+   carried-forward mitigation from DEC 2026-07-07: Terra's warm chrome would otherwise
+   collide with warm choropleth data — keep them physically separate token sets.
+2. **No rainbow / jet.** The rainbow (and MATLAB "jet") scheme is **banned** for continuous
+   data: it is not perceptually uniform (invents false boundaries, hides real ones) and is
+   not colorblind-safe. Use perceptually-uniform ramps only.
+3. **Colorblind-safe by construction.** Choose schemes that survive deuteranopia/
+   protanopia/tritanopia (the ColorBrewer "colorblind safe" sets, or viridis-family for
+   continuous). Verify with a simulator before shipping. **Never rely on hue alone** —
+   reinforce with lightness, and add text/pattern/labels for categorical distinctions.
+4. **Match the scale type to the data type.**
+   - **Sequential** (ordered low→high: elevation, population density, temperature) →
+     single-hue or multi-hue **monotonic-lightness** ramp. Elevation uses the **hypsometric
+     ramp** `--map-1…--map-6` (pale green lowlands → tan → brown highlands) — a
+     cartographic convention readers already decode, and deliberately NOT the brand hues.
+   - **Diverging** (meaningful midpoint: anomaly vs a mean, +/− change) → two-hue diverging
+     ramp with a neutral center; pick a colorblind-safe pair (avoid raw red–green).
+   - **Categorical** (unordered classes: climate zones, region types) → a qualitative,
+     colorblind-safe, limited (≤ ~8) set; distinguish further with labels/patterns.
+5. **Legibility of the encoding:** classed choropleths state their class breaks; sufficient
+   contrast between adjacent classes and against basemap/labels; a legend always present.
+
+### 6.2 Public-safety semantic colors stay STANDARD — never recolored to Terra (HARD)
+
+Some color scales are **externally standardized public-safety conventions**. They are
+**reproduced exactly as their authorities define them** and are **never** restyled into the
+Terra palette — recoloring them would misinform users:
+
+- **Air quality index (AQI)** — EPA / EEA official band colors (green→maroon). Standard.
+- **Earthquake intensity** — USGS MMI / ShakeMap intensity scale colors. Standard.
+- **Sea-surface temperature (SST)** and comparable geophysical scales — their conventional
+  scientific ramps. Standard.
+
+Only **brand / chrome** tokens are Terra. The rule is explicit and non-negotiable: _if a
+color carries a public-safety meaning the user must read correctly, it is not ours to
+rebrand._ (→ DEC 2026-07-08.)
+
+### 6.3 Faz-2 note
+
+When the scales module is built (Faz-2, with maps/feeds): implement the ramps above as a
+typed `lib` module (one place, tested), keep the brand token set and the data ramp set
+physically separate, and add a colorblind-simulation check to the review pass. No such code
+ships in PR-3 — this section is the specification it must satisfy.

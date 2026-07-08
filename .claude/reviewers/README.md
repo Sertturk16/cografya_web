@@ -1,0 +1,82 @@
+# Reviewer assets — `cografya_web`
+
+Committed, auditable role templates for the **Autonomous PR-Review Loop** on the web repo.
+These are the files **Atlas loads to run the reviewer fan-out**. They are not runnable by
+the engineers — see the loop note below.
+
+## The loop
+
+Every PR → **Atlas runs the reviewer fan-out on the MAIN THREAD** (engineers have no
+`Agent` tool by design → they cannot spawn reviewers → the review stays **independent of
+the author**, which is the entire point). Atlas spawns each roster reviewer as a
+fresh-context `general-purpose` agent, **anchored to this PR's worktree/branch diff only**,
+and hands it the matching role template below. Each reviewer is **read-only**, writes its
+findings to `pr-reviews/{PR#}-{role}.md`, and returns a distilled, severity-tagged summary
+to Atlas. **CRITICAL findings get per-finding adversarial validation** (a second agent
+tries to break the claim before it counts). Then the **authoring engineer (Vera) runs the
+Critical Architect Filter** on the collected findings (protocol in `cografya_web/CLAUDE.md`
+§8) → acts only on correctness/security/SEO-correctness/requirement items, annotates every
+skipped item in English, commits & pushes → if any Critical/Important was fixed, Atlas
+re-runs the fan-out and Vera re-filters → **re-loop until no Critical/Important remains** →
+Atlas archives `pr-reviews/{PR#}.md` to
+`Owner's Inbox/pr-review-archive/{repo}-{PR#}.md`.
+
+> **Only Atlas (main thread) runs the fan-out.** A subagent (Vera/Deniz) invoking a review
+> skill would read "spawn reviewers" and be unable to — no `Agent` tool — and even if
+> granted, an author spawning their own reviewers reintroduces the exact bias the loop
+> exists to remove. Keep engineers Agent-tool-less; keep the fan-out Atlas-only.
+
+## Roster (web)
+
+Atlas spawns these as fresh `general-purpose` agents (until a repo-local `/review-pr`
+skill exists — Faz-2, Atlas-workspace), each pinned to the PR diff and given its template:
+
+| Role                 | Model    | When                                                                                               |
+| -------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| **code-reviewer**    | `opus`   | **Always** — correctness, architecture, contract/type safety                                       |
+| **seo-reviewer**     | `sonnet` | **Always on web** — §6 non-negotiables (metadata / canonical / hreflang / JSON-LD / sitemap / CWV) |
+| **a11y-reviewer**    | `sonnet` | **Always on web** — semantic HTML, alt-text, contrast-AA, focus/keyboard, reduced-motion           |
+| **pr-test-analyzer** | `sonnet` | When the PR touches or should touch tests                                                          |
+| **code-simplifier**  | `sonnet` | When the PR adds non-trivial logic that may be over-built                                          |
+
+(api-repo roster — code-reviewer + security-privacy-reviewer + silent-failure-hunter —
+lives in `cografya_api/.claude/reviewers/`, Deniz's half.)
+
+## Severity taxonomy (shared with api — do not diverge)
+
+- **CRITICAL** — blocks merge: correctness / security / data-loss / SEO-breaking. **A
+  concrete failure scenario is required** to call something critical (not a hunch).
+- **IMPORTANT** — a real defect or standards violation (a11y, SEO-correctness, validation)
+  that must be fixed before merge, but is not catastrophic.
+- **MINOR** — cleanup / nit / deferrable; the filter decides whether to act now or defer.
+
+Reviewers and the filter share this vocabulary so a "CRITICAL" from a reviewer means the
+same thing the filter weighs.
+
+## Output contract (every reviewer template restates it)
+
+- **Read-only.** Do not create, edit, delete, move, or rename ANY file — including leftover
+  files in `pr-reviews/` from prior PRs. Your only write is your own findings file.
+- **Anchor to the PR diff only.** Judge what this PR changes (and its direct blast radius),
+  not the whole pre-existing codebase.
+- Write findings to **`pr-reviews/{PR#}-{role}.md`**, grouped by severity
+  (CRITICAL / IMPORTANT / MINOR), each with: file:line, a concrete failure scenario (for
+  CRITICAL/IMPORTANT), and a concrete fix.
+- Return to Atlas a **distilled severity-tagged summary** — never a raw dump; the detail
+  lives in your findings file.
+
+## Directory layout
+
+```
+cografya_web/
+  CLAUDE.md                       # engineering ground-truth + Filter protocol (§8)
+  DESIGN.md                       # Terra design system + data-viz color doctrine
+  .claude/reviewers/
+    README.md                     # this file
+    code-reviewer.md
+    seo-reviewer.md
+    a11y-reviewer.md
+    pr-test-analyzer.md
+    code-simplifier.md
+  pr-reviews/                     # transient run workspace (gitignored); Atlas archives it
+```
