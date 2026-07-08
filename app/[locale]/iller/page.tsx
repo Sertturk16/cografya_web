@@ -73,6 +73,10 @@ export default async function ProvincesPage({ params }: PageProps) {
                   pathname: "/il/[slug]",
                   params: { slug: slugForLocale(province, locale) },
                 }}
+                // Explicit accessible name so AT reads "İstanbul, Marmara" (with a
+                // pause) instead of the run-on "İstanbul Marmara" (WCAG — the two
+                // adjacent spans otherwise concatenate without a separator).
+                aria-label={`${province.nameTr}, ${tRegions(province.region)}`}
               >
                 <span className={styles.cardBody}>
                   <span className={styles.cardName}>{province.nameTr}</span>

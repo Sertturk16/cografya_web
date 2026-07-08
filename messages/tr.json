@@ -16,7 +16,7 @@
   },
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
-    "note": "İçerik geliştirme aşamasındadır; örnek/yer tutucu veriler yayın öncesi doğrulama bekler.",
+    "note": "İçerik geliştirme aşamasındadır; yeni iller ve konular sürekli ekleniyor. Yayınlanan veriler resmi kaynaklara (TÜİK, HGM, İçişleri, MGM) dayanır.",
     "copyright": "© {year} {siteName}. Tüm hakları saklıdır."
   },
   "Home": {
@@ -62,6 +62,7 @@
     "elevationUnit": "m",
     "climateHeading": "İklim",
     "climateValue": "{className} (Köppen: {koppen})",
+    "climateClassOnly": "{className}",
     "climateNoteLabel": "MGM metodolojik notu",
     "neighborsHeading": "Komşu İller",
     "sourcesLabel": "Kaynaklar",

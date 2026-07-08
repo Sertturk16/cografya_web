@@ -76,6 +76,8 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   const tRegions = await getTranslations("Regions");
   const format = await getFormatter();
 
+  // `nameTr` serves both locales: province names are proper nouns and the contract
+  // has no `nameEn` yet (Faz-3). Region + all chrome/labels ARE localized (i18n).
   const name = province.nameTr;
   const region = tRegions(province.region);
   const selfHref = {
@@ -219,11 +221,23 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         </dl>
       </section>
 
-      {climate && (
+      {/* Climate is TR-only until Faz-3 (mirrors the EN-content comment in
+          app/sitemap.ts). The class name (climateClassTr) and the MANDATORY MGM
+          methodological caveat (climateNoteTr) are untranslated Turkish, and §6
+          forbids shipping a bare Köppen code without that caveat (esp. Van/Ankara,
+          where a lone "Csa" misinforms). So the whole climate block defers to Faz-3
+          on EN — with no English caveat available, a caveat-less code is not shown.
+          Full EN (climateEn contract + values) is a tracked Faz-3 prerequisite. */}
+      {locale === "tr" && climate && (
         <section className="section">
           <h2>{t("climateHeading")}</h2>
           <p className={styles.climateValue}>
-            {t("climateValue", { className: climate.className, koppen: climate.koppen })}
+            {province.climateNoteTr !== null
+              ? t("climateValue", { className: climate.className, koppen: climate.koppen })
+              : /* Defense-in-depth (§6 "no bare Csa"): if the mandatory caveat is
+                   absent (a contract violation the api already guards), show the
+                   class name only — never a caveat-less Köppen code. */
+                t("climateClassOnly", { className: climate.className })}
           </p>
           {province.climateNoteTr !== null && (
             <p className={styles.climateNote}>

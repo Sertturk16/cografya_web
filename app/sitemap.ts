@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getProvinceBySlug, getProvincesResilient } from "@/lib/api/provinces";
+import { getProvinceBySlug, getProvincesResilient, isProductionBuild } from "@/lib/api/provinces";
 import type { ProvinceDetail } from "@/lib/api/types";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
@@ -71,18 +71,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // so we resolve the (lean) list to full detail records. NOTE(follow-up): the
   // list DTO has no `updated_at`, hence the per-province detail fetch — adding
   // `updatedAt` to `ProvinceListItemDto` (an additive contract change, via Atlas)
-  // would drop this to a single list call. Build-safe: the list is resilient (→
-  // [] when the api is down at build) and each detail fetch is guarded so one
-  // failure omits that entry rather than failing the whole sitemap.
+  // would drop this to a single list call.
+  //
+  // Resilience matches the rest of this PR (see getProvincesResilient): a genuine
+  // 404 omits that province (won't happen for a listed slug, but harmless), while a
+  // TRANSIENT failure is tolerated at BUILD (omit + warn) but RE-THROWN at runtime —
+  // so an api blip during ISR keeps the last good sitemap instead of silently
+  // dropping a province from the index.
   const provinces = await getProvincesResilient();
   const details = (
     await Promise.all(
-      provinces.map((province) =>
-        getProvinceBySlug(province.slugTr).catch((error: unknown) => {
-          console.warn(`[sitemap] detail fetch failed for ${province.slugTr}: ${String(error)}`);
-          return null;
-        }),
-      ),
+      provinces.map(async (province) => {
+        try {
+          return await getProvinceBySlug(province.slugTr); // null ⇒ genuine 404
+        } catch (error) {
+          if (isProductionBuild()) {
+            console.warn(
+              `[sitemap] build-time detail fetch failed for ${province.slugTr}; omitting. ${String(error)}`,
+            );
+            return null;
+          }
+          throw error;
+        }
+      }),
     )
   ).filter((detail): detail is ProvinceDetail => detail !== null);
 

@@ -16,7 +16,7 @@
   },
   "Footer": {
     "tagline": "A free, open geography education platform.",
-    "note": "Content is under active development; sample/placeholder data awaits verification before publication.",
+    "note": "Content is under active development; new provinces and topics are added regularly. Published data is based on official sources (TÜİK, HGM, Ministry of Interior, MGM).",
     "copyright": "© {year} {siteName}. All rights reserved."
   },
   "Home": {
@@ -62,6 +62,7 @@
     "elevationUnit": "m",
     "climateHeading": "Climate",
     "climateValue": "{className} (Köppen: {koppen})",
+    "climateClassOnly": "{className}",
     "climateNoteLabel": "MGM methodological note",
     "neighborsHeading": "Neighbouring Provinces",
     "sourcesLabel": "Sources",

@@ -33,6 +33,16 @@ export async function getProvinceBySlug(slug: string): Promise<ProvinceDetail | 
 }
 
 /**
+ * True during `next build` (the static-generation phase). The single knob behind
+ * the build-vs-runtime resilience split used by every enumerating consumer:
+ * tolerate an api outage at BUILD (degrade to on-demand ISR), but re-throw at
+ * RUNTIME so Next keeps serving the last good static artifact.
+ */
+export function isProductionBuild(): boolean {
+  return process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD;
+}
+
+/**
  * Build-safe province list for the enumerating consumers that run during
  * `next build` (generateStaticParams, the il-hub index, sitemap).
  *
@@ -48,7 +58,7 @@ export async function getProvincesResilient(): Promise<ProvinceListItem[]> {
   try {
     return await getProvinces();
   } catch (error) {
-    if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
+    if (isProductionBuild()) {
       console.warn(
         `[provinces] list fetch failed during build; deferring to on-demand ISR. ${String(error)}`,
       );
