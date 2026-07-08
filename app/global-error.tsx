@@ -28,7 +28,10 @@ export default function GlobalError({ reset }: GlobalErrorProps) {
           padding: "24px",
         }}
       >
-        <main style={{ maxWidth: "32rem", textAlign: "center" }}>
+        {/* role="alert" (assertive live region) announces the heading + body to
+            AT on render — the cheap WCAG 4.1.3 signal for this last-resort boundary
+            that has no next-intl/focus machinery. */}
+        <main role="alert" style={{ maxWidth: "32rem", textAlign: "center" }}>
           <h1 style={{ fontSize: "1.75rem", margin: "0 0 0.5rem", color: "#2b2622" }}>
             Something went wrong
           </h1>

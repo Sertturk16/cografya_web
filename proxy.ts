@@ -13,7 +13,13 @@ export const config = {
   // `apple-icon`). Those metadata routes MUST bypass locale rewriting: otherwise
   // the default-locale redirect turns `/tr/opengraph-image` into a 307→404 (killing
   // the TR og:image) and `/apple-icon` is rewritten to a non-existent
-  // `/tr/apple-icon`. The alternation is end-anchored (`...$`) so only the metadata
-  // leaf segments are excluded, never a content slug that merely contains the word.
-  matcher: "/((?!api|_next|_vercel|.*\\..*|.*(?:opengraph-image|twitter-image|apple-icon)$).*)",
+  // `/tr/apple-icon`. The metadata branch is anchored to a full LEAF SEGMENT
+  // (`(?:.*/)?` = start-of-path or preceded by a `/`, then the token, then `$`), so
+  // only a final path segment that IS the token bypasses — a free-form slug that
+  // merely ends in it (e.g. a future blog post `/blog/designing-an-apple-icon`) is
+  // NOT excluded and still gets normal i18n routing. Examples that BYPASS:
+  // `/tr/opengraph-image`, `/en/opengraph-image`, `/apple-icon`. Examples that RUN
+  // middleware: `/`, `/iller`, `/il/istanbul`, `/blog/my-apple-icon`.
+  matcher:
+    "/((?!api|_next|_vercel|.*\\..*|(?:.*/)?(?:opengraph-image|twitter-image|apple-icon)$).*)",
 };

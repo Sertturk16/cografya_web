@@ -1,11 +1,15 @@
 /**
- * Terra brand mark — the ◭ header glyph rendered as pure vector paths.
+ * Terra brand mark — a neutral GLOBE glyph rendered as pure vector shapes.
  *
- * The ◭ codepoint (U+25ED) is absent from most fonts (incl. the OG default), so
- * the mark is DRAWN, never typed. This is the single source of the placeholder
- * brand glyph shared by `app/apple-icon.tsx` and the OG image; `app/icon.svg`
- * mirrors it by hand (a static file cannot import). Swap on the pending brand
- * decision (CONVENTIONS §3) — owner approved this Terra placeholder for now.
+ * This is the SINGLE SOURCE for the placeholder brand mark shared by the header
+ * (`components/site-header.tsx`), `app/apple-icon.tsx`, and the OG image; the
+ * favicon `app/icon.svg` mirrors it BY HAND (a static file cannot import). The
+ * mark is a white globe (disc + equator + one meridian) on the Terra plate —
+ * deliberately geo-appropriate and non-alarming (the previous ◭ triangle read like
+ * a warning sign in the favicon/OG/apple surfaces). At favicon sizes the thin grid
+ * lines gracefully collapse into a clean solid disc, so it never degrades badly.
+ * Still a PLACEHOLDER — swap on the pending brand decision (CONVENTIONS §3); the
+ * owner approved this Terra globe for now.
  */
 export interface GlyphOptions {
   /** Rendered pixel size (square). */
@@ -26,13 +30,15 @@ export function brandGlyphSvg({
 }: GlyphOptions = {}): string {
   const rx = (radiusRatio * 32).toFixed(2);
   // viewBox is a fixed 32×32 grid; width/height scale it to `size`.
-  // Path 1 fills the LEFT half of the triangle; path 2 strokes the FULL outline —
-  // together they reproduce ◭ (left half solid, right half outline).
+  // White globe disc (r=8.6, centred) carved by two Terra grid lines: a straight
+  // equator across the full diameter and a narrow vertical meridian ellipse whose
+  // poles meet the disc edge — the minimal, instantly-readable globe.
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 32 32">` +
     `<rect width="32" height="32" rx="${rx}" fill="${background}"/>` +
-    `<path d="M16 8 L7 24 L16 24 Z" fill="${glyph}"/>` +
-    `<path d="M16 8 L7 24 L25 24 Z" fill="none" stroke="${glyph}" stroke-width="1.8" stroke-linejoin="round"/>` +
+    `<circle cx="16" cy="16" r="8.6" fill="${glyph}"/>` +
+    `<line x1="7.4" y1="16" x2="24.6" y2="16" stroke="${background}" stroke-width="1.5"/>` +
+    `<ellipse cx="16" cy="16" rx="3.7" ry="8.6" fill="none" stroke="${background}" stroke-width="1.5"/>` +
     `</svg>`
   );
 }

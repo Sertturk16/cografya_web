@@ -26,14 +26,13 @@
 }
 
 .glyph {
-  display: grid;
-  place-items: center;
+  /* Sizing box for the inline SVG brand mark (the SVG carries its own Terra plate
+     + rounded corners, so no background/radius here). line-height:0 drops the
+     inline baseline gap. */
+  display: inline-flex;
   width: 28px;
   height: 28px;
-  border-radius: 8px;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-size: 0.95rem;
+  line-height: 0;
 }
 
 .nav {
