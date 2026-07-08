@@ -115,7 +115,9 @@ semantic colors (AQI / earthquake intensity / SST) stay STANDARD, never recolore
 
 - **NO local test execution — CI is the ONLY test gate.** Locally run ONLY
   `npx tsc --noEmit` + `eslint` on changed files (**no `--fix`**). Verify tests by reading
-  the PR's CI, never by running them locally.
+  the PR's CI, never by running them locally. (Web test harness = Faz-2 follow-up; there is
+  **no test job in CI yet** — today's web CI is `typecheck-and-lint` + `build` only, so the
+  local gate is `tsc` + `eslint`. The test-reading discipline applies once the harness lands.)
 - **CI green is the single merge gate.** Never merge while red; never weaken or skip a
   test/SEO/a11y check to go green — diagnose and fix.
 - Standalone `tsc --noEmit` + `lint` pass as their own CI job (`.github/workflows/ci.yml`:
@@ -162,13 +164,14 @@ re-loop until no Critical/Important remains → Atlas archives `pr-reviews/{PR#}
 
 **Critical Architect Filter protocol (BINDING — shared with api):** for **every** finding,
 assess **Criticality · Blast Radius · Cost/Benefit · Architectural Fit (YAGNI?)**, then
-decide **Accept / Discuss & Decide / Reject / False Positive**:
+decide **Accept / Discuss & Decide / Reject**:
 
 - **Accept** → apply now (Critical/Important first).
 - **Discuss & Decide** (genuine dilemma) → _steel-man_ the finding's real problem;
   _counter-argue_ the current code's rationale; weigh the _trade-off_; state a clear
   **"Winner: [Suggestion / Current Code] — Because…"**.
-- **Reject** → YAGNI / unnecessary. · **False Positive** → misread context.
+- **Reject** → YAGNI / unnecessary — including a **false positive** (the finding misread the
+  context); annotate which.
 
 Take action ONLY on findings affecting **correctness / security / SEO-correctness / a
 stated requirement** — the scope brake. **Annotate every skipped item** with a short
