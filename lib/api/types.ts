@@ -14,6 +14,10 @@ import type { components } from "./schema";
  */
 export type ProvinceListItem = components["schemas"]["ProvinceListItemDto"];
 export type ProvinceDetail = components["schemas"]["ProvinceDetailDto"];
+/** Bulk hover-card summary for the homepage SVG map (identity + the stat-chip
+ *  numbers), build-time embedded — the purpose-built `/api/provinces/map-summary`
+ *  payload. */
+export type ProvinceMapSummary = components["schemas"]["ProvinceMapSummaryDto"];
 
 /** The seven official geographic regions of Türkiye (contract enum values). */
 export type GeographicRegion = ProvinceListItem["region"];
