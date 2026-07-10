@@ -8,7 +8,7 @@ import {
   getProvinces,
   getProvincesResilient,
 } from "@/lib/api/provinces";
-import type { ProvinceDetail, ProvinceListItem } from "@/lib/api/types";
+import type { HydrographyFeature, ProvinceDetail, ProvinceListItem } from "@/lib/api/types";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { administrativeAreaJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
@@ -18,6 +18,9 @@ import styles from "./province-detail.module.css";
 interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
 }
+
+/** Hidrografya feature-group render order (baraj → nehir → göl). */
+const HYDROGRAPHY_TYPE_ORDER = ["baraj", "nehir", "gol"] as const;
 
 /** The localized slug (slug_tr for tr, slug_en for en) for a province. */
 function slugForLocale(province: ProvinceDetail | ProvinceListItem, locale: Locale): string {
@@ -124,6 +127,16 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   if (province.districtCount !== null) {
     additionalProperty.push({ name: t("districtCount"), value: province.districtCount });
   }
+  // Nüfus yoğunluğu — server-computed (round(nüfus/yüzölçümü)); consumed as-is so
+  // the rounding/null rule stays single-sourced in the api. Kept in step with the
+  // visible fact-sheet row below (both derive from the same DTO field + i18n label).
+  if (province.populationDensity !== null) {
+    additionalProperty.push({
+      name: t("populationDensity"),
+      value: province.populationDensity,
+      unitText: t("populationDensityUnit"),
+    });
+  }
   if (province.elevationM !== null) {
     additionalProperty.push({
       name: t("elevation"),
@@ -142,6 +155,68 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
     province.climateClassTr !== null && province.climateKoppen !== null
       ? { className: province.climateClassTr, koppen: province.climateKoppen }
       : null;
+
+  // Giriş (intro) — SPEC §3.3. Layer 1: the hand-written `introTr` (genuine
+  // per-province prose) when present. It is Turkish and there is no `introEn` yet
+  // (Faz-3), so — like the climate block — the EN page never shows it and always
+  // uses the composed fallback (English chrome + the province's own locked numbers).
+  // Layer 2 (fallback, used everywhere today since `introTr` is null): a data-
+  // composed sentence that breaks the old pure-copula template ("X, Y Bölgesi'nde
+  // yer alan bir ildir") by carrying at least one differentiating LOCKED number.
+  // It states only the province's OWN figures (population, then area) and NEVER a
+  // cross-province national rank/superlative: a national rank cannot be verified
+  // from a partial seed without inventing a data source the api does not provide
+  // (CONVENTIONS §4/§6 — the api is the single source of truth; nothing invented
+  // client-side). A verified superlative like "en kalabalık il" belongs in a
+  // written `introTr` (Layer 1), not here. Region-only is the honest last resort
+  // for a province with no numeric facts at all (none today — all 14 have pop.).
+  const introText =
+    locale === "tr" && province.introTr !== null
+      ? province.introTr
+      : province.population !== null
+        ? province.populationYear !== null
+          ? t("introFallbackPopulationYear", {
+              name,
+              region,
+              population: province.population,
+              year: province.populationYear,
+            })
+          : t("introFallbackPopulation", { name, region, population: province.population })
+        : province.areaKm2 !== null
+          ? t("introFallbackArea", { name, region, area: province.areaKm2 })
+          : t("introFallbackRegion", { name, region });
+
+  // New prose/structured sections carry raw Turkish content (…Tr fields, Turkish
+  // labels) with no EN counterpart yet, so — mirroring the climate block — they are
+  // TR-gated until Faz-3 EN content lands. All these fields are null for every
+  // province today, so nothing new renders yet; the mechanism is ready for content.
+  const isTr = locale === "tr";
+  const showLandform = isTr && province.landformNoteTr !== null;
+  const hydrographyFeatures = province.hydrographyFeatures;
+  const showHydrography =
+    isTr && (province.hydrographyNoteTr !== null || hydrographyFeatures !== null);
+  const showSettlement =
+    isTr &&
+    (province.settlementNoteTr !== null ||
+      province.urbanizationRate !== null ||
+      province.netMigrationRate !== null);
+  const economyIndicator = province.economyIndicator;
+  const showEconomy = isTr && economyIndicator !== null;
+
+  const hydrographyTypeLabels: Record<HydrographyFeature["type"], string> = {
+    baraj: t("hydrographyTypeBaraj"),
+    nehir: t("hydrographyTypeNehir"),
+    gol: t("hydrographyTypeGol"),
+  };
+
+  // Kaynaklar (E-E-A-T provenance) is expanded with the per-section authorities
+  // ONLY for sections that actually rendered — so a source is never cited for
+  // content that is not on the page. Empty today (no new section renders) → the
+  // base sources line is shown unchanged.
+  const extraSources: string[] = [];
+  if (showLandform) extraSources.push(t("sourcesLandform"));
+  if (showHydrography) extraSources.push(t("sourcesHydrography"));
+  if (showEconomy) extraSources.push(t("sourcesEconomy"));
 
   return (
     <div className="container page">
@@ -165,7 +240,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         ]}
       />
       <h1>{t("heading", { name })}</h1>
-      <p className="lede">{t("summary", { name, region })}</p>
+      <p className="lede">{introText}</p>
 
       <section className="section">
         <h2>{t("keyFactsHeading")}</h2>
@@ -218,8 +293,26 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
               </dd>
             </div>
           )}
+          {/* Nüfus yoğunluğu — derived, renders today (server-computed from the two
+              locked values); "≈" flags the rounding. (SPEC §3.1 #3 / §4.2.) */}
+          {province.populationDensity !== null && (
+            <div className={styles.fact}>
+              <dt>{t("populationDensity")}</dt>
+              <dd>
+                ≈ {format.number(province.populationDensity)} {t("populationDensityUnit")}
+              </dd>
+            </div>
+          )}
         </dl>
       </section>
+
+      {/* Yeryüzü Şekilleri — TR-gated prose; absent until landformNoteTr is filled. */}
+      {showLandform && (
+        <section className="section">
+          <h2>{t("landformHeading")}</h2>
+          <p className={styles.prose}>{province.landformNoteTr}</p>
+        </section>
+      )}
 
       {/* Climate is TR-only until Faz-3 (mirrors the EN-content comment in
           app/sitemap.ts). The class name (climateClassTr) and the MANDATORY MGM
@@ -239,12 +332,99 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
                    class name only — never a caveat-less Köppen code. */
                 t("climateClassOnly", { className: climate.className })}
           </p>
+          {/* The caveat stays MANDATORY and its text is never trimmed, but per the
+              owner's UX ruling it renders collapsed (progressive disclosure) so it
+              is present in full + crawlable without being the page's narrative wall
+              (see province-detail.module.css .climateNote). */}
           {province.climateNoteTr !== null && (
-            <p className={styles.climateNote}>
-              <span className={styles.climateNoteLabel}>{t("climateNoteLabel")}:</span>{" "}
-              {province.climateNoteTr}
+            <details className={styles.climateNote}>
+              <summary className={styles.climateNoteSummary}>{t("climateNoteLabel")}</summary>
+              <p className={styles.climateNoteBody}>{province.climateNoteTr}</p>
+            </details>
+          )}
+        </section>
+      )}
+
+      {/* Hidrografya — TR-gated; prose note and/or a structured feature list. An
+          empty (non-null) feature list is a deliberate "no significant water" fact
+          (api: null = not researched, [] = none), shown as such. Null today. */}
+      {showHydrography && (
+        <section className="section">
+          <h2>{t("hydrographyHeading")}</h2>
+          {province.hydrographyNoteTr !== null && (
+            <p className={styles.prose}>{province.hydrographyNoteTr}</p>
+          )}
+          {hydrographyFeatures !== null &&
+            (hydrographyFeatures.length > 0 ? (
+              HYDROGRAPHY_TYPE_ORDER.map((type) => {
+                const items = hydrographyFeatures.filter((feature) => feature.type === type);
+                if (items.length === 0) return null;
+                return (
+                  <div key={type} className={styles.hydroGroup}>
+                    <h3 className={styles.hydroGroupHeading}>{hydrographyTypeLabels[type]}</h3>
+                    <ul className={styles.hydroList}>
+                      {items.map((feature) => (
+                        <li key={feature.name}>{feature.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })
+            ) : (
+              <p className={styles.prose}>{t("hydrographyNone")}</p>
+            ))}
+        </section>
+      )}
+
+      {/* Nüfus ve Yerleşme — TR-gated; leads with the derived density figure, then
+          the urbanization/migration facts + settlement note. Gated on those
+          narrative fields (density alone already shows in Temel Bilgiler), so this
+          standalone section stays absent until real settlement content lands. */}
+      {showSettlement && (
+        <section className="section">
+          <h2>{t("settlementHeading")}</h2>
+          {province.populationDensity !== null && (
+            <p className={styles.prose}>
+              {t("settlementDensityLine", { value: province.populationDensity })}
             </p>
           )}
+          {(province.urbanizationRate !== null || province.netMigrationRate !== null) && (
+            <dl className={styles.factSheet}>
+              {province.urbanizationRate !== null && (
+                <div className={styles.fact}>
+                  <dt>{t("urbanizationRate")}</dt>
+                  <dd>{t("urbanizationRateValue", { value: province.urbanizationRate })}</dd>
+                </div>
+              )}
+              {province.netMigrationRate !== null && (
+                <div className={styles.fact}>
+                  <dt>{t("netMigrationRate")}</dt>
+                  <dd>{t("netMigrationRateValue", { value: province.netMigrationRate })}</dd>
+                </div>
+              )}
+            </dl>
+          )}
+          {province.settlementNoteTr !== null && (
+            <p className={styles.prose}>{province.settlementNoteTr}</p>
+          )}
+        </section>
+      )}
+
+      {/* Ekonomik Coğrafya — TR-gated; exactly ONE TÜİK-anchored structured stat
+          (never free marketing prose). Absent until economyIndicator is filled.
+          `showEconomy` (= isTr && economyIndicator !== null) narrows the field to
+          non-null here via aliased-condition narrowing, so it stays the single
+          source of truth for "does economy render" (also drives extraSources). */}
+      {showEconomy && (
+        <section className="section">
+          <h2>{t("economyHeading")}</h2>
+          <dl className={styles.economyStat}>
+            <dt className={styles.economyLabel}>{economyIndicator.label}</dt>
+            <dd className={styles.economyValue}>{economyIndicator.value}</dd>
+            <dd className={styles.economyMeta}>
+              {economyIndicator.source} · {economyIndicator.year}
+            </dd>
+          </dl>
         </section>
       )}
 
@@ -272,6 +452,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
 
       <p className={styles.sources}>
         <span className={styles.sourcesLabel}>{t("sourcesLabel")}:</span> {t("sources")}
+        {extraSources.length > 0 && <> {t("sourcesExtra", { list: extraSources.join("; ") })}</>}
       </p>
 
       <p className="section">
