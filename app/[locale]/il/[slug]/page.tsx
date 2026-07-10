@@ -411,17 +411,20 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       )}
 
       {/* Ekonomik Coğrafya — TR-gated; exactly ONE TÜİK-anchored structured stat
-          (never free marketing prose). Absent until economyIndicator is filled. */}
-      {isTr && economyIndicator !== null && (
+          (never free marketing prose). Absent until economyIndicator is filled.
+          `showEconomy` (= isTr && economyIndicator !== null) narrows the field to
+          non-null here via aliased-condition narrowing, so it stays the single
+          source of truth for "does economy render" (also drives extraSources). */}
+      {showEconomy && (
         <section className="section">
           <h2>{t("economyHeading")}</h2>
-          <div className={styles.economyStat}>
-            <span className={styles.economyLabel}>{economyIndicator.label}</span>
-            <span className={styles.economyValue}>{economyIndicator.value}</span>
-            <span className={styles.economyMeta}>
+          <dl className={styles.economyStat}>
+            <dt className={styles.economyLabel}>{economyIndicator.label}</dt>
+            <dd className={styles.economyValue}>{economyIndicator.value}</dd>
+            <dd className={styles.economyMeta}>
               {economyIndicator.source} · {economyIndicator.year}
-            </span>
-          </div>
+            </dd>
+          </dl>
         </section>
       )}
 

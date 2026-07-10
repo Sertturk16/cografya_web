@@ -63,8 +63,11 @@
   list-style-position: inside;
 }
 
+/* Hover keeps the passing --color-primary-dark (6.95:1 on --color-surface) and
+   signals the state with an underline — NOT --color-primary, which computes to
+   4.27:1 here, under the 4.5:1 AA floor for this text size/weight (CLAUDE.md §5). */
 .climateNoteSummary:hover {
-  color: var(--color-primary);
+  text-decoration: underline;
 }
 
 .climateNoteBody {
@@ -102,8 +105,12 @@
   margin-bottom: 2px;
 }
 
-/* Ekonomik Coğrafya — one TÜİK-anchored structured stat (never free prose). */
+/* Ekonomik Coğrafya — one TÜİK-anchored structured stat (never free prose).
+   Rendered as a <dl> (dt = label, dd = value, dd = source·year) to match the
+   page's label+value semantic pattern; dd margins zeroed (browser default is a
+   40px inline-start). */
 .economyStat {
+  margin: 0;
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -112,27 +119,24 @@
 }
 
 .economyLabel {
-  display: block;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-slate);
 }
 
 .economyValue {
-  display: block;
+  margin: 2px 0 0;
   font-family: var(--font-heading);
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-ink);
   line-height: 1.2;
-  margin-top: 2px;
 }
 
 .economyMeta {
-  display: block;
+  margin: 6px 0 0;
   font-size: 0.8rem;
   color: var(--color-slate);
-  margin-top: 6px;
 }
 
 /* E-E-A-T source attribution line (authoritative provenance, small print). */
