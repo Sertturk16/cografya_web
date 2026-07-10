@@ -30,6 +30,17 @@
   --color-danger: #b23b2e;
   --color-info: #276b70;
 
+  /* ---- Interactive map CHROME (Faz-1 navigation map — not a data encoding;
+     DESIGN §6 data-viz rules do not apply here, see SPEC §2 doctrine note) ---- */
+  --province-fill: #ffffff; /* available il base fill */
+  --province-inert: var(--color-surface); /* not-yet-published il (recedes) */
+  --province-stroke: #b3a795; /* map boundary at rest — darker than --color-border
+     (~1.3:1) so 81-province borders read at true scale; map-only, does NOT touch the
+     global --color-border used elsewhere (NOVA color-research 2026-07-10) */
+  --province-hover: rgba(176, 82, 46, 0.16); /* terracotta wash of --color-primary */
+  --scrim-bg: rgba(251, 248, 243, 0.82); /* translucent --color-bg (attribution) */
+  --shadow-card: 0 12px 28px -8px rgba(43, 38, 34, 0.28); /* soft --color-ink shadow */
+
   /* ---- Hypsometric choropleth ramp (future maps) ---- */
   --map-1: #e8efce;
   --map-2: #cbd892;

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { TurkeyMapSection } from "@/components/map/turkey-map-section";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
@@ -43,6 +44,8 @@ export default async function HomePage({ params }: PageProps) {
           </Link>
         </div>
       </section>
+
+      <TurkeyMapSection locale={locale} />
 
       <section className="section">
         <h2>{t("provincesTitle")}</h2>

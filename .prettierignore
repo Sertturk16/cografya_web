@@ -11,6 +11,12 @@ node_modules/
 next-env.d.ts
 pnpm-lock.yaml
 lib/api/schema.ts
+# generate:map output — machine-written path data, kept as the generator emits it.
+lib/map/tr-provinces.generated.ts
+
+# Committed source-data snapshot (ODbL GeoJSON, see data/README.md) — kept
+# byte-identical to the upstream fetch, so Prettier must not reformat it.
+data/tr-il-boundaries.geojson
 
 # Committed OpenAPI contract artifact (synced from cografya_api; kept byte-identical
 # to the api's generator output, so Prettier must not reformat it).

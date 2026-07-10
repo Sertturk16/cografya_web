@@ -27,7 +27,15 @@
     "ctaProvinces": "İlleri Keşfet",
     "ctaAbout": "Platform Hakkında",
     "provincesTitle": "Türkiye'nin illeri",
-    "provincesBody": "81 ilin coğrafi konumu, iklimi ve yüzey şekilleri — kaynaklı ve düzenli içeriklerle."
+    "provincesBody": "81 ilin coğrafi konumu, iklimi ve yüzey şekilleri — kaynaklı ve düzenli içeriklerle.",
+    "mapHeading": "Haritadan bir il seçin",
+    "mapBody": "Türkiye haritasında bir ilin üzerine gelin (ya da klavyeyle odaklanın); açılan kartla o ilin detay sayfasına geçin. Yayında olan iller etkileşimlidir; kalan iller içerik doğrulandıkça eklenir."
+  },
+  "Map": {
+    "mapTitle": "Türkiye il haritası",
+    "plateLabel": "Plaka {code}",
+    "cta": "Detaya git",
+    "attribution": "© OpenStreetMap katkıcıları, ODbL"
   },
   "About": {
     "metaTitle": "Hakkımızda",

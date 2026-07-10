@@ -11,9 +11,17 @@ const eslintConfig = defineConfig([
   prettier,
   // Explicitly pin build-output / generated files to ignore. Mirrors
   // eslint-config-next's own defaults so they hold regardless of preset changes.
-  // `lib/api/schema.ts` is codegen output (openapi-typescript) — never hand-edited
-  // and not linted (its shape is owned by the OpenAPI contract, not our style rules).
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "lib/api/schema.ts"]),
+  // `lib/api/schema.ts` is codegen output (openapi-typescript) and
+  // `lib/map/tr-provinces.generated.ts` is generator output (generate:map) — both
+  // machine-written, never hand-edited, so neither is linted for style.
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "lib/api/schema.ts",
+    "lib/map/tr-provinces.generated.ts",
+  ]),
 ]);
 
 export default eslintConfig;

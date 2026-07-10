@@ -27,7 +27,15 @@
     "ctaProvinces": "Explore Provinces",
     "ctaAbout": "About the Platform",
     "provincesTitle": "Provinces of Türkiye",
-    "provincesBody": "The location, climate and landforms of all 81 provinces — in sourced, structured content."
+    "provincesBody": "The location, climate and landforms of all 81 provinces — in sourced, structured content.",
+    "mapHeading": "Choose a province from the map",
+    "mapBody": "Hover a province on the map of Türkiye (or focus it with the keyboard) and follow the card to its detail page. Published provinces are interactive; the rest are added as their content clears verification."
+  },
+  "Map": {
+    "mapTitle": "Map of the provinces of Türkiye",
+    "plateLabel": "Plate {code}",
+    "cta": "View details",
+    "attribution": "© OpenStreetMap contributors, ODbL"
   },
   "About": {
     "metaTitle": "About",
