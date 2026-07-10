@@ -14,6 +14,8 @@
     "typecheck": "tsc --noEmit",
     "codegen": "openapi-typescript ./openapi/openapi.json --output ./lib/api/schema.ts",
     "codegen:check": "pnpm run codegen && git diff --exit-code -- lib/api/schema.ts",
+    "generate:map": "node scripts/generate-map-paths.mjs",
+    "generate:map:check": "pnpm run generate:map && git diff --exit-code -- lib/map/tr-provinces.generated.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"

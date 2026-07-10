@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/provinces/map-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bulk hover-card summary for all provinces (homepage SVG map, build-time embed). */
+        get: operations["ProvinceController_findMapSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/provinces/{slug}": {
         parameters: {
             query?: never;
@@ -93,6 +110,88 @@ export interface components {
              */
             slugEn: string;
         };
+        ProvinceMapSummaryDto: {
+            /**
+             * @description Plaka kodu (stable, unique).
+             * @example 34
+             */
+            plateCode: string;
+            /**
+             * @description İl adı (TR).
+             * @example İstanbul
+             */
+            nameTr: string;
+            /**
+             * @description Coğrafi bölge.
+             * @enum {string}
+             */
+            region: "MARMARA" | "EGE" | "AKDENIZ" | "IC_ANADOLU" | "KARADENIZ" | "DOGU_ANADOLU" | "GUNEYDOGU_ANADOLU";
+            /**
+             * @description TR slug (routing key — kart tıklaması).
+             * @example istanbul
+             */
+            slugTr: string;
+            /**
+             * @description EN slug (routing key).
+             * @example istanbul
+             */
+            slugEn: string;
+            /**
+             * @description Nüfus (TÜİK ADNKS). Null until fact-checked.
+             * @example 15754053
+             */
+            population: number | null;
+            /**
+             * @description Nüfus referans yılı.
+             * @example 2025
+             */
+            populationYear: number | null;
+            /**
+             * @description Yüzölçümü (km², HGM).
+             * @example 5461
+             */
+            areaKm2: number | null;
+            /**
+             * @description İlçe sayısı.
+             * @example 39
+             */
+            districtCount: number | null;
+        };
+        HydrographyFeatureDto: {
+            /**
+             * @description Öz ad.
+             * @example Ömerli Barajı
+             */
+            name: string;
+            /**
+             * @description Özellik türü (baraj/nehir/göl) — ASCII değer; TR etiketi web tarafında.
+             * @example baraj
+             * @enum {string}
+             */
+            type: "baraj" | "nehir" | "gol";
+        };
+        EconomyIndicatorDto: {
+            /**
+             * @description İstatistiğin ölçtüğü büyüklük.
+             * @example GSYH'de Türkiye payı
+             */
+            label: string;
+            /**
+             * @description Değer, string — pay/sıra/ürün adı olabildiği için (heterojen).
+             * @example %30,2
+             */
+            value: string;
+            /**
+             * @description İstatistiğin referans yılı.
+             * @example 2024
+             */
+            year: number;
+            /**
+             * @description Otoriter kaynak.
+             * @example TÜİK Bölgesel GSYH
+             */
+            source: string;
+        };
         ProvinceDetailDto: {
             /**
              * @description Plaka kodu.
@@ -120,6 +219,11 @@ export interface components {
              */
             region: "MARMARA" | "EGE" | "AKDENIZ" | "IC_ANADOLU" | "KARADENIZ" | "DOGU_ANADOLU" | "GUNEYDOGU_ANADOLU";
             /**
+             * @description Yazılı açılış cümlesi (il girişi). Null ise web veri-tabanlı bir cümle kurar (fallback).
+             * @example İstanbul, Karadeniz ile Marmara Denizi'ni birbirine bağlayan Boğaz'ın iki yakasına kurulmuştur.
+             */
+            introTr: string | null;
+            /**
              * @description Nüfus (TÜİK ADNKS). Null until fact-checked.
              * @example 15754053
              */
@@ -139,6 +243,11 @@ export interface components {
              * @example 39
              */
             districtCount: number | null;
+            /**
+             * @description Nüfus yoğunluğu (kişi/km²) — SERVER-COMPUTED, not stored: round(nüfus / yüzölçümü). Null when population or area is null. Consume this rather than recomputing, so the rounding/null rule stays single-sourced.
+             * @example 2885
+             */
+            populationDensity: number | null;
             /**
              * @description İl merkezi rakımı (m) — MGM il-merkez istasyonu referansı.
              * @example 33
@@ -179,6 +288,24 @@ export interface components {
             climateNoteTr: string | null;
             /** @description Öne çıkan yer şekilleri / jeoloji notu (TR). */
             landformNoteTr: string | null;
+            /** @description Hidrografya — kısa düzyazı not (nehir/göl/baraj anlatısı, TR). */
+            hydrographyNoteTr: string | null;
+            /** @description Hidrografya — yapısal özellik listesi (baraj/nehir/göl). Null = araştırılmadı; boş dizi = "belirgin özellik yok" (bilinçli ifade). */
+            hydrographyFeatures: components["schemas"]["HydrographyFeatureDto"][] | null;
+            /**
+             * @description Şehirleşme oranı (%) — TÜİK ADNKS (il/ilçe merkezi nüfusu / toplam).
+             * @example 93.5
+             */
+            urbanizationRate: number | null;
+            /**
+             * @description Net göç hızı (‰) — TÜİK Göç İstatistikleri; işaretli (net göç ± olabilir).
+             * @example 19.6
+             */
+            netMigrationRate: number | null;
+            /** @description Nüfus ve yerleşme — kısa düzyazı not (TR). */
+            settlementNoteTr: string | null;
+            /** @description Ekonomik coğrafya — TEK, TÜİK-çıpalı yapısal istatistik (serbest metin değil). */
+            economyIndicator: components["schemas"]["EconomyIndicatorDto"] | null;
             /**
              * Format: date-time
              * @description Kayıt oluşturulma zamanı.
@@ -233,6 +360,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProvinceListItemDto"][];
+                };
+            };
+        };
+    };
+    ProvinceController_findMapSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvinceMapSummaryDto"][];
                 };
             };
         };
