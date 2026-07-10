@@ -14,6 +14,10 @@ import type { components } from "./schema";
  */
 export type ProvinceListItem = components["schemas"]["ProvinceListItemDto"];
 export type ProvinceDetail = components["schemas"]["ProvinceDetailDto"];
+/** A single hydrography feature (dam/river/lake) on the detail page. */
+export type HydrographyFeature = components["schemas"]["HydrographyFeatureDto"];
+/** The one TÜİK-anchored economic-geography statistic on the detail page. */
+export type EconomyIndicator = components["schemas"]["EconomyIndicatorDto"];
 /** Bulk hover-card summary for the homepage SVG map (identity + the stat-chip
  *  numbers), build-time embedded — the purpose-built `/api/provinces/map-summary`
  *  payload. */
