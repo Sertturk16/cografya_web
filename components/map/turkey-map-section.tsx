@@ -96,8 +96,25 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
               province.areaKm2 !== null
                 ? `${format.number(province.areaKm2)} ${tDetail("areaUnit")}`
                 : undefined;
+            const areaLabel = areaValue ? tDetail("area") : undefined;
             const districtValue =
               province.districtCount !== null ? format.number(province.districtCount) : undefined;
+            const districtLabel = districtValue ? tDetail("districtCount") : undefined;
+            // Accessible-name parity (a11y, PR#6 round-2): the hover card is a
+            // pointer-only visual surface (aria-hidden), so keyboard/AT users reach
+            // the province only through this <a>'s name. Fold the same stat rows the
+            // sighted card shows into the label — but ONLY the non-null ones, so the
+            // 76 unseeded il stay a clean "name, region" and the 5 seeded ones read
+            // "name, region. Nüfus … Yüzölçümü … İlçe Sayısı …" with no "null" leaking.
+            const statPhrases: string[] = [];
+            if (popLabel && popValue) statPhrases.push(`${popLabel} ${popValue}`);
+            if (areaLabel && areaValue) statPhrases.push(`${areaLabel} ${areaValue}`);
+            if (districtLabel && districtValue)
+              statPhrases.push(`${districtLabel} ${districtValue}`);
+            const ariaLabel =
+              statPhrases.length > 0
+                ? `${province.nameTr}, ${region}. ${statPhrases.join(". ")}.`
+                : `${province.nameTr}, ${region}`;
             return (
               // A plain SVG <a> with a server-computed localized next-intl pathname:
               // a real crawlable link in the first-response HTML, reliable inside
@@ -107,7 +124,7 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
                 key={shape.plateCode}
                 className={styles.provinceLink}
                 href={href}
-                aria-label={`${province.nameTr}, ${region}`}
+                aria-label={ariaLabel}
                 data-province={province.plateCode}
                 data-name={province.nameTr}
                 data-region={region}
@@ -115,9 +132,9 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
                 data-href={href}
                 data-pop-label={popLabel}
                 data-pop-value={popValue}
-                data-area-label={areaValue ? tDetail("area") : undefined}
+                data-area-label={areaLabel}
                 data-area-value={areaValue}
-                data-district-label={districtValue ? tDetail("districtCount") : undefined}
+                data-district-label={districtLabel}
                 data-district-value={districtValue}
               >
                 <path className={styles.province} d={shape.d} />
