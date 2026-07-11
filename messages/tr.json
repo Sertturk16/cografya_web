@@ -84,7 +84,6 @@
     "hydrographyTypeGol": "Göller",
     "hydrographyNone": "Bu ilde belirgin bir akarsu, göl veya baraj bulunmamaktadır.",
     "settlementHeading": "Nüfus ve Yerleşme",
-    "settlementDensityLine": "Nüfus yoğunluğu kilometrekareye yaklaşık {value, number} kişidir.",
     "urbanizationRate": "Şehirleşme Oranı",
     "urbanizationRateValue": "%{value, number}",
     "netMigrationRate": "Net Göç Hızı",

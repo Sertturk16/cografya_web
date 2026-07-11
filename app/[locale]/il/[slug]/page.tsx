@@ -382,18 +382,17 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Nüfus ve Yerleşme — TR-gated; leads with the derived density figure, then
-          the urbanization/migration facts + settlement note. Gated on those
-          narrative fields (density alone already shows in Temel Bilgiler), so this
-          standalone section stays absent until real settlement content lands. */}
+      {/* Nüfus ve Yerleşme — TR-gated. Quick-facts stat cards first (şehirleşme /
+          net göç), then the settlement-note narrative that puts them in context —
+          one clean scan-then-read flow, no prose stranded above the cards. The
+          derived density is deliberately NOT repeated here as a standalone lead-in
+          sentence: it already shows as a Temel Bilgiler card and is referenced with
+          fuller context inside settlementNoteTr itself. Gated on the narrative
+          fields (density alone already shows in Temel Bilgiler), so the section
+          stays absent until real settlement content lands. */}
       {showSettlement && (
         <section className="section">
           <h2>{t("settlementHeading")}</h2>
-          {province.populationDensity !== null && (
-            <p className={styles.prose}>
-              {t("settlementDensityLine", { value: province.populationDensity })}
-            </p>
-          )}
           {(province.urbanizationRate !== null || province.netMigrationRate !== null) && (
             <dl className={styles.factSheet}>
               {province.urbanizationRate !== null && (
