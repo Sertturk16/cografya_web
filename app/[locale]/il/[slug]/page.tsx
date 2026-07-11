@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { ProseNote } from "@/components/prose-note";
 import {
   byPlateCode,
   getProvinceBySlug,
@@ -191,7 +192,12 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // TR-gated until Faz-3 EN content lands. All these fields are null for every
   // province today, so nothing new renders yet; the mechanism is ready for content.
   const isTr = locale === "tr";
-  const showLandform = isTr && province.landformNoteTr !== null;
+  // The landform note IS the whole section, so hoist the TR-gated, narrowed value
+  // once: it both gates the section and feeds <ProseNote> as a plain `string`
+  // (aliased null-check narrowing). Hydrography/settlement narrow at their own inner
+  // note guards instead, because those sections can also render for non-note reasons.
+  const landformNote = isTr ? province.landformNoteTr : null;
+  const showLandform = landformNote !== null;
   const hydrographyFeatures = province.hydrographyFeatures;
   const showHydrography =
     isTr && (province.hydrographyNoteTr !== null || hydrographyFeatures !== null);
@@ -310,7 +316,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       {showLandform && (
         <section className="section">
           <h2>{t("landformHeading")}</h2>
-          <p className={styles.prose}>{province.landformNoteTr}</p>
+          <ProseNote text={landformNote} className={styles.prose} />
         </section>
       )}
 
@@ -352,7 +358,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         <section className="section">
           <h2>{t("hydrographyHeading")}</h2>
           {province.hydrographyNoteTr !== null && (
-            <p className={styles.prose}>{province.hydrographyNoteTr}</p>
+            <ProseNote text={province.hydrographyNoteTr} className={styles.prose} />
           )}
           {hydrographyFeatures !== null &&
             (hydrographyFeatures.length > 0 ? (
@@ -405,7 +411,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
             </dl>
           )}
           {province.settlementNoteTr !== null && (
-            <p className={styles.prose}>{province.settlementNoteTr}</p>
+            <ProseNote text={province.settlementNoteTr} className={styles.prose} />
           )}
         </section>
       )}
