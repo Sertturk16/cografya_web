@@ -84,7 +84,6 @@
     "hydrographyTypeGol": "Lakes",
     "hydrographyNone": "This province has no significant rivers, lakes or dams.",
     "settlementHeading": "Population & Settlement",
-    "settlementDensityLine": "Population density is approximately {value, number} people per km².",
     "urbanizationRate": "Urbanization Rate",
     "urbanizationRateValue": "{value, number}%",
     "netMigrationRate": "Net Migration Rate",
