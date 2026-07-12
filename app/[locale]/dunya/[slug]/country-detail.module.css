@@ -1,0 +1,67 @@
+/* Ülke detay sayfası — fact sheet + narrative prose + source line. Mirrors the il
+   detay page's visual grammar (province-detail.module.css). Terra tokens only
+   (DESIGN.md §2); no hardcoded brand hex. Contrast verified against DESIGN §5:
+   slate on white 7.92:1 (AAA), ink on white AAA. */
+
+.factSheet {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.fact {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.fact dt {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-slate);
+  margin-bottom: 4px;
+}
+
+.fact dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+/* Prose sections (Yeryüzü Şekilleri, İklim, Hidrografya, Bağımsızlık) — genuine
+   per-country narrative, rendered from the api's …NoteTr fields. */
+.prose {
+  color: var(--color-slate);
+  max-width: 70ch;
+  line-height: 1.65;
+}
+
+/* E-E-A-T source attribution line (authoritative provenance, small print). */
+.sources {
+  margin-top: 40px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  max-width: 70ch;
+}
+
+.sourcesLabel {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* Komşu ülkeler — an unseeded neighbour has no page yet, so it is rendered as a
+   plain, non-interactive text chip (distinct from the linked .province-card used
+   for seeded neighbours), never a dead link. */
+.neighborTextCard {
+  display: block;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  color: var(--color-slate);
+}

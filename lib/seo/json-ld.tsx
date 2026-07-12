@@ -171,3 +171,76 @@ export function administrativeAreaJsonLd(args: {
 
   return schema;
 }
+
+/**
+ * `schema.org/Country` for a `/dunya/{slug}` country detail page (CONVENTIONS §6 #5 schema
+ * map — the geo layer at country scale). `Country` is a subtype of `AdministrativeArea`, so
+ * this mirrors `administrativeAreaJsonLd` field-for-field, with three country-scale nuances
+ * (SPEC §6): `geo` is the CAPITAL's coordinates (the il-merkez analogue); `identifier`
+ * carries the ISO 3166-1 code (the generic schema.org identifier, a truer fit than a
+ * PropertyValue); and `containedInPlace` is the continent as a generic `Place` — schema.org
+ * has no `Continent` type, so a `Place` node is the honest mapping (validators accept it).
+ * Every field is emitted only when the api actually has the value (null → skipped, never
+ * invented).
+ */
+export function countryJsonLd(args: {
+  name: string;
+  path: string;
+  locale: Locale;
+  /** Capital coordinates (decimal degrees). Omitted when the api has no value. */
+  geo?: { latitude: number; longitude: number } | null;
+  /** Structured facts (nüfus, yüzölçümü, komşu ülke sayısı, …) as PropertyValue nodes. */
+  additionalProperty?: GeoPropertyValue[];
+  /** ISO 3166-1 code (alpha-2, or alpha-3 when present) → schema.org `identifier`. */
+  isoCode?: string | null;
+  /** The containing continent as a generic `Place` (no schema.org `Continent` type exists). */
+  containedInPlace?: { name: string } | null;
+  /** ISO date-time of the last data change (api `updated_at`). */
+  dateModified?: string;
+}): JsonLdSchema {
+  const schema: JsonLdSchema = {
+    "@context": "https://schema.org",
+    "@type": "Country",
+    name: args.name,
+    url: absoluteUrl(args.path),
+    inLanguage: args.locale,
+  };
+
+  if (args.isoCode) {
+    schema.identifier = args.isoCode;
+  }
+
+  if (args.geo) {
+    schema.geo = {
+      "@type": "GeoCoordinates",
+      latitude: args.geo.latitude,
+      longitude: args.geo.longitude,
+    };
+  }
+
+  if (args.containedInPlace) {
+    schema.containedInPlace = {
+      "@type": "Place",
+      name: args.containedInPlace.name,
+    };
+  }
+
+  if (args.additionalProperty && args.additionalProperty.length > 0) {
+    schema.additionalProperty = args.additionalProperty.map((property) => {
+      const node: JsonLdObject = {
+        "@type": "PropertyValue",
+        name: property.name,
+        value: property.value,
+      };
+      if (property.unitText !== undefined) node.unitText = property.unitText;
+      if (property.unitCode !== undefined) node.unitCode = property.unitCode;
+      return node;
+    });
+  }
+
+  if (args.dateModified) {
+    schema.dateModified = args.dateModified;
+  }
+
+  return schema;
+}

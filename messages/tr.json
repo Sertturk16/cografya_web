@@ -8,12 +8,14 @@
     "label": "Ana gezinme",
     "home": "Ana Sayfa",
     "turkiye": "Türkiye",
+    "dunya": "Dünya",
     "about": "Hakkımızda"
   },
   "Breadcrumb": {
     "label": "Sayfa yolu",
     "home": "Ana Sayfa",
-    "turkiye": "Türkiye"
+    "turkiye": "Türkiye",
+    "dunya": "Dünya"
   },
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
@@ -102,6 +104,56 @@
     "KARADENIZ": "Karadeniz",
     "DOGU_ANADOLU": "Doğu Anadolu",
     "GUNEYDOGU_ANADOLU": "Güneydoğu Anadolu"
+  },
+  "Continents": {
+    "ASYA": "Asya",
+    "AVRUPA": "Avrupa",
+    "AFRIKA": "Afrika",
+    "KUZEY_AMERIKA": "Kuzey Amerika",
+    "GUNEY_AMERIKA": "Güney Amerika",
+    "OKYANUSYA": "Okyanusya"
+  },
+  "Dunya": {
+    "metaTitle": "Dünya Haritası — Ülkeler",
+    "metaDescription": "Dünya ülkelerini interaktif haritada keşfedin. Her ülke için konum, başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
+    "heading": "Dünya Haritası",
+    "intro": "Dünya ülkelerini interaktif haritada keşfedin. Bir ülke seçerek konumu, başkenti, nüfusu ve fiziki coğrafyası hakkındaki kaynaklı detay sayfasına ulaşın. İçerik Türkiye'nin komşu ülkeleriyle başlıyor; kapsam yeni ülkeler eklendikçe genişleyecek."
+  },
+  "WorldMap": {
+    "sectionHeading": "Haritadan bir ülke seçin",
+    "sectionBody": "Dünya haritasında bir ülkenin üzerine gelin (ya da klavyeyle odaklanın); açılan kartla o ülkenin detay sayfasına geçin. İçeriği yayında olan ülkeler etkileşimlidir; kalan ülke ve bölgeler içerik eklendikçe canlanır.",
+    "mapTitle": "Dünya ülkeleri haritası (bölgesel)",
+    "attribution": "Sınır verisi: Natural Earth (kamu malı)"
+  },
+  "CountryDetail": {
+    "metaTitle": "{name} Coğrafyası",
+    "metaDescription": "{name}, {continent} kıtasında yer alan ülkenin konumu, başkenti, nüfusu, yüzölçümü ve fiziki coğrafyası hakkında kaynaklı bilgiler.",
+    "heading": "{name} Coğrafyası",
+    "introFallbackPopulation": "{name}, {continent} kıtasında yer alan ve {population, number} nüfuslu bir ülkedir.",
+    "introFallbackArea": "{name}, {continent} kıtasında yer alan ve {area, number} km² yüzölçümüne sahip bir ülkedir.",
+    "introFallbackContinent": "{name}, {continent} kıtasında yer alan bir ülkedir.",
+    "keyFactsHeading": "Temel Bilgiler",
+    "continent": "Kıta",
+    "subregion": "Bölge",
+    "capital": "Başkent",
+    "population": "Nüfus",
+    "area": "Yüzölçümü",
+    "areaUnit": "km²",
+    "isoCode": "ISO Kodu",
+    "currency": "Para Birimi",
+    "currencyValue": "{name} ({code})",
+    "language": "Resmi Dil",
+    "languagePlural": "Resmi Diller",
+    "governmentForm": "Yönetim Biçimi",
+    "neighborCount": "Komşu Ülke Sayısı",
+    "landformHeading": "Yeryüzü Şekilleri",
+    "climateHeading": "İklim",
+    "hydrographyHeading": "Hidrografya",
+    "independenceHeading": "Bağımsızlık",
+    "neighborsHeading": "Komşu Ülkeler",
+    "sourcesLabel": "Kaynaklar",
+    "sources": "Veriler resmi ve otoriter kaynaklara dayanır: ülke ve başkent adları T.C. Dışişleri Bakanlığı; nüfus Dünya Bankası (Gürcistan için Geostat 2024 sayımı); yüzölçümü Dünya Bankası; kıta ve bölge sınıflandırması BM İstatistik Bölümü (M49); komşu ülkeler, yönetim biçimi, para birimi ve fiziki coğrafya çok kaynaklı çapraz kontrolle (Britannica vb.).",
+    "backToMap": "Dünya haritasına dön"
   },
   "NotFound": {
     "metaTitle": "Sayfa bulunamadı",

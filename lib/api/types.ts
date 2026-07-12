@@ -25,3 +25,13 @@ export type ProvinceMapSummary = components["schemas"]["ProvinceMapSummaryDto"];
 
 /** The seven official geographic regions of Türkiye (contract enum values). */
 export type GeographicRegion = ProvinceListItem["region"];
+
+// ---- Country (dünya haritası, Faz-2) ----------------------------------------
+export type CountryListItem = components["schemas"]["CountryListItemDto"];
+export type CountryDetail = components["schemas"]["CountryDetailDto"];
+/** Bulk hover-card summary for the world SVG map (identity + the stat-chip numbers),
+ *  build-time embedded — the purpose-built `/api/countries/map-summary` payload. */
+export type CountryMapSummary = components["schemas"]["CountryMapSummaryDto"];
+
+/** The six continents (contract enum values, TR keys). */
+export type Continent = CountryListItem["continent"];

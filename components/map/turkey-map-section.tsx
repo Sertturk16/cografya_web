@@ -5,7 +5,7 @@ import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { MapHoverCard } from "./map-hover-card";
-import styles from "./turkey-map.module.css";
+import styles from "./map.module.css";
 
 interface TurkeyMapSectionProps {
   locale: Locale;
@@ -121,23 +121,25 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
               // A plain SVG <a> with a server-computed localized next-intl pathname:
               // a real crawlable link in the first-response HTML, reliable inside
               // <svg> (Next's <Link> component targets the HTML anchor, not the SVG
-              // namespace). Navigation is a full load — fine for a homepage map.
+              // namespace). Navigation is a full load — fine for a hub map. The
+              // `data-*` are the shared, entity-agnostic hover-card contract (see
+              // map-hover-card.tsx): badge = plaka, subtitle = bölge, three stat slots.
               <a
                 key={shape.plateCode}
                 className={styles.provinceLink}
                 href={href}
                 aria-label={ariaLabel}
-                data-province={province.plateCode}
+                data-shape={province.plateCode}
                 data-name={province.nameTr}
-                data-region={region}
-                data-plate-label={tMap("plateLabel", { code: province.plateCode })}
+                data-subtitle={region}
+                data-badge={tMap("plateLabel", { code: province.plateCode })}
                 data-href={href}
-                data-pop-label={popLabel}
-                data-pop-value={popValue}
-                data-area-label={areaLabel}
-                data-area-value={areaValue}
-                data-district-label={districtLabel}
-                data-district-value={districtValue}
+                data-stat1-label={popLabel}
+                data-stat1-value={popValue}
+                data-stat2-label={areaLabel}
+                data-stat2-value={areaValue}
+                data-stat3-label={districtLabel}
+                data-stat3-value={districtValue}
               >
                 <path className={styles.province} d={shape.d} />
               </a>
