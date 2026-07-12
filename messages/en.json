@@ -7,12 +7,13 @@
   "Nav": {
     "label": "Primary navigation",
     "home": "Home",
-    "provinces": "Provinces",
+    "turkiye": "Türkiye",
     "about": "About"
   },
   "Breadcrumb": {
     "label": "Breadcrumb",
-    "home": "Home"
+    "home": "Home",
+    "turkiye": "Türkiye"
   },
   "Footer": {
     "tagline": "A free, open geography education platform.",
@@ -24,17 +25,14 @@
     "metaDescription": "Free, sourced geography content for the 81 provinces of Türkiye, the countries of the world and landforms. Maps, topic guides and more.",
     "heading": "Explore Türkiye and the world through geography",
     "lede": "Free geography pages — province, country and landform details, with curriculum-aligned topic guides.",
-    "ctaProvinces": "Explore Provinces",
-    "ctaAbout": "About the Platform",
-    "provincesTitle": "Provinces of Türkiye",
-    "provincesBody": "The location, climate and landforms of all 81 provinces — in sourced, structured content.",
-    "mapHeading": "Choose a province from the map",
-    "mapBody": "Hover a province on the map of Türkiye (or focus it with the keyboard) and follow the card to its detail page. Published provinces are interactive; the rest are added as their content clears verification."
+    "ctaMap": "Explore the Map",
+    "ctaAbout": "About the Platform"
   },
   "Map": {
+    "sectionHeading": "Choose a province from the map",
+    "sectionBody": "Hover a province on the map of Türkiye (or focus it with the keyboard) and follow the card to its detail page. Published provinces are interactive; the rest are added as their content clears verification.",
     "mapTitle": "Map of the provinces of Türkiye",
     "plateLabel": "Plate {code}",
-    "cta": "View details",
     "attribution": "© OpenStreetMap contributors, ODbL"
   },
   "About": {
@@ -44,13 +42,11 @@
     "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone. Content is grounded in authoritative sources and passes an independent verification step before publication.",
     "body2": "The platform is under development. This page is a demonstration of the multilingual architecture and SEO foundations; content will deepen as coverage expands."
   },
-  "Provinces": {
-    "metaTitle": "Provinces of Türkiye",
-    "metaDescription": "The geographic location, climate and landforms of the provinces of Türkiye. Sourced, structured detail pages for each province.",
-    "heading": "Provinces of Türkiye",
-    "intro": "Select a province to reach its detail page covering location, population, climate and landforms.",
-    "coverageNote": "Coverage is expanding: pilot provinces are live now; the remaining provinces are added as their sources clear verification.",
-    "empty": "Province data could not be loaded right now. Please try again shortly."
+  "Turkiye": {
+    "metaTitle": "Map of Türkiye — 81 Provinces",
+    "metaDescription": "Explore the 81 provinces of Türkiye on an interactive map. Location, population, area, climate and landforms — sourced, structured detail pages for each province.",
+    "heading": "Map of Türkiye",
+    "intro": "Explore the 81 provinces of Türkiye on an interactive map. Select a province to reach its sourced detail page covering location, population, climate and landforms."
   },
   "ProvinceDetail": {
     "metaTitle": "Geography of {name}",
@@ -96,7 +92,7 @@
     "sourcesLandform": "landforms MTA/HGM",
     "sourcesHydrography": "hydrography DSİ/İSKİ",
     "sourcesEconomy": "economic indicator TÜİK regional accounts",
-    "backToProvinces": "Back to all provinces"
+    "backToMap": "Back to the map of Türkiye"
   },
   "Regions": {
     "MARMARA": "Marmara",

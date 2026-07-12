@@ -63,7 +63,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Hub: static pages.
   const staticEntries: MetadataRoute.Sitemap = [
     ...entriesFor(() => "/", now, 1),
-    ...entriesFor(() => "/iller", now, 0.8),
+    ...entriesFor(() => "/turkiye", now, 0.8),
     ...entriesFor(() => "/hakkimizda", now, 0.5),
   ];
 
@@ -100,7 +100,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const provinceEntries: MetadataRoute.Sitemap = details.flatMap((detail) =>
     entriesFor(
       (locale) => ({
-        pathname: "/il/[slug]",
+        pathname: "/turkiye/[slug]",
         params: { slug: locale === "en" ? detail.slugEn : detail.slugTr },
       }),
       new Date(detail.updatedAt),

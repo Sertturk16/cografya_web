@@ -19,7 +19,7 @@ export const config = {
   // merely ends in it (e.g. a future blog post `/blog/designing-an-apple-icon`) is
   // NOT excluded and still gets normal i18n routing. Examples that BYPASS:
   // `/tr/opengraph-image`, `/en/opengraph-image`, `/apple-icon`. Examples that RUN
-  // middleware: `/`, `/iller`, `/il/istanbul`, `/blog/my-apple-icon`.
+  // middleware: `/`, `/turkiye`, `/turkiye/istanbul`, `/blog/my-apple-icon`.
   matcher:
     "/((?!api|_next|_vercel|.*\\..*|(?:.*/)?(?:opengraph-image|twitter-image|apple-icon)$).*)",
 };

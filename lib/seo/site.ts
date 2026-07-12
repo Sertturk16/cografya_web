@@ -20,7 +20,7 @@ export function getSiteUrl(): string {
   return env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
 }
 
-/** Turns a root-relative path ("/il/istanbul") into an absolute URL. */
+/** Turns a root-relative path ("/turkiye/istanbul") into an absolute URL. */
 export function absoluteUrl(path: string): string {
   return `${getSiteUrl()}${path === "/" ? "/" : path}`;
 }
