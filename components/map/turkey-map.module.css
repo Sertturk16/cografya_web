@@ -180,16 +180,6 @@
   color: var(--color-ink);
 }
 
-.cardCta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 11px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--color-primary-dark);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .card {
     transition: none;

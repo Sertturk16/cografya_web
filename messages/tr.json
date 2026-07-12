@@ -7,12 +7,13 @@
   "Nav": {
     "label": "Ana gezinme",
     "home": "Ana Sayfa",
-    "provinces": "İller",
+    "turkiye": "Türkiye",
     "about": "Hakkımızda"
   },
   "Breadcrumb": {
     "label": "Sayfa yolu",
-    "home": "Ana Sayfa"
+    "home": "Ana Sayfa",
+    "turkiye": "Türkiye"
   },
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
@@ -24,17 +25,17 @@
     "metaDescription": "Türkiye'nin 81 ili, dünya ülkeleri ve yer şekilleri için ücretsiz, kaynaklı coğrafya içerikleri. Haritalar, konu anlatımları ve daha fazlası.",
     "heading": "Türkiye'yi ve dünyayı coğrafyayla keşfet",
     "lede": "Ücretsiz coğrafya sayfaları — il, ülke ve yer şekli detaylarıyla; müfredata uygun konu anlatımlarıyla.",
-    "ctaProvinces": "İlleri Keşfet",
+    "ctaMap": "Türkiye Haritası",
     "ctaAbout": "Platform Hakkında",
-    "provincesTitle": "Türkiye'nin illeri",
-    "provincesBody": "81 ilin coğrafi konumu, iklimi ve yüzey şekilleri — kaynaklı ve düzenli içeriklerle.",
-    "mapHeading": "Haritadan bir il seçin",
-    "mapBody": "Türkiye haritasında bir ilin üzerine gelin (ya da klavyeyle odaklanın); açılan kartla o ilin detay sayfasına geçin. Yayında olan iller etkileşimlidir; kalan iller içerik doğrulandıkça eklenir."
+    "mapTeaserTitle": "İnteraktif Türkiye Haritası",
+    "mapTeaserBody": "Türkiye'nin 81 ilini interaktif haritada keşfedin: bir ilin üzerine gelin ya da klavyeyle odaklanın, nüfus ve yüzölçümü gibi temel bilgileri görün, ardından ilin kaynaklı detay sayfasına geçin.",
+    "mapTeaserCta": "Haritayı Aç"
   },
   "Map": {
+    "sectionHeading": "Haritadan bir il seçin",
+    "sectionBody": "Türkiye haritasında bir ilin üzerine gelin (ya da klavyeyle odaklanın); açılan kartla o ilin detay sayfasına geçin. Yayında olan iller etkileşimlidir; kalan iller içerik doğrulandıkça eklenir.",
     "mapTitle": "Türkiye il haritası",
     "plateLabel": "Plaka {code}",
-    "cta": "Detaya git",
     "attribution": "© OpenStreetMap katkıcıları, ODbL"
   },
   "About": {
@@ -44,13 +45,11 @@
     "body1": "Coğrafya Platformu, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir. İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer.",
     "body2": "Platform geliştirme aşamasındadır. Bu sayfa, çok dilli mimarinin ve SEO altyapısının bir örneğidir; kapsam genişledikçe içerik derinleşecektir."
   },
-  "Provinces": {
-    "metaTitle": "Türkiye'nin İlleri",
-    "metaDescription": "Türkiye'nin illerinin coğrafi konumu, iklimi ve yüzey şekilleri. Her il için kaynaklı, düzenli detay sayfaları.",
-    "heading": "Türkiye'nin İlleri",
-    "intro": "Bir il seçerek konumu, nüfusu, iklimi ve yüzey şekilleri hakkındaki detay sayfasına ulaşabilirsiniz.",
-    "coverageNote": "İçerik genişliyor: şu anda öncü iller yayında; kalan iller kaynak doğrulamasından geçtikçe eklenecektir.",
-    "empty": "İl verisi şu anda yüklenemedi. Lütfen kısa süre sonra tekrar deneyin."
+  "Turkiye": {
+    "metaTitle": "Türkiye Haritası — 81 İl",
+    "metaDescription": "Türkiye'nin 81 ilini interaktif haritada keşfedin. Her il için konum, nüfus, yüzölçümü, iklim ve yüzey şekilleri; kaynaklı, düzenli detay sayfaları.",
+    "heading": "Türkiye Haritası",
+    "intro": "Türkiye'nin 81 ilini interaktif haritada keşfedin. Bir il seçerek konumu, nüfusu, iklimi ve yüzey şekilleri hakkındaki kaynaklı detay sayfasına ulaşın."
   },
   "ProvinceDetail": {
     "metaTitle": "{name} Coğrafyası",
@@ -96,7 +95,7 @@
     "sourcesLandform": "yeryüzü şekilleri MTA/HGM",
     "sourcesHydrography": "hidrografya DSİ/İSKİ",
     "sourcesEconomy": "ekonomik gösterge TÜİK bölgesel hesaplar",
-    "backToProvinces": "Tüm illere dön"
+    "backToMap": "Türkiye haritasına dön"
   },
   "Regions": {
     "MARMARA": "Marmara",

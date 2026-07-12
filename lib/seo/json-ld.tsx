@@ -46,7 +46,7 @@ export function organizationJsonLd(): JsonLdSchema {
 
 export interface BreadcrumbItem {
   name: string;
-  /** Root-relative path, e.g. "/il/istanbul". */
+  /** Root-relative path, e.g. "/turkiye/istanbul". */
   path: string;
 }
 
@@ -59,6 +59,33 @@ export function breadcrumbJsonLd(items: BreadcrumbItem[]): JsonLdSchema {
       position: index + 1,
       name: item.name,
       item: absoluteUrl(item.path),
+    })),
+  };
+}
+
+/** One enumerated entry in an ItemList (a province in the /turkiye hub). */
+export interface ItemListEntry {
+  name: string;
+  /** Root-relative path to the item's canonical page, e.g. "/turkiye/istanbul". */
+  path: string;
+}
+
+/**
+ * `schema.org/ItemList` for a hub page that enumerates concrete child pages
+ * (CONVENTIONS §6 #5 schema map — the list layer for a collection). Only pages that
+ * actually exist are passed in (never a soft-404 URL, §6 #6). Positions are 1-based.
+ */
+export function itemListJsonLd(args: { name: string; items: ItemListEntry[] }): JsonLdSchema {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: args.name,
+    numberOfItems: args.items.length,
+    itemListElement: args.items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: absoluteUrl(item.path),
     })),
   };
 }

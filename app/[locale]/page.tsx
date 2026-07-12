@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { TurkeyMapSection } from "@/components/map/turkey-map-section";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
@@ -36,8 +35,8 @@ export default async function HomePage({ params }: PageProps) {
         <h1>{t("heading")}</h1>
         <p className="lede">{t("lede")}</p>
         <div className="hero-actions">
-          <Link className="btn btn-primary" href="/iller">
-            {t("ctaProvinces")}
+          <Link className="btn btn-primary" href="/turkiye">
+            {t("ctaMap")}
           </Link>
           <Link className="btn btn-ghost" href="/hakkimizda">
             {t("ctaAbout")}
@@ -45,11 +44,18 @@ export default async function HomePage({ params }: PageProps) {
         </div>
       </section>
 
-      <TurkeyMapSection locale={locale} />
-
+      {/* Map teaser → the dedicated `/turkiye` hub (IA restructure → DEC 2026-07-13).
+          The interactive map now lives ONLY on `/turkiye` (its canonical home for
+          "türkiye haritası" intent), so the homepage links there instead of embedding
+          a second copy of the same widget. */}
       <section className="section">
-        <h2>{t("provincesTitle")}</h2>
-        <p>{t("provincesBody")}</p>
+        <h2>{t("mapTeaserTitle")}</h2>
+        <p>{t("mapTeaserBody")}</p>
+        <p className="section">
+          <Link className="btn btn-primary" href="/turkiye">
+            {t("mapTeaserCta")}
+          </Link>
+        </p>
       </section>
     </div>
   );

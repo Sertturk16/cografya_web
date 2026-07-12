@@ -12,24 +12,26 @@ interface TurkeyMapSectionProps {
 }
 
 /**
- * Homepage-hero interactive Türkiye map (server component — SPEC / DEC 2026-07-10).
+ * Interactive Türkiye map (server component — SPEC / DEC 2026-07-10). Since the IA
+ * restructure (→ DEC 2026-07-13) this is the primary content of the dedicated
+ * `/turkiye` hub page (it previously lived on the homepage; the retired `/iller`
+ * plain list is gone).
  *
  * Renders all 81 il outlines from the committed, build-time-generated SVG paths
  * (`lib/map/tr-provinces.generated.ts` — raw GeoJSON never ships). A shape becomes
  * an interactive, crawlable `<a>` (hub-and-spoke, CONVENTIONS §6 #10) with a stat
  * card ONLY when the api's map-summary carries its plaka kodu — i.e. the province is
- * seeded and has a published `/il/{slug}` page. The rest render as inert backdrop
- * and light up automatically as more il are seeded. So the homepage never links to
- * a not-yet-published (soft-404) page (SEO §6 #6), and degrades to a static map
- * picture if the summary is unreachable — the map is progressive enhancement over
- * the always-present `/iller` text hub, never the sole navigation path.
+ * seeded and has a published `/turkiye/{slug}` page. The rest render as inert backdrop
+ * and light up automatically as more il are seeded. So the map never links to a
+ * not-yet-published (soft-404) page (SEO §6 #6), and degrades to a static map picture
+ * if the summary is unreachable — the interactivity is progressive enhancement over
+ * the always-present crawlable `<a>` links.
  *
  * The card's numbers (nüfus / yüzölçümü / ilçe) come from the single purpose-built
  * `/api/provinces/map-summary` payload, formatted server-side and pre-embedded as
  * `data-*` on each link (no per-hover fetch — INP, SPEC §1.6).
  */
 export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
-  const tHome = await getTranslations("Home");
   const tMap = await getTranslations("Map");
   const tRegions = await getTranslations("Regions");
   const tDetail = await getTranslations("ProvinceDetail");
@@ -53,8 +55,8 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
 
   return (
     <section className="section" aria-labelledby="turkey-map-heading">
-      <h2 id="turkey-map-heading">{tHome("mapHeading")}</h2>
-      <p className={styles.intro}>{tHome("mapBody")}</p>
+      <h2 id="turkey-map-heading">{tMap("sectionHeading")}</h2>
+      <p className={styles.intro}>{tMap("sectionBody")}</p>
 
       <div className={styles.mapRoot} data-map-root>
         <svg className={styles.svg} viewBox={MAP_VIEWBOX} aria-labelledby={titleId}>
@@ -77,7 +79,7 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
             const href = getPathname({
               locale,
               href: {
-                pathname: "/il/[slug]",
+                pathname: "/turkiye/[slug]",
                 params: { slug: locale === "en" ? province.slugEn : province.slugTr },
               },
             });
@@ -143,7 +145,7 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
           })}
         </svg>
 
-        <MapHoverCard ctaLabel={tMap("cta")} />
+        <MapHoverCard />
 
         <p className={styles.attribution}>{tMap("attribution")}</p>
       </div>

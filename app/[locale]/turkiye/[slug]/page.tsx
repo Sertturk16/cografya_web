@@ -56,7 +56,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     // localized-slug alternates: slug_tr for tr, slug_en for en.
     hrefForLocale: (l) => ({
-      pathname: "/il/[slug]",
+      pathname: "/turkiye/[slug]",
       params: { slug: slugForLocale(province, l) },
     }),
     title: t("metaTitle", { name }),
@@ -76,7 +76,6 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
 
   const t = await getTranslations("ProvinceDetail");
   const tb = await getTranslations("Breadcrumb");
-  const tp = await getTranslations("Provinces");
   const tRegions = await getTranslations("Regions");
   const format = await getFormatter();
 
@@ -85,7 +84,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   const name = province.nameTr;
   const region = tRegions(province.region);
   const selfHref = {
-    pathname: "/il/[slug]",
+    pathname: "/turkiye/[slug]",
     params: { slug: slugForLocale(province, locale) },
   } as const;
   const path = getPathname({ locale, href: selfHref });
@@ -241,7 +240,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         locale={locale}
         items={[
           { label: tb("home"), href: "/" },
-          { label: tp("heading"), href: "/iller" },
+          { label: tb("turkiye"), href: "/turkiye" },
           { label: name, href: selfHref },
         ]}
       />
@@ -442,7 +441,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
                 <Link
                   className="province-card"
                   href={{
-                    pathname: "/il/[slug]",
+                    pathname: "/turkiye/[slug]",
                     params: { slug: slugForLocale(neighbor, locale) },
                   }}
                 >
@@ -461,7 +460,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       </p>
 
       <p className="section">
-        <Link href="/iller">← {t("backToProvinces")}</Link>
+        <Link href="/turkiye">← {t("backToMap")}</Link>
       </p>
     </div>
   );

@@ -19,11 +19,6 @@ interface ActiveCard {
   top: number;
 }
 
-interface MapHoverCardProps {
-  /** Localized "Detaya git" hint shown at the card foot. */
-  ctaLabel: string;
-}
-
 const CARD_WIDTH = 258;
 const CARD_HEIGHT_FALLBACK = 150; // used only before the card has ever been measured
 const HIDE_DELAY_MS = 140; // hover-intent: bridge the gap between shape and card
@@ -42,16 +37,16 @@ const HIDE_DELAY_MS = 140; // hover-intent: bridge the gap between shape and car
  *   hover). `Enter` on the focused link navigates natively.
  * - **The shape and its card behave as ONE hover region.** Moving the pointer off the
  *   shape toward the card no longer hides it: the card is a real pointer target and a
- *   short hover-intent delay bridges the blind gap in transit (PR#6 owner report — the
- *   card used to vanish before a click on "Detaya git" could land). The whole card is
- *   itself clickable (mouse affordance), navigating to the same detail page; the
+ *   short hover-intent delay bridges the blind gap in transit (PR#6 owner report). The
+ *   whole card is itself clickable (mouse affordance), navigating to the same detail
+ *   page — so no textual "go to detail" CTA is needed (retired → DEC 2026-07-13); the
  *   keyboard/AT path stays the province `<a>` (the card is `aria-hidden`, not
  *   focusable, so it never duplicates the link in the tab order or the a11y tree).
  * - Touch pointers are ignored (SPEC §6.1 / DEC 2026-07-10 #3): on mobile a single
  *   tap follows the link straight to the detail page, with no intermediate card.
  * - The appearance transition is CSS, disabled under `prefers-reduced-motion`.
  */
-export function MapHoverCard({ ctaLabel }: MapHoverCardProps) {
+export function MapHoverCard() {
   const [active, setActive] = useState<ActiveCard | null>(null);
   const [card, setCard] = useState<HTMLDivElement | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -190,9 +185,6 @@ export function MapHoverCard({ ctaLabel }: MapHoverCardProps) {
               )}
             </dl>
           )}
-          <div className={styles.cardCta}>
-            {ctaLabel} <span aria-hidden="true">→</span>
-          </div>
         </>
       )}
     </div>

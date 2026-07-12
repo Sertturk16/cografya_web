@@ -23,7 +23,7 @@ export async function SiteHeader() {
         </Link>
         <nav aria-label={t("label")} className={styles.nav}>
           <Link href="/">{t("home")}</Link>
-          <Link href="/iller">{t("provinces")}</Link>
+          <Link href="/turkiye">{t("turkiye")}</Link>
           <Link href="/hakkimizda">{t("about")}</Link>
         </nav>
         <LocaleSwitcher />

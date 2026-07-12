@@ -11,10 +11,15 @@ import { defineRouting } from "next-intl/routing";
  *   For an SEO-first site this keeps every URL deterministic for crawlers (Googlebot
  *   crawls from the US and must still land on the TR default at `/`, never be bounced
  *   to `/en`). hreflang — not header sniffing — is what points users at their language.
- * - `pathnames`: localized STATIC route segments (`/il` ↔ `/en/province`,
- *   `/iller` ↔ `/en/provinces`, `/hakkimizda` ↔ `/en/about`). The dynamic `[slug]`
- *   VALUE is the localized slug (`slug_tr` / `slug_en`) supplied per-locale by the
- *   caller — resolution lives in the page + `lib/geo`, not here.
+ * - `pathnames`: route segments. `/hakkimizda` ↔ `/en/about` stays a LOCALIZED
+ *   segment. `/turkiye` and `/turkiye/[slug]` (the map hub + province detail, IA
+ *   restructure → DEC 2026-07-13) use a SINGLE segment for both locales on purpose:
+ *   "Türkiye" is a proper noun the site already uses verbatim in its English copy
+ *   (see `Home.metaTitle` en), so `/turkiye` ↔ `/en/turkiye` reads correctly in both
+ *   languages, keeps the URL free of any "harita" word, and reserves a clean,
+ *   collision-free symmetry for the future `/dunya` world hub (→ DEC 2026-07-13). The
+ *   dynamic `[slug]` VALUE is still the localized slug (`slug_tr` / `slug_en`) supplied
+ *   per-locale by the caller — resolution lives in the page + `lib/api`, not here.
  */
 export const routing = defineRouting({
   locales: ["tr", "en"],
@@ -27,14 +32,8 @@ export const routing = defineRouting({
       tr: "/hakkimizda",
       en: "/about",
     },
-    "/iller": {
-      tr: "/iller",
-      en: "/provinces",
-    },
-    "/il/[slug]": {
-      tr: "/il/[slug]",
-      en: "/province/[slug]",
-    },
+    "/turkiye": "/turkiye",
+    "/turkiye/[slug]": "/turkiye/[slug]",
   },
 });
 
