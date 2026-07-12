@@ -34,6 +34,10 @@ export default async function HomePage({ params }: PageProps) {
       <section className="hero">
         <h1>{t("heading")}</h1>
         <p className="lede">{t("lede")}</p>
+        {/* The map now lives ONLY on the dedicated `/turkiye` hub (IA restructure →
+            DEC 2026-07-13). The hero's primary button is the SINGLE in-page path there
+            — a second CTA to the identical destination was cut as redundant (PR#10
+            review M2, owner-confirmed). */}
         <div className="hero-actions">
           <Link className="btn btn-primary" href="/turkiye">
             {t("ctaMap")}
@@ -42,20 +46,6 @@ export default async function HomePage({ params }: PageProps) {
             {t("ctaAbout")}
           </Link>
         </div>
-      </section>
-
-      {/* Map teaser → the dedicated `/turkiye` hub (IA restructure → DEC 2026-07-13).
-          The interactive map now lives ONLY on `/turkiye` (its canonical home for
-          "türkiye haritası" intent), so the homepage links there instead of embedding
-          a second copy of the same widget. */}
-      <section className="section">
-        <h2>{t("mapTeaserTitle")}</h2>
-        <p>{t("mapTeaserBody")}</p>
-        <p className="section">
-          <Link className="btn btn-primary" href="/turkiye">
-            {t("mapTeaserCta")}
-          </Link>
-        </p>
       </section>
     </div>
   );

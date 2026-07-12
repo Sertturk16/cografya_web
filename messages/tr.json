@@ -26,10 +26,7 @@
     "heading": "Türkiye'yi ve dünyayı coğrafyayla keşfet",
     "lede": "Ücretsiz coğrafya sayfaları — il, ülke ve yer şekli detaylarıyla; müfredata uygun konu anlatımlarıyla.",
     "ctaMap": "Türkiye Haritası",
-    "ctaAbout": "Platform Hakkında",
-    "mapTeaserTitle": "İnteraktif Türkiye Haritası",
-    "mapTeaserBody": "Türkiye'nin 81 ilini interaktif haritada keşfedin: bir ilin üzerine gelin ya da klavyeyle odaklanın, nüfus ve yüzölçümü gibi temel bilgileri görün, ardından ilin kaynaklı detay sayfasına geçin.",
-    "mapTeaserCta": "Haritayı Aç"
+    "ctaAbout": "Platform Hakkında"
   },
   "Map": {
     "sectionHeading": "Haritadan bir il seçin",

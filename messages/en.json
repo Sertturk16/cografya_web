@@ -26,10 +26,7 @@
     "heading": "Explore Türkiye and the world through geography",
     "lede": "Free geography pages — province, country and landform details, with curriculum-aligned topic guides.",
     "ctaMap": "Explore the Map",
-    "ctaAbout": "About the Platform",
-    "mapTeaserTitle": "Interactive Map of Türkiye",
-    "mapTeaserBody": "Explore all 81 provinces of Türkiye on the interactive map: hover a province or focus it with the keyboard, see key facts such as population and area, then open its sourced detail page.",
-    "mapTeaserCta": "Open the Map"
+    "ctaAbout": "About the Platform"
   },
   "Map": {
     "sectionHeading": "Choose a province from the map",
