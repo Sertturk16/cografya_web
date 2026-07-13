@@ -54,39 +54,51 @@ committed, so CI and runtime never invoke the generator.
 
 ---
 
-## `world-countries.geojson` — world (regional) country boundary polygons
+## `world-countries.geojson` — full-world country boundary polygons
 
-| Field                      | Value                                                                                                                           |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **Source dataset**         | **Natural Earth** — Admin-0 Countries, **1:50m** scale (`ne_50m_admin_0_countries`)                                             |
-| **Source file**            | `raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson`                        |
-| **Fetched (UTC)**          | 2026-07-13                                                                                                                      |
-| **Scope**                  | **Regional subset** — the 8 seeded pilot countries + geographic-context neighbours (27 features), NOT the full ~195-country set |
-| **Format**                 | GeoJSON `FeatureCollection`, Polygon / MultiPolygon, coordinates `[lon, lat]` (WGS84)                                           |
-| **Per-feature properties** | `{ "iso": "<ISO 3166-1 alpha-2>", "name": "<Natural Earth ADMIN>" }` — filtered down from Natural Earth's full property set     |
-| **Licence**                | **Public Domain** — "no restrictions … may use in any manner" (Natural Earth Terms of Use). Attribution NOT required.           |
-| **Attribution (courtesy)** | Shown as **"Sınır verisi: Natural Earth (kamu malı)"** next to the map — a voluntary courtesy credit, not a licence obligation. |
+| Field                      | Value                                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Source dataset**         | **Natural Earth** — Admin-0 Countries, **1:50m** scale (`ne_50m_admin_0_countries`)                                                  |
+| **Source file**            | `raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson`                             |
+| **Fetched (UTC)**          | 2026-07-13                                                                                                                           |
+| **Scope**                  | **Full world** — every Natural Earth Admin-0 entity (242 features), incl. non-UN / de-facto entities Natural Earth's default carries |
+| **Format**                 | GeoJSON `FeatureCollection`, Polygon / MultiPolygon, coordinates `[lon, lat]` (WGS84), rounded to 3 dp (~111 m) on ingest            |
+| **Per-feature properties** | `{ "iso": "<join key>", "name": "<Natural Earth ADMIN>" }` — filtered down from Natural Earth's full 168-property set                |
+| **Licence**                | **Public Domain** — "no restrictions … may use in any manner" (Natural Earth Terms of Use). Attribution NOT required.                |
+| **Attribution (courtesy)** | Shown as **"Sınır verisi: Natural Earth (kamu malı)"** next to the map — a voluntary courtesy credit, not a licence obligation.      |
 
-### Editorial & scope decisions (→ DEC 2026-07-13, world-map SPEC)
+### Editorial & scope decisions (→ DEC 2026-07-13, world-map SPEC + sovereignty rulings)
 
 - **Contested-borders policy = Option A (Natural Earth's default / de-facto rendering)** —
-  not the Türkiye-POV variant, not neutral disputed-shading. Locked by owner ruling.
-- **Regional (not full-world) scope is a deliberate pilot choice.** Only the 8 pilot
-  countries are seeded, so the committed subset covers just their region (Balkans → Caucasus
-  → Middle East). This also keeps the snapshot lean (Russia's full geometry alone is ~177 kB
-  of mostly off-frame Siberia, so it is excluded from the context set). The 5 pending
-  sovereignty-recognition entities (Cyprus, Kosovo, Israel-capital, Palestine, Taiwan) are
-  **none of them in this region and none among the 8 seeded**, and are deliberately NOT
-  drawn — so this pilot map is unblocked by those open rulings. Full-world sourcing is a
-  tracked follow-up once more countries are seeded + those rulings land.
+  not the Türkiye-POV variant, not neutral disputed-shading. Locked by owner ruling. Under
+  this de-facto view Natural Earth already splits several entities into separate features,
+  which is exactly what the platform's rulings require (see the Cyprus split below).
+- **Full-world scope.** The regional pilot (27 features, framed on the 8 pilot countries) is
+  retired now that ~190 countries are seeded and the 6 sovereignty entities are ruled. The
+  snapshot is the complete Natural Earth Admin-0 set; the generator decides what to draw.
 
-### The ISO join
+### The ISO join (+ how the 6 sovereignty entities map)
 
-Features are keyed by **ISO 3166-1 alpha-2** (`iso`), the stable join key to the api's
-`Country.isoCode`. The generator emits SVG paths keyed by that code; the map component joins
-those shapes to live api country data by ISO — a country renders interactive/linked ONLY
-when the api's country-map-summary carries its ISO (i.e. it is seeded), the rest render as
-inert backdrop (same active-vs-inert grammar as the Türkiye il map).
+Features are keyed by a **join key** in `iso`, the stable link to the api's `Country.isoCode`.
+Derivation at snapshot-build (see the build note below): prefer `ISO_A2_EH` (Natural Earth's
+human-edited alpha-2, which fills in many `-99`s such as Kosovo → `XK` and Taiwan → `TW`),
+else `ISO_A2`, with two deliberate exceptions:
+
+- **Cyprus is split in the source** into **`Cyprus`** (`ISO_A2 = CY`, southern polygon — the
+  internationally-recognised government) and a separate **`Northern Cyprus`** feature (no ISO
+  in the source). The latter is remapped to the api's private-use **`QN`** (KKTC, → DEC
+  2026-07-13). Both therefore render as **independently hoverable/clickable regions** once
+  each is seeded — the owner's split-island map requirement, met by Natural Earth's own
+  geometry, not faked.
+- **De-facto entities Natural Earth carries with no usable ISO** (Somaliland, Siachen
+  Glacier) get a synthetic lowercase `x-…` backdrop key. These are >2-char / lowercase so
+  they can **never** match an uppercase 2-char api `isoCode` → they always render as inert
+  backdrop (filling the map so there is no visual gap), never as a link.
+
+The generator emits SVG paths keyed by that join key; the map component links a shape ONLY
+when the api's country-map-summary carries its code (i.e. it is seeded), the rest render inert
+(same active-vs-inert grammar as the Türkiye il map). It also **merges features that share a
+key** (e.g. Australia + its external territories) into one shape → one link per country.
 
 ### Regenerating
 
@@ -94,7 +106,15 @@ inert backdrop (same active-vs-inert grammar as the Türkiye il map).
 pnpm generate:world-map
 ```
 
-Reads this file, rewrites `lib/map/world-countries.generated.ts` (projected + simplified,
-framed on the seeded 8). Re-run only if the snapshot is refreshed (update "Fetched" above)
-or the projection / simplification parameters change. Both the snapshot **and** the
-generated artifact are committed, so CI and runtime never invoke the generator.
+Reads this file, rewrites `lib/map/world-countries.generated.ts` (plate-carrée-projected +
+simplified). **Antarctica (`AQ`) is deliberately not drawn** by the generator — a ~5k-vertex,
+full-width polar polygon that is not a navigable country and the standard web-world-map
+omission; it stays in the snapshot for provenance. Re-run only if the snapshot is refreshed
+(update "Fetched" above) or the projection / simplification parameters change. Both the
+snapshot **and** the generated artifact are committed, so CI and runtime never invoke the
+generator.
+
+> **Snapshot rebuild (one-off, not part of the committed pipeline):** the `{iso, name}` snapshot
+> itself is produced from the raw 168-property Natural Earth download by the ISO-derivation +
+> 3 dp-rounding transform described above. That transform is a throwaway step run once when
+> re-sourcing; only its output (this file) and the generator output are committed.
