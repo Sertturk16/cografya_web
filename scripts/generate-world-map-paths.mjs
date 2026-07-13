@@ -60,13 +60,26 @@ const DRAW_EXCLUDE = new Set(["AQ"]);
 const VIEW_WIDTH = 1000; // shared viewBox width (svg units)
 const PADDING = 4; // inset so the framed world is not flush against the edge
 // Douglas-Peucker tolerance in projected svg units. At the full-world scale (~2.7 units/°)
-// this ≈ 0.055°, small enough that even micro-states (Singapore, Malta, the two Cyprus
-// halves, Palestine, Kosovo) survive as clickable quads rather than collapsing below the
-// 3-point minimum, while still cutting the artifact from a raw ~100k vertices to a
-// shippable size. Raise it and small seeded countries start vanishing — verify the seeded
-// set still renders before tightening for size.
+// this ≈ 0.055°, small enough that mid-small countries (Singapore, Malta, Bahrain, the two
+// Cyprus halves, Palestine, Kosovo) survive as clickable polygons, while still cutting the
+// artifact from a raw ~100k vertices to a shippable size. Micro-states below MARKER_MIN_SPAN
+// (Vatican, Nauru, Monaco, Tuvalu, …) are handled by the marker fallback below — NOT dropped
+// — so tuning this for size can never again silently delete a country from the link surface.
 const SIMPLIFY_EPSILON = 0.15;
 const DECIMALS = 1; // coordinate rounding in the emitted path data
+
+// --- Micro-state marker fallback (never silently drop a country) ---------------
+// A country whose whole projected outline is smaller than the Douglas-Peucker tolerance
+// collapses below 3 points and would vanish from COUNTRY_SHAPES entirely — no shape, so no
+// crawlable `<a>`, so the country is undiscoverable from the map (the Nauru/Vatican bug,
+// PR #13 review). Instead, any feature whose projected bounding box spans less than
+// MARKER_MIN_SPAN units in BOTH axes is rendered as a fixed-size diamond marker centred on
+// it — a guaranteed minimum clickable/crawlable target. The threshold sits in the clean gap
+// between the largest genuine micro-state that must stay a marker (Saint Kitts, ~0.85u) and
+// the smallest country the review verified must stay a real polygon (Singapore, ~0.95u), so
+// this touches only shapes that are otherwise invisible/degenerate, never a real outline.
+const MARKER_MIN_SPAN = 0.9; // projected svg units (per axis)
+const MARKER_RADIUS = 1.0; // half-diagonal of the fallback diamond, svg units
 
 /** Perpendicular distance from point p to the line segment a→b. */
 function perpDistance(p, a, b) {
@@ -129,6 +142,33 @@ function vertexCount(geometry) {
   return n;
 }
 
+/** Projected bounding box `{ cx, cy, w, h }` of a geometry (uses `project`, defined below at
+ *  call time). Drives the micro-state marker fallback. */
+function projectedBBox(geometry, projectFn) {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  eachCoord(geometry, (pt) => {
+    const [x, y] = projectFn(pt);
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  });
+  return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, w: maxX - minX, h: maxY - minY };
+}
+
+/** A fixed-size diamond subpath centred at (cx, cy) — the guaranteed-representable fallback
+ *  for a country too small to survive simplification. */
+function markerDiamond(cx, cy) {
+  const r = MARKER_RADIUS;
+  return (
+    `M${round(cx)} ${round(cy - r)}L${round(cx + r)} ${round(cy)}` +
+    `L${round(cx)} ${round(cy + r)}L${round(cx - r)} ${round(cy)}Z`
+  );
+}
+
 // --- Load + first pass: bounding box of the DRAWN features (Antarctica excluded) ---
 const geojson = JSON.parse(readFileSync(SRC, "utf8"));
 if (geojson.type !== "FeatureCollection" || !Array.isArray(geojson.features)) {
@@ -168,6 +208,10 @@ function project([lon, lat]) {
 // --- Second pass: build one merged, simplified path per ISO join key ------------
 /** @type {Map<string, { geoName: string, labelVerts: number, subpaths: string[] }>} */
 const byIso = new Map();
+/** Every join key we attempted to draw — checked against the emitted keys below so a
+ *  future silent drop (the Nauru/Vatican bug) fails the build instead of shipping. */
+const expectedKeys = new Set();
+let markerCount = 0;
 for (const feature of drawn) {
   // Normalize the join key to UPPERCASE for 2-letter ISO codes (the api's Country.isoCode
   // is uppercase alpha-2, joined by raw equality). Synthetic backdrop keys (lowercase
@@ -180,17 +224,35 @@ for (const feature of drawn) {
   if (typeof iso !== "string" || iso.length < 2) {
     throw new Error(`Feature has no valid join key: ${JSON.stringify(feature.properties)}`);
   }
+  expectedKeys.add(iso);
+
   const subpaths = [];
-  for (const ring of outerRings(feature.geometry)) {
-    const projected = ring.map(project);
-    const simplified = simplify(projected, SIMPLIFY_EPSILON);
-    if (simplified.length < 3) continue; // tiny islands that collapse — dropped
-    const d = simplified
-      .map(([x, y], i) => `${i === 0 ? "M" : "L"}${round(x)} ${round(y)}`)
-      .join("");
-    subpaths.push(`${d}Z`);
+  const bbox = projectedBBox(feature.geometry, project);
+  if (bbox.w < MARKER_MIN_SPAN && bbox.h < MARKER_MIN_SPAN) {
+    // Micro-state: its whole outline is smaller than the simplify tolerance and would
+    // collapse to nothing. Emit a fixed-size marker so the country still gets a shape (and
+    // thus a crawlable link) instead of being silently dropped.
+    subpaths.push(markerDiamond(bbox.cx, bbox.cy));
+    markerCount++;
+  } else {
+    for (const ring of outerRings(feature.geometry)) {
+      const projected = ring.map(project);
+      const simplified = simplify(projected, SIMPLIFY_EPSILON);
+      if (simplified.length < 3) continue; // a tiny islet of a larger country — safely dropped
+      const d = simplified
+        .map(([x, y], i) => `${i === 0 ? "M" : "L"}${round(x)} ${round(y)}`)
+        .join("");
+      subpaths.push(`${d}Z`);
+    }
+    // Safety net: a feature big enough to skip the marker path must still have produced at
+    // least one ring. If every ring somehow collapsed, fall back to a marker rather than
+    // dropping the country — the completeness assertion below is the hard guarantee, this
+    // keeps it satisfiable.
+    if (subpaths.length === 0) {
+      subpaths.push(markerDiamond(bbox.cx, bbox.cy));
+      markerCount++;
+    }
   }
-  if (subpaths.length === 0) continue;
 
   // Merge features that share a join key (e.g. Australia + its external territories) into a
   // single shape → one <a>, one internal link per country, all its polygons highlighting
@@ -206,6 +268,19 @@ for (const feature of drawn) {
   } else {
     byIso.set(iso, { geoName, labelVerts: verts, subpaths });
   }
+}
+
+// Completeness guarantee: every source join key MUST have produced a shape. This is the
+// regression guard the PR #13 review asked for — if simplification, a geometry edge case, or
+// a future tuning ever drops a country from the link surface again, the build fails loudly
+// here instead of silently shipping an undiscoverable (but seeded + indexable) country.
+const missing = [...expectedKeys].filter((k) => !byIso.has(k));
+if (missing.length > 0) {
+  throw new Error(
+    `generate:world-map — ${missing.length} source feature(s) produced no shape and would be ` +
+      `silently undiscoverable: ${missing.join(", ")}. Every drawn feature must emit a shape ` +
+      `(lower SIMPLIFY_EPSILON, raise MARKER_MIN_SPAN, or fix the geometry).`,
+  );
 }
 
 const shapes = [...byIso.entries()]
@@ -263,7 +338,7 @@ ${body}
 writeFileSync(OUT, out, "utf8");
 const bytes = Buffer.byteLength(out, "utf8");
 console.log(
-  `generate:world-map → ${OUT}\n  ${shapes.length} shapes · viewBox 0 0 ${VIEW_WIDTH} ${viewHeight} · ${(
-    bytes / 1024
-  ).toFixed(1)} kB`,
+  `generate:world-map → ${OUT}\n  ${shapes.length} shapes (${markerCount} micro-state markers) · ` +
+    `viewBox 0 0 ${VIEW_WIDTH} ${viewHeight} · ${(bytes / 1024).toFixed(1)} kB · ` +
+    `${expectedKeys.size} source keys all present ✓`,
 );
