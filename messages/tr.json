@@ -123,7 +123,13 @@
     "sectionHeading": "Haritadan bir ülke seçin",
     "sectionBody": "Dünya haritasında bir ülkenin üzerine gelin (ya da klavyeyle odaklanın); açılan kartla o ülkenin detay sayfasına geçin. İçeriği yayında olan ülkeler etkileşimlidir; kalan ülke ve bölgeler içerik eklendikçe canlanır.",
     "mapTitle": "Dünya ülkeleri haritası (bölgesel)",
-    "attribution": "Sınır verisi: Natural Earth (kamu malı)"
+    "attribution": "Sınır verisi: Natural Earth (kamu malı)",
+    "zoomIn": "Yakınlaştır",
+    "zoomOut": "Uzaklaştır",
+    "resetView": "Dünya görünümüne sıfırla",
+    "keyboardInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna basın; ok tuşlarıyla kaydırın, 0 veya Home tuşuyla dünya görünümüne dönün. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsiniz.",
+    "zoomHint": "Yakınlaştırmak için kaydırın veya + / − kullanın",
+    "dismissHint": "İpucunu kapat"
   },
   "CountryDetail": {
     "metaTitle": "{name} Coğrafyası",
