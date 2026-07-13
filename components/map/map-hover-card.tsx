@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import styles from "./turkey-map.module.css";
+import styles from "./map.module.css";
 
-/** Province info + computed overlay position for one active hover/focus. */
+/** One stat-chip row (label + pre-formatted value), server-formatted. */
+interface CardStat {
+  label: string;
+  value: string;
+}
+
+/** Entity info + computed overlay position for one active hover/focus. */
 interface ActiveCard {
   name: string;
-  region: string;
-  plateLabel: string;
+  /** Pill badge (plaka kodu for a province, ISO code for a country). */
+  badge: string;
+  /** Secondary line under the name (region for a province, continent for a country). */
+  subtitle: string;
   href: string;
-  popLabel: string;
-  popValue: string;
-  areaLabel: string;
-  areaValue: string;
-  districtLabel: string;
-  districtValue: string;
+  stats: CardStat[];
   left: number;
   top: number;
 }
@@ -22,28 +25,32 @@ interface ActiveCard {
 const CARD_WIDTH = 258;
 const CARD_HEIGHT_FALLBACK = 150; // used only before the card has ever been measured
 const HIDE_DELAY_MS = 140; // hover-intent: bridge the gap between shape and card
+const MAX_STATS = 3; // both maps expose exactly three stat slots
 
 /**
- * The floating province stat card — the ONLY client JS in the map (SPEC §1.6/§1.7).
+ * The floating stat card shared by both interactive maps — the Türkiye il map and the
+ * world country map — and the ONLY client JS either map ships (SPEC §1.6/§1.7).
  *
- * The map itself is server-rendered: 81 SVG paths, the available provinces wrapped
- * in real crawlable `<a>` links, the visual hover/focus highlight done in pure CSS.
- * This island adds only the overlay card. It uses event delegation on the map root
- * (`[data-map-root]`, its own parent) so no province data ships to the client twice
- * — it reads the localized, pre-formatted `data-*` the server already put on each
- * link (name/region/plaka + the stat-chip numbers + the detail href).
+ * Each map is server-rendered: the SVG paths, the seeded shapes wrapped in real crawlable
+ * `<a>` links, the visual hover/focus highlight done in pure CSS. This island adds only the
+ * overlay card. It uses event delegation on the map root (`[data-map-root]`, its own parent)
+ * so no entity data ships to the client twice — it reads the localized, pre-formatted,
+ * ENTITY-AGNOSTIC `data-*` the server already put on each link: `data-name`, `data-badge`,
+ * `data-subtitle`, `data-href`, and up to three `data-stat-{n}-label` / `data-stat-{n}-value`
+ * pairs. A province emits plaka+region+nüfus/yüzölçümü/ilçe; a country emits ISO+kıta+
+ * nüfus/yüzölçümü/komşu — same shape, different content.
  *
- * - Desktop hover AND keyboard focus both open the card (SPEC §1.7 — focus, not just
- *   hover). `Enter` on the focused link navigates natively.
- * - **The shape and its card behave as ONE hover region.** Moving the pointer off the
- *   shape toward the card no longer hides it: the card is a real pointer target and a
- *   short hover-intent delay bridges the blind gap in transit (PR#6 owner report). The
- *   whole card is itself clickable (mouse affordance), navigating to the same detail
- *   page — so no textual "go to detail" CTA is needed (retired → DEC 2026-07-13); the
- *   keyboard/AT path stays the province `<a>` (the card is `aria-hidden`, not
- *   focusable, so it never duplicates the link in the tab order or the a11y tree).
- * - Touch pointers are ignored (SPEC §6.1 / DEC 2026-07-10 #3): on mobile a single
- *   tap follows the link straight to the detail page, with no intermediate card.
+ * - Desktop hover AND keyboard focus both open the card (SPEC §1.7 — focus, not just hover).
+ *   `Enter` on the focused link navigates natively.
+ * - **The shape and its card behave as ONE hover region.** Moving the pointer off the shape
+ *   toward the card no longer hides it: the card is a real pointer target and a short
+ *   hover-intent delay bridges the blind gap in transit. The whole card is itself clickable
+ *   (mouse affordance), navigating to the same detail page — so no textual "go to detail" CTA
+ *   is needed (retired → DEC 2026-07-13); the keyboard/AT path stays the shape `<a>` (the card
+ *   is `aria-hidden`, not focusable, so it never duplicates the link in the tab order or the
+ *   a11y tree).
+ * - Touch pointers are ignored: on mobile a single tap follows the link straight to the
+ *   detail page, with no intermediate card.
  * - The appearance transition is CSS, disabled under `prefers-reduced-motion`.
  */
 export function MapHoverCard() {
@@ -66,9 +73,9 @@ export function MapHoverCard() {
       hideTimer.current = setTimeout(() => setActive(null), HIDE_DELAY_MS);
     };
 
-    const provinceFrom = (target: EventTarget | null): HTMLElement | null => {
+    const shapeFrom = (target: EventTarget | null): HTMLElement | null => {
       if (!(target instanceof Element)) return null;
-      const anchor = target.closest<HTMLElement>("a[data-province]");
+      const anchor = target.closest<HTMLElement>("a[data-shape]");
       return anchor && container.contains(anchor) ? anchor : null;
     };
     const inCard = (node: EventTarget | null): boolean =>
@@ -83,17 +90,18 @@ export function MapHoverCard() {
       let top = a.top - c.top - cardH - 10;
       if (top < 8) top = a.bottom - c.top + 10; // flip below if no room above
       const d = anchor.dataset;
+      const stats: CardStat[] = [];
+      for (let n = 1; n <= MAX_STATS; n++) {
+        const label = d[`stat${n}Label`];
+        const value = d[`stat${n}Value`];
+        if (label && value) stats.push({ label, value });
+      }
       setActive({
         name: d.name ?? "",
-        region: d.region ?? "",
-        plateLabel: d.plateLabel ?? "",
+        badge: d.badge ?? "",
+        subtitle: d.subtitle ?? "",
         href: d.href ?? "",
-        popLabel: d.popLabel ?? "",
-        popValue: d.popValue ?? "",
-        areaLabel: d.areaLabel ?? "",
-        areaValue: d.areaValue ?? "",
-        districtLabel: d.districtLabel ?? "",
-        districtValue: d.districtValue ?? "",
+        stats,
         left,
         top,
       });
@@ -101,7 +109,7 @@ export function MapHoverCard() {
 
     const onPointerOver = (e: PointerEvent) => {
       if (e.pointerType === "touch") return; // mobile taps navigate; no card
-      const anchor = provinceFrom(e.target);
+      const anchor = shapeFrom(e.target);
       if (anchor) {
         cancelHide();
         openFrom(anchor);
@@ -112,10 +120,10 @@ export function MapHoverCard() {
     const onPointerOut = (e: PointerEvent) => {
       if (e.pointerType === "touch") return;
       // Stay open while moving within the shape↔card region; hide (delayed) otherwise.
-      if (!provinceFrom(e.relatedTarget) && !inCard(e.relatedTarget)) scheduleHide();
+      if (!shapeFrom(e.relatedTarget) && !inCard(e.relatedTarget)) scheduleHide();
     };
     const onFocusIn = (e: FocusEvent) => {
-      const anchor = provinceFrom(e.target);
+      const anchor = shapeFrom(e.target);
       if (anchor) {
         cancelHide();
         openFrom(anchor);
@@ -123,7 +131,7 @@ export function MapHoverCard() {
     };
     const onFocusOut = (e: FocusEvent) => {
       // Keyboard focus moves deterministically — hide immediately when it leaves.
-      if (!provinceFrom(e.relatedTarget)) setActive(null);
+      if (!shapeFrom(e.relatedTarget)) setActive(null);
     };
 
     container.addEventListener("pointerover", onPointerOver);
@@ -139,14 +147,11 @@ export function MapHoverCard() {
     };
   }, [card]);
 
-  const hasStats =
-    active !== null && Boolean(active.popValue || active.areaValue || active.districtValue);
-
   return (
     <div
       ref={setCard}
       className={styles.card}
-      // Redundant MOUSE affordance duplicating the province link: aria-hidden + not
+      // Redundant MOUSE affordance duplicating the shape link: aria-hidden + not
       // focusable, so it never doubles the accessible link (keyboard/AT use the <a>).
       aria-hidden="true"
       data-visible={active !== null ? "true" : undefined}
@@ -159,30 +164,18 @@ export function MapHoverCard() {
         <>
           <div className={styles.cardHead}>
             <span className={styles.cardName}>{active.name}</span>
-            {active.plateLabel && <span className={styles.cardPlate}>{active.plateLabel}</span>}
+            {active.badge && <span className={styles.cardPlate}>{active.badge}</span>}
           </div>
-          {active.region && <div className={styles.cardRegion}>{active.region}</div>}
+          {active.subtitle && <div className={styles.cardRegion}>{active.subtitle}</div>}
           <div className={styles.cardRule} />
-          {hasStats && (
+          {active.stats.length > 0 && (
             <dl className={styles.stats}>
-              {active.popValue && (
-                <div className={styles.stat}>
-                  <dt className={styles.statLabel}>{active.popLabel}</dt>
-                  <dd className={styles.statValue}>{active.popValue}</dd>
+              {active.stats.map((stat) => (
+                <div key={stat.label} className={styles.stat}>
+                  <dt className={styles.statLabel}>{stat.label}</dt>
+                  <dd className={styles.statValue}>{stat.value}</dd>
                 </div>
-              )}
-              {active.areaValue && (
-                <div className={styles.stat}>
-                  <dt className={styles.statLabel}>{active.areaLabel}</dt>
-                  <dd className={styles.statValue}>{active.areaValue}</dd>
-                </div>
-              )}
-              {active.districtValue && (
-                <div className={styles.stat}>
-                  <dt className={styles.statLabel}>{active.districtLabel}</dt>
-                  <dd className={styles.statValue}>{active.districtValue}</dd>
-                </div>
-              )}
+              ))}
             </dl>
           )}
         </>

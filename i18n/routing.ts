@@ -34,6 +34,13 @@ export const routing = defineRouting({
     },
     "/turkiye": "/turkiye",
     "/turkiye/[slug]": "/turkiye/[slug]",
+    // `/dunya` + `/dunya/[slug]` (the world map hub + country detail, → DEC 2026-07-13)
+    // mirror `/turkiye` one level up. Like "Türkiye", "dünya" reads correctly in the
+    // English copy too, so a SINGLE segment serves both locales (no "world"/"harita"
+    // word, no future naming collision — the reserved symmetry now realised). The
+    // dynamic `[slug]` VALUE is still the localized slug (`slug_tr` / `slug_en`).
+    "/dunya": "/dunya",
+    "/dunya/[slug]": "/dunya/[slug]",
   },
 });
 

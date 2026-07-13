@@ -72,6 +72,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/countries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all countries (lean payload for the /dunya hub + map). */
+        get: operations["CountryController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/countries/map-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bulk hover-card summary for all countries (world SVG map, build-time embed). */
+        get: operations["CountryController_findMapSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/countries/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one country by its TR or EN slug (full detail). */
+        get: operations["CountryController_findBySlug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -317,6 +368,234 @@ export interface components {
              */
             updatedAt: string;
         };
+        CountryListItemDto: {
+            /**
+             * @description ISO 3166-1 alpha-2 kodu (stable, unique).
+             * @example TR
+             */
+            isoCode: string;
+            /**
+             * @description Ülke adı (TR).
+             * @example Türkiye
+             */
+            nameTr: string;
+            /**
+             * @description Ülke adı (EN).
+             * @example Türkiye
+             */
+            nameEn: string;
+            /**
+             * @description Kıta.
+             * @enum {string}
+             */
+            continent: "ASYA" | "AVRUPA" | "AFRIKA" | "KUZEY_AMERIKA" | "GUNEY_AMERIKA" | "OKYANUSYA";
+            /**
+             * @description TR slug (routing key).
+             * @example turkiye
+             */
+            slugTr: string;
+            /**
+             * @description EN slug (routing key).
+             * @example turkey
+             */
+            slugEn: string;
+        };
+        CountryMapSummaryDto: {
+            /**
+             * @description ISO 3166-1 alpha-2 kodu (stable, unique).
+             * @example TR
+             */
+            isoCode: string;
+            /**
+             * @description Ülke adı (TR).
+             * @example Türkiye
+             */
+            nameTr: string;
+            /**
+             * @description Ülke adı (EN).
+             * @example Türkiye
+             */
+            nameEn: string;
+            /**
+             * @description Kıta.
+             * @enum {string}
+             */
+            continent: "ASYA" | "AVRUPA" | "AFRIKA" | "KUZEY_AMERIKA" | "GUNEY_AMERIKA" | "OKYANUSYA";
+            /**
+             * @description TR slug (routing key — kart tıklaması).
+             * @example turkiye
+             */
+            slugTr: string;
+            /**
+             * @description EN slug (routing key).
+             * @example turkey
+             */
+            slugEn: string;
+            /**
+             * @description Nüfus (World Bank / UN). Null until fact-checked.
+             * @example 85372000
+             */
+            population: number | null;
+            /**
+             * @description Nüfus referans yılı.
+             * @example 2024
+             */
+            populationYear: number | null;
+            /**
+             * @description Yüzölçümü (km², World Bank / UN).
+             * @example 783562
+             */
+            areaKm2: number | null;
+            /**
+             * @description Komşu ülke sayısı — SERVER-DERIVED from the neighbour ISO-code array length (the "ilçe sayısı" replacement). Always present (0 for island nations).
+             * @example 8
+             */
+            neighborCount: number;
+        };
+        CountryDetailDto: {
+            /**
+             * @description ISO 3166-1 alpha-2 kodu.
+             * @example TR
+             */
+            isoCode: string;
+            /**
+             * @description ISO 3166-1 alpha-3 kodu (ikincil tanımlayıcı).
+             * @example TUR
+             */
+            isoCodeAlpha3: string | null;
+            /**
+             * @description Ülke adı (TR).
+             * @example Türkiye
+             */
+            nameTr: string;
+            /**
+             * @description Ülke adı (EN).
+             * @example Türkiye
+             */
+            nameEn: string;
+            /**
+             * @description TR slug (routing key).
+             * @example turkiye
+             */
+            slugTr: string;
+            /**
+             * @description EN slug (routing key).
+             * @example turkey
+             */
+            slugEn: string;
+            /**
+             * @description Kıta.
+             * @enum {string}
+             */
+            continent: "ASYA" | "AVRUPA" | "AFRIKA" | "KUZEY_AMERIKA" | "GUNEY_AMERIKA" | "OKYANUSYA";
+            /**
+             * @description BM alt-bölgesi (UNSD M49) TR etiketi.
+             * @example Batı Asya
+             */
+            unSubregionTr: string | null;
+            /**
+             * @description Yazılı açılış cümlesi (ülke girişi). Null ise web veri-tabanlı bir cümle kurar.
+             * @example Türkiye, Asya ile Avrupa'yı birbirine bağlayan, üç tarafı denizlerle çevrili bir ülkedir.
+             */
+            introTr: string | null;
+            /**
+             * @description Nüfus (World Bank / UN). Null until fact-checked.
+             * @example 85372000
+             */
+            population: number | null;
+            /**
+             * @description Nüfus referans yılı.
+             * @example 2024
+             */
+            populationYear: number | null;
+            /**
+             * @description Yüzölçümü (km², World Bank / UN).
+             * @example 783562
+             */
+            areaKm2: number | null;
+            /**
+             * @description Komşu ülke sayısı — SERVER-DERIVED: neighbour ISO-code array length (the "ilçe sayısı" replacement). Consume this rather than recomputing. Always present (0 for island nations).
+             * @example 8
+             */
+            neighborCount: number;
+            /**
+             * @description Komşu ülkelerin ISO 3166-1 alpha-2 kodları (hub-and-spoke için).
+             * @example [
+             *       "GR",
+             *       "BG",
+             *       "GE",
+             *       "AM",
+             *       "AZ",
+             *       "IR",
+             *       "IQ",
+             *       "SY"
+             *     ]
+             */
+            neighborIsoCodes: string[];
+            /**
+             * @description Başkent adı (TR).
+             * @example Ankara
+             */
+            capitalNameTr: string | null;
+            /**
+             * @description Başkent adı (EN).
+             * @example Ankara
+             */
+            capitalNameEn: string | null;
+            /**
+             * @description Başkent enlemi (decimal degrees).
+             * @example 39.9334
+             */
+            capitalLatitude: number | null;
+            /**
+             * @description Başkent boylamı (decimal degrees).
+             * @example 32.8597
+             */
+            capitalLongitude: number | null;
+            /**
+             * @description Resmi dil(ler) (TR dil adları). Null = araştırılmadı.
+             * @example [
+             *       "Türkçe"
+             *     ]
+             */
+            officialLanguagesTr: string[] | null;
+            /**
+             * @description Para birimi adı (TR).
+             * @example Türk lirası
+             */
+            currencyNameTr: string | null;
+            /**
+             * @description Para birimi kodu (ISO 4217).
+             * @example TRY
+             */
+            currencyCode: string | null;
+            /**
+             * @description Yönetim biçimi (TR).
+             * @example Üniter başkanlık cumhuriyeti
+             */
+            governmentFormTr: string | null;
+            /**
+             * @description Bağımsızlık tarihi / notu (serbest metin, yapılandırılmış tarih değil).
+             * @example 29 Ekim 1923
+             */
+            independenceNoteTr: string | null;
+            /** @description Öne çıkan yer şekilleri / jeoloji notu (TR). */
+            landformNoteTr: string | null;
+            /** @description İklim — serbest anlatı düzyazısı (ülke içi bölgesel iklim çeşitliliği). Yapılandırılmış Köppen kodu DEĞİL (ülke ölçeğinde tek kod yanıltıcı olur). */
+            climateNoteTr: string | null;
+            /** @description Hidrografya — kısa düzyazı not (nehir/göl/deniz anlatısı, TR). */
+            hydrographyNoteTr: string | null;
+            /**
+             * Format: date-time
+             * @description Kayıt oluşturulma zamanı.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Son güncelleme zamanı (SEO dateModified / sitemap lastmod).
+             */
+            updatedAt: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -404,6 +683,73 @@ export interface operations {
                 };
             };
             /** @description No province matches the given slug. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CountryController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountryListItemDto"][];
+                };
+            };
+        };
+    };
+    CountryController_findMapSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountryMapSummaryDto"][];
+                };
+            };
+        };
+    };
+    CountryController_findBySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description TR or EN slug of the country. */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountryDetailDto"];
+                };
+            };
+            /** @description No country matches the given slug. */
             404: {
                 headers: {
                     [name: string]: unknown;

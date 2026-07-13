@@ -8,12 +8,14 @@
     "label": "Primary navigation",
     "home": "Home",
     "turkiye": "Türkiye",
+    "dunya": "World",
     "about": "About"
   },
   "Breadcrumb": {
     "label": "Breadcrumb",
     "home": "Home",
-    "turkiye": "Türkiye"
+    "turkiye": "Türkiye",
+    "dunya": "World"
   },
   "Footer": {
     "tagline": "A free, open geography education platform.",
@@ -102,6 +104,56 @@
     "KARADENIZ": "Black Sea",
     "DOGU_ANADOLU": "Eastern Anatolia",
     "GUNEYDOGU_ANADOLU": "Southeastern Anatolia"
+  },
+  "Continents": {
+    "ASYA": "Asia",
+    "AVRUPA": "Europe",
+    "AFRIKA": "Africa",
+    "KUZEY_AMERIKA": "North America",
+    "GUNEY_AMERIKA": "South America",
+    "OKYANUSYA": "Oceania"
+  },
+  "Dunya": {
+    "metaTitle": "World Map — Countries",
+    "metaDescription": "Explore the countries of the world on an interactive map. Location, capital, population, area and physical geography — sourced, structured detail pages for each country.",
+    "heading": "World Map",
+    "intro": "Explore the countries of the world on an interactive map. Select a country to reach its sourced detail page covering location, capital, population and physical geography. Coverage begins with Türkiye's neighbouring countries and expands as new countries are added."
+  },
+  "WorldMap": {
+    "sectionHeading": "Choose a country from the map",
+    "sectionBody": "Hover a country on the map (or focus it with the keyboard) and follow the card to its detail page. Published countries are interactive; the remaining countries and regions light up as their content is added.",
+    "mapTitle": "Map of world countries (regional)",
+    "attribution": "Boundaries: Natural Earth (public domain)"
+  },
+  "CountryDetail": {
+    "metaTitle": "Geography of {name}",
+    "metaDescription": "Sourced information on the location, capital, population, area and physical geography of {name}, a country in {continent}.",
+    "heading": "Geography of {name}",
+    "introFallbackPopulation": "{name} is a country in {continent}, with a population of {population, number}.",
+    "introFallbackArea": "{name} is a country in {continent}, covering an area of {area, number} km².",
+    "introFallbackContinent": "{name} is a country in {continent}.",
+    "keyFactsHeading": "Key Facts",
+    "continent": "Continent",
+    "subregion": "Region",
+    "capital": "Capital",
+    "population": "Population",
+    "area": "Area",
+    "areaUnit": "km²",
+    "isoCode": "ISO Code",
+    "currency": "Currency",
+    "currencyValue": "{name} ({code})",
+    "language": "Official Language",
+    "languagePlural": "Official Languages",
+    "governmentForm": "Government",
+    "neighborCount": "Neighbouring Countries",
+    "landformHeading": "Landforms",
+    "climateHeading": "Climate",
+    "hydrographyHeading": "Hydrography",
+    "independenceHeading": "Independence",
+    "neighborsHeading": "Neighbouring Countries",
+    "sourcesLabel": "Sources",
+    "sources": "Data is grounded in official and authoritative sources: country and capital names from the Turkish Ministry of Foreign Affairs; population from the World Bank (Geostat 2024 census for Georgia); area from the World Bank; continent and region classification from the UN Statistics Division (M49); neighbouring countries, government form, currency and physical geography from cross-checked multi-source references (Britannica and others).",
+    "backToMap": "Back to the world map"
   },
   "NotFound": {
     "metaTitle": "Page not found",

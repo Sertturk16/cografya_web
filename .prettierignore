@@ -13,10 +13,13 @@ pnpm-lock.yaml
 lib/api/schema.ts
 # generate:map output — machine-written path data, kept as the generator emits it.
 lib/map/tr-provinces.generated.ts
+# generate:world-map output — same, for the world (regional) country map.
+lib/map/world-countries.generated.ts
 
-# Committed source-data snapshot (ODbL GeoJSON, see data/README.md) — kept
-# byte-identical to the upstream fetch, so Prettier must not reformat it.
+# Committed source-data snapshots (GeoJSON, see data/README.md) — kept as fetched/
+# filtered from upstream, so Prettier must not reformat them.
 data/tr-il-boundaries.geojson
+data/world-countries.geojson
 
 # Committed OpenAPI contract artifact (synced from cografya_api; kept byte-identical
 # to the api's generator output, so Prettier must not reformat it).

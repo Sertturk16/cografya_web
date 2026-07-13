@@ -1,6 +1,8 @@
-/* Interactive Türkiye map + hover/focus card. Terra tokens only; the map-chrome
-   tints live in the app/globals.css token layer (this Faz-1 map is navigation
-   CHROME, not a data encoding — SPEC §2 doctrine note). */
+/* Shared interactive-map + hover/focus card styles (Türkiye il map AND the world
+   country map). Terra tokens only; the map-chrome tints live in the app/globals.css
+   token layer (these maps are navigation CHROME, not a data encoding — SPEC §2
+   doctrine note). Seeded shapes use .province/.provinceLink (interactive); unseeded
+   shapes use .provinceInert (backdrop) — same grammar for provinces and countries. */
 
 .intro {
   color: var(--color-slate);
@@ -22,6 +24,11 @@
   height: auto;
   /* The viewBox gives an intrinsic aspect ratio, so the box reserves its height
      immediately; inline SVG has no async load → no layout shift (SEO §6 #9). */
+  /* The world map is FRAMED on its seeded countries; context/backdrop countries
+     project outside the viewBox and must clip at the frame edges. Explicit (the UA
+     default is already hidden, but pin it) — a no-op for the Türkiye map, whose il
+     all sit inside the padded viewBox. */
+  overflow: hidden;
 }
 
 .province,

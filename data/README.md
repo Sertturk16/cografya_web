@@ -51,3 +51,50 @@ Reads this file, rewrites `lib/map/tr-provinces.generated.ts`. Re-run only if th
 snapshot is refreshed (update the "Fetched" date above when you do) or the projection /
 simplification parameters change. Both this snapshot **and** the generated artifact are
 committed, so CI and runtime never invoke the generator.
+
+---
+
+## `world-countries.geojson` — world (regional) country boundary polygons
+
+| Field                      | Value                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Source dataset**         | **Natural Earth** — Admin-0 Countries, **1:50m** scale (`ne_50m_admin_0_countries`)                                             |
+| **Source file**            | `raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson`                        |
+| **Fetched (UTC)**          | 2026-07-13                                                                                                                      |
+| **Scope**                  | **Regional subset** — the 8 seeded pilot countries + geographic-context neighbours (27 features), NOT the full ~195-country set |
+| **Format**                 | GeoJSON `FeatureCollection`, Polygon / MultiPolygon, coordinates `[lon, lat]` (WGS84)                                           |
+| **Per-feature properties** | `{ "iso": "<ISO 3166-1 alpha-2>", "name": "<Natural Earth ADMIN>" }` — filtered down from Natural Earth's full property set     |
+| **Licence**                | **Public Domain** — "no restrictions … may use in any manner" (Natural Earth Terms of Use). Attribution NOT required.           |
+| **Attribution (courtesy)** | Shown as **"Sınır verisi: Natural Earth (kamu malı)"** next to the map — a voluntary courtesy credit, not a licence obligation. |
+
+### Editorial & scope decisions (→ DEC 2026-07-13, world-map SPEC)
+
+- **Contested-borders policy = Option A (Natural Earth's default / de-facto rendering)** —
+  not the Türkiye-POV variant, not neutral disputed-shading. Locked by owner ruling.
+- **Regional (not full-world) scope is a deliberate pilot choice.** Only the 8 pilot
+  countries are seeded, so the committed subset covers just their region (Balkans → Caucasus
+  → Middle East). This also keeps the snapshot lean (Russia's full geometry alone is ~177 kB
+  of mostly off-frame Siberia, so it is excluded from the context set). The 5 pending
+  sovereignty-recognition entities (Cyprus, Kosovo, Israel-capital, Palestine, Taiwan) are
+  **none of them in this region and none among the 8 seeded**, and are deliberately NOT
+  drawn — so this pilot map is unblocked by those open rulings. Full-world sourcing is a
+  tracked follow-up once more countries are seeded + those rulings land.
+
+### The ISO join
+
+Features are keyed by **ISO 3166-1 alpha-2** (`iso`), the stable join key to the api's
+`Country.isoCode`. The generator emits SVG paths keyed by that code; the map component joins
+those shapes to live api country data by ISO — a country renders interactive/linked ONLY
+when the api's country-map-summary carries its ISO (i.e. it is seeded), the rest render as
+inert backdrop (same active-vs-inert grammar as the Türkiye il map).
+
+### Regenerating
+
+```
+pnpm generate:world-map
+```
+
+Reads this file, rewrites `lib/map/world-countries.generated.ts` (projected + simplified,
+framed on the seeded 8). Re-run only if the snapshot is refreshed (update "Fetched" above)
+or the projection / simplification parameters change. Both the snapshot **and** the
+generated artifact are committed, so CI and runtime never invoke the generator.
