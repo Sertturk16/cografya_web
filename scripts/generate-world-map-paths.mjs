@@ -32,11 +32,20 @@
  * discipline as the Türkiye map, → SPEC §5.2 / DEC 2026-07-10): only the produced SVG
  * paths ship.
  *
- * Projection: plate carrée (equirectangular, standard parallel 0 — no per-latitude
- * x-correction: a single cos(lat) factor is meaningless across a full 142° latitude span,
- * so the familiar unprojected world outline is used). Framed on the bounding box of the
- * DRAWN features (Antarctica excluded). This map is navigation CHROME, not a data encoding,
- * so a precise cartographic projection is not required (same doctrine as the Türkiye map).
+ * Projection: **Natural Earth 1** (Tom Patterson), a general-purpose pseudo-cylindrical
+ * projection built exactly for "a nice-looking whole-world map". Applied point-wise via the
+ * published polynomial — the identical closed-form d3-geo's `geoNaturalEarth1()` uses (same
+ * constants), inlined here rather than pulling a dependency, matching this file's existing
+ * hand-rolled-geometry style (see `simplify` below). It converges the meridians toward the
+ * poles, so high latitudes (Greenland, Russia, Canada, Scandinavia) no longer read as the
+ * horizontally-stretched "flat top" the plain equirectangular outline produced. Framed on the
+ * bounding box of the DRAWN features in PROJECTED space (Antarctica excluded). This map is
+ * navigation CHROME, not a data encoding, so the projection is chosen for legibility, not
+ * measurement fidelity (same doctrine as the Türkiye map).
+ *
+ * Purely a build-time coordinate transform: the pipeline is still point-wise, the raw GeoJSON
+ * still never reaches the client, and the React component / its SEO+CWV surface are untouched
+ * — only the emitted path `d` values and the derived viewBox height change.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -59,8 +68,9 @@ const DRAW_EXCLUDE = new Set(["AQ"]);
 // --- Projection + simplification tuning ---------------------------------------
 const VIEW_WIDTH = 1000; // shared viewBox width (svg units)
 const PADDING = 4; // inset so the framed world is not flush against the edge
-// Douglas-Peucker tolerance in projected svg units. At the full-world scale (~2.7 units/°)
-// this ≈ 0.055°, small enough that mid-small countries (Singapore, Malta, Bahrain, the two
+// Douglas-Peucker tolerance in projected svg units. At the full-world equatorial scale
+// (~2.7 units/° — Natural Earth's units/° shrink toward the poles, so this is the loosest,
+// low-latitude case) this ≈ 0.055°, small enough that mid-small countries (Singapore, Malta, Bahrain, the two
 // Cyprus halves, Palestine, Kosovo) survive as clickable polygons, while still cutting the
 // artifact from a raw ~100k vertices to a shippable size. Micro-states below MARKER_MIN_SPAN
 // (Vatican, Nauru, Monaco, Tuvalu, …) are handled by the marker fallback below — NOT dropped
@@ -177,32 +187,57 @@ if (geojson.type !== "FeatureCollection" || !Array.isArray(geojson.features)) {
 
 const drawn = geojson.features.filter((f) => !DRAW_EXCLUDE.has(f.properties?.iso));
 
-let minLon = Infinity;
-let maxLon = -Infinity;
-let minLat = Infinity;
-let maxLat = -Infinity;
+const DEG2RAD = Math.PI / 180;
+
+/**
+ * Natural Earth 1 raw projection (Tom Patterson) — the exact polynomial d3-geo's
+ * `geoNaturalEarth1()` evaluates, with the same published constants. Point-wise and
+ * closed-form: input `[lon, lat]` in DEGREES, output `[x, y]` in dimensionless projection
+ * units (equator centred at 0). Meridians converge toward the poles, so high-latitude land
+ * is no longer horizontally stretched the way plain equirectangular stretched it. The raw
+ * output is framed to the viewBox by the scale/translate derived in the first pass below.
+ */
+function naturalEarthRaw([lon, lat]) {
+  const lambda = lon * DEG2RAD;
+  const phi = lat * DEG2RAD;
+  const phi2 = phi * phi;
+  const phi4 = phi2 * phi2;
+  return [
+    lambda *
+      (0.8707 - 0.131979 * phi2 + phi4 * (-0.013791 + phi4 * (0.003971 * phi2 - 0.001529 * phi4))),
+    phi * (1.007226 + phi2 * (0.015085 + phi4 * (-0.044475 + 0.028874 * phi2 - 0.005916 * phi4))),
+  ];
+}
+
+// First pass: bounding box of the DRAWN features in PROJECTED (Natural Earth) space — the
+// projection is non-linear, so framing must be computed on projected coordinates, not on the
+// raw lon/lat extent. Antarctica is already filtered out of `drawn`.
+let minX = Infinity;
+let maxX = -Infinity;
+let minY = Infinity;
+let maxY = -Infinity;
 for (const feature of drawn) {
-  eachCoord(feature.geometry, ([lon, lat]) => {
-    if (lon < minLon) minLon = lon;
-    if (lon > maxLon) maxLon = lon;
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
+  eachCoord(feature.geometry, (pt) => {
+    const [x, y] = naturalEarthRaw(pt);
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
   });
 }
-if (!Number.isFinite(minLon)) {
+if (!Number.isFinite(minX)) {
   throw new Error("No drawable features found — check the snapshot / DRAW_EXCLUDE.");
 }
 
-// Plate carrée: uniform units-per-degree in both axes so the outline reads as the familiar
-// unprojected world map. Scale so the full longitude span fills the viewBox width.
-const scale = (VIEW_WIDTH - 2 * PADDING) / (maxLon - minLon);
-const viewHeight = Math.round((maxLat - minLat) * scale + 2 * PADDING);
+// Scale so the full projected width fills the viewBox; height follows the projected span so
+// the map keeps Natural Earth's intrinsic aspect ratio.
+const scale = (VIEW_WIDTH - 2 * PADDING) / (maxX - minX);
+const viewHeight = Math.round((maxY - minY) * scale + 2 * PADDING);
 
 /** [lon, lat] → [x, y] in the shared viewBox (north up). */
-function project([lon, lat]) {
-  const x = PADDING + (lon - minLon) * scale;
-  const y = PADDING + (maxLat - lat) * scale;
-  return [x, y];
+function project(coord) {
+  const [x, y] = naturalEarthRaw(coord);
+  return [PADDING + (x - minX) * scale, PADDING + (maxY - y) * scale];
 }
 
 // --- Second pass: build one merged, simplified path per ISO join key ------------
@@ -301,7 +336,7 @@ const out = `// AUTO-GENERATED by scripts/generate-world-map-paths.mjs — DO NO
 // Source: data/world-countries.geojson (Natural Earth Admin-0 1:50m, Public Domain).
 // Regenerate with: pnpm generate:world-map
 //
-// Inline SVG path data for the full-world country map, plate-carrée-projected + simplified
+// Inline SVG path data for the full-world country map, Natural-Earth-1-projected + simplified
 // at build time. The raw GeoJSON never ships to the client (same discipline as the Türkiye
 // map, → SPEC §5.2 / DEC 2026-07-10) — only these produced paths do. Keyed by ISO 3166-1
 // alpha-2 (uppercase); join to live api country data by ISO code (\`geoName\` is a
