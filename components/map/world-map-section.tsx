@@ -72,6 +72,10 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
               );
             }
             const continent = tContinents(country.continent);
+            // Locale-aware display name (country DTOs carry both nameTr and nameEn) — used
+            // for BOTH the visible card name and the AT label, so the EN map never shows a
+            // Turkish name next to the already-localized continent (i18n symmetry).
+            const name = locale === "en" ? country.nameEn : country.nameTr;
             const href = getPathname({
               locale,
               href: {
@@ -102,7 +106,7 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
             if (popLabel && popValue) statPhrases.push(`${popLabel} ${popValue}`);
             if (areaLabel && areaValue) statPhrases.push(`${areaLabel} ${areaValue}`);
             statPhrases.push(`${neighborLabel} ${neighborValue}`);
-            const ariaLabel = `${country.nameTr}, ${continent}. ${statPhrases.join(". ")}.`;
+            const ariaLabel = `${name}, ${continent}. ${statPhrases.join(". ")}.`;
             return (
               <a
                 key={shape.iso}
@@ -110,7 +114,7 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
                 href={href}
                 aria-label={ariaLabel}
                 data-shape={country.isoCode}
-                data-name={country.nameTr}
+                data-name={name}
                 data-subtitle={continent}
                 data-badge={country.isoCode}
                 data-href={href}

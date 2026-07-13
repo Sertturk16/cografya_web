@@ -148,7 +148,12 @@ function project([lon, lat]) {
 /** @type {{ iso: string, geoName: string, d: string }[]} */
 const shapes = [];
 for (const feature of geojson.features) {
-  const iso = feature.properties?.iso;
+  // Normalize the join key to UPPERCASE: the api's Country.isoCode is uppercase alpha-2,
+  // and the map component joins shapes to live data by raw ISO equality. Today's snapshot
+  // is already uppercase, but a future re-fetch with lowercase ISO would otherwise emit
+  // shapes that silently never match (→ every country inert/unlinked — a broken map).
+  const rawIso = feature.properties?.iso;
+  const iso = typeof rawIso === "string" ? rawIso.toUpperCase() : rawIso;
   const geoName = feature.properties?.name;
   if (typeof iso !== "string" || iso.length !== 2) {
     throw new Error(`Feature has no valid ISO alpha-2 code: ${JSON.stringify(feature.properties)}`);
