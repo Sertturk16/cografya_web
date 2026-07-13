@@ -1,33 +1,42 @@
 // @ts-check
 /**
- * Build-time generator: world (regional) country boundary GeoJSON → inline SVG `<path>`.
+ * Build-time generator: full-world country boundary GeoJSON → inline SVG `<path>`.
  *
- * Reads the committed snapshot `data/world-countries.geojson` (Natural Earth Admin-0,
- * Public Domain — see `data/README.md`) and emits `lib/map/world-countries.generated.ts`:
+ * Reads the committed snapshot `data/world-countries.geojson` (Natural Earth Admin-0
+ * 1:50m, Public Domain — see `data/README.md`) and emits `lib/map/world-countries.generated.ts`:
  * one simplified SVG path per country, keyed by ISO 3166-1 alpha-2 code, in a single
  * shared viewBox.
  *
- * SCOPE (Faz-2 pilot): only the 8 seeded pilot countries have live `/dunya/{slug}` pages,
- * so this is a REGIONAL map framed on those 8 (Balkans → Caucasus → Middle East), not a
- * full 195-country world map. The map draws the 8 covered countries plus a curated set of
- * geographic-context neighbours (Türkiye is the central anchor) as inert backdrop — exactly
- * the same active-vs-inert pattern the Türkiye il map uses for seeded-vs-unseeded provinces.
- * Which countries render interactively is decided at request time by the API's
- * country-map-summary (a shape lights up only when its ISO code is seeded), so this artifact
- * carries NO seeded/interactive state — it is pure geometry. A future full-world map is a
- * follow-up (needs full-world GeoJSON sourcing + the pending sovereignty-recognition
- * rulings; none of the 5 contested entities is in this region, so this pilot is unblocked).
+ * SCOPE (full world): every Natural Earth Admin-0 entity is projected — ~190 seeded
+ * countries plus the de-facto backdrop. Which countries render interactively is decided at
+ * request time by the api's country-map-summary (a shape lights up as a real crawlable
+ * `<a>` only when its ISO code is seeded); everything else is inert backdrop. So this
+ * artifact carries NO seeded/interactive state — it is pure geometry — and new countries
+ * light up automatically as the api seeds them, exactly the active-vs-inert grammar the
+ * Türkiye il map uses for seeded-vs-unseeded provinces.
+ *
+ * Contested borders follow **Option A — Natural Earth's default / de-facto rendering**
+ * (→ DEC 2026-07-13): not the Türkiye-POV variant, not neutral disputed-shading. Under this
+ * de-facto view Natural Earth splits Cyprus into two separate features — "Cyprus" (ISO CY,
+ * the internationally-recognised government, southern polygon) and "Northern Cyprus" (no
+ * ISO in the source; remapped to the api's private-use `QN` at snapshot build → DEC
+ * 2026-07-13). Both therefore render as independently hoverable/clickable regions once each
+ * is seeded, satisfying the owner's split-island map requirement without faking geometry.
+ *
+ * Antarctica is the one entity deliberately not drawn (`DRAW_EXCLUDE`): a ~5k-vertex
+ * full-width polar polygon that is not a navigable country — the standard web-world-map
+ * omission. It stays in the snapshot for provenance; only the render step skips it.
  *
  * Run once and COMMIT the output (`pnpm generate:world-map`). CI/runtime never invoke this —
  * the app imports the committed artifact. The raw GeoJSON never reaches the client (same
  * discipline as the Türkiye map, → SPEC §5.2 / DEC 2026-07-10): only the produced SVG
  * paths ship.
  *
- * Projection: equirectangular with a cos(reference-latitude) x-correction, framed on the
- * bounding box of the SEEDED-8 only (context countries project into the same frame and
- * clip at its edges — the outer <svg> clips overflow). This Faz-2 map is navigation CHROME,
- * not a data encoding, so a precise cartographic projection is not required (same doctrine
- * note as the Türkiye map).
+ * Projection: plate carrée (equirectangular, standard parallel 0 — no per-latitude
+ * x-correction: a single cos(lat) factor is meaningless across a full 142° latitude span,
+ * so the familiar unprojected world outline is used). Framed on the bounding box of the
+ * DRAWN features (Antarctica excluded). This map is navigation CHROME, not a data encoding,
+ * so a precise cartographic projection is not required (same doctrine as the Türkiye map).
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -39,17 +48,24 @@ const SRC = join(ROOT, "data", "world-countries.geojson");
 const OUT = join(ROOT, "lib", "map", "world-countries.generated.ts");
 
 /**
- * The 8 seeded pilot countries (ISO 3166-1 alpha-2). The shared viewBox is framed on the
- * bounding box of THESE only, so the map centres on the covered region; context countries
- * fall outside and clip at the frame edges. Keep in sync with the API's seeded set — this
- * is only the FRAMING hint, never the interactivity gate (that is API-driven at runtime).
+ * ISO codes present in the snapshot but deliberately NOT drawn. Antarctica (AQ) is a
+ * ~5k-vertex, full-longitude-width polar cap — not a navigable country and the standard
+ * omission on web world maps; drawing it would balloon the artifact and the viewBox height
+ * for zero navigation value. If the api ever seeds it, it simply stays unrendered (a
+ * documented, deliberate gap — not a soft-404: there is no shape, hence no link).
  */
-const FRAME_ISO = new Set(["GR", "BG", "GE", "AM", "AZ", "IR", "IQ", "SY"]);
+const DRAW_EXCLUDE = new Set(["AQ"]);
 
 // --- Projection + simplification tuning ---------------------------------------
 const VIEW_WIDTH = 1000; // shared viewBox width (svg units)
-const PADDING = 8; // inset so the framed countries are not flush against the edge
-const SIMPLIFY_EPSILON = 0.4; // Douglas-Peucker tolerance, in projected svg units
+const PADDING = 4; // inset so the framed world is not flush against the edge
+// Douglas-Peucker tolerance in projected svg units. At the full-world scale (~2.7 units/°)
+// this ≈ 0.055°, small enough that even micro-states (Singapore, Malta, the two Cyprus
+// halves, Palestine, Kosovo) survive as clickable quads rather than collapsing below the
+// 3-point minimum, while still cutting the artifact from a raw ~100k vertices to a
+// shippable size. Raise it and small seeded countries start vanishing — verify the seeded
+// set still renders before tightening for size.
+const SIMPLIFY_EPSILON = 0.15;
 const DECIMALS = 1; // coordinate rounding in the emitted path data
 
 /** Perpendicular distance from point p to the line segment a→b. */
@@ -105,18 +121,27 @@ function outerRings(geometry) {
   return polys.map((poly) => poly[0]);
 }
 
-// --- Load + first pass: bounding box of the FRAMED (seeded-8) countries only ----
+/** Total vertex count of a geometry — used to pick the label of the largest member when
+ *  several source features merge under one ISO (e.g. Australia + its external territories). */
+function vertexCount(geometry) {
+  let n = 0;
+  eachCoord(geometry, () => n++);
+  return n;
+}
+
+// --- Load + first pass: bounding box of the DRAWN features (Antarctica excluded) ---
 const geojson = JSON.parse(readFileSync(SRC, "utf8"));
 if (geojson.type !== "FeatureCollection" || !Array.isArray(geojson.features)) {
   throw new Error(`Unexpected GeoJSON: ${SRC}`);
 }
 
+const drawn = geojson.features.filter((f) => !DRAW_EXCLUDE.has(f.properties?.iso));
+
 let minLon = Infinity;
 let maxLon = -Infinity;
 let minLat = Infinity;
 let maxLat = -Infinity;
-for (const feature of geojson.features) {
-  if (!FRAME_ISO.has(feature.properties?.iso)) continue;
+for (const feature of drawn) {
   eachCoord(feature.geometry, ([lon, lat]) => {
     if (lon < minLon) minLon = lon;
     if (lon > maxLon) maxLon = lon;
@@ -125,38 +150,35 @@ for (const feature of geojson.features) {
   });
 }
 if (!Number.isFinite(minLon)) {
-  throw new Error("No framed (seeded-8) features found — check FRAME_ISO vs the snapshot.");
+  throw new Error("No drawable features found — check the snapshot / DRAW_EXCLUDE.");
 }
 
-const refLat = ((minLat + maxLat) / 2) * (Math.PI / 180);
-const cosLat = Math.cos(refLat);
-// Raw (pre-scale) projected extent of the FRAME → scale so its width fills the viewBox.
-const rawW = (maxLon - minLon) * cosLat;
-const rawH = maxLat - minLat;
-const scale = (VIEW_WIDTH - 2 * PADDING) / rawW;
-const viewHeight = Math.round(rawH * scale + 2 * PADDING);
+// Plate carrée: uniform units-per-degree in both axes so the outline reads as the familiar
+// unprojected world map. Scale so the full longitude span fills the viewBox width.
+const scale = (VIEW_WIDTH - 2 * PADDING) / (maxLon - minLon);
+const viewHeight = Math.round((maxLat - minLat) * scale + 2 * PADDING);
 
-/** [lon, lat] → [x, y] in the shared viewBox (north up). Context countries may land
- *  outside [0, VIEW_WIDTH]×[0, viewHeight] — the outer <svg> clips that overflow. */
+/** [lon, lat] → [x, y] in the shared viewBox (north up). */
 function project([lon, lat]) {
-  const x = PADDING + (lon - minLon) * cosLat * scale;
+  const x = PADDING + (lon - minLon) * scale;
   const y = PADDING + (maxLat - lat) * scale;
   return [x, y];
 }
 
-// --- Second pass: build one simplified path per country -----------------------
-/** @type {{ iso: string, geoName: string, d: string }[]} */
-const shapes = [];
-for (const feature of geojson.features) {
-  // Normalize the join key to UPPERCASE: the api's Country.isoCode is uppercase alpha-2,
-  // and the map component joins shapes to live data by raw ISO equality. Today's snapshot
-  // is already uppercase, but a future re-fetch with lowercase ISO would otherwise emit
-  // shapes that silently never match (→ every country inert/unlinked — a broken map).
+// --- Second pass: build one merged, simplified path per ISO join key ------------
+/** @type {Map<string, { geoName: string, labelVerts: number, subpaths: string[] }>} */
+const byIso = new Map();
+for (const feature of drawn) {
+  // Normalize the join key to UPPERCASE for 2-letter ISO codes (the api's Country.isoCode
+  // is uppercase alpha-2, joined by raw equality). Synthetic backdrop keys (lowercase
+  // `x-…`, assigned at snapshot build to codeless de-facto entities like Somaliland) are
+  // left as-is: they are intentionally non-joinable and always render inert.
   const rawIso = feature.properties?.iso;
-  const iso = typeof rawIso === "string" ? rawIso.toUpperCase() : rawIso;
+  const iso =
+    typeof rawIso === "string" && /^[a-z]{2}$/i.test(rawIso) ? rawIso.toUpperCase() : rawIso;
   const geoName = feature.properties?.name;
-  if (typeof iso !== "string" || iso.length !== 2) {
-    throw new Error(`Feature has no valid ISO alpha-2 code: ${JSON.stringify(feature.properties)}`);
+  if (typeof iso !== "string" || iso.length < 2) {
+    throw new Error(`Feature has no valid join key: ${JSON.stringify(feature.properties)}`);
   }
   const subpaths = [];
   for (const ring of outerRings(feature.geometry)) {
@@ -169,10 +191,26 @@ for (const feature of geojson.features) {
     subpaths.push(`${d}Z`);
   }
   if (subpaths.length === 0) continue;
-  shapes.push({ iso, geoName, d: subpaths.join("") });
+
+  // Merge features that share a join key (e.g. Australia + its external territories) into a
+  // single shape → one <a>, one internal link per country, all its polygons highlighting
+  // together. The label follows the largest member (provenance only; the UI shows nameTr).
+  const verts = vertexCount(feature.geometry);
+  const existing = byIso.get(iso);
+  if (existing) {
+    existing.subpaths.push(...subpaths);
+    if (verts > existing.labelVerts) {
+      existing.geoName = geoName;
+      existing.labelVerts = verts;
+    }
+  } else {
+    byIso.set(iso, { geoName, labelVerts: verts, subpaths });
+  }
 }
 
-shapes.sort((a, b) => a.iso.localeCompare(b.iso));
+const shapes = [...byIso.entries()]
+  .map(([iso, v]) => ({ iso, geoName: v.geoName, d: v.subpaths.join("") }))
+  .sort((a, b) => a.iso.localeCompare(b.iso));
 
 // --- Emit -------------------------------------------------------------------
 const body = shapes
@@ -185,28 +223,36 @@ const body = shapes
   .join("\n");
 
 const out = `// AUTO-GENERATED by scripts/generate-world-map-paths.mjs — DO NOT EDIT BY HAND.
-// Source: data/world-countries.geojson (Natural Earth Admin-0, Public Domain).
+// Source: data/world-countries.geojson (Natural Earth Admin-0 1:50m, Public Domain).
 // Regenerate with: pnpm generate:world-map
 //
-// Inline SVG path data for the regional world map (Balkans → Caucasus → Middle East),
-// projected + simplified at build time. The raw GeoJSON never ships to the client (same
-// discipline as the Türkiye map, → SPEC §5.2 / DEC 2026-07-10) — only these produced
-// paths do. Keyed by ISO 3166-1 alpha-2; join to live API country data by ISO code
-// (\`geoName\` is a build-time label only, never shown — the API's nameTr is the display
-// name). A country is interactive/linked ONLY when the API's map-summary carries its ISO
-// code; the rest render as inert backdrop, same as unseeded provinces on the Türkiye map.
+// Inline SVG path data for the full-world country map, plate-carrée-projected + simplified
+// at build time. The raw GeoJSON never ships to the client (same discipline as the Türkiye
+// map, → SPEC §5.2 / DEC 2026-07-10) — only these produced paths do. Keyed by ISO 3166-1
+// alpha-2 (uppercase); join to live api country data by ISO code (\`geoName\` is a
+// build-time label only, never shown — the api's nameTr is the display name). A country is
+// interactive/linked ONLY when the api's map-summary carries its ISO code; the rest render
+// as inert backdrop, same as unseeded provinces on the Türkiye map. Contested borders
+// follow Natural Earth's de-facto default (Option A, → DEC 2026-07-13); Cyprus is split
+// into CY (south) and QN (KKTC, north) as independently clickable regions.
 
 /** One country outline in the shared \`WORLD_MAP_VIEWBOX\` coordinate space. */
 export interface CountryShape {
-  /** ISO 3166-1 alpha-2 (uppercase) — the stable join key to API country data. */
+  /**
+   * Join key to api country data. Uppercase ISO 3166-1 alpha-2 for recognised entities;
+   * the api's private-use \`QN\` for KKTC (no real ISO exists, → DEC 2026-07-13); or a
+   * synthetic non-joinable \`x-…\` key for de-facto backdrop entities Natural Earth carries
+   * without any ISO (Somaliland, Siachen Glacier) — those never match a seeded country and
+   * always render inert.
+   */
   readonly iso: string;
-  /** Source Natural Earth label (build-time provenance only; UI shows the API nameTr). */
+  /** Source Natural Earth label (build-time provenance only; UI shows the api nameTr). */
   readonly geoName: string;
   /** SVG path \`d\` (one or more closed subpaths for countries with islands). */
   readonly d: string;
 }
 
-/** Shared SVG viewBox all ${shapes.length} paths are projected into (framed on the seeded 8). */
+/** Shared SVG viewBox all ${shapes.length} paths are projected into (full world, Antarctica excluded). */
 export const WORLD_MAP_VIEWBOX = "0 0 ${VIEW_WIDTH} ${viewHeight}" as const;
 
 export const COUNTRY_SHAPES: readonly CountryShape[] = [
@@ -217,7 +263,7 @@ ${body}
 writeFileSync(OUT, out, "utf8");
 const bytes = Buffer.byteLength(out, "utf8");
 console.log(
-  `generate:world-map → ${OUT}\n  ${shapes.length} countries · viewBox 0 0 ${VIEW_WIDTH} ${viewHeight} · ${(
+  `generate:world-map → ${OUT}\n  ${shapes.length} shapes · viewBox 0 0 ${VIEW_WIDTH} ${viewHeight} · ${(
     bytes / 1024
   ).toFixed(1)} kB`,
 );

@@ -12,19 +12,21 @@ interface WorldMapSectionProps {
 }
 
 /**
- * Interactive world (regional) map (server component) — the `/dunya` hub's primary content,
+ * Interactive full-world map (server component) — the `/dunya` hub's primary content,
  * mirroring `TurkeyMapSection` one level up (country, not province). It reuses the exact same
  * mechanism: build-time-generated inline SVG country paths (`lib/map/world-countries.generated.ts`
  * — raw GeoJSON never ships), a real crawlable `<a>` per SEEDED country (hub-and-spoke,
  * CONVENTIONS §6 #10), pure-CSS hover/focus highlight, and the shared client hover-card island.
  *
- * SCOPE (Faz-2 pilot): only 8 countries are seeded, so this is a REGIONAL map framed on them
- * (Balkans → Caucasus → Middle East). A shape becomes interactive ONLY when the api's
- * country-map-summary carries its ISO code (i.e. it has a published `/dunya/{slug}` page); the
- * rest — including Türkiye, the central anchor — render as inert backdrop and light up
- * automatically as more countries are seeded. So the map never links to a not-yet-published
- * (soft-404) country (SEO §6 #6), and degrades to a static picture if the summary is
- * unreachable — interactivity is progressive enhancement over the always-present links.
+ * SCOPE (full world): every Natural Earth Admin-0 entity is drawn (~190 seeded countries plus
+ * the de-facto backdrop). A shape becomes interactive ONLY when the api's country-map-summary
+ * carries its ISO code (i.e. it has a published `/dunya/{slug}` page); the rest render as inert
+ * backdrop and light up automatically as the api seeds them. This is purely data-driven off the
+ * live summary, so it scales unchanged from the original 8-country pilot to the full seeded set
+ * (incl. the Cyprus split: CY and QN are two independent shapes, each interactive once seeded).
+ * So the map never links to a not-yet-published (soft-404) country (SEO §6 #6), and degrades to
+ * a static picture if the summary is unreachable — interactivity is progressive enhancement over
+ * the always-present links.
  *
  * The card's numbers (nüfus / yüzölçümü / komşu ülke sayısı — the locked country-scale
  * stat trio) come from the purpose-built `/api/countries/map-summary` payload, formatted
