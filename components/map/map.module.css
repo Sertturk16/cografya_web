@@ -187,6 +187,156 @@
   color: var(--color-ink);
 }
 
+/* ---- Zoom / pan (world map only — SPEC dunya-haritasi-zoom-pan) ----
+   The zoomable surface. Scoped to [data-zoomable] (set client-side by the zoom island)
+   so ONLY the world map opts in — the Türkiye map, which shares this stylesheet but has
+   no pan/zoom, keeps normal page scroll and pointer cursor. */
+.svg[data-zoomable] {
+  /* Prevent the browser's own touch scroll/zoom so one-finger pan + pinch reach us
+     without scroll-jank (SPEC §8). */
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Visible keyboard focus on the map surface itself (SPEC §5 / WCAG 2.4.7). Inset so the
+   ring is not clipped by the SVG's overflow:hidden frame. */
+.svg[data-zoomable]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.mapRoot[data-panning] .svg[data-zoomable] {
+  cursor: grabbing;
+}
+
+/* While a drag-pan is active the pointer crosses shapes, firing hover — suppress the
+   card so it does not flicker across the moving map. */
+.mapRoot[data-panning] .card {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Overlay layer for the controls + hint. Covers the map but lets pointer events fall
+   through to the SVG; only the interactive children re-enable pointer events. */
+.zoomLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.zoomControls {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.zoomButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 1.4rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition:
+    background 0.16s ease-out,
+    border-color 0.16s ease-out;
+}
+
+.zoomButton:hover {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+.zoomButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.zoomHint {
+  position: absolute;
+  left: 14px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(320px, 68%);
+  pointer-events: auto;
+  background: var(--scrim-bg);
+  color: var(--color-slate);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 6px 6px 6px 12px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  box-shadow: var(--shadow-card);
+  animation: zoomHintIn 0.24s ease-out;
+}
+
+.zoomHintDismiss {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--color-slate);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.zoomHintDismiss:hover {
+  background: var(--color-surface);
+  color: var(--color-primary-dark);
+}
+
+.zoomHintDismiss:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@keyframes zoomHintIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Visually-hidden but AT-readable (the SVG's aria-describedby target). */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card {
     transition: none;
@@ -194,6 +344,15 @@
   }
 
   .provinceLink .province {
+    transition: none;
+  }
+
+  /* Static hint + buttons under reduced motion (SPEC §9). */
+  .zoomHint {
+    animation: none;
+  }
+
+  .zoomButton {
     transition: none;
   }
 }

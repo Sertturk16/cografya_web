@@ -12,8 +12,13 @@
 #     without the native build, so it is not built.
 #   - @swc/core: ships prebuilt platform binaries via optionalDependencies; the postinstall
 #     build is unnecessary, and Next uses its own bundled @next/swc regardless.
+#
+# esbuild IS built (true): it backs vitest (the web unit-test harness, first used by the
+# /dunya zoom/pan tests). Its postinstall links the platform binary vitest needs to
+# transform TS specs, so — unlike the prebuilt-binary deps above — it must run.
 allowBuilds:
   "@parcel/watcher": false
   "@swc/core": false
+  esbuild: true
   sharp: false
   unrs-resolver: false

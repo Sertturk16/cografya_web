@@ -20,6 +20,8 @@
     "generate:world-map:check": "pnpm run generate:world-map && git diff --exit-code -- lib/map/world-countries.generated.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepare": "husky"
   },
   "dependencies": {
@@ -43,6 +45,7 @@
     "lint-staged": "^17.0.8",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.4",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.4"
   }
 }

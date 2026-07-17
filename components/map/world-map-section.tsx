@@ -5,6 +5,7 @@ import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
 import { MapHoverCard } from "./map-hover-card";
+import { MapZoomPan } from "./map-zoom-pan";
 import styles from "./map.module.css";
 
 interface WorldMapSectionProps {
@@ -50,6 +51,16 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
   const byIso = byIsoCode(summaries);
 
   const titleId = "world-map-title";
+  const instructionsId = "world-map-instructions";
+  const zoomLabels = {
+    zoomIn: tMap("zoomIn"),
+    zoomOut: tMap("zoomOut"),
+    reset: tMap("resetView"),
+    instructions: tMap("keyboardInstructions"),
+    controls: tMap("zoomControls"),
+    hint: tMap("zoomHint"),
+    dismissHint: tMap("dismissHint"),
+  };
 
   return (
     <section className="section" aria-labelledby="world-map-heading">
@@ -57,6 +68,16 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
       <p className={styles.intro}>{tMap("sectionBody")}</p>
 
       <div className={styles.mapRoot} data-map-root>
+        {/* Rendered BEFORE the <svg> so the zoom controls sit ahead of the ~190 crawlable
+            country links in tab order (review I3) — keyboard users reach +/−/reset without
+            tabbing through every country. Visual position is unaffected (the layer is
+            position:absolute); the island still reaches the <svg> via querySelector. */}
+        <MapZoomPan
+          viewBox={WORLD_MAP_VIEWBOX}
+          instructionsId={instructionsId}
+          labels={zoomLabels}
+        />
+
         <svg className={styles.svg} viewBox={WORLD_MAP_VIEWBOX} aria-labelledby={titleId}>
           <title id={titleId}>{tMap("mapTitle")}</title>
           {COUNTRY_SHAPES.map((shape) => {
@@ -134,6 +155,13 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
         </svg>
 
         <MapHoverCard />
+
+        {/* Keyboard-controls description the zoomable SVG points to via aria-describedby
+            (set client-side, SPEC §5). Visually hidden — the always-visible +/− buttons
+            carry the sighted affordance. */}
+        <p id={instructionsId} className={styles.srOnly}>
+          {tMap("keyboardInstructions")}
+        </p>
 
         <p className={styles.attribution}>{tMap("attribution")}</p>
       </div>

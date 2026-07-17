@@ -123,7 +123,14 @@
     "sectionHeading": "Choose a country from the map",
     "sectionBody": "Hover a country on the map (or focus it with the keyboard) and follow the card to its detail page. Published countries are interactive; the remaining countries and regions light up as their content is added.",
     "mapTitle": "Map of world countries (regional)",
-    "attribution": "Boundaries: Natural Earth (public domain)"
+    "attribution": "Boundaries: Natural Earth (public domain)",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "resetView": "Reset to world view",
+    "zoomControls": "Zoom controls",
+    "keyboardInstructions": "When the map is focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to return to the world view. With a mouse, scroll to zoom and drag to pan; on touch, pinch to zoom and drag with one finger to pan.",
+    "zoomHint": "Scroll to zoom, or use + / −",
+    "dismissHint": "Dismiss hint"
   },
   "CountryDetail": {
     "metaTitle": "Geography of {name}",
