@@ -22,12 +22,15 @@ export const MIN_ZOOM = 1;
 export const MAX_ZOOM = 12;
 
 /**
- * Click-vs-drag disambiguation thresholds (SPEC §4). A pointer gesture is a real click
- * (→ let the country `<a>` navigate) only when it stayed under BOTH: it barely moved
- * AND it was brief. Anything else is a pan → the click is swallowed.
+ * Click-vs-drag disambiguation threshold (SPEC §4, amended owner-ruled 2026-07-18). A
+ * pointer gesture is a real click (→ let the country `<a>` navigate) purely on MOVEMENT:
+ * if it barely moved it navigates, no matter how long it was held. Anything past the
+ * movement threshold is a pan → the click is swallowed. The former 250 ms duration gate
+ * was removed because it silently ate deliberate slow stationary press-and-hold aiming on
+ * small targets — the exact "small countries are hard to click" complaint this feature
+ * exists to fix. Movement alone is the reliable pan/tap discriminator.
  */
 export const CLICK_MOVE_THRESHOLD_PX = 6;
-export const CLICK_DURATION_THRESHOLD_MS = 250;
 
 /** Parse an SVG `viewBox` attribute string ("minX minY width height") into a ViewBox. */
 export function parseViewBox(value: string): ViewBox {
@@ -160,9 +163,10 @@ export function moveDistance(dx: number, dy: number): number {
 
 /**
  * True when a pointer gesture should be treated as a real click that navigates, rather
- * than a pan whose click must be swallowed (SPEC §4): it must have moved LESS than the
- * movement threshold AND lasted LESS than the duration threshold.
+ * than a pan whose click must be swallowed (SPEC §4, amended owner-ruled 2026-07-18):
+ * it is a click purely when it moved LESS than the movement threshold — hold duration is
+ * irrelevant, so a deliberate slow stationary press-and-hold still navigates.
  */
-export function isRealClick(moveDistancePx: number, durationMs: number): boolean {
-  return moveDistancePx < CLICK_MOVE_THRESHOLD_PX && durationMs < CLICK_DURATION_THRESHOLD_MS;
+export function isRealClick(moveDistancePx: number): boolean {
+  return moveDistancePx < CLICK_MOVE_THRESHOLD_PX;
 }

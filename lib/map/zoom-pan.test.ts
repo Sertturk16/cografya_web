@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  CLICK_DURATION_THRESHOLD_MS,
   CLICK_MOVE_THRESHOLD_PX,
   MAX_ZOOM,
   MIN_ZOOM,
@@ -227,23 +226,23 @@ describe("moveDistance", () => {
   });
 });
 
-describe("isRealClick (SPEC §4 threshold)", () => {
-  it("treats a small, brief gesture as a real click → navigate", () => {
-    expect(isRealClick(2, 100)).toBe(true);
+describe("isRealClick (SPEC §4 threshold, movement-only — owner-ruled 2026-07-18)", () => {
+  it("treats a small (stationary) gesture as a real click → navigate", () => {
+    expect(isRealClick(2)).toBe(true);
   });
 
   it("rejects a gesture that moved too far (it was a pan)", () => {
-    expect(isRealClick(CLICK_MOVE_THRESHOLD_PX + 0.5, 100)).toBe(false);
+    expect(isRealClick(CLICK_MOVE_THRESHOLD_PX + 0.5)).toBe(false);
   });
 
-  it("rejects a gesture that lasted too long (a slow press-drag)", () => {
-    expect(isRealClick(2, CLICK_DURATION_THRESHOLD_MS + 1)).toBe(false);
+  it("navigates a stationary press regardless of how long it was held (no duration gate)", () => {
+    // A deliberate slow press-and-hold to aim at a small target still navigates: hold
+    // time is no longer a gate, only movement is.
+    expect(isRealClick(0)).toBe(true);
   });
 
-  it("requires BOTH conditions: exactly-at-threshold move is not a click", () => {
-    // Strict `<` on both axes: a value equal to the threshold is a drag, not a click.
-    expect(isRealClick(CLICK_MOVE_THRESHOLD_PX, 10)).toBe(false);
-    expect(isRealClick(1, CLICK_DURATION_THRESHOLD_MS)).toBe(false);
+  it("uses a strict `<` boundary: exactly-at-threshold move is a drag, not a click", () => {
+    expect(isRealClick(CLICK_MOVE_THRESHOLD_PX)).toBe(false);
   });
 });
 

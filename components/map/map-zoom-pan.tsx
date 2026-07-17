@@ -206,7 +206,6 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
     const pointers = new Map<number, { x: number; y: number }>();
     let panOrigin: { vx: number; vy: number; cx: number; cy: number } | null = null;
     let pinchStart: { dist: number; zoom: number } | null = null;
-    let downTime = 0;
     let maxMove = 0;
     let justDragged = false;
     let panning = false;
@@ -228,7 +227,6 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       cancelTween();
       justDragged = false;
-      downTime = e.timeStamp;
       maxMove = 0;
       // Global listeners so a fast drag that leaves the SVG still tracks (SPEC §2).
       window.addEventListener("pointermove", onPointerMove);
@@ -313,9 +311,10 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
         window.removeEventListener("pointermove", onPointerMove);
         window.removeEventListener("pointerup", onPointerUp);
         window.removeEventListener("pointercancel", onPointerUp);
-        const duration = e.timeStamp - downTime;
-        // A drag/pan (or a slow press) must NOT navigate: swallow the upcoming click.
-        if (wasPanningGesture || !isRealClick(maxMove, duration)) {
+        // A drag/pan must NOT navigate: swallow the upcoming click. Duration is no longer
+        // a gate (owner-ruled 2026-07-18) — a stationary press-and-hold still navigates;
+        // only crossing the movement threshold (or a pinch) swallows the click.
+        if (wasPanningGesture || !isRealClick(maxMove)) {
           justDragged = true;
         }
         panOrigin = null;
