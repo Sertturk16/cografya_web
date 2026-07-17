@@ -104,6 +104,55 @@ export function panBy(view: ViewBox, world: ViewBox, dx: number, dy: number): Vi
   return clampPan({ ...view, x: view.x + dx, y: view.y + dy }, world);
 }
 
+/**
+ * Zoom factor implied by a pinch gesture (SPEC §3): the live finger separation relative
+ * to the separation at pinch-start scales the zoom that was in effect when the pinch
+ * began (fingers apart → zoom in, together → zoom out). Result is clamped to the
+ * owner-ruled [MIN_ZOOM, MAX_ZOOM] range, exactly like `zoomAtPoint`, so a runaway pinch
+ * can never escape the world-fit / 12× bounds. A non-positive start distance (a degenerate
+ * two-finger-down on the same point) cannot define a ratio → the start zoom is held.
+ */
+export function zoomFromPinch(startZoom: number, startDist: number, currentDist: number): number {
+  if (startDist <= 0) return clampZoom(startZoom);
+  return clampZoom((startZoom * currentDist) / startDist);
+}
+
+/**
+ * Smallest pan (never a zoom-in) that brings `shape` fully into the current view, so a
+ * keyboard focus landing on a country clipped out of a zoomed/panned view scrolls it back
+ * on-screen (WCAG 2.4.7 "focus visible"; SPEC §5). An already-fully-visible shape returns
+ * the SAME view reference (the caller uses identity to skip a no-op animation). A shape
+ * LARGER than the current viewport (e.g. a big country at high zoom) is centred so its
+ * middle shows — the zoom level and aspect ratio are preserved; we never zoom IN to chase
+ * a focus. Result stays clamped inside the world bbox. `shape` is an SVG-user-unit bbox
+ * (same coordinate space as `view`), i.e. an element's `getBBox()`.
+ */
+export function viewToIncludeShape(view: ViewBox, world: ViewBox, shape: ViewBox): ViewBox {
+  const fullyVisible =
+    shape.x >= view.x &&
+    shape.y >= view.y &&
+    shape.x + shape.w <= view.x + view.w &&
+    shape.y + shape.h <= view.y + view.h;
+  if (fullyVisible) return view;
+
+  // Per-axis: centre an oversized shape, else nudge the view just enough to contain it.
+  const axis = (vStart: number, vSize: number, sStart: number, sSize: number): number => {
+    if (sSize >= vSize) return sStart + sSize / 2 - vSize / 2;
+    if (sStart < vStart) return sStart;
+    if (sStart + sSize > vStart + vSize) return sStart + sSize - vSize;
+    return vStart;
+  };
+
+  return clampPan(
+    {
+      ...view,
+      x: axis(view.x, view.w, shape.x, shape.w),
+      y: axis(view.y, view.h, shape.y, shape.h),
+    },
+    world,
+  );
+}
+
 /** Euclidean pointer travel (px) between pointerdown and pointerup. */
 export function moveDistance(dx: number, dy: number): number {
   return Math.hypot(dx, dy);

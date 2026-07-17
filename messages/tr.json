@@ -127,6 +127,7 @@
     "zoomIn": "Yakınlaştır",
     "zoomOut": "Uzaklaştır",
     "resetView": "Dünya görünümüne sıfırla",
+    "zoomControls": "Yakınlaştırma denetimleri",
     "keyboardInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna basın; ok tuşlarıyla kaydırın, 0 veya Home tuşuyla dünya görünümüne dönün. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsiniz.",
     "zoomHint": "Yakınlaştırmak için kaydırın veya + / − kullanın",
     "dismissHint": "İpucunu kapat"

@@ -10,7 +10,9 @@ import {
   moveDistance,
   panBy,
   parseViewBox,
+  viewToIncludeShape,
   zoomAtPoint,
+  zoomFromPinch,
   zoomOf,
 } from "@/lib/map/zoom-pan";
 import styles from "./map.module.css";
@@ -22,6 +24,8 @@ export interface MapZoomPanLabels {
   reset: string;
   /** Full keyboard-controls sentence, referenced by the SVG via aria-describedby. */
   instructions: string;
+  /** Short accessible name for the zoom-button group (NOT the full instructions). */
+  controls: string;
   /** One-time discoverability hint (SPEC §9). */
   hint: string;
   /** Accessible label for the hint's dismiss (×) button. */
@@ -254,7 +258,7 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
           const midX = (a.x + b.x) / 2;
           const midY = (a.y + b.y) / 2;
           const { fx, fy } = svgFraction(midX, midY);
-          const targetZoom = (pinchStart.zoom * dist) / pinchStart.dist;
+          const targetZoom = zoomFromPinch(pinchStart.zoom, pinchStart.dist, dist);
           setView(zoomAtPoint(view, world, targetZoom, fx, fy));
         }
         markPanning();
@@ -354,20 +358,27 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
           e.preventDefault();
           zoomStep(1 / ZOOM_STEP);
           break;
+        // Arrow pans cancel any in-flight zoom tween first: otherwise the tween's own rAF
+        // loop keeps overwriting `view` and silently stomps the pan applied here — the
+        // "first arrow after a zoom is a no-op" papercut (review L1).
         case "ArrowLeft":
           e.preventDefault();
+          cancelTween();
           setView(panBy(view, world, -panX, 0));
           break;
         case "ArrowRight":
           e.preventDefault();
+          cancelTween();
           setView(panBy(view, world, panX, 0));
           break;
         case "ArrowUp":
           e.preventDefault();
+          cancelTween();
           setView(panBy(view, world, 0, -panY));
           break;
         case "ArrowDown":
           e.preventDefault();
+          cancelTween();
           setView(panBy(view, world, 0, panY));
           break;
         case "0":
@@ -378,6 +389,26 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
         default:
           break;
       }
+    };
+
+    // Keyboard focus-follows-view (WCAG 2.4.7, SPEC §5): when a country <a> takes focus
+    // and its shape is clipped out of a zoomed/panned view, pan it back on-screen so the
+    // :focus-visible highlight is actually visible. Gated on `pointers.size === 0`, which
+    // is false during a mouse press (focus fires while the pointer is down) — so ONLY true
+    // keyboard focus pans; a mouse click that focuses-then-navigates never triggers it.
+    const onFocusIn = (e: FocusEvent) => {
+      if (panning || pointers.size > 0) return;
+      const target = e.target;
+      if (!(target instanceof SVGAElement) || !svg.contains(target)) return;
+      const box = target.getBBox();
+      if (box.width <= 0 || box.height <= 0) return;
+      const next = viewToIncludeShape(view, world, {
+        x: box.x,
+        y: box.y,
+        w: box.width,
+        h: box.height,
+      });
+      if (next !== view) animateTo(next); // identity-unchanged when already fully visible
     };
 
     // Reset to the world view on a bfcache restore (SPEC §7 — no persistence).
@@ -401,6 +432,7 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
     svg.addEventListener("pointerdown", onPointerDown);
     svg.addEventListener("dblclick", onDblClick);
     svg.addEventListener("keydown", onKeyDown);
+    svg.addEventListener("focusin", onFocusIn);
     container.addEventListener("click", onClickCapture, true);
     window.addEventListener("pageshow", onPageShow);
 
@@ -414,6 +446,7 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
       svg.removeEventListener("pointerdown", onPointerDown);
       svg.removeEventListener("dblclick", onDblClick);
       svg.removeEventListener("keydown", onKeyDown);
+      svg.removeEventListener("focusin", onFocusIn);
       container.removeEventListener("click", onClickCapture, true);
       window.removeEventListener("pageshow", onPageShow);
       endPanning();
@@ -432,7 +465,7 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
 
   return (
     <div ref={rootRef} className={styles.zoomLayer}>
-      <div className={styles.zoomControls} role="group" aria-label={labels.instructions}>
+      <div className={styles.zoomControls} role="group" aria-label={labels.controls}>
         <button
           type="button"
           className={styles.zoomButton}

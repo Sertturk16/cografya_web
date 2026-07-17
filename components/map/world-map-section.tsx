@@ -57,6 +57,7 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
     zoomOut: tMap("zoomOut"),
     reset: tMap("resetView"),
     instructions: tMap("keyboardInstructions"),
+    controls: tMap("zoomControls"),
     hint: tMap("zoomHint"),
     dismissHint: tMap("dismissHint"),
   };
@@ -67,6 +68,16 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
       <p className={styles.intro}>{tMap("sectionBody")}</p>
 
       <div className={styles.mapRoot} data-map-root>
+        {/* Rendered BEFORE the <svg> so the zoom controls sit ahead of the ~190 crawlable
+            country links in tab order (review I3) — keyboard users reach +/−/reset without
+            tabbing through every country. Visual position is unaffected (the layer is
+            position:absolute); the island still reaches the <svg> via querySelector. */}
+        <MapZoomPan
+          viewBox={WORLD_MAP_VIEWBOX}
+          instructionsId={instructionsId}
+          labels={zoomLabels}
+        />
+
         <svg className={styles.svg} viewBox={WORLD_MAP_VIEWBOX} aria-labelledby={titleId}>
           <title id={titleId}>{tMap("mapTitle")}</title>
           {COUNTRY_SHAPES.map((shape) => {
@@ -144,11 +155,6 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
         </svg>
 
         <MapHoverCard />
-        <MapZoomPan
-          viewBox={WORLD_MAP_VIEWBOX}
-          instructionsId={instructionsId}
-          labels={zoomLabels}
-        />
 
         {/* Keyboard-controls description the zoomable SVG points to via aria-describedby
             (set client-side, SPEC §5). Visually hidden — the always-visible +/− buttons

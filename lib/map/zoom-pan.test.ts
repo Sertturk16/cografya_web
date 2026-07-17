@@ -12,7 +12,9 @@ import {
   moveDistance,
   panBy,
   parseViewBox,
+  viewToIncludeShape,
   zoomAtPoint,
+  zoomFromPinch,
   zoomOf,
 } from "./zoom-pan";
 
@@ -123,11 +125,84 @@ describe("zoomAtPoint (cursor-anchored zoom)", () => {
     expect(zoomOf(WORLD, next)).toBeCloseTo(MAX_ZOOM, 6);
   });
 
-  it("never produces a view that escapes the world bbox", () => {
+  it("never produces a view that escapes the world bbox (top-left anchor)", () => {
     // Anchor at the top-left corner while zooming in — result must stay clamped.
     const next = zoomAtPoint(WORLD, WORLD, 8, 0, 0);
     expect(next.x).toBeGreaterThanOrEqual(WORLD.x);
     expect(next.y).toBeGreaterThanOrEqual(WORLD.y);
+    expect(next.x + next.w).toBeLessThanOrEqual(WORLD.x + WORLD.w + 1e-9);
+    expect(next.y + next.h).toBeLessThanOrEqual(WORLD.y + WORLD.h + 1e-9);
+  });
+
+  it("never produces a view that escapes the world bbox (bottom-right anchor)", () => {
+    // Symmetric counterpart to the top-left case (review M7): anchor at the far corner.
+    const next = zoomAtPoint(WORLD, WORLD, 8, 1, 1);
+    expect(next.x).toBeGreaterThanOrEqual(WORLD.x);
+    expect(next.y).toBeGreaterThanOrEqual(WORLD.y);
+    expect(next.x + next.w).toBeLessThanOrEqual(WORLD.x + WORLD.w + 1e-9);
+    expect(next.y + next.h).toBeLessThanOrEqual(WORLD.y + WORLD.h + 1e-9);
+  });
+});
+
+describe("zoomFromPinch (SPEC §3 pinch ratio)", () => {
+  it("zooms in when the fingers spread apart", () => {
+    // 2× the start separation from a 3× base → 6×.
+    expect(zoomFromPinch(3, 100, 200)).toBe(6);
+  });
+
+  it("zooms out when the fingers come together", () => {
+    // Half the start separation from a 6× base → 3×.
+    expect(zoomFromPinch(6, 200, 100)).toBe(3);
+  });
+
+  it("leaves zoom unchanged when the separation is unchanged", () => {
+    expect(zoomFromPinch(4, 150, 150)).toBe(4);
+  });
+
+  it("clamps a runaway spread to MAX_ZOOM", () => {
+    expect(zoomFromPinch(8, 100, 1000)).toBe(MAX_ZOOM);
+  });
+
+  it("clamps an over-pinch to MIN_ZOOM (never past the full world)", () => {
+    expect(zoomFromPinch(2, 400, 1)).toBe(MIN_ZOOM);
+  });
+
+  it("holds the start zoom on a degenerate zero start distance", () => {
+    expect(zoomFromPinch(5, 0, 200)).toBe(5);
+  });
+});
+
+describe("viewToIncludeShape (keyboard focus-follows-view, WCAG 2.4.7)", () => {
+  const VIEW: ViewBox = { x: 0, y: 0, w: 250, h: 100 }; // a 4× zoomed view at the origin
+
+  it("returns the SAME view reference when the shape is already fully visible", () => {
+    const shape: ViewBox = { x: 10, y: 10, w: 20, h: 20 };
+    expect(viewToIncludeShape(VIEW, WORLD, shape)).toBe(VIEW);
+  });
+
+  it("pans right just enough to bring a shape off the right edge into view", () => {
+    const shape: ViewBox = { x: 300, y: 0, w: 20, h: 20 }; // right edge 320 > view right 250
+    // x moves to 320 - 250 = 70; y already in range.
+    expect(viewToIncludeShape(VIEW, WORLD, shape)).toEqual({ x: 70, y: 0, w: 250, h: 100 });
+  });
+
+  it("pans to the leading edges for a shape off the top-left", () => {
+    const view: ViewBox = { x: 500, y: 200, w: 250, h: 100 };
+    const shape: ViewBox = { x: 400, y: 150, w: 20, h: 20 };
+    expect(viewToIncludeShape(view, WORLD, shape)).toEqual({ x: 400, y: 150, w: 250, h: 100 });
+  });
+
+  it("centres a shape larger than the viewport (never zooms in), preserving zoom", () => {
+    const view: ViewBox = { x: 100, y: 0, w: 250, h: 100 };
+    const shape: ViewBox = { x: 0, y: 0, w: 400, h: 50 }; // wider than the 250-wide view
+    // x centred: 0 + 200 - 125 = 75; y already contained → stays 0; w/h unchanged.
+    expect(viewToIncludeShape(view, WORLD, shape)).toEqual({ x: 75, y: 0, w: 250, h: 100 });
+  });
+
+  it("keeps the resulting view clamped inside the world bbox", () => {
+    const view: ViewBox = { x: 750, y: 300, w: 250, h: 100 }; // hard against the SE corner
+    const shape: ViewBox = { x: 980, y: 390, w: 15, h: 8 };
+    const next = viewToIncludeShape(view, WORLD, shape);
     expect(next.x + next.w).toBeLessThanOrEqual(WORLD.x + WORLD.w + 1e-9);
     expect(next.y + next.h).toBeLessThanOrEqual(WORLD.y + WORLD.h + 1e-9);
   });
@@ -170,8 +245,10 @@ describe("isRealClick (SPEC §4 threshold)", () => {
     expect(isRealClick(CLICK_MOVE_THRESHOLD_PX, 10)).toBe(false);
     expect(isRealClick(1, CLICK_DURATION_THRESHOLD_MS)).toBe(false);
   });
+});
 
-  it("sanity: MIN/MAX zoom bounds are the owner-ruled values", () => {
+describe("zoom bounds (owner-ruled)", () => {
+  it("pins MIN/MAX to the owner-ruled values", () => {
     expect(MIN_ZOOM).toBe(1);
     expect(MAX_ZOOM).toBe(12);
   });
