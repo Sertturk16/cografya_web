@@ -122,9 +122,10 @@ semantic colors (AQI / earthquake intensity / SST) stay STANDARD, never recolore
 
 - **NO local test execution — CI is the ONLY test gate.** Locally run ONLY
   `npx tsc --noEmit` + `eslint` on changed files (**no `--fix`**). Verify tests by reading
-  the PR's CI, never by running them locally. (Web test harness = Faz-2 follow-up; there is
-  **no test job in CI yet** — today's web CI is `typecheck-and-lint` + `build` only, so the
-  local gate is `tsc` + `eslint`. The test-reading discipline applies once the harness lands.)
+  the PR's CI, never by running them locally. (The vitest harness landed in PR #15 and CI
+  now runs three jobs — `typecheck-and-lint`, **`test` / "Unit Tests"** (`pnpm test`), and
+  `build`. Tests live at `lib/**/*.test.ts` + `components/**/*.test.{ts,tsx}` per
+  `vitest.config.ts`. The local gate is still `tsc` + `eslint` only.)
 - **CI green is the single merge gate.** Never merge while red; never weaken or skip a
   test/SEO/a11y check to go green — diagnose and fix.
 - Standalone `tsc --noEmit` + `lint` pass as their own CI job (`.github/workflows/ci.yml`:

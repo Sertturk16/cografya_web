@@ -2,10 +2,7 @@ import type { MetadataRoute } from "next";
 import { getCountryBySlug, getCountriesResilient } from "@/lib/api/countries";
 import { getProvinceBySlug, getProvincesResilient, isProductionBuild } from "@/lib/api/provinces";
 import type { CountryDetail, ProvinceDetail } from "@/lib/api/types";
-import { getPathname } from "@/i18n/navigation";
-import { routing, type Locale } from "@/i18n/routing";
-import { type ContentSurface, indexableLocales } from "@/lib/seo/indexing";
-import { absoluteUrl } from "@/lib/seo/site";
+import { sitemapEntriesFor } from "@/lib/seo/sitemap-entries";
 
 /**
  * Root sitemap — a single flat urlset served at `/sitemap.xml` (the URL `robots.ts` points
@@ -22,72 +19,26 @@ import { absoluteUrl } from "@/lib/seo/site";
  * flat file. The builders below are kept per-hub and isolated so the split is mechanical
  * once a Next-16-verified index mechanism is in place (tracked follow-up — hand to Atlas).
  *
- * Every entry carries the full hreflang alternates set (tr/en/x-default) so the language
- * mapping is annotated in the sitemap too, not only in <head>. `lastmod` is the entity's
- * real api `updated_at`.
- */
-
-type Href = Parameters<typeof getPathname>[0]["href"];
-
-// Sitemap URLs are built through the same absoluteUrl() helper as canonicals so the two
-// can never drift (both must reference the identical origin + path form).
-function languagesFor(
-  hrefForLocale: (locale: Locale) => Href,
-  surface: ContentSurface,
-): Record<string, string> {
-  const languages: Record<string, string> = {};
-  for (const locale of indexableLocales(surface)) {
-    languages[locale] = absoluteUrl(getPathname({ locale, href: hrefForLocale(locale) }));
-  }
-  languages["x-default"] = absoluteUrl(
-    getPathname({
-      locale: routing.defaultLocale,
-      href: hrefForLocale(routing.defaultLocale),
-    }),
-  );
-  return languages;
-}
-
-/**
- * One <url> per INDEXABLE locale for a logical page, each carrying the alternates set.
+ * Each entry carries the hreflang alternates for the locales in which that page is
+ * INDEXABLE, plus `x-default` — so the language mapping is annotated in the sitemap too,
+ * not only in <head>. For a `"localized"` surface that is the full tr/en/x-default set;
+ * for a `"trNarrative"` surface the de-indexed locale is absent from both the urlset and
+ * the alternates, exactly mirroring what `buildAlternates` emits in the document head
+ * (see `lib/seo/sitemap-entries.ts` for the rationale). `lastmod` is the entity's real
+ * api `updated_at`.
  *
- * A `noindex` URL is deliberately omitted rather than listed: a sitemap entry is a request
- * to index, so listing a page that answers `noindex` sends the crawler two opposite signals
- * for the same URL. It also matters that Search Central calls sitemap `xhtml:link`
- * annotations *equivalent* to the in-`<head>` tags — so leaving the EN alternate in the
- * sitemap would rebuild in XML the very hreflang cluster `buildAlternates` dissolves in the
- * document head, and the two surfaces would contradict each other.
- *
- * (The known exception — John Mueller's advice to KEEP already-indexed URLs in the sitemap
- * with a fresh `lastmod` so Googlebot recrawls and sees the new `noindex` faster — does not
- * apply here: the site has never been deployed (`NEXT_PUBLIC_SITE_URL` is still localhost,
- * there is no deploy job), so none of these URLs are in any index to be evicted. There is
- * nothing to accelerate; this ships before first crawl.)
+ * The entry-building rules themselves live in `lib/seo/sitemap-entries.ts` so they can be
+ * unit-tested without the api fetching below; this file owns data + resilience only.
  */
-function entriesFor(
-  hrefForLocale: (locale: Locale) => Href,
-  lastModified: Date,
-  priority: number,
-  surface: ContentSurface = "localized",
-): MetadataRoute.Sitemap {
-  const languages = languagesFor(hrefForLocale, surface);
-  return indexableLocales(surface).map((locale) => ({
-    url: absoluteUrl(getPathname({ locale, href: hrefForLocale(locale) })),
-    lastModified,
-    changeFrequency: "weekly" as const,
-    priority,
-    alternates: { languages },
-  }));
-}
 
 /** Static hub pages. */
 function staticEntries(): MetadataRoute.Sitemap {
   const now = new Date();
   return [
-    ...entriesFor(() => "/", now, 1),
-    ...entriesFor(() => "/turkiye", now, 0.8),
-    ...entriesFor(() => "/dunya", now, 0.8),
-    ...entriesFor(() => "/hakkimizda", now, 0.5),
+    ...sitemapEntriesFor(() => "/", now, 1),
+    ...sitemapEntriesFor(() => "/turkiye", now, 0.8),
+    ...sitemapEntriesFor(() => "/dunya", now, 0.8),
+    ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
   ];
 }
 
@@ -118,7 +69,7 @@ async function provinceEntries(): Promise<MetadataRoute.Sitemap> {
   ).filter((detail): detail is ProvinceDetail => detail !== null);
 
   return details.flatMap((detail) =>
-    entriesFor(
+    sitemapEntriesFor(
       (locale) => ({
         pathname: "/turkiye/[slug]",
         params: { slug: locale === "en" ? detail.slugEn : detail.slugTr },
@@ -152,7 +103,7 @@ async function countryEntries(): Promise<MetadataRoute.Sitemap> {
   ).filter((detail): detail is CountryDetail => detail !== null);
 
   return details.flatMap((detail) =>
-    entriesFor(
+    sitemapEntriesFor(
       (locale) => ({
         pathname: "/dunya/[slug]",
         params: { slug: locale === "en" ? detail.slugEn : detail.slugTr },

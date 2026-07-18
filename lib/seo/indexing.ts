@@ -38,7 +38,7 @@ import { routing, type Locale } from "@/i18n/routing";
  * `app/[locale]/{turkiye,dunya}/[slug]/page.tsx` are removed). Flipping it while the pages
  * still render TR-gated chrome would re-expose the scaled-content surface.
  */
-export const EN_CONTENT_READY = false;
+export const EN_CONTENT_READY: boolean = false;
 
 /**
  * The content shape of a route, which is what decides whether EN is indexable.
@@ -53,10 +53,19 @@ export const EN_CONTENT_READY = false;
  */
 export type ContentSurface = "localized" | "trNarrative";
 
-/** The locales in which a page of this surface may be indexed. */
+/**
+ * The locales in which a page of this surface may be indexed.
+ *
+ * The narrowed branch keeps the DEFAULT locale rather than excluding `"en"` by name. The
+ * two are identical while `routing.locales` is `["tr", "en"]`, but they mean different
+ * things: the invariant this module documents is *"the locale that owns the narrative is
+ * never de-indexed"*, not *"English is de-indexed"*. Expressed this way, a future third
+ * locale is de-indexed on TR-narrative surfaces by default and must opt IN — the same
+ * fail-safe direction as `surface` defaulting to `"localized"`.
+ */
 export function indexableLocales(surface: ContentSurface): readonly Locale[] {
   if (surface === "localized" || EN_CONTENT_READY) return routing.locales;
-  return routing.locales.filter((locale) => locale !== "en");
+  return routing.locales.filter((locale) => locale === routing.defaultLocale);
 }
 
 /** Whether THIS (locale, surface) pair is indexable. */

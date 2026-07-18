@@ -19,8 +19,13 @@ import { absoluteUrl } from "@/lib/seo/site";
  * Turkish-first, while linking BOTH the TR (`/`) and EN (`/en`) roots so neither locale is
  * hidden from an ingesting agent. All links are built through `getPathname` + `absoluteUrl`
  * — the same helpers as canonicals/sitemap — so the localized slugs (e.g. `/en/about`)
- * can never drift from the routing table. The sitemap pointer is the authoritative,
- * complete URL set; this file is the human/agent-legible overview, not a crawl index.
+ * can never drift from the routing table. The sitemap pointer is the authoritative set of
+ * INDEXABLE URLs; this file is the human/agent-legible overview, not a crawl index.
+ *
+ * The prose below must not over-claim the sitemap's contents. Detail pages are currently
+ * indexable in Turkish only (`lib/seo/indexing.ts` — EN detail pages are `noindex` until
+ * real EN narrative content lands), so the sitemap is NOT "every URL in both locales".
+ * This file ships to LLM crawlers as published text, not as a comment — keep it true.
  */
 
 export const dynamic = "force-static";
@@ -38,7 +43,7 @@ function buildLlmsTxt(): string {
 
 > Free, open geography education platform for Türkiye and the world. Turkish-first (TR at the root, English under /en), with source-grounded content on the 81 provinces of Türkiye, world countries, landforms and geography concepts.
 
-Coğrafya Platformu is a non-commercial education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete, canonical URL set across both locales.
+Coğrafya Platformu is a non-commercial education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete set of indexable URLs. Note: detail pages (provinces, countries) are currently published in Turkish only — their English counterparts are served with a "noindex" directive until English narrative content is written.
 
 ## Main sections (Turkish, default locale)
 
@@ -56,7 +61,7 @@ Coğrafya Platformu is a non-commercial education project. All content is free t
 
 ## Full crawl discovery
 
-- [Sitemap](${sitemapUrl}): Complete URL set for both locales, with hreflang annotations and real last-modified dates.
+- [Sitemap](${sitemapUrl}): Every indexable URL, with hreflang annotations and real last-modified dates. Sections listed above appear in both locales; detail pages appear in Turkish only for now.
 `;
 }
 
