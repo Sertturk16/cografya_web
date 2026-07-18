@@ -160,6 +160,11 @@ export interface components {
              * @example istanbul
              */
             slugEn: string;
+            /**
+             * @description Köppen iklim kısa kodu (MGM 2023). Liste DTO’suna bilinçli eklendi: "benzer iklime sahip iller" bloğu bu alan olmadan kurulamaz (aynı Köppen kodlu illere çapraz link). Saf toplama, kırıcı değil.
+             * @example Csa
+             */
+            climateKoppen: string | null;
         };
         ProvinceMapSummaryDto: {
             /**
@@ -207,6 +212,176 @@ export interface components {
              * @example 39
              */
             districtCount: number | null;
+        };
+        ClimateMonthlyNormalDto: {
+            /**
+             * @description 1 = Ocak … 12 = Aralık.
+             * @example 7
+             */
+            month: number;
+            /**
+             * @description Ortalama sıcaklık (°C). Çekirdek çift — yayınlanan her ilde doludur.
+             * @example 27.9
+             */
+            tempMeanC: number | null;
+            /**
+             * @description Ortalama en yüksek sıcaklık (°C).
+             * @example 33.2
+             */
+            tempMaxMeanC: number | null;
+            /**
+             * @description Ortalama en düşük sıcaklık (°C).
+             * @example 22.6
+             */
+            tempMinMeanC: number | null;
+            /**
+             * @description Aylık toplam yağış miktarı ortalaması (mm). Çekirdek çift.
+             * @example 4.7
+             */
+            precipitationMm: number | null;
+            /**
+             * @description Ortalama günlük güneşlenme süresi (saat).
+             * @example 11.2
+             */
+            sunshineHours: number | null;
+            /**
+             * @description Ortalama yağışlı gün sayısı.
+             * @example 2.1
+             */
+            rainyDays: number | null;
+            /**
+             * @description O ay ölçülmüş en yüksek sıcaklık (°C) — uç değer, ortalama değil.
+             * @example 45.6
+             */
+            tempRecordMaxC: number | null;
+            /**
+             * Format: date
+             * @description `tempRecordMaxC` gerçekleşme tarihi (ISO YYYY-MM-DD). Değerden bağımsız nullable.
+             * @example 2000-07-30
+             */
+            tempRecordMaxDate: string | null;
+            /**
+             * @description O ay ölçülmüş en düşük sıcaklık (°C) — uç değer, ortalama değil.
+             * @example 12.3
+             */
+            tempRecordMinC: number | null;
+            /**
+             * Format: date
+             * @description `tempRecordMinC` gerçekleşme tarihi (ISO YYYY-MM-DD). Değerden bağımsız nullable.
+             * @example 1976-07-05
+             */
+            tempRecordMinDate: string | null;
+        };
+        ClimateExtremeRecordDto: {
+            /**
+             * @description Ölçülen uç değer (ham sayı).
+             * @example 189.4
+             */
+            value: number;
+            /**
+             * Format: date
+             * @description Gerçekleşme tarihi (ISO YYYY-MM-DD). MGM tarihi basmadıysa null — değerden bağımsız nullable.
+             * @example 1968-12-26
+             */
+            date: string | null;
+        };
+        ClimateRecordsDto: {
+            /** @description Günlük toplam en yüksek yağış miktarı (mm). */
+            dailyMaxPrecipitationMm: components["schemas"]["ClimateExtremeRecordDto"] | null;
+            /** @description Günlük en hızlı rüzgâr (m/sn). */
+            fastestWindMs: components["schemas"]["ClimateExtremeRecordDto"] | null;
+            /** @description En yüksek kar yüksekliği (cm). */
+            maxSnowDepthCm: components["schemas"]["ClimateExtremeRecordDto"] | null;
+        };
+        SeasonalPrecipitationDto: {
+            /**
+             * @description Kış (Ara+Oca+Şub) yağış payı (%).
+             * @example 45
+             */
+            winterPct: number;
+            /**
+             * @description İlkbahar (Mar+Nis+May) yağış payı (%).
+             * @example 27
+             */
+            springPct: number;
+            /**
+             * @description Yaz (Haz+Tem+Ağu) yağış payı (%).
+             * @example 6
+             */
+            summerPct: number;
+            /**
+             * @description Sonbahar (Eyl+Eki+Kas) yağış payı (%).
+             * @example 22
+             */
+            autumnPct: number;
+        };
+        ClimateDerivedDto: {
+            /**
+             * @description Yıllık ortalama sıcaklık (°C) — 12 aylık ortalamanın ortalaması (TÜRETİLMİŞ, MGM değil).
+             * @example 19.1
+             */
+            annualMeanTempC: number;
+            /**
+             * @description Yıllık toplam yağış (mm) — 12 aylık toplamın toplamı (TÜRETİLMİŞ, MGM değil).
+             * @example 592.4
+             */
+            annualPrecipitationMm: number;
+            /**
+             * @description En sıcak ay (1-12).
+             * @example 8
+             */
+            hottestMonth: number;
+            /**
+             * @description En soğuk ay (1-12).
+             * @example 1
+             */
+            coldestMonth: number;
+            /**
+             * @description En yağışlı ay (1-12).
+             * @example 12
+             */
+            wettestMonth: number;
+            /**
+             * @description En kurak ay (1-12).
+             * @example 7
+             */
+            driestMonth: number;
+            /**
+             * @description Yıllık sıcaklık farkı (°C) — en sıcak ile en soğuk ay ortalaması arası (TÜRETİLMİŞ).
+             * @example 20.4
+             */
+            annualTempRangeC: number;
+            /** @description Mevsimsel yağış yüzdeleri (tam 100 eder) — TÜRETİLMİŞ. */
+            seasonalPrecipitation: components["schemas"]["SeasonalPrecipitationDto"];
+        };
+        ClimateDto: {
+            /**
+             * @description Kaynak seri kimliği — MGM Genel İstatistik tablosu (k=A), 81 il için tek seri.
+             * @example mgm_general
+             * @enum {string}
+             */
+            source: "mgm_general";
+            /**
+             * @description Bu serinin okunduğu MGM sayfası — il başına (MGM anahtarı Türkçe adla aynı değil).
+             * @example https://www.mgm.gov.tr/veridegerlendirme/il-ve-ilceler-istatistik.aspx?k=A&m=ICEL
+             */
+            sourceUrl: string;
+            /**
+             * @description Ölçüm periyodu başlangıç yılı — il başına değişir, sayfadan okunur.
+             * @example 1929
+             */
+            periodStartYear: number;
+            /**
+             * @description Ölçüm periyodu bitiş yılı.
+             * @example 2025
+             */
+            periodEndYear: number;
+            /** @description Aylık normaller — tam 12 ay, 1-12 sırasıyla. */
+            months: components["schemas"]["ClimateMonthlyNormalDto"][];
+            /** @description Tüm zamanların rekorları. */
+            records: components["schemas"]["ClimateRecordsDto"];
+            /** @description Seriden TÜRETİLMİŞ yıllık/uç/mevsimsel değerler — MGM’e atfedilemez. */
+            derived: components["schemas"]["ClimateDerivedDto"];
         };
         HydrographyFeatureDto: {
             /**
@@ -337,6 +512,10 @@ export interface components {
              * @example MGM'nin 2023 Köppen sınıflandırması bu ili Csa (Akdeniz iklimi) olarak verir; ancak MGM'nin kendi raporu bu basitleştirilmiş yöntemin bölgesel ayırt ediciliğinin sınırlı olduğunu not düşer.
              */
             climateNoteTr: string | null;
+            /** @description İklim serisi (MGM k=A aylık normalleri + kaynak/dönem/rekorlar) + TÜRETİLMİŞ yıllık/mevsimsel değerler. Null = yayınlanabilir seri yok → web iklim bölümünü hiç render etmez. Türetilmiş değerler bizimdir, MGM'e atfedilemez; tüm sayılar ham (biçimlendirme web'in işi). */
+            climate: components["schemas"]["ClimateDto"] | null;
+            /** @description NOVA'nın il-il yazdığı iklim yorumu (TR) — mekanizma anlatan gerçek düzyazı. `climateNoteTr` (kilitli MGM Köppen uyarısı) DEĞİL; ayrı bir alandır. İçerik dalgaları doldurana kadar null. */
+            climateNarrativeTr: string | null;
             /** @description Öne çıkan yer şekilleri / jeoloji notu (TR). */
             landformNoteTr: string | null;
             /** @description Hidrografya — kısa düzyazı not (nehir/göl/baraj anlatısı, TR). */
@@ -585,6 +764,8 @@ export interface components {
             climateNoteTr: string | null;
             /** @description Hidrografya — kısa düzyazı not (nehir/göl/deniz anlatısı, TR). */
             hydrographyNoteTr: string | null;
+            /** @description Egemenlik / uluslararası tanınma çerçevesi — serbest anlatı düzyazısı (TR). Yalnızca tanınma statüsü tartışmalı/standart-dışı ülkeler için doldurulur; sıradan ülkelerde null. */
+            sovereigntyNoteTr: string | null;
             /**
              * Format: date-time
              * @description Kayıt oluşturulma zamanı.

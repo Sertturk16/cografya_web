@@ -1,0 +1,314 @@
+/* İklim grafiği + tablosu (W1). Terra tokens + the two dedicated chart data ramps
+   (DESIGN.md §6.4); no hardcoded brand hex. The chart is inline SVG (server-rendered,
+   zero client JS). Contrast verified: axis/label text uses --color-slate (7.48:1 on bg,
+   7.92:1 on white); data marks use the --chart-* ramps (temp-line 5.18:1, precip-bar
+   6.88:1 on the white plot — ≥ the 3:1 graphical-object floor). */
+
+.section {
+  margin-top: 28px;
+}
+
+.heading {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0 0 14px;
+}
+
+/* ---- Chart figure ---------------------------------------------------------- */
+
+.chartFigure {
+  margin: 0;
+}
+
+.chartLayout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+  align-items: flex-start;
+}
+
+/* The frame reserves space by aspect ratio BEFORE the SVG paints → zero CLS
+   (CONVENTIONS §6 #9). White plot background matches the fact cards. */
+.chartFrame {
+  flex: 1 1 420px;
+  min-width: 300px;
+  aspect-ratio: 720 / 340;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* SVG element styling (fill/stroke via CSS so all color stays in the token layer). */
+.grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+/* 0 °C reference — heavier, so a freezing line reads at a glance (Erzurum). */
+.gridZero {
+  stroke: var(--color-slate);
+  stroke-width: 1.4;
+}
+
+.precipBar {
+  fill: var(--chart-precip-bar);
+}
+
+.tempBand {
+  fill: var(--chart-temp-band);
+  stroke: var(--chart-temp-band-edge);
+  stroke-width: 1;
+}
+
+.tempLine {
+  fill: none;
+  stroke: var(--chart-temp-line);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.tempMarker {
+  fill: var(--chart-temp-line);
+}
+
+.axisLabelLeft,
+.axisLabelRight,
+.axisUnit,
+.axisUnitRight,
+.monthLabel {
+  font-family: var(--font-body);
+  font-size: 15px;
+  fill: var(--color-slate);
+}
+
+.axisLabelLeft {
+  text-anchor: end;
+}
+
+.axisLabelRight {
+  text-anchor: start;
+}
+
+.axisUnit {
+  text-anchor: end;
+  font-weight: 700;
+  fill: var(--chart-temp-line);
+}
+
+.axisUnitRight {
+  text-anchor: start;
+  font-weight: 700;
+  fill: var(--chart-precip-bar);
+}
+
+.monthLabel {
+  text-anchor: middle;
+}
+
+/* ---- Annual summary (real DOM text — the robust comparison surface) --------- */
+
+.summary {
+  flex: 1 1 220px;
+  min-width: 200px;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+.summaryItem dt,
+.summarySeasons dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-slate);
+  margin-bottom: 2px;
+}
+
+.summaryItem dd {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+.summarySeasons {
+  grid-column: 1 / -1;
+}
+
+.summarySeasons dd {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-ink);
+  line-height: 1.5;
+}
+
+/* ---- Legend ---------------------------------------------------------------- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin-top: 14px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 20px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.swatchPrecip {
+  background: var(--chart-precip-bar);
+}
+
+/* A short bold rule — mirrors the mean-temp line's SHAPE, not just its color. */
+.swatchLine {
+  height: 0;
+  border-top: 3px solid var(--chart-temp-line);
+  border-radius: 0;
+}
+
+.swatchBand {
+  background: var(--chart-temp-band);
+  border: 1px solid var(--chart-temp-band-edge);
+}
+
+/* ---- Table ----------------------------------------------------------------- */
+
+.tableScroll {
+  margin-top: 22px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+/* Keyboard-focusable scroll region (tabIndex=0) needs a visible focus ring. */
+.tableScroll:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 640px;
+}
+
+.tableCaption {
+  caption-side: top;
+  text-align: left;
+  padding: 12px 14px 10px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  line-height: 1.45;
+}
+
+.thMonth,
+.thMetric,
+.thRow,
+.td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.thMonth,
+.thMetric {
+  background: var(--color-surface);
+  font-weight: 600;
+  color: var(--color-ink);
+  text-align: right;
+  position: sticky;
+  top: 0;
+}
+
+.thMonth {
+  text-align: left;
+}
+
+.thRow {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.td {
+  text-align: right;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- All-time records ------------------------------------------------------ */
+
+.records {
+  margin-top: 18px;
+}
+
+.recordsHeading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0 0 8px;
+}
+
+.recordsList {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px 16px;
+}
+
+.recordItem dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-slate);
+  margin-bottom: 2px;
+}
+
+.recordItem dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+.recordDate {
+  color: var(--color-slate);
+  font-size: 0.85rem;
+}
+
+/* ---- Source line ----------------------------------------------------------- */
+
+.sourceLine {
+  margin-top: 16px;
+  font-size: 0.8rem;
+  color: var(--color-slate);
+  max-width: 78ch;
+  line-height: 1.5;
+}
+
+.sourceLine a {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}

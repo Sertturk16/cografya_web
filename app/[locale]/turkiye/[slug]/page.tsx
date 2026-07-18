@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { ClimateSection } from "@/components/climate/climate-section";
 import { ProseNote } from "@/components/prose-note";
 import {
   byPlateCode,
@@ -211,6 +212,15 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       province.netMigrationRate !== null);
   const economyIndicator = province.economyIndicator;
   const showEconomy = isTr && economyIndicator !== null;
+  // İklim grafiği/tablosu (W1) — the full MGM k=A series. TR-gated (EN detail pages are
+  // noindex and have no climate caveat text, SEO-POLICY §6). `climate === null` on the DTO
+  // means "no publishable series" → the whole chart/table/source line is absent, and its
+  // MGM source is NOT added to the page's Kaynaklar line (no source for absent content).
+  // The NOVA narrative slot ships wired but empty (climateNarrativeTr is null for all 81).
+  const climateSeries = isTr ? province.climate : null;
+  const climateNarrative = isTr ? province.climateNarrativeTr : null;
+  // The İklim <h2> renders when EITHER the Köppen class line OR the series is present.
+  const showClimateSection = isTr && (climate !== null || climateSeries !== null);
 
   const hydrographyTypeLabels: Record<HydrographyFeature["type"], string> = {
     baraj: t("hydrographyTypeBaraj"),
@@ -224,6 +234,9 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // base sources line is shown unchanged.
   const extraSources: string[] = [];
   if (showLandform) extraSources.push(t("sourcesLandform"));
+  // Climate normals source joins the Kaynaklar line ONLY when the chart actually renders
+  // (PLAN §2 — never cite a source for content that is not on the page).
+  if (climateSeries !== null) extraSources.push(t("sourcesClimate"));
   if (showHydrography) extraSources.push(t("sourcesHydrography"));
   if (showEconomy) extraSources.push(t("sourcesEconomy"));
 
@@ -330,26 +343,46 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           where a lone "Csa" misinforms). So the whole climate block defers to Faz-3
           on EN — with no English caveat available, a caveat-less code is not shown.
           Full EN (climateEn contract + values) is a tracked Faz-3 prerequisite. */}
-      {locale === "tr" && climate && (
+      {showClimateSection && (
         <section className="section">
           <h2>{t("climateHeading")}</h2>
-          <p className={styles.climateValue}>
-            {province.climateNoteTr !== null
-              ? t("climateValue", { className: climate.className, koppen: climate.koppen })
-              : /* Defense-in-depth (§6 "no bare Csa"): if the mandatory caveat is
-                   absent (a contract violation the api already guards), show the
-                   class name only — never a caveat-less Köppen code. */
-                t("climateClassOnly", { className: climate.className })}
-          </p>
-          {/* The caveat stays MANDATORY and its text is never trimmed, but per the
-              owner's UX ruling it renders collapsed (progressive disclosure) so it
-              is present in full + crawlable without being the page's narrative wall
-              (see province-detail.module.css .climateNote). */}
-          {province.climateNoteTr !== null && (
-            <details className={styles.climateNote}>
-              <summary className={styles.climateNoteSummary}>{t("climateNoteLabel")}</summary>
-              <p className={styles.climateNoteBody}>{province.climateNoteTr}</p>
-            </details>
+          {climate && (
+            <>
+              <p className={styles.climateValue}>
+                {province.climateNoteTr !== null
+                  ? t("climateValue", { className: climate.className, koppen: climate.koppen })
+                  : /* Defense-in-depth (§6 "no bare Csa"): if the mandatory caveat is
+                       absent (a contract violation the api already guards), show the
+                       class name only — never a caveat-less Köppen code. */
+                    t("climateClassOnly", { className: climate.className })}
+              </p>
+              {/* The caveat stays MANDATORY and its text is never trimmed, but per the
+                  owner's UX ruling it renders collapsed (progressive disclosure) so it
+                  is present in full + crawlable without being the page's narrative wall
+                  (see province-detail.module.css .climateNote). It stays FIRST — do not
+                  touch (2026-07-11 owner UX ruling). */}
+              {province.climateNoteTr !== null && (
+                <details className={styles.climateNote}>
+                  <summary className={styles.climateNoteSummary}>{t("climateNoteLabel")}</summary>
+                  <p className={styles.climateNoteBody}>{province.climateNoteTr}</p>
+                </details>
+              )}
+            </>
+          )}
+          {/* NOVA's per-province climate interpretation (PLAN §2 — the reader arrives at
+              the prose, the chart is the evidence). Slot ships wired but empty:
+              climateNarrativeTr is null for all 81 today, so nothing renders yet. */}
+          {climateNarrative !== null && (
+            <ProseNote text={climateNarrative} className={styles.prose} />
+          )}
+          {/* Sıcaklık ve Yağış Grafiği — new <h3> INSIDE this <h2> (no new sibling <h2>).
+              Only when a publishable series exists. */}
+          {climateSeries !== null && (
+            <ClimateSection
+              climate={climateSeries}
+              provinceName={name}
+              plateCode={province.plateCode}
+            />
           )}
         </section>
       )}
