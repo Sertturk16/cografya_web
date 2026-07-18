@@ -4,12 +4,14 @@ import { getProvinceBySlug, getProvincesResilient, isProductionBuild } from "@/l
 import type { CountryDetail, ProvinceDetail } from "@/lib/api/types";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { type ContentSurface, indexableLocales } from "@/lib/seo/indexing";
 import { absoluteUrl } from "@/lib/seo/site";
 
 /**
  * Root sitemap — a single flat urlset served at `/sitemap.xml` (the URL `robots.ts` points
- * at). Total at pilot scale: static (4×2=8) + provinces (81×2=162) + countries (8×2=16) ≈
- * 186 URLs — a valid, self-contained sitemap far under Google's 50k-per-file hard limit.
+ * at). Composition: static hubs (4 pages × 2 locales = 8) + provinces + countries at ONE
+ * entry each (TR only — their EN counterparts are `noindex`, see `entriesFor`) — a valid,
+ * self-contained sitemap far under Google's 50k-per-file hard limit.
  *
  * SPLIT TRIGGER STATUS (CONVENTIONS §6 #7). The convention's proactive split-to-a-sitemap-
  * index trigger (a second content hub; province×locale > ~150) is now crossed by adding the
@@ -29,9 +31,12 @@ type Href = Parameters<typeof getPathname>[0]["href"];
 
 // Sitemap URLs are built through the same absoluteUrl() helper as canonicals so the two
 // can never drift (both must reference the identical origin + path form).
-function languagesFor(hrefForLocale: (locale: Locale) => Href): Record<string, string> {
+function languagesFor(
+  hrefForLocale: (locale: Locale) => Href,
+  surface: ContentSurface,
+): Record<string, string> {
   const languages: Record<string, string> = {};
-  for (const locale of routing.locales) {
+  for (const locale of indexableLocales(surface)) {
     languages[locale] = absoluteUrl(getPathname({ locale, href: hrefForLocale(locale) }));
   }
   languages["x-default"] = absoluteUrl(
@@ -43,14 +48,30 @@ function languagesFor(hrefForLocale: (locale: Locale) => Href): Record<string, s
   return languages;
 }
 
-/** One <url> per locale for a logical page, each carrying the full alternates set. */
+/**
+ * One <url> per INDEXABLE locale for a logical page, each carrying the alternates set.
+ *
+ * A `noindex` URL is deliberately omitted rather than listed: a sitemap entry is a request
+ * to index, so listing a page that answers `noindex` sends the crawler two opposite signals
+ * for the same URL. It also matters that Search Central calls sitemap `xhtml:link`
+ * annotations *equivalent* to the in-`<head>` tags — so leaving the EN alternate in the
+ * sitemap would rebuild in XML the very hreflang cluster `buildAlternates` dissolves in the
+ * document head, and the two surfaces would contradict each other.
+ *
+ * (The known exception — John Mueller's advice to KEEP already-indexed URLs in the sitemap
+ * with a fresh `lastmod` so Googlebot recrawls and sees the new `noindex` faster — does not
+ * apply here: the site has never been deployed (`NEXT_PUBLIC_SITE_URL` is still localhost,
+ * there is no deploy job), so none of these URLs are in any index to be evicted. There is
+ * nothing to accelerate; this ships before first crawl.)
+ */
 function entriesFor(
   hrefForLocale: (locale: Locale) => Href,
   lastModified: Date,
   priority: number,
+  surface: ContentSurface = "localized",
 ): MetadataRoute.Sitemap {
-  const languages = languagesFor(hrefForLocale);
-  return routing.locales.map((locale) => ({
+  const languages = languagesFor(hrefForLocale, surface);
+  return indexableLocales(surface).map((locale) => ({
     url: absoluteUrl(getPathname({ locale, href: hrefForLocale(locale) })),
     lastModified,
     changeFrequency: "weekly" as const,
@@ -104,6 +125,7 @@ async function provinceEntries(): Promise<MetadataRoute.Sitemap> {
       }),
       new Date(detail.updatedAt),
       0.7,
+      "trNarrative",
     ),
   );
 }
@@ -137,6 +159,7 @@ async function countryEntries(): Promise<MetadataRoute.Sitemap> {
       }),
       new Date(detail.updatedAt),
       0.7,
+      "trNarrative",
     ),
   );
 }

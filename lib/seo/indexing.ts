@@ -1,0 +1,65 @@
+import { routing, type Locale } from "@/i18n/routing";
+
+/**
+ * Per-locale indexing policy — the ONE place the EN de-index is switched.
+ *
+ * ## Why this exists (owner ruling 2026-07-18)
+ *
+ * Every narrative field the api ships is Turkish-only (`introTr`, `landformNoteTr`,
+ * `climateNoteTr`, `hydrographyNoteTr`, `settlementNoteTr`, …) and the detail pages gate
+ * them behind `isTr`. So an EN detail page renders English CHROME around a fact sheet and
+ * a templated intro sentence — no unique prose. Across ~200 countries + 81 provinces that
+ * is a large set of thin, near-identical pages: exactly Google's **scaled content abuse**
+ * pattern (https://developers.google.com/search/docs/essentials/spam-policies#scaled-content).
+ *
+ * The ruling: those EN pages get `noindex, follow` until real EN content lands. `follow`
+ * is deliberate — the internal link graph must keep being crawled.
+ *
+ * ## What this is NOT
+ *
+ * NOT a `robots.txt` Disallow. Google must be able to CRAWL a page to ever see its
+ * `noindex` ("If the page is blocked by a robots.txt file … the crawler will never see
+ * the noindex rule" — Search Central, Block Indexing). Disallow would freeze the pages in
+ * whatever state they are in, the opposite of the intent. This is the ferrumone pattern
+ * pinned in `CONVENTIONS.md` §6 #8 / `CLAUDE.md` §4 #8.
+ *
+ * ## Reverting
+ *
+ * When real EN narrative content ships, flip {@link EN_CONTENT_READY} to `true` — that one
+ * edit restores indexability, the full tr/en/x-default hreflang cluster, and the EN sitemap
+ * entries everywhere at once. No per-page edits.
+ */
+
+/**
+ * Master switch: does the platform have genuine, per-entity ENGLISH narrative content?
+ *
+ * `false` today. Flip to `true` ONLY when the api actually serves EN narrative fields AND
+ * the detail pages render them (i.e. when the `isTr` gates in
+ * `app/[locale]/{turkiye,dunya}/[slug]/page.tsx` are removed). Flipping it while the pages
+ * still render TR-gated chrome would re-expose the scaled-content surface.
+ */
+export const EN_CONTENT_READY = false;
+
+/**
+ * The content shape of a route, which is what decides whether EN is indexable.
+ *
+ * - `"localized"` — every locale has genuine, hand-written copy for this page. Today: the
+ *   home page, `/hakkimizda` ↔ `/en/about`, and the `/turkiye` + `/dunya` map hubs, whose
+ *   headings, ledes and meta strings are real EN prose in `messages/en.json` (verified, not
+ *   assumed) and whose value — the interactive map + the province/country index — is
+ *   locale-independent. These stay fully indexable in both locales.
+ * - `"trNarrative"` — the page's substance comes from TR-only api narrative fields, so the
+ *   EN rendering is chrome-only. Today: `/turkiye/[slug]` and `/dunya/[slug]`.
+ */
+export type ContentSurface = "localized" | "trNarrative";
+
+/** The locales in which a page of this surface may be indexed. */
+export function indexableLocales(surface: ContentSurface): readonly Locale[] {
+  if (surface === "localized" || EN_CONTENT_READY) return routing.locales;
+  return routing.locales.filter((locale) => locale !== "en");
+}
+
+/** Whether THIS (locale, surface) pair is indexable. */
+export function isIndexable(locale: Locale, surface: ContentSurface): boolean {
+  return indexableLocales(surface).includes(locale);
+}

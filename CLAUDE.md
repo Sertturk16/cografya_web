@@ -82,6 +82,13 @@ Scan **every** PR against this. A page that fails any item does not ship.
    province×locale ≤ ~150, one content hub, total urlset ≤ ~10k — split to
    `generateSitemaps()` per hub at the **first** of these crossed (→ §6 split trigger),
    not at the 50k hard limit.
+   **STANDING EXCEPTION — do NOT split today (→ DEC 2026-07-13).** The trigger IS crossed,
+   and the flat urlset in `app/sitemap.ts` is a knowingly-approved deviation: Next 16's
+   `generateSitemaps()` serves shards at `/sitemap/{id}.xml` but exposes **no index at
+   `/sitemap.xml`** — the exact URL `robots.ts` advertises — so splitting now would 404 the
+   sitemap entrypoint entirely. Following this rule literally BREAKS the sitemap. The flat
+   file stays until a Next-16-verified index mechanism lands (tracked follow-up with Atlas);
+   revisit only against the 50k hard limit in the meantime.
 8. **noindex ≠ Disallow.** Auth/panel pages stay crawlable with `<meta robots
 noindex,follow>`. `robots.txt` Disallow is only for api/raw-file paths.
 9. **CWV budget: LCP < 2.5s · INP < 200ms · CLS < 0.1.** Maps/embeds lazy + fixed-size

@@ -31,16 +31,32 @@ Atlas archives `pr-reviews/{PR#}.md` to
 Atlas spawns these as fresh `general-purpose` agents (until a repo-local `/review-pr`
 skill exists — Faz-2, Atlas-workspace), each pinned to the PR diff and given its template:
 
-| Role                 | Model    | When                                                                                               |
-| -------------------- | -------- | -------------------------------------------------------------------------------------------------- |
-| **code-reviewer**    | `opus`   | **Always** — correctness, architecture, contract/type safety                                       |
-| **seo-reviewer**     | `sonnet` | **Always on web** — §6 non-negotiables (metadata / canonical / hreflang / JSON-LD / sitemap / CWV) |
-| **a11y-reviewer**    | `sonnet` | **Always on web** — semantic HTML, alt-text, contrast-AA, focus/keyboard, reduced-motion           |
-| **pr-test-analyzer** | `sonnet` | When the PR touches or should touch tests                                                          |
-| **code-simplifier**  | `sonnet` | When the PR adds non-trivial logic that may be over-built                                          |
+**The roster is RIGHT-SIZED BY PR SHAPE — "always" applies only to code-reviewer**
+(→ DEC 2026-07-11 / 2026-07-12, pace levers; the shape rules themselves are **binding and
+live in `CONVENTIONS.md` §2**, which wins over this table on any conflict). Atlas evaluates
+each "Runs" condition against the actual diff before spawning; skipping a reviewer whose
+condition is unmet is correct behaviour, not a shortcut.
+
+| Role                 | Model    | Runs                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **code-reviewer**    | `opus`   | **Always**, no exception — correctness, architecture, contract/type safety                                                                                                                                                                                                                                                                                              |
+| **FENER** (SEO)      | `sonnet` | Spawned as `subagent_type: cografya-seo` (**not** from a file here). When the diff touches the SEO surface — metadata/`buildMetadata`, routing/slugs, canonical/hreflang, JSON-LD, `sitemap.ts`/`robots.ts`/`llms.txt`, or page-shell rendering/CWV. **Skipped on a presentation-only diff** (CSS/copy/asset changes that touch no SEO surface) per `CONVENTIONS.md` §2 |
+| **a11y-reviewer**    | `sonnet` | When the diff touches **rendered UI** — markup/semantics, interactive components, focus/keyboard behaviour, color/contrast tokens, motion. Skipped on a diff with no user-visible surface (pure data/config/docs)                                                                                                                                                       |
+| **pr-test-analyzer** | `sonnet` | When the PR touches tests, or changes logic that should have been tested                                                                                                                                                                                                                                                                                                |
+| **code-simplifier**  | `sonnet` | When the PR adds non-trivial logic that may be over-built                                                                                                                                                                                                                                                                                                               |
+
+**Escalation overrides right-sizing** (→ DEC 2026-07-18b K7): when a PR is flagged as an
+escalation, run the full roster regardless of the conditions above.
+
+> **The SEO leg is FENER, and FENER is the ONLY SEO voice** (→ DEC 2026-07-18b, owner
+> directive "bir tane olsun"). The retired `seo-reviewer.md` in this folder is now just a
+> pointer stub. FENER's rules live in **`SEO-POLICY.md`** (orchestrator-home root, the one
+> canonical SEO document); in the fan-out it reports on the CRITICAL/IMPORTANT/MINOR scale
+> below, while its wave-end/retroactive audit mode uses BLOCKER/UYARI/NOT.
 
 (api-repo roster — code-reviewer + security-privacy-reviewer + silent-failure-hunter —
-lives in `cografya_api/.claude/reviewers/`, Deniz's half.)
+lives in `cografya_api/.claude/reviewers/`, Deniz's half, right-sized by the same
+`CONVENTIONS.md` §2 rules.)
 
 ## Severity taxonomy (shared with api — do not diverge)
 
@@ -74,7 +90,7 @@ cografya_web/
   .claude/reviewers/
     README.md                     # this file
     code-reviewer.md
-    seo-reviewer.md
+    seo-reviewer.md               # RETIRED — pointer stub → FENER (subagent_type: cografya-seo)
     a11y-reviewer.md
     pr-test-analyzer.md
     code-simplifier.md
