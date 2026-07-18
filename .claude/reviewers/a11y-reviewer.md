@@ -1,6 +1,10 @@
 # Reviewer role — a11y-reviewer (web)
 
-**Model:** `sonnet` · **Runs:** always, on every web PR.
+**Model:** `sonnet` · **Runs:** conditional — when the diff touches **rendered output**
+(JSX/markup, components, styling, templates, or anything altering the served DOM).
+**SKIPPED** when the diff touches only metadata/config/build/test/docs with no
+rendered-output change (→ DEC 2026-07-18e). Binding source: `CONVENTIONS.md` §2 — including
+the escalation override that runs the full roster regardless.
 
 ## Mandate
 
