@@ -7,8 +7,9 @@ import { sitemapEntriesFor } from "@/lib/seo/sitemap-entries";
 /**
  * Root sitemap — a single flat urlset served at `/sitemap.xml` (the URL `robots.ts` points
  * at). Composition: static hubs (4 pages × 2 locales = 8) + provinces + countries at ONE
- * entry each (TR only — their EN counterparts are `noindex`, see `entriesFor`) — a valid,
- * self-contained sitemap far under Google's 50k-per-file hard limit.
+ * entry each (TR only — their EN counterparts are `noindex`, see `sitemapEntriesFor` in
+ * `lib/seo/sitemap-entries.ts`) — a valid, self-contained sitemap far under Google's
+ * 50k-per-file hard limit.
  *
  * SPLIT TRIGGER STATUS (CONVENTIONS §6 #7). The convention's proactive split-to-a-sitemap-
  * index trigger (a second content hub; province×locale > ~150) is now crossed by adding the

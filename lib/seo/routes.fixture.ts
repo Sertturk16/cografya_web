@@ -8,9 +8,11 @@ import type { HrefForLocale } from "@/lib/seo/sitemap-entries";
  * structural ("a de-indexed locale never appears in the urlset or the hreflang cluster"),
  * and it must hold for any entity, so the fixtures deliberately use placeholder slugs.
  *
- * Two shapes are covered because they exercise different `getPathname` paths:
- * a STATIC route (same segment in both locales) and a LOCALIZED-SLUG dynamic route (a
- * different `[slug]` value per locale — where a one-legged hreflang is actually possible).
+ * Three shapes are covered because they exercise different `getPathname` paths:
+ * a STATIC route (same segment in both locales), a LOCALIZED-SEGMENT route (a different
+ * static pathname per locale, `/hakkimizda ↔ /en/about`), and a LOCALIZED-SLUG dynamic
+ * route (a different `[slug]` value per locale — where a one-legged hreflang is actually
+ * possible).
  */
 export interface RouteFixture {
   readonly name: string;
