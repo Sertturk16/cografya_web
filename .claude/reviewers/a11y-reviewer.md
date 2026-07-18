@@ -74,6 +74,7 @@ tech / condition it breaks under.
 - Every input has an associated `<label>`; errors are programmatically associated and
   announced; required/invalid states use `aria-*`, not color alone.
 
-Do not duplicate the SEO pass (metadata/canonical/hreflang) — that is the seo-reviewer's.
+Do not duplicate the SEO pass (metadata/canonical/hreflang) — that is FENER's
+(`subagent_type: cografya-seo`, the fan-out's SEO leg).
 Color-doctrine / data-viz concerns (colorblind-safe, no rainbow) live in `DESIGN.md`; flag
 brand-vs-data color bleed if you see it, but the deep data-viz pass is Faz-2.

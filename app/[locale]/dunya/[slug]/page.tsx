@@ -80,6 +80,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: t("metaTitle", { name }),
     description: t("metaDescription", { name, continent }),
     openGraphType: "article",
+    // The narrative sections below are TR-gated (`isTr`), so the EN rendering is chrome
+    // around a fact sheet — thin + near-identical across ~200 countries. `"trNarrative"`
+    // makes EN `noindex, follow` and drops it from the hreflang cluster + sitemap until
+    // real EN content lands (single switch: `EN_CONTENT_READY`, lib/seo/indexing.ts).
+    surface: "trNarrative",
   });
 }
 

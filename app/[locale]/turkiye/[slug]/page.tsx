@@ -62,6 +62,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: t("metaTitle", { name }),
     description: t("metaDescription", { name, region }),
     openGraphType: "article",
+    // Same TR-gating as the country page (intro/landform/climate/hydrography/settlement/
+    // economy are all `isTr`), so the EN province page is chrome-only. See
+    // `lib/seo/indexing.ts` for the policy and the single revert switch.
+    surface: "trNarrative",
   });
 }
 

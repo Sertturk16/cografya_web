@@ -61,5 +61,5 @@ a CRITICAL requires a concrete failure scenario.
   values live-verifiable claims over speculation (PR#2 caught a real 500 inside a
   "one-line" fix this way).
 
-SEO-surface and a11y specifics are owned by the seo-reviewer and a11y-reviewer — flag
+SEO-surface and a11y specifics are owned by FENER (the SEO leg) and the a11y-reviewer — flag
 anything you notice, but defer the deep pass to them (avoid duplicate noise).
