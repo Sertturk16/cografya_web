@@ -17,5 +17,19 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["lib/**/*.test.ts", "components/**/*.test.{ts,tsx}"],
+    server: {
+      deps: {
+        // The SEO tests exercise the REAL `getPathname` from `i18n/navigation`, which is
+        // the only honest way to assert canonical/hreflang URLs. Reaching it pulls in
+        // next-intl's `createNavigation`, whose module also imports `next/navigation` for
+        // the client hooks it re-exports (`useRouter`, `usePathname` — imported here, never
+        // called). Left externalized, Node resolves that bare specifier itself and fails
+        // ("Cannot find module …/next/navigation"), because Next's subpath exports need
+        // bundler-style resolution. Inlining hands next-intl to Vite, which honours the
+        // exports map. This makes the dependency resolvable — it does not stub or weaken
+        // anything: the routing table and path building under test stay entirely real.
+        inline: ["next-intl"],
+      },
+    },
   },
 });
