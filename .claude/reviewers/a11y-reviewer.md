@@ -1,6 +1,12 @@
 # Reviewer role — a11y-reviewer (web)
 
-**Model:** `sonnet` · **Runs:** always, on every web PR.
+**Model:** `sonnet` · **Runs:** conditional — when the diff touches **rendered UI** (markup/
+semantics, interactive components, focus/keyboard behaviour, color/contrast tokens, motion).
+**Skipped** on a diff with no user-visible surface (pure data/config/docs). The roster is
+right-sized by PR shape and only `code-reviewer` is unconditional; the binding shape rules
+live in `CONVENTIONS.md` §2 (→ DEC 2026-07-11 / 2026-07-12), with the roster table in
+`.claude/reviewers/README.md`. Escalation-flagged PRs run the full roster regardless
+(→ DEC 2026-07-18b K7).
 
 ## Mandate
 

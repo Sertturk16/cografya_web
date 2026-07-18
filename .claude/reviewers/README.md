@@ -28,8 +28,11 @@ Atlas archives `pr-reviews/{PR#}.md` to
 
 ## Roster (web)
 
-Atlas spawns these as fresh `general-purpose` agents (until a repo-local `/review-pr`
-skill exists — Faz-2, Atlas-workspace), each pinned to the PR diff and given its template:
+Atlas drives the fan-out through the **`review-pr` skill** in the Atlas workspace
+(`.claude/skills/review-pr/SKILL.md`), which landed and made its first live run on PR #16.
+Reviewers are still spawned as fresh `general-purpose` agents, each pinned to the PR diff
+and given its template below (FENER is the exception — a real subagent, see the note after
+the table):
 
 **The roster is RIGHT-SIZED BY PR SHAPE — "always" applies only to code-reviewer**
 (→ DEC 2026-07-11 / 2026-07-12, pace levers; the shape rules themselves are **binding and
@@ -40,7 +43,7 @@ condition is unmet is correct behaviour, not a shortcut.
 | Role                 | Model    | Runs                                                                                                                                                                                                                                                                                                                                                                    |
 | -------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **code-reviewer**    | `opus`   | **Always**, no exception — correctness, architecture, contract/type safety                                                                                                                                                                                                                                                                                              |
-| **FENER** (SEO)      | `sonnet` | Spawned as `subagent_type: cografya-seo` (**not** from a file here). When the diff touches the SEO surface — metadata/`buildMetadata`, routing/slugs, canonical/hreflang, JSON-LD, `sitemap.ts`/`robots.ts`/`llms.txt`, or page-shell rendering/CWV. **Skipped on a presentation-only diff** (CSS/copy/asset changes that touch no SEO surface) per `CONVENTIONS.md` §2 |
+| **FENER** (SEO)      | `sonnet` | Spawned as `subagent_type: cografya-seo` (**not** from a file here). When the diff touches the SEO surface — metadata/`buildMetadata`, routing/slugs, canonical/hreflang, JSON-LD, `sitemap.ts`/`robots.ts`/`llms.txt`, or data-fetching/schema. **Skipped on a presentation-only diff** (JSX/markup, copy/i18n values, styling, assets — touching no SEO surface) per `CONVENTIONS.md` §2. Note: a **rendering-mode change** (SSG→SSR/CSR, adding `dynamic(… { ssr: false })` around content) is a data-fetching change, NOT presentation-only — it still triggers FENER |
 | **a11y-reviewer**    | `sonnet` | When the diff touches **rendered UI** — markup/semantics, interactive components, focus/keyboard behaviour, color/contrast tokens, motion. Skipped on a diff with no user-visible surface (pure data/config/docs)                                                                                                                                                       |
 | **pr-test-analyzer** | `sonnet` | When the PR touches tests, or changes logic that should have been tested                                                                                                                                                                                                                                                                                                |
 | **code-simplifier**  | `sonnet` | When the PR adds non-trivial logic that may be over-built                                                                                                                                                                                                                                                                                                               |
