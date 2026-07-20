@@ -74,6 +74,10 @@
   --container-max: 1120px;
   --radius: 10px;
   --radius-lg: 16px;
+  /* Sticky site-header height (padding-block 12px×2 + ~28px brand row + 1px border).
+     Referenced by scroll-margin-top on deep-link anchor targets so a followed fragment
+     lands below the opaque sticky header, not underneath it. */
+  --header-height: 3.5rem;
 }
 
 *,
