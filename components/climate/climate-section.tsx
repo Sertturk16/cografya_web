@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { Climate } from "@/lib/api/types";
+import type { Locale } from "@/i18n/routing";
 import { ClimateChart } from "./climate-chart";
 import { ClimateTable } from "./climate-table";
 import styles from "./climate.module.css";
@@ -9,7 +10,19 @@ interface ClimateSectionProps {
   provinceName: string;
   /** Plaka kodu — used only to keep the chart's title/desc ids unique on the page. */
   plateCode: string;
+  /** Active locale — selects the permanent deep-link anchor slug. */
+  locale: Locale;
 }
+
+/**
+ * Permanent deep-link anchor for the chart heading (PLAN §2). Localized so a shared
+ * link always lands on the right heading; stable — treat these slugs as a public API,
+ * never renamed. The section is TR-gated today, so the `en` slug is future-facing.
+ */
+const CHART_ANCHOR: Record<Locale, string> = {
+  tr: "sicaklik-ve-yagis-grafigi",
+  en: "temperature-and-precipitation-chart",
+};
 
 /**
  * The "Sıcaklık ve Yağış Grafiği" block — a new `<h3>` INSIDE the existing İklim `<h2>`
@@ -23,12 +36,24 @@ interface ClimateSectionProps {
  * period, and explicitly attributes the derived annual/seasonal figures to US, not MGM
  * (DEC 2026-07-18f binding condition — MGM's own "Yıllık" column is empty).
  */
-export async function ClimateSection({ climate, provinceName, plateCode }: ClimateSectionProps) {
+export async function ClimateSection({
+  climate,
+  provinceName,
+  plateCode,
+  locale,
+}: ClimateSectionProps) {
   const t = await getTranslations("Climate");
 
   return (
     <div className={styles.section}>
-      <h3 className={styles.heading}>{t("chartHeading")}</h3>
+      {/* tabIndex={-1} makes this permanent deep-link target programmatically focusable,
+          so Safari/VoiceOver actually move AT focus to (and announce) the heading when the
+          fragment is followed — matching the skip-link `<main>` fix (CLAUDE.md §5, PR#2).
+          `.heading`'s scroll-margin-top clears the sticky header so it is not visually
+          obscured on arrival. */}
+      <h3 id={CHART_ANCHOR[locale]} tabIndex={-1} className={styles.heading}>
+        {t("chartHeading")}
+      </h3>
 
       <ClimateChart climate={climate} provinceName={provinceName} idSuffix={plateCode} />
 

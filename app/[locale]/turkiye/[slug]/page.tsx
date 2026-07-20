@@ -13,8 +13,11 @@ import {
 import type { HydrographyFeature, ProvinceDetail, ProvinceListItem } from "@/lib/api/types";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { monthName } from "@/lib/climate/month";
+import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
 import { administrativeAreaJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { selectProvinceMetaDescription } from "@/lib/seo/province-description";
 import styles from "./province-detail.module.css";
 
 interface PageProps {
@@ -53,6 +56,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const name = province.nameTr;
   const region = tRegions(province.region);
 
+  // Meta description — three skeleton-distinct variants rotated deterministically by
+  // plate code (PLAN §2 / SEO-POLICY §B10), with a graceful fallback chain:
+  // climate fact → population fact → area fact → region-only generic. The selection
+  // (incl. the TR-gate on the climate tier) is a PURE function, unit-tested in
+  // lib/seo/province-description. The climate tier is TR-only (mirrors the TR-gated
+  // visible climate section: EN detail pages are noindex and show no climate); the
+  // fallback tiers are deliberately climate-free strings, so no description — TR or EN
+  // — claims climate content the page does not render (SEO-POLICY §B2.6).
+  const { key: descriptionKey, params: descriptionParams } = selectProvinceMetaDescription({
+    locale,
+    plateCode: province.plateCode,
+    climate: province.climate,
+    population: province.population,
+    areaKm2: province.areaKm2,
+    name,
+    region,
+  });
+  const description = t(descriptionKey, descriptionParams);
+
   return buildMetadata({
     locale,
     // localized-slug alternates: slug_tr for tr, slug_en for en.
@@ -61,7 +83,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       params: { slug: slugForLocale(province, l) },
     }),
     title: t("metaTitle", { name }),
-    description: t("metaDescription", { name, region }),
+    description,
     openGraphType: "article",
     // Same TR-gating as the country page (intro/landform/climate/hydrography/settlement/
     // economy are all `isTr`), so the EN province page is chrome-only. See
@@ -82,6 +104,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   const t = await getTranslations("ProvinceDetail");
   const tb = await getTranslations("Breadcrumb");
   const tRegions = await getTranslations("Regions");
+  const tClimate = await getTranslations("Climate");
   const format = await getFormatter();
 
   // `nameTr` serves both locales: province names are proper nouns and the contract
@@ -99,14 +122,35 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // published page are omitted (never rendered as a dead link). Best-effort: the
   // block is progressive enhancement, so a list-fetch failure just hides it
   // rather than breaking the (already-loaded) detail page.
+  // The same list also feeds the "benzer iklimli iller" block below, so it is fetched
+  // ONCE and reused — no second request (zero build-time-request hard constraint, PLAN
+  // §5 risk 6). climateKoppen was added to the list DTO in A2 exactly for this.
   let neighbors: ProvinceListItem[] = [];
+  let similarClimate: ProvinceListItem[] = [];
   try {
-    const all = byPlateCode(await getProvinces());
+    const all = await getProvinces();
+    const byCode = byPlateCode(all);
     neighbors = province.neighborPlateCodes
-      .map((code) => all.get(code))
+      .map((code) => byCode.get(code))
       .filter((p): p is ProvinceListItem => p !== undefined);
+    // Benzer iklimli iller (PLAN §2): same Köppen code, published (= present in the
+    // list, i.e. has a page), self excluded, plate-code order, capped at 5. Pure
+    // filter/sort/slice extracted + unit-tested in lib/climate/similar-climate.
+    // RECIPROCITY (SEO-POLICY A4/#2): mutual links are guaranteed only for Köppen
+    // classes with ≤ 6 published members — there the cap keeps every member, so each
+    // target links back. For a class with ≥ 7 members the plate-order top-5 cap is NOT
+    // symmetric (a high-plate province can link a low-plate one that does not link
+    // back), so reciprocity is best-effort, not structural. Real class sizes make that
+    // the common case (Csa ≈ 44), so the "plaka sıralı, maks 5" rule is a PLAN-locked
+    // item under owner review (Atlas escalation) — the current locked behaviour is
+    // preserved here unchanged; a new rule would swap the selector's body.
+    // NOTE: anchor text is province-name only. The plan's "+ annual mean °C" needs a
+    // field the list DTO does not carry yet (annual mean is detail-only); adding a
+    // second fetch would break the zero-request rule, so the °C is deferred to a
+    // list-DTO contract addition (surfaced in the closing summary).
+    similarClimate = selectSimilarClimateProvinces(all, province);
   } catch (error) {
-    console.warn(`[province:${slug}] neighbour resolution skipped: ${String(error)}`);
+    console.warn(`[province:${slug}] province-list cross-links skipped: ${String(error)}`);
   }
 
   // schema.org PropertyValue facts — only the values the api actually has (null
@@ -219,8 +263,37 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // The NOVA narrative slot ships wired but empty (climateNarrativeTr is null for all 81).
   const climateSeries = isTr ? province.climate : null;
   const climateNarrative = isTr ? province.climateNarrativeTr : null;
-  // The İklim <h2> renders when EITHER the Köppen class line OR the series is present.
-  const showClimateSection = isTr && (climate !== null || climateSeries !== null);
+  // Benzer iklimli iller — TR-gated like the rest of the climate content (the block's
+  // labels/intro are Turkish and it belongs inside the TR-only İklim section).
+  const showSimilarClimate = isTr && similarClimate.length > 0;
+  // The İklim <h2> renders when the Köppen class line, the series, OR the similar-
+  // climate cross-links are present (so the block always has a heading to live under).
+  const showClimateSection =
+    isTr && (climate !== null || climateSeries !== null || showSimilarClimate);
+
+  // JSON-LD climate facts — appended to the SAME additionalProperty array (PLAN §2: no
+  // new schema type). Gated on the TR-gated series so structured data never describes a
+  // climate section that is not on the page (mirrors the visible gating). Values stay
+  // RAW numbers (machine-readable); month names come from the shared formatter helper.
+  if (climateSeries !== null) {
+    const d = climateSeries.derived;
+    additionalProperty.push(
+      {
+        name: tClimate("annualMeanTemp"),
+        value: d.annualMeanTempC,
+        unitText: tClimate("axisTempUnit"),
+        unitCode: "CEL",
+      },
+      {
+        name: tClimate("annualPrecip"),
+        value: d.annualPrecipitationMm,
+        unitText: tClimate("axisPrecipUnit"),
+        unitCode: "MMT",
+      },
+      { name: tClimate("hottestMonth"), value: monthName(format, d.hottestMonth, "long") },
+      { name: tClimate("coldestMonth"), value: monthName(format, d.coldestMonth, "long") },
+    );
+  }
 
   const hydrographyTypeLabels: Record<HydrographyFeature["type"], string> = {
     baraj: t("hydrographyTypeBaraj"),
@@ -382,7 +455,38 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
               climate={climateSeries}
               provinceName={name}
               plateCode={province.plateCode}
+              locale={locale}
             />
+          )}
+          {/* Benzer İklime Sahip İller — new <h3> INSIDE this <h2> (no new sibling <h2>).
+              Same Köppen code, published, plate-code order, max 5. Hub-and-spoke same-
+              climate cross-links (CONVENTIONS §6 #10). Uses the shared province-grid
+              card (same as Komşu İller). */}
+          {showSimilarClimate && (
+            <div className={styles.similarClimate}>
+              <h3 className={styles.similarClimateHeading}>{t("similarClimateHeading")}</h3>
+              {province.climateKoppen !== null && (
+                <p className={styles.similarClimateIntro}>
+                  {t("similarClimateIntro", { koppen: province.climateKoppen })}
+                </p>
+              )}
+              <ul className="province-grid">
+                {similarClimate.map((similar) => (
+                  <li key={similar.plateCode}>
+                    <Link
+                      className="province-card"
+                      href={{
+                        pathname: "/turkiye/[slug]",
+                        params: { slug: slugForLocale(similar, locale) },
+                      }}
+                    >
+                      <span>{similar.nameTr}</span>
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </section>
       )}

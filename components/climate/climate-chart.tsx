@@ -1,5 +1,6 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import type { Climate } from "@/lib/api/types";
+import { monthName } from "@/lib/climate/month";
 import { AXIS_UNIT_DY, buildClimateChartGeometry } from "@/lib/climate/scale";
 import styles from "./climate.module.css";
 
@@ -9,16 +10,6 @@ interface ClimateChartProps {
   provinceName: string;
   /** Unique id suffix (plaka kodu) so title/desc ids never collide across a page. */
   idSuffix: string;
-}
-
-/** A localized short/long month name via the formatter — no hardcoded month strings
- *  (day 15 avoids any TZ edge shifting the month). */
-function monthName(
-  format: Awaited<ReturnType<typeof getFormatter>>,
-  month: number,
-  style: "short" | "long",
-): string {
-  return format.dateTime(new Date(Date.UTC(2020, month - 1, 15)), { month: style });
 }
 
 /**

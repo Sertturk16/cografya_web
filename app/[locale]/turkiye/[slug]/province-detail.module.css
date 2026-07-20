@@ -139,6 +139,28 @@
   color: var(--color-slate);
 }
 
+/* Benzer İklime Sahip İller — same-climate cross-links (hub-and-spoke, CONVENTIONS
+   §6 #10). An h3 INSIDE the İklim <h2>, after the chart. Heading matches the chart's
+   h3 rhythm (climate.module.css .heading); the card grid reuses the global
+   .province-grid / .province-card (same as Komşu İller). */
+.similarClimate {
+  margin-top: 28px;
+}
+
+.similarClimateHeading {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0 0 8px;
+}
+
+.similarClimateIntro {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  color: var(--color-slate);
+  max-width: 70ch;
+}
+
 /* E-E-A-T source attribution line (authoritative provenance, small print). */
 .sources {
   margin-top: 40px;

@@ -13,6 +13,10 @@
   font-weight: 600;
   color: var(--color-ink);
   margin: 0 0 14px;
+  /* This heading is a permanent, shareable deep-link target (CHART_ANCHOR). Without this,
+     a followed `#...-grafigi` fragment scrolls the heading flush to the top, hidden under
+     the opaque sticky header. Offset it by the header height + breathing room (a11y). */
+  scroll-margin-top: calc(var(--header-height) + 1rem);
 }
 
 /* ---- Chart figure ---------------------------------------------------------- */
