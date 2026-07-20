@@ -42,11 +42,16 @@ describe("selectSimilarClimateProvinces", () => {
 
   it("fires the plate-order tie-break for OPPOSITE-SIDE equidistant 1-decimal ties (C1)", () => {
     // own 18.9; sib 19.2 (own+0.3) and 18.6 (own−0.3) are equidistant but on OPPOSITE sides,
-    // so on raw doubles |19.2−18.9| and |18.9−18.6| differ by ~3.55e-15 and the plate-order
-    // tie-break never fires. Quantizing to tenths makes both distances an exact 3 → plate order
-    // decides. Realistic 1-decimal values (api precision), unlike the integer-temp cases above.
+    // so on raw doubles |19.2−18.9| and |18.9−18.6| differ by ~3.55e-15. Quantizing to tenths
+    // makes both distances an exact 3 → the NUMERIC plate-order tie-break decides.
+    // GUARD DESIGN: the below-own temp (18.6) MUST sit on the HIGHER plate ("30"), and the
+    // above-own temp (19.2) on the LOWER plate ("07"). On a raw-double comparator |18.6−18.9|
+    // is the marginally-smaller delta, so 18.6@"30" sorts first → ["30","07"] — CONTRADICTING
+    // plate order. Only tenths-quantization ties them and yields plate order ["07","30"].
+    // (If the temps were swapped onto the other plates, the raw-double order would coincide
+    // with plate order and this guard would pass on the OLD comparator too — a no-op.)
     const current = p("50", "Csa", 18.9);
-    const all = [p("30", "Csa", 19.2), p("07", "Csa", 18.6), current];
+    const all = [p("07", "Csa", 19.2), p("30", "Csa", 18.6), current];
     const result = selectSimilarClimateProvinces(all, current, 18.9);
     // Both at Δ0.3 → NUMERIC plate order: "07" before "30" (regardless of insertion order).
     expect(result.map((r) => r.plateCode)).toEqual(["07", "30"]);
