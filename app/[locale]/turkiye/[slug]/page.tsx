@@ -133,22 +133,21 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
     neighbors = province.neighborPlateCodes
       .map((code) => byCode.get(code))
       .filter((p): p is ProvinceListItem => p !== undefined);
-    // Benzer iklimli iller (PLAN §2): same Köppen code, published (= present in the
-    // list, i.e. has a page), self excluded, plate-code order, capped at 5. Pure
-    // filter/sort/slice extracted + unit-tested in lib/climate/similar-climate.
-    // RECIPROCITY (SEO-POLICY A4/#2): mutual links are guaranteed only for Köppen
-    // classes with ≤ 6 published members — there the cap keeps every member, so each
-    // target links back. For a class with ≥ 7 members the plate-order top-5 cap is NOT
-    // symmetric (a high-plate province can link a low-plate one that does not link
-    // back), so reciprocity is best-effort, not structural. Real class sizes make that
-    // the common case (Csa ≈ 44), so the "plaka sıralı, maks 5" rule is a PLAN-locked
-    // item under owner review (Atlas escalation) — the current locked behaviour is
-    // preserved here unchanged; a new rule would swap the selector's body.
-    // NOTE: anchor text is province-name only. The plan's "+ annual mean °C" needs a
-    // field the list DTO does not carry yet (annual mean is detail-only); adding a
-    // second fetch would break the zero-request rule, so the °C is deferred to a
-    // list-DTO contract addition (surfaced in the closing summary).
-    similarClimate = selectSimilarClimateProvinces(all, province);
+    // Benzer iklimli iller (PLAN §2; selection rule → DEC 2026-07-20b): among the
+    // published provinces (present in the list = has a page) that share this province's
+    // Köppen class and are not itself, the 5 NEAREST by annual mean temperature (plate
+    // order as tie-break). This replaced the earlier plate-order-first-5 rule, which
+    // degenerated on Türkiye's real class sizes (Csa ≈ 44 → ~40 identical blocks + a
+    // skewed link graph). Own annual mean comes from the already-loaded DETAIL climate;
+    // each sibling's from the list DTO's `climateAnnualMeanTempC` (same derived value,
+    // added to the list contract in api PR #68) — so NO second/build-time request (zero-
+    // request rule, PLAN §5 risk 6). Siblings with a null annual mean are excluded (can't
+    // be ranked, can't render the °C anchor); if THIS province has a Köppen class but no
+    // annual mean the selector falls back to plate order (both handled in the pure
+    // filter/rank/slice, unit-tested in lib/climate/similar-climate). NOT reciprocal: a
+    // nearest-5 relation is not symmetric — a rendered link is not guaranteed to link back.
+    const ownAnnualMeanTempC = province.climate?.derived.annualMeanTempC ?? null;
+    similarClimate = selectSimilarClimateProvinces(all, province, ownAnnualMeanTempC);
   } catch (error) {
     console.warn(`[province:${slug}] province-list cross-links skipped: ${String(error)}`);
   }
@@ -459,9 +458,13 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
             />
           )}
           {/* Benzer İklime Sahip İller — new <h3> INSIDE this <h2> (no new sibling <h2>).
-              Same Köppen code, published, plate-code order, max 5. Hub-and-spoke same-
-              climate cross-links (CONVENTIONS §6 #10). Uses the shared province-grid
-              card (same as Komşu İller). */}
+              Same Köppen class, the 5 NEAREST by annual mean temperature (→ DEC
+              2026-07-20b). Hub-and-spoke same-climate cross-links (CONVENTIONS §6 #10).
+              Uses the shared province-grid card (same as Komşu İller). Anchor = "il adı
+              · N,N °C": the °C is CONTENT (part of the link's accessible name), only the
+              → arrow is aria-hidden. Temp is 1-decimal as delivered by the api (no
+              re-rounding), locale-formatted. The fallback path (own annual mean null) may
+              yield a null-temp sibling → then the card is name-only. */}
           {showSimilarClimate && (
             <div className={styles.similarClimate}>
               <h3 className={styles.similarClimateHeading}>{t("similarClimateHeading")}</h3>
@@ -480,7 +483,17 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
                         params: { slug: slugForLocale(similar, locale) },
                       }}
                     >
-                      <span>{similar.nameTr}</span>
+                      <span>
+                        {similar.climateAnnualMeanTempC !== null
+                          ? t("similarClimateAnchor", {
+                              name: similar.nameTr,
+                              temp: format.number(similar.climateAnnualMeanTempC, {
+                                minimumFractionDigits: 1,
+                                maximumFractionDigits: 1,
+                              }),
+                            })
+                          : similar.nameTr}
+                      </span>
                       <span aria-hidden="true">→</span>
                     </Link>
                   </li>
