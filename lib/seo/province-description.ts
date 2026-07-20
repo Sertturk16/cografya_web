@@ -66,6 +66,34 @@ export interface ProvinceDescriptionSelection {
   params: Record<string, string | number>;
 }
 
+/** The generic (always-valid) and climate-targeted meta-title message keys. */
+export const GENERIC_TITLE_KEY = "metaTitle";
+export const CLIMATE_TITLE_KEY = "metaTitleClimate";
+
+export interface ProvinceTitleInput {
+  locale: Locale;
+  /** The province's climate DTO, or null when it has no publishable series. */
+  climate: ClimateFacts | null;
+  name: string;
+}
+
+/**
+ * Selects the meta-title message key + params for a province page (W3, PLAN §2). The
+ * title is expanded to target the "{il} iklim grafiği" query — the exact query the small
+ * competitor outranks climate-data.org on — but ONLY when the page actually renders a
+ * climate chart. The variant is **climate-gated and TR-only** (mirrors the description's
+ * climate tier and the TR-gated visible climate section): an EN province page is noindex
+ * and shows no climate, so its title must never claim "İklim Grafiği" content the page
+ * lacks (SEO-POLICY §B2.6). Deterministic — no randomness, no plate-code rotation: the
+ * title is a single, stable string per URL. Pure/DOM-free so the TR-gate is unit-tested
+ * without i18n (the same gate whose EN slip regressed indexing before, → PR #16).
+ */
+export function selectProvinceMetaTitle(input: ProvinceTitleInput): ProvinceDescriptionSelection {
+  const climate = input.locale === "tr" ? input.climate : null;
+  const key = climate !== null ? CLIMATE_TITLE_KEY : GENERIC_TITLE_KEY;
+  return { key, params: { name: input.name } };
+}
+
 /**
  * Selects the meta-description message key + ICU params for a province page, applying the
  * graceful fallback chain: **climate fact → population fact → area fact → region-only
