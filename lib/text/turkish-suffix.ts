@@ -15,8 +15,16 @@
  * - **No final-consonant mutation** (k→ğ, p→b, …): proper nouns keep their base form after
  *   the apostrophe ("Sinop'un", "Zonguldak'ın" — never "Sinob…"/"Zonguldağ…"). This is
  *   exactly why the apostrophe rule also simplifies the code: we never mutate the stem.
+ * - **3rd-person-possessive compounds in -eli** (Kocaeli/Kırklareli/Tunceli) take the
+ *   pronominal buffer -n- in the LOCATIVE ("Kocaeli'nde", not "Kocaeli'de"); the genitive
+ *   buffer already handles them via the generic vowel-final rule.
  *
- * Covers all 81 province names (dotted/dotless İ-I, ç/ş/ğ, vowel- and consonant-final).
+ * Verified against the current 81 province names on the axes that would regress silently
+ * and corrupt every §19 heading: 4-/2-way vowel harmony, dotted/dotless İ-I, ç/ş/ğ finals,
+ * voiceless-final t/d, vowel- vs consonant-final stems, the genitive buffer, no stem
+ * mutation, and the -eli locative buffer. It is scoped to proper-noun province names — NOT
+ * a general Turkish morphology engine (a common noun like "eli" = "his/her hand" is out of
+ * scope; the -eli rule is exact for the province set, where only these three names match).
  */
 
 // Every Turkish vowel, both cases (dotted İ + dotless I distinguished). Used to find the
@@ -74,6 +82,14 @@ export function turkishLocative(name: string): string {
   if (name.length === 0) return name;
   const vowel = lastVowel(name);
   const harmonyVowel = vowel === null || isBackVowel(vowel) ? "a" : "e";
+  // 3rd-person-possessive compounds ending in -eli (Kocaeli/Kırklareli/Tunceli) require
+  // the pronominal buffer -n- before the locative suffix → "Kocaeli'nde" (TDK). The buffer
+  // is voiced, so the suffix consonant is always d (never t). Exact for the current 81:
+  // only these three provinces end in -eli, and -li derivationals (Denizli → "Denizli'de")
+  // do NOT match the pattern (the char before "li" is not "e"), so they stay unaffected.
+  if (/eli$/.test(name)) {
+    return `${name}'nd${harmonyVowel}`;
+  }
   const lastChar = name[name.length - 1];
   const consonant = lastChar !== undefined && VOICELESS.includes(lastChar) ? "t" : "d";
   return `${name}'${consonant}${harmonyVowel}`;
