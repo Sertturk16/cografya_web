@@ -17,7 +17,11 @@ import { monthName } from "@/lib/climate/month";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
 import { administrativeAreaJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { selectProvinceMetaDescription } from "@/lib/seo/province-description";
+import {
+  selectProvinceMetaDescription,
+  selectProvinceMetaTitle,
+} from "@/lib/seo/province-description";
+import { headingName, PROVINCE_HEADING_CASE } from "@/lib/text/heading-name";
 import styles from "./province-detail.module.css";
 
 interface PageProps {
@@ -75,6 +79,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
   const description = t(descriptionKey, descriptionParams);
 
+  // Meta-title (W3, PLAN §2): climate-gated, TR-only expansion that targets the
+  // "{il} iklim grafiği" query when the page actually renders a climate chart, and
+  // falls back to the plain "Geography of {name}" title otherwise. Deterministic
+  // (no rotation) and honest (EN/no-climate never claims chart content it lacks) —
+  // the TR-gate is the pure, unit-tested `selectProvinceMetaTitle`.
+  const { key: titleKey, params: titleParams } = selectProvinceMetaTitle({
+    locale,
+    climate: province.climate,
+    name,
+  });
+
   return buildMetadata({
     locale,
     // localized-slug alternates: slug_tr for tr, slug_en for en.
@@ -82,7 +97,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       pathname: "/turkiye/[slug]",
       params: { slug: slugForLocale(province, l) },
     }),
-    title: t("metaTitle", { name }),
+    title: t(titleKey, titleParams),
     description,
     openGraphType: "article",
     // Same TR-gating as the country page (intro/landform/climate/hydrography/settlement/
@@ -239,6 +254,17 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // TR-gated until Faz-3 EN content lands. All these fields are null for every
   // province today, so nothing new renders yet; the mechanism is ready for content.
   const isTr = locale === "tr";
+  // §19 section-heading entity name: each of the six content <h2>s carries the province
+  // name so 81 pages don't share one bare-generic skeleton, and the pattern is VARIED
+  // across the page (not mechanically "X'in Y'si"): genitive drives the "X'in Y'si"
+  // headings (landform/hydrography/neighbors), locative the "X'te Y" ones (climate/
+  // settlement/economy) — two of §19's variants, 3+3. The locale gate and the per-section
+  // case split both live in the pure, unit-tested `lib/text/heading-name` (EN suppression
+  // = the PR #16 regression class; case-per-section = PROVINCE_HEADING_CASE) — `sectionHeading`
+  // just reads that single source of truth here. For EN the helper returns the bare name,
+  // which feeds the "… of {name}" English messages (no Turkish suffix on an English heading).
+  const sectionHeading = (slot: keyof typeof PROVINCE_HEADING_CASE): string =>
+    headingName(locale, name, PROVINCE_HEADING_CASE[slot]);
   // The landform note IS the whole section, so hoist the TR-gated, narrowed value
   // once: it both gates the section and feeds <ProseNote> as a plain `string`
   // (aliased null-check narrowing). Hydrography/settlement narrow at their own inner
@@ -403,7 +429,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       {/* Yeryüzü Şekilleri — TR-gated prose; absent until landformNoteTr is filled. */}
       {showLandform && (
         <section className="section">
-          <h2>{t("landformHeading")}</h2>
+          <h2>{t("landformHeading", { name: sectionHeading("landform") })}</h2>
           <ProseNote text={landformNote} className={styles.prose} />
         </section>
       )}
@@ -417,7 +443,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           Full EN (climateEn contract + values) is a tracked Faz-3 prerequisite. */}
       {showClimateSection && (
         <section className="section">
-          <h2>{t("climateHeading")}</h2>
+          <h2>{t("climateHeading", { name: sectionHeading("climate") })}</h2>
           {climate && (
             <>
               <p className={styles.climateValue}>
@@ -509,7 +535,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           (api: null = not researched, [] = none), shown as such. Null today. */}
       {showHydrography && (
         <section className="section">
-          <h2>{t("hydrographyHeading")}</h2>
+          <h2>{t("hydrographyHeading", { name: sectionHeading("hydrography") })}</h2>
           {province.hydrographyNoteTr !== null && (
             <ProseNote text={province.hydrographyNoteTr} className={styles.prose} />
           )}
@@ -545,7 +571,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           stays absent until real settlement content lands. */}
       {showSettlement && (
         <section className="section">
-          <h2>{t("settlementHeading")}</h2>
+          <h2>{t("settlementHeading", { name: sectionHeading("settlement") })}</h2>
           {(province.urbanizationRate !== null || province.netMigrationRate !== null) && (
             <dl className={styles.factSheet}>
               {province.urbanizationRate !== null && (
@@ -575,7 +601,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           source of truth for "does economy render" (also drives extraSources). */}
       {showEconomy && (
         <section className="section">
-          <h2>{t("economyHeading")}</h2>
+          <h2>{t("economyHeading", { name: sectionHeading("economy") })}</h2>
           <dl className={styles.economyStat}>
             <dt className={styles.economyLabel}>{economyIndicator.label}</dt>
             <dd className={styles.economyValue}>{economyIndicator.value}</dd>
@@ -588,7 +614,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
 
       {neighbors.length > 0 && (
         <section className="section">
-          <h2>{t("neighborsHeading")}</h2>
+          <h2>{t("neighborsHeading", { name: sectionHeading("neighbors") })}</h2>
           <ul className="province-grid">
             {neighbors.map((neighbor) => (
               <li key={neighbor.plateCode}>

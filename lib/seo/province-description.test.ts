@@ -4,10 +4,13 @@ import trMessages from "@/messages/tr.json";
 import {
   AREA_DESCRIPTION_KEY,
   CLIMATE_DESCRIPTION_KEY,
+  CLIMATE_TITLE_KEY,
   GENERIC_DESCRIPTION_KEY,
+  GENERIC_TITLE_KEY,
   POPULATION_DESCRIPTION_KEY,
   provinceDescriptionVariant,
   selectProvinceMetaDescription,
+  selectProvinceMetaTitle,
 } from "./province-description";
 
 describe("provinceDescriptionVariant", () => {
@@ -116,6 +119,26 @@ describe("selectProvinceMetaDescription — fallback chain × locale gate", () =
   });
 });
 
+describe("selectProvinceMetaTitle — climate-gated, TR-only, deterministic (W3)", () => {
+  const climate = { derived: { annualMeanTempC: 18.5, annualPrecipitationMm: 1136.4 } };
+
+  it("TR + climate present → climate-targeted title key with the province name", () => {
+    const sel = selectProvinceMetaTitle({ locale: "tr", climate, name: "Fixture" });
+    expect(sel.key).toBe(CLIMATE_TITLE_KEY);
+    expect(sel.params).toEqual({ name: "Fixture" });
+  });
+
+  it("TR + no climate → generic title key", () => {
+    const sel = selectProvinceMetaTitle({ locale: "tr", climate: null, name: "Fixture" });
+    expect(sel.key).toBe(GENERIC_TITLE_KEY);
+  });
+
+  it("EN never takes the climate title even with climate data (noindex gate)", () => {
+    const sel = selectProvinceMetaTitle({ locale: "en", climate, name: "Fixture" });
+    expect(sel.key).toBe(GENERIC_TITLE_KEY);
+  });
+});
+
 describe("meta-description keys exist in both locale catalogues (I7 regression guard)", () => {
   // A typo'd key would silently ship a dotted-string ("ProvinceDetail.metaDescriptionX")
   // into a production <meta> — next-intl's default logs console.error but does NOT fail the
@@ -125,6 +148,8 @@ describe("meta-description keys exist in both locale catalogues (I7 regression g
     POPULATION_DESCRIPTION_KEY,
     AREA_DESCRIPTION_KEY,
     GENERIC_DESCRIPTION_KEY,
+    GENERIC_TITLE_KEY,
+    CLIMATE_TITLE_KEY,
   ];
   const catalogues = { tr: trMessages, en: enMessages } as const;
 
