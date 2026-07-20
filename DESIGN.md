@@ -174,3 +174,41 @@ When the scales module is built (Faz-2, with maps/feeds): implement the ramps ab
 typed `lib` module (one place, tested), keep the brand token set and the data ramp set
 physically separate, and add a colorblind-simulation check to the review pass. No such code
 ships in PR-3 — this section is the specification it must satisfy.
+
+### 6.4 Climate chart data ramps (İklim grafiği — W1, shipped)
+
+The province climate chart (`components/climate/climate-chart.tsx`) is the first shipped
+data-viz surface, so it is the first concrete application of §6.1. It defines **exactly two**
+data token sets in `app/globals.css`, physically separate from the Terra chrome tokens
+(§6.1 rule 1 — brand ≠ data) and used **only** by the chart. A full scales module remains
+Faz-2 (§6.3); these two ramps are the minimum this one chart needs, deliberately not a
+general system (that would be scope creep).
+
+| Token                    | Hex       | Encodes                                   |
+| ------------------------ | --------- | ----------------------------------------- |
+| `--chart-temp-line`      | `#c2410c` | mean-temperature polyline + point markers |
+| `--chart-temp-band`      | `#f2cfa8` | monthly max–min band fill (supplementary) |
+| `--chart-temp-band-edge` | `#c9762f` | band boundary hairline                    |
+| `--chart-precip-bar`     | `#1b5f8a` | precipitation columns                     |
+
+**Why these choices are §6-compliant:**
+
+- **Warm temperature, cool precipitation** — the universal climograph convention, and the
+  orange/blue pairing is the classic colorblind-safe categorical split (survives
+  deuteranopia via lightness). Temperature here is a single line series, so this is a
+  **categorical** distinction (temp vs precipitation), not a sequential ramp — §6.1 rule 4.
+- **Shape carries the meaning, never hue alone** (§6.1 rule 3 / §5 last bullet): the three
+  series are distinguished by SHAPE first — `<rect>` bars vs a bold `<polyline>` vs a filled
+  band — with color only reinforcing. Verified against a deuteranopia simulation before ship
+  (the sample is in the W1 delivery folder): all three stay distinct with color removed.
+- **Not brand tokens.** `--chart-temp-line` is a saturated vermillion, distinct from the
+  muted terracotta chrome (`--color-primary #b0522e`); `--chart-precip-bar` is a clear blue,
+  distinct from the greenish brand accent (`--color-accent #276b70`). Separate token set,
+  separate hues.
+- **Contrast (WCAG 1.4.11, graphical objects ≥ 3:1 on the white plot):**
+  `--chart-temp-line` = **5.18:1**, `--chart-precip-bar` = **6.88:1** — both clear the floor.
+  The band fill is **supplementary** (the exact max/min numbers live in the always-visible
+  table and the SVG `<desc>`), so its lighter fill is acceptable; its edge hairline is
+  `3.4:1` for definition.
+- **Not a public-safety scale** (§6.2) — climate normals carry no AQI/earthquake/SST
+  standardized-color obligation, so the palette is ours to set within these rules.

@@ -23,6 +23,25 @@ export type EconomyIndicator = components["schemas"]["EconomyIndicatorDto"];
  *  payload. */
 export type ProvinceMapSummary = components["schemas"]["ProvinceMapSummaryDto"];
 
+// ---- Climate (İklim grafiği/tablosu — W1) -----------------------------------
+/** Full climate series for a province: MGM k=A monthly normals + source/period +
+ *  all-time records + derived (annual/seasonal) figures. `null` on the detail DTO
+ *  means "no publishable series" → the web renders no climate section at all. */
+export type Climate = components["schemas"]["ClimateDto"];
+/** One month's normals row (mean/max/min temp, precipitation, sunshine, rainy days,
+ *  monthly record extremes). Every numeric field is nullable; the core pair
+ *  (tempMeanC + precipitationMm) is filled for every published province. */
+export type ClimateMonthlyNormal = components["schemas"]["ClimateMonthlyNormalDto"];
+/** Derived (OURS, never MGM-attributable) annual/seasonal figures — the api computes
+ *  these once so the web consumes them as-is (single-sourced rounding). */
+export type ClimateDerived = components["schemas"]["ClimateDerivedDto"];
+/** Seasonal precipitation shares (%, sum to exactly 100) — derived. */
+export type SeasonalPrecipitation = components["schemas"]["SeasonalPrecipitationDto"];
+/** All-time records block (daily-max precipitation, fastest wind, max snow depth). */
+export type ClimateRecords = components["schemas"]["ClimateRecordsDto"];
+/** A single all-time extreme record (value + optional observation date). */
+export type ClimateExtremeRecord = components["schemas"]["ClimateExtremeRecordDto"];
+
 /** The seven official geographic regions of Türkiye (contract enum values). */
 export type GeographicRegion = ProvinceListItem["region"];
 
