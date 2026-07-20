@@ -184,13 +184,12 @@ data token sets in `app/globals.css`, physically separate from the Terra chrome 
 Faz-2 (§6.3); these two ramps are the minimum this one chart needs, deliberately not a
 general system (that would be scope creep).
 
-| Token                     | Hex       | Encodes                                   |
-| ------------------------- | --------- | ----------------------------------------- |
-| `--chart-temp-line`       | `#c2410c` | mean-temperature polyline + point markers |
-| `--chart-temp-band`       | `#f2cfa8` | monthly max–min band fill (supplementary) |
-| `--chart-temp-band-edge`  | `#c9762f` | band boundary hairline                    |
-| `--chart-precip-bar`      | `#1b5f8a` | precipitation columns                     |
-| `--chart-precip-bar-soft` | `#cfe0ec` | precipitation soft fill (legend swatch)   |
+| Token                    | Hex       | Encodes                                   |
+| ------------------------ | --------- | ----------------------------------------- |
+| `--chart-temp-line`      | `#c2410c` | mean-temperature polyline + point markers |
+| `--chart-temp-band`      | `#f2cfa8` | monthly max–min band fill (supplementary) |
+| `--chart-temp-band-edge` | `#c9762f` | band boundary hairline                    |
+| `--chart-precip-bar`     | `#1b5f8a` | precipitation columns                     |
 
 **Why these choices are §6-compliant:**
 

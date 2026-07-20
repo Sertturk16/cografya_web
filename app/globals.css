@@ -65,7 +65,6 @@
   --chart-temp-band: #f2cfa8; /* min–max band fill (light warm; supplementary) */
   --chart-temp-band-edge: #c9762f; /* band boundary hairline (3.4:1 on white) */
   --chart-precip-bar: #1b5f8a; /* precipitation columns (cool) */
-  --chart-precip-bar-soft: #cfe0ec; /* precipitation soft fill (legend swatch) */
 
   /* ---- Typography (next/font CSS variables from lib/fonts.ts) ---- */
   --font-heading: var(--font-fraunces), Georgia, "Times New Roman", serif;

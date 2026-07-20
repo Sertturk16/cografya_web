@@ -100,7 +100,7 @@
   "Climate": {
     "chartHeading": "Sıcaklık ve Yağış Grafiği",
     "chartTitle": "{name} — aylık ortalama sıcaklık ve yağış grafiği",
-    "chartDesc": "Aylık ortalama sıcaklık {tempMin} ile {tempMax} °C arasında değişir; en sıcak ay {hottest}, en soğuk ay {coldest}. Aylık toplam yağış 0 ile {precipMax} mm arasındadır; en yağışlı ay {wettest}, en kurak ay {driest}. Sütunlar aylık toplam yağışı, kalın çizgi aylık ortalama sıcaklığı, açık renkli bant aylık en yüksek ve en düşük ortalama sıcaklık aralığını gösterir.",
+    "chartDesc": "Aylık ortalama sıcaklık {tempMin} ile {tempMax} °C arasında değişir; en sıcak ay {hottest}, en soğuk ay {coldest}. Aylık toplam yağış {precipMin} ile {precipMax} mm arasındadır; en yağışlı ay {wettest}, en kurak ay {driest}. Sütunlar aylık toplam yağışı, kalın çizgi aylık ortalama sıcaklığı, açık renkli bant aylık en yüksek ve en düşük ortalama sıcaklık aralığını gösterir.",
     "axisTempUnit": "°C",
     "axisPrecipUnit": "mm",
     "legendPrecip": "Aylık toplam yağış (mm)",
@@ -129,6 +129,7 @@
     "colRainyDays": "Yağışlı gün sayısı",
     "colRecordMax": "Rekor en yüksek (°C)",
     "colRecordMin": "Rekor en düşük (°C)",
+    "cellNoData": "veri yok",
     "recordsHeading": "Tüm Zamanların Rekorları",
     "recordDailyMaxPrecip": "Günlük en yüksek yağış",
     "recordFastestWind": "En hızlı rüzgâr",

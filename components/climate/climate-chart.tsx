@@ -1,6 +1,6 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import type { Climate } from "@/lib/api/types";
-import { buildClimateChartGeometry } from "@/lib/climate/scale";
+import { AXIS_UNIT_DY, buildClimateChartGeometry } from "@/lib/climate/scale";
 import styles from "./climate.module.css";
 
 interface ClimateChartProps {
@@ -43,15 +43,26 @@ export async function ClimateChart({ climate, provinceName, idSuffix }: ClimateC
 
   const num = (value: number, digits = 1) =>
     format.number(value, { maximumFractionDigits: digits });
+  /** Locale-correct percent (TR "%29", EN "29%") — never a hardcoded "%" glyph, whose
+   *  position differs between the two locales. */
+  const pct = (value: number) =>
+    format.number(value / 100, { style: "percent", maximumFractionDigits: 0 });
 
   // Real DATA ranges (not the padded axis domain) for the honest <desc> text.
-  const minVals = climate.months.map((m) => m.tempMinMeanC).filter((v): v is number => v !== null);
-  const maxVals = climate.months.map((m) => m.tempMaxMeanC).filter((v): v is number => v !== null);
+  // The sentence says "aylık ORTALAMA sıcaklık", so these must come from `tempMeanC` —
+  // NOT the mean-low/mean-high envelope (tempMinMeanC/tempMaxMeanC), which would announce
+  // a wider range than the one it names (Rize: real 6,8–23,3 °C vs envelope 3,7–26,6 °C).
+  // The envelope is described separately, in words, by the desc's third sentence.
+  const meanVals = climate.months.map((m) => m.tempMeanC).filter((v): v is number => v !== null);
   const precipVals = climate.months
     .map((m) => m.precipitationMm)
     .filter((v): v is number => v !== null);
-  const tempMinData = minVals.length ? Math.min(...minVals) : d.annualMeanTempC;
-  const tempMaxData = maxVals.length ? Math.max(...maxVals) : d.annualMeanTempC;
+  const tempMinData = meanVals.length ? Math.min(...meanVals) : d.annualMeanTempC;
+  const tempMaxData = meanVals.length ? Math.max(...meanVals) : d.annualMeanTempC;
+  // The precipitation floor is COMPUTED, never assumed to be 0 — Rize's driest month is
+  // 96,5 mm, and a hardcoded "0" would erase the arid-vs-humid distinction the <desc>
+  // exists to carry under the per-province auto-scaled axes (owner ruling 6).
+  const precipMinData = precipVals.length ? Math.min(...precipVals) : 0;
   const precipMaxData = precipVals.length ? Math.max(...precipVals) : 0;
 
   const titleId = `climate-chart-title-${idSuffix}`;
@@ -60,6 +71,7 @@ export async function ClimateChart({ climate, provinceName, idSuffix }: ClimateC
   const desc = t("chartDesc", {
     tempMin: num(tempMinData),
     tempMax: num(tempMaxData),
+    precipMin: num(precipMinData, 0),
     precipMax: num(precipMaxData, 0),
     hottest: monthName(format, d.hottestMonth, "long"),
     coldest: monthName(format, d.coldestMonth, "long"),
@@ -153,11 +165,13 @@ export async function ClimateChart({ climate, provinceName, idSuffix }: ClimateC
               </text>
             ))}
 
-            {/* Axis unit captions. */}
-            <text className={styles.axisUnit} x={g.plot.x0 - 6} y={g.plot.y0 - 5}>
+            {/* Axis unit captions — parked in the top margin, AXIS_UNIT_DY above the plot
+                edge, so their glyph box clears the topmost tick number's at every
+                viewport (review I3: they overprinted it on mobile at the old offset). */}
+            <text className={styles.axisUnit} x={g.plot.x0 - 6} y={g.plot.y0 - AXIS_UNIT_DY}>
               {t("axisTempUnit")}
             </text>
-            <text className={styles.axisUnitRight} x={g.plot.x1 + 6} y={g.plot.y0 - 5}>
+            <text className={styles.axisUnitRight} x={g.plot.x1 + 6} y={g.plot.y0 - AXIS_UNIT_DY}>
               {t("axisPrecipUnit")}
             </text>
 
@@ -210,10 +224,10 @@ export async function ClimateChart({ climate, provinceName, idSuffix }: ClimateC
           <div className={styles.summarySeasons}>
             <dt>{t("seasonalHeading")}</dt>
             <dd>
-              {t("seasonWinter")} %{num(d.seasonalPrecipitation.winterPct, 0)} · {t("seasonSpring")}{" "}
-              %{num(d.seasonalPrecipitation.springPct, 0)} · {t("seasonSummer")} %
-              {num(d.seasonalPrecipitation.summerPct, 0)} · {t("seasonAutumn")} %
-              {num(d.seasonalPrecipitation.autumnPct, 0)}
+              {t("seasonWinter")} {pct(d.seasonalPrecipitation.winterPct)} · {t("seasonSpring")}{" "}
+              {pct(d.seasonalPrecipitation.springPct)} · {t("seasonSummer")}{" "}
+              {pct(d.seasonalPrecipitation.summerPct)} · {t("seasonAutumn")}{" "}
+              {pct(d.seasonalPrecipitation.autumnPct)}
             </dd>
           </div>
         </dl>

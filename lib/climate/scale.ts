@@ -80,7 +80,14 @@ export interface MonthPoint {
 /** Chart canvas — fixed `viewBox` (owner spec): zero CLS via a constant aspect ratio. */
 export const CHART_WIDTH = 720;
 export const CHART_HEIGHT = 340;
-const MARGIN = { top: 16, right: 46, bottom: 44, left: 42 } as const;
+/** Top margin carries the axis UNIT captions ("°C" / "mm") above the highest tick
+ *  number. It must stay tall enough that the caption's glyph box clears the top tick's
+ *  glyph box at every viewport — at 390px the viewBox scales ~0.49×, so a 5-unit
+ *  nominal gap is the smallest that still reads (PR #18 review I3: at top=16 the
+ *  captions overprinted the top ticks on mobile). */
+const MARGIN = { top: 28, right: 46, bottom: 44, left: 42 } as const;
+/** Baseline offset of the unit caption above the plot's top edge (see MARGIN.top). */
+export const AXIS_UNIT_DY = 12;
 /** Fraction of a month slot the precipitation bar occupies (centered, leaving gaps). */
 const BAR_WIDTH_RATIO = 0.5;
 

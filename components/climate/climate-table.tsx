@@ -98,7 +98,17 @@ export async function ClimateTable({ climate, provinceName }: ClimateTableProps)
                   const v = c.get(m);
                   return (
                     <td key={c.id} className={styles.td}>
-                      {v !== null ? num(v, c.digits) : <span aria-hidden="true">—</span>}
+                      {v !== null ? (
+                        num(v, c.digits)
+                      ) : (
+                        <>
+                          <span aria-hidden="true">—</span>
+                          {/* An em-dash is invisible to AT, so the cell would announce as
+                              "blank" — ambiguous with a rendering fault in a data table
+                              whose whole point is machine/AT-readable numbers. */}
+                          <span className={styles.srOnly}>{t("cellNoData")}</span>
+                        </>
+                      )}
                     </td>
                   );
                 })}
@@ -120,7 +130,18 @@ export async function ClimateTable({ climate, provinceName }: ClimateTableProps)
                   {r.record.date !== null && (
                     <span className={styles.recordDate}>
                       {" "}
-                      ({format.dateTime(new Date(r.record.date), { dateStyle: "long" })})
+                      {/* `timeZone: "UTC"` is load-bearing: "YYYY-MM-DD" parses to UTC
+                          midnight, so on any negative-offset runtime the DAY would render
+                          one behind ("6 Ocak 1942" → "5 Ocak"). The project sets no default
+                          `timeZone` and the hosting region is still undecided, so the
+                          runtime's zone is an assumption we do not get to make. (Same
+                          defence as the `Date.UTC(…, 15)` trick used for month names.) */}
+                      (
+                      {format.dateTime(new Date(r.record.date), {
+                        dateStyle: "long",
+                        timeZone: "UTC",
+                      })}
+                      )
                     </span>
                   )}
                 </dd>

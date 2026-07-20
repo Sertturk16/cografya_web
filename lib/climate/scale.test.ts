@@ -68,10 +68,21 @@ describe("niceDomain — always includes 0 (owner ruling 6 compensation)", () =>
     }
   });
 
-  it("handles a fully-flat series without a degenerate axis", () => {
+  it("handles a flat POSITIVE series without a degenerate axis", () => {
+    // NOTE: this does NOT reach the `lo === hi` guard — forcing 0 in makes the span 0..5.
+    // The all-zero case below is the only input that does; see it.
     const d = niceDomain(5, 5);
     expect(d.min).toBeLessThanOrEqual(0);
     expect(d.max).toBeGreaterThanOrEqual(5);
+    expect(d.ticks).toContain(0);
+  });
+
+  it("handles an all-zero series — the only input that reaches the lo===hi guard", () => {
+    // What an all-null precipitation or temperature series collapses to. Without the
+    // guard the domain is 0..0 → a zero-width axis with a single degenerate tick.
+    const d = niceDomain(0, 0);
+    expect(d.max).toBeGreaterThan(d.min);
+    expect(d.ticks.length).toBeGreaterThan(1);
     expect(d.ticks).toContain(0);
   });
 });
@@ -159,6 +170,48 @@ describe("buildClimateChartGeometry", () => {
     expect(g.meanRuns.length).toBe(2);
   });
 
+  it("survives an all-null series without producing NaN geometry", () => {
+    const months: MonthPoint[] = Array.from({ length: 12 }, (_, i) => ({
+      month: i + 1,
+      tempMeanC: null,
+      tempMaxMeanC: null,
+      tempMinMeanC: null,
+      precipitationMm: null,
+    }));
+    const g = buildClimateChartGeometry(months);
+    expect(g.columns).toHaveLength(12);
+    expect(g.meanRuns).toHaveLength(0);
+    expect(g.bandPath).toBeNull();
+    // The degenerate domains still yield real, finite ticks (the lo===hi guard at work).
+    for (const t of [...g.tempTicks, ...g.precipTicks]) {
+      expect(Number.isFinite(t.y)).toBe(true);
+    }
+  });
+
+  it("grows precipitation bars from the baseline and skips a negative value", () => {
+    const g = buildClimateChartGeometry(
+      fixture({ 3: { precipitationMm: 0 }, 4: { precipitationMm: -1 } }),
+    );
+    for (const col of g.columns) {
+      // Every bar's foot sits exactly on the precip 0 baseline (plot bottom).
+      if (col.bar) expect(roundTo(col.bar.y + col.bar.h, 3)).toBe(roundTo(g.plot.y1, 3));
+    }
+    expect(g.columns[2]!.bar).not.toBeNull(); // 0 mm is a real value → a zero-height bar
+    expect(g.columns[2]!.bar!.h).toBe(0);
+    expect(g.columns[3]!.bar).toBeNull(); // a negative reading is rejected, not drawn
+  });
+
+  it("keeps months in calendar order with ascending column centers", () => {
+    const g = buildClimateChartGeometry(fixture());
+    g.columns.forEach((col, i) => expect(col.month).toBe(i + 1));
+    for (let i = 1; i < g.columns.length; i++) {
+      expect(g.columns[i]!.cx).toBeGreaterThan(g.columns[i - 1]!.cx);
+    }
+  });
+
+  // Guards the axes against being swapped: the temp scale must map onto the TEMP domain
+  // and the precip scale onto the PRECIP domain. The fixture's magnitudes differ enough
+  // (temps ~-14..+26, precip 20..75) that a swap would push points outside the plot.
   it("colder-than / warmer-than months map to lower / higher pixels (SVG y grows down)", () => {
     const g = buildClimateChartGeometry(fixture());
     const jan = g.columns[0]!.meanPoint!;

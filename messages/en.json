@@ -100,7 +100,7 @@
   "Climate": {
     "chartHeading": "Temperature and Precipitation Chart",
     "chartTitle": "{name} — monthly mean temperature and precipitation chart",
-    "chartDesc": "Monthly mean temperature ranges from {tempMin} to {tempMax} °C; the warmest month is {hottest} and the coldest is {coldest}. Monthly total precipitation ranges from 0 to {precipMax} mm; the wettest month is {wettest} and the driest is {driest}. Columns show monthly total precipitation, the bold line shows monthly mean temperature, and the light band shows the monthly mean high–low temperature range.",
+    "chartDesc": "Monthly mean temperature ranges from {tempMin} to {tempMax} °C; the warmest month is {hottest} and the coldest is {coldest}. Monthly total precipitation ranges from {precipMin} to {precipMax} mm; the wettest month is {wettest} and the driest is {driest}. Columns show monthly total precipitation, the bold line shows monthly mean temperature, and the light band shows the monthly mean high–low temperature range.",
     "axisTempUnit": "°C",
     "axisPrecipUnit": "mm",
     "legendPrecip": "Monthly total precipitation (mm)",
@@ -129,6 +129,7 @@
     "colRainyDays": "Rainy days",
     "colRecordMax": "Record high (°C)",
     "colRecordMin": "Record low (°C)",
+    "cellNoData": "no data",
     "recordsHeading": "All-Time Records",
     "recordDailyMaxPrecip": "Highest daily precipitation",
     "recordFastestWind": "Fastest wind",

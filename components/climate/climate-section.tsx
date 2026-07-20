@@ -39,8 +39,11 @@ export async function ClimateSection({ climate, provinceName, plateCode }: Clima
           // Strings so ICU never group-separates the years (1929, not 1.929).
           start: String(climate.periodStartYear),
           end: String(climate.periodEndYear),
+          // Deliberately NOT `nofollow`: this is an editorial citation to the authoritative
+          // source the whole section's information-gain thesis rests on. `nofollow` is for
+          // untrusted / paid / UGC links; using it here would understate a real attribution.
           mgm: (chunks) => (
-            <a href={climate.sourceUrl} target="_blank" rel="noopener noreferrer nofollow">
+            <a href={climate.sourceUrl} target="_blank" rel="noopener noreferrer">
               {chunks}
             </a>
           ),
