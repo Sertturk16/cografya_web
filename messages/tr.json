@@ -95,6 +95,7 @@
     "neighborsHeading": "Komşu İller",
     "similarClimateHeading": "Benzer İklime Sahip İller",
     "similarClimateIntro": "Aynı Köppen iklim tipini ({koppen}) paylaşan iller:",
+    "similarClimateAnchor": "{name} · {temp} °C",
     "sourcesLabel": "Kaynaklar",
     "sources": "Veriler resmi kaynaklara dayanır: nüfus TÜİK (ADNKS), yüzölçümü Harita Genel Müdürlüğü (HGM), ilçe sayısı İçişleri Bakanlığı; iklim ile il-merkezi rakım ve koordinatları MGM.",
     "sourcesExtra": "Ek bölüm kaynakları: {list}.",
