@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import enMessages from "@/messages/en.json";
+import trMessages from "@/messages/tr.json";
 import { selectSimilarClimateProvinces } from "./similar-climate";
 
 /**
@@ -38,6 +40,18 @@ describe("selectSimilarClimateProvinces", () => {
     expect(result.map((r) => r.plateCode)).toEqual(["11", "12", "13"]);
   });
 
+  it("fires the plate-order tie-break for OPPOSITE-SIDE equidistant 1-decimal ties (C1)", () => {
+    // own 18.9; sib 19.2 (own+0.3) and 18.6 (own−0.3) are equidistant but on OPPOSITE sides,
+    // so on raw doubles |19.2−18.9| and |18.9−18.6| differ by ~3.55e-15 and the plate-order
+    // tie-break never fires. Quantizing to tenths makes both distances an exact 3 → plate order
+    // decides. Realistic 1-decimal values (api precision), unlike the integer-temp cases above.
+    const current = p("50", "Csa", 18.9);
+    const all = [p("30", "Csa", 19.2), p("07", "Csa", 18.6), current];
+    const result = selectSimilarClimateProvinces(all, current, 18.9);
+    // Both at Δ0.3 → NUMERIC plate order: "07" before "30" (regardless of insertion order).
+    expect(result.map((r) => r.plateCode)).toEqual(["07", "30"]);
+  });
+
   it("breaks ranking ties by plate code NUMERICALLY, not lexicographically", () => {
     // All equidistant from 15; "9" must precede "10" (numeric), not follow it (lexical).
     const current = p("50", "BSk", 15);
@@ -61,6 +75,20 @@ describe("selectSimilarClimateProvinces", () => {
     const all = [p("10", "Csa", 16), p("02", "Csa", null), p("09", "Csa", 14), current];
     const result = selectSimilarClimateProvinces(all, current, null);
     expect(result.map((r) => r.plateCode)).toEqual(["02", "09", "10"]);
+  });
+
+  it("caps the own-null plate-order FALLBACK at max too, not just the ranked path (I1)", () => {
+    // ownAnnualMeanTempC null → plate-order fallback. With more than `max` siblings its
+    // `.slice(0, max)` must still cap; the earlier fallback test had only 3 siblings so the
+    // cap was never exercised on this path.
+    const current = p("50", "Csa", null);
+    const all = Array.from({ length: 7 }, (_, i) =>
+      p(String(i + 1).padStart(2, "0"), "Csa", i === 3 ? null : 10 + i),
+    );
+    const result = selectSimilarClimateProvinces([...all, current], current, null);
+    expect(result).toHaveLength(5);
+    // Plate order, INCLUDING the null-temp sibling ("04") which the fallback keeps.
+    expect(result.map((r) => r.plateCode)).toEqual(["01", "02", "03", "04", "05"]);
   });
 
   it("caps the ranked list at max (default 5)", () => {
@@ -98,4 +126,24 @@ describe("selectSimilarClimateProvinces", () => {
     selectSimilarClimateProvinces(all, p("99", "Csa", 15), 15);
     expect(all.map((r) => r.plateCode)).toEqual(before);
   });
+});
+
+describe("similar-climate i18n keys exist in both locale catalogues (I2 regression guard)", () => {
+  // Same failure class the province-description I7 guard closed: a typo'd or missing key
+  // would silently ship a dotted-string ("ProvinceDetail.similarClimateX") into rendered
+  // HTML — next-intl logs a console.error but does NOT fail the build. Every ProvinceDetail
+  // key this block renders (W2's heading/intro + W2.1's anchor) must exist, non-empty, in
+  // BOTH catalogues (the anchor is EN-future-facing but must still resolve if the gate opens).
+  const requiredKeys = ["similarClimateHeading", "similarClimateIntro", "similarClimateAnchor"];
+  const catalogues = { tr: trMessages, en: enMessages } as const;
+
+  for (const [locale, messages] of Object.entries(catalogues)) {
+    const provinceDetail = messages.ProvinceDetail as Record<string, unknown>;
+    for (const key of requiredKeys) {
+      it(`${locale}.json ProvinceDetail.${key} is a non-empty string`, () => {
+        expect(typeof provinceDetail[key]).toBe("string");
+        expect((provinceDetail[key] as string).length).toBeGreaterThan(0);
+      });
+    }
+  }
 });

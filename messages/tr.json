@@ -94,7 +94,7 @@
     "economyHeading": "Ekonomik Coğrafya",
     "neighborsHeading": "Komşu İller",
     "similarClimateHeading": "Benzer İklime Sahip İller",
-    "similarClimateIntro": "Aynı Köppen iklim tipini ({koppen}) paylaşan iller:",
+    "similarClimateIntro": "Aynı Köppen iklim tipini ({koppen}) paylaşan, yıllık ortalama sıcaklığı en yakın iller:",
     "similarClimateAnchor": "{name} · {temp} °C",
     "sourcesLabel": "Kaynaklar",
     "sources": "Veriler resmi kaynaklara dayanır: nüfus TÜİK (ADNKS), yüzölçümü Harita Genel Müdürlüğü (HGM), ilçe sayısı İçişleri Bakanlığı; iklim ile il-merkezi rakım ve koordinatları MGM.",

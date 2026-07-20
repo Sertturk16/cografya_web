@@ -6,8 +6,11 @@
  * Selection rule (→ DEC 2026-07-20b, owner-ruled): among the published provinces (those
  * present in the list — each has a page) that share the current province's Köppen class
  * and are not the current province itself, keep the `max` NEAREST by annual mean
- * temperature — ranked on `|sibling.climateAnnualMeanTempC − ownAnnualMeanTempC|`, ascending,
- * with plate code (NUMERIC, so "09" precedes "10") as the tie-break — then cap at `max`.
+ * temperature — ranked on `|sibling.climateAnnualMeanTempC − ownAnnualMeanTempC|` quantized to
+ * integer tenths (the api's one-decimal precision), ascending, with plate code (NUMERIC, so
+ * "09" precedes "10") as the tie-break — then cap at `max`. Quantizing to tenths is load-bearing
+ * for the tie-break: on raw doubles two opposite-side-equidistant siblings differ by float noise
+ * (~1e-15) and never reach the plate-order branch (PR #20 C1).
  * This replaced the earlier plate-order-first-`max` rule, which degenerated on Türkiye's real
  * class sizes (Csa ≈ 44): the first-5 cut produced ~40 identical blocks and a skewed internal
  * link graph. Nearest-by-temperature makes each province's block distinct and topically tighter.
@@ -50,12 +53,20 @@ export function selectSimilarClimateProvinces<
     return sameClass.sort(byPlate).slice(0, max);
   }
 
+  // Rank on the ABSOLUTE distance quantized to integer tenths, NOT on the raw double
+  // difference. The api serves annual means at exactly one decimal (`roundTo1` at
+  // serialization), so tenths is the true precision of the data. Comparing raw doubles is
+  // wrong for the tie-break: two siblings equidistant on OPPOSITE sides of `own` (own ± d)
+  // produce floats like ±3.55e-15 apart, so `delta !== 0` was true and DEC 2026-07-20b's
+  // plate-order tie-break silently never fired for that shape — which at the top-5 cap
+  // boundary of a large class (Csa ≈ 44) could flip block MEMBERSHIP, not just order.
+  // Rounding `|diff| * 10` collapses those spurious deltas to an exact integer tie so the
+  // plate-order tie-break fires as specified (PR #20 C1).
+  const tenths = (t: number) => Math.round(Math.abs(t - ownAnnualMeanTempC) * 10);
   return sameClass
     .filter((p): p is T & { climateAnnualMeanTempC: number } => p.climateAnnualMeanTempC !== null)
     .sort((a, b) => {
-      const delta =
-        Math.abs(a.climateAnnualMeanTempC - ownAnnualMeanTempC) -
-        Math.abs(b.climateAnnualMeanTempC - ownAnnualMeanTempC);
+      const delta = tenths(a.climateAnnualMeanTempC) - tenths(b.climateAnnualMeanTempC);
       return delta !== 0 ? delta : byPlate(a, b);
     })
     .slice(0, max);
