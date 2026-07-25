@@ -11,12 +11,18 @@ import {
 } from "@/lib/api/countries";
 import type { CountryDetail, CountryListItem } from "@/lib/api/types";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
+import { isSpecialStatusRow } from "@/lib/geo/sovereignty";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { selectCountryMetaDescription } from "@/lib/seo/country-description";
 import { countryJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { COUNTRY_HEADING_CASE, headingName } from "@/lib/text/heading-name";
+import {
+  COUNTRY_HEADING_CASE,
+  COUNTRY_HEADING_KEY,
+  headingName,
+  type CountryHeadingSlot,
+} from "@/lib/text/heading-name";
 import styles from "./country-detail.module.css";
 
 interface PageProps {
@@ -69,7 +75,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // whole selection (chain order, the zero-neighbour guard, the rotation key) is a PURE
   // function, unit-tested in lib/seo/country-description. Every fact it can use is already
   // in the DTO and already visible in the fact sheet on BOTH locales — no api change, no
-  // extra fetch, and nothing promised that the page does not render (§B2.6).
+  // extra fetch, and no fact-sheet figure promised that the page does not render (§B2.6).
+  // Special-status rows (`sovereigntyNoteTr`) short-circuit the rotation onto one fixed,
+  // non-copula skeleton — see lib/geo/sovereignty.ts for why.
   const { key: descriptionKey, params: descriptionParams } = selectCountryMetaDescription({
     locale,
     isoCode: country.isoCode,
@@ -77,6 +85,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     areaKm2: country.areaKm2,
     neighborCount: country.neighborCount,
     capital: locale === "en" ? country.capitalNameEn : country.capitalNameTr,
+    sovereigntyNote: country.sovereigntyNoteTr,
     name,
     continent,
   });
@@ -205,8 +214,21 @@ export default async function CountryDetailPage({ params }: PageProps) {
   // unit-tested `lib/text/heading-name`; this just reads that single source of truth. The
   // "Temel Bilgiler" heading deliberately stays plain (→ DEC 2026-07-20c K1, by analogy with
   // the province page) and is not in the map.
-  const sectionHeading = (slot: keyof typeof COUNTRY_HEADING_CASE): string =>
-    headingName(locale, name, COUNTRY_HEADING_CASE[slot]);
+  //
+  // EXCEPTION — special-status rows keep the PLAIN heading in every section (one row-level
+  // condition, not a per-section list): an entity-named H2 is built to be independently
+  // extractable, which on a contested row reads as a standalone possessive assertion over
+  // prose that deliberately hedges (e.g. island-wide hydrography, or a neighbour list whose
+  // mandated explanatory note is not rendered yet). Rationale + the trade this costs:
+  // lib/geo/sovereignty.ts. This also gates the `independence` slot, which would otherwise
+  // ship "X'in Bağımsızlığı" as an H2 the moment a content wave fills independenceNoteTr.
+  const entityNamedHeadings = !isSpecialStatusRow(country.sovereigntyNoteTr);
+  const sectionHeading = (slot: CountryHeadingSlot): string =>
+    entityNamedHeadings
+      ? t(COUNTRY_HEADING_KEY[slot].named, {
+          name: headingName(locale, name, COUNTRY_HEADING_CASE[slot]),
+        })
+      : t(COUNTRY_HEADING_KEY[slot].plain);
 
   const officialLanguages = isTr ? country.officialLanguagesTr : null;
 
@@ -308,7 +330,7 @@ export default async function CountryDetailPage({ params }: PageProps) {
       {/* Yeryüzü Şekilleri — TR-gated prose (genuine per-country relief narrative). */}
       {landformNote !== null && (
         <section className="section">
-          <h2>{t("landformHeading", { name: sectionHeading("landform") })}</h2>
+          <h2>{sectionHeading("landform")}</h2>
           <ProseNote text={landformNote} className={styles.prose} />
         </section>
       )}
@@ -317,7 +339,7 @@ export default async function CountryDetailPage({ params }: PageProps) {
           owner ruling → DEC 2026-07-13): regional climate variation described in words. */}
       {climateNote !== null && (
         <section className="section">
-          <h2>{t("climateHeading", { name: sectionHeading("climate") })}</h2>
+          <h2>{sectionHeading("climate")}</h2>
           <ProseNote text={climateNote} className={styles.prose} />
         </section>
       )}
@@ -327,7 +349,7 @@ export default async function CountryDetailPage({ params }: PageProps) {
           because a country may legitimately have no note. */}
       {hydrographyNote !== null && (
         <section className="section">
-          <h2>{t("hydrographyHeading", { name: sectionHeading("hydrography") })}</h2>
+          <h2>{sectionHeading("hydrography")}</h2>
           <ProseNote text={hydrographyNote} className={styles.prose} />
         </section>
       )}
@@ -336,14 +358,14 @@ export default async function CountryDetailPage({ params }: PageProps) {
           İran where a colonial-independence date is inapplicable. */}
       {independenceNote !== null && (
         <section className="section">
-          <h2>{t("independenceHeading", { name: sectionHeading("independence") })}</h2>
+          <h2>{sectionHeading("independence")}</h2>
           <ProseNote text={independenceNote} className={styles.prose} />
         </section>
       )}
 
       {neighbors.length > 0 && (
         <section className="section">
-          <h2>{t("neighborsHeading", { name: sectionHeading("neighbors") })}</h2>
+          <h2>{sectionHeading("neighbors")}</h2>
           <ul className="province-grid">
             {neighbors.map((neighbor) =>
               neighbor.kind === "link" ? (

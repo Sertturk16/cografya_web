@@ -1,5 +1,5 @@
 /**
- * Turkish grammatical-case suffixation for PROPER NOUNS (province names), used to build
+ * Turkish grammatical-case suffixation for PROPER NOUNS (province + country names), used to build
  * §19 section headings ("Antalya'nın İklimi", "Muş'ta Hidrografya"). Pure and DOM-free —
  * unit-tested in plain Node (no jsdom) like the other `lib` string helpers.
  *
@@ -77,9 +77,15 @@ const PRONOMINAL_BUFFER_HEADS = new Set([
  */
 const PALATAL_L_WORDS = new Set(["Nepal", "Senegal"]);
 
-/** The name's last whitespace-delimited word (the token that governs the suffix). */
+/**
+ * The name's last whitespace-delimited word (the token that governs the suffix). Splits on
+ * ANY whitespace run, not just the ASCII space: a name pasted into the seed with a
+ * non-breaking space (U+00A0) would otherwise be one opaque token, silently missing both
+ * closed-list lookups and rendering "Kongo Cumhuriyeti'de". No live name contains one today —
+ * this keeps the code and its own documentation in agreement.
+ */
 function lastWord(name: string): string {
-  return name.slice(name.lastIndexOf(" ") + 1);
+  return name.split(/\s+/).at(-1) ?? name;
 }
 
 /**

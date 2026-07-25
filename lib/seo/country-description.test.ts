@@ -54,6 +54,7 @@ describe("selectCountryMetaDescription — fallback chain", () => {
     name: "Fixture",
     continent: "Fixture Continent",
     capital: "Fixture City",
+    sovereigntyNote: null,
   } as const;
 
   it("population present → population tier, routed through the variant selector", () => {
@@ -117,12 +118,92 @@ describe("selectCountryMetaDescription — fallback chain", () => {
     expect(sel.params).toEqual({ name: "Fixture", continent: "Fixture Continent" });
   });
 
+  it("treats population/area ZERO as a real fact (gate is `!== null`, never truthiness)", () => {
+    // A future refactor to `if (population)` would silently drop a 0-population row to the
+    // area tier. No live row carries 0, but the DTO allows it and the gate's intent is
+    // explicit — this pins it.
+    const zeroPop = selectCountryMetaDescription({
+      ...base,
+      population: 0,
+      areaKm2: 1000,
+      neighborCount: 2,
+    });
+    expect(zeroPop.key).toBe(POPULATION_DESCRIPTION_KEY[countryDescriptionVariant(base.isoCode)]);
+    expect(zeroPop.params.population).toBe(0);
+
+    const zeroArea = selectCountryMetaDescription({
+      ...base,
+      population: null,
+      areaKm2: 0,
+      neighborCount: 2,
+    });
+    expect(zeroArea.key).toBe(AREA_DESCRIPTION_KEY);
+    expect(zeroArea.params.area).toBe(0);
+  });
+
   it("selects the same tier in both locales (facts render on both, no locale gate)", () => {
     const facts = { population: null, areaKm2: 1000, neighborCount: 2 } as const;
     const tr = selectCountryMetaDescription({ ...base, locale: "tr", ...facts });
     const en = selectCountryMetaDescription({ ...base, locale: "en", ...facts });
     expect(en.key).toBe(tr.key);
     expect(en.params).toEqual(tr.params);
+  });
+});
+
+describe("selectCountryMetaDescription — special-status rows short-circuit the chain", () => {
+  // Structure/invariant only: what is pinned is that a row carrying the api's
+  // `sovereigntyNoteTr` marker never reaches the ISO-keyed rotation or the capital tier, so
+  // its SERP framing cannot be decided by a checksum over an internal code. No country facts
+  // are asserted here (CONVENTIONS §2).
+  const special = {
+    locale: "tr",
+    isoCode: "ZZ",
+    name: "Fixture",
+    continent: "Fixture Continent",
+    capital: "Fixture City",
+    sovereigntyNote: "Fixture sovereignty note.",
+  } as const;
+
+  it("routes to the fixed variant-1 skeleton regardless of the ISO code", () => {
+    // Every alpha-2 code, including the ones whose checksum would otherwise pick variant
+    // 0 or 2 — the property under test is that the code no longer decides.
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for (const a of letters) {
+      for (const b of letters) {
+        const sel = selectCountryMetaDescription({
+          ...special,
+          isoCode: `${a}${b}`,
+          population: 1_000,
+          areaKm2: 5_000,
+          neighborCount: 3,
+        });
+        expect(sel.key).toBe(POPULATION_DESCRIPTION_KEY[1]);
+      }
+    }
+  });
+
+  it("never reaches the area, neighbour or capital tier when facts are missing", () => {
+    const sel = selectCountryMetaDescription({
+      ...special,
+      population: null,
+      areaKm2: 5_000,
+      neighborCount: 3,
+    });
+    // Not a tier SKIP: the area/neighbour skeletons carry the same copula the branch exists
+    // to avoid, so the only fallthrough is the (copula-free) generic.
+    expect(sel.key).toBe(GENERIC_DESCRIPTION_KEY);
+    expect(sel.params).toEqual({ name: "Fixture", continent: "Fixture Continent" });
+  });
+
+  it("leaves ordinary rows on the normal chain", () => {
+    const sel = selectCountryMetaDescription({
+      ...special,
+      sovereigntyNote: null,
+      population: null,
+      areaKm2: 5_000,
+      neighborCount: 3,
+    });
+    expect(sel.key).toBe(AREA_DESCRIPTION_KEY);
   });
 });
 
@@ -180,6 +261,66 @@ describe("description copy honesty (SEO-POLICY §B2.6)", () => {
             permitted.has(placeholder),
             `${locale}.CountryDetail.${key} interpolates {${placeholder}}`,
           ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("no tier NAMES a fact-sheet figure its own gate does not guarantee (prose, not ICU)", () => {
+    // The test above catches an interpolated fact; this one catches a fact named in the
+    // PROSE tail, which is the hole the PR #22 review found (the EN generic tier promised
+    // "its capital" on the one branch where capital is null by construction). Placeholders
+    // are stripped first, so what is inspected is only the copy a searcher reads.
+    //
+    // Scope = the three NULLABLE fact-sheet figures. The TR-only narrative sections named in
+    // the TR copy (yeryüzü şekilleri / iklim / hidrografya) are deliberately NOT in scope:
+    // they are non-null across the whole closed corpus and no tier selects against them, so
+    // a static word list would be wrong there (that finding was adversarially refuted).
+    const FACT_WORDS = {
+      population: ["nüfus", "population"],
+      area: ["yüzölçüm", "area"],
+      capital: ["başkent", "capital"],
+    } as const;
+    type Fact = keyof typeof FACT_WORDS;
+    const guaranteed: Record<string, readonly Fact[]> = {
+      [POPULATION_DESCRIPTION_KEY[0]]: ["population"],
+      [POPULATION_DESCRIPTION_KEY[1]]: ["population"],
+      [POPULATION_DESCRIPTION_KEY[2]]: ["population"],
+      [AREA_DESCRIPTION_KEY]: ["area"],
+      [NEIGHBORS_DESCRIPTION_KEY]: [],
+      [CAPITAL_DESCRIPTION_KEY]: ["capital"],
+      [GENERIC_DESCRIPTION_KEY]: [],
+    };
+    for (const [locale, messages] of Object.entries(countryDetail)) {
+      for (const [key, allowedFacts] of Object.entries(guaranteed)) {
+        const prose = (messages[key] ?? "").replace(/\{[^}]*\}/g, " ").toLowerCase();
+        for (const fact of Object.keys(FACT_WORDS) as Fact[]) {
+          if (allowedFacts.includes(fact)) continue;
+          for (const word of FACT_WORDS[fact]) {
+            expect(
+              prose.includes(word),
+              `${locale}.CountryDetail.${key} promises "${fact}", which its gate does not guarantee`,
+            ).toBe(false);
+          }
+        }
+      }
+    }
+  });
+
+  it("the skeletons a special-status row can reach never predicate statehood", () => {
+    // The whole point of the `isSpecialStatusRow` early return (PR #22 filter, C1/I1): a
+    // contested row's SERP snippet states location and a concrete figure, and leaves
+    // recognition to the owner-ruled `sovereigntyNoteTr`. A future copy pass that reflows a
+    // copula back into either reachable skeleton silently re-opens it, so it is pinned here.
+    const copulas = ["bir ülkedir", "bir ülke.", "is a country"];
+    for (const [locale, messages] of Object.entries(countryDetail)) {
+      for (const key of [POPULATION_DESCRIPTION_KEY[1], GENERIC_DESCRIPTION_KEY]) {
+        const template = (messages[key] ?? "").toLowerCase();
+        for (const copula of copulas) {
+          expect(
+            template.includes(copula),
+            `${locale}.CountryDetail.${key} predicates statehood ("${copula}")`,
+          ).toBe(false);
         }
       }
     }
