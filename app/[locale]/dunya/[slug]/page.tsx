@@ -13,23 +13,14 @@ import type { CountryDetail, CountryListItem } from "@/lib/api/types";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { selectCountryMetaDescription } from "@/lib/seo/country-description";
 import { countryJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { COUNTRY_HEADING_CASE, headingName } from "@/lib/text/heading-name";
 import styles from "./country-detail.module.css";
 
 interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
-}
-
-/**
- * `hydrographyNoteTr` is a parallel fast-follow api field (Deniz's schema PR, → DEC
- * 2026-07-13) that is NOT in the committed OpenAPI contract yet. Read it through this shim
- * so the Hidrografya section lights up automatically the moment codegen picks the field up,
- * without a hard reference that would fail typecheck against today's `CountryDetailDto`.
- * Remove the shim (read `country.hydrographyNoteTr` directly) once the field lands.
- */
-interface MaybeHydrography {
-  hydrographyNoteTr?: string | null;
 }
 
 /** The localized slug (slug_tr for tr, slug_en for en) for a country. */
@@ -70,6 +61,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const name = nameForLocale(country, locale);
   const continent = tContinents(country.continent);
 
+  // Meta description — a graceful fallback chain that guarantees at least one CONCRETE fact
+  // in every country's snippet (SEO-POLICY §A2/#1, §B2.2): population → area → neighbour
+  // count → capital → continent-only generic. The population tier additionally rotates
+  // between three skeleton-distinct variants, keyed deterministically on the ISO code, so
+  // the ~196-page corpus does not collapse to one masked sentence (§A2/#4, §B10.2). The
+  // whole selection (chain order, the zero-neighbour guard, the rotation key) is a PURE
+  // function, unit-tested in lib/seo/country-description. Every fact it can use is already
+  // in the DTO and already visible in the fact sheet on BOTH locales — no api change, no
+  // extra fetch, and nothing promised that the page does not render (§B2.6).
+  const { key: descriptionKey, params: descriptionParams } = selectCountryMetaDescription({
+    locale,
+    isoCode: country.isoCode,
+    population: country.population,
+    areaKm2: country.areaKm2,
+    neighborCount: country.neighborCount,
+    capital: locale === "en" ? country.capitalNameEn : country.capitalNameTr,
+    name,
+    continent,
+  });
+
   return buildMetadata({
     locale,
     // localized-slug alternates: slug_tr for tr, slug_en for en.
@@ -78,7 +89,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       params: { slug: slugForLocale(country, l) },
     }),
     title: t("metaTitle", { name }),
-    description: t("metaDescription", { name, continent }),
+    description: t(descriptionKey, descriptionParams),
     openGraphType: "article",
     // The narrative sections below are TR-gated (`isTr`), so the EN rendering is chrome
     // around a fact sheet — thin + near-identical across ~200 countries. `"trNarrative"`
@@ -185,11 +196,17 @@ export default async function CountryDetailPage({ params }: PageProps) {
   const landformNote = isTr ? country.landformNoteTr : null;
   const climateNote = isTr ? country.climateNoteTr : null;
   const independenceNote = isTr ? country.independenceNoteTr : null;
-  // Hidrografya — read defensively (not in the contract yet, see the shim above): null today,
-  // so the section renders nothing until the api ships the field + data.
-  const hydrographyNote = isTr
-    ? ((country as CountryDetail & MaybeHydrography).hydrographyNoteTr ?? null)
-    : null;
+  const hydrographyNote = isTr ? country.hydrographyNoteTr : null;
+
+  // §19 section-heading entity name: each content <h2> carries the country name so ~196
+  // pages don't share one bare-generic heading skeleton (SEO-POLICY §A3/§B3.4). The locale
+  // gate (EN gets the BARE name — the PR #16 regression class, never a Turkish suffix on an
+  // English heading) and the per-section genitive/locative split both live in the pure,
+  // unit-tested `lib/text/heading-name`; this just reads that single source of truth. The
+  // "Temel Bilgiler" heading deliberately stays plain (→ DEC 2026-07-20c K1, by analogy with
+  // the province page) and is not in the map.
+  const sectionHeading = (slot: keyof typeof COUNTRY_HEADING_CASE): string =>
+    headingName(locale, name, COUNTRY_HEADING_CASE[slot]);
 
   const officialLanguages = isTr ? country.officialLanguagesTr : null;
 
@@ -291,7 +308,7 @@ export default async function CountryDetailPage({ params }: PageProps) {
       {/* Yeryüzü Şekilleri — TR-gated prose (genuine per-country relief narrative). */}
       {landformNote !== null && (
         <section className="section">
-          <h2>{t("landformHeading")}</h2>
+          <h2>{t("landformHeading", { name: sectionHeading("landform") })}</h2>
           <ProseNote text={landformNote} className={styles.prose} />
         </section>
       )}
@@ -300,16 +317,17 @@ export default async function CountryDetailPage({ params }: PageProps) {
           owner ruling → DEC 2026-07-13): regional climate variation described in words. */}
       {climateNote !== null && (
         <section className="section">
-          <h2>{t("climateHeading")}</h2>
+          <h2>{t("climateHeading", { name: sectionHeading("climate") })}</h2>
           <ProseNote text={climateNote} className={styles.prose} />
         </section>
       )}
 
-      {/* Hidrografya — conditional on the fast-follow field (absent in the contract today,
-          so nothing renders yet; lights up when the api ships hydrographyNoteTr + data). */}
+      {/* Hidrografya — TR-gated prose (rivers/lakes/seas narrative). The field is in the
+          committed OpenAPI contract, so it is read directly; the section stays conditional
+          because a country may legitimately have no note. */}
       {hydrographyNote !== null && (
         <section className="section">
-          <h2>{t("hydrographyHeading")}</h2>
+          <h2>{t("hydrographyHeading", { name: sectionHeading("hydrography") })}</h2>
           <ProseNote text={hydrographyNote} className={styles.prose} />
         </section>
       )}
@@ -318,14 +336,14 @@ export default async function CountryDetailPage({ params }: PageProps) {
           İran where a colonial-independence date is inapplicable. */}
       {independenceNote !== null && (
         <section className="section">
-          <h2>{t("independenceHeading")}</h2>
+          <h2>{t("independenceHeading", { name: sectionHeading("independence") })}</h2>
           <ProseNote text={independenceNote} className={styles.prose} />
         </section>
       )}
 
       {neighbors.length > 0 && (
         <section className="section">
-          <h2>{t("neighborsHeading")}</h2>
+          <h2>{t("neighborsHeading", { name: sectionHeading("neighbors") })}</h2>
           <ul className="province-grid">
             {neighbors.map((neighbor) =>
               neighbor.kind === "link" ? (

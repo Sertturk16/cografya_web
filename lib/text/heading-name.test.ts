@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { headingName, PROVINCE_HEADING_CASE, type ProvinceHeadingSlot } from "./heading-name";
+import {
+  COUNTRY_HEADING_CASE,
+  headingName,
+  PROVINCE_HEADING_CASE,
+  type CountryHeadingSlot,
+  type ProvinceHeadingSlot,
+} from "./heading-name";
 
 /**
  * Guards the two things the page-level heading logic used to do inline and untested: the
@@ -37,5 +43,41 @@ describe("PROVINCE_HEADING_CASE — per-section mapping", () => {
     for (const slot of slots) {
       expect(["genitive", "locative"]).toContain(PROVINCE_HEADING_CASE[slot]);
     }
+  });
+});
+
+describe("COUNTRY_HEADING_CASE — per-section mapping", () => {
+  it("keeps the province assignment on every shared slot", () => {
+    // One platform-wide slot→case convention: "X'in Hidrografyası" must not mean one thing
+    // on /turkiye and another on /dunya. A drift here is what this assertion catches.
+    for (const slot of ["landform", "hydrography", "neighbors", "climate"] as const) {
+      expect(COUNTRY_HEADING_CASE[slot]).toBe(PROVINCE_HEADING_CASE[slot]);
+    }
+  });
+
+  it("assigns the country-only `independence` slot the genitive", () => {
+    // "Şili'nin Bağımsızlığı" — the locative would describe independence happening INSIDE
+    // the country rather than the country's own independence.
+    expect(COUNTRY_HEADING_CASE.independence).toBe("genitive");
+  });
+
+  it("covers exactly the five country slots and only genitive/locative values", () => {
+    const slots = Object.keys(COUNTRY_HEADING_CASE) as CountryHeadingSlot[];
+    expect(slots).toHaveLength(5);
+    for (const slot of slots) {
+      expect(["genitive", "locative"]).toContain(COUNTRY_HEADING_CASE[slot]);
+    }
+  });
+
+  it("produces the intended TR headings and bare EN names for a country name", () => {
+    // End-to-end through the same helper the page uses, incl. a possessive-compound name.
+    expect(headingName("tr", "Şili", COUNTRY_HEADING_CASE.landform)).toBe("Şili'nin");
+    expect(headingName("tr", "Şili", COUNTRY_HEADING_CASE.climate)).toBe("Şili'de");
+    expect(headingName("tr", "Kongo Cumhuriyeti", COUNTRY_HEADING_CASE.climate)).toBe(
+      "Kongo Cumhuriyeti'nde",
+    );
+    expect(headingName("en", "Kongo Cumhuriyeti", COUNTRY_HEADING_CASE.climate)).toBe(
+      "Kongo Cumhuriyeti",
+    );
   });
 });

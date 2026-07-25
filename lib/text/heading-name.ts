@@ -24,6 +24,10 @@ export type HeadingCase = "genitive" | "locative";
 export type ProvinceHeadingSlot =
   "landform" | "hydrography" | "neighbors" | "climate" | "settlement" | "economy";
 
+/** The five §19 content sections whose <h2> carries the country name. */
+export type CountryHeadingSlot =
+  "landform" | "climate" | "hydrography" | "independence" | "neighbors";
+
 /**
  * Grammatical case per §19 section, so the page reads as VARIED prose instead of
  * "X'in Y'si" six times. Genitive drives the "X'in Y'si" headings, locative the "X'te Y"
@@ -40,10 +44,34 @@ export const PROVINCE_HEADING_CASE = {
 } as const satisfies Record<ProvinceHeadingSlot, HeadingCase>;
 
 /**
- * The province name as it should appear in a §19 heading. TR → the Turkish grammatical
- * suffix; any other locale → the bare name (English headings, never a Turkish-suffixed
- * proper noun). Combine with the section's i18n message (TR: "{name} ..." with the suffix
- * baked in; EN: "... of {name}").
+ * Grammatical case per §19 section on the COUNTRY page. The three slots it shares with the
+ * province page keep the province's assignment on purpose — the slot→case mapping is one
+ * platform-wide convention, so "X'in Hidrografyası" never means one thing on `/turkiye` and
+ * another on `/dunya`.
+ *
+ * `independence` is the only new slot and is genitive: "Şili'nin Bağımsızlığı" is the
+ * natural reading, whereas the locative "Şili'de Bağımsızlık" would describe independence
+ * happening *inside* the country rather than the country's own independence.
+ *
+ * The result is 4 genitive + 1 locative, not the province's 3 + 3. That is deliberate: of
+ * the five country sections only `climate` has a natural locative reading, and manufacturing
+ * more locatives would ship awkward Turkish to buy down a NOT-level checklist item
+ * (SEO-POLICY §B3.5 — heading-skeleton variety). Naturalness wins; the entity name is in
+ * every heading either way, which is the UYARI-level item (§B3.4) this map exists to close.
+ */
+export const COUNTRY_HEADING_CASE = {
+  landform: "genitive",
+  hydrography: "genitive",
+  neighbors: "genitive",
+  independence: "genitive",
+  climate: "locative",
+} as const satisfies Record<CountryHeadingSlot, HeadingCase>;
+
+/**
+ * The entity name (province OR country) as it should appear in a §19 heading. TR → the
+ * Turkish grammatical suffix; any other locale → the bare name (English headings, never a
+ * Turkish-suffixed proper noun). Combine with the section's i18n message (TR: "{name} ..."
+ * with the suffix baked in; EN: "... of {name}").
  */
 export function headingName(locale: Locale, name: string, headingCase: HeadingCase): string {
   if (locale !== "tr") return name;
