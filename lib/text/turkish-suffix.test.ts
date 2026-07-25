@@ -11,6 +11,11 @@ import { turkishGenitive, turkishLocative } from "./turkish-suffix";
  * on the corresponding province pages. Representative-per-class by design: every STRUCTURAL
  * class has a case here, which is the actual protection — an 81-row table would add
  * maintenance for no extra coverage.
+ *
+ * The COUNTRY corpus is different and is covered separately, exhaustively, in
+ * `turkish-suffix.countries.test.ts`: it contains classes no province name has (possessive
+ * compounds, palatal final l, parenthesised names), and representative sampling is exactly
+ * what let the `-eli` class slip through the first time.
  */
 describe("turkishGenitive", () => {
   it("matches the task's named examples", () => {
@@ -95,5 +100,16 @@ describe("turkishLocative", () => {
     // Guards the /eli$/ exception from over-reaching: Denizli is a -li derivational, not a
     // possessive compound, so it keeps the plain locative.
     expect(turkishLocative("Denizli")).toBe("Denizli'de");
+  });
+
+  it("generalises the buffer to izafet head nouns, without touching province names", () => {
+    // The -eli rule and the "… Cumhuriyeti" rule are the SAME phenomenon (a stem already
+    // carrying a 3rd-person possessive). Pinned here so the province behaviour is proven
+    // unchanged by the country-driven generalisation; the full country coverage lives in
+    // turkish-suffix.countries.test.ts.
+    expect(turkishLocative("Kocaeli")).toBe("Kocaeli'nde");
+    expect(turkishLocative("Kongo Cumhuriyeti")).toBe("Kongo Cumhuriyeti'nde");
+    expect(turkishLocative("Denizli")).toBe("Denizli'de");
+    expect(turkishLocative("Rize")).toBe("Rize'de");
   });
 });
