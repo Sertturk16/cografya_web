@@ -34,6 +34,60 @@
      DESIGN §6 data-viz rules do not apply here, see SPEC §2 doctrine note) ---- */
   --province-fill: #ffffff; /* available il base fill */
   --province-inert: var(--color-surface); /* not-yet-published il (recedes) */
+  /* WORLD-MAP SEA. Flat, and a cool tint of --color-accent (#276b70, the brand's water
+     teal) rather than a warm parchment gradient. Both properties are load-bearing, not
+     cosmetic (PR #23 review I2):
+
+       FLAT, because a gradient makes every fill contrast LATITUDE-DEPENDENT. The previous
+         sea swept --color-surface → --color-bg (relative luminance 0.82 → 0.94), so any
+         single land fill necessarily collided with the sea at SOME latitude: the old
+         backdrop tone measured 1.05:1 at Greenland (top 13 % of the map) and the seeded
+         white countries measured just 1.06:1 at the bottom of the map. Tuning one tone
+         traded the Arctic against the Antarctic; it could not win both. A flat sea makes
+         every figure below hold identically at every point on the map.
+       COOL, because the usable luminance band is tiny. --province-stroke (taupe #8a8078)
+         must clear WCAG 1.4.11's 3:1 against every fill it borders — including the sea —
+         which floors any fill at ~0.766 luminance, and white countries cap it at 1.0. The
+         whole system therefore has ~1.29:1 of luminance to spend. Separating land from sea
+         on HUE as well (warm land / cool water — the standard atlas convention) is what
+         actually carries the distinction; it also survives red-green colour blindness,
+         since warm-vs-cool sits on the blue-yellow axis.
+
+     #dbe7e8 is a hand-tuned cool tint in the --color-accent family, NOT a mechanical blend
+     of it: no single sRGB mix of --color-accent into --color-bg reproduces it (the closest,
+     ~13 %, lands on rgb(223 230 226) — up to 6 levels off per channel and short of this
+     tint's blue). Do not "correct" it toward a blend ratio; it is a measured value. What is
+     load-bearing is the floor it sits on: it is the DARKEST sea the 3:1 stroke floor permits
+     (taupe 3.05:1 against it) — going cooler/darker to buy fill contrast would quietly break
+     a floor a previous a11y review set, so it does not. */
+  --map-sea: #dbe7e8;
+  /* Backdrop LAND on the world map: territories that will never get a page (Greenland,
+     Antarctica, the overseas-territory set) plus not-yet-seeded countries.
+
+     ONE LAND TONE FOR THE WHOLE MAP (owner ruling 2026-07-26: "Greenland and Antarctica
+     should be the same colour as everywhere else"). So this is an ALIAS of --province-fill,
+     not a second literal — the same aliasing pattern --province-inert uses one line above.
+     Single source: the two tones cannot drift apart by someone editing one hex, and the call
+     site in map.module.css still reads as "land" rather than reaching for a province token.
+
+     Measured against the flat --map-sea (#dbe7e8):
+       land vs sea 1.26:1 — the MAXIMUM available, because white is the ceiling of the narrow
+         luminance band the 3:1 stroke floor leaves (see --map-sea above), plus the warm/cool
+         hue break that actually carries the distinction.
+       taupe coastline on land 3.86:1 ✓ — also the best case, well clear of WCAG 1.4.11's 3:1
+         (the earlier separate backdrop tone #f8f4ee measured 3.52:1).
+     Land-vs-land is 1.00:1 BY DESIGN: clickability is not encoded in colour on this map. It
+     is carried by three non-colour signals — element type (a real <a> vs a bare
+     `<path aria-hidden>`), tab order, and the pointer/hover/focus-visible state change (fill
+     AND stroke, see map.module.css). That is what WCAG 1.4.1 asks for, and the PR #23 a11y
+     review confirmed it holds without a tone difference.
+
+     History, so nobody reintroduces the bug: the world map must NOT reuse --province-inert
+     (#f1e9de). On the il map "inert" means "not published yet" and correctly recedes, but
+     that value was byte-identical to the old world-map background gradient's TOP stop →
+     1.00:1 against it, which is exactly why Greenland disappeared (/dunya completeness
+     audit, 2026-07-26). */
+  --land-inert: var(--province-fill);
   /* Map boundary at rest. Taupe (#8a8078) is a non-text / secondary-UI token
      (DESIGN §5) and, as a graphical object, clears WCAG 1.4.11's 3:1 in BOTH fill
      contexts: 3.86:1 on --province-fill (#fff), 3.21:1 on --province-inert (#f1e9de).

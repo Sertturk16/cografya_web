@@ -13,6 +13,12 @@ interface WorldMapSectionProps {
 }
 
 /**
+ * The one shape whose destination is NOT `/dunya/{slug}`: Türkiye links to the `/turkiye`
+ * hub instead (→ DEC 2026-07-26 K1). Matched against the generated artifact's ISO key.
+ */
+const TURKIYE_ISO = "TR";
+
+/**
  * Interactive full-world map (server component) — the `/dunya` hub's primary content,
  * mirroring `TurkeyMapSection` one level up (country, not province). It reuses the exact same
  * mechanism: build-time-generated inline SVG country paths (`lib/map/world-countries.generated.ts`
@@ -33,6 +39,13 @@ interface WorldMapSectionProps {
  * stat trio) come from the purpose-built `/api/countries/map-summary` payload, formatted
  * server-side and pre-embedded as the shared entity-agnostic `data-*` on each link (no
  * per-hover fetch — INP).
+ *
+ * ONE shape is wired by hand: Türkiye. It is a country on the world map, but the site's
+ * Türkiye surface is the dedicated `/turkiye` hub — there is no `/dunya/turkiye` page and
+ * none is planned (IA → DEC 2026-07-13). So the TR shape is interactive and points at the
+ * hub (→ DEC 2026-07-26 K1), with a deliberately minimal card (name + where it goes, no
+ * stats): a hole in the middle of the map for the site's own country would be the worst
+ * possible dead spot. KKTC (QN) is untouched — it is a normal seeded country shape.
  */
 export async function WorldMapSection({ locale }: WorldMapSectionProps) {
   const tMap = await getTranslations("WorldMap");
@@ -67,7 +80,10 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
       <h2 id="world-map-heading">{tMap("sectionHeading")}</h2>
       <p className={styles.intro}>{tMap("sectionBody")}</p>
 
-      <div className={styles.mapRoot} data-map-root>
+      {/* .worldRoot = flat cool SEA (the il map keeps the warm parchment gradient): a
+          gradient backdrop makes land/sea fill contrast depend on latitude, which is what
+          made Greenland vanish at the top of the map (→ --map-sea, globals.css). */}
+      <div className={`${styles.mapRoot} ${styles.worldRoot}`} data-map-root>
         {/* Rendered BEFORE the <svg> so the zoom controls sit ahead of the ~190 crawlable
             country links in tab order (review I3) — keyboard users reach +/−/reset without
             tabbing through every country. Visual position is unaffected (the layer is
@@ -81,17 +97,38 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
         <svg className={styles.svg} viewBox={WORLD_MAP_VIEWBOX} aria-labelledby={titleId}>
           <title id={titleId}>{tMap("mapTitle")}</title>
           {COUNTRY_SHAPES.map((shape) => {
+            // Türkiye first, BEFORE the map-summary lookup: if the api ever seeds TR into
+            // the summary, this map must still never manufacture a `/dunya/turkiye` link to
+            // a page the IA says does not exist (that would be a soft-404 waiting to happen,
+            // SEO §6 #6). The hub link is the fixed answer for this shape.
+            if (shape.iso === TURKIYE_ISO) {
+              const turkiyeHref = getPathname({ locale, href: "/turkiye" });
+              return (
+                <a
+                  key={shape.iso}
+                  className={styles.provinceLink}
+                  href={turkiyeHref}
+                  aria-label={tMap("turkiyeLinkLabel")}
+                  data-shape={TURKIYE_ISO}
+                  data-name={tMap("turkiyeName")}
+                  data-subtitle={tMap("turkiyeCardSubtitle")}
+                  data-badge={TURKIYE_ISO}
+                  data-href={turkiyeHref}
+                >
+                  <path className={styles.province} d={shape.d} />
+                </a>
+              );
+            }
             const country = byIso.get(shape.iso);
             if (!country) {
-              // Not-yet-seeded (or backdrop-context) country: geographic backdrop only —
-              // no link, no card, hidden from AT (it is not actionable).
+              // Not-yet-seeded country, or a territory/polar mass that will never have a
+              // page: geographic backdrop only — no link, no card, hidden from AT (it is not
+              // actionable). It IS land, so .landInert paints it in the SAME land tone as a
+              // clickable country (owner ruling 2026-07-26) — never the il map's "not
+              // published yet" tint, which was the map background's own top gradient stop and
+              // rendered Greenland invisible (/dunya audit 2026-07-26).
               return (
-                <path
-                  key={shape.iso}
-                  className={styles.provinceInert}
-                  d={shape.d}
-                  aria-hidden="true"
-                />
+                <path key={shape.iso} className={styles.landInert} d={shape.d} aria-hidden="true" />
               );
             }
             const continent = tContinents(country.continent);

@@ -106,11 +106,24 @@ key** (e.g. Australia + its external territories) into one shape → one link pe
 pnpm generate:world-map
 ```
 
-Reads this file, rewrites `lib/map/world-countries.generated.ts` (plate-carrée-projected +
-simplified). **Antarctica (`AQ`) is deliberately not drawn** by the generator — a ~5k-vertex,
-full-width polar polygon that is not a navigable country and the standard web-world-map
-omission; it stays in the snapshot for provenance. Re-run only if the snapshot is refreshed
-(update "Fetched" above) or the projection / simplification parameters change. Both the
+Reads this file, rewrites `lib/map/world-countries.generated.ts` (Natural-Earth-1-projected +
+simplified). **Every snapshot feature is drawn — there is no exclusion list.** Antarctica
+(`AQ`) used to be the single deliberate omission; that was reversed on owner instruction
+("the world map must not have holes", 2026-07-26). It is drawn at a coarser simplification
+tolerance (0.8 vs the global 0.15, `SIMPLIFY_EPSILON_BY_ISO`) because it is non-navigable
+backdrop mass, and its genuinely sub-pixel islets are dropped by `MIN_RING_AREA_BY_ISO`
+(< 1 svg unit² ≈ < 1 px at world scale): 6.0 kB raw / 2.2 kB gzipped instead of ~19.8 kB raw.
+The area bar is measured on the **true projected ring, before simplification** — measuring the
+simplified ring instead deletes real islands that the coarse tolerance merely flattened
+(PR #23 review I1: 18 real Antarctic rings, largest 4.6 u², were being dropped). Of AQ's 108
+outer rings, 72 are true sub-pixel noise and 36 are drawn; the 18 the coarse pass would have
+flattened into hairlines are re-simplified at the global 0.15 so they render as islands rather
+than as coastal "hair". Both overrides are keyed per ISO and default to
+"no override", so no other country path is touched. Framing it extends the
+viewBox south (`0 0 1000 447` → `0 0 1000 521`); the projected X extent and the northern edge
+are unchanged, so **all 239 pre-existing country paths stayed byte-identical** (the artifact
+diff is +1 shape line and the viewBox constant, nothing else). Re-run only if the snapshot is
+refreshed (update "Fetched" above) or the projection / simplification parameters change. Both the
 snapshot **and** the generated artifact are committed, so CI and runtime never invoke the
 generator.
 

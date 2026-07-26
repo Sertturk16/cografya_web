@@ -1,8 +1,9 @@
 /* Shared interactive-map + hover/focus card styles (Türkiye il map AND the world
    country map). Terra tokens only; the map-chrome tints live in the app/globals.css
    token layer (these maps are navigation CHROME, not a data encoding — SPEC §2
-   doctrine note). Seeded shapes use .province/.provinceLink (interactive); unseeded
-   shapes use .provinceInert (backdrop) — same grammar for provinces and countries. */
+   doctrine note). Seeded shapes use .province/.provinceLink (interactive); non-interactive
+   shapes use a backdrop class — .provinceInert on the il map ("not published yet", recedes)
+   and .landInert on the world map (permanent land, must read as land). */
 
 .intro {
   color: var(--color-slate);
@@ -18,21 +19,31 @@
   padding: 16px clamp(12px, 3vw, 28px) 40px;
 }
 
+/* World map ONLY: the backdrop is literal SEA, so it is flat (never a gradient) and cool.
+   A gradient would make land/sea fill contrast depend on a shape's latitude — see --map-sea
+   in globals.css for the measured reason. Scoped to this modifier so the Türkiye il map,
+   which shares this stylesheet but whose backdrop is a panel and not water, keeps the warm
+   parchment gradient unchanged. */
+.worldRoot {
+  background: var(--map-sea);
+}
+
 .svg {
   display: block;
   width: 100%;
   height: auto;
   /* The viewBox gives an intrinsic aspect ratio, so the box reserves its height
      immediately; inline SVG has no async load → no layout shift (SEO §6 #9). */
-  /* The world map is FRAMED on its seeded countries; context/backdrop countries
-     project outside the viewBox and must clip at the frame edges. Explicit (the UA
-     default is already hidden, but pin it) — a no-op for the Türkiye map, whose il
-     all sit inside the padded viewBox. */
+  /* Both maps are framed on the bounding box of EVERY shape they draw, so nothing
+     projects outside the viewBox and this clip is a no-op today. Pinned anyway (the UA
+     default is already hidden) so a future framing change cannot spill shapes past the
+     panel edge. */
   overflow: hidden;
 }
 
 .province,
-.provinceInert {
+.provinceInert,
+.landInert {
   stroke: var(--province-stroke);
   stroke-width: 1;
   stroke-linejoin: round;
@@ -44,8 +55,19 @@
   fill: var(--province-fill);
 }
 
+/* Türkiye il map: a province that has no published page yet — recedes on purpose. */
 .provinceInert {
   fill: var(--province-inert);
+}
+
+/* World map: backdrop LAND (unseeded countries + territories that never get a page). Filled
+   with the SAME tone as a clickable country — one land colour for the whole map (owner ruling
+   2026-07-26). What makes a shape inert is the absence of a link, a tab stop and a
+   hover/focus state, never the fill. Never the surface tint either: that was the map
+   background gradient's own top stop and made Greenland invisible (see --land-inert in
+   globals.css for the measured figures). */
+.landInert {
+  fill: var(--land-inert);
 }
 
 .provinceLink {
