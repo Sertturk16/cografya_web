@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { INTERNAL_REQUEST_HEADER, buildApiRequestHeaders } from "./internal-token";
+import {
+  INTERNAL_REQUEST_HEADER,
+  buildApiRequestHeaders,
+  describeThrottleExemption,
+} from "./internal-token";
 
 /**
- * Structural contract tests for the trusted-client throttle-exemption header. Three
+ * Structural contract tests for the trusted-client throttle-exemption header. Four
  * invariants are worth a test here, all of them structural (no facts, no api round-trip):
  *
  *   1. **Fail-closed** — with no configured token the produced headers are byte-identical
@@ -11,8 +15,14 @@ import { INTERNAL_REQUEST_HEADER, buildApiRequestHeaders } from "./internal-toke
  *   2. **The header name matches the api constant exactly** (lowercase). A silent rename on
  *      either side of the contract re-enables the 429 build failures with no error message
  *      anywhere, which is exactly the class of drift a pinned string catches in CI.
- *   3. **The env var is server-only by name** — nothing in this module may carry a
- *      `NEXT_PUBLIC_` prefix, since that would inline the secret into client bundles.
+ *   3. **The 429 diagnostic never carries the value** — it is appended to an `ApiError`
+ *      message that the build-time resilient wrappers `console.warn`, i.e. straight into
+ *      retained CI logs, so "state only" is a security invariant, not a style preference.
+ *   4. **The diagnostic cannot contradict the wire** — it must report "configured" exactly
+ *      when the header is actually attached.
+ *
+ * The client-bundle leak guard for the env var NAME lives in `lib/env.server.test.ts`
+ * (it is an assertion about the CLIENT schema `lib/env.ts`, not about this module).
  */
 const VALID_TOKEN = "a".repeat(48);
 
@@ -48,9 +58,31 @@ describe("INTERNAL_REQUEST_HEADER", () => {
     expect(INTERNAL_REQUEST_HEADER).toBe("x-internal-request-token");
     expect(INTERNAL_REQUEST_HEADER).toBe(INTERNAL_REQUEST_HEADER.toLowerCase());
   });
+});
 
-  it("is not a NEXT_PUBLIC_ surface", () => {
-    // Guards the one mistake that would leak the secret into every client bundle.
-    expect(INTERNAL_REQUEST_HEADER).not.toContain("NEXT_PUBLIC");
+describe("describeThrottleExemption", () => {
+  it("never reveals the token value (the string is logged verbatim on a 429)", () => {
+    const hint = describeThrottleExemption(VALID_TOKEN);
+
+    expect(hint).not.toContain(VALID_TOKEN);
+    // Also not a prefix of it: a truncated secret in a log line is still a disclosure.
+    expect(hint).not.toContain(VALID_TOKEN.slice(0, 8));
+  });
+
+  it("names the env var in both states so the operator can act on the message", () => {
+    expect(describeThrottleExemption(VALID_TOKEN)).toContain("INTERNAL_REQUEST_TOKEN");
+    expect(describeThrottleExemption(undefined)).toContain("INTERNAL_REQUEST_TOKEN");
+  });
+
+  it("never contradicts what was actually sent on the wire", () => {
+    // The diagnostic and the header must share one predicate: a hint that says "configured"
+    // while no header was attached (or vice versa) sends the operator down the wrong path.
+    for (const token of [undefined, "", VALID_TOKEN]) {
+      const headerAttached = INTERNAL_REQUEST_HEADER in buildApiRequestHeaders(token);
+      const hint = describeThrottleExemption(token);
+
+      expect(hint).toMatch(/configured/i);
+      expect(/not configured/i.test(hint)).toBe(!headerAttached);
+    }
   });
 });

@@ -1,6 +1,6 @@
 import "server-only";
 import { serverEnv } from "@/lib/env.server";
-import { buildApiRequestHeaders } from "./internal-token";
+import { buildApiRequestHeaders, describeThrottleExemption } from "./internal-token";
 
 /**
  * ISR window for province content (seconds). Province data changes rarely, so an
@@ -44,7 +44,13 @@ export async function apiGet<T>(path: string, options: ApiGetOptions = {}): Prom
   });
 
   if (!res.ok) {
-    throw new ApiError(res.status, `API GET ${path} failed with status ${res.status}`);
+    // A 429 is the ONE status whose cause is ambiguous from the outside (throttled because
+    // no exemption is configured? because the two secrets drifted?), and it is the failure
+    // this wiring exists to prevent — so it carries a state-only hint. Never the value.
+    const hint =
+      res.status === 429 ? ` — ${describeThrottleExemption(serverEnv.INTERNAL_REQUEST_TOKEN)}` : "";
+
+    throw new ApiError(res.status, `API GET ${path} failed with status ${res.status}${hint}`);
   }
 
   return (await res.json()) as T;

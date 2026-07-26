@@ -31,8 +31,23 @@
 export const INTERNAL_REQUEST_HEADER = "x-internal-request-token";
 
 /**
- * Request headers for a server-side api GET: the JSON `Accept` every call sends, plus the
- * trusted-client token when (and only when) one is configured.
+ * The fail-closed predicate, single-sourced so the header we SEND and the diagnostic we
+ * PRINT can never disagree about whether an exemption was attempted. Module-private: the
+ * two consumers below are the only ones that need it.
+ */
+function isTokenConfigured(
+  internalRequestToken: string | undefined,
+): internalRequestToken is string {
+  return internalRequestToken !== undefined && internalRequestToken !== "";
+}
+
+/**
+ * Request headers for a server-side api **GET**: the JSON `Accept` every call sends, plus
+ * the trusted-client token when (and only when) one is configured.
+ *
+ * GET/HEAD ONLY — do not reuse this for a write call site. The api hard-scopes the
+ * exemption to safe methods, so a POST (the roadmap's AI-vision endpoint, admin CRUD)
+ * would carry the secret for nothing: no bypass, just extra exposure surface.
  */
 export function buildApiRequestHeaders(
   internalRequestToken: string | undefined,
@@ -40,9 +55,25 @@ export function buildApiRequestHeaders(
   const headers: Record<string, string> = { Accept: "application/json" };
 
   // Fail-closed: no secret configured (unset or empty) → no header, no exemption.
-  if (internalRequestToken !== undefined && internalRequestToken !== "") {
+  if (isTokenConfigured(internalRequestToken)) {
     headers[INTERNAL_REQUEST_HEADER] = internalRequestToken;
   }
 
   return headers;
+}
+
+/**
+ * Operator-facing diagnostic appended to a 429 from the api. A plain
+ * `ApiError … status 429` is byte-identical whether the token is absent, stale, rotated on
+ * one side only or mangled — so the natural reading is "rate limit, retry" and nothing
+ * points at `INTERNAL_REQUEST_TOKEN`. This names the suspect.
+ *
+ * SECURITY: reports the STATE only, never the value — the returned string is logged by the
+ * build-time resilient wrappers, so a value here would land in retained CI logs.
+ * `internal-token.test.ts` pins that.
+ */
+export function describeThrottleExemption(internalRequestToken: string | undefined): string {
+  return isTokenConfigured(internalRequestToken)
+    ? "trusted-client exemption token IS configured on the web side — verify it matches the api's INTERNAL_REQUEST_TOKEN byte-for-byte (a rotation on one side only looks exactly like this)"
+    : "trusted-client exemption token is NOT configured on the web side — set INTERNAL_REQUEST_TOKEN to the api's value to exempt build reads from the rate limit";
 }

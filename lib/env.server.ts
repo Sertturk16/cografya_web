@@ -14,6 +14,10 @@ const serverEnvSchema = z.object({
   // NOT NEXT_PUBLIC_). Defaults to the local api dev port; MUST be set to the
   // real (internal) api origin in production. A build with no api reachable
   // degrades gracefully to on-demand ISR (see lib/api/provinces.ts).
+  // ACCEPTED RISK (deliberate, no origin allowlist): INTERNAL_REQUEST_TOKEN below rides
+  // EVERY request to this origin, so a misconfigured value discloses the shared secret to
+  // whoever answers. Prefer `https://` unless the api is reached over a trusted network —
+  // `z.url()` also accepts `http://`, which sends the token in plaintext.
   API_BASE_URL: z.url().default("http://localhost:3001"),
   // OPTIONAL shared secret that exempts our server-side api reads from the api's global
   // rate limit (cografya_api `TrustedClientThrottlerGuard`, PR #67) — presented in the
@@ -24,9 +28,31 @@ const serverEnvSchema = z.object({
   // truncated/typo'd value aborts boot loudly instead of degrading into silent 429s during
   // `next build`; an EMPTY assignment is therefore invalid too — leave the line out
   // entirely when you don't want the exemption.
+  //
+  // The character class is a WIRE-CONTRACT constraint, not cosmetics: this value is sent
+  // verbatim as an HTTP header value, and length alone does not make a string one. Visible
+  // ASCII (0x21-0x7E) is exactly the set that (a) `Headers` accepts and (b) survives the
+  // wire byte-identical, so every accepted value hashes on the api side to what we sent.
+  // Measured on Node 24 — the two classes this excludes both fail in production:
+  //   · whitespace: a wrapped `openssl rand -base64 64` (internal newline) makes `fetch`
+  //     throw a TypeError, which the build-time resilient wrappers swallow → a GREEN build
+  //     with zero prerendered pages and a gutted sitemap; a leading/trailing space or
+  //     newline is silently TRIMMED by `Headers`, so a byte-identical secret in both stores
+  //     still mismatches the api's untrimmed digest → permanent 429s with "exemption:
+  //     active" in the api log (the one diagnostic that would exonerate the token).
+  //   · control/non-ASCII: NUL, 0x7F, `ş`, an emoji — all non-whitespace, so a `\S` check
+  //     lets them through, yet several still throw the same swallowed TypeError, whose
+  //     message embeds the offending value VERBATIM (it would land in retained build logs).
+  // Rejecting them here is the single control that keeps the secret out of both failure
+  // modes; `lib/env.server.test.ts` pins the schema↔`Headers` agreement so a future
+  // loosening fails CI instead of re-opening them.
   INTERNAL_REQUEST_TOKEN: z
     .string()
     .min(32, "INTERNAL_REQUEST_TOKEN must be at least 32 characters when set")
+    .regex(
+      /^[\x21-\x7E]+$/,
+      "INTERNAL_REQUEST_TOKEN must contain only visible ASCII characters (no whitespace, no control or non-ASCII characters) when set",
+    )
     .optional(),
 });
 
