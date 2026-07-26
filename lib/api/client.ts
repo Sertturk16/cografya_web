@@ -1,5 +1,6 @@
 import "server-only";
 import { serverEnv } from "@/lib/env.server";
+import { buildApiRequestHeaders } from "./internal-token";
 
 /**
  * ISR window for province content (seconds). Province data changes rarely, so an
@@ -31,10 +32,14 @@ interface ApiGetOptions {
  * OpenAPI contract). Throws `ApiError` on any non-OK status so callers can
  * distinguish 404 (→ notFound) from a real failure (→ let ISR keep the last
  * good render / surface the error boundary).
+ *
+ * This is the ONLY place the web app talks to the api, which is why the trusted-client
+ * throttle-exemption header is attached here: one chokepoint, and it is `server-only`, so
+ * the secret cannot reach the browser (see `./internal-token`).
  */
 export async function apiGet<T>(path: string, options: ApiGetOptions = {}): Promise<T> {
   const res = await fetch(`${serverEnv.API_BASE_URL}${path}`, {
-    headers: { Accept: "application/json" },
+    headers: buildApiRequestHeaders(serverEnv.INTERNAL_REQUEST_TOKEN),
     next: { revalidate: options.revalidate ?? CONTENT_REVALIDATE_SECONDS },
   });
 
