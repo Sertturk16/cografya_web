@@ -23,9 +23,16 @@
  * 2026-07-13). Both therefore render as independently hoverable/clickable regions once each
  * is seeded, satisfying the owner's split-island map requirement without faking geometry.
  *
- * Antarctica is the one entity deliberately not drawn (`DRAW_EXCLUDE`): a ~5k-vertex
- * full-width polar polygon that is not a navigable country — the standard web-world-map
- * omission. It stays in the snapshot for provenance; only the render step skips it.
+ * EVERY snapshot feature is drawn — there is no exclusion list. Antarctica (AQ) used to be
+ * the one deliberate omission (a ~5k-vertex full-width polar cap, the standard web-world-map
+ * cut); that call was REVERSED on owner instruction ("the world map must not have holes",
+ * 2026-07-26) after the `/dunya` completeness audit. It is drawn with a deliberately coarser
+ * simplification tolerance (`SIMPLIFY_EPSILON_BY_ISO`) because it is a non-navigable backdrop
+ * mass whose coastline detail carries no navigation value, plus a sub-pixel ring filter
+ * (`MIN_RING_AREA_BY_ISO`): 4.5 kB raw / 1.8 kB gzipped instead of ~19.8 kB raw.
+ * Including it extends the framing to the south pole, so the shared viewBox grows taller —
+ * the projected X extent and the northern edge are unchanged, so every already-emitted
+ * country path stays byte-identical (verified at generation time, see `pnpm generate:world-map`).
  *
  * Run once and COMMIT the output (`pnpm generate:world-map`). CI/runtime never invoke this —
  * the app imports the committed artifact. The raw GeoJSON never reaches the client (same
@@ -39,7 +46,7 @@
  * hand-rolled-geometry style (see `simplify` below). It converges the meridians toward the
  * poles, so high latitudes (Greenland, Russia, Canada, Scandinavia) no longer read as the
  * horizontally-stretched "flat top" the plain equirectangular outline produced. Framed on the
- * bounding box of the DRAWN features in PROJECTED space (Antarctica excluded). This map is
+ * bounding box of ALL features in PROJECTED space (pole to pole). This map is
  * navigation CHROME, not a data encoding, so the projection is chosen for legibility, not
  * measurement fidelity (same doctrine as the Türkiye map).
  *
@@ -56,15 +63,6 @@ const ROOT = join(HERE, "..");
 const SRC = join(ROOT, "data", "world-countries.geojson");
 const OUT = join(ROOT, "lib", "map", "world-countries.generated.ts");
 
-/**
- * ISO codes present in the snapshot but deliberately NOT drawn. Antarctica (AQ) is a
- * ~5k-vertex, full-longitude-width polar cap — not a navigable country and the standard
- * omission on web world maps; drawing it would balloon the artifact and the viewBox height
- * for zero navigation value. If the api ever seeds it, it simply stays unrendered (a
- * documented, deliberate gap — not a soft-404: there is no shape, hence no link).
- */
-const DRAW_EXCLUDE = new Set(["AQ"]);
-
 // --- Projection + simplification tuning ---------------------------------------
 const VIEW_WIDTH = 1000; // shared viewBox width (svg units)
 const PADDING = 4; // inset so the framed world is not flush against the edge
@@ -76,6 +74,29 @@ const PADDING = 4; // inset so the framed world is not flush against the edge
 // (Vatican, Nauru, Monaco, Tuvalu, …) are handled by the marker fallback below — NOT dropped
 // — so tuning this for size can never again silently delete a country from the link surface.
 const SIMPLIFY_EPSILON = 0.15;
+/**
+ * Per-join-key tolerance overrides. Only for shapes that are pure backdrop mass — never for
+ * anything the api can seed into a clickable country, where coastline fidelity is part of the
+ * click target. Antarctica: a ~5k-vertex polar cap that is not navigable and never gets a
+ * `/dunya/{slug}` page, so its coastline detail buys nothing; 0.8 (vs the global 0.15) keeps
+ * the recognisable outline at world scale for a fraction of the bytes (see below).
+ * @type {Map<string, number>}
+ */
+const SIMPLIFY_EPSILON_BY_ISO = new Map([["AQ", 0.8]]);
+/**
+ * Companion to the tolerance override: the minimum area (svg units²) a SIMPLIFIED ring of
+ * such a shape must enclose to be emitted. Douglas-Peucker at a coarse tolerance does not
+ * delete an archipelago's islets, it FLATTENS each of them into a near-zero-area zigzag
+ * sliver — which reads as "hair" along the coast the moment the user zooms in (and this map
+ * zooms). West Antarctica's island fringe produced ~58 such slivers. At world scale 1 unit²
+ * is about one pixel, so dropping sub-1u² rings removes only noise: it deletes nothing a
+ * reader could ever see as a place, and cuts the Antarctic path by ~35 %.
+ *
+ * Defaults to 0 for every other key, so no already-emitted country path is affected — the
+ * 239 pre-existing shapes stay byte-identical, which is the standing gate on this artifact.
+ * @type {Map<string, number>}
+ */
+const MIN_RING_AREA_BY_ISO = new Map([["AQ", 1]]);
 const DECIMALS = 1; // coordinate rounding in the emitted path data
 
 // --- Micro-state marker fallback (never silently drop a country) ---------------
@@ -132,6 +153,17 @@ function round(n) {
   return Number(n.toFixed(DECIMALS));
 }
 
+/** Absolute shoelace area of a projected ring, in svg units². */
+function ringArea(points) {
+  let sum = 0;
+  for (let i = 0; i < points.length; i++) {
+    const [x1, y1] = points[i];
+    const [x2, y2] = points[(i + 1) % points.length];
+    sum += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(sum / 2);
+}
+
 /** Visit every [lon, lat] pair in a Polygon / MultiPolygon geometry. */
 function eachCoord(geometry, fn) {
   const polys = geometry.type === "MultiPolygon" ? geometry.coordinates : [geometry.coordinates];
@@ -179,13 +211,13 @@ function markerDiamond(cx, cy) {
   );
 }
 
-// --- Load + first pass: bounding box of the DRAWN features (Antarctica excluded) ---
+// --- Load + first pass: bounding box of ALL features (nothing is excluded) ---
 const geojson = JSON.parse(readFileSync(SRC, "utf8"));
 if (geojson.type !== "FeatureCollection" || !Array.isArray(geojson.features)) {
   throw new Error(`Unexpected GeoJSON: ${SRC}`);
 }
 
-const drawn = geojson.features.filter((f) => !DRAW_EXCLUDE.has(f.properties?.iso));
+const drawn = geojson.features;
 
 const DEG2RAD = Math.PI / 180;
 
@@ -211,7 +243,7 @@ function naturalEarthRaw([lon, lat]) {
 
 // First pass: bounding box of the DRAWN features in PROJECTED (Natural Earth) space — the
 // projection is non-linear, so framing must be computed on projected coordinates, not on the
-// raw lon/lat extent. Antarctica is already filtered out of `drawn`.
+// raw lon/lat extent.
 let minX = Infinity;
 let maxX = -Infinity;
 let minY = Infinity;
@@ -226,7 +258,7 @@ for (const feature of drawn) {
   });
 }
 if (!Number.isFinite(minX)) {
-  throw new Error("No drawable features found — check the snapshot / DRAW_EXCLUDE.");
+  throw new Error("No drawable features found — check the snapshot.");
 }
 
 // Scale so the full projected width fills the viewBox; height follows the projected span so
@@ -262,6 +294,8 @@ for (const feature of drawn) {
   expectedKeys.add(iso);
 
   const subpaths = [];
+  const epsilon = SIMPLIFY_EPSILON_BY_ISO.get(iso) ?? SIMPLIFY_EPSILON;
+  const minRingArea = MIN_RING_AREA_BY_ISO.get(iso) ?? 0;
   const bbox = projectedBBox(feature.geometry, project);
   if (bbox.w < MARKER_MIN_SPAN && bbox.h < MARKER_MIN_SPAN) {
     // Micro-state: its whole outline is smaller than the simplify tolerance and would
@@ -272,8 +306,11 @@ for (const feature of drawn) {
   } else {
     for (const ring of outerRings(feature.geometry)) {
       const projected = ring.map(project);
-      const simplified = simplify(projected, SIMPLIFY_EPSILON);
+      const simplified = simplify(projected, epsilon);
       if (simplified.length < 3) continue; // a tiny islet of a larger country — safely dropped
+      // Backdrop-only shapes additionally drop rings the coarse tolerance flattened into
+      // sub-pixel slivers (0 for every normal country, so their paths are untouched).
+      if (minRingArea > 0 && ringArea(simplified) < minRingArea) continue;
       const d = simplified
         .map(([x, y], i) => `${i === 0 ? "M" : "L"}${round(x)} ${round(y)}`)
         .join("");
@@ -362,7 +399,7 @@ export interface CountryShape {
   readonly d: string;
 }
 
-/** Shared SVG viewBox all ${shapes.length} paths are projected into (full world, Antarctica excluded). */
+/** Shared SVG viewBox all ${shapes.length} paths are projected into (whole world, pole to pole). */
 export const WORLD_MAP_VIEWBOX = "0 0 ${VIEW_WIDTH} ${viewHeight}" as const;
 
 export const COUNTRY_SHAPES: readonly CountryShape[] = [

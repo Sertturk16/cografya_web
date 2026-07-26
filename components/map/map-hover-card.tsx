@@ -167,16 +167,23 @@ export function MapHoverCard() {
             {active.badge && <span className={styles.cardPlate}>{active.badge}</span>}
           </div>
           {active.subtitle && <div className={styles.cardRegion}>{active.subtitle}</div>}
-          <div className={styles.cardRule} />
+          {/* The rule SEPARATES the head from the stats, so it only exists when there are
+              stats to separate. Every province and country card has at least one stat; the
+              stat-less case is the hand-wired Türkiye shape, whose card is deliberately just
+              name + destination (→ DEC 2026-07-26 K1) and would otherwise end on a dangling
+              hairline. */}
           {active.stats.length > 0 && (
-            <dl className={styles.stats}>
-              {active.stats.map((stat) => (
-                <div key={stat.label} className={styles.stat}>
-                  <dt className={styles.statLabel}>{stat.label}</dt>
-                  <dd className={styles.statValue}>{stat.value}</dd>
-                </div>
-              ))}
-            </dl>
+            <>
+              <div className={styles.cardRule} />
+              <dl className={styles.stats}>
+                {active.stats.map((stat) => (
+                  <div key={stat.label} className={styles.stat}>
+                    <dt className={styles.statLabel}>{stat.label}</dt>
+                    <dd className={styles.statValue}>{stat.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </>
           )}
         </>
       )}

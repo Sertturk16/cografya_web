@@ -1,8 +1,9 @@
 /* Shared interactive-map + hover/focus card styles (Türkiye il map AND the world
    country map). Terra tokens only; the map-chrome tints live in the app/globals.css
    token layer (these maps are navigation CHROME, not a data encoding — SPEC §2
-   doctrine note). Seeded shapes use .province/.provinceLink (interactive); unseeded
-   shapes use .provinceInert (backdrop) — same grammar for provinces and countries. */
+   doctrine note). Seeded shapes use .province/.provinceLink (interactive); non-interactive
+   shapes use a backdrop class — .provinceInert on the il map ("not published yet", recedes)
+   and .landInert on the world map (permanent land, must read as land). */
 
 .intro {
   color: var(--color-slate);
@@ -32,7 +33,8 @@
 }
 
 .province,
-.provinceInert {
+.provinceInert,
+.landInert {
   stroke: var(--province-stroke);
   stroke-width: 1;
   stroke-linejoin: round;
@@ -44,8 +46,16 @@
   fill: var(--province-fill);
 }
 
+/* Türkiye il map: a province that has no published page yet — recedes on purpose. */
 .provinceInert {
   fill: var(--province-inert);
+}
+
+/* World map: backdrop LAND (unseeded countries + territories that never get a page). It is
+   land, so it is filled like land — never with the surface tint, which is the map background
+   gradient's own top stop and made Greenland invisible (see --land-inert in globals.css). */
+.landInert {
+  fill: var(--land-inert);
 }
 
 .provinceLink {

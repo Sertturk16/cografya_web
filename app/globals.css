@@ -34,6 +34,35 @@
      DESIGN §6 data-viz rules do not apply here, see SPEC §2 doctrine note) ---- */
   --province-fill: #ffffff; /* available il base fill */
   --province-inert: var(--color-surface); /* not-yet-published il (recedes) */
+  /* Backdrop LAND on the world map: territories that will never get a page (Greenland,
+     Antarctica, the overseas-territory set) plus not-yet-seeded countries. Deliberately a
+     SEPARATE token from --province-inert: on the il map "inert" means "not published yet"
+     and correctly recedes, whereas on the world map the same shapes are permanent land that
+     must read as LAND, not sea. --province-inert (#f1e9de) is byte-identical to the map
+     background gradient's TOP stop → 1.00:1, which is exactly why Greenland disappeared
+     (/dunya completeness audit, 2026-07-26).
+
+     The map background is a gradient from --color-surface (#f1e9de, top) to --color-bg
+     (#fbf8f3, bottom), so a land fill has to hold against BOTH ends, and the taupe boundary
+     (--province-stroke) has to stay ≥ 3:1 on whatever fill it sits on (WCAG 1.4.11) — that
+     floor is what caps how dark this token may go. Two owner-reviewed tone variants:
+
+       VARIANT A (alternative) #f8f4ee — "country-adjacent": one perceptible step down from
+         the clickable countries' #ffffff (1.10:1) and one step up from the sea's top stop
+         (1.10:1). Reads as land at Greenland's latitude, but at the bottom of the map, where
+         the sea is nearly white, Antarctica all but disappears into it (1.03:1) and only its
+         outline survives. Taupe boundary 3.52:1 ✓.
+       VARIANT B (in force) #eae4dc — "light neutral sand": the strongest published-vs-
+         backdrop signal (1.26:1 against the white countries) and the only tone under which
+         Antarctica reads as a mass rather than an outline (1.19:1 against the sea's bottom
+         stop). Its fill sits close to the sea's TOP stop (1.05:1), but at Greenland's actual
+         position the gradient has already lifted, and the rendered samples show the shape
+         reading clearly. Taupe boundary 3.06:1 ✓ (above the 3:1 floor).
+
+     Switching is this one line. Backdrop land is never distinguished from a published
+     country by BEHAVIOUR-carrying colour alone: no hover highlight, no pointer cursor, no
+     link is what makes it inert — the tone only sets how the map reads at rest. */
+  --land-inert: #eae4dc;
   /* Map boundary at rest. Taupe (#8a8078) is a non-text / secondary-UI token
      (DESIGN §5) and, as a graphical object, clears WCAG 1.4.11's 3:1 in BOTH fill
      contexts: 3.86:1 on --province-fill (#fff), 3.21:1 on --province-inert (#f1e9de).
