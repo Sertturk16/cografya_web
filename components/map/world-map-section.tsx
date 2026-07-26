@@ -80,7 +80,10 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
       <h2 id="world-map-heading">{tMap("sectionHeading")}</h2>
       <p className={styles.intro}>{tMap("sectionBody")}</p>
 
-      <div className={styles.mapRoot} data-map-root>
+      {/* .worldRoot = flat cool SEA (the il map keeps the warm parchment gradient): a
+          gradient backdrop makes land/sea fill contrast depend on latitude, which is what
+          made Greenland vanish at the top of the map (→ --map-sea, globals.css). */}
+      <div className={`${styles.mapRoot} ${styles.worldRoot}`} data-map-root>
         {/* Rendered BEFORE the <svg> so the zoom controls sit ahead of the ~190 crawlable
             country links in tab order (review I3) — keyboard users reach +/−/reset without
             tabbing through every country. Visual position is unaffected (the layer is

@@ -34,35 +34,53 @@
      DESIGN §6 data-viz rules do not apply here, see SPEC §2 doctrine note) ---- */
   --province-fill: #ffffff; /* available il base fill */
   --province-inert: var(--color-surface); /* not-yet-published il (recedes) */
+  /* WORLD-MAP SEA. Flat, and a cool tint of --color-accent (#276b70, the brand's water
+     teal) rather than a warm parchment gradient. Both properties are load-bearing, not
+     cosmetic (PR #23 review I2):
+
+       FLAT, because a gradient makes every fill contrast LATITUDE-DEPENDENT. The previous
+         sea swept --color-surface → --color-bg (relative luminance 0.82 → 0.94), so any
+         single land fill necessarily collided with the sea at SOME latitude: the old
+         backdrop tone measured 1.05:1 at Greenland (top 13 % of the map) and the seeded
+         white countries measured just 1.06:1 at the bottom of the map. Tuning one tone
+         traded the Arctic against the Antarctic; it could not win both. A flat sea makes
+         every figure below hold identically at every point on the map.
+       COOL, because the usable luminance band is tiny. --province-stroke (taupe #8a8078)
+         must clear WCAG 1.4.11's 3:1 against every fill it borders — including the sea —
+         which floors any fill at ~0.766 luminance, and white countries cap it at 1.0. The
+         whole system therefore has ~1.29:1 of luminance to spend. Separating land from sea
+         on HUE as well (warm land / cool water — the standard atlas convention) is what
+         actually carries the distinction; it also survives red-green colour blindness,
+         since warm-vs-cool sits on the blue-yellow axis.
+
+     #dbe7e8 is ~14 % --color-accent on --color-bg. It is the DARKEST sea the 3:1 stroke
+     floor permits (taupe 3.05:1 against it) — going cooler/darker to buy fill contrast
+     would quietly break a floor a previous a11y review set, so it does not. */
+  --map-sea: #dbe7e8;
   /* Backdrop LAND on the world map: territories that will never get a page (Greenland,
      Antarctica, the overseas-territory set) plus not-yet-seeded countries. Deliberately a
      SEPARATE token from --province-inert: on the il map "inert" means "not published yet"
      and correctly recedes, whereas on the world map the same shapes are permanent land that
-     must read as LAND, not sea. --province-inert (#f1e9de) is byte-identical to the map
+     must read as LAND, not sea. --province-inert (#f1e9de) was byte-identical to the old
      background gradient's TOP stop → 1.00:1, which is exactly why Greenland disappeared
      (/dunya completeness audit, 2026-07-26).
 
-     The map background is a gradient from --color-surface (#f1e9de, top) to --color-bg
-     (#fbf8f3, bottom), so a land fill has to hold against BOTH ends, and the taupe boundary
-     (--province-stroke) has to stay ≥ 3:1 on whatever fill it sits on (WCAG 1.4.11) — that
-     floor is what caps how dark this token may go. Two owner-reviewed tone variants:
+     Against the flat --map-sea both tone variants below hold their figures at EVERY
+     latitude — the two numbers are a genuine editorial trade-off now, not an artefact of
+     where a shape happens to sit:
 
-       VARIANT A (alternative) #f8f4ee — "country-adjacent": one perceptible step down from
-         the clickable countries' #ffffff (1.10:1) and one step up from the sea's top stop
-         (1.10:1). Reads as land at Greenland's latitude, but at the bottom of the map, where
-         the sea is nearly white, Antarctica all but disappears into it (1.03:1) and only its
-         outline survives. Taupe boundary 3.52:1 ✓.
-       VARIANT B (in force) #eae4dc — "light neutral sand": the strongest published-vs-
-         backdrop signal (1.26:1 against the white countries) and the only tone under which
-         Antarctica reads as a mass rather than an outline (1.19:1 against the sea's bottom
-         stop). Its fill sits close to the sea's TOP stop (1.05:1), but at Greenland's actual
-         position the gradient has already lifted, and the rendered samples show the shape
-         reading clearly. Taupe boundary 3.06:1 ✓ (above the 3:1 floor).
+       VARIANT A (in force) #f8f4ee — "paper land": the strongest land-vs-sea reading
+         (1.15:1, plus the warm/cool hue break), one step down from the clickable countries'
+         #ffffff (1.10:1). Favours the reported bug — non-navigable land must read as land.
+         Taupe boundary 3.52:1 ✓.
+       VARIANT B (alternative) #f4ecdd — "sand land": warmer and one step darker, so the
+         published-vs-backdrop grammar is the stronger signal (1.17:1 against the white
+         countries) at the cost of some land-vs-sea (1.08:1). Taupe boundary 3.29:1 ✓.
 
      Switching is this one line. Backdrop land is never distinguished from a published
      country by BEHAVIOUR-carrying colour alone: no hover highlight, no pointer cursor, no
      link is what makes it inert — the tone only sets how the map reads at rest. */
-  --land-inert: #eae4dc;
+  --land-inert: #f8f4ee;
   /* Map boundary at rest. Taupe (#8a8078) is a non-text / secondary-UI token
      (DESIGN §5) and, as a graphical object, clears WCAG 1.4.11's 3:1 in BOTH fill
      contexts: 3.86:1 on --province-fill (#fff), 3.21:1 on --province-inert (#f1e9de).

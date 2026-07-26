@@ -19,16 +19,25 @@
   padding: 16px clamp(12px, 3vw, 28px) 40px;
 }
 
+/* World map ONLY: the backdrop is literal SEA, so it is flat (never a gradient) and cool.
+   A gradient would make land/sea fill contrast depend on a shape's latitude — see --map-sea
+   in globals.css for the measured reason. Scoped to this modifier so the Türkiye il map,
+   which shares this stylesheet but whose backdrop is a panel and not water, keeps the warm
+   parchment gradient unchanged. */
+.worldRoot {
+  background: var(--map-sea);
+}
+
 .svg {
   display: block;
   width: 100%;
   height: auto;
   /* The viewBox gives an intrinsic aspect ratio, so the box reserves its height
      immediately; inline SVG has no async load → no layout shift (SEO §6 #9). */
-  /* The world map is FRAMED on its seeded countries; context/backdrop countries
-     project outside the viewBox and must clip at the frame edges. Explicit (the UA
-     default is already hidden, but pin it) — a no-op for the Türkiye map, whose il
-     all sit inside the padded viewBox. */
+  /* Both maps are framed on the bounding box of EVERY shape they draw, so nothing
+     projects outside the viewBox and this clip is a no-op today. Pinned anyway (the UA
+     default is already hidden) so a future framing change cannot spill shapes past the
+     panel edge. */
   overflow: hidden;
 }
 
