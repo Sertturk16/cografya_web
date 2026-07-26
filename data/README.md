@@ -111,9 +111,14 @@ simplified). **Every snapshot feature is drawn — there is no exclusion list.**
 (`AQ`) used to be the single deliberate omission; that was reversed on owner instruction
 ("the world map must not have holes", 2026-07-26). It is drawn at a coarser simplification
 tolerance (0.8 vs the global 0.15, `SIMPLIFY_EPSILON_BY_ISO`) because it is non-navigable
-backdrop mass, and its sub-pixel island slivers — what that tolerance flattens the West
-Antarctic archipelago into — are dropped by `MIN_RING_AREA_BY_ISO`: 4.5 kB raw / 1.8 kB
-gzipped instead of ~19.8 kB raw. Both overrides are keyed per ISO and default to
+backdrop mass, and its genuinely sub-pixel islets are dropped by `MIN_RING_AREA_BY_ISO`
+(< 1 svg unit² ≈ < 1 px at world scale): 6.0 kB raw / 2.2 kB gzipped instead of ~19.8 kB raw.
+The area bar is measured on the **true projected ring, before simplification** — measuring the
+simplified ring instead deletes real islands that the coarse tolerance merely flattened
+(PR #23 review I1: 18 real Antarctic rings, largest 4.6 u², were being dropped). Of AQ's 108
+outer rings, 72 are true sub-pixel noise and 36 are drawn; the 18 the coarse pass would have
+flattened into hairlines are re-simplified at the global 0.15 so they render as islands rather
+than as coastal "hair". Both overrides are keyed per ISO and default to
 "no override", so no other country path is touched. Framing it extends the
 viewBox south (`0 0 1000 447` → `0 0 1000 521`); the projected X extent and the northern edge
 are unchanged, so **all 239 pre-existing country paths stayed byte-identical** (the artifact

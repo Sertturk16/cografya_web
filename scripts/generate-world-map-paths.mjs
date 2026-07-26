@@ -29,7 +29,8 @@
  * 2026-07-26) after the `/dunya` completeness audit. It is drawn with a deliberately coarser
  * simplification tolerance (`SIMPLIFY_EPSILON_BY_ISO`) because it is a non-navigable backdrop
  * mass whose coastline detail carries no navigation value, plus a sub-pixel ring filter
- * (`MIN_RING_AREA_BY_ISO`): 4.5 kB raw / 1.8 kB gzipped instead of ~19.8 kB raw.
+ * (`MIN_RING_AREA_BY_ISO`) that drops only rings smaller than ~1 px at world scale:
+ * 6.0 kB raw / 2.2 kB gzipped instead of ~19.8 kB raw.
  * Including it extends the framing to the south pole, so the shared viewBox grows taller —
  * the projected X extent and the northern edge are unchanged, so every already-emitted
  * country path stays byte-identical (verified at generation time, see `pnpm generate:world-map`).
@@ -84,13 +85,22 @@ const SIMPLIFY_EPSILON = 0.15;
  */
 const SIMPLIFY_EPSILON_BY_ISO = new Map([["AQ", 0.8]]);
 /**
- * Companion to the tolerance override: the minimum area (svg units²) a SIMPLIFIED ring of
- * such a shape must enclose to be emitted. Douglas-Peucker at a coarse tolerance does not
- * delete an archipelago's islets, it FLATTENS each of them into a near-zero-area zigzag
- * sliver — which reads as "hair" along the coast the moment the user zooms in (and this map
- * zooms). West Antarctica's island fringe produced ~58 such slivers. At world scale 1 unit²
- * is about one pixel, so dropping sub-1u² rings removes only noise: it deletes nothing a
- * reader could ever see as a place, and cuts the Antarctic path by ~35 %.
+ * Companion to the tolerance override: the minimum area (svg units²) a ring of such a shape
+ * must ACTUALLY enclose to be drawn at all. Measured on the TRUE projected ring, before any
+ * simplification — see the ordering note in the emit loop below, this is the whole point.
+ *
+ * Why the filter exists: Douglas-Peucker at a coarse tolerance does not delete an
+ * archipelago's islets, it FLATTENS each of them into a near-zero-area zigzag sliver, which
+ * reads as "hair" along the coast the moment the user zooms in (and this map zooms).
+ * Antarctica's snapshot geometry carries 108 outer rings; 72 of them are genuinely sub-pixel
+ * at world scale (1 unit² ≈ 1 px), and those are the ones this bar removes.
+ *
+ * What it guarantees, precisely: a ring is dropped ONLY if the place itself is smaller than
+ * ~1 px on the rendered world map. Every ring at or above the bar is drawn — and drawn at
+ * whatever tolerance preserves its shape (the coarse pass flattens 18 of the 36 survivors to
+ * near-zero area, so those are re-simplified at the global tolerance rather than shipped as
+ * hairlines). Cost of that honesty: 6.0 kB raw / 2.2 kB gzip for AQ, vs 6.8 kB raw with no
+ * filter at all and ~19.8 kB unsimplified.
  *
  * Defaults to 0 for every other key, so no already-emitted country path is affected — the
  * 239 pre-existing shapes stay byte-identical, which is the standing gate on this artifact.
@@ -306,11 +316,23 @@ for (const feature of drawn) {
   } else {
     for (const ring of outerRings(feature.geometry)) {
       const projected = ring.map(project);
-      const simplified = simplify(projected, epsilon);
+      // ORDER MATTERS. The size decision is made on the TRUE ring, before any tolerance has
+      // touched it: testing the SIMPLIFIED ring conflates "genuinely sub-pixel" with
+      // "flattened by our own coarse tolerance" and silently deletes real islands (this is
+      // exactly what it did — 18 real Antarctic rings, the largest 4.6 u² / 5.8 × 1.6 u,
+      // a visible hole at MAX_ZOOM; PR #23 review I1). Backdrop-only: minRingArea is 0 for
+      // every normal country, so their rings skip this test entirely and their paths are
+      // byte-identical.
+      if (minRingArea > 0 && ringArea(projected) < minRingArea) continue;
+      let simplified = simplify(projected, epsilon);
+      // A ring that cleared the size bar IS a place, so it has to be drawn as one. If the
+      // coarse tolerance collapsed it into a sliver, redraw it at the global tolerance
+      // instead of shipping a hairline — a hairline is the very artifact the size bar
+      // exists to remove, so emitting one would defeat the filter from the other side.
+      if (minRingArea > 0 && (simplified.length < 3 || ringArea(simplified) < minRingArea)) {
+        simplified = simplify(projected, SIMPLIFY_EPSILON);
+      }
       if (simplified.length < 3) continue; // a tiny islet of a larger country — safely dropped
-      // Backdrop-only shapes additionally drop rings the coarse tolerance flattened into
-      // sub-pixel slivers (0 for every normal country, so their paths are untouched).
-      if (minRingArea > 0 && ringArea(simplified) < minRingArea) continue;
       const d = simplified
         .map(([x, y], i) => `${i === 0 ? "M" : "L"}${round(x)} ${round(y)}`)
         .join("");
@@ -319,8 +341,16 @@ for (const feature of drawn) {
     // Safety net: a feature big enough to skip the marker path must still have produced at
     // least one ring. If every ring somehow collapsed, fall back to a marker rather than
     // dropping the country — the completeness assertion below is the hard guarantee, this
-    // keeps it satisfiable.
+    // keeps it satisfiable. It is a net, never an intended outcome: a feature this large
+    // reduced to a 2 u diamond is always a tuning bug (too coarse an epsilon, too high a
+    // ring-area bar), and the completeness assertion would NOT catch it — that checks
+    // presence, not plausibility. So say so loudly instead of shipping a shrunken landmass.
     if (subpaths.length === 0) {
+      console.warn(
+        `generate:world-map — WARNING: "${geoName}" (${iso}) spans ` +
+          `${bbox.w.toFixed(2)} × ${bbox.h.toFixed(2)} u but every ring collapsed; it is being ` +
+          `drawn as a marker diamond. Check SIMPLIFY_EPSILON_BY_ISO / MIN_RING_AREA_BY_ISO.`,
+      );
       subpaths.push(markerDiamond(bbox.cx, bbox.cy));
       markerCount++;
     }
@@ -357,7 +387,11 @@ if (missing.length > 0) {
 
 const shapes = [...byIso.entries()]
   .map(([iso, v]) => ({ iso, geoName: v.geoName, d: v.subpaths.join("") }))
-  .sort((a, b) => a.iso.localeCompare(b.iso));
+  // Locale PINNED: the artifact mixes uppercase ISO keys with lowercase synthetic `x-…`
+  // backdrop keys, whose relative order differs between ICU locales. The standing
+  // "239 paths byte-identical" gate (and `generate:world-map:check` in CI) would otherwise
+  // rest on every machine happening to run the same default locale.
+  .sort((a, b) => a.iso.localeCompare(b.iso, "en"));
 
 // --- Emit -------------------------------------------------------------------
 const body = shapes
