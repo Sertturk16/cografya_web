@@ -123,9 +123,10 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
             if (!country) {
               // Not-yet-seeded country, or a territory/polar mass that will never have a
               // page: geographic backdrop only — no link, no card, hidden from AT (it is not
-              // actionable). It IS land, so it is filled with the land tone (.landInert), not
-              // the il map's "not published yet" tint, which is the map background's own top
-              // gradient stop and rendered Greenland invisible (/dunya audit 2026-07-26).
+              // actionable). It IS land, so .landInert paints it in the SAME land tone as a
+              // clickable country (owner ruling 2026-07-26) — never the il map's "not
+              // published yet" tint, which was the map background's own top gradient stop and
+              // rendered Greenland invisible (/dunya audit 2026-07-26).
               return (
                 <path key={shape.iso} className={styles.landInert} d={shape.d} aria-hidden="true" />
               );

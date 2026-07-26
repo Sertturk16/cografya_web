@@ -319,8 +319,11 @@ for (const feature of drawn) {
       // ORDER MATTERS. The size decision is made on the TRUE ring, before any tolerance has
       // touched it: testing the SIMPLIFIED ring conflates "genuinely sub-pixel" with
       // "flattened by our own coarse tolerance" and silently deletes real islands (this is
-      // exactly what it did — 18 real Antarctic rings, the largest 4.6 u² / 5.8 × 1.6 u,
-      // a visible hole at MAX_ZOOM; PR #23 review I1). Backdrop-only: minRingArea is 0 for
+      // exactly what it did — 18 real Antarctic rings, the largest a true 4.6 u² / 5.8 × 1.6 u
+      // island, a visible hole at MAX_ZOOM; PR #23 review I1). Both figures are measured on
+      // the TRUE projected ring, which is the object the test is deciding about; that same
+      // island ships as 5.8 × 1.4 u after the re-simplification and 1-decimal rounding below.
+      // Backdrop-only: minRingArea is 0 for
       // every normal country, so their rings skip this test entirely and their paths are
       // byte-identical.
       if (minRingArea > 0 && ringArea(projected) < minRingArea) continue;

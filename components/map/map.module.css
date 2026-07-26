@@ -60,9 +60,12 @@
   fill: var(--province-inert);
 }
 
-/* World map: backdrop LAND (unseeded countries + territories that never get a page). It is
-   land, so it is filled like land — never with the surface tint, which is the map background
-   gradient's own top stop and made Greenland invisible (see --land-inert in globals.css). */
+/* World map: backdrop LAND (unseeded countries + territories that never get a page). Filled
+   with the SAME tone as a clickable country — one land colour for the whole map (owner ruling
+   2026-07-26). What makes a shape inert is the absence of a link, a tab stop and a
+   hover/focus state, never the fill. Never the surface tint either: that was the map
+   background gradient's own top stop and made Greenland invisible (see --land-inert in
+   globals.css for the measured figures). */
 .landInert {
   fill: var(--land-inert);
 }
