@@ -3,15 +3,22 @@ import { defineConfig } from "vitest/config";
 
 /**
  * Minimal vitest setup for the web repo's unit tests: the `/dunya` zoom/pan pure geometry
- * (SPEC §8 test plan) and the SEO policy layer (`lib/seo/*` — indexing, metadata and
- * sitemap-entry contracts). Node environment: all of it is DOM-free logic, so no jsdom is
- * pulled in. The `@/…` alias mirrors tsconfig's path mapping so tests can use the same
- * import style as app code.
+ * (SPEC §8 test plan), the SEO policy layer (`lib/seo/*` — indexing, metadata and
+ * sitemap-entry contracts) and the boot-time env validation (`lib/env.server.ts`). Node
+ * environment: all of it is DOM-free logic, so no jsdom is pulled in. The `@/…` alias
+ * mirrors tsconfig's path mapping so tests can use the same import style as app code.
  */
 export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL(".", import.meta.url)),
+      // `server-only`'s default entry THROWS on import (that is the whole point of the
+      // package). Next resolves its `react-server` condition to an empty module when it
+      // compiles a Server Component; vitest sets no such condition, so server modules —
+      // `lib/env.server.ts`, i.e. the boot-time env validation — would be untestable. This
+      // maps the specifier to an equally empty stub. It cannot weaken the shipped guard:
+      // this config is not used by `next build`. See `test/stubs/server-only.ts`.
+      "server-only": fileURLToPath(new URL("./test/stubs/server-only.ts", import.meta.url)),
     },
   },
   test: {
