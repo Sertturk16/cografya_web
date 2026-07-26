@@ -13,7 +13,7 @@
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The SEO reviewer persona/prompt         | `.claude/agents/cografya-seo.md` (orchestrator home) — FENER is a **persona**, not a prompt template, so Atlas spawns it by `subagent_type` rather than by handing over a file like the roles below |
 | The SEO rules being checked             | **`SEO-POLICY.md`** (orchestrator-home root) — the ONE canonical SEO document. Part A = authoring rules (shift-left, for NOVA + Vera), Part B = the audit checklist                                 |
-| The in-repo non-negotiables restatement | `cografya_web/CLAUDE.md` §4 (still current, still binding)                                                                                                                                          |
+| The in-repo non-negotiables restatement | `cografya_web/ENGINEERING.md` §4 (still current, still binding)                                                                                                                                     |
 
 ## FENER's two modes (one role, not two)
 
