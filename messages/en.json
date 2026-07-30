@@ -58,7 +58,7 @@
   "Game": {
     "brandName": "Explorer",
     "metaTitle": "{brand} — Geography Map Game",
-    "metaDescription": "A game for finding the 81 provinces and 7 geographical regions of Türkiye on the map. Three modes: find the region, find all 81 provinces, provinces by region. Free, no sign-up.",
+    "metaDescription": "A map game for finding Türkiye's 81 provinces and 7 geographical regions. Three modes: find the region, find all provinces, provinces by region. Free, no sign-up.",
     "heading": "{brand} — Geography Map Game",
     "lede": "{brand} is a find-the-place game played on the map of Türkiye. A province or region is named and you locate it on the map; when the round ends you see how many you got right and which provinces you missed.",
     "modesHeading": "Three game modes",

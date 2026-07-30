@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { getMapSummary } from "@/lib/api/provinces";
-import type { ProvinceMapSummary } from "@/lib/api/types";
+import { getMapSummaryResilient } from "@/lib/api/provinces";
 import type { Locale } from "@/i18n/routing";
 import { buildGameShapes } from "@/lib/game/map-shapes";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
@@ -35,15 +34,12 @@ export async function GameMap({ locale }: GameMapProps) {
   const t = await getTranslations("Game");
   const tMap = await getTranslations("Map");
 
-  // Best-effort, exactly like the /turkiye map: a summary-fetch failure degrades the map
-  // to an unjoined outline picture instead of breaking an otherwise complete page. The
-  // shapes themselves are compiled in, so the map is never blank.
-  let summaries: ProvinceMapSummary[] = [];
-  try {
-    summaries = await getMapSummary();
-  } catch (error) {
-    console.warn(`[game-map] map-summary unavailable; rendering unjoined map. ${String(error)}`);
-  }
+  // Build-tolerant, runtime-strict (`getMapSummaryResilient`): at `next build` an api
+  // outage degrades the map to an unjoined outline instead of failing the build, but at
+  // RUNTIME the failure propagates so ISR keeps serving the last good page. The map join
+  // is this page's only api read, so swallowing it at runtime would let a regeneration
+  // "succeed" with zero targets and cache an inert map for a whole revalidate window.
+  const summaries = await getMapSummaryResilient();
 
   const shapes = buildGameShapes(PROVINCE_SHAPES, summaries, locale);
   const titleId = "game-map-title";

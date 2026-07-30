@@ -1,4 +1,6 @@
-/* `/oyun` shell layout (SPEC §3.1). Terra tokens only — no hex values here. */
+/* `/oyun` shell layout (SPEC §3.1). Colours come from the Terra token layer; the only
+   literal is the `#fff` card surface, which is the established repo pattern (there is no
+   white token — see `.card` in `app/globals.css`). No brand hex is hardcoded here. */
 
 .sectionIntro {
   color: var(--color-slate);
