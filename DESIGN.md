@@ -223,3 +223,41 @@ general system (that would be scope creep).
   `3.4:1` for definition.
 - **Not a public-safety scale** (§6.2) — climate normals carry no AQI/earthquake/SST
   standardized-color obligation, so the palette is ours to set within these rules.
+
+### 6.5 Region palette — the game's Bölge Bulma map (Kâşif, shipped)
+
+The second data-viz surface, and the first **categorical** one: in the game's region mode
+(`/oyun/bolge-bulma`) the map is filled by coğrafi bölge, which is a nominal variable with
+seven values. Tokens live in `app/globals.css`, physically separate from the Terra chrome
+set (§6.1 rule 1) and read only by `components/game/game-map.module.css`.
+
+| Token                        | Hex       | Region            |
+| ---------------------------- | --------- | ----------------- |
+| `--region-marmara`           | `#0072b2` | Marmara           |
+| `--region-ege`               | `#e69f00` | Ege               |
+| `--region-akdeniz`           | `#56b4e9` | Akdeniz           |
+| `--region-ic-anadolu`        | `#f0e442` | İç Anadolu        |
+| `--region-karadeniz`         | `#cc79a7` | Karadeniz         |
+| `--region-dogu-anadolu`      | `#009e73` | Doğu Anadolu      |
+| `--region-guneydogu-anadolu` | `#d55e00` | Güneydoğu Anadolu |
+
+**Why these choices are §6-compliant:**
+
+- **Okabe–Ito**, the published colorblind-safe qualitative palette, used unmodified. §6.1
+  rule 4 asks for a qualitative set of ≤ ~8 for categorical data; this is seven of its eight
+  members, so the set is at its designed size rather than stretched.
+- **Not a ramp.** Bölge has no order, so a sequential or diverging scale would encode a
+  ranking that does not exist. Hue-only separation is the correct encoding here — the
+  opposite of §6.4's climate ramps, and for the opposite reason.
+- **Not brand tokens.** None of the seven appears in the Terra chrome set; the map's own
+  chrome (`--province-fill`, `--province-stroke`) is untouched, so a region fill can never be
+  confused with a UI state.
+- **Colour is not the only signal** (§6.1 rule 3). Province BOUNDARIES stay drawn inside a
+  region, so the groups are readable as shapes; and the three answer states that sit on top
+  of the tint each carry a distinct **stroke treatment** — solid / dotted / dashed — plus a
+  ✓ / ✕ / ▸ glyph and the same statement in words in the live region above the map.
+- **Never a public-safety scale** (§6.2) — regions carry no standardized-colour obligation.
+- **Where it is NOT used:** the 81-province mode and the per-region rounds draw one neutral
+  fill. Tinting by region there would hand the player the answer, which is the product
+  reason; the doctrine reason is the same one — colour must encode the variable under
+  discussion, and in those modes that variable is not the region.

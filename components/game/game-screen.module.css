@@ -1,0 +1,79 @@
+/* One playable game screen: back link · mode name · question + pills · map · controls.
+   The column is centred (owner design direction, 2026-07-30); colours come from the Terra
+   token layer in app/globals.css, and no brand hex is written here. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* The way back to the shop window. Left-aligned above a centred column on purpose: it is
+   navigation, not part of the game's own heading block. */
+.backRow {
+  margin: 0 0 8px;
+}
+
+.back {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* The page's own name, deliberately quiet: the live question below it is the headline of
+   the screen, and two headline-sized lines would leave neither of them reading as one.
+   Still a real <h1> — it is what this document is about, and what a visitor without
+   JavaScript is left with. */
+.kicker {
+  margin: 0;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-slate);
+}
+
+/* HEAD SLOT — pre-sized so the island's question, pills and live region mount without
+   pushing the map down (CLS budget, CONVENTIONS §6 #9). The reserved height is the
+   playing state's, which is the state the island reaches immediately: the round starts
+   itself. */
+.headSlot {
+  min-height: 116px;
+  margin: 6px 0 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* The no-JavaScript sentence, hidden once the island reports for duty. */
+.headSlot[data-game-ready] .headFallback {
+  display: none;
+}
+
+.headFallback {
+  margin: 0;
+  text-align: center;
+  color: var(--color-slate);
+}
+
+/* ACTION SLOT — the island portals the round's controls in here so they sit under the map,
+   inside a thumb's reach on a phone. Its height is reserved for the same reason as the head
+   slot's: the controls arrive with the island, not with a click. */
+.actionSlot {
+  min-height: 52px;
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}

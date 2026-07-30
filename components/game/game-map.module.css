@@ -9,39 +9,16 @@
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 16px clamp(12px, 3vw, 28px) 40px;
+  padding: clamp(10px, 2vw, 20px);
 }
 
-/* HUD SLOT. Server-rendered and pre-sized, so the `ssr:false` island can mount its
-   controls here without pushing the map down by a pixel (CLS budget, ENGINEERING.md §4
-   #9). The reserved height covers the island's AT-MOUNT states — the idle line and the
-   "resume your round" banner; the taller playing state only ever appears in response to a
-   click, which is outside the layout-shift window by definition.
-   With JavaScript off the slot is not dead space: it holds the same instruction sentence
-   the island would show. */
-.hudSlot {
-  min-height: 92px;
-  margin-bottom: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-}
-
-/* The no-JS instruction line, hidden once the island reports for duty. */
-.hudSlot[data-game-ready] .hudFallback {
-  display: none;
-}
-
-.hudFallback {
-  margin: 0;
-  color: var(--color-slate);
-}
-
-/* FIXED-SIZE STAGE. The ratio is MAP_VIEWBOX's own (1000 × 429), so the box holds the
-   map's exact height from the first paint — before the island mounts anything on top of
-   it. This is the "fixed-size container" the heavy-interactive rendering rule requires
-   (ENGINEERING.md §3, CWV/CLS budget §4 #9). */
+/* FIXED-SIZE STAGE. This is the FALLBACK ratio — MAP_VIEWBOX's own 1000 × 429 — for the
+   whole-country screens and for the case the viewBox string is unreadable. A region screen
+   overrides it with its own subset ratio through the inline `aspect-ratio` style in
+   `game-map.tsx` (`lib/game/map-bbox.ts` only floors that ratio at 1, it does NOT grow the
+   subset to the country's letterbox). Either way the height is settled in the first
+   response, before the island mounts anything on top of it: the "fixed-size container" the
+   heavy-interactive rendering rule requires (ENGINEERING.md §3, CWV/CLS budget §4 #9). */
 .stage {
   position: relative;
   aspect-ratio: 1000 / 429;

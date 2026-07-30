@@ -52,5 +52,23 @@ export const ROUTE_FIXTURES: readonly RouteFixture[] = [
   },
 ];
 
-/** Both content surfaces, so every test runs the full policy matrix. */
+/**
+ * The INDEXABLE surfaces, so every test runs the full policy matrix over them.
+ *
+ * `"noindex"` is deliberately NOT in this list. The matrix asserts things that only make
+ * sense for a page some locale indexes — "one urlset entry per indexable locale", "the
+ * cluster contains x-default" — and a fully de-indexed surface has no such locale. It gets
+ * its own block in each policy test instead, asserting the opposite properties (no robots
+ * silence, no `languages` map, no sitemap entry at all).
+ */
 export const SURFACES = ["localized", "trNarrative"] as const;
+
+/**
+ * A route of the fully de-indexed class — today the game's play screens (→ DEC
+ * 2026-07-30p). Real, not synthetic, for the same reason `/oyun` is above: the assertion
+ * should run against the actual `pathnames` table.
+ */
+export const NOINDEX_ROUTE: RouteFixture = {
+  name: "game play screen (/oyun/81-il ↔ /en/game/81-provinces)",
+  hrefForLocale: () => "/oyun/81-il",
+};
