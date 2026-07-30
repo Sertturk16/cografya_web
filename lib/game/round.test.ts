@@ -5,12 +5,10 @@ import {
   createRound,
   currentQuestionPoints,
   currentTargetId,
-  elapsedMs,
   MAX_STARS,
-  pauseRound,
   pointsForAttempt,
-  resumeRound,
   revealRound,
+  runningScore,
   shuffle,
   starsForScore,
   summarizeRound,
@@ -33,8 +31,8 @@ const WRONG = "not-a-target";
 /** Deterministic "random": always picks the first candidate, so order is reproducible. */
 const noShuffle = () => 0;
 
-function startRound(pool: readonly string[] = POOL, now = 1_000): RoundState {
-  return createRound("provinces", pool, now, noShuffle);
+function startRound(pool: readonly string[] = POOL): RoundState {
+  return createRound("provinces", pool, noShuffle);
 }
 
 function target(state: RoundState): string {
@@ -44,16 +42,16 @@ function target(state: RoundState): string {
 }
 
 /** Click wrong `count` times on the current question. */
-function miss(state: RoundState, count: number, now = 2_000): RoundState {
+function miss(state: RoundState, count: number): RoundState {
   let next = state;
-  for (let i = 0; i < count; i += 1) next = answerRound(next, WRONG, now).state;
+  for (let i = 0; i < count; i += 1) next = answerRound(next, WRONG).state;
   return next;
 }
 
 /** Answer the current question after `wrongs` misses, then advance. */
-function solve(state: RoundState, wrongs = 0, now = 2_000): RoundState {
-  const missed = miss(state, wrongs, now);
-  return advanceRound(answerRound(missed, target(missed), now).state);
+function solve(state: RoundState, wrongs = 0): RoundState {
+  const missed = miss(state, wrongs);
+  return advanceRound(answerRound(missed, target(missed)).state);
 }
 
 describe("shuffle", () => {
@@ -126,14 +124,13 @@ describe("createRound", () => {
     expect(new Set(state.order).size).toBe(POOL.length);
   });
 
-  it("opens on the first question at full value with a running clock", () => {
-    const state = startRound(POOL, 5_000);
+  it("opens on the first question at full value", () => {
+    const state = startRound(POOL);
 
     expect(state.status).toBe("asking");
     expect(state.index).toBe(0);
     expect(state.wrongs).toBe(0);
     expect(currentQuestionPoints(state)).toBe(100);
-    expect(state.segmentStartedAt).toBe(5_000);
   });
 
   it("is born finished for an empty pool of questions", () => {
@@ -148,7 +145,7 @@ describe("answering", () => {
   it("pays the full 100 for a first-click hit", () => {
     const state = startRound();
 
-    expect(answerRound(state, target(state), 2_000).outcome).toMatchObject({
+    expect(answerRound(state, target(state)).outcome).toMatchObject({
       kind: "correct",
       score: 100,
     });
@@ -164,7 +161,7 @@ describe("answering", () => {
   it("keeps the question open after a wrong click, worth half as much", () => {
     const state = startRound();
     const expected = target(state);
-    const { state: next, outcome } = answerRound(state, WRONG, 2_000);
+    const { state: next, outcome } = answerRound(state, WRONG);
 
     expect(outcome).toEqual({ kind: "retry", targetId: expected, pickedId: WRONG });
     expect(next.status).toBe("asking");
@@ -181,7 +178,7 @@ describe("answering", () => {
       [6, 2],
     ] as const) {
       const state = miss(startRound(POOL), wrongs);
-      expect(answerRound(state, target(state), 2_000).outcome).toMatchObject({
+      expect(answerRound(state, target(state)).outcome).toMatchObject({
         kind: "correct",
         score,
       });
@@ -193,15 +190,15 @@ describe("answering", () => {
 
     expect(state.status).toBe("asking");
     expect(state.results).toHaveLength(0);
-    expect(answerRound(state, target(state), 3_000).outcome.kind).toBe("correct");
+    expect(answerRound(state, target(state)).outcome.kind).toBe("correct");
   });
 
   it("ignores a pick that lands during the feedback pause", () => {
     const state = startRound();
-    const resolved = answerRound(state, target(state), 2_000).state;
+    const resolved = answerRound(state, target(state)).state;
 
     expect(resolved.status).toBe("resolved");
-    expect(answerRound(resolved, "anything", 2_050).outcome.kind).toBe("ignored");
+    expect(answerRound(resolved, "anything").outcome.kind).toBe("ignored");
   });
 
   it("ignores a pick after the round is over", () => {
@@ -209,7 +206,7 @@ describe("answering", () => {
     for (let i = 0; i < POOL.length; i += 1) state = solve(state);
 
     expect(state.status).toBe("finished");
-    expect(answerRound(state, "anything", 9_000).outcome.kind).toBe("ignored");
+    expect(answerRound(state, "anything").outcome.kind).toBe("ignored");
   });
 });
 
@@ -217,7 +214,7 @@ describe("showing the answer", () => {
   it("scores the question 0 and resolves it", () => {
     const state = startRound(POOL);
     const expected = target(state);
-    const { state: next, outcome } = revealRound(state, 2_000);
+    const { state: next, outcome } = revealRound(state);
 
     expect(outcome).toEqual({ kind: "revealed", targetId: expected });
     expect(next.status).toBe("resolved");
@@ -230,10 +227,10 @@ describe("showing the answer", () => {
     let state = startRound();
     for (let q = 0; q < POOL.length; q += 1) {
       const before = state;
-      state = advanceRound(revealRound(state, 2_000).state);
+      state = advanceRound(revealRound(state).state);
       expect(before.status).toBe("asking"); // every question was actually reached
     }
-    const summary = summarizeRound(state, 3_000);
+    const summary = summarizeRound(state);
 
     expect(state.status).toBe("finished");
     expect(summary.missedTargetIds).toHaveLength(POOL.length);
@@ -241,22 +238,22 @@ describe("showing the answer", () => {
   });
 
   it("keeps the wrong picks already made on that question", () => {
-    const next = revealRound(miss(startRound(POOL), 2), 2_000).state;
+    const next = revealRound(miss(startRound(POOL), 2)).state;
 
     expect(next.results[0]?.wrongPicks).toEqual([WRONG, WRONG]);
   });
 
   it("is a no-op once the question is resolved or the round is over", () => {
-    const resolved = revealRound(startRound(), 2_000).state;
+    const resolved = revealRound(startRound()).state;
 
-    expect(revealRound(resolved, 2_100).outcome.kind).toBe("ignored");
+    expect(revealRound(resolved).outcome.kind).toBe("ignored");
   });
 });
 
 describe("advanceRound", () => {
   it("moves to the next question only from a resolved one", () => {
     const state = startRound();
-    const next = advanceRound(answerRound(state, target(state), 2_000).state);
+    const next = advanceRound(answerRound(state, target(state)).state);
 
     expect(next.index).toBe(1);
     expect(next.status).toBe("asking");
@@ -273,13 +270,13 @@ describe("advanceRound", () => {
 
   it("is a no-op when called twice (a double click cannot skip a question)", () => {
     const state = startRound();
-    const once = advanceRound(answerRound(state, target(state), 2_000).state);
+    const once = advanceRound(answerRound(state, target(state)).state);
 
     expect(advanceRound(once)).toBe(once);
   });
 
   it("finishes the round after the last question", () => {
-    const state = answerRound(startRound(["only"]), "only", 2_000).state;
+    const state = answerRound(startRound(["only"]), "only").state;
 
     expect(state.status).toBe("resolved");
     expect(advanceRound(state).status).toBe("finished");
@@ -292,12 +289,26 @@ describe("summarizeRound", () => {
     state = solve(state, 0); // 100
     state = solve(state, 1); // 50
     state = solve(state, 2); // 25
-    state = advanceRound(revealRound(state, 2_000).state); // 0
-    const summary = summarizeRound(state, 9_000);
+    state = advanceRound(revealRound(state).state); // 0
+    const summary = summarizeRound(state);
 
     expect(summary.total).toBe(4);
     expect(summary.score).toBe(44); // (100+50+25+0)/4 = 43.75
     expect(summary.firstTry).toBe(1);
+  });
+
+  // "Doğru" on the end screen. Found means "did not score 0", which — because a shown
+  // answer is the only zero — is exactly the complement of the missed list.
+  it("counts every non-zero question as found, and found + missed is the whole pool", () => {
+    let state = startRound(POOL);
+    state = solve(state, 0);
+    state = solve(state, 4);
+    state = advanceRound(revealRound(state).state);
+    state = solve(state, 1);
+    const summary = summarizeRound(state);
+
+    expect(summary.found).toBe(3);
+    expect(summary.found + summary.missedTargetIds.length).toBe(summary.total);
   });
 
   it("counts as first-try only the questions worth the full 100", () => {
@@ -307,24 +318,24 @@ describe("summarizeRound", () => {
     state = solve(state, 1);
     state = solve(state, 2);
 
-    expect(summarizeRound(state, 9_000).firstTry).toBe(2);
+    expect(summarizeRound(state).firstTry).toBe(2);
   });
 
   it("lists exactly the zero-scoring targets, in the order they were asked", () => {
     let state = startRound(POOL);
     const asked = [...state.order];
     state = solve(state, 0); // 100
-    state = advanceRound(revealRound(state, 2_000).state); // shown → 0
-    state = advanceRound(revealRound(miss(state, 3), 2_000).state); // searched, then shown → 0
+    state = advanceRound(revealRound(state).state); // shown → 0
+    state = advanceRound(revealRound(miss(state, 3)).state); // searched, then shown → 0
     state = solve(state, 1); // 50
 
-    expect(summarizeRound(state, 9_000).missedTargetIds).toEqual([asked[1], asked[2]]);
+    expect(summarizeRound(state).missedTargetIds).toEqual([asked[1], asked[2]]);
   });
 
   it("never scores a found question as missed, however many tries it took", () => {
     const state = solve(startRound(POOL), 20);
 
-    expect(summarizeRound(state, 9_000).missedTargetIds).toEqual([]);
+    expect(summarizeRound(state).missedTargetIds).toEqual([]);
   });
 
   it("lists a target found after real searching as a REVIEW item, not a failure", () => {
@@ -334,7 +345,7 @@ describe("summarizeRound", () => {
     state = solve(state, 1); // one slip — not review-worthy
     state = solve(state, 2); // two misses — review
     state = solve(state, 5); // five misses — review
-    const summary = summarizeRound(state, 9_000);
+    const summary = summarizeRound(state);
 
     expect(summary.reviewTargetIds).toEqual([asked[2], asked[3]]);
     expect(summary.missedTargetIds).toEqual([]);
@@ -343,8 +354,8 @@ describe("summarizeRound", () => {
   it("never puts a target in both the missed and the review list", () => {
     let state = startRound(POOL);
     state = solve(state, 3);
-    state = advanceRound(revealRound(miss(state, 3), 2_000).state);
-    const summary = summarizeRound(state, 9_000);
+    state = advanceRound(revealRound(miss(state, 3)).state);
+    const summary = summarizeRound(state);
     const overlap = summary.reviewTargetIds.filter((id) => summary.missedTargetIds.includes(id));
 
     expect(overlap).toEqual([]);
@@ -355,7 +366,7 @@ describe("summarizeRound", () => {
     state = solve(state, 2); // two wrong clicks, then found
     state = miss(state, 3); // three more on the question still open
 
-    expect(summarizeRound(state, 5_000).totalWrongs).toBe(5);
+    expect(summarizeRound(state).totalWrongs).toBe(5);
   });
 
   // The boundary the "including the open question" test above cannot see: between the
@@ -364,68 +375,75 @@ describe("summarizeRound", () => {
   // that feedback was on screen.
   it("counts a resolved question's wrong clicks exactly once, before it is advanced", () => {
     const searched = miss(startRound(), 2);
-    const resolved = answerRound(searched, target(searched), 2_000).state;
+    const resolved = answerRound(searched, target(searched)).state;
 
     expect(resolved.status).toBe("resolved");
-    expect(summarizeRound(resolved, 5_000).totalWrongs).toBe(2);
+    expect(summarizeRound(resolved).totalWrongs).toBe(2);
   });
 
   it("counts the wrong clicks of a question whose answer was shown exactly once", () => {
-    const revealed = revealRound(miss(startRound(), 3), 2_000).state;
+    const revealed = revealRound(miss(startRound(), 3)).state;
 
     expect(revealed.status).toBe("resolved");
-    expect(summarizeRound(revealed, 5_000).totalWrongs).toBe(3);
+    expect(summarizeRound(revealed).totalWrongs).toBe(3);
   });
 
   it("reports zero wrong clicks for a clean round", () => {
     let state = startRound();
     for (let q = 0; q < POOL.length; q += 1) state = solve(state);
 
-    expect(summarizeRound(state, 5_000).totalWrongs).toBe(0);
-    expect(summarizeRound(state, 5_000).score).toBe(100);
+    expect(summarizeRound(state).totalWrongs).toBe(0);
+    expect(summarizeRound(state).score).toBe(100);
   });
 });
 
-describe("the clock", () => {
-  it("runs from the round's start while a question is open", () => {
-    expect(elapsedMs(startRound(POOL, 1_000), 4_000)).toBe(3_000);
+describe("runningScore", () => {
+  // The HUD pill. It is averaged over the questions ANSWERED SO FAR, not over the pool —
+  // the pool average starts at 0 and creeps up however well the round is going, which is
+  // the opposite of what a live figure should say.
+  it("is absent before the first answer", () => {
+    expect(runningScore(startRound(POOL))).toBeNull();
   });
 
-  it("stops when the last question is settled, not when its feedback is dismissed", () => {
-    const state = answerRound(
-      createRound("provinces", ["only"], 1_000, noShuffle),
-      "only",
-      4_000,
-    ).state;
-
-    expect(elapsedMs(state, 60_000)).toBe(3_000);
-    expect(elapsedMs(advanceRound(state), 60_000)).toBe(3_000);
+  it("averages only the questions answered so far", () => {
+    let state = startRound(POOL);
+    state = solve(state, 0); // 100
+    expect(runningScore(state)).toBe(100);
+    state = solve(state, 1); // 50
+    expect(runningScore(state)).toBe(75);
   });
 
-  it("does not count the time a paused round spends in storage", () => {
-    const paused = pauseRound(startRound(POOL, 1_000), 4_000);
-    // …the tab is closed for an hour…
-    const resumed = resumeRound(paused, 3_604_000);
+  it("converges on the final score exactly once the pool is exhausted", () => {
+    let state = startRound(POOL);
+    state = solve(state, 0);
+    state = solve(state, 1);
+    state = solve(state, 2);
+    state = advanceRound(revealRound(state).state);
 
-    expect(elapsedMs(paused, 3_604_000)).toBe(3_000);
-    expect(elapsedMs(resumed, 3_605_000)).toBe(4_000);
+    expect(state.status).toBe("finished");
+    expect(runningScore(state)).toBe(summarizeRound(state).score);
+  });
+});
+
+describe("the removed clock and snapshot (DEC 2026-07-30m/30n)", () => {
+  // A guard, not a formality: the seconds display and the localStorage snapshot were both
+  // removed by owner ruling, and elapsed time is exactly the kind of state that gets
+  // quietly re-added "for later". A round now carries nothing but the round.
+  it("keeps no timing field on the round state", () => {
+    const state = solve(startRound(POOL), 1);
+
+    expect(Object.keys(state).sort()).toEqual([
+      "currentWrongPicks",
+      "index",
+      "modeId",
+      "order",
+      "results",
+      "status",
+      "wrongs",
+    ]);
   });
 
-  it("stays stopped when a round is resumed with its LAST question already resolved", () => {
-    // The tab was closed during the final question's feedback pause, so the clock had
-    // already been frozen on purpose. Resuming must not restart it and bill the gap.
-    const settled = answerRound(
-      createRound("provinces", ["only"], 1_000, noShuffle),
-      "only",
-      4_000,
-    ).state;
-    const resumed = resumeRound(pauseRound(settled, 4_000), 3_604_000);
-
-    expect(resumed.segmentStartedAt).toBeNull();
-    expect(elapsedMs(resumed, 3_605_000)).toBe(3_000);
-  });
-
-  it("never runs backwards if the system clock jumps", () => {
-    expect(elapsedMs(startRound(POOL, 10_000), 5_000)).toBe(0);
+  it("reports no elapsed time in the summary", () => {
+    expect(summarizeRound(startRound(POOL))).not.toHaveProperty("elapsedMs");
   });
 });

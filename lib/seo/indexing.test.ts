@@ -24,6 +24,22 @@ describe("indexing policy", () => {
     expect(isIndexable("en", "trNarrative")).toBe(EN_CONTENT_READY);
   });
 
+  // The fully de-indexed class (→ DEC 2026-07-30p). Two properties matter: it is empty in
+  // every locale, and it stays empty when the EN switch flips — a `noindex` page is
+  // `noindex` because of what the PAGE is, not because of how much English content exists.
+  it("indexes a noindex surface in no locale at all", () => {
+    expect(indexableLocales("noindex")).toEqual([]);
+    for (const locale of routing.locales) {
+      expect(isIndexable(locale, "noindex")).toBe(false);
+    }
+  });
+
+  it("keeps the noindex surface out of the EN_CONTENT_READY switch's reach", () => {
+    // Asserted through the DEFAULT locale, which the switch never touches: if the noindex
+    // branch were placed after the switch, TR would be indexable here whatever the flag.
+    expect(isIndexable(routing.defaultLocale, "noindex")).toBe(false);
+  });
+
   it("exposes no locale outside the routing table", () => {
     for (const surface of ["localized", "trNarrative"] as const) {
       for (const locale of indexableLocales(surface)) {

@@ -50,8 +50,14 @@ export const EN_CONTENT_READY: boolean = false;
  *   locale-independent. These stay fully indexable in both locales.
  * - `"trNarrative"` — the page's substance comes from TR-only api narrative fields, so the
  *   EN rendering is chrome-only. Today: `/turkiye/[slug]` and `/dunya/[slug]`.
+ * - `"noindex"` — the page is deliberately kept out of the index in EVERY locale. Today:
+ *   the per-mode game screens under `/oyun` (→ DEC 2026-07-30p). They are application
+ *   screens, not documents: what a crawler would see is a map and a control strip, and
+ *   three of them would repeat the hub's own thin copy. The hub `/oyun` carries the query;
+ *   these carry the play. Opening them up later is a one-word change here plus a sitemap
+ *   line — the reversible direction.
  */
-export type ContentSurface = "localized" | "trNarrative";
+export type ContentSurface = "localized" | "trNarrative" | "noindex";
 
 /**
  * The locales in which a page of this surface may be indexed.
@@ -64,6 +70,13 @@ export type ContentSurface = "localized" | "trNarrative";
  * fail-safe direction as `surface` defaulting to `"localized"`.
  */
 export function indexableLocales(surface: ContentSurface): readonly Locale[] {
+  // Checked FIRST, before the EN switch: a fully de-indexed surface is a property of the
+  // page, not of how much English content exists, so flipping `EN_CONTENT_READY` must
+  // never quietly index it. An empty list is also what keeps every downstream consumer
+  // honest without a second rule — `buildAlternates` emits a self-canonical and no
+  // `languages` map (the DEC 2026-07-18c "a noindex page leaves the hreflang cluster
+  // entirely" shape), and `sitemapEntriesFor` emits no `<url>` at all.
+  if (surface === "noindex") return [];
   if (surface === "localized" || EN_CONTENT_READY) return routing.locales;
   return routing.locales.filter((locale) => locale === routing.defaultLocale);
 }

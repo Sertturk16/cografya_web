@@ -1,63 +1,62 @@
-/* Play-surface chrome: the HUD that sits above the map and the end-of-round dialog.
-   SEPARATE from game-map.module.css (which styles the map itself) so the shape states and
-   the control chrome can never reach into one another's selectors. All colour comes from
-   the token layer in app/globals.css; the only literal here is the `#fff` control surface,
-   the established repo pattern (there is no white token — see `.card` in globals.css). */
+/* Play-surface chrome: the question block above the map, the control row under it, and the
+   end-of-round panel. SEPARATE from game-map.module.css (which styles the map itself) so
+   the shape states and the control chrome can never reach into one another's selectors.
+   All colour comes from the token layer in app/globals.css; the only literal here is the
+   `#fff` control surface, the established repo pattern (there is no white token — see
+   `.card` in globals.css). */
 
-/* ---- HUD ----------------------------------------------------------------------------
-   The HUD lives inside a slot whose height is reserved by game-map.module.css, so the
-   island can mount into it without moving the map. Growth BEYOND the reserved height only
-   happens in states a click caused (a round starting, a question resolving), which is
-   outside the CLS window by definition. */
-.hud {
+/* ---- Question block -------------------------------------------------------------------
+   Mounted into the pre-sized head slot (game-screen.module.css), so it appears without
+   moving the map. */
+.head {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.hudIdle,
-.hudScore {
-  margin: 0;
-  color: var(--color-slate);
-}
-
-.hudScore {
-  font-weight: 700;
-  color: var(--color-primary-dark);
-  font-size: 1.05rem;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
 }
 
 .question {
   margin: 0;
-  font-size: clamp(1.1rem, 1rem + 1vw, 1.5rem);
-  line-height: 1.25;
+  font-family: var(--font-heading);
+  font-size: clamp(1.5rem, 1.1rem + 2vw, 2.4rem);
+  line-height: 1.15;
+  color: var(--color-ink);
 }
 
 /* Focus target when a round opens — visible, because focus moves here programmatically. */
 .question:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 4px;
+  outline-offset: 6px;
   border-radius: var(--radius);
 }
 
 .questionLead {
   color: var(--color-slate);
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .questionName {
   color: var(--color-primary-dark);
-  font-family: var(--font-heading);
+  font-weight: 700;
 }
 
-.meta {
+/* ---- Pills ---------------------------------------------------------------------------- */
+.pills {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
   margin: 0;
+}
+
+.pill {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: #fff;
   font-size: 0.85rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--color-slate);
 }
@@ -67,6 +66,7 @@
 .feedback {
   display: flex;
   align-items: baseline;
+  justify-content: center;
   gap: 6px;
   margin: 0;
   min-height: 1.5em;
@@ -84,12 +84,12 @@
 /* The tone values are the outcome kinds themselves (`correct` / `retry` / `revealed`), so
    these selectors are pinned to that union — a name that does not exist matches nothing
    and fails silently. */
-.hud[data-tone="correct"] .feedback {
+.head[data-tone="correct"] .feedback {
   color: var(--color-success);
 }
 
-.hud[data-tone="retry"] .feedback,
-.hud[data-tone="revealed"] .feedback {
+.head[data-tone="retry"] .feedback,
+.head[data-tone="revealed"] .feedback {
   color: var(--color-danger);
 }
 
@@ -97,19 +97,24 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
 }
 
 .action,
 .primaryAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 600;
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
   background: #fff;
   color: var(--color-primary-dark);
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -121,58 +126,34 @@
 
 .action:hover {
   border-color: var(--color-primary);
+  text-decoration: none;
 }
 
 .primaryAction:hover {
   background: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
+  color: #fff;
+}
+
+.action:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .action:focus-visible,
 .primaryAction:focus-visible,
-.quietAction:focus-visible,
 .missedLink:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-.quietAction {
-  align-self: flex-start;
-  font: inherit;
-  font-size: 0.8rem;
-  padding: 4px 0;
-  border: 0;
-  background: none;
-  color: var(--color-slate);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-/* ---- Resume banner -------------------------------------------------------------------- */
-.resume {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-}
-
-.resumeText {
-  margin: 0;
-  font-size: 0.88rem;
-  color: var(--color-slate);
-}
-
-/* ---- End-of-round dialog ---------------------------------------------------------------
+/* ---- End-of-round panel ------------------------------------------------------------------
    A native modal: focus trap, Esc, inert background and top-layer stacking are the
-   platform's job, and because a modal is outside page flow an 81-row list costs no layout
-   shift at all. */
+   platform's job, and because a modal is outside page flow a long list costs no layout
+   shift at all. Closing it leaves the finished map on screen. */
 .dialog {
   width: min(560px, 100vw - 24px);
-  max-height: min(80vh, 720px);
+  max-height: min(85vh, 760px);
   padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -188,26 +169,33 @@
 .dialogBody {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 10px;
-  padding: 24px clamp(16px, 4vw, 28px) 22px;
+  padding: 26px clamp(16px, 4vw, 30px) 24px;
+  text-align: center;
+}
+
+/* Circular badge over the result — the design direction's trophy. */
+.dialogBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--color-chip-bg);
+  color: var(--color-primary-dark);
 }
 
 .dialogHeading {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.6rem;
 }
 
 .dialogHeading:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 4px;
-}
-
-.dialogScore {
-  margin: 0;
-  font-size: 1.6rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-primary-dark);
 }
 
 .dialogStars {
@@ -235,26 +223,57 @@
   color: var(--color-slate);
 }
 
-.dialogStats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.dialogFirstTry {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
   color: var(--color-slate);
 }
 
-.dialogBest {
+/* Three labelled numbers. `auto-fit` rather than a fixed 3-up so the row wraps to two and
+   then one on a narrow phone instead of squeezing the digits. */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin: 6px 0 4px;
+}
+
+.stat {
+  padding: 12px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.statLabel {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-slate);
+}
+
+.statValue {
+  margin: 4px 0 0;
+  font-family: var(--font-heading);
+  font-size: 1.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary-dark);
+}
+
+.statOutOf {
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--color-success);
+  color: var(--color-slate);
 }
 
 .dialogSubheading {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   font-size: 1.05rem;
+  color: var(--color-primary-dark);
 }
 
 .dialogNote {
@@ -266,6 +285,7 @@
 .missedList {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 6px 8px;
   list-style: none;
   margin: 0;
@@ -279,7 +299,7 @@
 .missedLink,
 .missedPlain {
   display: inline-block;
-  padding: 4px 12px;
+  padding: 5px 14px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
   background: #fff;
@@ -302,8 +322,9 @@
 
 /* Secondary "look again" group — collapsed by default so the score stays the headline. */
 .reviewGroup {
-  margin: 0;
-  padding: 8px 0 0;
+  width: 100%;
+  margin: 4px 0 0;
+  padding: 10px 0 0;
   border-top: 1px solid var(--color-border);
 }
 
@@ -326,13 +347,10 @@
 .dialogActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .action,
-  .primaryAction {
-    transition: none;
-  }
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
 }

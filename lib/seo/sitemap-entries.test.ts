@@ -3,7 +3,7 @@ import { getPathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { indexableLocales, isIndexable } from "./indexing";
 import { buildAlternates } from "./metadata";
-import { ROUTE_FIXTURES, SURFACES } from "./routes.fixture";
+import { NOINDEX_ROUTE, ROUTE_FIXTURES, SURFACES } from "./routes.fixture";
 import { alternateLanguagesFor, sitemapEntriesFor } from "./sitemap-entries";
 import { absoluteUrl } from "./site";
 
@@ -83,5 +83,13 @@ describe("sitemapEntriesFor — indexing policy contract", () => {
   it("defaults an unspecified surface to fully indexable (fail-safe direction)", () => {
     const entries = sitemapEntriesFor(() => "/", lastModified, 1);
     expect(entries.length).toBe(routing.locales.length);
+  });
+
+  // A fully de-indexed page contributes NOTHING to the sitemap — not a stripped-down
+  // entry, not a TR-only one (→ DEC 2026-07-30p). A sitemap entry is a request to index.
+  it("emits no entry at all for a noindex surface", () => {
+    expect(sitemapEntriesFor(NOINDEX_ROUTE.hrefForLocale, lastModified, 0.5, "noindex")).toEqual(
+      [],
+    );
   });
 });

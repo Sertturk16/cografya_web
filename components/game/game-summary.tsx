@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { provinceUrl } from "@/lib/game/province-url";
 import { MAX_STARS, starsForScore, type RoundSummary } from "@/lib/game/round";
 import { targetsById, type GameTarget } from "@/lib/game/target";
+import { TrophyIcon } from "./game-icons";
 import styles from "./game-ui.module.css";
 
 interface GameSummaryProps {
@@ -12,39 +13,13 @@ interface GameSummaryProps {
   summary: RoundSummary;
   /** The full pool of the finished round — the source of the missed targets' labels. */
   targets: readonly GameTarget[];
-  /** Best score (0–100) for this mode BEFORE the round, `undefined` on a first run. */
-  previousBest: number | undefined;
   provinceUrlTemplate: string;
-  formatClock: (ms: number) => string;
+  /** Localized path of `/oyun`, so the end screen can offer the way back out. */
+  hubUrl: string;
   onClose: () => void;
   onReplay: () => void;
-  onChangeMode: () => void;
-  onClearProgress: () => void;
 }
 
-/**
- * The end-of-round screen (SPEC §5.4) — the most valuable part of the game.
- *
- * The headline is the round's score out of 100 (→ DEC 2026-07-30f/30h): a question halves
- * with every wrong click (100 · 50 · 25 · 13 …) and the round reports the mean, so a
- * 7-question mode and an 81-question mode are directly comparable. The honest detail sits
- * under it — how many were found on the first click, and how many wrong clicks it took.
- *
- * Then comes the list of what was MISSED — the ones whose answer had to be shown — each
- * province a real link to its own page. That
- * list is what turns a game round into a reading session and wires the game into the
- * content corpus (CONVENTIONS §6 #10).
- *
- * This is the ONE file in the game surface that is allowed to render a link. The map and
- * the island are held to "no navigation, anywhere" by a CI guard
- * (`game-map.nav-guard.test.ts`), because on the play surface a click must answer a
- * question, never navigate.
- *
- * It is a native `<dialog showModal>`: focus trapping, Esc-to-close, inert background and
- * top-layer stacking come from the platform, and — because a modal never participates in
- * page layout — an 81-row list can appear at the end of a round without moving a single
- * pixel of the page (CLS budget, CONVENTIONS §6 #9).
- */
 /** One chip row of targets: a real link when the target has a page, plain text when not. */
 function TargetList({
   targets,
@@ -70,17 +45,40 @@ function TargetList({
   );
 }
 
+/**
+ * The end-of-round screen (SPEC §5.4) — the most valuable part of the game.
+ *
+ * Layout follows the owner's design direction (2026-07-30): a badge, the result, three
+ * stat boxes, then what was missed. The numbers themselves are the ones DEC 2026-07-30h
+ * locked — a question halves with every wrong click (100 · 50 · 25 · 13 …) and the round
+ * reports the mean, so a 7-question mode and an 81-question mode are directly comparable —
+ * plus the two honest details: how many were found on the first click, and how many wrong
+ * clicks it took. There is no elapsed time and no personal best: the seconds display and
+ * the whole persistence layer were removed by DEC 2026-07-30m/30n.
+ *
+ * Then comes the list of what was MISSED — the ones whose answer had to be shown — each
+ * province a real link to its own page. That list is what turns a game round into a reading
+ * session and wires the game into the content corpus (CONVENTIONS §6 #10). Nothing in the
+ * benchmarked competitors does this (`Owner's Inbox/oyun-metin-benchmark/brief.md`).
+ *
+ * This is the ONE file in the play surface that renders links; the map and the island are
+ * held to "no navigation, anywhere" by a CI guard (`game-map.nav-guard.test.ts`), because
+ * on the map a click must answer a question, never navigate.
+ *
+ * It is a native `<dialog showModal>`: focus trapping, Esc-to-close, inert background and
+ * top-layer stacking come from the platform, and — because a modal never participates in
+ * page layout — a long list can appear at the end of a round without moving a single pixel
+ * of the page (CLS budget, CONVENTIONS §6 #9). Closing it leaves the finished map on
+ * screen, which is the one thing the design mockup's separate result page cannot show.
+ */
 export function GameSummary({
   open,
   summary,
   targets,
-  previousBest,
   provinceUrlTemplate,
-  formatClock,
+  hubUrl,
   onClose,
   onReplay,
-  onChangeMode,
-  onClearProgress,
 }: GameSummaryProps) {
   const t = useTranslations("Game");
   const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -113,7 +111,6 @@ export function GameSummary({
     }
   }, [open]);
 
-  const isNewBest = previousBest === undefined || summary.score > previousBest;
   const stars = starsForScore(summary.score);
 
   return (
@@ -124,6 +121,12 @@ export function GameSummary({
       onClose={onClose}
     >
       <div className={styles.dialogBody}>
+        {/* A trophy over the result, per the design direction. Decorative: every fact it
+            could stand for is written underneath it in words. */}
+        <p className={styles.dialogBadge} aria-hidden="true">
+          <TrophyIcon size={26} />
+        </p>
+
         <h2
           id="game-summary-heading"
           className={styles.dialogHeading}
@@ -133,8 +136,7 @@ export function GameSummary({
           {t("summaryHeading")}
         </h2>
 
-        <p className={styles.dialogScore}>{t("summaryScore", { score: summary.score })}</p>
-        {/* The star row is DECORATION over a number that is already on screen: the glyphs
+        {/* The star row is DECORATION over numbers that are already on screen: the glyphs
             are hidden from assistive tech and the same grade is stated in words next to
             them, so nothing here is carried by a symbol alone. */}
         <p className={styles.dialogStars}>
@@ -146,16 +148,31 @@ export function GameSummary({
             {t("summaryStars", { count: stars, max: MAX_STARS })}
           </span>
         </p>
-        <p className={styles.dialogStats}>
-          <span>{t("summaryFirstTry", { count: summary.firstTry, total: summary.total })}</span>
-          <span aria-hidden="true">·</span>
-          <span>{t("summaryTotalWrongs", { count: summary.totalWrongs })}</span>
-          <span aria-hidden="true">·</span>
-          <span>{t("summaryTime", { time: formatClock(summary.elapsedMs) })}</span>
+
+        <p className={styles.dialogFirstTry}>
+          {t("summaryFirstTry", { count: summary.firstTry, total: summary.total })}
         </p>
-        <p className={styles.dialogBest}>
-          {isNewBest ? t("summaryNewBest") : t("summaryPreviousBest", { score: previousBest ?? 0 })}
-        </p>
+
+        {/* Three boxes, one number each. `<dl>` rather than a row of paragraphs because
+            that is exactly what this is — three labelled values — and it is what makes each
+            number readable as "Puan: 78" instead of a bare "78" out of context. */}
+        <dl className={styles.statGrid}>
+          <div className={styles.stat}>
+            <dt className={styles.statLabel}>{t("statScore")}</dt>
+            <dd className={styles.statValue}>{summary.score}</dd>
+          </div>
+          <div className={styles.stat}>
+            <dt className={styles.statLabel}>{t("statFound")}</dt>
+            <dd className={styles.statValue}>
+              {summary.found}
+              <span className={styles.statOutOf}>/{summary.total}</span>
+            </dd>
+          </div>
+          <div className={styles.stat}>
+            <dt className={styles.statLabel}>{t("statWrong")}</dt>
+            <dd className={styles.statValue}>{summary.totalWrongs}</dd>
+          </div>
+        </dl>
 
         <h3 className={styles.dialogSubheading}>{t("summaryMissedHeading")}</h3>
         {missed.length === 0 ? (
@@ -163,7 +180,7 @@ export function GameSummary({
         ) : (
           <>
             {/* Only promise a page when there is one: region targets have no detail page,
-                so in Mode 1 the list is plain text and this line would be a lie. */}
+                so in the region mode the list is plain text and this line would be a lie. */}
             {missed.some((target) => target.slug) ? (
               <p className={styles.dialogNote}>{t("summaryMissedNote")}</p>
             ) : null}
@@ -189,16 +206,13 @@ export function GameSummary({
           <button type="button" className={styles.primaryAction} onClick={onReplay}>
             {t("summaryReplay")}
           </button>
-          <button type="button" className={styles.action} onClick={onChangeMode}>
-            {t("summaryChangeMode")}
-          </button>
+          <a className={styles.action} href={hubUrl}>
+            {t("summaryBackToHub")}
+          </a>
           <button type="button" className={styles.action} onClick={onClose}>
             {t("summaryClose")}
           </button>
         </div>
-        <button type="button" className={styles.quietAction} onClick={onClearProgress}>
-          {t("summaryClearProgress")}
-        </button>
       </div>
     </dialog>
   );

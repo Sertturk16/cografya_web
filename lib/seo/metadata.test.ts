@@ -3,7 +3,7 @@ import { getPathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { indexableLocales, isIndexable } from "./indexing";
 import { buildAlternates, buildMetadata } from "./metadata";
-import { ROUTE_FIXTURES, SURFACES } from "./routes.fixture";
+import { NOINDEX_ROUTE, ROUTE_FIXTURES, SURFACES } from "./routes.fixture";
 
 /**
  * Structural guards for the metadata CONSUMER of the indexing policy.
@@ -109,5 +109,38 @@ describe("buildAlternates / buildMetadata — indexing policy contract", () => {
       // A new route must opt INTO de-indexing, never silently out of indexing.
       expect(meta.robots).toBeUndefined();
     }
+  });
+
+  // The fully de-indexed class (→ DEC 2026-07-30p): `noindex, follow` in EVERY locale, a
+  // self-referencing canonical, and NO hreflang cluster on either side. That last part is
+  // the DEC 2026-07-18c shape — a noindex member is dissolved OUT of a cluster rather than
+  // annotated into one — applied to a page that is noindex in every locale at once.
+  describe("a noindex surface", () => {
+    for (const locale of routing.locales) {
+      it(`emits noindex, follow and no languages map — ${locale}`, () => {
+        const meta = buildMetadata({
+          locale,
+          hrefForLocale: NOINDEX_ROUTE.hrefForLocale,
+          title: "Fixture title",
+          description: "Fixture description",
+          surface: "noindex",
+        });
+
+        expect(meta.robots).toEqual({ index: false, follow: true });
+        expect(meta.alternates?.canonical).toBe(
+          getPathname({ locale, href: NOINDEX_ROUTE.hrefForLocale(locale) }),
+        );
+        expect(meta.alternates?.languages).toBeUndefined();
+      });
+    }
+
+    it("never cross-canonicals to another locale", () => {
+      // `noindex` + a canonical pointing at a different URL is the one combination Google
+      // warns about: it asks the indexer to consolidate onto a page it was told to skip.
+      const tr = buildAlternates("tr", NOINDEX_ROUTE.hrefForLocale, "noindex");
+      const en = buildAlternates("en", NOINDEX_ROUTE.hrefForLocale, "noindex");
+
+      expect(tr.canonical).not.toBe(en.canonical);
+    });
   });
 });

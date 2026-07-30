@@ -51,6 +51,33 @@ export const routing = defineRouting({
       tr: "/oyun",
       en: "/game",
     },
+    // One page per game mode (→ DEC 2026-07-30p, reversing the earlier single-page
+    // answer). `/oyun` is the shop window; each of these is a screen you play on, and
+    // they are born `noindex` (`surface: "noindex"`), so they carry a self-canonical, no
+    // hreflang cluster and no sitemap entry. The localized segments are still declared
+    // here — a `noindex` page must still resolve to ONE correct URL per locale, and every
+    // link to it is built from this table, never hand-written.
+    "/oyun/bolge-bulma": {
+      tr: "/oyun/bolge-bulma",
+      en: "/game/find-the-region",
+    },
+    "/oyun/81-il": {
+      tr: "/oyun/81-il",
+      en: "/game/81-provinces",
+    },
+    "/oyun/bolge-bolge-il": {
+      tr: "/oyun/bolge-bolge-il",
+      en: "/game/provinces-by-region",
+    },
+    // The chosen region's round. The `[bolge]` VALUE is the region's own identifier slug
+    // and is the SAME string in both locales (`lib/game/region-slug.ts`) — unlike
+    // `/turkiye/[slug]`, whose per-locale slug exists to give each locale its own
+    // indexable URL. There is no indexable URL here to localize, and one identifier means
+    // one `notFound()` rule and one `generateStaticParams` list instead of two.
+    "/oyun/bolge-bolge-il/[bolge]": {
+      tr: "/oyun/bolge-bolge-il/[bolge]",
+      en: "/game/provinces-by-region/[bolge]",
+    },
   },
 });
 

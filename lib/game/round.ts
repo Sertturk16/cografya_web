@@ -22,8 +22,15 @@ export { MAX_STARS } from "./config";
  *
  * The engine knows targets only by `id` and takes its question set and pool size as
  * parameters. It has no idea a target is drawn as a polygon, and no idea whether the map
- * is Türkiye, the world or a continent — which is what lets Mode 3 (PR-3) and the future
- * world/continent modes sit on it unchanged.
+ * is Türkiye, one bölge, the world or a continent — which is what lets mode 3 and the
+ * future world/continent modes sit on it unchanged.
+ *
+ * NO CLOCK, and no snapshot (→ DEC 2026-07-30m/30n). A round used to carry elapsed time so
+ * the HUD could show seconds and so a half-finished round could be frozen into
+ * `localStorage`. The owner removed both the seconds display and the persistence, which
+ * removed the only two readers this state ever had; carrying it on as "telemetry nobody
+ * collects" would be state that can drift with nothing to catch it. A round now begins and
+ * ends inside one visit, which is also why the engine takes no `now` argument at all.
  */
 
 /**
@@ -69,14 +76,6 @@ export interface RoundState {
   readonly currentWrongPicks: readonly string[];
   readonly results: readonly QuestionResult[];
   readonly status: RoundStatus;
-  /**
-   * Milliseconds of play accumulated BEFORE the current session segment. A round resumed
-   * from storage opens a new segment, so the clock never counts the hours the tab was
-   * closed (SPEC §5.5).
-   */
-  readonly baseElapsedMs: number;
-  /** Epoch ms the current segment started; `null` while the clock is stopped. */
-  readonly segmentStartedAt: number | null;
 }
 
 export type AnswerOutcome =
@@ -121,11 +120,9 @@ export function shuffle<T>(items: readonly T[], random: () => number = Math.rand
 export function createRound(
   modeId: GameModeId,
   targetIds: readonly string[],
-  now: number,
   random: () => number = Math.random,
 ): RoundState {
   const order = shuffle(targetIds, random);
-  const playable = order.length > 0;
   return {
     modeId,
     order,
@@ -133,9 +130,7 @@ export function createRound(
     wrongs: 0,
     currentWrongPicks: [],
     results: [],
-    status: playable ? "asking" : "finished",
-    baseElapsedMs: 0,
-    segmentStartedAt: playable ? now : null,
+    status: order.length > 0 ? "asking" : "finished",
   };
 }
 
@@ -144,7 +139,7 @@ export function currentTargetId(state: RoundState): string | null {
   return state.status === "finished" ? null : (state.order[state.index] ?? null);
 }
 
-/** What the current question is worth right now — the HUD's "worth N points" figure. */
+/** What the current question is worth right now — never SHOWN, only scored (DEC 30m). */
 export function currentQuestionPoints(state: RoundState): number {
   return pointsForAttempt(state.wrongs);
 }
@@ -156,7 +151,7 @@ export function currentQuestionPoints(state: RoundState): number {
  * pause, or after the round ends, is `ignored` rather than silently halving the next
  * question — the pause is reading time, not play time.
  */
-export function answerRound(state: RoundState, pickedId: string, now: number): AnswerTransition {
+export function answerRound(state: RoundState, pickedId: string): AnswerTransition {
   const targetId = currentTargetId(state);
   if (state.status !== "asking" || targetId === null) {
     return { state, outcome: { kind: "ignored" } };
@@ -165,7 +160,7 @@ export function answerRound(state: RoundState, pickedId: string, now: number): A
   if (pickedId === targetId) {
     const score = pointsForAttempt(state.wrongs);
     return {
-      state: resolveQuestion(state, { targetId, score, wrongPicks: state.currentWrongPicks }, now),
+      state: resolveQuestion(state, { targetId, score, wrongPicks: state.currentWrongPicks }),
       outcome: { kind: "correct", targetId, score },
     };
   }
@@ -187,13 +182,13 @@ export function answerRound(state: RoundState, pickedId: string, now: number): A
  * still visits every remaining question — so asking for an answer is never a penalty beyond
  * the question it is asked about. It is also the only reason a question can score 0.
  */
-export function revealRound(state: RoundState, now: number): AnswerTransition {
+export function revealRound(state: RoundState): AnswerTransition {
   const targetId = currentTargetId(state);
   if (state.status !== "asking" || targetId === null) {
     return { state, outcome: { kind: "ignored" } };
   }
   return {
-    state: resolveQuestion(state, { targetId, score: 0, wrongPicks: state.currentWrongPicks }, now),
+    state: resolveQuestion(state, { targetId, score: 0, wrongPicks: state.currentWrongPicks }),
     outcome: { kind: "revealed", targetId },
   };
 }
@@ -217,56 +212,30 @@ export function advanceRound(state: RoundState): RoundState {
   };
 }
 
-/** Milliseconds played so far — the HUD clock and the end-of-round total. */
-export function elapsedMs(state: RoundState, now: number): number {
-  if (state.segmentStartedAt === null) return state.baseElapsedMs;
-  return state.baseElapsedMs + Math.max(0, now - state.segmentStartedAt);
-}
-
-/**
- * Freeze the clock into `baseElapsedMs` before the state is written to storage, so a round
- * resumed tomorrow does not count the intervening night as play time (SPEC §5.5).
- */
-export function pauseRound(state: RoundState, now: number): RoundState {
-  if (state.segmentStartedAt === null) return state;
-  return { ...state, baseElapsedMs: elapsedMs(state, now), segmentStartedAt: null };
-}
-
-/**
- * Restart the clock on a round loaded from storage.
- *
- * A round whose LAST question is already `resolved` keeps its clock stopped: it was frozen
- * on purpose by `resolveQuestion`, and restarting it would bill the player for the time
- * between closing the tab and pressing "Devam" on a round that is effectively over.
- */
-export function resumeRound(state: RoundState, now: number): RoundState {
-  if (state.status === "finished" || state.segmentStartedAt !== null) return state;
-  if (state.status === "resolved" && state.index >= state.order.length - 1) return state;
-  return { ...state, segmentStartedAt: now };
-}
-
 export interface RoundSummary {
   /** Questions in the round. */
   readonly total: number;
   /** The round's score out of 100 — the mean of the per-question points, rounded. */
   readonly score: number;
+  /** Questions that were FOUND — anything that did not score 0. The end screen's "doğru". */
+  readonly found: number;
   /** Questions found on the FIRST click (worth the full 100). */
   readonly firstTry: number;
   /** Target ids that scored 0 — shown, or never reached (SPEC §5.4). */
   readonly missedTargetIds: readonly string[];
   /**
    * Found, but only after `reviewWrongThreshold` wrong clicks or more. Not failures, so
-   * they are kept out of "bilemediklerin" — but they are exactly what a player should
+   * they are kept out of "bilemedikleriniz" — but they are exactly what a player should
    * look at again, so the end screen offers them as a second, secondary group.
    */
   readonly reviewTargetIds: readonly string[];
   /** Wrong clicks across the whole round — an honest stat, not a mechanic. */
   readonly totalWrongs: number;
-  readonly elapsedMs: number;
 }
 
-export function summarizeRound(state: RoundState, now: number): RoundSummary {
+export function summarizeRound(state: RoundState): RoundSummary {
   let points = 0;
+  let found = 0;
   let firstTry = 0;
   let totalWrongs = state.currentWrongPicks.length;
   const missedTargetIds: string[] = [];
@@ -276,9 +245,12 @@ export function summarizeRound(state: RoundState, now: number): RoundSummary {
     totalWrongs += result.wrongPicks.length;
     if (result.score === GAME_CONFIG.fullQuestionPoints) firstTry += 1;
     if (result.score === 0) missedTargetIds.push(result.targetId);
-    // Found, but only after real searching: worth a second look, without being a failure.
-    else if (result.wrongPicks.length >= GAME_CONFIG.reviewWrongThreshold) {
-      reviewTargetIds.push(result.targetId);
+    else {
+      found += 1;
+      // Found, but only after real searching: worth a second look, without being a failure.
+      if (result.wrongPicks.length >= GAME_CONFIG.reviewWrongThreshold) {
+        reviewTargetIds.push(result.targetId);
+      }
     }
   }
   return {
@@ -286,12 +258,30 @@ export function summarizeRound(state: RoundState, now: number): RoundSummary {
     // Averaged over the WHOLE pool, so a mid-round summary reads as progress towards the
     // final number rather than as a score in its own right.
     score: state.order.length === 0 ? 0 : Math.round(points / state.order.length),
+    found,
     firstTry,
     missedTargetIds,
     reviewTargetIds,
     totalWrongs,
-    elapsedMs: elapsedMs(state, now),
   };
+}
+
+/**
+ * The HUD's running score pill (→ owner design direction, 2026-07-30).
+ *
+ * Averaged over the questions ANSWERED SO FAR, not over the whole pool — the two differ
+ * mid-round, and only this one is honest as a live figure: the pool average starts at 0 and
+ * creeps up no matter how well you are playing, which reads as a punishment for being on
+ * question 3 of 81. This one starts where the play is and converges on `summarizeRound`'s
+ * final score exactly, because at the last question "answered" IS the pool.
+ *
+ * `null` before the first answer: there is nothing to average yet, and printing "100"
+ * would be a claim about a round that has not been played.
+ */
+export function runningScore(state: RoundState): number | null {
+  if (state.results.length === 0) return null;
+  const points = state.results.reduce((sum, result) => sum + result.score, 0);
+  return Math.round(points / state.results.length);
 }
 
 /** Stars for a final score. A presentation grade, thresholds from the config. */
@@ -299,19 +289,14 @@ export function starsForScore(score: number): number {
   return GAME_CONFIG.starThresholds.filter((threshold) => score >= threshold).length;
 }
 
-function resolveQuestion(state: RoundState, result: QuestionResult, now: number): RoundState {
-  // The clock stops the moment the LAST question is settled, not when the player dismisses
-  // its feedback — otherwise the reading pause would land in the reported total.
-  const isLast = state.index >= state.order.length - 1;
+function resolveQuestion(state: RoundState, result: QuestionResult): RoundState {
   return {
     ...state,
     // The picks have just moved INTO `results`, so the open-question list is empty again.
     // Carrying them here as well would make `summarizeRound` count them twice while the
-    // question sits in `resolved` — and "Toplam yanlış" is on the end screen.
+    // question sits in `resolved` — and "Yanlış" is on the end screen.
     currentWrongPicks: [],
     results: [...state.results, result],
     status: "resolved",
-    baseElapsedMs: isLast ? elapsedMs(state, now) : state.baseElapsedMs,
-    segmentStartedAt: isLast ? null : state.segmentStartedAt,
   };
 }
