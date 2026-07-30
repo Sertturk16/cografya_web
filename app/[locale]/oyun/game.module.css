@@ -9,10 +9,12 @@
 }
 
 /* ---- Mode cards ----
-   PR-1 renders these as descriptive cards, not controls: nothing on this page is
-   playable yet, and a disabled `<button>` would announce an unavailable control to
-   assistive tech while promising an interaction the page cannot deliver. PR-2 turns each
-   card into a real `<button>` that starts the round. */
+   Each playable mode carries a REAL in-page link to the play area. A link rather than a
+   button because it does something without JavaScript too — it takes the reader to the map
+   and its instructions — and the play island only ENHANCES it into "start this round".
+   A disabled button was rejected in PR-1 for the same family of reasons: it would announce
+   an unavailable control and promise an interaction the page could not deliver. A mode that
+   has not shipped yet says so in plain text instead (mode 3, until PR-3). */
 .modeGrid {
   list-style: none;
   padding: 0;
@@ -48,6 +50,36 @@
 
 .modeBody {
   margin: 0;
+  color: var(--color-slate);
+}
+
+.modeAction {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.modeAction:hover {
+  background: var(--color-primary-dark);
+  color: #fff;
+  text-decoration: none;
+}
+
+.modeAction:focus-visible {
+  outline: 2px solid var(--color-primary-dark);
+  outline-offset: 2px;
+}
+
+/* Honest placeholder for a mode that has not shipped: a sentence, never a dead control. */
+.modePending {
+  margin: 14px 0 0;
+  font-size: 0.85rem;
   color: var(--color-slate);
 }
 

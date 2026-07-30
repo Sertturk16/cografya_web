@@ -12,10 +12,36 @@
   padding: 16px clamp(12px, 3vw, 28px) 40px;
 }
 
+/* HUD SLOT. Server-rendered and pre-sized, so the `ssr:false` island can mount its
+   controls here without pushing the map down by a pixel (CLS budget, ENGINEERING.md §4
+   #9). The reserved height covers the island's AT-MOUNT states — the idle line and the
+   "resume your round" banner; the taller playing state only ever appears in response to a
+   click, which is outside the layout-shift window by definition.
+   With JavaScript off the slot is not dead space: it holds the same instruction sentence
+   the island would show. */
+.hudSlot {
+  min-height: 92px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+/* The no-JS instruction line, hidden once the island reports for duty. */
+.hudSlot[data-game-ready] .hudFallback {
+  display: none;
+}
+
+.hudFallback {
+  margin: 0;
+  color: var(--color-slate);
+}
+
 /* FIXED-SIZE STAGE. The ratio is MAP_VIEWBOX's own (1000 × 429), so the box holds the
-   map's exact height from the first paint — before the PR-2 island mounts anything on
-   top of it. This is the "fixed-size container" the heavy-interactive rendering rule
-   requires (ENGINEERING.md §3, CWV/CLS budget §4 #9). */
+   map's exact height from the first paint — before the island mounts anything on top of
+   it. This is the "fixed-size container" the heavy-interactive rendering rule requires
+   (ENGINEERING.md §3, CWV/CLS budget §4 #9). */
 .stage {
   position: relative;
   aspect-ratio: 1000 / 429;
@@ -47,6 +73,134 @@
    but it is not a possible question or answer. Recedes, exactly as on the /turkiye map. */
 .provinceInert {
   fill: var(--province-inert);
+}
+
+/* ---- Play state (island-driven) -------------------------------------------------------
+   Everything below is switched by attributes the island writes onto the server HTML:
+   `data-game-mode` on the stage, `data-state` on a shape. No React re-render of the map is
+   involved, which is the whole point (81 re-rendered elements per answer would be the INP
+   problem, ENGINEERING.md §4 #9). */
+
+/* A shape only becomes a control while a round is running.
+   NOTE — SPEC §7.3 proposed a transparent `stroke-width: 6` hit margin for tiny provinces.
+   It is NOT applied: the hit margin and the visible border are the same stroke, so buying
+   the margin costs the province outlines, and in Mode 2 (one flat fill for all 81) those
+   outlines are the entire map. Reaching small provinces is what zoom is for, and zoom is
+   mandatory in Faz-1 for exactly this reason (SPEC §7.2). A real fix is a second,
+   invisible hit path per shape — that doubles the SVG payload, so it is a measured PR-4
+   question, not a silent one. */
+.stage[data-game-mode] .province {
+  cursor: pointer;
+}
+
+/* A shape is a real `role="button"` tab stop during a round, so the UA draws its own focus
+   ring on it — including after a MOUSE click, which left a stray outline across whichever
+   province was last tapped. Suppressed here; the keyboard treatment is re-added on
+   `:focus-visible` below, after the region tints. */
+.stage[data-game-mode] .province:focus {
+  outline: none;
+}
+
+/* MODE 1 — the map is coloured by coğrafi bölge. A DATA encoding, so the values come from
+   the categorical region token set, never from the Terra brand tokens (DESIGN.md §6.1
+   rule 1). `:not([data-state])` keeps the tint out of the way of the answer states below
+   without a specificity arms race: a shape that has a game state is no longer showing its
+   region, it is showing what the player just did. */
+.stage[data-game-mode="regions"] .province[data-region="MARMARA"]:not([data-state]) {
+  fill: var(--region-marmara);
+}
+.stage[data-game-mode="regions"] .province[data-region="EGE"]:not([data-state]) {
+  fill: var(--region-ege);
+}
+.stage[data-game-mode="regions"] .province[data-region="AKDENIZ"]:not([data-state]) {
+  fill: var(--region-akdeniz);
+}
+.stage[data-game-mode="regions"] .province[data-region="IC_ANADOLU"]:not([data-state]) {
+  fill: var(--region-ic-anadolu);
+}
+.stage[data-game-mode="regions"] .province[data-region="KARADENIZ"]:not([data-state]) {
+  fill: var(--region-karadeniz);
+}
+.stage[data-game-mode="regions"] .province[data-region="DOGU_ANADOLU"]:not([data-state]) {
+  fill: var(--region-dogu-anadolu);
+}
+.stage[data-game-mode="regions"] .province[data-region="GUNEYDOGU_ANADOLU"]:not([data-state]) {
+  fill: var(--region-guneydogu-anadolu);
+}
+
+/* ANSWER STATES. Colour is never the only signal (DESIGN.md §6.1 rule 3): each state also
+   has its own STROKE TREATMENT — solid / dotted / dashed — and the HUD says the same thing
+   in words at the same moment. That redundancy is what makes the three states readable on
+   top of seven region colours, and readable at all without colour perception. */
+.province[data-state="correct"] {
+  fill: var(--game-correct);
+  stroke: var(--game-correct-edge);
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+}
+
+.province[data-state="wrong"] {
+  fill: var(--game-wrong);
+  stroke: var(--game-wrong-edge);
+  stroke-width: 2.5;
+  stroke-dasharray: 1 3;
+}
+
+.province[data-state="reveal"] {
+  fill: var(--game-reveal);
+  stroke: var(--game-reveal-edge);
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
+  animation: gameReveal 1s ease-in-out infinite;
+}
+
+@keyframes gameReveal {
+  50% {
+    stroke-dashoffset: 10;
+  }
+}
+
+/* Keyboard focus on a shape. Placed after the region tints so it wins on equal specificity:
+   knowing where the focus is always outranks knowing which region you are hovering.
+   Fill AND stroke both change — on the /turkiye map a fill-only ring measured 1.25:1, under
+   the 3:1 graphical-object floor, and only the stroke shift brought it to AA (repo lesson,
+   map.module.css). */
+.stage[data-game-mode] .province:focus-visible {
+  outline: none;
+  fill: var(--province-hover);
+  stroke: var(--color-primary-dark);
+  stroke-width: 3;
+}
+
+/* Grab cursors while the shared zoom/pan island is dragging the stage — the game map's
+   own copy of the rules map.module.css applies to `.mapRoot` (different container, same
+   `data-panning` contract from MapZoomPan). */
+.stage .svg[data-zoomable] {
+  cursor: grab;
+  touch-action: none;
+}
+
+.stage[data-panning] .svg[data-zoomable] {
+  cursor: grabbing;
+}
+
+/* Visually hidden, still read by AT — the zoom island's aria-describedby target. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .province[data-state="reveal"] {
+    animation: none;
+  }
 }
 
 /* ODbL attribution — required visibly next to the map (licence obligation, not styling). */

@@ -26,24 +26,46 @@ import type { ProvinceShape } from "@/lib/map/tr-provinces.generated";
  * shipping a second copy of the province table as JavaScript (SPEC §3.3).
  */
 export interface GameShapeTarget {
+  /**
+   * İl adı. The api publishes ONE province name (`nameTr`) because a Turkish province
+   * name is the same string in English prose ("Kars" is "Kars") — so both locales read
+   * this field; it is not a missing translation.
+   */
+  readonly name: string;
   /** Coğrafi bölge ENUM KEY (e.g. "EGE"), never a translated label. */
   readonly region: ProvinceMapSummary["region"];
   /** The locale's own slug, so a link built from it resolves in that locale. */
   readonly slug: string;
 }
 
-/** One rendered `<path>` of the game map. */
-export interface GameShapeEntry {
+/**
+ * A shape's ANSWER-side data, without its geometry.
+ *
+ * This narrower view is what crosses the server→client boundary: the island needs to know
+ * which plate answers what, and must never receive the 56 KB of path `d` data that is
+ * already in the HTML (SPEC §3.3). Splitting the interface is what makes that a type
+ * error rather than a code-review question.
+ */
+export interface GameShapeTargetEntry {
   /** Plaka kodu (zero-padded 2-digit) — the stable join key. */
   readonly plateCode: string;
-  /** SVG path `d` from the generated artifact. */
-  readonly d: string;
   /**
    * `null` for a plate the api does not (yet) publish: the shape still renders, as
    * geographic backdrop, but it can never become a question or an answer. This mirrors
    * the `/turkiye` map's "no link for an unpublished il" rule, one layer down.
    */
   readonly target: GameShapeTarget | null;
+}
+
+/** One rendered `<path>` of the game map: the answer data plus its geometry. */
+export interface GameShapeEntry extends GameShapeTargetEntry {
+  /** SVG path `d` from the generated artifact. */
+  readonly d: string;
+}
+
+/** Drop the geometry — the exact payload the client island is allowed to receive. */
+export function toTargetEntries(shapes: readonly GameShapeEntry[]): GameShapeTargetEntry[] {
+  return shapes.map(({ plateCode, target }) => ({ plateCode, target }));
 }
 
 /**
@@ -68,6 +90,7 @@ export function buildGameShapes(
       d: shape.d,
       target: province
         ? {
+            name: province.nameTr,
             region: province.region,
             slug: locale === "en" ? province.slugEn : province.slugTr,
           }

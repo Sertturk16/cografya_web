@@ -82,7 +82,9 @@ const TWEEN_MS = 200;
 const PAN_START_PX = CLICK_MOVE_THRESHOLD_PX;
 
 /**
- * The `/dunya` world-map zoom/pan client island (SPEC `dunya-haritasi-zoom-pan-spec`).
+ * The shared map zoom/pan client island (SPEC `dunya-haritasi-zoom-pan-spec`), used by the
+ * `/dunya` world map and, from Kâşif PR-2, by the `/oyun` game map — where zoom is not a
+ * convenience but the only way to reach the smallest provinces on a phone (SPEC §7.2).
  *
  * It is a thin sibling of the server-rendered `<svg>` inside `[data-map-root]` — exactly
  * the same "reach the shared container, enhance it imperatively" pattern as
@@ -390,15 +392,29 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
       }
     };
 
-    // Keyboard focus-follows-view (WCAG 2.4.7, SPEC §5): when a country <a> takes focus
-    // and its shape is clipped out of a zoomed/panned view, pan it back on-screen so the
+    // Keyboard focus-follows-view (WCAG 2.4.7, SPEC §5): when a focusable shape takes
+    // focus and is clipped out of a zoomed/panned view, pan it back on-screen so the
     // :focus-visible highlight is actually visible. Gated on `pointers.size === 0`, which
     // is false during a mouse press (focus fires while the pointer is down) — so ONLY true
     // keyboard focus pans; a mouse click that focuses-then-navigates never triggers it.
+    //
+    // "Focusable shape" is deliberately broader than `SVGAElement` (Kâşif PR-2): the game
+    // map's provinces are `<path>` elements the game island gives `tabindex` and
+    // `role="button"`, not links. `SVGAElement` still matches — a country link on /dunya
+    // is an `SVGGraphicsElement` and has no `tabindex` — so /dunya's behaviour is
+    // unchanged by construction. The `node !== svg` guard is load-bearing: the zoomable
+    // `<svg>` is itself an `SVGGraphicsElement` with `tabindex="0"` (set below), and
+    // without the guard focusing the map surface would try to fit the map's own bounding
+    // box and silently reset the view.
+    const isFocusableShape = (node: EventTarget | null): node is SVGGraphicsElement =>
+      node instanceof SVGGraphicsElement &&
+      node !== svg &&
+      (node instanceof SVGAElement || node.hasAttribute("tabindex"));
+
     const onFocusIn = (e: FocusEvent) => {
       if (panning || pointers.size > 0) return;
       const target = e.target;
-      if (!(target instanceof SVGAElement) || !svg.contains(target)) return;
+      if (!isFocusableShape(target) || !svg.contains(target)) return;
       const box = target.getBBox();
       if (box.width <= 0 || box.height <= 0) return;
       const next = viewToIncludeShape(view, world, {
