@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import type { GameShapeTargetEntry } from "@/lib/game/map-shapes";
@@ -48,6 +56,23 @@ export interface GameIslandProps {
   /** The shop window's own localized path — the end screen's way back out. */
   hubUrl: string;
 }
+
+/**
+ * The server-rendered box under the map that the round's controls are portalled into.
+ *
+ * Read as an EXTERNAL STORE, because that is what it is: a piece of DOM this island does
+ * not own and did not render. `subscribe` has nothing to listen to — the slot is
+ * server-rendered once per page and never replaced — but `useSyncExternalStore` re-reads
+ * the snapshot after the commit and re-renders if it changed, which is the entire point
+ * here (see {@link GameIsland}).
+ */
+const subscribeToActionSlot = () => () => {};
+const readActionSlot = (): HTMLElement | null => {
+  const node = document.querySelector("[data-game-actions]");
+  return node instanceof HTMLElement ? node : null;
+};
+/** There is no server render of this island (`ssr: false`), so there is nothing to read. */
+const noActionSlot = () => null;
 
 /** Milliseconds the wrongly-picked shape stays marked before it returns (SPEC §5.3). */
 const WRONG_FLASH_MS = 700;
@@ -118,18 +143,24 @@ export function GameIsland({
   const [wrongPlate, setWrongPlate] = useState<string | null>(null);
   const [summaryDismissed, setSummaryDismissed] = useState(false);
   /**
-   * The server-rendered box under the map that the round's controls are portalled into.
+   * The portal target for the round's controls — RE-READ after the commit, never frozen at
+   * the first render.
    *
-   * Looked up in a lazy initializer, not an effect. This island is `ssr: false`, so its
-   * first render happens on the client with the server's HTML already in the document —
-   * the box is there before this line runs. Doing it in an effect instead would mean
-   * calling `setState` from an effect body purely to learn something that was already
-   * true, which is the cascading-render pattern the lint rule exists to stop.
+   * `ssr: false` makes this island a `React.lazy` created ONCE at module scope. Only the
+   * very first load suspends on the chunk and therefore renders with this page's HTML
+   * already in the document. On every later client-side navigation the chunk is warm,
+   * React renders the island SYNCHRONOUSLY, and the document still holds the PREVIOUS
+   * page's DOM — so a value captured during that render is either `null` (hub → game: the
+   * whole control strip then never mounts, silently, for the rest of the round) or the
+   * outgoing page's detached slot node (game → game). Link prefetching means production
+   * hits this on the FIRST click, not the second.
+   *
+   * `useSyncExternalStore` is what makes the stale read self-correcting: React verifies the
+   * snapshot after committing and re-renders when it moved, so the portal lands in the
+   * live slot. The slot's height is reserved by CSS either way, so the controls arriving a
+   * frame later moves nothing (CLS budget, CONVENTIONS §6 #9).
    */
-  const [actionSlot] = useState<HTMLElement | null>(() => {
-    const node = document.querySelector("[data-game-actions]");
-    return node instanceof HTMLElement ? node : null;
-  });
+  const actionSlot = useSyncExternalStore(subscribeToActionSlot, readActionSlot, noActionSlot);
 
   const questionRef = useRef<HTMLParagraphElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -391,6 +422,26 @@ export function GameIsland({
   const summary = useMemo(() => summarizeRound(round), [round]);
   const liveScore = runningScore(round);
 
+  /**
+   * NOTHING TO ASK — say so, and stop.
+   *
+   * `getMapSummaryResilient()` is build-tolerant by design, so an api outage during
+   * `next build` degrades every shape to `target: null` and that page still ships; an
+   * unseeded region does the same to one screen. `createRound` on an empty pool returns a
+   * round that is ALREADY `finished`, so without this guard the page opens straight onto
+   * "Tur bitti · 0/0 · Hepsini bildiniz." over an empty map, with both end-screen buttons
+   * dead (`restartRound` early-returns on the same empty pool). PR-2 refused that state
+   * next to `startRound`; the guard left with that function, so it is re-stated here — at
+   * render level, because there is no longer a moment when a round is NOT running.
+   */
+  if (targetIds.length === 0) {
+    return (
+      <div className={styles.head}>
+        <p className={styles.emptyPool}>{t("emptyPool")}</p>
+      </div>
+    );
+  }
+
   const tone = feedback?.kind ?? null;
   // A switch rather than a ternary chain: each branch reads a DIFFERENT field of the
   // outcome (`targetId` for what was asked, `pickedId` for what was clicked), and that is
@@ -416,14 +467,14 @@ export function GameIsland({
       <button type="button" className={styles.primaryAction} onClick={restartRound}>
         {t("summaryReplay")}
       </button>
-      <button
-        type="button"
-        className={styles.action}
-        onClick={() => setSummaryDismissed(false)}
-        disabled={!summaryDismissed}
-      >
-        {t("summaryReopen")}
-      </button>
+      {/* Rendered only when there IS a dismissed summary to reopen. Not `disabled`: this
+          repo's own recorded lesson is that a control which is present but does nothing is
+          worse than one that is absent — it takes a tab stop and explains nothing. */}
+      {summaryDismissed ? (
+        <button type="button" className={styles.action} onClick={() => setSummaryDismissed(false)}>
+          {t("summaryReopen")}
+        </button>
+      ) : null}
     </div>
   ) : (
     <div className={styles.actions}>

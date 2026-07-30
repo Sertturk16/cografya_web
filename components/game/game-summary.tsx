@@ -65,6 +65,14 @@ function TargetList({
  * held to "no navigation, anywhere" by a CI guard (`game-map.nav-guard.test.ts`), because
  * on the map a click must answer a question, never navigate.
  *
+ * Those links are plain `<a href>`, deliberately. This is a client component and every URL
+ * it renders arrives ALREADY resolved — the localized province template and the localized
+ * `/oyun` path, both built once on the server through `getPathname` (SEO-POLICY §B7 7.4).
+ * next-intl's `Link` wants the unlocalized route and would resolve it a second time, and
+ * `next/link` over a list of up to 81 province chips would fire a prefetch per visible
+ * chip from inside a modal. The cost is one full navigation on two deliberate exit
+ * actions; the crawler sees a normal link either way.
+ *
  * It is a native `<dialog showModal>`: focus trapping, Esc-to-close, inert background and
  * top-layer stacking come from the platform, and — because a modal never participates in
  * page layout — a long list can appear at the end of a round without moving a single pixel

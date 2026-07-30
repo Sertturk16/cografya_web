@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!region) notFound();
 
   const t = await getTranslations({ locale, namespace: "Game" });
-  const regionLabels = await getRegionLabels();
+  const regionLabels = await getRegionLabels(locale);
 
   return buildMetadata({
     locale,
@@ -59,7 +59,7 @@ export default async function RegionRoundPage({ params }: PageProps) {
   if (!region) notFound();
 
   setRequestLocale(locale);
-  const regionLabels = await getRegionLabels();
+  const regionLabels = await getRegionLabels(locale);
 
   return (
     <div className="container page">

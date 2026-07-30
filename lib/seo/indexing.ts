@@ -70,6 +70,24 @@ export type ContentSurface = "localized" | "trNarrative" | "noindex";
  * fail-safe direction as `surface` defaulting to `"localized"`.
  */
 export function indexableLocales(surface: ContentSurface): readonly Locale[] {
+  return indexableLocalesFor(surface, EN_CONTENT_READY);
+}
+
+/**
+ * The same policy with the switch passed IN — the form the tests can interrogate.
+ *
+ * {@link EN_CONTENT_READY} is a module constant, so a test importing
+ * {@link indexableLocales} can only ever see today's `false`, and under `false` the two
+ * possible branch orders below produce identical output for EVERY surface. That made the
+ * ordering — the one thing standing between a one-word flag flip and re-indexing a
+ * deliberately de-indexed surface — untestable in practice. Taking the flag as a parameter
+ * is the whole fix: the real function stays a one-liner over the constant, and the branch
+ * order is pinned at the combination where it actually matters.
+ */
+export function indexableLocalesFor(
+  surface: ContentSurface,
+  enContentReady: boolean,
+): readonly Locale[] {
   // Checked FIRST, before the EN switch: a fully de-indexed surface is a property of the
   // page, not of how much English content exists, so flipping `EN_CONTENT_READY` must
   // never quietly index it. An empty list is also what keeps every downstream consumer
@@ -77,7 +95,7 @@ export function indexableLocales(surface: ContentSurface): readonly Locale[] {
   // `languages` map (the DEC 2026-07-18c "a noindex page leaves the hreflang cluster
   // entirely" shape), and `sitemapEntriesFor` emits no `<url>` at all.
   if (surface === "noindex") return [];
-  if (surface === "localized" || EN_CONTENT_READY) return routing.locales;
+  if (surface === "localized" || enContentReady) return routing.locales;
   return routing.locales.filter((locale) => locale === routing.defaultLocale);
 }
 

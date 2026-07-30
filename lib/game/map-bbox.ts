@@ -96,8 +96,9 @@ export function aspectOfViewBox(viewBox: string): number | null {
 const MIN_ASPECT = 1;
 
 /**
- * The viewBox string for a subset of shapes, or `null` when the subset is empty (the
- * caller then keeps the full-map viewBox rather than rendering a degenerate frame).
+ * The viewBox string for a subset of shapes, or `null` when the subset is empty or has no
+ * extent (the caller then keeps the full-map viewBox rather than rendering a degenerate
+ * frame).
  *
  * The frame follows the SUBSET's own shape rather than the whole map's, and the stage
  * follows the frame (`components/game/game-map.tsx` reads the aspect back off this
@@ -123,7 +124,15 @@ export function viewBoxForPaths(paths: readonly string[]): string | null {
   let width = bounds.maxX - bounds.minX + pad * 2;
   const height = bounds.maxY - bounds.minY + pad * 2;
 
-  if (width > 0 && height > 0 && width / height < MIN_ASPECT) {
+  // A subset with no extent at all — one point, or several paths sharing one point — has no
+  // frame to draw: `pad` is 0 too, so the string would be `"x y 0 0"`, an SVG that paints
+  // nothing and an aspect the stage cannot read. It is answered exactly like an empty
+  // subset, which sends the caller to the full-map viewBox. Unreachable from the committed
+  // artifact today; this function is exported as a general utility, so it answers rather
+  // than emitting a degenerate box for the next caller to discover on screen.
+  if (width <= 0 || height <= 0) return null;
+
+  if (width / height < MIN_ASPECT) {
     const grown = height * MIN_ASPECT;
     minX -= (grown - width) / 2;
     width = grown;

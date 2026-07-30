@@ -61,6 +61,15 @@
   color: var(--color-slate);
 }
 
+/* The "there is nothing to ask" sentence — the head slot's whole content when the question
+   pool came back empty. Deliberately NOT question-sized: it takes the question's place but
+   it is a status line, not the round's headline, and the same quiet register as the
+   JavaScript-off fallback it replaces (`game-screen.module.css .headFallback`). */
+.emptyPool {
+  margin: 0;
+  color: var(--color-slate);
+}
+
 /* The round's live region. It keeps its line height when empty so the block below it does
    not jump each time feedback appears and clears. */
 .feedback {

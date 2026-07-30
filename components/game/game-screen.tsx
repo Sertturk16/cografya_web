@@ -40,7 +40,7 @@ interface GameScreenProps {
 export async function GameScreen({ locale, mode, modeName, region = null }: GameScreenProps) {
   const t = await getTranslations("Game");
   const summaries = await getMapSummaryResilient();
-  const regionLabels = await getRegionLabels();
+  const regionLabels = await getRegionLabels(locale);
 
   const allShapes = buildGameShapes(PROVINCE_SHAPES, summaries, locale);
   // Region mode draws ONE region. An unseeded plate has no region, so it is absent here

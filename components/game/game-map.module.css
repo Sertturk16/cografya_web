@@ -12,10 +12,12 @@
   padding: clamp(10px, 2vw, 20px);
 }
 
-/* FIXED-SIZE STAGE. The ratio is MAP_VIEWBOX's own (1000 × 429) — and the region mode's
-   subset viewBox is GROWN to that same ratio (`lib/game/map-bbox.ts`), so this one number
-   holds for every screen: the box reserves the map's exact height from the first paint,
-   before the island mounts anything on top of it. This is the "fixed-size container" the
+/* FIXED-SIZE STAGE. This is the FALLBACK ratio — MAP_VIEWBOX's own 1000 × 429 — for the
+   whole-country screens and for the case the viewBox string is unreadable. A region screen
+   overrides it with its own subset ratio through the inline `aspect-ratio` style in
+   `game-map.tsx` (`lib/game/map-bbox.ts` only floors that ratio at 1, it does NOT grow the
+   subset to the country's letterbox). Either way the height is settled in the first
+   response, before the island mounts anything on top of it: the "fixed-size container" the
    heavy-interactive rendering rule requires (ENGINEERING.md §3, CWV/CLS budget §4 #9). */
 .stage {
   position: relative;

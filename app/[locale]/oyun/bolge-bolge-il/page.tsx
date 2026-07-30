@@ -44,7 +44,7 @@ export default async function RegionPickerPage({ params }: PageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Game");
-  const regionLabels = await getRegionLabels();
+  const regionLabels = await getRegionLabels(locale);
 
   return (
     <div className="container page">

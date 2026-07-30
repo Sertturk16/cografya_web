@@ -88,6 +88,14 @@ describe("viewBoxForPaths", () => {
     expect(viewBoxForPaths([])).toBeNull();
   });
 
+  // A degenerate subset takes the SAME answer as an empty one. `pad` scales with the
+  // subset's longer side, so a zero-extent subset pads by zero and would otherwise produce
+  // `"x y 0 0"`: an invisible map inside a stage whose aspect is unreadable.
+  it("is null for a subset with no extent, rather than a 0 × 0 box", () => {
+    expect(viewBoxForPaths(["M40 70L40 70Z"])).toBeNull();
+    expect(viewBoxForPaths(["M40 70Z", "M40 70L40 70Z"])).toBeNull();
+  });
+
   it("contains every point of every path it framed", () => {
     const box = viewBoxForPaths([RECT, "M100 5L120 200Z"]);
     expect(box).not.toBeNull();

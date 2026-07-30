@@ -77,6 +77,7 @@
     "backToHub": "Game",
     "summaryBackToHub": "Back to the modes",
     "noScript": "The game needs JavaScript enabled in your browser.",
+    "emptyPool": "This round's questions could not be loaded, please try again shortly.",
     "mapTitle": "Game map: {mode}",
     "questionLead": "Find:",
     "metaProgress": "Question {index}/{total}",
