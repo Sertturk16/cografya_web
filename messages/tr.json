@@ -26,7 +26,7 @@
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Türkiye ve Dünya Coğrafyası",
-    "metaDescription": "Türkiye'nin 81 ili, dünya ülkeleri ve yer şekilleri için ücretsiz, kaynaklı coğrafya içerikleri. Haritalar, konu anlatımları ve daha fazlası.",
+    "metaDescription": "Türkiye'nin 81 ili ve dünya ülkeleri için ücretsiz, kaynaklı coğrafya sayfaları ve haritalar. Öğrendiklerini harita oyunuyla sına.",
     "heading": "Türkiye'yi ve dünyayı coğrafyayla keşfet",
     "lede": "Türkiye'nin 81 ili ve dünya ülkeleri için ücretsiz, kaynaklı coğrafya sayfaları.",
     "ctaMap": "Türkiye Haritası",
@@ -41,15 +41,16 @@
     "metaTitle": "Hakkımızda",
     "metaDescription": "Coğrafya Platformu; Türkiye ve dünya coğrafyasını ücretsiz, kaynaklı ve erişilebilir içeriklerle anlatmayı amaçlayan bir eğitim projesidir.",
     "heading": "Hakkımızda",
-    "body1": "Coğrafya Platformu, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir. İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer."
+    "body1": "Coğrafya Platformu, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir.",
+    "sourcing": "İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer."
   },
   "Turkiye": {
     "metaTitle": "Türkiye Haritası — 81 İl",
-    "metaDescription": "Türkiye'nin 81 ilini interaktif haritada keşfedin. Her il için konum, nüfus, yüzölçümü, iklim ve yüzey şekilleri; kaynaklı, düzenli detay sayfaları.",
+    "metaDescription": "Türkiye'nin 81 ilini interaktif haritada keşfet. Her il için konum, nüfus, yüzölçümü, iklim ve yüzey şekilleri; kaynaklı, düzenli detay sayfaları.",
     "heading": "Türkiye Haritası",
     "intro": "Bir ile tıklayarak detaylarını görüntüle.",
     "gameCtaHeading": "Öğrendiklerini oyunla sına",
-    "gameCtaLink": "Coğrafya harita oyununu aç"
+    "gameCtaLink": "Harita oyununu aç"
   },
   "Game": {
     "brandName": "Kâşif",
@@ -224,7 +225,7 @@
   },
   "Dunya": {
     "metaTitle": "Dünya Haritası — Ülkeler",
-    "metaDescription": "Dünya ülkelerini interaktif haritada keşfedin. Her ülke için konum, başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
+    "metaDescription": "Dünya ülkelerini interaktif haritada keşfet. Her ülke için konum, başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
     "heading": "Dünya Haritası",
     "intro": "Bir ülkeye tıklayarak detaylarını görüntüle."
   },

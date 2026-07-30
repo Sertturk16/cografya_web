@@ -26,7 +26,7 @@
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Geography of Türkiye and the World",
-    "metaDescription": "Free, sourced geography content for the 81 provinces of Türkiye, the countries of the world and landforms. Maps, topic guides and more.",
+    "metaDescription": "Free, sourced geography pages and maps for the 81 provinces of Türkiye and the countries of the world. Test yourself with the free map game.",
     "heading": "Explore Türkiye and the world through geography",
     "lede": "Free, sourced geography pages for the 81 provinces of Türkiye and the countries of the world.",
     "ctaMap": "Explore the Map",
@@ -41,7 +41,8 @@
     "metaTitle": "About",
     "metaDescription": "Coğrafya Platformu is an education project that presents the geography of Türkiye and the world through free, sourced and accessible content.",
     "heading": "About",
-    "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone. Content is grounded in authoritative sources and passes an independent verification step before publication."
+    "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone.",
+    "sourcing": "Content is grounded in authoritative sources and passes an independent verification step before publication."
   },
   "Turkiye": {
     "metaTitle": "Map of Türkiye — 81 Provinces",
@@ -49,7 +50,7 @@
     "heading": "Map of Türkiye",
     "intro": "Select a province to see its details.",
     "gameCtaHeading": "Test what you have learned",
-    "gameCtaLink": "Open the geography map game"
+    "gameCtaLink": "Open the map game"
   },
   "Game": {
     "brandName": "Explorer",
