@@ -47,7 +47,7 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
     console.warn(`[map] map-summary unavailable; rendering inert map. ${String(error)}`);
   }
   // Raw plateCode join: both sides are the api's 2-digit zero-padded codes (api
-  // CLAUDE.md §5), matching the generated artifact — same posture as the existing
+  // ENGINEERING.md §5), matching the generated artifact — same posture as the existing
   // neighbour-code join.
   const byPlate = byPlateCode(summaries);
 

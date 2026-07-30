@@ -48,7 +48,7 @@ export async function ClimateSection({
     <div className={styles.section}>
       {/* tabIndex={-1} makes this permanent deep-link target programmatically focusable,
           so Safari/VoiceOver actually move AT focus to (and announce) the heading when the
-          fragment is followed — matching the skip-link `<main>` fix (CLAUDE.md §5, PR#2).
+          fragment is followed — matching the skip-link `<main>` fix (ENGINEERING.md §5, PR#2).
           `.heading`'s scroll-margin-top clears the sticky header so it is not visually
           obscured on arrival. */}
       <h3 id={CHART_ANCHOR[locale]} tabIndex={-1} className={styles.heading}>

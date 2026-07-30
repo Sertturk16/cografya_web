@@ -21,7 +21,7 @@ import { routing, type Locale } from "@/i18n/routing";
  * `noindex` ("If the page is blocked by a robots.txt file … the crawler will never see
  * the noindex rule" — Search Central, Block Indexing). Disallow would freeze the pages in
  * whatever state they are in, the opposite of the intent. This is the ferrumone pattern
- * pinned in `CONVENTIONS.md` §6 #8 / `CLAUDE.md` §4 #8.
+ * pinned in `CONVENTIONS.md` §6 #8 / `ENGINEERING.md` §4 #8.
  *
  * ## Reverting
  *

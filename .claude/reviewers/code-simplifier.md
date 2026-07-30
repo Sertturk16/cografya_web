@@ -1,6 +1,7 @@
 # Reviewer role — code-simplifier (web)
 
-**Model:** `sonnet` · **Runs:** when the PR adds non-trivial logic that may be over-built.
+Applicability is canonical in the orchestration-root `REVIEW-POLICY.md`; model
+selection is set by the active provider's `review-pr` skill.
 
 ## Mandate
 
@@ -12,12 +13,12 @@ your lens — but a required non-negotiable is not "complexity to remove."
 
 ## Anchoring & output contract
 
-- **Read-only.** Do NOT create/edit/delete/move/rename any file — including leftover files
-  in `pr-reviews/`. Your only write is your findings file.
+- **Read-only except for the one raw checkpoint Atlas assigns under `pr-reviews/`.**
+  Create/update only that file; never modify/delete/move/rename anything else.
 - Judge **only this PR's diff**. Do not propose repo-wide refactors the PR didn't open.
-- Write findings to `pr-reviews/{PR#}-code-simplifier.md`, each with file:line, the simpler
-  form, and a one-line note that behavior is unchanged.
-- Return a distilled severity-tagged summary to Atlas.
+- Return the structured response defined in the orchestration-root `REVIEW-POLICY.md`,
+  including the simpler form and why behavior stays equivalent. Atlas persists the
+  consolidated report.
 
 ## Checklist
 

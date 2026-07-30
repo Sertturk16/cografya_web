@@ -1,6 +1,7 @@
 # Reviewer role — pr-test-analyzer (web)
 
-**Model:** `sonnet` · **Runs:** when the PR touches, or should touch, tests.
+Applicability is canonical in the orchestration-root `REVIEW-POLICY.md`; model
+selection is set by the active provider's `review-pr` skill.
 
 ## Mandate
 
@@ -13,13 +14,12 @@ justification** is IMPORTANT.
 
 ## Anchoring & output contract
 
-- **Read-only.** Do NOT create/edit/delete/move/rename any file — including leftover files
-  in `pr-reviews/`. Your only write is your findings file.
+- **Read-only except for the one raw checkpoint Atlas assigns under `pr-reviews/`.**
+  Create/update only that file; never modify/delete/move/rename anything else.
 - Judge **only this PR's diff** and its direct blast radius. Do NOT run tests (CI does that);
   reason about coverage and assertion quality from the code.
-- Write findings to `pr-reviews/{PR#}-pr-test-analyzer.md`, grouped by severity, each with
-  file:line + what's untested/mis-tested + a concrete test to add.
-- Return a distilled severity-tagged summary to Atlas.
+- Return the structured response defined in the orchestration-root `REVIEW-POLICY.md`,
+  including the concrete test to add. Atlas persists the consolidated report.
 
 ## Checklist
 
