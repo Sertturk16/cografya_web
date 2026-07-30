@@ -54,7 +54,7 @@ correctness boundary, not a preference.
 | Token                                  | Hex                   | Use                                         |
 | -------------------------------------- | --------------------- | ------------------------------------------- |
 | `--color-chip-bg` / `--color-chip-ink` | `#ede3d5` / `#7e3a1e` | pill chips                                  |
-| `--color-success`                      | `#4f7a3a`             | success                                     |
+| `--color-success`                      | `#496f35`             | success (AA on every Terra bg — see §5)     |
 | `--color-warning`                      | `#c9860f`             | warning (e.g. placeholder-note left border) |
 | `--color-danger`                       | `#b23b2e`             | error/destructive                           |
 | `--color-info`                         | `#276b70`             | info (= accent)                             |
@@ -111,8 +111,19 @@ ramp and not the Terra brand hues.
   | on-primary `#fff` on primary `#b0522e` (button)   | 5.13:1      | AA                            |
   | on-primary on primary-dark `#7e3a1e` (hover/skip) | 8.36:1      | AAA                           |
   | chip-ink on chip-bg                               | 6.59:1      | AA (AAA large)                |
+  | success `#496f35` on surface `#f1e9de`            | 4.84:1      | AA                            |
+  | success on bg                                     | 5.49:1      | AA                            |
+  | danger `#b23b2e` on surface                       | 4.90:1      | AA                            |
   | **taupe `#8a8078` on white**                      | **3.86:1**  | **SUB-AA — placeholder only** |
   | **taupe on surface `#f1e9de`**                    | **3.21:1**  | **SUB-AA — placeholder only** |
+
+  **The semantic-colour rule (hard, → PR #27):** a semantic text colour must clear 4.5:1 on
+  **`--color-surface`**, the darkest Terra background — not merely on `--color-bg`. A token
+  that passes on one panel and fails on the next is the taupe trap in a new colour, and it
+  is invisible in review because both panels look the same in a screenshot. `--color-success`
+  was `#4f7a3a` (4.18:1 on surface, 4.75:1 on bg) until the game HUD became its first real
+  consumer; the token itself moved to `#496f35` rather than a scoped darker variant being
+  added next to it, so there is no wrong choice left to make.
 
   **The taupe rule (hard):** `--color-taupe` is **decorative / placeholder / secondary-UI
   ONLY** — never body, nav, footer, or any essential text. Use `--color-slate` for

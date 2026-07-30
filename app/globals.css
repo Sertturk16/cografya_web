@@ -25,7 +25,14 @@
   --color-chip-ink: #7e3a1e;
 
   /* ---- Semantic ---- */
-  --color-success: #4f7a3a;
+  /* Success is AA on EVERY Terra background, not just the page one: its first real use
+     (the game HUD's "Doğru: …" line) sits on --color-surface, where the previous #4f7a3a
+     measured 4.18:1 — under the 4.5:1 floor for normal text, while passing at 4.75:1 on
+     --color-bg one panel away. That "passes here, fails there" shape is exactly the trap
+     --color-taupe documents (DESIGN.md §5), so the value moved instead of a second
+     near-identical token being introduced: #496f35 is 4.84:1 on surface, 5.49:1 on bg,
+     5.82:1 on white. */
+  --color-success: #496f35;
   --color-warning: #c9860f;
   --color-danger: #b23b2e;
   --color-info: #276b70;
@@ -119,6 +126,41 @@
   --chart-temp-band: #f2cfa8; /* min–max band fill (light warm; supplementary) */
   --chart-temp-band-edge: #c9762f; /* band boundary hairline (3.4:1 on white) */
   --chart-precip-bar: #1b5f8a; /* precipitation columns (cool) */
+
+  /* ---- Map-game region palette (Kâşif Mode 1; DESIGN.md §6.1 rule 4 — CATEGORICAL) ----
+     Colouring the map by coğrafi bölge is a DATA encoding (an unordered categorical
+     variable), not chrome — so it gets its own token set, physically separate from the
+     Terra brand tokens, exactly as the climate ramps above do. The values are the
+     Okabe–Ito qualitative palette, which is designed to stay mutually distinguishable
+     under deuteranopia, protanopia and tritanopia (DESIGN §6.1 rule 3); its black member
+     is unused, leaving exactly 7 for the 7 regions (rule 4's ≤ ~8 ceiling). Hues are
+     assigned so that NEIGHBOURING regions never share a weak pair — Marmara/Ege, Ege/
+     Akdeniz, İç Anadolu against everything it touches — and every shape keeps its
+     1px --province-stroke border, so group edges are readable as line work as well as
+     colour. Answer states below always override a region tint, and the round's state is
+     ALSO carried in words and in stroke style, never by hue alone.
+     A low-contrast texture layer per region is PR-4 (SPEC §13). */
+  --region-marmara: #0072b2; /* blue */
+  --region-ege: #e69f00; /* orange */
+  --region-akdeniz: #56b4e9; /* sky blue */
+  --region-ic-anadolu: #f0e442; /* yellow */
+  --region-karadeniz: #cc79a7; /* reddish purple */
+  --region-dogu-anadolu: #009e73; /* bluish green */
+  --region-guneydogu-anadolu: #d55e00; /* vermillion */
+
+  /* ---- Map-game answer states (UI STATE, not a data scale) ----
+     These mark what the PLAYER just did, so they are semantic UI colours (the
+     success/danger family), not an encoding of any geographic value. Each is paired in
+     CSS with a distinct stroke treatment — solid / dotted / dashed — so right, wrong and
+     revealed stay tellable apart with no colour perception at all, on top of any region
+     tint underneath. The reveal marker is deliberately the ONE dark, low-hue value: it
+     has to read as "look here" over all seven region colours at once. */
+  --game-correct: #5f8f3f;
+  --game-correct-edge: #2c451c;
+  --game-wrong: #c0392b;
+  --game-wrong-edge: #5e1a13;
+  --game-reveal: #3f3a36;
+  --game-reveal-edge: #ffffff;
 
   /* ---- Typography (next/font CSS variables from lib/fonts.ts) ---- */
   --font-heading: var(--font-fraunces), Georgia, "Times New Roman", serif;

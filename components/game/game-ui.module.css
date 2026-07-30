@@ -1,0 +1,338 @@
+/* Play-surface chrome: the HUD that sits above the map and the end-of-round dialog.
+   SEPARATE from game-map.module.css (which styles the map itself) so the shape states and
+   the control chrome can never reach into one another's selectors. All colour comes from
+   the token layer in app/globals.css; the only literal here is the `#fff` control surface,
+   the established repo pattern (there is no white token — see `.card` in globals.css). */
+
+/* ---- HUD ----------------------------------------------------------------------------
+   The HUD lives inside a slot whose height is reserved by game-map.module.css, so the
+   island can mount into it without moving the map. Growth BEYOND the reserved height only
+   happens in states a click caused (a round starting, a question resolving), which is
+   outside the CLS window by definition. */
+.hud {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hudIdle,
+.hudScore {
+  margin: 0;
+  color: var(--color-slate);
+}
+
+.hudScore {
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  font-size: 1.05rem;
+}
+
+.question {
+  margin: 0;
+  font-size: clamp(1.1rem, 1rem + 1vw, 1.5rem);
+  line-height: 1.25;
+}
+
+/* Focus target when a round opens — visible, because focus moves here programmatically. */
+.question:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  border-radius: var(--radius);
+}
+
+.questionLead {
+  color: var(--color-slate);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.questionName {
+  color: var(--color-primary-dark);
+  font-family: var(--font-heading);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-slate);
+}
+
+/* The round's live region. It keeps its line height when empty so the block below it does
+   not jump each time feedback appears and clears. */
+.feedback {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 0.95rem;
+  color: var(--color-slate);
+}
+
+/* A GLYPH, not a colour: ✓ / ✕ / ▸ carry the answer state on their own, so the state is
+   readable with no colour perception at all (DESIGN.md §6.1 rule 3). The tint below only
+   reinforces it. */
+.feedbackMark {
+  font-weight: 700;
+}
+
+/* The tone values are the outcome kinds themselves (`correct` / `retry` / `revealed`), so
+   these selectors are pinned to that union — a name that does not exist matches nothing
+   and fails silently. */
+.hud[data-tone="correct"] .feedback {
+  color: var(--color-success);
+}
+
+.hud[data-tone="retry"] .feedback,
+.hud[data-tone="revealed"] .feedback {
+  color: var(--color-danger);
+}
+
+/* ---- Controls ------------------------------------------------------------------------ */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action,
+.primaryAction {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+}
+
+.primaryAction {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.action:hover {
+  border-color: var(--color-primary);
+}
+
+.primaryAction:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.action:focus-visible,
+.primaryAction:focus-visible,
+.quietAction:focus-visible,
+.missedLink:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.quietAction {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--color-slate);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---- Resume banner -------------------------------------------------------------------- */
+.resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.resumeText {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--color-slate);
+}
+
+/* ---- End-of-round dialog ---------------------------------------------------------------
+   A native modal: focus trap, Esc, inert background and top-layer stacking are the
+   platform's job, and because a modal is outside page flow an 81-row list costs no layout
+   shift at all. */
+.dialog {
+  width: min(560px, 100vw - 24px);
+  max-height: min(80vh, 720px);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  color: inherit;
+  overflow: auto;
+}
+
+.dialog::backdrop {
+  background: rgb(35 28 22 / 55%);
+}
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px clamp(16px, 4vw, 28px) 22px;
+}
+
+.dialogHeading {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.dialogHeading:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.dialogScore {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary-dark);
+}
+
+.dialogStars {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+}
+
+.starGlyphs {
+  font-size: 1.4rem;
+  line-height: 1;
+  letter-spacing: 2px;
+  color: var(--color-warning);
+}
+
+/* Unearned stars stay visible so the row reads as "2 of 3", not "2". */
+.starEmpty {
+  color: var(--color-taupe);
+}
+
+.starLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-slate);
+}
+
+.dialogStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-slate);
+}
+
+.dialogBest {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.dialogSubheading {
+  margin: 8px 0 0;
+  font-size: 1.05rem;
+}
+
+.dialogNote {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+.missedList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.missedList li {
+  margin: 0;
+}
+
+.missedLink,
+.missedPlain {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  font-size: 0.85rem;
+}
+
+.missedLink {
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+.missedLink:hover {
+  border-color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.missedPlain {
+  color: var(--color-slate);
+}
+
+/* Secondary "look again" group — collapsed by default so the score stays the headline. */
+.reviewGroup {
+  margin: 0;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.reviewSummary {
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.reviewSummary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.reviewGroup > *:not(summary) {
+  margin-top: 8px;
+}
+
+.dialogActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action,
+  .primaryAction {
+    transition: none;
+  }
+}

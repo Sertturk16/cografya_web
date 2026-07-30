@@ -62,6 +62,13 @@ describe("buildGameShapes", () => {
     expect(entries[0]?.target?.region).toBe("KARADENIZ");
   });
 
+  it("carries the api's single province name into both locales", () => {
+    const summaries = [summary("01", "MARMARA")];
+
+    expect(buildGameShapes(SHAPES, summaries, "tr")[0]?.target?.name).toBe("Fixture 01");
+    expect(buildGameShapes(SHAPES, summaries, "en")[0]?.target?.name).toBe("Fixture 01");
+  });
+
   it("resolves the slug of the requested locale", () => {
     const summaries = [summary("01", "MARMARA")];
 
