@@ -358,6 +358,25 @@ describe("summarizeRound", () => {
     expect(summarizeRound(state, 5_000).totalWrongs).toBe(5);
   });
 
+  // The boundary the "including the open question" test above cannot see: between the
+  // answer and "Devam" the question is `resolved`, so its picks live in `results` — and
+  // used to ALSO be left on the open-question list, double-counting them for as long as
+  // that feedback was on screen.
+  it("counts a resolved question's wrong clicks exactly once, before it is advanced", () => {
+    const searched = miss(startRound(), 2);
+    const resolved = answerRound(searched, target(searched), 2_000).state;
+
+    expect(resolved.status).toBe("resolved");
+    expect(summarizeRound(resolved, 5_000).totalWrongs).toBe(2);
+  });
+
+  it("counts the wrong clicks of a question whose answer was shown exactly once", () => {
+    const revealed = revealRound(miss(startRound(), 3), 2_000).state;
+
+    expect(revealed.status).toBe("resolved");
+    expect(summarizeRound(revealed, 5_000).totalWrongs).toBe(3);
+  });
+
   it("reports zero wrong clicks for a clean round", () => {
     let state = startRound();
     for (let q = 0; q < POOL.length; q += 1) state = solve(state);
@@ -390,6 +409,20 @@ describe("the clock", () => {
 
     expect(elapsedMs(paused, 3_604_000)).toBe(3_000);
     expect(elapsedMs(resumed, 3_605_000)).toBe(4_000);
+  });
+
+  it("stays stopped when a round is resumed with its LAST question already resolved", () => {
+    // The tab was closed during the final question's feedback pause, so the clock had
+    // already been frozen on purpose. Resuming must not restart it and bill the gap.
+    const settled = answerRound(
+      createRound("provinces", ["only"], 1_000, noShuffle),
+      "only",
+      4_000,
+    ).state;
+    const resumed = resumeRound(pauseRound(settled, 4_000), 3_604_000);
+
+    expect(resumed.segmentStartedAt).toBeNull();
+    expect(elapsedMs(resumed, 3_605_000)).toBe(3_000);
   });
 
   it("never runs backwards if the system clock jumps", () => {

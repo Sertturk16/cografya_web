@@ -81,7 +81,9 @@
    involved, which is the whole point (81 re-rendered elements per answer would be the INP
    problem, ENGINEERING.md §4 #9). */
 
-/* A shape only becomes a control while a round is running.
+/* A shape only becomes a control while a question can still be ANSWERED — which is what
+   `data-game-active` means, and why it is a separate attribute from `data-game-mode` (the
+   mode's colouring stays on after the last question, the clickability does not).
    NOTE — SPEC §7.3 proposed a transparent `stroke-width: 6` hit margin for tiny provinces.
    It is NOT applied: the hit margin and the visible border are the same stroke, so buying
    the margin costs the province outlines, and in Mode 2 (one flat fill for all 81) those
@@ -89,7 +91,7 @@
    mandatory in Faz-1 for exactly this reason (SPEC §7.2). A real fix is a second,
    invisible hit path per shape — that doubles the SVG payload, so it is a measured PR-4
    question, not a silent one. */
-.stage[data-game-mode] .province {
+.stage[data-game-active] .province {
   cursor: pointer;
 }
 
@@ -97,7 +99,7 @@
    ring on it — including after a MOUSE click, which left a stray outline across whichever
    province was last tapped. Suppressed here; the keyboard treatment is re-added on
    `:focus-visible` below, after the region tints. */
-.stage[data-game-mode] .province:focus {
+.stage[data-game-active] .province:focus {
   outline: none;
 }
 
@@ -160,12 +162,16 @@
   }
 }
 
-/* Keyboard focus on a shape. Placed after the region tints so it wins on equal specificity:
-   knowing where the focus is always outranks knowing which region you are hovering.
+/* Keyboard focus on a shape. Knowing where the focus is always outranks knowing which
+   region you are hovering, so this rule has to beat the Mode-1 tints above — and those are
+   (0,5,0), not (0,4,0): `:not([data-state])` contributes its argument's specificity. The
+   `[data-plate]` here (every shape carries one) brings this rule to the same (0,5,0), and
+   source order after the tints decides the tie. Without it the fill below silently lost
+   and only the stroke changed on focus.
    Fill AND stroke both change — on the /turkiye map a fill-only ring measured 1.25:1, under
    the 3:1 graphical-object floor, and only the stroke shift brought it to AA (repo lesson,
    map.module.css). */
-.stage[data-game-mode] .province:focus-visible {
+.stage[data-game-active] .province[data-plate]:focus-visible {
   outline: none;
   fill: var(--province-hover);
   stroke: var(--color-primary-dark);

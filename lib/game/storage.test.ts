@@ -108,6 +108,17 @@ describe("parseRoundState", () => {
     expect(parseRoundState({ ...roundFixture(), index: 99 })).toBeNull();
   });
 
+  it("rejects an index past the last question unless the round is finished", () => {
+    const round = roundFixture();
+    // Shape-valid but unplayable: no current question, so nothing can be clicked and the
+    // "Devam" button never appears — the player would be stuck in a dead round.
+    expect(parseRoundState({ ...round, index: round.order.length, status: "asking" })).toBeNull();
+    expect(parseRoundState({ ...round, index: round.order.length, status: "resolved" })).toBeNull();
+    expect(
+      parseRoundState({ ...round, index: round.order.length, status: "finished" }),
+    ).not.toBeNull();
+  });
+
   it("rejects a wrong-click count that is not a whole non-negative number", () => {
     // There is no cap on tries and no attempt budget (DEC 2026-07-30h) — only "a count".
     expect(parseRoundState({ ...roundFixture(), wrongs: -1 })).toBeNull();

@@ -108,6 +108,8 @@
     "resumeBody": "{mode} turunuz {done}/{total} soruda kalmış.",
     "resumeContinue": "Kaldığım yerden devam",
     "resumeDiscard": "Bu turu sil",
+    "resumeUnavailable": "Kayıtlı tur bu haritayla açılamıyor, o yüzden silindi. Yeni bir tur başlatabilirsiniz.",
+    "confirmNewRound": "Devam eden bir turunuz var. Yeni tura başlarsanız o tur silinir. Başlansın mı?",
     "summaryHeading": "Tur bitti",
     "summaryScore": "{score}/100 puan",
     "summaryFirstTry": "{count}/{total} ilk denemede",

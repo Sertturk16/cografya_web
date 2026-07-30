@@ -232,9 +232,16 @@ export function pauseRound(state: RoundState, now: number): RoundState {
   return { ...state, baseElapsedMs: elapsedMs(state, now), segmentStartedAt: null };
 }
 
-/** Restart the clock on a round loaded from storage. */
+/**
+ * Restart the clock on a round loaded from storage.
+ *
+ * A round whose LAST question is already `resolved` keeps its clock stopped: it was frozen
+ * on purpose by `resolveQuestion`, and restarting it would bill the player for the time
+ * between closing the tab and pressing "Devam" on a round that is effectively over.
+ */
 export function resumeRound(state: RoundState, now: number): RoundState {
   if (state.status === "finished" || state.segmentStartedAt !== null) return state;
+  if (state.status === "resolved" && state.index >= state.order.length - 1) return state;
   return { ...state, segmentStartedAt: now };
 }
 
@@ -298,7 +305,10 @@ function resolveQuestion(state: RoundState, result: QuestionResult, now: number)
   const isLast = state.index >= state.order.length - 1;
   return {
     ...state,
-    currentWrongPicks: result.wrongPicks,
+    // The picks have just moved INTO `results`, so the open-question list is empty again.
+    // Carrying them here as well would make `summarizeRound` count them twice while the
+    // question sits in `resolved` — and "Toplam yanlış" is on the end screen.
+    currentWrongPicks: [],
     results: [...state.results, result],
     status: "resolved",
     baseElapsedMs: isLast ? elapsedMs(state, now) : state.baseElapsedMs,

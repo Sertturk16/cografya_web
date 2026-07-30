@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useTranslations } from "next-intl";
 import type { GameShapeTargetEntry } from "@/lib/game/map-shapes";
 import {
@@ -115,6 +123,8 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [wrongPlate, setWrongPlate] = useState<string | null>(null);
   const [summaryDismissed, setSummaryDismissed] = useState(false);
+  /** Set when a saved round had to be dropped because this map can no longer answer it. */
+  const [resumeNotice, setResumeNotice] = useState(false);
   /** Best score for this mode BEFORE the round that just ended (captured at the finish). */
   const [previousBest, setPreviousBest] = useState<number | undefined>(undefined);
   /**
@@ -144,6 +154,15 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
   );
 
   const playing = round !== null;
+  /**
+   * A round that can still be ANSWERED. A finished round is still "playing" as far as the
+   * map's colours go — the answer marks and the region tint stay readable behind the end
+   * screen — but nothing on it can be clicked any more, so the shapes must stop being
+   * controls the moment the last question resolves (WCAG 4.1.2). `playing` alone never
+   * distinguishes the two, which left up to 81 dead `role="button"` tab stops in front of
+   * the page content once the end screen was dismissed.
+   */
+  const interactive = round !== null && round.status !== "finished";
   const modeId = round?.modeId ?? null;
   const activeSet = round ? targetSets[round.modeId] : null;
   const labelOf = useMemo(() => {
@@ -153,15 +172,38 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
 
   // --- round transitions (handlers and timers only) ------------------------------------
   /**
-   * Apply a round transition and snapshot it with the clock FROZEN, so a tab closed
-   * mid-round resumes where it stopped instead of counting the time it was away.
+   * Snapshot a round with the clock FROZEN, so a tab closed mid-round resumes where it
+   * stopped instead of counting the time it was away. A finished round — and an explicit
+   * discard — persist as `null`: there is nothing left to come back to. The ONE place that
+   * writes a round to storage, so the rule cannot drift between the three callers.
    */
-  const commitRound = useCallback((next: RoundState | null) => {
-    roundRef.current = next;
-    setRound(next);
+  const persistRound = useCallback((next: RoundState | null) => {
     const stored = next && next.status !== "finished" ? pauseRound(next, Date.now()) : null;
     setGameProgress({ ...getGameProgress(), round: stored });
   }, []);
+
+  /** Apply a round transition: to the listeners' ref, to React, and to storage. */
+  const commitRound = useCallback(
+    (next: RoundState | null) => {
+      roundRef.current = next;
+      setRound(next);
+      persistRound(next);
+    },
+    [persistRound],
+  );
+
+  /** Open a round: clear whatever the previous one left on screen, then commit it. */
+  const beginRound = useCallback(
+    (state: RoundState) => {
+      setFeedback(null);
+      setWrongPlate(null);
+      setSummaryDismissed(false);
+      setResumeNotice(false);
+      setClockNow(Date.now());
+      commitRound(state);
+    },
+    [commitRound],
+  );
 
   const startRound = useCallback(
     (nextMode: GameModeId) => {
@@ -169,28 +211,42 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
       // No seeded provinces means no game. Better to leave the idle prompt in place than
       // to open a round with nothing in it and immediately "finish" it at 0/100.
       if (ids.length === 0) return;
-      setFeedback(null);
-      setWrongPlate(null);
-      setSummaryDismissed(false);
-      setClockNow(Date.now());
-      commitRound(createRound(nextMode, ids, Date.now()));
+      // Starting a round REPLACES the one in progress, snapshot included — and the mode
+      // cards sit above the play area, fully clickable, for the whole round. Seventy
+      // questions in, one stray click would wipe the run with no undo, so it is asked
+      // about. ("Turu bırak" is the path that keeps a round; this one is not.)
+      const current = roundRef.current;
+      if (current && current.status !== "finished" && !window.confirm(t("confirmNewRound"))) {
+        return;
+      }
+      beginRound(createRound(nextMode, ids, Date.now()));
     },
-    [commitRound, targetSets],
+    [beginRound, t, targetSets],
   );
 
   const resumeSaved = useCallback(() => {
     const saved = getGameProgress().round;
     if (!saved) return;
-    setFeedback(null);
-    setWrongPlate(null);
-    setSummaryDismissed(false);
-    setClockNow(Date.now());
-    commitRound(resumeRound(saved, Date.now()));
-  }, [commitRound]);
+    // A snapshot names its questions by target id, and `parseRoundState` can only check
+    // its SHAPE — being a pure module, it has no access to the live pool. So the pool has
+    // to be checked here: `getMapSummaryResilient` is build-tolerant, so an api outage
+    // during `next build` degrades the map to an unjoined outline with NO seeded targets
+    // at all, and a shrinking province set can drop individual ids between sessions.
+    // Either way, resuming would open a round in which no click is an answer and the
+    // question line is blank. Drop it instead, and say so.
+    const available = new Set(targetSets[saved.modeId].targets.map((target) => target.id));
+    if (saved.order.some((id) => !available.has(id))) {
+      persistRound(null);
+      setResumeNotice(true);
+      return;
+    }
+    beginRound(resumeRound(saved, Date.now()));
+  }, [beginRound, persistRound, targetSets]);
 
   const discardSaved = useCallback(() => {
-    setGameProgress({ ...getGameProgress(), round: null });
-  }, []);
+    persistRound(null);
+    setResumeNotice(false);
+  }, [persistRound]);
 
   /** Leave the round but KEEP its snapshot, so "Devam et" is offered afterwards. */
   const leaveRound = useCallback(() => {
@@ -199,10 +255,8 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
     setRound(null);
     setFeedback(null);
     setWrongPlate(null);
-    const stored =
-      current && current.status !== "finished" ? pauseRound(current, Date.now()) : null;
-    setGameProgress({ ...getGameProgress(), round: stored });
-  }, []);
+    persistRound(current);
+  }, [persistRound]);
 
   /** Dismiss the current question's feedback — the button and the timer share this. */
   const goNext = useCallback(() => {
@@ -237,9 +291,20 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
     roundRef.current = null;
     setRound(null);
     setFeedback(null);
-    document
-      .querySelector("[data-game-modes]")
-      ?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+    const list = document.querySelector("[data-game-modes]");
+    list?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+    // Send the KEYBOARD there too, not just the viewport: this button can be pressed from
+    // inside the end-of-round dialog, which otherwise unmounts and releases focus to
+    // `<body>` — dropping the player at the top of the document. The first mode's action
+    // link is the real control they were sent here to use.
+    //
+    // On the next frame, because while the modal `<dialog>` is still open everything
+    // outside it is inert and simply refuses focus. By then this handler's state update
+    // has been committed and the dialog is gone.
+    requestAnimationFrame(() => {
+      const firstAction = document.querySelector("[data-game-modes] [data-game-mode]");
+      if (firstAction instanceof HTMLElement) firstAction.focus({ preventScroll: true });
+    });
   }, []);
 
   const clearProgress = useCallback(() => {
@@ -270,7 +335,9 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
   // The slot ships a server-rendered instruction line so it is neither empty nor useless
   // without JavaScript. Once the island is mounted that line is the island's job, so the
   // slot is marked and CSS hides the static copy — no duplicate sentence, no layout jump.
-  useEffect(() => {
+  // BEFORE paint (`useLayoutEffect`), because a passive effect flushes after it: the same
+  // sentence would be painted twice, once by the fallback and once by the island.
+  useLayoutEffect(() => {
     const slot = document.querySelector("[data-game-hud]");
     if (!(slot instanceof HTMLElement)) return;
     slot.dataset.gameReady = "true";
@@ -319,6 +386,13 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
     // stopped before it reaches this handler — panning the map can never answer a
     // question, at no cost here.
     const onClick = (event: MouseEvent) => {
+      // Only the FIRST click of a click sequence is an answer. A double-click is one
+      // gesture — MapZoomPan reads it as "zoom in here" — but the DOM still delivers two
+      // `click` events, and on a wrong province the second one would halve the question a
+      // second time (100 → 50 → 25 for a single mistake). `detail` is the click counter
+      // the browser already keeps; a right answer was never affected, because the second
+      // click lands while the question is `resolved` and is ignored anyway.
+      if (event.detail > 1) return;
       const plate = plateOf(event.target);
       if (plate) handlePlate(plate);
     };
@@ -354,18 +428,28 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
         .map((shape) => [shape.plateCode, shape.target?.name ?? ""]),
     );
 
-    if (playing) {
+    if (interactive) {
       // `role="img"` makes the whole subtree presentational, so it has to come off before a
       // single shape can be exposed as a control.
       svg.removeAttribute("role");
       svg.removeAttribute("focusable");
-      if (stage instanceof HTMLElement && modeId) stage.dataset.gameMode = modeId;
+    }
+
+    // Two attributes, because they answer two different questions. `data-game-mode` is
+    // what the map LOOKS like (the Mode-1 region tint, which stays on behind the end
+    // screen); `data-game-active` is whether it is a control surface right now (cursor and
+    // focus ring), which stops the moment the round finishes.
+    if (stage instanceof HTMLElement) {
+      if (playing && modeId) stage.dataset.gameMode = modeId;
+      else delete stage.dataset.gameMode;
+      if (interactive) stage.dataset.gameActive = "true";
+      else delete stage.dataset.gameActive;
     }
 
     for (const shape of svg.querySelectorAll("[data-plate]")) {
       if (!(shape instanceof SVGElement)) continue;
       const name = nameByPlate.get(shape.dataset.plate ?? "");
-      if (playing && name) {
+      if (interactive && name) {
         shape.setAttribute("role", "button");
         shape.setAttribute("tabindex", "0");
         // The accessible name is the province's own name in BOTH modes. In region mode that
@@ -377,17 +461,16 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
         shape.removeAttribute("role");
         shape.removeAttribute("tabindex");
         shape.removeAttribute("aria-label");
-        if (playing) shape.setAttribute("aria-hidden", "true");
+        if (interactive) shape.setAttribute("aria-hidden", "true");
         else shape.removeAttribute("aria-hidden");
       }
     }
 
-    if (!playing) {
+    if (!interactive) {
       svg.setAttribute("role", "img");
       svg.setAttribute("focusable", "false");
-      if (stage instanceof HTMLElement) delete stage.dataset.gameMode;
     }
-  }, [playing, modeId, shapes]);
+  }, [interactive, playing, modeId, shapes]);
 
   // --- DOM sync: answer marks ----------------------------------------------------------------
   useEffect(() => {
@@ -436,9 +519,16 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
 
   // Move focus to the live question when a round opens, so a keyboard or screen-reader user
   // is told the page changed instead of being left on the card they just activated.
+  //
+  // Keyed on the QUESTION ORDER, not on `playing`: replaying from the end screen unmounts
+  // the summary dialog while `playing` is already `true`, so a boolean dependency would
+  // not re-fire and the player would be dropped on `<body>` at the top of the document.
+  // Every round gets a freshly shuffled array, and a transition inside a round keeps the
+  // same one, so this fires exactly once per round.
+  const roundOrder = round?.order ?? null;
   useEffect(() => {
-    if (playing) questionRef.current?.focus();
-  }, [playing]);
+    if (roundOrder) questionRef.current?.focus();
+  }, [roundOrder]);
 
   // --- render -------------------------------------------------------------------------------------
   const summary = round ? summarizeRound(round, clockNow) : null;
@@ -461,6 +551,11 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
     return (
       <div className={styles.hud}>
         <p className={styles.hudIdle}>{t("hudIdle")}</p>
+        {resumeNotice ? (
+          <p className={styles.resumeText} role="status">
+            {t("resumeUnavailable")}
+          </p>
+        ) : null}
         {saved ? (
           <div className={styles.resume} role="group" aria-label={t("resumeHeading")}>
             <p className={styles.resumeText}>
@@ -524,16 +619,29 @@ export function GameIsland({ shapes, regionLabels, provinceUrlTemplate }: GameIs
   }
 
   const tone = feedback?.kind ?? null;
-  const feedbackText = !feedback
-    ? ""
-    : feedback.kind === "correct"
-      ? t("feedbackCorrect", { name: labelOf(feedback.targetId), score: feedback.score })
-      : feedback.kind === "retry"
-        ? t("feedbackRetry", {
-            name: labelOf(feedback.pickedId),
-            score: currentQuestionPoints(round),
-          })
-        : t("feedbackRevealed", { name: labelOf(feedback.targetId) });
+  // A switch rather than a ternary chain: each branch reads a DIFFERENT field of the
+  // outcome (`targetId` for what was asked, `pickedId` for what was clicked), and that is
+  // the one thing a reader of this line has to get right.
+  let feedbackText = "";
+  if (feedback) {
+    switch (feedback.kind) {
+      case "correct":
+        feedbackText = t("feedbackCorrect", {
+          name: labelOf(feedback.targetId),
+          score: feedback.score,
+        });
+        break;
+      case "retry":
+        feedbackText = t("feedbackRetry", {
+          name: labelOf(feedback.pickedId),
+          score: currentQuestionPoints(round),
+        });
+        break;
+      case "revealed":
+        feedbackText = t("feedbackRevealed", { name: labelOf(feedback.targetId) });
+        break;
+    }
+  }
 
   return (
     <div className={styles.hud} data-tone={tone ?? undefined}>

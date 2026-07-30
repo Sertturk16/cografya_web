@@ -88,6 +88,11 @@ export function parseRoundState(value: unknown): RoundState | null {
   if (!isFiniteNumber(wrongs) || wrongs < 0 || !Number.isInteger(wrongs)) return null;
   if (!isStringArray(currentWrongPicks)) return null;
   if (!isRoundStatus(status)) return null;
+  // `index === order.length` means "past the last question", which is only coherent for a
+  // FINISHED round. In any other status it restores a round with no current question: no
+  // click is an answer, the question line is blank and "Devam" never appears — the player's
+  // only way out is to leave, which re-saves the same dead snapshot.
+  if (index >= order.length && status !== "finished") return null;
   if (!isFiniteNumber(baseElapsedMs) || baseElapsedMs < 0) return null;
   if (!Array.isArray(results) || results.length > order.length) return null;
 

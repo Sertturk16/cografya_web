@@ -81,13 +81,15 @@
   font-weight: 700;
 }
 
+/* The tone values are the outcome kinds themselves (`correct` / `retry` / `revealed`), so
+   these selectors are pinned to that union — a name that does not exist matches nothing
+   and fails silently. */
 .hud[data-tone="correct"] .feedback {
   color: var(--color-success);
 }
 
 .hud[data-tone="retry"] .feedback,
-.hud[data-tone="reveal"] .feedback,
-.hud[data-tone="exhausted"] .feedback {
+.hud[data-tone="revealed"] .feedback {
   color: var(--color-danger);
 }
 

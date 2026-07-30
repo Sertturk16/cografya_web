@@ -86,8 +86,11 @@ const PAN_START_PX = CLICK_MOVE_THRESHOLD_PX;
  * `/dunya` world map and, from Kâşif PR-2, by the `/oyun` game map — where zoom is not a
  * convenience but the only way to reach the smallest provinces on a phone (SPEC §7.2).
  *
- * It is a thin sibling of the server-rendered `<svg>` inside `[data-map-root]` — exactly
- * the same "reach the shared container, enhance it imperatively" pattern as
+ * It is a thin sibling of the server-rendered `<svg>` inside whichever container it is
+ * mounted in (`[data-map-root]` on `/dunya`, `[data-game-map]` on `/oyun`) — it resolves
+ * that container as its own `parentElement` rather than by name, which is why one
+ * component serves both. Exactly the same "reach the shared container, enhance it
+ * imperatively" pattern as
  * `MapHoverCard`. It NEVER re-renders the map per frame: the viewBox is mutated directly
  * on the element and batched through `requestAnimationFrame`, so pan/zoom scrubbing stays
  * INP-safe (SPEC §8). All the SEO surface (the crawlable country `<a>` links, JSON-LD,

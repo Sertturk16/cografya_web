@@ -25,7 +25,14 @@
   --color-chip-ink: #7e3a1e;
 
   /* ---- Semantic ---- */
-  --color-success: #4f7a3a;
+  /* Success is AA on EVERY Terra background, not just the page one: its first real use
+     (the game HUD's "Doğru: …" line) sits on --color-surface, where the previous #4f7a3a
+     measured 4.18:1 — under the 4.5:1 floor for normal text, while passing at 4.75:1 on
+     --color-bg one panel away. That "passes here, fails there" shape is exactly the trap
+     --color-taupe documents (DESIGN.md §5), so the value moved instead of a second
+     near-identical token being introduced: #496f35 is 4.84:1 on surface, 5.49:1 on bg,
+     5.82:1 on white. */
+  --color-success: #496f35;
   --color-warning: #c9860f;
   --color-danger: #b23b2e;
   --color-info: #276b70;

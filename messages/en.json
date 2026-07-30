@@ -108,6 +108,8 @@
     "resumeBody": "Your {mode} round stopped at question {done}/{total}.",
     "resumeContinue": "Continue where I left off",
     "resumeDiscard": "Delete this round",
+    "resumeUnavailable": "The saved round cannot be opened on this map, so it has been deleted. You can start a new round.",
+    "confirmNewRound": "You have a round in progress. Starting a new one deletes it. Start anyway?",
     "summaryHeading": "Round over",
     "summaryScore": "{score}/100 points",
     "summaryFirstTry": "{count}/{total} on the first try",
@@ -135,7 +137,7 @@
     "summaryStars": "{count}/{max} stars",
     "summaryReviewHeading": "Look again ({count})",
     "summaryReviewNote": "You found these, but it took a few tries. Their pages are worth a look.",
-    "summaryTotalWrongs": "{count} wrong clicks"
+    "summaryTotalWrongs": "{count, plural, one {# wrong click} other {# wrong clicks}}"
   },
   "ProvinceDetail": {
     "metaTitle": "Geography of {name}",
