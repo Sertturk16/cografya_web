@@ -41,6 +41,16 @@ export const routing = defineRouting({
     // dynamic `[slug]` VALUE is still the localized slug (`slug_tr` / `slug_en`).
     "/dunya": "/dunya",
     "/dunya/[slug]": "/dunya/[slug]",
+    // The map game hub (→ DEC 2026-07-30c, owner answer S1). LOCALIZED segment, unlike
+    // `/turkiye` and `/dunya`: those two survive untranslated because "Türkiye" and
+    // "dünya" already read correctly inside the site's English copy, whereas "oyun" does
+    // not read as English at all. So the governing precedent here is `/hakkimizda` ↔
+    // `/en/about`. Canonical, hreflang and the sitemap entry all derive from this one
+    // line via `getPathname` — the two URLs are never hand-written anywhere.
+    "/oyun": {
+      tr: "/oyun",
+      en: "/game",
+    },
   },
 });
 

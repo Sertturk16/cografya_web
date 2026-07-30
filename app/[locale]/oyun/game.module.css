@@ -1,0 +1,125 @@
+/* `/oyun` shell layout (SPEC §3.1). Colours come from the Terra token layer; the only
+   literal is the `#fff` card surface, which is the established repo pattern (there is no
+   white token — see `.card` in `app/globals.css`). No brand hex is hardcoded here. */
+
+.sectionIntro {
+  color: var(--color-slate);
+  max-width: 60ch;
+  margin-bottom: 20px;
+}
+
+/* ---- Mode cards ----
+   PR-1 renders these as descriptive cards, not controls: nothing on this page is
+   playable yet, and a disabled `<button>` would announce an unavailable control to
+   assistive tech while promising an interaction the page cannot deliver. PR-2 turns each
+   card into a real `<button>` that starts the round. */
+.modeGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.modeCard {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+}
+
+.modeName {
+  font-size: 1.15rem;
+  margin: 0 0 6px;
+  color: var(--color-primary-dark);
+}
+
+.modeCount {
+  display: inline-block;
+  background: var(--color-chip-bg);
+  color: var(--color-chip-ink);
+  border-radius: 999px;
+  padding: 2px 12px;
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.modeBody {
+  margin: 0;
+  color: var(--color-slate);
+}
+
+/* ---- How to play ---- */
+.steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  max-width: 70ch;
+  color: var(--color-slate);
+}
+
+.steps li {
+  margin-bottom: 12px;
+}
+
+/* ---- FAQ (the visible source of the FAQPage markup) ---- */
+.faq {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 70ch;
+}
+
+.faqItem {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+
+.faqQuestion {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.faqQuestion:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.faqAnswer {
+  margin: 10px 0 0;
+  color: var(--color-slate);
+}
+
+/* ---- Hub links ---- */
+.linkGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.linkCard {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+}
+
+.linkTitle {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.linkBody {
+  margin: 6px 0 0;
+  color: var(--color-slate);
+}

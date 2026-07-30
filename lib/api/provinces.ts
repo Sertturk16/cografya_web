@@ -80,6 +80,33 @@ export async function getProvincesResilient(): Promise<ProvinceListItem[]> {
 }
 
 /**
+ * Build-safe map summary — the same build-vs-runtime split as
+ * `getProvincesResilient`, for the consumers whose ONLY api read is the map join.
+ *
+ * - At BUILD: degrade to `[]` so CI (no api service) can still build; the shapes are
+ *   compiled in, so the map renders as an unjoined outline and the route falls back to
+ *   on-demand ISR at runtime.
+ * - At RUNTIME (ISR regeneration): re-throw, so a transient api failure makes Next keep
+ *   serving the last good static page instead of caching a silently unjoined map for a
+ *   full revalidate window. Swallowing here is only safe when a SIBLING call already
+ *   re-throws at runtime (the `/turkiye` case, where `getProvincesResilient` guards the
+ *   page); a page whose sole api read is this one must use this wrapper.
+ */
+export async function getMapSummaryResilient(): Promise<ProvinceMapSummary[]> {
+  try {
+    return await getMapSummary();
+  } catch (error) {
+    if (isProductionBuild()) {
+      console.warn(
+        `[provinces] map-summary fetch failed during build; deferring to on-demand ISR. ${String(error)}`,
+      );
+      return [];
+    }
+    throw error;
+  }
+}
+
+/**
  * Index any plaka-kodu-bearing payload by its `plateCode` (neighbour cross-links,
  * the map's shape↔data join, …). Generic over the item type so the list, the
  * map-summary, and any future plate-keyed shape all reuse one indexer. Plate codes

@@ -106,6 +106,72 @@ export function collectionPageJsonLd(args: {
   };
 }
 
+/** One visible question/answer pair from a page's FAQ block. */
+export interface FaqEntry {
+  question: string;
+  /** Plain text — must be the SAME text the page renders visibly. */
+  answer: string;
+}
+
+/**
+ * `schema.org/FAQPage` (CONVENTIONS §6 #5 schema map — the FAQ layer).
+ *
+ * The caller MUST pass the exact question/answer text the page renders visibly: Google's
+ * FAQPage documentation requires the content to be visible to the user, and
+ * `SEO-POLICY.md` §B5 5.7 bans structured data that is not on the page. So the visible
+ * `<details>` block and this markup are built from ONE source of message keys, never two.
+ * Answers are plain text (no embedded markup) so the two representations are compared
+ * character-for-character rather than approximately.
+ */
+export function faqPageJsonLd(entries: FaqEntry[]): JsonLdSchema {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: entries.map((entry) => ({
+      "@type": "Question",
+      name: entry.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: entry.answer,
+      },
+    })),
+  };
+}
+
+/**
+ * `schema.org/LearningResource` — the education layer of the schema map
+ * (CONVENTIONS §6 #5), used by learn-by-doing surfaces such as the map game.
+ *
+ * Deliberately small: only fields whose value is actually true of the page are emitted.
+ * `isAccessibleForFree: true` is a statement of fact about this platform (no paywall, no
+ * sign-up), and `learningResourceType` + `teaches` describe what the page IS and what it
+ * teaches. No `Game`/`VideoGame`/`SoftwareApplication` node is added on purpose (SPEC
+ * §10.2): they produce no rich result here and would only add markup that describes the
+ * page less accurately (`SEO-POLICY.md` §B5 5.7/5.8).
+ */
+export function learningResourceJsonLd(args: {
+  name: string;
+  description: string;
+  path: string;
+  locale: Locale;
+  /** e.g. "Game" — the shape of the resource. */
+  learningResourceType: string;
+  /** What the resource teaches, in the page's language. */
+  teaches: string;
+}): JsonLdSchema {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: args.name,
+    description: args.description,
+    url: absoluteUrl(args.path),
+    inLanguage: args.locale,
+    learningResourceType: args.learningResourceType,
+    teaches: args.teaches,
+    isAccessibleForFree: true,
+  };
+}
+
 /** A single `schema.org/PropertyValue` fact (population, area, …). */
 export interface GeoPropertyValue {
   name: string;

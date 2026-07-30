@@ -1,0 +1,14 @@
+/* `/turkiye` hub page styles. Today this is only the cross-link block to the map game
+   (SPEC §10.4); the map itself is styled by components/map/map.module.css. */
+
+.gameCta {
+  max-width: 70ch;
+}
+
+.gameCta h2 {
+  margin-top: 0;
+}
+
+.gameCtaBody {
+  color: var(--color-slate);
+}

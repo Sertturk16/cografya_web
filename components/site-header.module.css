@@ -36,8 +36,15 @@
 }
 
 .nav {
+  /* The nav must wrap as WHOLE ITEMS, never inside a label. Without `flex-wrap` the row
+     cannot break, so the items shrink below their content width and a two-word link
+     ("Ana Sayfa") splits across two lines — visible at ≤ ~390 px in TR once the list grew
+     to five items (PR #26 review i1). `row-gap` keeps the second row legible; the item gap
+     stays 18px. */
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
+  row-gap: 8px;
   margin-left: auto;
   font-weight: 600;
   font-size: 0.95rem;
@@ -46,6 +53,8 @@
 .nav a {
   color: var(--color-slate);
   text-decoration: none;
+  /* A nav label is one unit: it moves to the next row intact rather than breaking mid-label. */
+  white-space: nowrap;
 }
 
 .nav a:hover {
