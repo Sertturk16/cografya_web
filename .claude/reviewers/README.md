@@ -6,13 +6,13 @@ provider-neutral and is used by both Claude and Codex.
 The orchestration-root `REVIEW-POLICY.md` is the only authority for:
 
 - roster and applicability;
-- model selection and escalation;
+- escalation (model selection is set by the active provider's `review-pr` skill);
 - severity;
 - output contract;
 - validation, deduplication, and report shape;
 - author filter and delivery loop.
 
-These files contain role-specific checklists only:
+These files contain the role-specific mandate and checklists only:
 
 - `code-reviewer.md`
 - `a11y-reviewer.md`

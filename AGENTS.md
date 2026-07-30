@@ -5,15 +5,15 @@ binding frontend handbook.
 
 For shared process and product state, also read:
 
-- `../ATLAS-OPERATIONS.md`
-- `../CONVENTIONS.md`
-- `../SEO-POLICY.md`
-- `../TASKS.md` when task state matters
+- the orchestration-root `ATLAS-OPERATIONS.md`
+- the orchestration-root `CONVENTIONS.md`
+- the orchestration-root `SEO-POLICY.md`
+- the orchestration-root `TASKS.md` when task state matters
 - the other relevant root policy documents
 
-Codex-specific execution uses the `cografya_frontend_dev` profile from
-`../.codex/agents/`. Vera is the single writer. Never edit `../cografya_api`; coordinate
-OpenAPI contract changes through Atlas.
+Codex-specific execution uses the `cografya_frontend_dev` profile from the orchestration
+root's `.codex/agents/`. Vera is the single writer. Never edit the sibling
+`cografya_api` repo; coordinate OpenAPI contract changes through Atlas.
 
 CI is the only test-suite gate. Use only the local checks allowed by `ENGINEERING.md`.
 Do not merge or run the PR-review fan-out; Atlas invokes `$review-pr`.

@@ -3,7 +3,7 @@
 > **Binding on repo specifics.** This file is the authoritative engineering handbook for
 > the `cografya_web` repo. Once it exists it **overrides the Vera persona and the
 > orchestrator SOP on web-repo specifics** (per `ATLAS-OPERATIONS.md`
-> "Engineering Ground-Truth"). It does not restate the whole persona — it pins the rules
+> "Engineering ground truth"). It does not restate the whole persona — it pins the rules
 > a change in THIS repo must satisfy. When this file and a review finding conflict, this
 > file (and the SEO non-negotiables in `CONVENTIONS.md` §6) win.
 >
@@ -23,9 +23,11 @@
 - **SEO is the sacred boundary.** Every rule in §4 below is non-negotiable: never ship an
   indexable page that violates it, the way a multi-tenant engineer never ships an
   unscoped query. When in doubt, stop and ask — do not guess (95% rule).
-- **Ground-truth order:** this file → `CONVENTIONS.md` (§2 gates / §6 SEO) → the founding
-  SEO brief (`Owner's Inbox/founding-research/ferrumone-analysis-and-seo.md`, Bölüm 4) →
-  the Vera persona. Higher wins on conflict.
+- **Ground-truth order:** this file → `CONVENTIONS.md` (§2 gates / §6 SEO) →
+  `SEO-POLICY.md` (the ONE canonical SEO document, → DEC 2026-07-18) → the Vera persona.
+  Higher wins on conflict. The founding SEO brief
+  (`Owner's Inbox/founding-research/ferrumone-analysis-and-seo.md`, Bölüm 4) is
+  background reading, not an authority.
 
 ## 2. Stack (locked, → `CONVENTIONS.md` §3)
 
@@ -147,7 +149,7 @@ semantic colors (AQI / earthquake intensity / SST) stay STANDARD, never recolore
   the active authoring client requires one; otherwise omit it.
 - Every PR runs the **Autonomous PR-Review Loop** (§8). Provider-neutral reviewer role
   rubrics currently live at the legacy `.claude/reviewers/` path; the canonical roster,
-  severity, and workflow live in `../REVIEW-POLICY.md`. Atlas runs the fan-out; Vera
+  severity, and workflow live in the orchestration-root `REVIEW-POLICY.md`. Atlas runs the fan-out; Vera
   runs the filter.
 
 ## 8. Autonomous PR-Review Loop — the author's half (Critical Architect Filter)
@@ -155,7 +157,7 @@ semantic colors (AQI / earthquake intensity / SST) stay STANDARD, never recolore
 Atlas alone runs the independent reviewer fan-out. Vera has no subagent-spawn tool and
 must never self-review.
 
-When Atlas returns a consolidated report, read and apply `../REVIEW-POLICY.md` §9
+When Atlas returns a consolidated report, read and apply the orchestration-root `REVIEW-POLICY.md` §9
 completely. It is the single severity, author-filter, annotation, re-loop, and delivery
 procedure.
 
@@ -209,7 +211,7 @@ Web-specific filter boundary:
   (AQI/earthquake/SST) — see `DESIGN.md`.
 - Do NOT run tests locally as a gate; do NOT merge on red CI; do NOT weaken a check to go
   green.
-- Do NOT grant engineers the `Agent` tool / attempt to self-run the reviewer fan-out
+- Do NOT grant engineers the subagent-spawn tool / attempt to self-run the reviewer fan-out
   (§8 — review independence is a design choice, not an accident).
 - Data-viz / map color code is **Faz-2** — `DESIGN.md` ships the doctrine as documentation
   now; no scales module lands in this repo yet.

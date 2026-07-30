@@ -11,7 +11,7 @@
 > maps and live feeds arrive. The token layer this doc describes already exists in
 > `app/globals.css`; do not duplicate hex values anywhere else.
 >
-> Binding companions: `CLAUDE.md` (§4 SEO, §5 a11y floor), `CONVENTIONS.md` §6.
+> Binding companions: `ENGINEERING.md` (§4 SEO, §5 a11y floor), `CONVENTIONS.md` §6.
 
 ---
 
@@ -70,7 +70,7 @@ ramp and not the Terra brand hues.
 - **Display / headings:** Fraunces (variable serif) → `--font-heading`. **Body / UI:**
   Nunito Sans (variable sans) → `--font-body`. Loaded via `next/font` (`lib/fonts.ts`),
   self-hosted + preloaded, `latin` + **`latin-ext`** (Turkish glyphs İ ı ğ ş ç ö ü) — never
-  a render-blocking Google Fonts `<link>` (CWV, `CLAUDE.md` §4 #9).
+  a render-blocking Google Fonts `<link>` (CWV, `ENGINEERING.md` §4 #9).
 - **Scale** (fluid `clamp`): `h1` `clamp(1.9rem, 1.2rem+2.6vw, 2.6rem)`/700 · `h2`
   `clamp(1.4rem, 1rem+1.4vw, 1.8rem)`/600 (primary-dark) · body `16px`/`1.6` · `.lede`
   `1.15rem` slate. Headings: `line-height 1.15`, `letter-spacing -0.01em`. One `h1` per
@@ -89,7 +89,7 @@ ramp and not the Terra brand hues.
   mirrors it by hand (a static file can't import) — keep the two in step. Still a
   placeholder pending the brand/logo decision (K7).
 
-## 5. Accessibility (WCAG 2.1 AA — binding; see `CLAUDE.md` §5)
+## 5. Accessibility (WCAG 2.1 AA — binding; see `ENGINEERING.md` §5)
 
 - **Skip-to-content link** (`.skip-link`) whose target `<main>` is programmatically
   focusable (`tabIndex={-1}` — Safari/VoiceOver need it).

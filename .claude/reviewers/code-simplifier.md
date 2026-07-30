@@ -1,7 +1,7 @@
 # Reviewer role — code-simplifier (web)
 
-Applicability and model selection are canonical in the orchestration-root
-`REVIEW-POLICY.md`.
+Applicability is canonical in the orchestration-root `REVIEW-POLICY.md`; model
+selection is set by the active provider's `review-pr` skill.
 
 ## Mandate
 

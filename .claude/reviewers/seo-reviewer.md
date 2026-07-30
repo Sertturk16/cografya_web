@@ -5,15 +5,16 @@
 > owner directive "bir tane olsun": the SEO authority must be SINGLE, so there is no second
 > competing SEO voice).
 >
-> **Use instead:** `subagent_type: cografya-seo` (FENER).
+> **Use instead:** the active provider's FENER definition (Claude:
+> `subagent_type: cografya-seo`; Codex: `.codex/agents/cografya_seo.toml`).
 
 ## Where everything moved
 
-| What you came here for                  | Where it lives now                                                                                                                                                                                  |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The SEO reviewer persona/prompt         | `.claude/agents/cografya-seo.md` (orchestrator home) — FENER is a **persona**, not a prompt template, so Atlas spawns it by `subagent_type` rather than by handing over a file like the roles below |
-| The SEO rules being checked             | **`SEO-POLICY.md`** (orchestrator-home root) — the ONE canonical SEO document. Part A = authoring rules (shift-left, for NOVA + Vera), Part B = the audit checklist                                 |
-| The in-repo non-negotiables restatement | `cografya_web/ENGINEERING.md` §4 (still current, still binding)                                                                                                                                     |
+| What you came here for                  | Where it lives now                                                                                                                                                                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The SEO reviewer persona/prompt         | the active provider's FENER definition at the orchestration root (`.claude/agents/` or `.codex/agents/`) — FENER is a **persona**, not a prompt template, so Atlas spawns it as a persona role rather than by handing over a file like the roles below |
+| The SEO rules being checked             | **`SEO-POLICY.md`** (orchestrator-home root) — the ONE canonical SEO document. Part A = authoring rules (shift-left, for NOVA + Vera), Part B = the audit checklist                                                                                    |
+| The in-repo non-negotiables restatement | `cografya_web/ENGINEERING.md` §4 (still current, still binding)                                                                                                                                                                                        |
 
 ## FENER's two modes (one role, not two)
 
@@ -25,7 +26,8 @@
    near-duplication). Reports on FENER's own audit scale: **BLOCKER / UYARI / NOT**.
 
 Mode 1 is subject to the roster right-sizing rules in `CONVENTIONS.md` §2 (→ DEC
-2026-07-11/12) — see `README.md` for when the leg runs and when it is skipped.
+2026-07-11/12) — see the orchestration-root `REVIEW-POLICY.md` §2 for when the leg runs
+and when it is skipped.
 
 _(This stub is intentionally kept rather than deleted: archived `pr-reviews/` files and
 prior PR-review archives reference the `seo-reviewer` name, and a live pointer serves
