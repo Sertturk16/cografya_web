@@ -5,12 +5,6 @@
    shapes use a backdrop class — .provinceInert on the il map ("not published yet", recedes)
    and .landInert on the world map (permanent land, must read as land). */
 
-.intro {
-  color: var(--color-slate);
-  max-width: 60ch;
-  margin-bottom: 20px;
-}
-
 .mapRoot {
   position: relative;
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));

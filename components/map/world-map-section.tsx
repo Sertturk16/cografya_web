@@ -76,10 +76,12 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
   };
 
   return (
-    <section className="section" aria-labelledby="world-map-heading">
-      <h2 id="world-map-heading">{tMap("sectionHeading")}</h2>
-      <p className={styles.intro}>{tMap("sectionBody")}</p>
-
+    // Heading + instruction paragraph removed by the site-wide frame-copy trim
+    // (→ DEC 2026-07-30t/u, CONTENT-STYLE §22), mirroring the Türkiye map: the <h2>
+    // restated the map, and the paragraph narrated the interaction and leaked internal
+    // state ("kalan ülke ve bölgeler içerik eklendikçe canlanır"). The region keeps an
+    // accessible name via aria-label (the same string as the <svg> <title>).
+    <section className="section" aria-label={tMap("mapTitle")}>
       {/* .worldRoot = flat cool SEA (the il map keeps the warm parchment gradient): a
           gradient backdrop makes land/sea fill contrast depend on latitude, which is what
           made Greenland vanish at the top of the map (→ --map-sea, globals.css). */}
