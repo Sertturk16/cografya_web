@@ -4,7 +4,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { TurkeyMapSection } from "@/components/map/turkey-map-section";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import type { ProvinceListItem } from "@/lib/api/types";
-import { getPathname } from "@/i18n/navigation";
+import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
   collectionPageJsonLd,
@@ -13,6 +13,7 @@ import {
   JsonLd,
 } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import styles from "./turkiye.module.css";
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;
@@ -51,6 +52,8 @@ export default async function TurkiyePage({ params }: PageProps) {
   setRequestLocale(locale);
   const t = await getTranslations("Turkiye");
   const tb = await getTranslations("Breadcrumb");
+  // The game's name lives in ONE key (SPEC §1) — this page interpolates it, never repeats it.
+  const tGame = await getTranslations("Game");
   const path = getPathname({ locale, href: "/turkiye" });
 
   // The published-province list is the authoritative set of pages that exist; the
@@ -90,6 +93,19 @@ export default async function TurkiyePage({ params }: PageProps) {
       <p className="lede">{t("intro")}</p>
 
       <TurkeyMapSection locale={locale} />
+
+      {/* Hub-and-spoke link to the map game (SPEC §10.4, CONVENTIONS §6 #10). It lives in
+          the PAGE body, deliberately outside `TurkeyMapSection`: that component owns the
+          81 crawlable province links and is not opened by game work. */}
+      <section className="section" aria-labelledby="turkiye-game-heading">
+        <div className={`card ${styles.gameCta}`}>
+          <h2 id="turkiye-game-heading">{t("gameCtaHeading")}</h2>
+          <p className={styles.gameCtaBody}>{t("gameCtaBody", { brand: tGame("brandName") })}</p>
+          <Link href="/oyun" className="btn btn-primary">
+            {t("gameCtaLink")}
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

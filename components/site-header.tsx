@@ -25,6 +25,10 @@ export async function SiteHeader() {
           <Link href="/">{t("home")}</Link>
           <Link href="/turkiye">{t("turkiye")}</Link>
           <Link href="/dunya">{t("dunya")}</Link>
+          {/* The game is a primary surface, not a sub-page of the map hub (owner answer
+              S4, → DEC 2026-07-30c) — so it sits in the top nav, after the two map hubs
+              and before the site-info link. */}
+          <Link href="/oyun">{t("game")}</Link>
           <Link href="/hakkimizda">{t("about")}</Link>
         </nav>
         <LocaleSwitcher />

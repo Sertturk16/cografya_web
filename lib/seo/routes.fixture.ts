@@ -13,6 +13,10 @@ import type { HrefForLocale } from "@/lib/seo/sitemap-entries";
  * static pathname per locale, `/hakkimizda ↔ /en/about`), and a LOCALIZED-SLUG dynamic
  * route (a different `[slug]` value per locale — where a one-legged hreflang is actually
  * possible).
+ *
+ * `/oyun ↔ /en/game` is the second localized-segment entry rather than a fourth shape: it
+ * is here because it is a REAL route whose two URLs are asymmetric, so the policy matrix
+ * runs against the actual `pathnames` table, not only against a representative shape.
  */
 export interface RouteFixture {
   readonly name: string;
@@ -27,6 +31,10 @@ export const ROUTE_FIXTURES: readonly RouteFixture[] = [
   {
     name: "localized-segment route (/hakkimizda ↔ /en/about)",
     hrefForLocale: () => "/hakkimizda",
+  },
+  {
+    name: "localized-segment route (/oyun ↔ /en/game)",
+    hrefForLocale: () => "/oyun",
   },
   {
     name: "localized-slug province route (/turkiye/[slug])",

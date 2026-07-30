@@ -6,7 +6,7 @@ import { sitemapEntriesFor } from "@/lib/seo/sitemap-entries";
 
 /**
  * Root sitemap — a single flat urlset served at `/sitemap.xml` (the URL `robots.ts` points
- * at). Composition: static hubs (4 pages × 2 locales = 8) + provinces + countries at ONE
+ * at). Composition: static hubs (5 pages × 2 locales = 10) + provinces + countries at ONE
  * entry each (TR only — their EN counterparts are `noindex`, see `sitemapEntriesFor` in
  * `lib/seo/sitemap-entries.ts`) — a valid, self-contained sitemap far under Google's
  * 50k-per-file hard limit.
@@ -39,6 +39,10 @@ function staticEntries(): MetadataRoute.Sitemap {
     ...sitemapEntriesFor(() => "/", now, 1),
     ...sitemapEntriesFor(() => "/turkiye", now, 0.8),
     ...sitemapEntriesFor(() => "/dunya", now, 0.8),
+    // The map game hub. `"localized"` surface → one entry per locale (/oyun + /en/game),
+    // each carrying the full tr/en/x-default alternates set, both resolved through
+    // `getPathname` from the single `pathnames` entry in `i18n/routing.ts`.
+    ...sitemapEntriesFor(() => "/oyun", now, 0.7),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
   ];
 }
