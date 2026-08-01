@@ -16,10 +16,18 @@
  *      OR empty token means the header is simply not sent. The exemption does not exist
  *      until a secret is deliberately configured, and behaviour with no token is
  *      byte-identical to the pre-#67 client.
- *   3. This module is deliberately free of `import "server-only"` and of any
- *      `process.env` read: it holds a header name and a pure function, so it carries no
- *      secret and stays unit-testable. The env read lives in `lib/env.server.ts`; the
- *      value is passed in by the single caller (`lib/api/client.ts`).
+ *   3. This module is deliberately free of any `process.env` read: it holds a header name
+ *      and a pure function, so it carries no secret of its own. The env read lives in
+ *      `lib/env.server.ts`; the value is passed in by the single caller
+ *      (`lib/api/client.ts`).
+ *
+ *      It also carries no `import "server-only"`, and the reason is NOT "so it can be unit
+ *      tested" — `vitest.config.ts` aliases `server-only` to an empty stub precisely so
+ *      that server modules stay testable, and `lib/env.server.ts` is both guarded and
+ *      covered. The real reason is rule 3 itself: this module holds nothing that must not
+ *      reach a browser, so the guard would assert a boundary that does not exist here.
+ *      Adding it would be harmless, not forbidden — the guard belongs on the modules that
+ *      actually touch the secret or the api, which is where it is.
  */
 
 /**

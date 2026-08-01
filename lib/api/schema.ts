@@ -123,6 +123,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/marine/points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List every marine reference point (lean payload for the /deniz hub + map).
+         * @description Plain array, bounded and small. Points are OFFSHORE coordinates deliberately outside straits and narrow gulfs, where regional models measurably disagree; the three two-sea provinces (İstanbul, Çanakkale, Balıkesir) each return two entries.
+         */
+        get: operations["MarineController_findAllPoints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marine/layers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Layer catalogue — units, direction conventions, calm thresholds, colour ramps.
+         * @description The machine-readable authority for how a value may be rendered. In particular directionConvention states, per layer, whether a degree means the direction the flow comes FROM or heads TOWARDS — the providers use both, inside the same API. Both arrow-unlock preconditions are met for the wind layers (the field is published and the wind-convention regression suite runs on CI). For the two ECMWF-PRIMARY layers (wind_speed_10m, wind_direction_10m), horizonEndUtc / updateFrequency / catalogueUpdatedAtUtc are resolved from the newest ingested model cycle — a local database read; this endpoint NEVER calls a provider. They are null while no cycle has been ingested yet or the newest one breached the 24 h cycle-age ceiling. The CMEMS-primary layers keep null until M4 resolves the CMEMS catalogue.
+         */
+        get: operations["MarineController_findAllLayers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/air-quality/index-system": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Full machine-readable definition of the active air-quality index system.
+         * @description The published methodology behind every band/category this API serves: the EAQI-2024 band table (EEA/ETC HE 2024/17, Table 5.2), the (lo, hi] boundary rule as a token, per-pollutant averaging periods (all hourly) and the dominant-pollutant tie-break order. The web repo renders from THIS payload and hardcodes none of it. Served from an in-code constant: answers 200 cold or warm and never calls the upstream provider.
+         */
+        get: operations["AirQualityController_getIndexSystem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -782,6 +842,589 @@ export interface components {
              */
             updatedAt: string;
         };
+        MarineValueDto: {
+            /**
+             * @description The value, or null when status !== ok. NOT suppressed when the sea is calm: a server-side null would become indistinguishable from a genuine no_data. The layer catalogue publishes calmThreshold instead, and the DISPLAY decides not to draw an arrow.
+             * @example 23.5
+             */
+            value: number | null;
+            /**
+             * @description Canonical machine unit. Providers return three different strings for the same quantity (m / degree / degrees_C from CMEMS; m / ° / °C / km/h from Open-Meteo), so passthrough is not an option. Symbols are a display concern (web i18n).
+             * @enum {string}
+             */
+            unit: "m" | "celsius" | "degree_true" | "meter_per_second";
+            /**
+             * @description Why the value is or is not present. not_supported is a PERMANENT product truth (CMEMS carries no wave field in the Marmara at all) and is distinct from no_data ("covered here, but nothing right now"); the two must not render alike.
+             * @enum {string}
+             */
+            status: "ok" | "no_data" | "not_supported" | "unavailable";
+            /**
+             * @description Cache freshness, ALWAYS null when status !== ok. Deliberately separate from status: ok + stale is a normal, frequent combination (provider quiet for 20 minutes, we hold a 40-minute-old valid number).
+             * @enum {string|null}
+             */
+            freshness: "fresh" | "stale" | null;
+            /**
+             * @description The MODEL time this value belongs to (ISO-8601 UTC). For CMEMS this is the time WE sent: the GetFeatureInfo reply carries no time field at all, yet the time parameter does change the value — so an explicit time is always sent and never defaulted.
+             * @example 2026-07-30T12:00:00.000Z
+             */
+            validAtUtc: string | null;
+            /**
+             * @description When WE fetched it (ISO-8601 UTC, server clock).
+             * @example 2026-07-30T12:04:11.000Z
+             */
+            fetchedAtUtc: string | null;
+            /**
+             * @description The model RUN this value came from (ISO-8601 UTC). ECMWF: the 00/06/12/18 UTC cycle, which the provider states in both the URL and the GRIB header. CMEMS: null — it publishes no run time per value. Added because it is the ONLY field that can reveal a stale forecast: an old cycle still produces a step valid "now", so validAtUtc looks current and fetchedAtUtc is genuinely recent while the numbers are two days old.
+             * @example 2026-07-30T12:00:00.000Z
+             */
+            modelRunAtUtc: string | null;
+            /** @description When this value first became stale (ISO-8601 UTC), or null while fresh. Two independent ceilings can retire a value: cache age and model validity age — they catch different failures, since a value fetched 10 minutes ago may belong to an 8-hour-old model step. */
+            staleSinceUtc: string | null;
+            /**
+             * @description Which provider produced THIS field. Carried per field, never per response: mixing sources silently is banned (K6), and the Marmara wave fields legitimately come from a different provider than the temperature next to them.
+             * @enum {string|null}
+             */
+            source: "cmems" | "ecmwf" | null;
+            /**
+             * @description Provider dataset identifier, verbatim, when the provider reports one.
+             * @example BLKSEA_ANALYSISFORECAST_PHY_007_001/cmems_mod_blk_phy-tem_anfc_mrm-500m_PT1H-i_202311
+             */
+            datasetId: string | null;
+            /** @description Latitude of the model grid cell centre the value was read from. */
+            gridLatitude: number | null;
+            /** @description Longitude of the model grid cell centre the value was read from. */
+            gridLongitude: number | null;
+            /**
+             * @description Distance from the requested coordinate to that grid centre, km. On BOTH Faz-1 sources this is an IN-CELL OFFSET, never a search distance: the value comes from the cell the coordinate falls in, and neither leg ever looks for a nearer wet cell. It therefore cannot exceed half a cell diagonal — ≤ ~2 km for the regional CMEMS grids, ≤ ~21 km for the 0.25° ECMWF grid (largest measured over the 30 reference points: 15.5 km) — and it cannot warn that data is far away. What it CAN do is expose a mapping bug: an offset above half a diagonal means the arithmetic picked the wrong cell.
+             * @example 1.2
+             */
+            distanceKm: number | null;
+        };
+        MarineSeriesDto: {
+            /**
+             * @description Spacing between consecutive samples, hours. Uniform at 3 across the whole published horizon: ECMWF switches to 6-hourly steps only after +144 h, and the horizon stops at +120 h, so this stays a single honest number.
+             * @example 3
+             */
+            stepHours: number;
+            /**
+             * @description Sample instants (ISO-8601 UTC). Defines the length of EVERY array below.
+             * @example [
+             *       "2026-07-30T00:00:00.000Z",
+             *       "2026-07-30T03:00:00.000Z"
+             *     ]
+             */
+            timesUtc: string[];
+            /** @description Sea surface temperature, °C. Same length as timesUtc; nulls are gaps. ON THIS SERIES IT IS NULL FOR ITS WHOLE LENGTH: ECMWF Open Data publishes no sea-surface-temperature field in any of its streams (verified against the published parameter set of oper, wave, enfo and aifs-single). The array is kept rather than removed because the temperature series is a CMEMS concern and this shape must not change when M4 fills it. */
+            seaSurfaceTemperature: (number | null)[];
+            /** @description Significant wave height, m. Same length as timesUtc. */
+            waveHeight: (number | null)[];
+            /** @description Wave direction, degrees. True north, clockwise, 0–360. Per-field from/towards meaning is published in GET /api/marine/layers → directionConvention. This field is 'from'. */
+            waveDirection: (number | null)[];
+            /** @description Wind speed at 10 m, m/s (requested explicitly from the provider, never its default). */
+            windSpeed10m: (number | null)[];
+            /** @description Wind direction at 10 m, degrees. True north, clockwise, 0–360. Per-field from/towards meaning is published in GET /api/marine/layers → directionConvention. This field is 'from'. */
+            windDirection10m: (number | null)[];
+            /**
+             * @description Always ecmwf — CMEMS answers one time step per call, so a 5-day series would cost ~120 requests per point.
+             * @example ecmwf
+             * @enum {string}
+             */
+            source: "ecmwf";
+            /**
+             * @description The model RUN this series came from (ISO-8601 UTC) — for ECMWF, the 00/06/12/18 UTC cycle; null for a provider that publishes none. Distinct from fetchedAtUtc and from validAtUtc, and it is the only one of the three that can expose a stale forecast: a two-day-old cycle still produces a step valid "now", so both of the other timestamps look fresh while the data is not.
+             * @example 2026-07-30T12:00:00.000Z
+             */
+            modelRunAtUtc: string | null;
+            /**
+             * @description Last instant covered by this series (ISO-8601 UTC). NOT a constant: the published ECMWF horizon is +120 h from the model run, and while a cycle is still being ingested this is the last step actually held — it grows as the cycle completes. The web must read it rather than hardcode a slider bound.
+             * @example 2026-08-04T00:00:00.000Z
+             */
+            horizonEndUtc: string;
+        };
+        MarinePointListItemDto: {
+            /**
+             * @description TR slug (routing key).
+             * @example istanbul-marmara-aciklari
+             */
+            slugTr: string;
+            /**
+             * @description EN slug (routing key).
+             * @example istanbul-marmara-offshore
+             */
+            slugEn: string;
+            /**
+             * @description Standalone full name, used where the point appears WITHOUT province context (the /deniz hub). İstanbul, Çanakkale and Balıkesir each have two points that show different numbers side by side, so the sea must be part of the name.
+             * @example İstanbul – Marmara Açıkları
+             */
+            nameTr: string;
+            /**
+             * @description Standalone full name (EN).
+             * @example İstanbul – Marmara Offshore
+             */
+            nameEn: string;
+            /**
+             * @description Province-relative short label, used INSIDE /turkiye/{il} where the province name is already in the heading and repeating it would be noise.
+             * @example Marmara açıkları
+             */
+            coastLabelTr: string;
+            /**
+             * @description Province-relative short label (EN).
+             * @example Marmara offshore
+             */
+            coastLabelEn: string;
+            /**
+             * @description Plaka kodu of the province this point is published under (zero-padded).
+             * @example 34
+             */
+            plateCode: string;
+            /**
+             * @description Requested latitude (decimal degrees). This is OUR chosen coordinate, not the model grid centre — the grid centre is per-provider and is served on the value payload as gridLatitude/gridLongitude.
+             * @example 40.85
+             */
+            latitude: number;
+            /**
+             * @description Requested longitude (decimal degrees).
+             * @example 28.8
+             */
+            longitude: number;
+            /**
+             * @description The POINT's basin, never the province's. İstanbul has one black_sea point and one marmara point; the basin also selects the CMEMS dataset, so deriving it from the province would query the wrong model.
+             * @enum {string}
+             */
+            seaBasin: "aegean" | "mediterranean" | "marmara" | "black_sea";
+            /**
+             * @description Presentation order on the /deniz hub — a coastal traverse (Black Sea west→east, then Marmara, Aegean, Mediterranean), not alphabetical.
+             * @example 2
+             */
+            displayOrder: number;
+        };
+        MarineOverviewPointDto: {
+            /** @description The point this block describes. */
+            point: components["schemas"]["MarinePointListItemDto"];
+            /** @description Sea surface temperature (°C). */
+            seaSurfaceTemperature: components["schemas"]["MarineValueDto"];
+            /** @description Significant wave height (m) — the mean of the highest one third of waves. Individual waves can be noticeably higher; the /deniz hub is required to explain this in prose. */
+            waveHeight: components["schemas"]["MarineValueDto"];
+            /** @description Wave direction. True north, clockwise, 0–360. Per-field from/towards meaning is published in GET /api/marine/layers → directionConvention. This field is 'from'. */
+            waveDirection: components["schemas"]["MarineValueDto"];
+            /** @description Wind speed at 10 m (m/s). */
+            windSpeed10m: components["schemas"]["MarineValueDto"];
+            /** @description Wind direction at 10 m. True north, clockwise, 0–360. Per-field from/towards meaning is published in GET /api/marine/layers → directionConvention. This field is 'from'. */
+            windDirection10m: components["schemas"]["MarineValueDto"];
+        };
+        MarineAttributionDto: {
+            /**
+             * @description Stable provider key.
+             * @example cmems
+             */
+            providerId: string;
+            /**
+             * @description Provider display name.
+             * @example Copernicus Marine Service
+             */
+            providerName: string;
+            /**
+             * @description Licence name.
+             * @example Copernicus Marine Service licence
+             */
+            licenceName: string;
+            /**
+             * @description Licence URL.
+             * @example https://marine.copernicus.eu/
+             */
+            licenceUrl: string;
+            /** @description The notice the licence REQUIRES us to display, verbatim (TR). Not editorial copy — shortening or restyling it is a licence breach, so it is data, not a template. */
+            requiredNoticeTr: string;
+            /** @description The required notice, verbatim (EN). */
+            requiredNoticeEn: string;
+            /** @description Product DOI when the provider issues one, else null. */
+            doi: string | null;
+            /** @description Product title as the provider names it, when required by the licence. */
+            productTitle: string | null;
+        };
+        MarineOverviewDto: {
+            points: components["schemas"]["MarineOverviewPointDto"][];
+            /**
+             * @description When the server assembled this response (ISO-8601 UTC).
+             * @example 2026-07-30T12:04:11.000Z
+             */
+            generatedAtUtc: string;
+            /**
+             * @description False only in the narrow window where the cache is genuinely empty (first boot before the first warmup tick, or after a cache flush). The response is still 200 — a 5xx would break the web build, which is the one thing these endpoints must never do — but it carries Cache-Control: no-store and this flag. CONTRACT: a response with dataAvailable=false MUST NOT be committed by ISR/SSG; keep the previous render. That is what stops an empty /deniz page from being indexed.
+             * @example true
+             */
+            dataAvailable: boolean;
+            attributions: components["schemas"]["MarineAttributionDto"][];
+        };
+        MarineConditionsDto: {
+            /** @description The point this block describes. */
+            point: components["schemas"]["MarinePointListItemDto"];
+            /** @description Sea surface temperature (°C). */
+            seaSurfaceTemperature: components["schemas"]["MarineValueDto"];
+            /** @description Significant wave height (m). */
+            waveHeight: components["schemas"]["MarineValueDto"];
+            /** @description Wave direction. True north, clockwise, 0–360. Per-field from/towards meaning is published in GET /api/marine/layers → directionConvention. This field is 'from'. */
+            waveDirection: components["schemas"]["MarineValueDto"];
+            /** @description Wind speed at 10 m (m/s). */
+            windSpeed10m: components["schemas"]["MarineValueDto"];
+            /** @description Wind direction at 10 m. True north, clockwise, 0–360. Per-field from/towards meaning is published in GET /api/marine/layers → directionConvention. This field is 'from'. */
+            windDirection10m: components["schemas"]["MarineValueDto"];
+            /** @description The 5-day series, or null. Nullable for a real case, not for convenience: CMEMS may be up while Open-Meteo is down, which yields instant values with no series. */
+            series: components["schemas"]["MarineSeriesDto"] | null;
+            /**
+             * @description SERVER-COMPUTED. True when the chart comes from a different model than the headline instant value, which measurably happens (~1.5–1.7 °C apart at the same point). When true the web MUST render the fixed i18n notice marine.series.sourceDiffersNotice. It is a boolean rather than a design-guide sentence precisely so it can be asserted in a contract test instead of quietly skipped.
+             * @example true
+             */
+            seriesSourceDiffersFromInstant: boolean;
+        };
+        MarineProvinceConditionsDto: {
+            /**
+             * @description Plaka kodu (zero-padded).
+             * @example 34
+             */
+            plateCode: string;
+            /** @description One entry per marine point of this province, in displayOrder. Two entries for the three two-sea provinces; they legitimately disagree and must be labelled by sea. */
+            marinePoints: components["schemas"]["MarineConditionsDto"][];
+            attributions: components["schemas"]["MarineAttributionDto"][];
+        };
+        MarineColorStopDto: {
+            /**
+             * @description Value the stop is anchored at, in the layer unit.
+             * @example 20
+             */
+            value: number;
+            /**
+             * @description Colour, `#rrggbb`.
+             * @example #2c7fb8
+             */
+            hex: string;
+        };
+        MarineLayerDto: {
+            /**
+             * @description Layer id, snake_case. It corresponds one-to-one with a MarineValueDto property on the conditions/overview payloads, but those are camelCase — sea_surface_temperature ↔ seaSurfaceTemperature — so convert the case rather than indexing the payload by this id.
+             * @enum {string}
+             */
+            id: "sea_surface_temperature" | "wave_height" | "wave_direction" | "wind_speed_10m" | "wind_direction_10m";
+            /**
+             * @description Display label (TR).
+             * @example Deniz suyu sıcaklığı
+             */
+            labelTr: string;
+            /**
+             * @description Display label (EN).
+             * @example Sea surface temperature
+             */
+            labelEn: string;
+            /**
+             * @description Canonical unit of this layer’s values.
+             * @enum {string}
+             */
+            unit: "m" | "celsius" | "degree_true" | "meter_per_second";
+            /**
+             * @description What a degree MEANS for this layer; null for non-direction layers. True north, clockwise, 0–360. Per-field from/towards meaning is published in GET /api/marine/layers → directionConvention. ARROW-UNLOCK CONDITION (binding, and now MET for wind_speed_10m and wind_direction_10m): a direction arrow may be drawn once this field is published AND the three-layer wind regression suite is green — (1) a table of eight cardinal vectors mapped to expected bearings, (2) the invariants every bearing in [0, 360), speed >= 0, speed >= |u| and |v|, and a null component producing a null bearing rather than 0, and (3) a committed real ECMWF GRIB message decoded and compared against ecCodes reference values. All three ship in src/marine/ecmwf/ and run on CI. The condition exists because ECMWF publishes wind as the vector components 10u/10v, so the bearing is SERVER-DERIVED arithmetic: a sign error produces a bearing exactly 180 degrees wrong, and a reversed arrow is indistinguishable from a correct one on screen. Wave direction is not derived — ECMWF states mwd as "degree true, zero means coming from the north" and it is published verbatim.
+             * @enum {string|null}
+             */
+            directionConvention: "from" | "towards" | null;
+            /**
+             * @description Below this magnitude the sea/wind counts as CALM. Published on the MAGNITUDE layer (wave_height, wind_speed_10m) and it governs the PAIRED direction layer: when wave_height < its calmThreshold the web shows a calm indicator instead of a wave_direction arrow, and likewise for wind. Null on the direction layers themselves and on temperature. The server never suppresses the direction value — nulling it would make "calm" indistinguishable from "no data".
+             * @example 0.1
+             */
+            calmThreshold: number | null;
+            /**
+             * @description Primary provider for this layer.
+             * @enum {string}
+             */
+            primarySource: "cmems" | "ecmwf";
+            /**
+             * @description Provider used where the primary does not cover the point (CMEMS carries no wave field in the Marmara), or null when there is no fallback.
+             * @enum {string|null}
+             */
+            fallbackSource: "cmems" | "ecmwf" | null;
+            /**
+             * @description Series step for this layer, hours.
+             * @example 3
+             */
+            stepHours: number;
+            /** @description Last instant the provider can serve (ISO-8601 UTC). NULL IN M1 — resolved from the provider catalogue in M3. The horizon is genuinely variable (4–9 days by product), so the web must read it here rather than hardcode a slider bound. */
+            horizonEndUtc: string | null;
+            /**
+             * @description How often the provider re-runs the model, as the provider states it. NULL IN M1 — resolved from the provider catalogue in M3. Carried at LAYER level rather than per value because neither Faz-1 provider publishes a model-run time per value; a per-value field would be null 31 × 5 times per response.
+             * @example twice-daily: 00:00 UTC; 12:00 UTC
+             */
+            updateFrequency: string | null;
+            /** @description When the provider last updated its catalogue entry (ISO-8601 UTC). NULL IN M1 — resolved from the provider catalogue in M3. */
+            catalogueUpdatedAtUtc: string | null;
+            /** @description Colour ramp for this layer, ascending by value. */
+            colorStops: components["schemas"]["MarineColorStopDto"][];
+            /**
+             * @description Key of the MarineAttributionDto that must accompany this layer. Attribution ROWS are seeded in M5; the reference is frozen now so the join is stable.
+             * @example cmems
+             */
+            attributionId: string;
+        };
+        AirQualityPollutantValueDto: {
+            /**
+             * @example pm2_5
+             * @enum {string}
+             */
+            pollutant: "pm2_5" | "pm10" | "no2" | "o3" | "so2";
+            /**
+             * @description Raw model concentration in µg/m³, or null when this step/pollutant is missing. Model output on a ~0.1° grid — never a station reading. Missing values are null, never a sentinel: the provider marks absence with an in-band fill value that the server classifies away before publication.
+             * @example 8.4
+             */
+            value: number | null;
+            /**
+             * @description Canonical machine unit token. The display symbol (µg/m³) is a web i18n concern.
+             * @enum {string}
+             */
+            unit: "ug_m3";
+            /**
+             * @description EAQI-2024 rates ALL five pollutants on hourly values (no 24 h running mean), so this enum has a single member. A future methodology change arrives as a new indexSystem member, not a silent reinterpretation of this field.
+             * @enum {string}
+             */
+            averagingPeriod: "hourly";
+            /**
+             * @description EAQI sub-index band for this pollutant alone; null when value is null.
+             * @example 2
+             */
+            subIndexBand: number | null;
+            /**
+             * @example fair
+             * @enum {string|null}
+             */
+            subIndexCategory: "good" | "fair" | "moderate" | "poor" | "very_poor" | "extremely_poor" | null;
+            /**
+             * @description Per-pollutant status: the same cell can carry PM2.5 and miss SO₂ — pollutants are classified independently, never averaged or borrowed from a neighbour cell.
+             * @enum {string}
+             */
+            status: "ok" | "no_data" | "not_supported" | "unavailable";
+        };
+        AirQualityIndexDto: {
+            /**
+             * @description Overall EAQI band = the WORST per-pollutant sub-band. Null unless status=ok.
+             * @example 2
+             */
+            band: number | null;
+            /**
+             * @description Category TOKEN for the band — never user-facing text; TR/EN names and the "our translation" label are web i18n keys.
+             * @enum {string|null}
+             */
+            category: "good" | "fair" | "moderate" | "poor" | "very_poor" | "extremely_poor" | null;
+            /**
+             * @description The pollutant that set the worst band. Ties are broken deterministically by the published order (see GET /api/air-quality/index-system → tieBreakOrder).
+             * @enum {string|null}
+             */
+            dominantPollutant: "pm2_5" | "pm10" | "no2" | "o3" | "so2" | null;
+            /**
+             * @description Which index methodology produced band/category. The full band table behind this token is published at GET /api/air-quality/index-system; the web must not hardcode it. Adding a member is treated as a BREAKING change (exhaustive switches).
+             * @enum {string}
+             */
+            indexSystem: "eaqi-eea-2024";
+            /** @enum {string} */
+            status: "ok" | "no_data" | "not_supported" | "unavailable";
+            /**
+             * @description Cache freshness; ALWAYS null when status !== ok.
+             * @enum {string|null}
+             */
+            freshness: "fresh" | "stale" | null;
+            /** @description Raw per-pollutant concentrations + sub-indexes (DEC 2026-07-30w: the index stays auditable against the numbers it came from). */
+            pollutants: components["schemas"]["AirQualityPollutantValueDto"][];
+            /** @description Pollutants missing at this instant. A partial index is still published; honesty here means SAYING what is missing, not hiding what is known. All five missing → status no_data. */
+            missingPollutants: ("pm2_5" | "pm10" | "no2" | "o3" | "so2")[];
+            /**
+             * @description The model step this value belongs to (ISO-8601 UTC). Derived from the REQUESTED run day + hour offset — the file’s own free-text time label is only cross-validated, never parsed as the source of truth.
+             * @example 2026-08-01T14:00:00.000Z
+             */
+            validAtUtc: string | null;
+            /**
+             * @description CAMS model run base time (00:00 UTC of the run day) — the "model time".
+             * @example 2026-08-01T00:00:00.000Z
+             */
+            modelRunAtUtc: string | null;
+            /**
+             * @description When the run file was downloaded and decoded by this server.
+             * @example 2026-08-01T12:41:03.000Z
+             */
+            ingestedAtUtc: string | null;
+            /**
+             * @description When THIS response was compiled from the local store (cache semantics only — the model/ingest instants above are the honest data times).
+             * @example 2026-08-01T14:03:11.000Z
+             */
+            fetchedAtUtc: string | null;
+            /**
+             * @description When the served value started counting as stale; null while fresh.
+             * @example null
+             */
+            staleSinceUtc: string | null;
+            /** @enum {string} */
+            source: "cams-europe-aq";
+            /**
+             * @description Provider dataset identifier, verbatim.
+             * @example cams-europe-air-quality-forecasts
+             */
+            datasetId: string | null;
+            /**
+             * @description Latitude of the grid-cell CENTRE the value was read from.
+             * @example 39.95
+             */
+            gridLatitude: number | null;
+            /** @example 32.85 */
+            gridLongitude: number | null;
+            /**
+             * @description Distance (km) between the requested province reference point and the grid-cell centre. This is the WITHIN-CELL offset of nearest-cell sampling — never the result of searching for a "better" cell; interpolation and averaging are banned by design.
+             * @example 3.1
+             */
+            distanceKm: number | null;
+            /**
+             * @description Model grid resolution in degrees (~11 km background level). Street-level differences are below this resolution by construction — honest-presentation field.
+             * @example 0.1
+             */
+            gridResolutionDegrees: number;
+        };
+        AirQualitySeriesConcentrationsDto: {
+            /** @description µg/m³ per step; null per missing step. */
+            pm2_5: (number | null)[];
+            pm10: (number | null)[];
+            no2: (number | null)[];
+            o3: (number | null)[];
+            so2: (number | null)[];
+        };
+        AirQualitySeriesDto: {
+            /**
+             * @description Step instants (ISO-8601 UTC). INVARIANT: every other array in this object has exactly this length; a missing step is null in place, never dropped and never invented. Every step is model FORECAST output — the series starts at the model run base time and contains no earlier step.
+             * @example [
+             *       "2026-08-01T00:00:00.000Z",
+             *       "2026-08-01T01:00:00.000Z"
+             *     ]
+             */
+            timesUtc: string[];
+            /**
+             * @description Hours between steps (always 1 in Faz-1).
+             * @example 1
+             */
+            stepHours: number;
+            /**
+             * @description End of the published horizon (run base + 96 h in Faz-1).
+             * @example 2026-08-05T00:00:00.000Z
+             */
+            horizonEndUtc: string;
+            /** @description Overall EAQI band per step; null where it cannot be computed. */
+            bands: (number | null)[];
+            categories: ("good" | "fair" | "moderate" | "poor" | "very_poor" | "extremely_poor" | null)[];
+            dominantPollutants: ("pm2_5" | "pm10" | "no2" | "o3" | "so2" | null)[];
+            concentrations: components["schemas"]["AirQualitySeriesConcentrationsDto"];
+        };
+        AirQualityAttributionDto: {
+            /** @example Copernicus Atmosphere Monitoring Service (CAMS) */
+            providerName: string;
+            /** @example CAMS European air quality forecasts */
+            productName: string;
+            /** @example https://ads.atmosphere.copernicus.eu/datasets/cams-europe-air-quality-forecasts */
+            datasetUrl: string;
+            /**
+             * @description The licence the dataset actually requires (measured: cc-by, revision 1).
+             * @example Creative Commons Attribution 4.0 International (CC-BY-4.0)
+             */
+            licenceName: string;
+            /** @example https://creativecommons.org/licenses/by/4.0/ */
+            licenceUrl: string;
+            /**
+             * @description Verbatim required attribution line — never translated.
+             * @example Contains modified Copernicus Atmosphere Monitoring Service Information 2026
+             */
+            attributionText: string;
+            /**
+             * @description Verbatim required disclaimer — never translated.
+             * @example Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.
+             */
+            disclaimerText: string;
+            /** @description i18n keys for the editorial notices (model nature, grid resolution, category-name translation). The API ships KEYS only; the texts are authored on the web side. */
+            noticeKeys: string[];
+        };
+        AirQualityProvinceDto: {
+            /**
+             * @description Zero-padded plate code.
+             * @example 06
+             */
+            plateCode: string;
+            /** @example ankara */
+            slugTr: string;
+            /** @example ankara */
+            slugEn: string;
+            /** @example Ankara */
+            nameTr: string;
+            /**
+             * @description The canonical province reference point the platform uses everywhere.
+             * @example 39.9727
+             */
+            latitude: number;
+            /** @example 32.8637 */
+            longitude: number;
+            /** @description The value for the step nearest to now. */
+            current: components["schemas"]["AirQualityIndexDto"];
+            series: components["schemas"]["AirQualitySeriesDto"] | null;
+            attribution: components["schemas"]["AirQualityAttributionDto"];
+            /** @description False on the cold path (no usable run) — the page renders, the widget degrades. */
+            dataAvailable: boolean;
+        };
+        AirQualityProvinceListItemDto: {
+            /** @example 06 */
+            plateCode: string;
+            /** @example ankara */
+            slugTr: string;
+            /** @example ankara */
+            slugEn: string;
+            /** @example 2 */
+            band: number | null;
+            /** @enum {string|null} */
+            category: "good" | "fair" | "moderate" | "poor" | "very_poor" | "extremely_poor" | null;
+            /** @enum {string|null} */
+            dominantPollutant: "pm2_5" | "pm10" | "no2" | "o3" | "so2" | null;
+            /** @enum {string} */
+            status: "ok" | "no_data" | "not_supported" | "unavailable";
+            /** @example 2026-08-01T14:00:00.000Z */
+            validAtUtc: string | null;
+        };
+        AirQualityIndexSystemCategoryDto: {
+            /** @example 2 */
+            band: number;
+            /**
+             * @example fair
+             * @enum {string}
+             */
+            category: "good" | "fair" | "moderate" | "poor" | "very_poor" | "extremely_poor";
+        };
+        AirQualityIndexSystemPollutantDto: {
+            /** @enum {string} */
+            pollutant: "pm2_5" | "pm10" | "no2" | "o3" | "so2";
+            /** @enum {string} */
+            averagingPeriod: "hourly";
+            /**
+             * @description Upper bounds (µg/m³) of bands 1..5; band 6 is unbounded above the last value. Interpreted under boundaryRule — the upper bound belongs to ITS band.
+             * @example [
+             *       5,
+             *       15,
+             *       50,
+             *       90,
+             *       140
+             *     ]
+             */
+            upperBoundsUgM3: number[];
+        };
+        AirQualityIndexSystemDto: {
+            /** @enum {string} */
+            indexSystem: "eaqi-eea-2024";
+            /**
+             * @description Band boundary rule, machine-readable: (lo, hi] — a value equal to an upper bound falls in THAT band (PM2.5 = 15.0 µg/m³ → band 2). The last band has no upper bound.
+             * @example lower_exclusive_upper_inclusive
+             * @enum {string}
+             */
+            boundaryRule: "lower_exclusive_upper_inclusive";
+            categories: components["schemas"]["AirQualityIndexSystemCategoryDto"][];
+            pollutants: components["schemas"]["AirQualityIndexSystemPollutantDto"][];
+            /** @description Deterministic dominant-pollutant tie-break order when two pollutants share the worst band. */
+            tieBreakOrder: ("pm2_5" | "pm10" | "no2" | "o3" | "so2")[];
+        };
     };
     responses: never;
     parameters: never;
@@ -941,6 +1584,63 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    MarineController_findAllPoints: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarinePointListItemDto"][];
+                };
+            };
+        };
+    };
+    MarineController_findAllLayers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarineLayerDto"][];
+                };
+            };
+        };
+    };
+    AirQualityController_getIndexSystem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AirQualityIndexSystemDto"];
+                };
             };
         };
     };

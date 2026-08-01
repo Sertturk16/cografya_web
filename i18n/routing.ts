@@ -41,6 +41,18 @@ export const routing = defineRouting({
     // dynamic `[slug]` VALUE is still the localized slug (`slug_tr` / `slug_en`).
     "/dunya": "/dunya",
     "/dunya/[slug]": "/dunya/[slug]",
+    // The marine hub (→ DEC 2026-08-01, owner answer S2). LOCALIZED segment for the same
+    // reason as `/oyun` below and NOT for the reason `/turkiye`/`/dunya` stay single: the
+    // word "deniz" does not read as English at all, so the governing precedent is
+    // `/hakkimizda ↔ /en/about`. The EN page is `noindex` today (its seven explainer blocks
+    // are TR-only), and a localized segment is still required — a `noindex` page must
+    // resolve to exactly ONE correct URL per locale, and changing that URL later would owe
+    // a redirect. Canonical, hreflang, the sitemap entry, the nav link and the `/turkiye`
+    // cross-link all derive from this one line via `getPathname`.
+    "/deniz": {
+      tr: "/deniz",
+      en: "/sea",
+    },
     // The map game hub (→ DEC 2026-07-30c, owner answer S1). LOCALIZED segment, unlike
     // `/turkiye` and `/dunya`: those two survive untranslated because "Türkiye" and
     // "dünya" already read correctly inside the site's English copy, whereas "oyun" does

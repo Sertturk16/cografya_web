@@ -17,5 +17,28 @@ export default getRequestConfig(async ({ requestLocale }) => {
   return {
     locale,
     messages: (await import(`../messages/${locale}.json`)).default,
+    /**
+     * PROJECT-WIDE FORMATTING TIME ZONE (→ owner answer S5, W1).
+     *
+     * Without this, `format.dateTime` inherits the RUNTIME's zone: the same build prints a
+     * different hour — and, for a date-only value, sometimes a different DAY — depending on
+     * which machine rendered it. The hosting region is still undecided, so that zone is an
+     * assumption we do not get to make, and an ISR page can be rendered days apart on
+     * different workers.
+     *
+     * UTC rather than `Europe/Istanbul` because every instant the app formats is published
+     * in UTC by the api (the marine model künye: cycle time, forecast horizon, catalogue
+     * timestamp) and the `/deniz` hub labels them "UTC" on screen. Converting them to a
+     * local zone would silently restate the provider's own stamp.
+     *
+     * This does NOT change any existing page. All three pre-existing `dateTime` call sites
+     * already defend themselves: the climate records pass `timeZone: "UTC"` explicitly (an
+     * explicit option beats this default), and the two month-name formatters
+     * (`components/climate/climate-table.tsx`, `lib/climate/month.ts`) build their input
+     * from `Date.UTC(2020, m-1, 15)`, a mid-month anchor no real zone offset can push into
+     * another month. Verified empirically against `dev` before merge (rendered-HTML diff,
+     * W1a closing summary).
+     */
+    timeZone: "UTC",
   };
 });

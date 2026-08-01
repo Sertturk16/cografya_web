@@ -25,6 +25,11 @@ export async function SiteHeader() {
           <Link href="/">{t("home")}</Link>
           <Link href="/turkiye">{t("turkiye")}</Link>
           <Link href="/dunya">{t("dunya")}</Link>
+          {/* The marine hub sits with the two map hubs, not under `/turkiye`: it spans 27
+              provinces and four seas, so no single province owns it. A nav link is also
+              what keeps it from being an orphan page (`SEO-POLICY.md` §B8) — the second
+              entry point is the cross-link on `/turkiye` (owner answer S8: both). */}
+          <Link href="/deniz">{t("deniz")}</Link>
           {/* The game is a primary surface, not a sub-page of the map hub (owner answer
               S4, → DEC 2026-07-30c) — so it sits in the top nav, after the two map hubs
               and before the site-info link. */}

@@ -50,6 +50,7 @@ Coğrafya Platformu is a non-commercial education project. All content is free t
 - [Ana Sayfa (Home)](${url("tr", "/")}): Overview and entry point to the province and country hubs.
 - [Türkiye](${url("tr", "/turkiye")}): Interactive map hub linking the detail pages for all 81 provinces of Türkiye.
 - [Dünya (World)](${url("tr", "/dunya")}): World map hub linking country detail pages.
+- [Deniz (Sea)](${url("tr", "/deniz")}): Marine hub for the coasts of Türkiye — offshore reference points, the measurement catalogue, and explanatory blocks on wave height, wind and sea-surface temperature. Turkish only; its English counterpart is served with "noindex".
 - [Hakkımızda (About)](${url("tr", "/hakkimizda")}): What the platform is and how its content is sourced and verified.
 
 ## Main sections (English)

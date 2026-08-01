@@ -96,13 +96,27 @@ export default async function TurkiyePage({ params }: PageProps) {
           the PAGE body, deliberately outside `TurkeyMapSection`: that component owns the
           81 crawlable province links and is not opened by game work. */}
       <section className="section" aria-labelledby="turkiye-game-heading">
-        <div className={`card ${styles.gameCta}`}>
+        <div className={`card ${styles.ctaCard}`}>
           <h2 id="turkiye-game-heading">{t("gameCtaHeading")}</h2>
           {/* The descriptive paragraph under this heading is gone (→ DEC 2026-07-30t/u,
               CONTENT-STYLE §22): it narrated the game's mechanic ("ekranda çıkan ili …
               işaretlersiniz"), which the heading and the button already imply. */}
           <Link href="/oyun" className="btn btn-primary">
             {t("gameCtaLink")}
+          </Link>
+        </div>
+      </section>
+
+      {/* Hub-and-spoke cross-link to the marine hub (owner answer S8, CONVENTIONS §6 #10).
+          It belongs on THIS page specifically: 27 of the 81 provinces indexed above have a
+          coast, and `/deniz` is where their offshore reference points and the measurement
+          catalogue live. The link is deliberately thematic, not navigational duplication —
+          the header already carries the nav entry. */}
+      <section className="section" aria-labelledby="turkiye-marine-heading">
+        <div className={`card ${styles.ctaCard}`}>
+          <h2 id="turkiye-marine-heading">{t("marineCtaHeading")}</h2>
+          <Link href="/deniz" className="btn btn-primary">
+            {t("marineCtaLink")}
           </Link>
         </div>
       </section>

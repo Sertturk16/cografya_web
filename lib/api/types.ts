@@ -54,3 +54,15 @@ export type CountryMapSummary = components["schemas"]["CountryMapSummaryDto"];
 
 /** The six continents (contract enum values, TR keys). */
 export type Continent = CountryListItem["continent"];
+
+// ---- Marine (deniz-hava — /deniz hub'ı, W1) ---------------------------------
+/** One offshore reference point: identity, the province it is published under
+ *  (`plateCode`), its coordinate, its sea basin, and the coastal-traverse
+ *  `displayOrder`. Three provinces (İstanbul, Çanakkale, Balıkesir) own two points
+ *  each, so 30 points map to 27 provinces. */
+export type MarinePointListItem = components["schemas"]["MarinePointListItemDto"];
+/** One measurement layer of the catalogue: unit, direction convention, calm threshold,
+ *  provider, and the model künye (`horizonEndUtc` / `updateFrequency` /
+ *  `catalogueUpdatedAtUtc`). The three künye fields are nullable and move together —
+ *  null means no ingested cycle (or one past the 24 h age ceiling), never "unknown". */
+export type MarineLayer = components["schemas"]["MarineLayerDto"];

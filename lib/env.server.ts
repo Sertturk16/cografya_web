@@ -40,9 +40,23 @@ const serverEnvSchema = z.object({
   //     newline is silently TRIMMED by `Headers`, so a byte-identical secret in both stores
   //     still mismatches the api's untrimmed digest → permanent 429s with "exemption:
   //     active" in the api log (the one diagnostic that would exonerate the token).
+  //     Note the asymmetry: an INTERIOR LF/CR is a hard error (next bullet), a leading or
+  //     trailing one is trimmed. Same character, opposite failure — which is why the class
+  //     is rejected wholesale rather than trimmed on our side.
   //   · control/non-ASCII: NUL, 0x7F, `ş`, an emoji — all non-whitespace, so a `\S` check
-  //     lets them through, yet several still throw the same swallowed TypeError, whose
-  //     message embeds the offending value VERBATIM (it would land in retained build logs).
+  //     lets them through, and they fail in THREE different ways. Measured on Node 24, so
+  //     the leak is stated exactly rather than left at "several":
+  //       – interior LF, CR, NUL → `TypeError: Headers.append: "<value>" is an invalid
+  //         header value.` This is the ONLY class whose message quotes the secret VERBATIM,
+  //         and it is the one that would land in retained build logs.
+  //       – any code point above U+00FF (`ş`, an emoji) → also a TypeError, but the
+  //         ByteString conversion message reports only an index and a code point, so it
+  //         fails loudly WITHOUT leaking. Still rejected: it is a build-breaking value.
+  //       – the remaining C0 controls and 0x7F (0x01, 0x1B, DEL) → silently ACCEPTED and
+  //         sent, so they never throw at all and instead land in the silent-mismatch mode
+  //         the whitespace bullet describes.
+  //     One regex closes all three; splitting it into "leaks" and "does not leak" halves
+  //     would only invite someone to relax the safe-looking half.
   // Rejecting them here is the single control that keeps the secret out of both failure
   // modes; `lib/env.server.test.ts` pins the schema↔`Headers` agreement so a future
   // loosening fails CI instead of re-opening them.

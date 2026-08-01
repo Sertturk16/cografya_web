@@ -9,6 +9,7 @@
     "home": "Home",
     "turkiye": "Türkiye",
     "dunya": "World",
+    "deniz": "Sea",
     "game": "Game",
     "about": "About"
   },
@@ -17,7 +18,8 @@
     "home": "Home",
     "turkiye": "Türkiye",
     "dunya": "World",
-    "game": "Game"
+    "game": "Game",
+    "deniz": "Sea"
   },
   "Footer": {
     "tagline": "A free, open geography education platform.",
@@ -50,7 +52,9 @@
     "heading": "Map of Türkiye",
     "intro": "Select a province to see its details.",
     "gameCtaHeading": "Test what you have learned",
-    "gameCtaLink": "Open the map game"
+    "gameCtaLink": "Open the map game",
+    "marineCtaHeading": "Seas and coastal provinces",
+    "marineCtaLink": "Open sea page"
   },
   "Game": {
     "brandName": "Explorer",
@@ -286,6 +290,63 @@
     "sourcesLabel": "Sources",
     "sources": "Data is grounded in official and authoritative sources: country and capital names from the Turkish Ministry of Foreign Affairs; population from the World Bank (Geostat 2024 census for Georgia); area from the World Bank; continent and region classification from the UN Statistics Division (M49); neighbouring countries, government form, currency and physical geography from cross-checked multi-source references (Britannica and others).",
     "backToMap": "Back to the world map"
+  },
+  "Deniz": {
+    "metaTitle": "Türkiye's Coasts: Wind and Wave Measurements",
+    "metaDescription": "Thirty fixed offshore reference points off 27 coastal provinces on the Black Sea, Marmara, Aegean and Mediterranean, and the model behind each measurement.",
+    "heading": "Sea and Wind on Türkiye's Coasts",
+    "lede": "Thirty fixed reference points offshore in the Black Sea, Marmara, Aegean and Mediterranean.",
+    "pointsHeading": "Coastal provinces and offshore reference points",
+    "catalogueHeading": "Measurement catalogue: which quantity comes from which model",
+    "sourcesHeading": "Sources and use",
+    "sourceEcmwf": "The model run details for the wind layers are obtained from ECMWF Open Data, licensed under CC BY 4.0. This data is the output of a numerical weather prediction model, not a station measurement.",
+    "sourceCmems": "Sea surface temperature and the Copernicus Marine wave layers will be published in the next phase. No values from those sources are shown on this page.",
+    "teaches": "The seas around Türkiye, the offshore reference points along its coasts and the measurement catalogue behind them"
+  },
+  "Marine": {
+    "basinPointCount": "{count, plural, one {# point} other {# points}}",
+    "disclaimer": {
+      "educationalOnly": "The information on this page is for educational purposes only and must not be used for maritime, navigational or safety-of-life decisions. Official marine forecasts and warnings are published by the Turkish State Meteorological Service."
+    },
+    "status": {
+      "live": "Live",
+      "notSupported": "Next phase"
+    },
+    "point": {
+      "referencePointHint": "The points sit outside the straits and narrow gulfs, in the open water where the models are more reliable."
+    },
+    "unit": {
+      "m": "m",
+      "celsius": "°C",
+      "degree_true": "degrees (true north)",
+      "meter_per_second": "m/s"
+    },
+    "direction": {
+      "from": "Direction it comes from",
+      "towards": "Direction it heads towards"
+    },
+    "source": {
+      "ecmwf": "ECMWF Open Data",
+      "cmems": "Copernicus Marine",
+      "fallback": "Fallback: {source}"
+    },
+    "catalogue": {
+      "caption": "Measurement layers published for the coasts of Türkiye.",
+      "scrollRegionLabel": "Measurement catalogue table",
+      "colQuantity": "Quantity",
+      "colUnit": "Unit",
+      "colDirection": "Direction",
+      "colCalm": "Calm threshold",
+      "colSource": "Source",
+      "colStatus": "Status",
+      "colModelRun": "Model run",
+      "calmNote": "The calm threshold is the value below which the sea or the wind counts as calm: below it a calm indicator replaces the direction arrow.",
+      "cycle": "Cycle: {value}",
+      "horizon": "Forecast horizon: {value} UTC",
+      "catalogueUpdated": "Catalogue: {value} UTC",
+      "noModelRun": "The model run details arrive in the next phase.",
+      "notApplicable": "Not applicable to this layer"
+    }
   },
   "NotFound": {
     "metaTitle": "Page not found",
