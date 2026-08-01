@@ -299,7 +299,8 @@
     "pointsHeading": "Coastal provinces and offshore reference points",
     "catalogueHeading": "Measurement catalogue: which quantity comes from which model",
     "sourcesHeading": "Sources and use",
-    "sourceEcmwf": "The model run details for the wind layers are obtained from ECMWF Open Data, licensed under CC BY 4.0. This data is the output of a numerical weather prediction model, not a station measurement.",
+    "sourceEcmwf": "The model run details for the wind layers come from ECMWF Open Data. This data is the output of a numerical weather prediction model, not a station measurement.",
+    "sourceEcmwfNoticeIntro": "The text below is the attribution and disclaimer that ECMWF's licence requires to be published verbatim.",
     "sourceCmems": "Sea surface temperature and the Copernicus Marine wave layers will be published in the next phase. No values from those sources are shown on this page.",
     "teaches": "The seas around Türkiye, the offshore reference points along its coasts and the measurement catalogue behind them"
   },
@@ -308,12 +309,22 @@
     "disclaimer": {
       "educationalOnly": "The information on this page is for educational purposes only and must not be used for maritime, navigational or safety-of-life decisions. Official marine forecasts and warnings are published by the Turkish State Meteorological Service."
     },
+    "attribution": {
+      "ecmwfCopyright": "Copyright © {year} European Centre for Medium-Range Weather Forecasts (ECMWF).",
+      "ecmwfNotice": "This service is based on data and products of the European Centre for Medium-Range Weather Forecasts (ECMWF). Source: www.ecmwf.int. This ECMWF data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. Modified: values are sampled from the source grid to selected points; no other modification.",
+      "ecmwfDisclaimer": "ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use."
+    },
     "status": {
       "live": "Live",
       "notSupported": "Next phase"
     },
     "point": {
       "referencePointHint": "The points sit outside the straits and narrow gulfs, in the open water where the models are more reliable."
+    },
+    "map": {
+      "title": "Map of the reference points off Türkiye's coasts",
+      "description": "{count, plural, one {# reference point} other {# reference points}} marked on a map of the provincial boundaries of Türkiye. The names of the points, and the links to their province pages, are in the list directly below the map.",
+      "caption": "Each marker is a fixed reference point offshore of that province. A province on two seas can appear twice."
     },
     "unit": {
       "m": "m",

@@ -266,6 +266,38 @@ export interface ProvinceShape {
 /** Shared SVG viewBox all ${shapes.length} paths are projected into. */
 export const MAP_VIEWBOX = "0 0 ${VIEW_WIDTH} ${viewHeight}" as const;
 
+/**
+ * The exact equirectangular constants the paths above were projected with, so that a
+ * [lon, lat] pair OUTSIDE this GeoJSON (an offshore marine reference point, a city
+ * marker) can be placed in the SAME coordinate space at runtime.
+ *
+ * Emitted by the generator rather than restated by hand: the values derive from the
+ * source file's own bounding box, so a snapshot change silently invalidates any
+ * hand-copied constant. \`pnpm generate:map:check\` fails the moment they drift.
+ *
+ * Apply them with \`projectToMapPoint()\` in \`lib/map/projection.ts\` — never inline.
+ */
+export interface MapProjection {
+  /** Western edge of the source bounding box (decimal degrees). */
+  readonly minLon: number;
+  /** Northern edge of the source bounding box (decimal degrees). */
+  readonly maxLat: number;
+  /** cos(reference latitude) — the equirectangular x-correction factor. */
+  readonly cosLat: number;
+  /** Degrees → svg-unit scale factor. */
+  readonly scale: number;
+  /** Inset applied on every side before scaling (svg units). */
+  readonly padding: number;
+}
+
+export const MAP_PROJECTION: MapProjection = {
+  minLon: ${minLon},
+  maxLat: ${maxLat},
+  cosLat: ${cosLat},
+  scale: ${scale},
+  padding: ${PADDING},
+};
+
 export const PROVINCE_SHAPES: readonly ProvinceShape[] = [
 ${body}
 ];

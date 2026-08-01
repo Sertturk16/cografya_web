@@ -9,6 +9,26 @@
   color: var(--color-slate);
 }
 
+/* The provider's own required wording, published verbatim in English (→ DEC 2026-08-02c).
+   Set in a quieter, indented block so a Turkish reader can see at a glance where the
+   platform's prose stops and the licence text begins — it is still full-size body text on
+   the page, never hidden behind a disclosure ("prominently", per the licence). */
+.licenceNotice {
+  margin: 12px 0;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--color-border);
+  font-size: 0.85rem;
+}
+
+.licenceNotice p {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.licenceNotice p:last-child {
+  margin-bottom: 0;
+}
+
 /* The licence / educational-use notice is an UNTOUCHABLE copy class (CONTENT-STYLE §22):
    it stays formal and complete. Set apart visually so it reads as a notice rather than as
    another paragraph of body copy. */

@@ -299,7 +299,8 @@
     "pointsHeading": "Kıyı illeri ve açıklardaki referans noktaları",
     "catalogueHeading": "Ölçüm kataloğu: hangi büyüklük hangi modelden geliyor",
     "sourcesHeading": "Kaynaklar ve kullanım",
-    "sourceEcmwf": "Rüzgâr katmanlarının model künyesi ECMWF Open Data'dan alınmaktadır; lisansı CC BY 4.0'dır. Bu veri, sayısal bir hava tahmini modelinin çıktısıdır, istasyon ölçümü değildir.",
+    "sourceEcmwf": "Rüzgâr katmanlarının model künyesi ECMWF Open Data'dan geliyor. Bu veri, sayısal bir hava tahmini modelinin çıktısıdır; istasyon ölçümü değildir.",
+    "sourceEcmwfNoticeIntro": "Aşağıdaki İngilizce metin, ECMWF lisansının birebir yayımlanmasını istediği atıf ve sorumluluk reddidir. Türkçesi şudur: Bu servis, Avrupa Orta Vadeli Hava Tahminleri Merkezi'nin (ECMWF) veri ve ürünlerine dayanmaktadır. Kaynak: www.ecmwf.int. Veri, Creative Commons Attribution 4.0 International (CC BY 4.0) lisansıyla yayımlanmaktadır. Coğrafya tarafından yapılan değişiklik: değerler kaynak ızgaradan seçilen noktalara örneklenmiştir. ECMWF; verideki hata veya eksikliklerden, verinin erişilebilirliğinden ya da kullanımından doğabilecek hiçbir zarardan sorumluluk kabul etmez.",
     "sourceCmems": "Deniz yüzeyi sıcaklığı ile Copernicus Marine kaynaklı dalga katmanları sıradaki aşamada yayımlanacaktır. Bu sayfada söz konusu kaynaklardan hiçbir değer gösterilmemektedir.",
     "teaches": "Türkiye'yi çevreleyen denizler, deniz tahmin modellerinin çözünürlüğü ve rüzgâr ölçümünün temel kavramları",
     "q1": "Belirgin dalga yüksekliği ne demektir?",
@@ -322,12 +323,22 @@
     "disclaimer": {
       "educationalOnly": "Bu sayfadaki bilgiler eğitim amaçlıdır; denizcilik, seyir veya can güvenliği kararlarında kullanılamaz. Resmî deniz durumu tahminleri ve uyarıları için Meteoroloji Genel Müdürlüğü'nün yayınları esas alınmalıdır."
     },
+    "attribution": {
+      "ecmwfCopyright": "Copyright © {year} European Centre for Medium-Range Weather Forecasts (ECMWF).",
+      "ecmwfNotice": "This service is based on data and products of the European Centre for Medium-Range Weather Forecasts (ECMWF). Source: www.ecmwf.int. This ECMWF data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. Modified: values are sampled from the source grid to selected points; no other modification.",
+      "ecmwfDisclaimer": "ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use."
+    },
     "status": {
       "live": "Yayında",
       "notSupported": "Sıradaki aşama"
     },
     "point": {
       "referencePointHint": "Noktalar boğazların ve dar körfezlerin dışına, modelin daha güvenilir çalıştığı açık suya yerleştirildi."
+    },
+    "map": {
+      "title": "Türkiye kıyılarındaki referans noktaları haritası",
+      "description": "{count} referans noktası, Türkiye'nin il sınırlarını gösteren bir harita üzerinde işaretlendi. Noktaların adları ve il sayfalarına bağlantıları haritanın hemen altındaki listede yer alıyor.",
+      "caption": "Her işaret, ilin açığındaki sabit bir referans noktasını gösterir. İki denize kıyısı olan bir il haritada iki kez geçebilir."
     },
     "unit": {
       "m": "m",
