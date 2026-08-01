@@ -241,7 +241,9 @@
     "dismissHint": "Dismiss hint",
     "turkiyeName": "Türkiye",
     "turkiyeCardSubtitle": "Province map",
-    "turkiyeLinkLabel": "Türkiye, province map page"
+    "turkiyeLinkLabel": "Türkiye, province map page",
+    "territoryCentre": "Capital",
+    "territoryNoPopulation": "No permanent population"
   },
   "CountryDetail": {
     "metaTitle": "Geography of {name}",

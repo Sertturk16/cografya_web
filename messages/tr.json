@@ -241,7 +241,9 @@
     "dismissHint": "İpucunu kapat",
     "turkiyeName": "Türkiye",
     "turkiyeCardSubtitle": "İl haritası",
-    "turkiyeLinkLabel": "Türkiye, il haritası sayfası"
+    "turkiyeLinkLabel": "Türkiye, il haritası sayfası",
+    "territoryCentre": "Merkez",
+    "territoryNoPopulation": "Kalıcı nüfus yok"
   },
   "CountryDetail": {
     "metaTitle": "{name} Coğrafyası",

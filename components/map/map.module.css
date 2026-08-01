@@ -64,6 +64,28 @@
   fill: var(--land-inert);
 }
 
+/* World map: a NON-COUNTRY place that has a hover card but no page (the 43 territories).
+   Its hover state is deliberately WEAKER than a country's: the stroke shifts to
+   --color-primary at 3px — the accessible, non-colour-dependent state signal WCAG 1.4.1/
+   1.4.11 requires — but the terracotta fill wash stays off and the cursor stays the default
+   arrow. Those two omissions are the honest "readable, not clickable" cue: a shape that
+   lights up exactly like a country and then swallows the click would be a lie. Fill tone is
+   untouched either way (uniform land colour, owner ruling 2026-07-26). */
+.territory {
+  cursor: default;
+}
+
+.territory .landInert {
+  transition:
+    stroke 0.16s ease-out,
+    stroke-width 0.16s ease-out;
+}
+
+.territory:hover .landInert {
+  stroke: var(--color-primary);
+  stroke-width: 3;
+}
+
 .provinceLink {
   cursor: pointer;
   /* Focus is shown by the fill/stroke highlight below (a rectangular outline on an
@@ -111,9 +133,11 @@
   /* The card is a hover target AND itself clickable (mouse affordance → same detail
      page). It stays open while the pointer is on it, and a hover-intent delay in the
      island bridges the shape→card gap so the click can land (PR#6 owner report).
-     While hidden it is visibility:hidden, so it captures nothing. */
+     While hidden it is visibility:hidden, so it captures nothing.
+     The pointer cursor is opt-in ([data-clickable]) because a TERRITORY card has no detail
+     page to click through to. */
   pointer-events: auto;
-  cursor: pointer;
+  cursor: default;
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -132,6 +156,10 @@
   opacity: 1;
   visibility: visible;
   transform: none;
+}
+
+.card[data-clickable="true"] {
+  cursor: pointer;
 }
 
 .cardHead {
@@ -359,7 +387,8 @@
     transform: none;
   }
 
-  .provinceLink .province {
+  .provinceLink .province,
+  .territory .landInert {
     transition: none;
   }
 

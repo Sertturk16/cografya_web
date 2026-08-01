@@ -3,6 +3,7 @@ import { byIsoCode, getCountryMapSummary } from "@/lib/api/countries";
 import type { CountryMapSummary } from "@/lib/api/types";
 import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { territoryFor, type TerritoryFigure } from "@/lib/map/territories";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
 import { MapHoverCard } from "./map-hover-card";
 import { MapZoomPan } from "./map-zoom-pan";
@@ -17,6 +18,40 @@ interface WorldMapSectionProps {
  * hub instead (→ DEC 2026-07-26 K1). Matched against the generated artifact's ISO key.
  */
 const TURKIYE_ISO = "TR";
+
+/** One label/value pair destined for a card stat row. */
+interface StatSlot {
+  readonly label: string;
+  readonly value: string;
+}
+
+/**
+ * Renders a territory figure, or `undefined` when there is nothing publishable.
+ *
+ * `unknown` returns `undefined` on purpose: the card omits the whole row rather than print a
+ * placeholder dash, which is the same honesty rule the country cards follow for a null stat.
+ * `range` prints the interval — several territories genuinely have no single-source figure
+ * and the interval is what the source brief publishes.
+ */
+function figureText(
+  figure: TerritoryFigure,
+  formatNumber: (value: number) => string,
+  noneText: string,
+  unit?: string,
+): string | undefined {
+  const suffix = unit ? ` ${unit}` : "";
+  switch (figure.kind) {
+    case "exact":
+      return `${formatNumber(figure.value)}${suffix}`;
+    case "range":
+      // En dash, unspaced — a numeric interval, not a sentence dash.
+      return `${formatNumber(figure.min)}–${formatNumber(figure.max)}${suffix}`;
+    case "none":
+      return noneText;
+    case "unknown":
+      return undefined;
+  }
+}
 
 /**
  * Interactive full-world map (server component) — the `/dunya` hub's primary content,
@@ -39,6 +74,17 @@ const TURKIYE_ISO = "TR";
  * stat trio) come from the purpose-built `/api/countries/map-summary` payload, formatted
  * server-side and pre-embedded as the shared entity-agnostic `data-*` on each link (no
  * per-hover fetch — INP).
+ *
+ * NON-COUNTRY SHAPES (the 43 territories, `lib/map/territories.ts`) get a hover card too,
+ * but never a link: they have no detail page and none is planned in this initiative
+ * (→ DEC 2026-07-26 K2, spec-first, not yet spec'd). They render as a `<g role="img">` with
+ * the full card content in its accessible name, carrying the SAME `data-*` contract the card
+ * island reads. No `href` ⇒ nothing to click, no tab stop added (43 extra non-actionable
+ * stops on top of ~190 country links would damage keyboard navigation far more than they
+ * help — teshis.md §5 a11y note; the accessible name is how AT reaches the content), and
+ * zero SEO surface: no new URL, no sitemap entry, no JSON-LD, no change to the internal link
+ * graph. A seeded country ALWAYS wins over a territory entry, so the day the api publishes a
+ * page for one of these shapes it becomes a normal link and the card disappears on its own.
  *
  * ONE shape is wired by hand: Türkiye. It is a country on the world map, but the site's
  * Türkiye surface is the dedicated `/turkiye` hub — there is no `/dunya/turkiye` page and
@@ -123,12 +169,82 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
             }
             const country = byIso.get(shape.iso);
             if (!country) {
-              // Not-yet-seeded country, or a territory/polar mass that will never have a
-              // page: geographic backdrop only — no link, no card, hidden from AT (it is not
-              // actionable). It IS land, so .landInert paints it in the SAME land tone as a
-              // clickable country (owner ruling 2026-07-26) — never the il map's "not
-              // published yet" tint, which was the map background's own top gradient stop and
-              // rendered Greenland invisible (/dunya audit 2026-07-26).
+              const territory = territoryFor(shape.iso);
+              if (territory) {
+                // A known non-country place: informational hover card, NO link. Checked
+                // AFTER the map summary on purpose — if the api ever publishes a page for
+                // this shape, the real link wins and this branch stops running for it.
+                const stats: StatSlot[] = [];
+                // Wrapped, not passed by reference: `format.number` is a method on the
+                // next-intl formatter and must keep its receiver.
+                const formatNumber = (value: number) => format.number(value);
+                const population = figureText(
+                  territory.population,
+                  formatNumber,
+                  tMap("territoryNoPopulation"),
+                );
+                if (population) stats.push({ label: tDetail("population"), value: population });
+                const area = figureText(
+                  territory.areaKm2,
+                  formatNumber,
+                  tMap("territoryNoPopulation"),
+                  tDetail("areaUnit"),
+                );
+                if (area) stats.push({ label: tDetail("area"), value: area });
+                if (territory.centre) {
+                  stats.push({ label: tMap("territoryCentre"), value: territory.centre });
+                }
+                const territoryName = locale === "en" ? territory.nameEn : territory.nameTr;
+                // TR only. The status sentences exist in Turkish alone and six of them are
+                // owner-approved VERBATIM texts on a sovereignty-sensitive surface
+                // (→ DEC 2026-08-01b) — translating them is a content round, not a frontend
+                // decision. So `/en/dunya` renders the brief's own stat-only variant rather
+                // than leaking Turkish onto an indexable English page.
+                const status = locale === "en" ? undefined : territory.statusTr;
+                // The card is pointer-only (aria-hidden), so this label is the ONLY way AT
+                // reaches the content. Same composition as a country link, with a trailing
+                // full stop normalised away per part so the approved sentences (which end in
+                // one) do not produce a doubled stop.
+                // A "there is none" figure is already a full statement, so it is spoken on
+                // its own — prefixing the label would read "Nüfus. Kalıcı nüfus yok."
+                const noPopulation = tMap("territoryNoPopulation");
+                const ariaLabel = `${[
+                  territoryName,
+                  status,
+                  ...stats.map((s) =>
+                    s.value === noPopulation ? s.value : `${s.label} ${s.value}`,
+                  ),
+                ]
+                  .filter((part): part is string => part !== undefined)
+                  .map((part) => part.replace(/\.$/, ""))
+                  .join(". ")}.`;
+                return (
+                  <g
+                    key={shape.iso}
+                    className={styles.territory}
+                    role="img"
+                    aria-label={ariaLabel}
+                    data-shape={shape.iso}
+                    data-name={territoryName}
+                    data-subtitle={status}
+                    data-badge={territory.badge}
+                    data-stat1-label={stats[0]?.label}
+                    data-stat1-value={stats[0]?.value}
+                    data-stat2-label={stats[1]?.label}
+                    data-stat2-value={stats[1]?.value}
+                    data-stat3-label={stats[2]?.label}
+                    data-stat3-value={stats[2]?.value}
+                  >
+                    <path className={styles.landInert} d={shape.d} />
+                  </g>
+                );
+              }
+              // Not-yet-seeded country with no territory entry either: geographic backdrop
+              // only — no link, no card, hidden from AT (it is not actionable). It IS land,
+              // so .landInert paints it in the SAME land tone as a clickable country (owner
+              // ruling 2026-07-26) — never the il map's "not published yet" tint, which was
+              // the map background's own top gradient stop and rendered Greenland invisible
+              // (/dunya audit 2026-07-26).
               return (
                 <path key={shape.iso} className={styles.landInert} d={shape.d} aria-hidden="true" />
               );

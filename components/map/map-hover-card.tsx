@@ -14,8 +14,12 @@ interface ActiveCard {
   name: string;
   /** Pill badge (plaka kodu for a province, ISO code for a country). */
   badge: string;
-  /** Secondary line under the name (region for a province, continent for a country). */
+  /**
+   * Secondary line under the name — region for a province, continent for a country, the
+   * one-line status sentence for a territory.
+   */
   subtitle: string;
+  /** Empty for a territory: it has no detail page, so the card is not a click target. */
   href: string;
   stats: CardStat[];
   left: number;
@@ -35,13 +39,20 @@ const MAX_STATS = 3; // both maps expose exactly three stat slots
  * `<a>` links, the visual hover/focus highlight done in pure CSS. This island adds only the
  * overlay card. It uses event delegation on the map root (`[data-map-root]`, its own parent)
  * so no entity data ships to the client twice — it reads the localized, pre-formatted,
- * ENTITY-AGNOSTIC `data-*` the server already put on each link: `data-name`, `data-badge`,
+ * ENTITY-AGNOSTIC `data-*` the server already put on each shape: `data-name`, `data-badge`,
  * `data-subtitle`, `data-href`, and up to three `data-stat-{n}-label` / `data-stat-{n}-value`
  * pairs. A province emits plaka+region+nüfus/yüzölçümü/ilçe; a country emits ISO+kıta+
- * nüfus/yüzölçümü/komşu — same shape, different content.
+ * nüfus/yüzölçümü/komşu; a territory emits ISO+statü+nüfus/yüzölçümü/merkez — same shape,
+ * different content.
+ *
+ * The delegated selector is `[data-shape]`, not `a[data-shape]`: the world map's 43 territory
+ * shapes are `<g role="img">`, not links (no detail page exists → nothing to navigate to,
+ * → DEC 2026-07-26 K2). They therefore emit no `data-href`, and a card opened from one is not
+ * a click target — the pointer affordance is suppressed rather than silently doing nothing.
  *
  * - Desktop hover AND keyboard focus both open the card (SPEC §1.7 — focus, not just hover).
- *   `Enter` on the focused link navigates natively.
+ *   `Enter` on the focused link navigates natively. `Escape` dismisses the card without
+ *   moving the pointer (WCAG 1.4.13 "Dismissable" — content shown on hover).
  * - **The shape and its card behave as ONE hover region.** Moving the pointer off the shape
  *   toward the card no longer hides it: the card is a real pointer target and a short
  *   hover-intent delay bridges the blind gap in transit. The whole card is itself clickable
@@ -73,15 +84,18 @@ export function MapHoverCard() {
       hideTimer.current = setTimeout(() => setActive(null), HIDE_DELAY_MS);
     };
 
-    const shapeFrom = (target: EventTarget | null): HTMLElement | null => {
+    // HTMLElement OR SVGElement: a country/province shape is an `<a>`, a territory shape is
+    // an SVG `<g>`. Both implement `HTMLOrSVGElement`, which is where `dataset` lives.
+    const shapeFrom = (target: EventTarget | null): HTMLElement | SVGElement | null => {
       if (!(target instanceof Element)) return null;
-      const anchor = target.closest<HTMLElement>("a[data-shape]");
-      return anchor && container.contains(anchor) ? anchor : null;
+      const shape = target.closest("[data-shape]");
+      if (!(shape instanceof HTMLElement || shape instanceof SVGElement)) return null;
+      return container.contains(shape) ? shape : null;
     };
     const inCard = (node: EventTarget | null): boolean =>
       node instanceof Node && card.contains(node);
 
-    const openFrom = (anchor: HTMLElement) => {
+    const openFrom = (anchor: HTMLElement | SVGElement) => {
       const a = anchor.getBoundingClientRect();
       const c = container.getBoundingClientRect();
       const cardH = card.offsetHeight > 40 ? card.offsetHeight : CARD_HEIGHT_FALLBACK;
@@ -133,17 +147,27 @@ export function MapHoverCard() {
       // Keyboard focus moves deterministically — hide immediately when it leaves.
       if (!shapeFrom(e.relatedTarget)) setActive(null);
     };
+    // WCAG 1.4.13: content shown on hover must be dismissable without moving the pointer.
+    // Bound on the document, not the container, because a mouse user has no focus inside it.
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        cancelHide();
+        setActive(null);
+      }
+    };
 
     container.addEventListener("pointerover", onPointerOver);
     container.addEventListener("pointerout", onPointerOut);
     container.addEventListener("focusin", onFocusIn);
     container.addEventListener("focusout", onFocusOut);
+    document.addEventListener("keydown", onKeyDown);
     return () => {
       cancelHide();
       container.removeEventListener("pointerover", onPointerOver);
       container.removeEventListener("pointerout", onPointerOut);
       container.removeEventListener("focusin", onFocusIn);
       container.removeEventListener("focusout", onFocusOut);
+      document.removeEventListener("keydown", onKeyDown);
     };
   }, [card]);
 
@@ -155,6 +179,9 @@ export function MapHoverCard() {
       // focusable, so it never doubles the accessible link (keyboard/AT use the <a>).
       aria-hidden="true"
       data-visible={active !== null ? "true" : undefined}
+      // Territory cards have no destination, so they must not offer a pointer cursor for a
+      // click that would do nothing (the CSS keys off this).
+      data-clickable={active?.href ? "true" : undefined}
       style={active ? { left: active.left, top: active.top } : undefined}
       onClick={() => {
         if (active?.href) window.location.assign(active.href);
