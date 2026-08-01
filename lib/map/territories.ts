@@ -22,10 +22,15 @@
  *
  * Every `statusTr` is byte-for-byte the sentence in
  * `Owner's Inbox/dunya-territory-kartlari/brief.md` (NOVA, independently fact-checked
- * 2026-08-01). The six contested entities (EH, Somaliland, Siachen, FK, GS, IO) carry the
- * owner-approved **verbatim** text from that brief's "🔴 ONAY METİNLERİ" section and are
- * **binding** (→ DEC 2026-08-01b): they are never paraphrased, trimmed or "improved" in
- * code. Changing any sentence here requires a new content round, not a commit.
+ * 2026-08-01), **as amended by the owner rulings recorded against it**. The six contested
+ * entities (EH, Somaliland, Siachen, FK, GS, IO) carry the owner-approved **verbatim** text
+ * from that brief's "🔴 ONAY METİNLERİ" section and are **binding** (→ DEC 2026-08-01b):
+ * they are never paraphrased, trimmed or "improved" in code. Three further sentences were
+ * amended by the review round and are equally binding (→ DEC 2026-08-01g): BM lost the
+ * " ve en kalabalık" superlative (the same map's Cayman card disproves it), HM lost its
+ * AAT-volcano clause (the record it cited belongs to Australia's highest POINT, not to a
+ * volcano), and TF's sentence was replaced wholesale by an owner-approved verbatim text.
+ * Changing any sentence here requires a new content round, not a commit.
  * `territories.test.ts` pins the invariants (character cap, shape-key existence, no
  * `/dunya/turkiye`).
  *
@@ -44,6 +49,12 @@
  * uncertainty instead of hiding it:
  *
  * - `exact` — one figure, pinned to a Tier-1 source.
+ * - `approx` — the source itself publishes the figure as an approximation (a rounded or
+ *   converted value), so the card prints it as one. Rendered with a leading `≈`, which is
+ *   the brief's own notation and the same "let the symbol carry the uncertainty" treatment
+ *   as the `range` en dash. Collapsing such a figure to `exact` silently promotes a rounded
+ *   number into a pinned one — the drift this member exists to prevent (→ DEC 2026-08-01g
+ *   item 3: Somaliland's ≈176.000 and Chagos's ≈60).
  * - `range` — the brief's own published interval, shown as an interval (the platform's
  *   established treatment for a figure that is real but not pinned to a single source —
  *   `data-provenance.md`, Burdur summit precedent).
@@ -54,6 +65,7 @@
  */
 export type TerritoryFigure =
   | { readonly kind: "exact"; readonly value: number }
+  | { readonly kind: "approx"; readonly value: number }
   | { readonly kind: "range"; readonly min: number; readonly max: number }
   | { readonly kind: "none" }
   | { readonly kind: "unknown" };
@@ -177,8 +189,9 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "BM",
     nameTr: "Bermuda",
     nameEn: "Bermuda",
-    statusTr:
-      "Birleşik Krallık'a bağlı denizaşırı toprak; en eski ve en kalabalık BK denizaşırı toprağı",
+    // " ve en kalabalık" removed (→ DEC 2026-08-01g item 1): Cayman's own card on this map
+    // shows a larger population. "en eski" is correct and stays.
+    statusTr: "Birleşik Krallık'a bağlı denizaşırı toprak; en eski BK denizaşırı toprağı",
     population: { kind: "range", min: 63300, max: 63778 },
     areaKm2: { kind: "exact", value: 54 },
     centre: "Hamilton",
@@ -340,9 +353,20 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "TF",
     nameTr: "Fransız Güney ve Antarktika Toprakları",
     nameEn: "French Southern and Antarctic Lands (TAAF)",
-    statusTr: "Fransa'ya bağlı, kalıcı nüfusu olmayan toprak; bir kesimi (Adélie) Antarktika'dadır",
+    // OWNER-APPROVED VERBATIM (→ DEC 2026-08-01g item 2). Binding like the six 🔴 texts:
+    // never paraphrased, trimmed or re-wrapped in meaning. The recorded constraint on this
+    // card is that it must NEVER say "other states object" — no rival claim to Adélie
+    // exists; the frame is Antarctic-Treaty suspension / non-recognition.
+    // NOTE FOR THE OWNER: this sentence is 100 characters, over the CONTENT-STYLE §22
+    // 90-character card cap — see the cap test, which pins TF as the one ruled exception.
+    statusTr:
+      "Fransa'ya bağlı, kalıcı nüfusu olmayan toprak; Antarktika kesimi üzerindeki iddia (Adélie) tanınmaz.",
     population: { kind: "none" },
-    areaKm2: { kind: "exact", value: 439672 },
+    // Area row REMOVED (→ DEC 2026-08-01g item 2). The 439.672 km² total is ~98% Adélie
+    // Land, which the drawn shape does not contain and which the Antarctic Treaty freezes:
+    // printing it measured a territorial claim into a number. `unknown` is the module's own
+    // doctrine for a figure a 258px card cannot carry honestly — the row simply disappears.
+    areaKm2: { kind: "unknown" },
   },
 
   // ---- Hollanda Krallığı (brief §1.6) ----
@@ -476,8 +500,11 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "HM",
     nameTr: "Heard ve McDonald Adaları",
     nameEn: "Heard Island and McDonald Islands",
-    statusTr:
-      "Avustralya'ya bağlı, nüfussuz toprak; Antarktika Toprağı dışında ülkenin tek aktif volkanı",
+    // The AAT-volcano clause is gone (→ DEC 2026-08-01g item 1): the sources attach that
+    // record to Australia's highest POINT, not to volcanoes, so the clause carried zero
+    // correct information — and it measured/attributed territory inside the Antarctic
+    // Treaty area, now a standing axis of every territory content review.
+    statusTr: "Avustralya'ya bağlı, nüfussuz toprak",
     population: { kind: "none" },
     areaKm2: { kind: "exact", value: 368 },
   },
@@ -553,7 +580,10 @@ export const TERRITORIES: readonly Territory[] = [
     statusTr:
       "Somali'den 1991'de fiilen ayrılan bölge; 2025'te İsrail tanıdı, Somali itiraz ediyor.",
     population: { kind: "unknown" },
-    areaKm2: { kind: "exact", value: 176000 },
+    // ≈, not exact (→ DEC 2026-08-01g item 3): the brief's figure is a rounded conversion
+    // from 68.000 sq mi. It was collapsed to a pinned number in the first round; the card
+    // now carries the approximation the source actually published.
+    areaKm2: { kind: "approx", value: 176000 },
   },
   {
     iso: "x-siachen-glacier",
@@ -595,7 +625,9 @@ export const TERRITORIES: readonly Territory[] = [
     statusTr:
       "Birleşik Krallık'a bağlı denizaşırı toprak; Mauritius'a devir anlaşması onay aşamasında.",
     population: { kind: "unknown" },
-    areaKm2: { kind: "exact", value: 60 },
+    // ≈, not exact — the same collapse as Somaliland, corrected together (→ DEC 2026-08-01g
+    // item 3). The brief publishes ≈60 km² of LAND across the archipelago.
+    areaKm2: { kind: "approx", value: 60 },
   },
 ];
 
@@ -639,6 +671,14 @@ export interface FigureTextOptions {
 const NBSP = "\u00A0";
 
 /**
+ * Approximation marker (U+2248 ALMOST EQUAL TO), printed tight against the number: "\u2248176.000".
+ * It is the brief's own notation and a locale-neutral one \u2014 the digit grouping around it is
+ * still the locale's (`176.000` TR / `176,000` EN), so no message key is needed and no
+ * Turkish wording can leak onto `/en/dunya`.
+ */
+const APPROX = "\u2248";
+
+/**
  * Renders a territory figure for a card stat row, or `undefined` when there is nothing
  * publishable.
  *
@@ -656,6 +696,8 @@ export function figureText(
   switch (figure.kind) {
     case "exact":
       return `${formatNumber(figure.value)}${suffix}`;
+    case "approx":
+      return `${APPROX}${formatNumber(figure.value)}${suffix}`;
     case "range":
       // En dash, unspaced — a numeric interval, not a sentence dash.
       return `${formatNumber(figure.min)}–${formatNumber(figure.max)}${suffix}`;

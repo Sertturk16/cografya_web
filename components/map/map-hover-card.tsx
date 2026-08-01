@@ -65,6 +65,8 @@ const MAX_STATS = 3; // both maps expose exactly three stat slots
  * shapes are `<g role="img">`, not links (no detail page exists → nothing to navigate to,
  * → DEC 2026-07-26 K2). They therefore emit no `data-href`, and a card opened from one is not
  * a click target — the pointer affordance is suppressed rather than silently doing nothing.
+ * The ABSENCE of `data-href` is what drives all three of those differences, including the
+ * touch behaviour below; nothing here enumerates entity types.
  *
  * - Desktop hover AND keyboard focus both open the card (SPEC §1.7 — focus, not just hover).
  *   `Enter` on the focused link navigates natively. `Escape` dismisses the card without
@@ -76,8 +78,12 @@ const MAX_STATS = 3; // both maps expose exactly three stat slots
  *   is needed (retired → DEC 2026-07-13); the keyboard/AT path stays the shape `<a>` (the card
  *   is `aria-hidden`, not focusable, so it never duplicates the link in the tab order or the
  *   a11y tree).
- * - Touch pointers are ignored: on mobile a single tap follows the link straight to the
- *   detail page, with no intermediate card.
+ * - Touch: a tap on a shape that HAS a destination still goes straight there, with no
+ *   intermediate card (unchanged). A tap on a shape with no destination — a territory —
+ *   opens its card, and a tap anywhere else closes it (→ DEC 2026-08-01g item 4). Without
+ *   this, the 43 territory cards were desktop-only: no hover exists on a phone, so the
+ *   content was simply unreachable there. Hover/leave still ignore touch pointers; the
+ *   tap path is a separate `click` listener.
  * - The appearance transition is CSS, disabled under `prefers-reduced-motion`.
  */
 export function MapHoverCard() {
@@ -183,10 +189,40 @@ export function MapHoverCard() {
       }
     };
 
+    // TOUCH (→ DEC 2026-08-01g item 4). A touch device has no hover, so a shape with no
+    // destination was simply dead on a phone: the tap navigated nowhere and no card opened.
+    // The TAP is now the trigger for exactly those shapes, and a tap anywhere else closes
+    // the card — the touch equivalent of moving the pointer away.
+    //
+    // Bound on `click`, in the BUBBLE phase, on purpose. `MapZoomPan` already owns the one
+    // hard question here — "was this gesture a tap or a pan?" — and answers it with a
+    // capture-phase listener on this same container that swallows the click of a drag
+    // (`stopPropagation`, so a swallowed click never reaches this handler either). A click
+    // that gets here is by construction the same gesture that would have navigated a country
+    // link: one movement threshold, one answer, no second copy of the heuristic to drift.
+    //
+    // On the DOCUMENT, not the container, so that "tap outside" means anywhere on the page —
+    // tapping the paragraph below the map closes the card just like tapping the sea does.
+    const onClick = (e: MouseEvent) => {
+      const anchor = shapeFrom(e.target);
+      if (anchor) {
+        // A country/province shape IS a link — let the native navigation happen untouched.
+        if (anchor.dataset.href) return;
+        cancelHide();
+        openFrom(anchor);
+        return;
+      }
+      // The card's own click handler decides what a click on the card means.
+      if (inCard(e.target)) return;
+      cancelHide();
+      setActive(null);
+    };
+
     container.addEventListener("pointerover", onPointerOver);
     container.addEventListener("pointerout", onPointerOut);
     container.addEventListener("focusin", onFocusIn);
     container.addEventListener("focusout", onFocusOut);
+    document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKeyDown);
     return () => {
       cancelHide();
@@ -194,6 +230,7 @@ export function MapHoverCard() {
       container.removeEventListener("pointerout", onPointerOut);
       container.removeEventListener("focusin", onFocusIn);
       container.removeEventListener("focusout", onFocusOut);
+      document.removeEventListener("click", onClick);
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [card]);

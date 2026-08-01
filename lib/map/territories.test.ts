@@ -55,13 +55,29 @@ describe("territory card data", () => {
     expect(territoryFor("TR")).toBeUndefined();
   });
 
+  // CONTENT-STYLE §22: card description = 1 sentence / 90 characters. The source brief was
+  // brought under this cap in its correction round.
+  const CARD_CAP = 90;
+  /**
+   * The ONE ruled exception. TF's sentence is an owner-approved VERBATIM text
+   * (→ DEC 2026-08-01g item 2) and lands at 100 characters; a verbatim ruling cannot be
+   * trimmed in code, and the cap cannot be raised to hide it either. So the exception is
+   * pinned as a set: the cap still guards the other 42 entries, and a SECOND over-cap
+   * sentence cannot appear without a deliberate edit here. Surfaced to the owner in the
+   * closing summary — if the sentence is amended, this list empties.
+   */
+  const RULED_OVER_CAP = ["TF"];
+
   it("keeps every status sentence within the 90-character card cap", () => {
-    // CONTENT-STYLE §22: card description = 1 sentence / 90 characters. The source brief was
-    // brought under this cap in its correction round; this pins it against a later edit.
-    const overCap = TERRITORIES.filter((t) => t.statusTr.length > 90).map(
-      (t) => `${t.iso}:${t.statusTr.length}`,
-    );
+    const overCap = TERRITORIES.filter(
+      (t) => !RULED_OVER_CAP.includes(t.iso) && t.statusTr.length > CARD_CAP,
+    ).map((t) => `${t.iso}:${t.statusTr.length}`);
     expect(overCap).toEqual([]);
+  });
+
+  it("pins the over-cap sentences to the ruled exception set", () => {
+    const over = TERRITORIES.filter((t) => t.statusTr.length > CARD_CAP).map((t) => t.iso);
+    expect(over).toEqual(RULED_OVER_CAP);
   });
 
   it("has non-blank names in both locales, a non-blank status, and non-blank centres", () => {
@@ -109,12 +125,33 @@ describe("territory card data", () => {
           expect(figure.min, territory.iso).toBeLessThan(figure.max);
           expect(figure.min, territory.iso).toBeGreaterThan(0);
         }
-        if (figure.kind === "exact") {
+        if (figure.kind === "exact" || figure.kind === "approx") {
           expect(Number.isFinite(figure.value), territory.iso).toBe(true);
           expect(figure.value, territory.iso).toBeGreaterThan(0);
         }
       }
     }
+  });
+
+  it("pins the set of figures published as approximations", () => {
+    // → DEC 2026-08-01g item 3 corrected exactly two figures that had been collapsed from
+    // the brief's "≈" to a pinned number, and ruled that NO other figure changes kind. A
+    // set assertion is the only way to test that second half: it fails both if one of these
+    // silently reverts to `exact` and if a later edit promotes some other rounded number
+    // into an approximation without a ruling.
+    const approx = TERRITORIES.filter(
+      (t) => t.population.kind === "approx" || t.areaKm2.kind === "approx",
+    ).map((t) => t.iso);
+    expect(approx).toEqual(["x-somaliland", "IO"]);
+  });
+
+  it("pins the entities that publish no area at all", () => {
+    // An omitted area row is always a ruling, never an oversight: Siachen's area was never
+    // owner-ruled, and TF's was REMOVED (→ DEC 2026-08-01g item 2) because ~98% of the
+    // 439.672 km² total is Adélie Land — outside the drawn shape and frozen by the
+    // Antarctic Treaty, so printing it measured a territorial claim into a number.
+    const noArea = TERRITORIES.filter((t) => t.areaKm2.kind === "unknown").map((t) => t.iso);
+    expect(noArea).toEqual(["TF", "x-siachen-glacier"]);
   });
 
   it("never marks an AREA as 'none'", () => {
@@ -184,7 +221,7 @@ describe("centreFor", () => {
 
 /**
  * The card's only new pure logic. It lives in this module rather than inside the async
- * Server Component that consumes it precisely so these four branches are reachable from a
+ * Server Component that consumes it precisely so these five branches are reachable from a
  * node test: a `default:`/`"—"` fallback slipped into the `unknown` branch would grow a
  * placeholder dash row on every contested entity — the one thing the module's own doc
  * forbids — and nothing else in CI would notice.
@@ -199,6 +236,18 @@ describe("figureText", () => {
     expect(figureText({ kind: "exact", value: 394 }, { formatNumber, unit: "km²" })).toBe(
       "#394\u00A0km²",
     );
+  });
+
+  it("marks an approximate figure with a leading ≈ and keeps the unit glued on", () => {
+    // The whole point of the member: the rendered string must be visibly DIFFERENT from the
+    // `exact` one. If this ever prints the same text as `exact`, a rounded figure is being
+    // published as a pinned one (→ DEC 2026-08-01g item 3).
+    const unit = "km²";
+    const value = figureText({ kind: "approx", value: 176000 }, { formatNumber, unit });
+    expect(value).toBe("≈#176000 km²");
+    expect(value).not.toBe(figureText({ kind: "exact", value: 176000 }, { formatNumber, unit }));
+    // Unit-free call (the population slot) keeps the marker.
+    expect(figureText({ kind: "approx", value: 60 }, { formatNumber })).toBe("≈#60");
   });
 
   it("prints a range as an unspaced en-dash interval", () => {

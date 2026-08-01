@@ -58,11 +58,17 @@ interface StatSlot {
  * but never a link: they have no detail page and none is planned in this initiative
  * (→ DEC 2026-07-26 K2, spec-first, not yet spec'd). They render as a `<g role="img">` with
  * the full card content in its accessible name, carrying the SAME `data-*` contract the card
- * island reads. No `href` ⇒ nothing to click, no tab stop added (43 extra non-actionable
- * stops on top of ~190 country links would damage keyboard navigation far more than they
- * help — teshis.md §5 a11y note; the accessible name is how AT reaches the content), and
- * zero SEO surface: no new URL, no sitemap entry, no JSON-LD, no change to the internal link
- * graph. A seeded country ALWAYS wins over a territory entry, so the day the api publishes a
+ * island reads. No `href` ⇒ nothing to navigate to, and zero SEO surface: no new URL, no
+ * sitemap entry, no JSON-LD, no change to the internal link graph.
+ *
+ * They ARE keyboard-reachable (`tabIndex={0}`, → DEC 2026-08-01g item 4). The first round
+ * left them out of the tab order on the teshis.md §5 argument that 43 non-actionable stops
+ * on top of ~190 country links cost more than they give; the owner ruled the other way and
+ * accepted the 43 stops, because without them a SIGHTED keyboard user could never see a card
+ * that a mouse user gets for free. Focus opens the card through the same delegation as hover
+ * and is mirrored by a `:focus-visible` stroke, so the visible state matches what the card
+ * shows. `MapZoomPan`'s focus-follows-view now covers them too (it keys off `[tabindex]`),
+ * which is the behaviour a focusable shape should have — verified against a zoomed view. A seeded country ALWAYS wins over a territory entry, so the day the api publishes a
  * page for one of these shapes it becomes a normal link and the card disappears on its own.
  * A territory with nothing publishable in the CURRENT locale falls back to the same inert
  * backdrop as unseeded land rather than opening an empty card (see the guard below).
@@ -223,6 +229,11 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
                     key={shape.iso}
                     className={styles.territory}
                     role="img"
+                    // Focusable, not actionable: the shape has no destination, so it stays
+                    // role="img" (a labelled graphic) rather than pretending to be a button
+                    // whose activation does nothing. Tab reaches it, the card opens on
+                    // focus, Escape dismisses it (→ DEC 2026-08-01g item 4).
+                    tabIndex={0}
                     aria-label={ariaLabel}
                     data-shape={shape.iso}
                     data-name={territoryName}
