@@ -39,17 +39,21 @@ const CARD_WIDTH = 258;
  * every card of both maps was opened and measured at 1440×900 (heights do not vary with the
  * viewport: the card is a fixed 258px wide):
  *
- * - `/dunya` territory cards 70–194px TR, 92–192px EN — the tallest are MP/PM, a two-line
- *   name over three stat rows. They SHRANK from 237px when the status sentences became
- *   3-word labels (→ DEC 2026-08-01m), so a territory no longer sets this bound.
+ * - `/dunya` territory cards 70–194px TR, 70–216px EN — the tallest are MP/PM/TC/VI, a
+ *   two-line name over three stat rows; the shortest is the Siachen Glacier, a name over a
+ *   label and nothing else. They SHRANK from 237px when the status sentences became 3-word
+ *   labels (→ DEC 2026-08-01m); the English ones then grew ~24px when the English labels
+ *   added their line to a card that had been stat-only (→ DEC 2026-08-01p).
  * - `/dunya` country cards 73–215px — the tallest is EN "Democratic Republic of the Congo",
- *   a three-line name. This is the real worst case on either map.
+ *   a three-line name.
  * - `/turkiye` province cards: a uniform 176px.
  *
- * 240 = the measured 215 plus one more wrapped name line of headroom. Over-estimating only
- * flips a short card BELOW a near-the-top shape that could have hosted it above (which is
- * why this number is kept as tight as the measurements honestly allow); under-estimating
- * pushes a card off the top of the map, so it still errs high.
+ * 240 was the measured country worst case (215) plus one wrapped name line of headroom, and
+ * it still clears the new overall worst case (EN territory 216) by 24px — so the number does
+ * NOT move: it is still an over-estimate, and over-estimating is the safe direction. It only
+ * flips a short card BELOW a near-the-top shape that could have hosted it above, whereas
+ * under-estimating pushes a card off the top of the map. Re-measure before trusting this
+ * bound again if a card ever gains a fourth content line.
  */
 const CARD_MAX_HEIGHT = 240;
 const CARD_GAP = 10; // shape↔card breathing room

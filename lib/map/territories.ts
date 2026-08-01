@@ -26,25 +26,26 @@
  * 90-character sentence broke the parity. The context those sentences carried moves to the
  * territory detail pages (→ DEC 2026-08-01j) — never back into a longer label.
  *
- * Every `labelTr` is byte-for-byte the approved label in
- * `Owner's Inbox/dunya-territory-kartlari/kart-etiketleri.md` (NOVA, derived from the
- * independently fact-checked brief; owner-approved → DEC 2026-08-01n). Six of them are
- * **verbatim and binding** (EH, Somaliland, Siachen, FK, GS, IO — item 1 of that ruling):
- * each is a sovereignty judgement, not a description — "Egemenliği Tartışmalı Toprak" on
- * FK/GS deliberately names the dispute CLASS rather than one side's frame, and Siachen names
- * an unresolved status without naming a controlling party. They are never paraphrased,
- * trimmed or "improved" in code. Changing any label here requires a content round, not a
- * commit. `territories.test.ts` pins the structural invariants (≤3 words, no sentence
- * punctuation, shape-key existence, no `/dunya/turkiye`, no interval figures).
+ * Every `labelTr` AND every `labelEn` is byte-for-byte the approved label in the matching
+ * column of `Owner's Inbox/dunya-territory-kartlari/kart-etiketleri.md` (NOVA, derived from
+ * the independently fact-checked brief; TR approved → DEC 2026-08-01n, EN approved →
+ * DEC 2026-08-01p). Six of them are **verbatim and binding** (EH, Somaliland, Siachen, FK,
+ * GS, IO — item 1 of the TR ruling, carried into English as the same class names): each is a
+ * sovereignty judgement, not a description — "Egemenliği Tartışmalı Toprak" / "Disputed
+ * Sovereignty Territory" on FK/GS deliberately names the dispute CLASS rather than one side's
+ * frame, and Siachen names an unresolved status without naming a controlling party. They are
+ * never paraphrased, trimmed or "improved" in code, and the two locales are never edited
+ * apart — an English label is not a translation slot, it is the same ruling in the other
+ * language. Changing any label here requires a content round, not a commit.
+ * `territories.test.ts` pins the structural invariants for BOTH locales (≤3 words, no
+ * sentence punctuation, 43/43 non-blank, shape-key existence, no `/dunya/turkiye`, no
+ * interval figures).
  *
- * ## Why there is no `labelEn`
- *
- * The labels exist in Turkish only. An English column was drafted with them but is a
- * SEPARATE approval item (→ DEC 2026-08-01n item 3): six of the labels are verbatim-locked
- * sovereignty texts whose English wording cannot be picked inside a frontend PR. Until that
- * round lands, the EN map renders the brief's own "Varyant A" (stat-only) card: name + ISO
- * badge + figures, all of which are locale-safe (numbers and proper nouns). No Turkish label
- * ever appears on `/en/dunya`.
+ * The EN column is deliberately NOT a word-for-word mirror everywhere: HK/MO carry the
+ * administering state in a parenthesis in Turkish ("Özel İdari Bölge (Çin)") because the
+ * bare Turkish term does not identify it, while "Special Administrative Region" is the
+ * standard English term on its own (approved table §4.2). The asymmetry is approved content,
+ * not drift.
  */
 
 /**
@@ -98,6 +99,15 @@ export interface Territory {
    * never edited in code; see the module note.
    */
   readonly labelTr: string;
+  /**
+   * EN card label — the same slot on `/en/dunya`, under the same constraints, from the same
+   * approved table (→ DEC 2026-08-01p). REQUIRED, not optional: the English country cards
+   * show an English continent name in this slot, so a territory card that left it empty
+   * would be the very inconsistency the territory card exists to remove. Six of these are
+   * the English form of an owner-locked sovereignty ruling — see the module note before
+   * touching one.
+   */
+  readonly labelEn: string;
   readonly population: TerritoryFigure;
   readonly areaKm2: TerritoryFigure;
   /**
@@ -133,6 +143,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Grönland",
     nameEn: "Greenland",
     labelTr: "Danimarka Özerk Bölgesi",
+    labelEn: "Danish Autonomous Territory",
     population: { kind: "exact", value: 56542 },
     areaKm2: { kind: "exact", value: 2166086 },
     centre: "Nuuk",
@@ -143,6 +154,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Faroe Adaları",
     nameEn: "Faroe Islands",
     labelTr: "Danimarka Özerk Bölgesi",
+    labelEn: "Danish Autonomous Territory",
     population: { kind: "exact", value: 54684 },
     areaKm2: { kind: "exact", value: 1393 },
     centre: "Tórshavn",
@@ -155,6 +167,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Åland",
     nameEn: "Åland Islands",
     labelTr: "Finlandiya Özerk Bölgesi",
+    labelEn: "Finnish Autonomous Region",
     population: { kind: "exact", value: 30836 },
     areaKm2: { kind: "exact", value: 1580 },
     centre: "Mariehamn",
@@ -167,6 +180,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Man Adası",
     nameEn: "Isle of Man",
     labelTr: "Britanya Taç Bağımlılığı",
+    labelEn: "British Crown Dependency",
     population: { kind: "exact", value: 84975 },
     areaKm2: { kind: "exact", value: 572 },
     centre: "Douglas",
@@ -177,6 +191,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Jersey",
     nameEn: "Jersey",
     labelTr: "Britanya Taç Bağımlılığı",
+    labelEn: "British Crown Dependency",
     population: { kind: "exact", value: 103944 },
     areaKm2: { kind: "exact", value: 116 },
     centre: "Saint Helier",
@@ -187,6 +202,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Guernsey",
     nameEn: "Guernsey",
     labelTr: "Britanya Taç Bağımlılığı",
+    labelEn: "British Crown Dependency",
     population: { kind: "exact", value: 64781 },
     areaKm2: { kind: "exact", value: 78 },
     centre: "Saint Peter Port",
@@ -199,6 +215,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Bermuda",
     nameEn: "Bermuda",
     labelTr: "BK Denizaşırı Toprağı",
+    labelEn: "British Overseas Territory",
     population: { kind: "exact", value: 63179 },
     areaKm2: { kind: "exact", value: 54 },
     centre: "Hamilton",
@@ -209,6 +226,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Cayman Adaları",
     nameEn: "Cayman Islands",
     labelTr: "BK Denizaşırı Toprağı",
+    labelEn: "British Overseas Territory",
     population: { kind: "exact", value: 90577 },
     areaKm2: { kind: "exact", value: 259 },
     centre: "George Town",
@@ -219,6 +237,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Turks ve Caicos Adaları",
     nameEn: "Turks and Caicos Islands",
     labelTr: "BK Denizaşırı Toprağı",
+    labelEn: "British Overseas Territory",
     population: { kind: "exact", value: 46431 },
     areaKm2: { kind: "exact", value: 948 },
     centre: "Cockburn Town",
@@ -229,6 +248,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Anguilla",
     nameEn: "Anguilla",
     labelTr: "BK Denizaşırı Toprağı",
+    labelEn: "British Overseas Territory",
     population: { kind: "exact", value: 19416 },
     areaKm2: { kind: "exact", value: 91 },
     centre: "The Valley",
@@ -239,6 +259,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Montserrat",
     nameEn: "Montserrat",
     labelTr: "BK Denizaşırı Toprağı",
+    labelEn: "British Overseas Territory",
     population: { kind: "exact", value: 5468 },
     areaKm2: { kind: "exact", value: 102 },
     // The brief's qualifier restored: the de-jure capital is still Plymouth, abandoned
@@ -253,6 +274,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Britanya Virjin Adaları",
     nameEn: "British Virgin Islands",
     labelTr: "BK Denizaşırı Toprağı",
+    labelEn: "British Overseas Territory",
     population: { kind: "exact", value: 40102 },
     areaKm2: { kind: "exact", value: 151 },
     centre: "Road Town",
@@ -263,6 +285,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Pitcairn Adaları",
     nameEn: "Pitcairn Islands",
     labelTr: "BK Denizaşırı Toprağı",
+    labelEn: "British Overseas Territory",
     population: { kind: "exact", value: 50 },
     areaKm2: { kind: "exact", value: 47 },
     centre: "Adamstown",
@@ -281,6 +304,7 @@ export const TERRITORIES: readonly Territory[] = [
     // island, and neither card carries prose to disambiguate it.
     nameEn: "Saint Helena, Ascension and Tristan da Cunha",
     labelTr: "BK Denizaşırı Toprağı",
+    labelEn: "British Overseas Territory",
     population: { kind: "exact", value: 5651 },
     areaKm2: { kind: "exact", value: 394 },
     centre: "Jamestown",
@@ -296,6 +320,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Saint-Martin",
     nameEn: "Saint-Martin",
     labelTr: "Fransız Denizaşırı Topluluğu",
+    labelEn: "French Overseas Collectivity",
     population: { kind: "exact", value: 31620 },
     areaKm2: { kind: "exact", value: 50 },
     centre: "Marigot",
@@ -310,6 +335,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Saint-Barthélemy",
     nameEn: "Saint-Barthélemy",
     labelTr: "Fransız Denizaşırı Topluluğu",
+    labelEn: "French Overseas Collectivity",
     population: { kind: "unknown" },
     areaKm2: { kind: "exact", value: 25 },
     centre: "Gustavia",
@@ -320,6 +346,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Saint-Pierre ve Miquelon",
     nameEn: "Saint Pierre and Miquelon",
     labelTr: "Fransız Denizaşırı Topluluğu",
+    labelEn: "French Overseas Collectivity",
     population: { kind: "exact", value: 5819 },
     areaKm2: { kind: "exact", value: 242 },
     centre: "Saint-Pierre",
@@ -330,6 +357,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Wallis ve Futuna",
     nameEn: "Wallis and Futuna",
     labelTr: "Fransız Denizaşırı Topluluğu",
+    labelEn: "French Overseas Collectivity",
     population: { kind: "exact", value: 11620 },
     areaKm2: { kind: "exact", value: 142 },
     centre: "Mata-Utu",
@@ -340,6 +368,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Yeni Kaledonya",
     nameEn: "New Caledonia",
     labelTr: "Fransa'ya Bağlı Toprak",
+    labelEn: "French Territory",
     population: { kind: "exact", value: 264596 },
     areaKm2: { kind: "exact", value: 18567 },
     centre: "Nouméa",
@@ -350,6 +379,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Fransız Polinezyası",
     nameEn: "French Polynesia",
     labelTr: "Fransız Denizaşırı Topluluğu",
+    labelEn: "French Overseas Collectivity",
     population: { kind: "exact", value: 283147 },
     areaKm2: { kind: "exact", value: 4167 },
     centre: "Papeete",
@@ -368,6 +398,7 @@ export const TERRITORIES: readonly Territory[] = [
     // answer here; the context belongs to the detail page (→ DEC 2026-08-01n, §3.3 of the
     // approved label table).
     labelTr: "Fransız Denizaşırı Toprağı",
+    labelEn: "French Overseas Territory",
     population: { kind: "none" },
     // Area row REMOVED (→ DEC 2026-08-01g item 2). The 439.672 km² total is ~98% Adélie
     // Land, which the drawn shape does not contain and which the Antarctic Treaty freezes:
@@ -383,6 +414,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Aruba",
     nameEn: "Aruba",
     labelTr: "Hollanda Kurucu Ülkesi",
+    labelEn: "Dutch Constituent Country",
     population: { kind: "exact", value: 109435 },
     areaKm2: { kind: "exact", value: 180 },
     centre: "Oranjestad",
@@ -393,6 +425,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Curaçao",
     nameEn: "Curaçao",
     labelTr: "Hollanda Kurucu Ülkesi",
+    labelEn: "Dutch Constituent Country",
     population: { kind: "exact", value: 156700 },
     areaKm2: { kind: "exact", value: 444 },
     centre: "Willemstad",
@@ -403,6 +436,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Sint Maarten",
     nameEn: "Sint Maarten",
     labelTr: "Hollanda Kurucu Ülkesi",
+    labelEn: "Dutch Constituent Country",
     population: { kind: "exact", value: 42449 },
     areaKm2: { kind: "exact", value: 34 },
     centre: "Philipsburg",
@@ -415,6 +449,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Porto Riko",
     nameEn: "Puerto Rico",
     labelTr: "ABD Dış Toprağı",
+    labelEn: "US Territory",
     population: { kind: "exact", value: 3184195 },
     areaKm2: { kind: "exact", value: 8868 },
     centre: "San Juan",
@@ -430,6 +465,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "ABD Virjin Adaları",
     nameEn: "United States Virgin Islands",
     labelTr: "ABD Dış Toprağı",
+    labelEn: "US Territory",
     population: { kind: "exact", value: 87146 },
     areaKm2: { kind: "exact", value: 348 },
     centre: "Charlotte Amalie",
@@ -440,6 +476,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Guam",
     nameEn: "Guam",
     labelTr: "ABD Dış Toprağı",
+    labelEn: "US Territory",
     population: { kind: "exact", value: 168399 },
     areaKm2: { kind: "exact", value: 561 },
     centre: "Hagåtña",
@@ -450,6 +487,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Kuzey Mariana Adaları",
     nameEn: "Northern Mariana Islands",
     labelTr: "ABD Dış Toprağı",
+    labelEn: "US Territory",
     population: { kind: "exact", value: 47329 },
     areaKm2: { kind: "exact", value: 472 },
     // Brief-exact: "Saipan" is the island, "Capital Hill" the seat of government. Both are
@@ -462,6 +500,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Amerikan Samoası",
     nameEn: "American Samoa",
     labelTr: "ABD Dış Toprağı",
+    labelEn: "US Territory",
     population: { kind: "exact", value: 43268 },
     areaKm2: { kind: "exact", value: 224 },
     centre: "Pago Pago",
@@ -475,6 +514,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Hong Kong",
     nameEn: "Hong Kong",
     labelTr: "Özel İdari Bölge (Çin)",
+    labelEn: "Special Administrative Region",
     population: { kind: "exact", value: 7599000 },
     areaKm2: { kind: "exact", value: 1115 },
   },
@@ -488,6 +528,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Makao",
     nameEn: "Macau",
     labelTr: "Özel İdari Bölge (Çin)",
+    labelEn: "Special Administrative Region",
     population: { kind: "exact", value: 688900 },
     areaKm2: { kind: "exact", value: 32.9 },
   },
@@ -499,6 +540,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Norfolk Adası",
     nameEn: "Norfolk Island",
     labelTr: "Avustralya Dış Toprağı",
+    labelEn: "Australian External Territory",
     population: { kind: "exact", value: 2188 },
     areaKm2: { kind: "exact", value: 36 },
     centre: "Kingston",
@@ -513,6 +555,7 @@ export const TERRITORIES: readonly Territory[] = [
     // correct information — and it measured/attributed territory inside the Antarctic
     // Treaty area, now a standing axis of every territory content review.
     labelTr: "Avustralya Dış Toprağı",
+    labelEn: "Australian External Territory",
     population: { kind: "none" },
     areaKm2: { kind: "exact", value: 368 },
   },
@@ -524,6 +567,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Cook Adaları",
     nameEn: "Cook Islands",
     labelTr: "Serbest Ortaklık Devleti",
+    labelEn: "Freely Associated State",
     population: { kind: "exact", value: 15040 },
     areaKm2: { kind: "exact", value: 240 },
     centre: "Avarua",
@@ -534,6 +578,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Niue",
     nameEn: "Niue",
     labelTr: "Serbest Ortaklık Devleti",
+    labelEn: "Freely Associated State",
     population: { kind: "exact", value: 1822 },
     areaKm2: { kind: "exact", value: 260 },
     centre: "Alofi",
@@ -549,6 +594,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Vatikan",
     nameEn: "Vatican City",
     labelTr: "Egemen Şehir Devleti",
+    labelEn: "Sovereign City-State",
     population: { kind: "exact", value: 882 },
     areaKm2: { kind: "exact", value: 0.49 },
   },
@@ -558,6 +604,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Antarktika",
     nameEn: "Antarctica",
     labelTr: "Tarafsız Kıta",
+    labelEn: "Neutral Continent",
     population: { kind: "none" },
     // ONE value, not the old 14.000.000–14.200.000 interval (→ DEC 2026-08-01l). Antarctica
     // has no statistics office, no census and no UN series, so the source ladder runs to its
@@ -583,6 +630,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Batı Sahra",
     nameEn: "Western Sahara",
     labelTr: "Özyönetimi Olmayan Toprak",
+    labelEn: "Non-Self-Governing Territory",
     population: { kind: "unknown" },
     areaKm2: { kind: "exact", value: 272000 },
   },
@@ -591,6 +639,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Somaliland",
     nameEn: "Somaliland",
     labelTr: "Statüsü Tartışmalı Bölge",
+    labelEn: "Disputed Status Region",
     population: { kind: "unknown" },
     // ≈, not exact (→ DEC 2026-08-01g item 3): the brief's figure is a rounded conversion
     // from 68.000 sq mi. It was collapsed to a pinned number in the first round; the card
@@ -602,6 +651,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Siachen Buzulu",
     nameEn: "Siachen Glacier",
     labelTr: "Statüsü Çözülmemiş Bölge",
+    labelEn: "Unresolved Status Region",
     population: { kind: "unknown" },
     areaKm2: { kind: "unknown" },
   },
@@ -613,6 +663,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Falkland Adaları (Malvinas)",
     nameEn: "Falkland Islands (Malvinas)",
     labelTr: "Egemenliği Tartışmalı Toprak",
+    labelEn: "Disputed Sovereignty Territory",
     population: { kind: "unknown" },
     areaKm2: { kind: "exact", value: 12170 },
   },
@@ -622,6 +673,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Güney Georgia ve Güney Sandwich Adaları",
     nameEn: "South Georgia and the South Sandwich Islands",
     labelTr: "Egemenliği Tartışmalı Toprak",
+    labelEn: "Disputed Sovereignty Territory",
     population: { kind: "unknown" },
     areaKm2: { kind: "exact", value: 3903 },
   },
@@ -635,6 +687,7 @@ export const TERRITORIES: readonly Territory[] = [
     nameTr: "Britanya Hint Okyanusu Toprakları (Chagos)",
     nameEn: "British Indian Ocean Territory (Chagos)",
     labelTr: "Devir Sürecindeki Toprak",
+    labelEn: "Sovereignty Transfer Pending",
     population: { kind: "unknown" },
     // ≈, not exact — the same collapse as Somaliland, corrected together (→ DEC 2026-08-01g
     // item 3). The brief publishes ≈60 km² of LAND across the archipelago.
