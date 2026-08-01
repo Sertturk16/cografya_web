@@ -43,7 +43,7 @@ function buildLlmsTxt(): string {
 
 > Free, open geography education platform for Türkiye and the world. Turkish-first (TR at the root, English under /en), with source-grounded content on the 81 provinces of Türkiye, world countries, landforms and geography concepts.
 
-Coğrafya Platformu is a non-commercial education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete set of indexable URLs. Note: detail pages (provinces, countries) are currently published in Turkish only — their English counterparts are served with a "noindex" directive until English narrative content is written.
+Coğrafya Platformu is an education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete set of indexable URLs. Note: detail pages (provinces, countries) are currently published in Turkish only — their English counterparts are served with a "noindex" directive until English narrative content is written.
 
 ## Main sections (Turkish, default locale)
 

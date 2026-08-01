@@ -41,7 +41,7 @@ export interface MapProjection {
   readonly cosLat: number;
   /** Degrees → svg-unit scale factor. */
   readonly scale: number;
-  /** Inset applied on every side before scaling (svg units). */
+  /** Constant svg-unit offset added on every side; also reserved out of `scale`. */
   readonly padding: number;
 }
 

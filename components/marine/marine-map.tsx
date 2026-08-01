@@ -84,7 +84,14 @@ export async function MarineMap({ locale, points, provinces }: MarineMapProps) {
   if (base === null || inputs.length === 0) return null;
 
   const placed = placePointLabels(inputs, base);
-  const frame = formatViewBox(frameForLabelledPoints(base, placed));
+  // A single non-finite coordinate would poison the whole union frame (`Math.min`/`Math.max`
+  // propagate NaN) and emit a `viewBox` the browser rejects — which collapses the ENTIRE map
+  // to the 150px default, not just one marker. The contract makes that unreachable
+  // (`latitude`/`longitude` are non-nullable numbers), but the api response is trusted by
+  // TYPE, not validated at runtime (`lib/api/client.ts` casts), so the frame falls back to
+  // the base viewBox rather than taking the map down with it.
+  const computed = formatViewBox(frameForLabelledPoints(base, placed));
+  const frame = parseViewBox(computed) === null ? MAP_VIEWBOX : computed;
 
   return (
     <figure className={styles.mapFigure}>

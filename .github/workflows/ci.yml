@@ -44,6 +44,16 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # `lib/map/tr-provinces.generated.ts` is an AUTO-GENERATED artifact whose projection
+      # constants (`MAP_PROJECTION`) are replayed at runtime by `lib/map/projection.ts` to
+      # place markers in the same coordinate space as the 81 outlines. A hand-edit there
+      # silently offsets every marker and cannot be reproduced from the source GeoJSON, so
+      # the regenerate-and-diff check that the code comments promise runs here. Pure node,
+      # no network, ~1s. NOTE: `codegen:check` and `generate:world-map:check` are the repo's
+      # other two artifact gates and are still unwired — a separate CI-tooling change.
+      - name: Map artifact drift
+        run: pnpm generate:map:check
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest

@@ -187,13 +187,16 @@ function segmentHitsRect(x1: number, y1: number, x2: number, y2: number, rect: M
   return true;
 }
 
+/**
+ * Would this label box print over ANOTHER point's marker?
+ *
+ * It is the same AABB test as `overlaps`, with the marker as a zero-area rectangle and its
+ * radius as the gap — so it delegates instead of restating the four comparisons. Written
+ * out twice, the only thing keeping the two boundary rules (`<` vs `<=`) in step would be
+ * that nobody edited one without the other.
+ */
 function coversMarker(box: MapRect, point: LabelledPointInput, radius: number): boolean {
-  return (
-    box.minX - radius < point.x &&
-    box.maxX + radius > point.x &&
-    box.minY - radius < point.y &&
-    box.maxY + radius > point.y
-  );
+  return overlaps(box, { minX: point.x, maxX: point.x, minY: point.y, maxY: point.y }, radius);
 }
 
 interface Candidate {

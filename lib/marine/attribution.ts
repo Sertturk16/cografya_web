@@ -14,7 +14,8 @@ import { parseModelInstant } from "./model-run";
  * So it is derived from the catalogue künye of the ECMWF-sourced layers rather than
  * written down: a constant would be correct until 1 January and wrong afterwards, and an
  * ISR page rendered from a cached year would go on being wrong for a whole revalidate
- * window. `catalogueUpdatedAtUtc` — the cycle's production time — is the right field;
+ * window. `catalogueUpdatedAtUtc` — the provider's catalogue stamp for the ingested cycle,
+ * i.e. the closest PUBLISHED proxy for the cycle's own year — is the right field;
  * `horizonEndUtc` points days into the FUTURE and would print next year's copyright at a
  * year boundary.
  *
