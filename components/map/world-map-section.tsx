@@ -85,8 +85,10 @@ type FigureRenderOptions = Pick<FigureTextOptions, "noneText" | "unit">;
  * shows. `MapZoomPan`'s focus-follows-view now covers them too (it keys off `[tabindex]`),
  * which is the behaviour a focusable shape should have — verified against a zoomed view. A seeded country ALWAYS wins over a territory entry, so the day the api publishes a
  * page for one of these shapes it becomes a normal link and the card disappears on its own.
- * A territory with nothing publishable in the CURRENT locale falls back to the same inert
- * backdrop as unseeded land rather than opening an empty card (see the guard below).
+ * Every territory now has card content in BOTH locales, so all 43 open a card on both maps:
+ * the label is required in each locale and `territories.test.ts` pins that (the earlier
+ * "nothing publishable ⇒ inert backdrop" fallback existed only for Siachen on the label-less
+ * English map and went away with the English labels → DEC 2026-08-01p).
  *
  * ONE shape is wired by hand: Türkiye. It is a country on the world map, but the site's
  * Türkiye surface is the dedicated `/turkiye` hub — there is no `/dunya/turkiye` page and
@@ -211,30 +213,13 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
                   stats.push({ label: tMap("territoryCentre"), value: centre });
                 }
                 const territoryName = locale === "en" ? territory.nameEn : territory.nameTr;
-                // TR only. The labels exist in Turkish alone and six of them are owner-approved
-                // VERBATIM texts on a sovereignty-sensitive surface (→ DEC 2026-08-01n) —
-                // choosing their English wording is a content round, not a frontend decision.
-                // So `/en/dunya` renders the brief's own stat-only variant rather than leaking
-                // Turkish onto an indexable English page.
-                const label = locale === "en" ? undefined : territory.labelTr;
-                // Nothing publishable in THIS locale (no badge, no label, no stat) ⇒ fall
-                // through to the inert backdrop instead of opening a card that is a bare
-                // name over empty space. Today that is exactly Siachen on `/en/dunya`: its
-                // figures are deliberately `unknown`, it carries no ISO badge, and its only
-                // content is the Turkish label. A one-line card on the most sovereignty-
-                // sensitive shape on the map reads as a rendering fault, and the honest state
-                // is the same silence the map already gives unseeded land. The card returns
-                // on its own the day the EN label round lands.
-                if (!territory.badge && !label && stats.length === 0) {
-                  return (
-                    <path
-                      key={shape.iso}
-                      className={styles.landInert}
-                      d={shape.d}
-                      aria-hidden="true"
-                    />
-                  );
-                }
+                // Both locales, picked the same way as the name above. The English labels are
+                // the owner-approved column of the same table as the Turkish ones (→ DEC
+                // 2026-08-01p) — including the English form of the six sovereignty-locked
+                // ones — so this slot is filled on `/en/dunya` exactly as the continent name
+                // fills it on an English country card. It is never a fallback to `labelTr`:
+                // no Turkish reaches the English map.
+                const label = locale === "en" ? territory.labelEn : territory.labelTr;
                 // The card is pointer-only (aria-hidden), so this name is the ONLY way AT
                 // reaches the content. Same composition as a country link. Each part has a
                 // trailing full stop normalised away before the parts are joined with one,

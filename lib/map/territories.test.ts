@@ -56,15 +56,22 @@ describe("territory card data", () => {
   });
 
   /**
-   * LABEL INVARIANTS (→ DEC 2026-08-01m/n). The card's second line is a label in parity with
-   * the continent name a country card shows in the same slot — max 3 words, no verb, no
-   * punctuation. The CONTENT-STYLE §22 90-character sentence cap (and TF's ruled exception
-   * to it) is gone with the sentences it governed: nothing on this surface is a sentence any
-   * more, so a character cap would only license one.
+   * LABEL INVARIANTS (→ DEC 2026-08-01m/n for TR, DEC 2026-08-01p for EN). The card's second
+   * line is a label in parity with the continent name a country card shows in the same slot —
+   * max 3 words, no verb, no punctuation. The CONTENT-STYLE §22 90-character sentence cap
+   * (and TF's ruled exception to it) is gone with the sentences it governed: nothing on this
+   * surface is a sentence any more, so a character cap would only license one.
+   *
+   * BOTH locales are held to the identical rule, deliberately in one loop rather than a
+   * Turkish branch and an English one: the English column is the same ruling in the other
+   * language, not a translation with its own budget, so a constraint that held for TR and
+   * silently lapsed for EN is exactly the drift worth failing on.
    *
    * A trailing parenthetical qualifier does not count toward the three words: "Özel İdari
    * Bölge (Çin)" is the approved HK/MO label, where the parenthesis carries the administering
-   * state rather than a fourth word of description (approved table §3.5).
+   * state rather than a fourth word of description (approved table §3.5). Hyphenated forms
+   * count as the one word they are written as — "Non-Self-Governing Territory" (EH) and
+   * "Sovereign City-State" (VA) are the UN's and the approved table's own spellings.
    */
   const WORD_CAP = 3;
   const labelWords = (label: string): string[] =>
@@ -72,33 +79,45 @@ describe("territory card data", () => {
       .replace(/\s*\([^)]*\)$/, "")
       .split(/\s+/)
       .filter((word) => word.length > 0);
+  /** Every label on the surface, tagged with the entity + locale it belongs to. */
+  const allLabels = (): { id: string; label: string }[] =>
+    TERRITORIES.flatMap((t) => [
+      { id: `${t.iso}/tr`, label: t.labelTr },
+      { id: `${t.iso}/en`, label: t.labelEn },
+    ]);
 
-  it("keeps every card label within the three-word cap", () => {
-    const tooLong = TERRITORIES.filter((t) => labelWords(t.labelTr).length > WORD_CAP).map(
-      (t) => `${t.iso}:${labelWords(t.labelTr).length}`,
-    );
+  it("keeps every card label within the three-word cap, in both locales", () => {
+    const tooLong = allLabels()
+      .filter(({ label }) => labelWords(label).length > WORD_CAP)
+      .map(({ id, label }) => `${id}:${labelWords(label).length}`);
     expect(tooLong).toEqual([]);
   });
 
-  it("keeps every card label free of sentence punctuation", () => {
-    // The structural half of "no verb". Turkish verbs cannot be detected from a string, and
-    // a test that tried would be a fact-check in disguise (that screening happened in the
-    // approved label table). What IS structural: the retired sentences all carried a clause
-    // separator or a final stop, and a noun-phrase label carries neither — so this fails the
-    // moment a sentence starts growing back into the slot.
-    const punctuated = TERRITORIES.filter((t) => /[.;,:!?]/.test(t.labelTr)).map((t) => t.iso);
+  it("keeps every card label free of sentence punctuation, in both locales", () => {
+    // The structural half of "no verb". Verbs cannot be detected from a string, and a test
+    // that tried would be a fact-check in disguise (that screening happened in the approved
+    // label table). What IS structural: the retired sentences all carried a clause separator
+    // or a final stop, and a noun-phrase label carries neither — so this fails the moment a
+    // sentence starts growing back into the slot. The hyphen is NOT in the set: it joins a
+    // compound modifier ("Non-Self-Governing"), it does not end or split a clause.
+    const punctuated = allLabels()
+      .filter(({ label }) => /[.;,:!?]/.test(label))
+      .map(({ id }) => id);
     expect(punctuated).toEqual([]);
   });
 
-  it("has non-blank names in both locales, a non-blank label, and non-blank centres", () => {
+  it("has non-blank names, labels and centres in both locales", () => {
     // `.trim()` on purpose: a whitespace-only string is truthy and non-empty, and would ship
-    // an invisible card row.
+    // an invisible card row. 43 entities × 2 locales = 86 labels, all required: an entity
+    // whose label went blank in ONE locale is the asymmetry the English round removed.
     for (const territory of TERRITORIES) {
       expect(territory.nameTr.trim().length, territory.iso).toBeGreaterThan(0);
       expect(territory.nameEn.trim().length, territory.iso).toBeGreaterThan(0);
       expect(territory.labelTr.trim().length, territory.iso).toBeGreaterThan(0);
+      expect(territory.labelEn.trim().length, territory.iso).toBeGreaterThan(0);
       // Untrimmed whitespace would also survive the word/punctuation checks above.
       expect(territory.labelTr, territory.iso).toBe(territory.labelTr.trim());
+      expect(territory.labelEn, territory.iso).toBe(territory.labelEn.trim());
       if (territory.centre !== undefined) {
         expect(territory.centre.trim().length, territory.iso).toBeGreaterThan(0);
       }
@@ -189,22 +208,31 @@ describe("territory card data", () => {
     }
   });
 
-  it("pins the set of entities with nothing to render on the stat-only EN card", () => {
-    // `/en/dunya` shows no label (→ DEC 2026-08-01n item 3 keeps the EN column unapproved),
-    // so an entity with no badge and no publishable figure has zero card content and falls
-    // through to the inert backdrop instead of opening a name-only panel. The set is still
-    // exactly one after the label round: TF gained a TR label, but the EN card never renders
-    // labels, and TF's `none` population already prints "No permanent population" there.
-    // Pinning it is structural — it documents the ruled state and forces a deliberate
-    // decision if a later edit grows the set of shapes that go silent on the English map.
-    const nothingToRender = TERRITORIES.filter(
-      (t) =>
-        t.badge === undefined &&
-        t.population.kind === "unknown" &&
-        t.areaKm2.kind === "unknown" &&
-        centreFor(t, "en") === undefined,
-    ).map((t) => t.iso);
-    expect(nothingToRender).toEqual(["x-siachen-glacier"]);
+  it("leaves no shape with an empty card in either locale", () => {
+    // THIS TEST REPLACES A RENDER-PATH GUARD. While `/en/dunya` was label-less (→ DEC
+    // 2026-08-01n item 3), exactly one entity — the Siachen Glacier: no ISO badge, both
+    // figures deliberately `unknown`, no centre — had zero English card content, and
+    // `world-map-section.tsx` carried a branch that dropped such a shape to the inert
+    // backdrop rather than opening a bare-name panel. The English labels (→ DEC 2026-08-01p)
+    // gave Siachen content, which made that branch unreachable, and unreachable code whose
+    // comment narrates a state that no longer exists is worse than no code: it decays into a
+    // false explanation. So the branch is gone and its GUARANTEE lives here instead, where it
+    // is checked against all 43 entities in both locales at once.
+    //
+    // The predicate mirrors the render path's content sources exactly (badge · locale label ·
+    // population · area · locale centre). It fails the day an edit leaves an entity with
+    // nothing to show — which is now a data bug to fix in this module, not a silent shape.
+    const empty = (["tr", "en"] as const).flatMap((locale) =>
+      TERRITORIES.filter(
+        (t) =>
+          t.badge === undefined &&
+          (locale === "en" ? t.labelEn : t.labelTr).trim().length === 0 &&
+          t.population.kind === "unknown" &&
+          t.areaKm2.kind === "unknown" &&
+          centreFor(t, locale) === undefined,
+      ).map((t) => `${t.iso}/${locale}`),
+    );
+    expect(empty).toEqual([]);
   });
 
   it("resolves a known key and rejects an unknown one", () => {
@@ -216,7 +244,7 @@ describe("territory card data", () => {
 });
 
 describe("centreFor", () => {
-  const base = { iso: "ZZ", nameTr: "x", nameEn: "x", labelTr: "x" } as const;
+  const base = { iso: "ZZ", nameTr: "x", nameEn: "x", labelTr: "x", labelEn: "x" } as const;
   const figures = { population: { kind: "unknown" }, areaKm2: { kind: "unknown" } } as const;
 
   it("serves the same proper noun to both locales when there is no override", () => {
