@@ -236,12 +236,15 @@
     "zoomOut": "Zoom out",
     "resetView": "Reset to world view",
     "zoomControls": "Zoom controls",
-    "keyboardInstructions": "When the map is focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to return to the world view. With a mouse, scroll to zoom and drag to pan; on touch, pinch to zoom and drag with one finger to pan.",
+    "keyboardInstructions": "When the map is focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to return to the world view; Esc closes an open info card. With a mouse, scroll to zoom and drag to pan; on touch, pinch to zoom and drag with one finger to pan.",
     "zoomHint": "Scroll to zoom, or use + / −",
     "dismissHint": "Dismiss hint",
     "turkiyeName": "Türkiye",
     "turkiyeCardSubtitle": "Province map",
-    "turkiyeLinkLabel": "Türkiye, province map page"
+    "turkiyeLinkLabel": "Türkiye, province map page",
+    "territoryCentre": "Administrative centre",
+    "territoryNoPopulation": "No permanent population",
+    "territoryApproximate": "approximately"
   },
   "CountryDetail": {
     "metaTitle": "Geography of {name}",

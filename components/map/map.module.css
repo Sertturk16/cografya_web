@@ -64,6 +64,42 @@
   fill: var(--land-inert);
 }
 
+/* World map: a NON-COUNTRY place that has a hover card but no page (the 43 territories).
+   Its hover state is deliberately WEAKER than a country's: the stroke shifts to
+   --color-primary at 3px — the accessible, non-colour-dependent state signal WCAG 1.4.1/
+   1.4.11 requires — but the terracotta fill wash stays off. That omission, plus the absence
+   of `cursor: pointer`, is the honest "readable, not clickable" cue: a shape that lights up
+   exactly like a country and then swallows the click would be a lie. Fill tone is untouched
+   either way (uniform land colour, owner ruling 2026-07-26).
+
+   It sets NO cursor of its own on purpose. Pinning `default` here beat the pan cursor the
+   zoomable surface inherits down (grab / grabbing), so dragging across the map flickered
+   arrow↔grab over all 43 shapes. Inheriting is also the truthful signal: a territory is not
+   clickable, but it IS pannable, exactly like the inert land and sea around it. */
+.territory {
+  /* The territory is a tab stop (→ DEC 2026-08-01g item 4). The UA outline is suppressed
+     for the same reason as .provinceLink: on an SVG group it is drawn around the whole
+     multi-part bounding box, which for a scattered territory (TAAF's islands span a third
+     of the map) is a rectangle over the open ocean rather than a highlight on the shape.
+     The stroke shift below is the focus indicator, identical to the hover one. */
+  outline: none;
+}
+
+.territory .landInert {
+  transition:
+    stroke 0.16s ease-out,
+    stroke-width 0.16s ease-out;
+}
+
+/* Focus MIRRORS hover exactly, so a keyboard user sees the same state a mouse user does
+   (WCAG 2.4.7 / 1.4.11): stroke to --color-primary (~5.1:1) at 3px, still no terracotta
+   fill wash and still no pointer cursor — the shape is readable, not clickable. */
+.territory:hover .landInert,
+.territory:focus-visible .landInert {
+  stroke: var(--color-primary);
+  stroke-width: 3;
+}
+
 .provinceLink {
   cursor: pointer;
   /* Focus is shown by the fill/stroke highlight below (a rectangular outline on an
@@ -89,7 +125,16 @@
   stroke-width: 3;
 }
 
-/* ODbL attribution — required visibly next to the map (SPEC §5.2 / DEC 2026-07-10). */
+/* ODbL attribution — required visibly next to the map (SPEC §5.2 / DEC 2026-07-10).
+   BOTTOM-CHROME STACK: this row owns the bottom-right corner of EVERY map surface (il map,
+   world map, game map) and never moves. The zoom hint is the other bottom-anchored element;
+   it stacks one band ABOVE this one (see `.zoomHint`), because at the same inset the two
+   boxes overlap on a narrow stage — measured at 390px: hint 237px wide from the left edge,
+   attribution 207px from the right, ~124px of them printed on top of each other. The two
+   offsets are plain numbers on purpose: this stylesheet is shared by containers that do not
+   share a custom-property scope (`.mapRoot` vs the game's own stage element), so a var
+   defined here would silently resolve to nothing on the game map and drop the hint back to
+   the top of the stage. */
 .attribution {
   position: absolute;
   right: 14px;
@@ -111,9 +156,11 @@
   /* The card is a hover target AND itself clickable (mouse affordance → same detail
      page). It stays open while the pointer is on it, and a hover-intent delay in the
      island bridges the shape→card gap so the click can land (PR#6 owner report).
-     While hidden it is visibility:hidden, so it captures nothing. */
+     While hidden it is visibility:hidden, so it captures nothing.
+     The pointer cursor is opt-in ([data-clickable]) because a TERRITORY card has no detail
+     page to click through to. */
   pointer-events: auto;
-  cursor: pointer;
+  cursor: default;
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -132,6 +179,24 @@
   opacity: 1;
   visibility: visible;
   transform: none;
+}
+
+/* ANCHORING. When the card hangs above its shape, the island sets `top` to the card's
+   intended BOTTOM edge and this pulls it up by exactly its own height — so placement is
+   correct for a one-row territory card and a three-row country card alike, with no height
+   measurement in JS (which could only ever measure the PREVIOUSLY shown card). The 4px is
+   the entrance offset the transition animates away; it composes into the same transform
+   because a single element has only one. */
+.card[data-place="above"] {
+  transform: translateY(calc(-100% + 4px));
+}
+
+.card[data-place="above"][data-visible="true"] {
+  transform: translateY(-100%);
+}
+
+.card[data-clickable="true"] {
+  cursor: pointer;
 }
 
 .cardHead {
@@ -181,11 +246,21 @@
   margin: 0;
 }
 
+/* Label and value share one line whenever they fit. When they do not — Antarktika's area is
+   a 7-digit approximation ("≈14.200.000 km²"), the widest value either map can produce — the
+   value drops to its own full-width line instead of hyphen-less wrapping into a two-line
+   ragged column beside the label. `margin-left: auto` keeps it flush right in both layouts
+   (and makes `justify-content` moot on the one-line case). */
 .stat {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 2px 12px;
+}
+
+.stat .statValue {
+  margin-left: auto;
+  text-align: right;
 }
 
 .statLabel {
@@ -282,10 +357,14 @@
   outline-offset: 2px;
 }
 
+/* Sits one band above the attribution — see the stack note there. 42px = the attribution's
+   own 10px inset + its measured single-line height (0.72rem text + 3px padding = 24px) + an
+   8px gap. Both attribution strings stay on one line down to a 320px stage; if a longer one
+   ever wraps, this offset is what has to grow with it. */
 .zoomHint {
   position: absolute;
   left: 14px;
-  bottom: 10px;
+  bottom: 42px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -359,7 +438,13 @@
     transform: none;
   }
 
-  .provinceLink .province {
+  /* Only the 4px entrance offset is motion; the -100% is PLACEMENT and must survive. */
+  .card[data-place="above"] {
+    transform: translateY(-100%);
+  }
+
+  .provinceLink .province,
+  .territory .landInert {
     transition: none;
   }
 

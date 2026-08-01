@@ -236,12 +236,15 @@
     "zoomOut": "Uzaklaştır",
     "resetView": "Dünya görünümüne sıfırla",
     "zoomControls": "Yakınlaştırma denetimleri",
-    "keyboardInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla dünya görünümüne dön. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
+    "keyboardInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla dünya görünümüne dön; Esc tuşu açık bilgi kartını kapatır. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
     "zoomHint": "Yakınlaştırmak için kaydır veya + / − kullan",
     "dismissHint": "İpucunu kapat",
     "turkiyeName": "Türkiye",
     "turkiyeCardSubtitle": "İl haritası",
-    "turkiyeLinkLabel": "Türkiye, il haritası sayfası"
+    "turkiyeLinkLabel": "Türkiye, il haritası sayfası",
+    "territoryCentre": "Merkez",
+    "territoryNoPopulation": "Kalıcı nüfus yok",
+    "territoryApproximate": "yaklaşık"
   },
   "CountryDetail": {
     "metaTitle": "{name} Coğrafyası",
