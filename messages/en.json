@@ -21,20 +21,18 @@
   },
   "Footer": {
     "tagline": "A free, open geography education platform.",
-    "note": "Content is under active development; new provinces and topics are added regularly. Published data is based on official sources (TÜİK, HGM, Ministry of Interior, MGM).",
+    "note": "Published data is based on official sources (TÜİK, HGM, Ministry of Interior, MGM).",
     "copyright": "© {year} {siteName}. All rights reserved."
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Geography of Türkiye and the World",
-    "metaDescription": "Free, sourced geography content for the 81 provinces of Türkiye, the countries of the world and landforms. Maps, topic guides and more.",
+    "metaDescription": "Free, sourced geography pages and maps for the 81 provinces of Türkiye and the countries of the world. Test yourself with the free map game.",
     "heading": "Explore Türkiye and the world through geography",
-    "lede": "Free geography pages — province, country and landform details, with curriculum-aligned topic guides.",
+    "lede": "Free, sourced geography pages for the 81 provinces of Türkiye and the countries of the world.",
     "ctaMap": "Explore the Map",
     "ctaAbout": "About the Platform"
   },
   "Map": {
-    "sectionHeading": "Choose a province from the map",
-    "sectionBody": "Hover a province on the map of Türkiye (or focus it with the keyboard) and follow the card to its detail page. Published provinces are interactive; the rest are added as their content clears verification.",
     "mapTitle": "Map of the provinces of Türkiye",
     "plateLabel": "Plate {code}",
     "attribution": "© OpenStreetMap contributors, ODbL"
@@ -43,17 +41,16 @@
     "metaTitle": "About",
     "metaDescription": "Coğrafya Platformu is an education project that presents the geography of Türkiye and the world through free, sourced and accessible content.",
     "heading": "About",
-    "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone. Content is grounded in authoritative sources and passes an independent verification step before publication.",
-    "body2": "The platform is under development. This page is a demonstration of the multilingual architecture and SEO foundations; content will deepen as coverage expands."
+    "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone.",
+    "sourcing": "Content is grounded in authoritative sources and passes an independent verification step before publication."
   },
   "Turkiye": {
     "metaTitle": "Map of Türkiye — 81 Provinces",
     "metaDescription": "Explore the 81 provinces of Türkiye on an interactive map. Location, population, area, climate and landforms — sourced, structured detail pages for each province.",
     "heading": "Map of Türkiye",
-    "intro": "Explore the 81 provinces of Türkiye on an interactive map. Select a province to reach its sourced detail page covering location, population, climate and landforms.",
+    "intro": "Select a province to see its details.",
     "gameCtaHeading": "Test what you have learned",
-    "gameCtaBody": "{brand} is a find-the-place game played on this same map: a province or region is named, and you point it out. Free, no sign-up.",
-    "gameCtaLink": "Open the geography map game"
+    "gameCtaLink": "Open the map game"
   },
   "Game": {
     "brandName": "Explorer",
@@ -77,7 +74,7 @@
     "backToHub": "Game",
     "summaryBackToHub": "Back to the modes",
     "noScript": "The game needs JavaScript enabled in your browser.",
-    "emptyPool": "This round's questions could not be loaded, please try again shortly.",
+    "emptyPool": "No questions are available for this round. Try again shortly.",
     "mapTitle": "Game map: {mode}",
     "questionLead": "Find:",
     "metaProgress": "Question {index}/{total}",
@@ -230,11 +227,9 @@
     "metaTitle": "World Map — Countries",
     "metaDescription": "Explore the countries of the world on an interactive map. Location, capital, population, area and physical geography — sourced, structured detail pages for each country.",
     "heading": "World Map",
-    "intro": "Explore the countries of the world on an interactive map. Select a country to reach its sourced detail page covering location, capital, population and physical geography. Coverage begins with Türkiye's neighbouring countries and expands as new countries are added."
+    "intro": "Select a country to see its details."
   },
   "WorldMap": {
-    "sectionHeading": "Choose a country from the map",
-    "sectionBody": "Hover a country on the map (or focus it with the keyboard) and follow the card to its detail page. Published countries are interactive; the remaining countries and regions light up as their content is added.",
     "mapTitle": "Map of world countries (regional)",
     "attribution": "Boundaries: Natural Earth (public domain)",
     "zoomIn": "Zoom in",

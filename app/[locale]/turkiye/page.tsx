@@ -52,8 +52,6 @@ export default async function TurkiyePage({ params }: PageProps) {
   setRequestLocale(locale);
   const t = await getTranslations("Turkiye");
   const tb = await getTranslations("Breadcrumb");
-  // The game's name lives in ONE key (SPEC §1) — this page interpolates it, never repeats it.
-  const tGame = await getTranslations("Game");
   const path = getPathname({ locale, href: "/turkiye" });
 
   // The published-province list is the authoritative set of pages that exist; the
@@ -100,7 +98,9 @@ export default async function TurkiyePage({ params }: PageProps) {
       <section className="section" aria-labelledby="turkiye-game-heading">
         <div className={`card ${styles.gameCta}`}>
           <h2 id="turkiye-game-heading">{t("gameCtaHeading")}</h2>
-          <p className={styles.gameCtaBody}>{t("gameCtaBody", { brand: tGame("brandName") })}</p>
+          {/* The descriptive paragraph under this heading is gone (→ DEC 2026-07-30t/u,
+              CONTENT-STYLE §22): it narrated the game's mechanic ("ekranda çıkan ili …
+              işaretlersiniz"), which the heading and the button already imply. */}
           <Link href="/oyun" className="btn btn-primary">
             {t("gameCtaLink")}
           </Link>

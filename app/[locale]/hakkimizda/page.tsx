@@ -36,8 +36,16 @@ export default async function AboutPage({ params }: PageProps) {
         ]}
       />
       <h1>{t("heading")}</h1>
+      {/* The old second paragraph ("Platform geliştirme aşamasındadır. Bu sayfa, çok
+          dilli mimarinin ve SEO altyapısının bir örneğidir…") was removed by the
+          site-wide frame-copy trim (→ DEC 2026-07-30t/u, CONTENT-STYLE §22): it leaked
+          internal project state to the reader and described the page as a demo of its
+          own infrastructure. What the platform is and how it sources content stays —
+          but as TWO paragraphs, not one: §22 caps a page sub-line at one sentence /
+          120 characters, so the lede carries the definition and the sourcing sentence
+          drops to a normal paragraph (PR #29 review, CR-M2). */}
       <p className="lede">{t("body1")}</p>
-      <p>{t("body2")}</p>
+      <p>{t("sourcing")}</p>
     </div>
   );
 }

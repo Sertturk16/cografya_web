@@ -54,10 +54,14 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
   const titleId = "turkey-map-title";
 
   return (
-    <section className="section" aria-labelledby="turkey-map-heading">
-      <h2 id="turkey-map-heading">{tMap("sectionHeading")}</h2>
-      <p className={styles.intro}>{tMap("sectionBody")}</p>
-
+    // The "Haritadan bir il seçin" <h2> and its instruction paragraph were removed by
+    // the site-wide frame-copy trim (→ DEC 2026-07-30t/u, CONTENT-STYLE §22): the
+    // heading restated what the map itself shows, and the paragraph both narrated the
+    // interaction and carried a stale claim ("kalan iller içerik doğrulandıkça
+    // eklenir" — all 81 are live). The region keeps an accessible name via aria-label
+    // (same string as the <svg> <title>) rather than a visually-hidden heading: an
+    // equivalent landmark name with no hidden text on the page.
+    <section className="section" aria-label={tMap("mapTitle")}>
       <div className={styles.mapRoot} data-map-root>
         <svg className={styles.svg} viewBox={MAP_VIEWBOX} aria-labelledby={titleId}>
           <title id={titleId}>{tMap("mapTitle")}</title>

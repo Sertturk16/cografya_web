@@ -21,20 +21,18 @@
   },
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
-    "note": "İçerik geliştirme aşamasındadır; yeni iller ve konular sürekli ekleniyor. Yayınlanan veriler resmi kaynaklara (TÜİK, HGM, İçişleri, MGM) dayanır.",
+    "note": "Yayınlanan veriler resmi kaynaklara (TÜİK, HGM, İçişleri, MGM) dayanır.",
     "copyright": "© {year} {siteName}. Tüm hakları saklıdır."
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Türkiye ve Dünya Coğrafyası",
-    "metaDescription": "Türkiye'nin 81 ili, dünya ülkeleri ve yer şekilleri için ücretsiz, kaynaklı coğrafya içerikleri. Haritalar, konu anlatımları ve daha fazlası.",
+    "metaDescription": "Türkiye'nin 81 ili ve dünya ülkeleri için ücretsiz, kaynaklı coğrafya sayfaları ve haritalar. Öğrendiklerini harita oyunuyla sına.",
     "heading": "Türkiye'yi ve dünyayı coğrafyayla keşfet",
-    "lede": "Ücretsiz coğrafya sayfaları — il, ülke ve yer şekli detaylarıyla; müfredata uygun konu anlatımlarıyla.",
+    "lede": "Türkiye'nin 81 ili ve dünya ülkeleri için ücretsiz, kaynaklı coğrafya sayfaları.",
     "ctaMap": "Türkiye Haritası",
     "ctaAbout": "Platform Hakkında"
   },
   "Map": {
-    "sectionHeading": "Haritadan bir il seçin",
-    "sectionBody": "Türkiye haritasında bir ilin üzerine gelin (ya da klavyeyle odaklanın); açılan kartla o ilin detay sayfasına geçin. Yayında olan iller etkileşimlidir; kalan iller içerik doğrulandıkça eklenir.",
     "mapTitle": "Türkiye il haritası",
     "plateLabel": "Plaka {code}",
     "attribution": "© OpenStreetMap katkıcıları, ODbL"
@@ -43,17 +41,16 @@
     "metaTitle": "Hakkımızda",
     "metaDescription": "Coğrafya Platformu; Türkiye ve dünya coğrafyasını ücretsiz, kaynaklı ve erişilebilir içeriklerle anlatmayı amaçlayan bir eğitim projesidir.",
     "heading": "Hakkımızda",
-    "body1": "Coğrafya Platformu, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir. İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer.",
-    "body2": "Platform geliştirme aşamasındadır. Bu sayfa, çok dilli mimarinin ve SEO altyapısının bir örneğidir; kapsam genişledikçe içerik derinleşecektir."
+    "body1": "Coğrafya Platformu, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir.",
+    "sourcing": "İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer."
   },
   "Turkiye": {
     "metaTitle": "Türkiye Haritası — 81 İl",
-    "metaDescription": "Türkiye'nin 81 ilini interaktif haritada keşfedin. Her il için konum, nüfus, yüzölçümü, iklim ve yüzey şekilleri; kaynaklı, düzenli detay sayfaları.",
+    "metaDescription": "Türkiye'nin 81 ilini interaktif haritada keşfet. Her il için konum, nüfus, yüzölçümü, iklim ve yüzey şekilleri; kaynaklı, düzenli detay sayfaları.",
     "heading": "Türkiye Haritası",
-    "intro": "Türkiye'nin 81 ilini interaktif haritada keşfedin. Bir il seçerek konumu, nüfusu, iklimi ve yüzey şekilleri hakkındaki kaynaklı detay sayfasına ulaşın.",
-    "gameCtaHeading": "Öğrendiklerinizi oyunla sınayın",
-    "gameCtaBody": "{brand}, aynı harita üzerinde oynanan bir bulma oyunudur: ekranda çıkan ili ya da bölgeyi haritada işaretlersiniz. Ücretsiz, kayıt gerekmiyor.",
-    "gameCtaLink": "Coğrafya harita oyununu aç"
+    "intro": "Bir ile tıklayarak detaylarını görüntüle.",
+    "gameCtaHeading": "Öğrendiklerini oyunla sına",
+    "gameCtaLink": "Harita oyununu aç"
   },
   "Game": {
     "brandName": "Kâşif",
@@ -76,8 +73,8 @@
     "regionRoundDescription": "{region} bölgesinin illerini haritada bulma turu.",
     "backToHub": "Oyun",
     "summaryBackToHub": "Mod seçimine dön",
-    "noScript": "Oyun için tarayıcınızda JavaScript gerekir.",
-    "emptyPool": "Bu turun soruları yüklenemedi, birazdan tekrar deneyin.",
+    "noScript": "Oyun için tarayıcında JavaScript gerekir.",
+    "emptyPool": "Bu tur için soru bulunamadı. Birazdan tekrar dene.",
     "mapTitle": "Oyun haritası: {mode}",
     "questionLead": "Bul:",
     "metaProgress": "Soru {index}/{total}",
@@ -85,9 +82,9 @@
     "showAnswer": "Cevabı göster",
     "next": "Devam",
     "restart": "Baştan başlat",
-    "confirmRestart": "Turu baştan başlatırsanız şu ana kadarki ilerleme silinir. Baştan başlansın mı?",
+    "confirmRestart": "Turu baştan başlatırsan şu ana kadarki ilerleme silinir. Baştan başlansın mı?",
     "feedbackCorrect": "Doğru: {name}",
-    "feedbackRetry": "Burası {name}. Tekrar deneyin.",
+    "feedbackRetry": "Burası {name}. Tekrar dene.",
     "feedbackRevealed": "{name} burası.",
     "summaryHeading": "Tur bitti",
     "summaryStars": "{count}/{max} yıldız",
@@ -95,11 +92,11 @@
     "statScore": "Puan",
     "statFound": "Doğru",
     "statWrong": "Yanlış",
-    "summaryMissedHeading": "Bilemedikleriniz",
+    "summaryMissedHeading": "Bilemediklerin",
     "summaryMissedNote": "Her il kendi detay sayfasına açılır.",
-    "summaryMissedNone": "Hepsini bildiniz.",
+    "summaryMissedNone": "Hepsini bildin.",
     "summaryReviewHeading": "Tekrar bak ({count})",
-    "summaryReviewNote": "Bunları buldunuz ama birkaç denemede. Sayfalarına göz atmak iyi gelir.",
+    "summaryReviewNote": "Bunları buldun ama birkaç denemede. Sayfalarına göz atmak iyi gelir.",
     "summaryReplay": "Tekrar oyna",
     "summaryReopen": "Tur özetini aç",
     "summaryClose": "Kapat",
@@ -107,8 +104,8 @@
     "zoomOut": "Uzaklaştır",
     "zoomReset": "Harita görünümüne sıfırla",
     "zoomControls": "Yakınlaştırma denetimleri",
-    "zoomInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna basın; ok tuşlarıyla kaydırın, 0 veya Home tuşuyla başlangıç görünümüne dönün. Bir il odaktayken Enter veya boşluk tuşu o ili seçer. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsiniz.",
-    "zoomHint": "Küçük illeri seçmek için yakınlaştırın",
+    "zoomInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla başlangıç görünümüne dön. Bir il odaktayken Enter veya boşluk tuşu o ili seçer. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
+    "zoomHint": "Küçük illeri seçmek için yakınlaştır",
     "zoomDismissHint": "İpucunu kapat"
   },
   "ProvinceDetail": {
@@ -147,7 +144,7 @@
     "hydrographyTypeBaraj": "Barajlar",
     "hydrographyTypeNehir": "Akarsular",
     "hydrographyTypeGol": "Göller",
-    "hydrographyNone": "Bu ilde belirgin bir akarsu, göl veya baraj bulunmamaktadır.",
+    "hydrographyNone": "Bu ilde belirgin bir akarsu, göl veya baraj yok.",
     "settlementHeading": "{name} Nüfus ve Yerleşme",
     "urbanizationRate": "Şehirleşme Oranı",
     "urbanizationRateValue": "%{value, number}",
@@ -228,21 +225,19 @@
   },
   "Dunya": {
     "metaTitle": "Dünya Haritası — Ülkeler",
-    "metaDescription": "Dünya ülkelerini interaktif haritada keşfedin. Her ülke için konum, başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
+    "metaDescription": "Dünya ülkelerini interaktif haritada keşfet. Her ülke için konum, başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
     "heading": "Dünya Haritası",
-    "intro": "Dünya ülkelerini interaktif haritada keşfedin. Bir ülke seçerek konumu, başkenti, nüfusu ve fiziki coğrafyası hakkındaki kaynaklı detay sayfasına ulaşın. İçerik Türkiye'nin komşu ülkeleriyle başlıyor; kapsam yeni ülkeler eklendikçe genişleyecek."
+    "intro": "Bir ülkeye tıklayarak detaylarını görüntüle."
   },
   "WorldMap": {
-    "sectionHeading": "Haritadan bir ülke seçin",
-    "sectionBody": "Dünya haritasında bir ülkenin üzerine gelin (ya da klavyeyle odaklanın); açılan kartla o ülkenin detay sayfasına geçin. İçeriği yayında olan ülkeler etkileşimlidir; kalan ülke ve bölgeler içerik eklendikçe canlanır.",
     "mapTitle": "Dünya ülkeleri haritası (bölgesel)",
     "attribution": "Sınır verisi: Natural Earth (kamu malı)",
     "zoomIn": "Yakınlaştır",
     "zoomOut": "Uzaklaştır",
     "resetView": "Dünya görünümüne sıfırla",
     "zoomControls": "Yakınlaştırma denetimleri",
-    "keyboardInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna basın; ok tuşlarıyla kaydırın, 0 veya Home tuşuyla dünya görünümüne dönün. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsiniz.",
-    "zoomHint": "Yakınlaştırmak için kaydırın veya + / − kullanın",
+    "keyboardInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla dünya görünümüne dön. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
+    "zoomHint": "Yakınlaştırmak için kaydır veya + / − kullan",
     "dismissHint": "İpucunu kapat",
     "turkiyeName": "Türkiye",
     "turkiyeCardSubtitle": "İl haritası",
@@ -292,12 +287,12 @@
   "NotFound": {
     "metaTitle": "Sayfa bulunamadı",
     "heading": "Sayfa bulunamadı",
-    "body": "Aradığınız sayfa taşınmış veya hiç var olmamış olabilir.",
+    "body": "Aradığın sayfa taşınmış veya hiç var olmamış olabilir.",
     "backHome": "Ana sayfaya dön"
   },
   "Error": {
     "heading": "Bir şeyler ters gitti",
-    "body": "Beklenmeyen bir hata oluştu. Sayfayı yeniden yüklemeyi deneyebilirsiniz.",
+    "body": "Beklenmeyen bir hata oluştu. Sayfayı yeniden yüklemeyi deneyebilirsin.",
     "retry": "Tekrar dene"
   }
 }
