@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import { buildMarineExplainers, MARINE_EXPLAINER_KEYS, type MarineTranslator } from "./explainers";
 
 /**
- * The FAQ PARITY guarantee, asserted structurally (`CONVENTIONS.md` §2). Nothing here reads
+ * The explainer BLOCK SET, asserted structurally (`CONVENTIONS.md` §2). Nothing here reads
  * the real Turkish copy: the translator is synthetic and the assertions are about WHICH
- * strings the visible blocks and the JSON-LD answers are built from, never about what those
- * strings say. Google requires FAQPage content to be visible on the page and
- * `SEO-POLICY.md` §B5 5.7 bans markup that is not — so what must be pinned is that both
- * consumers resolve the same keys through the same call.
+ * keys the seven blocks are built from and in WHICH order, never about what those strings
+ * say. B11 requires seven blocks in an editorial order, and the module is the only place
+ * that set is declared — so the set, the order and the purity of the builder are what a
+ * test can meaningfully pin.
+ *
+ * That the keys actually RESOLVE in the message catalogues is a separate concern, guarded
+ * in `messages.test.ts`.
  */
 
 /** Echoes the key back, so an entry's provenance is visible in the assertion. */
@@ -53,17 +56,17 @@ describe("buildMarineExplainers", () => {
     }
   });
 
-  it("gives the visible block and the FAQ markup identical strings", () => {
-    // The page calls this ONCE and hands the result to both consumers. Two calls with the
-    // same translator must therefore be indistinguishable — if they ever were not, the
-    // rendered paragraph and the marked-up answer could drift apart.
-    const forDisplay = buildMarineExplainers(echo);
-    const forJsonLd = buildMarineExplainers(echo);
+  it("is pure — the same translator always yields the same blocks", () => {
+    // Every consumer resolves the blocks through this one call, so two calls with the same
+    // translator must be indistinguishable: no hidden order, no per-call state, nothing
+    // that could make one caller render a different seventh block than another.
+    const first = buildMarineExplainers(echo);
+    const second = buildMarineExplainers(echo);
 
-    expect(forJsonLd).toEqual(forDisplay);
-    for (const [index, entry] of forDisplay.entries()) {
-      expect(forJsonLd[index]?.answer).toBe(entry.answer);
-      expect(forJsonLd[index]?.question).toBe(entry.question);
+    expect(second).toEqual(first);
+    for (const [index, entry] of first.entries()) {
+      expect(second[index]?.answer).toBe(entry.answer);
+      expect(second[index]?.question).toBe(entry.question);
     }
   });
 

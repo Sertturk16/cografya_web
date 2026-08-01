@@ -1,10 +1,11 @@
-/* `/turkiye` hub page styles. Today this is only the cross-link block to the map game
-   (SPEC §10.4); the map itself is styled by components/map/map.module.css. */
+/* `/turkiye` hub page styles. Today these are only the cross-link blocks (the map game,
+   SPEC §10.4, and the marine hub); the map itself is styled by
+   components/map/map.module.css. */
 
-.gameCta {
+.ctaCard {
   max-width: 70ch;
 }
 
-.gameCta h2 {
+.ctaCard h2 {
   margin-top: 0;
 }

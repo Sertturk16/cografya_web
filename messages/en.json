@@ -301,7 +301,7 @@
     "sourcesHeading": "Sources and use",
     "sourceEcmwf": "The model run details for the wind layers are obtained from ECMWF Open Data, licensed under CC BY 4.0. This data is the output of a numerical weather prediction model, not a station measurement.",
     "sourceCmems": "Sea surface temperature and the Copernicus Marine wave layers will be published in the next phase. No values from those sources are shown on this page.",
-    "teaches": "The seas around Türkiye, the resolution of marine forecast models and the basics of wind measurement"
+    "teaches": "The seas around Türkiye, the offshore reference points along its coasts and the measurement catalogue behind them"
   },
   "Marine": {
     "basinPointCount": "{count, plural, one {# point} other {# points}}",

@@ -2,17 +2,20 @@
  * The seven permanent explainer blocks of `/deniz` (SPEC-ADDENDUM §7.12, B11) — and the
  * ONE place their message keys are listed.
  *
- * Why a shared builder instead of two lists: the visible blocks and the `FAQPage` JSON-LD
- * must carry character-for-character identical text. Google's FAQPage documentation
- * requires the marked-up content to be visible on the page, and `SEO-POLICY.md` §B5 5.7
- * treats structured data that is not on the page as a spam signal, not a bonus (it is why
- * DEC 2026-07-30r removed the FAQ markup from `/oyun` together with its visible FAQ). If
- * the renderer and the markup builder each read their own keys, that guarantee lasts
- * exactly until someone edits one of them. Both call THIS function, so the two
- * representations are the same strings by construction, not by discipline.
+ * Why a module instead of seven inline `t()` calls in the JSX: the block SET is a
+ * requirement (B11 names the seven), the block ORDER is editorial, and both are properties
+ * of the content rather than of the markup that happens to render it. Declared once here,
+ * they can be asserted (`explainers.test.ts`) and reused by any future consumer without a
+ * second hand-maintained list of keys drifting away from the first.
+ *
+ * There is deliberately NO `FAQPage` JSON-LD built from these blocks. Google has restricted
+ * FAQ rich results to authoritative government and health sites since 2023, so the markup
+ * would win this page no SERP surface while committing us to keeping a second copy of the
+ * same seven answers byte-identical forever. The blocks are visible content and stand on
+ * their own.
  *
  * The blocks are Turkish-only and are not rendered on `/en/sea` at all — machine
- * translation is barred (`SEO-POLICY.md` §B14), so the EN page carries no FAQ markup either.
+ * translation is barred (`SEO-POLICY.md` §B14).
  */
 
 /** The minimal shape of a next-intl translator this module needs. */
@@ -31,8 +34,8 @@ export interface MarineExplainer {
  *
  * Order is editorial and deliberate: definitions first (what the numbers mean), then the
  * model's limits (resolution, per-sea models, the Marmara wave gap), then what a reference
- * point is. A block is a SINGLE paragraph by requirement — the JSON-LD answer is plain
- * text, so a two-paragraph block could not be reproduced identically.
+ * point is. A block is a SINGLE paragraph by requirement — one question, one answer, no
+ * sub-structure to get lost when the copy is revised.
  */
 export const MARINE_EXPLAINER_KEYS = [
   { id: "waveHeight", question: "q1", answer: "a1" },
@@ -47,8 +50,8 @@ export const MARINE_EXPLAINER_KEYS = [
 /**
  * Resolves the explainer blocks through a `Deniz`-namespace translator.
  *
- * Call it once per render and pass the result to BOTH the visible section and
- * `faqPageJsonLd` — never call it twice with different translators.
+ * Pure: the same translator always yields the same blocks in the same order, so every
+ * consumer of the result renders the same seven strings.
  */
 export function buildMarineExplainers(t: MarineTranslator): MarineExplainer[] {
   return MARINE_EXPLAINER_KEYS.map((entry) => ({

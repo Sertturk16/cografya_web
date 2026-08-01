@@ -10,8 +10,8 @@ interface LayerCatalogueProps {
   layers: MarineLayer[];
 }
 
-/** The section's heading id, shared with the page's landmark wiring. */
-export const LAYER_CATALOGUE_HEADING_ID = "deniz-layer-catalogue";
+/** The section's heading id — the `<h2>` and this section's `aria-labelledby`. */
+const HEADING_ID = "deniz-layer-catalogue";
 
 /**
  * Exhaustive enum → message-key maps.
@@ -20,6 +20,13 @@ export const LAYER_CATALOGUE_HEADING_ID = "deniz-layer-catalogue";
  * a template key compiles no matter what, so an enum value added to the contract would ship
  * a missing-key crash. These maps fail at `tsc` instead — the same reason the `/oyun` page
  * spells its mode tuple out by hand.
+ *
+ * `tsc` only guards the values the COMMITTED spec knows about, though. Between an api
+ * deploy that adds an enum value and the web regenerating its types, the api can send one
+ * these maps have never heard of; the lookup is then `undefined` at runtime and next-intl
+ * renders the namespace name ("Marine") into an indexable table cell. So every lookup below
+ * is read into a `string | undefined` local and falls back to the empty-cell treatment —
+ * a value we cannot label honestly is shown as absent, never as a nonsense word.
  */
 const UNIT_KEY: Record<MarineLayer["unit"], string> = {
   m: "unit.m",
@@ -82,9 +89,12 @@ export async function LayerCatalogue({ locale, layers }: LayerCatalogueProps) {
 
   const instant = (value: Date) => format.dateTime(value, MODEL_INSTANT_FORMAT);
 
+  /** Resolves a catalogue enum, or `null` when the contract has moved ahead of this build. */
+  const label = (key: string | undefined): string | null => (key === undefined ? null : tm(key));
+
   return (
-    <section className="section" aria-labelledby={LAYER_CATALOGUE_HEADING_ID}>
-      <h2 id={LAYER_CATALOGUE_HEADING_ID}>{t("catalogueHeading")}</h2>
+    <section className="section" aria-labelledby={HEADING_ID}>
+      <h2 id={HEADING_ID}>{t("catalogueHeading")}</h2>
 
       <div
         className={styles.tableScroll}
@@ -122,7 +132,21 @@ export async function LayerCatalogue({ locale, layers }: LayerCatalogueProps) {
           <tbody>
             {layers.map((layer) => {
               const state = marineLayerState(layer);
-              const unit = tm(UNIT_KEY[layer.unit]);
+              // Widened to `string | undefined` deliberately: `tsc` proves the maps cover
+              // today's contract, these locals cover tomorrow's payload.
+              const unitKey: string | undefined = UNIT_KEY[layer.unit];
+              const directionKey: string | undefined =
+                layer.directionConvention === null
+                  ? undefined
+                  : DIRECTION_KEY[layer.directionConvention];
+              const sourceKey: string | undefined = SOURCE_KEY[layer.primarySource];
+              const fallbackKey: string | undefined =
+                layer.fallbackSource === null ? undefined : SOURCE_KEY[layer.fallbackSource];
+
+              const unit = label(unitKey);
+              const direction = label(directionKey);
+              const source = label(sourceKey);
+              const fallback = label(fallbackKey);
               const horizon = parseModelInstant(layer.horizonEndUtc);
               const catalogueUpdated = parseModelInstant(layer.catalogueUpdatedAtUtc);
 
@@ -131,22 +155,18 @@ export async function LayerCatalogue({ locale, layers }: LayerCatalogueProps) {
                   <th scope="row" className={styles.thRow}>
                     {locale === "en" ? layer.labelEn : layer.labelTr}
                   </th>
-                  <td className={styles.td}>{unit}</td>
-                  <td className={styles.td}>
-                    {layer.directionConvention !== null
-                      ? tm(DIRECTION_KEY[layer.directionConvention])
-                      : emptyCell}
-                  </td>
+                  <td className={styles.td}>{unit ?? emptyCell}</td>
+                  <td className={styles.td}>{direction ?? emptyCell}</td>
                   <td className={`${styles.td} ${styles.tdNumeric}`}>
-                    {layer.calmThreshold !== null
+                    {layer.calmThreshold !== null && unit !== null
                       ? `${format.number(layer.calmThreshold, { maximumFractionDigits: 2 })} ${unit}`
                       : emptyCell}
                   </td>
                   <td className={styles.td}>
-                    {tm(SOURCE_KEY[layer.primarySource])}
-                    {layer.fallbackSource !== null && (
+                    {source ?? emptyCell}
+                    {fallback !== null && (
                       <span className={styles.sourceFallback}>
-                        {tm("source.fallback", { source: tm(SOURCE_KEY[layer.fallbackSource]) })}
+                        {tm("source.fallback", { source: fallback })}
                       </span>
                     )}
                   </td>

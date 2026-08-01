@@ -31,11 +31,13 @@ export default getRequestConfig(async ({ requestLocale }) => {
      * timestamp) and the `/deniz` hub labels them "UTC" on screen. Converting them to a
      * local zone would silently restate the provider's own stamp.
      *
-     * This does NOT change any existing page. The only two `dateTime` call sites already
-     * defend themselves: the climate records pass `timeZone: "UTC"` explicitly (an explicit
-     * option beats this default), and month names are built from `Date.UTC(2020, m-1, 15)`,
-     * a mid-month anchor no real zone offset can push into another month. Verified
-     * empirically against `dev` before merge (rendered-HTML diff, W1a closing summary).
+     * This does NOT change any existing page. All three pre-existing `dateTime` call sites
+     * already defend themselves: the climate records pass `timeZone: "UTC"` explicitly (an
+     * explicit option beats this default), and the two month-name formatters
+     * (`components/climate/climate-table.tsx`, `lib/climate/month.ts`) build their input
+     * from `Date.UTC(2020, m-1, 15)`, a mid-month anchor no real zone offset can push into
+     * another month. Verified empirically against `dev` before merge (rendered-HTML diff,
+     * W1a closing summary).
      */
     timeZone: "UTC",
   };

@@ -13,8 +13,8 @@ interface ReferencePointsProps {
   provinces: ProvinceListItem[];
 }
 
-/** The section's heading id, so the page and the landmark label stay in step. */
-export const REFERENCE_POINTS_HEADING_ID = "deniz-reference-points";
+/** The section's heading id, and the stem of each basin sub-heading's id. */
+const HEADING_ID = "deniz-reference-points";
 
 /**
  * The 30 offshore reference points, grouped under the sea each one sits in and linked to
@@ -38,16 +38,28 @@ export async function ReferencePoints({ locale, points, provinces }: ReferencePo
   const groups = groupPointsByBasin(points);
   const provincesByPlate = byPlateCode(provinces);
 
+  // The link-less render is a legitimate state (no published province page) AND the exact
+  // shape of a degraded one: if the province read fails during `next build` while the point
+  // read succeeds, every point silently loses its link and the hub caches a dead-ended page
+  // that looks intentional. Nothing here can repair that, but it must not pass in silence —
+  // same treatment as the fetch wrappers' build-time warnings (`lib/api/provinces.ts`).
+  if (points.length > 0 && points.every((point) => !provincesByPlate.has(point.plateCode))) {
+    console.warn(
+      `[marine] ${points.length} reference points resolved to 0 province pages ` +
+        `(${provinces.length} provinces loaded); the hub is rendering without internal links.`,
+    );
+  }
+
   return (
-    <section className="section" aria-labelledby={REFERENCE_POINTS_HEADING_ID}>
-      <h2 id={REFERENCE_POINTS_HEADING_ID}>{t("pointsHeading")}</h2>
+    <section className="section" aria-labelledby={HEADING_ID}>
+      <h2 id={HEADING_ID}>{t("pointsHeading")}</h2>
       <p className={styles.hint}>{tm("point.referencePointHint")}</p>
 
       <div className={styles.basinGrid}>
         {groups.map((group) => {
           const label = basinLabel(group, locale);
           if (label === null) return null;
-          const headingId = `${REFERENCE_POINTS_HEADING_ID}-${group.basin}`;
+          const headingId = `${HEADING_ID}-${group.basin}`;
 
           return (
             <section key={group.basin} className={styles.basin} aria-labelledby={headingId}>

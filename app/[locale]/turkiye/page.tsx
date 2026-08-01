@@ -96,7 +96,7 @@ export default async function TurkiyePage({ params }: PageProps) {
           the PAGE body, deliberately outside `TurkeyMapSection`: that component owns the
           81 crawlable province links and is not opened by game work. */}
       <section className="section" aria-labelledby="turkiye-game-heading">
-        <div className={`card ${styles.gameCta}`}>
+        <div className={`card ${styles.ctaCard}`}>
           <h2 id="turkiye-game-heading">{t("gameCtaHeading")}</h2>
           {/* The descriptive paragraph under this heading is gone (→ DEC 2026-07-30t/u,
               CONTENT-STYLE §22): it narrated the game's mechanic ("ekranda çıkan ili …
@@ -113,7 +113,7 @@ export default async function TurkiyePage({ params }: PageProps) {
           catalogue live. The link is deliberately thematic, not navigational duplication —
           the header already carries the nav entry. */}
       <section className="section" aria-labelledby="turkiye-marine-heading">
-        <div className={`card ${styles.gameCta}`}>
+        <div className={`card ${styles.ctaCard}`}>
           <h2 id="turkiye-marine-heading">{t("marineCtaHeading")}</h2>
           <Link href="/deniz" className="btn btn-primary">
             {t("marineCtaLink")}

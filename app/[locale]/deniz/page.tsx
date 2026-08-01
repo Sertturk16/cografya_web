@@ -9,12 +9,7 @@ import { getProvincesResilient } from "@/lib/api/provinces";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { buildMarineExplainers } from "@/lib/marine/explainers";
-import {
-  collectionPageJsonLd,
-  faqPageJsonLd,
-  JsonLd,
-  learningResourceJsonLd,
-} from "@/lib/seo/json-ld";
+import { collectionPageJsonLd, JsonLd, learningResourceJsonLd } from "@/lib/seo/json-ld";
 import type { ContentSurface } from "@/lib/seo/indexing";
 import { buildMetadata } from "@/lib/seo/metadata";
 import styles from "./deniz.module.css";
@@ -58,7 +53,7 @@ const MARINE_SURFACE: ContentSurface = "trNarrative";
  * reads as a schedule, not as an omission.
  */
 
-/** The blocks (and their FAQ markup) exist only in the locale that owns the narrative. */
+/** The blocks exist only in the locale that owns the narrative. */
 function rendersExplainers(locale: Locale): boolean {
   return locale === routing.defaultLocale;
 }
@@ -118,8 +113,8 @@ export default async function DenizPage({ params }: PageProps) {
     getProvincesResilient(),
   ]);
 
-  // Built ONCE and used twice — the visible blocks and the FAQ markup are the same strings
-  // by construction (`lib/marine/explainers.ts`).
+  // The seven blocks, resolved through the ONE module that lists their keys
+  // (`lib/marine/explainers.ts`) — empty on `/en/sea`, where the narrative does not exist.
   const explainers = rendersExplainers(locale) ? buildMarineExplainers(t) : [];
 
   return (
@@ -132,6 +127,13 @@ export default async function DenizPage({ params }: PageProps) {
             path,
             locale,
           }),
+          // NO `FAQPage` node, deliberately. The seven blocks are genuinely visible, so the
+          // §B5 5.7 "markup without content" ban is not what rules here — the reason is that
+          // since 2023 Google restricts FAQ rich results to authoritative government and
+          // health sites, so the markup buys this page exactly zero SERP surface while
+          // adding a second copy of the same text that has to be kept in step forever.
+          // The blocks themselves are untouched: they are the page's substance (B11), they
+          // are what a reader and an AI crawler actually read, and they stay in the HTML.
           learningResourceJsonLd({
             name: t("heading"),
             description: t("metaDescription"),
@@ -140,12 +142,6 @@ export default async function DenizPage({ params }: PageProps) {
             learningResourceType: "Article",
             teaches: t("teaches"),
           }),
-          // FAQPage only where the visible blocks actually render. Structured data whose
-          // content is not on the page is a spam signal, not a bonus (SEO-POLICY §B5 5.7) —
-          // the same rule that took the FAQ markup off `/oyun` (DEC 2026-07-30r). The
-          // difference here is that the content is not filler: B11 REQUIRES these seven
-          // blocks, and they are the page's substance.
-          ...(explainers.length > 0 ? [faqPageJsonLd(explainers)] : []),
         ]}
       />
       <Breadcrumb
