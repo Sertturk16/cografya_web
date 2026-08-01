@@ -36,6 +36,15 @@ export const ROUTE_FIXTURES: readonly RouteFixture[] = [
     name: "localized-segment route (/oyun ↔ /en/game)",
     hrefForLocale: () => "/oyun",
   },
+  // The marine hub — a real localized-segment route that is ALSO the first STATIC route
+  // carried on the `"trNarrative"` surface. Until now that surface was exercised only by
+  // the two localized-SLUG routes, so the policy matrix never checked that a de-indexed
+  // static segment (`/en/sea`) drops out of the urlset and the hreflang cluster the same
+  // way a de-indexed slug does.
+  {
+    name: "localized-segment route (/deniz ↔ /en/sea)",
+    hrefForLocale: () => "/deniz",
+  },
   {
     name: "localized-slug province route (/turkiye/[slug])",
     hrefForLocale: (locale) => ({

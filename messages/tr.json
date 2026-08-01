@@ -9,6 +9,7 @@
     "home": "Ana Sayfa",
     "turkiye": "Türkiye",
     "dunya": "Dünya",
+    "deniz": "Deniz",
     "game": "Oyun",
     "about": "Hakkımızda"
   },
@@ -17,7 +18,8 @@
     "home": "Ana Sayfa",
     "turkiye": "Türkiye",
     "dunya": "Dünya",
-    "game": "Oyun"
+    "game": "Oyun",
+    "deniz": "Deniz"
   },
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
@@ -50,7 +52,9 @@
     "heading": "Türkiye Haritası",
     "intro": "Bir ile tıklayarak detaylarını görüntüle.",
     "gameCtaHeading": "Öğrendiklerini oyunla sına",
-    "gameCtaLink": "Harita oyununu aç"
+    "gameCtaLink": "Harita oyununu aç",
+    "marineCtaHeading": "Denizler ve kıyı illeri",
+    "marineCtaLink": "Deniz sayfasını aç"
   },
   "Game": {
     "brandName": "Kâşif",
@@ -286,6 +290,77 @@
     "sourcesLabel": "Kaynaklar",
     "sources": "Veriler resmi ve otoriter kaynaklara dayanır: ülke ve başkent adları T.C. Dışişleri Bakanlığı; nüfus Dünya Bankası (Gürcistan için Geostat 2024 sayımı); yüzölçümü Dünya Bankası; kıta ve bölge sınıflandırması BM İstatistik Bölümü (M49); komşu ülkeler, yönetim biçimi, para birimi ve fiziki coğrafya çok kaynaklı çapraz kontrolle (Britannica vb.).",
     "backToMap": "Dünya haritasına dön"
+  },
+  "Deniz": {
+    "metaTitle": "Türkiye Kıyıları: Rüzgâr ve Dalga Ölçümü",
+    "metaDescription": "Karadeniz, Marmara, Ege ve Akdeniz kıyısındaki 27 ilin açığında 30 sabit referans noktası. Rüzgâr ve dalga ölçümlerinin hangi modelden geldiğini anlatıyoruz.",
+    "heading": "Türkiye Kıyılarında Deniz ve Rüzgâr",
+    "lede": "Karadeniz, Marmara, Ege ve Akdeniz açıklarında 30 sabit referans noktası.",
+    "pointsHeading": "Kıyı illeri ve açıklardaki referans noktaları",
+    "catalogueHeading": "Ölçüm kataloğu: hangi büyüklük hangi modelden geliyor",
+    "sourcesHeading": "Kaynaklar ve kullanım",
+    "sourceEcmwf": "Rüzgâr katmanlarının model künyesi ECMWF Open Data'dan alınmaktadır; lisansı CC BY 4.0'dır. Bu veri, sayısal bir hava tahmini modelinin çıktısıdır, istasyon ölçümü değildir.",
+    "sourceCmems": "Deniz yüzeyi sıcaklığı ile Copernicus Marine kaynaklı dalga katmanları sıradaki aşamada yayımlanacaktır. Bu sayfada söz konusu kaynaklardan hiçbir değer gösterilmemektedir.",
+    "teaches": "Türkiye'yi çevreleyen denizler, deniz tahmin modellerinin çözünürlüğü ve rüzgâr ölçümünün temel kavramları",
+    "q1": "Belirgin dalga yüksekliği ne demektir?",
+    "a1": "Denizcilikte ve tahmin modellerinde kullanılan dalga yüksekliği, teknik adıyla belirgin dalga yüksekliğidir: belirli bir süre boyunca ölçülen dalgaların en yüksek üçte birinin ortalaması. Bu tanım, denizi izleyen deneyimli bir gözlemcinin algıladığı yüksekliğe yakın çıktığı için tercih edilir. Ama bir ortalamadır, tek dalgaların üst sınırı değil. Dalgaların yaklaşık yüzde 15'i bu değere eşit ya da ondan yüksek çıkar; en yüksek tekil dalga, belirgin dalga yüksekliğinin iki katına yaklaşabilir. Yani 1 metre yazan bir değerin altında ara sıra 2 metreye yaklaşan dalgalarla karşılaşmak istatistiksel olarak beklenen bir durumdur.",
+    "q2": "Rüzgâr neden 10 metre yükseklikte veriliyor?",
+    "a2": "Ölçüm kataloğundaki rüzgâr, deniz yüzeyinden 10 metre yükseklikteki rüzgârdır. Bu, meteorolojide yerleşik standart ölçüm yüksekliğidir; kara istasyonları da anemometrelerini aynı yüksekliğe kurar. Sebep karşılaştırılabilirlik: rüzgâr yüzeye yaklaştıkça sürtünmeyle yavaşlar ve düzensizleşir, bu yüzden farklı yerlerde ölçülen rüzgârları yan yana koyabilmek için ortak bir referans yüksekliğe ihtiyaç var. Kısacası bu ölçüm \"şu anda kıyıda ne hissedersin\" sorusuna değil, \"açık deniz üzerinde 10 metrede model rüzgârı nedir\" sorusuna cevap verir. Teknenin güvertesinde ya da kumsalda hissedilen rüzgâr, yerel engellere göre bundan farklı olabilir.",
+    "q3": "Deniz yüzeyi sıcaklığı, kıyıdaki su sıcaklığıyla aynı mı?",
+    "a3": "Değil. Ölçüm kataloğundaki deniz yüzeyi sıcaklığı uydu ve model verilerinden hesaplanır ve birkaç kilometre genişliğindeki bir su kütlesinin ince yüzey tabakasını temsil eder. Kıyıda elini suya soktuğunda hissettiğin sıcaklık ise sığ, güneşle çabuk ısınıp çabuk soğuyan, dip akıntılarından ve rüzgârdan etkilenen tek bir noktanın sıcaklığıdır. İkisi aynı gün birkaç derece farklı çıkabilir, özellikle sığ körfezlerde ve öğleden sonraki saatlerde. Meteoroloji Genel Müdürlüğü'nün kıyı istasyonlarında termometreyle yaptığı ölçüm bu yerel farkı yakalar; model tahmini ise geniş bir su kütlesinin ortalamasını verir. İki sayı aynı soruyu farklı ölçekte cevaplar.",
+    "q4": "Model çözünürlüğü kıyıya yaklaşınca ne oluyor?",
+    "a4": "Deniz tahmin modelleri denizi kare kare bir ızgaraya böler ve her kare için tek bir sayı üretir; o sayı, karenin tamamının ortalamasıdır. Açık denizde bu yeterince doğrudur, çünkü sıcaklık ve dalga koşulları birkaç kilometrelik bir alanda fazla değişmez. Boğazlarda ve dar körfezlerde ise farklı bir fizik devreye girer: İstanbul Boğazı gibi geçitlerde üstte ve altta ters yönde akan iki katmanlı bir akıntı vardır, dar kesitten geçen su hızla karışır ve sıcaklık dağılımı birkaç yüz metrede değişebilir. Aynı noktayı iki farklı model birbirinden belirgin biçimde farklı gösterebilir. Referans noktalarının geçitlerin dışında seçilmesinin sebebi budur.",
+    "q5": "Türkiye'yi çevreleyen dört denizin modelleri neden ayrı?",
+    "a5": "Karadeniz, Marmara, Ege ve Akdeniz tek bir modelden değil, ayrı ayrı çalışan bölgesel modellerden okunur. Sebebi coğrafyanın kendisi: derinlik, tuzluluk ve akıntı düzeni bu dört denizde birbirinden farklıdır ve dar, kapalı bir denizi geniş kareli küresel bir model yeterince çözemez. Bölgesel bir model aynı alanı çok daha sık bir ızgarayla kaplar, bu yüzden kıyıya yakın koşulları daha iyi yakalar. Ayrı model, ayrı üretim takvimi demektir: bir denizin tahmini günde iki kez yenilenirken bir başkasınınki günde bir kez yenilenebilir. Bu yüzden dört deniz aynı anda aynı yaşta veri taşımayabilir; ölçüm kataloğundaki künye sütunu her katman için bunu ayrı ayrı gösterir.",
+    "q6": "Marmara'nın dalga verisi neden farklı bir modelden gelebilir?",
+    "a6": "Bölgesel dalga modelinin kapsama kutusu Marmara Denizi'ni içine alır, ama modelin kara/deniz maskesi bu alanı deniz olarak işaretlemez ve orada hiç sayısal değer üretmez. Kutunun içinde olmak, o noktanın modellendiği anlamına gelmiyor: dalga modeli için Marmara boş bir alandır. Bu bir arıza değil, ürünün kapsama sınırının sonucudur. Ölçüm kataloğu bu yüzden dalga katmanları için ayrı bir yedek kaynak kaydeder ve Marmara'daki bir dalga değeri diğer üç denizde kullanılan modelden değil, daha kaba çözünürlüklü bir küresel modelden gelir. Katalogdaki kaynak sütunu bu ayrımı gösterir.",
+    "q7": "\"Açıklardaki referans noktası\" ne demek?",
+    "a7": "Bu sayfa belirli bir plaj ya da liman için değil, elle seçilmiş sabit açık deniz noktaları için ölçüm yayımlar: \"Antalya Açıkları\", \"Sinop Açıkları\" gibi. Sebebi haritada tıklama kolaylığı değil, dürüstlük. Bölgesel modellerin ızgara kareleri birkaç kilometre genişliğinde olduğu için tek bir plajın hemen önündeki dalga ve sıcaklık koşullarını temsil edemezler. Sonuç, tek bir kıyı şeridi için değil, o kıyının açığındaki geniş bir su kütlesi için temsili bir tahmindir. Bir plajın gerçek dalga ve akıntı koşulları, dip yapısına ve yerel rüzgâra bağlı olarak buradan belirgin biçimde farklı olabilir."
+  },
+  "Marine": {
+    "basinPointCount": "{count} nokta",
+    "disclaimer": {
+      "educationalOnly": "Bu sayfadaki bilgiler eğitim amaçlıdır; denizcilik, seyir veya can güvenliği kararlarında kullanılamaz. Resmî deniz durumu tahminleri ve uyarıları için Meteoroloji Genel Müdürlüğü'nün yayınları esas alınmalıdır."
+    },
+    "status": {
+      "live": "Yayında",
+      "notSupported": "Sıradaki aşama"
+    },
+    "point": {
+      "referencePointHint": "Noktalar boğazların ve dar körfezlerin dışına, modelin daha güvenilir çalıştığı açık suya yerleştirildi."
+    },
+    "unit": {
+      "m": "m",
+      "celsius": "°C",
+      "degree_true": "derece (gerçek kuzeye göre)",
+      "meter_per_second": "m/s"
+    },
+    "direction": {
+      "from": "Geldiği yön",
+      "towards": "Gittiği yön"
+    },
+    "source": {
+      "ecmwf": "ECMWF Open Data",
+      "cmems": "Copernicus Marine",
+      "fallback": "Yedek: {source}"
+    },
+    "catalogue": {
+      "caption": "Türkiye kıyıları için yayımlanan ölçüm katmanları.",
+      "scrollRegionLabel": "Ölçüm kataloğu tablosu",
+      "colQuantity": "Büyüklük",
+      "colUnit": "Birim",
+      "colDirection": "Yön",
+      "colCalm": "Sakin eşiği",
+      "colSource": "Kaynak",
+      "colStatus": "Durum",
+      "colModelRun": "Model künyesi",
+      "calmNote": "Sakin eşiği, altında denizin ya da rüzgârın sakin sayıldığı değerdir: bu değerin altında yön oku yerine sakin göstergesi kullanılır.",
+      "cycle": "Çevrim: {value}",
+      "horizon": "Tahmin ufku: {value} UTC",
+      "catalogueUpdated": "Katalog: {value} UTC",
+      "noModelRun": "Model künyesi sıradaki aşamada yayımlanacak.",
+      "notApplicable": "Bu katman için geçerli değil"
+    }
   },
   "NotFound": {
     "metaTitle": "Sayfa bulunamadı",

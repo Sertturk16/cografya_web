@@ -1,0 +1,22 @@
+/* `/deniz` hub page styles. The section components carry their own styling
+   (components/marine/marine.module.css); this file holds only page-level layout. */
+
+.sources {
+  max-width: 70ch;
+}
+
+.sources p {
+  color: var(--color-slate);
+}
+
+/* The licence / educational-use notice is an UNTOUCHABLE copy class (CONTENT-STYLE §22):
+   it stays formal and complete. Set apart visually so it reads as a notice rather than as
+   another paragraph of body copy. */
+.disclaimer {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-surface);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.9rem;
+}

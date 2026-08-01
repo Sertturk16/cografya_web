@@ -106,6 +106,20 @@ export default async function TurkiyePage({ params }: PageProps) {
           </Link>
         </div>
       </section>
+
+      {/* Hub-and-spoke cross-link to the marine hub (owner answer S8, CONVENTIONS §6 #10).
+          It belongs on THIS page specifically: 27 of the 81 provinces indexed above have a
+          coast, and `/deniz` is where their offshore reference points and the measurement
+          catalogue live. The link is deliberately thematic, not navigational duplication —
+          the header already carries the nav entry. */}
+      <section className="section" aria-labelledby="turkiye-marine-heading">
+        <div className={`card ${styles.gameCta}`}>
+          <h2 id="turkiye-marine-heading">{t("marineCtaHeading")}</h2>
+          <Link href="/deniz" className="btn btn-primary">
+            {t("marineCtaLink")}
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

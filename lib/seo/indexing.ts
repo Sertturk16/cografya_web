@@ -48,8 +48,14 @@ export const EN_CONTENT_READY: boolean = false;
  *   headings, ledes and meta strings are real EN prose in `messages/en.json` (verified, not
  *   assumed) and whose value — the interactive map + the province/country index — is
  *   locale-independent. These stay fully indexable in both locales.
- * - `"trNarrative"` — the page's substance comes from TR-only api narrative fields, so the
- *   EN rendering is chrome-only. Today: `/turkiye/[slug]` and `/dunya/[slug]`.
+ * - `"trNarrative"` — the page's substance is TURKISH-ONLY, so the EN rendering is
+ *   chrome-only. Today: `/turkiye/[slug]` and `/dunya/[slug]`, whose substance is the api's
+ *   TR-only narrative fields, and `/deniz`, whose substance is seven hand-written Turkish
+ *   explainer blocks in `messages/tr.json` that are deliberately NOT machine-translated
+ *   (`SEO-POLICY.md` §B14). The surface is named after the api case because that is where
+ *   it started; what it actually encodes is "the narrative exists in one locale only",
+ *   whatever holds the narrative. Flipping `EN_CONTENT_READY` still fixes every member at
+ *   once — for `/deniz` that means writing the English blocks, not translating them.
  * - `"noindex"` — the page is deliberately kept out of the index in EVERY locale. Today:
  *   the per-mode game screens under `/oyun` (→ DEC 2026-07-30p). They are application
  *   screens, not documents: what a crawler would see is a map and a control strip, and

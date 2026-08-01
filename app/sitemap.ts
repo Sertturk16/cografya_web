@@ -43,6 +43,11 @@ function staticEntries(): MetadataRoute.Sitemap {
     // each carrying the full tr/en/x-default alternates set, both resolved through
     // `getPathname` from the single `pathnames` entry in `i18n/routing.ts`.
     ...sitemapEntriesFor(() => "/oyun", now, 0.7),
+    // The marine hub. `"trNarrative"` surface → ONE entry (`/deniz`), because `/en/sea` is
+    // `noindex` while the seven explainer blocks exist only in Turkish. The alternates set
+    // on that single entry is therefore `tr` + `x-default`, mirroring exactly what
+    // `buildAlternates` puts in the page head.
+    ...sitemapEntriesFor(() => "/deniz", now, 0.7, "trNarrative"),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
   ];
 }
