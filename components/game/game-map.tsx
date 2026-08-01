@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { getTranslations } from "next-intl/server";
 import { MapZoomPan } from "@/components/map/map-zoom-pan";
 import { aspectOfViewBox } from "@/lib/game/map-bbox";
@@ -50,7 +51,15 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
   // The stage takes its shape FROM the frame it is drawing, so the map fills the box
   // exactly instead of letterboxing inside a fixed one — which is what lets a region's
   // provinces use the full width they are entitled to (`lib/game/map-bbox.ts`).
+  //
+  // Handed to CSS as a CUSTOM PROPERTY rather than as `aspect-ratio` directly, because the
+  // stylesheet needs the ratio as a NUMBER in arithmetic too: the viewport cap it applies is
+  // a height, and turning a height cap into the width that produces it is a multiplication
+  // by this ratio (`game-map.module.css` `.stage`). One value, read twice, so the shape and
+  // the cap can never disagree.
   const aspect = aspectOfViewBox(viewBox);
+  const stageStyle =
+    aspect === null ? undefined : ({ "--game-stage-aspect": String(aspect) } as CSSProperties);
 
   return (
     <div className={styles.frame}>
@@ -58,11 +67,7 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
           the viewBox, so it is settled before any script runs and the overlays mount on top
           of it without moving a single pixel of the page (CLS budget, CONVENTIONS §6 #9).
           The CSS default is the full map's ratio, for the case the string is unreadable. */}
-      <div
-        className={styles.stage}
-        style={aspect ? { aspectRatio: aspect } : undefined}
-        data-game-map
-      >
+      <div className={styles.stage} style={stageStyle} data-game-map>
         {/* Rendered BEFORE the <svg> so the zoom controls come first in tab order — a
             keyboard player reaches +/−/reset without tabbing through every province (the
             solution already proven on /dunya). Visual position is unaffected: the layer is

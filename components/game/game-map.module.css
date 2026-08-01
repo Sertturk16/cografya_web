@@ -12,16 +12,51 @@
   padding: clamp(10px, 2vw, 20px);
 }
 
-/* FIXED-SIZE STAGE. This is the FALLBACK ratio — MAP_VIEWBOX's own 1000 × 429 — for the
-   whole-country screens and for the case the viewBox string is unreadable. A region screen
-   overrides it with its own subset ratio through the inline `aspect-ratio` style in
-   `game-map.tsx` (`lib/game/map-bbox.ts` only floors that ratio at 1, it does NOT grow the
-   subset to the country's letterbox). Either way the height is settled in the first
-   response, before the island mounts anything on top of it: the "fixed-size container" the
-   heavy-interactive rendering rule requires (ENGINEERING.md §3, CWV/CLS budget §4 #9). */
+/* FIXED-SIZE STAGE. This is the FALLBACK ratio — MAP_VIEWBOX's own 1000 ÷ 429 = 2.331 — for
+   the whole-country screens and for the case the viewBox string is unreadable. A region
+   screen overrides it with its own subset ratio through the `--game-stage-aspect` custom
+   property set in `game-map.tsx` (`lib/game/map-bbox.ts` only floors that ratio at 1, it
+   does NOT grow the subset to the country's letterbox). Either way the height is settled in
+   the first response, before the island mounts anything on top of it: the "fixed-size
+   container" the heavy-interactive rendering rule requires (ENGINEERING.md §3, CWV/CLS
+   budget §4 #9).
+
+   VIEWPORT CAP. Left uncapped, the stage is only ever as tall as the column is wide divided
+   by the ratio — which is fine at 2.33 and ruinous below it. Measured on the running build
+   at 1440 × 900: Ege (the narrowest region frame, 1.165) rendered an 891px stage and pushed
+   the round's buttons 388px below the fold, so the player could not see the question, the
+   map and the controls at the same time. That is the whole complaint.
+
+   The cap is applied to the WIDTH, deliberately, and the ratio turns it back into a height:
+   `width = min(available, cap × ratio)` ⇒ `height = min(available ÷ ratio, cap)`. That is
+   the mandated `min()` — NOT `max-height` — so the final box is known to the very first
+   layout pass and nothing reflows once the island mounts (zero CLS). Capping the height
+   alone would have letterboxed the SVG inside a full-width box instead of shrinking the box,
+   leaving the ODbL attribution and the zoom controls stranded away from the map's corners.
+
+   WHY A SUBTRACTION AND NOT A `dvh` PERCENTAGE. The chrome the map shares the screen with is
+   a fixed PIXEL amount, not a proportion: 308px above the stage (header 57 + page padding 40
+   + back link 34 + h1 21 + head slot 116 + frame padding 20) and 89px below it (frame
+   padding 20 + action-slot margin 16 + action row 52) = 397px, measured identically at 1440
+   and 1280 wide. A single percentage therefore cannot fit both mandated viewports: the
+   66dvh starting value still overflowed 900px-tall screens by ~91px, and the percentage that
+   does fit an 800px screen (≈50dvh) then wastes 50px of a 900px one. Subtracting the
+   constant fits every viewport height by construction — it works out to ≈54.7dvh at 900 and
+   ≈49dvh at 800 — and it keeps working on the 768px-tall laptops the two mandated sizes do
+   not cover. 408 rather than 397 leaves ~11px of slack for sub-pixel rounding and for a
+   question that wraps a line further than the head slot reserves.
+
+   The 240px floor is the give-up point: below a ~648px-tall viewport the map would become a
+   sliver, and a scrollbar is a better answer than an unreadable map. Keep this number in
+   step with the chrome above — if the head slot, the header or the action row change height,
+   this is the constant that has to move with them. */
 .stage {
+  --game-stage-aspect: 2.331;
+  --game-stage-cap: max(240px, calc(100dvh - 408px));
   position: relative;
-  aspect-ratio: 1000 / 429;
+  aspect-ratio: var(--game-stage-aspect);
+  width: min(100%, calc(var(--game-stage-cap) * var(--game-stage-aspect)));
+  margin-inline: auto;
 }
 
 .svg {
