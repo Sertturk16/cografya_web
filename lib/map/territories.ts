@@ -79,12 +79,23 @@ export interface Territory {
   readonly population: TerritoryFigure;
   readonly areaKm2: TerritoryFigure;
   /**
-   * Administrative centre. A proper noun, so ONE field serves both locales. Omitted where
-   * there is none (city-regions, uninhabited territories) and for the six contested
-   * entities, whose centre field was never owner-ruled — DEC 2026-08-01 left Batı Sahra's
-   * centre question explicitly unanswered, so none of the six shows one.
+   * Administrative centre, as the source brief's own centre column spells it. Normally a
+   * bare proper noun, so ONE field serves both locales. Omitted where there is none
+   * (city-regions, uninhabited territories) and for the six contested entities, whose
+   * centre field was never owner-ruled — DEC 2026-08-01 left Batı Sahra's centre question
+   * explicitly unanswered, so none of the six shows one.
+   *
+   * Two of the brief's 31 centre cells carry a qualifier ("Brades (fiili)",
+   * "Saipan (Capital Hill)"); both are restored here rather than silently stripped.
    */
   readonly centre?: string;
+  /**
+   * EN override, used ONLY when `centre` carries a Turkish-language qualifier — the module
+   * guarantees no Turkish ever reaches `/en/dunya`, and authoring an English hedge is
+   * content work this repo does not own. Everywhere else the proper noun serves both
+   * locales and this stays absent.
+   */
+  readonly centreEn?: string;
 }
 
 /**
@@ -210,7 +221,11 @@ export const TERRITORIES: readonly Territory[] = [
     statusTr: "Birleşik Krallık'a bağlı toprak; 1995 yanardağı sonrası merkez Brades'e taşındı",
     population: { kind: "exact", value: 5468 },
     areaKm2: { kind: "exact", value: 102 },
-    centre: "Brades",
+    // The brief's qualifier restored: the de-jure capital is still Plymouth, abandoned
+    // under the 1995 eruption. EN drops the Turkish hedge and leans on the status-neutral
+    // "Administrative centre" label instead.
+    centre: "Brades (fiili)",
+    centreEn: "Brades",
   },
   {
     iso: "VG",
@@ -241,7 +256,11 @@ export const TERRITORIES: readonly Territory[] = [
     iso: "SH",
     badge: "SH",
     nameTr: "Saint Helena",
-    nameEn: "Saint Helena",
+    // Full EN name on purpose: the TR short form is the brief's own §4 title, but the EN
+    // column there spells the whole thing out, and the card's figures are the THREE island
+    // groups' totals. "Saint Helena" alone would load Ascension + Tristan da Cunha onto one
+    // island on the stat-only EN card, which has no sentence to disambiguate it.
+    nameEn: "Saint Helena, Ascension and Tristan da Cunha",
     statusTr: "Birleşik Krallık'a bağlı toprak; üç ada grubunu tek idari birim olarak kapsar",
     population: { kind: "exact", value: 5651 },
     areaKm2: { kind: "exact", value: 394 },
@@ -320,7 +339,7 @@ export const TERRITORIES: readonly Territory[] = [
     iso: "TF",
     badge: "TF",
     nameTr: "Fransız Güney ve Antarktika Toprakları",
-    nameEn: "French Southern and Antarctic Lands",
+    nameEn: "French Southern and Antarctic Lands (TAAF)",
     statusTr: "Fransa'ya bağlı, kalıcı nüfusu olmayan toprak; bir kesimi (Adélie) Antarktika'dadır",
     population: { kind: "none" },
     areaKm2: { kind: "exact", value: 439672 },
@@ -399,7 +418,9 @@ export const TERRITORIES: readonly Territory[] = [
     statusTr: "ABD ile siyasi birlik içinde, kendi kendini yöneten topluluk (commonwealth)",
     population: { kind: "range", min: 42914, max: 50255 },
     areaKm2: { kind: "exact", value: 472 },
-    centre: "Saipan",
+    // Brief-exact: "Saipan" is the island, "Capital Hill" the seat of government. Both are
+    // proper nouns, so the one field still serves both locales.
+    centre: "Saipan (Capital Hill)",
   },
   {
     iso: "AS",
@@ -584,4 +605,63 @@ const BY_ISO: ReadonlyMap<string, Territory> = new Map(TERRITORIES.map((t) => [t
 /** The territory for a map shape key, or `undefined` if the shape is not one. */
 export function territoryFor(iso: string): Territory | undefined {
   return BY_ISO.get(iso);
+}
+
+/** Locale-resolved administrative centre, or `undefined` where there is none. */
+export function centreFor(territory: Territory, locale: "tr" | "en"): string | undefined {
+  return locale === "en" ? (territory.centreEn ?? territory.centre) : territory.centre;
+}
+
+/**
+ * Rendering inputs for {@link figureText}. `noneText` is OPTIONAL by design: "there is
+ * none" is a real fact for a population and a meaningless one for an area, so the area
+ * call passes no wording and a (forbidden, test-pinned) `none` area drops its row instead
+ * of borrowing the population sentence.
+ */
+export interface FigureTextOptions {
+  /** Locale-aware number formatter (next-intl's, injected so this stays pure/testable). */
+  readonly formatNumber: (value: number) => string;
+  /** Words for a `none` figure — population only. */
+  readonly noneText?: string;
+  /**
+   * Unit suffix appended to numeric output ("km²"). Never appended to `noneText` — "Kalıcı
+   * nüfus yok km²" is not a thing.
+   */
+  readonly unit?: string;
+}
+
+/**
+ * Non-breaking space between a number and its unit. A 258px card cannot fit Antarktika's
+ * 7-digit area RANGE plus "km²" on one line, and with a normal space the browser orphans the
+ * unit onto a line of its own; the break belongs after the range's en dash instead, which is
+ * where it lands once the unit is glued to its number.
+ */
+const NBSP = "\u00A0";
+
+/**
+ * Renders a territory figure for a card stat row, or `undefined` when there is nothing
+ * publishable.
+ *
+ * `unknown` returns `undefined` ON PURPOSE: the card omits the whole row rather than print
+ * a placeholder dash, which is the same honesty rule the country cards follow for a null
+ * stat, and the rule the six contested entities depend on (→ the module note above). A
+ * future `default:`/`"—"` fallback here would grow a dash row on every one of them, so
+ * `territories.test.ts` pins the branch.
+ */
+export function figureText(
+  figure: TerritoryFigure,
+  { formatNumber, noneText, unit }: FigureTextOptions,
+): string | undefined {
+  const suffix = unit ? `${NBSP}${unit}` : "";
+  switch (figure.kind) {
+    case "exact":
+      return `${formatNumber(figure.value)}${suffix}`;
+    case "range":
+      // En dash, unspaced — a numeric interval, not a sentence dash.
+      return `${formatNumber(figure.min)}–${formatNumber(figure.max)}${suffix}`;
+    case "none":
+      return noneText;
+    case "unknown":
+      return undefined;
+  }
 }

@@ -67,14 +67,15 @@
 /* World map: a NON-COUNTRY place that has a hover card but no page (the 43 territories).
    Its hover state is deliberately WEAKER than a country's: the stroke shifts to
    --color-primary at 3px — the accessible, non-colour-dependent state signal WCAG 1.4.1/
-   1.4.11 requires — but the terracotta fill wash stays off and the cursor stays the default
-   arrow. Those two omissions are the honest "readable, not clickable" cue: a shape that
-   lights up exactly like a country and then swallows the click would be a lie. Fill tone is
-   untouched either way (uniform land colour, owner ruling 2026-07-26). */
-.territory {
-  cursor: default;
-}
+   1.4.11 requires — but the terracotta fill wash stays off. That omission, plus the absence
+   of `cursor: pointer`, is the honest "readable, not clickable" cue: a shape that lights up
+   exactly like a country and then swallows the click would be a lie. Fill tone is untouched
+   either way (uniform land colour, owner ruling 2026-07-26).
 
+   It sets NO cursor of its own on purpose. Pinning `default` here beat the pan cursor the
+   zoomable surface inherits down (grab / grabbing), so dragging across the map flickered
+   arrow↔grab over all 43 shapes. Inheriting is also the truthful signal: a territory is not
+   clickable, but it IS pannable, exactly like the inert land and sea around it. */
 .territory .landInert {
   transition:
     stroke 0.16s ease-out,
@@ -158,6 +159,20 @@
   transform: none;
 }
 
+/* ANCHORING. When the card hangs above its shape, the island sets `top` to the card's
+   intended BOTTOM edge and this pulls it up by exactly its own height — so placement is
+   correct for a one-row territory card and a three-row country card alike, with no height
+   measurement in JS (which could only ever measure the PREVIOUSLY shown card). The 4px is
+   the entrance offset the transition animates away; it composes into the same transform
+   because a single element has only one. */
+.card[data-place="above"] {
+  transform: translateY(calc(-100% + 4px));
+}
+
+.card[data-place="above"][data-visible="true"] {
+  transform: translateY(-100%);
+}
+
 .card[data-clickable="true"] {
   cursor: pointer;
 }
@@ -209,11 +224,21 @@
   margin: 0;
 }
 
+/* Label and value share one line whenever they fit. When they do not — Antarktika's area
+   is a 7-digit RANGE ("12.272.800–14.200.000 km²"), the widest value either map can
+   produce — the value drops to its own full-width line instead of hyphen-less wrapping
+   into a two-line ragged column beside the label. `margin-left: auto` keeps it flush right
+   in both layouts (and makes `justify-content` moot on the one-line case). */
 .stat {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 2px 12px;
+}
+
+.stat .statValue {
+  margin-left: auto;
+  text-align: right;
 }
 
 .statLabel {
@@ -385,6 +410,11 @@
   .card {
     transition: none;
     transform: none;
+  }
+
+  /* Only the 4px entrance offset is motion; the -100% is PLACEMENT and must survive. */
+  .card[data-place="above"] {
+    transform: translateY(-100%);
   }
 
   .provinceLink .province,

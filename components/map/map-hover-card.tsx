@@ -22,12 +22,28 @@ interface ActiveCard {
   /** Empty for a territory: it has no detail page, so the card is not a click target. */
   href: string;
   stats: CardStat[];
+  /**
+   * `true` when the card hangs ABOVE the shape. `top` is then the card's BOTTOM edge and CSS
+   * pulls it up by its own height (`translateY(-100%)`) — see the placement note below.
+   */
+  above: boolean;
   left: number;
   top: number;
 }
 
 const CARD_WIDTH = 258;
-const CARD_HEIGHT_FALLBACK = 150; // used only before the card has ever been measured
+/**
+ * Upper bound on the card's rendered height, used ONLY to decide which side of the shape it
+ * hangs on (exact placement is CSS's job — see `data-place` below). MEASURED, not guessed:
+ * all 43 territory cards were sampled at 1440×900 on both locales and span 112–237px (TR)
+ * and 92–193px (EN); the tallest is Antarktika, whose two-line status sentence sits above a
+ * wrapped 7-digit area range. 260 leaves headroom over the observed 237.
+ * Over-estimating only flips a short card BELOW a near-the-top shape that could have hosted
+ * it above; under-estimating pushes a card off the top of the map, so this errs high.
+ */
+const CARD_MAX_HEIGHT = 260;
+const CARD_GAP = 10; // shape↔card breathing room
+const EDGE_INSET = 8; // keep the card off the container edge
 const HIDE_DELAY_MS = 140; // hover-intent: bridge the gap between shape and card
 const MAX_STATS = 3; // both maps expose exactly three stat slots
 
@@ -40,7 +56,7 @@ const MAX_STATS = 3; // both maps expose exactly three stat slots
  * overlay card. It uses event delegation on the map root (`[data-map-root]`, its own parent)
  * so no entity data ships to the client twice — it reads the localized, pre-formatted,
  * ENTITY-AGNOSTIC `data-*` the server already put on each shape: `data-name`, `data-badge`,
- * `data-subtitle`, `data-href`, and up to three `data-stat-{n}-label` / `data-stat-{n}-value`
+ * `data-subtitle`, `data-href`, and up to three `data-stat{n}-label` / `data-stat{n}-value`
  * pairs. A province emits plaka+region+nüfus/yüzölçümü/ilçe; a country emits ISO+kıta+
  * nüfus/yüzölçümü/komşu; a territory emits ISO+statü+nüfus/yüzölçümü/merkez — same shape,
  * different content.
@@ -95,14 +111,24 @@ export function MapHoverCard() {
     const inCard = (node: EventTarget | null): boolean =>
       node instanceof Node && card.contains(node);
 
+    // PLACEMENT. The card is anchored to an EDGE, never to a measured height: `top` is the
+    // card's bottom edge when it hangs above (CSS pulls it up by exactly its own height) and
+    // its top edge when it hangs below. Reading `card.offsetHeight` here would measure the
+    // PREVIOUS entity's card — the DOM has not re-rendered yet — which placed a tall card as
+    // if it were short and vice versa; territory cards, whose height swings from one stat row
+    // to a two-line status sentence plus three rows, made that visible. Height now only
+    // decides WHICH SIDE, against a conservative bound, so no measurement is needed at all.
     const openFrom = (anchor: HTMLElement | SVGElement) => {
       const a = anchor.getBoundingClientRect();
       const c = container.getBoundingClientRect();
-      const cardH = card.offsetHeight > 40 ? card.offsetHeight : CARD_HEIGHT_FALLBACK;
       const centerX = a.left - c.left + a.width / 2;
-      const left = Math.max(8, Math.min(centerX - CARD_WIDTH / 2, c.width - CARD_WIDTH - 8));
-      let top = a.top - c.top - cardH - 10;
-      if (top < 8) top = a.bottom - c.top + 10; // flip below if no room above
+      const left = Math.max(
+        EDGE_INSET,
+        Math.min(centerX - CARD_WIDTH / 2, c.width - CARD_WIDTH - EDGE_INSET),
+      );
+      const anchorTop = a.top - c.top;
+      const above = anchorTop - CARD_GAP - CARD_MAX_HEIGHT >= EDGE_INSET;
+      const top = above ? anchorTop - CARD_GAP : a.bottom - c.top + CARD_GAP;
       const d = anchor.dataset;
       const stats: CardStat[] = [];
       for (let n = 1; n <= MAX_STATS; n++) {
@@ -116,6 +142,7 @@ export function MapHoverCard() {
         subtitle: d.subtitle ?? "",
         href: d.href ?? "",
         stats,
+        above,
         left,
         top,
       });
@@ -179,6 +206,9 @@ export function MapHoverCard() {
       // focusable, so it never doubles the accessible link (keyboard/AT use the <a>).
       aria-hidden="true"
       data-visible={active !== null ? "true" : undefined}
+      // Above the shape ⇒ `top` is the card's BOTTOM edge and CSS lifts it by its own
+      // height, so placement is exact for any card height without measuring one.
+      data-place={active?.above ? "above" : undefined}
       // Territory cards have no destination, so they must not offer a pointer cursor for a
       // click that would do nothing (the CSS keys off this).
       data-clickable={active?.href ? "true" : undefined}
