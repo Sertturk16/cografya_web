@@ -5,6 +5,13 @@ import { aspectOfViewBox } from "@/lib/game/map-bbox";
 import type { GameShapeEntry } from "@/lib/game/map-shapes";
 import styles from "./game-map.module.css";
 
+/**
+ * `React.CSSProperties` has no index signature for custom properties, and the usual
+ * workaround is to assert the whole object. Naming the one property instead keeps the rest
+ * of the object type-checked, so a typo in a real CSS property is still a compile error.
+ */
+type StageStyle = CSSProperties & Record<"--game-stage-aspect", string>;
+
 interface GameMapProps {
   /** The shapes to DRAW — already narrowed to the round's map (§ region mode). */
   shapes: readonly GameShapeEntry[];
@@ -57,9 +64,15 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
   // a height, and turning a height cap into the width that produces it is a multiplication
   // by this ratio (`game-map.module.css` `.stage`). One value, read twice, so the shape and
   // the cap can never disagree.
+  //
+  // The guard is `> 0`, not just "not null": the ratio is now an operand in the stylesheet's
+  // width arithmetic, so a zero would compute `width: 0` and erase the map, where the old
+  // `aspect-ratio`-only usage merely fell back to the CSS default. `aspectOfViewBox` already
+  // rejects non-finite and non-positive boxes, so this is unreachable — it is here so the
+  // unreachable branch fails toward the fallback ratio rather than toward a blank stage.
   const aspect = aspectOfViewBox(viewBox);
-  const stageStyle =
-    aspect === null ? undefined : ({ "--game-stage-aspect": String(aspect) } as CSSProperties);
+  const stageStyle: StageStyle | undefined =
+    aspect !== null && aspect > 0 ? { "--game-stage-aspect": String(aspect) } : undefined;
 
   return (
     <div className={styles.frame}>

@@ -3,6 +3,14 @@
    token layer in app/globals.css, and no brand hex is written here. */
 
 .screen {
+  /* The two reserved heights below are DECLARED here and CONSUMED in three places: the
+     slots' own `min-height`, and the map stage's viewport cap in `game-map.module.css`
+     (the cap has to subtract the chrome the map shares the screen with, and these are the
+     two pieces of that chrome most likely to be edited). Custom properties inherit and are
+     not renamed by CSS Modules, so the stage reads the same value the slot reserves and the
+     two can never drift apart — which matters, because the cap's tolerance is 11px. */
+  --game-head-slot: 116px;
+  --game-action-row: 52px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -50,7 +58,7 @@
    playing state's, which is the state the island reaches immediately: the round starts
    itself. */
 .headSlot {
-  min-height: 116px;
+  min-height: var(--game-head-slot);
   margin: 6px 0 14px;
   display: flex;
   flex-direction: column;
@@ -72,7 +80,7 @@
    inside a thumb's reach on a phone. Its height is reserved for the same reason as the head
    slot's: the controls arrive with the island, not with a click. */
 .actionSlot {
-  min-height: 52px;
+  min-height: var(--game-action-row);
   margin-top: 16px;
   display: flex;
   justify-content: center;

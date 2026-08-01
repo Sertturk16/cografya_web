@@ -34,29 +34,95 @@
    alone would have letterboxed the SVG inside a full-width box instead of shrinking the box,
    leaving the ODbL attribution and the zoom controls stranded away from the map's corners.
 
-   WHY A SUBTRACTION AND NOT A `dvh` PERCENTAGE. The chrome the map shares the screen with is
-   a fixed PIXEL amount, not a proportion: 308px above the stage (header 57 + page padding 40
-   + back link 34 + h1 21 + head slot 116 + frame padding 20) and 89px below it (frame
-   padding 20 + action-slot margin 16 + action row 52) = 397px, measured identically at 1440
-   and 1280 wide. A single percentage therefore cannot fit both mandated viewports: the
-   66dvh starting value still overflowed 900px-tall screens by ~91px, and the percentage that
-   does fit an 800px screen (≈50dvh) then wastes 50px of a 900px one. Subtracting the
-   constant fits every viewport height by construction — it works out to ≈54.7dvh at 900 and
-   ≈49dvh at 800 — and it keeps working on the 768px-tall laptops the two mandated sizes do
-   not cover. 408 rather than 397 leaves ~11px of slack for sub-pixel rounding and for a
-   question that wraps a line further than the head slot reserves.
+   WHY A SUBTRACTION AND NOT A VIEWPORT PERCENTAGE. The chrome the map shares the screen with
+   is a fixed PIXEL amount, not a proportion — 397px, measured identically at 1440 and 1280
+   wide, itemized in full further down. A single percentage therefore cannot fit both mandated
+   viewports: the 66vh starting value still overflowed 900px-tall screens by ~91px, and the
+   percentage that does fit an 800px screen (≈50vh) then wastes 50px of a 900px one.
+   Subtracting the constant fits every viewport HEIGHT by construction — it works out to
+   ≈54.7vh at 900 and ≈49vh at 800 — and it keeps working on the 768px-tall laptops the two
+   mandated sizes do not cover.
 
-   The 240px floor is the give-up point: below a ~648px-tall viewport the map would become a
-   sliver, and a scrollbar is a better answer than an unreadable map. Keep this number in
-   step with the chrome above — if the head slot, the header or the action row change height,
-   this is the constant that has to move with them. */
+   WHAT THE CONSTANT DOES NOT COVER: NARROW WIDTHS. It is a desktop-layout measurement, and
+   the honest limit is the SITE HEADER, not this rule. Measured on the running build, the
+   header is 57px while its nav fits one row, but wraps to 145px at 430px wide and 177px at
+   375px and below — so the real chrome there is ~459-541px, not 397, and no arrangement of
+   this cap makes a phone fit (buying one would mean a ~175px-tall map, which is the trade
+   the short-viewport release below explicitly rejects). Phones therefore scroll, exactly as
+   they did before this rule existed; the cap is close to inert there anyway, because at
+   those widths the `100%` term of the `min()` usually wins. Making a phone fit is the head
+   slot's and the header's problem, not the stage's. The question block itself was checked
+   and is NOT part of the risk: at every width from 320px up, in both locales, with the
+   longest answer in the pool ("Afyonkarahisar") forced into it, the head slot still renders
+   its reserved height.
+
+   WHY `svh` AND NOT `dvh`. `dvh` is the DYNAMIC viewport height: it is recomputed live as a
+   mobile browser's address bar collapses and expands during scroll. Feeding that into a
+   WIDTH would resize the map — and everything under it — while the player is scrolling and
+   aiming, which is a smaller copy of the very bug this rule fixes. `svh` is the SMALL
+   viewport height, i.e. the address-bar-SHOWN state: the one that has to fit anyway, and a
+   constant for the whole session. The cost is that the map does not grow into the space a
+   collapsed toolbar frees; that is the trade we want. (`lvh` would be the wrong end — it
+   overflows exactly when the toolbar is shown.) On desktop all three are the same number.
+
+   THE CONSTANT, ITEMIZED (measured on the running build; every line reproducible). Three
+   addends are read from custom properties instead of being retyped: `--header-height` is an
+   existing global token, and the two slot heights are declared in `game-screen.module.css`
+   next to the slots that reserve them. What is left is the 184px residual below, which sums
+   EXACTLY — check it before you change it:
+
+     header bottom border          1   (--header-height is the 56px box; the border is extra)
+     .page padding-top            40
+     back-link row                34
+     <h1> (the mode/region name)  15
+     head slot margin-top          6
+     head slot overshoot           5   (reserves 116, renders 121 with today's question block)
+     head slot margin-bottom      14
+     .frame border-top             1
+     .frame padding-top           20
+     .frame padding-bottom        20
+     .frame border-bottom          1
+     action slot margin-top       16
+     slack                        11
+                                 ---
+                                  184
+
+   Plus the three variables: 56 (header) + 116 (head slot) + 52 (action row) = 224.
+   Total 408, against 397px of real chrome — 308 above the stage, 89 below it.
+
+   The 11px of slack covers sub-pixel rounding and small chrome drift. It does NOT cover the
+   question wrapping to a second line: at ≥1280px the question is 2.4rem/1.15, so a wrapped
+   line costs ~44px and the head slot would grow past what it reserves. Today's longest
+   strings do not wrap in either locale (measured); if a longer one is ever added, the head
+   slot's own reservation is what has to move, not this slack.
+
+   RELEASING THE CAP ON SHORT VIEWPORTS. Below ~648px of viewport height the cap can no
+   longer buy a fit worth having: it would hand back a map under 240px tall while the column
+   still scrolls — a smaller map AND a scrollbar, which is worse than the uncapped layout on
+   both counts (a landscape phone, or a desktop window at 200% zoom, lands here). So at that
+   point the cap steps aside entirely and the map goes back to filling the column. The
+   breakpoint is 240px (the smallest map worth showing) + 408px (the constant above) = 648.
+   Crossing it is a step, not a slide (240px of map at 648, full column at 647) — that is
+   inherent to releasing a cap, and it is only ever crossed by resizing a window, never by
+   scrolling, which is precisely why `svh` above matters. */
 .stage {
   --game-stage-aspect: 2.331;
-  --game-stage-cap: max(240px, calc(100dvh - 408px));
+  --game-stage-cap: calc(
+    100svh - var(--header-height) - var(--game-head-slot, 116px) - var(--game-action-row, 52px) -
+      184px
+  );
   position: relative;
   aspect-ratio: var(--game-stage-aspect);
   width: min(100%, calc(var(--game-stage-cap) * var(--game-stage-aspect)));
   margin-inline: auto;
+}
+
+/* Below the breakpoint the cap has no job left (see above): the map takes the full column
+   again and the page scrolls, which is what it did before the cap existed. */
+@media (max-height: 647px) {
+  .stage {
+    width: 100%;
+  }
 }
 
 .svg {
