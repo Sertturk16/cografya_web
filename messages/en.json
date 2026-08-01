@@ -243,7 +243,8 @@
     "turkiyeCardSubtitle": "Province map",
     "turkiyeLinkLabel": "Türkiye, province map page",
     "territoryCentre": "Administrative centre",
-    "territoryNoPopulation": "No permanent population"
+    "territoryNoPopulation": "No permanent population",
+    "territoryApproximate": "approximately"
   },
   "CountryDetail": {
     "metaTitle": "Geography of {name}",

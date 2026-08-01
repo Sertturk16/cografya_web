@@ -243,7 +243,8 @@
     "turkiyeCardSubtitle": "İl haritası",
     "turkiyeLinkLabel": "Türkiye, il haritası sayfası",
     "territoryCentre": "Merkez",
-    "territoryNoPopulation": "Kalıcı nüfus yok"
+    "territoryNoPopulation": "Kalıcı nüfus yok",
+    "territoryApproximate": "yaklaşık"
   },
   "CountryDetail": {
     "metaTitle": "{name} Coğrafyası",

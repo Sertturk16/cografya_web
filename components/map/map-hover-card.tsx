@@ -16,7 +16,8 @@ interface ActiveCard {
   badge: string;
   /**
    * Secondary line under the name — region for a province, continent for a country, the
-   * one-line status sentence for a territory.
+   * short status label for a territory (→ DEC 2026-08-01m: max 3 words, in parity with the
+   * continent name a country card shows in this same slot).
    */
   subtitle: string;
   /** Empty for a territory: it has no detail page, so the card is not a click target. */
@@ -34,14 +35,23 @@ interface ActiveCard {
 const CARD_WIDTH = 258;
 /**
  * Upper bound on the card's rendered height, used ONLY to decide which side of the shape it
- * hangs on (exact placement is CSS's job — see `data-place` below). MEASURED, not guessed:
- * all 43 territory cards were sampled at 1440×900 on both locales and span 112–237px (TR)
- * and 92–193px (EN); the tallest is Antarktika, whose two-line status sentence sits above a
- * wrapped 7-digit area range. 260 leaves headroom over the observed 237.
- * Over-estimating only flips a short card BELOW a near-the-top shape that could have hosted
- * it above; under-estimating pushes a card off the top of the map, so this errs high.
+ * hangs on (exact placement is CSS's job — see `data-place` below). MEASURED, not guessed —
+ * every card of both maps was opened and measured at 1440×900 (heights do not vary with the
+ * viewport: the card is a fixed 258px wide):
+ *
+ * - `/dunya` territory cards 70–194px TR, 92–192px EN — the tallest are MP/PM, a two-line
+ *   name over three stat rows. They SHRANK from 237px when the status sentences became
+ *   3-word labels (→ DEC 2026-08-01m), so a territory no longer sets this bound.
+ * - `/dunya` country cards 73–215px — the tallest is EN "Democratic Republic of the Congo",
+ *   a three-line name. This is the real worst case on either map.
+ * - `/turkiye` province cards: a uniform 176px.
+ *
+ * 240 = the measured 215 plus one more wrapped name line of headroom. Over-estimating only
+ * flips a short card BELOW a near-the-top shape that could have hosted it above (which is
+ * why this number is kept as tight as the measurements honestly allow); under-estimating
+ * pushes a card off the top of the map, so it still errs high.
  */
-const CARD_MAX_HEIGHT = 260;
+const CARD_MAX_HEIGHT = 240;
 const CARD_GAP = 10; // shape↔card breathing room
 const EDGE_INSET = 8; // keep the card off the container edge
 const HIDE_DELAY_MS = 140; // hover-intent: bridge the gap between shape and card
@@ -117,14 +127,43 @@ export function MapHoverCard() {
     const inCard = (node: EventTarget | null): boolean =>
       node instanceof Node && card.contains(node);
 
+    // PAN. `MapZoomPan` owns the one answer to "is this gesture a pan?" and publishes it as
+    // `[data-panning]` on this same container (the stylesheet already suppresses the card
+    // from it). Observing that attribute — rather than re-deriving a movement threshold here
+    // — keeps a single source of truth for the gesture.
+    //
+    // Two things follow from a pan starting. The open card is CLOSED, because the shapes
+    // move underneath it and its coordinates were computed against the old view: the card
+    // was only hidden while the finger was down, then reappeared, anchored to wherever its
+    // shape used to be. On touch that was permanent — a tap opens a territory card, but the
+    // capture-phase click swallow (correctly) eats the click that ends a pan, so the "tap
+    // outside to close" path never ran and the card was stranded. And no NEW card opens
+    // mid-pan: a mouse drag crosses dozens of shapes, each firing pointerover, so without
+    // this gate the pan would end on whichever shape was crossed last, positioned against a
+    // view that has since moved. After the gesture the map is quiet until the pointer moves
+    // again — the same state as a fresh page.
+    let panning = container.dataset.panning !== undefined;
+    const panObserver = new MutationObserver(() => {
+      const now = container.dataset.panning !== undefined;
+      if (now === panning) return;
+      panning = now;
+      if (panning) {
+        cancelHide();
+        setActive(null);
+      }
+    });
+    panObserver.observe(container, { attributes: true, attributeFilter: ["data-panning"] });
+
     // PLACEMENT. The card is anchored to an EDGE, never to a measured height: `top` is the
     // card's bottom edge when it hangs above (CSS pulls it up by exactly its own height) and
     // its top edge when it hangs below. Reading `card.offsetHeight` here would measure the
     // PREVIOUS entity's card — the DOM has not re-rendered yet — which placed a tall card as
-    // if it were short and vice versa; territory cards, whose height swings from one stat row
-    // to a two-line status sentence plus three rows, made that visible. Height now only
-    // decides WHICH SIDE, against a conservative bound, so no measurement is needed at all.
+    // if it were short and vice versa; territory cards, whose height still swings from a
+    // single stat row (70px) to a wrapped name over three rows (194px), made that visible.
+    // Height now only decides WHICH SIDE, against a conservative bound, so no measurement is
+    // needed at all.
     const openFrom = (anchor: HTMLElement | SVGElement) => {
+      if (panning) return; // mid-gesture: any position computed here is already stale
       const a = anchor.getBoundingClientRect();
       const c = container.getBoundingClientRect();
       const centerX = a.left - c.left + a.width / 2;
@@ -226,6 +265,7 @@ export function MapHoverCard() {
     document.addEventListener("keydown", onKeyDown);
     return () => {
       cancelHide();
+      panObserver.disconnect();
       container.removeEventListener("pointerover", onPointerOver);
       container.removeEventListener("pointerout", onPointerOut);
       container.removeEventListener("focusin", onFocusIn);

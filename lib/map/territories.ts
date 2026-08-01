@@ -13,60 +13,66 @@
  *
  * It is deliberately NOT in `messages/{tr,en}.json` either. `NextIntlClientProvider` in the
  * locale layout inherits the WHOLE catalogue and serialises it into the client payload of
- * every page, so 43 status sentences there would ship on the home page, the game and every
+ * every page, so 43 territory labels there would ship on the home page, the game and every
  * province page. This module is imported by a server component only: its strings reach the
  * browser once, as the `data-*` of the `/dunya` map, and nowhere else. UI chrome (the stat
  * labels) stays in the message catalogue where it belongs.
  *
  * ## Content authority — do not edit the copy here
  *
- * Every `statusTr` is byte-for-byte the sentence in
- * `Owner's Inbox/dunya-territory-kartlari/brief.md` (NOVA, independently fact-checked
- * 2026-08-01), **as amended by the owner rulings recorded against it**. The six contested
- * entities (EH, Somaliland, Siachen, FK, GS, IO) carry the owner-approved **verbatim** text
- * from that brief's "🔴 ONAY METİNLERİ" section and are **binding** (→ DEC 2026-08-01b):
- * they are never paraphrased, trimmed or "improved" in code. Three further sentences were
- * amended by the review round and are equally binding (→ DEC 2026-08-01g): BM lost the
- * " ve en kalabalık" superlative (the same map's Cayman card disproves it), HM lost its
- * AAT-volcano clause (the record it cited belongs to Australia's highest POINT, not to a
- * volcano), and TF's sentence was replaced wholesale by an owner-approved verbatim text.
- * Changing any sentence here requires a new content round, not a commit.
- * `territories.test.ts` pins the invariants (character cap, shape-key existence, no
- * `/dunya/turkiye`).
+ * The card's second line is a LABEL, not a sentence. The one-line status sentences this
+ * module shipped in its first three commits were retired wholesale (→ DEC 2026-08-01m):
+ * every COUNTRY card on the same map carries a 1–2 word continent name in that slot, and a
+ * 90-character sentence broke the parity. The context those sentences carried moves to the
+ * territory detail pages (→ DEC 2026-08-01j) — never back into a longer label.
  *
- * ## Why there is no `statusEn`
+ * Every `labelTr` is byte-for-byte the approved label in
+ * `Owner's Inbox/dunya-territory-kartlari/kart-etiketleri.md` (NOVA, derived from the
+ * independently fact-checked brief; owner-approved → DEC 2026-08-01n). Six of them are
+ * **verbatim and binding** (EH, Somaliland, Siachen, FK, GS, IO — item 1 of that ruling):
+ * each is a sovereignty judgement, not a description — "Egemenliği Tartışmalı Toprak" on
+ * FK/GS deliberately names the dispute CLASS rather than one side's frame, and Siachen names
+ * an unresolved status without naming a controlling party. They are never paraphrased,
+ * trimmed or "improved" in code. Changing any label here requires a content round, not a
+ * commit. `territories.test.ts` pins the structural invariants (≤3 words, no sentence
+ * punctuation, shape-key existence, no `/dunya/turkiye`, no interval figures).
  *
- * The status sentences exist in Turkish only. Producing English ones is content authorship
- * on a sovereignty-sensitive surface — six of them are verbatim-locked and six more are
- * owner-approved sensitive phrasings (→ DEC 2026-08-01) — so it needs its own content +
- * approval round, not a translation inside a frontend PR. Until then the EN map renders the
- * brief's own "Varyant A" (stat-only) card: name + ISO badge + figures, all of which are
- * locale-safe (numbers and proper nouns). No Turkish sentence ever appears on `/en/dunya`.
+ * ## Why there is no `labelEn`
+ *
+ * The labels exist in Turkish only. An English column was drafted with them but is a
+ * SEPARATE approval item (→ DEC 2026-08-01n item 3): six of the labels are verbatim-locked
+ * sovereignty texts whose English wording cannot be picked inside a frontend PR. Until that
+ * round lands, the EN map renders the brief's own "Varyant A" (stat-only) card: name + ISO
+ * badge + figures, all of which are locale-safe (numbers and proper nouns). No Turkish label
+ * ever appears on `/en/dunya`.
  */
 
 /**
  * One numeric card figure. Sources disagree for some territories, so the shape carries the
- * uncertainty instead of hiding it:
+ * uncertainty instead of hiding it — but ONE figure always reaches the card:
  *
  * - `exact` — one figure, pinned to a Tier-1 source.
  * - `approx` — the source itself publishes the figure as an approximation (a rounded or
- *   converted value), so the card prints it as one. Rendered with a leading `≈`, which is
- *   the brief's own notation and the same "let the symbol carry the uncertainty" treatment
- *   as the `range` en dash. Collapsing such a figure to `exact` silently promotes a rounded
- *   number into a pinned one — the drift this member exists to prevent (→ DEC 2026-08-01g
- *   item 3: Somaliland's ≈176.000 and Chagos's ≈60).
- * - `range` — the brief's own published interval, shown as an interval (the platform's
- *   established treatment for a figure that is real but not pinned to a single source —
- *   `data-provenance.md`, Burdur summit precedent).
+ *   converted value), so the card prints it as one. Rendered with a leading `≈` visually and
+ *   with the WORD "yaklaşık"/"approximately" in the accessible name (screen readers do not
+ *   speak U+2248). Collapsing such a figure to `exact` silently promotes a rounded number
+ *   into a pinned one — the drift this member exists to prevent (→ DEC 2026-08-01g item 3:
+ *   Somaliland's ≈176.000 and Chagos's ≈60; → DEC 2026-08-01l: Antarktika's ≈14.200.000).
  * - `none` — the fact IS "there is none" (no permanent population). Rendered as words.
  * - `unknown` — not publishable: no independent confirmation, or the only available figure
  *   carries a caveat a 258px card cannot honestly carry. The row is omitted entirely
  *   (never a placeholder dash).
+ *
+ * There is deliberately **no interval member**. The module shipped one (`range`, rendered
+ * "63.300–63.778") for seven figures; DEC 2026-08-01l retired intervals from every card
+ * surface — a card shows ONE value, chosen by a deterministic source ladder, with the
+ * variance recorded in the provenance file instead. The member is REMOVED rather than left
+ * unused so the ruling is structural: a future edit cannot reintroduce an interval and still
+ * typecheck. (`≈` is not an interval and is unaffected — same ruling, explicit.)
  */
 export type TerritoryFigure =
   | { readonly kind: "exact"; readonly value: number }
   | { readonly kind: "approx"; readonly value: number }
-  | { readonly kind: "range"; readonly min: number; readonly max: number }
   | { readonly kind: "none" }
   | { readonly kind: "unknown" };
 
@@ -86,8 +92,12 @@ export interface Territory {
   readonly badge?: string;
   readonly nameTr: string;
   readonly nameEn: string;
-  /** TR card sentence — see the module note. Never edited in code. */
-  readonly statusTr: string;
+  /**
+   * TR card label — the second line of the card, in continent-name parity with the country
+   * cards (max 3 words, no verb, no punctuation → DEC 2026-08-01m/n). NOT a sentence and
+   * never edited in code; see the module note.
+   */
+  readonly labelTr: string;
   readonly population: TerritoryFigure;
   readonly areaKm2: TerritoryFigure;
   /**
@@ -122,7 +132,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "GL",
     nameTr: "Grönland",
     nameEn: "Greenland",
-    statusTr: "Danimarka Krallığı'na bağlı, geniş iç özerkliğe sahip ülke",
+    labelTr: "Danimarka Özerk Bölgesi",
     population: { kind: "exact", value: 56542 },
     areaKm2: { kind: "exact", value: 2166086 },
     centre: "Nuuk",
@@ -132,7 +142,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "FO",
     nameTr: "Faroe Adaları",
     nameEn: "Faroe Islands",
-    statusTr: "Danimarka Krallığı'na bağlı, kendi kendini yöneten bölge (1948 Home Rule Yasası)",
+    labelTr: "Danimarka Özerk Bölgesi",
     population: { kind: "exact", value: 54684 },
     areaKm2: { kind: "exact", value: 1393 },
     centre: "Tórshavn",
@@ -144,8 +154,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "AX",
     nameTr: "Åland",
     nameEn: "Åland Islands",
-    statusTr:
-      "Finlandiya'ya bağlı, 1921 Milletler Cemiyeti kararıyla tescillenmiş, silahsız özerk bölge",
+    labelTr: "Finlandiya Özerk Bölgesi",
     population: { kind: "exact", value: 30836 },
     areaKm2: { kind: "exact", value: 1580 },
     centre: "Mariehamn",
@@ -157,7 +166,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "IM",
     nameTr: "Man Adası",
     nameEn: "Isle of Man",
-    statusTr: "Britanya Tacı'na bağlı özerk bölge (Crown Dependency); BK'nin parçası değildir",
+    labelTr: "Britanya Taç Bağımlılığı",
     population: { kind: "exact", value: 84975 },
     areaKm2: { kind: "exact", value: 572 },
     centre: "Douglas",
@@ -167,7 +176,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "JE",
     nameTr: "Jersey",
     nameEn: "Jersey",
-    statusTr: "Britanya Tacı'na bağlı özerk bölge (Crown Dependency)",
+    labelTr: "Britanya Taç Bağımlılığı",
     population: { kind: "exact", value: 103944 },
     areaKm2: { kind: "exact", value: 116 },
     centre: "Saint Helier",
@@ -177,7 +186,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "GG",
     nameTr: "Guernsey",
     nameEn: "Guernsey",
-    statusTr: "Britanya Tacı'na bağlı özerk bölge (Crown Dependency)",
+    labelTr: "Britanya Taç Bağımlılığı",
     population: { kind: "exact", value: 64781 },
     areaKm2: { kind: "exact", value: 78 },
     centre: "Saint Peter Port",
@@ -189,10 +198,8 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "BM",
     nameTr: "Bermuda",
     nameEn: "Bermuda",
-    // " ve en kalabalık" removed (→ DEC 2026-08-01g item 1): Cayman's own card on this map
-    // shows a larger population. "en eski" is correct and stays.
-    statusTr: "Birleşik Krallık'a bağlı denizaşırı toprak; en eski BK denizaşırı toprağı",
-    population: { kind: "range", min: 63300, max: 63778 },
+    labelTr: "BK Denizaşırı Toprağı",
+    population: { kind: "exact", value: 63179 },
     areaKm2: { kind: "exact", value: 54 },
     centre: "Hamilton",
   },
@@ -201,8 +208,8 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "KY",
     nameTr: "Cayman Adaları",
     nameEn: "Cayman Islands",
-    statusTr: "Birleşik Krallık'a bağlı denizaşırı toprak",
-    population: { kind: "range", min: 91116, max: 91166 },
+    labelTr: "BK Denizaşırı Toprağı",
+    population: { kind: "exact", value: 90577 },
     areaKm2: { kind: "exact", value: 259 },
     centre: "George Town",
   },
@@ -211,7 +218,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "TC",
     nameTr: "Turks ve Caicos Adaları",
     nameEn: "Turks and Caicos Islands",
-    statusTr: "Birleşik Krallık'a bağlı denizaşırı toprak",
+    labelTr: "BK Denizaşırı Toprağı",
     population: { kind: "exact", value: 46431 },
     areaKm2: { kind: "exact", value: 948 },
     centre: "Cockburn Town",
@@ -221,7 +228,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "AI",
     nameTr: "Anguilla",
     nameEn: "Anguilla",
-    statusTr: "Birleşik Krallık'a bağlı denizaşırı toprak",
+    labelTr: "BK Denizaşırı Toprağı",
     population: { kind: "exact", value: 19416 },
     areaKm2: { kind: "exact", value: 91 },
     centre: "The Valley",
@@ -231,7 +238,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "MS",
     nameTr: "Montserrat",
     nameEn: "Montserrat",
-    statusTr: "Birleşik Krallık'a bağlı toprak; 1995 yanardağı sonrası merkez Brades'e taşındı",
+    labelTr: "BK Denizaşırı Toprağı",
     population: { kind: "exact", value: 5468 },
     areaKm2: { kind: "exact", value: 102 },
     // The brief's qualifier restored: the de-jure capital is still Plymouth, abandoned
@@ -245,7 +252,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "VG",
     nameTr: "Britanya Virjin Adaları",
     nameEn: "British Virgin Islands",
-    statusTr: "Birleşik Krallık'a bağlı denizaşırı toprak",
+    labelTr: "BK Denizaşırı Toprağı",
     population: { kind: "exact", value: 40102 },
     areaKm2: { kind: "exact", value: 151 },
     centre: "Road Town",
@@ -255,26 +262,25 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "PN",
     nameTr: "Pitcairn Adaları",
     nameEn: "Pitcairn Islands",
-    statusTr:
-      "Birleşik Krallık'a bağlı toprak; dünyanın en az nüfuslu yerleşik topraklarından biri",
+    labelTr: "BK Denizaşırı Toprağı",
     population: { kind: "exact", value: 50 },
     areaKm2: { kind: "exact", value: 47 },
     centre: "Adamstown",
   },
   {
     // Card title uses the brief's own short form (§4). The full administrative name —
-    // "Saint Helena, Ascension and Tristan da Cunha" — is what the status sentence
-    // describes ("üç ada grubunu tek idari birim olarak kapsar"); as a card heading it
-    // would be four times the width of every other title.
+    // "Saint Helena, Ascension and Tristan da Cunha" — covers three island groups
+    // administered as one unit; as a TR card heading it would be four times the width of
+    // every other title.
     iso: "SH",
     badge: "SH",
     nameTr: "Saint Helena",
     // Full EN name on purpose: the TR short form is the brief's own §4 title, but the EN
     // column there spells the whole thing out, and the card's figures are the THREE island
     // groups' totals. "Saint Helena" alone would load Ascension + Tristan da Cunha onto one
-    // island on the stat-only EN card, which has no sentence to disambiguate it.
+    // island, and neither card carries prose to disambiguate it.
     nameEn: "Saint Helena, Ascension and Tristan da Cunha",
-    statusTr: "Birleşik Krallık'a bağlı toprak; üç ada grubunu tek idari birim olarak kapsar",
+    labelTr: "BK Denizaşırı Toprağı",
     population: { kind: "exact", value: 5651 },
     areaKm2: { kind: "exact", value: 394 },
     centre: "Jamestown",
@@ -282,12 +288,15 @@ export const TERRITORIES: readonly Territory[] = [
 
   // ---- Fransa (brief §1.5) ----
   {
+    // Population = INSEE "population totale" (Décret n° 2025-1362), the convention the rest
+    // of the French cells on this map already follow (PF's 283.147 is the same one). If that
+    // convention ever changes to "population municipale", MF, PF and PM move together.
     iso: "MF",
     badge: "MF",
     nameTr: "Saint-Martin",
     nameEn: "Saint-Martin",
-    statusTr: "Fransa'ya bağlı topluluk; adayı Hollanda Krallığı'na bağlı Sint Maarten'le paylaşır",
-    population: { kind: "range", min: 31500, max: 33093 },
+    labelTr: "Fransız Denizaşırı Topluluğu",
+    population: { kind: "exact", value: 31620 },
     areaKm2: { kind: "exact", value: 50 },
     centre: "Marigot",
   },
@@ -300,7 +309,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "BL",
     nameTr: "Saint-Barthélemy",
     nameEn: "Saint-Barthélemy",
-    statusTr: "Fransa'ya bağlı denizaşırı topluluk",
+    labelTr: "Fransız Denizaşırı Topluluğu",
     population: { kind: "unknown" },
     areaKm2: { kind: "exact", value: 25 },
     centre: "Gustavia",
@@ -310,7 +319,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "PM",
     nameTr: "Saint-Pierre ve Miquelon",
     nameEn: "Saint Pierre and Miquelon",
-    statusTr: "Fransa'ya bağlı denizaşırı topluluk (Kuzey Amerika kıyısında, Kanada açıklarında)",
+    labelTr: "Fransız Denizaşırı Topluluğu",
     population: { kind: "exact", value: 5819 },
     areaKm2: { kind: "exact", value: 242 },
     centre: "Saint-Pierre",
@@ -320,7 +329,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "WF",
     nameTr: "Wallis ve Futuna",
     nameEn: "Wallis and Futuna",
-    statusTr: "Fransa'ya bağlı denizaşırı topluluk",
+    labelTr: "Fransız Denizaşırı Topluluğu",
     population: { kind: "exact", value: 11620 },
     areaKm2: { kind: "exact", value: 142 },
     centre: "Mata-Utu",
@@ -330,8 +339,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "NC",
     nameTr: "Yeni Kaledonya",
     nameEn: "New Caledonia",
-    statusTr:
-      "Fransa'ya bağlı; Bougival Anlaşması (Tem 2025) yeni statü öngörüyor, süreç netleşmedi",
+    labelTr: "Fransa'ya Bağlı Toprak",
     population: { kind: "exact", value: 264596 },
     areaKm2: { kind: "exact", value: 18567 },
     centre: "Nouméa",
@@ -341,7 +349,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "PF",
     nameTr: "Fransız Polinezyası",
     nameEn: "French Polynesia",
-    statusTr: "Fransa'ya bağlı denizaşırı topluluk",
+    labelTr: "Fransız Denizaşırı Topluluğu",
     population: { kind: "exact", value: 283147 },
     areaKm2: { kind: "exact", value: 4167 },
     centre: "Papeete",
@@ -353,14 +361,13 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "TF",
     nameTr: "Fransız Güney ve Antarktika Toprakları",
     nameEn: "French Southern and Antarctic Lands (TAAF)",
-    // OWNER-APPROVED VERBATIM (→ DEC 2026-08-01g item 2). Binding like the six 🔴 texts:
-    // never paraphrased, trimmed or re-wrapped in meaning. The recorded constraint on this
-    // card is that it must NEVER say "other states object" — no rival claim to Adélie
-    // exists; the frame is Antarctic-Treaty suspension / non-recognition.
-    // NOTE FOR THE OWNER: this sentence is 100 characters, over the CONTENT-STYLE §22
-    // 90-character card cap — see the cap test, which pins TF as the one ruled exception.
-    statusTr:
-      "Fransa'ya bağlı, kalıcı nüfusu olmayan toprak; Antarktika kesimi üzerindeki iddia (Adélie) tanınmaz.",
+    // The label states the administrative relationship ONLY. The Adélie Land claim is
+    // deliberately absent: the ruled framing ("not recognised / Treaty-frozen", never "other
+    // states object") cannot survive in three words, and every short form of it either
+    // measures the claim or invents an opposing party. Deliberate silence is the neutral
+    // answer here; the context belongs to the detail page (→ DEC 2026-08-01n, §3.3 of the
+    // approved label table).
+    labelTr: "Fransız Denizaşırı Toprağı",
     population: { kind: "none" },
     // Area row REMOVED (→ DEC 2026-08-01g item 2). The 439.672 km² total is ~98% Adélie
     // Land, which the drawn shape does not contain and which the Antarctic Treaty freezes:
@@ -375,7 +382,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "AW",
     nameTr: "Aruba",
     nameEn: "Aruba",
-    statusTr: "Hollanda Krallığı'nın dört kurucu ülkesinden biri (1986'dan beri)",
+    labelTr: "Hollanda Kurucu Ülkesi",
     population: { kind: "exact", value: 109435 },
     areaKm2: { kind: "exact", value: 180 },
     centre: "Oranjestad",
@@ -385,7 +392,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "CW",
     nameTr: "Curaçao",
     nameEn: "Curaçao",
-    statusTr: "Hollanda Krallığı'nın dört kurucu ülkesinden biri (2010'dan beri)",
+    labelTr: "Hollanda Kurucu Ülkesi",
     population: { kind: "exact", value: 156700 },
     areaKm2: { kind: "exact", value: 444 },
     centre: "Willemstad",
@@ -395,9 +402,8 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "SX",
     nameTr: "Sint Maarten",
     nameEn: "Sint Maarten",
-    statusTr:
-      "Hollanda Krallığı'nın kurucu ülkesi (2010); adayı Fransa'ya bağlı Saint-Martin'le paylaşır",
-    population: { kind: "range", min: 44404, max: 46738 },
+    labelTr: "Hollanda Kurucu Ülkesi",
+    population: { kind: "exact", value: 42449 },
     areaKm2: { kind: "exact", value: 34 },
     centre: "Philipsburg",
   },
@@ -408,19 +414,23 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "PR",
     nameTr: "Porto Riko",
     nameEn: "Puerto Rico",
-    statusTr:
-      "ABD'ye bağlı, ilhak edilmemiş toprak; resmî statüsü Commonwealth (Serbest Birlik Devleti)",
+    labelTr: "ABD Dış Toprağı",
     population: { kind: "exact", value: 3184195 },
     areaKm2: { kind: "exact", value: 8868 },
     centre: "San Juan",
   },
   {
+    // VI and MP publish the 2020 Island Areas CENSUS count, on the Census Bureau's own
+    // instruction that its island-area estimate series has not incorporated the 2020 census
+    // (the discarded intervals' upper ends were exactly that stale projection). GU and AS
+    // below still carry estimate-vintage figures, so these four cards are knowingly mixed
+    // vintage — recorded as a follow-up, not silently averaged away (selection table F2).
     iso: "VI",
     badge: "VI",
     nameTr: "ABD Virjin Adaları",
     nameEn: "United States Virgin Islands",
-    statusTr: "ABD'ye bağlı, ilhak edilmemiş ve örgütlenmiş toprak",
-    population: { kind: "range", min: 78500, max: 84905 },
+    labelTr: "ABD Dış Toprağı",
+    population: { kind: "exact", value: 87146 },
     areaKm2: { kind: "exact", value: 348 },
     centre: "Charlotte Amalie",
   },
@@ -429,7 +439,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "GU",
     nameTr: "Guam",
     nameEn: "Guam",
-    statusTr: "ABD'ye bağlı, ilhak edilmemiş toprak",
+    labelTr: "ABD Dış Toprağı",
     population: { kind: "exact", value: 168399 },
     areaKm2: { kind: "exact", value: 561 },
     centre: "Hagåtña",
@@ -439,8 +449,8 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "MP",
     nameTr: "Kuzey Mariana Adaları",
     nameEn: "Northern Mariana Islands",
-    statusTr: "ABD ile siyasi birlik içinde, kendi kendini yöneten topluluk (commonwealth)",
-    population: { kind: "range", min: 42914, max: 50255 },
+    labelTr: "ABD Dış Toprağı",
+    population: { kind: "exact", value: 47329 },
     areaKm2: { kind: "exact", value: 472 },
     // Brief-exact: "Saipan" is the island, "Capital Hill" the seat of government. Both are
     // proper nouns, so the one field still serves both locales.
@@ -451,7 +461,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "AS",
     nameTr: "Amerikan Samoası",
     nameEn: "American Samoa",
-    statusTr: "ABD'ye bağlı, ilhak edilmemiş ve örgütlenmemiş toprak",
+    labelTr: "ABD Dış Toprağı",
     population: { kind: "exact", value: 43268 },
     areaKm2: { kind: "exact", value: 224 },
     centre: "Pago Pago",
@@ -464,8 +474,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "HK",
     nameTr: "Hong Kong",
     nameEn: "Hong Kong",
-    statusTr:
-      "Çin Halk Cumhuriyeti'ne bağlı özel idari bölge; 'Bir Ülke, İki Sistem', 1997'den 50 yıl",
+    labelTr: "Özel İdari Bölge (Çin)",
     population: { kind: "exact", value: 7599000 },
     areaKm2: { kind: "exact", value: 1115 },
   },
@@ -478,8 +487,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "MO",
     nameTr: "Makao",
     nameEn: "Macau",
-    statusTr:
-      "Çin Halk Cumhuriyeti'ne bağlı özel idari bölge; 'Bir Ülke, İki Sistem', 1999'dan 50 yıl",
+    labelTr: "Özel İdari Bölge (Çin)",
     population: { kind: "exact", value: 688900 },
     areaKm2: { kind: "exact", value: 32.9 },
   },
@@ -490,7 +498,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "NF",
     nameTr: "Norfolk Adası",
     nameEn: "Norfolk Island",
-    statusTr: "Avustralya'ya bağlı dış toprak",
+    labelTr: "Avustralya Dış Toprağı",
     population: { kind: "exact", value: 2188 },
     areaKm2: { kind: "exact", value: 36 },
     centre: "Kingston",
@@ -504,7 +512,7 @@ export const TERRITORIES: readonly Territory[] = [
     // record to Australia's highest POINT, not to volcanoes, so the clause carried zero
     // correct information — and it measured/attributed territory inside the Antarctic
     // Treaty area, now a standing axis of every territory content review.
-    statusTr: "Avustralya'ya bağlı, nüfussuz toprak",
+    labelTr: "Avustralya Dış Toprağı",
     population: { kind: "none" },
     areaKm2: { kind: "exact", value: 368 },
   },
@@ -515,7 +523,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "CK",
     nameTr: "Cook Adaları",
     nameEn: "Cook Islands",
-    statusTr: "Yeni Zelanda ile serbest ortaklık ilişkisinde kendi kendini yöneten devlet",
+    labelTr: "Serbest Ortaklık Devleti",
     population: { kind: "exact", value: 15040 },
     areaKm2: { kind: "exact", value: 240 },
     centre: "Avarua",
@@ -525,7 +533,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "NU",
     nameTr: "Niue",
     nameEn: "Niue",
-    statusTr: "Yeni Zelanda ile serbest ortaklık ilişkisinde kendi kendini yöneten devlet",
+    labelTr: "Serbest Ortaklık Devleti",
     population: { kind: "exact", value: 1822 },
     areaKm2: { kind: "exact", value: 260 },
     centre: "Alofi",
@@ -534,15 +542,13 @@ export const TERRITORIES: readonly Territory[] = [
   // ---- Özel iki durum: egemen devlet + kıta (brief §1.11) ----
   {
     // NOT a territory — a sovereign city state, deliberately absent from the 196-country
-    // corpus (→ DEC 2026-07-13). The sentence is the factual half of the brief's §1.11
-    // cell; the rest of that cell is an internal note to the reader of the brief (corpus
-    // bookkeeping), which CONTENT-STYLE §22 bars from a user-facing surface.
+    // corpus (→ DEC 2026-07-13). Hence the one label on this map that describes what the
+    // place IS instead of what it belongs to: an "…'ya bağlı" form would be false here.
     iso: "VA",
     badge: "VA",
     nameTr: "Vatikan",
     nameEn: "Vatican City",
-    statusTr:
-      "Roma'nın içinde yer alan, tam egemen bir şehir devleti; Katolik Kilisesi'nin merkezi",
+    labelTr: "Egemen Şehir Devleti",
     population: { kind: "exact", value: 882 },
     areaKm2: { kind: "exact", value: 0.49 },
   },
@@ -551,25 +557,32 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "AQ",
     nameTr: "Antarktika",
     nameEn: "Antarctica",
-    statusTr: "1959 Antlaşması'yla yönetilen kıta; 7 ülkenin çakışan toprak iddiası var, tanınmaz",
+    labelTr: "Tarafsız Kıta",
     population: { kind: "none" },
-    areaKm2: { kind: "range", min: 14000000, max: 14200000 },
+    // ONE value, not the old 14.000.000–14.200.000 interval (→ DEC 2026-08-01l). Antarctica
+    // has no statistics office, no census and no UN series, so the source ladder runs to its
+    // last rung (CIA World Factbook): 285.000 km² ice-free + 13.915.000 km² ice-covered =
+    // 14,2 million, i.e. the ice-shelf-inclusive convention. The figure is rounded at source,
+    // so it keeps the ≈ — an approximation is not an interval.
+    areaKm2: { kind: "approx", value: 14200000 },
   },
 
-  // ---- 🔴 Owner-approved verbatim texts (brief §3a, → DEC 2026-08-01b) ----
-  // These six carry NO population row. None of their population figures was owner-ruled and
-  // each one needs a caveat a 258px card cannot carry honestly: Batı Sahra's figure excludes
+  // ---- 🔴 Owner-approved VERBATIM labels (→ DEC 2026-08-01n item 1) ----
+  // Six sovereignty-sensitive entities. Their labels are byte-locked by the owner and their
+  // reasoning lives in the approved label table (§2) — the short form is that each names a
+  // status CLASS and never a party.
+  // These six also carry NO population row. None of their population figures was owner-ruled
+  // and each needs a caveat a 258px card cannot carry honestly: Batı Sahra's figure excludes
   // the Tindouf refugee population, Somaliland's is flagged [KAYNAK DOĞRULANAMADI], Siachen
   // has only military personnel, and Chagos's zero is the result of the 1960s removal of its
-  // population. Where the fact matters the approved sentence already states it (Güney
-  // Georgia: "kalıcı nüfusu yok"). Areas are plain, uncontested figures and are shown.
+  // population. The label cannot state such a caveat either (3 words), so the row stays off
+  // until a ruling says otherwise. Areas are plain, uncontested figures and are shown.
   {
     iso: "EH",
     badge: "EH",
     nameTr: "Batı Sahra",
     nameEn: "Western Sahara",
-    statusTr:
-      "BM'nin özyönetimi olmayan toprak listesinde; toprağı Fas ve Polisario Cephesi paylaşır.",
+    labelTr: "Özyönetimi Olmayan Toprak",
     population: { kind: "unknown" },
     areaKm2: { kind: "exact", value: 272000 },
   },
@@ -577,8 +590,7 @@ export const TERRITORIES: readonly Territory[] = [
     iso: "x-somaliland",
     nameTr: "Somaliland",
     nameEn: "Somaliland",
-    statusTr:
-      "Somali'den 1991'de fiilen ayrılan bölge; 2025'te İsrail tanıdı, Somali itiraz ediyor.",
+    labelTr: "Statüsü Tartışmalı Bölge",
     population: { kind: "unknown" },
     // ≈, not exact (→ DEC 2026-08-01g item 3): the brief's figure is a rounded conversion
     // from 68.000 sq mi. It was collapsed to a pinned number in the first round; the card
@@ -589,8 +601,7 @@ export const TERRITORIES: readonly Territory[] = [
     iso: "x-siachen-glacier",
     nameTr: "Siachen Buzulu",
     nameEn: "Siachen Glacier",
-    statusTr:
-      "Hindistan ve Pakistan arasında sınırı kesin çizilmemiş, statüsü çözülmemiş buzul bölgesi.",
+    labelTr: "Statüsü Çözülmemiş Bölge",
     population: { kind: "unknown" },
     areaKm2: { kind: "unknown" },
   },
@@ -601,7 +612,7 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "FK",
     nameTr: "Falkland Adaları (Malvinas)",
     nameEn: "Falkland Islands (Malvinas)",
-    statusTr: "Birleşik Krallık'a bağlı, özerk denizaşırı toprak; Arjantin hak iddia ediyor.",
+    labelTr: "Egemenliği Tartışmalı Toprak",
     population: { kind: "unknown" },
     areaKm2: { kind: "exact", value: 12170 },
   },
@@ -610,20 +621,20 @@ export const TERRITORIES: readonly Territory[] = [
     badge: "GS",
     nameTr: "Güney Georgia ve Güney Sandwich Adaları",
     nameEn: "South Georgia and the South Sandwich Islands",
-    statusTr:
-      "Birleşik Krallık'a bağlı denizaşırı toprak, kalıcı nüfusu yok; Arjantin hak iddia ediyor.",
+    labelTr: "Egemenliği Tartışmalı Toprak",
     population: { kind: "unknown" },
     areaKm2: { kind: "exact", value: 3903 },
   },
   {
     // The brief's own name cell carries both names; the primary-name question was never
-    // owner-ruled (DEC 2026-08-01 ruled only the sentence), so neither name is dropped.
+    // owner-ruled (the rulings covered the card text only), so neither name is dropped.
+    // WATCH ITEM: the label describes a transfer IN PROGRESS. When the Mauritius agreement
+    // enters into force it stops being true and needs a new ruling (tracked with Atlas).
     iso: "IO",
     badge: "IO",
     nameTr: "Britanya Hint Okyanusu Toprakları (Chagos)",
     nameEn: "British Indian Ocean Territory (Chagos)",
-    statusTr:
-      "Birleşik Krallık'a bağlı denizaşırı toprak; Mauritius'a devir anlaşması onay aşamasında.",
+    labelTr: "Devir Sürecindeki Toprak",
     population: { kind: "unknown" },
     // ≈, not exact — the same collapse as Somaliland, corrected together (→ DEC 2026-08-01g
     // item 3). The brief publishes ≈60 km² of LAND across the archipelago.
@@ -660,21 +671,40 @@ export interface FigureTextOptions {
    * nüfus yok km²" is not a thing.
    */
   readonly unit?: string;
+  /**
+   * Localized word for "approximately". Supplied ONLY by the accessible-name pass: with it,
+   * an `approx` figure reads "yaklaşık 176.000 km²" instead of the visual "≈176.000 km²".
+   * Screen readers do not announce U+2248 at all, so without it the spoken card presents a
+   * rounded figure as a pinned one — exactly the drift the `approx` member exists to prevent
+   * (review finding sov-r3-m1). The glyph stays purely visual.
+   */
+  readonly approxWord?: string;
 }
 
 /**
  * Non-breaking space between a number and its unit. A 258px card cannot fit Antarktika's
- * 7-digit area RANGE plus "km²" on one line, and with a normal space the browser orphans the
- * unit onto a line of its own; the break belongs after the range's en dash instead, which is
- * where it lands once the unit is glued to its number.
+ * 7-digit area plus "km²" on one line, and with a normal space the browser orphans the unit
+ * onto a line of its own; gluing the unit to its number moves the break to the label/value
+ * boundary, which is where the stat row is built to wrap.
  */
 const NBSP = "\u00A0";
 
 /**
  * Approximation marker (U+2248 ALMOST EQUAL TO), printed tight against the number: "\u2248176.000".
  * It is the brief's own notation and a locale-neutral one \u2014 the digit grouping around it is
- * still the locale's (`176.000` TR / `176,000` EN), so no message key is needed and no
- * Turkish wording can leak onto `/en/dunya`.
+ * still the locale's (`176.000` TR / `176,000` EN), so no Turkish wording can leak onto
+ * `/en/dunya`. Its SPOKEN counterpart is {@link FigureTextOptions.approxWord}, which is a
+ * message-catalogue string precisely because a word cannot be locale-neutral.
+ *
+ * TYPOGRAPHY, KNOWN AND ACCEPTED: U+2248 is outside both Google subsets the app loads
+ * (`latin` stops the symbol block at U+2212/U+2215; `latin-ext` is U+100–2C5 and friends), so
+ * this one character falls through Fraunces to the next family in `--font-heading` — Georgia
+ * on macOS/Windows, the platform serif elsewhere. Measured at 1440×900 the difference is a
+ * ~2px-wider, slightly heavier symbol next to Fraunces digits; a rendered sample is in the
+ * PR's final-sample set. The alternatives were both worse: shipping a `next/font/local` face
+ * for ONE glyph puts a whole extra font request in the CWV budget, and swapping the marker
+ * for a latin-subset character (`~`) would edit ruled notation (→ DEC 2026-08-01g item 3)
+ * on a sovereignty-sensitive card. So the fallback is deliberate, not an oversight.
  */
 const APPROX = "\u2248";
 
@@ -690,17 +720,17 @@ const APPROX = "\u2248";
  */
 export function figureText(
   figure: TerritoryFigure,
-  { formatNumber, noneText, unit }: FigureTextOptions,
+  { formatNumber, noneText, unit, approxWord }: FigureTextOptions,
 ): string | undefined {
   const suffix = unit ? `${NBSP}${unit}` : "";
   switch (figure.kind) {
     case "exact":
       return `${formatNumber(figure.value)}${suffix}`;
     case "approx":
-      return `${APPROX}${formatNumber(figure.value)}${suffix}`;
-    case "range":
-      // En dash, unspaced — a numeric interval, not a sentence dash.
-      return `${formatNumber(figure.min)}–${formatNumber(figure.max)}${suffix}`;
+      // Word for the accessible name, glyph for the eye — same figure, same uncertainty.
+      return approxWord
+        ? `${approxWord} ${formatNumber(figure.value)}${suffix}`
+        : `${APPROX}${formatNumber(figure.value)}${suffix}`;
     case "none":
       return noneText;
     case "unknown":

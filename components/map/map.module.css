@@ -125,7 +125,16 @@
   stroke-width: 3;
 }
 
-/* ODbL attribution — required visibly next to the map (SPEC §5.2 / DEC 2026-07-10). */
+/* ODbL attribution — required visibly next to the map (SPEC §5.2 / DEC 2026-07-10).
+   BOTTOM-CHROME STACK: this row owns the bottom-right corner of EVERY map surface (il map,
+   world map, game map) and never moves. The zoom hint is the other bottom-anchored element;
+   it stacks one band ABOVE this one (see `.zoomHint`), because at the same inset the two
+   boxes overlap on a narrow stage — measured at 390px: hint 237px wide from the left edge,
+   attribution 207px from the right, ~124px of them printed on top of each other. The two
+   offsets are plain numbers on purpose: this stylesheet is shared by containers that do not
+   share a custom-property scope (`.mapRoot` vs the game's own stage element), so a var
+   defined here would silently resolve to nothing on the game map and drop the hint back to
+   the top of the stage. */
 .attribution {
   position: absolute;
   right: 14px;
@@ -237,11 +246,11 @@
   margin: 0;
 }
 
-/* Label and value share one line whenever they fit. When they do not — Antarktika's area
-   is a 7-digit RANGE ("12.272.800–14.200.000 km²"), the widest value either map can
-   produce — the value drops to its own full-width line instead of hyphen-less wrapping
-   into a two-line ragged column beside the label. `margin-left: auto` keeps it flush right
-   in both layouts (and makes `justify-content` moot on the one-line case). */
+/* Label and value share one line whenever they fit. When they do not — Antarktika's area is
+   a 7-digit approximation ("≈14.200.000 km²"), the widest value either map can produce — the
+   value drops to its own full-width line instead of hyphen-less wrapping into a two-line
+   ragged column beside the label. `margin-left: auto` keeps it flush right in both layouts
+   (and makes `justify-content` moot on the one-line case). */
 .stat {
   display: flex;
   flex-wrap: wrap;
@@ -348,10 +357,14 @@
   outline-offset: 2px;
 }
 
+/* Sits one band above the attribution — see the stack note there. 42px = the attribution's
+   own 10px inset + its measured single-line height (0.72rem text + 3px padding = 24px) + an
+   8px gap. Both attribution strings stay on one line down to a 320px stage; if a longer one
+   ever wraps, this offset is what has to grow with it. */
 .zoomHint {
   position: absolute;
   left: 14px;
-  bottom: 10px;
+  bottom: 42px;
   display: flex;
   align-items: center;
   gap: 8px;
