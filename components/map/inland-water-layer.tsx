@@ -30,12 +30,50 @@ import styles from "./inland-water.module.css";
  *
  * `/turkiye`, the game's full map, the game's region maps and `/deniz` all draw the same
  * pinned frame. Rendering the layer from one file is what guarantees they cannot drift into
- * three slightly different lakes. It is a server component with no props: it has no state,
- * no client JS and nothing to configure — the region maps clip it with their own viewBox.
+ * three slightly different lakes. It is a server component with no state and no client JS.
  */
-export function InlandWaterLayer() {
+
+interface InlandWaterLayerProps {
+  /**
+   * Province path `d` strings that define the LAND on this surface — pass them only when the
+   * surface draws a SUBSET of the country.
+   *
+   * The game's region rounds are the case this exists for, and rendered samples are what
+   * found it. A region map narrows the viewBox to the region's bounding box, which was
+   * assumed to clip the rest away. It does not: Keban, Karakaya and Atatürk all fall inside
+   * Doğu Anadolu's bounding box while lying in provinces the round does not draw, so they
+   * rendered as blue filaments floating on the empty parchment beyond the region's edge.
+   *
+   * Clipping to the drawn provinces states the real rule — water exists only where this
+   * surface draws land — and costs one duplicate of the region's own paths (~10-14 shapes).
+   * The full-country surfaces pass nothing: every body in the artifact is Turkish and the
+   * whole country is on screen, so a clip there would be ~57 kB of markup to change no
+   * pixel.
+   */
+  readonly clipToPaths?: readonly string[];
+  /** Unique id for the clip path — required when `clipToPaths` is given (one per surface). */
+  readonly clipId?: string;
+}
+
+export function InlandWaterLayer({ clipToPaths, clipId }: InlandWaterLayerProps = {}) {
+  const clipped = clipToPaths !== undefined && clipToPaths.length > 0 && clipId !== undefined;
   return (
-    <g className={styles.layer} aria-hidden="true" data-inland-water>
+    <g
+      className={styles.layer}
+      aria-hidden="true"
+      data-inland-water
+      clipPath={clipped ? `url(#${clipId})` : undefined}
+    >
+      {clipped && (
+        <clipPath id={clipId}>
+          {clipToPaths.map((d, index) => (
+            // The land shapes again, as a clip region. Index keys are correct here: this is
+            // a static, order-stable projection of the caller's own array, and the elements
+            // carry no state.
+            <path key={index} d={d} />
+          ))}
+        </clipPath>
+      )}
       {INLAND_WATER_SHAPES.map((shape) => (
         <path key={shape.id} className={styles.water} d={shape.d} />
       ))}

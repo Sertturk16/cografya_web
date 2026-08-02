@@ -4,6 +4,7 @@ import { InlandWaterLayer } from "@/components/map/inland-water-layer";
 import { MapZoomPan } from "@/components/map/map-zoom-pan";
 import { aspectOfViewBox } from "@/lib/game/map-bbox";
 import type { GameShapeEntry } from "@/lib/game/map-shapes";
+import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
 import styles from "./game-map.module.css";
 
 /**
@@ -56,6 +57,13 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
   const tMap = await getTranslations("Map");
   const titleId = "game-map-title";
   const instructionsId = "game-map-instructions";
+  // Does this round draw the whole country, or a slice of it? Derived from the frame rather
+  // than passed as a flag: `game-screen.tsx` builds the region frame with `viewBoxForPaths`
+  // and falls back to `MAP_VIEWBOX` for the full map, so the frame IS the answer and a new
+  // prop could only ever disagree with it. Used to decide whether the water layer needs
+  // clipping to the drawn land.
+  const isSubset = viewBox !== MAP_VIEWBOX;
+
   // The stage takes its shape FROM the frame it is drawing, so the map fills the box
   // exactly instead of letterboxing inside a fixed one — which is what lets a region's
   // provinces use the full width they are entitled to (`lib/game/map-bbox.ts`).
@@ -117,11 +125,15 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
           ))}
 
           {/* Painted after the provinces, exactly as on /turkiye. The layer holds every body
-              in the country, not just this round's region: the region viewBox clips the rest
-              away, so no filtering is needed and the two maps cannot disagree. It also stays
-              OUT of `viewBoxForPaths()` — the stage's aspect ratio is derived from the
-              province shapes alone, so adding water cannot move the frame. */}
-          <InlandWaterLayer />
+              in the country, not just this round's region, so on a REGION map it is clipped
+              to the provinces actually drawn — the region's bounding box is not a substitute
+              (Keban and Atatürk fall inside Doğu Anadolu's box while lying outside it). The
+              layer stays OUT of `viewBoxForPaths()`: the stage's aspect ratio is derived from
+              the province shapes alone, so adding water cannot move the frame. */}
+          <InlandWaterLayer
+            clipToPaths={isSubset ? shapes.map((shape) => shape.d) : undefined}
+            clipId={isSubset ? "game-map-land-clip" : undefined}
+          />
         </svg>
 
         {/* ODbL obligation: the attribution stays visible wherever these shapes are drawn

@@ -97,6 +97,7 @@ describe("the inland water stylesheet", () => {
 
   it("takes its tone from a token, never a literal hex", () => {
     expect(STYLES).toMatch(/fill:\s*var\(--map-water\)/);
+    expect(STYLES).toMatch(/stroke:\s*var\(--map-water-line\)/);
     expect(STYLES).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
   });
 });
@@ -113,7 +114,23 @@ describe("the surfaces that consume the layer", () => {
     // a lake-less Türkiye on the water page (→ DEC 2026-08-02k md. 4). The game map covers
     // both the full-country and the region rounds — same component, different viewBox.
     for (const surface of SURFACES) {
-      expect(code(sourceOf(surface))).toMatch(/<InlandWaterLayer\s*\/>/);
+      expect(code(sourceOf(surface))).toMatch(/<InlandWaterLayer[\s/>]/);
+    }
+  });
+
+  it("clips the layer to the drawn land wherever the surface draws only part of the country", () => {
+    // The game's REGION rounds narrow the viewBox to the region's bounding box, and a
+    // bounding box is not the region: Keban, Karakaya and Atatürk fall inside Doğu Anadolu's
+    // box while lying in provinces the round does not draw, so without a clip they render as
+    // blue filaments on empty background. Dropping the clip is a plausible "simplification"
+    // that reintroduces exactly that, so it is pinned here.
+    const game = code(sourceOf("../game/game-map.tsx"));
+    expect(game).toMatch(/clipToPaths=\{isSubset \?/);
+    expect(game).toMatch(/const isSubset = viewBox !== MAP_VIEWBOX;/);
+    // The full-country surfaces must NOT clip: every body in the artifact is Turkish and the
+    // whole country is on screen, so a clip there is ~57 kB of markup that changes no pixel.
+    for (const surface of ["../map/turkey-map-section.tsx", "../marine/marine-map.tsx"]) {
+      expect(code(sourceOf(surface))).not.toMatch(/clipToPaths/);
     }
   });
 

@@ -28,11 +28,18 @@
      lakes follow it without this file being reopened. */
   fill: var(--map-water);
   /* The fill difference alone is only 1.26:1 against white land — the narrow luminance band
-     the 3:1 stroke floor leaves (see --map-sea in globals.css). As on /dunya's land↔sea
-     boundary, the SIGNAL is carried by the line: taupe measures 3.05:1 on the water tint and
-     3.86:1 on land, both clear of WCAG 1.4.11's 3:1 for a graphical object. Same stroke
-     family and width as a province edge, so the shoreline reads as part of one drawing. */
-  stroke: var(--province-stroke);
+     the 3:1 stroke floor leaves (see --map-sea in globals.css) — so the SIGNAL is carried by
+     the line, exactly as on /dunya's land↔sea boundary.
+
+     The line is a DARKER SHADE OF THE WATER, not the administrative taupe. Rendered samples
+     settled this: the dendritic reservoirs (Keban, Atatürk, Karakaya, Ilısu) have arms
+     narrower than one svg unit, so a 1px non-scaling stroke covers them from both sides and
+     the fill never shows — in taupe they read as brown scribbles rather than as lakes. See
+     --map-water-line in globals.css for the measured contrasts; it clears WCAG 1.4.11's 3:1
+     against white land, against its own fill and against an inert province, and does so by a
+     wider margin than taupe. Same width and stroke family as a province edge, so the
+     shoreline still reads as part of one drawing. */
+  stroke: var(--map-water-line);
   stroke-width: 1;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;

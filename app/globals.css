@@ -75,6 +75,19 @@
      drift apart. Contrast is inherited unchanged: --province-stroke measures 3.05:1 against
      this tint, clear of WCAG 1.4.11's 3:1 for a graphical object. */
   --map-water: var(--map-sea);
+  /* Outline for inland water. NOT --province-stroke, and this is a correction made from
+     rendered samples rather than a preference: Türkiye's biggest reservoirs (Keban,
+     Atatürk, Karakaya, Ilısu) are DENDRITIC — arms a few hundred metres wide, i.e. well
+     under one svg unit. A 1px non-scaling stroke covers such an arm from both sides, so the
+     fill never shows and the country's largest man-made lakes rendered as brown scribbles in
+     the administrative line colour. Outlining water in a darker shade of ITSELF is also the
+     standard atlas convention, and it makes a sub-unit arm read as a watercourse instead of
+     as an unexplained boundary.
+     Measured (WCAG 1.4.11, 3:1 graphical-object floor — this tone BEATS taupe on all three):
+       vs --province-fill #fff        4.69:1  (taupe 3.86:1)
+       vs --map-water     #dbe7e8     3.71:1  (taupe 3.05:1)
+       vs --province-inert #f1e9de    3.90:1  (taupe 3.21:1) */
+  --map-water-line: #527a84;
   /* Backdrop LAND on the world map: territories that will never get a page (Greenland,
      Antarctica, the overseas-territory set) plus not-yet-seeded countries.
 
