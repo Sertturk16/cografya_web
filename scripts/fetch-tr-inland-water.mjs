@@ -35,7 +35,7 @@
  *
  * ## The snapshot is a VERTEX SUBSET of the source, not a rewrite
  *
- * Verbatim, the 107 bodies below are 1.42 MILLION nodes / ~34 MB: OSM traces reservoir
+ * Verbatim, the 114 bodies below are 1.43 MILLION nodes / ~34 MB: OSM traces reservoir
  * shorelines at ~10 m from imagery (Keban alone is 215 488 nodes). That is three orders of
  * magnitude finer than this map can render — the whole viewBox is 1000 units wide and one
  * unit is ~1.68 km — and ~140× the province snapshot it has to register against (81
@@ -48,9 +48,11 @@
  *   - `areaKm2` on each feature is measured on the VERBATIM rings, BEFORE reduction, so the
  *     threshold ladder is decided by the source's own geometry (plan §11 A3) and cannot
  *     wobble across a rung because a tolerance changed;
- *   - the reduction tolerance is 16× finer than the drawing tolerance, so re-simplifying
- *     this file at any epsilon the map would plausibly use gives the same result as
- *     re-simplifying the raw source.
+ *   - the reduction tolerance is 2.4× finer than the FINEST tolerance the generator uses on
+ *     any body and 10× finer than the coarsest, and that headroom is measured rather than
+ *     asserted: re-running the generator's own simplification against the verbatim geometry
+ *     gives an IDENTICAL vertex count on all 39 drawn bodies, with a maximum vertex
+ *     displacement of 0.185 svg units (0.31 km) — under a fifth of a pixel at render width.
  *
  * Licence: ODbL. This file's data is NEVER merged with the public-domain Natural Earth
  * sea/neighbour layer — separate source, separate file, separate artifact
@@ -80,7 +82,7 @@ const SERVERS = [
 const ATTEMPTS_PER_SERVER = 3;
 
 /** Douglas–Peucker tolerance for the snapshot, in svg units of the pinned TR frame. */
-const SNAPSHOT_EPSILON = 0.05; // ≈ 84 m; the drawing epsilon is 16× coarser
+const SNAPSHOT_EPSILON = 0.05; // ≈ 84 m; the drawing tolerance is 2.4×-10× coarser
 
 /**
  * ID-pinned selection — measured sweep of 2026-08-02 (see header). Every water body in
@@ -93,16 +95,16 @@ const SNAPSHOT_EPSILON = 0.05; // ≈ 84 m; the drawing epsilon is 16× coarser
  */
 const PINNED_RELATIONS = [
   // ≥ 10 km², descending by measured area
-  36995, 2411676, 370829, 207124, 179390, 1410914, 1319095, 10111983, 1103056, 1028112,
-  1272910, 7336746, 371040, 395698, 1273044, 1808092, 1224893, 2436188, 16862988, 398079,
-  2385434, 2249464, 1869452, 272008, 313352, 385113, 2347892, 2842328, 1186573, 16122782,
-  17069201, 1139094, 11765142, 1342720, 3546627, 12914685, 1956206, 397126, 17083287, 1761470,
-  1302039, 158172, 313351, 158163, 2861302, 2452970, 1280088, 16915457, 13999262, 961325,
-  4011904, 17537232, 15986627, 2874388, 7416160, 2332911, 1721352, 2296756, 1175859, 2352113,
-  1226863, 2436693, 1846315, 7412623, 1225132, 2330005, 2337254, 1236868, 947703, 17045554,
-  2977, 2890, 10840590, 1748801, 2455077, 3535085, 14487587, 1820911, 10886357, 1319084,
-  385686, 1395031, 3531544, 1811482, 2626775, 11165611, 4195201, 2436305, 7757527, 10888383,
-  13799311, 9548064, 9535125, 14018346, 946949, 17531565, 10413981, 1273043, 10952370, 2583204,
+  36995, 2411676, 370829, 207124, 179390, 1410914, 1319095, 10111983, 1103056, 1028112, 1272910,
+  7336746, 371040, 395698, 1273044, 1808092, 1224893, 2436188, 16862988, 398079, 2385434, 2249464,
+  1869452, 272008, 313352, 385113, 2347892, 2842328, 1186573, 16122782, 17069201, 1139094, 11765142,
+  1342720, 3546627, 12914685, 1956206, 397126, 17083287, 1761470, 1302039, 158172, 313351, 158163,
+  2861302, 2452970, 1280088, 16915457, 13999262, 961325, 4011904, 17537232, 15986627, 2874388,
+  7416160, 2332911, 1721352, 2296756, 1175859, 2352113, 1226863, 2436693, 1846315, 7412623, 1225132,
+  2330005, 2337254, 1236868, 947703, 17045554, 2977, 2890, 10840590, 1748801, 2455077, 3535085,
+  14487587, 1820911, 10886357, 1319084, 385686, 1395031, 3531544, 1811482, 2626775, 11165611,
+  4195201, 2436305, 7757527, 10888383, 13799311, 9548064, 9535125, 14018346, 946949, 17531565,
+  10413981, 1273043, 10952370, 2583204,
   // Curriculum tail — below every rung of the ladder, carried so an owner question about
   // formation types (crater / landslide-dammed / karstic) does not cost another fetch.
   10166504, 5471859,
@@ -149,7 +151,8 @@ async function runQuery(query) {
             "Content-Type": "application/x-www-form-urlencoded",
             // Overpass mirrors answer Node's default agent with `406 Not Acceptable`.
             // Identifying the caller is also the API's own usage-policy expectation.
-            "User-Agent": "cografya-web-inland-water-fetch/1.0 (+https://github.com/Sertturk16/cografya_web)",
+            "User-Agent":
+              "cografya-web-inland-water-fetch/1.0 (+https://github.com/Sertturk16/cografya_web)",
           },
           body: new URLSearchParams({ data: query }),
         });
@@ -167,16 +170,27 @@ async function runQuery(query) {
       await new Promise((resolve) => setTimeout(resolve, 8000));
     }
   }
-  throw new Error(`Overpass returned no JSON from any endpoint. Last body:\n${lastBody.slice(0, 500)}`);
+  throw new Error(
+    `Overpass returned no JSON from any endpoint. Last body:\n${lastBody.slice(0, 500)}`,
+  );
 }
 
 /**
- * Resolve the display name: `name:tr` → `name:en` → `name` (→ su-envanteri N1). Faz-1 draws
- * no labels, but the file must already carry the right string so the label layer, when it
- * lands, does not inherit "Saksak Dagi".
+ * Resolve the display name: `name:tr` → `name` → `name:en`.
+ *
+ * Faz-1 draws no labels, but the file must already carry the right string so the label layer,
+ * when it lands, does not inherit a wrong name (the reason OSM was chosen over Natural Earth
+ * at all: NE calls Karakaya "Saksak Dagi" and Atatürk "Ataturk Barajt").
+ *
+ * `name` comes BEFORE `name:en`, and that ordering is a correction made from the fetch
+ * report rather than a preference: on a Turkish feature the untagged `name` IS the Turkish
+ * name, and several of these bodies carry an English `name:en` with no `name:tr` at all.
+ * Preferring `name:en` produced "Atatürk Reservoir", "Akyatan Lagoon" and "Hirfanlı Dam" in
+ * a Turkish-first product whose whole reason for using this source is that the names arrive
+ * in Turkish.
  */
 function resolveName(tags) {
-  return tags["name:tr"] ?? tags["name:en"] ?? tags.name ?? null;
+  return tags["name:tr"] ?? tags.name ?? tags["name:en"] ?? null;
 }
 
 // --- run ---------------------------------------------------------------------
@@ -190,7 +204,9 @@ console.log(`fetch:water → ${pinned.size} pinned ids`);
 const payload = await runQuery(query);
 const timestamp = payload.osm3s?.timestamp_osm_base ?? null;
 if (typeof timestamp !== "string") {
-  throw new Error("Overpass response carries no timestamp_osm_base — provenance would be unrecordable.");
+  throw new Error(
+    "Overpass response carries no timestamp_osm_base — provenance would be unrecordable.",
+  );
 }
 
 const features = [];
@@ -203,7 +219,9 @@ for (const element of payload.elements ?? []) {
   if (!pinned.has(osmId)) {
     // Cannot happen with an id-pinned query; treated as a hard error rather than ignored,
     // because "the query returned something I did not ask for" means the query changed.
-    throw new Error(`Unpinned feature ${osmId} in the response — the query no longer matches the pin list.`);
+    throw new Error(
+      `Unpinned feature ${osmId} in the response — the query no longer matches the pin list.`,
+    );
   }
   seen.add(osmId);
   const tags = element.tags ?? {};
@@ -237,7 +255,10 @@ for (const element of payload.elements ?? []) {
     rings.outer.reduce((sum, ring) => sum + measureRingAreaKm2(ring), 0) -
     rings.inner.reduce((sum, ring) => sum + measureRingAreaKm2(ring), 0);
 
-  const verbatimNodes = [...rings.outer, ...rings.inner].reduce((sum, ring) => sum + ring.length, 0);
+  const verbatimNodes = [...rings.outer, ...rings.inner].reduce(
+    (sum, ring) => sum + ring.length,
+    0,
+  );
 
   // Hole → shell assignment happens on the VERBATIM rings, where the topology is exact.
   // Doing it after reduction is what a naive pipeline gets wrong: simplification moves a
@@ -301,7 +322,12 @@ if (missing.length > 0) {
  * vertices land ambiguously on it; an orphan hole is an error, never a silent drop.
  */
 function findShell(outerRings, hole, label) {
-  const probes = [0, Math.floor(hole.length / 4), Math.floor(hole.length / 2), Math.floor((3 * hole.length) / 4)];
+  const probes = [
+    0,
+    Math.floor(hole.length / 4),
+    Math.floor(hole.length / 2),
+    Math.floor((3 * hole.length) / 4),
+  ];
   for (const probe of probes) {
     const point = hole[probe];
     if (!point) continue;
