@@ -15,11 +15,17 @@ lib/api/schema.ts
 lib/map/tr-provinces.generated.ts
 # generate:world-map output — same, for the world (regional) country map.
 lib/map/world-countries.generated.ts
+# generate:water output — same, for the TR inland water layer. NOT optional: `generate:water:check`
+# compares the committed file to the generator's output byte for byte, and Prettier splits the
+# one-line shape objects across four lines, so a single `prettier --write` (the pre-commit hook
+# runs one) turns a green CI red on a file nobody edited.
+lib/map/tr-inland-water.generated.ts
 
 # Committed source-data snapshots (GeoJSON, see data/README.md) — kept as fetched/
 # filtered from upstream, so Prettier must not reformat them.
 data/tr-il-boundaries.geojson
 data/world-countries.geojson
+data/tr-inland-water.geojson
 
 # Committed OpenAPI contract artifact (synced from cografya_api; kept byte-identical
 # to the api's generator output, so Prettier must not reformat it).
