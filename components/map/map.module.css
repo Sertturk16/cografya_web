@@ -103,11 +103,20 @@
    is what keeps the invariant true anyway the next time the token moves (the P4 palette
    pass is the likely next mover). The tone step (--color-primary vs --color-primary-dark)
    is the other half of the hierarchy and needs no arithmetic.
-   Floor: --map-hover-width must stay ≥ 1.5px or this goes to zero.
+   FLOOR — the first wording ("≥ 1.5px or this goes to zero") was arithmetically loose in
+   both directions (→ PR #38 review round 2, R2-M2). It reaches literal zero only at 0.5px;
+   what actually matters lands much earlier. The resting `.landInert` stroke is 1px, so at
+   --map-hover-width: 1.5px the territory computes to exactly 1px and the hover/focus state
+   becomes INVISIBLE — same width, only a tone shift, which is the colour-alone signal
+   WCAG 1.4.1/1.4.11 will not accept as the state cue on its own. So the real floor is above
+   1.5px, and 2px is the smallest value that leaves any step at all (→ 1.5px, half a pixel
+   over resting — thin, but present). Today's 3.5px gives the territory 3px, a 2px step.
 
    Hover is gated on pointer type and on "not currently panning" for the same reasons as
-   the country rule below; focus is gated on neither. Both rules now also require a
-   `.mapRoot` ancestor — see the note on the country rule. */
+   the country rule below; focus is gated on neither. Both HOVER rules in this file — this
+   one and the country one — also require a `.mapRoot` ancestor (see the note on the country
+   rule); the two FOCUS rules deliberately do not, so this block's pair is asymmetric on
+   that point too. */
 @media (hover: hover) {
   .mapRoot:not([data-panning]) .territory:hover .landInert {
     stroke: var(--color-primary);

@@ -20,32 +20,62 @@ import { REGION_KEYS } from "@/lib/game/region-slug";
  * transitively ties the stylesheet to the api's region enum: add or rename a region there
  * and this fails until the CSS follows.
  *
- * It asserts nothing about colour, width or geometry — those are the owner's call and the
- * rendered samples' job. Only that no region is missing a rule, and that no rule names a
- * region the contract does not have.
+ * It asserts nothing about which colour or how many pixels — those are the owner's call and
+ * the rendered samples' job. What it pins is structural: that no region is missing a rule,
+ * that each tint rule actually declares a fill and declares its OWN region's token, that
+ * both mate rules carry the `:not(:focus-visible)` guard the focus step depends on, and
+ * that no rule names a region the api contract does not have.
  */
 
 const CSS = readFileSync(fileURLToPath(new URL("./game-map.module.css", import.meta.url)), "utf8")
+  // Strip comments FIRST. This stylesheet is heavily annotated and its prose quotes real
+  // selectors, so without this a commented-out rule — or a selector merely discussed in a
+  // note — would satisfy every assertion below (→ PR #38 review round 2, CR-R2-2). The
+  // sibling `game-island.wrong-scope.test.ts` strips for the same reason; this file did not,
+  // which made it a weaker guard than it looked.
+  .replace(/\/\*[\s\S]*?\*\//g, " ")
   // Prettier wraps these very long selectors across lines; flatten so the assertions match
   // the selector, not its formatting.
   .replace(/\s+/g, " ");
 
+/**
+ * `MARMARA` → `--region-marmara`, `IC_ANADOLU` → `--region-ic-anadolu`. The token names are
+ * derived rather than listed so the mapping cannot drift into a fifth hand-written copy of
+ * the region list — and so a copy-paste that points one region's rule at another region's
+ * token fails here instead of shipping.
+ */
+function tintToken(region: string): string {
+  return `--region-${region.toLowerCase().replaceAll("_", "-")}`;
+}
+
 describe("game-map.module.css region rules", () => {
-  it("tints every region", () => {
+  it("tints every region with that region's own token", () => {
     for (const region of REGION_KEYS) {
-      expect(CSS).toContain(`[data-game-mode="regions"] .province[data-region="${region}"]`);
+      // The selector AND its declaration: asserting the selector alone would pass on an
+      // empty rule block (→ CR-R2-5).
+      expect(CSS).toContain(
+        `[data-game-mode="regions"] .province[data-region="${region}"]:not([data-state]) { fill: var(${tintToken(region)}); }`,
+      );
     }
   });
 
-  it("outlines every region on pointer hover", () => {
+  it("outlines every region on pointer hover, without flattening the focused shape", () => {
     for (const region of REGION_KEYS) {
-      expect(CSS).toContain(`:has(.province[data-region="${region}"]:hover)`);
+      // `:not(:focus-visible)` on the mate subject is load-bearing, not cosmetic: these
+      // selectors compute to (0,11,0) against the focus step's (0,6,0), so dropping it makes
+      // keyboard focus vanish whenever the pointer rests inside the focused region
+      // (→ PR #38 review round 2, CR-R2-1 — a real regression, caught in a browser).
+      expect(CSS).toContain(
+        `:has(.province[data-region="${region}"]:hover) .province[data-region="${region}"]:not([data-state]):not(:focus-visible)`,
+      );
     }
   });
 
-  it("outlines every region on keyboard focus", () => {
+  it("outlines every region on keyboard focus, without flattening the focused shape", () => {
     for (const region of REGION_KEYS) {
-      expect(CSS).toContain(`:has(.province[data-region="${region}"]:focus-visible)`);
+      expect(CSS).toContain(
+        `:has(.province[data-region="${region}"]:focus-visible) .province[data-region="${region}"]:not([data-state]):not(:focus-visible)`,
+      );
     }
   });
 

@@ -35,11 +35,18 @@ export interface ShapeStateInput {
 }
 
 /**
- * Precedence: **solved beats wrong**; revealed still beats solved; wrong still beats
- * revealed. Only the first of those three changed here — the solved↔revealed pair is
- * carried over untouched from the inline version this function replaced (and is not
- * reachable in play anyway: a target is asked once per round, so the target being revealed
- * is by construction one that has not been solved).
+ * Precedence, stated exactly — it is NOT a single total order, and the earlier one-line
+ * version of this note ("solved beats wrong; revealed beats solved; wrong beats revealed")
+ * read like a cycle because it left out the condition:
+ *
+ * - on a SOLVED target, the wrong mark never applies at all, and revealed still wins over
+ *   the earned `correct`;
+ * - on an UNSOLVED target, wrong wins over revealed.
+ *
+ * Only the solved↔wrong half changed here. The solved↔revealed pair is carried over
+ * untouched from the inline version this function replaced (and is not reachable in play
+ * anyway: a target is asked once per round, so the target being revealed is by construction
+ * one that has not been solved).
  *
  * WHY SOLVED WINS OVER WRONG (→ PR #38 review I1). `answerRound` returns `retry` for ANY
  * pick that is not the open question's target — including a target the player already
@@ -56,9 +63,9 @@ export interface ShapeStateInput {
  * Tekrar dene."). The text carries the whole signal there, which is why `game-island.tsx`
  * re-announces it even when the sentence repeats verbatim.
  *
- * Wrong still beats revealed and an unsolved target still flashes exactly as before: wrong
- * is the newest, shortest-lived thing that happened and it is what the player needs to see
- * at that moment. Scoring is untouched by this file and by this rule.
+ * On an unsolved target wrong still beats revealed, and such a target still flashes exactly
+ * as before: wrong is the newest, shortest-lived thing that happened and it is what the
+ * player needs to see at that moment. Scoring is untouched by this file and by this rule.
  */
 export function deriveShapeState({
   targetId,
