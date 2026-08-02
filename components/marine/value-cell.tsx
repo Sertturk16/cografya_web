@@ -3,6 +3,7 @@ import type { MarineLayer, MarineValue } from "@/lib/api/types";
 import {
   MARINE_COMPASS_KEY,
   MARINE_DIRECTION_CONVENTION_KEY,
+  displayBearing,
   marineDirectionView,
 } from "@/lib/marine/direction";
 import { MODEL_INSTANT_FORMAT, parseModelInstant } from "@/lib/marine/model-run";
@@ -150,7 +151,10 @@ export async function ValueCell({
         <span className={styles.valueDirection}>
           {hasNumber(directionValue)
             ? tm("values.bearingOnly", {
-                degrees: format.number(directionValue.value, { maximumFractionDigits: 0 }),
+                // Same rounding rule as the arrow branch: 359.6° is "0°", never "360°".
+                degrees: format.number(displayBearing(directionValue.value), {
+                  maximumFractionDigits: 0,
+                }),
               })
             : tm("values.directionStatus", {
                 status: tm(MARINE_VALUE_STATUS_KEY[directionValue.status]),

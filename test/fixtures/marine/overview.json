@@ -2670,19 +2670,19 @@
         "distanceKm": null
       },
       "windSpeed10m": {
-        "value": 7.2,
+        "value": null,
         "unit": "meter_per_second",
-        "status": "ok",
-        "freshness": "fresh",
-        "validAtUtc": "2026-08-02T12:00:00.000Z",
-        "fetchedAtUtc": "2026-08-02T12:04:11.000Z",
-        "modelRunAtUtc": "2026-08-02T06:00:00.000Z",
+        "status": "no_data",
+        "freshness": null,
+        "validAtUtc": null,
+        "fetchedAtUtc": null,
+        "modelRunAtUtc": null,
         "staleSinceUtc": null,
-        "source": "ecmwf",
+        "source": null,
         "datasetId": null,
         "gridLatitude": null,
         "gridLongitude": null,
-        "distanceKm": 6.6
+        "distanceKm": null
       },
       "windDirection10m": {
         "value": 247,

@@ -64,6 +64,27 @@ export function normalizeBearing(degrees: number): number {
 }
 
 /**
+ * The bearing as the page states it: ROUNDED FIRST, then wrapped into `[0, 360)`.
+ *
+ * Order is the whole point. Every bearing is printed with zero decimals, so normalising a raw
+ * 359.6° and letting the formatter round it afterwards prints **360°** — a bearing that does
+ * not exist on a compass, and one the reader has to translate back to north themselves. The
+ * fix is to round before wrapping: 359.6 → 360 → 0.
+ *
+ * Rounding here rather than at each print site also means the arrow, the compass name and the
+ * printed degrees are all derived from the SAME number. Deriving the sector from 22.4999 while
+ * printing "22°" is a disagreement nobody would ever see in testing and everybody would see on
+ * a boundary. The half-degree of rotation precision lost is sub-pixel on the glyph, and the
+ * documented sector boundaries survive intact: 22.4 → 22 → "kuzey", 22.5 → 23 → "kuzeydoğu".
+ *
+ * Non-finite input yields `0` rather than a `NaN` in an indexable cell.
+ */
+export function displayBearing(degrees: number): number {
+  if (!Number.isFinite(degrees)) return 0;
+  return normalizeBearing(Math.round(degrees));
+}
+
+/**
  * The CSS rotation for the arrow glyph, in degrees.
  *
  * The glyph is authored pointing NORTH (up) at 0°, and the arrow always shows where the flow
@@ -144,7 +165,9 @@ export function marineDirectionView(input: DirectionInput): MarineDirectionView 
     return { kind: "none" };
   }
 
-  const bearing = normalizeBearing(direction.value);
+  // Rounded to the degree the cell prints, so the arrow, the compass name and the number
+  // beside them can never be three readings of three slightly different bearings.
+  const bearing = displayBearing(direction.value);
   return {
     kind: "arrow",
     bearing,

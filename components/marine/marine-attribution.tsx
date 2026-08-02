@@ -21,7 +21,7 @@ interface MarineAttributionProps {
  * of a verbatim licence text is a licence breach waiting for the day someone edits one of
  * them, so there is exactly one copy and two render sites.
  *
- * THE ENGLISH BLOCK IS NOT COPY — IT IS THE LICENCE (→ DEC 2026-08-02c, from NOVA's
+ * THE ENGLISH BLOCKS ARE NOT COPY — THEY ARE THE LICENCE (→ DEC 2026-08-02c, from NOVA's
  * first-hand reading of ECMWF's licence page). ECMWF's terms say the wording "shall be
  * attached", quote it, and — unlike the Copernicus framework — offer NO "or any similar
  * notice" escape. So it is published verbatim, in English, in both locales, and marked
@@ -29,14 +29,28 @@ interface MarineAttributionProps {
  * phonetics (WCAG 3.1.2). The Turkish rendering stands ALONGSIDE it, never instead of it.
  * Shortening, restyling or translating any of it is a licence breach.
  *
- * It is also visible without a click on the page that carries the derived material, which is
- * the conservative reading of the licence's "prominently".
+ * THE SAME RULE NOW COVERS COPERNICUS MARINE (added in the PR #36 review round; Atlas ruling
+ * 2026-08-02 on M4a's machine-verified licence record). W1a's Turkish sentence truthfully
+ * said no CMEMS-derived VALUE was on the page; W2a puts sea surface temperature and part of
+ * the wave field on it, and the licence's attribution obligation travels with the derived
+ * material. The required notice is the single sentence
+ * "Generated using E.U. Copernicus Marine Service Information" — published verbatim, in
+ * English, `lang="en"`, exactly like the ECMWF block, with the Turkish explanation alongside
+ * rather than instead. The per-dataset DOIs are the reference layer and live in
+ * `data-provenance.md`, not on the page: five DOI strings in a reader-facing block would
+ * crowd out the notice that is actually mandatory.
  *
- * Provider name, licence name and product class come from `data-provenance.md`'s ECMWF Open
- * Data entry, not from the payload: `MarineAttributionDto` is frozen in the contract but has
- * no endpoint and no seeded rows until M5. When it does, this component becomes data-driven
- * in ONE place — which is the whole reason it was extracted before the province surface
- * needed it.
+ * NO ENDORSEMENT, EITHER DIRECTION (`CONVENTIONS.md` §7, from ADS ToS art. 5). These blocks
+ * state the SOURCE of the data. Nothing here may read as "ECMWF onaylı", "resmî Copernicus
+ * verisi" or any other claim that a provider or the EU endorses this platform.
+ *
+ * They are also visible without a click on the page that carries the derived material, which
+ * is the conservative reading of the licence's "prominently".
+ *
+ * Provider names, licence names and product classes come from `data-provenance.md`, not from
+ * the payload: `MarineAttributionDto` is frozen in the contract but has no endpoint and no
+ * seeded rows until M5. When it does, this component becomes data-driven in ONE place —
+ * which is the whole reason it was extracted before the province surface needed it.
  */
 export async function MarineAttribution({
   layers,
@@ -66,6 +80,14 @@ export async function MarineAttribution({
           <p>{tm("attribution.ecmwfDisclaimer")}</p>
         </div>
         <p>{t("sourceCmems")}</p>
+        <p>{t("sourceCmemsNoticeIntro")}</p>
+        <div className={styles.licenceNotice} lang="en">
+          {/* One sentence, and it is the whole obligation. No copyright year: the Copernicus
+              Marine licence attaches its notice to the SERVICE, not to a data year, so there
+              is nothing here to derive from an ingested cycle and nothing to omit when there
+              is none. */}
+          <p>{tm("attribution.cmemsNotice")}</p>
+        </div>
         <p className={styles.disclaimer}>{tm("disclaimer.educationalOnly")}</p>
       </div>
     </section>

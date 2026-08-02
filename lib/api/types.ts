@@ -80,3 +80,12 @@ export type MarineOverviewPoint = components["schemas"]["MarineOverviewPointDto"
  *  instant, the `dataAvailable` publish gate, and the attribution rows every displayed
  *  value drags along. */
 export type MarineOverview = components["schemas"]["MarineOverviewDto"];
+/** One reference point's full conditions block — the five values PLUS the 5-day series and
+ *  the series/instant source-divergence flag. The province surface's payload element (W2b);
+ *  aliased now so the committed fixture is type-checked against the contract rather than
+ *  against a hand-rolled shape. */
+export type MarineConditions = components["schemas"]["MarineConditionsDto"];
+/** One province's marine payload: its plaka, one `MarineConditions` entry per reference
+ *  point in `displayOrder` (two for the three two-sea provinces, which legitimately
+ *  disagree), and the attribution rows. Consumed by the province pages in W2b. */
+export type MarineProvinceConditions = components["schemas"]["MarineProvinceConditionsDto"];

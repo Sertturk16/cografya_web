@@ -293,15 +293,17 @@
   },
   "Deniz": {
     "metaTitle": "Sea State: Wind, Waves, Water Temperature",
-    "metaDescription": "Thirty reference points off 27 coastal provinces on the Black Sea, Marmara, Aegean and Mediterranean: wind speed and direction, wave height, sea temperature, and the model behind each number.",
+    "metaDescription": "Thirty reference points off 27 coastal provinces in four seas: wind, waves, sea surface temperature, and the forecast model each quantity comes from.",
     "heading": "Sea state on Türkiye's coasts",
     "lede": "Wind, waves and sea temperature at 30 reference points offshore in four seas.",
+    "ledeNoValues": "Thirty reference points offshore in four seas, and the model behind each quantity. Current values cannot be shown right now.",
     "pointsHeading": "Coastal provinces and offshore reference points",
     "catalogueHeading": "Which model these numbers come from",
     "sourcesHeading": "Sources and use",
-    "sourceEcmwf": "The model run details for the wind layers come from ECMWF Open Data. This data is the output of a numerical weather prediction model, not a station measurement.",
+    "sourceEcmwf": "The wind speed and direction values, and the model run details behind them, come from ECMWF Open Data. This data is the output of a numerical weather prediction model, not a station measurement.",
     "sourceEcmwfNoticeIntro": "The text below is the attribution and disclaimer that ECMWF's licence requires to be published verbatim.",
     "sourceCmems": "Sea surface temperature and part of the wave layers come from the Copernicus Marine Service. These are numerical model output as well, not station measurements.",
+    "sourceCmemsNoticeIntro": "The English sentence below is the attribution the Copernicus Marine Service licence requires to be published verbatim.",
     "teaches": "Wind, waves and sea surface temperature in the seas around Türkiye, and the limits of the forecast models these numbers rest on",
     "valuesHeading": "Current values offshore in the four seas",
     "faqHeading": "Frequently asked questions"
@@ -314,7 +316,8 @@
     "attribution": {
       "ecmwfCopyright": "Copyright © {year} European Centre for Medium-Range Weather Forecasts (ECMWF).",
       "ecmwfNotice": "This service is based on data and products of the European Centre for Medium-Range Weather Forecasts (ECMWF). Source: www.ecmwf.int. This ECMWF data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. Modified: values are sampled from the source grid to selected points; no other modification.",
-      "ecmwfDisclaimer": "ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use."
+      "ecmwfDisclaimer": "ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use.",
+      "cmemsNotice": "Generated using E.U. Copernicus Marine Service Information"
     },
     "status": {
       "live": "Live",
@@ -396,7 +399,7 @@
       "gridDistance": "The model cell centre is at most {km} km away.",
       "readingKeyHeading": "How to read the table",
       "readingKeyArrow": "The arrow shows where the wind or the swell is heading; the text beside it states where it comes from.",
-      "readingKeyCalm": "{term}: the value is below the calm threshold in the measurement catalogue, so this word replaces the direction arrow.",
+      "readingKeyCalm": "{term}: the value is below the calm threshold in the measurement catalogue, so this word replaces the direction arrow. The number in the cell is rounded to one decimal, so it can read as the threshold itself.",
       "readingKeyStale": "A stale number stays on screen, with the time it was last refreshed next to it.",
       "readingKeyNoData": "{term}: the point is covered, but there is no number right now.",
       "readingKeyNotSupported": "{term}: the provider produces no such quantity in this sea, and will not later.",

@@ -3,11 +3,13 @@ import en from "@/messages/en.json";
 import tr from "@/messages/tr.json";
 
 /**
- * The ECMWF attribution block is the ONE user-facing string in this repo that may not be
- * edited for style, length or tone: ECMWF's licence requires it to be published VERBATIM
- * (NOVA, read first-hand from `apps.ecmwf.int/datasets/licences/general/` →
- * `Owner's Inbox/atif-dogrulama/brief.md` §1.2, ruled in DEC 2026-08-02c). It is therefore
- * pinned here byte-for-byte.
+ * The provider attribution blocks are the user-facing strings in this repo that may not be
+ * edited for style, length or tone: their licences require them to be published VERBATIM.
+ * ECMWF's wording was read first-hand by NOVA from
+ * `apps.ecmwf.int/datasets/licences/general/` (→ `Owner's Inbox/atif-dogrulama/brief.md`
+ * §1.2, ruled in DEC 2026-08-02c); the Copernicus Marine sentence comes from M4a's
+ * machine-verified licence record (`Owner's Inbox/marine-m4/m4a-closing-summary.md`, Atlas
+ * ruling 2026-08-02). Both are pinned here byte-for-byte.
  *
  * WHY THIS IS NOT A FACT LITERAL (`CONVENTIONS.md` §2). The no-hardcoded-facts rule exists
  * so a test never asserts a claim about the world that can legitimately change — a
@@ -32,6 +34,19 @@ const ECMWF_NOTICE =
 
 const ECMWF_DISCLAIMER =
   "ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use.";
+
+/**
+ * The Copernicus Marine Service's required notice — one sentence, and the whole obligation
+ * for the sea surface temperature and wave values this platform derives from it.
+ *
+ * Pinned with the same force as the ECMWF block, and for a sharper reason: it is SHORT. A
+ * copy pass that would never dare touch a paragraph of legal English will happily "fix"
+ * "E.U." to "EU", drop the full stops, or translate a single sentence into Turkish — and any
+ * one of those is a licence breach. `CONVENTIONS.md` §7's no-endorsement corollary applies
+ * on top: the notice states the SOURCE, and no wording near it may imply the EU or the
+ * service endorses this platform.
+ */
+const CMEMS_NOTICE = "Generated using E.U. Copernicus Marine Service Information";
 
 describe("ECMWF attribution strings are verbatim", () => {
   it("pins the copyright template in en.json", () => {
@@ -61,5 +76,24 @@ describe("ECMWF attribution strings are verbatim", () => {
     expect(en.Marine.attribution.ecmwfNotice).toContain(
       "Modified: values are sampled from the source grid to selected points",
     );
+  });
+});
+
+describe("Copernicus Marine attribution is verbatim", () => {
+  it("pins the required notice in en.json", () => {
+    expect(en.Marine.attribution.cmemsNotice).toBe(CMEMS_NOTICE);
+  });
+
+  it("ships the same untranslated sentence in tr.json", () => {
+    // The Turkish page renders this exact English sentence inside `lang="en"`, with the
+    // Turkish explanation alongside it (`Deniz.sourceCmemsNoticeIntro`) rather than instead
+    // of it. Only a byte comparison proves the two catalogues have not drifted.
+    expect(tr.Marine.attribution.cmemsNotice).toBe(CMEMS_NOTICE);
+  });
+
+  it("names the service exactly as the licence does", () => {
+    // Called out separately from the byte pin: "E.U." with both full stops and the full
+    // service name are the two parts a copy pass is most likely to tidy away.
+    expect(en.Marine.attribution.cmemsNotice).toContain("E.U. Copernicus Marine Service");
   });
 });

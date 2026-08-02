@@ -14,6 +14,7 @@ import { getProvincesResilient } from "@/lib/api/provinces";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { buildMarineExplainers } from "@/lib/marine/explainers";
+import { marineShowsValues } from "@/lib/marine/overview";
 import { collectionPageJsonLd, JsonLd, learningResourceJsonLd } from "@/lib/seo/json-ld";
 import type { ContentSurface } from "@/lib/seo/indexing";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -70,6 +71,36 @@ function rendersExplainers(locale: Locale): boolean {
   return locale === routing.defaultLocale;
 }
 
+/**
+ * WHAT THE HEAD PROMISES WHEN THE BAND IS GONE — a deliberate, recorded decision
+ * (PR #36 review, F-C1 / W2A-I1; live-verified 2026-08-02).
+ *
+ * The value band can disappear for a render (`getMarineOverviewSafe` is fail-soft, and the
+ * contract's `dataAvailable: false` gate withholds a payload outright). Two questions follow,
+ * and they get DIFFERENT answers on purpose:
+ *
+ * - **Content promises track the data.** The lede and the value section's `<h2>` both say
+ *   what the reader will find, so both fall back through the one `marineShowsValues` signal
+ *   when there is nothing to find. Those two sit inches from the missing table; a promise
+ *   there is a promise broken in the same screenful.
+ * - **Page identity stays stable.** `<title>`, the meta description and the `<h1>` state the
+ *   page's SUBJECT — which sea, which quantities, how many points — and that subject is true
+ *   in every render: the degraded page still carries the map, the thirty points, the
+ *   measurement catalogue for exactly those quantities and the seven explainers about them.
+ *   They are NOT gated, for three reasons. (1) A `<title>` that flips between two strings
+ *   across ISR windows is a genuinely worse SEO failure than a transient overpromise — the
+ *   SERP would show whichever one the last crawl caught. (2) Gating the title but not the
+ *   `<h1>`, or vice versa, would put the head and the page's own heading in disagreement.
+ *   (3) The degraded render is a WINDOW (900 s ISR), not the steady state: with M4b on the
+ *   api and `MARINE_ENABLED=true`, `/deniz` was verified rendering 150/150 values
+ *   server-side (`Owner's Inbox/w2-deniz-degerler/w2a-live-samples/`).
+ *
+ * GO-LIVE ORDERING NOTE (M5 / ENV op, not a code gate). This page is not crawlable by anyone
+ * yet — deploy is the last step of the marine track. Production must not serve the W2a shape
+ * with `MARINE_ENABLED=false`: that flag makes the value-less render the PERMANENT state, and
+ * a permanently value-less page under this title is the §B12.2.a doorway class, not a
+ * transient. The flag and this page go live together or not at all.
+ */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Deniz" });
@@ -140,6 +171,10 @@ export default async function DenizPage({ params }: PageProps) {
   // (`lib/marine/explainers.ts`) — empty on `/en/sea`, where the narrative does not exist.
   const explainers = rendersExplainers(locale) ? buildMarineExplainers(t) : [];
 
+  // The SAME signal the value section reads, from the same pure function — so the lede and
+  // the `<h2>` beneath it can never disagree about whether this page has values today.
+  const showValues = marineShowsValues(overview);
+
   return (
     <div className="container page">
       <JsonLd
@@ -175,7 +210,9 @@ export default async function DenizPage({ params }: PageProps) {
         ]}
       />
       <h1>{t("heading")}</h1>
-      <p className="lede">{t("lede")}</p>
+      {/* The `<h1>` names the subject and does not move; the lede states what the reader
+          will find and therefore does (see the head-promise block above). */}
+      <p className="lede">{showValues ? t("lede") : t("ledeNoValues")}</p>
 
       {points.length > 0 && (
         <ReferencePoints

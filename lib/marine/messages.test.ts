@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
@@ -119,15 +120,45 @@ describe("Marine.* keys exist in both catalogues", () => {
     }
   });
 
-  it("has NOT reused the frozen status.notSupported for the catalogue's next-phase wording", () => {
-    // W1a rendered `status.notSupported` ("Sıradaki aşama") in the catalogue's status column;
-    // the contract means a PERMANENT product truth by it. Atlas ruling A1 moved the catalogue
-    // wording to its own key so one string could not mean both "arriving later" and "never
-    // arriving" one section apart. If the two ever converge again, the correction was undone.
+  it("declares catalogue.nextPhase as a string distinct from status.notSupported", () => {
+    // HALF of the A1 guard: the two CATALOGUE ENTRIES must not carry the same copy. Atlas
+    // ruling A1 moved the catalogue's "arriving later" wording to its own key so one string
+    // could not mean both that and the contract's "never arriving" one section apart. This
+    // assertion sees only the JSON — the component half is the test below it, and the two
+    // are deliberately separate because each catches a different way of undoing A1.
     expectNonEmptyString(trMarine, "catalogue.nextPhase");
     expectNonEmptyString(enMarine, "catalogue.nextPhase");
     expect(trMarine.get("status.notSupported")).not.toBe(trMarine.get("catalogue.nextPhase"));
     expect(enMarine.get("status.notSupported")).not.toBe(enMarine.get("catalogue.nextPhase"));
+  });
+});
+
+describe("the catalogue COMPONENT renders the key A1 gave it", () => {
+  /**
+   * The other half of the A1 guard, and the one the catalogue assertions above cannot make.
+   *
+   * Reverting `layer-catalogue.tsx` to `tm("status.notSupported")` leaves both catalogue
+   * entries in place and every JSON assertion green, while putting the frozen key back in
+   * the status column — precisely the state A1 exists to prevent. This repo's vitest
+   * environment is `node`, and the catalogue is an async server component that awaits
+   * `next-intl/server`, so it cannot be rendered here; the honest guard at this level is
+   * therefore the source symbol, scoped to the ONE file the ruling is about.
+   *
+   * `value-cell.tsx` and `reference-points.tsx` legitimately reach for the frozen key
+   * (through `MARINE_VALUE_STATUS_KEY`, never as a literal) — they are the section where it
+   * means what the contract says. Only the catalogue is asserted against.
+   */
+  const source = readFileSync(
+    new URL("../../components/marine/layer-catalogue.tsx", import.meta.url),
+    "utf8",
+  );
+
+  it('calls tm("catalogue.nextPhase") in the status column', () => {
+    expect(source).toMatch(/tm\("catalogue\.nextPhase"\)/);
+  });
+
+  it("does not translate the frozen status.notSupported key anywhere in that file", () => {
+    expect(source).not.toMatch(/tm\("status\.notSupported"\)/);
   });
 });
 

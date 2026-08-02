@@ -327,10 +327,13 @@
   min-width: 720px;
 }
 
-/* Every value cell reserves the height of its tallest possible content (magnitude + second
-   unit + direction line), so a point that gains or loses a direction between two ISR passes
-   cannot reflow the rows around it. Server-rendered, no client JS: CLS is 0 by construction
-   (SEO §6 #9). */
+/* CLS is 0 here by CONSTRUCTION, not by reservation: the whole band is server-rendered, has
+   no client JS, loads no image and no third party, so nothing arrives after first paint that
+   could move a row (SEO §6 #9). The `min-width` below is a LEGIBILITY floor — it keeps the
+   "8,4 m/s (30 km/h)" line from wrapping into three lines on a narrow viewport — and no
+   height is reserved: a point that gains or loses a direction line between two ISR passes
+   changes its row height in the NEXT full document, which is a new render, never a shift
+   inside a painted one. */
 .tdValue {
   padding: 9px 12px;
   border-bottom: 1px solid var(--color-border);

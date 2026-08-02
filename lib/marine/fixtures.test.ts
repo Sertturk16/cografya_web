@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { MarineLayer, MarineOverview, MarineValue } from "@/lib/api/types";
-import coldBootFixture from "@/test/fixtures/marine/overview-cold-boot.json";
+import type {
+  MarineLayer,
+  MarineOverview,
+  MarineProvinceConditions,
+  MarineValue,
+} from "@/lib/api/types";
+import notPublishableFixture from "@/test/fixtures/marine/overview-not-publishable.json";
 import overviewFixture from "@/test/fixtures/marine/overview.json";
 import twoPointFixture from "@/test/fixtures/marine/province-conditions-two-point.json";
 import { marineDirectionView } from "./direction";
 import { buildMarineVintage, marineBlockValues, maxGridDistanceKm, oldestValidAt } from "./vintage";
-import { marineValueView } from "./value-state";
+import { hasNumber, marineValueView } from "./value-state";
 
 /**
  * THE FIXTURE CORPUS AND ITS COVERAGE PROMISE.
@@ -27,11 +32,14 @@ import { marineValueView } from "./value-state";
  *
  * The typing is a deliberate `as`: these are hand-authored payloads standing in for an api
  * response, and the compiler checking them against the contract type is exactly the guard
- * that catches a fixture drifting away from the schema it was derived from.
+ * that catches a fixture drifting away from the schema it was derived from. Every fixture is
+ * cast to the REAL contract alias, including the province one whose route the web does not
+ * consume until W2b — a cast to a hand-rolled two-field shape would have advertised that
+ * guard without providing it.
  */
 
 const overview = overviewFixture as MarineOverview;
-const coldBoot = coldBootFixture as MarineOverview;
+const notPublishable = notPublishableFixture as MarineOverview;
 
 const everyValue: MarineValue[] = overview.points.flatMap(marineBlockValues);
 
@@ -79,6 +87,34 @@ describe("overview fixture — the corpus covers every render", () => {
       expect(block.waveHeight.status).toBe("not_supported");
       expect(block.waveDirection.status).toBe("not_supported");
     }
+  });
+
+  it("carries BOTH halves of a broken wind pair, in both directions", () => {
+    // A wind pair is two independent values and they diverge upstream (M4b flagged exactly
+    // this on the ECMWF side). Two different renders follow, and the corpus has to hold both
+    // or its coverage promise is only half true:
+    //
+    //   magnitude present, direction absent → the speed renders, its bearing reports itself;
+    //   direction present, magnitude absent → the cell prints the magnitude's status word
+    //                                         ALONE and the orphaned bearing is swallowed,
+    //                                         because an angle with nothing travelling along
+    //                                         it is not a fact a reader can use.
+    //
+    // The second was missing until the PR #36 review; nothing else in the corpus reaches the
+    // early return in `ValueCell` with a live bearing sitting behind it.
+    const magnitudeWithoutDirection = overview.points.some(
+      (block) =>
+        hasNumber(marineValueView(block.windSpeed10m)) &&
+        !hasNumber(marineValueView(block.windDirection10m)),
+    );
+    const directionWithoutMagnitude = overview.points.some(
+      (block) =>
+        hasNumber(marineValueView(block.windDirection10m)) &&
+        !hasNumber(marineValueView(block.windSpeed10m)),
+    );
+
+    expect(magnitudeWithoutDirection).toBe(true);
+    expect(directionWithoutMagnitude).toBe(true);
   });
 
   it("never carries a value alongside a non-ok status, or a freshness without one", () => {
@@ -170,18 +206,29 @@ describe("overview fixture — the künye is derivable from it", () => {
   });
 });
 
-describe("cold-boot fixture — the contract's do-not-publish signal", () => {
+describe("not-publishable fixture — the contract's do-not-publish signal", () => {
+  /**
+   * WHAT THIS FIXTURE IS, AND WHAT IT IS NOT (it was called `overview-cold-boot` until the
+   * PR #36 review, and the name was doing the misleading).
+   *
+   * It is the `dataAvailable: false` PUBLISH GATE: the api telling the page not to commit
+   * this render at all. That is the state the band's outermost branch keys on, and the only
+   * state this file exercises.
+   *
+   * A genuinely cold api cache looks nothing like it. Live verification on 2026-08-02
+   * produced one (`Owner's Inbox/w2-deniz-degerler/w2a-live-samples/`, frames 07–08): all
+   * thirty blocks present, wind and waves still `ok` from Postgres, sea surface temperature
+   * `unavailable` across the board. That shape is covered by the main corpus above, which
+   * carries every non-ok status on real blocks — not here.
+   */
   it("is a 200-shaped payload with no points and dataAvailable false", () => {
-    expect(coldBoot.dataAvailable).toBe(false);
-    expect(coldBoot.points).toEqual([]);
+    expect(notPublishable.dataAvailable).toBe(false);
+    expect(notPublishable.points).toEqual([]);
   });
 });
 
 describe("two-point province fixture — the locked two-point policy, as data", () => {
-  const province = twoPointFixture as {
-    plateCode: string;
-    marinePoints: { point: { seaBasin: string }; waveHeight: MarineValue }[];
-  };
+  const province = twoPointFixture as MarineProvinceConditions;
 
   it("carries two entries for one plaka, on two different seas", () => {
     expect(province.marinePoints).toHaveLength(2);

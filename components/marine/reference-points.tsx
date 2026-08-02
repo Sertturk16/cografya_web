@@ -10,6 +10,7 @@ import type {
 } from "@/lib/api/types";
 import { byPlateCode } from "@/lib/api/provinces";
 import { basinLabel, groupPointsByBasin } from "@/lib/marine/basins";
+import { marinePublishableBlocks } from "@/lib/marine/overview";
 import { MARINE_VALUE_STATUS_KEY } from "@/lib/marine/value-state";
 import { marineBlockValues } from "@/lib/marine/vintage";
 import { BasinValuesTable } from "./basin-values-table";
@@ -55,9 +56,21 @@ const HEADING_ID = "deniz-reference-points";
  * chain, and a hub that silently lost its outbound links whenever an upstream model ran late
  * would be a much worse failure than a table missing for one revalidate window.
  *
- * The layout authority stays the `/points` list, not the value payload: a point with no
- * value block simply gets no row, because a gap in the value feed is not a reason to drop a
- * reference point from the page.
+ * WHICH LIST DRIVES THE ROWS, PRECISELY. The `/points` list drives the ORDER and the basin
+ * grouping; the value payload drives which rows exist. A point that `/points` publishes and
+ * `/overview` does not carry gets no row in the value render — and, with it, no province
+ * link — because a row assembled out of five absent values would say nothing a reader could
+ * use, and inventing a status the api did not send is the one thing this whole surface is
+ * written against.
+ *
+ * That divergence is not reachable against today's api: `/overview` is assembled from the
+ * same reference-point table `/points` serves, so the two sets are equal by construction.
+ * The residual is a cache-skew window — the points read is cached for 24 h, the value read
+ * for 900 s — so a point RETIRED from the probe set could sit in the stale `/points` list
+ * for up to a day without a matching value block. It would then be missing from the table
+ * for that window, which is the correct outcome for a retired point. The value-less render
+ * below takes the opposite path and lists all thirty, because there it is the only list
+ * there is.
  */
 export async function ReferencePoints({
   locale,
@@ -84,12 +97,10 @@ export async function ReferencePoints({
     );
   }
 
-  // `dataAvailable: false` is the contract's "do not publish this render" signal — it marks
-  // the narrow window where the api's cache is genuinely empty. The closest honest thing a
-  // Next render can do is refuse to build a band out of it: an empty value table baked into
-  // the static output is exactly what the flag exists to prevent.
-  const blocks: MarineOverviewPoint[] =
-    overview !== null && overview.dataAvailable ? overview.points : [];
+  // The publish gate lives in ONE function (`lib/marine/overview.ts`) because the page's
+  // lede reads the same answer: two components deciding separately whether this render has
+  // values is how a lede ends up promising numbers the section below it cannot show.
+  const blocks: MarineOverviewPoint[] = marinePublishableBlocks(overview);
   const blockBySlug = new Map(blocks.map((block) => [block.point.slugTr, block]));
   const showValues = blocks.length > 0;
 

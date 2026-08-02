@@ -5,6 +5,7 @@ import {
   MARINE_COMPASS_KEY,
   arrowRotationDeg,
   compassPoint,
+  displayBearing,
   marineDirectionView,
   normalizeBearing,
 } from "./direction";
@@ -71,6 +72,46 @@ describe("normalizeBearing", () => {
     [450, 90],
   ])("wraps %p into [0,360) as %p", (input, expected) => {
     expect(normalizeBearing(input)).toBeCloseTo(expected, 6);
+  });
+});
+
+describe("displayBearing — rounds first, THEN wraps", () => {
+  it.each([
+    // The whole reason this function exists: normalising first and letting the formatter
+    // round afterwards prints "360°", which is not a bearing.
+    [359.6, 0],
+    [359.5, 0],
+    [359.4, 359],
+    [0.4, 0],
+    [-0.4, 0],
+    [-0.6, 359],
+    [22.4, 22],
+    [22.5, 23],
+    [359.9, 0],
+    [360, 0],
+  ])("states %p as %p", (input, expected) => {
+    expect(displayBearing(input)).toBe(expected);
+  });
+
+  it("never emits 360", () => {
+    for (let raw = 359; raw < 360; raw += 0.01) {
+      expect(displayBearing(raw)).toBeLessThan(360);
+    }
+  });
+
+  it("keeps every documented sector boundary after rounding", () => {
+    // Rounding could in principle push a bearing across a sector line. It does not at any of
+    // the boundaries the compass table pins, and that is asserted rather than assumed.
+    expect(compassPoint(displayBearing(22.4))).toBe("n");
+    expect(compassPoint(displayBearing(22.5))).toBe("ne");
+    expect(compassPoint(displayBearing(337.4))).toBe("nw");
+    expect(compassPoint(displayBearing(337.5))).toBe("n");
+    expect(compassPoint(displayBearing(359.9))).toBe("n");
+  });
+
+  it("returns 0 for non-finite input rather than NaN", () => {
+    expect(displayBearing(Number.NaN)).toBe(0);
+    expect(displayBearing(Number.POSITIVE_INFINITY)).toBe(0);
   });
 });
 
@@ -298,6 +339,26 @@ describe("marineDirectionView — the arrow-unlock gate", () => {
       bearing: 45,
       rotationDeg: 225,
       compass: "ne",
+      convention: "from",
+    });
+  });
+
+  it("states the bearing at the precision the cell actually prints", () => {
+    // 359.6° normalised and only then formatted to zero decimals prints "360°" — not a
+    // bearing. The view rounds first, so the arrow, the compass name and the number agree
+    // that this is north.
+    const view = marineDirectionView({
+      magnitude: value({ value: 8.4 }),
+      magnitudeLayer,
+      direction: value({ value: 359.6, unit: "degree_true" }),
+      directionLayer,
+    });
+
+    expect(view).toEqual({
+      kind: "arrow",
+      bearing: 0,
+      rotationDeg: 180,
+      compass: "n",
       convention: "from",
     });
   });

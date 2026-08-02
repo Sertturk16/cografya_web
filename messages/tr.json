@@ -293,15 +293,17 @@
   },
   "Deniz": {
     "metaTitle": "Deniz Durumu: Rüzgâr, Dalga, Su Sıcaklığı",
-    "metaDescription": "Karadeniz, Marmara, Ege ve Akdeniz kıyısındaki 27 ilin açığında 30 referans noktası: rüzgâr hızı ve yönü, dalga yüksekliği, deniz suyu sıcaklığı ve her sayının hangi modelden geldiği.",
+    "metaDescription": "Karadeniz, Marmara, Ege ve Akdeniz'de 27 kıyı ilinin açığındaki 30 referans noktası: rüzgâr, dalga, deniz suyu sıcaklığı ve her büyüklüğün hangi modelden geldiği.",
     "heading": "Türkiye kıyılarında deniz durumu",
     "lede": "Dört denizin açığındaki 30 referans noktasında rüzgâr, dalga ve deniz suyu sıcaklığı.",
+    "ledeNoValues": "Dört denizin açığındaki 30 referans noktası ve her büyüklüğün hangi modelden geldiği. Güncel değerler şu an gösterilemiyor.",
     "pointsHeading": "Kıyı illeri ve açıklardaki referans noktaları",
     "catalogueHeading": "Bu sayılar hangi modelden geliyor",
     "sourcesHeading": "Kaynaklar ve kullanım",
-    "sourceEcmwf": "Rüzgâr katmanlarının model künyesi ECMWF Open Data'dan geliyor. Bu veri, sayısal bir hava tahmini modelinin çıktısıdır; istasyon ölçümü değildir.",
+    "sourceEcmwf": "Rüzgâr hızı ve yönü değerleri ile bu katmanların model künyesi ECMWF Open Data'dan geliyor. Bu veri, sayısal bir hava tahmini modelinin çıktısıdır; istasyon ölçümü değildir.",
     "sourceEcmwfNoticeIntro": "Aşağıdaki İngilizce metin, ECMWF lisansının birebir yayımlanmasını istediği atıf ve sorumluluk reddidir. Türkçesi şudur: Bu servis, Avrupa Orta Vadeli Hava Tahminleri Merkezi'nin (ECMWF) veri ve ürünlerine dayanmaktadır. Kaynak: www.ecmwf.int. Veri, Creative Commons Attribution 4.0 International (CC BY 4.0) lisansıyla yayımlanmaktadır. Coğrafya tarafından yapılan değişiklik: değerler kaynak ızgaradan seçilen noktalara örneklenmiştir. ECMWF; verideki hata veya eksikliklerden, verinin erişilebilirliğinden ya da kullanımından doğabilecek hiçbir zarardan sorumluluk kabul etmez.",
     "sourceCmems": "Deniz suyu sıcaklığı ve dalga katmanlarının bir bölümü Copernicus Marine Service'ten geliyor. Bu veriler de sayısal model çıktısıdır; istasyon ölçümü değildir.",
+    "sourceCmemsNoticeIntro": "Aşağıdaki İngilizce cümle, Copernicus Marine Service lisansının birebir yayımlanmasını istediği atıftır. Türkçesi şudur: Avrupa Birliği Copernicus Deniz Hizmeti bilgileri kullanılarak üretilmiştir.",
     "teaches": "Türkiye'yi çevreleyen denizlerde rüzgâr, dalga ve deniz suyu sıcaklığı ile bu sayıların dayandığı tahmin modellerinin sınırları",
     "q1": "Dalga yüksekliği 1 metre yazıyorsa deniz nasıl olur?",
     "a1": "Tabloda gördüğün dalga yüksekliği, teknik adıyla belirgin dalga yüksekliğidir: belirli bir süre boyunca ölçülen dalgaların en yüksek üçte birinin ortalaması. Bu tanım, denizi izleyen deneyimli bir gözlemcinin algıladığı yüksekliğe yakın çıktığı için tercih edilir. Ama bir ortalamadır, tek dalgaların üst sınırı değil. Dalgaların yaklaşık yüzde 15'i bu değere eşit ya da ondan yüksek çıkar; en yüksek tekil dalga, belirgin dalga yüksekliğinin iki katına yaklaşabilir. Yani 1 metre yazan bir değerin altında ara sıra 2 metreye yaklaşan dalgalarla karşılaşmak istatistiksel olarak beklenen bir durumdur.",
@@ -328,7 +330,8 @@
     "attribution": {
       "ecmwfCopyright": "Copyright © {year} European Centre for Medium-Range Weather Forecasts (ECMWF).",
       "ecmwfNotice": "This service is based on data and products of the European Centre for Medium-Range Weather Forecasts (ECMWF). Source: www.ecmwf.int. This ECMWF data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. Modified: values are sampled from the source grid to selected points; no other modification.",
-      "ecmwfDisclaimer": "ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use."
+      "ecmwfDisclaimer": "ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use.",
+      "cmemsNotice": "Generated using E.U. Copernicus Marine Service Information"
     },
     "status": {
       "live": "Yayında",
@@ -401,7 +404,7 @@
       "colWind": "Rüzgâr",
       "colWave": "Dalga",
       "colSeaTemperature": "Deniz suyu",
-      "colVintage": "Ölçüm anı",
+      "colVintage": "Geçerlilik anı",
       "kmh": "({value} km/h)",
       "direction": "{label}: {compass} ({degrees}°)",
       "bearingOnly": "Yön: {degrees}°",
@@ -410,7 +413,7 @@
       "gridDistance": "Model karesinin merkezi en çok {km} km ötede.",
       "readingKeyHeading": "Tabloyu okuma anahtarı",
       "readingKeyArrow": "Ok, rüzgârın ve dalganın gittiği yönü gösterir; yanındaki yazı geldiği yönü söyler.",
-      "readingKeyCalm": "{term}: değer, ölçüm kataloğundaki sakin eşiğinin altında kaldı; yön oku yerine bu yazı çıkar.",
+      "readingKeyCalm": "{term}: değer, ölçüm kataloğundaki sakin eşiğinin altında kaldı; yön oku yerine bu yazı çıkar. Hücredeki sayı en yakın onda bire yuvarlandığı için eşiğin kendisi gibi görünebilir.",
       "readingKeyStale": "Bayat bir sayı ekrandan kalkmaz; yanına en son ne zaman tazelendiği yazılır.",
       "readingKeyNoData": "{term}: nokta kapsam içinde, ama şu an elimizde sayı yok.",
       "readingKeyNotSupported": "{term}: sağlayıcı bu büyüklüğü bu denizde hiç üretmiyor, sonradan da gelmeyecek.",
