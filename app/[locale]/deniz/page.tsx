@@ -8,6 +8,7 @@ import { getMarineLayersResilient, getMarinePointsResilient } from "@/lib/api/ma
 import { getProvincesResilient } from "@/lib/api/provinces";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { ecmwfAttributionYear } from "@/lib/marine/attribution";
 import { buildMarineExplainers } from "@/lib/marine/explainers";
 import { collectionPageJsonLd, JsonLd, learningResourceJsonLd } from "@/lib/seo/json-ld";
 import type { ContentSurface } from "@/lib/seo/indexing";
@@ -117,6 +118,10 @@ export default async function DenizPage({ params }: PageProps) {
   // (`lib/marine/explainers.ts`) — empty on `/en/sea`, where the narrative does not exist.
   const explainers = rendersExplainers(locale) ? buildMarineExplainers(t) : [];
 
+  // The year ECMWF's required copyright line states — the ingested cycle's own year, or
+  // `null` when nothing has been ingested (see `lib/marine/attribution.ts`).
+  const attributionYear = ecmwfAttributionYear(layers);
+
   return (
     <div className="container page">
       <JsonLd
@@ -165,15 +170,38 @@ export default async function DenizPage({ params }: PageProps) {
       {/* Attribution + educational-use notice. UNTOUCHABLE copy class (CONTENT-STYLE §22):
           it stays formal and is rendered in BOTH locales, because the EN page shows the
           same ECMWF-derived künye and CC BY 4.0 requires the attribution wherever that
-          derived material appears. The provider name, licence name and product class are
-          taken from `data-provenance.md`'s ECMWF Open Data entry — not from the payload:
-          the api's `MarineAttributionDto` is frozen in the contract but has no endpoint and
-          no seeded rows until M5. When it does, this block becomes data-driven in one
-          place. */}
+          derived material appears.
+
+          THE ENGLISH BLOCK IS NOT COPY — IT IS THE LICENCE (→ DEC 2026-08-02c, from NOVA's
+          first-hand reading of ECMWF's licence page). ECMWF's terms say the wording "shall
+          be attached", quote it, and — unlike the Copernicus framework — offer NO "or any
+          similar notice" escape. So it is published verbatim, in English, in both locales,
+          and marked `lang="en"` so a screen reader on the Turkish page does not read it in
+          Turkish phonetics (WCAG 3.1.2). The Turkish rendering stands ALONGSIDE it, never
+          instead of it. Shortening, restyling or translating any of it is a licence breach.
+
+          It is also visible without a click on the page that carries the derived material,
+          which is the conservative reading of the licence's "prominently".
+
+          Provider name, licence name and product class come from `data-provenance.md`'s
+          ECMWF Open Data entry, not from the payload: `MarineAttributionDto` is frozen in
+          the contract but has no endpoint and no seeded rows until M5. When it does, this
+          block becomes data-driven in one place. */}
       <section className="section" aria-labelledby="deniz-sources">
         <div className={styles.sources}>
           <h2 id="deniz-sources">{t("sourcesHeading")}</h2>
           <p>{t("sourceEcmwf")}</p>
+          <p>{t("sourceEcmwfNoticeIntro")}</p>
+          <div className={styles.licenceNotice} lang="en">
+            {/* The copyright line is omitted — not faked — when no ECMWF cycle has been
+                ingested and there is therefore no data year to state. The mandatory
+                "this service is based on…" sentence carries no year and always shows. */}
+            {attributionYear !== null && (
+              <p>{tm("attribution.ecmwfCopyright", { year: attributionYear })}</p>
+            )}
+            <p>{tm("attribution.ecmwfNotice")}</p>
+            <p>{tm("attribution.ecmwfDisclaimer")}</p>
+          </div>
           <p>{t("sourceCmems")}</p>
           <p className={styles.disclaimer}>{tm("disclaimer.educationalOnly")}</p>
         </div>

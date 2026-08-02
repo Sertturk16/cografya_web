@@ -43,7 +43,7 @@ function buildLlmsTxt(): string {
 
 > Free, open geography education platform for Türkiye and the world. Turkish-first (TR at the root, English under /en), with source-grounded content on the 81 provinces of Türkiye, world countries, landforms and geography concepts.
 
-Coğrafya Platformu is a non-commercial education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete set of indexable URLs. Note: detail pages (provinces, countries) are currently published in Turkish only — their English counterparts are served with a "noindex" directive until English narrative content is written.
+Coğrafya Platformu is an education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete set of indexable URLs. Note: detail pages (provinces, countries) are currently published in Turkish only — their English counterparts are served with a "noindex" directive until English narrative content is written.
 
 ## Main sections (Turkish, default locale)
 
@@ -51,6 +51,7 @@ Coğrafya Platformu is a non-commercial education project. All content is free t
 - [Türkiye](${url("tr", "/turkiye")}): Interactive map hub linking the detail pages for all 81 provinces of Türkiye.
 - [Dünya (World)](${url("tr", "/dunya")}): World map hub linking country detail pages.
 - [Deniz (Sea)](${url("tr", "/deniz")}): Marine hub for the coasts of Türkiye — offshore reference points, the measurement catalogue, and explanatory blocks on wave height, wind and sea-surface temperature. Turkish only; its English counterpart is served with "noindex".
+- [Oyun (Map Game)](${url("tr", "/oyun")}): A map game for locating the provinces of Türkiye. The hub page describes the game; the individual play screens are application screens and are served with "noindex".
 - [Hakkımızda (About)](${url("tr", "/hakkimizda")}): What the platform is and how its content is sourced and verified.
 
 ## Main sections (English)
@@ -58,6 +59,7 @@ Coğrafya Platformu is a non-commercial education project. All content is free t
 - [Home](${url("en", "/")})
 - [Türkiye](${url("en", "/turkiye")})
 - [World](${url("en", "/dunya")})
+- [Map Game](${url("en", "/oyun")})
 - [About](${url("en", "/hakkimizda")})
 
 ## Full crawl discovery

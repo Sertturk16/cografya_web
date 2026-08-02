@@ -21,6 +21,38 @@ export interface ProvinceShape {
 /** Shared SVG viewBox all 81 paths are projected into. */
 export const MAP_VIEWBOX = "0 0 1000 429" as const;
 
+/**
+ * The exact equirectangular constants the paths above were projected with, so that a
+ * [lon, lat] pair OUTSIDE this GeoJSON (an offshore marine reference point, a city
+ * marker) can be placed in the SAME coordinate space at runtime.
+ *
+ * Emitted by the generator rather than restated by hand: the values derive from the
+ * source file's own bounding box, so a snapshot change silently invalidates any
+ * hand-copied constant. `pnpm generate:map:check` fails the moment they drift.
+ *
+ * Apply them with `projectToMapPoint()` in `lib/map/projection.ts` — never inline.
+ */
+export interface MapProjection {
+  /** Western edge of the source bounding box (decimal degrees). */
+  readonly minLon: number;
+  /** Northern edge of the source bounding box (decimal degrees). */
+  readonly maxLat: number;
+  /** cos(reference latitude) — the equirectangular x-correction factor. */
+  readonly cosLat: number;
+  /** Degrees → svg-unit scale factor. */
+  readonly scale: number;
+  /** Constant svg-unit offset added on every side; also reserved out of `scale`. */
+  readonly padding: number;
+}
+
+export const MAP_PROJECTION: MapProjection = {
+  minLon: 25.665136337280273,
+  maxLat: 42.1054115295413,
+  cosLat: 0.7775805256021876,
+  scale: 66.28554617603106,
+  padding: 6,
+};
+
 export const PROVINCE_SHAPES: readonly ProvinceShape[] = [
   { plateCode: "01", geoName: "Adana", d: "M555.7 283.4L554.9 285.7L555.1 289.2L557.4 294.5L554.3 301.2L546.6 302.2L540.4 306.6L532.7 320.8L532.6 328.4L533.8 330.6L531.1 335.9L532.2 336.3L538.7 332.9L540.3 333.9L541.9 337.2L540.8 342.7L536 347.3L534.2 350.8L535.3 352.4L530.5 358L528.1 359.9L521.5 359.9L519.5 361.3L518.5 363.4L518.7 362.2L518.2 362.5L518 364.3L517.6 363.6L516.2 363.5L515.7 364.3L516.5 363.9L517.3 365.7L519.6 362.9L519.3 362.1L520.9 361.7L520.4 363.8L521 362.4L520.9 363.8L523.6 363.4L523.4 362.8L524.4 363.5L520.4 366.4L519.2 370.6L517.1 371.5L516.3 373.3L508.7 371.6L504.6 375L503.7 372.8L505 370.7L501.8 369.2L502 368L501.1 367.5L500.7 368.3L500 367.3L501.1 366.8L500.1 365.7L496.5 364.8L495.6 365.9L501.2 370.3L503.9 373.7L487 363.4L482.8 362.7L484.6 360.7L488.9 359.6L490.6 356.5L490.7 354.2L490 346.4L487.2 341.7L483.3 338.5L482 332.7L476.1 319.3L476.2 313.6L480 309.6L479.8 306.1L477.7 300.8L478.2 299L480.4 297.3L488.5 298.1L491.3 296.8L498.2 289.3L497.8 283.9L499.6 281.2L510.7 283.5L519.1 281.1L522.2 274.2L539.4 265.8L547 250.7L554.4 247.4L558.1 247.2L560.4 248.8L564 257.2L560.6 261.4L556 278.3L555.7 283.4Z" },
   { plateCode: "02", geoName: "Adıyaman", d: "M675.5 272L686 272L693.6 270.3L697.2 268.5L699.1 265.9L701.6 266.6L703.9 265.4L706 267.1L704.1 274.6L697.1 278.7L692.9 283.8L692.1 285.8L692.2 291.7L690.8 294.8L684.6 298.5L685.1 300.8L684.5 301.8L673.5 306.1L666.4 312L658.8 312.3L649.8 317.4L644.9 315.8L640.9 311.5L631.2 308.3L625.2 310.5L622.3 310.5L619.8 307.9L613.9 305.8L611.7 303.6L612 297.8L620.9 289.7L628.2 289.1L629.9 287L633.3 285.9L640.8 287.3L651.1 283.5L648.7 272.2L662.3 264.9L669.5 262.8L674.5 264.9L673.9 266.9L670.8 269.9L675.5 272Z" },

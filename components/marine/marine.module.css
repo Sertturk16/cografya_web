@@ -12,6 +12,131 @@
   margin: 0 0 18px;
 }
 
+/* ---- Reference-point map (W1b) ---------------------------------------------
+   The 30 offshore points on the build-time Türkiye outline. This map is framed on the
+   SEA (the labels are pushed out into the water), so the backdrop is the flat sea tint
+   the world map uses — a gradient would make land/sea contrast depend on where a shape
+   sits in the frame. Terra chrome tokens only: nothing here encodes a value, because
+   this page publishes none. */
+
+.mapFigure {
+  margin: 0 0 22px;
+}
+
+.mapRoot {
+  position: relative;
+  background: var(--map-sea);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 10px clamp(8px, 2vw, 18px) 34px;
+}
+
+.mapSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The viewBox gives an intrinsic aspect ratio, so the box reserves its height
+     immediately — inline SVG has no async load, hence no layout shift (SEO §6 #9). */
+  overflow: hidden;
+}
+
+.mapLand {
+  fill: var(--province-fill);
+  stroke: var(--province-stroke);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  /* Keep borders ~1px crisp regardless of the SVG's rendered width. */
+  vector-effect: non-scaling-stroke;
+}
+
+/* The dot itself. Its white ring scales WITH the map (no non-scaling-stroke): pinned at a
+   constant pixel width it swallowed the fill on a phone, where the map draws at about a
+   third of its desktop size, and thirty markers turned into thirty pale specks. */
+.mapMarker {
+  fill: var(--color-accent);
+  stroke: #fff;
+  stroke-width: 1.5;
+  transition: fill 0.16s ease-out;
+}
+
+.mapLeader {
+  stroke: var(--color-accent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.75;
+}
+
+/* Map lettering. The white halo (paint-order: stroke) is what keeps a label readable
+   where it crosses a coastline — the standard cartographic treatment, and it is drawn at
+   a non-scaling width so it stays a hairline at every rendered map size. Ink, never
+   taupe: this is text (ENGINEERING §5). */
+.mapLabel {
+  fill: var(--color-ink);
+  font-family: var(--font-body);
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Hover reveals the marker's full name via its native `<title>` tooltip; the colour shift
+   is the affordance that says a tooltip is there. The markers are NOT links — every point
+   already has a real, crawlable link in the list below, and thirty duplicate anchors would
+   only add tab stops without adding a destination. */
+.mapPoint:hover .mapMarker {
+  fill: var(--color-primary);
+}
+
+.mapAttribution {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--color-slate);
+  background: var(--scrim-bg);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.mapCaption {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  max-width: 70ch;
+}
+
+/* Below this width the map is roughly 340 px wide, at which point thirty labels would
+   overprint each other into an unreadable smear — no font size or placement rule fixes
+   thirty names on a phone-width map of a country. The markers stay (the shape of the
+   answer — points around all four seas — survives), and the names are one scroll away in
+   the list below, where each is also a link. */
+@media (max-width: 720px) {
+  .mapLabel,
+  .mapLeader {
+    display: none;
+  }
+
+  /* With the names gone the dots ARE the content, so they grow to stay legible at a third
+     of the desktop map size. `r` is a CSS geometry property (Chrome 45+, Safari 9+,
+     Firefox 70+); where it is not honoured the element's own `r` attribute still applies,
+     so the map degrades to the desktop dot rather than to nothing. */
+  .mapMarker {
+    r: 9;
+    stroke-width: 2.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapMarker {
+    transition: none;
+  }
+}
+
+/* ---- Reference-point list ---------------------------------------------------- */
+
 .basinGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

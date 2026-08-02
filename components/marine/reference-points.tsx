@@ -4,6 +4,7 @@ import type { Locale } from "@/i18n/routing";
 import type { MarinePointListItem, ProvinceListItem } from "@/lib/api/types";
 import { byPlateCode } from "@/lib/api/provinces";
 import { basinLabel, groupPointsByBasin } from "@/lib/marine/basins";
+import { MarineMap } from "./marine-map";
 import styles from "./marine.module.css";
 
 interface ReferencePointsProps {
@@ -54,6 +55,11 @@ export async function ReferencePoints({ locale, points, provinces }: ReferencePo
     <section className="section" aria-labelledby={HEADING_ID}>
       <h2 id={HEADING_ID}>{t("pointsHeading")}</h2>
       <p className={styles.hint}>{tm("point.referencePointHint")}</p>
+
+      {/* The map is a VIEW of the list below it, not a separate topic, so the two share
+          this one <h2> rather than the map opening a heading of its own — a second heading
+          would claim the map is a second subject and split the section's outline. */}
+      <MarineMap locale={locale} points={points} provinces={provinces} />
 
       <div className={styles.basinGrid}>
         {groups.map((group) => {
