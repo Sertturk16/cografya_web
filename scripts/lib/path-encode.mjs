@@ -7,7 +7,9 @@
  * a simplified outline are a fraction of a unit apart, so almost all of those digits encode
  * a position we already knew. Switching to a relative `l` run with implicit repetition
  * (`M123.4 56.7l.5.4.4.5…`) spends bytes on the DELTA instead, and the delta is one to two
- * digits. Measured on the world artifact: **−26% raw**, with the identical rendered outline.
+ * digits. Measured on the world artifact: **−26% raw**. The ENCODING is lossless at the 0.1
+ * quantum (round-trip verified, pinned by `lib/map/path-encode.test.ts`) — which vertices
+ * exist at all is decided upstream by simplification, not here.
  *
  * ## The trap this module exists to avoid
  *
@@ -30,7 +32,7 @@
 
 /**
  * Format an integer count of quanta as the shortest legal SVG number.
- * `123` @1dp → `"12.3"`, `50` → `"5"`, `-4` → `"-.4"`.
+ * `123` at 1 dp → `"12.3"`, `50` → `"5"`, `-4` → `"-.4"`.
  * @param {number} units @param {number} scale @param {number} decimals
  */
 function formatUnits(units, scale, decimals) {
@@ -95,10 +97,10 @@ export function encodePath(subpaths, options = {}) {
   let first = true;
 
   for (const points of subpaths) {
-    if (points.length === 0) continue;
-    const [startX, startY] = points[0];
-    const sx = q(startX);
-    const sy = q(startY);
+    const start = points[0];
+    if (!start) continue;
+    const sx = q(start[0]);
+    const sy = q(start[1]);
     if (first) {
       command("M");
       write(formatUnits(sx, scale, decimals));
@@ -114,8 +116,10 @@ export function encodePath(subpaths, options = {}) {
 
     let open = false; // has the `l` run been started for this subpath?
     for (let i = 1; i < points.length; i++) {
-      const nx = q(points[i][0]);
-      const ny = q(points[i][1]);
+      const point = points[i];
+      if (!point) continue;
+      const nx = q(point[0]);
+      const ny = q(point[1]);
       const dx = nx - cursorX;
       const dy = ny - cursorY;
       if (dx === 0 && dy === 0) continue;

@@ -58,8 +58,10 @@
  * Simplification is TOPOLOGICAL (`lib/map-topology.mjs`): a border shared by two countries is
  * cut out as an arc, simplified ONCE, and handed to both neighbours, so they cannot disagree
  * about which vertices survive and leave a sliver of sea along their common border. Emission
- * is RELATIVE (`lib/path-encode.mjs`) with a quantised cursor. Both modules are shared with
- * the Türkiye generator; read their headers before touching either.
+ * is RELATIVE (`lib/path-encode.mjs`) with a quantised cursor. Both modules are DESIGNED to be
+ * shared with the Türkiye generator, but today this generator is their only consumer — TR
+ * adoption is the wave's P2 item, so the Türkiye map does NOT yet carry the border-symmetry
+ * guarantee. Read both module headers before touching either.
  *
  * Interior rings are DRAWN AS HOLES. Every interior ring in this snapshot is an enclave — the
  * hole in South Africa is Lesotho, the holes in Kyrgyzstan are Uzbek and Tajik exclaves — and
@@ -140,6 +142,45 @@ const DECIMALS = 1; // coordinate rounding in the emitted path data
 // this touches only shapes that are otherwise invisible/degenerate, never a real outline.
 const MARKER_MIN_SPAN = 0.9; // projected svg units (per axis)
 const MARKER_RADIUS = 1.0; // half-diagonal of the fallback diamond, svg units
+/**
+ * Companion marker trigger for DISPERSED MICRO-ARCHIPELAGOS. The bbox test above is
+ * per-axis, so a chain of sub-pixel islets spanning several units (Maldives, the British
+ * Virgin Islands) never trips it — yet its total painted area is a fraction of what the
+ * marker diamond itself paints (2 u²), so rendering it "as polygons" means rendering it as
+ * invisible specks. A feature whose summed TRUE projected ring area is below this bar is a
+ * marker, decided on the true geometry BEFORE any tolerance touches it (the AQ lesson:
+ * decide on the object itself, not on what our own simplification left of it). 0.1 u² ≈ a
+ * tenth of a pixel at 1× and ~14 px² at MAX_ZOOM; the smallest promised-polygon country
+ * (Malta, 0.24 u²) clears it 2.4×, and MUST_STAY_POLYGON below turns any future drift into
+ * a build failure rather than a silent demotion.
+ */
+const MARKER_MIN_AREA = 0.1; // svg units², summed true outer-ring area per feature
+/**
+ * Minimum enclosed area (svg units²) an OUTER ring must keep after simplification to be
+ * drawn at all. 0.01 u² ≈ 1.4 px² at MAX_ZOOM (12×) — genuinely invisible, not merely
+ * small. This is the generalised, far more conservative sibling of the AQ-only
+ * `MIN_RING_AREA_BY_ISO` bar: it removes the "zero-area degenerate subpath" class (the
+ * Maldives/BVI defect — shapes present in the artifact, invisible on screen) instead of
+ * letting it re-enter whenever an anchor tweak hands a flattened islet a third vertex.
+ * A country whose EVERY ring falls under it correctly lands on the marker fallback below.
+ * HOLES take the same bar: a hole below it cannot be seen at any zoom and may not even
+ * survive the 0.1-unit path quantisation (the Vatican hole is 0.001 u²). Because the bar is
+ * evaluated on the SAME simplified polyline for a hole and its coincident enclave outline,
+ * the pair always passes or fails together — no one-sided window onto the background can
+ * open (and if that invariant ever broke, the "no hole another country fails to fill"
+ * structural test fails in CI).
+ */
+const MIN_VISIBLE_RING_AREA = 0.01;
+/**
+ * HARD GATE, paired with `SIMPLIFY_EPSILON` above: countries that must survive as REAL
+ * polygons, never as marker diamonds. This is the wave plan §3 P1 acceptance list ("poligon
+ * kalmalı"). The epsilon ruling it encodes: 0.25 was measured and REJECTED because it
+ * collapses Malta (on this list) plus KN/TC/VI to markers; 0.15 stands. The generator
+ * THROWS below if any of these ever demotes — a retune cannot silently pass CI on the
+ * strength of a clean drift diff (PR #35 review I3; the marker fallback's console.warn is
+ * a diagnostic, not a gate).
+ */
+const MUST_STAY_POLYGON = ["SG", "MT", "BH", "CY", "QN", "PS", "XK"];
 
 /** Absolute shoelace area of a projected ring, in svg units². */
 function ringArea(points) {
@@ -175,15 +216,16 @@ function vertexCount(geometry) {
   return n;
 }
 
-/** Projected bounding box `{ cx, cy, w, h }` of a geometry (uses `project`, defined below at
- *  call time). Drives the micro-state marker fallback. */
-function projectedBBox(geometry, projectFn) {
+/** Projected bounding box `{ cx, cy, w, h }` of a geometry (uses `project` directly — both
+ *  are hoisted top-level declarations of this one module, and there is exactly one
+ *  projection). Drives the micro-state marker fallback. */
+function projectedBBox(geometry) {
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
   let maxY = -Infinity;
   eachCoord(geometry, (pt) => {
-    const [x, y] = projectFn(pt);
+    const [x, y] = project(pt);
     if (x < minX) minX = x;
     if (x > maxX) maxX = x;
     if (y < minY) minY = y;
@@ -300,13 +342,19 @@ for (const feature of drawn) {
 
   const epsilon = SIMPLIFY_EPSILON_BY_ISO.get(iso) ?? SIMPLIFY_EPSILON;
   const minRingArea = MIN_RING_AREA_BY_ISO.get(iso) ?? 0;
-  const bbox = projectedBBox(feature.geometry, project);
+  const bbox = projectedBBox(feature.geometry);
   const verts = vertexCount(feature.geometry);
+  const trueArea = polygonRings(feature.geometry).reduce(
+    (sum, { outer }) => sum + ringArea(outer.map(project)),
+    0,
+  );
 
-  if (bbox.w < MARKER_MIN_SPAN && bbox.h < MARKER_MIN_SPAN) {
+  if ((bbox.w < MARKER_MIN_SPAN && bbox.h < MARKER_MIN_SPAN) || trueArea < MARKER_MIN_AREA) {
     // Micro-state: its whole outline is smaller than the simplify tolerance and would
-    // collapse to nothing. Emit a fixed-size marker so the country still gets a shape (and
-    // thus a crawlable link) instead of being silently dropped.
+    // collapse to nothing — or a dispersed micro-archipelago whose total true area is below
+    // what the marker itself paints (see MARKER_MIN_AREA). Emit a fixed-size marker so the
+    // country still gets a shape (and thus a crawlable link) instead of being silently
+    // dropped or shipped as invisible specks.
     plans.push({
       iso,
       geoName,
@@ -351,7 +399,13 @@ for (const feature of drawn) {
     const holeIndices = [];
     for (const hole of holes) {
       holeIndices.push(topologyRings.length);
-      topologyRings.push({ points: hole.map(project), epsilon: ringEpsilon });
+      // `preserve`: an enclave hole must not collapse below a drawable polygon while its
+      // host ring survives — the outline epsilon is the wrong tolerance for a ring whose
+      // whole job is to make room for another country (Artsvashen/Barak were still being
+      // painted over, the Lesotho failure mode at smaller scale). The topology module
+      // honours the flag only when the coincident enclave outline shares the arc, so the
+      // hole and the enclave re-emerge together; see its header.
+      topologyRings.push({ points: hole.map(project), epsilon: ringEpsilon, preserve: true });
       holeRingCount++;
     }
     polygons.push({ outer: outerIndex, holes: holeIndices });
@@ -374,27 +428,40 @@ if (topology.stats.asymmetricSharedNodes !== 0) {
 }
 
 // --- Second pass (c): assemble one merged path per ISO join key ------------------
-/** @type {Map<string, { geoName: string, labelVerts: number, subpaths: [number, number][][] }>} */
+// Polygons and marker diamonds are collected SEPARATELY per join key: a marker is
+// INSURANCE against a country being unrepresentable, not geometry, so it only survives to
+// the artifact if the key ends up with no real polygon at all. Without this split, a
+// sub-visible territory FEATURE of an already-drawn country (the Coral Sea Islands, true
+// area 0.002 u², merging into AU) would paint a full-size 2 u² diamond into the middle of
+// its country's shape.
+/** @type {Map<string, { geoName: string, labelVerts: number, polygons: [number, number][][], markers: [number, number][][] }>} */
 const byIso = new Map();
-let markerCount = 0;
 let emittedHoles = 0;
 for (const plan of plans) {
   const { iso, geoName, verts } = plan;
   /** @type {[number, number][][]} */
   const subpaths = [];
+  /** @type {[number, number][][]} */
+  const markerSubpaths = [];
   if (plan.marker) {
-    subpaths.push(plan.marker);
-    markerCount++;
+    markerSubpaths.push(plan.marker);
   } else {
     for (const polygon of plan.polygons) {
       const outer = simplifiedRings[polygon.outer];
-      // A tiny islet of a larger country — safely dropped, and its holes go with it (a hole
-      // without its landmass would punch through whatever is drawn underneath).
-      if (outer.length < 3) continue;
+      // A degenerate or invisible islet — safely dropped, and its holes go with it (a hole
+      // without its landmass would punch through whatever is drawn underneath). The area
+      // test runs on the SIMPLIFIED ring, which the topology module's area-preservation
+      // guard keeps within 80% of the true ring — so "invisible after simplification" now
+      // implies "genuinely sub-visible place", not "flattened by our own tolerance".
+      if (outer.length < 3 || ringArea(outer) < MIN_VISIBLE_RING_AREA) continue;
       subpaths.push(outer);
       for (const holeIndex of polygon.holes) {
         const hole = simplifiedRings[holeIndex];
-        if (hole.length < 3) continue; // sub-tolerance enclave: nothing left to cut out
+        // Sub-visible hole (in practice: one whose enclave state fell to a MARKER — the
+        // preservation floor keeps every polygon-state enclave hole above the bar). The
+        // marker diamond draws over the host at this spot, so nothing is lost; emitting
+        // the hole instead would risk a sub-quantum degenerate subpath.
+        if (hole.length < 3 || ringArea(hole) < MIN_VISIBLE_RING_AREA) continue;
         subpaths.push(hole);
         emittedHoles++;
       }
@@ -425,8 +492,7 @@ for (const plan of plans) {
           `≈0 means a dispersed micro-archipelago (expected); anything larger means ` +
           `SIMPLIFY_EPSILON_BY_ISO / MIN_RING_AREA_BY_ISO need retuning.`,
       );
-      subpaths.push(markerDiamond(plan.bbox.cx, plan.bbox.cy));
-      markerCount++;
+      markerSubpaths.push(markerDiamond(plan.bbox.cx, plan.bbox.cy));
     }
   }
 
@@ -435,21 +501,41 @@ for (const plan of plans) {
   // together. The label follows the largest member (provenance only; the UI shows nameTr).
   const existing = byIso.get(iso);
   if (existing) {
-    existing.subpaths.push(...subpaths);
+    existing.polygons.push(...subpaths);
+    existing.markers.push(...markerSubpaths);
     if (verts > existing.labelVerts) {
       existing.geoName = geoName;
       existing.labelVerts = verts;
     }
   } else {
-    byIso.set(iso, { geoName, labelVerts: verts, subpaths });
+    byIso.set(iso, { geoName, labelVerts: verts, polygons: subpaths, markers: markerSubpaths });
   }
+}
+
+// Finalize per key: real polygons win; the marker ships only when the key has none.
+let markerCount = 0;
+/** @type {Set<string>} join keys whose final rendering is a marker diamond — feeds the
+ *  MUST_STAY_POLYGON gate below. */
+const markerIsos = new Set();
+/** @type {Map<string, { geoName: string, subpaths: [number, number][][] }>} */
+const shapesByIso = new Map();
+for (const [iso, entry] of byIso) {
+  const isMarker = entry.polygons.length === 0 && entry.markers.length > 0;
+  if (isMarker) {
+    markerCount++;
+    markerIsos.add(iso);
+  }
+  shapesByIso.set(iso, {
+    geoName: entry.geoName,
+    subpaths: entry.polygons.length > 0 ? entry.polygons : entry.markers,
+  });
 }
 
 // Completeness guarantee: every source join key MUST have produced a shape. This is the
 // regression guard the PR #13 review asked for — if simplification, a geometry edge case, or
 // a future tuning ever drops a country from the link surface again, the build fails loudly
 // here instead of silently shipping an undiscoverable (but seeded + indexable) country.
-const missing = [...expectedKeys].filter((k) => !byIso.has(k));
+const missing = [...expectedKeys].filter((k) => (shapesByIso.get(k)?.subpaths.length ?? 0) === 0);
 if (missing.length > 0) {
   throw new Error(
     `generate:world-map — ${missing.length} source feature(s) produced no shape and would be ` +
@@ -458,7 +544,20 @@ if (missing.length > 0) {
   );
 }
 
-const shapes = [...byIso.entries()]
+// Promised-polygon guarantee: presence is not enough for the countries the epsilon ruling
+// was decided on — a marker diamond passes the completeness check above but is NOT the
+// clickable outline the plan's acceptance list demands. Fail the build, do not warn.
+const demoted = MUST_STAY_POLYGON.filter((iso) => markerIsos.has(iso));
+if (demoted.length > 0) {
+  throw new Error(
+    `generate:world-map — ${demoted.length} protected countr(y/ies) collapsed from a real ` +
+      `polygon to a marker diamond: ${demoted.join(", ")}. MUST_STAY_POLYGON forbids this; ` +
+      `the simplification tuning (SIMPLIFY_EPSILON / per-ISO overrides / MIN_RING_AREA_BY_ISO) ` +
+      `must be revisited, not this gate.`,
+  );
+}
+
+const shapes = [...shapesByIso.entries()]
   .map(([iso, v]) => ({
     iso,
     geoName: v.geoName,
