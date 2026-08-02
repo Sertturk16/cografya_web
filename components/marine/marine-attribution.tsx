@@ -8,18 +8,28 @@ interface MarineAttributionProps {
   layers: MarineLayer[];
   /** `id` of this block's `<h2>` — unique per page, since two surfaces render it. */
   headingId?: string;
+  /**
+   * The block's heading. Defaults to `/deniz`'s "Kaynaklar ve kullanım"; the province page
+   * passes its own, because that page already carries a Kaynaklar line for its own facts and
+   * two identically-titled sources surfaces would leave the reader guessing which is which.
+   * ONLY the heading is overridable — every licence string below is single-sourced and
+   * verbatim, and none of it is a prop.
+   */
+  heading?: string;
 }
 
 /**
  * Attribution + licence + educational-use notice — ONE component, rendered wherever an
  * ECMWF- or CMEMS-derived value appears.
  *
- * WHY IT IS A COMPONENT NOW. In W1a this markup was inline in `/deniz` because `/deniz` was
- * the only page carrying derived material. W2 puts real values on the hub and, next, on 27
- * province pages; CC BY 4.0 and ECMWF's "shall be attached" wording require the notice to
- * travel WITH the material, not to stay on the page it was first written for. A second copy
- * of a verbatim licence text is a licence breach waiting for the day someone edits one of
- * them, so there is exactly one copy and two render sites.
+ * WHY IT IS A COMPONENT. In W1a this markup was inline in `/deniz` because `/deniz` was the
+ * only page carrying derived material. W2a put real values on the hub and W2b put them on the
+ * 27 coastal province pages; CC BY 4.0 and ECMWF's "shall be attached" wording require the
+ * notice to travel WITH the material, not to stay on the page it was first written for. A
+ * second copy of a verbatim licence text is a licence breach waiting for the day someone edits
+ * one of them, so there is exactly one copy and two render sites — and the province site is
+ * gated on the SAME signal as the values it accompanies (`provinceShowsMarine`), so the notice
+ * can neither go missing where a value appears nor appear where none does.
  *
  * THE ENGLISH BLOCKS ARE NOT COPY — THEY ARE THE LICENCE (→ DEC 2026-08-02c, from NOVA's
  * first-hand reading of ECMWF's licence page). ECMWF's terms say the wording "shall be
@@ -55,6 +65,7 @@ interface MarineAttributionProps {
 export async function MarineAttribution({
   layers,
   headingId = "marine-sources",
+  heading,
 }: MarineAttributionProps) {
   const t = await getTranslations("Deniz");
   const tm = await getTranslations("Marine");
@@ -66,7 +77,7 @@ export async function MarineAttribution({
   return (
     <section className="section" aria-labelledby={headingId}>
       <div className={styles.sources}>
-        <h2 id={headingId}>{t("sourcesHeading")}</h2>
+        <h2 id={headingId}>{heading ?? t("sourcesHeading")}</h2>
         <p>{t("sourceEcmwf")}</p>
         <p>{t("sourceEcmwfNoticeIntro")}</p>
         <div className={styles.licenceNotice} lang="en">

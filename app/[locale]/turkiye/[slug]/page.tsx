@@ -3,7 +3,14 @@ import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ClimateSection } from "@/components/climate/climate-section";
+import { MarineAttribution } from "@/components/marine/marine-attribution";
+import { ProvinceMarineSection } from "@/components/marine/province-marine-section";
 import { ProseNote } from "@/components/prose-note";
+import {
+  getMarineLayersSafe,
+  getMarinePointsSafe,
+  getMarineProvinceConditionsSafe,
+} from "@/lib/api/marine";
 import {
   byPlateCode,
   getProvinceBySlug,
@@ -11,6 +18,7 @@ import {
   getProvincesResilient,
 } from "@/lib/api/provinces";
 import type { HydrographyFeature, ProvinceDetail, ProvinceListItem } from "@/lib/api/types";
+import { isCoastalPlate, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { monthName } from "@/lib/climate/month";
@@ -166,6 +174,33 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   } catch (error) {
     console.warn(`[province:${slug}] province-list cross-links skipped: ${String(error)}`);
   }
+
+  // ── Deniz Durumu (W2b) ─────────────────────────────────────────────────────────────────
+  // THE COASTAL GATE COMES FIRST, and it is derived from the api's own reference-point set
+  // (`lib/marine/coastal.ts`) — the list of which 27 provinces have a coast does not live in
+  // this repo. An inland province therefore makes no `/conditions` call at all, which is also
+  // how this page stays clear of the one corner of the contract nobody has written down: what
+  // that route answers for a province with no coast.
+  //
+  // EVERY MARINE READ HERE IS FAIL-SOFT, in both build and runtime, and that is a different
+  // contract from the same routes' behaviour on `/deniz` (see `lib/api/marine.ts`). There the
+  // points and the catalogue ARE the page. Here the whole marine section is an enhancement on
+  // a page about a province, and a chain of external providers we do not operate may remove
+  // the section — never the page, never its 200, never its facts or its links.
+  const [marinePoints, marineLayers] = await Promise.all([
+    getMarinePointsSafe(),
+    getMarineLayersSafe(),
+  ]);
+  const marineConditions = isCoastalPlate(marinePoints, province.plateCode)
+    ? await getMarineProvinceConditionsSafe(province.plateCode)
+    : null;
+  // ONE signal, read by the section AND by the licence block that has to travel with it: the
+  // attribution may not go missing where a derived value appears (a licence obligation,
+  // → DEC 2026-08-02c) and may not appear where none does (this page's own "no source for
+  // absent content" rule). Two independently-computed booleans would eventually break one of
+  // those halves — the O1 finding from the PR #36 review, fixed here before it can happen.
+  const marineBlocks = provinceMarineBlocks(marineConditions);
+  const showMarine = provinceShowsMarine(marineConditions);
 
   // schema.org PropertyValue facts — only the values the api actually has (null
   // fields are skipped, never invented). Labels come from i18n so JSON-LD and the
@@ -426,6 +461,29 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         </dl>
       </section>
 
+      {/* Deniz Durumu (W2b) — directly under Temel Bilgiler, above the prose. A reader who
+          arrived asking "Sinop'ta deniz kaç derece" answers that question without scrolling;
+          that is this page's half of the user-first inversion `/deniz` took in W2a.
+
+          NOT TR-gated, unlike every prose section below it. Those are gated because they are
+          hand-written Turkish with no English counterpart; this section is DATA plus the
+          symmetric `Marine.*` vocabulary, and a wave height is not a translation. Same
+          reasoning as the value band on `/en/sea`.
+
+          The section is absent for an inland province, absent when the conditions read fails,
+          and PRESENT — with honest per-field states — whenever the api answered, including
+          when every value in it is `unavailable`. A section that blinks out of existence
+          between two ISR passes is a worse answer than "şu an alınamıyor". */}
+      {showMarine && (
+        <ProvinceMarineSection
+          locale={locale}
+          provinceName={name}
+          blocks={marineBlocks}
+          layers={marineLayers}
+          headingId="province-marine"
+        />
+      )}
+
       {/* Yeryüzü Şekilleri — TR-gated prose; absent until landformNoteTr is filled. */}
       {showLandform && (
         <section className="section">
@@ -632,6 +690,26 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
             ))}
           </ul>
         </section>
+      )}
+
+      {/* ECMWF + Copernicus Marine attribution, licence and educational-use notice — the SAME
+          component and the SAME verbatim strings `/deniz` renders, never a second copy
+          (`components/marine/marine-attribution.tsx`). It travels with the derived values
+          because CC BY 4.0 and ECMWF's "shall be attached" wording require it to
+          (→ DEC 2026-08-02c), and it is gated on the same `showMarine` signal as the values
+          themselves, so the two cannot come apart in either direction.
+
+          It carries its OWN heading rather than "Kaynaklar ve kullanım": the Kaynaklar line
+          below belongs to the province's own facts (TÜİK, HGM, MGM), and two identically
+          titled sources surfaces on one page would leave the reader guessing which licence
+          covers what. Bottom of the page, like the hub's — visible without a click, which is
+          the conservative reading of the licence's "prominently". */}
+      {showMarine && (
+        <MarineAttribution
+          layers={marineLayers}
+          headingId="province-marine-sources"
+          heading={t("marineSourcesHeading")}
+        />
       )}
 
       <p className={styles.sources}>

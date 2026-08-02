@@ -101,11 +101,11 @@ describe("Marine.* keys exist in both catalogues", () => {
     });
   }
 
-  it("carries the six SPEC §7.14 frozen keys the value band renders", () => {
-    // The SPEC freezes these strings by name. The remaining two are born with the things they
-    // annotate — `straits.lowConfidence` with the province section (W2b) and
-    // `series.sourceDiffersNotice` with the chart it explains (W2c) — per the mapping block in
-    // `app/[locale]/deniz/page.tsx`.
+  it("carries the seven SPEC §7.14 frozen keys the marine surfaces render", () => {
+    // The SPEC freezes these strings by name. The eighth — `series.sourceDiffersNotice` — is
+    // born with the chart it explains (W2c), per the mapping block in
+    // `app/[locale]/deniz/page.tsx`. `straits.lowConfidence` joined the list in W2b, with the
+    // province section that renders it.
     const frozen = [
       "disclaimer.educationalOnly",
       "point.referencePointHint",
@@ -113,6 +113,7 @@ describe("Marine.* keys exist in both catalogues", () => {
       "status.noData",
       "status.unavailable",
       "freshness.stale",
+      "straits.lowConfidence",
     ];
     for (const key of frozen) {
       expectNonEmptyString(trMarine, key);
@@ -191,6 +192,19 @@ describe("value-band message keys are derived from the render code, not hand-lis
 
   it("covers every compass sector the bucketing function can emit", () => {
     expect(Object.keys(MARINE_COMPASS_KEY).sort()).toEqual([...COMPASS_POINTS].sort());
+  });
+
+  it("resolves the two ProvinceDetail keys the marine section renders", () => {
+    // The section's `<h2>` and its licence block's heading live in the PAGE's namespace
+    // rather than in `Marine.*`, because both are about the province page, not about the
+    // marine vocabulary. They would otherwise fall outside every guard in this file.
+    const trProvince = flatten((trMessages as Catalogue).ProvinceDetail);
+    const enProvince = flatten((enMessages as Catalogue).ProvinceDetail);
+
+    for (const key of ["marineHeading", "marineSourcesHeading"]) {
+      expectNonEmptyString(trProvince, key);
+      expectNonEmptyString(enProvince, key);
+    }
   });
 
   it("names each of the three non-numeric states distinctly in both catalogues", () => {

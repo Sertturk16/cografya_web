@@ -7,6 +7,7 @@ import type {
 } from "@/lib/api/types";
 import notPublishableFixture from "@/test/fixtures/marine/overview-not-publishable.json";
 import overviewFixture from "@/test/fixtures/marine/overview.json";
+import singlePointFixture from "@/test/fixtures/marine/province-conditions-single-point.json";
 import twoPointFixture from "@/test/fixtures/marine/province-conditions-two-point.json";
 import { marineDirectionView } from "./direction";
 import { buildMarineVintage, marineBlockValues, maxGridDistanceKm, oldestValidAt } from "./vintage";
@@ -241,5 +242,78 @@ describe("two-point province fixture — the locked two-point policy, as data", 
     // as a fixture invariant so W2b inherits it as a fact rather than as a paragraph.
     const statuses = province.marinePoints.map((entry) => entry.waveHeight.status);
     expect(new Set(statuses).size).toBe(2);
+  });
+
+  it("labels each block by its own sea, and never by the province name", () => {
+    // `coastLabel*` is what the two `<h3>`s render. If both blocks carried the same label the
+    // section would show two identical headings over two different sets of numbers, which is
+    // the two-point policy failing visibly rather than in the data.
+    const labels = province.marinePoints.map((entry) => entry.point.coastLabelTr);
+    expect(new Set(labels).size).toBe(labels.length);
+    for (const label of labels) expect(label.trim().length).toBeGreaterThan(0);
+  });
+
+  it("keeps the two blocks' künye independent", () => {
+    // Each block prints its OWN künye. The Marmara point's wave fields carry no timestamps at
+    // all (`not_supported`), so a section-wide line would have to speak for a point that has
+    // nothing to say.
+    for (const entry of province.marinePoints) {
+      expect(buildMarineVintage(marineBlockValues(entry)).length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("single-point province fixture — the degraded province render", () => {
+  /**
+   * The other half of the province corpus. The two-point fixture proves independence; this
+   * one proves a SINGLE province block can carry every degraded state at once, which is what
+   * a reader actually meets when a provider is having a bad afternoon:
+   *
+   *   wind      → a real number and a drawn arrow
+   *   wave      → a real number, STALE, with the instant it stopped refreshing
+   *   wave dir  → `no_data` — covered here, nothing right now
+   *   sea temp  → `unavailable` — we cannot reach the source
+   *
+   * Together with the two-point fixture's permanent `not_supported`, the province surface's
+   * corpus covers all five renders without a single fact literal.
+   */
+  const province = singlePointFixture as MarineProvinceConditions;
+  const block = province.marinePoints[0];
+
+  it("carries exactly one block, so no sub-heading layer is opened", () => {
+    expect(province.marinePoints).toHaveLength(1);
+  });
+
+  it("holds a value, a stale value, a no_data and an unavailable in ONE block", () => {
+    expect(block).toBeDefined();
+    if (block === undefined) return;
+
+    const renders = new Set(
+      marineBlockValues(block).map((value) => {
+        const view = marineValueView(value);
+        return view.kind === "value" ? (view.stale ? "value:stale" : "value:fresh") : view.status;
+      }),
+    );
+
+    expect(renders).toEqual(new Set(["value:fresh", "value:stale", "noData", "unavailable"]));
+  });
+
+  it("still produces a künye — a degraded block does not lose its provenance", () => {
+    expect(block).toBeDefined();
+    if (block === undefined) return;
+
+    expect(oldestValidAt(marineBlockValues(block))).not.toBeNull();
+    expect(maxGridDistanceKm(marineBlockValues(block))).not.toBeNull();
+  });
+
+  it("never carries a value alongside a non-ok status, or a freshness without one", () => {
+    expect(block).toBeDefined();
+    if (block === undefined) return;
+
+    for (const value of marineBlockValues(block)) {
+      if (value.status === "ok") continue;
+      expect(value.value).toBeNull();
+      expect(value.freshness).toBeNull();
+    }
   });
 });

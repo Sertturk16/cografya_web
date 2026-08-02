@@ -2,6 +2,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { MarineLayer, MarineOverviewPoint, ProvinceListItem } from "@/lib/api/types";
+import { marinePointAnchorId } from "@/lib/marine/anchors";
 import { MODEL_INSTANT_FORMAT } from "@/lib/marine/model-run";
 import { marineBlockValues, maxGridDistanceKm, oldestValidAt } from "@/lib/marine/vintage";
 import { ValueCell } from "./value-cell";
@@ -11,8 +12,6 @@ interface BasinValuesTableProps {
   locale: Locale;
   /** The basin's own heading, read off its points' `coastLabel*` (never a web-side table). */
   basinLabel: string;
-  /** Stable id stem for the caption/heading association. */
-  idStem: string;
   /** The basin's value blocks, in the api's coastal-traverse order. */
   blocks: MarineOverviewPoint[];
   /** Catalogue rows by id — the source of every threshold and convention below. */
@@ -44,7 +43,6 @@ interface BasinValuesTableProps {
 export async function BasinValuesTable({
   locale,
   basinLabel,
-  idStem,
   blocks,
   layerById,
   provincesByPlate,
@@ -95,8 +93,11 @@ export async function BasinValuesTable({
             const validAt = oldestValidAt(rowValues);
             const gridDistance = maxGridDistanceKm(rowValues);
 
+            // The row id is what the 27 province marine sections link INTO (W2b), so it is
+            // derived from the shared anchor module rather than assembled here — see
+            // `lib/marine/anchors.ts` for why a template literal on each side is not enough.
             return (
-              <tr key={point.slugTr} id={`${idStem}-${point.slugTr}`}>
+              <tr key={point.slugTr} id={marinePointAnchorId(point)}>
                 <th scope="row" className={styles.thRow}>
                   {province ? (
                     // The anchor text is the point's own name ("Kocaeli Açıkları"), which

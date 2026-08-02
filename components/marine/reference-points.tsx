@@ -9,6 +9,7 @@ import type {
   ProvinceListItem,
 } from "@/lib/api/types";
 import { byPlateCode } from "@/lib/api/provinces";
+import { MARINE_POINTS_SECTION_ID, marineBasinAnchorId } from "@/lib/marine/anchors";
 import { basinLabel, groupPointsByBasin } from "@/lib/marine/basins";
 import { marinePublishableBlocks } from "@/lib/marine/overview";
 import { MARINE_VALUE_STATUS_KEY } from "@/lib/marine/value-state";
@@ -29,8 +30,14 @@ interface ReferencePointsProps {
   overview: MarineOverview | null;
 }
 
-/** The section's heading id, and the stem of each basin sub-heading's id. */
-const HEADING_ID = "deniz-reference-points";
+/**
+ * The section's heading id, and the stem of each basin sub-heading's id.
+ *
+ * Both come from `lib/marine/anchors.ts` rather than from a template literal here: since W2b
+ * the 27 province pages link INTO these ids, and two independently-written template strings
+ * would drift into a link that silently lands at the top of the page.
+ */
+const HEADING_ID = MARINE_POINTS_SECTION_ID;
 
 /**
  * THE VALUE BAND — the page's first section and, since W2a, its subject.
@@ -130,7 +137,7 @@ export async function ReferencePoints({
                 .filter((block): block is MarineOverviewPoint => block !== undefined);
               if (groupBlocks.length === 0) return null;
 
-              const headingId = `${HEADING_ID}-${group.basin}`;
+              const headingId = marineBasinAnchorId(group.basin);
 
               return (
                 <section
@@ -149,7 +156,6 @@ export async function ReferencePoints({
                   <BasinValuesTable
                     locale={locale}
                     basinLabel={label}
-                    idStem={headingId}
                     blocks={groupBlocks}
                     layerById={layerById}
                     provincesByPlate={provincesByPlate}
@@ -191,7 +197,7 @@ export async function ReferencePoints({
           {groups.map((group) => {
             const label = basinLabel(group, locale);
             if (label === null) return null;
-            const headingId = `${HEADING_ID}-${group.basin}`;
+            const headingId = marineBasinAnchorId(group.basin);
 
             return (
               <section key={group.basin} className={styles.basin} aria-labelledby={headingId}>

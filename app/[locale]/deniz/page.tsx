@@ -48,14 +48,16 @@ const MARINE_SURFACE: ContentSurface = "trNarrative";
  *   marine.status.noData                 → Marine.status.noData                 [born, W2a]
  *   marine.status.unavailable            → Marine.status.unavailable            [born, W2a]
  *   marine.freshness.stale               → Marine.freshness.stale               [born, W2a]
- *   marine.straits.lowConfidence         → Marine.straits.lowConfidence         [W2b]
+ *   marine.straits.lowConfidence         → Marine.straits.lowConfidence         [born, W2b]
  *   marine.series.sourceDiffersNotice    → Marine.series.sourceDiffersNotice    [W2c]
  *
  * A frozen key is born together with the thing it annotates, never before it: a string
  * nothing renders is a dead string someone will later translate, review and maintain for
- * nothing. W2a ships the value band, so the three value states are born with it. The straits
- * caution belongs to the province section and the series notice to the chart it explains.
- * Recorded here so "the frozen key is missing" reads as a schedule, not as an omission.
+ * nothing. W2a shipped the value band, so the three value states were born with it; W2b
+ * shipped the province section, so the straits caution was born with that. Only the series
+ * notice is still unborn — it explains a discrepancy between a CHART and a headline number,
+ * and W2c owns the chart. Recorded here so "the frozen key is missing" reads as a schedule,
+ * not as an omission.
  *
  * MEANING CORRECTION IN W2a (→ Atlas ruling A1, 2026-08-02). W1a rendered
  * `status.notSupported` as "Sıradaki aşama" in the catalogue's status column, because that
