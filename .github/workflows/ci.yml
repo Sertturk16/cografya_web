@@ -49,10 +49,17 @@ jobs:
       # place markers in the same coordinate space as the 81 outlines. A hand-edit there
       # silently offsets every marker and cannot be reproduced from the source GeoJSON, so
       # the regenerate-and-diff check that the code comments promise runs here. Pure node,
-      # no network, ~1s. NOTE: `codegen:check` and `generate:world-map:check` are the repo's
-      # other two artifact gates and are still unwired — a separate CI-tooling change.
+      # no network, ~1s. NOTE: `codegen:check` is the repo's remaining unwired artifact
+      # gate — a separate CI-tooling change.
       - name: Map artifact drift
         run: pnpm generate:map:check
+
+      # Same contract for the world map. It carries an extra guarantee the Türkiye artifact
+      # does not yet have: the generator THROWS if two countries disagree about a vertex on
+      # their shared border (`scripts/lib/map-topology.mjs`), so this step is also the
+      # regression gate on border slivers — not just on hand-edits. Pure node, no network.
+      - name: World map artifact drift
+        run: pnpm generate:world-map:check
 
   test:
     name: Unit Tests

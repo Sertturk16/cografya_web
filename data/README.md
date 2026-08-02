@@ -121,11 +121,85 @@ flattened into hairlines are re-simplified at the global 0.15 so they render as 
 than as coastal "hair". Both overrides are keyed per ISO and default to
 "no override", so no other country path is touched. Framing it extends the
 viewBox south (`0 0 1000 447` → `0 0 1000 521`); the projected X extent and the northern edge
-are unchanged, so **all 239 pre-existing country paths stayed byte-identical** (the artifact
-diff is +1 shape line and the viewBox constant, nothing else). Re-run only if the snapshot is
+are unchanged. Re-run only if the snapshot is
 refreshed (update "Fetched" above) or the projection / simplification parameters change. Both the
 snapshot **and** the generated artifact are committed, so CI and runtime never invoke the
-generator.
+generator. `pnpm generate:world-map:check` re-runs the generator and fails on any diff; it is
+wired into CI, so a hand-edit of the artifact cannot ship.
+
+### Topological simplification + relative encoding (2026-08-02)
+
+Simplification is **topological**, via the shared `scripts/lib/map-topology.mjs`. Douglas-Peucker
+used to run once per country, so a border shared by two neighbours was decided twice and they
+routinely kept different subsets of the same source vertices — measured on this snapshot,
+**1,198 of the 19,258 shared vertices (6.2%) were decided asymmetrically**, and every one of
+them is a sliver of sea showing through a land border. The generator now cuts the ring set into
+shared arcs, simplifies each arc **once**, and reassembles; the epsilon of a shared arc is the
+finest of its owners', so a coarse backdrop override can never degrade a neighbour. The
+generator re-measures symmetry on its own output and **throws if it is not 0**.
+
+Emission is **relative** (`scripts/lib/path-encode.mjs`): one absolute `M` per shape, then an
+`l` run of deltas. The cursor is tracked in the same 0.1-unit quantised space the SVG parser
+reconstructs, so rounding error is bounded per-vertex instead of accumulating along a coastline.
+The encoding step is lossless at the 0.1 quantum — verified by round-tripping the emitted paths
+back to absolute (maximum deviation 0) and pinned by a synthetic-input unit test
+(`lib/map/path-encode.test.ts`).
+
+The simplification step, by contrast, **does re-decide outlines** — arcs are anchored at
+junctions instead of at each ring's own start vertex, so the surviving vertex set differs from
+the old per-ring pass. Two guards bound what that can cost: every junction-free loop force-keeps
+its source ring's start vertex (the anchor the old pass had), and an **area-preservation guard**
+re-simplifies any loop whose enclosed area would fall below 80% of the true ring's
+(`LOOP_AREA_RATIO`) — DP measures perpendicular distance, which for near-tolerance rings says
+nothing about area, and small islands measurably collapsed without it (Bahrain to a triangle at
+−45% painted area). Measured against the previous artifact, the smallest listed countries now
+sit between −6.8% (Brunei, a shared-border redistribution) and +139% (Malta — the OLD pass was
+the one under-painting it; the guard bounds loss against the TRUE ring, so several small
+countries are now closer to the source than before). An emitted ring must also keep at least
+`MIN_VISIBLE_RING_AREA` (0.01 u² ≈ 1.4 px² at max zoom): a ring below it is invisible at any
+zoom, and this bar — not an accident of collapse — is now what removes the zero-area
+degenerate-subpath class.
+
+Combined, at the unchanged 0.15 tolerance: **326.3 KiB → 191.5 KiB raw (−41%), 81.4 → 54.2 KiB
+brotli (−33%)**. Relaxing the tolerance further was measured and **rejected**: 0.25 collapses
+Malta, Saint Kitts, Turks and Caicos and the US/British Virgin Islands from real outlines to
+fallback markers, and the artifact is already far inside budget. That ruling is now enforced in
+code: `MUST_STAY_POLYGON` (SG, MT, BH, CY, QN, PS, XK) makes the generator **throw** if any of
+them ever demotes to a marker, so a future retune cannot pass CI on a clean drift diff alone.
+
+### Enclave holes
+
+Interior rings are **drawn as holes** (they used to be dropped). All 12 in this snapshot are
+enclaves, each exactly coincident with the enclosed state's own outline: Lesotho in South
+Africa, San Marino and the Vatican in Italy, Uzbek/Tajik exclaves in Kyrgyzstan, Malawi's two
+in Mozambique, and the Armenia/Azerbaijan/UAE/Uzbekistan pairs. Dropping them made the
+surrounding country paint over the enclave whenever it drew later in ISO order — **Lesotho was
+invisible and unclickable on the live map** (its `<a>` was in the HTML, so this was a rendering
+defect, not an SEO one). Holes are emitted as extra subpaths and the component must paint with
+`fill-rule="evenodd"`, which makes them holes without trusting the source's ring winding.
+DEC 2026-07-26's "the world map must not have holes" is about **missing landmass**; an enclave
+hole is the opposite — the enclave draws its own shape into it.
+
+**11 of the 12 holes reach the artifact.** A hole ring gets a preservation floor in the
+topology pass: the coastline epsilon is the wrong tolerance for a ring whose whole job is to
+make room for another state, so a hole that would collapse below 3 vertices is re-simplified
+finer, together with its coincident enclave outline (they share the arc, so the pair re-emerges
+in lockstep — Artsvashen in Azerbaijan and Barak in Uzbekistan were still being painted over
+without this, the Lesotho failure mode at ~2–3 px scale). The single residue is **Italy's
+Vatican hole (0.001 u²)**: it is below `MIN_VISIBLE_RING_AREA` and below the 0.1-unit path
+quantisation itself, and the Vatican is a marker-fallback micro-state whose diamond draws over
+Italy at that exact spot — nothing is visually or navigationally lost. The hole census (11) is
+pinned by `lib/map/world-shapes.test.ts`.
+
+Two dispersed micro-archipelagos (**Maldives, Wallis and Futuna**) render as marker diamonds by
+rule (`MARKER_MIN_AREA`): their total true painted area (0.048 / 0.097 u²) is a fraction of
+what the 2 u² marker itself paints, so "polygons" would mean invisible specks — which is what
+they were: both previously emitted zero-area degenerate subpaths, present in the artifact,
+invisible on screen. The per-axis `MARKER_MIN_SPAN` bbox test cannot see them because the
+_chain_ spans several units even though every island in it does not. The **British Virgin
+Islands** (0.102 u²) sit just above the bar and render their three ≥ 0.01 u² islands as real,
+area-true polygons. A marker is insurance, never geometry: a join key that has any real polygon
+(e.g. Australia and its sub-visible Coral Sea Islands territory feature) never receives one.
 
 > **Snapshot rebuild (one-off, not part of the committed pipeline):** the `{iso, name}` snapshot
 > itself is produced from the raw 168-property Natural Earth download by the ISO-derivation +
