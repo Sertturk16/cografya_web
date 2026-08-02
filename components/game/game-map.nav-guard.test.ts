@@ -55,8 +55,32 @@ describe("the game map component", () => {
     expect(MAP_SOURCE).not.toMatch(/<Link[\s>]/);
   });
 
-  it("renders no href of any kind", () => {
-    expect(MAP_SOURCE).not.toMatch(/\bhref\b/);
+  /**
+   * WHY THIS IS NARROWER THAN "no href of any kind", AND WHY IT IS NOT WEAKER.
+   *
+   * The rule used to be a blanket ban on the token `href`. That stopped being expressible
+   * when the map went to layered `<use>` twins: `<use href="#game-map-42">` is a
+   * same-document reference to this file's OWN `<defs>` geometry — it resolves a shape, it
+   * does not go anywhere, and it is the only way to draw one outline in three layers without
+   * shipping the path data three times.
+   *
+   * So the guard now says: every `href` in this file MUST open a same-document fragment, and
+   * there must be no `href` in any other syntactic position. A destination of any kind —
+   * `href="/turkiye/konya"`, `href={someUrl}`, a `getPathname()` result — fails. Navigation
+   * would also have to reach an `<a>` or a `<Link>` to mean anything, and both are still
+   * banned outright by the test above, so the property this file exists to protect is
+   * unchanged: a click on this surface can answer a question and nothing else.
+   */
+  it("uses href ONLY as a same-document <use> geometry reference", () => {
+    const fragmentHrefs = [...MAP_SOURCE.matchAll(/\bhref\b\s*=\s*(?:\{`|["'])(.?)/g)];
+    // Anchor: a rename that removed every `<use>` would otherwise satisfy the loop vacuously.
+    expect(fragmentHrefs.length).toBeGreaterThan(0);
+    for (const match of fragmentHrefs) {
+      expect(match[1]).toBe("#");
+    }
+    // Nothing named `href` anywhere else — this is what catches `href={destination}`, which
+    // the loop above would never see.
+    expect(MAP_SOURCE.match(/\bhref\b/g)).toHaveLength(fragmentHrefs.length);
     expect(MAP_SOURCE).not.toMatch(/xlink:href/);
   });
 

@@ -22,9 +22,22 @@ import { REGION_KEYS } from "@/lib/game/region-slug";
  *
  * It asserts nothing about which colour or how many pixels — those are the owner's call and
  * the rendered samples' job. What it pins is structural: that no region is missing a rule,
- * that each tint rule actually declares a fill and declares its OWN region's token, that
- * both mate rules carry the `:not(:focus-visible)` guard the focus step depends on, and
- * that no rule names a region the api contract does not have.
+ * that each tint rule actually declares a fill and declares its OWN region's token, that the
+ * hover and focus rules probe the HIT layer and light that region's own silhouette, and that
+ * no rule names a region the api contract does not have.
+ *
+ * WHAT CHANGED WITH THE LAYERED MAP (owner rejection 2026-08-02), because two assertions here
+ * moved and a reader deserves to know they were not quietly dropped:
+ *  · The hover/focus SUBJECT is no longer the region's member provinces, it is the region's
+ *    silhouette group (`.regionOutline`). Outlining the members also thickened the region's
+ *    INTERNAL boundaries, which is what the owner rejected.
+ *  · `:not(:focus-visible)` on the mate subjects is GONE, and the assertion that pinned it
+ *    with it. It existed because those (0,11,0) selectors set `stroke-width` on a province and
+ *    beat the (0,6,0) focus step (→ CR-R2-1). These rules now set `display` on a group and
+ *    touch no province at all, so there is nothing left to win that cascade. The test below
+ *    pins the replacement invariant instead: the probe must read the HIT layer (`.hitEdge`),
+ *    because the base layer is `pointer-events: none` and can never match `:hover`.
+ *  · `:not([data-state])` moved from the subject to the probe and is still asserted.
  */
 
 const CSS = readFileSync(fileURLToPath(new URL("./game-map.module.css", import.meta.url)), "utf8")
@@ -59,24 +72,33 @@ describe("game-map.module.css region rules", () => {
     }
   });
 
-  it("outlines every region on pointer hover, without flattening the focused shape", () => {
+  it("shows every region's own silhouette on pointer hover", () => {
     for (const region of REGION_KEYS) {
-      // `:not(:focus-visible)` on the mate subject is load-bearing, not cosmetic: these
-      // selectors compute to (0,11,0) against the focus step's (0,6,0), so dropping it makes
-      // keyboard focus vanish whenever the pointer rests inside the focused region
-      // (→ PR #38 review round 2, CR-R2-1 — a real regression, caught in a browser).
+      // The probe reads `.hitEdge`, not `.province`: the painted base layer is
+      // `pointer-events: none`, so a `:hover` written against it could never match and the
+      // whole bölge-mode hover state would be silently dead.
       expect(CSS).toContain(
-        `:has(.province[data-region="${region}"]:hover) .province[data-region="${region}"]:not([data-state]):not(:focus-visible)`,
+        `:has(.hitEdge[data-region="${region}"]:hover:not([data-state])) .regionOutline[data-region="${region}"]`,
       );
     }
   });
 
-  it("outlines every region on keyboard focus, without flattening the focused shape", () => {
+  it("shows every region's own silhouette on keyboard focus", () => {
     for (const region of REGION_KEYS) {
       expect(CSS).toContain(
-        `:has(.province[data-region="${region}"]:focus-visible) .province[data-region="${region}"]:not([data-state]):not(:focus-visible)`,
+        `:has(.hitEdge[data-region="${region}"]:focus-visible:not([data-state])) .regionOutline[data-region="${region}"]`,
       );
     }
+  });
+
+  it("hides the silhouettes until one of those rules shows it", () => {
+    // The pair the seven rules above depend on: without the default `display: none` every
+    // region would be outlined at all times, and without `display` as the shown value the
+    // rules would set a property nothing reads. `display` specifically, not visibility or
+    // opacity — a `display: none` subtree evaluates no filter, which is what keeps six
+    // unused silhouettes free.
+    expect(CSS).toMatch(/\.regionOutline \{[^}]*display: none;/);
+    expect(CSS).toContain(`.regionOutline[data-region="GUNEYDOGU_ANADOLU"] { display: block; }`);
   });
 
   it("names no region the api contract does not have", () => {

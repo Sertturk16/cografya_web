@@ -48,7 +48,8 @@ interface StatSlot {
 type FigureRenderOptions = Pick<FigureTextOptions, "noneText" | "unit">;
 
 /**
- * REQUIRED on every `<path>` painting a `COUNTRY_SHAPES` `d`. The generator emits an enclave's
+ * REQUIRED on the `<defs>` geometry — which, since the three-layer restructure, is the ONE
+ * place a `COUNTRY_SHAPES` `d` appears. The generator emits an enclave's
  * interior ring as an extra subpath — the hole in South Africa is Lesotho, the holes in
  * Kyrgyzstan are Uzbek and Tajik exclaves — and only the even-odd rule turns those subpaths
  * into actual holes without trusting the source's ring winding. Under SVG's default `nonzero`
@@ -57,8 +58,23 @@ type FigureRenderOptions = Pick<FigureTextOptions, "noneText" | "unit">;
  * on the live map, its `<a>` present in the HTML but unhittable. A hole is also not painted,
  * so `pointer-events: visiblePainted` lets the click through to the enclave underneath — the
  * fill rule is what makes the link work, not just what makes it look right.
+ *
+ * IT MUST STAY ON THE GEOMETRY, not move onto the `<use>` twins. `fill-rule` IS an inherited
+ * property, so either place would paint correctly — but the hit layer sets
+ * `pointer-events: all`, whose "interior" is defined by the SHAPE's own fill rule. Keeping
+ * the single declaration on the single copy of the geometry is what guarantees the two twins
+ * can never disagree about where Lesotho's hole is, which is the difference between a click
+ * reaching Lesotho and a click being swallowed by South Africa's hit twin.
  */
 const FILL_RULE = "evenodd" as const;
+
+/**
+ * `id` prefix of this map's shared `<defs>` geometry (three-layer architecture — see the
+ * component docblock and `turkey-map-section.tsx`, which carries the full measured note).
+ * Prefixed per SURFACE so two maps could share a document without their fragment ids
+ * colliding: a `<use href>` resolves against the whole document, not its own `<svg>`.
+ */
+const SHAPE_ID_PREFIX = "world-map-";
 
 /**
  * Interactive full-world map (server component) — the `/dunya` hub's primary content,
@@ -98,6 +114,17 @@ const FILL_RULE = "evenodd" as const;
  * shows. `MapZoomPan`'s focus-follows-view now covers them too (it keys off `[tabindex]`),
  * which is the behaviour a focusable shape should have — verified against a zoomed view. A seeded country ALWAYS wins over a territory entry, so the day the api publishes a
  * page for one of these shapes it becomes a normal link and the card disappears on its own.
+ *
+ * THREE PAINT LAYERS, one copy of the geometry — the same architecture as the Türkiye map,
+ * whose docblock carries the full measured note. `<defs>` holds 240 classless `<path id>`;
+ * `[data-map-layer="base"]` paints all 240 exactly as before; `[data-map-layer="hit"]` holds
+ * the `<a>` links, the 43 territory `<g>` and a fill-less `<use>` that carries ONLY the
+ * hover/focus line, above every fill and every resting border. That is what makes a hovered
+ * country's border the same weight all the way round instead of half-eaten by the countries
+ * painted after it in ISO order. Unseeded backdrop land has no hit twin at all. Here the
+ * change also SHRINKS the gzipped page by ~2 KB (240 `<use href>` compress far better than
+ * 240 inline `<path d>`), and cuts per-pointer-move work 1.52ms → 1.13ms.
+ * SEO surface unchanged: the same crawlable `<a>` set, the same hrefs, the same order.
  * Every territory now has card content in BOTH locales, so all 43 open a card on both maps:
  * the label is required in each locale and `territories.test.ts` pins that (the earlier
  * "nothing publishable ⇒ inert backdrop" fallback existed only for Siachen on the label-less
@@ -159,195 +186,228 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
 
         <svg className={styles.svg} viewBox={WORLD_MAP_VIEWBOX} aria-labelledby={titleId}>
           <title id={titleId}>{tMap("mapTitle")}</title>
-          {COUNTRY_SHAPES.map((shape) => {
-            // Türkiye first, BEFORE the map-summary lookup: if the api ever seeds TR into
-            // the summary, this map must still never manufacture a `/dunya/turkiye` link to
-            // a page the IA says does not exist (that would be a soft-404 waiting to happen,
-            // SEO §6 #6). The hub link is the fixed answer for this shape.
-            if (shape.iso === TURKIYE_ISO) {
-              const turkiyeHref = getPathname({ locale, href: "/turkiye" });
+
+          {/* THE GEOMETRY, ONCE — classless, so a `<use>` clone takes its look from the
+              `<use>` that references it. `vector-effect` and `fill-rule` are the two
+              exceptions that must be here: neither can reach a clone from the `<use>`
+              element (the first is not an inherited property; the second defines the shape's
+              own interior, which is what `pointer-events: all` hit-tests against). */}
+          <defs>
+            {COUNTRY_SHAPES.map((shape) => (
+              <path
+                key={shape.iso}
+                id={`${SHAPE_ID_PREFIX}${shape.iso}`}
+                d={shape.d}
+                fillRule={FILL_RULE}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+          </defs>
+
+          {/* LAYER 1 — the painted world, all 240 shapes in ISO order, exactly as before:
+              land tone for everything, `.province` where a shape is interactive. Decorative
+              (the accessible names live in the hit layer) and inert to the pointer. */}
+          <g data-map-layer="base" className={styles.mapBase} aria-hidden="true">
+            {COUNTRY_SHAPES.map((shape) => (
+              <use
+                key={shape.iso}
+                href={`#${SHAPE_ID_PREFIX}${shape.iso}`}
+                className={
+                  shape.iso === TURKIYE_ISO || byIso.has(shape.iso)
+                    ? styles.province
+                    : styles.landInert
+                }
+              />
+            ))}
+          </g>
+
+          {/* LAYER 2 — links, territory groups, tab stops, hover-card anchors and the
+              hover/focus line. A shape that is none of those (unseeded land with no
+              territory entry) has no twin up here at all. */}
+          <g data-map-layer="hit">
+            {COUNTRY_SHAPES.map((shape) => {
+              // Türkiye first, BEFORE the map-summary lookup: if the api ever seeds TR into
+              // the summary, this map must still never manufacture a `/dunya/turkiye` link to
+              // a page the IA says does not exist (that would be a soft-404 waiting to happen,
+              // SEO §6 #6). The hub link is the fixed answer for this shape.
+              if (shape.iso === TURKIYE_ISO) {
+                const turkiyeHref = getPathname({ locale, href: "/turkiye" });
+                return (
+                  <a
+                    key={shape.iso}
+                    className={styles.provinceLink}
+                    href={turkiyeHref}
+                    aria-label={tMap("turkiyeLinkLabel")}
+                    data-shape={TURKIYE_ISO}
+                    data-name={tMap("turkiyeName")}
+                    data-subtitle={tMap("turkiyeCardSubtitle")}
+                    data-badge={TURKIYE_ISO}
+                    data-href={turkiyeHref}
+                  >
+                    <use href={`#${SHAPE_ID_PREFIX}${shape.iso}`} className={styles.hitEdge} />
+                  </a>
+                );
+              }
+              const country = byIso.get(shape.iso);
+              if (!country) {
+                const territory = territoryFor(shape.iso);
+                if (territory) {
+                  // A known non-country place: informational hover card, NO link. Checked
+                  // AFTER the map summary on purpose — if the api ever publishes a page for
+                  // this shape, the real link wins and this branch stops running for it.
+                  const stats: StatSlot[] = [];
+                  // Wrapped, not passed by reference: `format.number` is a method on the
+                  // next-intl formatter and must keep its receiver.
+                  const formatNumber = (value: number) => format.number(value);
+                  const noPopulation = tMap("territoryNoPopulation");
+                  // Printed vs spoken rendering of one figure. They are identical except for
+                  // an `approx` figure, where the printed "≈" becomes a spoken word — so the
+                  // second call is what keeps the accessible name from pinning a rounded
+                  // number (see StatSlot.ariaValue).
+                  const render = (figure: TerritoryFigure, opts: FigureRenderOptions) => {
+                    const value = figureText(figure, { formatNumber, ...opts });
+                    if (value === undefined) return undefined;
+                    const spoken = figureText(figure, {
+                      formatNumber,
+                      approxWord: tMap("territoryApproximate"),
+                      ...opts,
+                    });
+                    return { value, ariaValue: spoken ?? value };
+                  };
+                  const population = render(territory.population, { noneText: noPopulation });
+                  if (population) {
+                    stats.push({
+                      label: tDetail("population"),
+                      ...population,
+                      standalone: territory.population.kind === "none",
+                    });
+                  }
+                  // No `noneText`: "there is no area" is not a fact an area row can state.
+                  const area = render(territory.areaKm2, { unit: tDetail("areaUnit") });
+                  if (area) stats.push({ label: tDetail("area"), ...area });
+                  const centre = centreFor(territory, locale);
+                  if (centre) {
+                    stats.push({ label: tMap("territoryCentre"), value: centre });
+                  }
+                  const territoryName = locale === "en" ? territory.nameEn : territory.nameTr;
+                  // Both locales, picked the same way as the name above. The English labels are
+                  // the owner-approved column of the same table as the Turkish ones (→ DEC
+                  // 2026-08-01p) — including the English form of the six sovereignty-locked
+                  // ones — so this slot is filled on `/en/dunya` exactly as the continent name
+                  // fills it on an English country card. It is never a fallback to `labelTr`:
+                  // no Turkish reaches the English map.
+                  const label = locale === "en" ? territory.labelEn : territory.labelTr;
+                  // The card is pointer-only (aria-hidden), so this name is the ONLY way AT
+                  // reaches the content. Same composition as a country link. Each part has a
+                  // trailing full stop normalised away before the parts are joined with one,
+                  // so no part can produce a doubled stop. Stats speak `ariaValue`, which
+                  // differs from the printed value exactly where a glyph would go unspoken.
+                  const ariaLabel = `${[
+                    territoryName,
+                    label,
+                    ...stats.map((s) =>
+                      s.standalone
+                        ? (s.ariaValue ?? s.value)
+                        : `${s.label} ${s.ariaValue ?? s.value}`,
+                    ),
+                  ]
+                    .filter((part): part is string => part !== undefined)
+                    .map((part) => part.replace(/\.$/, ""))
+                    .join(". ")}.`;
+                  return (
+                    <g
+                      key={shape.iso}
+                      className={styles.territory}
+                      role="img"
+                      // Focusable, not actionable: the shape has no destination, so it stays
+                      // role="img" (a labelled graphic) rather than pretending to be a button
+                      // whose activation does nothing. Tab reaches it, the card opens on
+                      // focus, Escape dismisses it (→ DEC 2026-08-01g item 4).
+                      tabIndex={0}
+                      aria-label={ariaLabel}
+                      data-shape={shape.iso}
+                      data-name={territoryName}
+                      data-subtitle={label}
+                      data-badge={territory.badge}
+                      data-stat1-label={stats[0]?.label}
+                      data-stat1-value={stats[0]?.value}
+                      data-stat2-label={stats[1]?.label}
+                      data-stat2-value={stats[1]?.value}
+                      data-stat3-label={stats[2]?.label}
+                      data-stat3-value={stats[2]?.value}
+                    >
+                      <use href={`#${SHAPE_ID_PREFIX}${shape.iso}`} className={styles.hitEdge} />
+                    </g>
+                  );
+                }
+                // Not-yet-seeded country with no territory entry either: geographic backdrop
+                // only — no link, no card, no tab stop, no hover line, and nothing for AT (it
+                // is not actionable). It is already DRAWN by the base layer in the same land
+                // tone as a clickable country (owner ruling 2026-07-26 — never the il map's
+                // "not published yet" tint, which was the map background's own top gradient
+                // stop and rendered Greenland invisible, /dunya audit 2026-07-26). So the hit
+                // layer simply has no twin for it.
+                return null;
+              }
+              const continent = tContinents(country.continent);
+              // Locale-aware display name (country DTOs carry both nameTr and nameEn) — used
+              // for BOTH the visible card name and the AT label, so the EN map never shows a
+              // Turkish name next to the already-localized continent (i18n symmetry).
+              const name = locale === "en" ? country.nameEn : country.nameTr;
+              const href = getPathname({
+                locale,
+                href: {
+                  pathname: "/dunya/[slug]",
+                  params: { slug: locale === "en" ? country.slugEn : country.slugTr },
+                },
+              });
+              // Stat-chip rows, formatted server-side; a null stat omits its row (honest —
+              // never a placeholder dash). Labels reuse the CountryDetail namespace so the
+              // card and the detail page read identically. populationYear is null at world
+              // scale (owner ruling), so the population label carries no year.
+              const popLabel = country.population !== null ? tDetail("population") : undefined;
+              const popValue =
+                country.population !== null ? format.number(country.population) : undefined;
+              const areaValue =
+                country.areaKm2 !== null
+                  ? `${format.number(country.areaKm2)} ${tDetail("areaUnit")}`
+                  : undefined;
+              const areaLabel = areaValue ? tDetail("area") : undefined;
+              // neighborCount is a required non-null number (0 for a hypothetical island —
+              // a correct fact, shown as such), so it always fills the third stat slot.
+              const neighborLabel = tDetail("neighborCount");
+              const neighborValue = format.number(country.neighborCount);
+              // Accessible-name parity: the hover card is pointer-only (aria-hidden), so
+              // keyboard/AT users reach the country only through this <a>'s name. Fold the
+              // same stat rows into the label — only the non-null ones.
+              const statPhrases: string[] = [];
+              if (popLabel && popValue) statPhrases.push(`${popLabel} ${popValue}`);
+              if (areaLabel && areaValue) statPhrases.push(`${areaLabel} ${areaValue}`);
+              statPhrases.push(`${neighborLabel} ${neighborValue}`);
+              const ariaLabel = `${name}, ${continent}. ${statPhrases.join(". ")}.`;
               return (
                 <a
                   key={shape.iso}
                   className={styles.provinceLink}
-                  href={turkiyeHref}
-                  aria-label={tMap("turkiyeLinkLabel")}
-                  data-shape={TURKIYE_ISO}
-                  data-name={tMap("turkiyeName")}
-                  data-subtitle={tMap("turkiyeCardSubtitle")}
-                  data-badge={TURKIYE_ISO}
-                  data-href={turkiyeHref}
+                  href={href}
+                  aria-label={ariaLabel}
+                  data-shape={country.isoCode}
+                  data-name={name}
+                  data-subtitle={continent}
+                  data-badge={country.isoCode}
+                  data-href={href}
+                  data-stat1-label={popLabel}
+                  data-stat1-value={popValue}
+                  data-stat2-label={areaLabel}
+                  data-stat2-value={areaValue}
+                  data-stat3-label={neighborLabel}
+                  data-stat3-value={neighborValue}
                 >
-                  <path className={styles.province} d={shape.d} fillRule={FILL_RULE} />
+                  <use href={`#${SHAPE_ID_PREFIX}${shape.iso}`} className={styles.hitEdge} />
                 </a>
               );
-            }
-            const country = byIso.get(shape.iso);
-            if (!country) {
-              const territory = territoryFor(shape.iso);
-              if (territory) {
-                // A known non-country place: informational hover card, NO link. Checked
-                // AFTER the map summary on purpose — if the api ever publishes a page for
-                // this shape, the real link wins and this branch stops running for it.
-                const stats: StatSlot[] = [];
-                // Wrapped, not passed by reference: `format.number` is a method on the
-                // next-intl formatter and must keep its receiver.
-                const formatNumber = (value: number) => format.number(value);
-                const noPopulation = tMap("territoryNoPopulation");
-                // Printed vs spoken rendering of one figure. They are identical except for
-                // an `approx` figure, where the printed "≈" becomes a spoken word — so the
-                // second call is what keeps the accessible name from pinning a rounded
-                // number (see StatSlot.ariaValue).
-                const render = (figure: TerritoryFigure, opts: FigureRenderOptions) => {
-                  const value = figureText(figure, { formatNumber, ...opts });
-                  if (value === undefined) return undefined;
-                  const spoken = figureText(figure, {
-                    formatNumber,
-                    approxWord: tMap("territoryApproximate"),
-                    ...opts,
-                  });
-                  return { value, ariaValue: spoken ?? value };
-                };
-                const population = render(territory.population, { noneText: noPopulation });
-                if (population) {
-                  stats.push({
-                    label: tDetail("population"),
-                    ...population,
-                    standalone: territory.population.kind === "none",
-                  });
-                }
-                // No `noneText`: "there is no area" is not a fact an area row can state.
-                const area = render(territory.areaKm2, { unit: tDetail("areaUnit") });
-                if (area) stats.push({ label: tDetail("area"), ...area });
-                const centre = centreFor(territory, locale);
-                if (centre) {
-                  stats.push({ label: tMap("territoryCentre"), value: centre });
-                }
-                const territoryName = locale === "en" ? territory.nameEn : territory.nameTr;
-                // Both locales, picked the same way as the name above. The English labels are
-                // the owner-approved column of the same table as the Turkish ones (→ DEC
-                // 2026-08-01p) — including the English form of the six sovereignty-locked
-                // ones — so this slot is filled on `/en/dunya` exactly as the continent name
-                // fills it on an English country card. It is never a fallback to `labelTr`:
-                // no Turkish reaches the English map.
-                const label = locale === "en" ? territory.labelEn : territory.labelTr;
-                // The card is pointer-only (aria-hidden), so this name is the ONLY way AT
-                // reaches the content. Same composition as a country link. Each part has a
-                // trailing full stop normalised away before the parts are joined with one,
-                // so no part can produce a doubled stop. Stats speak `ariaValue`, which
-                // differs from the printed value exactly where a glyph would go unspoken.
-                const ariaLabel = `${[
-                  territoryName,
-                  label,
-                  ...stats.map((s) =>
-                    s.standalone
-                      ? (s.ariaValue ?? s.value)
-                      : `${s.label} ${s.ariaValue ?? s.value}`,
-                  ),
-                ]
-                  .filter((part): part is string => part !== undefined)
-                  .map((part) => part.replace(/\.$/, ""))
-                  .join(". ")}.`;
-                return (
-                  <g
-                    key={shape.iso}
-                    className={styles.territory}
-                    role="img"
-                    // Focusable, not actionable: the shape has no destination, so it stays
-                    // role="img" (a labelled graphic) rather than pretending to be a button
-                    // whose activation does nothing. Tab reaches it, the card opens on
-                    // focus, Escape dismisses it (→ DEC 2026-08-01g item 4).
-                    tabIndex={0}
-                    aria-label={ariaLabel}
-                    data-shape={shape.iso}
-                    data-name={territoryName}
-                    data-subtitle={label}
-                    data-badge={territory.badge}
-                    data-stat1-label={stats[0]?.label}
-                    data-stat1-value={stats[0]?.value}
-                    data-stat2-label={stats[1]?.label}
-                    data-stat2-value={stats[1]?.value}
-                    data-stat3-label={stats[2]?.label}
-                    data-stat3-value={stats[2]?.value}
-                  >
-                    <path className={styles.landInert} d={shape.d} fillRule={FILL_RULE} />
-                  </g>
-                );
-              }
-              // Not-yet-seeded country with no territory entry either: geographic backdrop
-              // only — no link, no card, hidden from AT (it is not actionable). It IS land,
-              // so .landInert paints it in the SAME land tone as a clickable country (owner
-              // ruling 2026-07-26) — never the il map's "not published yet" tint, which was
-              // the map background's own top gradient stop and rendered Greenland invisible
-              // (/dunya audit 2026-07-26).
-              return (
-                <path
-                  key={shape.iso}
-                  className={styles.landInert}
-                  d={shape.d}
-                  fillRule={FILL_RULE}
-                  aria-hidden="true"
-                />
-              );
-            }
-            const continent = tContinents(country.continent);
-            // Locale-aware display name (country DTOs carry both nameTr and nameEn) — used
-            // for BOTH the visible card name and the AT label, so the EN map never shows a
-            // Turkish name next to the already-localized continent (i18n symmetry).
-            const name = locale === "en" ? country.nameEn : country.nameTr;
-            const href = getPathname({
-              locale,
-              href: {
-                pathname: "/dunya/[slug]",
-                params: { slug: locale === "en" ? country.slugEn : country.slugTr },
-              },
-            });
-            // Stat-chip rows, formatted server-side; a null stat omits its row (honest —
-            // never a placeholder dash). Labels reuse the CountryDetail namespace so the
-            // card and the detail page read identically. populationYear is null at world
-            // scale (owner ruling), so the population label carries no year.
-            const popLabel = country.population !== null ? tDetail("population") : undefined;
-            const popValue =
-              country.population !== null ? format.number(country.population) : undefined;
-            const areaValue =
-              country.areaKm2 !== null
-                ? `${format.number(country.areaKm2)} ${tDetail("areaUnit")}`
-                : undefined;
-            const areaLabel = areaValue ? tDetail("area") : undefined;
-            // neighborCount is a required non-null number (0 for a hypothetical island —
-            // a correct fact, shown as such), so it always fills the third stat slot.
-            const neighborLabel = tDetail("neighborCount");
-            const neighborValue = format.number(country.neighborCount);
-            // Accessible-name parity: the hover card is pointer-only (aria-hidden), so
-            // keyboard/AT users reach the country only through this <a>'s name. Fold the
-            // same stat rows into the label — only the non-null ones.
-            const statPhrases: string[] = [];
-            if (popLabel && popValue) statPhrases.push(`${popLabel} ${popValue}`);
-            if (areaLabel && areaValue) statPhrases.push(`${areaLabel} ${areaValue}`);
-            statPhrases.push(`${neighborLabel} ${neighborValue}`);
-            const ariaLabel = `${name}, ${continent}. ${statPhrases.join(". ")}.`;
-            return (
-              <a
-                key={shape.iso}
-                className={styles.provinceLink}
-                href={href}
-                aria-label={ariaLabel}
-                data-shape={country.isoCode}
-                data-name={name}
-                data-subtitle={continent}
-                data-badge={country.isoCode}
-                data-href={href}
-                data-stat1-label={popLabel}
-                data-stat1-value={popValue}
-                data-stat2-label={areaLabel}
-                data-stat2-value={areaValue}
-                data-stat3-label={neighborLabel}
-                data-stat3-value={neighborValue}
-              >
-                <path className={styles.province} d={shape.d} fillRule={FILL_RULE} />
-              </a>
-            );
-          })}
+            })}
+          </g>
         </svg>
 
         <MapHoverCard />

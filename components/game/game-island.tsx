@@ -76,6 +76,31 @@ const readActionSlot = (): HTMLElement | null => {
 /** There is no server render of this island (`ssr: false`), so there is nothing to read. */
 const noActionSlot = () => null;
 
+/**
+ * ---- THE TWO SHAPE QUERIES, AND WHY THEY ARE DIFFERENT -----------------------------------
+ *
+ * Since the map went to layered `<use>` twins (`game-map.tsx`), a single plaka kodu is
+ * carried by TWO elements: the painted one in the base layer and the invisible hit twin above
+ * it. An unscoped `svg.querySelectorAll("[data-plate]")` therefore returns 162 elements where
+ * it used to return 81, and this island has two loops that each need a DIFFERENT half of that
+ * — so both are scoped explicitly, and `game-map.layers.test.ts` pins both.
+ *
+ * HIT_SHAPES — the control surface. `role="button"`, `tabindex` and `aria-label` belong to
+ * exactly ONE element per province: putting them on both twins would double the tab order
+ * (162 stops) and announce every province twice. The hit twin is the right one, because it is
+ * the element that actually receives the click and the key event.
+ */
+const HIT_SHAPES = '[data-map-layer="hit"] [data-plate]';
+/**
+ * PAINTED_SHAPES — both twins, deliberately. `data-state` is what the stylesheet paints a
+ * right/wrong/revealed answer from, and that answer is now expressed in two places: the FILL
+ * on the base twin, the LINE on the hit twin. Writing it to one of them would half-render
+ * every answer. Written as an explicit two-part selector rather than left unscoped so that
+ * "both twins" is a stated intention and not an accident of how many layers happen to carry
+ * `data-plate` today — the region-silhouette layer deliberately carries none.
+ */
+const PAINTED_SHAPES = '[data-map-layer="base"] [data-plate], [data-map-layer="hit"] [data-plate]';
+
 /** Milliseconds the wrongly-picked shape stays marked before it returns (SPEC §5.3). */
 const WRONG_FLASH_MS = 700;
 /** Auto-advance delay after a right answer. */
@@ -264,8 +289,10 @@ export function GameIsland({
     (plate: string) => {
       const pickedTargetId = targetSet.plateToTarget[plate];
       // A shape with no target is geographic backdrop, not a wrong answer: it must not
-      // halve the question. `data-plate` is on EVERY drawn shape while a target only
-      // exists for a seeded province, so tolerating the difference is the contract.
+      // halve the question. Since the layer split an unseeded plate has no hit twin at all,
+      // so a click on backdrop no longer even resolves a plaka kodu — but the base layer
+      // still carries `data-plate` (it needs it for `data-state`), and this guard is what
+      // keeps the answer path correct no matter which layer a future caller reads from.
       if (!pickedTargetId) return;
       const { state, outcome } = answerRound(roundRef.current, pickedTargetId);
       if (outcome.kind === "ignored") return;
@@ -370,7 +397,9 @@ export function GameIsland({
       else delete stage.dataset.gameActive;
     }
 
-    for (const shape of svg.querySelectorAll("[data-plate]")) {
+    // The HIT layer only (see HIT_SHAPES): one tab stop and one accessible name per province.
+    // The base layer is `aria-hidden` as a whole and is never a control.
+    for (const shape of svg.querySelectorAll(HIT_SHAPES)) {
       if (!(shape instanceof SVGElement)) continue;
       const name = nameByPlate.get(shape.dataset.plate ?? "");
       if (interactive && name) {
@@ -406,7 +435,9 @@ export function GameIsland({
     );
     const revealed = feedback?.kind === "revealed" ? feedback.targetId : null;
 
-    for (const shape of svg.querySelectorAll("[data-plate]")) {
+    // BOTH painted twins (see PAINTED_SHAPES): the base twin carries the answer's fill, the
+    // hit twin carries its line. One `data-state`, written to the pair.
+    for (const shape of svg.querySelectorAll(PAINTED_SHAPES)) {
       if (!(shape instanceof SVGElement)) continue;
       const state = deriveShapeState({
         targetId: targetSet.plateToTarget[shape.dataset.plate ?? ""],
