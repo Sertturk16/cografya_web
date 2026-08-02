@@ -108,9 +108,7 @@
     "zoomOut": "Zoom out",
     "zoomReset": "Reset the map view",
     "zoomControls": "Zoom controls",
-    "zoomInstructions": "With the map focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to return to the starting view. With a province focused, Enter or Space selects it. With a mouse you can zoom with the wheel and pan by dragging; on a touch screen, pinch to zoom and drag with one finger to pan.",
-    "zoomHint": "Zoom in to pick the smallest provinces",
-    "zoomDismissHint": "Dismiss the hint"
+    "zoomInstructions": "With the map focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to return to the starting view. With a province focused, Enter or Space selects it. With a mouse you can zoom with the wheel and pan by dragging; on a touch screen, pinch to zoom and drag with one finger to pan."
   },
   "ProvinceDetail": {
     "metaTitle": "Geography of {name}",
@@ -243,8 +241,6 @@
     "resetView": "Reset to world view",
     "zoomControls": "Zoom controls",
     "keyboardInstructions": "When the map is focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to return to the world view; Esc closes an open info card. With a mouse, scroll to zoom and drag to pan; on touch, pinch to zoom and drag with one finger to pan.",
-    "zoomHint": "Scroll to zoom, or use + / −",
-    "dismissHint": "Dismiss hint",
     "turkiyeName": "Türkiye",
     "turkiyeCardSubtitle": "Province map",
     "turkiyeLinkLabel": "Türkiye, province map page",
@@ -317,7 +313,7 @@
     },
     "attribution": {
       "ecmwfCopyright": "Copyright © {year} European Centre for Medium-Range Weather Forecasts (ECMWF).",
-      "ecmwfNotice": "This service is based on data and products of the European Centre for Medium-Range Weather Forecasts (ECMWF). Source: www.ecmwf.int. This ECMWF data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. Modified: values are sampled from the source grid to selected points; no other modification.",
+      "ecmwfNotice": "This service is based on data and products of the European Centre for Medium-Range Weather Forecasts (ECMWF). Source www.ecmwf.int. This ECMWF data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0). https://creativecommons.org/licenses/by/4.0/. Modified: values are sampled from the source grid to selected points; no other modification.",
       "ecmwfDisclaimer": "ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use.",
       "cmemsNotice": "Generated using E.U. Copernicus Marine Service Information"
     },

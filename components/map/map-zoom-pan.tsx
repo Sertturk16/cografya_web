@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 import {
   CLICK_MOVE_THRESHOLD_PX,
   type ViewBox,
@@ -26,10 +26,6 @@ export interface MapZoomPanLabels {
   instructions: string;
   /** Short accessible name for the zoom-button group (NOT the full instructions). */
   controls: string;
-  /** One-time discoverability hint (SPEC §9). */
-  hint: string;
-  /** Accessible label for the hint's dismiss (×) button. */
-  dismissHint: string;
 }
 
 interface MapZoomPanProps {
@@ -45,25 +41,12 @@ interface MapZoomPanProps {
   labels: MapZoomPanLabels;
 }
 
-const HINT_STORAGE_KEY = "cografya:dunya-zoom-hint";
-
-/**
- * Read the one-time-hint dismissed flag from localStorage as an external store (SPEC §9).
- * `useSyncExternalStore` is the SSR-safe way to read a browser-only source: the server
- * snapshot is always "not dismissed" (hint present in the first HTML), and the client
- * reconciles from storage on hydration — no setState-in-effect, no hydration error. The
- * subscribe is a no-op: the flag only changes via this component's own dismiss handler,
- * which tracks it in local state for the immediate hide.
- */
-const subscribeHint = () => () => {};
-const hintDismissedClient = () => {
-  try {
-    return window.localStorage.getItem(HINT_STORAGE_KEY) === "dismissed";
-  } catch {
-    return false;
-  }
-};
-const hintDismissedServer = () => false;
+/* REMOVED 2026-08-02 (owner ruling): the one-time "scroll to zoom" hint box (SPEC §9) and
+   its localStorage dismissed-flag store. It sat in the map's bottom-left corner, on top of
+   the map, with `pointer-events: auto` — so it also swallowed clicks on whatever shape was
+   under it — and on a short stage it crowded the ODbL attribution. The always-visible
+   +/−/reset buttons and the aria-describedby instructions carry the same affordance
+   without covering the map. */
 
 /** Per press / keypress / double-click zoom multiplier (SPEC §2). */
 const ZOOM_STEP = 1.8;
@@ -104,13 +87,6 @@ const PAN_START_PX = CLICK_MOVE_THRESHOLD_PX;
  */
 export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const storedDismissed = useSyncExternalStore(
-    subscribeHint,
-    hintDismissedClient,
-    hintDismissedServer,
-  );
-  const [dismissedNow, setDismissedNow] = useState(false);
-  const hintVisible = !storedDismissed && !dismissedNow;
   // Imperative control handles wired up on mount; the rendered buttons call through
   // these so the JSX never needs the live viewBox in React state.
   const apiRef = useRef<{
@@ -472,15 +448,6 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
     };
   }, [viewBox, instructionsId]);
 
-  const dismissHint = () => {
-    setDismissedNow(true);
-    try {
-      window.localStorage.setItem(HINT_STORAGE_KEY, "dismissed");
-    } catch {
-      // storage blocked → the hint simply reappears next visit; acceptable.
-    }
-  };
-
   return (
     <div ref={rootRef} className={styles.zoomLayer}>
       <div className={styles.zoomControls} role="group" aria-label={labels.controls}>
@@ -509,20 +476,6 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
           <span aria-hidden="true">⤢</span>
         </button>
       </div>
-
-      {hintVisible && (
-        <div className={styles.zoomHint} role="note">
-          <span>{labels.hint}</span>
-          <button
-            type="button"
-            className={styles.zoomHintDismiss}
-            aria-label={labels.dismissHint}
-            onClick={dismissHint}
-          >
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }

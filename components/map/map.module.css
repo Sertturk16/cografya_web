@@ -92,12 +92,41 @@
 }
 
 /* Focus MIRRORS hover exactly, so a keyboard user sees the same state a mouse user does
-   (WCAG 2.4.7 / 1.4.11): stroke to --color-primary (~5.1:1) at 3px, still no terracotta
-   fill wash and still no pointer cursor — the shape is readable, not clickable. */
-.territory:hover .landInert,
+   (WCAG 2.4.7 / 1.4.11): stroke to --color-primary (~5.1:1), still no terracotta fill wash
+   and still no pointer cursor — the shape is readable, not clickable.
+
+   A TERRITORY IS DELIBERATELY WEAKER THAN A COUNTRY, and the gap is STRUCTURAL rather than
+   arithmetic. The first version pinned this at a literal 3px while the country moved to
+   --map-hover-width — two independent numbers whose ORDER was the actual requirement, so
+   the pair could be inverted by editing one of them (→ PR #38 review, code-reviewer M5).
+   The weights are now settled at 3.5 / 3px and nobody is tuning them today; the derivation
+   is what keeps the invariant true anyway the next time the token moves (the P4 palette
+   pass is the likely next mover). The tone step (--color-primary vs --color-primary-dark)
+   is the other half of the hierarchy and needs no arithmetic.
+   FLOOR — the first wording ("≥ 1.5px or this goes to zero") was arithmetically loose in
+   both directions (→ PR #38 review round 2, R2-M2). It reaches literal zero only at 0.5px;
+   what actually matters lands much earlier. The resting `.landInert` stroke is 1px, so at
+   --map-hover-width: 1.5px the territory computes to exactly 1px and the hover/focus state
+   becomes INVISIBLE — same width, only a tone shift, which is the colour-alone signal
+   WCAG 1.4.1/1.4.11 will not accept as the state cue on its own. So the real floor is above
+   1.5px, and 2px is the smallest value that leaves any step at all (→ 1.5px, half a pixel
+   over resting — thin, but present). Today's 3.5px gives the territory 3px, a 2px step.
+
+   Hover is gated on pointer type and on "not currently panning" for the same reasons as
+   the country rule below; focus is gated on neither. Both HOVER rules in this file — this
+   one and the country one — also require a `.mapRoot` ancestor (see the note on the country
+   rule); the two FOCUS rules deliberately do not, so this block's pair is asymmetric on
+   that point too. */
+@media (hover: hover) {
+  .mapRoot:not([data-panning]) .territory:hover .landInert {
+    stroke: var(--color-primary);
+    stroke-width: calc(var(--map-hover-width) - 0.5px);
+  }
+}
+
 .territory:focus-visible .landInert {
   stroke: var(--color-primary);
-  stroke-width: 3;
+  stroke-width: calc(var(--map-hover-width) - 0.5px);
 }
 
 .provinceLink {
@@ -114,27 +143,47 @@
     stroke-width 0.16s ease-out;
 }
 
-/* Fill AND stroke change together (NOVA color-research 2026-07-10): the terracotta
-   fill wash alone is only ~1.25:1 on white (sub-3:1), so the accessible state signal
-   is carried by the stroke shift to --color-primary (~5.1:1) widened to 3px — a hard
-   WCAG 1.4.1/1.4.11 requirement, not a nicety. */
-.provinceLink:hover .province,
+/* HOVER = BORDER (owner report 2026-08-01 / 2026-08-02). Hover and focus used to be one
+   rule that shifted fill AND stroke together; the owner's complaint is that on a big white
+   shape the result reads as nothing, which the numbers agree with — the terracotta fill
+   wash is only ~1.25:1 on white and the 1px→3px --color-primary line (5.13:1 on land,
+   4.06:1 on sea) was the only real signal. So the two states split:
+     hover → the LINE, and a stronger one: --color-primary-dark (8.36:1 on land, 6.61:1 on
+             sea, 6.95:1 on an inert province) at --map-hover-width. No fill shift at all,
+             which is exactly what was asked for.
+     focus → the same line PLUS the terracotta wash (rule below), so keyboard is never the
+             weaker state and the two are still tellable apart.
+   `:not([data-panning])` — on /dunya a drag-pan sweeps the pointer across dozens of
+   countries; without this the map strobes while panning (the card is already suppressed
+   for the same reason further down). Inert on /turkiye, which has no pan.
+   `@media (hover: hover)` — a touch device would otherwise leave the last-tapped shape
+   outlined; the focus rule deliberately sits outside the query.
+   NEW ANCESTOR REQUIREMENT: both hover rules in this file now need a `.mapRoot` ancestor,
+   which they did not before. Every consumer already has one — `turkey-map-section.tsx:65`
+   and `world-map-section.tsx:149` — and the marine map has its own `.mapRoot` in its own
+   module, so nothing bleeds across. A future surface that reuses `.provinceLink` WITHOUT
+   `.mapRoot` would silently lose hover; that is the coupling this note exists to name. */
+@media (hover: hover) {
+  .mapRoot:not([data-panning]) .provinceLink:hover .province {
+    stroke: var(--color-primary-dark);
+    stroke-width: var(--map-hover-width);
+  }
+}
+
 .provinceLink:focus-visible .province {
   fill: var(--province-hover);
-  stroke: var(--color-primary);
-  stroke-width: 3;
+  stroke: var(--color-primary-dark);
+  stroke-width: var(--map-hover-width);
 }
 
 /* ODbL attribution — required visibly next to the map (SPEC §5.2 / DEC 2026-07-10).
-   BOTTOM-CHROME STACK: this row owns the bottom-right corner of EVERY map surface (il map,
-   world map, game map) and never moves. The zoom hint is the other bottom-anchored element;
-   it stacks one band ABOVE this one (see `.zoomHint`), because at the same inset the two
-   boxes overlap on a narrow stage — measured at 390px: hint 237px wide from the left edge,
-   attribution 207px from the right, ~124px of them printed on top of each other. The two
-   offsets are plain numbers on purpose: this stylesheet is shared by containers that do not
-   share a custom-property scope (`.mapRoot` vs the game's own stage element), so a var
-   defined here would silently resolve to nothing on the game map and drop the hint back to
-   the top of the stage. */
+   It owns the bottom-right corner of EVERY map surface (il map, world map, game map) and
+   never moves. It is now the ONLY bottom-anchored element: the one-time zoom hint that used
+   to stack one band above it was removed outright (owner ruling 2026-08-02) — it covered
+   the map's south-west corner, its `pointer-events: auto` box swallowed clicks on whatever
+   was under it, and on a short stage it crowded this licence line. If a bottom-left overlay
+   is ever reintroduced, the overlap it has to avoid is measured at 390px: a 237px box from
+   the left edge against this 207px one from the right. */
 .attribution {
   position: absolute;
   right: 14px;
@@ -309,7 +358,7 @@
   opacity: 0 !important;
 }
 
-/* Overlay layer for the controls + hint. Covers the map but lets pointer events fall
+/* Overlay layer for the zoom controls. Covers the map but lets pointer events fall
    through to the SVG; only the interactive children re-enable pointer events. */
 .zoomLayer {
   position: absolute;
@@ -357,67 +406,6 @@
   outline-offset: 2px;
 }
 
-/* Sits one band above the attribution — see the stack note there. 42px = the attribution's
-   own 10px inset + its measured single-line height (0.72rem text + 3px padding = 24px) + an
-   8px gap. Both attribution strings stay on one line down to a 320px stage; if a longer one
-   ever wraps, this offset is what has to grow with it. */
-.zoomHint {
-  position: absolute;
-  left: 14px;
-  bottom: 42px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: min(320px, 68%);
-  pointer-events: auto;
-  background: var(--scrim-bg);
-  color: var(--color-slate);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 6px 6px 6px 12px;
-  font-size: 0.78rem;
-  line-height: 1.35;
-  box-shadow: var(--shadow-card);
-  animation: zoomHintIn 0.24s ease-out;
-}
-
-.zoomHintDismiss {
-  flex: none;
-  width: 24px;
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.15rem;
-  line-height: 1;
-  color: var(--color-slate);
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.zoomHintDismiss:hover {
-  background: var(--color-surface);
-  color: var(--color-primary-dark);
-}
-
-.zoomHintDismiss:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-@keyframes zoomHintIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 /* Visually-hidden but AT-readable (the SVG's aria-describedby target). */
 .srOnly {
   position: absolute;
@@ -448,11 +436,8 @@
     transition: none;
   }
 
-  /* Static hint + buttons under reduced motion (SPEC §9). */
-  .zoomHint {
-    animation: none;
-  }
-
+  /* Static zoom buttons under reduced motion. (The SPEC §9 reference this line used to
+     carry belonged to the one-time hint, which no longer exists.) */
   .zoomButton {
     transition: none;
   }

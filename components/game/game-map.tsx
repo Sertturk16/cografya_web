@@ -94,8 +94,6 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
             reset: t("zoomReset"),
             instructions: t("zoomInstructions"),
             controls: t("zoomControls"),
-            hint: t("zoomHint"),
-            dismissHint: t("zoomDismissHint"),
           }}
         />
 

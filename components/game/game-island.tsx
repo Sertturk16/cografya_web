@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -23,6 +24,7 @@ import {
   type AnswerOutcome,
   type RoundState,
 } from "@/lib/game/round";
+import { deriveShapeState } from "@/lib/game/shape-state";
 import {
   buildProvinceTargetSet,
   buildRegionTargetSet,
@@ -140,7 +142,33 @@ export function GameIsland({
    */
   const [round, setRound] = useState<RoundState>(() => createRound(mode, targetIds));
   const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [wrongPlate, setWrongPlate] = useState<string | null>(null);
+  /**
+   * The most recent wrong answer, as the TARGET it named — not as the plate that was
+   * clicked. In bölge mode a click answers for a whole region, and marking only the il
+   * under the cursor made the red flash disagree with the green one, which covers the
+   * whole region (`lib/game/shape-state.ts`).
+   *
+   * `seq` is what makes a repeat mistake re-flash. The flash is cleared by a timer keyed on
+   * this state, and two wrong clicks inside the same region produce the SAME target id — so
+   * without a changing companion value React would bail out of the update, the timer would
+   * not restart, and the second mistake would fade on the first one's schedule.
+   */
+  const [wrongAnswer, setWrongAnswer] = useState<{ targetId: string; seq: number } | null>(null);
+  /**
+   * How many feedback events have happened, purely so the live region below can re-announce
+   * one that repeats itself word for word.
+   *
+   * The same problem `wrongAnswer.seq` solves for the eye, one layer up. Click the wrong
+   * region twice and `feedbackRetry` renders the IDENTICAL sentence both times; React sees
+   * an unchanged string and touches no DOM node, so a polite live region has nothing to
+   * observe and says nothing — the second mistake is silent for a screen-reader user. This
+   * counter keys the sentence's fragment, so a repeat genuinely replaces the nodes inside
+   * the live region and is announced again.
+   *
+   * It matters more since the map stopped reacting to a wrong click on an ALREADY-SOLVED
+   * target (`lib/game/shape-state.ts`): there the text is the ONLY feedback there is.
+   */
+  const [feedbackSeq, setFeedbackSeq] = useState(0);
   const [summaryDismissed, setSummaryDismissed] = useState(false);
   /**
    * The portal target for the round's controls — RE-READ after the commit, never frozen at
@@ -170,6 +198,8 @@ export function GameIsland({
    * happens inside a handler, next to the matching `setRound`.
    */
   const roundRef = useRef<RoundState>(round);
+  /** Monotonic counter behind `wrongAnswer.seq` — see that state's note. */
+  const wrongSeqRef = useRef(0);
 
   const interactive = round.status !== "finished";
 
@@ -184,7 +214,7 @@ export function GameIsland({
   const beginRound = useCallback(
     (state: RoundState) => {
       setFeedback(null);
-      setWrongPlate(null);
+      setWrongAnswer(null);
       setSummaryDismissed(false);
       commitRound(state);
     },
@@ -223,8 +253,9 @@ export function GameIsland({
   const showAnswer = useCallback(() => {
     const { state, outcome } = revealRound(roundRef.current);
     if (outcome.kind === "ignored") return;
-    setWrongPlate(null);
+    setWrongAnswer(null);
     setFeedback(outcome);
+    setFeedbackSeq((seq) => seq + 1);
     commitRound(state);
   }, [commitRound]);
 
@@ -239,7 +270,12 @@ export function GameIsland({
       const { state, outcome } = answerRound(roundRef.current, pickedTargetId);
       if (outcome.kind === "ignored") return;
       setFeedback(outcome);
-      setWrongPlate(outcome.kind === "retry" ? plate : null);
+      setFeedbackSeq((seq) => seq + 1);
+      setWrongAnswer(
+        outcome.kind === "retry"
+          ? { targetId: pickedTargetId, seq: (wrongSeqRef.current += 1) }
+          : null,
+      );
       commitRound(state);
     },
     [commitRound, targetSet],
@@ -372,25 +408,23 @@ export function GameIsland({
 
     for (const shape of svg.querySelectorAll("[data-plate]")) {
       if (!(shape instanceof SVGElement)) continue;
-      const plate = shape.dataset.plate ?? "";
-      const targetId = targetSet.plateToTarget[plate];
-      let state: "correct" | "wrong" | "reveal" | null = null;
-      if (targetId) {
-        if (solved.has(targetId)) state = "correct";
-        if (revealed !== null && targetId === revealed) state = "reveal";
-        if (plate === wrongPlate) state = "wrong";
-      }
+      const state = deriveShapeState({
+        targetId: targetSet.plateToTarget[shape.dataset.plate ?? ""],
+        solvedTargetIds: solved,
+        revealedTargetId: revealed,
+        wrongTargetId: wrongAnswer?.targetId ?? null,
+      });
       if (state) shape.setAttribute("data-state", state);
       else shape.removeAttribute("data-state");
     }
-  }, [round, feedback, wrongPlate, targetSet]);
+  }, [round, feedback, wrongAnswer, targetSet]);
 
   // --- timers -----------------------------------------------------------------------------------
   useEffect(() => {
-    if (!wrongPlate) return;
-    const timer = window.setTimeout(() => setWrongPlate(null), WRONG_FLASH_MS);
+    if (!wrongAnswer) return;
+    const timer = window.setTimeout(() => setWrongAnswer(null), WRONG_FLASH_MS);
     return () => window.clearTimeout(timer);
-  }, [wrongPlate]);
+  }, [wrongAnswer]);
 
   useEffect(() => {
     if (round.status !== "resolved" || !feedback) return;
@@ -523,15 +557,23 @@ export function GameIsland({
 
       {/* Every state the map expresses with colour is ALSO said in words here — colour is
           never the only signal (DESIGN.md §6.1 rule 3) — and this same sentence is what a
-          screen reader hears, because the line is the round's live region. */}
+          screen reader hears, because the line is the round's live region.
+
+          The `key` is what makes a REPEATED sentence audible. The <p> itself never moves —
+          a live region has to be in the document before the change to be announced at all —
+          but its contents are keyed on the feedback counter, so a second identical wrong
+          answer replaces the nodes instead of leaving an untouched text node, and AT
+          announces it again (see `feedbackSeq`). A Fragment rather than a wrapper element:
+          the mark and the sentence stay direct flex children of the line, so nothing about
+          the layout changes. */}
       <p className={styles.feedback} role="status" aria-live="polite">
         {feedbackText ? (
-          <>
+          <Fragment key={feedbackSeq}>
             <span className={styles.feedbackMark} aria-hidden="true">
               {tone === "correct" ? "✓" : tone === "retry" ? "✕" : "▸"}
             </span>{" "}
             {feedbackText}
-          </>
+          </Fragment>
         ) : null}
       </p>
 
