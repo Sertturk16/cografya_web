@@ -95,14 +95,14 @@
    (WCAG 2.4.7 / 1.4.11): stroke to --color-primary (~5.1:1), still no terracotta fill wash
    and still no pointer cursor — the shape is readable, not clickable.
 
-   A TERRITORY IS DELIBERATELY WEAKER THAN A COUNTRY, and the gap is now STRUCTURAL rather
-   than arithmetic. The first version pinned this at a literal 3px while the country moved
-   to --map-hover-width (3.5px) — but the owner tunes only the country side, so picking the
-   2.5px alternative from the samples would have made a country's hover THINNER than a
-   territory's and inverted the hierarchy (→ PR #38 review, code-reviewer M5). Derived from
-   the same token, the territory is always exactly half a pixel lighter than whatever the
-   country weighs, in both directions. The tone step (--color-primary vs
-   --color-primary-dark) is the other half of the hierarchy and needs no arithmetic.
+   A TERRITORY IS DELIBERATELY WEAKER THAN A COUNTRY, and the gap is STRUCTURAL rather than
+   arithmetic. The first version pinned this at a literal 3px while the country moved to
+   --map-hover-width — two independent numbers whose ORDER was the actual requirement, so
+   the pair could be inverted by editing one of them (→ PR #38 review, code-reviewer M5).
+   The weights are now settled at 3.5 / 3px and nobody is tuning them today; the derivation
+   is what keeps the invariant true anyway the next time the token moves (the P4 palette
+   pass is the likely next mover). The tone step (--color-primary vs --color-primary-dark)
+   is the other half of the hierarchy and needs no arithmetic.
    Floor: --map-hover-width must stay ≥ 1.5px or this goes to zero.
 
    Hover is gated on pointer type and on "not currently panning" for the same reasons as
