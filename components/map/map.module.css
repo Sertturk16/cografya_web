@@ -92,23 +92,32 @@
 }
 
 /* Focus MIRRORS hover exactly, so a keyboard user sees the same state a mouse user does
-   (WCAG 2.4.7 / 1.4.11): stroke to --color-primary (~5.1:1) at 3px, still no terracotta
-   fill wash and still no pointer cursor — the shape is readable, not clickable.
-   Both values stay LITERAL while the country state below moved to --map-hover-width: the
-   gap between the two is the hierarchy, so a territory must not follow the country weight
-   when the owner tunes it.
+   (WCAG 2.4.7 / 1.4.11): stroke to --color-primary (~5.1:1), still no terracotta fill wash
+   and still no pointer cursor — the shape is readable, not clickable.
+
+   A TERRITORY IS DELIBERATELY WEAKER THAN A COUNTRY, and the gap is now STRUCTURAL rather
+   than arithmetic. The first version pinned this at a literal 3px while the country moved
+   to --map-hover-width (3.5px) — but the owner tunes only the country side, so picking the
+   2.5px alternative from the samples would have made a country's hover THINNER than a
+   territory's and inverted the hierarchy (→ PR #38 review, code-reviewer M5). Derived from
+   the same token, the territory is always exactly half a pixel lighter than whatever the
+   country weighs, in both directions. The tone step (--color-primary vs
+   --color-primary-dark) is the other half of the hierarchy and needs no arithmetic.
+   Floor: --map-hover-width must stay ≥ 1.5px or this goes to zero.
+
    Hover is gated on pointer type and on "not currently panning" for the same reasons as
-   the country rule below; focus is gated on neither. */
+   the country rule below; focus is gated on neither. Both rules now also require a
+   `.mapRoot` ancestor — see the note on the country rule. */
 @media (hover: hover) {
   .mapRoot:not([data-panning]) .territory:hover .landInert {
     stroke: var(--color-primary);
-    stroke-width: 3;
+    stroke-width: calc(var(--map-hover-width) - 0.5px);
   }
 }
 
 .territory:focus-visible .landInert {
   stroke: var(--color-primary);
-  stroke-width: 3;
+  stroke-width: calc(var(--map-hover-width) - 0.5px);
 }
 
 .provinceLink {
@@ -139,7 +148,12 @@
    countries; without this the map strobes while panning (the card is already suppressed
    for the same reason further down). Inert on /turkiye, which has no pan.
    `@media (hover: hover)` — a touch device would otherwise leave the last-tapped shape
-   outlined; the focus rule deliberately sits outside the query. */
+   outlined; the focus rule deliberately sits outside the query.
+   NEW ANCESTOR REQUIREMENT: both hover rules in this file now need a `.mapRoot` ancestor,
+   which they did not before. Every consumer already has one — `turkey-map-section.tsx:65`
+   and `world-map-section.tsx:149` — and the marine map has its own `.mapRoot` in its own
+   module, so nothing bleeds across. A future surface that reuses `.provinceLink` WITHOUT
+   `.mapRoot` would silently lose hover; that is the coupling this note exists to name. */
 @media (hover: hover) {
   .mapRoot:not([data-panning]) .provinceLink:hover .province {
     stroke: var(--color-primary-dark);
@@ -413,7 +427,8 @@
     transition: none;
   }
 
-  /* Static buttons under reduced motion (SPEC §9). */
+  /* Static zoom buttons under reduced motion. (The SPEC §9 reference this line used to
+     carry belonged to the one-time hint, which no longer exists.) */
   .zoomButton {
     transition: none;
   }

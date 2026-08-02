@@ -30,6 +30,23 @@ import tr from "@/messages/tr.json";
 const ECMWF_COPYRIGHT =
   "Copyright © {year} European Centre for Medium-Range Weather Forecasts (ECMWF).";
 
+/**
+ * ⚠ "This **ECMWF** data" IS THE CORRECT WORDING. DO NOT "CORRECT" IT AWAY.
+ *
+ * The licence page (`apps.ecmwf.int/datasets/licences/general/`) carries two consecutive
+ * headed lists: (A) the statements to attach to the USE OF the data product, and (B) the
+ * statements to attach to SERVICES CREATED WITH it. This platform is a public service built
+ * on ECMWF Open Data, so **(B) governs**, and (B)3 reads verbatim "This ECMWF data is
+ * published under a Creative Commons Attribution 4.0 International (CC BY 4.0)." The
+ * shorter "This data is published under…" belongs to (A)3, which does not apply to us —
+ * deleting the word "ECMWF" to match it would introduce a licence defect, not fix one.
+ * Re-confirmed against the live page during the PR #38 review (an earlier reviewer read it
+ * as our own insertion; a validator refuted that from the source).
+ *
+ * The absent quotation marks are correct for the same kind of reason: the source's period
+ * sits OUTSIDE the closing quote and the Terms body quotes the same required phrase with
+ * SINGLE quotes, so the marks are the page's delimiters, not part of the required text.
+ */
 const ECMWF_NOTICE =
   "This service is based on data and products of the European Centre for Medium-Range Weather Forecasts (ECMWF). Source www.ecmwf.int. This ECMWF data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0). https://creativecommons.org/licenses/by/4.0/. Modified: values are sampled from the source grid to selected points; no other modification.";
 

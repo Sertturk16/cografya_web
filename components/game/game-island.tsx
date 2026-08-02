@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -153,6 +154,21 @@ export function GameIsland({
    * not restart, and the second mistake would fade on the first one's schedule.
    */
   const [wrongAnswer, setWrongAnswer] = useState<{ targetId: string; seq: number } | null>(null);
+  /**
+   * How many feedback events have happened, purely so the live region below can re-announce
+   * one that repeats itself word for word.
+   *
+   * The same problem `wrongAnswer.seq` solves for the eye, one layer up. Click the wrong
+   * region twice and `feedbackRetry` renders the IDENTICAL sentence both times; React sees
+   * an unchanged string and touches no DOM node, so a polite live region has nothing to
+   * observe and says nothing — the second mistake is silent for a screen-reader user. This
+   * counter keys the sentence's fragment, so a repeat genuinely replaces the nodes inside
+   * the live region and is announced again.
+   *
+   * It matters more since the map stopped reacting to a wrong click on an ALREADY-SOLVED
+   * target (`lib/game/shape-state.ts`): there the text is the ONLY feedback there is.
+   */
+  const [feedbackSeq, setFeedbackSeq] = useState(0);
   const [summaryDismissed, setSummaryDismissed] = useState(false);
   /**
    * The portal target for the round's controls — RE-READ after the commit, never frozen at
@@ -239,6 +255,7 @@ export function GameIsland({
     if (outcome.kind === "ignored") return;
     setWrongAnswer(null);
     setFeedback(outcome);
+    setFeedbackSeq((seq) => seq + 1);
     commitRound(state);
   }, [commitRound]);
 
@@ -253,6 +270,7 @@ export function GameIsland({
       const { state, outcome } = answerRound(roundRef.current, pickedTargetId);
       if (outcome.kind === "ignored") return;
       setFeedback(outcome);
+      setFeedbackSeq((seq) => seq + 1);
       setWrongAnswer(
         outcome.kind === "retry"
           ? { targetId: pickedTargetId, seq: (wrongSeqRef.current += 1) }
@@ -539,15 +557,23 @@ export function GameIsland({
 
       {/* Every state the map expresses with colour is ALSO said in words here — colour is
           never the only signal (DESIGN.md §6.1 rule 3) — and this same sentence is what a
-          screen reader hears, because the line is the round's live region. */}
+          screen reader hears, because the line is the round's live region.
+
+          The `key` is what makes a REPEATED sentence audible. The <p> itself never moves —
+          a live region has to be in the document before the change to be announced at all —
+          but its contents are keyed on the feedback counter, so a second identical wrong
+          answer replaces the nodes instead of leaving an untouched text node, and AT
+          announces it again (see `feedbackSeq`). A Fragment rather than a wrapper element:
+          the mark and the sentence stay direct flex children of the line, so nothing about
+          the layout changes. */}
       <p className={styles.feedback} role="status" aria-live="polite">
         {feedbackText ? (
-          <>
+          <Fragment key={feedbackSeq}>
             <span className={styles.feedbackMark} aria-hidden="true">
               {tone === "correct" ? "✓" : tone === "retry" ? "✕" : "▸"}
             </span>{" "}
             {feedbackText}
-          </>
+          </Fragment>
         ) : null}
       </p>
 
