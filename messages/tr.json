@@ -166,7 +166,9 @@
     "sourcesHydrography": "hidrografya DSİ/İSKİ",
     "sourcesEconomy": "ekonomik gösterge TÜİK bölgesel hesaplar",
     "sourcesClimate": "iklim normalleri MGM Genel İstatistik (k=A)",
-    "backToMap": "Türkiye haritasına dön"
+    "backToMap": "Türkiye haritasına dön",
+    "marineHeading": "{name} açıklarında deniz durumu",
+    "marineSourcesHeading": "Deniz verisi: kaynaklar ve kullanım"
   },
   "Climate": {
     "chartHeading": "Sıcaklık ve Yağış Grafiği",
@@ -424,7 +426,12 @@
       "validAtAndRun": "{source}: {validAt} UTC anına ait, {modelRun} UTC koşusundan.",
       "validAt": "{source}: {validAt} UTC anına ait.",
       "runOnly": "{source}: {modelRun} UTC koşusundan."
-    }
+    },
+    "straits": {
+      "lowConfidence": "Bu sayılar açıktaki referans noktası içindir; boğazlarda, dar körfezlerde ve kıyıya çok yakın sularda koşullar belirgin biçimde farklı olabilir."
+    },
+    "hubLinkPoint": "{label} satırını dört denizin tablosunda gör",
+    "hubLinkAll": "Türkiye kıyılarının tamamında deniz durumu"
   },
   "NotFound": {
     "metaTitle": "Sayfa bulunamadı",

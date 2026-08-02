@@ -1,0 +1,98 @@
+{
+  "plateCode": "57",
+  "marinePoints": [
+    {
+      "point": {
+        "slugTr": "sinop-aciklari",
+        "slugEn": "sinop-offshore",
+        "nameTr": "Sinop Açıkları",
+        "nameEn": "Sinop Offshore",
+        "coastLabelTr": "Karadeniz açıkları",
+        "coastLabelEn": "Black Sea offshore",
+        "plateCode": "57",
+        "latitude": 42.15,
+        "longitude": 35.15,
+        "seaBasin": "black_sea",
+        "displayOrder": 9
+      },
+      "seaSurfaceTemperature": {
+        "value": null,
+        "unit": "celsius",
+        "status": "unavailable",
+        "freshness": null,
+        "validAtUtc": null,
+        "fetchedAtUtc": null,
+        "modelRunAtUtc": null,
+        "staleSinceUtc": null,
+        "source": null,
+        "datasetId": null,
+        "gridLatitude": null,
+        "gridLongitude": null,
+        "distanceKm": null
+      },
+      "waveHeight": {
+        "value": 0.9,
+        "unit": "m",
+        "status": "ok",
+        "freshness": "stale",
+        "validAtUtc": "2026-08-02T09:00:00.000Z",
+        "fetchedAtUtc": "2026-08-02T09:04:11.000Z",
+        "modelRunAtUtc": null,
+        "staleSinceUtc": "2026-08-02T11:00:00.000Z",
+        "source": "cmems",
+        "datasetId": null,
+        "gridLatitude": null,
+        "gridLongitude": null,
+        "distanceKm": 2.4
+      },
+      "waveDirection": {
+        "value": null,
+        "unit": "degree_true",
+        "status": "no_data",
+        "freshness": null,
+        "validAtUtc": null,
+        "fetchedAtUtc": null,
+        "modelRunAtUtc": null,
+        "staleSinceUtc": null,
+        "source": null,
+        "datasetId": null,
+        "gridLatitude": null,
+        "gridLongitude": null,
+        "distanceKm": null
+      },
+      "windSpeed10m": {
+        "value": 7.4,
+        "unit": "meter_per_second",
+        "status": "ok",
+        "freshness": "fresh",
+        "validAtUtc": "2026-08-02T12:00:00.000Z",
+        "fetchedAtUtc": "2026-08-02T12:04:11.000Z",
+        "modelRunAtUtc": "2026-08-02T06:00:00.000Z",
+        "staleSinceUtc": null,
+        "source": "ecmwf",
+        "datasetId": null,
+        "gridLatitude": null,
+        "gridLongitude": null,
+        "distanceKm": 5.1
+      },
+      "windDirection10m": {
+        "value": 315,
+        "unit": "degree_true",
+        "status": "ok",
+        "freshness": "fresh",
+        "validAtUtc": "2026-08-02T12:00:00.000Z",
+        "fetchedAtUtc": "2026-08-02T12:04:11.000Z",
+        "modelRunAtUtc": "2026-08-02T06:00:00.000Z",
+        "staleSinceUtc": null,
+        "source": "ecmwf",
+        "datasetId": null,
+        "gridLatitude": null,
+        "gridLongitude": null,
+        "distanceKm": null
+      },
+      "series": null,
+      "seriesSourceDiffersFromInstant": false
+    }
+  ],
+  "attributions": []
+}

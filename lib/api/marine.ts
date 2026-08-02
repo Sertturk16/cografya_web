@@ -1,18 +1,32 @@
 import "server-only";
+import { createWarnLimiter } from "@/lib/marine/warn-limiter";
 import { apiGet } from "./client";
 import { isProductionBuild } from "./provinces";
-import type { MarineLayer, MarineOverview, MarinePointListItem } from "./types";
+import type {
+  MarineLayer,
+  MarineOverview,
+  MarinePointListItem,
+  MarineProvinceConditions,
+} from "./types";
 
 /**
- * Marine data access for the `/deniz` hub.
+ * Marine data access for the `/deniz` hub and the province marine sections.
  *
- * Three routes are wrapped here: the reference points, the measurement catalogue and — as
- * of W2a — the value overview. The per-point conditions and series routes stay unwrapped
- * (they belong to the province section, W2b/W2c) and `/api/marine/points/{slug}/conditions`
- * is never consumed at all, because `/deniz/{point}` pages were rejected as thin content.
+ * Four routes are wrapped here: the reference points, the measurement catalogue, the value
+ * overview (W2a) and one province's conditions (W2b). The series route stays unwrapped (the
+ * chart is W2c, and `series` already rides on the conditions payload) and
+ * `/api/marine/points/{slug}/conditions` is never consumed at all, because `/deniz/{point}`
+ * pages were rejected as thin content.
  *
  * Each read carries its own ISR window, mirroring the api's own `s-maxage` so the page can
  * never be staler than the CDN in front of it.
+ *
+ * TWO RESILIENCE SHAPES, AND WHICH SURFACE GETS WHICH. The `…Resilient` wrappers degrade at
+ * BUILD and re-throw at RUNTIME, so a blip leaves the last good static render in place. The
+ * `…Safe` wrappers never throw in either phase. The split is not per ROUTE, it is per
+ * SURFACE: on `/deniz` the points and the catalogue ARE the page, while on
+ * `/turkiye/{il}` every marine read is an enhancement bolted onto a page about a province —
+ * and an external provider chain may never turn a province page into a 500.
  */
 
 /**
@@ -40,6 +54,16 @@ export const MARINE_LAYERS_REVALIDATE_SECONDS = 1_800;
  * the api's locked cold-behavior table forbids these reads from ever reaching upstream.
  */
 export const MARINE_VALUES_REVALIDATE_SECONDS = 900;
+
+/**
+ * One limiter per failure CLASS, module-scoped so the 27 coastal province pages share a tally
+ * instead of each warning on its own (→ the M9 decision, `lib/marine/warn-limiter.ts`). The
+ * hub's own reads are deliberately NOT limited: they happen once per page, and one line about
+ * `/deniz` is exactly the right amount of noise.
+ */
+const pointsWarnLimiter = createWarnLimiter();
+const layersWarnLimiter = createWarnLimiter();
+const provinceConditionsWarnLimiter = createWarnLimiter();
 
 /** The 30 offshore reference points (lean payload). Throws on failure. */
 export async function getMarinePoints(): Promise<MarinePointListItem[]> {
@@ -93,11 +117,79 @@ export async function getMarineLayersResilient(): Promise<MarineLayer[]> {
   }
 }
 
+/**
+ * FAIL-SOFT point list, for the PROVINCE surface only.
+ *
+ * Same URL, same ISR window and the same shared fetch entry as
+ * `getMarinePointsResilient` — a different failure contract, because it is read from a
+ * different kind of page. On `/deniz` the points are the subject and a runtime re-throw is
+ * what preserves the last good render of them. On a province page the list is a GATE: it
+ * answers "does this province have a coast", and the honest answer when it cannot be reached
+ * is "we cannot tell right now", which means no section — never a 500 on a page about
+ * Sinop's population.
+ *
+ * The 27 coastal province pages read this on every regeneration, so its warnings go through
+ * the shared limiter (see `lib/marine/warn-limiter.ts`).
+ */
+export async function getMarinePointsSafe(): Promise<MarinePointListItem[]> {
+  try {
+    const points = await getMarinePoints();
+    pointsWarnLimiter.reset();
+    return points;
+  } catch (error) {
+    const line = pointsWarnLimiter(
+      `[marine] points fetch failed; province marine sections are gated off this pass. ${String(error)}`,
+    );
+    if (line !== null) console.warn(line);
+    return [];
+  }
+}
+
+/**
+ * FAIL-SOFT layer catalogue, for the PROVINCE surface only — same split, same reasoning as
+ * the points wrapper above.
+ *
+ * An empty catalogue degrades gracefully rather than hiding the section: with no published
+ * `directionConvention` no arrow may be drawn (the binding arrow-unlock rule), with no
+ * `calmThreshold` no calm claim may be made, and with no ingested cycle the ECMWF copyright
+ * LINE is omitted while the mandatory notice still renders. Every one of those is the same
+ * answer the code already gives when the api genuinely publishes nothing.
+ */
+export async function getMarineLayersSafe(): Promise<MarineLayer[]> {
+  try {
+    const layers = await getMarineLayers();
+    layersWarnLimiter.reset();
+    return layers;
+  } catch (error) {
+    const line = layersWarnLimiter(
+      `[marine] layer catalogue fetch failed; province marine sections render without thresholds this pass. ${String(error)}`,
+    );
+    if (line !== null) console.warn(line);
+    return [];
+  }
+}
+
 /** The value band's payload: 30 blocks of five values each, plus the publish gate. */
 export async function getMarineOverview(): Promise<MarineOverview> {
   return apiGet<MarineOverview>("/api/marine/overview", {
     revalidate: MARINE_VALUES_REVALIDATE_SECONDS,
   });
+}
+
+/**
+ * One province's marine conditions: one block per reference point, in `displayOrder`.
+ *
+ * The plaka is path-encoded even though the api's own codes are two ASCII digits — the value
+ * reaching here comes from a province payload, and a route parameter is never interpolated
+ * raw regardless of how well-behaved today's data is.
+ */
+export async function getMarineProvinceConditions(
+  plateCode: string,
+): Promise<MarineProvinceConditions> {
+  return apiGet<MarineProvinceConditions>(
+    `/api/marine/provinces/${encodeURIComponent(plateCode)}/conditions`,
+    { revalidate: MARINE_VALUES_REVALIDATE_SECONDS },
+  );
 }
 
 /**
@@ -127,6 +219,38 @@ export async function getMarineOverviewSafe(): Promise<MarineOverview | null> {
     console.warn(
       `[marine] overview fetch failed; the /deniz value band is not rendered this pass. ${String(error)}`,
     );
+    return null;
+  }
+}
+
+/**
+ * FAIL-SOFT province conditions read — `null` means "no marine section this render", never
+ * "this province has no sea".
+ *
+ * It is fail-soft in both phases for the same reason the overview read is, only more so: the
+ * page it hangs off is not about the sea at all. A province page must keep its facts, its
+ * climate chart, its neighbour links and its 200 whatever ECMWF and Copernicus are doing.
+ *
+ * WHY THE WARNING IS LIMITED (the M9 decision). This one function is called by 27 provinces
+ * × 2 locales, and a failed fetch is not cached, so one outage would otherwise print the same
+ * line up to 54 times per build and once per regeneration forever. The limiter emits
+ * occurrences 1, 2, 4, 8, … with the running count attached: the first failure is still
+ * reported immediately and in full, and the scale is readable from any single line. The tally
+ * resets on the first successful read, so the next outage is reported as a new event.
+ */
+export async function getMarineProvinceConditionsSafe(
+  plateCode: string,
+): Promise<MarineProvinceConditions | null> {
+  try {
+    const conditions = await getMarineProvinceConditions(plateCode);
+    provinceConditionsWarnLimiter.reset();
+    return conditions;
+  } catch (error) {
+    const line = provinceConditionsWarnLimiter(
+      `[marine] province conditions fetch failed for plaka ${plateCode}; ` +
+        `the marine section is not rendered this pass. ${String(error)}`,
+    );
+    if (line !== null) console.warn(line);
     return null;
   }
 }

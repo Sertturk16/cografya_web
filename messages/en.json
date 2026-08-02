@@ -166,7 +166,9 @@
     "sourcesHydrography": "hydrography DSİ/İSKİ",
     "sourcesEconomy": "economic indicator TÜİK regional accounts",
     "sourcesClimate": "climate normals MGM General Statistics (k=A)",
-    "backToMap": "Back to the map of Türkiye"
+    "backToMap": "Back to the map of Türkiye",
+    "marineHeading": "Sea state off {name}",
+    "marineSourcesHeading": "Sea data: sources and use"
   },
   "Climate": {
     "chartHeading": "Temperature and Precipitation Chart",
@@ -410,7 +412,12 @@
       "validAtAndRun": "{source}: valid at {validAt} UTC, from the {modelRun} UTC run.",
       "validAt": "{source}: valid at {validAt} UTC.",
       "runOnly": "{source}: from the {modelRun} UTC run."
-    }
+    },
+    "straits": {
+      "lowConfidence": "These numbers describe a reference point in open water; conditions in the straits, in narrow gulfs and very close to the shore can differ markedly."
+    },
+    "hubLinkPoint": "See the {label} row in the four-seas table",
+    "hubLinkAll": "Sea state along the whole coast of Türkiye"
   },
   "NotFound": {
     "metaTitle": "Page not found",

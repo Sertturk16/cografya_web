@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import en from "@/messages/en.json";
 import tr from "@/messages/tr.json";
@@ -95,5 +96,53 @@ describe("Copernicus Marine attribution is verbatim", () => {
     // Called out separately from the byte pin: "E.U." with both full stops and the full
     // service name are the two parts a copy pass is most likely to tidy away.
     expect(en.Marine.attribution.cmemsNotice).toContain("E.U. Copernicus Marine Service");
+  });
+});
+
+/**
+ * THE NOTICE TRAVELS WITH THE MATERIAL (W2b).
+ *
+ * The byte pins above prove the strings are intact. They cannot prove the strings are on the
+ * page that carries the values, and from W2b that page is 27 province pages as well as
+ * `/deniz` — the exact obligation CC BY 4.0 and ECMWF's "shall be attached" wording impose
+ * (→ DEC 2026-08-02c). Deleting the block from `/turkiye/[slug]` would leave every assertion
+ * in this file green while publishing derived ECMWF and Copernicus material with no
+ * attribution at all.
+ *
+ * This repo's vitest environment is `node` and both pages are async server components, so
+ * they cannot be rendered here; the honest guard at this level is the source symbol, scoped
+ * to the two files the obligation is about.
+ */
+describe("the attribution block is rendered on every surface that shows derived values", () => {
+  const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+
+  const hub = read("../../app/[locale]/deniz/page.tsx");
+  const province = read("../../app/[locale]/turkiye/[slug]/page.tsx");
+  const section = read("../../components/marine/province-marine-section.tsx");
+
+  it("renders it on the /deniz hub", () => {
+    expect(hub).toMatch(/<MarineAttribution\b/);
+  });
+
+  it("renders it on the province page", () => {
+    expect(province).toMatch(/<MarineAttribution\b/);
+  });
+
+  it("gates the province block on the SAME signal as the province's values", () => {
+    // Not "a boolean that happens to be true at the same time": literally the one signal the
+    // section reads, so the notice can neither go missing where a value appears nor appear
+    // where none does.
+    expect(province).toMatch(/showMarine && \(\s*<ProvinceMarineSection/);
+    expect(province).toMatch(/showMarine && \(\s*<MarineAttribution/);
+  });
+
+  it("keeps the licence text out of the section component — one copy, two render sites", () => {
+    // A second copy of a verbatim licence is a breach waiting for the day someone edits one
+    // of them. The section renders values; the notice stays in its own single-sourced block.
+    // Asserted against the licence TEXT and against a second translation call site — not
+    // against the provider names, which a code comment may legitimately mention.
+    expect(section).not.toContain(CMEMS_NOTICE);
+    expect(section).not.toContain("This service is based on data and products");
+    expect(section).not.toMatch(/attribution\.(ecmwf|cmems)/);
   });
 });

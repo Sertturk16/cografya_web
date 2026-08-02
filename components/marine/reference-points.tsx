@@ -9,6 +9,11 @@ import type {
   ProvinceListItem,
 } from "@/lib/api/types";
 import { byPlateCode } from "@/lib/api/provinces";
+import {
+  MARINE_POINTS_SECTION_ID,
+  marineBasinAnchorId,
+  marinePointAnchorId,
+} from "@/lib/marine/anchors";
 import { basinLabel, groupPointsByBasin } from "@/lib/marine/basins";
 import { marinePublishableBlocks } from "@/lib/marine/overview";
 import { MARINE_VALUE_STATUS_KEY } from "@/lib/marine/value-state";
@@ -29,8 +34,14 @@ interface ReferencePointsProps {
   overview: MarineOverview | null;
 }
 
-/** The section's heading id, and the stem of each basin sub-heading's id. */
-const HEADING_ID = "deniz-reference-points";
+/**
+ * The section's heading id, and the stem of each basin sub-heading's id.
+ *
+ * Both come from `lib/marine/anchors.ts` rather than from a template literal here: since W2b
+ * the 27 province pages link INTO these ids, and two independently-written template strings
+ * would drift into a link that silently lands at the top of the page.
+ */
+const HEADING_ID = MARINE_POINTS_SECTION_ID;
 
 /**
  * THE VALUE BAND — the page's first section and, since W2a, its subject.
@@ -130,7 +141,7 @@ export async function ReferencePoints({
                 .filter((block): block is MarineOverviewPoint => block !== undefined);
               if (groupBlocks.length === 0) return null;
 
-              const headingId = `${HEADING_ID}-${group.basin}`;
+              const headingId = marineBasinAnchorId(group.basin);
 
               return (
                 <section
@@ -149,7 +160,6 @@ export async function ReferencePoints({
                   <BasinValuesTable
                     locale={locale}
                     basinLabel={label}
-                    idStem={headingId}
                     blocks={groupBlocks}
                     layerById={layerById}
                     provincesByPlate={provincesByPlate}
@@ -191,7 +201,7 @@ export async function ReferencePoints({
           {groups.map((group) => {
             const label = basinLabel(group, locale);
             if (label === null) return null;
-            const headingId = `${HEADING_ID}-${group.basin}`;
+            const headingId = marineBasinAnchorId(group.basin);
 
             return (
               <section key={group.basin} className={styles.basin} aria-labelledby={headingId}>
@@ -207,7 +217,19 @@ export async function ReferencePoints({
                     const province = provincesByPlate.get(point.plateCode);
 
                     return (
-                      <li key={point.slugTr}>
+                      // THE SAME per-point id the value branch puts on its table row, emitted
+                      // HERE TOO — the branch fix from the PR #37 review. The 27 province
+                      // sections link to `#…-{slug}` unconditionally, but `/conditions` and
+                      // `/overview` are different endpoints with independent cache entries, so
+                      // a province page can very reasonably show values while this page is
+                      // rendering its value-less shape. Emitting the ids in one branch only
+                      // meant those links landed at the top of the page — silently, which is
+                      // the exact failure `lib/marine/anchors.ts` exists to prevent. Both
+                      // branches list the point, so both can name it.
+                      // `tabIndex={-1}` for the same reason the climate anchor carries one:
+                      // Safari/VoiceOver only move AT focus to a followed fragment when its
+                      // target is programmatically focusable (ENGINEERING.md §5).
+                      <li key={point.slugTr} id={marinePointAnchorId(point)} tabIndex={-1}>
                         {province ? (
                           // The visible link text is the point's own name ("Kocaeli
                           // Açıkları"), which contains the target province's name — a
