@@ -32,6 +32,26 @@
  *
  * `reset()` is called on a SUCCESSFUL read: the next outage is a new event and deserves its
  * own first-occurrence warning, rather than inheriting a counter from last week.
+ *
+ * WHAT IT DOES NOT PROMISE (stated because the docblock above is easy to over-read, → the
+ * PR #37 review, M1). The tally is a module-scoped variable, so it aggregates within ONE
+ * process and nowhere else:
+ *
+ * - `next build` may render routes across several workers. Each worker holds its own tally,
+ *   so an N-worker build prints up to N sequences of the same schedule, not one. The volume
+ *   is still logarithmic in the failure count per worker — which is the property that matters
+ *   — but "54 failures → 6 lines" is a single-process figure.
+ * - At runtime the same applies per serverless instance / server process: M instances mean M
+ *   sequences, and a process that restarts starts counting from one again.
+ * - In `next dev`, an HMR reload re-evaluates the module and silently resets the tally.
+ *
+ * And one sharper limit, in the mechanism itself: `reset()` on success is what makes a PARTIAL
+ * outage aggregate badly. If the api answers some provinces and fails others, every success in
+ * between zeroes the counter, so each failure is emitted as occurrence 1 and the 54-line
+ * problem comes back for exactly the interleaving where it is least informative. The trade is
+ * deliberate — the alternative (never resetting) reports a fresh outage next week as
+ * "occurrence 4096", which is worse — but a total outage is the case this limiter actually
+ * bounds, and it is the case it was built for.
  */
 
 export interface WarnLimiter {

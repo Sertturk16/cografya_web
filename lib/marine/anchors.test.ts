@@ -57,6 +57,7 @@ describe("both sides of the anchor contract call this module", () => {
   const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
   const emitter = read("../../components/marine/basin-values-table.tsx");
+  const fallbackEmitter = read("../../components/marine/reference-points.tsx");
   const linker = read("../../components/marine/province-marine-section.tsx");
 
   it("the hub row EMITS its id through marinePointAnchorId", () => {
@@ -69,8 +70,36 @@ describe("both sides of the anchor contract call this module", () => {
 
   it("neither side rebuilds the id from the section constant by hand", () => {
     // A template literal on either side is what drift looks like before it happens.
-    for (const source of [emitter, linker]) {
+    for (const source of [emitter, linker, fallbackEmitter]) {
       expect(source).not.toContain("deniz-reference-points");
     }
+  });
+
+  /**
+   * THE BRANCH THE FORMAT CONTRACT ALONE DOES NOT COVER (the PR #37 review, FENER-I3 +
+   * code-reviewer M2).
+   *
+   * `/deniz` has two render shapes: the value table, and the value-less point list it falls
+   * back to when the overview payload is not publishable. The province sections link to
+   * `#…-{slug}` UNCONDITIONALLY — they read `/api/marine/provinces/{plaka}/conditions`, a
+   * different endpoint with an independent cache entry from the hub's `/api/marine/overview`,
+   * so "province has values, hub does not" is genuinely reachable rather than theoretical.
+   *
+   * With the id emitted in one branch only, those 27 pages' links landed at the top of
+   * `/deniz` — no error, no 404, no CI signal, which is precisely the silent-failure class
+   * this module was written to prevent. Both branches list every point, so both name it, and
+   * this is the assertion that keeps it that way.
+   */
+  it("emits the per-point id in the value-less fallback branch too", () => {
+    expect(fallbackEmitter).toMatch(
+      /<li key=\{point\.slugTr\} id=\{marinePointAnchorId\(point\)\}/,
+    );
+  });
+
+  it("makes both fragment targets programmatically focusable", () => {
+    // A fragment target that is not focusable is followed VISUALLY but not by Safari/VoiceOver
+    // (ENGINEERING.md §5, the climate-chart precedent). Both branches, one rule.
+    expect(emitter).toMatch(/id=\{marinePointAnchorId\(point\)\} tabIndex=\{-1\}/);
+    expect(fallbackEmitter).toMatch(/id=\{marinePointAnchorId\(point\)\} tabIndex=\{-1\}/);
   });
 });

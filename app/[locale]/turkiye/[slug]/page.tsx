@@ -124,6 +124,15 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  // The marine point list is a GATE, not content: it answers "does this province have a
+  // coast" (`lib/marine/coastal.ts`), and no part of the page above it depends on the answer.
+  // Started HERE and awaited below so it overlaps the province-list read instead of queueing
+  // behind it — one fewer serial round trip on all 81 pages, coastal or not. Floating the
+  // promise is safe for exactly one reason: `getMarinePointsSafe` never rejects, in either
+  // phase, so there is no unhandled rejection to leak whichever path the render then takes.
+  // It is started AFTER the province resolves, so an unknown slug still costs no marine call.
+  const marinePointsPromise = getMarinePointsSafe();
+
   const t = await getTranslations("ProvinceDetail");
   const tb = await getTranslations("Breadcrumb");
   const tRegions = await getTranslations("Regions");
@@ -195,7 +204,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // the catalogue and the values are read only where a section will actually render, which
   // is where the 900 s window is the intended cost. Verified in the build output: coastal
   // provinces revalidate at 15 m, inland ones stay at 1 h.
-  const marinePoints = await getMarinePointsSafe();
+  const marinePoints = await marinePointsPromise;
   const [marineLayers, marineConditions] = isCoastalPlate(marinePoints, province.plateCode)
     ? await Promise.all([
         getMarineLayersSafe(),

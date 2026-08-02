@@ -327,6 +327,17 @@
   min-width: 720px;
 }
 
+/* THE DEEP-LINK TARGETS. Since W2b the 27 province marine sections link straight to a
+   point's row here, in BOTH of this page's render branches (the value table and the
+   value-less point list). Without a scroll margin the sticky site header covers the row
+   the reader was sent to — the same reason the climate chart anchor carries one
+   (`components/climate/climate.module.css`). Paired with `tabIndex={-1}` on the elements
+   themselves, which is what makes Safari/VoiceOver move focus there at all. */
+.valuesTable tbody tr,
+.pointList li {
+  scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+
 /* CLS is 0 here by CONSTRUCTION, not by reservation: the whole band is server-rendered, has
    no client JS, loads no image and no third party, so nothing arrives after first paint that
    could move a row (SEO §6 #9). The `min-width` below is a LEGIBILITY floor — it keeps the
@@ -458,8 +469,15 @@
      two-point provinces (İstanbul, Çanakkale, Balıkesir) show their two seas as a genuine
      comparison rather than as one block above another. The upper bound is what keeps the
      24 single-point provinces honest: an unbounded `1fr` stretched three short rows across
-     the full page width and read as a half-empty table. */
-  grid-template-columns: repeat(auto-fit, minmax(280px, 520px));
+     the full page width and read as a half-empty table.
+
+     The `min(280px, 100%)` rather than a bare `280px`: a fixed track minimum cannot shrink
+     below itself, so at the 320 px reflow reference width (WCAG 1.4.10) the block would sit
+     at exactly the 280 px the 20 px container padding leaves — no overflow today, but with
+     zero slack, and any future padding change would push the page into horizontal scroll.
+     The `min()` caps the minimum at the space actually available and changes nothing at any
+     width where 280 px fits. */
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 520px));
   justify-content: start;
   gap: 18px;
   align-items: start;

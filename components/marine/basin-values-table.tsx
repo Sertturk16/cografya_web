@@ -96,8 +96,12 @@ export async function BasinValuesTable({
             // The row id is what the 27 province marine sections link INTO (W2b), so it is
             // derived from the shared anchor module rather than assembled here — see
             // `lib/marine/anchors.ts` for why a template literal on each side is not enough.
+            // `tabIndex={-1}` makes that live deep-link target programmatically focusable, so
+            // Safari/VoiceOver actually move AT focus to the row when the fragment is
+            // followed — the same fix the climate chart anchor carries (ENGINEERING.md §5).
+            // It adds nothing to the tab order; the row's own link keeps its natural stop.
             return (
-              <tr key={point.slugTr} id={marinePointAnchorId(point)}>
+              <tr key={point.slugTr} id={marinePointAnchorId(point)} tabIndex={-1}>
                 <th scope="row" className={styles.thRow}>
                   {province ? (
                     // The anchor text is the point's own name ("Kocaeli Açıkları"), which

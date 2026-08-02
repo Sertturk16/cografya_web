@@ -9,7 +9,11 @@ import type {
   ProvinceListItem,
 } from "@/lib/api/types";
 import { byPlateCode } from "@/lib/api/provinces";
-import { MARINE_POINTS_SECTION_ID, marineBasinAnchorId } from "@/lib/marine/anchors";
+import {
+  MARINE_POINTS_SECTION_ID,
+  marineBasinAnchorId,
+  marinePointAnchorId,
+} from "@/lib/marine/anchors";
 import { basinLabel, groupPointsByBasin } from "@/lib/marine/basins";
 import { marinePublishableBlocks } from "@/lib/marine/overview";
 import { MARINE_VALUE_STATUS_KEY } from "@/lib/marine/value-state";
@@ -213,7 +217,19 @@ export async function ReferencePoints({
                     const province = provincesByPlate.get(point.plateCode);
 
                     return (
-                      <li key={point.slugTr}>
+                      // THE SAME per-point id the value branch puts on its table row, emitted
+                      // HERE TOO — the branch fix from the PR #37 review. The 27 province
+                      // sections link to `#…-{slug}` unconditionally, but `/conditions` and
+                      // `/overview` are different endpoints with independent cache entries, so
+                      // a province page can very reasonably show values while this page is
+                      // rendering its value-less shape. Emitting the ids in one branch only
+                      // meant those links landed at the top of the page — silently, which is
+                      // the exact failure `lib/marine/anchors.ts` exists to prevent. Both
+                      // branches list the point, so both can name it.
+                      // `tabIndex={-1}` for the same reason the climate anchor carries one:
+                      // Safari/VoiceOver only move AT focus to a followed fragment when its
+                      // target is programmatically focusable (ENGINEERING.md §5).
+                      <li key={point.slugTr} id={marinePointAnchorId(point)} tabIndex={-1}>
                         {province ? (
                           // The visible link text is the point's own name ("Kocaeli
                           // Açıkları"), which contains the target province's name — a

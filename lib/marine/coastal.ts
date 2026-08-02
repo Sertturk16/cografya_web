@@ -74,9 +74,17 @@ export function provinceMarineBlocks(
  * before the same bug can happen here.
  *
  * The licence gate is the sharp end of it: the attribution block must appear whenever a
- * derived value appears (a licence obligation, → DEC 2026-08-02c) and must NOT appear when
- * none does (the page's own "no source for absent content" rule). One boolean guarantees
- * both halves at once.
+ * derived value appears (a licence obligation, → DEC 2026-08-02c) and must not sit on a page
+ * that carries no marine material at all (the page's own "no source for absent content"
+ * rule). One boolean guarantees both halves at once.
+ *
+ * WHAT THE SIGNAL ACTUALLY MEANS, precisely (→ the PR #37 review, M3). It is "the api
+ * published a block for this province", NOT "a number is on screen". One state separates the
+ * two: every value in the block `unavailable`, where the section renders three honest status
+ * words and the licence block renders over zero derived numbers. That is over-attribution,
+ * which is the safe direction of the licence obligation, and it is chosen deliberately over
+ * the alternative — a section and a licence that blink in and out of existence between two
+ * ISR passes, which is a worse answer to the reader than "şu an alınamıyor".
  */
 export function provinceShowsMarine(conditions: MarineProvinceConditions | null): boolean {
   return provinceMarineBlocks(conditions).length > 0;

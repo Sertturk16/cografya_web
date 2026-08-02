@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type {
   MarineConditions,
@@ -122,5 +123,65 @@ describe("provinceMarineBlocks / provinceShowsMarine — ONE publish signal", ()
     for (const input of [null, conditions([]), singlePoint, twoPoint]) {
       expect(provinceShowsMarine(input)).toBe(provinceMarineBlocks(input).length > 0);
     }
+  });
+});
+
+/**
+ * THE LOCKED TWO-POINT POLICY, AS MARKUP (the PR #37 review, I2).
+ *
+ * `provinceMarineBlocks` passes the api's blocks through untouched — asserted above — and
+ * `fixtures.test.ts` proves the two blocks of a two-point province legitimately DISAGREE
+ * (İstanbul's Black Sea point carries a wave height; its Marmara point cannot, permanently).
+ * Neither of those proves the COMPONENT keeps them apart. A refactor that averaged the two
+ * temperatures, or filled the Marmara's missing wave from the Black Sea's, would leave every
+ * assertion in this repo green while publishing a number no instrument ever measured.
+ *
+ * This repo's vitest environment is `node` and the section is an async server component, so
+ * it cannot be rendered here (same limitation as the anchor and attribution guards, and the
+ * same answer): the honest guard at this level is the source symbol. It catches the class of
+ * change that would break the policy — an index into the block list, a merge, an arithmetic
+ * combination — and it does not pretend to be a render test.
+ */
+describe("the two-point policy survives into the markup", () => {
+  const section = readFileSync(
+    new URL("../../components/marine/province-marine-section.tsx", import.meta.url),
+    "utf8",
+  );
+
+  it("renders one block per api entry, mapped over the list it was handed", () => {
+    expect(section).toMatch(/blocks\.map\(\(block\) =>/);
+  });
+
+  it("reads every value from the block being rendered, never from a sibling", () => {
+    // The sharp end of the policy. Each `<ValueCell>` in the section must take its magnitude
+    // from `block.…`; a cell fed from anywhere else is a cross-block read by definition.
+    const cells = section.match(/<ValueCell\b/g) ?? [];
+    const blockScopedMagnitudes = section.match(/magnitude=\{block\./g) ?? [];
+
+    expect(cells.length).toBeGreaterThan(0);
+    expect(blockScopedMagnitudes).toHaveLength(cells.length);
+  });
+
+  it("never indexes the block list, and never combines two blocks into one number", () => {
+    // `blocks[0]` / `blocks[1]` is how "fill the other one from this one" is spelled, and
+    // `reduce` / `Math.` is how an average is. Neither belongs in a per-point render.
+    expect(section).not.toMatch(/blocks\[/);
+    expect(section).not.toMatch(/blocks\.(reduce|sort|filter|slice|find)\(/);
+    expect(section).not.toMatch(/Math\./);
+  });
+
+  it("gives each block its own künye and its own hub link", () => {
+    // Both are derived from the block/point in scope: a section-wide künye would speak for a
+    // point that has nothing to say, and a section-wide link would send both blocks to the
+    // same row of the hub table.
+    expect(section).toMatch(/marineBlockValues\(block\)/);
+    expect(section).toMatch(/hash: marinePointAnchorId\(point\)/);
+  });
+
+  it("never suppresses the province because one of its blocks is short of data", () => {
+    // The other half of the policy: the gate is the LIST, in `./coastal`, and it asks only
+    // whether there is a block — never whether a block's values are complete. A status test
+    // inside the section would be that suppression creeping back in.
+    expect(section).not.toMatch(/status ===/);
   });
 });
