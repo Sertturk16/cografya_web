@@ -61,6 +61,18 @@ jobs:
       - name: World map artifact drift
         run: pnpm generate:world-map:check
 
+      # The inland-water layer is drawn into the SAME pinned frame as the province
+      # outlines, on four different surfaces, from a SEPARATE snapshot and generator. That
+      # separation is what keeps the ODbL water data out of the public-domain Natural Earth
+      # layer, and it is also what makes drift dangerous: if the two artifacts ever stop
+      # sharing a frame, every lake slides off its shore while the pages still render, still
+      # typecheck and still look like a map. This step re-derives the artifact and fails on
+      # any difference; `generate:map:check` above proves the other half — that the pinned
+      # frame still reproduces the province paths byte for byte. Pure node, no network (the
+      # network step, `scripts/fetch-tr-inland-water.mjs`, is deliberately NOT a pnpm script).
+      - name: Inland water artifact drift
+        run: pnpm generate:water:check
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest

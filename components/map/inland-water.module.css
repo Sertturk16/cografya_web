@@ -1,0 +1,52 @@
+/* Inland water layer — the ONE style home for the lake/reservoir layer.
+   Deliberately its own file: the layer must look and behave IDENTICALLY on all four TR-frame
+   surfaces (/turkiye hub, the game's full and region maps, /deniz), and a rule that lives in
+   map.module.css or game-map.module.css would either be duplicated or drift. It also keeps
+   the pointer-events rule below in one place, next to the ruling that produced it. */
+
+.layer {
+  /* WATER SWALLOWS CLICKS — owner ruling, 2026-08-02: "suya tıklayınca hiçbir şey olmasın",
+     on every surface (→ DEC 2026-08-02k md. 5).
+
+     DO NOT ADD `pointer-events: none` HERE. It is the one change that would silently undo
+     the ruling: the click would fall through to the province underneath and, on /turkiye,
+     navigate to a province the user did not aim at; in the game it would be scored as an
+     answer. `visiblePainted` (the SVG default for a filled path) already holds the pointer,
+     so this declaration is documentation as much as instruction.
+
+     Nothing else is needed to satisfy the ruling — verified in code, not assumed:
+       · the game reads `event.target.closest("[data-plate]")`, and a water path has no
+         `[data-plate]` ancestor, so no attempt is counted and no score is lost;
+       · the hover card's `shapeFrom()` returns null over water, so the card never opens;
+       · pan is bound on the <svg>, so a drag that starts over a lake still pans. */
+  pointer-events: auto;
+}
+
+.water {
+  /* Tone: an ALIAS of the sea, never a literal. Published political maps draw inland water
+     and sea in the same blue (su-envanteri §2 E5/E7), and when P4 retunes --map-sea the
+     lakes follow it without this file being reopened. */
+  fill: var(--map-water);
+  /* The fill difference alone is only 1.26:1 against white land — the narrow luminance band
+     the 3:1 stroke floor leaves (see --map-sea in globals.css) — so the SIGNAL is carried by
+     the line, exactly as on /dunya's land↔sea boundary.
+
+     The line is a DARKER SHADE OF THE WATER, not the administrative taupe. Rendered samples
+     settled this: the dendritic reservoirs (Keban, Atatürk, Karakaya, Ilısu) have arms
+     narrower than one svg unit, so a 1px non-scaling stroke covers them from both sides and
+     the fill never shows — on those bodies the STROKE IS THE BODY, and in taupe they read as
+     brown scribbles rather than as lakes. See --map-water-line in globals.css for the
+     measured contrasts: it clears WCAG 1.4.11's 3:1 against ALL TEN backdrops this layer is
+     drawn over — white land, its own fill, an inert province, AND the seven Okabe-Ito region
+     tints the game's Bölge Bulma mode paints underneath it. That last set is why the token is
+     a near-black petrol rather than a mid-teal; the mid-teal failed 6 of the 7. Same width
+     and stroke family as a province edge, so the shoreline still reads as part of one
+     drawing. */
+  stroke: var(--map-water-line);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  /* NO opacity / fill-opacity, ever. The layer's whole job is to MASK the administrative
+     boundary that runs across a lake; any transparency puts that boundary back on screen as
+     a ghost, which is worse than not drawing the lake at all. */
+}

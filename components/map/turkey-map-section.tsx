@@ -4,6 +4,7 @@ import type { ProvinceMapSummary } from "@/lib/api/types";
 import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
+import { InlandWaterLayer } from "./inland-water-layer";
 import { MapHoverCard } from "./map-hover-card";
 import styles from "./map.module.css";
 
@@ -149,6 +150,11 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
               </a>
             );
           })}
+
+          {/* LAST child on purpose: opaque water painted after the provinces is what hides
+              the boundary segments crossing a lake, and what makes a mid-lake click hit the
+              water instead of a province link. See components/map/inland-water-layer.tsx. */}
+          <InlandWaterLayer />
         </svg>
 
         <MapHoverCard />

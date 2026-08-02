@@ -10,6 +10,7 @@ import {
 } from "@/lib/map/point-labels";
 import { formatViewBox, parseViewBox, projectToMapPoint } from "@/lib/map/projection";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
+import { InlandWaterLayer } from "@/components/map/inland-water-layer";
 import styles from "./marine.module.css";
 
 interface MarineMapProps {
@@ -113,6 +114,12 @@ export async function MarineMap({ locale, points, provinces }: MarineMapProps) {
               <path key={shape.plateCode} className={styles.mapLand} d={shape.d} />
             ))}
           </g>
+
+          {/* The lakes belong here more than anywhere else: this is the water page, and a
+              Türkiye drawn without Van Gölü next to a section about seas is the exact gap the
+              layer exists to close (→ DEC 2026-08-02k md. 4). Painted after the land, before
+              the markers — a marker must never disappear under a lake. */}
+          <InlandWaterLayer />
 
           {placed.map((item) => (
             // `role="img"` + a `<title>` child gives the marker ONE accessible name that is
