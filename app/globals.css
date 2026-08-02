@@ -68,6 +68,13 @@
      (taupe 3.05:1 against it) — going cooler/darker to buy fill contrast would quietly break
      a floor a previous a11y review set, so it does not. */
   --map-sea: #dbe7e8;
+  /* INLAND water (lakes + reservoirs) on the Türkiye map. An ALIAS of the sea, not a second
+     literal — the same single-source pattern --land-inert uses below. Published political
+     maps draw inland water and sea in one blue (su-envanteri §2, E5/E7), and the alias means
+     a future retune of --map-sea carries the lakes with it instead of leaving two tones to
+     drift apart. Contrast is inherited unchanged: --province-stroke measures 3.05:1 against
+     this tint, clear of WCAG 1.4.11's 3:1 for a graphical object. */
+  --map-water: var(--map-sea);
   /* Backdrop LAND on the world map: territories that will never get a page (Greenland,
      Antarctica, the overseas-territory set) plus not-yet-seeded countries.
 

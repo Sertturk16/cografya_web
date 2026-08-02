@@ -26,9 +26,12 @@ export const MAP_VIEWBOX = "0 0 1000 429" as const;
  * [lon, lat] pair OUTSIDE this GeoJSON (an offshore marine reference point, a city
  * marker) can be placed in the SAME coordinate space at runtime.
  *
- * Emitted by the generator rather than restated by hand: the values derive from the
- * source file's own bounding box, so a snapshot change silently invalidates any
- * hand-copied constant. `pnpm generate:map:check` fails the moment they drift.
+ * Emitted by the generator rather than restated by hand, so no consumer can hold a stale
+ * copy. The values themselves are PINNED in `scripts/lib/tr-frame.mjs` and shared with
+ * every other generator that draws into this viewBox (the inland-water layer, later the
+ * rivers), which is what keeps those artifacts co-registered with these outlines. The
+ * generator re-measures this snapshot's bounding box on every run and throws if it no
+ * longer agrees with the pinned frame; `pnpm generate:map:check` fails on any drift.
  *
  * Apply them with `projectToMapPoint()` in `lib/map/projection.ts` — never inline.
  */

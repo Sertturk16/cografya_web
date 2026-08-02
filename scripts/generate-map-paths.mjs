@@ -15,10 +15,18 @@
  * outline, and — critically — this Faz-1 map is navigation CHROME, not a data
  * encoding (SPEC §2 doctrine note), so a precise cartographic projection is not
  * required. A conic-conformal upgrade (via d3-geo) is a possible Faz-2 refinement.
+ *
+ * The projection CONSTANTS are no longer derived here: they are pinned in
+ * `scripts/lib/tr-frame.mjs` and shared with every other generator that draws into the
+ * same viewBox (inland water today, rivers later). This generator still measures the
+ * source bbox — but only to ASSERT that it still agrees with the pinned frame, so a
+ * snapshot refresh that would have silently shifted the provinces under a co-registered
+ * layer now stops the build instead (→ DEC 2026-08-02k md. 1).
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { TR_FRAME, assertFrameMatchesBounds, assertInsideFrame, projectToFrame } from "./lib/tr-frame.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -116,9 +124,9 @@ const NAME_TO_PLATE = {
   Düzce: "81",
 };
 
-// --- Projection + simplification tuning ---------------------------------------
-const VIEW_WIDTH = 1000; // shared viewBox width (svg units)
-const PADDING = 6; // inset so strokes near the edge are not clipped
+// --- Simplification tuning ----------------------------------------------------
+// The FRAME (viewBox size, projection constants, padding) is not tuned here — it is pinned
+// in scripts/lib/tr-frame.mjs and shared with every other generator that draws into it.
 const SIMPLIFY_EPSILON = 0.45; // Douglas-Peucker tolerance, in projected svg units
 const DECIMALS = 1; // coordinate rounding in the emitted path data
 
@@ -182,20 +190,16 @@ for (const feature of geojson.features) {
   });
 }
 
-const refLat = ((minLat + maxLat) / 2) * (Math.PI / 180);
-const cosLat = Math.cos(refLat);
-// Raw (pre-scale) projected extent → scale so width fills VIEW_WIDTH - 2*PADDING.
-const rawW = (maxLon - minLon) * cosLat;
-const rawH = maxLat - minLat;
-const scale = (VIEW_WIDTH - 2 * PADDING) / rawW;
-const viewHeight = Math.round(rawH * scale + 2 * PADDING);
+// The frame is PINNED, not derived. This snapshot is still the landmass the frame was
+// fitted to, so its bbox must still reproduce the pinned constants exactly — and if it does
+// not, the generator refuses to run rather than quietly moving every map on the site out
+// from under the layers that share the frame (→ DEC 2026-08-02k md. 1).
+assertFrameMatchesBounds({ minLon, maxLon, minLat, maxLat });
+
+const { minLon: frameMinLon, maxLat: frameMaxLat, cosLat, scale, padding: PADDING, viewWidth: VIEW_WIDTH, viewHeight } = TR_FRAME;
 
 /** [lon, lat] → [x, y] in the shared viewBox (north up). */
-function project([lon, lat]) {
-  const x = PADDING + (lon - minLon) * cosLat * scale;
-  const y = PADDING + (maxLat - lat) * scale;
-  return [x, y];
-}
+const project = projectToFrame;
 
 /** Visit every [lon, lat] pair in a Polygon / MultiPolygon geometry. */
 function eachCoord(geometry, fn) {
@@ -221,6 +225,9 @@ for (const feature of geojson.features) {
   const subpaths = [];
   for (const ring of outerRings(feature.geometry)) {
     const projected = ring.map(project);
+    // Inverted safety net: with the frame pinned, "the source grew" can no longer move the
+    // frame, so it has to surface as "the source no longer fits".
+    assertInsideFrame(projected, { label: `${geoName} (${plateCode})` });
     const simplified = simplify(projected, SIMPLIFY_EPSILON);
     if (simplified.length < 3) continue;
     const d = simplified
@@ -271,9 +278,12 @@ export const MAP_VIEWBOX = "0 0 ${VIEW_WIDTH} ${viewHeight}" as const;
  * [lon, lat] pair OUTSIDE this GeoJSON (an offshore marine reference point, a city
  * marker) can be placed in the SAME coordinate space at runtime.
  *
- * Emitted by the generator rather than restated by hand: the values derive from the
- * source file's own bounding box, so a snapshot change silently invalidates any
- * hand-copied constant. \`pnpm generate:map:check\` fails the moment they drift.
+ * Emitted by the generator rather than restated by hand, so no consumer can hold a stale
+ * copy. The values themselves are PINNED in \`scripts/lib/tr-frame.mjs\` and shared with
+ * every other generator that draws into this viewBox (the inland-water layer, later the
+ * rivers), which is what keeps those artifacts co-registered with these outlines. The
+ * generator re-measures this snapshot's bounding box on every run and throws if it no
+ * longer agrees with the pinned frame; \`pnpm generate:map:check\` fails on any drift.
  *
  * Apply them with \`projectToMapPoint()\` in \`lib/map/projection.ts\` — never inline.
  */
@@ -291,8 +301,8 @@ export interface MapProjection {
 }
 
 export const MAP_PROJECTION: MapProjection = {
-  minLon: ${minLon},
-  maxLat: ${maxLat},
+  minLon: ${frameMinLon},
+  maxLat: ${frameMaxLat},
   cosLat: ${cosLat},
   scale: ${scale},
   padding: ${PADDING},

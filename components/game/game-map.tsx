@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { getTranslations } from "next-intl/server";
+import { InlandWaterLayer } from "@/components/map/inland-water-layer";
 import { MapZoomPan } from "@/components/map/map-zoom-pan";
 import { aspectOfViewBox } from "@/lib/game/map-bbox";
 import type { GameShapeEntry } from "@/lib/game/map-shapes";
@@ -114,6 +115,13 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
               data-region={shape.target?.region}
             />
           ))}
+
+          {/* Painted after the provinces, exactly as on /turkiye. The layer holds every body
+              in the country, not just this round's region: the region viewBox clips the rest
+              away, so no filtering is needed and the two maps cannot disagree. It also stays
+              OUT of `viewBoxForPaths()` — the stage's aspect ratio is derived from the
+              province shapes alone, so adding water cannot move the frame. */}
+          <InlandWaterLayer />
         </svg>
 
         {/* ODbL obligation: the attribution stays visible wherever these shapes are drawn
