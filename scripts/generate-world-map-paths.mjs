@@ -54,10 +54,29 @@
  * Purely a build-time coordinate transform: the pipeline is still point-wise, the raw GeoJSON
  * still never reaches the client, and the React component / its SEO+CWV surface are untouched
  * — only the emitted path `d` values and the derived viewBox height change.
+ *
+ * Simplification is TOPOLOGICAL (`lib/map-topology.mjs`): a border shared by two countries is
+ * cut out as an arc, simplified ONCE, and handed to both neighbours, so they cannot disagree
+ * about which vertices survive and leave a sliver of sea along their common border. Emission
+ * is RELATIVE (`lib/path-encode.mjs`) with a quantised cursor. Both modules are shared with
+ * the Türkiye generator; read their headers before touching either.
+ *
+ * Interior rings are DRAWN AS HOLES. Every interior ring in this snapshot is an enclave — the
+ * hole in South Africa is Lesotho, the holes in Kyrgyzstan are Uzbek and Tajik exclaves — and
+ * dropping them made the surrounding country paint straight over a sovereign state that draws
+ * earlier in ISO order (Lesotho was invisible and unclickable on the live map; its `<a>` was
+ * in the HTML, so this was a rendering defect, not an SEO one). They are emitted as extra
+ * subpaths and the component paints with `fill-rule="evenodd"`, which makes the hole a hole
+ * without relying on the source's ring winding order. DEC 2026-07-26's "the world map must
+ * not have holes" is about MISSING LANDMASS; an enclave hole is the opposite — the enclave
+ * draws its own shape into it.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { buildTopology, simplify } from "./lib/map-topology.mjs";
+import { encodePath } from "./lib/path-encode.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -122,47 +141,6 @@ const DECIMALS = 1; // coordinate rounding in the emitted path data
 const MARKER_MIN_SPAN = 0.9; // projected svg units (per axis)
 const MARKER_RADIUS = 1.0; // half-diagonal of the fallback diamond, svg units
 
-/** Perpendicular distance from point p to the line segment a→b. */
-function perpDistance(p, a, b) {
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
-  let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2;
-  t = Math.max(0, Math.min(1, t));
-  return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
-}
-
-/** Iterative Douglas-Peucker line simplification (avoids deep recursion). */
-function simplify(points, epsilon) {
-  if (points.length < 3) return points.slice();
-  const keep = new Array(points.length).fill(false);
-  keep[0] = true;
-  keep[points.length - 1] = true;
-  const stack = [[0, points.length - 1]];
-  while (stack.length) {
-    const [start, end] = stack.pop();
-    let maxDist = 0;
-    let index = -1;
-    for (let i = start + 1; i < end; i++) {
-      const dist = perpDistance(points[i], points[start], points[end]);
-      if (dist > maxDist) {
-        maxDist = dist;
-        index = i;
-      }
-    }
-    if (maxDist > epsilon && index !== -1) {
-      keep[index] = true;
-      stack.push([start, index], [index, end]);
-    }
-  }
-  return points.filter((_, i) => keep[i]);
-}
-
-function round(n) {
-  return Number(n.toFixed(DECIMALS));
-}
-
 /** Absolute shoelace area of a projected ring, in svg units². */
 function ringArea(points) {
   let sum = 0;
@@ -180,10 +158,13 @@ function eachCoord(geometry, fn) {
   for (const poly of polys) for (const ring of poly) for (const pt of ring) fn(pt);
 }
 
-/** Outer rings of a geometry (drops holes; each MultiPolygon member is an island). */
-function outerRings(geometry) {
+/**
+ * Every polygon of a geometry as `{ outer, holes }` (each MultiPolygon member is a separate
+ * island/landmass; ring 0 is its outline, rings 1+ are its enclave holes).
+ */
+function polygonRings(geometry) {
   const polys = geometry.type === "MultiPolygon" ? geometry.coordinates : [geometry.coordinates];
-  return polys.map((poly) => poly[0]);
+  return polys.map((poly) => ({ outer: poly[0], holes: poly.slice(1) }));
 }
 
 /** Total vertex count of a geometry — used to pick the label of the largest member when
@@ -212,13 +193,16 @@ function projectedBBox(geometry, projectFn) {
 }
 
 /** A fixed-size diamond subpath centred at (cx, cy) — the guaranteed-representable fallback
- *  for a country too small to survive simplification. */
+ *  for a country too small to survive simplification. Synthetic geometry, so it is built
+ *  after the topology pass and never offered to it as a ring. */
 function markerDiamond(cx, cy) {
   const r = MARKER_RADIUS;
-  return (
-    `M${round(cx)} ${round(cy - r)}L${round(cx + r)} ${round(cy)}` +
-    `L${round(cx)} ${round(cy + r)}L${round(cx - r)} ${round(cy)}Z`
-  );
+  return [
+    [cx, cy - r],
+    [cx + r, cy],
+    [cx, cy + r],
+    [cx - r, cy],
+  ];
 }
 
 // --- Load + first pass: bounding box of ALL features (nothing is excluded) ---
@@ -282,13 +266,24 @@ function project(coord) {
   return [PADDING + (x - minX) * scale, PADDING + (maxY - y) * scale];
 }
 
-// --- Second pass: build one merged, simplified path per ISO join key ------------
-/** @type {Map<string, { geoName: string, labelVerts: number, subpaths: string[] }>} */
-const byIso = new Map();
+// --- Second pass (a): COLLECT every ring that will be drawn --------------------
+// Nothing is simplified here. Douglas-Peucker now runs per shared ARC, not per ring, so the
+// whole ring set has to be on the table before any tolerance is applied — that is the entire
+// point of the topology module.
+/**
+ * One feature's drawing plan. `marker` short-circuits everything else; otherwise each entry
+ * of `polygons` names the ring indices this feature contributed to `topologyRings`.
+ * @type {{ iso: string, geoName: string, verts: number, bbox: { cx: number, cy: number, w: number, h: number },
+ *          marker: [number, number][] | null,
+ *          polygons: { outer: number, holes: number[] }[] }[]}
+ */
+const plans = [];
+/** @type {{ points: [number, number][], epsilon: number }[]} */
+const topologyRings = [];
 /** Every join key we attempted to draw — checked against the emitted keys below so a
  *  future silent drop (the Nauru/Vatican bug) fails the build instead of shipping. */
 const expectedKeys = new Set();
-let markerCount = 0;
+let holeRingCount = 0;
 for (const feature of drawn) {
   // Normalize the join key to UPPERCASE for 2-letter ISO codes (the api's Country.isoCode
   // is uppercase alpha-2, joined by raw equality). Synthetic backdrop keys (lowercase
@@ -303,58 +298,134 @@ for (const feature of drawn) {
   }
   expectedKeys.add(iso);
 
-  const subpaths = [];
   const epsilon = SIMPLIFY_EPSILON_BY_ISO.get(iso) ?? SIMPLIFY_EPSILON;
   const minRingArea = MIN_RING_AREA_BY_ISO.get(iso) ?? 0;
   const bbox = projectedBBox(feature.geometry, project);
+  const verts = vertexCount(feature.geometry);
+
   if (bbox.w < MARKER_MIN_SPAN && bbox.h < MARKER_MIN_SPAN) {
     // Micro-state: its whole outline is smaller than the simplify tolerance and would
     // collapse to nothing. Emit a fixed-size marker so the country still gets a shape (and
     // thus a crawlable link) instead of being silently dropped.
-    subpaths.push(markerDiamond(bbox.cx, bbox.cy));
+    plans.push({
+      iso,
+      geoName,
+      verts,
+      bbox,
+      marker: markerDiamond(bbox.cx, bbox.cy),
+      polygons: [],
+    });
+    continue;
+  }
+
+  /** @type {{ outer: number, holes: number[] }[]} */
+  const polygons = [];
+  for (const { outer, holes } of polygonRings(feature.geometry)) {
+    const projected = outer.map(project);
+    // ORDER MATTERS. The size decision is made on the TRUE ring, before any tolerance has
+    // touched it: testing the SIMPLIFIED ring conflates "genuinely sub-pixel" with
+    // "flattened by our own coarse tolerance" and silently deletes real islands (this is
+    // exactly what it did — 18 real Antarctic rings, the largest a true 4.6 u² / 5.8 × 1.6 u
+    // island, a visible hole at MAX_ZOOM; PR #23 review I1). Both figures are measured on
+    // the TRUE projected ring, which is the object the test is deciding about.
+    // Backdrop-only: minRingArea is 0 for every normal country, so their rings skip this
+    // test entirely.
+    if (minRingArea > 0 && ringArea(projected) < minRingArea) continue;
+    // A ring that cleared the size bar IS a place, so it has to be drawn as one. If the
+    // coarse backdrop tolerance would collapse it into a sliver, ask for the global
+    // tolerance instead of shipping a hairline — a hairline is the very artifact the size
+    // bar exists to remove, so emitting one would defeat the filter from the other side.
+    // Decided on the ring ALONE, before topology, which is exact here precisely because the
+    // only shape with a coarse override (Antarctica) borders nothing and therefore shares no
+    // arc. Should that ever stop being true, the topology module simplifies a shared arc at
+    // the FINEST epsilon of its owners, so a coarse backdrop can still never degrade a
+    // neighbour — the trial below would merely become conservative.
+    let ringEpsilon = epsilon;
+    if (minRingArea > 0) {
+      const trial = simplify(projected, epsilon);
+      if (trial.length < 3 || ringArea(trial) < minRingArea) ringEpsilon = SIMPLIFY_EPSILON;
+    }
+    const outerIndex = topologyRings.length;
+    topologyRings.push({ points: projected, epsilon: ringEpsilon });
+    /** @type {number[]} */
+    const holeIndices = [];
+    for (const hole of holes) {
+      holeIndices.push(topologyRings.length);
+      topologyRings.push({ points: hole.map(project), epsilon: ringEpsilon });
+      holeRingCount++;
+    }
+    polygons.push({ outer: outerIndex, holes: holeIndices });
+  }
+  plans.push({ iso, geoName, verts, bbox, marker: null, polygons });
+}
+
+// --- Second pass (b): ONE topology + simplification pass over every collected ring ---
+const topology = buildTopology(topologyRings);
+const simplifiedRings = topology.rings;
+// The whole point of the topology pass: neighbours must agree, vertex for vertex, about the
+// border they share. If they do not, the artifact ships visible slivers of sea along land
+// borders — so fail the build BEFORE writing rather than let the regression through.
+if (topology.stats.asymmetricSharedNodes !== 0) {
+  throw new Error(
+    `generate:world-map — ${topology.stats.asymmetricSharedNodes} shared source vertices were ` +
+      `kept by one owner and dropped by another. Topology extraction is broken; the emitted ` +
+      `borders would not coincide.`,
+  );
+}
+
+// --- Second pass (c): assemble one merged path per ISO join key ------------------
+/** @type {Map<string, { geoName: string, labelVerts: number, subpaths: [number, number][][] }>} */
+const byIso = new Map();
+let markerCount = 0;
+let emittedHoles = 0;
+for (const plan of plans) {
+  const { iso, geoName, verts } = plan;
+  /** @type {[number, number][][]} */
+  const subpaths = [];
+  if (plan.marker) {
+    subpaths.push(plan.marker);
     markerCount++;
   } else {
-    for (const ring of outerRings(feature.geometry)) {
-      const projected = ring.map(project);
-      // ORDER MATTERS. The size decision is made on the TRUE ring, before any tolerance has
-      // touched it: testing the SIMPLIFIED ring conflates "genuinely sub-pixel" with
-      // "flattened by our own coarse tolerance" and silently deletes real islands (this is
-      // exactly what it did — 18 real Antarctic rings, the largest a true 4.6 u² / 5.8 × 1.6 u
-      // island, a visible hole at MAX_ZOOM; PR #23 review I1). Both figures are measured on
-      // the TRUE projected ring, which is the object the test is deciding about; that same
-      // island ships as 5.8 × 1.4 u after the re-simplification and 1-decimal rounding below.
-      // Backdrop-only: minRingArea is 0 for
-      // every normal country, so their rings skip this test entirely and their paths are
-      // byte-identical.
-      if (minRingArea > 0 && ringArea(projected) < minRingArea) continue;
-      let simplified = simplify(projected, epsilon);
-      // A ring that cleared the size bar IS a place, so it has to be drawn as one. If the
-      // coarse tolerance collapsed it into a sliver, redraw it at the global tolerance
-      // instead of shipping a hairline — a hairline is the very artifact the size bar
-      // exists to remove, so emitting one would defeat the filter from the other side.
-      if (minRingArea > 0 && (simplified.length < 3 || ringArea(simplified) < minRingArea)) {
-        simplified = simplify(projected, SIMPLIFY_EPSILON);
+    for (const polygon of plan.polygons) {
+      const outer = simplifiedRings[polygon.outer];
+      // A tiny islet of a larger country — safely dropped, and its holes go with it (a hole
+      // without its landmass would punch through whatever is drawn underneath).
+      if (outer.length < 3) continue;
+      subpaths.push(outer);
+      for (const holeIndex of polygon.holes) {
+        const hole = simplifiedRings[holeIndex];
+        if (hole.length < 3) continue; // sub-tolerance enclave: nothing left to cut out
+        subpaths.push(hole);
+        emittedHoles++;
       }
-      if (simplified.length < 3) continue; // a tiny islet of a larger country — safely dropped
-      const d = simplified
-        .map(([x, y], i) => `${i === 0 ? "M" : "L"}${round(x)} ${round(y)}`)
-        .join("");
-      subpaths.push(`${d}Z`);
     }
-    // Safety net: a feature big enough to skip the marker path must still have produced at
-    // least one ring. If every ring somehow collapsed, fall back to a marker rather than
+    // Safety net: a feature whose bounding box cleared MARKER_MIN_SPAN must still have
+    // produced at least one ring. If every ring collapsed, fall back to a marker rather than
     // dropping the country — the completeness assertion below is the hard guarantee, this
-    // keeps it satisfiable. It is a net, never an intended outcome: a feature this large
-    // reduced to a 2 u diamond is always a tuning bug (too coarse an epsilon, too high a
-    // ring-area bar), and the completeness assertion would NOT catch it — that checks
-    // presence, not plausibility. So say so loudly instead of shipping a shrunken landmass.
+    // keeps it satisfiable. The completeness assertion would NOT catch this on its own: it
+    // checks presence, not plausibility. So say it out loud, WITH the two numbers that tell
+    // the two possible causes apart:
+    //
+    //   • total ring area ≈ 0 → a DISPERSED MICRO-ARCHIPELAGO. Every island is genuinely
+    //     sub-pixel; only the chain between them spans more than MARKER_MIN_SPAN, which is a
+    //     per-axis bbox test and cannot see that. The marker is the correct rendering, and
+    //     the honest one — Maldives and the British Virgin Islands used to emit zero-area
+    //     degenerate subpaths here instead: in the artifact, invisible on screen.
+    //   • total ring area meaningfully > 0 → a real landmass reduced to a 2 u diamond, i.e.
+    //     a tuning bug (too coarse an epsilon, too high a ring-area bar).
     if (subpaths.length === 0) {
-      console.warn(
-        `generate:world-map — WARNING: "${geoName}" (${iso}) spans ` +
-          `${bbox.w.toFixed(2)} × ${bbox.h.toFixed(2)} u but every ring collapsed; it is being ` +
-          `drawn as a marker diamond. Check SIMPLIFY_EPSILON_BY_ISO / MIN_RING_AREA_BY_ISO.`,
+      const area = plan.polygons.reduce(
+        (sum, polygon) => sum + ringArea(topologyRings[polygon.outer].points),
+        0,
       );
-      subpaths.push(markerDiamond(bbox.cx, bbox.cy));
+      console.warn(
+        `generate:world-map — NOTE: "${geoName}" (${iso}) spans ` +
+          `${plan.bbox.w.toFixed(2)} × ${plan.bbox.h.toFixed(2)} u but every ring collapsed, ` +
+          `so it is drawn as a marker diamond. Total true ring area ${area.toFixed(2)} u² — ` +
+          `≈0 means a dispersed micro-archipelago (expected); anything larger means ` +
+          `SIMPLIFY_EPSILON_BY_ISO / MIN_RING_AREA_BY_ISO need retuning.`,
+      );
+      subpaths.push(markerDiamond(plan.bbox.cx, plan.bbox.cy));
       markerCount++;
     }
   }
@@ -362,7 +433,6 @@ for (const feature of drawn) {
   // Merge features that share a join key (e.g. Australia + its external territories) into a
   // single shape → one <a>, one internal link per country, all its polygons highlighting
   // together. The label follows the largest member (provenance only; the UI shows nameTr).
-  const verts = vertexCount(feature.geometry);
   const existing = byIso.get(iso);
   if (existing) {
     existing.subpaths.push(...subpaths);
@@ -389,11 +459,15 @@ if (missing.length > 0) {
 }
 
 const shapes = [...byIso.entries()]
-  .map(([iso, v]) => ({ iso, geoName: v.geoName, d: v.subpaths.join("") }))
+  .map(([iso, v]) => ({
+    iso,
+    geoName: v.geoName,
+    d: encodePath(v.subpaths, { decimals: DECIMALS }),
+  }))
   // Locale PINNED: the artifact mixes uppercase ISO keys with lowercase synthetic `x-…`
   // backdrop keys, whose relative order differs between ICU locales. The standing
-  // "239 paths byte-identical" gate (and `generate:world-map:check` in CI) would otherwise
-  // rest on every machine happening to run the same default locale.
+  // `generate:world-map:check` drift gate would otherwise rest on every machine happening
+  // to run the same default locale.
   .sort((a, b) => a.iso.localeCompare(b.iso, "en"));
 
 // --- Emit -------------------------------------------------------------------
@@ -432,7 +506,15 @@ export interface CountryShape {
   readonly iso: string;
   /** Source Natural Earth label (build-time provenance only; UI shows the api nameTr). */
   readonly geoName: string;
-  /** SVG path \`d\` (one or more closed subpaths for countries with islands). */
+  /**
+   * SVG path \`d\` — one closed subpath per landmass, plus one per ENCLAVE HOLE (Lesotho
+   * inside South Africa, the Uzbek/Tajik exclaves inside Kyrgyzstan, …). Holes rely on
+   * \`fill-rule="evenodd"\`, so any element painting this string MUST set it; with the
+   * default \`nonzero\` an enclave would be filled over by its surrounding country.
+   *
+   * Encoded relatively (\`M\` once, then an \`l\` run) — the outline is identical to the
+   * absolute form, it is just ~26% fewer bytes on the wire.
+   */
   readonly d: string;
 }
 
@@ -446,8 +528,13 @@ ${body}
 
 writeFileSync(OUT, out, "utf8");
 const bytes = Buffer.byteLength(out, "utf8");
+const { stats } = topology;
 console.log(
   `generate:world-map → ${OUT}\n  ${shapes.length} shapes (${markerCount} micro-state markers) · ` +
     `viewBox 0 0 ${VIEW_WIDTH} ${viewHeight} · ${(bytes / 1024).toFixed(1)} kB · ` +
-    `${expectedKeys.size} source keys all present ✓`,
+    `${expectedKeys.size} source keys all present ✓\n  topology: ${stats.inputRings} rings ` +
+    `(${holeRingCount} enclave holes, ${emittedHoles} survived) → ${stats.arcs} arcs ` +
+    `(${stats.sharedArcs} shared) · ${stats.inputVertices} → ${stats.outputVertices} vertices\n` +
+    `  shared source nodes: ${stats.sharedNodes} · ` +
+    `ASYMMETRIC: ${stats.asymmetricSharedNodes} ✓`,
 );

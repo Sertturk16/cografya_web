@@ -121,11 +121,53 @@ flattened into hairlines are re-simplified at the global 0.15 so they render as 
 than as coastal "hair". Both overrides are keyed per ISO and default to
 "no override", so no other country path is touched. Framing it extends the
 viewBox south (`0 0 1000 447` → `0 0 1000 521`); the projected X extent and the northern edge
-are unchanged, so **all 239 pre-existing country paths stayed byte-identical** (the artifact
-diff is +1 shape line and the viewBox constant, nothing else). Re-run only if the snapshot is
+are unchanged. Re-run only if the snapshot is
 refreshed (update "Fetched" above) or the projection / simplification parameters change. Both the
 snapshot **and** the generated artifact are committed, so CI and runtime never invoke the
-generator.
+generator. `pnpm generate:world-map:check` re-runs the generator and fails on any diff; it is
+wired into CI, so a hand-edit of the artifact cannot ship.
+
+### Topological simplification + relative encoding (2026-08-02)
+
+Simplification is **topological**, via the shared `scripts/lib/map-topology.mjs`. Douglas-Peucker
+used to run once per country, so a border shared by two neighbours was decided twice and they
+routinely kept different subsets of the same source vertices — measured on this snapshot,
+**1,198 of the 19,258 shared vertices (6.2%) were decided asymmetrically**, and every one of
+them is a sliver of sea showing through a land border. The generator now cuts the ring set into
+shared arcs, simplifies each arc **once**, and reassembles; the epsilon of a shared arc is the
+finest of its owners', so a coarse backdrop override can never degrade a neighbour. The
+generator re-measures symmetry on its own output and **throws if it is not 0**.
+
+Emission is **relative** (`scripts/lib/path-encode.mjs`): one absolute `M` per shape, then an
+`l` run of deltas. The cursor is tracked in the same 0.1-unit quantised space the SVG parser
+reconstructs, so rounding error is bounded per-vertex instead of accumulating along a coastline.
+Verified by round-tripping the emitted paths back to absolute: **26,339 vertices, maximum
+deviation 0.**
+
+Combined, at the unchanged 0.15 tolerance: **326.3 KiB → 177.9 KiB raw (−45%), 81.4 → 50.9 KiB
+brotli (−37%)**, same outlines. Relaxing the tolerance further was measured and **rejected**:
+0.25 collapses Malta, Saint Kitts, Turks and Caicos and the US/British Virgin Islands from real
+outlines to fallback markers, and the artifact is already far inside budget.
+
+### Enclave holes
+
+Interior rings are **drawn as holes** (they used to be dropped). All 12 in this snapshot are
+enclaves, each exactly coincident with the enclosed state's own outline: Lesotho in South
+Africa, San Marino and the Vatican in Italy, Uzbek/Tajik exclaves in Kyrgyzstan, Malawi's two
+in Mozambique, and the Armenia/Azerbaijan/UAE/Uzbekistan pairs. Dropping them made the
+surrounding country paint over the enclave whenever it drew later in ISO order — **Lesotho was
+invisible and unclickable on the live map** (its `<a>` was in the HTML, so this was a rendering
+defect, not an SEO one). Holes are emitted as extra subpaths and the component must paint with
+`fill-rule="evenodd"`, which makes them holes without trusting the source's ring winding.
+DEC 2026-07-26's "the world map must not have holes" is about **missing landmass**; an enclave
+hole is the opposite — the enclave draws its own shape into it.
+
+Two dispersed micro-archipelagos (**Maldives, British Virgin Islands**) now fall back to the
+marker diamond. Every one of their islands is sub-pixel at world scale, so they were previously
+emitting zero-area degenerate subpaths — present in the artifact, invisible on screen. The
+marker is the artifact's standing guarantee that a country is never unrepresentable; the
+per-axis `MARKER_MIN_SPAN` bbox test misses them because the _chain_ spans several units even
+though every island in it does not.
 
 > **Snapshot rebuild (one-off, not part of the committed pipeline):** the `{iso, name}` snapshot
 > itself is produced from the raw 168-property Natural Earth download by the ISO-derivation +

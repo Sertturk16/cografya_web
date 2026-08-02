@@ -48,6 +48,19 @@ interface StatSlot {
 type FigureRenderOptions = Pick<FigureTextOptions, "noneText" | "unit">;
 
 /**
+ * REQUIRED on every `<path>` painting a `COUNTRY_SHAPES` `d`. The generator emits an enclave's
+ * interior ring as an extra subpath — the hole in South Africa is Lesotho, the holes in
+ * Kyrgyzstan are Uzbek and Tajik exclaves — and only the even-odd rule turns those subpaths
+ * into actual holes without trusting the source's ring winding. Under SVG's default `nonzero`
+ * they fill instead, and because the shapes paint in ISO order the surrounding country covers
+ * the enclave: Lesotho (drawn 113 shapes before South Africa) was invisible AND unclickable
+ * on the live map, its `<a>` present in the HTML but unhittable. A hole is also not painted,
+ * so `pointer-events: visiblePainted` lets the click through to the enclave underneath — the
+ * fill rule is what makes the link work, not just what makes it look right.
+ */
+const FILL_RULE = "evenodd" as const;
+
+/**
  * Interactive full-world map (server component) — the `/dunya` hub's primary content,
  * mirroring `TurkeyMapSection` one level up (country, not province). It reuses the exact same
  * mechanism: build-time-generated inline SVG country paths (`lib/map/world-countries.generated.ts`
@@ -167,7 +180,7 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
                   data-badge={TURKIYE_ISO}
                   data-href={turkiyeHref}
                 >
-                  <path className={styles.province} d={shape.d} />
+                  <path className={styles.province} d={shape.d} fillRule={FILL_RULE} />
                 </a>
               );
             }
@@ -259,7 +272,7 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
                     data-stat3-label={stats[2]?.label}
                     data-stat3-value={stats[2]?.value}
                   >
-                    <path className={styles.landInert} d={shape.d} />
+                    <path className={styles.landInert} d={shape.d} fillRule={FILL_RULE} />
                   </g>
                 );
               }
@@ -270,7 +283,13 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
               // the map background's own top gradient stop and rendered Greenland invisible
               // (/dunya audit 2026-07-26).
               return (
-                <path key={shape.iso} className={styles.landInert} d={shape.d} aria-hidden="true" />
+                <path
+                  key={shape.iso}
+                  className={styles.landInert}
+                  d={shape.d}
+                  fillRule={FILL_RULE}
+                  aria-hidden="true"
+                />
               );
             }
             const continent = tContinents(country.continent);
@@ -327,7 +346,7 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
                 data-stat3-label={neighborLabel}
                 data-stat3-value={neighborValue}
               >
-                <path className={styles.province} d={shape.d} />
+                <path className={styles.province} d={shape.d} fillRule={FILL_RULE} />
               </a>
             );
           })}
