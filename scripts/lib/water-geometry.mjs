@@ -126,8 +126,10 @@ function samePoint(a, b) {
  * Two details that a naive call gets wrong:
  *   - a closed ring has no natural endpoints, so classic DP anchored on `[0, n-1]` would
  *     pin the arbitrary start vertex and could collapse the half of the ring furthest from
- *     it. The ring is split at its two most distant vertices and each half simplified,
- *     which makes the result independent of where the source happened to start;
+ *     it. The ring is split at two mutually distant vertices — a two-pass farthest-point
+ *     heuristic (2-approximation of the ring's diameter), NOT the exact diameter — and
+ *     each half simplified, which makes the result independent of where the source
+ *     happened to start;
  *   - the tolerance must be applied in the space the reader SEES. Simplifying in degrees
  *     would be ~1.29× stricter east-west than north-south at these latitudes.
  *
@@ -144,8 +146,11 @@ export function simplifyRing(ring, epsilon, project) {
   if (open.length < 4) return closeRing(open);
 
   const projected = open.map((point) => project(point));
-  // Split at the vertex pair that is furthest apart, so neither anchor is an artefact of
-  // the source's start index.
+  // Split at a mutually distant vertex pair, so neither anchor is an artefact of the
+  // source's start index. Two passes: the vertex furthest from `projected[0]` (anchorB),
+  // then the vertex furthest from that (anchorA). This is the standard farthest-point
+  // 2-approximation — it does not guarantee the true diameter, and does not need to:
+  // only start-index independence matters here.
   let anchorA = 0;
   let anchorB = 0;
   let best = -1;
