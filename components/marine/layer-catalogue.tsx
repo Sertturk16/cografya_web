@@ -3,6 +3,8 @@ import type { Locale } from "@/i18n/routing";
 import type { MarineLayer } from "@/lib/api/types";
 import { marineLayerState } from "@/lib/marine/layer-state";
 import { MODEL_INSTANT_FORMAT, parseModelInstant } from "@/lib/marine/model-run";
+import { MARINE_UNIT_KEY } from "@/lib/marine/units";
+import { MARINE_DIRECTION_CONVENTION_KEY } from "@/lib/marine/direction";
 import styles from "./marine.module.css";
 
 interface LayerCatalogueProps {
@@ -27,19 +29,12 @@ const HEADING_ID = "deniz-layer-catalogue";
  * renders the namespace name ("Marine") into an indexable table cell. So every lookup below
  * is read into a `string | undefined` local and falls back to the empty-cell treatment —
  * a value we cannot label honestly is shown as absent, never as a nonsense word.
+ *
+ * The UNIT and DIRECTION maps moved to `lib/marine/{units,direction}.ts` in W2a: the value
+ * band needs the same two lookups, and a second copy of an exhaustive map is a map that
+ * eventually disagrees with the first. Only the source map is still local, because nothing
+ * outside this table names a provider.
  */
-const UNIT_KEY: Record<MarineLayer["unit"], string> = {
-  m: "unit.m",
-  celsius: "unit.celsius",
-  degree_true: "unit.degree_true",
-  meter_per_second: "unit.meter_per_second",
-};
-
-const DIRECTION_KEY: Record<"from" | "towards", string> = {
-  from: "direction.from",
-  towards: "direction.towards",
-};
-
 const SOURCE_KEY: Record<"cmems" | "ecmwf", string> = {
   cmems: "source.cmems",
   ecmwf: "source.ecmwf",
@@ -134,11 +129,11 @@ export async function LayerCatalogue({ locale, layers }: LayerCatalogueProps) {
               const state = marineLayerState(layer);
               // Widened to `string | undefined` deliberately: `tsc` proves the maps cover
               // today's contract, these locals cover tomorrow's payload.
-              const unitKey: string | undefined = UNIT_KEY[layer.unit];
+              const unitKey: string | undefined = MARINE_UNIT_KEY[layer.unit];
               const directionKey: string | undefined =
                 layer.directionConvention === null
                   ? undefined
-                  : DIRECTION_KEY[layer.directionConvention];
+                  : MARINE_DIRECTION_CONVENTION_KEY[layer.directionConvention];
               const sourceKey: string | undefined = SOURCE_KEY[layer.primarySource];
               const fallbackKey: string | undefined =
                 layer.fallbackSource === null ? undefined : SOURCE_KEY[layer.fallbackSource];
@@ -171,8 +166,17 @@ export async function LayerCatalogue({ locale, layers }: LayerCatalogueProps) {
                     )}
                   </td>
                   <td className={styles.td}>
+                    {/* `catalogue.nextPhase`, NOT `status.notSupported` (→ Atlas ruling A1,
+                        2026-08-02). W1a borrowed the frozen `status.notSupported` string for
+                        "this layer has no künye yet", but the contract gives that key a
+                        different meaning entirely: `not_supported` is a PERMANENT product
+                        truth — the provider carries no such field in this sea at all. With
+                        the value band shipping, the same string would have had to mean both
+                        "arriving later" in this table and "never arriving" one section above
+                        it. The copy is unchanged; only its key moved, so the frozen key is
+                        back to its contract meaning and nothing was lost. */}
                     <span className={state === "live" ? styles.statusLive : styles.statusNext}>
-                      {state === "live" ? tm("status.live") : tm("status.notSupported")}
+                      {state === "live" ? tm("status.live") : tm("catalogue.nextPhase")}
                     </span>
                   </td>
                   <td className={styles.td}>

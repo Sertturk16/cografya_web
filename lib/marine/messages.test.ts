@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
+import { COMPASS_POINTS, MARINE_COMPASS_KEY, MARINE_DIRECTION_CONVENTION_KEY } from "./direction";
 import { MARINE_EXPLAINER_KEYS } from "./explainers";
+import { MARINE_UNIT_KEY } from "./units";
+import { MARINE_FRESHNESS_STALE_KEY, MARINE_VALUE_STATUS_KEY } from "./value-state";
 
 /**
  * MESSAGE-KEY RESOLUTION GUARD for the `/deniz` surface (the I7 regression-guard pattern,
@@ -97,17 +100,75 @@ describe("Marine.* keys exist in both catalogues", () => {
     });
   }
 
-  it("carries the three SPEC §7.14 frozen keys W1a renders", () => {
-    // The SPEC freezes these strings by name; the other five are born with the values they
-    // annotate (see the mapping block in `app/[locale]/deniz/page.tsx`).
+  it("carries the six SPEC §7.14 frozen keys the value band renders", () => {
+    // The SPEC freezes these strings by name. The remaining two are born with the things they
+    // annotate — `straits.lowConfidence` with the province section (W2b) and
+    // `series.sourceDiffersNotice` with the chart it explains (W2c) — per the mapping block in
+    // `app/[locale]/deniz/page.tsx`.
     const frozen = [
       "disclaimer.educationalOnly",
-      "status.notSupported",
       "point.referencePointHint",
+      "status.notSupported",
+      "status.noData",
+      "status.unavailable",
+      "freshness.stale",
     ];
     for (const key of frozen) {
       expectNonEmptyString(trMarine, key);
       expectNonEmptyString(enMarine, key);
+    }
+  });
+
+  it("has NOT reused the frozen status.notSupported for the catalogue's next-phase wording", () => {
+    // W1a rendered `status.notSupported` ("Sıradaki aşama") in the catalogue's status column;
+    // the contract means a PERMANENT product truth by it. Atlas ruling A1 moved the catalogue
+    // wording to its own key so one string could not mean both "arriving later" and "never
+    // arriving" one section apart. If the two ever converge again, the correction was undone.
+    expectNonEmptyString(trMarine, "catalogue.nextPhase");
+    expectNonEmptyString(enMarine, "catalogue.nextPhase");
+    expect(trMarine.get("status.notSupported")).not.toBe(trMarine.get("catalogue.nextPhase"));
+    expect(enMarine.get("status.notSupported")).not.toBe(enMarine.get("catalogue.nextPhase"));
+  });
+});
+
+/**
+ * DERIVED-KEY GUARD for the value band (the PR #33 pattern, extended).
+ *
+ * Every expectation below is read from the TYPE-EXHAUSTIVE map that the rendering code itself
+ * uses, never from a list hand-copied into this file. That is the whole point: adding a sixth
+ * value state, a ninth compass sector or a fifth unit to the contract makes `tsc` demand a new
+ * entry in the map, and this test then demands its copy in both catalogues. A hand-written
+ * list here would go stale in exactly the case it exists to catch.
+ */
+describe("value-band message keys are derived from the render code, not hand-listed", () => {
+  const derived: [label: string, keys: string[]][] = [
+    ["value status", Object.values(MARINE_VALUE_STATUS_KEY)],
+    ["freshness", [MARINE_FRESHNESS_STALE_KEY, "freshness.staleNoInstant"]],
+    ["compass sector", Object.values(MARINE_COMPASS_KEY)],
+    ["direction convention", Object.values(MARINE_DIRECTION_CONVENTION_KEY)],
+    ["unit", Object.values(MARINE_UNIT_KEY)],
+  ];
+
+  for (const [label, keys] of derived) {
+    for (const key of keys) {
+      it(`${label} key Marine.${key} resolves in tr and en`, () => {
+        expectNonEmptyString(trMarine, key);
+        expectNonEmptyString(enMarine, key);
+      });
+    }
+  }
+
+  it("covers every compass sector the bucketing function can emit", () => {
+    expect(Object.keys(MARINE_COMPASS_KEY).sort()).toEqual([...COMPASS_POINTS].sort());
+  });
+
+  it("names each of the three non-numeric states distinctly in both catalogues", () => {
+    // The five-render rule is only real if the three status words differ. Identical copy would
+    // pass every structural check above while telling a reader that a permanent gap and a
+    // transient outage are the same thing.
+    for (const catalogue of [trMarine, enMarine]) {
+      const rendered = Object.values(MARINE_VALUE_STATUS_KEY).map((key) => catalogue.get(key));
+      expect(new Set(rendered).size).toBe(rendered.length);
     }
   });
 });

@@ -292,17 +292,19 @@
     "backToMap": "Back to the world map"
   },
   "Deniz": {
-    "metaTitle": "Türkiye's Coasts: Wind and Wave Measurements",
-    "metaDescription": "Thirty fixed offshore reference points off 27 coastal provinces on the Black Sea, Marmara, Aegean and Mediterranean, and the model behind each measurement.",
-    "heading": "Sea and Wind on Türkiye's Coasts",
-    "lede": "Thirty fixed reference points offshore in the Black Sea, Marmara, Aegean and Mediterranean.",
+    "metaTitle": "Sea State: Wind, Waves, Water Temperature",
+    "metaDescription": "Thirty reference points off 27 coastal provinces on the Black Sea, Marmara, Aegean and Mediterranean: wind speed and direction, wave height, sea temperature, and the model behind each number.",
+    "heading": "Sea state on Türkiye's coasts",
+    "lede": "Wind, waves and sea temperature at 30 reference points offshore in four seas.",
     "pointsHeading": "Coastal provinces and offshore reference points",
-    "catalogueHeading": "Measurement catalogue: which quantity comes from which model",
+    "catalogueHeading": "Which model these numbers come from",
     "sourcesHeading": "Sources and use",
     "sourceEcmwf": "The model run details for the wind layers come from ECMWF Open Data. This data is the output of a numerical weather prediction model, not a station measurement.",
     "sourceEcmwfNoticeIntro": "The text below is the attribution and disclaimer that ECMWF's licence requires to be published verbatim.",
-    "sourceCmems": "Sea surface temperature and the Copernicus Marine wave layers will be published in the next phase. No values from those sources are shown on this page.",
-    "teaches": "The seas around Türkiye, the offshore reference points along its coasts and the measurement catalogue behind them"
+    "sourceCmems": "Sea surface temperature and part of the wave layers come from the Copernicus Marine Service. These are numerical model output as well, not station measurements.",
+    "teaches": "Wind, waves and sea surface temperature in the seas around Türkiye, and the limits of the forecast models these numbers rest on",
+    "valuesHeading": "Current values offshore in the four seas",
+    "faqHeading": "Frequently asked questions"
   },
   "Marine": {
     "basinPointCount": "{count, plural, one {# point} other {# points}}",
@@ -316,7 +318,9 @@
     },
     "status": {
       "live": "Live",
-      "notSupported": "Next phase"
+      "noData": "No value right now",
+      "notSupported": "Not published in this sea",
+      "unavailable": "Cannot be retrieved right now"
     },
     "point": {
       "referencePointHint": "The points sit outside the straits and narrow gulfs, in the open water where the models are more reliable."
@@ -356,7 +360,53 @@
       "horizon": "Forecast horizon: {value} UTC",
       "catalogueUpdated": "Catalogue: {value} UTC",
       "noModelRun": "The model run details arrive in the next phase.",
-      "notApplicable": "Not applicable to this layer"
+      "notApplicable": "Not applicable to this layer",
+      "nextPhase": "Next phase"
+    },
+    "freshness": {
+      "stale": "Not refreshed since {since} UTC",
+      "staleNoInstant": "Not refreshed for a while"
+    },
+    "calm": {
+      "label": "Calm"
+    },
+    "compass": {
+      "n": "north",
+      "ne": "northeast",
+      "e": "east",
+      "se": "southeast",
+      "s": "south",
+      "sw": "southwest",
+      "w": "west",
+      "nw": "northwest"
+    },
+    "values": {
+      "caption": "{basin}: the latest values published at the reference points.",
+      "scrollRegionLabel": "{basin} value table",
+      "colPoint": "Point",
+      "colWind": "Wind",
+      "colWave": "Waves",
+      "colSeaTemperature": "Sea water",
+      "colVintage": "Valid at",
+      "kmh": "({value} km/h)",
+      "direction": "{label}: {compass} ({degrees}°)",
+      "bearingOnly": "Bearing: {degrees}°",
+      "directionStatus": "Direction: {status}",
+      "validAt": "{value} UTC",
+      "gridDistance": "The model cell centre is at most {km} km away.",
+      "readingKeyHeading": "How to read the table",
+      "readingKeyArrow": "The arrow shows where the wind or the swell is heading; the text beside it states where it comes from.",
+      "readingKeyCalm": "{term}: the value is below the calm threshold in the measurement catalogue, so this word replaces the direction arrow.",
+      "readingKeyStale": "A stale number stays on screen, with the time it was last refreshed next to it.",
+      "readingKeyNoData": "{term}: the point is covered, but there is no number right now.",
+      "readingKeyNotSupported": "{term}: the provider produces no such quantity in this sea, and will not later.",
+      "readingKeyUnavailable": "{term}: we cannot reach the data source right now."
+    },
+    "vintage": {
+      "heading": "When are these numbers from?",
+      "validAtAndRun": "{source}: valid at {validAt} UTC, from the {modelRun} UTC run.",
+      "validAt": "{source}: valid at {validAt} UTC.",
+      "runOnly": "{source}: from the {modelRun} UTC run."
     }
   },
   "NotFound": {
