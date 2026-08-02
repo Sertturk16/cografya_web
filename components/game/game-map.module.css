@@ -240,6 +240,72 @@
   }
 }
 
+/* ---- POINTER HOVER (owner report 2026-08-01 / 2026-08-02) ------------------------------
+   Until now this stylesheet had NO `:hover` rule at all: moving the mouse over the play
+   surface changed literally nothing, and the player could not tell what they were about to
+   answer. The state below is a BORDER, deliberately — not a fill shift. A fill shift is
+   what the navigation map already does and what measured 1.25:1 on white; the line is the
+   part that carries the signal (--game-hover-edge, ≥3:1 on every surface here, see
+   globals.css for the table).
+
+   WHAT LIGHTS UP DEPENDS ON WHAT THE MODE ASKS.
+   · province modes (81 il, bölge turu) — the question is one il, so hover draws that one
+     shape's own outline.
+   · region mode — the question is a BÖLGE and a click anywhere in it answers, so hovering
+     one il must outline the WHOLE region. CSS cannot match "the other shapes whose
+     data-region equals the hovered one's", so it is one rule per region (the same shape as
+     the seven tint rules above) with `:has()` doing the lookup. No JS, no DOM change, no
+     change to paint order.
+     Honest limit: the region's INTERNAL il boundaries thicken too, because there is no
+     merged region outline in the artifact — producing one is geometry work (P2), and the
+     owner sees this exact frame in the samples. If it is rejected, a union outline is a
+     later geometry task, not a reason to keep the map dead to the mouse.
+
+   `:not([data-state])` on every rule: what the player just DID (correct / wrong / reveal)
+   always outranks where the pointer happens to be.
+   `:not([data-panning])` on the stage: while a drag-pan is running the pointer sweeps
+   across shapes, and without this the whole map would strobe (same `data-panning` contract
+   MapZoomPan already drives the cursor with).
+   `@media (hover: hover)`: a touch device would otherwise keep the last-tapped shape
+   outlined forever. The `:focus-visible` rule below stays OUTSIDE this query — keyboard
+   access must not depend on the pointer type.
+   NO transition, on purpose: the border is instant (this is a timed game, and a transition
+   on stroke here would also animate the answer states, which are instant today and whose
+   `reveal` keyframes already own stroke-dashoffset). Nothing to degrade under
+   prefers-reduced-motion, so no new debt in that block either. */
+@media (hover: hover) {
+  .stage[data-game-active][data-game-mode="provinces"]:not([data-panning])
+    .province[data-plate]:hover:not([data-state]) {
+    stroke: var(--game-hover-edge);
+    stroke-width: var(--game-hover-width);
+  }
+
+  .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
+    .svg:has(.province[data-region="MARMARA"]:hover)
+    .province[data-region="MARMARA"]:not([data-state]),
+  .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
+    .svg:has(.province[data-region="EGE"]:hover)
+    .province[data-region="EGE"]:not([data-state]),
+  .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
+    .svg:has(.province[data-region="AKDENIZ"]:hover)
+    .province[data-region="AKDENIZ"]:not([data-state]),
+  .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
+    .svg:has(.province[data-region="IC_ANADOLU"]:hover)
+    .province[data-region="IC_ANADOLU"]:not([data-state]),
+  .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
+    .svg:has(.province[data-region="KARADENIZ"]:hover)
+    .province[data-region="KARADENIZ"]:not([data-state]),
+  .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
+    .svg:has(.province[data-region="DOGU_ANADOLU"]:hover)
+    .province[data-region="DOGU_ANADOLU"]:not([data-state]),
+  .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
+    .svg:has(.province[data-region="GUNEYDOGU_ANADOLU"]:hover)
+    .province[data-region="GUNEYDOGU_ANADOLU"]:not([data-state]) {
+    stroke: var(--game-hover-edge);
+    stroke-width: var(--game-hover-width);
+  }
+}
+
 /* Keyboard focus on a shape. Knowing where the focus is always outranks knowing which
    region you are hovering, so this rule has to beat the Mode-1 tints above — and those are
    (0,5,0), not (0,4,0): `:not([data-state])` contributes its argument's specificity. The
@@ -248,12 +314,19 @@
    and only the stroke changed on focus.
    Fill AND stroke both change — on the /turkiye map a fill-only ring measured 1.25:1, under
    the 3:1 graphical-object floor, and only the stroke shift brought it to AA (repo lesson,
-   map.module.css). */
+   map.module.css).
+   FOCUS = HOVER + FILL. The stroke is the SAME token and width the hover rules above use,
+   so the two can never disagree, and the terracotta wash is what makes focus strictly
+   stronger than hover and tellable apart from it. The stroke used to be
+   --color-primary-dark, which measured 1.61:1 on Marmara and sub-3:1 on four of the seven
+   region tints — the shared token repairs that (globals.css --game-hover-edge). The region
+   hover rules above are far more specific than this one, but they set no fill and the same
+   stroke, so a shape that is hovered AND focused still ends up with the focus appearance. */
 .stage[data-game-active] .province[data-plate]:focus-visible {
   outline: none;
   fill: var(--province-hover);
-  stroke: var(--color-primary-dark);
-  stroke-width: 3;
+  stroke: var(--game-hover-edge);
+  stroke-width: var(--game-hover-width);
 }
 
 /* Grab cursors while the shared zoom/pan island is dragging the stage — the game map's

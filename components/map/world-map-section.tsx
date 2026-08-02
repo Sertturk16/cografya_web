@@ -134,8 +134,6 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
     reset: tMap("resetView"),
     instructions: tMap("keyboardInstructions"),
     controls: tMap("zoomControls"),
-    hint: tMap("zoomHint"),
-    dismissHint: tMap("dismissHint"),
   };
 
   return (

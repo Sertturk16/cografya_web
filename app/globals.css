@@ -102,6 +102,12 @@
      #b3a795 was 2.37:1 / 1.97:1 — sub-3:1.) */
   --province-stroke: var(--color-taupe);
   --province-hover: rgba(176, 82, 46, 0.16); /* terracotta wash of --color-primary */
+  /* NAVIGATION-MAP hover/focus border weight (/turkiye + /dunya). One number, because it
+     is the tunable the owner rules on from rendered samples; the colour is
+     --color-primary-dark, applied in map.module.css. The 43 non-country territories keep
+     their own literal 3px so the deliberately WEAKER territory state cannot be flattened
+     by a change here (map.module.css .territory). */
+  --map-hover-width: 3.5px;
   --scrim-bg: rgba(251, 248, 243, 0.82); /* translucent --color-bg (attribution) */
   --shadow-card: 0 12px 28px -8px rgba(43, 38, 34, 0.28); /* soft --color-ink shadow */
 
@@ -161,6 +167,34 @@
   --game-wrong-edge: #5e1a13;
   --game-reveal: #3f3a36;
   --game-reveal-edge: #ffffff;
+
+  /* ---- Map-game POINTER/KEYBOARD border (UI state, not an answer state) ----
+     The line drawn around the shape the player is hovering or has focused. It is a
+     separate token from the Terra chrome hover colour used on /turkiye and /dunya for one
+     measured reason: on the play surface this line has to be legible over the SEVEN
+     Okabe–Ito region tints as well as over white land, and no terracotta value manages
+     that. Measured (WCAG 2.x sRGB, worst case is always Marmara #0072b2, the darkest
+     tint):
+         --color-primary      #b0522e → 1.01:1  ✗
+         --color-primary-dark #7e3a1e → 1.61:1  ✗   (what :focus-visible used before —
+                                                     also 2.16 / 2.44 / 2.73 on Güneydoğu,
+                                                     Doğu Anadolu and Karadeniz, i.e. the
+                                                     old focus ring was sub-3:1 on 4 of 7)
+         --color-ink          #2b2622 → 2.89:1  ✗   (near miss)
+         #211c19                      → 3.25:1  ✓
+     #211c19 is a warm near-black one step darker than --color-ink, and clears the 3:1
+     graphical-object floor (WCAG 1.4.11) on every surface it can land on: white land
+     16.87:1 · parchment 15.92:1 · İç Anadolu 12.76:1 · Ege 7.49 · Akdeniz 7.31 ·
+     Karadeniz 5.51 · Doğu Anadolu 4.93 · Güneydoğu 4.36 · Marmara 3.25, plus 4.41 and
+     3.10 against a neighbouring correct/wrong shape.
+     ⚠ RE-MEASURE WHEN THE LAND TONE CHANGES. These figures are tuned to TODAY's palette
+     (--province-fill #ffffff). The land-tone work (UI-cila P4) and the still-OPEN stroke
+     polarity ruling (S4, → DEC 2026-08-01f item 5) both move the surfaces underneath this
+     line; Marmara's 3.25:1 is the margin that will bite first. */
+  --game-hover-edge: #211c19;
+  /* Border weight for the state above. Owner-tunable from rendered samples, same role as
+     --map-hover-width. 3px against the 1px resting --province-stroke. */
+  --game-hover-width: 3px;
 
   /* ---- Typography (next/font CSS variables from lib/fonts.ts) ---- */
   --font-heading: var(--font-fraunces), Georgia, "Times New Roman", serif;

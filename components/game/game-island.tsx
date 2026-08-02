@@ -23,6 +23,7 @@ import {
   type AnswerOutcome,
   type RoundState,
 } from "@/lib/game/round";
+import { deriveShapeState } from "@/lib/game/shape-state";
 import {
   buildProvinceTargetSet,
   buildRegionTargetSet,
@@ -140,7 +141,18 @@ export function GameIsland({
    */
   const [round, setRound] = useState<RoundState>(() => createRound(mode, targetIds));
   const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [wrongPlate, setWrongPlate] = useState<string | null>(null);
+  /**
+   * The most recent wrong answer, as the TARGET it named — not as the plate that was
+   * clicked. In bölge mode a click answers for a whole region, and marking only the il
+   * under the cursor made the red flash disagree with the green one, which covers the
+   * whole region (`lib/game/shape-state.ts`).
+   *
+   * `seq` is what makes a repeat mistake re-flash. The flash is cleared by a timer keyed on
+   * this state, and two wrong clicks inside the same region produce the SAME target id — so
+   * without a changing companion value React would bail out of the update, the timer would
+   * not restart, and the second mistake would fade on the first one's schedule.
+   */
+  const [wrongAnswer, setWrongAnswer] = useState<{ targetId: string; seq: number } | null>(null);
   const [summaryDismissed, setSummaryDismissed] = useState(false);
   /**
    * The portal target for the round's controls — RE-READ after the commit, never frozen at
@@ -170,6 +182,8 @@ export function GameIsland({
    * happens inside a handler, next to the matching `setRound`.
    */
   const roundRef = useRef<RoundState>(round);
+  /** Monotonic counter behind `wrongAnswer.seq` — see that state's note. */
+  const wrongSeqRef = useRef(0);
 
   const interactive = round.status !== "finished";
 
@@ -184,7 +198,7 @@ export function GameIsland({
   const beginRound = useCallback(
     (state: RoundState) => {
       setFeedback(null);
-      setWrongPlate(null);
+      setWrongAnswer(null);
       setSummaryDismissed(false);
       commitRound(state);
     },
@@ -223,7 +237,7 @@ export function GameIsland({
   const showAnswer = useCallback(() => {
     const { state, outcome } = revealRound(roundRef.current);
     if (outcome.kind === "ignored") return;
-    setWrongPlate(null);
+    setWrongAnswer(null);
     setFeedback(outcome);
     commitRound(state);
   }, [commitRound]);
@@ -239,7 +253,11 @@ export function GameIsland({
       const { state, outcome } = answerRound(roundRef.current, pickedTargetId);
       if (outcome.kind === "ignored") return;
       setFeedback(outcome);
-      setWrongPlate(outcome.kind === "retry" ? plate : null);
+      setWrongAnswer(
+        outcome.kind === "retry"
+          ? { targetId: pickedTargetId, seq: (wrongSeqRef.current += 1) }
+          : null,
+      );
       commitRound(state);
     },
     [commitRound, targetSet],
@@ -372,25 +390,23 @@ export function GameIsland({
 
     for (const shape of svg.querySelectorAll("[data-plate]")) {
       if (!(shape instanceof SVGElement)) continue;
-      const plate = shape.dataset.plate ?? "";
-      const targetId = targetSet.plateToTarget[plate];
-      let state: "correct" | "wrong" | "reveal" | null = null;
-      if (targetId) {
-        if (solved.has(targetId)) state = "correct";
-        if (revealed !== null && targetId === revealed) state = "reveal";
-        if (plate === wrongPlate) state = "wrong";
-      }
+      const state = deriveShapeState({
+        targetId: targetSet.plateToTarget[shape.dataset.plate ?? ""],
+        solvedTargetIds: solved,
+        revealedTargetId: revealed,
+        wrongTargetId: wrongAnswer?.targetId ?? null,
+      });
       if (state) shape.setAttribute("data-state", state);
       else shape.removeAttribute("data-state");
     }
-  }, [round, feedback, wrongPlate, targetSet]);
+  }, [round, feedback, wrongAnswer, targetSet]);
 
   // --- timers -----------------------------------------------------------------------------------
   useEffect(() => {
-    if (!wrongPlate) return;
-    const timer = window.setTimeout(() => setWrongPlate(null), WRONG_FLASH_MS);
+    if (!wrongAnswer) return;
+    const timer = window.setTimeout(() => setWrongAnswer(null), WRONG_FLASH_MS);
     return () => window.clearTimeout(timer);
-  }, [wrongPlate]);
+  }, [wrongAnswer]);
 
   useEffect(() => {
     if (round.status !== "resolved" || !feedback) return;

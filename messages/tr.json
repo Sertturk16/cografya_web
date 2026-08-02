@@ -108,9 +108,7 @@
     "zoomOut": "Uzaklaştır",
     "zoomReset": "Harita görünümüne sıfırla",
     "zoomControls": "Yakınlaştırma denetimleri",
-    "zoomInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla başlangıç görünümüne dön. Bir il odaktayken Enter veya boşluk tuşu o ili seçer. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
-    "zoomHint": "Küçük illeri seçmek için yakınlaştır",
-    "zoomDismissHint": "İpucunu kapat"
+    "zoomInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla başlangıç görünümüne dön. Bir il odaktayken Enter veya boşluk tuşu o ili seçer. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin."
   },
   "ProvinceDetail": {
     "metaTitle": "{name} Coğrafyası",
@@ -243,8 +241,6 @@
     "resetView": "Dünya görünümüne sıfırla",
     "zoomControls": "Yakınlaştırma denetimleri",
     "keyboardInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla dünya görünümüne dön; Esc tuşu açık bilgi kartını kapatır. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
-    "zoomHint": "Yakınlaştırmak için kaydır veya + / − kullan",
-    "dismissHint": "İpucunu kapat",
     "turkiyeName": "Türkiye",
     "turkiyeCardSubtitle": "İl haritası",
     "turkiyeLinkLabel": "Türkiye, il haritası sayfası",
@@ -331,7 +327,7 @@
     },
     "attribution": {
       "ecmwfCopyright": "Copyright © {year} European Centre for Medium-Range Weather Forecasts (ECMWF).",
-      "ecmwfNotice": "This service is based on data and products of the European Centre for Medium-Range Weather Forecasts (ECMWF). Source: www.ecmwf.int. This ECMWF data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/. Modified: values are sampled from the source grid to selected points; no other modification.",
+      "ecmwfNotice": "This service is based on data and products of the European Centre for Medium-Range Weather Forecasts (ECMWF). Source www.ecmwf.int. This ECMWF data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0). https://creativecommons.org/licenses/by/4.0/. Modified: values are sampled from the source grid to selected points; no other modification.",
       "ecmwfDisclaimer": "ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use.",
       "cmemsNotice": "Generated using E.U. Copernicus Marine Service Information"
     },
