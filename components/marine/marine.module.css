@@ -301,10 +301,166 @@
   max-width: 70ch;
 }
 
+/* ---- Value band (W2a) --------------------------------------------------------
+   Four sea tables of real numbers. Still Terra chrome tokens ONLY: nothing here paints a
+   value. The catalogue's `colorStops` stay untouched — those are public-safety data ramps
+   (DESIGN.md §6.2) and a choropleth is a Faz-2 decision, not a side effect of publishing
+   numbers. Every state below is separated by its WORDS; the tints are reinforcement and
+   carry no information on their own (WCAG 1.4.1). */
+
+.basinTables {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.basinBlock {
+  margin: 0;
+}
+
+.valuesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  /* Five columns, three of which stack a magnitude over a direction line. Below this the
+     cells wrap into unreadable slivers, so the container scrolls instead. */
+  min-width: 720px;
+}
+
+/* CLS is 0 here by CONSTRUCTION, not by reservation: the whole band is server-rendered, has
+   no client JS, loads no image and no third party, so nothing arrives after first paint that
+   could move a row (SEO §6 #9). The `min-width` below is a LEGIBILITY floor — it keeps the
+   "8,4 m/s (30 km/h)" line from wrapping into three lines on a narrow viewport — and no
+   height is reserved: a point that gains or loses a direction line between two ISR passes
+   changes its row height in the NEXT full document, which is a new render, never a shift
+   inside a painted one. */
+.tdValue {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  text-align: left;
+  color: var(--color-ink);
+  min-width: 15ch;
+}
+
+.tdVintage {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  text-align: left;
+  color: var(--color-slate);
+  font-size: 0.8rem;
+  min-width: 20ch;
+}
+
+.valuePrimary {
+  display: block;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+/* The km/h companion (owner ruling A6). Quieter than the published unit beside it, because
+   m/s is what the api serves and km/h is the reading aid. */
+.valueSecondary {
+  font-weight: 400;
+  color: var(--color-slate);
+  margin-left: 5px;
+}
+
+.valueDirection {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-top: 3px;
+  color: var(--color-slate);
+  font-size: 0.8rem;
+}
+
+/* Decoration only — the whole meaning is in the text beside it (see direction-arrow.tsx).
+   Fixed box so the glyph never changes the line's height. */
+.arrow {
+  flex: none;
+  fill: var(--color-accent);
+  transform-origin: 50% 50%;
+  align-self: center;
+}
+
+/* "Sakin" and the stale marker are WORDS, not icons and not colours. Slate on white clears
+   4.5:1; taupe never appears in text (ENGINEERING §5). */
+.valueCalm,
+.valueStale {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.8rem;
+  color: var(--color-slate);
+}
+
+.valueCalm {
+  font-weight: 600;
+}
+
+/* The three non-numeric states. They share one treatment on purpose — the distinction a
+   reader needs is in the sentence, and three different tints would invite reading the colour
+   instead. `data-state` is a styling/testing hook, never the carrier of the meaning. */
+.valueStatus {
+  display: inline-block;
+  color: var(--color-slate);
+  font-size: 0.85rem;
+}
+
+.vintageInstant,
+.vintageGrid {
+  display: block;
+}
+
+.vintageGrid {
+  margin-top: 3px;
+}
+
+/* ---- Reading key + künye ------------------------------------------------------ */
+
+.readingKey,
+.vintage {
+  margin-top: 22px;
+  max-width: 70ch;
+}
+
+.subHeading {
+  font-size: 1rem;
+  margin: 0 0 8px;
+  color: var(--color-ink);
+}
+
+.noteList,
+.vintageList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  line-height: 1.5;
+}
+
 /* ---- Explainers ------------------------------------------------------------- */
 
+/* Demoted to H3 under one wrapper H2 in W2a: the page's subject is the sea state and these
+   explain it (see marine-explainers.tsx). The blocks keep their own spacing so the demotion
+   does not squash them into a list. */
+.explainer {
+  margin: 0 0 22px;
+}
+
+.explainer:last-child {
+  margin-bottom: 0;
+}
+
 .explainerHeading {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   margin: 0 0 10px;
 }
 

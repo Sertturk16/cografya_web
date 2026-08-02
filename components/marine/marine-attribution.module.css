@@ -1,5 +1,6 @@
-/* `/deniz` hub page styles. The section components carry their own styling
-   (components/marine/marine.module.css); this file holds only page-level layout. */
+/* Attribution / licence block. Moved verbatim out of `app/[locale]/deniz/deniz.module.css`
+   when the block became a shared component (W2a): the markup now renders on two surfaces,
+   so its styling has to travel with it rather than stay in one route's stylesheet. */
 
 .sources {
   max-width: 70ch;

@@ -2,18 +2,22 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { LayerCatalogue } from "@/components/marine/layer-catalogue";
+import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { MarineExplainers } from "@/components/marine/marine-explainers";
 import { ReferencePoints } from "@/components/marine/reference-points";
-import { getMarineLayersResilient, getMarinePointsResilient } from "@/lib/api/marine";
+import {
+  getMarineLayersResilient,
+  getMarineOverviewSafe,
+  getMarinePointsResilient,
+} from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
-import { ecmwfAttributionYear } from "@/lib/marine/attribution";
 import { buildMarineExplainers } from "@/lib/marine/explainers";
+import { marineShowsValues } from "@/lib/marine/overview";
 import { collectionPageJsonLd, JsonLd, learningResourceJsonLd } from "@/lib/seo/json-ld";
 import type { ContentSurface } from "@/lib/seo/indexing";
 import { buildMetadata } from "@/lib/seo/metadata";
-import styles from "./deniz.module.css";
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;
@@ -41,17 +45,25 @@ const MARINE_SURFACE: ContentSurface = "trNarrative";
  *   marine.disclaimer.educationalOnly    → Marine.disclaimer.educationalOnly    [born, W1a]
  *   marine.status.notSupported           → Marine.status.notSupported           [born, W1a]
  *   marine.point.referencePointHint      → Marine.point.referencePointHint      [born, W1a]
- *   marine.status.noData                 → Marine.status.noData                 [W1b/W2]
- *   marine.status.unavailable            → Marine.status.unavailable            [W1b/W2]
- *   marine.freshness.stale               → Marine.freshness.stale               [W1b/W2]
- *   marine.series.sourceDiffersNotice    → Marine.series.sourceDiffersNotice    [W1b/W2]
- *   marine.straits.lowConfidence         → Marine.straits.lowConfidence         [W1b/W2]
+ *   marine.status.noData                 → Marine.status.noData                 [born, W2a]
+ *   marine.status.unavailable            → Marine.status.unavailable            [born, W2a]
+ *   marine.freshness.stale               → Marine.freshness.stale               [born, W2a]
+ *   marine.straits.lowConfidence         → Marine.straits.lowConfidence         [W2b]
+ *   marine.series.sourceDiffersNotice    → Marine.series.sourceDiffersNotice    [W2c]
  *
- * Only the three keys W1a actually renders are born now. The other five belong to the VALUE
- * band — there is no value on this page for them to describe, and a string nothing renders
- * is a dead string someone will later translate, review and maintain for nothing. They are
- * born together with the values they annotate. Recorded here so "the frozen key is missing"
- * reads as a schedule, not as an omission.
+ * A frozen key is born together with the thing it annotates, never before it: a string
+ * nothing renders is a dead string someone will later translate, review and maintain for
+ * nothing. W2a ships the value band, so the three value states are born with it. The straits
+ * caution belongs to the province section and the series notice to the chart it explains.
+ * Recorded here so "the frozen key is missing" reads as a schedule, not as an omission.
+ *
+ * MEANING CORRECTION IN W2a (→ Atlas ruling A1, 2026-08-02). W1a rendered
+ * `status.notSupported` as "Sıradaki aşama" in the catalogue's status column, because that
+ * was the only place a status word appeared. The contract means something else by it — a
+ * PERMANENT product truth, "the provider carries no such field in this sea" — and with real
+ * values on the page the same string would have had to mean both "arriving later" and "never
+ * arriving" one section apart. The catalogue's wording moved to `Marine.catalogue.nextPhase`
+ * (copy unchanged) and the frozen key is back to its contract meaning. No key was lost.
  */
 
 /** The blocks exist only in the locale that owns the narrative. */
@@ -59,6 +71,36 @@ function rendersExplainers(locale: Locale): boolean {
   return locale === routing.defaultLocale;
 }
 
+/**
+ * WHAT THE HEAD PROMISES WHEN THE BAND IS GONE — a deliberate, recorded decision
+ * (PR #36 review, F-C1 / W2A-I1; live-verified 2026-08-02).
+ *
+ * The value band can disappear for a render (`getMarineOverviewSafe` is fail-soft, and the
+ * contract's `dataAvailable: false` gate withholds a payload outright). Two questions follow,
+ * and they get DIFFERENT answers on purpose:
+ *
+ * - **Content promises track the data.** The lede and the value section's `<h2>` both say
+ *   what the reader will find, so both fall back through the one `marineShowsValues` signal
+ *   when there is nothing to find. Those two sit inches from the missing table; a promise
+ *   there is a promise broken in the same screenful.
+ * - **Page identity stays stable.** `<title>`, the meta description and the `<h1>` state the
+ *   page's SUBJECT — which sea, which quantities, how many points — and that subject is true
+ *   in every render: the degraded page still carries the map, the thirty points, the
+ *   measurement catalogue for exactly those quantities and the seven explainers about them.
+ *   They are NOT gated, for three reasons. (1) A `<title>` that flips between two strings
+ *   across ISR windows is a genuinely worse SEO failure than a transient overpromise — the
+ *   SERP would show whichever one the last crawl caught. (2) Gating the title but not the
+ *   `<h1>`, or vice versa, would put the head and the page's own heading in disagreement.
+ *   (3) The degraded render is a WINDOW (900 s ISR), not the steady state: with M4b on the
+ *   api and `MARINE_ENABLED=true`, `/deniz` was verified rendering 150/150 values
+ *   server-side (`Owner's Inbox/w2-deniz-degerler/w2a-live-samples/`).
+ *
+ * GO-LIVE ORDERING NOTE (M5 / ENV op, not a code gate). This page is not crawlable by anyone
+ * yet — deploy is the last step of the marine track. Production must not serve the W2a shape
+ * with `MARINE_ENABLED=false`: that flag makes the value-less render the PERMANENT state, and
+ * a permanently value-less page under this title is the §B12.2.a doorway class, not a
+ * transient. The flag and this page go live together or not at all.
+ */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Deniz" });
@@ -75,52 +117,63 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /**
  * `/deniz` ↔ `/en/sea` — the marine hub (SPEC-ADDENDUM §7.12).
  *
- * WHAT THIS PAGE IS TODAY. Explanatory content, the 30 offshore reference points, and the
- * measurement catalogue. It publishes **no wind, wave or sea-temperature VALUE**: the
- * value/series/conditions endpoints are frozen in the OpenAPI contract but deliberately not
- * mounted on the api controller until M4, so there is nothing to read — and an estimate, a
- * rounding or a "≈" would be precisely the dishonesty this whole surface is designed
- * against. The value band lands additively on this same route once M4 ships (W1b/W2); no
- * URL, no heading and no JSON-LD node has to change for it.
+ * THE SPINE, INVERTED IN W2a. The page used to open with explanation and keep its data at
+ * the bottom, because it had no data worth leading with. It does now, so the order says so:
  *
- * That is also what the SPEC asks for rather than a compromise: §7.12's acceptance rule is
- * "the /deniz hub does not ship on numbers alone". This is the other half, shipped whole.
+ *   H1 + one helper line
+ *   H2  the sea state right now   — map, four value tables, reading key, künye
+ *   H2  which model these come from — the measurement catalogue
+ *   H2  frequently asked          — the seven explainers, now H3 beneath it
+ *   H2  sources and use           — attribution, licence, educational-use notice
  *
- * RENDERING. SSG + ISR, full HTML in the first response (`ENGINEERING.md` §3/§4 #1). There
- * is no client island at all — the points list, the catalogue table and the explainers are
- * server-rendered markup. The ISR window is set per FETCH (`lib/api/marine.ts`), mirroring
- * the api's own `s-maxage` for each route, so the page's künye can never be staler than the
- * CDN in front of it.
+ * The seven blocks did not shrink; they moved under the subject they explain. Their headings
+ * were also rewritten from the method to the READER's question ("Dalga yüksekliği 1 metre
+ * yazıyorsa deniz nasıl olur?" rather than "Belirgin dalga yüksekliği ne demektir?"), which
+ * is the one on-page change here with real SERP exposure — accepted because the page landed
+ * on 2026-08-02 and has no accumulated ranking to lose, and because the URL, canonical,
+ * hreflang, sitemap entry and every internal link are untouched.
  *
- * RESILIENCE. Each api read is a build-safe wrapper: an outage during `next build` (web CI
- * has no api service) degrades that section to nothing and defers to on-demand ISR, while a
- * runtime failure re-throws so Next keeps serving the last good page. A section with no
- * data is not rendered at all — an empty heading is worse than an absent one, and the
- * substance of this page lives in `messages/tr.json`, not in the api.
+ * RENDERING. SSG + ISR, full HTML in the first response (`ENGINEERING.md` §3/§4 #1). There is
+ * no client island at all — the map, the value tables, the catalogue and the explainers are
+ * server-rendered markup, and the direction arrows are inline SVG rotated by a server-computed
+ * angle. The ISR window is set per FETCH (`lib/api/marine.ts`) to mirror the api's own
+ * `s-maxage` for each route, so the page's künye can never be staler than the CDN in front of
+ * it; the value read's 900 s is the shortest, and therefore the route's effective period.
+ *
+ * NO LIVE NUMBER REACHES THE HEAD. Title and description stay structural (which quantities,
+ * how many points, how many provinces). A number baked into `<title>` at revalidate time
+ * would sit wrong in the SERP for hours, which is a worse failure than not being there.
+ *
+ * RESILIENCE, IN TWO SHAPES. The points and catalogue reads are build-safe but re-throw at
+ * runtime, so a blip leaves the last good static render in place — they ARE this page. The
+ * value read is fail-soft in BOTH phases: it is an enhancement on top of an editorial page
+ * that depends on external providers, so it may remove the band and may never remove the
+ * page (`getMarineOverviewSafe`).
  */
 export default async function DenizPage({ params }: PageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Deniz");
-  const tm = await getTranslations("Marine");
   const tb = await getTranslations("Breadcrumb");
   const path = getPathname({ locale, href: "/deniz" });
 
-  // Three independent reads, in parallel. `provinces` is what turns each point into a real
-  // crawlable link to its province page (and what keeps an unpublished one plain text).
-  const [points, layers, provinces] = await Promise.all([
+  // Four independent reads, in parallel. `provinces` is what turns each point into a real
+  // crawlable link to its province page (and what keeps an unpublished one plain text);
+  // `overview` is the value band and is the only one of the four allowed to come back null.
+  const [points, layers, provinces, overview] = await Promise.all([
     getMarinePointsResilient(),
     getMarineLayersResilient(),
     getProvincesResilient(),
+    getMarineOverviewSafe(),
   ]);
 
   // The seven blocks, resolved through the ONE module that lists their keys
   // (`lib/marine/explainers.ts`) — empty on `/en/sea`, where the narrative does not exist.
   const explainers = rendersExplainers(locale) ? buildMarineExplainers(t) : [];
 
-  // The year ECMWF's required copyright line states — the ingested cycle's own year, or
-  // `null` when nothing has been ingested (see `lib/marine/attribution.ts`).
-  const attributionYear = ecmwfAttributionYear(layers);
+  // The SAME signal the value section reads, from the same pure function — so the lede and
+  // the `<h2>` beneath it can never disagree about whether this page has values today.
+  const showValues = marineShowsValues(overview);
 
   return (
     <div className="container page">
@@ -157,55 +210,29 @@ export default async function DenizPage({ params }: PageProps) {
         ]}
       />
       <h1>{t("heading")}</h1>
-      <p className="lede">{t("lede")}</p>
+      {/* The `<h1>` names the subject and does not move; the lede states what the reader
+          will find and therefore does (see the head-promise block above). */}
+      <p className="lede">{showValues ? t("lede") : t("ledeNoValues")}</p>
 
       {points.length > 0 && (
-        <ReferencePoints locale={locale} points={points} provinces={provinces} />
+        <ReferencePoints
+          locale={locale}
+          points={points}
+          provinces={provinces}
+          layers={layers}
+          overview={overview}
+        />
       )}
 
       {layers.length > 0 && <LayerCatalogue locale={locale} layers={layers} />}
 
-      <MarineExplainers explainers={explainers} />
+      <MarineExplainers explainers={explainers} heading={t("faqHeading")} headingId="deniz-faq" />
 
-      {/* Attribution + educational-use notice. UNTOUCHABLE copy class (CONTENT-STYLE §22):
-          it stays formal and is rendered in BOTH locales, because the EN page shows the
-          same ECMWF-derived künye and CC BY 4.0 requires the attribution wherever that
-          derived material appears.
-
-          THE ENGLISH BLOCK IS NOT COPY — IT IS THE LICENCE (→ DEC 2026-08-02c, from NOVA's
-          first-hand reading of ECMWF's licence page). ECMWF's terms say the wording "shall
-          be attached", quote it, and — unlike the Copernicus framework — offer NO "or any
-          similar notice" escape. So it is published verbatim, in English, in both locales,
-          and marked `lang="en"` so a screen reader on the Turkish page does not read it in
-          Turkish phonetics (WCAG 3.1.2). The Turkish rendering stands ALONGSIDE it, never
-          instead of it. Shortening, restyling or translating any of it is a licence breach.
-
-          It is also visible without a click on the page that carries the derived material,
-          which is the conservative reading of the licence's "prominently".
-
-          Provider name, licence name and product class come from `data-provenance.md`'s
-          ECMWF Open Data entry, not from the payload: `MarineAttributionDto` is frozen in
-          the contract but has no endpoint and no seeded rows until M5. When it does, this
-          block becomes data-driven in one place. */}
-      <section className="section" aria-labelledby="deniz-sources">
-        <div className={styles.sources}>
-          <h2 id="deniz-sources">{t("sourcesHeading")}</h2>
-          <p>{t("sourceEcmwf")}</p>
-          <p>{t("sourceEcmwfNoticeIntro")}</p>
-          <div className={styles.licenceNotice} lang="en">
-            {/* The copyright line is omitted — not faked — when no ECMWF cycle has been
-                ingested and there is therefore no data year to state. The mandatory
-                "this service is based on…" sentence carries no year and always shows. */}
-            {attributionYear !== null && (
-              <p>{tm("attribution.ecmwfCopyright", { year: attributionYear })}</p>
-            )}
-            <p>{tm("attribution.ecmwfNotice")}</p>
-            <p>{tm("attribution.ecmwfDisclaimer")}</p>
-          </div>
-          <p>{t("sourceCmems")}</p>
-          <p className={styles.disclaimer}>{tm("disclaimer.educationalOnly")}</p>
-        </div>
-      </section>
+      {/* Attribution, licence and educational-use notice — ONE component since W2a, because
+          the same block now has to travel to the 27 province pages that carry the same
+          derived values (W2b). See `components/marine/marine-attribution.tsx` for why the
+          English wording is the licence itself rather than copy. */}
+      <MarineAttribution layers={layers} headingId="deniz-sources" />
     </div>
   );
 }

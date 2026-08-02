@@ -66,3 +66,26 @@ export type MarinePointListItem = components["schemas"]["MarinePointListItemDto"
  *  `catalogueUpdatedAtUtc`). The three künye fields are nullable and move together —
  *  null means no ingested cycle (or one past the 24 h age ceiling), never "unknown". */
 export type MarineLayer = components["schemas"]["MarineLayerDto"];
+/** One measured quantity at one point: the number (or `null`), its canonical unit, WHY it
+ *  is or is not present (`status`), cache freshness, the model künye behind it
+ *  (`validAtUtc` / `modelRunAtUtc` / `staleSinceUtc`), the provider, and the grid cell it
+ *  was read from. `status` and `freshness` are deliberately separate — `ok + stale` is a
+ *  normal, frequent combination, not an error. */
+export type MarineValue = components["schemas"]["MarineValueDto"];
+/** One reference point's five values on the hub payload (identity + SST, wave height,
+ *  wave direction, wind speed, wind direction). No series: the 5-day chart is a province
+ *  concern (`MarineConditionsDto`). */
+export type MarineOverviewPoint = components["schemas"]["MarineOverviewPointDto"];
+/** The `/deniz` value band's whole payload: one block per reference point, the assembly
+ *  instant, the `dataAvailable` publish gate, and the attribution rows every displayed
+ *  value drags along. */
+export type MarineOverview = components["schemas"]["MarineOverviewDto"];
+/** One reference point's full conditions block — the five values PLUS the 5-day series and
+ *  the series/instant source-divergence flag. The province surface's payload element (W2b);
+ *  aliased now so the committed fixture is type-checked against the contract rather than
+ *  against a hand-rolled shape. */
+export type MarineConditions = components["schemas"]["MarineConditionsDto"];
+/** One province's marine payload: its plaka, one `MarineConditions` entry per reference
+ *  point in `displayOrder` (two for the three two-sea provinces, which legitimately
+ *  disagree), and the attribution rows. Consumed by the province pages in W2b. */
+export type MarineProvinceConditions = components["schemas"]["MarineProvinceConditionsDto"];

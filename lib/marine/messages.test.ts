@@ -1,7 +1,11 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
+import { COMPASS_POINTS, MARINE_COMPASS_KEY, MARINE_DIRECTION_CONVENTION_KEY } from "./direction";
 import { MARINE_EXPLAINER_KEYS } from "./explainers";
+import { MARINE_UNIT_KEY } from "./units";
+import { MARINE_FRESHNESS_STALE_KEY, MARINE_VALUE_STATUS_KEY } from "./value-state";
 
 /**
  * MESSAGE-KEY RESOLUTION GUARD for the `/deniz` surface (the I7 regression-guard pattern,
@@ -97,17 +101,105 @@ describe("Marine.* keys exist in both catalogues", () => {
     });
   }
 
-  it("carries the three SPEC §7.14 frozen keys W1a renders", () => {
-    // The SPEC freezes these strings by name; the other five are born with the values they
-    // annotate (see the mapping block in `app/[locale]/deniz/page.tsx`).
+  it("carries the six SPEC §7.14 frozen keys the value band renders", () => {
+    // The SPEC freezes these strings by name. The remaining two are born with the things they
+    // annotate — `straits.lowConfidence` with the province section (W2b) and
+    // `series.sourceDiffersNotice` with the chart it explains (W2c) — per the mapping block in
+    // `app/[locale]/deniz/page.tsx`.
     const frozen = [
       "disclaimer.educationalOnly",
-      "status.notSupported",
       "point.referencePointHint",
+      "status.notSupported",
+      "status.noData",
+      "status.unavailable",
+      "freshness.stale",
     ];
     for (const key of frozen) {
       expectNonEmptyString(trMarine, key);
       expectNonEmptyString(enMarine, key);
+    }
+  });
+
+  it("declares catalogue.nextPhase as a string distinct from status.notSupported", () => {
+    // HALF of the A1 guard: the two CATALOGUE ENTRIES must not carry the same copy. Atlas
+    // ruling A1 moved the catalogue's "arriving later" wording to its own key so one string
+    // could not mean both that and the contract's "never arriving" one section apart. This
+    // assertion sees only the JSON — the component half is the test below it, and the two
+    // are deliberately separate because each catches a different way of undoing A1.
+    expectNonEmptyString(trMarine, "catalogue.nextPhase");
+    expectNonEmptyString(enMarine, "catalogue.nextPhase");
+    expect(trMarine.get("status.notSupported")).not.toBe(trMarine.get("catalogue.nextPhase"));
+    expect(enMarine.get("status.notSupported")).not.toBe(enMarine.get("catalogue.nextPhase"));
+  });
+});
+
+describe("the catalogue COMPONENT renders the key A1 gave it", () => {
+  /**
+   * The other half of the A1 guard, and the one the catalogue assertions above cannot make.
+   *
+   * Reverting `layer-catalogue.tsx` to `tm("status.notSupported")` leaves both catalogue
+   * entries in place and every JSON assertion green, while putting the frozen key back in
+   * the status column — precisely the state A1 exists to prevent. This repo's vitest
+   * environment is `node`, and the catalogue is an async server component that awaits
+   * `next-intl/server`, so it cannot be rendered here; the honest guard at this level is
+   * therefore the source symbol, scoped to the ONE file the ruling is about.
+   *
+   * `value-cell.tsx` and `reference-points.tsx` legitimately reach for the frozen key
+   * (through `MARINE_VALUE_STATUS_KEY`, never as a literal) — they are the section where it
+   * means what the contract says. Only the catalogue is asserted against.
+   */
+  const source = readFileSync(
+    new URL("../../components/marine/layer-catalogue.tsx", import.meta.url),
+    "utf8",
+  );
+
+  it('calls tm("catalogue.nextPhase") in the status column', () => {
+    expect(source).toMatch(/tm\("catalogue\.nextPhase"\)/);
+  });
+
+  it("does not translate the frozen status.notSupported key anywhere in that file", () => {
+    expect(source).not.toMatch(/tm\("status\.notSupported"\)/);
+  });
+});
+
+/**
+ * DERIVED-KEY GUARD for the value band (the PR #33 pattern, extended).
+ *
+ * Every expectation below is read from the TYPE-EXHAUSTIVE map that the rendering code itself
+ * uses, never from a list hand-copied into this file. That is the whole point: adding a sixth
+ * value state, a ninth compass sector or a fifth unit to the contract makes `tsc` demand a new
+ * entry in the map, and this test then demands its copy in both catalogues. A hand-written
+ * list here would go stale in exactly the case it exists to catch.
+ */
+describe("value-band message keys are derived from the render code, not hand-listed", () => {
+  const derived: [label: string, keys: string[]][] = [
+    ["value status", Object.values(MARINE_VALUE_STATUS_KEY)],
+    ["freshness", [MARINE_FRESHNESS_STALE_KEY, "freshness.staleNoInstant"]],
+    ["compass sector", Object.values(MARINE_COMPASS_KEY)],
+    ["direction convention", Object.values(MARINE_DIRECTION_CONVENTION_KEY)],
+    ["unit", Object.values(MARINE_UNIT_KEY)],
+  ];
+
+  for (const [label, keys] of derived) {
+    for (const key of keys) {
+      it(`${label} key Marine.${key} resolves in tr and en`, () => {
+        expectNonEmptyString(trMarine, key);
+        expectNonEmptyString(enMarine, key);
+      });
+    }
+  }
+
+  it("covers every compass sector the bucketing function can emit", () => {
+    expect(Object.keys(MARINE_COMPASS_KEY).sort()).toEqual([...COMPASS_POINTS].sort());
+  });
+
+  it("names each of the three non-numeric states distinctly in both catalogues", () => {
+    // The five-render rule is only real if the three status words differ. Identical copy would
+    // pass every structural check above while telling a reader that a permanent gap and a
+    // transient outage are the same thing.
+    for (const catalogue of [trMarine, enMarine]) {
+      const rendered = Object.values(MARINE_VALUE_STATUS_KEY).map((key) => catalogue.get(key));
+      expect(new Set(rendered).size).toBe(rendered.length);
     }
   });
 });
