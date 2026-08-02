@@ -187,13 +187,21 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // points and the catalogue ARE the page. Here the whole marine section is an enhancement on
   // a page about a province, and a chain of external providers we do not operate may remove
   // the section — never the page, never its 200, never its facts or its links.
-  const [marinePoints, marineLayers] = await Promise.all([
-    getMarinePointsSafe(),
-    getMarineLayersSafe(),
-  ]);
-  const marineConditions = isCoastalPlate(marinePoints, province.plateCode)
-    ? await getMarineProvinceConditionsSafe(province.plateCode)
-    : null;
+  // THE GATE IS ALSO AN ISR GATE, and the ordering below is load-bearing. Next takes a
+  // route's revalidate window from the SHORTEST fetch in the render, so reading the layer
+  // catalogue (1800 s) unconditionally would drag all 54 INLAND province pages from a 1 h
+  // window down to 30 min — for a payload they never use. Only the point list (86 400 s,
+  // longer than the province window and therefore invisible to it) is read before the gate;
+  // the catalogue and the values are read only where a section will actually render, which
+  // is where the 900 s window is the intended cost. Verified in the build output: coastal
+  // provinces revalidate at 15 m, inland ones stay at 1 h.
+  const marinePoints = await getMarinePointsSafe();
+  const [marineLayers, marineConditions] = isCoastalPlate(marinePoints, province.plateCode)
+    ? await Promise.all([
+        getMarineLayersSafe(),
+        getMarineProvinceConditionsSafe(province.plateCode),
+      ])
+    : [[], null];
   // ONE signal, read by the section AND by the licence block that has to travel with it: the
   // attribution may not go missing where a derived value appears (a licence obligation,
   // → DEC 2026-08-02c) and may not appear where none does (this page's own "no source for
