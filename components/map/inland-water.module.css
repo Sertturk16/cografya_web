@@ -34,11 +34,14 @@
      The line is a DARKER SHADE OF THE WATER, not the administrative taupe. Rendered samples
      settled this: the dendritic reservoirs (Keban, Atatürk, Karakaya, Ilısu) have arms
      narrower than one svg unit, so a 1px non-scaling stroke covers them from both sides and
-     the fill never shows — in taupe they read as brown scribbles rather than as lakes. See
-     --map-water-line in globals.css for the measured contrasts; it clears WCAG 1.4.11's 3:1
-     against white land, against its own fill and against an inert province, and does so by a
-     wider margin than taupe. Same width and stroke family as a province edge, so the
-     shoreline still reads as part of one drawing. */
+     the fill never shows — on those bodies the STROKE IS THE BODY, and in taupe they read as
+     brown scribbles rather than as lakes. See --map-water-line in globals.css for the
+     measured contrasts: it clears WCAG 1.4.11's 3:1 against ALL TEN backdrops this layer is
+     drawn over — white land, its own fill, an inert province, AND the seven Okabe-Ito region
+     tints the game's Bölge Bulma mode paints underneath it. That last set is why the token is
+     a near-black petrol rather than a mid-teal; the mid-teal failed 6 of the 7. Same width
+     and stroke family as a province edge, so the shoreline still reads as part of one
+     drawing. */
   stroke: var(--map-water-line);
   stroke-width: 1;
   stroke-linejoin: round;

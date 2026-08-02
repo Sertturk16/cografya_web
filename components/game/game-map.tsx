@@ -52,6 +52,14 @@ interface GameMapProps {
  * `role="button"` names the moment there is something to answer, and swaps it back when
  * the round ends.
  */
+
+/**
+ * Id of the `<clipPath>` that confines the water layer to this round's land. SVG ids are
+ * document-global, so it is written once here rather than re-typed at the call site — one
+ * game map is rendered per page.
+ */
+const LAND_CLIP_ID = "game-map-land-clip";
+
 export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
   const t = await getTranslations("Game");
   const tMap = await getTranslations("Map");
@@ -131,8 +139,9 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
               layer stays OUT of `viewBoxForPaths()`: the stage's aspect ratio is derived from
               the province shapes alone, so adding water cannot move the frame. */}
           <InlandWaterLayer
-            clipToPaths={isSubset ? shapes.map((shape) => shape.d) : undefined}
-            clipId={isSubset ? "game-map-land-clip" : undefined}
+            clip={
+              isSubset ? { paths: shapes.map((shape) => shape.d), id: LAND_CLIP_ID } : undefined
+            }
           />
         </svg>
 

@@ -26,7 +26,13 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TR_FRAME, assertFrameMatchesBounds, assertInsideFrame, projectToFrame } from "./lib/tr-frame.mjs";
+import { perpDistance } from "./lib/map-topology.mjs";
+import {
+  TR_FRAME,
+  assertFrameMatchesBounds,
+  assertInsideFrame,
+  projectToFrame,
+} from "./lib/tr-frame.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -130,17 +136,6 @@ const NAME_TO_PLATE = {
 const SIMPLIFY_EPSILON = 0.45; // Douglas-Peucker tolerance, in projected svg units
 const DECIMALS = 1; // coordinate rounding in the emitted path data
 
-/** Perpendicular distance from point p to the line segment a→b. */
-function perpDistance(p, a, b) {
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
-  let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2;
-  t = Math.max(0, Math.min(1, t));
-  return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
-}
-
 /** Iterative Douglas-Peucker line simplification (avoids deep recursion). */
 function simplify(points, epsilon) {
   if (points.length < 3) return points.slice();
@@ -196,7 +191,15 @@ for (const feature of geojson.features) {
 // from under the layers that share the frame (→ DEC 2026-08-02k md. 1).
 assertFrameMatchesBounds({ minLon, maxLon, minLat, maxLat });
 
-const { minLon: frameMinLon, maxLat: frameMaxLat, cosLat, scale, padding: PADDING, viewWidth: VIEW_WIDTH, viewHeight } = TR_FRAME;
+const {
+  minLon: frameMinLon,
+  maxLat: frameMaxLat,
+  cosLat,
+  scale,
+  padding: PADDING,
+  viewWidth: VIEW_WIDTH,
+  viewHeight,
+} = TR_FRAME;
 
 /** [lon, lat] → [x, y] in the shared viewBox (north up). */
 const project = projectToFrame;

@@ -75,8 +75,15 @@
  *   preserving it would punch a window to the background instead.
  */
 
-/** Absolute shoelace area of an OPEN ring (no repeated closing vertex). */
-function loopArea(points) {
+/**
+ * Absolute shoelace area of an OPEN ring (no repeated closing vertex).
+ *
+ * Exported because it is a planar primitive every generator in this folder needs, and this
+ * module is already their shared simplification home (`simplify()` lives here). It was
+ * re-implemented a third time in the inland-water generator before that was noticed
+ * (PR #39, code-simplifier) — import it, do not write a fourth.
+ */
+export function loopArea(points) {
   let sum = 0;
   for (let i = 0; i < points.length; i++) {
     const [x1, y1] = points[i];
@@ -96,8 +103,14 @@ function loopArea(points) {
  */
 const LOOP_AREA_RATIO = 0.8;
 
-/** Perpendicular distance from point `p` to the segment `a`→`b`. */
-function perpDistance(p, a, b) {
+/**
+ * Perpendicular distance from point `p` to the segment `a`→`b`.
+ *
+ * Exported for the same reason as `loopArea` above: this was byte-for-byte identical in
+ * `generate-map-paths.mjs` and `water-geometry.mjs` as well — three copies of the one
+ * function every Douglas-Peucker pass in this repo is built on (PR #39, code-simplifier).
+ */
+export function perpDistance(p, a, b) {
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];
   const len2 = dx * dx + dy * dy;

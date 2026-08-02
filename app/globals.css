@@ -80,14 +80,39 @@
      Atatürk, Karakaya, Ilısu) are DENDRITIC — arms a few hundred metres wide, i.e. well
      under one svg unit. A 1px non-scaling stroke covers such an arm from both sides, so the
      fill never shows and the country's largest man-made lakes rendered as brown scribbles in
-     the administrative line colour. Outlining water in a darker shade of ITSELF is also the
-     standard atlas convention, and it makes a sub-unit arm read as a watercourse instead of
-     as an unexplained boundary.
-     Measured (WCAG 1.4.11, 3:1 graphical-object floor — this tone BEATS taupe on all three):
-       vs --province-fill #fff        4.69:1  (taupe 3.86:1)
-       vs --map-water     #dbe7e8     3.71:1  (taupe 3.05:1)
-       vs --province-inert #f1e9de    3.90:1  (taupe 3.21:1) */
-  --map-water-line: #527a84;
+     the administrative line colour. On those bodies the STROKE IS THE BODY: no fill is
+     visible anywhere, so this token alone carries them.
+
+     THAT is why the value is a near-black cold tone and not the mid-teal #527a84 this layer
+     shipped with first. The layer renders UNCONDITIONALLY inside the game's Bölge Bulma
+     mode, where every province carries one of the seven Okabe-Ito region tints — the same
+     constraint --game-hover-edge is written against further down this file, and the same
+     step that was skipped here first time round. Against those seven a mid-tone fails: the
+     dendritic reservoirs washed out on 6 of 7, worst on exactly the two tints that carry
+     Keban/Karakaya (Doğu Anadolu 1.37:1) and Atatürk (Güneydoğu 1.21:1). Going LIGHTER
+     cannot work either — clearing 3:1 over Marmara from above needs L ≥ 0.558, which then
+     fails against white land — so the only single value that clears every backdrop is a
+     dark one, and 3:1 over Marmara #0072b2 caps it at L ≤ 0.0175.
+
+     Measured (WCAG 1.4.11, 3:1 graphical-object floor). ALL TEN backdrops this layer is
+     ever drawn over, not just the three neutral ones:
+       vs --province-fill  #ffffff   16.21:1   (#527a84 4.69 · taupe 3.86)
+       vs --province-inert #f1e9de   13.47:1   (#527a84 3.90 · taupe 3.21)
+       vs --map-water      #dbe7e8   12.82:1   (#527a84 3.71 · taupe 3.05)
+       vs --region-ic-anadolu        #f0e442   12.26:1   (#527a84 3.55)
+       vs --region-ege               #e69f00    7.20:1   (#527a84 2.08 ✗)
+       vs --region-akdeniz           #56b4e9    7.02:1   (#527a84 2.03 ✗)
+       vs --region-karadeniz         #cc79a7    5.30:1   (#527a84 1.53 ✗)
+       vs --region-dogu-anadolu      #009e73    4.74:1   (#527a84 1.37 ✗)
+       vs --region-guneydogu-anadolu #d55e00    4.19:1   (#527a84 1.21 ✗)
+       vs --region-marmara           #0072b2    3.13:1   (#527a84 1.11 ✗)  ← binding case
+
+     It is a dark PETROL, not a neutral black: still a darker shade of the water it outlines
+     (the atlas convention), still unmistakably cool against the warm administrative taupe,
+     and deliberately a different family from the warm near-black --game-hover-edge #211c19,
+     which is the only other near-black line on the play surface (and is 3px to this one's
+     1px). Do not lighten it toward the old teal without re-running the seven tints. */
+  --map-water-line: #002337;
   /* Backdrop LAND on the world map: territories that will never get a page (Greenland,
      Antarctica, the overseas-territory set) plus not-yet-seeded countries.
 

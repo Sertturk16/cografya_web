@@ -92,7 +92,20 @@ describe("the inland water stylesheet", () => {
   it("keeps the water fully opaque", () => {
     // The layer's job is to MASK the administrative boundary running across a lake. Any
     // transparency puts that line back on screen as a ghost.
-    expect(STYLES).not.toMatch(/(^|[^-])opacity:/);
+    //
+    // ALL THREE spellings, because the two that matter most are the two the stylesheet's own
+    // comment forbids BY NAME. The first version of this guard was `/(^|[^-])opacity:/`,
+    // whose `[^-]` alternative requires a non-hyphen character immediately before the
+    // property — which is exactly what makes `fill-opacity:` and `stroke-opacity:` incapable
+    // of matching it. It passed on `opacity: 1` and failed to see `fill-opacity: 0.5`, i.e.
+    // it was blind to the softening someone would actually reach for (PR #39 review T1).
+    const TRANSPARENCY = /(^|[\s;{])(fill-|stroke-)?opacity\s*:/;
+    expect(STYLES).not.toMatch(TRANSPARENCY);
+    // Self-check: the pattern must be able to see all three forms, or the assertion above is
+    // decorative again. A guard nobody has watched fail is a guard nobody has tested.
+    for (const declaration of ["opacity: 1", "  fill-opacity: 0.5", "; stroke-opacity:0.5"]) {
+      expect(declaration).toMatch(TRANSPARENCY);
+    }
   });
 
   it("takes its tone from a token, never a literal hex", () => {
@@ -109,10 +122,14 @@ describe("the surfaces that consume the layer", () => {
     "../marine/marine-map.tsx",
   ] as const;
 
-  it("all four TR-frame surfaces render it", () => {
+  it("is rendered by every file that draws the TR frame", () => {
+    // THREE files, FOUR surfaces: `game-map.tsx` serves both the full-country round and the
+    // region rounds — same component, different viewBox — so the file count and the surface
+    // count are deliberately not the same number.
+    //
     // `/deniz` is the one that is easy to forget and the one where the omission reads worst:
-    // a lake-less Türkiye on the water page (→ DEC 2026-08-02k md. 4). The game map covers
-    // both the full-country and the region rounds — same component, different viewBox.
+    // a lake-less Türkiye on the water page (→ DEC 2026-08-02k md. 4).
+    expect(SURFACES).toHaveLength(3);
     for (const surface of SURFACES) {
       expect(code(sourceOf(surface))).toMatch(/<InlandWaterLayer[\s/>]/);
     }
@@ -125,12 +142,19 @@ describe("the surfaces that consume the layer", () => {
     // blue filaments on empty background. Dropping the clip is a plausible "simplification"
     // that reintroduces exactly that, so it is pinned here.
     const game = code(sourceOf("../game/game-map.tsx"));
-    expect(game).toMatch(/clipToPaths=\{isSubset \?/);
+    // THE PAYLOAD, not the syntax. Asserting only the shape of the call — that a clip is
+    // passed when `isSubset` — is satisfied by `clip={isSubset ? { paths: [], id } : …}`,
+    // which is the defect wearing the fix's clothes (PR #39 review T2). What has to be true
+    // is that the clip region IS the province set this surface draws, so that is what is
+    // matched: the same `shapes` array the `<path>` loop above it consumes.
+    expect(game).toMatch(
+      /clip=\{\s*isSubset\s*\?\s*\{\s*paths:\s*shapes\.map\(\(shape\)\s*=>\s*shape\.d\)\s*,/,
+    );
     expect(game).toMatch(/const isSubset = viewBox !== MAP_VIEWBOX;/);
     // The full-country surfaces must NOT clip: every body in the artifact is Turkish and the
     // whole country is on screen, so a clip there is ~57 kB of markup that changes no pixel.
     for (const surface of ["../map/turkey-map-section.tsx", "../marine/marine-map.tsx"]) {
-      expect(code(sourceOf(surface))).not.toMatch(/clipToPaths/);
+      expect(code(sourceOf(surface))).not.toMatch(/\bclip=/);
     }
   });
 

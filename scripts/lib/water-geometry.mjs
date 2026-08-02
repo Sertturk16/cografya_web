@@ -8,6 +8,8 @@
  * disagree, and the disagreement would show up as a lake mysteriously crossing a rung.
  */
 
+import { perpDistance } from "./map-topology.mjs";
+
 /** Mean Earth radius (IUGG), metres. */
 const EARTH_RADIUS_M = 6371008.8;
 const DEG_TO_RAD = Math.PI / 180;
@@ -56,7 +58,9 @@ export function stitchRings(members, label) {
   for (const member of members) {
     if (member.type !== "way" || !Array.isArray(member.geometry)) continue;
     const role = member.role === "inner" ? "inner" : "outer";
-    pieces[role].push(member.geometry.map((point) => /** @type {LonLat} */ ([point.lon, point.lat])));
+    pieces[role].push(
+      member.geometry.map((point) => /** @type {LonLat} */ ([point.lon, point.lat])),
+    );
   }
 
   /** @type {{ outer: LonLat[][], inner: LonLat[][] }} */
@@ -114,17 +118,6 @@ function isClosed(ring) {
  */
 function samePoint(a, b) {
   return a !== undefined && b !== undefined && a[0] === b[0] && a[1] === b[1];
-}
-
-/** Perpendicular distance from `p` to segment `a`→`b`. */
-function perpDistance(p, a, b) {
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
-  let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2;
-  t = Math.max(0, Math.min(1, t));
-  return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
 }
 
 /**
@@ -187,8 +180,8 @@ export function simplifyRing(ring, epsilon, project) {
   keep[lo] = true;
   keep[hi] = true;
   // Two open arcs: lo→hi, and hi→…→wrap→…→lo.
-  markKept(projected, lo, hi, epsilon, keep, false);
-  markKept(projected, hi, lo + open.length, epsilon, keep, true);
+  markKept(projected, lo, hi, epsilon, keep);
+  markKept(projected, hi, lo + open.length, epsilon, keep);
 
   const simplified = open.filter((_, i) => keep[i]);
   if (simplified.length < 3) return closeRing(open);
@@ -196,12 +189,14 @@ export function simplifyRing(ring, epsilon, project) {
 }
 
 /**
- * Iterative Douglas–Peucker over an arc, optionally wrapping past the end of the array.
- * Indices are virtual: `i % n` addresses the real vertex.
+ * Iterative Douglas–Peucker over an arc, which may run past the end of the array and wrap.
+ * Indices are VIRTUAL: `i % n` addresses the real vertex, and it is applied unconditionally
+ * because for the non-wrapping arc every index is already `< n`, so `i % n === i`. (There
+ * used to be a `wrap` flag selecting between the two; it could never change an outcome.)
  */
-function markKept(projected, start, end, epsilon, keep, wrap) {
+function markKept(projected, start, end, epsilon, keep) {
   const n = projected.length;
-  const at = (i) => projected[wrap ? i % n : i];
+  const at = (i) => projected[i % n];
   const stack = [[start, end]];
   while (stack.length) {
     const frame = stack.pop();

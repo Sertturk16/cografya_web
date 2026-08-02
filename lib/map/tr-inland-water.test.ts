@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { INLAND_WATER_SHAPES } from "./tr-inland-water.generated";
 import { MAP_VIEWBOX } from "./tr-provinces.generated";
@@ -92,20 +94,74 @@ const VIEW_WIDTH = VIEWBOX[2] ?? Number.NaN;
 const VIEW_HEIGHT = VIEWBOX[3] ?? Number.NaN;
 
 /**
- * How far outside the frame a vertex may sit. Not zero: the province outlines are simplified
- * at 0.45 units and the water is not, so a coastal lagoon can legitimately reach a fraction
- * of a unit past the landmass bounding box the frame was fitted to. This mirrors the
- * generator's own `FRAME_TOLERANCE`, and its job is to fail LOUDLY if the two artifacts ever
- * stop sharing a coordinate space — a drift of even a few units puts lakes inland of, or out
- * to sea from, their real shores.
+ * Slack on the VIEWBOX-containment check below — which, read literally, is all this guards.
+ *
+ * The comparison is against the province artifact's own `MAP_VIEWBOX`, so the effective slack
+ * is `padding + tolerance = 6 + 1.5 = 7.5 units` (~12.6 km): the landmass only spans
+ * `[6, 994] × [6, 422.9]` inside a `[0, 1000] × [0, 429]` box. That is deliberate and it is a
+ * CO-REGISTRATION detector, not a shoreline check — its job is to fail loudly if the two
+ * artifacts ever stop sharing a coordinate space, and a frame drift is measured in tens of
+ * units, not tenths. Measured on the committed artifact: overshoot is **0.000** against the
+ * viewBox and **0.000** against the province artifact's own bounding box.
+ *
+ * How far a lagoon reaches past the simplified COASTLINE is a different quantity — point
+ * against polygon, not point against box — and neither this test nor the generator computes
+ * it, because P6 never reads province geometry (→ DEC 2026-08-02k md. 1). It is measured by
+ * hand from the rendered samples. Do not report the two under one name (PR #39 review
+ * `cr-frame-tolerance-semantics`). Mirrors the generator's own `FRAME_TOLERANCE`.
  */
 const FRAME_TOLERANCE = 1.5;
 
+/**
+ * How many bodies the artifact must contain.
+ *
+ * A COUNT, not a fact: it says nothing about what any lake is or how big it is, only that
+ * regenerating did not silently change what the map draws. Without it the only assertion was
+ * `length > 0`, so a source refresh or a stray env override could halve the layer and every
+ * test would stay green (PR #39 review T4). `world-shapes.test.ts`'s `HOLE_CENSUS` is the
+ * same instrument.
+ *
+ * 50 is the count at the owner-ruled 30 km² rung (S1, 2026-08-02). The cross-check below is
+ * what ties the number to that ruling rather than leaving it a magic constant to be bumped
+ * whenever it goes red.
+ */
+const EXPECTED_BODY_COUNT = 50;
+
+/** The owner-ruled drawing threshold in km² — mirrors `MIN_AREA_KM2` in the generator. */
+const MIN_AREA_KM2 = 30;
+
 describe("the generated inland-water artifact", () => {
-  it("draws at least one body", () => {
-    // A threshold typo (`400` for `40`) would empty the layer, and an empty `<g>` renders
+  it("draws exactly the pinned number of bodies", () => {
+    // A threshold typo (`300` for `30`) would empty the layer, and an empty `<g>` renders
     // perfectly happily. The generator throws on this too; this is the artifact-side pin.
-    expect(INLAND_WATER_SHAPES.length).toBeGreaterThan(0);
+    expect(INLAND_WATER_SHAPES.length).toBe(EXPECTED_BODY_COUNT);
+  });
+
+  it("draws exactly the snapshot bodies that clear the ruled threshold, and no others", () => {
+    // WHY the count is what it is, so a future red does not get "fixed" by editing the
+    // number. The rung is an owner ruling; this asserts the artifact is its faithful image.
+    //
+    // Deliberately an ID-SET equality rather than the tier split that was suggested: the
+    // artifact carries no area and no tier (DEC 2026-08-01r-4), so a tier assertion would
+    // have to re-implement the generator's own tier function inside the test — a copy that
+    // can drift. Pinning WHICH bodies are drawn subsumes pinning how many fall in each band.
+    const snapshot: unknown = JSON.parse(
+      readFileSync(
+        fileURLToPath(new URL("../../data/tr-inland-water.geojson", import.meta.url)),
+        "utf8",
+      ),
+    );
+    const features = (snapshot as { features?: unknown[] }).features ?? [];
+    const eligible = features
+      .map(
+        (feature) => (feature as { properties?: { osmId?: string; areaKm2?: number } }).properties,
+      )
+      .filter((properties) => (properties?.areaKm2 ?? 0) >= MIN_AREA_KM2)
+      .map((properties) => properties?.osmId)
+      .filter((osmId): osmId is string => typeof osmId === "string");
+
+    expect(eligible).toHaveLength(EXPECTED_BODY_COUNT);
+    expect([...INLAND_WATER_SHAPES.map((shape) => shape.id)].sort()).toEqual([...eligible].sort());
   });
 
   it("keys every body with a unique, stable OSM id", () => {

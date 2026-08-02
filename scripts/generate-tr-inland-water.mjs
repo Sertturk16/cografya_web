@@ -33,6 +33,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loopArea } from "./lib/map-topology.mjs";
 import { encodePath } from "./lib/path-encode.mjs";
 import { TR_FRAME, TR_VIEWBOX, assertInsideFrame, projectToFrame } from "./lib/tr-frame.mjs";
 import { measureRingAreaKm2, simplifyRing } from "./lib/water-geometry.mjs";
@@ -45,11 +46,19 @@ const OUT = join(ROOT, "lib", "map", "tr-inland-water.generated.ts");
 /**
  * Drawing threshold in km², measured on the source rings.
  *
- * 40 km² is the published-map floor: HGM's 1:2 000 000 political sheet and the international
- * atlas convention both show Sapanca (45 km²) and Marmara Gölü (39 km²), so ~40 is where a
- * reader stops expecting to see a body. The env override exists ONLY to render the owner's
- * threshold-ladder samples; it is never set in CI or in `generate:water:check`, so the
- * committed artifact is deterministic.
+ * **30 km² — OWNER RULING, 2026-08-02 (S1 of the P6 sample gate).** The owner reviewed the
+ * 40 / 30 / 10 km² ladder rendered from this snapshot and took the middle rung. It draws 50
+ * bodies for a 42.4 kB artifact, and it is what closes the curriculum-parity gaps that the
+ * published-map floor left open — Marmara Gölü (38.6 km²), Suğla, Seyhan, Sır and Balık Gölü
+ * all sit between the two rungs, and a Türkiye map without Marmara Gölü reads as a mistake to
+ * a reader who was taught it.
+ *
+ * 40 km² was the pre-ruling default and the reasoning behind it still holds as cartography —
+ * HGM's 1:2 000 000 political sheet and the international atlas convention both stop around
+ * there — but this product is taught-curriculum-first, and the owner ruled accordingly.
+ *
+ * The env override exists ONLY to render the owner's threshold-ladder samples; it is never
+ * set in CI or in `generate:water:check`, so the committed artifact is deterministic.
  */
 const MIN_AREA_KM2 = readThreshold();
 
@@ -74,7 +83,10 @@ const MIN_AREA_KM2 = readThreshold();
  *
  * ## The numbers, and why these numbers
  *
- * Measured on the committed snapshot, 40 km² cut, whole artifact:
+ * The tolerance comparison below was measured at the **40 km² cut**, the rung in force when
+ * it was chosen. The rows are kept at that cut on purpose: the choice between them does not
+ * depend on the rung, and re-deriving three configurations this generator no longer emits
+ * would produce numbers nobody can reproduce from the shipped code.
  *
  *   constant 0.80  →  11.2 kB · worst body −26.3 %      ← the tolerance DEC 2026-08-02k assumed
  *   constant 0.45  →  17.1 kB · worst body  −8.4 %
@@ -82,12 +94,19 @@ const MIN_AREA_KM2 = readThreshold();
  *   ADAPTIVE below →  35.9 kB · worst body  −4.3 %
  *   adaptive β 0.0127 → 45.1 kB · worst body −4.3 %     (no further fidelity for +9 kB)
  *
+ * **What ships today** is the ADAPTIVE row at the owner-ruled 30 km² cut: **42.4 kB, 50
+ * bodies, worst body −4.32 % (Hotamış Depolaması)**. Run the generator to reproduce it — the
+ * report prints all three numbers.
+ *
  * DEC 2026-08-02k md. 2 lifted the ≤20 kB cap and budgeted "~0.8 units, ~35 kB". The byte
  * half of that prediction was based on an estimated 6 500 km of shoreline; the real figure
  * is 10 137 km, but Douglas–Peucker is far more effective on a lake shore than the linear
  * estimate assumed, so 0.8 units actually costs 11 kB, not 35. This setting SPENDS the
- * ruled budget (35.9 kB) and buys the quality the ruling was after — six times less area
- * distortion on the small bodies than the tolerance the ruling named.
+ * ruled budget and buys the quality the ruling was after — six times less area distortion on
+ * the small bodies than the tolerance the ruling named. The 42.4 kB it now costs is above the
+ * ruled estimate because the OWNER later ruled the rung directly (30 km², S1); the estimate
+ * was superseded by the ruling it was estimating for, and the wire cost that actually governs
+ * CWV is gzip, measured separately.
  *
  * `ε_max` 0.50 keeps the biggest bodies at the province generator's own smoothness class
  * (0.45); `ε_min` 0.12 is where extra fidelity stops changing the picture (see the last row
@@ -113,28 +132,46 @@ const KM2_PER_UNIT2 = (() => {
 })();
 
 /**
- * Smallest ring worth drawing, in svg units² (≈ 0.29 km² at 1 unit ≈ 1.68 km).
+ * Smallest ring worth drawing, in svg units².
+ *
+ * **0.35 units² ≈ 0.985 km²** at this frame's 2.8141 km²/unit² (re-derive it from
+ * `KM2_PER_UNIT2` below rather than trusting this line — an earlier version of this docblock
+ * said "≈ 0.29 km²", understating by 3.4× how large a ring the generator silently drops).
+ * Just under a square kilometre is still a sub-pixel speck at the 1000 px render width: one
+ * unit is ~1.68 km, so such a ring is under 0.6 px across.
  *
  * Applies to individual RINGS, not to bodies: a reservoir's detached backwater or a lake's
- * satellite pond below this size renders as a sub-pixel speck — visually indistinguishable
- * from dirt on the screen, and pure payload. The body's own area is unaffected (it was
- * measured on the source), so no threshold moves; the largest ring of every drawn body is
- * always kept, whatever its size.
+ * satellite pond below this size renders as a speck — visually indistinguishable from dirt on
+ * the screen, and pure payload. The body's own area is unaffected (it was measured on the
+ * source), so no threshold moves; the largest ring of every drawn body is always kept,
+ * whatever its size.
  */
 const MIN_RING_AREA_UNITS2 = 0.35;
 
 /**
- * How far a body may sit outside the pinned viewBox before the generator refuses.
+ * Extra slack, in svg units, on the VIEWBOX-containment check — which is the only thing this
+ * constant guards. Read that literally: `assertInsideFrame()` compares projected points
+ * against the pinned `[0, 1000] × [0, 429]` box, NOT against the landmass and NOT against the
+ * coastline.
  *
- * Not zero, on purpose: the coastline the provinces draw is simplified at 0.45 units, and a
- * coastal lagoon traced at full resolution can legitimately fall a fraction of a unit
- * outside it. 1.5 units (≈ 2.5 km) is the plan's reporting threshold — anything larger means
- * the layer is drawing something that is not in Türkiye, or the frame moved.
+ * So the real slack before this throws is `padding + tolerance = 6 + 1.5 = 7.5 units`
+ * (~12.6 km), because the landmass itself only spans `[6, 994] × [6, 422.9]`. It is a
+ * catastrophe detector — "this layer is drawing something that is not in Türkiye, or the
+ * frame moved" — and it is deliberately nowhere near tight enough to police a shoreline.
+ * Measured on the committed snapshot: true viewBox overshoot is **0.000 for every body**, and
+ * so is the overshoot past the province artifact's own bounding box.
+ *
+ * WHAT IT DOES NOT MEASURE. How far a lagoon reaches past the simplified COASTLINE is a
+ * different quantity — point-against-polygon, not point-against-box — and this generator
+ * cannot compute it, because it never reads province geometry (→ DEC 2026-08-02k md. 1).
+ * That number is measured by hand from the rendered samples; last measured value **0.99 units
+ * (Akyatan Gölü)**, and nothing gates it. Do not conflate the two: they were reported under
+ * one name once already (PR #39 review `cr-frame-tolerance-semantics`).
  */
 const FRAME_TOLERANCE = 1.5;
 
 function readThreshold() {
-  return readNumberEnv("WATER_MIN_AREA_KM2", 40);
+  return readNumberEnv("WATER_MIN_AREA_KM2", 30);
 }
 
 /** @param {string} name @param {number} fallback */
@@ -164,7 +201,9 @@ for (const feature of snapshot.features) {
   const osmId = properties.osmId;
   const areaKm2 = properties.areaKm2;
   if (typeof osmId !== "string" || typeof areaKm2 !== "number") {
-    throw new Error(`Snapshot feature without osmId/areaKm2 — the snapshot is not the one this generator expects.`);
+    throw new Error(
+      `Snapshot feature without osmId/areaKm2 — the snapshot is not the one this generator expects.`,
+    );
   }
   if (areaKm2 < MIN_AREA_KM2) {
     skipped++;
@@ -195,16 +234,20 @@ for (const feature of snapshot.features) {
     const points = simplified.slice(0, -1).map((lonLat) => projectToFrame(lonLat));
     candidates.push({
       points,
-      area: Math.abs(shoelace(points)),
+      area: loopArea(points),
       sourceArea: measureRingAreaKm2(ring),
     });
   }
   if (candidates.length === 0) {
-    throw new Error(`${osmId}: every ring collapsed at ε=${epsilon} although the body is above the threshold.`);
+    throw new Error(
+      `${osmId}: every ring collapsed at ε=${epsilon} although the body is above the threshold.`,
+    );
   }
 
   candidates.sort((a, b) => b.area - a.area);
-  const kept = candidates.filter((candidate, index) => index === 0 || candidate.area >= MIN_RING_AREA_UNITS2);
+  const kept = candidates.filter(
+    (candidate, index) => index === 0 || candidate.area >= MIN_RING_AREA_UNITS2,
+  );
 
   const points = kept.flatMap((candidate) => candidate.points);
   const { maxOvershoot: overshoot } = assertInsideFrame(points, {
@@ -232,25 +275,14 @@ for (const feature of snapshot.features) {
 }
 
 if (drawn.length === 0) {
-  throw new Error(`No water body cleared MIN_AREA_KM2=${MIN_AREA_KM2} — refusing to emit an empty layer.`);
+  throw new Error(
+    `No water body cleared MIN_AREA_KM2=${MIN_AREA_KM2} — refusing to emit an empty layer.`,
+  );
 }
 
 // Largest first: the paint order inside the layer is then "big bodies underneath", which is
 // what a reader expects when two bodies touch, and it makes the artifact readable.
 drawn.sort((a, b) => b.areaKm2 - a.areaKm2);
-
-/** Planar shoelace area of a projected ring, in svg units². */
-function shoelace(points) {
-  let sum = 0;
-  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-    const a = points[i];
-    const b = points[j];
-    if (!a || !b) continue;
-    sum += (b[0] + a[0]) * (b[1] - a[1]);
-  }
-  return sum / 2;
-}
-
 
 // --- Emit ---------------------------------------------------------------------
 const body = drawn
@@ -312,7 +344,7 @@ console.log(`generate:water → ${OUT}
   vertices         : ${vertices} · ${(pathBytes / vertices).toFixed(2)} B/vertex
   path data        : ${(pathBytes / 1024).toFixed(1)} kB · whole artifact ${(bytes / 1024).toFixed(1)} kB
   viewBox          : ${TR_VIEWBOX}
-  frame overshoot  : max ${maxOvershoot.toFixed(2)} svg units (tolerance ${FRAME_TOLERANCE})
+  viewBox overshoot: max ${maxOvershoot.toFixed(2)} svg units outside ${TR_VIEWBOX} (tolerance ${FRAME_TOLERANCE}; coastal overspill is NOT this number — see FRAME_TOLERANCE)
   worst area loss  : ${worstLoss.map((s) => `${s.name} ${s.areaLossPct.toFixed(2)}%`).join(" · ")}
   rings dropped    : ${drawn.reduce((sum, s) => sum + s.droppedRings, 0)} below ${MIN_RING_AREA_UNITS2} units²
 `);

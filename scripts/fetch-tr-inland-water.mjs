@@ -51,8 +51,12 @@
  *   - the reduction tolerance is 2.4× finer than the FINEST tolerance the generator uses on
  *     any body and 10× finer than the coarsest, and that headroom is measured rather than
  *     asserted: re-running the generator's own simplification against the verbatim geometry
- *     gives an IDENTICAL vertex count on all 39 drawn bodies, with a maximum vertex
- *     displacement of 0.185 svg units (0.31 km) — under a fifth of a pixel at render width.
+ *     gives an IDENTICAL vertex count on all 39 bodies the 40 km² rung drew, with a maximum
+ *     vertex displacement of 0.185 svg units (0.31 km) — under a fifth of a pixel at render
+ *     width. The 11 further bodies the owner-ruled 30 km² rung adds were NOT individually
+ *     re-measured (that needs another network fetch of the 34 MB verbatim geometry); all 11
+ *     are small enough to sit at the generator's `ε_min` 0.12, i.e. its FINEST tolerance and
+ *     therefore the 2.4× headroom case the measurement above already covers.
  *
  * Licence: ODbL. This file's data is NEVER merged with the public-domain Natural Earth
  * sea/neighbour layer — separate source, separate file, separate artifact
@@ -62,6 +66,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveName } from "./lib/osm-names.mjs";
 import { projectToFrame } from "./lib/tr-frame.mjs";
 import { measureRingAreaKm2, simplifyRing, stitchRings } from "./lib/water-geometry.mjs";
 
@@ -175,24 +180,6 @@ async function runQuery(query) {
   );
 }
 
-/**
- * Resolve the display name: `name:tr` → `name` → `name:en`.
- *
- * Faz-1 draws no labels, but the file must already carry the right string so the label layer,
- * when it lands, does not inherit a wrong name (the reason OSM was chosen over Natural Earth
- * at all: NE calls Karakaya "Saksak Dagi" and Atatürk "Ataturk Barajt").
- *
- * `name` comes BEFORE `name:en`, and that ordering is a correction made from the fetch
- * report rather than a preference: on a Turkish feature the untagged `name` IS the Turkish
- * name, and several of these bodies carry an English `name:en` with no `name:tr` at all.
- * Preferring `name:en` produced "Atatürk Reservoir", "Akyatan Lagoon" and "Hirfanlı Dam" in
- * a Turkish-first product whose whole reason for using this source is that the names arrive
- * in Turkish.
- */
-function resolveName(tags) {
-  return tags["name:tr"] ?? tags.name ?? tags["name:en"] ?? null;
-}
-
 // --- run ---------------------------------------------------------------------
 
 const query = buildQuery();
@@ -210,7 +197,9 @@ if (typeof timestamp !== "string") {
 }
 
 const features = [];
-const seen = new Set();
+// Pinned ids the Overpass response contained — recorded BEFORE the tag filters, so it answers
+// "did the network still know this id", not "is it still a lake". See the F1 note below.
+const returned = new Set();
 const rejected = [];
 
 for (const element of payload.elements ?? []) {
@@ -223,7 +212,7 @@ for (const element of payload.elements ?? []) {
       `Unpinned feature ${osmId} in the response — the query no longer matches the pin list.`,
     );
   }
-  seen.add(osmId);
+  returned.add(osmId);
   const tags = element.tags ?? {};
 
   // F4 — tag whitelist. Rivers, canals, basins and wastewater ponds dominate the
@@ -308,10 +297,18 @@ for (const element of payload.elements ?? []) {
   });
 }
 
-// F1 — every pinned id must come back. A silently missing id is how a lake disappears from
-// the map without anyone noticing; same discipline as NAME_TO_PLATE in the province
-// generator.
-const missing = [...pinned].filter((id) => !seen.has(id));
+// F1 — every pinned id must come back FROM THE NETWORK. Read that literally: `returned` is
+// filled before the tag filters run, so this proves Overpass still knows the id, and nothing
+// more. Same discipline as NAME_TO_PLATE in the province generator.
+//
+// IT IS NOT A "NO LAKE DISAPPEARED" GUARANTEE, which is what an earlier version of this
+// comment claimed (PR #39 review `cr-f1-after-filters`). A pinned body that an OSM mapper
+// retags — `natural=water` → something else, or `water=lake` → `water=dry_lake` — comes back
+// from the network, passes this check, and is then dropped by the filters below. The honest
+// second half of the accounting is the reject line in the report, which is why it names every
+// rejected id: on an id-pinned query a rejected id is ALWAYS worth a human look, because the
+// pin list was curated as water bodies in the first place.
+const missing = [...pinned].filter((id) => !returned.has(id));
 if (missing.length > 0) {
   throw new Error(`Pinned ids missing from the Overpass response: ${missing.join(", ")}`);
 }

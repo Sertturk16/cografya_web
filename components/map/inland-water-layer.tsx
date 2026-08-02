@@ -33,10 +33,19 @@ import styles from "./inland-water.module.css";
  * three slightly different lakes. It is a server component with no state and no client JS.
  */
 
-interface InlandWaterLayerProps {
+/**
+ * The LAND this surface draws, as a clip region.
+ *
+ * `paths` and `id` are ONE object rather than two optional props on purpose. As two props,
+ * passing `clipToPaths` and forgetting `clipId` type-checked and rendered the layer
+ * completely UNCLIPPED — the exact defect the clip exists to prevent, restored silently, with
+ * the call site still reading as though it clips. Bundling them makes "half a clip"
+ * unrepresentable.
+ */
+interface InlandWaterClip {
   /**
-   * Province path `d` strings that define the LAND on this surface — pass them only when the
-   * surface draws a SUBSET of the country.
+   * Province path `d` strings that define the LAND on this surface — pass a clip only when
+   * the surface draws a SUBSET of the country.
    *
    * The game's region rounds are the case this exists for, and rendered samples are what
    * found it. A region map narrows the viewBox to the region's bounding box, which was
@@ -44,29 +53,30 @@ interface InlandWaterLayerProps {
    * Doğu Anadolu's bounding box while lying in provinces the round does not draw, so they
    * rendered as blue filaments floating on the empty parchment beyond the region's edge.
    *
-   * Clipping to the drawn provinces states the real rule — water exists only where this
-   * surface draws land — and costs one duplicate of the region's own paths (~10-14 shapes).
-   * The full-country surfaces pass nothing: every body in the artifact is Turkish and the
-   * whole country is on screen, so a clip there would be ~57 kB of markup to change no
-   * pixel.
+   * An EMPTY array is honoured as "this surface draws no land", so no water is drawn. That is
+   * deliberate: the alternative — falling back to unclipped — would put every body in the
+   * artifact on an empty parchment, which is the loudest possible version of the same defect.
    */
-  readonly clipToPaths?: readonly string[];
-  /** Unique id for the clip path — required when `clipToPaths` is given (one per surface). */
-  readonly clipId?: string;
+  readonly paths: readonly string[];
+  /** Unique id for the clip path — one per surface, since ids are document-global. */
+  readonly id: string;
 }
 
-export function InlandWaterLayer({ clipToPaths, clipId }: InlandWaterLayerProps = {}) {
-  const clipped = clipToPaths !== undefined && clipToPaths.length > 0 && clipId !== undefined;
+interface InlandWaterLayerProps {
+  /**
+   * Pass a clip only on a surface that draws part of the country. The full-country surfaces
+   * pass nothing: every body in the artifact is Turkish and the whole country is on screen,
+   * so a clip there would be ~57 kB of markup to change no pixel.
+   */
+  readonly clip?: InlandWaterClip;
+}
+
+export function InlandWaterLayer({ clip }: InlandWaterLayerProps) {
   return (
-    <g
-      className={styles.layer}
-      aria-hidden="true"
-      data-inland-water
-      clipPath={clipped ? `url(#${clipId})` : undefined}
-    >
-      {clipped && (
-        <clipPath id={clipId}>
-          {clipToPaths.map((d, index) => (
+    <g className={styles.layer} aria-hidden="true" clipPath={clip ? `url(#${clip.id})` : undefined}>
+      {clip && (
+        <clipPath id={clip.id}>
+          {clip.paths.map((d, index) => (
             // The land shapes again, as a clip region. Index keys are correct here: this is
             // a static, order-stable projection of the caller's own array, and the elements
             // carry no state.

@@ -56,24 +56,24 @@ committed, so CI and runtime never invoke the generator.
 
 ## `tr-inland-water.geojson` — Türkiye lakes + reservoirs (P6)
 
-| Field                      | Value                                                                                                                     |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Source**                 | OpenStreetMap via the Overpass API (`gall.openstreetmap.de` / `overpass-api.de` / `lambert.openstreetmap.de`)             |
-| **`timestamp_osm_base`**   | **2026-08-02T16:01:36Z** — the OSM database moment this snapshot represents                                               |
-| **Fetched (UTC)**          | 2026-08-02                                                                                                                |
-| **Bytes**                  | 1,140,720                                                                                                                 |
-| **Format**                 | GeoJSON `FeatureCollection`, 114 features (Polygon / MultiPolygon), coordinates `[lon, lat]` (WGS84), plus a `metadata` block |
-| **Per-feature properties** | `osmId`, `name` (`name:tr` → `name:en` → `name`), `water`, `wikidata`, `intermittent`, `areaKm2`, `verbatimNodes`, `snapshotNodes` |
-| **Licence**                | **ODbL** — same source and the same obligation as `tr-il-boundaries.geojson`                                              |
-| **Required attribution**   | **© OpenStreetMap katkıcıları, ODbL** — already rendered next to every map surface; no new attribution surface was needed |
+| Field                      | Value                                                                                                                              |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Source**                 | OpenStreetMap via the Overpass API (`gall.openstreetmap.de` / `overpass-api.de` / `lambert.openstreetmap.de`)                      |
+| **`timestamp_osm_base`**   | **2026-08-02T16:29:06Z** — the OSM database moment this snapshot represents                                                        |
+| **Fetched (UTC)**          | 2026-08-02                                                                                                                         |
+| **Bytes**                  | 1,140,794                                                                                                                          |
+| **Format**                 | GeoJSON `FeatureCollection`, 114 features (Polygon / MultiPolygon), coordinates `[lon, lat]` (WGS84), plus a `metadata` block      |
+| **Per-feature properties** | `osmId`, `name` (`name:tr` → `name` → `name:en`), `water`, `wikidata`, `intermittent`, `areaKm2`, `verbatimNodes`, `snapshotNodes` |
+| **Licence**                | **ODbL** — same source and the same obligation as `tr-il-boundaries.geojson`                                                       |
+| **Required attribution**   | **© OpenStreetMap katkıcıları, ODbL** — already rendered next to every map surface; no new attribution surface was needed          |
 
 ### Licence hygiene — this file is never merged with Natural Earth data
 
 Public-domain Natural Earth data (the future sea / neighbouring-land layer, and the `/dunya`
-lakes) stays in its **own** files. ODbL's share-alike applies to a *derived database*, so
+lakes) stays in its **own** files. ODbL's share-alike applies to a _derived database_, so
 combining an ODbL source and a public-domain source into one data file risks pulling the
 public-domain side into ODbL. Keeping them physically separate preserves the "collective
-database" position (→ DEC 2026-08-01r-1). Rendering both into one SVG is a *produced work*
+database" position (→ DEC 2026-08-01r-1). Rendering both into one SVG is a _produced work_
 and is not affected.
 
 ### The exact query
@@ -112,16 +112,41 @@ out ids bb;
 DEC 2026-08-02k md. 3), so every rung can be rendered from this one snapshot without
 another network round trip.
 
+**The owner ruled the middle rung — 30 km² (S1, 2026-08-02).** The generator therefore draws
+**50 of the 114 bodies** in this file (42.4 kB artifact); the other 64 stay in the snapshot,
+unread, so a future re-ruling is a `pnpm generate:water` and not a fetch. The rung is what
+brings the curriculum bodies that sit between the two candidate cuts onto the map — Marmara
+Gölü (38.6 km²), Suğla, Seyhan, Sır and Balık Gölü. It also admits **Karamık Gölü (39.99
+km²)**, one of the three bodies the source review flagged as cartographically doubtful (OSM
+also tags it `alt_name = Karamık Bataklığı`, i.e. a marsh); it enters by the rule rather than
+by preference, and it is in the owner's sample set for that reason.
+
 ### Filters applied at fetch time
 
-| Filter                                                                | Why                                                                                 |
-| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| every pinned id must come back, or the script throws                   | a silently missing id is how a lake disappears from the map unnoticed                |
-| `natural=water` required                                               | `natural=caldera` and friends are not water bodies                                   |
-| `water ∈ {lake, reservoir, lagoon, pond, ∅}`                           | `river` / `canal` / `basin` / `wastewater` dominate the largest-feature list          |
-| `water=dry_lake` rejected                                              | Tuz Gölü has three large unnamed seasonal aprons tagged this way                      |
-| relation rings must close                                              | an unclosed ring is a lake with a bite out of it — refused, never silently dropped    |
-| name resolved `name:tr` → `name:en` → `name`                           | the file must already carry the right string before any label layer exists            |
+| Filter                                               | Why                                                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| every pinned id must come back, or the script throws | a silently missing id is how a lake disappears from the map unnoticed              |
+| `natural=water` required                             | `natural=caldera` and friends are not water bodies                                 |
+| `water ∈ {lake, reservoir, lagoon, pond, ∅}`         | `river` / `canal` / `basin` / `wastewater` dominate the largest-feature list       |
+| `water=dry_lake` rejected                            | Tuz Gölü has three large unnamed seasonal aprons tagged this way                   |
+| relation rings must close                            | an unclosed ring is a lake with a bite out of it — refused, never silently dropped |
+| name resolved `name:tr` → `name` → `name:en`         | the file must already carry the right string before any label layer exists         |
+
+**The name order is `name:tr` → `name` → `name:en`, and the middle term is load-bearing.** On a
+Turkish feature the untagged `name` IS the Turkish name; `name:en` is a translation for
+foreigners. Reading `name:en` second put "Atatürk Reservoir", "Akyatan Lagoon" and "Hirfanlı
+Dam" into this snapshot once. The rule lives in `scripts/lib/osm-names.mjs` and is pinned by
+`lib/map/osm-names.test.ts` — if this paragraph and that test ever disagree, the test is right.
+
+**Re-deriving the provenance row above.** `timestamp_osm_base` and the byte count are NOT
+narrative — copy them out of the committed artifact, never from a previous fetch's console
+output (both were once a fetch out of date here, describing an OSM database state that would
+replay differently):
+
+```
+node -e "const f=require('fs');const j=JSON.parse(f.readFileSync('data/tr-inland-water.geojson'));\
+console.log(j.metadata.timestampOsmBase, f.statSync('data/tr-inland-water.geojson').size)"
+```
 
 ### Reduced, not rewritten
 
@@ -133,14 +158,19 @@ Douglas–Peucker at **0.05 svg units (≈ 84 m)** in the pinned frame: **46,960
 
 This is a **vertex subset**, not a rewrite. Every coordinate in the file is an unmodified
 7-decimal OSM value; nothing is rounded, averaged or invented. `areaKm2` is measured on the
-**verbatim** rings *before* reduction, so the drawing threshold is decided by the source's own
+**verbatim** rings _before_ reduction, so the drawing threshold is decided by the source's own
 geometry and cannot wobble across a rung because a tolerance changed.
 
 **The reduction is verified invisible at drawing resolution, not assumed to be.** Re-running
 the generator's own simplification against the VERBATIM Overpass geometry and comparing it to
-the result from this snapshot, across all 39 currently-drawn bodies: **identical vertex
-count**, and a maximum vertex displacement of **0.185 svg units (0.31 km)** — under a fifth of
-a pixel at the 1000 px render width, worst case Hotamış Depolaması.
+the result from this snapshot, across the **39 bodies the 40 km² rung drew**: **identical
+vertex count**, and a maximum vertex displacement of **0.185 svg units (0.31 km)** — under a
+fifth of a pixel at the 1000 px render width, worst case Hotamış Depolaması.
+
+The **11 further bodies** the ruled 30 km² rung adds were not individually re-measured, because
+that needs another network fetch of the 34 MB verbatim geometry. All 11 are below ~101 km², so
+the generator draws them at its `ε_min` of 0.12 svg units — its FINEST tolerance, 2.4× this
+snapshot's 0.05, which is exactly the headroom case the measurement above covers.
 
 ### Regenerating
 
