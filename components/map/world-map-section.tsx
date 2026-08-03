@@ -118,12 +118,18 @@ const SHAPE_ID_PREFIX = "world-map-";
  * THREE PAINT LAYERS, one copy of the geometry — the same architecture as the Türkiye map,
  * whose docblock carries the full measured note. `<defs>` holds 240 classless `<path id>`;
  * `[data-map-layer="base"]` paints all 240 exactly as before; `[data-map-layer="hit"]` holds
- * the `<a>` links, the 43 territory `<g>` and a fill-less `<use>` that carries ONLY the
+ * the `<a>` links, the 43 territory `<g>` and a `<use>` unpainted at rest that carries the
  * hover/focus line, above every fill and every resting border. That is what makes a hovered
  * country's border the same weight all the way round instead of half-eaten by the countries
- * painted after it in ISO order. Unseeded backdrop land has no hit twin at all. Here the
- * change also SHRINKS the gzipped page by ~2 KB (240 `<use href>` compress far better than
- * 240 inline `<path d>`), and cuts per-pointer-move work 1.52ms → 1.13ms.
+ * painted after it in ISO order. Unseeded backdrop land has no hit twin at all. It cuts
+ * per-pointer-move work 1.52ms → 1.13ms.
+ *
+ * PAGE WEIGHT — corrected; an earlier draft of this note claimed a ~2 KB SHRINK, which was
+ * measured on the SVG markup alone (that part is real: −1,758 B gzipped, because 240
+ * `<use href>` compress far better than 240 inline `<path d>`). It ignored the RSC flight
+ * payload, where Next serializes the same markup a second time. The real gzipped total for
+ * `/dunya` is **+5,657 B (+3.0%)**, measured end-to-end on one running build. Accepted as
+ * small in absolute terms against the interaction win — but it is a growth, not a saving.
  * SEO surface unchanged: the same crawlable `<a>` set, the same hrefs, the same order.
  * Every territory now has card content in BOTH locales, so all 43 open a card on both maps:
  * the label is required in each locale and `territories.test.ts` pins that (the earlier

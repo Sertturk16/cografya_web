@@ -156,7 +156,14 @@
 }
 
 /* The hit twin: invisible until a state paints it, hittable regardless. `pointer-events: all`
-   reads the shape's interior and perimeter without either being painted. */
+   reads the shape's interior and perimeter without either being painted.
+
+   `none` here, `transparent` in map.module.css — deliberately different, not an oversight.
+   `none` is not interpolable, so it would turn a transition into a discrete flip; the
+   navigation maps DO transition their hover line (0.16s) and therefore need a real colour to
+   start from. This surface has NO transition on purpose (see the note further down: the
+   border is instant, because a timed game must not delay its own feedback), so there is
+   nothing here for the value to break. */
 .hitEdge {
   fill: none;
   stroke: none;
@@ -211,12 +218,18 @@
    `data-game-active` means, and why it is a separate attribute from `data-game-mode` (the
    mode's colouring stays on after the last question, the clickability does not).
    NOTE — SPEC §7.3 proposed a transparent `stroke-width: 6` hit margin for tiny provinces.
-   It is NOT applied: the hit margin and the visible border are the same stroke, so buying
-   the margin costs the province outlines, and in Mode 2 (one flat fill for all 81) those
-   outlines are the entire map. Reaching small provinces is what zoom is for, and zoom is
-   mandatory in Faz-1 for exactly this reason (SPEC §7.2). A real fix is a second,
-   invisible hit path per shape — that doubles the SVG payload, so it is a measured PR-4
-   question, not a silent one. */
+   It is NOT applied, but the REASON changed and the old wording is no longer true. The
+   original objection was that the hit margin and the visible border are the same stroke, so
+   buying the margin costs the province outlines — and that a second, invisible hit path per
+   shape "doubles the SVG payload". The layered restructure SHIPPED that second path: it is
+   the `.hitEdge` twin, and it costs no extra geometry (all three layers `<use>` one copy in
+   `<defs>`), so the payload objection is gone and the margin would now be one declaration on
+   a stroke nobody sees.
+   What is left is a product question, not a cost one: a 6px invisible margin makes
+   neighbouring small provinces overlap each other's targets, so a click near a shared border
+   becomes ambiguous. Reaching small provinces is what zoom is for, and zoom is mandatory in
+   Faz-1 for exactly this reason (SPEC §7.2). So it stays an owner question with rendered
+   samples, not a silent default. */
 .stage[data-game-active] .hitEdge {
   cursor: pointer;
 }
@@ -422,9 +435,16 @@
    1.61:1 on Marmara and sub-3:1 on four of the seven region tints — the shared
    --game-hover-edge token repairs that.
    The wash now paints on the HIT twin, on top of the base twin's fill, instead of replacing
-   it. `--province-hover` is a 16% terracotta rgba either way, and the surface underneath is
-   the same white `--province-fill` it used to replace — so the composite is the same colour,
-   and it is applied exactly once (the base twin is never washed). */
+   it — and that CHANGES THE COLOUR, which an earlier version of this note denied (→ PR #40
+   review, code-reviewer CR-1). `--province-hover` (#b0522e29, a 16% terracotta) is the same
+   paint either way, but replacing the fill made it composite over what was BEHIND the shape;
+   painting on the twin composites it over the base twin's white `--province-fill`. Measured
+   on the running build: new rgb(242, 227, 221) against old rgb(231, 209, 194) …
+   rgb(239, 221, 211) over this stage's parchment gradient — 3 to 27 levels per channel, so
+   the wash reads slightly lighter and pinker than it did. The focus INDICATOR is the 3px
+   `--game-hover-edge` line, not the wash, so the a11y floor is untouched; the change is
+   aesthetic and it is in the owner's sample set (`pr40-samples/11-oyun-odak-01.png`).
+   It is applied exactly once — the base twin is never washed. */
 .stage[data-game-active][data-game-mode="provinces"] .hitEdge[data-plate]:focus-visible {
   fill: var(--province-hover);
 }

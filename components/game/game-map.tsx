@@ -84,7 +84,7 @@ interface GameMapProps {
  *   <g data-map-layer=base>    the painted map: fill, region tint, answer-state FILL, 1px
  *                              resting border. Inert to the pointer, hidden from AT.
  *   <g data-map-layer=region>  §BÖLGE — seven silhouette groups, one per coğrafi bölge
- *   <g data-map-layer=hit>     one fill-less, stroke-less <use> per ANSWERABLE shape: the
+ *   <g data-map-layer=hit>     one <use> per ANSWERABLE shape, unpainted at rest: the
  *                              tab stop, the click target, and the only place a hover, focus
  *                              or answer-state LINE is drawn — above every province layer
  *   <InlandWaterLayer>         P6's lakes, still the LAST child (see the note at the call

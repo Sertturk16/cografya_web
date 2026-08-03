@@ -54,7 +54,7 @@ const SHAPE_ID_PREFIX = "tr-map-";
  *   <defs>                 81 UNSTYLED <path id> — the geometry MOVES here, it is not copied
  *   <g data-map-layer=base>  today's painted map, byte-identical in appearance; inert to the
  *                            pointer and hidden from AT
- *   <g data-map-layer=hit>   the crawlable <a> wrappers + a fill-less, stroke-less <use>
+ *   <g data-map-layer=hit>   the crawlable <a> wrappers + a <use> unpainted at rest
  *                            that carries ONLY the hover/focus line — above every fill and
  *                            every resting border on the map
  *   <InlandWaterLayer>       P6's lakes, still the LAST child (see the note at the call site):
@@ -66,8 +66,16 @@ const SHAPE_ID_PREFIX = "tr-map-";
  * exactly what already happens to the resting border, and is the cartographic rule P6
  * implements: the administrative line stops at the shore.) It costs ONE css rule (down from a
  * family of them), and it is measurably CHEAPER per pointer move than what it replaces
- * (1.71ms → 1.50ms). Gzipped HTML actually SHRINKS (−73 B), because 81 `<use href="#tr-42"/>`
- * compress better than 81 inline `<path class d>`.
+ * (1.71ms → 1.50ms).
+ *
+ * PAGE WEIGHT — the honest number, because an earlier draft of this note had it backwards.
+ * The SVG MARKUP does get smaller gzipped (−338 B: 81 `<use href="#tr-map-42"/>` compress
+ * better than 81 inline `<path class d>`), but that is not what ships. Next serializes the
+ * same markup a SECOND time into the RSC flight payload, so the real gzipped total for
+ * `/turkiye` is **+1,419 B (+1.8%)** — measured end-to-end on one running build, not
+ * inferred. (`/dunya` +5,657 B / +3.0%; `/oyun/81-il` +5,765 B / +8.2%.) Small in absolute
+ * terms and per-pointer-move work goes down, so it was accepted — but it is a growth, and a
+ * comment that claims a shrink is worse than no comment.
  *
  * THREE `<use>` BEHAVIOURS THAT ARE LOAD-BEARING HERE, each one measured:
  *  1. A `<use>` clone takes the CSS that matched the REFERENCED element, so the geometry in

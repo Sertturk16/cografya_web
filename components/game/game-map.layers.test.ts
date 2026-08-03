@@ -3,7 +3,8 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
- * STRUCTURE, NOT FACTS — "one plaka kodu, two painted twins, exactly one tab stop".
+ * STRUCTURE, NOT FACTS — "one plaka kodu, two painted twins, one tab stop per ANSWERABLE
+ * shape" (an unseeded plate is backdrop: it gets no hit twin and therefore no tab stop).
  *
  * The game map draws each province ONCE (a classless `<path>` in `<defs>`) and paints it
  * through `<use>` twins: the base layer carries the fill, the hit layer carries every line
@@ -49,13 +50,21 @@ const MAP = code(sourceOf("./game-map.tsx"));
 const ISLAND = code(sourceOf("./game-island.tsx"));
 const CSS = code(sourceOf("./game-map.module.css")).replace(/\s+/g, " ");
 
-/** The three layers, in the order they must paint: fills, then silhouettes, then lines. */
+/**
+ * The three layers, in the order they must paint: fills, then silhouettes, then lines.
+ *
+ * NOT the whole paint order of this `<svg>`: `<InlandWaterLayer>` sits ABOVE all three and is
+ * pinned in `components/map/inland-water-layer.contract.test.ts`, because that position is the
+ * water layer's own contract (it is what makes a mid-lake click score nothing). Do not read
+ * the list below as "these are all the children" — it is the twin split and nothing else.
+ */
 const LAYERS = ["base", "region", "hit"] as const;
 
 /**
  * The source of ONE layer group: from its marker attribute up to the next one (the last block
- * runs to the end of the render). Positional, because the invariants being pinned are
- * positional — which attributes live in which layer is the whole point.
+ * runs to the end of the FILE, which today is the end of the render plus the water call).
+ * Positional, because the invariants being pinned are positional — which attributes live in
+ * which layer is the whole point.
  */
 function layerBlock(name: (typeof LAYERS)[number]): string {
   const start = MAP.indexOf(`data-map-layer="${name}"`);

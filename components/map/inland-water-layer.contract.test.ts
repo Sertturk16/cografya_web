@@ -122,6 +122,14 @@ describe("the surfaces that consume the layer", () => {
     "../marine/marine-map.tsx",
   ] as const;
 
+  /**
+   * The subset of those surfaces that paint through the layered `<use>` architecture, i.e.
+   * that have something between the province loop and the water. `marine-map.tsx` is
+   * deliberately absent: it still draws one flat province layer, so for it "after the
+   * shapes" and "after the hit layer" are the same statement.
+   */
+  const LAYERED_SURFACES = ["../map/turkey-map-section.tsx", "../game/game-map.tsx"] as const;
+
   it("is rendered by every file that draws the TR frame", () => {
     // THREE files, FOUR surfaces: `game-map.tsx` serves both the full-country round and the
     // region rounds — same component, different viewBox — so the file count and the surface
@@ -162,6 +170,9 @@ describe("the surfaces that consume the layer", () => {
     // Paint order IS the feature: it hides the boundary across a lake and it puts the water
     // above the province links in hit-testing order. A future refactor that hoists the layer
     // to the top of the <svg> would break both at once, invisibly in code review.
+    //
+    // KEEP READING — since the layered restructure this assertion alone is NOT enough; the
+    // one below it is the load-bearing half.
     for (const surface of SURFACES) {
       const source = code(sourceOf(surface));
       const shapes = source.indexOf("PROVINCE_SHAPES.map");
@@ -169,6 +180,31 @@ describe("the surfaces that consume the layer", () => {
       const provinces = shapes === -1 ? gameShapes : shapes;
       expect(provinces).toBeGreaterThan(-1);
       expect(source.indexOf("<InlandWaterLayer")).toBeGreaterThan(provinces);
+    }
+  });
+
+  it("renders it after the HIT layer on every surface that has one", () => {
+    // WHY THIS EXISTS, and it is a real hole that was found by review, not a nicety.
+    //
+    // The assertion above anchors on the FIRST `…SHAPES.map` in the file. When each surface
+    // drew its provinces in one loop that first occurrence WAS the paint site, so the probe
+    // was tight. The layered restructure emits that same loop three times — `<defs>`, the
+    // base layer, the hit layer — and `indexOf` still finds the `<defs>` one. Every position
+    // after `<defs>` then satisfies it, INCLUDING water slid between base and hit: the exact
+    // edit that silently un-does the owner's ruling (a mid-lake click would land on the hit
+    // twin again and navigate on /turkiye or score an answer in the game). The guard was
+    // still green while the thing it guards was one line-move from broken.
+    //
+    // So the anchor here is the layer that actually has to stay UNDER the water:
+    // `data-map-layer="hit"`, whose `<use>` carries `pointer-events: all` over the shape's
+    // whole interior. Requiring the marker to EXIST (rather than skipping a surface that
+    // does not declare it) is deliberate — a rename of the attribute must fail loudly here
+    // instead of quietly turning this test back into a no-op.
+    for (const surface of LAYERED_SURFACES) {
+      const source = code(sourceOf(surface));
+      const hit = source.indexOf('data-map-layer="hit"');
+      expect(hit).toBeGreaterThan(-1);
+      expect(source.indexOf("<InlandWaterLayer")).toBeGreaterThan(hit);
     }
   });
 });

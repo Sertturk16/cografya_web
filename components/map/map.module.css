@@ -38,7 +38,7 @@
 /* ---- THE THREE PAINT LAYERS (owner report 2026-08-02) ----------------------------------
    Both maps now draw ONE copy of each outline, parked classless in `<defs>`, and paint it
    twice: `[data-map-layer="base"]` is the map you see (fill + 1px resting border) and
-   `[data-map-layer="hit"]` is a fill-less, stroke-less twin that carries ONLY the
+   `[data-map-layer="hit"]` is a twin that paints NOTHING at rest and carries ONLY the
    hover/focus line — above every fill and every resting border on the map. That is what
    makes a hovered shape's border the same weight on all four sides; before this, the
    neighbours painted after it ate its inner half (SVG has no z-index, and document order
@@ -61,10 +61,19 @@
 /* The hit layer's shape: invisible until a state paints it, and hittable regardless.
    `pointer-events: all` reads the shape's INTERIOR (as the fill-rule defines it — so the
    world map's enclave holes stay click-through to the country underneath) and its perimeter,
-   without needing either to be painted. */
+   without needing either to be painted.
+
+   `transparent`, NOT `none` — and the difference is visible, not pedantic. `none` is not an
+   interpolable value, so a transition between `none` and a colour is DISCRETE: the hover line
+   flips on at the halfway point of the 0.16s instead of fading, which is a downgrade on the
+   exact interaction this layer exists to improve (the twin is what these rules paint, so the
+   transition below has nowhere else to run). `transparent` is a colour, so `stroke` and `fill`
+   interpolate normally. Hit-testing is unaffected: `pointer-events: all` ignores the paint
+   value entirely — it is the one keyword that hit-tests an unpainted interior. (→ PR #40
+   review, code-reviewer CR-6.) */
 .hitEdge {
-  fill: none;
-  stroke: none;
+  fill: transparent;
+  stroke: transparent;
   stroke-linejoin: round;
   pointer-events: all;
 }
@@ -197,18 +206,31 @@
    `@media (hover: hover)` — a touch device would otherwise leave the last-tapped shape
    outlined; the focus rule deliberately sits outside the query.
    NEW ANCESTOR REQUIREMENT: both hover rules in this file now need a `.mapRoot` ancestor,
-   which they did not before. Every consumer already has one — `turkey-map-section.tsx:65`
-   and `world-map-section.tsx:149` — and the marine map has its own `.mapRoot` in its own
+   which they did not before. Every consumer already has one — `turkey-map-section.tsx:119`
+   and `world-map-section.tsx:176` — and the marine map has its own `.mapRoot` in its own
    module, so nothing bleeds across. A future surface that reuses `.provinceLink` WITHOUT
    `.mapRoot` would silently lose hover; that is the coupling this note exists to name.
    THE SUBJECT IS NOW THE HIT-LAYER TWIN (`.hitEdge`), not the painted shape. That is the
    whole owner-facing fix: the line is drawn above every fill and every resting border on
    the map, so a hovered province is the same weight on all four sides instead of being
    half-eaten by whichever neighbours happen to be painted after it.
-   The FOCUS WASH moved with it. It used to REPLACE --province-fill (#fff) on the painted
-   shape; it now paints the same rgba(176, 82, 46, 0.16) ON TOP of that white — the
-   composite is the same colour to within a fraction of a percent, and it is applied exactly
-   once (the base twin is never washed, so there is no double coat). */
+   THE FOCUS WASH MOVED WITH IT, AND IT IS A CHANGED COLOUR — an earlier version of this note
+   claimed the composite was "the same to within a fraction of a percent", which is wrong and
+   is corrected here (→ PR #40 review, code-reviewer CR-1). The old rule REPLACED the painted
+   shape's fill, so the 16% terracotta (--province-hover, #b0522e29) composited over whatever
+   was BEHIND the shape. The new rule paints it on the hit twin, over the base twin's white
+   --province-fill. Different backdrop ⇒ different colour. Measured on the running build:
+     · new, everywhere: rgb(242, 227, 221)  (wash over #fff)
+     · old on /dunya:   rgb(212, 207, 202)  (wash over the sea, rgb(219, 231, 232)) — up to
+       30 levels per channel apart; the state used to read cool grey, it now reads warm pink
+     · old on /turkiye: rgb(231, 209, 194) … rgb(239, 221, 211) (wash over the parchment
+       gradient rgb(241, 233, 222) → rgb(251, 248, 243)) — 3 to 27 levels apart
+   The a11y floor is unaffected either way: the focus INDICATOR is the 3.5px
+   --color-primary-dark line, not the wash (a fill-only ring measured 1.25:1 on white, under
+   the 3:1 graphical-object floor). The change is aesthetic, it is real, and it is in the
+   owner's sample set (`pr40-samples/10-dunya-odak-AU.png`, `11-oyun-odak-01.png`).
+   It is still applied exactly once — the base twin is never washed, so there is no double
+   coat. */
 @media (hover: hover) {
   .mapRoot:not([data-panning]) .provinceLink:hover .hitEdge {
     stroke: var(--color-primary-dark);
