@@ -78,10 +78,17 @@
   /* Outline for inland water. NOT --province-stroke, and this is a correction made from
      rendered samples rather than a preference: Türkiye's biggest reservoirs (Keban,
      Atatürk, Karakaya, Ilısu) are DENDRITIC — arms a few hundred metres wide, i.e. well
-     under one svg unit. A 1px non-scaling stroke covers such an arm from both sides, so the
-     fill never shows and the country's largest man-made lakes rendered as brown scribbles in
-     the administrative line colour. On those bodies the STROKE IS THE BODY: no fill is
-     visible anywhere, so this token alone carries them.
+     under one svg unit — sub-pixel at render width. The non-scaling stroke therefore covers
+     such an arm from both sides, the fill barely shows, and in the administrative line colour
+     the country's largest man-made lakes rendered as brown scribbles. On those bodies the
+     STROKE IS (most of) THE BODY, so this token alone carries them.
+
+     The stroke is 0.5px since DEC 2026-08-03e md. 1 (it was 1px when this token was chosen;
+     the arms are still sub-pixel, so the reasoning above is unchanged). The width matters to
+     the numbers below: a SUB-PIXEL line is antialiased, i.e. composited at roughly its
+     device-pixel coverage, so on a DPR-1 screen the ratios it actually achieves are lower
+     than the full-alpha figures in this table. Re-measure at the shipped width — the α≈0.5
+     table lives in components/map/inland-water.module.css, next to the width itself.
 
      THAT is why the value is a near-black cold tone and not the mid-teal #527a84 this layer
      shipped with first. The layer renders UNCONDITIONALLY inside the game's Bölge Bulma
@@ -111,7 +118,12 @@
      (the atlas convention), still unmistakably cool against the warm administrative taupe,
      and deliberately a different family from the warm near-black --game-hover-edge #211c19,
      which is the only other near-black line on the play surface (and is 3px to this one's
-     1px). Do not lighten it toward the old teal without re-running the seven tints. */
+     0.5px — a six-fold difference, so the two never read as the same line).
+
+     Do not lighten it toward the old teal without re-running the seven tints. Lightening is
+     doubly unavailable at the shipped 0.5px: the softer navies were measured for the
+     2026-08-03 sample round and the nearest one (#0b3a5d) already fails a backdrop at full
+     alpha and drops white land to 2.83:1 at this width on DPR 1. */
   --map-water-line: #002337;
   /* Backdrop LAND on the world map: territories that will never get a page (Greenland,
      Antarctica, the overseas-territory set) plus not-yet-seeded countries.

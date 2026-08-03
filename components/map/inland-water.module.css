@@ -35,9 +35,9 @@
      settled this: the dendritic reservoirs (Keban, Atatürk, Karakaya, Ilısu) have arms
      narrower than one svg unit — sub-pixel at render width — so the non-scaling stroke covers
      them from both sides and the fill barely shows; on those bodies the STROKE IS (most of)
-     THE BODY, and in taupe they read as brown scribbles rather than as lakes. See --map-water-line in globals.css for the
-     measured contrasts: it clears WCAG 1.4.11's 3:1 against ALL TEN backdrops this layer is
-     drawn over — white land, its own fill, an inert province, AND the seven Okabe-Ito region
+     THE BODY, and in taupe they read as brown scribbles rather than as lakes. See
+     --map-water-line in globals.css for the measured contrasts: AT FULL ALPHA it clears WCAG
+     1.4.11's 3:1 against ALL TEN backdrops this layer is drawn over — white land, its own fill, an inert province, AND the seven Okabe-Ito region
      tints the game's Bölge Bulma mode paints underneath it. That last set is why the token is
      a near-black petrol rather than a mid-teal; the mid-teal failed 6 of the 7. Same stroke
      FAMILY as a province edge (same colour discipline, same linejoin, same non-scaling
@@ -54,12 +54,22 @@
      stroke or lightening the token without a new ruling. What the alternatives cost is
      recorded at the end of this comment.
 
-     WHY 1px WAS ACTUALLY TOO THICK, in this frame's own units. One svg unit is ~1.677 km, so
-     one unit² is ~2.814 km², and the smallest body the ruled 30 km² rung draws is ~3.7 units
-     across (Marmara Gölü 38.6 km², Karamık 39.99 km²). `non-scaling-stroke` pins the line to
-     1 CSS px at every zoom, so on a 1000 px-wide map that line ate 54 % of such a lake's
-     diameter, and at a 390 px mobile width the lake is ~1.4 px across — i.e. the small lakes
-     were not lakes with an outline, they WERE the outline. At 0.5 the fill is visible again.
+     WHY 1px WAS ACTUALLY TOO THICK, in this frame's own units. One svg unit is ~1.677 km and
+     one unit² is ~2.814 km², so the SMALLEST body the ruled 30 km² rung draws — Durugöl,
+     32.14 km² — is 3.38 units across, measuring "across" as √area, the side of an equal-area
+     square. (Take that subject from the generator's report, not from a familiar name: Marmara
+     Gölü is the tenth smallest of the 49, not the smallest.)
+
+     `non-scaling-stroke` pins the line to a fixed CSS-pixel width at every zoom, and an SVG
+     stroke is CENTRED on the path — half of it falls outside the shape — so a 1px line eats
+     1px of the width, not 2. On the desktop map (1022 px for 1000 units) that is 29 % of
+     Durugöl's 3.45 px, leaving 2.45 px of fill; at 0.5 it is 15 %, leaving 2.95 px.
+
+     The mobile figure is what actually settled it. At a 390 px viewport the frame renders
+     324 px wide, so Durugöl is 1.10 px across: a 1px line consumed ~91 % of it and left a
+     tenth of a pixel of water — the small lakes were not lakes with an outline, they WERE the
+     outline. At 0.5 they keep ~0.6 px of fill, which is the difference between a lake and a
+     mark.
 
      WHY NOT THINNER. 0.5 is the floor this layer can defend, and the constraint is WCAG
      1.4.11, not taste. The declared colour does not change (--map-water-line #002337, and its
@@ -68,7 +78,16 @@
      0.5px lands at ~50 % alpha. Re-measuring #002337 blended at that alpha against the three
      backdrops this layer must always survive gives 3.26:1 on white land, 3.12:1 on an inert
      province and 3.06:1 on its own fill — still over the 3:1 graphical-object floor, with no
-     loss at all on DPR ≥ 2 where 0.5px is a full device pixel. The same measurement at 0.4px
+     loss at all on DPR ≥ 2 where 0.5px is a full device pixel.
+
+     That alpha model was CHECKED AGAINST REAL PIXELS rather than trusted, because the white-
+     land margin is only 0.26 above the floor: sampling every shoreline pixel of a DPR-1
+     render of /turkiye gives a median stroke pixel of rgb(127 147 156) = 3.20:1 on white,
+     against the model's predicted rgb(128 145 155) = 3.26:1. The same sample on the 1px
+     version measures 6.62:1, so halving the width costs roughly half the achieved contrast
+     and lands just above the floor — which is the honest description of this trade.
+
+     The same measurement at 0.4px
      gives 2.47 / 2.39 / 2.36 — under the floor on every one of them. So 0.4 is not a
      "slightly thinner" option, it is a different compliance answer; it was rendered next to
      this one for the owner's sample round and rejected on that measurement, not on taste.
@@ -97,14 +116,30 @@
      point that exists on this map — thinness spends the same contrast budget the colour
      would.
 
-     The one context where the thin line's PERCEIVED contrast does drop below 3:1 on a DPR-1
-     screen is the game's Bölge Bulma mode, over the seven Okabe-Ito region tints. Accepted
-     deliberately: in that mode the lakes are decorative context rather than information
-     required to answer the question, the region tints differ from the water fill in hue and
-     lightness (so the fill carries the object there, unlike over near-white land), and DPR ≥ 2
-     is unaffected. If that ever has to be bought back, buy it with WIDTH (0.75), never by
-     lightening the token — going lighter fails Marmara #0072b2 from the other side, which is
-     the whole reason the token is a near-black petrol. */
+     THE CONCESSION, STATED AT ITS TRUE SIZE. In the game's Bölge Bulma mode, on a DPR-1
+     screen, the thinned line drops below 3:1 on SIX of the seven Okabe-Ito region tints, and
+     on FOUR of them the fill does not carry the object either. Measured (line at α≈0.5 /
+     fill #dbe7e8 against the same tint):
+
+       İç Anadolu  #f0e442   line 3.07 ✓  fill 1.05      ← the only tint the line still carries
+       Ege         #e69f00   line 2.70 ✗  fill 1.78 ✗
+       Akdeniz     #56b4e9   line 2.49 ✗  fill 1.82 ✗
+       Karadeniz   #cc79a7   line 2.38 ✗  fill 2.42 ✗
+       D. Anadolu  #009e73   line 2.16 ✗  fill 2.71 ✗
+       G.D.Anadolu #d55e00   line 2.26 ✗  fill 3.06 ✓
+       Marmara     #0072b2   line 1.79 ✗  fill 4.10 ✓
+
+     At 1px all seven cleared it (3.13–12.26), so this PR introduces the four both-channels
+     cases. It rests on ONE argument, and it is not "the fill carries it": in this mode the
+     layer is DECORATIVE CONTEXT. The question is which province or region is which; no lake
+     is named, labelled, linked or answerable, the whole <g> is aria-hidden, and nothing the
+     player must perceive is encoded in a lake's edge. DPR ≥ 2 is unaffected in any case.
+
+     If a future ruling wants it back, buy it with WIDTH (0.75 restores full alpha on DPR 1),
+     never by lightening the token — going lighter fails Marmara #0072b2 from the other side,
+     which is the whole reason the token is a near-black petrol. And if a lake ever becomes
+     meaning-bearing here (a labelled body, a "click the lake" round), this concession must be
+     re-opened rather than inherited. */
   stroke-width: 0.5;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;

@@ -182,7 +182,8 @@ const FRAME_TOLERANCE = 1.5;
  * interior on a 900 × 900 grid puts **99.94 % of it inside Eğirdir**, i.e. ~137.9 km² of this
  * layer's drawn area was the same water counted twice (→ DEC 2026-08-02q md. A; the ruling's
  * figure was reproduced independently from the committed snapshot before this exclusion was
- * written). The same sweep over all 50 drawn bodies found NO other pair overlapping by more
+ * written). The same sweep over all 50 bodies ABOVE THE RUNG — the 49 drawn plus Hoyran, i.e.
+ * the set as it stood before this exclusion — found NO other pair overlapping by more
  * than 1 %, so this is one measured defect, not a class — which is why this is a pinned list
  * and not a geometric de-duplication pass.
  *
@@ -237,7 +238,13 @@ const excludedDuplicates = [];
 // threshold and present in the snapshot. Without this, a future re-source that removes or
 // shrinks Eğirdir would silently delete real water from the map instead of a double count —
 // the exclusion would still fire, and nothing downstream would notice.
+//
+// Scoped to the rung ON PURPOSE: if the duplicate itself is below MIN_AREA_KM2 it is not
+// drawn either way, so the exclusion cannot remove anything and demanding a drawn survivor
+// would only fail the owner's threshold-ladder renders (WATER_MIN_AREA_KM2) for no gain.
 for (const [duplicateId, keptId] of DRAWN_DUPLICATES) {
+  const duplicate = snapshot.features.find((feature) => feature.properties?.osmId === duplicateId);
+  if (duplicate === undefined || (duplicate.properties?.areaKm2 ?? 0) < MIN_AREA_KM2) continue;
   const kept = snapshot.features.find((feature) => feature.properties?.osmId === keptId);
   if (kept === undefined || (kept.properties?.areaKm2 ?? 0) < MIN_AREA_KM2) {
     throw new Error(

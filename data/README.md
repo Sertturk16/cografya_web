@@ -128,7 +128,8 @@ OSM's Eğirdir relation already covers that lobe: sampling Hoyran's interior on 
 puts **99.94 %** of it inside Eğirdir (→ DEC 2026-08-02q md. A). Drawing both painted ~138 km²
 of water twice and, because the two bodies simplify at different tolerances, drew the shared
 shoreline twice a fraction of a unit apart — a doubled shore plus a spurious line across open
-water at the strait. The same overlap sweep across all 50 bodies found **no other pair
+water at the strait. The same overlap sweep across all 50 bodies **above the rung** — the 49
+drawn plus Hoyran, i.e. the set as it stood before this exclusion — found **no other pair
 overlapping by more than 1 %**. The feature stays in this snapshot (it is a real OSM object and
 this file is the record of the sweep, not of the map); the exclusion lives in
 `scripts/generate-tr-inland-water.mjs` as `DRAWN_DUPLICATES`, next to its measurement, and the
