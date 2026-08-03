@@ -37,14 +37,23 @@
   "Map": {
     "mapTitle": "Türkiye il haritası",
     "plateLabel": "Plaka {code}",
-    "attribution": "© OpenStreetMap katkıcıları, ODbL"
+    "attribution": "© OpenStreetMap katkıcıları, ODbL",
+    "attributionJrc": "Mevsimlik göl sınırları: JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
   },
   "About": {
     "metaTitle": "Hakkımızda",
     "metaDescription": "Coğrafya Platformu; Türkiye ve dünya coğrafyasını ücretsiz, kaynaklı ve erişilebilir içeriklerle anlatmayı amaçlayan bir eğitim projesidir.",
     "heading": "Hakkımızda",
     "body1": "Coğrafya Platformu, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir.",
-    "sourcing": "İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer."
+    "sourcing": "İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer.",
+    "dataHeading": "Harita veri kaynakları",
+    "dataIntro": "Sitedeki haritalar açık veri kümelerinden üretiliyor. Her katmanın kaynağı ve lisansı aşağıda.",
+    "dataOsm": "Türkiye il sınırları, göller ve baraj gölleri: OpenStreetMap — © OpenStreetMap katkıcıları, ODbL.",
+    "dataNaturalEarth": "Dünya ülke sınırları: Natural Earth (kamu malı).",
+    "dataJrc": "Mevsimlik ve tuzlu göllerin sınırları: JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google.",
+    "dataJrcCitationIntro": "JRC Global Surface Water veri kümesinin künyesi:",
+    "dataJrcCitation": "Jean-Francois Pekel, Andrew Cottam, Noel Gorelick, Alan S. Belward, High-resolution mapping of global surface water and its long-term changes. Nature 540, 418-422 (2016).",
+    "dataJrcDoi": "https://doi.org/10.1038/nature20584"
   },
   "Turkiye": {
     "metaTitle": "Türkiye Haritası — 81 İl",

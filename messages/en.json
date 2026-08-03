@@ -37,14 +37,23 @@
   "Map": {
     "mapTitle": "Map of the provinces of Türkiye",
     "plateLabel": "Plate {code}",
-    "attribution": "© OpenStreetMap contributors, ODbL"
+    "attribution": "© OpenStreetMap contributors, ODbL",
+    "attributionJrc": "Seasonal lake outlines: JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
   },
   "About": {
     "metaTitle": "About",
     "metaDescription": "Coğrafya Platformu is an education project that presents the geography of Türkiye and the world through free, sourced and accessible content.",
     "heading": "About",
     "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone.",
-    "sourcing": "Content is grounded in authoritative sources and passes an independent verification step before publication."
+    "sourcing": "Content is grounded in authoritative sources and passes an independent verification step before publication.",
+    "dataHeading": "Map data sources",
+    "dataIntro": "The maps on this site are built from open datasets. The source and licence of each layer is listed below.",
+    "dataOsm": "Provincial boundaries, lakes and reservoirs of Türkiye: OpenStreetMap — © OpenStreetMap contributors, ODbL.",
+    "dataNaturalEarth": "World country boundaries: Natural Earth (public domain).",
+    "dataJrc": "Seasonal and salt lake outlines: JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google.",
+    "dataJrcCitationIntro": "Citation for the JRC Global Surface Water dataset:",
+    "dataJrcCitation": "Jean-Francois Pekel, Andrew Cottam, Noel Gorelick, Alan S. Belward, High-resolution mapping of global surface water and its long-term changes. Nature 540, 418-422 (2016).",
+    "dataJrcDoi": "https://doi.org/10.1038/nature20584"
   },
   "Turkiye": {
     "metaTitle": "Map of Türkiye — 81 Provinces",

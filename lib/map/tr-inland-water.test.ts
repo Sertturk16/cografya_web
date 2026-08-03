@@ -89,6 +89,21 @@ function toSubpaths(d: string): Point[][] {
   return subpaths;
 }
 
+/** `[id, areaKm2]` for every feature of a snapshot, keyed by whichever id field it uses. */
+function readAreas(relative: string, idField: "osmId" | "id"): [string, number][] {
+  const collection: unknown = JSON.parse(
+    readFileSync(fileURLToPath(new URL(relative, import.meta.url)), "utf8"),
+  );
+  const features = (collection as { features?: unknown[] }).features ?? [];
+  return features
+    .map((feature) => (feature as { properties?: Record<string, unknown> }).properties ?? {})
+    .map((properties): [string, number] => [
+      String(properties[idField]),
+      Number(properties.areaKm2 ?? 0),
+    ])
+    .filter(([id]) => id !== "undefined");
+}
+
 const VIEWBOX = MAP_VIEWBOX.split(" ").map(Number);
 const VIEW_WIDTH = VIEWBOX[2] ?? Number.NaN;
 const VIEW_HEIGHT = VIEWBOX[3] ?? Number.NaN;
@@ -121,12 +136,13 @@ const FRAME_TOLERANCE = 1.5;
  * test would stay green (PR #39 review T4). `world-shapes.test.ts`'s `HOLE_CENSUS` is the
  * same instrument.
  *
- * 49 = the 50 snapshot bodies at the owner-ruled 30 km² rung (S1, 2026-08-02), minus the one
- * body the generator holds back as a duplicate (`DRAWN_DUPLICATES`, → DEC 2026-08-02q md. A).
- * The cross-check below is what ties the number to those two rulings rather than leaving it a
- * magic constant to be bumped whenever it goes red.
+ * 52 = the OSM bodies at the owner-ruled 30 km² rung (S1, 2026-08-02), minus the one held back
+ * as a duplicate (`DRAWN_DUPLICATES`, → DEC 2026-08-02q md. A), minus the six replaced by a JRC
+ * body, plus the nine JRC bodies (→ DEC 2026-08-02q §D, DEC 2026-08-03c). The cross-check below
+ * is what ties the number to those rulings rather than leaving it a magic constant to be bumped
+ * whenever it goes red.
  */
-const EXPECTED_BODY_COUNT = 49;
+const EXPECTED_BODY_COUNT = 52;
 
 /** The owner-ruled drawing threshold in km² — mirrors `MIN_AREA_KM2` in the generator. */
 const MIN_AREA_KM2 = 30;
@@ -145,6 +161,30 @@ const MIN_AREA_KM2 = 30;
  */
 const NOT_DRAWN: ReadonlySet<string> = new Set(["r7336746"]);
 
+/**
+ * OSM records the JRC water class replaces — mirrors `SUPERSEDED_BY_JRC` in
+ * `scripts/generate-tr-inland-water.mjs`, the same way `MIN_AREA_KM2` mirrors its threshold.
+ *
+ * The seasonal and salt lakes are drawn from JRC Global Surface Water instead of OSM, because a
+ * body that fills and dries is described by a 41-year occurrence statistic and not by the single
+ * satellite moment an OSM outline freezes (→ DEC 2026-08-02q §D). The ODbL snapshot KEEPS these
+ * features — it is the faithful record of its own sweep — so this is a DRAWING rule, and the
+ * id-set equality below has to know it.
+ *
+ * Only SIX appear here rather than the nine JRC bodies: Seyfe and Acıgöl sit below the rung on
+ * the OSM side (21.8 and 18.6 km²) so they were never drawn, and Yay Gölü has no OSM counterpart
+ * at all. Listing only what is actually superseded AND drawn is what lets the arithmetic below
+ * stay a derivation instead of a fudge.
+ */
+const SUPERSEDED_BY_JRC: ReadonlySet<string> = new Set([
+  "r2411676",
+  "r16862988",
+  "r2385434",
+  "r17069201",
+  "r1761470",
+  "r17083287",
+]);
+
 describe("the generated inland-water artifact", () => {
   it("draws exactly the pinned number of bodies", () => {
     // A threshold typo (`300` for `30`) would empty the layer, and an empty `<g>` renders
@@ -152,7 +192,7 @@ describe("the generated inland-water artifact", () => {
     expect(INLAND_WATER_SHAPES.length).toBe(EXPECTED_BODY_COUNT);
   });
 
-  it("draws exactly the snapshot bodies that clear the ruled threshold, and no others", () => {
+  it("draws exactly the two snapshots' bodies that clear the ruled threshold, and no others", () => {
     // WHY the count is what it is, so a future red does not get "fixed" by editing the
     // number. The rung is an owner ruling; this asserts the artifact is its faithful image.
     //
@@ -160,27 +200,29 @@ describe("the generated inland-water artifact", () => {
     // artifact carries no area and no tier (DEC 2026-08-01r-4), so a tier assertion would
     // have to re-implement the generator's own tier function inside the test — a copy that
     // can drift. Pinning WHICH bodies are drawn subsumes pinning how many fall in each band.
-    const snapshot: unknown = JSON.parse(
-      readFileSync(
-        fileURLToPath(new URL("../../data/tr-inland-water.geojson", import.meta.url)),
-        "utf8",
-      ),
-    );
-    const features = (snapshot as { features?: unknown[] }).features ?? [];
-    const eligible = features
-      .map(
-        (feature) => (feature as { properties?: { osmId?: string; areaKm2?: number } }).properties,
-      )
-      .filter((properties) => (properties?.areaKm2 ?? 0) >= MIN_AREA_KM2)
-      .map((properties) => properties?.osmId)
-      .filter((osmId): osmId is string => typeof osmId === "string");
-    const expected = eligible.filter((osmId) => !NOT_DRAWN.has(osmId));
+    //
+    // The rung is applied PER SOURCE (→ DEC 2026-08-03c, Q9): each body is measured against
+    // the area its OWN source measured, because the whole point of the hybrid is that the two
+    // sources answer "how big is this lake" differently for a body that fills and dries.
+    const osmEligible = readAreas("../../data/tr-inland-water.geojson", "osmId")
+      .filter(([, areaKm2]) => areaKm2 >= MIN_AREA_KM2)
+      .map(([id]) => id);
+    const jrcEligible = readAreas("../../data/tr-inland-water-jrc.geojson", "id")
+      .filter(([, areaKm2]) => areaKm2 >= MIN_AREA_KM2)
+      .map(([id]) => id);
 
-    // Both halves are asserted: that the exclusion is still EXACTLY as large as it claims to
-    // be (so a snapshot refresh dropping Hoyran turns this red instead of silently making the
-    // exclusion a no-op), and that the artifact is the faithful image of rung minus exclusion.
-    expect(eligible).toHaveLength(EXPECTED_BODY_COUNT + NOT_DRAWN.size);
-    expect(eligible.filter((osmId) => NOT_DRAWN.has(osmId))).toHaveLength(NOT_DRAWN.size);
+    const expected = [
+      ...osmEligible.filter((id) => !NOT_DRAWN.has(id) && !SUPERSEDED_BY_JRC.has(id)),
+      ...jrcEligible,
+    ];
+
+    // Each exclusion is asserted to still be EXACTLY as large as it claims to be, so a
+    // snapshot refresh that drops one of its targets turns this red instead of silently
+    // making the exclusion a no-op.
+    expect(osmEligible.filter((id) => NOT_DRAWN.has(id))).toHaveLength(NOT_DRAWN.size);
+    expect(osmEligible.filter((id) => SUPERSEDED_BY_JRC.has(id))).toHaveLength(
+      SUPERSEDED_BY_JRC.size,
+    );
     expect(expected).toHaveLength(EXPECTED_BODY_COUNT);
     expect([...INLAND_WATER_SHAPES.map((shape) => shape.id)].sort()).toEqual([...expected].sort());
   });
@@ -188,7 +230,8 @@ describe("the generated inland-water artifact", () => {
   it("keys every body with a unique, stable OSM id", () => {
     const ids = INLAND_WATER_SHAPES.map((shape) => shape.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const id of ids) expect(id).toMatch(/^[rw]\d+$/);
+    // OSM keys or JRC keys — the artifact is fed by two snapshots (→ DEC 2026-08-03c, Q8).
+    for (const id of ids) expect(id).toMatch(/^([rw]\d+|gsw-\d{2})$/);
   });
 
   it("emits no name, area or other prose in the artifact", () => {

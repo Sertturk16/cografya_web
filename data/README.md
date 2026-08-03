@@ -199,6 +199,135 @@ impounding in 2022 and its polygon shows an intermediate state), so its area wil
 
 ---
 
+## `tr-inland-water-jrc.geojson` — Türkiye seasonal + salt lakes (P7)
+
+| Field                      | Value                                                                                                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Source dataset**         | **JRC Global Surface Water v1.5 (1984–2024)**, `occurrence` + `extent` layers, 30 m                                                                         |
+| **Publisher**              | European Commission Joint Research Centre / Google                                                                                                          |
+| **Bytes**                  | 84,402                                                                                                                                                      |
+| **Format**                 | GeoJSON `FeatureCollection`, 9 features (MultiPolygon), coordinates `[lon, lat]` (WGS84), plus a `metadata` block                                           |
+| **Per-feature properties** | `id`, `name`, `wikidata`, `areaKm2`, `rings`, `nodes`, `identity`, `window`, `identityNeighbourM`, `componentsUsed`, `componentsTotal`, `extentCoveragePct` |
+| **Licence**                | Copernicus / EC JRC open data — free reuse **with attribution and citation**                                                                                |
+| **Required attribution**   | **`Source: EC JRC/Google`** — verbatim, never translated, rendered next to every TR-frame map                                                               |
+| **Required citation**      | Pekel et al. 2016, rendered on `/hakkimizda` (see below)                                                                                                    |
+
+### Why this file exists at all — the hybrid
+
+OSM traces a lake from one satellite moment. For a body that fills and dries, that moment is
+arbitrary: our OSM Tuz Gölü was 939 km² in three fragments, an artefact of a single 2024 edit.
+GSW's `occurrence` layer answers a different question — _what share of 1984–2024 observations
+at this pixel were water_ — and for the seasonal and salt class that is the only honest
+description available (→ DEC 2026-08-02q §D).
+
+The same statistic is exactly why **dams and permanent lakes stay on OSM**. A reservoir
+impounded in 2018 has been water for six of the forty-one years, so its occurrence is low
+everywhere: measured, Ilısu falls 286.0 → 22.2 km². The denominator is the trap, and the
+hybrid exists to avoid walking into it.
+
+### Licence hygiene — this file is never merged with the ODbL snapshot
+
+ODbL's share-alike applies to a _derived database_. Merging JRC geometry into
+`tr-inland-water.geojson` would pull the merged result under ODbL, which the Copernicus terms
+do not grant. The two files therefore meet only in `scripts/generate-tr-inland-water.mjs`, and
+only as geometry that is rendered into one SVG — a _produced work_, which carries no such
+obligation (→ DEC 2026-08-01r-1). `lib/map/tr-inland-water-jrc.test.ts` asserts the separation
+in both directions, and this file carries **no OSM identifier of any kind**: names and Wikidata
+QIDs are typed by hand, not copied.
+
+The identity boxes are hand-typed for the same reason. Using our OSM polygon as an identity
+filter was proposed and declined — "we only used it to choose which pixels to keep" is exactly
+the argument the separation exists to avoid having to make.
+
+### The recipe
+
+```
+granule (cached, SHA-256 pinned)
+  → window read
+  → threshold occurrence >= 10 %          ← never `== 100`; 255 (no data) removed first
+  → 4-connected component labelling
+  → IDENTITY TEST                          ← core box + components within 2 km of the main body
+  → morphological closing, r = 300 m       ← bridges dry salt-crust seams; reach is 2·r
+  → interior hole filling                  ← a dried lake bed is part of the lake
+  → `extent` cross-check                   ← every selected pixel must be inside max extent
+  → boundary tracing (marching squares)
+  → Douglas–Peucker at 0.05 svg units      ← the ODbL snapshot's own SNAPSHOT_EPSILON
+```
+
+Every constant is pinned at the top of `scripts/fetch-tr-jrc-water.mjs` with its rationale and
+is copied into this file's `metadata.recipe`. They interact strongly — on Tuz Gölü, changing
+only the closing radius moves the result from ~1,293 km² (300 m) to ~1,375 km² (600 m) — so
+the recipe is an executable, not a paragraph, and the owner approves a **rendered frame**,
+never a number (→ DEC 2026-08-02q §C).
+
+**The identity test replaced an earlier "every component touching a seed box" rule** after that
+rule drew **Hirfanlı Baraj Gölü** as part of Tuz Gölü (→ DEC 2026-08-04d). The reservoir's
+264 km² component reaches into any box wide enough to hold Tuz, because the two overlap in both
+latitude and longitude; no rectangle separates them. The window stays wide regardless — it must
+be at least 2 × the closing radius clear of the finished body, because outside the window is dry
+and closing shaves anything reaching the edge.
+
+### The bodies
+
+| id       | Name          | Wikidata |    km² | rings | nodes |
+| -------- | ------------- | -------- | -----: | ----: | ----: |
+| `gsw-01` | Tuz Gölü      | Q211823  | 1292.6 |   268 |  2732 |
+| `gsw-02` | Akşehir Gölü  | Q617319  |  194.1 |    10 |   167 |
+| `gsw-03` | Eber Gölü     | Q1284379 |  109.9 |     6 |   161 |
+| `gsw-04` | Tersakan Gölü | Q6161851 |   50.6 |    15 |   171 |
+| `gsw-05` | Marmara Gölü  | Q1093090 |   61.4 |     2 |    77 |
+| `gsw-06` | Karamık Gölü  | Q6151136 |   37.8 |    21 |   175 |
+| `gsw-07` | Seyfe Gölü    | Q3383191 |   63.2 |    13 |   233 |
+| `gsw-08` | Acıgöl        | Q2820091 |  155.1 |    22 |   289 |
+| `gsw-09` | Yay Gölü      | —        |   84.8 |     1 |   139 |
+
+`areaKm2` is measured on the traced rings, before reduction — it is a **drawing** measurement,
+not a figure for publication. **No number from this file is ever published as fact**: GSW is a
+cartographic source, and the areas a reader is taught come from the content pipeline
+(→ DEC 2026-08-01r-4).
+
+### Granules — 505.0 MB, cached, never committed
+
+The six granules tiling Türkiye's bounding box, for both layers, live in a gitignored
+`.jrc-cache/`. Their SHA-256 digests are **pinned in the fetch script and copied into this
+file's `metadata.granules`**: the download URL carries no version beyond `VER1-5`, so a silent
+republication would otherwise change our lakes with nothing in the diff. A mismatch throws.
+
+| Granule                            | SHA-256                                                          |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| `occurrence_20E_40N_v1_5_2024.tif` | 0c1bc09f08317d9b893a6858e0fc9a26628fed322c0eb97b0ab0d1b04924f937 |
+| `occurrence_30E_40N_v1_5_2024.tif` | dc41507f8e22a9d36da5793f9f9ff9ceba222ff8abe7d618b37e03c93d62f9df |
+| `occurrence_40E_40N_v1_5_2024.tif` | 30db9dbcae93d6b297b87584aa358729d0aef4a43ec5bd298fbf2e5810333e50 |
+| `occurrence_20E_50N_v1_5_2024.tif` | 6a1163a9563219c3d147f6e7f1cf274b9e64cddf45465b6ef6dc4f15a7c3b83b |
+| `occurrence_30E_50N_v1_5_2024.tif` | f128ac90c5698a48c19df7cf29141a0294d38bdfeb534b602525d8c5b62e0f25 |
+| `occurrence_40E_50N_v1_5_2024.tif` | 725266cdc5058b7c9de80834cd4506c0f110d69c93b9ff72373e2fdea5241975 |
+| `extent_20E_40N_v1_5_2024.tif`     | de73cd84bf3e330063dd61d9e96915848e904db976d7f3bf1879e228bb00ff37 |
+| `extent_30E_40N_v1_5_2024.tif`     | e9c4efc9d4bccf2a7e753d4eeea25e2f35d2ac575a5276e33b28e2410072b7dc |
+| `extent_40E_40N_v1_5_2024.tif`     | ce9f8c1cffd21ee687bbe29d5be61a379e86a36f1155484781b0f5c179ed1d61 |
+| `extent_20E_50N_v1_5_2024.tif`     | 67c7285fc41719b578fd677b620483f5d205c18bccd7c41b427af47a2ade7f2c |
+| `extent_30E_50N_v1_5_2024.tif`     | b252ee4abab6aadc7f72ff9544052d5f8cdc9971cb68317e7a0b32e10d5dbe18 |
+| `extent_40E_50N_v1_5_2024.tif`     | 7e3be46611a8aac49213ddc966e9837814d6c129925a7fda41affe7de2eac5bc |
+
+**The raster step has no CI gate** — it needs the network and 505 MB. That is a deliberate,
+accepted gap (→ DEC 2026-08-03c, Q10); its compensating controls are the pinned checksums, the
+committed derivative behind `pnpm generate:water:check`, and the owner's sample gate.
+
+### Regenerating
+
+```
+node scripts/fetch-tr-jrc-water.mjs      # network + 505 MB, manual, deliberately NOT a pnpm script
+pnpm generate:water                      # offline: BOTH snapshots → lib/map/tr-inland-water.generated.ts
+pnpm generate:water:check                # CI drift gate
+```
+
+Refresh when JRC publishes a new GSW edition. Environment overrides
+(`JRC_OCCURRENCE_THRESHOLD`, `JRC_CLOSING_RADIUS_M`, `JRC_COMPONENT_RULE`,
+`JRC_IDENTITY_NEIGHBOUR_M`, `JRC_OUT`, and `JRC_SOURCE` on the generator) exist **only** to
+render the owner's variant frames into `.jrc-cache/variants/`. They are never set in CI, so the
+committed file and artifact stay deterministic.
+
+---
+
 ## `world-countries.geojson` — full-world country boundary polygons
 
 | Field                      | Value                                                                                                                                |

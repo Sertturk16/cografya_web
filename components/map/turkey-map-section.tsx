@@ -249,7 +249,24 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
 
         <MapHoverCard />
 
-        <p className={styles.attribution}>{tMap("attribution")}</p>
+        {/* TWO obligations, one chip. OSM's ODbL covers the dams and permanent lakes; the
+            seasonal and salt lakes come from JRC Global Surface Water, whose terms require
+            both the dataset credit and, on /hakkimizda, the journal citation. `Source: EC
+            JRC/Google` is the licensor's own wording and is VERBATIM in both locales — it is
+            never translated, shortened or expanded (→ DEC 2026-08-02q §F), which is why
+            `lib/map/tr-inland-water-jrc.test.ts` asserts the substring in tr AND en.
+
+            One paragraph with a break rather than two absolutely-positioned siblings: the
+            chip is `position: absolute; bottom: 10px`, so a second `<p>` would land on top of
+            the first. This keeps the stylesheets closed (P6 kept them closed on purpose).
+
+            NOT on the world map: it draws Natural Earth countries, not this water layer, and
+            crediting a source a surface does not use is a false claim, not a courtesy. */}
+        <p className={styles.attribution}>
+          {tMap("attribution")}
+          <br />
+          {tMap("attributionJrc")}
+        </p>
       </div>
     </section>
   );

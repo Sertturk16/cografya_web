@@ -26,6 +26,11 @@ lib/map/tr-inland-water.generated.ts
 data/tr-il-boundaries.geojson
 data/world-countries.geojson
 data/tr-inland-water.geojson
+# Same, for the JRC Global Surface Water derivative. Its features are one-per-line by design
+# (see scripts/fetch-tr-jrc-water.mjs) and `generate:water:check` re-derives the artifact from
+# it byte for byte, so a stray `prettier --write` from the pre-commit hook would turn a green
+# CI red on a file nobody edited — the exact PR #39 incident (commit 7c02553).
+data/tr-inland-water-jrc.geojson
 
 # Committed OpenAPI contract artifact (synced from cografya_api; kept byte-identical
 # to the api's generator output, so Prettier must not reformat it).

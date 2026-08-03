@@ -304,9 +304,14 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
           />
         </svg>
 
-        {/* ODbL obligation: the attribution stays visible wherever these shapes are drawn
-            (SPEC §1). Shared string with the /turkiye map — one source, never re-typed. */}
-        <p className={styles.attribution}>{tMap("attribution")}</p>
+        {/* Both obligations stay visible wherever these shapes are drawn (SPEC §1) — see
+            components/map/turkey-map-section.tsx for the full note. Shared strings with the
+            /turkiye map: one source, never re-typed. */}
+        <p className={styles.attribution}>
+          {tMap("attribution")}
+          <br />
+          {tMap("attributionJrc")}
+        </p>
       </div>
 
       {/* Keyboard-controls description the zoomable SVG points at via aria-describedby
