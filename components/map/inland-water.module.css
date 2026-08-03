@@ -37,8 +37,9 @@
      them from both sides and the fill barely shows; on those bodies the STROKE IS (most of)
      THE BODY, and in taupe they read as brown scribbles rather than as lakes. See
      --map-water-line in globals.css for the measured contrasts: AT FULL ALPHA it clears WCAG
-     1.4.11's 3:1 against ALL TEN backdrops this layer is drawn over — white land, its own fill, an inert province, AND the seven Okabe-Ito region
-     tints the game's Bölge Bulma mode paints underneath it. That last set is why the token is
+     1.4.11's 3:1 against ALL TEN backdrops this layer is drawn over — white land, its own
+     fill, an inert province, AND the seven Okabe-Ito region tints the game's Bölge Bulma
+     mode paints underneath it. That last set is why the token is
      a near-black petrol rather than a mid-teal; the mid-teal failed 6 of the 7. Same stroke
      FAMILY as a province edge (same colour discipline, same linejoin, same non-scaling
      behaviour) — but deliberately HALF its width; see below. */
@@ -87,10 +88,10 @@
      version measures 6.62:1, so halving the width costs roughly half the achieved contrast
      and lands just above the floor — which is the honest description of this trade.
 
-     The same measurement at 0.4px
-     gives 2.47 / 2.39 / 2.36 — under the floor on every one of them. So 0.4 is not a
-     "slightly thinner" option, it is a different compliance answer; it was rendered next to
-     this one for the owner's sample round and rejected on that measurement, not on taste.
+     The same measurement at 0.4px gives 2.47 / 2.39 / 2.36 — under the floor on every one of
+     them. So 0.4 is not a "slightly thinner" option, it is a different compliance answer; it
+     was rendered next to this one for the owner's sample round and rejected on that
+     measurement, not on taste.
 
      WHY THE LAYER STILL HAS A STROKE AT ALL, since the borderless version was rendered and
      ruled against (DEC 2026-08-03i). Three measured reasons, in order of weight:
@@ -121,7 +122,7 @@
      on FOUR of them the fill does not carry the object either. Measured (line at α≈0.5 /
      fill #dbe7e8 against the same tint):
 
-       İç Anadolu  #f0e442   line 3.07 ✓  fill 1.05      ← the only tint the line still carries
+       İç Anadolu  #f0e442   line 3.07 ✓  fill 1.05   ← the only tint the line still carries
        Ege         #e69f00   line 2.70 ✗  fill 1.78 ✗
        Akdeniz     #56b4e9   line 2.49 ✗  fill 1.82 ✗
        Karadeniz   #cc79a7   line 2.38 ✗  fill 2.42 ✗
@@ -135,9 +136,12 @@
      is named, labelled, linked or answerable, the whole <g> is aria-hidden, and nothing the
      player must perceive is encoded in a lake's edge. DPR ≥ 2 is unaffected in any case.
 
-     If a future ruling wants it back, buy it with WIDTH (0.75 restores full alpha on DPR 1),
-     never by lightening the token — going lighter fails Marmara #0072b2 from the other side,
-     which is the whole reason the token is a near-black petrol. And if a lake ever becomes
+     There is no ready-made way to buy it back, and this comment is not going to promise one:
+     WIDTH is the only direction left — lightening the token fails Marmara #0072b2 from the
+     other side, which is the whole reason it is a near-black petrol — but widening short of
+     1px still leaves a sub-pixel, still-antialiased line on DPR 1, and at 0.75 the binding
+     tint (Marmara) is still under the floor. So a future ruling that wants this back has to
+     RE-MEASURE at the width it picks, not read a remedy off this line. And if a lake ever becomes
      meaning-bearing here (a labelled body, a "click the lake" round), this concession must be
      re-opened rather than inherited. */
   stroke-width: 0.5;
