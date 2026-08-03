@@ -127,6 +127,9 @@ describe("the surfaces that consume the layer", () => {
    * that have something between the province loop and the water. `marine-map.tsx` is
    * deliberately absent: it still draws one flat province layer, so for it "after the
    * shapes" and "after the hit layer" are the same statement.
+   *
+   * This list is ASSERTED against the files rather than trusted — see the hit-layer test
+   * below. It exists to make the expected set visible to a reader, not to decide it.
    */
   const LAYERED_SURFACES = ["../map/turkey-map-section.tsx", "../game/game-map.tsx"] as const;
 
@@ -197,14 +200,23 @@ describe("the surfaces that consume the layer", () => {
     //
     // So the anchor here is the layer that actually has to stay UNDER the water:
     // `data-map-layer="hit"`, whose `<use>` carries `pointer-events: all` over the shape's
-    // whole interior. Requiring the marker to EXIST (rather than skipping a surface that
-    // does not declare it) is deliberate — a rename of the attribute must fail loudly here
-    // instead of quietly turning this test back into a no-op.
-    for (const surface of LAYERED_SURFACES) {
+    // whole interior.
+    //
+    // "EVERY surface that has one" is meant literally, so the set is DERIVED from the files
+    // and only then checked against the declared list — `LAYERED_SURFACES` is a description,
+    // not the source of truth (→ PR #40 review round 2). A hand-kept allowlist would silently
+    // skip a surface that gains a hit layer later, which is precisely the shape of the hole
+    // this test was written to close. Both directions now fail loudly: a NEW layered surface
+    // makes the derived set longer than the declared one, and a renamed marker makes it
+    // shorter.
+    const layered: string[] = [];
+    for (const surface of SURFACES) {
       const source = code(sourceOf(surface));
       const hit = source.indexOf('data-map-layer="hit"');
-      expect(hit).toBeGreaterThan(-1);
+      if (hit === -1) continue;
+      layered.push(surface);
       expect(source.indexOf("<InlandWaterLayer")).toBeGreaterThan(hit);
     }
+    expect(layered).toEqual([...LAYERED_SURFACES]);
   });
 });

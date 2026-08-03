@@ -206,9 +206,12 @@
    `@media (hover: hover)` — a touch device would otherwise leave the last-tapped shape
    outlined; the focus rule deliberately sits outside the query.
    NEW ANCESTOR REQUIREMENT: both hover rules in this file now need a `.mapRoot` ancestor,
-   which they did not before. Every consumer already has one — `turkey-map-section.tsx:119`
-   and `world-map-section.tsx:176` — and the marine map has its own `.mapRoot` in its own
-   module, so nothing bleeds across. A future surface that reuses `.provinceLink` WITHOUT
+   which they did not before. Every consumer already has one — the `[data-map-root]` wrapper
+   in `turkey-map-section.tsx` and in `world-map-section.tsx` — and the marine map has its
+   own `.mapRoot` in its own module, so nothing bleeds across.
+   (NO LINE NUMBERS here, deliberately: this note has now been corrected twice because edits
+   above it shifted the targets. A file plus an identifier survives editing; a line number is
+   a treadmill. → PR #40 review round 2.) A future surface that reuses `.provinceLink` WITHOUT
    `.mapRoot` would silently lose hover; that is the coupling this note exists to name.
    THE SUBJECT IS NOW THE HIT-LAYER TWIN (`.hitEdge`), not the painted shape. That is the
    whole owner-facing fix: the line is drawn above every fill and every resting border on

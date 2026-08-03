@@ -92,17 +92,33 @@ for (const { file, shapes } of SURFACES) {
       expect(defs).not.toContain("className=");
     });
 
-    it("keeps every crawlable link in the hit layer, exactly one per shape", () => {
-      // THE LINK-COUNT GUARD. The base layer is decorative and `aria-hidden`; an `<a>` in it
-      // would be a second, duplicate, crawlable copy of the entire internal link graph.
+    it("confines every crawlable link to the hit layer", () => {
+      // THE LINK-DUPLICATION GUARD. The base layer is decorative and `aria-hidden`; an `<a>`
+      // in it would be a second, duplicate, crawlable copy of the entire internal link graph
+      // — and copying the wrapper into the base loop "for consistency" is the cheapest way to
+      // do exactly that, since both layers iterate the same array.
+      //
+      // WHAT THIS DOES *NOT* CLAIM, stated because an earlier version of this name did claim
+      // it (→ PR #40 review round 2): it does not prove ONE anchor per shape. `<a>` sites are
+      // not iterations — `world-map-section.tsx` legitimately carries two of them inside the
+      // single hit loop (an early-return branch for the Türkiye hub link, then the country
+      // branch), and they are mutually exclusive per shape. Proving that from source text
+      // would mean following control flow; any count-based stand-in would pin the file's
+      // shape rather than the property, i.e. a guard that fails on a harmless refactor and
+      // passes on a real duplicate. The per-shape count is proven empirically instead, by the
+      // rendered `<a>` count on `/turkiye` (81) and `/dunya` (196 + 1) that every PR on these
+      // surfaces curls.
       const base = layerBlock(SOURCE, "base");
       const hit = layerBlock(SOURCE, "hit");
       expect(base).not.toMatch(/<a[\s>]/);
       expect(base).not.toMatch(/\bhref=\{(?!`#)/); // only the same-document `<use href={`#…`}`
+      // The link/card contract attribute belongs to the anchor, so its absence is a second,
+      // independent tripwire on the same copy-paste.
+      expect(base).not.toContain("data-shape");
       expect(hit).toMatch(/<a[\s>]/);
-      // One anchor per iteration of the shape loop: the hit layer opens exactly one loop over
-      // the shape array, and every `<a>` in the file lives inside it.
       expect(hit).toContain(shapes);
+      // Every anchor in the FILE is inside the hit block — the layer boundary holds for the
+      // whole component, not just for the part of it this block happens to cover.
       expect(SOURCE.match(/<a[\s>]/g)?.length).toBe(hit.match(/<a[\s>]/g)?.length);
     });
 
