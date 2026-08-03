@@ -47,8 +47,9 @@ const OUT = join(ROOT, "lib", "map", "tr-inland-water.generated.ts");
  * Drawing threshold in km², measured on the source rings.
  *
  * **30 km² — OWNER RULING, 2026-08-02 (S1 of the P6 sample gate).** The owner reviewed the
- * 40 / 30 / 10 km² ladder rendered from this snapshot and took the middle rung. It draws 50
- * bodies for a 42.4 kB artifact, and it is what closes the curriculum-parity gaps that the
+ * 40 / 30 / 10 km² ladder rendered from this snapshot and took the middle rung. 50 snapshot
+ * bodies clear it and 49 are drawn (one of them is a duplicate — see `DRAWN_DUPLICATES`), for
+ * a 42.2 kB artifact, and it is what closes the curriculum-parity gaps that the
  * published-map floor left open — Marmara Gölü (38.6 km²), Suğla, Seyhan, Sır and Balık Gölü
  * all sit between the two rungs, and a Türkiye map without Marmara Gölü reads as a mistake to
  * a reader who was taught it.
@@ -94,16 +95,16 @@ const MIN_AREA_KM2 = readThreshold();
  *   ADAPTIVE below →  35.9 kB · worst body  −4.3 %
  *   adaptive β 0.0127 → 45.1 kB · worst body −4.3 %     (no further fidelity for +9 kB)
  *
- * **What ships today** is the ADAPTIVE row at the owner-ruled 30 km² cut: **42.4 kB, 50
- * bodies, worst body −4.32 % (Hotamış Depolaması)**. Run the generator to reproduce it — the
- * report prints all three numbers.
+ * **What ships today** is the ADAPTIVE row at the owner-ruled 30 km² cut, less the one
+ * duplicate: **42.2 kB, 49 bodies, worst body −4.32 % (Hotamış Depolaması)**. Run the
+ * generator to reproduce it — the report prints all three numbers.
  *
  * DEC 2026-08-02k md. 2 lifted the ≤20 kB cap and budgeted "~0.8 units, ~35 kB". The byte
  * half of that prediction was based on an estimated 6 500 km of shoreline; the real figure
  * is 10 137 km, but Douglas–Peucker is far more effective on a lake shore than the linear
  * estimate assumed, so 0.8 units actually costs 11 kB, not 35. This setting SPENDS the
  * ruled budget and buys the quality the ruling was after — six times less area distortion on
- * the small bodies than the tolerance the ruling named. The 42.4 kB it now costs is above the
+ * the small bodies than the tolerance the ruling named. The 42.2 kB it now costs is above the
  * ruled estimate because the OWNER later ruled the rung directly (30 km², S1); the estimate
  * was superseded by the ruling it was estimating for, and the wire cost that actually governs
  * CWV is gzip, measured separately.
@@ -170,6 +171,41 @@ const MIN_RING_AREA_UNITS2 = 0.35;
  */
 const FRAME_TOLERANCE = 1.5;
 
+/**
+ * Bodies that are NOT drawn although they clear the threshold, because the snapshot already
+ * contains the same water under another id. Keyed by the excluded id → the id that keeps it.
+ *
+ * ## The one case, and how it was measured
+ *
+ * `r7336746` "Hoyran Gölü" (138.01 km²) is the northern lobe of `r1410914` "Eğirdir Gölü"
+ * (453.02 km²), and OSM's Eğirdir relation already covers that lobe: sampling Hoyran's
+ * interior on a 900 × 900 grid puts **99.94 % of it inside Eğirdir**, i.e. ~137.9 km² of this
+ * layer's drawn area was the same water counted twice (→ DEC 2026-08-02q md. A; the ruling's
+ * figure was reproduced independently from the committed snapshot before this exclusion was
+ * written). The same sweep over all 50 bodies ABOVE THE RUNG — the 49 drawn plus Hoyran, i.e.
+ * the set as it stood before this exclusion — found NO other pair overlapping by more
+ * than 1 %, so this is one measured defect, not a class — which is why this is a pinned list
+ * and not a geometric de-duplication pass.
+ *
+ * ## Why it was VISIBLE, not just double bookkeeping
+ *
+ * Two bodies get two tolerances (ε ≈ 0.14 for Hoyran, ≈ 0.25 for Eğirdir, see EPSILON_BETA),
+ * so the shared shoreline was drawn twice, a fraction of a unit apart: a doubled, muddy shore
+ * along the north lobe plus a spurious dark line running across open water at the strait.
+ * Half of the "the shoreline is too thick" report this exclusion ships with was this.
+ *
+ * ## Why HERE and not in the snapshot
+ *
+ * `data/tr-inland-water.geojson` is the faithful record of the ≥ 10 km² sweep and Hoyran is a
+ * real OSM object in it; deleting the feature by hand would contradict the file's own
+ * `metadata.query` (which still lists the id it was fetched with), and re-fetching to drop one
+ * id would refresh every other body's geometry from today's OSM inside a two-line fix. WHAT
+ * GETS DRAWN is this generator's decision — the same class of decision as MIN_AREA_KM2 and
+ * MIN_RING_AREA_UNITS2 — so the exclusion lives with them. The fetch script keeps the id
+ * pinned on purpose: the snapshot must stay complete.
+ */
+const DRAWN_DUPLICATES = new Map([["r7336746", "r1410914"]]);
+
 function readThreshold() {
   return readNumberEnv("WATER_MIN_AREA_KM2", 30);
 }
@@ -195,6 +231,29 @@ if (snapshot.type !== "FeatureCollection" || !Array.isArray(snapshot.features)) 
 const drawn = [];
 let skipped = 0;
 let maxOvershoot = 0;
+/** @type {string[]} */
+const excludedDuplicates = [];
+
+// A duplicate may only be dropped while the body that ABSORBS it is itself above the
+// threshold and present in the snapshot. Without this, a future re-source that removes or
+// shrinks Eğirdir would silently delete real water from the map instead of a double count —
+// the exclusion would still fire, and nothing downstream would notice.
+//
+// Scoped to the rung ON PURPOSE: if the duplicate itself is below MIN_AREA_KM2 it is not
+// drawn either way, so the exclusion cannot remove anything and demanding a drawn survivor
+// would only fail the owner's threshold-ladder renders (WATER_MIN_AREA_KM2) for no gain.
+for (const [duplicateId, keptId] of DRAWN_DUPLICATES) {
+  const duplicate = snapshot.features.find((feature) => feature.properties?.osmId === duplicateId);
+  if (duplicate === undefined || (duplicate.properties?.areaKm2 ?? 0) < MIN_AREA_KM2) continue;
+  const kept = snapshot.features.find((feature) => feature.properties?.osmId === keptId);
+  if (kept === undefined || (kept.properties?.areaKm2 ?? 0) < MIN_AREA_KM2) {
+    throw new Error(
+      `${duplicateId} is excluded as a duplicate of ${keptId}, but ${keptId} is not drawn ` +
+        `(missing from the snapshot or below MIN_AREA_KM2=${MIN_AREA_KM2}). Dropping it now ` +
+        `would remove the water itself, not the double count — re-check DRAWN_DUPLICATES.`,
+    );
+  }
+}
 
 for (const feature of snapshot.features) {
   const properties = feature.properties ?? {};
@@ -207,6 +266,11 @@ for (const feature of snapshot.features) {
   }
   if (areaKm2 < MIN_AREA_KM2) {
     skipped++;
+    continue;
+  }
+  const duplicateOf = DRAWN_DUPLICATES.get(osmId);
+  if (duplicateOf !== undefined) {
+    excludedDuplicates.push(`${osmId} (${properties.name ?? "unnamed"}) ⊂ ${duplicateOf}`);
     continue;
   }
 
@@ -341,6 +405,7 @@ for (const shape of drawn) counts[tier(shape.areaKm2)]++;
 console.log(`generate:water → ${OUT}
   threshold        : ${MIN_AREA_KM2} km²  ·  epsilon β=${EPSILON_BETA} clamped to [${EPSILON_MIN}, ${EPSILON_MAX}] svg units
   bodies drawn     : ${drawn.length} (tier A ${counts.A} · B ${counts.B} · C ${counts.C}) · ${skipped} below threshold
+  duplicates held  : ${excludedDuplicates.length} above threshold but not drawn${excludedDuplicates.map((entry) => `\n      ${entry}`).join("")}
   vertices         : ${vertices} · ${(pathBytes / vertices).toFixed(2)} B/vertex
   path data        : ${(pathBytes / 1024).toFixed(1)} kB · whole artifact ${(bytes / 1024).toFixed(1)} kB
   viewBox          : ${TR_VIEWBOX}
