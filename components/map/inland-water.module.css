@@ -43,8 +43,16 @@
      FAMILY as a province edge (same colour discipline, same linejoin, same non-scaling
      behaviour) — but deliberately HALF its width; see below. */
   stroke: var(--map-water-line);
-  /* HALF a province edge — OWNER RULING, 2026-08-03 (→ DEC 2026-08-03e md. 1): the shoreline
-     at 1px read as "çok kalın", and what was wanted is "belli belirsiz ince bir çizgi".
+  /* HALF a province edge — OWNER RULING, 2026-08-03 (→ DEC 2026-08-03e md. 1, and the value
+     itself confirmed against rendered alternatives in DEC 2026-08-03i): the shoreline at 1px
+     read as "çok kalın", and what was wanted is "belli belirsiz ince bir çizgi".
+
+     THE OWNER SAW THE ALTERNATIVES AND CHOSE THIS ONE. The sample round rendered a
+     BORDERLESS layer (the owner's own first instinct: "sulara border yapmaya bile gerek yok"),
+     a borderless layer with a darkened fill, and a softer navy line, all next to this. So the
+     values below are a decision, not a default — do not "simplify" the layer by dropping the
+     stroke or lightening the token without a new ruling. What the alternatives cost is
+     recorded at the end of this comment.
 
      WHY 1px WAS ACTUALLY TOO THICK, in this frame's own units. One svg unit is ~1.677 km, so
      one unit² is ~2.814 km², and the smallest body the ruled 30 km² rung draws is ~3.7 units
@@ -64,6 +72,30 @@
      gives 2.47 / 2.39 / 2.36 — under the floor on every one of them. So 0.4 is not a
      "slightly thinner" option, it is a different compliance answer; it was rendered next to
      this one for the owner's sample round and rejected on that measurement, not on taste.
+
+     WHY THE LAYER STILL HAS A STROKE AT ALL, since the borderless version was rendered and
+     ruled against (DEC 2026-08-03i). Three measured reasons, in order of weight:
+       1. it would put the ADMINISTRATIVE BOUNDARY BACK ON THE MAP. The dendritic reservoirs'
+          arms are narrower than one svg unit, i.e. under a pixel at render width, so a
+          fill-only arm cannot cover the 1px taupe province line running beneath it: the
+          rendered sample shows that line reappearing THROUGH Keban, Karakaya and Atatürk.
+          Hiding it is the layer's whole reason to exist (→ DEC 2026-08-01r-3);
+       2. the fill alone is 1.26:1 against white land — the ceiling of the narrow luminance
+          band --map-sea documents — so a borderless lake fails WCAG 1.4.11 on the surface it
+          matters most. Darkening the fill to clear it needs L ≤ 0.30 (measured ~#4b8fab:
+          3.61:1 white / 3.00:1 inert), which then fails against the seven region tints
+          (1.06–2.73) and, worse, forces --map-water to stop being an alias of --map-sea —
+          two different blues for sea and lake, against the published-map convention this
+          layer is built on (su-envanteri §2 E5/E7);
+       3. on the smallest bodies the fill-only shape reads as a smudge rather than a lake at
+          1:1 mobile width, which is where the complaint that started this began.
+
+     A softer LINE COLOUR was measured too and is not available: #002337 is the only family
+     that clears 3:1 on all ten backdrops at full alpha. The nearest softer navy (#0b3a5d)
+     already fails one backdrop at full alpha and drops white land to 2.83:1 at 0.5px on
+     DPR 1; every lighter candidate fails three to six. "Thin AND soft-coloured" is not a
+     point that exists on this map — thinness spends the same contrast budget the colour
+     would.
 
      The one context where the thin line's PERCEIVED contrast does drop below 3:1 on a DPR-1
      screen is the game's Bölge Bulma mode, over the seven Okabe-Ito region tints. Accepted
