@@ -134,13 +134,48 @@
   overflow: hidden;
 }
 
+/* ---- THE PAINT LAYERS (owner report 2026-08-02) ------------------------------------------
+   The map now draws ONE copy of each outline, parked classless in `<defs>`, and paints it
+   through `<use>` twins: `[data-map-layer="base"]` is what you see (fill, region tint, answer
+   FILL, 1px resting border), `[data-map-layer="region"]` holds the seven bölge silhouettes,
+   and `[data-map-layer="hit"]` is an invisible twin per answerable shape carrying ONLY the
+   hover / focus / answer LINE — above every fill and every resting border on the map. That is
+   what makes a highlighted province the same weight on all four sides; before this, the
+   neighbours painted after it ate its inner half (SVG has no z-index; document order decides).
+   The measured reasoning lives in `game-map.tsx`.
+
+   WHERE `vector-effect` WENT: onto the `<defs>` geometry, as a presentation attribute. It is
+   NOT an inherited property, so a `<use>` clone never picks it up from the `<use>` element —
+   declared here it would silently do nothing and every border would thicken with zoom. Every
+   other stroke/fill property in this file IS inherited and therefore does reach the clone. */
+
+.mapBase {
+  /* The painted map is scenery. Every hit — click, tab stop, hover — is scored by the hit
+     layer, so a click can never land on a shape's fill and bypass the answer path. */
+  pointer-events: none;
+}
+
+/* The hit twin: invisible until a state paints it, hittable regardless. `pointer-events: all`
+   reads the shape's interior and perimeter without either being painted.
+
+   `none` here, `transparent` in map.module.css — deliberately different, not an oversight.
+   `none` is not interpolable, so it would turn a transition into a discrete flip; the
+   navigation maps DO transition their hover line (0.16s) and therefore need a real colour to
+   start from. This surface has NO transition on purpose (see the note further down: the
+   border is instant, because a timed game must not delay its own feedback), so there is
+   nothing here for the value to break. */
+.hitEdge {
+  fill: none;
+  stroke: none;
+  stroke-linejoin: round;
+  pointer-events: all;
+}
+
 .province,
 .provinceInert {
   stroke: var(--province-stroke);
   stroke-width: 1;
   stroke-linejoin: round;
-  /* Keep boundaries ~1px crisp at any rendered width — and, from PR-2 on, at any zoom. */
-  vector-effect: non-scaling-stroke;
 }
 
 .province {
@@ -153,6 +188,26 @@
   fill: var(--province-inert);
 }
 
+/* ---- THE BÖLGE SILHOUETTE LAYER (game-map.tsx §BÖLGE) ------------------------------------
+   Seven groups, one per coğrafi bölge, each re-using its own members' geometry and filtered
+   into a single outer ring. It sits ABOVE the painted map (an outline under the fills would
+   only ever show its outward half) and BELOW the hit layer (so the focused shape's own line
+   stays on top), and it never takes a pointer event — the hit layer owns every hit. */
+.regionLayer {
+  pointer-events: none;
+}
+
+/* HIDDEN BY DEFAULT, and `display` rather than `visibility` or `opacity` on purpose: a
+   `display: none` subtree is not rendered, so its filter is never evaluated. That is what
+   keeps six unused silhouettes free, and it is why the seven `:has()` rules further down set
+   `display` and nothing else. The colour is the group's FILL, not a stroke: the filter grows
+   that filled union and subtracts it from itself, so what survives is a ring painted in
+   whatever the union was painted in. */
+.regionOutline {
+  display: none;
+  fill: var(--game-hover-edge);
+}
+
 /* ---- Play state (island-driven) -------------------------------------------------------
    Everything below is switched by attributes the island writes onto the server HTML:
    `data-game-mode` on the stage, `data-state` on a shape. No React re-render of the map is
@@ -163,13 +218,19 @@
    `data-game-active` means, and why it is a separate attribute from `data-game-mode` (the
    mode's colouring stays on after the last question, the clickability does not).
    NOTE — SPEC §7.3 proposed a transparent `stroke-width: 6` hit margin for tiny provinces.
-   It is NOT applied: the hit margin and the visible border are the same stroke, so buying
-   the margin costs the province outlines, and in Mode 2 (one flat fill for all 81) those
-   outlines are the entire map. Reaching small provinces is what zoom is for, and zoom is
-   mandatory in Faz-1 for exactly this reason (SPEC §7.2). A real fix is a second,
-   invisible hit path per shape — that doubles the SVG payload, so it is a measured PR-4
-   question, not a silent one. */
-.stage[data-game-active] .province {
+   It is NOT applied, but the REASON changed and the old wording is no longer true. The
+   original objection was that the hit margin and the visible border are the same stroke, so
+   buying the margin costs the province outlines — and that a second, invisible hit path per
+   shape "doubles the SVG payload". The layered restructure SHIPPED that second path: it is
+   the `.hitEdge` twin, and it costs no extra geometry (all three layers `<use>` one copy in
+   `<defs>`), so the payload objection is gone and the margin would now be one declaration on
+   a stroke nobody sees.
+   What is left is a product question, not a cost one: a 6px invisible margin makes
+   neighbouring small provinces overlap each other's targets, so a click near a shared border
+   becomes ambiguous. Reaching small provinces is what zoom is for, and zoom is mandatory in
+   Faz-1 for exactly this reason (SPEC §7.2). So it stays an owner question with rendered
+   samples, not a silent default. */
+.stage[data-game-active] .hitEdge {
   cursor: pointer;
 }
 
@@ -177,7 +238,7 @@
    ring on it — including after a MOUSE click, which left a stray outline across whichever
    province was last tapped. Suppressed here; the keyboard treatment is re-added on
    `:focus-visible` below, after the region tints. */
-.stage[data-game-active] .province:focus {
+.stage[data-game-active] .hitEdge:focus {
   outline: none;
 }
 
@@ -211,9 +272,19 @@
 /* ANSWER STATES. Colour is never the only signal (DESIGN.md §6.1 rule 3): each state also
    has its own STROKE TREATMENT — solid / dotted / dashed — and the HUD says the same thing
    in words at the same moment. That redundancy is what makes the three states readable on
-   top of seven region colours, and readable at all without colour perception. */
+   top of seven region colours, and readable at all without colour perception.
+
+   SPLIT ACROSS THE TWO TWINS, and this is a FIX, not bookkeeping: the fill belongs to the
+   painted map, the line belongs to the hit layer. Drawn among the fills, these 2.5–3px lines
+   suffered exactly the owner's hover complaint — every neighbour painted after the marked
+   province ate the line's inner half, so a "correct" province was full weight on one side
+   and half on the other. In the hit layer nothing is painted after them. The island writes
+   `data-state` to both twins, which is what keeps the pair in step. */
 .province[data-state="correct"] {
   fill: var(--game-correct);
+}
+
+.hitEdge[data-state="correct"] {
   stroke: var(--game-correct-edge);
   stroke-width: 2.5;
   stroke-dasharray: none;
@@ -221,6 +292,9 @@
 
 .province[data-state="wrong"] {
   fill: var(--game-wrong);
+}
+
+.hitEdge[data-state="wrong"] {
   stroke: var(--game-wrong-edge);
   stroke-width: 2.5;
   stroke-dasharray: 1 3;
@@ -228,6 +302,9 @@
 
 .province[data-state="reveal"] {
   fill: var(--game-reveal);
+}
+
+.hitEdge[data-state="reveal"] {
   stroke: var(--game-reveal-edge);
   stroke-width: 3;
   stroke-dasharray: 6 4;
@@ -256,26 +333,27 @@
      data-region equals the hovered one's", so it is one rule per region (the same shape as
      the seven tint rules above) with `:has()` doing the lookup. No JS, no DOM change, no
      change to paint order.
-     Honest limit: the region's INTERNAL il boundaries thicken too, because there is no
-     merged region outline in the artifact — producing one is geometry work (P2), and the
-     owner sees this exact frame in the samples. If it is rejected, a union outline is a
-     later geometry task, not a reason to keep the map dead to the mouse.
 
-   `:not([data-state])` on every rule: what the player just DID (correct / wrong / reveal)
-   always outranks where the pointer happens to be.
-   `:not(:focus-visible)` on the seven REGION-MATE subjects, and the dependency it records
-   (→ PR #38 review round 2, CR-R2-1, reproduced in a browser by two independent legs).
-   Those subjects compute to (0,11,0); the bölge-mode focus STEP further down is only
-   (0,6,0). Without the guard, a pointer resting on ANY unmarked member of the region that
-   holds keyboard focus wins the cascade against the focused shape too — the step collapses
-   4.5px → 3px and the focused shape becomes pixel-identical to its ten mates, which is
-   exactly the WCAG 2.4.7 failure the step exists to prevent. It is the mirror of the guard
-   on the focus-mate rules below, and it stays load-bearing for as long as `stroke-width`
-   is focus's only distinguishing declaration in this mode. THIS IS THE TRAP: the first
-   version of this PR was safe only because focus's distinction was then `fill`, which
-   hover never sets; scoping the wash off bölge mode moved the distinction into a property
-   hover DOES set, and re-opened it. Move a property out of the focus rules and you must
-   re-check this guard.
+   WHAT THE SEVEN REGION RULES NOW LIGHT UP (owner rejection, 2026-08-02). They used to
+   thicken every member's OWN border, which also thickened the region's INTERNAL boundaries —
+   it read as eleven outlined provinces rather than one region, and the owner rejected it.
+   The subject is now the region's SILHOUETTE GROUP in the region layer (`game-map.tsx`
+   §BÖLGE): a filter-drawn outer ring around the union of that region's shapes, `display:
+   none` until one of these rules shows it. The internal boundaries stay at their resting 1px.
+   The rule COUNT is unchanged (seven here, seven on focus) — CSS still has no other way to
+   say "the shapes whose data-region equals the hovered one's".
+
+   `:not([data-state])` moved from the subject to the PROBE, and it still means the same
+   thing: what the player just DID (correct / wrong / reveal) outranks where the pointer is,
+   so a solved region does not re-outline itself on hover. It has to sit on the probe now
+   because the subject is no longer a province and has no state of its own.
+   `:not(:focus-visible)` IS GONE, and its removal is safe for a structural reason worth
+   recording. It existed because the mate selectors computed to (0,11,0) while the bölge-mode
+   focus STEP is only (0,6,0), so a pointer resting on a mate flattened the focused shape's
+   4.5px back to 3px (→ PR #38 review round 2, CR-R2-1). These rules no longer set
+   `stroke-width` on any province at all — they set `display` on a group — so there is nothing
+   left to win that cascade. IF A FUTURE CHANGE EVER POINTS THESE RULES AT A PROVINCE AGAIN,
+   the guard has to come back with it.
    `:not([data-panning])` on the stage: while a drag-pan is running the pointer sweeps
    across shapes, and without this the whole map would strobe (same `data-panning` contract
    MapZoomPan already drives the cursor with).
@@ -288,34 +366,33 @@
    prefers-reduced-motion, so no new debt in that block either. */
 @media (hover: hover) {
   .stage[data-game-active][data-game-mode="provinces"]:not([data-panning])
-    .province[data-plate]:hover:not([data-state]) {
+    .hitEdge[data-plate]:hover:not([data-state]) {
     stroke: var(--game-hover-edge);
     stroke-width: var(--game-hover-width);
   }
 
   .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
-    .svg:has(.province[data-region="MARMARA"]:hover)
-    .province[data-region="MARMARA"]:not([data-state]):not(:focus-visible),
+    .svg:has(.hitEdge[data-region="MARMARA"]:hover:not([data-state]))
+    .regionOutline[data-region="MARMARA"],
   .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
-    .svg:has(.province[data-region="EGE"]:hover)
-    .province[data-region="EGE"]:not([data-state]):not(:focus-visible),
+    .svg:has(.hitEdge[data-region="EGE"]:hover:not([data-state]))
+    .regionOutline[data-region="EGE"],
   .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
-    .svg:has(.province[data-region="AKDENIZ"]:hover)
-    .province[data-region="AKDENIZ"]:not([data-state]):not(:focus-visible),
+    .svg:has(.hitEdge[data-region="AKDENIZ"]:hover:not([data-state]))
+    .regionOutline[data-region="AKDENIZ"],
   .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
-    .svg:has(.province[data-region="IC_ANADOLU"]:hover)
-    .province[data-region="IC_ANADOLU"]:not([data-state]):not(:focus-visible),
+    .svg:has(.hitEdge[data-region="IC_ANADOLU"]:hover:not([data-state]))
+    .regionOutline[data-region="IC_ANADOLU"],
   .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
-    .svg:has(.province[data-region="KARADENIZ"]:hover)
-    .province[data-region="KARADENIZ"]:not([data-state]):not(:focus-visible),
+    .svg:has(.hitEdge[data-region="KARADENIZ"]:hover:not([data-state]))
+    .regionOutline[data-region="KARADENIZ"],
   .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
-    .svg:has(.province[data-region="DOGU_ANADOLU"]:hover)
-    .province[data-region="DOGU_ANADOLU"]:not([data-state]):not(:focus-visible),
+    .svg:has(.hitEdge[data-region="DOGU_ANADOLU"]:hover:not([data-state]))
+    .regionOutline[data-region="DOGU_ANADOLU"],
   .stage[data-game-active][data-game-mode="regions"]:not([data-panning])
-    .svg:has(.province[data-region="GUNEYDOGU_ANADOLU"]:hover)
-    .province[data-region="GUNEYDOGU_ANADOLU"]:not([data-state]):not(:focus-visible) {
-    stroke: var(--game-hover-edge);
-    stroke-width: var(--game-hover-width);
+    .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"]:hover:not([data-state]))
+    .regionOutline[data-region="GUNEYDOGU_ANADOLU"] {
+    display: block;
   }
 }
 
@@ -345,7 +422,7 @@
 
 /* Common to both modes: kill the UA ring (already suppressed on `:focus` above; repeated
    here so this block is readable on its own) and draw the line. */
-.stage[data-game-active] .province[data-plate]:focus-visible {
+.stage[data-game-active] .hitEdge[data-plate]:focus-visible {
   outline: none;
   stroke: var(--game-hover-edge);
   stroke-width: var(--game-hover-width);
@@ -356,27 +433,35 @@
    under the 3:1 graphical-object floor, and only the stroke shift brought it to AA (repo
    lesson, map.module.css). The stroke used to be --color-primary-dark, which measured
    1.61:1 on Marmara and sub-3:1 on four of the seven region tints — the shared
-   --game-hover-edge token repairs that. */
-.stage[data-game-active][data-game-mode="provinces"] .province[data-plate]:focus-visible {
+   --game-hover-edge token repairs that.
+   The wash now paints on the HIT twin, on top of the base twin's fill, instead of replacing
+   it — and that CHANGES THE COLOUR, which an earlier version of this note denied (→ PR #40
+   review, code-reviewer CR-1). `--province-hover` (#b0522e29, a 16% terracotta) is the same
+   paint either way, but replacing the fill made it composite over what was BEHIND the shape;
+   painting on the twin composites it over the base twin's white `--province-fill`. Measured
+   on the running build: new rgb(242, 227, 221) against old rgb(231, 209, 194) …
+   rgb(239, 221, 211) over this stage's parchment gradient — 3 to 27 levels per channel, so
+   the wash reads slightly lighter and pinker than it did. The focus INDICATOR is the 3px
+   `--game-hover-edge` line, not the wash, so the a11y floor is untouched; the change is
+   aesthetic and it is in the owner's sample set (`pr40-samples/11-oyun-odak-01.png`).
+   It is applied exactly once — the base twin is never washed. */
+.stage[data-game-active][data-game-mode="provinces"] .hitEdge[data-plate]:focus-visible {
   fill: var(--province-hover);
 }
 
-/* Bölge mode — the focused shape carries the region's outline like every other member, PLUS
-   a heavier line of its OWN so the player can still see which shape the focus is on.
-   WHY THE STEP IS NEEDED (corrected — the first wording of this note said "eleven
-   consecutive tab stops inside Marmara", which is simply wrong: the shapes are emitted in
-   plaka order, so a region's members are scattered across all 81 stops, not consecutive).
-   The real problem is not the tab ORDER, it is that the region outline is IDENTICAL for all
-   eleven members. Without a step, every Marmara shape renders the same 3px line the moment
-   any one of them is focused, so nothing on screen says WHICH shape holds focus — not after
-   eleven presses, not after one. That is a WCAG 2.4.7 failure on its own terms, independent
-   of where the region's stops fall in the order.
+/* Bölge mode — the region's silhouette says "Enter answers for this whole bölge", and the
+   focused shape carries a heavier line of its OWN so the player can still see WHICH shape
+   the focus is on.
+   WHY THE STEP IS STILL NEEDED. Its original reason was that the region outline used to be
+   drawn as eleven identical member borders, so nothing said which of them held focus. The
+   silhouette removed that particular collision — mates no longer carry a line at all — but
+   the step survives for a second, independent reason: a province ON the region's edge shares
+   its boundary with the silhouette, so a focus line at the same weight would be swallowed by
+   it exactly where the player is looking. 1.5px over the silhouette keeps the two tellable
+   apart there.
    The step is DERIVED from the hover width, not a fourth tunable: whatever the owner rules
-   on for --game-hover-width, focus stays 1.5px heavier than the region line, and the
-   hierarchy cannot invert — PROVIDED the hover mate rules keep their `:not(:focus-visible)`
-   guard, which is the only thing stopping their (0,11,0) from beating this rule's (0,6,0)
-   (see the trap paragraph in the hover block). Same token, so the measured contrast is
-   unchanged (3.25:1 worst case, on Marmara).
+   on for --game-hover-width, focus stays 1.5px heavier and the hierarchy cannot invert. Same
+   token, so the measured contrast is unchanged (3.25:1 worst case, on Marmara).
    Two properties of a WIDTH step worth recording, because they are why it works here and
    not merely why it is convenient: every stroke on this map is `non-scaling-stroke`, so 3px
    and 4.5px stay those literal CSS pixels at any zoom level rather than scaling with the
@@ -384,42 +469,39 @@
    that repaints every stroke in this stylesheet to one system colour.
    No `:not([data-state])` here, deliberately: focus must be visible even on a shape that is
    already marked correct/wrong/revealed. */
-.stage[data-game-active][data-game-mode="regions"] .province[data-plate]:focus-visible {
+.stage[data-game-active][data-game-mode="regions"] .hitEdge[data-plate]:focus-visible {
   stroke-width: calc(var(--game-hover-width) + 1.5px);
 }
 
-/* The other members of the focused shape's region. Same seven-rule shape as the hover block
-   — CSS still cannot say "the shapes whose data-region equals the focused one's" any other
-   way. `:not(:focus-visible)` on the subject keeps this rule off the focused shape itself:
-   these selectors compute to (0,11,0) and would otherwise beat the (0,6,0) rule above and
-   flatten the step back out. The hover mate rules carry the IDENTICAL guard for the
-   identical reason — a pointer resting on a mate is the other way into the same collapse
-   (→ CR-R2-1). The two are one mechanism written twice; change them together.
-   `:not([data-state])` for the same reason as hover: what the player DID outranks where the
-   focus is — for everyone except the focused shape. */
+/* The focused shape's REGION, shown the same way the pointer shows it. Same seven-rule shape
+   as the hover block — CSS still cannot say "the shapes whose data-region equals the focused
+   one's" any other way — and the same subject: the silhouette group, not the member borders.
+   `:not([data-state])` sits on the PROBE for the same reason as in the hover block: what the
+   player DID outranks where the focus is, for the region as a whole. The FOCUSED shape's own
+   line is unaffected by that (its rule above carries no such guard), so focus stays visible
+   on a solved province even when its region no longer re-outlines itself. */
 .stage[data-game-active][data-game-mode="regions"]
-  .svg:has(.province[data-region="MARMARA"]:focus-visible)
-  .province[data-region="MARMARA"]:not([data-state]):not(:focus-visible),
+  .svg:has(.hitEdge[data-region="MARMARA"]:focus-visible:not([data-state]))
+  .regionOutline[data-region="MARMARA"],
 .stage[data-game-active][data-game-mode="regions"]
-  .svg:has(.province[data-region="EGE"]:focus-visible)
-  .province[data-region="EGE"]:not([data-state]):not(:focus-visible),
+  .svg:has(.hitEdge[data-region="EGE"]:focus-visible:not([data-state]))
+  .regionOutline[data-region="EGE"],
 .stage[data-game-active][data-game-mode="regions"]
-  .svg:has(.province[data-region="AKDENIZ"]:focus-visible)
-  .province[data-region="AKDENIZ"]:not([data-state]):not(:focus-visible),
+  .svg:has(.hitEdge[data-region="AKDENIZ"]:focus-visible:not([data-state]))
+  .regionOutline[data-region="AKDENIZ"],
 .stage[data-game-active][data-game-mode="regions"]
-  .svg:has(.province[data-region="IC_ANADOLU"]:focus-visible)
-  .province[data-region="IC_ANADOLU"]:not([data-state]):not(:focus-visible),
+  .svg:has(.hitEdge[data-region="IC_ANADOLU"]:focus-visible:not([data-state]))
+  .regionOutline[data-region="IC_ANADOLU"],
 .stage[data-game-active][data-game-mode="regions"]
-  .svg:has(.province[data-region="KARADENIZ"]:focus-visible)
-  .province[data-region="KARADENIZ"]:not([data-state]):not(:focus-visible),
+  .svg:has(.hitEdge[data-region="KARADENIZ"]:focus-visible:not([data-state]))
+  .regionOutline[data-region="KARADENIZ"],
 .stage[data-game-active][data-game-mode="regions"]
-  .svg:has(.province[data-region="DOGU_ANADOLU"]:focus-visible)
-  .province[data-region="DOGU_ANADOLU"]:not([data-state]):not(:focus-visible),
+  .svg:has(.hitEdge[data-region="DOGU_ANADOLU"]:focus-visible:not([data-state]))
+  .regionOutline[data-region="DOGU_ANADOLU"],
 .stage[data-game-active][data-game-mode="regions"]
-  .svg:has(.province[data-region="GUNEYDOGU_ANADOLU"]:focus-visible)
-  .province[data-region="GUNEYDOGU_ANADOLU"]:not([data-state]):not(:focus-visible) {
-  stroke: var(--game-hover-edge);
-  stroke-width: var(--game-hover-width);
+  .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"]:focus-visible:not([data-state]))
+  .regionOutline[data-region="GUNEYDOGU_ANADOLU"] {
+  display: block;
 }
 
 /* Grab cursors while the shared zoom/pan island is dragging the stage — the game map's
@@ -448,7 +530,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .province[data-state="reveal"] {
+  .hitEdge[data-state="reveal"] {
     animation: none;
   }
 }

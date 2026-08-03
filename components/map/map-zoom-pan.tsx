@@ -105,9 +105,36 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
 
     const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    // --- filter radii that must not grow with the zoom -------------------------------
+    // A `<filter>` primitive's `radius` is in USER UNITS of the map's coordinate space, so
+    // zooming in magnifies it along with the geometry. The game map's bölge silhouette is
+    // drawn that way, and left uncompensated it reached a ~25px black band at 12× (measured;
+    // `overlay-6a`). The fix is one attribute write per frame: scale the radius by exactly
+    // the factor the view narrowed by, and the outline holds its on-screen thickness.
+    //
+    // Discovered by attribute, not by id, so this island stays surface-agnostic: /dunya has
+    // no such primitive and this whole block costs it one empty query. `data-zoom-radius`
+    // holds the BASE value and is never written to — only `radius` is — so repeated frames
+    // cannot compound, and re-reading after a bfcache restore still starts from the truth.
+    const zoomRadii = [...svg.querySelectorAll("[data-zoom-radius]")]
+      .map((node) => ({ node, base: Number(node.getAttribute("data-zoom-radius")) }))
+      .filter((entry) => Number.isFinite(entry.base) && entry.base > 0);
+    const writeZoomRadii = (v: ViewBox) => {
+      if (zoomRadii.length === 0 || world.w <= 0) return;
+      const scale = v.w / world.w;
+      for (const { node, base } of zoomRadii) {
+        node.setAttribute("radius", (base * scale).toFixed(4));
+      }
+    };
+
     // --- imperative viewBox writes, batched to one per frame (SPEC §8, INP) ----------
     let applyRaf: number | null = null;
-    const writeNow = (v: ViewBox) => svg.setAttribute("viewBox", formatViewBox(v));
+    // Both writes live here, so the radius can never lag a frame behind the view it
+    // compensates for — every path that moves the view goes through this function.
+    const writeNow = (v: ViewBox) => {
+      svg.setAttribute("viewBox", formatViewBox(v));
+      writeZoomRadii(v);
+    };
     const scheduleWrite = () => {
       if (applyRaf !== null) return;
       applyRaf = requestAnimationFrame(() => {
@@ -378,10 +405,13 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
     // keyboard focus pans; a mouse click that focuses-then-navigates never triggers it.
     //
     // "Focusable shape" is deliberately broader than `SVGAElement` (Kâşif PR-2): the game
-    // map's provinces are `<path>` elements the game island gives `tabindex` and
-    // `role="button"`, not links. `SVGAElement` still matches — a country link on /dunya
-    // is an `SVGGraphicsElement` and has no `tabindex` — so /dunya's behaviour is
-    // unchanged by construction. The `node !== svg` guard is load-bearing: the zoomable
+    // map's provinces are shapes the game island gives `tabindex` and `role="button"`, not
+    // links. `SVGAElement` still matches — a country link on /dunya is an
+    // `SVGGraphicsElement` and has no `tabindex` — so /dunya's behaviour is unchanged by
+    // construction. Since the maps went to layered `<use>` twins, the focused shape is an
+    // `SVGUseElement`: it is an `SVGGraphicsElement` too, and `getBBox()` on it returns the
+    // REFERENCED geometry's box, so this predicate and the fit below both keep working with
+    // no change (verified in a browser). The `node !== svg` guard is load-bearing: the zoomable
     // `<svg>` is itself an `SVGGraphicsElement` with `tabindex="0"` (set below), and
     // without the guard focusing the map surface would try to fit the map's own bounding
     // box and silently reset the view.

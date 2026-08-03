@@ -35,14 +35,55 @@
   overflow: hidden;
 }
 
+/* ---- THE THREE PAINT LAYERS (owner report 2026-08-02) ----------------------------------
+   Both maps now draw ONE copy of each outline, parked classless in `<defs>`, and paint it
+   twice: `[data-map-layer="base"]` is the map you see (fill + 1px resting border) and
+   `[data-map-layer="hit"]` is a twin that paints NOTHING at rest and carries ONLY the
+   hover/focus line — above every fill and every resting border on the map. That is what
+   makes a hovered shape's border the same weight on all four sides; before this, the
+   neighbours painted after it ate its inner half (SVG has no z-index, and document order
+   decides). The full measured reasoning lives in the component docblocks.
+
+   WHERE `vector-effect` WENT. It used to be declared here and is now a presentation
+   attribute on the `<defs>` geometry. It is NOT an inherited property, so a `<use>` clone
+   never picks it up from the `<use>` element — declaring it here would silently do nothing
+   and province borders would thicken with zoom (measured: a 1px border became a ~12px band
+   at 12×). Every other stroke/fill property below IS inherited and therefore does reach the
+   clone from the `<use>`, which is why they can stay in CSS. */
+
+.mapBase {
+  /* The painted map is scenery. Every hit — link, card, tab stop — is scored by the hit
+     layer above, so a pointer can never land on a shape's fill and pick up the wrong
+     ancestor. */
+  pointer-events: none;
+}
+
+/* The hit layer's shape: invisible until a state paints it, and hittable regardless.
+   `pointer-events: all` reads the shape's INTERIOR (as the fill-rule defines it — so the
+   world map's enclave holes stay click-through to the country underneath) and its perimeter,
+   without needing either to be painted.
+
+   `transparent`, NOT `none` — and the difference is visible, not pedantic. `none` is not an
+   interpolable value, so a transition between `none` and a colour is DISCRETE: the hover line
+   flips on at the halfway point of the 0.16s instead of fading, which is a downgrade on the
+   exact interaction this layer exists to improve (the twin is what these rules paint, so the
+   transition below has nowhere else to run). `transparent` is a colour, so `stroke` and `fill`
+   interpolate normally. Hit-testing is unaffected: `pointer-events: all` ignores the paint
+   value entirely — it is the one keyword that hit-tests an unpainted interior. (→ PR #40
+   review, code-reviewer CR-6.) */
+.hitEdge {
+  fill: transparent;
+  stroke: transparent;
+  stroke-linejoin: round;
+  pointer-events: all;
+}
+
 .province,
 .provinceInert,
 .landInert {
   stroke: var(--province-stroke);
   stroke-width: 1;
   stroke-linejoin: round;
-  /* Keep borders ~1px crisp regardless of the SVG's rendered width. */
-  vector-effect: non-scaling-stroke;
 }
 
 .province {
@@ -85,7 +126,7 @@
   outline: none;
 }
 
-.territory .landInert {
+.territory .hitEdge {
   transition:
     stroke 0.16s ease-out,
     stroke-width 0.16s ease-out;
@@ -111,6 +152,12 @@
    WCAG 1.4.1/1.4.11 will not accept as the state cue on its own. So the real floor is above
    1.5px, and 2px is the smallest value that leaves any step at all (→ 1.5px, half a pixel
    over resting — thin, but present). Today's 3.5px gives the territory 3px, a 2px step.
+   THE TWO LINES NOW LIVE ON DIFFERENT TWINS — the resting 1px is the base layer's
+   `.landInert`, the state line is the hit layer's `.hitEdge` — so the state OVERDRAWS the
+   resting border instead of replacing it. That changes nothing about the arithmetic above
+   (3px covers 1px completely, and both are opaque), and nothing about the floor: at 1.5px
+   the state line computes to 1px, lands exactly on the 1px line underneath it, and the step
+   is still invisible.
 
    Hover is gated on pointer type and on "not currently panning" for the same reasons as
    the country rule below; focus is gated on neither. Both HOVER rules in this file — this
@@ -118,13 +165,13 @@
    rule); the two FOCUS rules deliberately do not, so this block's pair is asymmetric on
    that point too. */
 @media (hover: hover) {
-  .mapRoot:not([data-panning]) .territory:hover .landInert {
+  .mapRoot:not([data-panning]) .territory:hover .hitEdge {
     stroke: var(--color-primary);
     stroke-width: calc(var(--map-hover-width) - 0.5px);
   }
 }
 
-.territory:focus-visible .landInert {
+.territory:focus-visible .hitEdge {
   stroke: var(--color-primary);
   stroke-width: calc(var(--map-hover-width) - 0.5px);
 }
@@ -136,7 +183,7 @@
   outline: none;
 }
 
-.provinceLink .province {
+.provinceLink .hitEdge {
   transition:
     fill 0.16s ease-out,
     stroke 0.16s ease-out,
@@ -159,18 +206,42 @@
    `@media (hover: hover)` — a touch device would otherwise leave the last-tapped shape
    outlined; the focus rule deliberately sits outside the query.
    NEW ANCESTOR REQUIREMENT: both hover rules in this file now need a `.mapRoot` ancestor,
-   which they did not before. Every consumer already has one — `turkey-map-section.tsx:65`
-   and `world-map-section.tsx:149` — and the marine map has its own `.mapRoot` in its own
-   module, so nothing bleeds across. A future surface that reuses `.provinceLink` WITHOUT
-   `.mapRoot` would silently lose hover; that is the coupling this note exists to name. */
+   which they did not before. Every consumer already has one — the `[data-map-root]` wrapper
+   in `turkey-map-section.tsx` and in `world-map-section.tsx` — and the marine map has its
+   own `.mapRoot` in its own module, so nothing bleeds across.
+   (NO LINE NUMBERS here, deliberately: this note has now been corrected twice because edits
+   above it shifted the targets. A file plus an identifier survives editing; a line number is
+   a treadmill. → PR #40 review round 2.) A future surface that reuses `.provinceLink` WITHOUT
+   `.mapRoot` would silently lose hover; that is the coupling this note exists to name.
+   THE SUBJECT IS NOW THE HIT-LAYER TWIN (`.hitEdge`), not the painted shape. That is the
+   whole owner-facing fix: the line is drawn above every fill and every resting border on
+   the map, so a hovered province is the same weight on all four sides instead of being
+   half-eaten by whichever neighbours happen to be painted after it.
+   THE FOCUS WASH MOVED WITH IT, AND IT IS A CHANGED COLOUR — an earlier version of this note
+   claimed the composite was "the same to within a fraction of a percent", which is wrong and
+   is corrected here (→ PR #40 review, code-reviewer CR-1). The old rule REPLACED the painted
+   shape's fill, so the 16% terracotta (--province-hover, #b0522e29) composited over whatever
+   was BEHIND the shape. The new rule paints it on the hit twin, over the base twin's white
+   --province-fill. Different backdrop ⇒ different colour. Measured on the running build:
+     · new, everywhere: rgb(242, 227, 221)  (wash over #fff)
+     · old on /dunya:   rgb(212, 207, 202)  (wash over the sea, rgb(219, 231, 232)) — up to
+       30 levels per channel apart; the state used to read cool grey, it now reads warm pink
+     · old on /turkiye: rgb(231, 209, 194) … rgb(239, 221, 211) (wash over the parchment
+       gradient rgb(241, 233, 222) → rgb(251, 248, 243)) — 3 to 27 levels apart
+   The a11y floor is unaffected either way: the focus INDICATOR is the 3.5px
+   --color-primary-dark line, not the wash (a fill-only ring measured 1.25:1 on white, under
+   the 3:1 graphical-object floor). The change is aesthetic, it is real, and it is in the
+   owner's sample set (`pr40-samples/10-dunya-odak-AU.png`, `11-oyun-odak-01.png`).
+   It is still applied exactly once — the base twin is never washed, so there is no double
+   coat. */
 @media (hover: hover) {
-  .mapRoot:not([data-panning]) .provinceLink:hover .province {
+  .mapRoot:not([data-panning]) .provinceLink:hover .hitEdge {
     stroke: var(--color-primary-dark);
     stroke-width: var(--map-hover-width);
   }
 }
 
-.provinceLink:focus-visible .province {
+.provinceLink:focus-visible .hitEdge {
   fill: var(--province-hover);
   stroke: var(--color-primary-dark);
   stroke-width: var(--map-hover-width);
@@ -431,8 +502,8 @@
     transform: translateY(-100%);
   }
 
-  .provinceLink .province,
-  .territory .landInert {
+  .provinceLink .hitEdge,
+  .territory .hitEdge {
     transition: none;
   }
 
