@@ -33,17 +33,47 @@
 
      The line is a DARKER SHADE OF THE WATER, not the administrative taupe. Rendered samples
      settled this: the dendritic reservoirs (Keban, Atatürk, Karakaya, Ilısu) have arms
-     narrower than one svg unit, so a 1px non-scaling stroke covers them from both sides and
-     the fill never shows — on those bodies the STROKE IS THE BODY, and in taupe they read as
-     brown scribbles rather than as lakes. See --map-water-line in globals.css for the
+     narrower than one svg unit — sub-pixel at render width — so the non-scaling stroke covers
+     them from both sides and the fill barely shows; on those bodies the STROKE IS (most of)
+     THE BODY, and in taupe they read as brown scribbles rather than as lakes. See --map-water-line in globals.css for the
      measured contrasts: it clears WCAG 1.4.11's 3:1 against ALL TEN backdrops this layer is
      drawn over — white land, its own fill, an inert province, AND the seven Okabe-Ito region
      tints the game's Bölge Bulma mode paints underneath it. That last set is why the token is
-     a near-black petrol rather than a mid-teal; the mid-teal failed 6 of the 7. Same width
-     and stroke family as a province edge, so the shoreline still reads as part of one
-     drawing. */
+     a near-black petrol rather than a mid-teal; the mid-teal failed 6 of the 7. Same stroke
+     FAMILY as a province edge (same colour discipline, same linejoin, same non-scaling
+     behaviour) — but deliberately HALF its width; see below. */
   stroke: var(--map-water-line);
-  stroke-width: 1;
+  /* HALF a province edge — OWNER RULING, 2026-08-03 (→ DEC 2026-08-03e md. 1): the shoreline
+     at 1px read as "çok kalın", and what was wanted is "belli belirsiz ince bir çizgi".
+
+     WHY 1px WAS ACTUALLY TOO THICK, in this frame's own units. One svg unit is ~1.677 km, so
+     one unit² is ~2.814 km², and the smallest body the ruled 30 km² rung draws is ~3.7 units
+     across (Marmara Gölü 38.6 km², Karamık 39.99 km²). `non-scaling-stroke` pins the line to
+     1 CSS px at every zoom, so on a 1000 px-wide map that line ate 54 % of such a lake's
+     diameter, and at a 390 px mobile width the lake is ~1.4 px across — i.e. the small lakes
+     were not lakes with an outline, they WERE the outline. At 0.5 the fill is visible again.
+
+     WHY NOT THINNER. 0.5 is the floor this layer can defend, and the constraint is WCAG
+     1.4.11, not taste. The declared colour does not change (--map-water-line #002337, and its
+     ten measured backdrops are still the ones listed in globals.css), but a sub-pixel line is
+     ANTIALIASED: it is composited at roughly its device-pixel coverage, so on a DPR-1 screen
+     0.5px lands at ~50 % alpha. Re-measuring #002337 blended at that alpha against the three
+     backdrops this layer must always survive gives 3.26:1 on white land, 3.12:1 on an inert
+     province and 3.06:1 on its own fill — still over the 3:1 graphical-object floor, with no
+     loss at all on DPR ≥ 2 where 0.5px is a full device pixel. The same measurement at 0.4px
+     gives 2.47 / 2.39 / 2.36 — under the floor on every one of them. So 0.4 is not a
+     "slightly thinner" option, it is a different compliance answer; it was rendered next to
+     this one for the owner's sample round and rejected on that measurement, not on taste.
+
+     The one context where the thin line's PERCEIVED contrast does drop below 3:1 on a DPR-1
+     screen is the game's Bölge Bulma mode, over the seven Okabe-Ito region tints. Accepted
+     deliberately: in that mode the lakes are decorative context rather than information
+     required to answer the question, the region tints differ from the water fill in hue and
+     lightness (so the fill carries the object there, unlike over near-white land), and DPR ≥ 2
+     is unaffected. If that ever has to be bought back, buy it with WIDTH (0.75), never by
+     lightening the token — going lighter fails Marmara #0072b2 from the other side, which is
+     the whole reason the token is a near-black petrol. */
+  stroke-width: 0.5;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
   /* NO opacity / fill-opacity, ever. The layer's whole job is to MASK the administrative

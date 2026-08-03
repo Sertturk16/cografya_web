@@ -97,6 +97,14 @@ const SNAPSHOT_EPSILON = 0.05; // ≈ 84 m; the drawing tolerance is 2.4×-10× 
  * the Türkiye area query but is a SYRIAN reservoir. It would have cleared the top tier.
  * Ruling this set by ID rather than by an area query is what keeps it out
  * (→ su-referans-envanteri §6 R4).
+ *
+ * NOT EVERY PINNED BODY IS DRAWN, and that is deliberate: this list is the SNAPSHOT's scope
+ * (the faithful ≥ 10 km² sweep), while what reaches the map is decided offline by
+ * `scripts/generate-tr-inland-water.mjs`. One pinned id is currently held back there as a
+ * duplicate — `relation/7336746` "Hoyran Gölü" is 99.94 % inside `relation/1410914` "Eğirdir
+ * Gölü" (→ DEC 2026-08-02q md. A). Do NOT "clean up" the pin list by removing it: the
+ * snapshot must stay complete, and the drawing decision belongs to the generator, next to
+ * the measurement that justifies it (`DRAWN_DUPLICATES`).
  */
 const PINNED_RELATIONS = [
   // ≥ 10 km², descending by measured area

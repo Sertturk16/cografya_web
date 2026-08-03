@@ -112,14 +112,27 @@ out ids bb;
 DEC 2026-08-02k md. 3), so every rung can be rendered from this one snapshot without
 another network round trip.
 
-**The owner ruled the middle rung — 30 km² (S1, 2026-08-02).** The generator therefore draws
-**50 of the 114 bodies** in this file (42.4 kB artifact); the other 64 stay in the snapshot,
-unread, so a future re-ruling is a `pnpm generate:water` and not a fetch. The rung is what
-brings the curriculum bodies that sit between the two candidate cuts onto the map — Marmara
-Gölü (38.6 km²), Suğla, Seyhan, Sır and Balık Gölü. It also admits **Karamık Gölü (39.99
-km²)**, one of the three bodies the source review flagged as cartographically doubtful (OSM
-also tags it `alt_name = Karamık Bataklığı`, i.e. a marsh); it enters by the rule rather than
-by preference, and it is in the owner's sample set for that reason.
+**The owner ruled the middle rung — 30 km² (S1, 2026-08-02).** **50 of the 114 bodies** in
+this file clear it and the generator draws **49** of them (42.2 kB artifact); the other 64
+stay in the snapshot, unread, so a future re-ruling is a `pnpm generate:water` and not a
+fetch. The rung is what brings the curriculum bodies that sit between the two candidate cuts
+onto the map — Marmara Gölü (38.6 km²), Suğla, Seyhan, Sır and Balık Gölü. It also admits
+**Karamık Gölü (39.99 km²)**, one of the three bodies the source review flagged as
+cartographically doubtful (OSM also tags it `alt_name = Karamık Bataklığı`, i.e. a marsh); it
+enters by the rule rather than by preference, and it is in the owner's sample set for that
+reason.
+
+**The 50th body is held back as a DUPLICATE, not by the rung.** `relation/7336746` "Hoyran
+Gölü" (138.01 km²) is the northern lobe of `relation/1410914` "Eğirdir Gölü" (453.02 km²), and
+OSM's Eğirdir relation already covers that lobe: sampling Hoyran's interior on a 900 × 900 grid
+puts **99.94 %** of it inside Eğirdir (→ DEC 2026-08-02q md. A). Drawing both painted ~138 km²
+of water twice and, because the two bodies simplify at different tolerances, drew the shared
+shoreline twice a fraction of a unit apart — a doubled shore plus a spurious line across open
+water at the strait. The same overlap sweep across all 50 bodies found **no other pair
+overlapping by more than 1 %**. The feature stays in this snapshot (it is a real OSM object and
+this file is the record of the sweep, not of the map); the exclusion lives in
+`scripts/generate-tr-inland-water.mjs` as `DRAWN_DUPLICATES`, next to its measurement, and the
+generator refuses to apply it if Eğirdir itself ever stops being drawn.
 
 ### Filters applied at fetch time
 

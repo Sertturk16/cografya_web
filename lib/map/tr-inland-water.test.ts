@@ -121,14 +121,29 @@ const FRAME_TOLERANCE = 1.5;
  * test would stay green (PR #39 review T4). `world-shapes.test.ts`'s `HOLE_CENSUS` is the
  * same instrument.
  *
- * 50 is the count at the owner-ruled 30 km² rung (S1, 2026-08-02). The cross-check below is
- * what ties the number to that ruling rather than leaving it a magic constant to be bumped
- * whenever it goes red.
+ * 49 = the 50 snapshot bodies at the owner-ruled 30 km² rung (S1, 2026-08-02), minus the one
+ * body the generator holds back as a duplicate (`DRAWN_DUPLICATES`, → DEC 2026-08-02q md. A).
+ * The cross-check below is what ties the number to those two rulings rather than leaving it a
+ * magic constant to be bumped whenever it goes red.
  */
-const EXPECTED_BODY_COUNT = 50;
+const EXPECTED_BODY_COUNT = 49;
 
 /** The owner-ruled drawing threshold in km² — mirrors `MIN_AREA_KM2` in the generator. */
 const MIN_AREA_KM2 = 30;
+
+/**
+ * Bodies present in the snapshot and above the threshold that the generator deliberately does
+ * NOT draw — mirrors `DRAWN_DUPLICATES` in `scripts/generate-tr-inland-water.mjs`, the same
+ * way `MIN_AREA_KM2` above mirrors its threshold.
+ *
+ * `r7336746` "Hoyran Gölü" is 99.94 % inside `r1410914` "Eğirdir Gölü": OSM's Eğirdir relation
+ * already covers that lobe, so drawing both painted ~138 km² of water twice and, because the
+ * two bodies simplify at different tolerances, drew the shared shoreline twice a fraction of a
+ * unit apart. The snapshot keeps the feature — it is a real OSM object and the file is the
+ * faithful record of the sweep — so this is a DRAWING rule, and the test has to know it or the
+ * id-set equality below would be asserting a rule the generator does not implement.
+ */
+const NOT_DRAWN: ReadonlySet<string> = new Set(["r7336746"]);
 
 describe("the generated inland-water artifact", () => {
   it("draws exactly the pinned number of bodies", () => {
@@ -159,9 +174,15 @@ describe("the generated inland-water artifact", () => {
       .filter((properties) => (properties?.areaKm2 ?? 0) >= MIN_AREA_KM2)
       .map((properties) => properties?.osmId)
       .filter((osmId): osmId is string => typeof osmId === "string");
+    const expected = eligible.filter((osmId) => !NOT_DRAWN.has(osmId));
 
-    expect(eligible).toHaveLength(EXPECTED_BODY_COUNT);
-    expect([...INLAND_WATER_SHAPES.map((shape) => shape.id)].sort()).toEqual([...eligible].sort());
+    // Both halves are asserted: that the exclusion is still EXACTLY as large as it claims to
+    // be (so a snapshot refresh dropping Hoyran turns this red instead of silently making the
+    // exclusion a no-op), and that the artifact is the faithful image of rung minus exclusion.
+    expect(eligible).toHaveLength(EXPECTED_BODY_COUNT + NOT_DRAWN.size);
+    expect(eligible.filter((osmId) => NOT_DRAWN.has(osmId))).toHaveLength(NOT_DRAWN.size);
+    expect(expected).toHaveLength(EXPECTED_BODY_COUNT);
+    expect([...INLAND_WATER_SHAPES.map((shape) => shape.id)].sort()).toEqual([...expected].sort());
   });
 
   it("keys every body with a unique, stable OSM id", () => {
