@@ -192,19 +192,20 @@ export function buildClimateChartGeometry(months: MonthPoint[]): ClimateChartGeo
 
   const columns: ChartColumn[] = months.map((m, i) => {
     const cx = roundTo(x0 + (i + 0.5) * slot);
-    const top = yPrecip(m.precipitationMm);
     // A bar always exists now — `precipitationMm` is a required field, so the old
-    // "no value ⇒ no bar" branch is gone. The height is still floored at 0: a NEGATIVE
-    // monthly precipitation total is physically impossible and would be a contract
-    // violation, and this is a MARKUP guard, not a data one — a negative `<rect height>`
-    // is invalid SVG with renderer-defined behaviour. The offending number is not hidden:
-    // it is printed unchanged in the always-visible table, which is the authoritative
-    // surface for the values and the honest place for a bad one to show up.
-    const h = Math.max(0, roundTo(y1 - top));
+    // "no value ⇒ no bar" branch is gone. The bar's TOP is clamped to the baseline, which
+    // is a MARKUP guard, not a data one: a NEGATIVE monthly total is physically impossible
+    // and would be a contract violation, and letting it through would emit a negative
+    // `<rect height>` (invalid SVG, renderer-defined behaviour) hanging below the plot.
+    // Clamping the top — rather than just flooring the height — is what keeps the bar's
+    // foot ON the baseline instead of parked outside the plot rectangle. The offending
+    // number is not hidden: it prints unchanged in the always-visible table, which is the
+    // authoritative surface for the values and the honest place for a bad one to show up.
+    const top = Math.min(yPrecip(m.precipitationMm), y1);
     return {
       month: m.month,
       cx,
-      bar: { x: roundTo(cx - barW / 2), y: top, w: barW, h },
+      bar: { x: roundTo(cx - barW / 2), y: top, w: barW, h: roundTo(y1 - top) },
       meanPoint: { x: cx, y: yTemp(m.tempMeanC) },
     };
   });

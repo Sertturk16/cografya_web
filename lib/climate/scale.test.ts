@@ -182,13 +182,18 @@ describe("buildClimateChartGeometry", () => {
       fixture({ 3: { precipitationMm: 0 }, 4: { precipitationMm: -1 } }),
     );
     for (const col of g.columns) {
-      // Every bar's foot sits on (or, for the floored case, above) the precip 0 baseline.
-      expect(col.bar.y + col.bar.h).toBeLessThanOrEqual(roundTo(g.plot.y1, 3) + 0.001);
+      // Every bar's foot sits EXACTLY on the precip 0 baseline — including the clamped
+      // negative one. Flooring only the height would leave that bar's foot below the
+      // plot rectangle, which is what this assertion caught.
+      expect(roundTo(col.bar.y + col.bar.h, 3)).toBe(roundTo(g.plot.y1, 3));
+      expect(col.bar.h).toBeGreaterThanOrEqual(0);
     }
     expect(g.columns[2]!.bar.h).toBe(0); // 0 mm is a real value → a zero-height bar
-    // A negative total is a contract violation; it is floored so the SVG stays valid
-    // (never a negative `height`). The raw number still prints in the table.
+    // A negative total is a contract violation; the bar's TOP is clamped to the baseline
+    // so the SVG stays valid (never a negative `height`, never a rect outside the plot).
+    // The raw number still prints in the table.
     expect(g.columns[3]!.bar.h).toBe(0);
+    expect(g.columns[3]!.bar.y).toBe(roundTo(g.plot.y1, 3));
   });
 
   it("keeps months in calendar order with ascending column centers", () => {
