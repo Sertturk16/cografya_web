@@ -205,8 +205,8 @@ impounding in 2022 and its polygon shows an intermediate state), so its area wil
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Source dataset**         | **JRC Global Surface Water v1.5 (1984–2024)**, `occurrence` + `extent` layers, 30 m                                                                                                |
 | **Publisher**              | European Commission Joint Research Centre / Google                                                                                                                                 |
-| **Bytes**                  | 83,611                                                                                                                                                                             |
-| **Format**                 | GeoJSON `FeatureCollection`, 9 features (MultiPolygon), coordinates `[lon, lat]` (WGS84), plus a `metadata` block                                                                  |
+| **Bytes**                  | 77,754                                                                                                                                                                             |
+| **Format**                 | GeoJSON `FeatureCollection`, 8 features (MultiPolygon), coordinates `[lon, lat]` (WGS84), plus a `metadata` block                                                                  |
 | **Per-feature properties** | `id`, `name`, `wikidata`, `areaKm2`, `rings`, `nodes`, `identity`, `window`, `identityNeighbourPx`, `componentsIdentity`, `componentsUsed`, `componentsTotal`, `extentCoveragePct` |
 | **Licence**                | Copernicus / EC JRC open data — free reuse **with attribution and citation**                                                                                                       |
 | **Required attribution**   | **`Source: EC JRC/Google`** — verbatim, never translated, rendered next to every TR-frame map                                                                                      |
@@ -286,8 +286,15 @@ and closing shaves anything reaching the edge.
 | `gsw-05` | Marmara Gölü  | Q1093090 |   61.4 |     2 |    77 |
 | `gsw-06` | Karamık Gölü  | Q6151136 |   37.8 |    21 |   175 |
 | `gsw-07` | Seyfe Gölü    | Q3383191 |   63.2 |    13 |   233 |
-| `gsw-08` | Acıgöl        | Q2820091 |  155.1 |    22 |   289 |
-| `gsw-09` | Yay Gölü      | —        |   84.8 |     1 |   139 |
+| `gsw-09` | Yay Gölü      | —        |   45.2 |     1 |    75 |
+
+**`gsw-08` is retired, not missing.** Acıgöl (Denizli) was built and then ruled out at the
+sample gate (→ DEC 2026-08-04h): GSW's seasonal basin there measures 155.1 km², **3.7× the
+published ~41.5 km²**, and its footprint takes in the industrial evaporation ponds beside the
+lake. Which boundary is "Acıgöl" was never established, and the map did not draw the lake
+before P7 either (the OSM record is 18.6 km², under the rung) — so absent beats wrong, and the
+reader loses nothing. A depiction from a source that separates the lake from the ponds is a
+future candidate. The id is not reused; the next body is `gsw-10`.
 
 `areaKm2` is measured on the traced rings, before reduction — it is a **drawing** measurement,
 not a figure for publication. **No number from this file is ever published as fact**: GSW is a

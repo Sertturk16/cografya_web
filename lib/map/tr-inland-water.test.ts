@@ -136,13 +136,17 @@ const FRAME_TOLERANCE = 1.5;
  * test would stay green (PR #39 review T4). `world-shapes.test.ts`'s `HOLE_CENSUS` is the
  * same instrument.
  *
- * 52 = the OSM bodies at the owner-ruled 30 km² rung (S1, 2026-08-02), minus the one held back
+ * 51 = the OSM bodies at the owner-ruled 30 km² rung (S1, 2026-08-02), minus the one held back
  * as a duplicate (`DRAWN_DUPLICATES`, → DEC 2026-08-02q md. A), minus the six replaced by a JRC
- * body, plus the nine JRC bodies (→ DEC 2026-08-02q §D, DEC 2026-08-03c). The cross-check below
- * is what ties the number to those rulings rather than leaving it a magic constant to be bumped
- * whenever it goes red.
+ * body, plus the eight JRC bodies (→ DEC 2026-08-02q §D, DEC 2026-08-03c). The cross-check
+ * below is what ties the number to those rulings rather than leaving it a magic constant to be
+ * bumped whenever it goes red.
+ *
+ * It was 52 until the sample gate ruled Acıgöl out (→ DEC 2026-08-04h) — a ninth JRC body whose
+ * GSW basin measured 3.7× the published figure. Note what did NOT happen: the OSM Acıgöl record
+ * is 18.6 km², under the rung, so the drawn set lost exactly one row and no lake left the map.
  */
-const EXPECTED_BODY_COUNT = 52;
+const EXPECTED_BODY_COUNT = 51;
 
 /** The owner-ruled drawing threshold in km² — mirrors `MIN_AREA_KM2` in the generator. */
 const MIN_AREA_KM2 = 30;
@@ -171,10 +175,10 @@ const NOT_DRAWN: ReadonlySet<string> = new Set(["r7336746"]);
  * features — it is the faithful record of its own sweep — so this is a DRAWING rule, and the
  * id-set equality below has to know it.
  *
- * Only SIX appear here rather than the nine JRC bodies: Seyfe and Acıgöl sit below the rung on
- * the OSM side (21.8 and 18.6 km²) so they were never drawn, and Yay Gölü has no OSM counterpart
- * at all. Listing only what is actually superseded AND drawn is what lets the arithmetic below
- * stay a derivation instead of a fudge.
+ * Only SIX appear here rather than the eight JRC bodies: Seyfe sits below the rung on the OSM
+ * side (21.8 km²) so it was never drawn, and Yay Gölü has no OSM counterpart at all. Listing
+ * only what is actually superseded AND drawn is what lets the arithmetic below stay a
+ * derivation instead of a fudge.
  */
 const SUPERSEDED_BY_JRC: ReadonlySet<string> = new Set([
   "r2411676",

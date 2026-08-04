@@ -234,7 +234,7 @@ const DRAWN_DUPLICATES = new Map([["r7336746", "r1410914"]]);
 /**
  * The HYBRID: which JRC body replaces which OSM record, and which replaces none.
  *
- * ## Why only these nine, and why the dams and permanent lakes stay on OSM
+ * ## Why only these eight, and why the dams and permanent lakes stay on OSM
  *
  * GSW's `occurrence` is the share of 1984–2024 observations that were water. For a body that
  * IS water every year that number is ~100 and the source barely matters (Van Gölü moves
@@ -252,12 +252,12 @@ const DRAWN_DUPLICATES = new Map([["r7336746", "r1410914"]]);
  * `DRAWN_DUPLICATES`, same reason: `data/tr-inland-water.geojson` is the faithful record of
  * the ODbL sweep and stays complete.
  *
- * Two of the superseded records are BELOW the rung today and therefore not drawn either way
- * (Seyfe 21.8 km², Acıgöl 18.6 km²). They are listed anyway: if the rung ever moves down,
- * the same water must not arrive twice from two sources.
+ * One of the superseded records is BELOW the rung today and therefore not drawn either way
+ * (Seyfe, 21.8 km²). It is listed anyway: if the rung ever moves down, the same water must
+ * not arrive twice from two sources.
  *
  * This map is also the JRC ROSTER. A body in the data file that is not a key here throws —
- * a nine-body registry and an eight-entry map is precisely the drift that would draw a lake
+ * an eight-body registry and a seven-entry map is precisely the drift that would draw a lake
  * on top of the OSM record it was supposed to replace.
  */
 const SUPERSEDED_BY_JRC = new Map([
@@ -268,7 +268,12 @@ const SUPERSEDED_BY_JRC = new Map([
   ["gsw-05", "r1761470"], // Marmara Gölü
   ["gsw-06", "r17083287"], // Karamık Gölü — SHRINKS under GSW
   ["gsw-07", "r1721352"], // Seyfe Gölü — below the rung on OSM, drawn under GSW
-  ["gsw-08", "w492757813"], // Acıgöl (Denizli). NOT w19325134, a different lake of the same name
+  // `gsw-08` (Acıgöl, Denizli) is absent BY RULING (→ DEC 2026-08-04h): GSW's basin there is
+  // 3.7× the published figure and takes in industrial evaporation ponds. Its OSM record
+  // `w492757813` (18.6 km²) is therefore no longer superseded — and is still not drawn,
+  // because it sits under the rung, which is exactly why dropping the body costs the reader
+  // nothing. Do NOT re-add the mapping without re-adding the body: the roster check below
+  // turns a dangling entry into a hard error, verified.
   ["gsw-09", null], // Yay Gölü — no OSM counterpart in our snapshot
 ]);
 

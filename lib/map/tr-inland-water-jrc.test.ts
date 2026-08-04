@@ -233,8 +233,10 @@ describe("T7 — no body swallows another", () => {
     // Mirrors SUPERSEDED_BY_JRC in scripts/generate-tr-inland-water.mjs. Duplicated on
     // purpose: if the generator's map changes, a human must look at this list rather than have
     // it silently follow along, because "which OSM record does this JRC body replace" is
-    // exactly the decision a leak would hide. All nine are listed here (not just the six that
-    // are drawn) because a sub-rung record still sits under its replacement geometrically.
+    // exactly the decision a leak would hide. All SEVEN mapped records are listed (not just the
+    // six that are drawn) because a sub-rung record still sits under its replacement
+    // geometrically. `w492757813` (Acıgöl) is deliberately NOT here: DEC 2026-08-04h dropped
+    // its JRC body, so nothing supersedes it any more.
     const superseded = new Set([
       "r2411676",
       "r16862988",
@@ -243,7 +245,6 @@ describe("T7 — no body swallows another", () => {
       "r1761470",
       "r17083287",
       "r1721352",
-      "w492757813",
     ]);
 
     const drawnOsm = osm.features

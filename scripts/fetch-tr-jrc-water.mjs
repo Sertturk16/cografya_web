@@ -174,7 +174,7 @@ const PIXEL_SIZE_DEG = 0.00025;
  *
  * The alternative — an axis-true metric, i.e. a weighted distance transform so that a
  * "300 m" radius really is 300 m on both axes — is deliberately NOT taken here: it would
- * change the geometry of all nine bodies and invalidate the closing-radius frames the owner
+ * change the geometry of every body and invalidate the closing-radius frames the owner
  * is about to rule on. It stays available as a follow-up if ground-true radii are ever
  * wanted; what is not acceptable is a docblock that claims a precision the code lacks.
  */
@@ -268,7 +268,7 @@ const DOWNLOAD_ROOT = "https://storage.googleapis.com/water-world/download2024/V
  * are copied into the output's `metadata`, so a reader can tell which bytes produced the
  * geometry without owning the 505 MB.
  *
- * Only the two `*_40N` granules are actually touched by today's nine bodies; the set is
+ * Only the two `*_40N` granules are actually touched by today's eight bodies; the set is
  * pinned for the whole country because that is the download the recipe describes, and a
  * tenth body north of 40°N must not silently read an unverified file.
  */
@@ -326,7 +326,8 @@ const GRANULES = {
 // --- The registry -------------------------------------------------------------------
 
 /**
- * The nine bodies whose geometry comes from GSW, hand-curated (→ DEC 2026-08-02q §D + §G).
+ * The eight bodies whose geometry comes from GSW, hand-curated (→ DEC 2026-08-02q §D + §G;
+ * a ninth, Acıgöl, was ruled out at the sample gate — see the tombstone below `gsw-07`).
  *
  * ## The identity test (→ DEC 2026-08-04d), and why it replaced the seed box
  *
@@ -341,7 +342,7 @@ const GRANULES = {
  *
  * 1. **`identity`** — a small box pinned in the CORE of the body, and the component covering
  *    it is the main body. Each one sits at the deepest interior point of its own component
- *    (measured: the shallowest of the nine is 1.65 km of clearance, the box half-width is
+ *    (measured: the shallowest of the eight is 1.65 km of clearance, the box half-width is
  *    under 450 m), so it survives a threshold change rather than falling on a dry pixel.
  * 2. **`IDENTITY_NEIGHBOUR_PX`** — components within that many pixels of the main body join
  *    it; anything further away is a different lake, whatever box it happens to fall in.
@@ -469,22 +470,21 @@ const REGISTRY = [
     expectedKm2: 54.1,
     note: "Ramsar; newly drawn",
   },
-  {
-    id: "gsw-08",
-    name: "Acıgöl",
-    wikidata: "Q2820091",
-    // 134.9 km² / lon 29.7085–29.9725 / lat 37.7762–37.8912. **The 134.9 ↔ ~41.5 km²
-    // discrepancy (P7 brief errata E1) is OPEN and is an owner call at the sample gate**: the
-    // interior of our OSM polygon averages occurrence 99, i.e. that 18.6 km² is a permanent
-    // core (probably the sodium-sulphate works), while GSW's basin is three times the
-    // published figure. If the owner rejects the basin the cost is nil — this entry is
-    // removed and the OSM core stays below the rung, so nothing is drawn either way.
-    // `w19325134` is a DIFFERENT Acıgöl (1.04 km², Konya) and is not touched.
-    identity: { minLon: 29.91, maxLon: 29.918, minLat: 37.842, maxLat: 37.85 },
-    window: { minLon: 29.64, maxLon: 30.04, minLat: 37.71, maxLat: 37.96 },
-    expectedKm2: 147.1,
-    note: "E1 discrepancy open — owner decides at the sample gate",
-  },
+  // `gsw-08` — Acıgöl (Denizli) — DELIBERATELY ABSENT (→ DEC 2026-08-04h).
+  //
+  // The id is retired, not reused: `gsw-NN` keys are assigned once and never renumbered
+  // (→ DEC 2026-08-03c, Q8), so a future `gsw-10` is the next body, and anything that ever
+  // referred to `gsw-08` still refers to Acıgöl.
+  //
+  // Why it is not drawn: GSW's seasonal basin here measures 155.1 km², **3.7× the published
+  // ~41.5 km²**, and its footprint takes in the industrial evaporation ponds beside the lake
+  // as well as the lake. Which of the two boundaries is "Acıgöl" was never established, and
+  // the pre-P7 map did not draw Acıgöl either (the OSM record `w492757813` is 18.6 km², under
+  // the 30 km² rung), so leaving it out costs the reader nothing while drawing it would
+  // publish a shape 3.7× too large. Absent beats wrong.
+  //
+  // Restoring it is NOT a matter of un-commenting this: it needs a source that separates the
+  // lake from the ponds. Recorded as a future candidate, untracked.
   {
     id: "gsw-09",
     name: "Yay Gölü",
