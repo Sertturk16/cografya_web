@@ -18,6 +18,12 @@
 # never committed (see .claude/reviewers/README.md).
 /pr-reviews/
 
+# JRC Global Surface Water granule cache — 505 MB of raw GeoTIFF (occurrence + extent,
+# 6 granules × 2 layers) plus the SHA-256 manifest that pins them. The raster step is
+# manual and never runs in CI; what the repo commits is the DERIVED GeoJSON, never the
+# source raster (same rule as the OSM snapshot: reduced, not rewritten).
+/.jrc-cache/
+
 # next.js
 /.next/
 /out/

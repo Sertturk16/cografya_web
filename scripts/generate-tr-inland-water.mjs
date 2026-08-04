@@ -2,10 +2,23 @@
 /**
  * Build-time generator: TR inland-water GeoJSON → inline SVG `<path>` data.
  *
- * Reads the committed ODbL snapshot `data/tr-inland-water.geojson` (see `data/README.md`
- * and `scripts/fetch-tr-inland-water.mjs`) and emits `lib/map/tr-inland-water.generated.ts`:
- * one simplified path per drawn water body, in the SAME pinned frame as the province
- * outlines (`scripts/lib/tr-frame.mjs`).
+ * Reads TWO committed, separately licensed snapshots and emits ONE artifact
+ * (`lib/map/tr-inland-water.generated.ts`): one simplified path per drawn water body, in the
+ * SAME pinned frame as the province outlines (`scripts/lib/tr-frame.mjs`).
+ *
+ *   data/tr-inland-water.geojson       ODbL, OpenStreetMap   scripts/fetch-tr-inland-water.mjs
+ *   data/tr-inland-water-jrc.geojson   Copernicus, EC JRC    scripts/fetch-tr-jrc-water.mjs
+ *
+ * ## Why two files and not one (→ DEC 2026-08-01r-1, and the reason it is worth the code)
+ *
+ * ODbL's share-alike applies to a derived DATABASE: merging the JRC geometry into the ODbL
+ * file would pull the merged result under ODbL, which the Copernicus terms do not grant.
+ * Rendering both into one SVG is a *produced work* and carries no such obligation. So the
+ * two databases meet HERE, in code, and never on disk. `data/README.md` records both.
+ *
+ * The consequence for this file: the hybrid decision — which OSM bodies the JRC class
+ * replaces — lives in `SUPERSEDED_BY_JRC` below. It is a list of ids in a program, not a
+ * column in a data file, which is exactly what keeps each data file single-licensed.
  *
  * Run once and COMMIT the output (`pnpm generate:water`). CI/runtime never invoke it; the
  * app imports the committed artifact, and the raw GeoJSON never reaches the client
@@ -20,15 +33,21 @@
  *
  * ## What decides whether a body is drawn
  *
- * One number: `MIN_AREA_KM2`, applied to `areaKm2`, which the fetch step measured on the
- * VERBATIM source rings (outer − inner). The owner rules this number from rendered samples
- * at 40 / 30 / 10 km² (the ladder in DEC 2026-08-02k md. 3); the snapshot holds every body
- * down to 10 km² so switching rungs is a regenerate, not a network round trip.
+ * One number: `MIN_AREA_KM2`, applied to `areaKm2`, which each fetch step measured on its
+ * OWN source geometry. The owner rules this number from rendered samples at 40 / 30 / 10 km²
+ * (the ladder in DEC 2026-08-02k md. 3); the snapshot holds every body down to 10 km² so
+ * switching rungs is a regenerate, not a network round trip.
+ *
+ * **The rung is applied PER SOURCE** (→ DEC 2026-08-03c, Q9): a JRC body is measured against
+ * its JRC area, an OSM body against its OSM area. There is no third, reconciled figure to
+ * measure against — the whole point of the hybrid is that the two sources answer "how big is
+ * this lake" differently, and a seasonal lake's honest answer is the 41-year one.
  *
  * NOTHING numeric leaves this file. No area, no name, no tier reaches the artifact, the
  * messages files or any component (→ DEC 2026-08-01r-4): the measurements live in this
- * console report, in the snapshot's own properties and in `data/README.md`. The artifact
- * carries an OSM id purely as a stable React key and traceability handle.
+ * console report, in the snapshots' own properties and in `data/README.md`. The artifact
+ * carries a source id purely as a stable React key and traceability handle — `r36995` /
+ * `w852912181` for OSM, `gsw-01`… for JRC (→ DEC 2026-08-03c, Q8).
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -40,7 +59,13 @@ import { measureRingAreaKm2, simplifyRing } from "./lib/water-geometry.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
-const SRC = join(ROOT, "data", "tr-inland-water.geojson");
+const SRC_OSM = join(ROOT, "data", "tr-inland-water.geojson");
+/**
+ * The JRC snapshot. `JRC_SOURCE` exists ONLY to render an owner variant (a different
+ * component rule or closing radius) from a file produced into `.jrc-cache/variants/`; it is
+ * never set in CI, so `generate:water:check` always compares against the committed recipe.
+ */
+const SRC_JRC = process.env.JRC_SOURCE ?? join(ROOT, "data", "tr-inland-water-jrc.geojson");
 const OUT = join(ROOT, "lib", "map", "tr-inland-water.generated.ts");
 
 /**
@@ -206,6 +231,52 @@ const FRAME_TOLERANCE = 1.5;
  */
 const DRAWN_DUPLICATES = new Map([["r7336746", "r1410914"]]);
 
+/**
+ * The HYBRID: which JRC body replaces which OSM record, and which replaces none.
+ *
+ * ## Why only these eight, and why the dams and permanent lakes stay on OSM
+ *
+ * GSW's `occurrence` is the share of 1984–2024 observations that were water. For a body that
+ * IS water every year that number is ~100 and the source barely matters (Van Gölü moves
+ * 0.8 % across the whole 1–75 % threshold range). For a body that fills and dries it is the
+ * only honest description we have, and OSM — a single traced satellite moment — is not.
+ *
+ * The same statistic is why reservoirs must NOT come from GSW: a dam impounded in 2018 has
+ * been water for six of the forty-one years, so its occurrence is low everywhere. Measured:
+ * Ilısu 286.0 → 22.2 km² (→ DEC 2026-08-02q §D). The denominator is the trap.
+ *
+ * ## What the values mean
+ *
+ * `null` = this JRC body replaces nothing; the map has never drawn it (Yay Gölü).
+ * Otherwise the OSM record is dropped from the DRAWING, not from the snapshot — same rule as
+ * `DRAWN_DUPLICATES`, same reason: `data/tr-inland-water.geojson` is the faithful record of
+ * the ODbL sweep and stays complete.
+ *
+ * One of the superseded records is BELOW the rung today and therefore not drawn either way
+ * (Seyfe, 21.8 km²). It is listed anyway: if the rung ever moves down, the same water must
+ * not arrive twice from two sources.
+ *
+ * This map is also the JRC ROSTER. A body in the data file that is not a key here throws —
+ * an eight-body registry and a seven-entry map is precisely the drift that would draw a lake
+ * on top of the OSM record it was supposed to replace.
+ */
+const SUPERSEDED_BY_JRC = new Map([
+  ["gsw-01", "r2411676"], // Tuz Gölü — three OSM fragments, one GSW basin
+  ["gsw-02", "r16862988"], // Akşehir Gölü
+  ["gsw-03", "r2385434"], // Eber Gölü
+  ["gsw-04", "r17069201"], // Tersakan Gölü — SHRINKS under GSW
+  ["gsw-05", "r1761470"], // Marmara Gölü
+  ["gsw-06", "r17083287"], // Karamık Gölü — SHRINKS under GSW
+  ["gsw-07", "r1721352"], // Seyfe Gölü — below the rung on OSM, drawn under GSW
+  // `gsw-08` (Acıgöl, Denizli) is absent BY RULING (→ DEC 2026-08-04h): GSW's basin there is
+  // 3.7× the published figure and takes in industrial evaporation ponds. Its OSM record
+  // `w492757813` (18.6 km²) is therefore no longer superseded — and is still not drawn,
+  // because it sits under the rung, which is exactly why dropping the body costs the reader
+  // nothing. Do NOT re-add the mapping without re-adding the body: the roster check below
+  // turns a dangling entry into a hard error, verified.
+  ["gsw-09", null], // Yay Gölü — no OSM counterpart in our snapshot
+]);
+
 function readThreshold() {
   return readNumberEnv("WATER_MIN_AREA_KM2", 30);
 }
@@ -222,17 +293,115 @@ function readNumberEnv(name, fallback) {
 }
 
 // --- Load ---------------------------------------------------------------------
-const snapshot = JSON.parse(readFileSync(SRC, "utf8"));
-if (snapshot.type !== "FeatureCollection" || !Array.isArray(snapshot.features)) {
-  throw new Error(`Unexpected GeoJSON: ${SRC}`);
+
+/** @param {string} path */
+function readCollection(path) {
+  const collection = JSON.parse(readFileSync(path, "utf8"));
+  if (collection.type !== "FeatureCollection" || !Array.isArray(collection.features)) {
+    throw new Error(`Unexpected GeoJSON: ${path}`);
+  }
+  return collection;
 }
 
-/** @type {{ id: string, name: string, areaKm2: number, d: string, vertices: number, rings: number, droppedRings: number, areaLossPct: number, overshoot: number }[]} */
+const snapshot = readCollection(SRC_OSM);
+const jrc = readCollection(SRC_JRC);
+
+// The licence separation is a property of the DATA, so it is checked against the data rather
+// than trusted from the scripts that wrote it: a merge would most plausibly arrive as someone
+// "helpfully" copying features between the two files.
+if (snapshot.metadata?.licence === jrc.metadata?.licence) {
+  throw new Error(
+    `${SRC_OSM} and ${SRC_JRC} declare the same licence. These are two separately licensed ` +
+      `databases that must never be merged (→ DEC 2026-08-01r-1); if they now agree, one of ` +
+      `them has been overwritten with the other's provenance.`,
+  );
+}
+
+/**
+ * Both sources, normalised to what the drawing loop needs.
+ *
+ * OSM features key on `osmId`, JRC features on `id`; every other field the two files carry is
+ * ignored here. `sourceLabel` exists only for the console report — no source name reaches the
+ * artifact any more than an area does.
+ *
+ * @typedef {{ type: string, coordinates: number[][][] | number[][][][] }} SourceGeometry
+ * @type {{ id: string, name: string, areaKm2: number, geometry: SourceGeometry, source: "osm" | "jrc" }[]}
+ */
+const bodies = [];
+for (const feature of snapshot.features) {
+  const properties = feature.properties ?? {};
+  if (typeof properties.osmId !== "string" || typeof properties.areaKm2 !== "number") {
+    throw new Error(
+      `Snapshot feature without osmId/areaKm2 — the snapshot is not the one this generator expects.`,
+    );
+  }
+  bodies.push({
+    id: properties.osmId,
+    name: properties.name ?? "(unnamed)",
+    areaKm2: properties.areaKm2,
+    geometry: feature.geometry,
+    source: "osm",
+  });
+}
+for (const feature of jrc.features) {
+  const properties = feature.properties ?? {};
+  if (typeof properties.id !== "string" || typeof properties.areaKm2 !== "number") {
+    throw new Error(
+      `JRC feature without id/areaKm2 — ${SRC_JRC} is not the one this generator expects.`,
+    );
+  }
+  if (!SUPERSEDED_BY_JRC.has(properties.id)) {
+    throw new Error(
+      `${properties.id} is in ${SRC_JRC} but not in SUPERSEDED_BY_JRC. Every JRC body must ` +
+        `declare which OSM record it replaces (or \`null\` for none) before it can be drawn — ` +
+        `otherwise the same water can arrive twice from two sources.`,
+    );
+  }
+  bodies.push({
+    id: properties.id,
+    name: properties.name ?? "(unnamed)",
+    areaKm2: properties.areaKm2,
+    geometry: feature.geometry,
+    source: "jrc",
+  });
+}
+
+// Every JRC body the roster promises must actually be in the data file. Without this a
+// truncated or half-written JRC snapshot would silently drop a lake AND silently un-supersede
+// its OSM record, which is the same defect in both directions at once.
+for (const jrcId of SUPERSEDED_BY_JRC.keys()) {
+  if (!bodies.some((body) => body.source === "jrc" && body.id === jrcId)) {
+    throw new Error(`${jrcId} is declared in SUPERSEDED_BY_JRC but missing from ${SRC_JRC}.`);
+  }
+}
+
+/**
+ * OSM records the JRC class replaces. Built from the roster, and every one of them is
+ * verified to EXIST in the ODbL snapshot: a refreshed snapshot that renumbered or dropped an
+ * id would otherwise turn its override into a silent no-op and draw both bodies.
+ *
+ * @type {Map<string, string>} osm id → the JRC id that replaces it
+ */
+const supersededOsmIds = new Map();
+for (const [jrcId, osmId] of SUPERSEDED_BY_JRC) {
+  if (osmId === null) continue;
+  if (!snapshot.features.some((feature) => feature.properties?.osmId === osmId)) {
+    throw new Error(
+      `${jrcId} supersedes ${osmId}, but ${osmId} is not in ${SRC_OSM}. The override would ` +
+        `be a no-op — re-check SUPERSEDED_BY_JRC against the refreshed snapshot.`,
+    );
+  }
+  supersededOsmIds.set(osmId, jrcId);
+}
+
+/** @type {{ id: string, name: string, source: string, areaKm2: number, d: string, vertices: number, rings: number, droppedRings: number, areaLossPct: number, overshoot: number }[]} */
 const drawn = [];
 let skipped = 0;
 let maxOvershoot = 0;
 /** @type {string[]} */
 const excludedDuplicates = [];
+/** @type {string[]} */
+const excludedSuperseded = [];
 
 // A duplicate may only be dropped while the body that ABSORBS it is itself above the
 // threshold and present in the snapshot. Without this, a future re-source that removes or
@@ -255,26 +424,54 @@ for (const [duplicateId, keptId] of DRAWN_DUPLICATES) {
   }
 }
 
-for (const feature of snapshot.features) {
-  const properties = feature.properties ?? {};
-  const osmId = properties.osmId;
-  const areaKm2 = properties.areaKm2;
-  if (typeof osmId !== "string" || typeof areaKm2 !== "number") {
-    throw new Error(
-      `Snapshot feature without osmId/areaKm2 — the snapshot is not the one this generator expects.`,
-    );
-  }
+/**
+ * A superseded OSM record may only be dropped while its JRC replacement is ITSELF drawn.
+ *
+ * Without this, a JRC body that falls under the rung takes its OSM twin down with it and the
+ * lake vanishes from all four surfaces in silence: the artifact loses two rows, and
+ * `tr-inland-water.test.ts`'s id-set derivation shrinks in lockstep, so the suite stays green
+ * while the map loses a lake. Karamık is one radius choice away from this — 37.8 km² against
+ * a 30 km² rung — and the owner's sample gate is currently offering radius variants.
+ *
+ * This is the exact twin of the `DRAWN_DUPLICATES` pre-check above, for the exact same
+ * reason: an exclusion must never be able to remove the water itself instead of the
+ * double count.
+ */
+for (const [jrcId, osmId] of SUPERSEDED_BY_JRC) {
+  if (osmId === null) continue;
+  const replacement = bodies.find((body) => body.source === "jrc" && body.id === jrcId);
+  if (replacement !== undefined && replacement.areaKm2 >= MIN_AREA_KM2) continue;
+  const superseded = bodies.find((body) => body.source === "osm" && body.id === osmId);
+  if (superseded === undefined || superseded.areaKm2 < MIN_AREA_KM2) continue;
+  throw new Error(
+    `${osmId} is superseded by ${jrcId}, but ${jrcId} measures ` +
+      `${replacement?.areaKm2?.toFixed(1) ?? "—"} km² and does not clear ` +
+      `MIN_AREA_KM2=${MIN_AREA_KM2}, while ${osmId} (${superseded.areaKm2.toFixed(1)} km²) ` +
+      `does. Dropping it now would remove the lake from the map entirely rather than replace ` +
+      `it — re-check the recipe or SUPERSEDED_BY_JRC before regenerating.`,
+  );
+}
+
+for (const body of bodies) {
+  const { id, name, areaKm2 } = body;
+  // PER-SOURCE rung (→ DEC 2026-08-03c, Q9): `areaKm2` is whichever source measured this
+  // body, so the comparison needs no branch — the branchlessness IS the rule.
   if (areaKm2 < MIN_AREA_KM2) {
     skipped++;
     continue;
   }
-  const duplicateOf = DRAWN_DUPLICATES.get(osmId);
+  const supersededBy = supersededOsmIds.get(id);
+  if (supersededBy !== undefined) {
+    excludedSuperseded.push(`${id} (${name}) → ${supersededBy}`);
+    continue;
+  }
+  const duplicateOf = DRAWN_DUPLICATES.get(id);
   if (duplicateOf !== undefined) {
-    excludedDuplicates.push(`${osmId} (${properties.name ?? "unnamed"}) ⊂ ${duplicateOf}`);
+    excludedDuplicates.push(`${id} (${name}) ⊂ ${duplicateOf}`);
     continue;
   }
 
-  const geometry = feature.geometry;
+  const geometry = body.geometry;
   const polygons = geometry.type === "MultiPolygon" ? geometry.coordinates : [geometry.coordinates];
 
   // One tolerance per BODY, not per ring: a reservoir's small detached arm belongs to the
@@ -304,7 +501,7 @@ for (const feature of snapshot.features) {
   }
   if (candidates.length === 0) {
     throw new Error(
-      `${osmId}: every ring collapsed at ε=${epsilon} although the body is above the threshold.`,
+      `${id}: every ring collapsed at ε=${epsilon} although the body is above the threshold.`,
     );
   }
 
@@ -315,7 +512,7 @@ for (const feature of snapshot.features) {
 
   const points = kept.flatMap((candidate) => candidate.points);
   const { maxOvershoot: overshoot } = assertInsideFrame(points, {
-    label: `${osmId} (${properties.name ?? "unnamed"})`,
+    label: `${id} (${name})`,
     tolerance: FRAME_TOLERANCE,
   });
   if (overshoot > maxOvershoot) maxOvershoot = overshoot;
@@ -326,8 +523,9 @@ for (const feature of snapshot.features) {
   const sourceKm2 = candidates.reduce((sum, candidate) => sum + candidate.sourceArea, 0);
 
   drawn.push({
-    id: osmId,
-    name: properties.name ?? "(unnamed)",
+    id,
+    name,
+    source: body.source,
     areaKm2,
     d: encodePath(kept.map((candidate) => candidate.points)),
     vertices: points.length,
@@ -354,7 +552,8 @@ const body = drawn
   .join("\n");
 
 const out = `// AUTO-GENERATED by scripts/generate-tr-inland-water.mjs — DO NOT EDIT BY HAND.
-// Source: data/tr-inland-water.geojson (© OpenStreetMap katkıcıları, ODbL).
+// Sources: data/tr-inland-water.geojson (© OpenStreetMap katkıcıları, ODbL)
+//          data/tr-inland-water-jrc.geojson (JRC Global Surface Water — Source: EC JRC/Google)
 // Regenerate with: pnpm generate:water
 //
 // Türkiye's inland water bodies — natural lakes and reservoirs — as inline SVG paths in the
@@ -364,18 +563,24 @@ const out = `// AUTO-GENERATED by scripts/generate-tr-inland-water.mjs — DO NO
 // running across a lake, which is the convention every published Türkiye political map
 // follows (→ DEC 2026-08-01r-3).
 //
+// HYBRID SOURCING (→ DEC 2026-08-02q). Dams and permanent lakes come from OSM; the seasonal
+// and salt lakes come from JRC Global Surface Water, whose 41-year occurrence statistic is
+// the only honest description of a body that fills and dries. The two databases are NEVER
+// merged on disk — they meet only here and, as pixels, in one rendered SVG.
+//
 // This file carries NO name, NO area and NO tier — only geometry and a stable key
 // (→ DEC 2026-08-01r-4). The measurements that decided which bodies are here live in the
-// generator's console report, in the snapshot's own properties and in data/README.md.
+// generator's console report, in the snapshots' own properties and in data/README.md.
 //
-// ODbL: this data is never merged with the public-domain Natural Earth sea/neighbour layer.
-// The attribution already rendered next to every map surface covers it.
+// Neither source is ever merged with the public-domain Natural Earth sea/neighbour layer.
+// The attribution rendered next to every map surface covers both.
 
 /** One inland water body in the shared \`MAP_VIEWBOX\` coordinate space. */
 export interface InlandWaterShape {
   /**
-   * Stable OpenStreetMap key — \`"r36995"\` (relation) or \`"w852912181"\` (way). Used as the
-   * React key and as the traceability handle back into the snapshot. NEVER displayed.
+   * Stable source key — \`"r36995"\` / \`"w852912181"\` for OpenStreetMap, \`"gsw-01"\` for a
+   * JRC Global Surface Water body (→ DEC 2026-08-03c, Q8). Used as the React key and as the
+   * traceability handle back into the snapshot it came from. NEVER displayed.
    */
   readonly id: string;
   /** SVG path \`d\` (one closed subpath per drawn ring; islands are not drawn). */
@@ -404,7 +609,9 @@ for (const shape of drawn) counts[tier(shape.areaKm2)]++;
 
 console.log(`generate:water → ${OUT}
   threshold        : ${MIN_AREA_KM2} km²  ·  epsilon β=${EPSILON_BETA} clamped to [${EPSILON_MIN}, ${EPSILON_MAX}] svg units
-  bodies drawn     : ${drawn.length} (tier A ${counts.A} · B ${counts.B} · C ${counts.C}) · ${skipped} below threshold
+  sources          : ${SRC_OSM.replace(`${ROOT}/`, "")} (ODbL) + ${SRC_JRC.replace(`${ROOT}/`, "")} (EC JRC/Google)
+  bodies drawn     : ${drawn.length} (OSM ${drawn.filter((s) => s.source === "osm").length} · JRC ${drawn.filter((s) => s.source === "jrc").length}) (tier A ${counts.A} · B ${counts.B} · C ${counts.C}) · ${skipped} below threshold
+  superseded       : ${excludedSuperseded.length} of ${[...SUPERSEDED_BY_JRC.values()].filter((id) => id !== null).length} mapped OSM records were above the rung and are now replaced${excludedSuperseded.map((entry) => `\n      ${entry}`).join("")}
   duplicates held  : ${excludedDuplicates.length} above threshold but not drawn${excludedDuplicates.map((entry) => `\n      ${entry}`).join("")}
   vertices         : ${vertices} · ${(pathBytes / vertices).toFixed(2)} B/vertex
   path data        : ${(pathBytes / 1024).toFixed(1)} kB · whole artifact ${(bytes / 1024).toFixed(1)} kB
@@ -419,7 +626,7 @@ if (process.env.WATER_REPORT === "full") {
     drawn
       .map(
         (s) =>
-          `  ${s.areaKm2.toFixed(1).padStart(8)} km²  ${s.id.padEnd(12)} ${String(s.vertices).padStart(5)} v  ` +
+          `  ${s.areaKm2.toFixed(1).padStart(8)} km²  ${s.source.padEnd(4)} ${s.id.padEnd(12)} ${String(s.vertices).padStart(5)} v  ` +
           `${s.areaLossPct.toFixed(2).padStart(6)}%  ${s.name}`,
       )
       .join("\n"),
