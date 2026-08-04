@@ -26,15 +26,40 @@ const CHART_ANCHOR: Record<Locale, string> = {
 
 /**
  * The "Sıcaklık ve Yağış Grafiği" block — a new `<h3>` INSIDE the existing İklim `<h2>`
- * (PLAN §2 layout: it follows the untouchable MGM methodology `<details>` and the NOVA
- * narrative slot). It is rendered ONLY when the province has a publishable climate series
+ * (PLAN §2 layout: it follows the Köppen methodology `<details>` and the NOVA narrative
+ * slot). It is rendered ONLY when the province has a publishable climate series
  * (`province.climate !== null`) and only on the TR locale (EN detail pages are noindex and
  * have no climate caveat text — SEO-POLICY §6). The gating lives in the page.
  *
- * Composes the chart (visual), the always-visible table (the readable numbers), and the
- * MGM source line. The source line links MGM with the per-province URL + measurement
- * period, and explicitly attributes the derived annual/seasonal figures to US, not MGM
- * (DEC 2026-07-18f binding condition — MGM's own "Yıllık" column is empty).
+ * Composes four things, in this order: the chart (visual), the always-visible table (the
+ * readable numbers), the source line, and the provider's mandatory licence notice.
+ *
+ * ## The series is ERA5-Land, and the copy below is licence-bearing
+ *
+ * The source is **ERA5-Land monthly averaged data (C3S / Copernicus)**, not MGM — the MGM
+ * series was retired from production by api #87 (DEC 2026-08-01o). Three consequences the
+ * copy in this file depends on, each of which someone will eventually be tempted to "fix"
+ * back:
+ *
+ * 1. **One dataset URL for all 81 provinces.** `climate.sourceUrl` is a single Copernicus
+ *    Climate Data Store dataset page; there is no per-province source page to link, and the
+ *    ICU tag is `<source>` (it was `<mgm>`).
+ * 2. **1991-2020 is a REFERENCE period, not a measurement period.** ERA5-Land is a
+ *    reanalysis; calling it "ölçüm dönemi" would claim station observation this data does
+ *    not carry (owner-ruled with the ERA5 web leg, 2026-08-04).
+ * 3. **The derived annual/seasonal figures are OURS, not the provider's** — C3S publishes a
+ *    grid, never a per-province average. The source line says so explicitly, and that
+ *    sentence is a binding condition carried over from the W1 ruling (DEC 2026-07-18f),
+ *    re-pointed from MGM to C3S.
+ *
+ * The `lang="en"` block at the end is CC-BY-4.0's REQUIRED attribution notice
+ * (`data-provenance.md` §0b), published verbatim and untranslated, with the Turkish
+ * explanation **alongside it, never instead of it** — the same obligation and the same
+ * treatment as `components/marine/marine-attribution.tsx`. Shortening, restyling or
+ * translating it is a licence breach. It is byte-pinned in
+ * `lib/climate/attribution-notice.test.ts`, which also asserts this component still renders
+ * it — so deleting the block here fails CI rather than silently publishing derived
+ * Copernicus material with no attribution.
  */
 export async function ClimateSection({
   climate,

@@ -208,9 +208,10 @@
 
 /* `max-width` matters now that the table carries three columns instead of nine. Left to
    stretch the full content width, a 3-column table sprays "Ay | Ortalama sıcaklık | Toplam
-   yağış" across ~1900px on a desktop, pushing each number so far from its month label that
-   the row stops reading as a row. 560px is about the natural width of the widest header
-   plus the month column, so the columns stay associated without crowding. */
+   yağış" across the whole column (`--container-max: 1120px` minus the 20px inline padding
+   ≈ 1080px), pushing each number so far from its month label that the row stops reading as
+   a row. 560px is about the natural width of the widest header plus the month column, so
+   the columns stay associated without crowding. */
 .tableScroll {
   margin-top: 22px;
   max-width: 560px;
@@ -312,13 +313,18 @@
 
 /* The mandatory C3S notice — an UNTOUCHABLE copy class (CONTENT-STYLE §22), set in a
    quieter, indented block so a Turkish reader can see at a glance where the platform's
-   prose stops and the licence text begins. Mirrors the marine attribution treatment.
-   It is still full-size body text on the page, never hidden behind a disclosure. */
+   prose stops and the licence text begins.
+
+   Sized 0.85rem to match `components/marine/marine-attribution.module.css`, the treatment
+   this block claims to mirror — a notch ABOVE the 0.8rem source line it follows rather
+   than level with it. The licence asks for the notice "prominently", so where the two
+   precedents disagreed the larger one won. It is never hidden behind a disclosure and
+   never collapsed. */
 .licenceNotice {
   margin: 8px 0 0;
   padding: 2px 0 2px 14px;
   border-left: 2px solid var(--color-border);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--color-slate);
   max-width: 78ch;
   line-height: 1.5;

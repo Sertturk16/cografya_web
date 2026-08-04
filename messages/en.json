@@ -200,7 +200,7 @@
     "seasonSummer": "Summer",
     "seasonAutumn": "Autumn",
     "tableCaption": "{name} — monthly climate normals for the {start}–{end} reference period (ERA5-Land, C3S/Copernicus).",
-    "scrollRegionLabel": "{name} monthly climate normals table (horizontally scrollable)",
+    "scrollRegionLabel": "{name} monthly climate normals table",
     "colMonth": "Month",
     "colTempMean": "Mean temperature (°C)",
     "colPrecip": "Total precipitation (mm)",

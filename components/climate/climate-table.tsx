@@ -33,14 +33,27 @@ const COLUMNS: ColumnDef[] = [
 ];
 
 /**
- * The always-visible monthly climate table (server component). Months as ROWS, metrics
- * as COLUMNS (mobile-first — a horizontal scroll handles the many columns on a narrow
- * screen). THIS is the information gain over the competitor, whose figures are trapped in
- * a raster JPG: machine-readable `<td>`s in the first HTML response, so the numbers are
- * copyable, crawlable, and screen-reader navigable (PLAN §2 — never hidden in `<details>`).
+ * The always-visible monthly climate table (server component). Months as ROWS, the two
+ * metrics as COLUMNS. THIS is the information gain over the competitor, whose figures are
+ * trapped in a raster JPG: machine-readable `<td>`s in the first HTML response, so the
+ * numbers are copyable, crawlable, and screen-reader navigable (PLAN §2 — never hidden in
+ * `<details>`).
  *
  * Units live only in the column headers. `<th scope>` on both axes + a `<caption>` naming
  * the province, period, and source keep the table fully associable for assistive tech.
+ *
+ * ## Why the scroll container is still here with only three columns
+ *
+ * At normal widths this table no longer scrolls — three columns fit inside `.tableScroll`'s
+ * 560px cap, and below 700px the metric headers wrap so it fits a 390px phone exactly. But
+ * `.table` keeps a 320px `min-width`, so at the WCAG 1.4.10 reflow width (a 320px viewport,
+ * or equivalently 400% zoom) the content box IS narrower than the table and the container
+ * genuinely scrolls. A scrollable container that keyboard users cannot reach fails WCAG
+ * 2.1.1, so `tabIndex={0}` stays.
+ *
+ * Its LABEL, however, no longer claims scrolling as a fact: it used to end with "(yatay
+ * kaydırılabilir)", which was a false statement to a screen reader at every width where the
+ * table fits. The region is now named by what it contains.
  */
 export async function ClimateTable({ climate, provinceName }: ClimateTableProps) {
   const t = await getTranslations("Climate");
@@ -52,50 +65,48 @@ export async function ClimateTable({ climate, provinceName }: ClimateTableProps)
     format.dateTime(new Date(Date.UTC(2020, month - 1, 15)), { month: "long" });
 
   return (
-    <>
-      <div
-        className={styles.tableScroll}
-        role="region"
-        aria-label={t("scrollRegionLabel", { name: provinceName })}
-        tabIndex={0}
-      >
-        <table className={styles.table}>
-          <caption className={styles.tableCaption}>
-            {/* Years passed as strings so ICU never group-separates them (1929, not 1.929). */}
-            {t("tableCaption", {
-              name: provinceName,
-              start: String(climate.periodStartYear),
-              end: String(climate.periodEndYear),
-            })}
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col" className={styles.thMonth}>
-                {t("colMonth")}
+    <div
+      className={styles.tableScroll}
+      role="region"
+      aria-label={t("scrollRegionLabel", { name: provinceName })}
+      tabIndex={0}
+    >
+      <table className={styles.table}>
+        <caption className={styles.tableCaption}>
+          {/* Years passed as strings so ICU never group-separates them (1991, not 1.991). */}
+          {t("tableCaption", {
+            name: provinceName,
+            start: String(climate.periodStartYear),
+            end: String(climate.periodEndYear),
+          })}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" className={styles.thMonth}>
+              {t("colMonth")}
+            </th>
+            {COLUMNS.map((c) => (
+              <th key={c.id} scope="col" className={styles.thMetric}>
+                {t(c.headerKey)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {climate.months.map((m) => (
+            <tr key={m.month}>
+              <th scope="row" className={styles.thRow}>
+                {monthLong(m.month)}
               </th>
               {COLUMNS.map((c) => (
-                <th key={c.id} scope="col" className={styles.thMetric}>
-                  {t(c.headerKey)}
-                </th>
+                <td key={c.id} className={styles.td}>
+                  {num(c.get(m), c.digits)}
+                </td>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {climate.months.map((m) => (
-              <tr key={m.month}>
-                <th scope="row" className={styles.thRow}>
-                  {monthLong(m.month)}
-                </th>
-                {COLUMNS.map((c) => (
-                  <td key={c.id} className={styles.td}>
-                    {num(c.get(m), c.digits)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

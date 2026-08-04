@@ -333,10 +333,11 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       province.netMigrationRate !== null);
   const economyIndicator = province.economyIndicator;
   const showEconomy = isTr && economyIndicator !== null;
-  // İklim grafiği/tablosu (W1) — the full MGM k=A series. TR-gated (EN detail pages are
-  // noindex and have no climate caveat text, SEO-POLICY §6). `climate === null` on the DTO
-  // means "no publishable series" → the whole chart/table/source line is absent, and its
-  // MGM source is NOT added to the page's Kaynaklar line (no source for absent content).
+  // İklim grafiği/tablosu (W1) — the ERA5-Land (C3S/Copernicus) core-pair series. TR-gated
+  // (EN detail pages are noindex and have no climate caveat text, SEO-POLICY §6).
+  // `climate === null` on the DTO means "no publishable series" → the whole
+  // chart/table/source line is absent, and `sourcesClimate` is NOT added to the page's
+  // Kaynaklar line (no source for absent content).
   // The NOVA narrative slot ships wired but empty (climateNarrativeTr is null for all 81).
   const climateSeries = isTr ? province.climate : null;
   const climateNarrative = isTr ? province.climateNarrativeTr : null;

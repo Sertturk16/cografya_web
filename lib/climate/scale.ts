@@ -4,7 +4,7 @@
  * NO React, NO i18n, NO DTO imports — just numbers in, pixel coordinates out, so the
  * whole scaling layer is unit-testable in isolation (the same discipline as the api's
  * `climate-derivations.ts`). The server component (`components/climate/climate-chart.tsx`)
- * feeds raw MGM numbers in and renders the returned coordinates as inline SVG; number
+ * feeds the raw ERA5-Land numbers in and renders the returned coordinates as inline SVG; number
  * FORMATTING (locale digits, units) stays the component's job via `next-intl`.
  *
  * The load-bearing invariant (owner ruling 6 — the Y axis auto-scales PER province, so
@@ -193,14 +193,20 @@ export function buildClimateChartGeometry(months: MonthPoint[]): ClimateChartGeo
   const columns: ChartColumn[] = months.map((m, i) => {
     const cx = roundTo(x0 + (i + 0.5) * slot);
     // A bar always exists now — `precipitationMm` is a required field, so the old
-    // "no value ⇒ no bar" branch is gone. The bar's TOP is clamped to the baseline, which
-    // is a MARKUP guard, not a data one: a NEGATIVE monthly total is physically impossible
-    // and would be a contract violation, and letting it through would emit a negative
-    // `<rect height>` (invalid SVG, renderer-defined behaviour) hanging below the plot.
-    // Clamping the top — rather than just flooring the height — is what keeps the bar's
-    // foot ON the baseline instead of parked outside the plot rectangle. The offending
-    // number is not hidden: it prints unchanged in the always-visible table, which is the
-    // authoritative surface for the values and the honest place for a bad one to show up.
+    // "no value ⇒ no bar" branch is gone. The bar's TOP is clamped to the baseline: a
+    // NEGATIVE monthly total is physically impossible and would be a contract violation,
+    // and letting it through would emit a negative `<rect height>` (invalid SVG,
+    // renderer-defined behaviour) hanging below the plot. Clamping the top — rather than
+    // just flooring the height — is what keeps the bar's foot ON the baseline instead of
+    // parked outside the plot rectangle. The offending number is not hidden: it prints
+    // unchanged in the always-visible table, which is the authoritative surface for the
+    // values and the honest place for a bad one to show up.
+    //
+    // Scope, precisely: this handles every FINITE value. A non-finite one (NaN/Infinity —
+    // an api serialization bug, not a null) still propagates into the coordinates. That is
+    // deliberate rather than guarded: the api gates non-finite numbers at its own jsonb
+    // boundary, the contract types this `number`, and adding an unreachable branch here is
+    // the speculative defence the core-pair ruling (DEC 2026-08-01o) exists to refuse.
     const top = Math.min(yPrecip(m.precipitationMm), y1);
     return {
       month: m.month,

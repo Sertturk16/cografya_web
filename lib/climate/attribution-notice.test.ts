@@ -63,6 +63,17 @@ describe("the C3S / ERA5-Land attribution is verbatim", () => {
     );
   });
 
+  it("ships the Turkish explanation key in both catalogues", () => {
+    // `sourceC3sNoticeIntro` is what makes the English block legible to a Turkish reader,
+    // and it is the half NOT covered by the byte pin above. The repo defines no
+    // `IntlMessages` global typing, so deleting this key type-checks, builds, and ships the
+    // raw key path onto 81 pages with CI green. Cheapest possible guard against that.
+    expect(typeof tr.Climate.sourceC3sNoticeIntro).toBe("string");
+    expect(tr.Climate.sourceC3sNoticeIntro.length).toBeGreaterThan(0);
+    expect(typeof en.Climate.sourceC3sNoticeIntro).toBe("string");
+    expect(en.Climate.sourceC3sNoticeIntro.length).toBeGreaterThan(0);
+  });
+
   it("states a data year, not a rendering year", () => {
     // A guard against someone converting the literal into an ICU `{year}` placeholder fed
     // by the wall clock — which would restate the provenance of unchanged data every
@@ -88,8 +99,12 @@ describe("the climate section renders the notice next to the values", () => {
     expect(section).toMatch(/attribution\.c3sNotice/);
   });
 
-  it('marks it `lang="en"` so AT does not read English with Turkish phonemes', () => {
-    expect(section).toMatch(/lang="en"/);
+  it('marks THE NOTICE ITSELF `lang="en"`, not merely something on the page', () => {
+    // Asserting `lang="en"` appears *somewhere* in the file would keep passing if the
+    // attribute migrated to the Turkish intro paragraph and the English notice lost it —
+    // the exact failure the attribute exists to prevent (a screen reader on the TR page
+    // reading English with Turkish phonemes). So the two are pinned to the SAME element.
+    expect(section).toMatch(/lang="en"[^>]*>\s*\{t\("attribution\.c3sNotice"\)\}/);
   });
 
   it("keeps the Turkish explanation alongside it, never instead of it", () => {

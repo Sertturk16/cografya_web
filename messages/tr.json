@@ -200,7 +200,7 @@
     "seasonSummer": "Yaz",
     "seasonAutumn": "Sonbahar",
     "tableCaption": "{name} — ERA5-Land (C3S/Copernicus), {start}–{end} referans dönemine ait aylık iklim normalleri.",
-    "scrollRegionLabel": "{name} aylık iklim normalleri tablosu (yatay kaydırılabilir)",
+    "scrollRegionLabel": "{name} aylık iklim normalleri tablosu",
     "colMonth": "Ay",
     "colTempMean": "Ortalama sıcaklık (°C)",
     "colPrecip": "Toplam yağış (mm)",
