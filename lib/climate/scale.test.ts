@@ -104,17 +104,15 @@ describe("scaleLinear", () => {
   });
 });
 
-// A compact 12-month stress fixture: negative winter means, a full min–max band, and a
-// tall precipitation month — enough to exercise every branch. Values are illustrative,
-// not a real province.
+// A compact 12-month stress fixture: negative winter means and a tall precipitation month
+// — enough to exercise every branch. Values are illustrative, not a real province.
+// The core pair is REQUIRED by the contract (api #87), so there is no null case to model.
 function fixture(overrides: Partial<Record<number, Partial<MonthPoint>>> = {}): MonthPoint[] {
   return Array.from({ length: 12 }, (_, i) => {
     const month = i + 1;
     const base: MonthPoint = {
       month,
       tempMeanC: -9 + i * 2.5,
-      tempMaxMeanC: -4 + i * 2.7,
-      tempMinMeanC: -14 + i * 2.3,
       precipitationMm: 20 + i * 5,
     };
     return { ...base, ...overrides[month] };
@@ -132,16 +130,12 @@ describe("buildClimateChartGeometry", () => {
   it("keeps every bar and mean point inside the plot rectangle", () => {
     const g = buildClimateChartGeometry(fixture());
     for (const col of g.columns) {
-      if (col.bar) {
-        expect(col.bar.x).toBeGreaterThanOrEqual(g.plot.x0);
-        expect(col.bar.x + col.bar.w).toBeLessThanOrEqual(g.plot.x1 + 0.001);
-        expect(col.bar.y).toBeGreaterThanOrEqual(g.plot.y0 - 0.001);
-        expect(col.bar.h).toBeGreaterThanOrEqual(0);
-      }
-      if (col.meanPoint) {
-        expect(col.meanPoint.y).toBeGreaterThanOrEqual(g.plot.y0 - 0.001);
-        expect(col.meanPoint.y).toBeLessThanOrEqual(g.plot.y1 + 0.001);
-      }
+      expect(col.bar.x).toBeGreaterThanOrEqual(g.plot.x0);
+      expect(col.bar.x + col.bar.w).toBeLessThanOrEqual(g.plot.x1 + 0.001);
+      expect(col.bar.y).toBeGreaterThanOrEqual(g.plot.y0 - 0.001);
+      expect(col.bar.h).toBeGreaterThanOrEqual(0);
+      expect(col.meanPoint.y).toBeGreaterThanOrEqual(g.plot.y0 - 0.001);
+      expect(col.meanPoint.y).toBeLessThanOrEqual(g.plot.y1 + 0.001);
     }
   });
 
@@ -152,53 +146,54 @@ describe("buildClimateChartGeometry", () => {
     expect(g.tempZeroY!).toBeLessThan(g.plot.y1);
   });
 
-  it("produces a mean polyline run and a min–max band path", () => {
+  it("produces one unbroken mean polyline across all 12 months", () => {
     const g = buildClimateChartGeometry(fixture());
-    expect(g.meanRuns).toHaveLength(1);
-    expect(g.meanRuns[0]!.split(" ")).toHaveLength(12);
-    expect(g.bandPath).toContain("M ");
-    expect(g.bandPath).toContain("Z");
+    // One run, not an array of runs: `tempMeanC` is required, so a gap cannot occur.
+    expect(g.meanLine.split(" ")).toHaveLength(12);
   });
 
-  it("omits a bar for a null-precipitation month and breaks the mean line on a gap", () => {
-    const g = buildClimateChartGeometry(
-      fixture({ 6: { precipitationMm: null }, 7: { tempMeanC: null } }),
-    );
-    expect(g.columns[5]!.bar).toBeNull(); // month 6
-    expect(g.columns[6]!.meanPoint).toBeNull(); // month 7
-    // The gap at month 7 splits the mean line into two runs.
-    expect(g.meanRuns.length).toBe(2);
-  });
-
-  it("survives an all-null series without producing NaN geometry", () => {
-    const months: MonthPoint[] = Array.from({ length: 12 }, (_, i) => ({
-      month: i + 1,
-      tempMeanC: null,
-      tempMaxMeanC: null,
-      tempMinMeanC: null,
-      precipitationMm: null,
-    }));
-    const g = buildClimateChartGeometry(months);
+  it("gives every month a bar and a mean point", () => {
+    // The old "null value ⇒ null bar / null meanPoint" branches are gone with the
+    // nullable fields; this pins that every column is now fully populated.
+    const g = buildClimateChartGeometry(fixture());
     expect(g.columns).toHaveLength(12);
-    expect(g.meanRuns).toHaveLength(0);
-    expect(g.bandPath).toBeNull();
-    // The degenerate domains still yield real, finite ticks (the lo===hi guard at work).
+    for (const col of g.columns) {
+      expect(col.bar).not.toBeNull();
+      expect(col.meanPoint).not.toBeNull();
+    }
+  });
+
+  it("keeps ticks finite when every month carries the same value", () => {
+    // The degenerate-domain guard (lo === hi) still has to hold — a flat series is
+    // legitimate input, unlike the all-null series this replaced.
+    const flat = Array.from({ length: 12 }, (_, i) => ({
+      month: i + 1,
+      tempMeanC: 12,
+      precipitationMm: 0,
+    }));
+    const g = buildClimateChartGeometry(flat);
     for (const t of [...g.tempTicks, ...g.precipTicks]) {
       expect(Number.isFinite(t.y)).toBe(true);
     }
   });
 
-  it("grows precipitation bars from the baseline and skips a negative value", () => {
+  it("grows precipitation bars from the baseline and floors a negative value at zero", () => {
     const g = buildClimateChartGeometry(
       fixture({ 3: { precipitationMm: 0 }, 4: { precipitationMm: -1 } }),
     );
     for (const col of g.columns) {
-      // Every bar's foot sits exactly on the precip 0 baseline (plot bottom).
-      if (col.bar) expect(roundTo(col.bar.y + col.bar.h, 3)).toBe(roundTo(g.plot.y1, 3));
+      // Every bar's foot sits EXACTLY on the precip 0 baseline — including the clamped
+      // negative one. Flooring only the height would leave that bar's foot below the
+      // plot rectangle, which is what this assertion caught.
+      expect(roundTo(col.bar.y + col.bar.h, 3)).toBe(roundTo(g.plot.y1, 3));
+      expect(col.bar.h).toBeGreaterThanOrEqual(0);
     }
-    expect(g.columns[2]!.bar).not.toBeNull(); // 0 mm is a real value → a zero-height bar
-    expect(g.columns[2]!.bar!.h).toBe(0);
-    expect(g.columns[3]!.bar).toBeNull(); // a negative reading is rejected, not drawn
+    expect(g.columns[2]!.bar.h).toBe(0); // 0 mm is a real value → a zero-height bar
+    // A negative total is a contract violation; the bar's TOP is clamped to the baseline
+    // so the SVG stays valid (never a negative `height`, never a rect outside the plot).
+    // The raw number still prints in the table.
+    expect(g.columns[3]!.bar.h).toBe(0);
+    expect(g.columns[3]!.bar.y).toBe(roundTo(g.plot.y1, 3));
   });
 
   it("keeps months in calendar order with ascending column centers", () => {

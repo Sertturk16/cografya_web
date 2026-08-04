@@ -4,7 +4,7 @@
  * NO React, NO i18n, NO DTO imports — just numbers in, pixel coordinates out, so the
  * whole scaling layer is unit-testable in isolation (the same discipline as the api's
  * `climate-derivations.ts`). The server component (`components/climate/climate-chart.tsx`)
- * feeds raw MGM numbers in and renders the returned coordinates as inline SVG; number
+ * feeds the raw ERA5-Land numbers in and renders the returned coordinates as inline SVG; number
  * FORMATTING (locale digits, units) stays the component's job via `next-intl`.
  *
  * The load-bearing invariant (owner ruling 6 — the Y axis auto-scales PER province, so
@@ -30,15 +30,16 @@ export interface Tick {
   y: number;
 }
 
-/** One month column: the precipitation bar + the mean-temp marker (either may be null). */
+/** One month column: the precipitation bar + the mean-temp marker. Both always exist —
+ *  the two source fields are required by the contract (api #87). */
 export interface ChartColumn {
   month: number;
   /** Column center X (used for the month label and the temp marker). */
   cx: number;
-  /** Precipitation `<rect>` box, or null when the month has no precipitation value. */
-  bar: { x: number; y: number; w: number; h: number } | null;
-  /** Mean-temp point, or null when the month has no mean value. */
-  meanPoint: { x: number; y: number } | null;
+  /** Precipitation `<rect>` box. */
+  bar: { x: number; y: number; w: number; h: number };
+  /** Mean-temp point. */
+  meanPoint: { x: number; y: number };
 }
 
 /** The full, render-ready geometry for one province's chart. */
@@ -49,13 +50,13 @@ export interface ClimateChartGeometry {
   plot: { x0: number; y0: number; x1: number; y1: number };
   columns: ChartColumn[];
   /**
-   * Mean-temp polyline point runs ("x,y x,y …"). One string per contiguous run of
-   * non-null months, so a data gap breaks the line instead of drawing a false segment
-   * across it (all published provinces are gap-free today; this is defence-in-depth).
+   * Mean-temp polyline points ("x,y x,y …") — ONE run across all 12 months.
+   *
+   * It used to be an array of contiguous non-null runs so a data gap could break the
+   * line. `tempMeanC` is now a REQUIRED field (api #87), so a gap cannot occur and the
+   * run-splitting was unreachable code.
    */
-  meanRuns: string[];
-  /** Min–max band area `<path>` `d` (max edge forward, min edge back), or null. */
-  bandPath: string | null;
+  meanLine: string;
   /** Temperature (left) axis ticks. */
   tempTicks: Tick[];
   /** Precipitation (right) axis ticks. */
@@ -68,13 +69,12 @@ export interface ClimateChartGeometry {
 }
 
 /** A minimal month row — structurally a subset of the api's `ClimateMonthlyNormalDto`,
- *  so the DTO's `months` array is assignable directly. */
+ *  so the DTO's `months` array is assignable directly. The core pair is REQUIRED there
+ *  (ERA5-Land, api #87), so neither field is nullable here either. */
 export interface MonthPoint {
   month: number;
-  tempMeanC: number | null;
-  tempMaxMeanC: number | null;
-  tempMinMeanC: number | null;
-  precipitationMm: number | null;
+  tempMeanC: number;
+  precipitationMm: number;
 }
 
 /** Chart canvas — fixed `viewBox` (owner spec): zero CLS via a constant aspect ratio. */
@@ -158,15 +158,13 @@ export function scaleLinear(
   return (value: number) => roundTo(rangeStart + ((value - min) / span) * (rangeEnd - rangeStart));
 }
 
-function isNum(v: number | null): v is number {
-  return v !== null && Number.isFinite(v);
-}
-
 /**
  * Project one province's monthly normals into render-ready chart geometry.
  *
- * Temperature uses a left axis whose domain spans the coldest mean-min to the warmest
- * mean-max (so the whole min–max band fits) and always includes 0. Precipitation uses an
+ * Temperature uses a left axis whose domain spans the mean series and always includes 0.
+ * (It used to span the mean-min→mean-max envelope so the light band fit inside it; ERA5-Land
+ * publishes no such envelope, so the domain now follows the mean series alone — which makes
+ * the curve fill more of the plot than it did in the MGM era.) Precipitation uses an
  * independent right axis anchored at 0 (bars grow from the baseline). Both auto-scale per
  * province, which is exactly why the returned ticks carry real numbers.
  */
@@ -179,15 +177,9 @@ export function buildClimateChartGeometry(months: MonthPoint[]): ClimateChartGeo
   const slot = plotW / 12;
   const barW = roundTo(slot * BAR_WIDTH_RATIO);
 
-  // Temperature domain: cover the band's full extent (min of mins → max of maxes),
-  // falling back to the mean series where max/min are absent.
-  const tempValues: number[] = [];
-  for (const m of months) {
-    if (isNum(m.tempMinMeanC)) tempValues.push(m.tempMinMeanC);
-    if (isNum(m.tempMaxMeanC)) tempValues.push(m.tempMaxMeanC);
-    if (isNum(m.tempMeanC)) tempValues.push(m.tempMeanC);
-  }
-  const precipValues = months.map((m) => m.precipitationMm).filter(isNum);
+  // Temperature domain: the mean series' own extent (always widened to include 0).
+  const tempValues = months.map((m) => m.tempMeanC);
+  const precipValues = months.map((m) => m.precipitationMm);
 
   const tempDomain = niceDomain(
     tempValues.length ? Math.min(...tempValues) : 0,
@@ -200,55 +192,32 @@ export function buildClimateChartGeometry(months: MonthPoint[]): ClimateChartGeo
 
   const columns: ChartColumn[] = months.map((m, i) => {
     const cx = roundTo(x0 + (i + 0.5) * slot);
-    const bar =
-      isNum(m.precipitationMm) && m.precipitationMm >= 0
-        ? (() => {
-            const top = yPrecip(m.precipitationMm);
-            return { x: roundTo(cx - barW / 2), y: top, w: barW, h: roundTo(y1 - top) };
-          })()
-        : null;
-    const meanPoint = isNum(m.tempMeanC) ? { x: cx, y: yTemp(m.tempMeanC) } : null;
-    return { month: m.month, cx, bar, meanPoint };
+    // A bar always exists now — `precipitationMm` is a required field, so the old
+    // "no value ⇒ no bar" branch is gone. The bar's TOP is clamped to the baseline: a
+    // NEGATIVE monthly total is physically impossible and would be a contract violation,
+    // and letting it through would emit a negative `<rect height>` (invalid SVG,
+    // renderer-defined behaviour) hanging below the plot. Clamping the top — rather than
+    // just flooring the height — is what keeps the bar's foot ON the baseline instead of
+    // parked outside the plot rectangle. The offending number is not hidden: it prints
+    // unchanged in the always-visible table, which is the authoritative surface for the
+    // values and the honest place for a bad one to show up.
+    //
+    // Scope, precisely: this handles every FINITE value. A non-finite one (NaN/Infinity —
+    // an api serialization bug, not a null) still propagates into the coordinates. That is
+    // deliberate rather than guarded: the api gates non-finite numbers at its own jsonb
+    // boundary, the contract types this `number`, and adding an unreachable branch here is
+    // the speculative defence the core-pair ruling (DEC 2026-08-01o) exists to refuse.
+    const top = Math.min(yPrecip(m.precipitationMm), y1);
+    return {
+      month: m.month,
+      cx,
+      bar: { x: roundTo(cx - barW / 2), y: top, w: barW, h: roundTo(y1 - top) },
+      meanPoint: { x: cx, y: yTemp(m.tempMeanC) },
+    };
   });
 
-  // Mean-temp polyline: contiguous non-null runs (a gap breaks the line).
-  const meanRuns: string[] = [];
-  let run: string[] = [];
-  for (const col of columns) {
-    if (col.meanPoint) {
-      run.push(`${col.meanPoint.x},${col.meanPoint.y}`);
-    } else if (run.length) {
-      meanRuns.push(run.join(" "));
-      run = [];
-    }
-  }
-  if (run.length) meanRuns.push(run.join(" "));
-
-  // Min–max band: forward along the max edge, back along the min edge, per contiguous
-  // run where BOTH bounds exist. Multiple runs are concatenated into one `d`.
-  const bandSegments: string[] = [];
-  let segTop: string[] = [];
-  let segBottom: Array<{ x: number; y: number }> = [];
-  const flushBand = () => {
-    if (segTop.length >= 2) {
-      const back = [...segBottom].reverse().map((p) => `L ${p.x} ${p.y}`);
-      bandSegments.push(`M ${segTop.join(" L ")} ${back.join(" ")} Z`);
-    }
-    segTop = [];
-    segBottom = [];
-  };
-  for (let i = 0; i < months.length; i++) {
-    const m = months[i];
-    const col = columns[i];
-    if (m && col && isNum(m.tempMaxMeanC) && isNum(m.tempMinMeanC)) {
-      segTop.push(`${col.cx} ${yTemp(m.tempMaxMeanC)}`);
-      segBottom.push({ x: col.cx, y: yTemp(m.tempMinMeanC) });
-    } else {
-      flushBand();
-    }
-  }
-  flushBand();
-  const bandPath = bandSegments.length ? bandSegments.join(" ") : null;
+  // Mean-temp polyline — one unbroken run, because every month carries a mean.
+  const meanLine = columns.map((col) => `${col.meanPoint.x},${col.meanPoint.y}`).join(" ");
 
   const tempTicks: Tick[] = tempDomain.ticks.map((value) => ({ value, y: yTemp(value) }));
   const precipTicks: Tick[] = precipDomain.ticks.map((value) => ({ value, y: yPrecip(value) }));
@@ -259,8 +228,7 @@ export function buildClimateChartGeometry(months: MonthPoint[]): ClimateChartGeo
     height: CHART_HEIGHT,
     plot: { x0, y0, x1, y1 },
     columns,
-    meanRuns,
-    bandPath,
+    meanLine,
     tempTicks,
     precipTicks,
     tempDomain,

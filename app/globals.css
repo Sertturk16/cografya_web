@@ -186,8 +186,6 @@
      ≥ the 3:1 graphical-object floor, WCAG 1.4.11). NOT public-safety scales, so no
      §6.2 constraint. */
   --chart-temp-line: #c2410c; /* mean-temp polyline + markers (bold, warm) */
-  --chart-temp-band: #f2cfa8; /* min–max band fill (light warm; supplementary) */
-  --chart-temp-band-edge: #c9762f; /* band boundary hairline (3.4:1 on white) */
   --chart-precip-bar: #1b5f8a; /* precipitation columns (cool) */
 
   /* ---- Map-game region palette (Kâşif Mode 1; DESIGN.md §6.1 rule 4 — CATEGORICAL) ----

@@ -18,9 +18,11 @@ interface ClimateChartProps {
  * precedent). The fixed `viewBox` + a CSS `aspect-ratio` frame reserve the space →
  * zero CLS; zero client JS → zero INP (CONVENTIONS §6 #9).
  *
- * Three series, distinguished by SHAPE (never color alone, DESIGN §6.1.3): precipitation
- * as `<rect>` columns, mean temperature as a bold `<polyline>`, the monthly max–min
- * spread as a light band. Because the axes auto-scale PER province (owner ruling 6), the
+ * Two series, distinguished by SHAPE (never color alone, DESIGN §6.1.3): precipitation
+ * as `<rect>` columns and mean temperature as a bold `<polyline>`. (A third series — the
+ * light monthly mean-max/mean-min band — was dropped with the MGM series: ERA5-Land
+ * publishes no such envelope, → api #87 / DEC 2026-08-01o.) Because the axes auto-scale
+ * PER province (owner ruling 6), the
  * printed axis numbers, the `<desc>` ranges, and the annual summary beside the chart are
  * LOAD-BEARING — they are what lets a reader tell arid Konya from soaked Rize when the two
  * chart *shapes* look alike. The authoritative monthly numbers live in the always-visible
@@ -39,15 +41,12 @@ export async function ClimateChart({ climate, provinceName, idSuffix }: ClimateC
   const pct = (value: number) =>
     format.number(value / 100, { style: "percent", maximumFractionDigits: 0 });
 
-  // Real DATA ranges (not the padded axis domain) for the honest <desc> text.
-  // The sentence says "aylık ORTALAMA sıcaklık", so these must come from `tempMeanC` —
-  // NOT the mean-low/mean-high envelope (tempMinMeanC/tempMaxMeanC), which would announce
-  // a wider range than the one it names (Rize: real 6,8–23,3 °C vs envelope 3,7–26,6 °C).
-  // The envelope is described separately, in words, by the desc's third sentence.
-  const meanVals = climate.months.map((m) => m.tempMeanC).filter((v): v is number => v !== null);
-  const precipVals = climate.months
-    .map((m) => m.precipitationMm)
-    .filter((v): v is number => v !== null);
+  // Real DATA ranges (not the padded axis domain) for the honest <desc> text. The sentence
+  // says "aylık ORTALAMA sıcaklık", and `tempMeanC` is exactly that. (It used to be spelled
+  // out that these must NOT come from the mean-low/mean-high envelope, which would announce
+  // a wider range than the one it names; that envelope no longer exists in the contract.)
+  const meanVals = climate.months.map((m) => m.tempMeanC);
+  const precipVals = climate.months.map((m) => m.precipitationMm);
   const tempMinData = meanVals.length ? Math.min(...meanVals) : d.annualMeanTempC;
   const tempMaxData = meanVals.length ? Math.max(...meanVals) : d.annualMeanTempC;
   // The precipitation floor is COMPUTED, never assumed to be 0 — Rize's driest month is
@@ -97,41 +96,29 @@ export async function ClimateChart({ climate, provinceName, idSuffix }: ClimateC
               />
             ))}
 
-            {/* Max–min band (light warm, supplementary — exact values are in the table).
-                Drawn first so the opaque precipitation bars sit cleanly in front of it. */}
-            {g.bandPath && <path className={styles.tempBand} d={g.bandPath} />}
-
             {/* Precipitation columns (cool) — grow from the precip 0 baseline. */}
-            {g.columns.map(
-              (col) =>
-                col.bar && (
-                  <rect
-                    key={`bar-${col.month}`}
-                    className={styles.precipBar}
-                    x={col.bar.x}
-                    y={col.bar.y}
-                    width={col.bar.w}
-                    height={col.bar.h}
-                  />
-                ),
-            )}
-
-            {/* Mean-temp polyline(s) (bold warm) + point markers. */}
-            {g.meanRuns.map((points, i) => (
-              <polyline key={`mean-${i}`} className={styles.tempLine} points={points} />
+            {g.columns.map((col) => (
+              <rect
+                key={`bar-${col.month}`}
+                className={styles.precipBar}
+                x={col.bar.x}
+                y={col.bar.y}
+                width={col.bar.w}
+                height={col.bar.h}
+              />
             ))}
-            {g.columns.map(
-              (col) =>
-                col.meanPoint && (
-                  <circle
-                    key={`pt-${col.month}`}
-                    className={styles.tempMarker}
-                    cx={col.meanPoint.x}
-                    cy={col.meanPoint.y}
-                    r={2.6}
-                  />
-                ),
-            )}
+
+            {/* Mean-temp polyline (bold warm) + point markers. */}
+            <polyline className={styles.tempLine} points={g.meanLine} />
+            {g.columns.map((col) => (
+              <circle
+                key={`pt-${col.month}`}
+                className={styles.tempMarker}
+                cx={col.meanPoint.x}
+                cy={col.meanPoint.y}
+                r={2.6}
+              />
+            ))}
 
             {/* Left axis: temperature tick numbers (°C). */}
             {g.tempTicks.map((tick) => (
@@ -224,7 +211,7 @@ export async function ClimateChart({ climate, provinceName, idSuffix }: ClimateC
         </dl>
       </div>
 
-      {/* Legend — shape-coded swatches (bars / band / line), reinforcing the
+      {/* Legend — shape-coded swatches (bars / line), reinforcing the
           shape-not-color distinction. */}
       <figcaption className={styles.legend}>
         <span className={styles.legendItem}>
@@ -234,10 +221,6 @@ export async function ClimateChart({ climate, provinceName, idSuffix }: ClimateC
         <span className={styles.legendItem}>
           <span className={`${styles.swatch} ${styles.swatchLine}`} aria-hidden="true" />
           {t("legendTemp")}
-        </span>
-        <span className={styles.legendItem}>
-          <span className={`${styles.swatch} ${styles.swatchBand}`} aria-hidden="true" />
-          {t("legendTempBand")}
         </span>
       </figcaption>
     </figure>

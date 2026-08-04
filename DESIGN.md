@@ -195,12 +195,18 @@ data token sets in `app/globals.css`, physically separate from the Terra chrome 
 Faz-2 (§6.3); these two ramps are the minimum this one chart needs, deliberately not a
 general system (that would be scope creep).
 
-| Token                    | Hex       | Encodes                                   |
-| ------------------------ | --------- | ----------------------------------------- |
-| `--chart-temp-line`      | `#c2410c` | mean-temperature polyline + point markers |
-| `--chart-temp-band`      | `#f2cfa8` | monthly max–min band fill (supplementary) |
-| `--chart-temp-band-edge` | `#c9762f` | band boundary hairline                    |
-| `--chart-precip-bar`     | `#1b5f8a` | precipitation columns                     |
+| Token                | Hex       | Encodes                                   |
+| -------------------- | --------- | ----------------------------------------- |
+| `--chart-temp-line`  | `#c2410c` | mean-temperature polyline + point markers |
+| `--chart-precip-bar` | `#1b5f8a` | precipitation columns                     |
+
+> **Retired with the MGM series (api #87 / DEC 2026-08-01o).** `--chart-temp-band`
+> (`#f2cfa8`) and `--chart-temp-band-edge` (`#c9762f`) encoded the monthly mean-max/mean-min
+> band and **no longer exist** in `app/globals.css`. ERA5-Land publishes only the core pair
+> (mean temperature + total precipitation), so there is no envelope to draw. They are recorded
+> here as retired rather than silently deleted: writing `var(--chart-temp-band)` against an
+> undefined custom property does not error — it falls back to black and passes every check
+> this repo runs.
 
 **Why these choices are §6-compliant:**
 
@@ -208,19 +214,20 @@ general system (that would be scope creep).
   orange/blue pairing is the classic colorblind-safe categorical split (survives
   deuteranopia via lightness). Temperature here is a single line series, so this is a
   **categorical** distinction (temp vs precipitation), not a sequential ramp — §6.1 rule 4.
-- **Shape carries the meaning, never hue alone** (§6.1 rule 3 / §5 last bullet): the three
-  series are distinguished by SHAPE first — `<rect>` bars vs a bold `<polyline>` vs a filled
-  band — with color only reinforcing. Verified against a deuteranopia simulation before ship
-  (the sample is in the W1 delivery folder): all three stay distinct with color removed.
+- **Shape carries the meaning, never hue alone** (§6.1 rule 3 / §5 last bullet): the two
+  series are distinguished by SHAPE first — `<rect>` bars vs a bold `<polyline>` — with color
+  only reinforcing. The deuteranopia simulation run before the W1 ship covered three series
+  (bars, line, band) and found all three distinct with color removed; dropping the band left
+  the two most distinct shapes, so that verification still holds a fortiori — but it was run
+  against the three-series chart, and this note says so rather than implying a fresh check.
 - **Not brand tokens.** `--chart-temp-line` is a saturated vermillion, distinct from the
   muted terracotta chrome (`--color-primary #b0522e`); `--chart-precip-bar` is a clear blue,
   distinct from the greenish brand accent (`--color-accent #276b70`). Separate token set,
   separate hues.
 - **Contrast (WCAG 1.4.11, graphical objects ≥ 3:1 on the white plot):**
   `--chart-temp-line` = **5.18:1**, `--chart-precip-bar` = **6.88:1** — both clear the floor.
-  The band fill is **supplementary** (the exact max/min numbers live in the always-visible
-  table and the SVG `<desc>`), so its lighter fill is acceptable; its edge hairline is
-  `3.4:1` for definition.
+  Every drawn series now clears it on its own; the one element that relied on the
+  "supplementary" allowance (the band fill) is gone.
 - **Not a public-safety scale** (§6.2) — climate normals carry no AQI/earthquake/SST
   standardized-color obligation, so the palette is ours to set within these rules.
 

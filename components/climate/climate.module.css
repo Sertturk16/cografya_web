@@ -66,12 +66,6 @@
   fill: var(--chart-precip-bar);
 }
 
-.tempBand {
-  fill: var(--chart-temp-band);
-  stroke: var(--chart-temp-band-edge);
-  stroke-width: 1;
-}
-
 .tempLine {
   fill: none;
   stroke: var(--chart-temp-line);
@@ -210,15 +204,17 @@
   border-radius: 0;
 }
 
-.swatchBand {
-  background: var(--chart-temp-band);
-  border: 1px solid var(--chart-temp-band-edge);
-}
-
 /* ---- Table ----------------------------------------------------------------- */
 
+/* `max-width` matters now that the table carries three columns instead of nine. Left to
+   stretch the full content width, a 3-column table sprays "Ay | Ortalama sıcaklık | Toplam
+   yağış" across the whole column (`--container-max: 1120px` minus the 20px inline padding
+   ≈ 1080px), pushing each number so far from its month label that the row stops reading as
+   a row. 560px is about the natural width of the widest header plus the month column, so
+   the columns stay associated without crowding. */
 .tableScroll {
   margin-top: 22px;
+  max-width: 560px;
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -230,11 +226,17 @@
   outline-offset: -3px;
 }
 
+/* `min-width` was 640px when the table carried nine columns and horizontal scroll was the
+   point. It now carries three (month + the ERA5-Land core pair), and 640px would have
+   forced a scrollbar on a phone for a table that fits. 320px keeps the columns from
+   crushing while letting the table fit a 390px viewport — and it is also what still makes
+   the container genuinely scrollable at the 320px reflow width, which is why the scroll
+   region stays focusable (see `climate-table.tsx`). */
 .table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
-  min-width: 640px;
+  min-width: 320px;
 }
 
 .tableCaption {
@@ -268,6 +270,17 @@
   text-align: right;
 }
 
+/* Let the two metric HEADERS wrap on a phone. The data cells stay `nowrap` — a number
+   must never break across lines — but "Ortalama sıcaklık (°C)" held on one line is what
+   pushed the 3-column table past a 390px viewport, hiding the precipitation column behind
+   a scroll for no reason. Wrapping the header to two lines is the normal data-table
+   answer and lets the whole table fit. */
+@media (max-width: 700px) {
+  .thMetric {
+    white-space: normal;
+  }
+}
+
 .thMonth {
   text-align: left;
 }
@@ -282,44 +295,6 @@
   text-align: right;
   color: var(--color-ink);
   font-variant-numeric: tabular-nums;
-}
-
-/* ---- All-time records ------------------------------------------------------ */
-
-.records {
-  margin-top: 18px;
-}
-
-.recordsHeading {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-ink);
-  margin: 0 0 8px;
-}
-
-.recordsList {
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px 16px;
-}
-
-.recordItem dt {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-slate);
-  margin-bottom: 2px;
-}
-
-.recordItem dd {
-  margin: 0;
-  font-size: 0.95rem;
-  color: var(--color-ink);
-}
-
-.recordDate {
-  color: var(--color-slate);
-  font-size: 0.85rem;
 }
 
 /* ---- Source line ----------------------------------------------------------- */
@@ -337,17 +312,21 @@
   text-decoration: underline;
 }
 
-/* ---- Utilities ------------------------------------------------------------- */
+/* The mandatory C3S notice — an UNTOUCHABLE copy class (CONTENT-STYLE §22), set in a
+   quieter, indented block so a Turkish reader can see at a glance where the platform's
+   prose stops and the licence text begins.
 
-/* Visually hidden, still announced (clip-path pattern — survives forced-colors). */
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
+   Sized 0.85rem to match `components/marine/marine-attribution.module.css`, the treatment
+   this block claims to mirror — a notch ABOVE the 0.8rem source line it follows rather
+   than level with it. The licence asks for the notice "prominently", so where the two
+   precedents disagreed the larger one won. It is never hidden behind a disclosure and
+   never collapsed. */
+.licenceNotice {
+  margin: 8px 0 0;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--color-border);
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  max-width: 78ch;
+  line-height: 1.5;
 }

@@ -1,5 +1,5 @@
 import { getFormatter, getTranslations } from "next-intl/server";
-import type { Climate, ClimateExtremeRecord, ClimateMonthlyNormal } from "@/lib/api/types";
+import type { Climate, ClimateMonthlyNormal } from "@/lib/api/types";
 import styles from "./climate.module.css";
 
 interface ClimateTableProps {
@@ -10,40 +10,50 @@ interface ClimateTableProps {
 /** One data column: its header key, decimals, and how to read the value off a month. */
 interface ColumnDef {
   id: string;
-  headerKey:
-    | "colTempMean"
-    | "colTempMax"
-    | "colTempMin"
-    | "colPrecip"
-    | "colSunshine"
-    | "colRainyDays"
-    | "colRecordMax"
-    | "colRecordMin";
+  headerKey: "colTempMean" | "colPrecip";
   digits: number;
-  get: (m: ClimateMonthlyNormal) => number | null;
+  get: (m: ClimateMonthlyNormal) => number;
 }
 
+/**
+ * The CORE PAIR, and deliberately nothing else (api #87 / DEC 2026-08-01o).
+ *
+ * ERA5-Land monthly means publish exactly two quantities per month, so the six MGM-era
+ * columns (mean-max, mean-min, sunshine, rainy days, record max/min) are gone — not
+ * hidden behind a null check, gone, because the fields no longer exist in the contract.
+ *
+ * Both getters return a NON-nullable `number`: the DTO types them required. The old
+ * "drop an all-null column" filter and the em-dash no-data cell were removed with them —
+ * with two guaranteed columns neither branch could ever run, and a silent em-dash would
+ * have HIDDEN a contract violation instead of surfacing it.
+ */
 const COLUMNS: ColumnDef[] = [
   { id: "tempMean", headerKey: "colTempMean", digits: 1, get: (m) => m.tempMeanC },
-  { id: "tempMax", headerKey: "colTempMax", digits: 1, get: (m) => m.tempMaxMeanC },
-  { id: "tempMin", headerKey: "colTempMin", digits: 1, get: (m) => m.tempMinMeanC },
   { id: "precip", headerKey: "colPrecip", digits: 1, get: (m) => m.precipitationMm },
-  { id: "sunshine", headerKey: "colSunshine", digits: 1, get: (m) => m.sunshineHours },
-  { id: "rainyDays", headerKey: "colRainyDays", digits: 1, get: (m) => m.rainyDays },
-  { id: "recordMax", headerKey: "colRecordMax", digits: 1, get: (m) => m.tempRecordMaxC },
-  { id: "recordMin", headerKey: "colRecordMin", digits: 1, get: (m) => m.tempRecordMinC },
 ];
 
 /**
- * The always-visible monthly climate table (server component). Months as ROWS, metrics
- * as COLUMNS (mobile-first — a horizontal scroll handles the many columns on a narrow
- * screen). THIS is the information gain over the competitor, whose figures are trapped in
- * a raster JPG: machine-readable `<td>`s in the first HTML response, so the numbers are
- * copyable, crawlable, and screen-reader navigable (PLAN §2 — never hidden in `<details>`).
+ * The always-visible monthly climate table (server component). Months as ROWS, the two
+ * metrics as COLUMNS. THIS is the information gain over the competitor, whose figures are
+ * trapped in a raster JPG: machine-readable `<td>`s in the first HTML response, so the
+ * numbers are copyable, crawlable, and screen-reader navigable (PLAN §2 — never hidden in
+ * `<details>`).
  *
- * A column whose 12 values are all null is dropped entirely. Units live only in the
- * column headers. `<th scope>` on both axes + a `<caption>` naming the province, period,
- * and source keep the table fully associable for assistive tech.
+ * Units live only in the column headers. `<th scope>` on both axes + a `<caption>` naming
+ * the province, period, and source keep the table fully associable for assistive tech.
+ *
+ * ## Why the scroll container is still here with only three columns
+ *
+ * At normal widths this table no longer scrolls — three columns fit inside `.tableScroll`'s
+ * 560px cap, and below 700px the metric headers wrap so it fits a 390px phone exactly. But
+ * `.table` keeps a 320px `min-width`, so at the WCAG 1.4.10 reflow width (a 320px viewport,
+ * or equivalently 400% zoom) the content box IS narrower than the table and the container
+ * genuinely scrolls. A scrollable container that keyboard users cannot reach fails WCAG
+ * 2.1.1, so `tabIndex={0}` stays.
+ *
+ * Its LABEL, however, no longer claims scrolling as a fact: it used to end with "(yatay
+ * kaydırılabilir)", which was a false statement to a screen reader at every width where the
+ * table fits. The region is now named by what it contains.
  */
 export async function ClimateTable({ climate, provinceName }: ClimateTableProps) {
   const t = await getTranslations("Climate");
@@ -54,132 +64,49 @@ export async function ClimateTable({ climate, provinceName }: ClimateTableProps)
   const monthLong = (month: number) =>
     format.dateTime(new Date(Date.UTC(2020, month - 1, 15)), { month: "long" });
 
-  // Drop any column that is all-null across the 12 months (PLAN §2).
-  const columns = COLUMNS.filter((c) => climate.months.some((m) => c.get(m) !== null));
-
-  const records = buildRecords(climate);
-
   return (
-    <>
-      <div
-        className={styles.tableScroll}
-        role="region"
-        aria-label={t("scrollRegionLabel", { name: provinceName })}
-        tabIndex={0}
-      >
-        <table className={styles.table}>
-          <caption className={styles.tableCaption}>
-            {/* Years passed as strings so ICU never group-separates them (1929, not 1.929). */}
-            {t("tableCaption", {
-              name: provinceName,
-              start: String(climate.periodStartYear),
-              end: String(climate.periodEndYear),
-            })}
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col" className={styles.thMonth}>
-                {t("colMonth")}
+    <div
+      className={styles.tableScroll}
+      role="region"
+      aria-label={t("scrollRegionLabel", { name: provinceName })}
+      tabIndex={0}
+    >
+      <table className={styles.table}>
+        <caption className={styles.tableCaption}>
+          {/* Years passed as strings so ICU never group-separates them (1991, not 1.991). */}
+          {t("tableCaption", {
+            name: provinceName,
+            start: String(climate.periodStartYear),
+            end: String(climate.periodEndYear),
+          })}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" className={styles.thMonth}>
+              {t("colMonth")}
+            </th>
+            {COLUMNS.map((c) => (
+              <th key={c.id} scope="col" className={styles.thMetric}>
+                {t(c.headerKey)}
               </th>
-              {columns.map((c) => (
-                <th key={c.id} scope="col" className={styles.thMetric}>
-                  {t(c.headerKey)}
-                </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {climate.months.map((m) => (
+            <tr key={m.month}>
+              <th scope="row" className={styles.thRow}>
+                {monthLong(m.month)}
+              </th>
+              {COLUMNS.map((c) => (
+                <td key={c.id} className={styles.td}>
+                  {num(c.get(m), c.digits)}
+                </td>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {climate.months.map((m) => (
-              <tr key={m.month}>
-                <th scope="row" className={styles.thRow}>
-                  {monthLong(m.month)}
-                </th>
-                {columns.map((c) => {
-                  const v = c.get(m);
-                  return (
-                    <td key={c.id} className={styles.td}>
-                      {v !== null ? (
-                        num(v, c.digits)
-                      ) : (
-                        <>
-                          <span aria-hidden="true">—</span>
-                          {/* An em-dash is invisible to AT, so the cell would announce as
-                              "blank" — ambiguous with a rendering fault in a data table
-                              whose whole point is machine/AT-readable numbers. */}
-                          <span className={styles.srOnly}>{t("cellNoData")}</span>
-                        </>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {records.length > 0 && (
-        <div className={styles.records}>
-          <h4 className={styles.recordsHeading}>{t("recordsHeading")}</h4>
-          <dl className={styles.recordsList}>
-            {records.map((r) => (
-              <div key={r.labelKey} className={styles.recordItem}>
-                <dt>{t(r.labelKey)}</dt>
-                <dd>
-                  {t(r.valueKey, { value: r.record.value })}
-                  {r.record.date !== null && (
-                    <span className={styles.recordDate}>
-                      {" "}
-                      {/* `timeZone: "UTC"` is load-bearing: "YYYY-MM-DD" parses to UTC
-                          midnight, so on any negative-offset runtime the DAY would render
-                          one behind ("6 Ocak 1942" → "5 Ocak"). The project sets no default
-                          `timeZone` and the hosting region is still undecided, so the
-                          runtime's zone is an assumption we do not get to make. (Same
-                          defence as the `Date.UTC(…, 15)` trick used for month names.) */}
-                      (
-                      {format.dateTime(new Date(r.record.date), {
-                        dateStyle: "long",
-                        timeZone: "UTC",
-                      })}
-                      )
-                    </span>
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      )}
-    </>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
-}
-
-interface RecordRow {
-  labelKey: "recordDailyMaxPrecip" | "recordFastestWind" | "recordMaxSnow";
-  valueKey: "recordValuePrecip" | "recordValueWind" | "recordValueSnow";
-  record: ClimateExtremeRecord;
-}
-
-/** Collect the present all-time records (each is independently nullable). */
-function buildRecords(climate: Climate): RecordRow[] {
-  const rows: RecordRow[] = [];
-  const r = climate.records;
-  if (r.dailyMaxPrecipitationMm !== null) {
-    rows.push({
-      labelKey: "recordDailyMaxPrecip",
-      valueKey: "recordValuePrecip",
-      record: r.dailyMaxPrecipitationMm,
-    });
-  }
-  if (r.fastestWindMs !== null) {
-    rows.push({
-      labelKey: "recordFastestWind",
-      valueKey: "recordValueWind",
-      record: r.fastestWindMs,
-    });
-  }
-  if (r.maxSnowDepthCm !== null) {
-    rows.push({ labelKey: "recordMaxSnow", valueKey: "recordValueSnow", record: r.maxSnowDepthCm });
-  }
-  return rows;
 }
