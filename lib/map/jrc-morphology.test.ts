@@ -8,6 +8,7 @@ import {
   labelComponents,
   maskFromRows,
   maskToRows,
+  selectBodyComponents,
   ringSignedArea,
   traceRings,
 } from "../../scripts/lib/jrc-morphology.mjs";
@@ -406,3 +407,110 @@ function segmentsIntersect(a: Pt, b: Pt, c: Pt, d: Pt): boolean {
   }
   return onSegment(c, d, a) || onSegment(c, d, b) || onSegment(a, b, c) || onSegment(a, b, d);
 }
+
+describe("T12 — the identity test composes a body from labelled components", () => {
+  /**
+   * Three water blocks on one row, with controllable gaps:
+   *
+   *   [CORE]  gapA  [NEAR]  gapB  [FAR]
+   *
+   * The identity box always sits inside CORE. This is the Tuz/Hirfanlı and the Yay/Çöl
+   * geometry in miniature — a body, a fragment that belongs to it, and a separate lake that
+   * does not — and it is the regression tripwire for both defects: each shipped a plausible
+   * lake that was actually two (→ DEC 2026-08-04d, DEC 2026-08-04g).
+   */
+  function threeBlocks(gapA: number, gapB: number) {
+    const block = 6;
+    const margin = 30;
+    const width = margin * 2 + block * 3 + gapA + gapB;
+    const height = margin * 2 + block;
+    const mask = createMask(width, height);
+    const y0 = margin;
+    const y1 = margin + block - 1;
+    let x = margin;
+    const spans: [number, number][] = [];
+    for (const gap of [gapA, gapB, 0]) {
+      fillRect(mask, x, x + block - 1, y0, y1);
+      spans.push([x, x + block - 1]);
+      x += block + gap;
+    }
+    const core = spans[0] ?? [0, 0];
+    return {
+      mask,
+      identityBox: { x0: core[0] + 1, y0: y0 + 1, x1: core[0] + 2, y1: y0 + 2 },
+    };
+  }
+
+  function select(gapA: number, gapB: number, neighbourPx: number, includeFragments = true) {
+    const { mask, identityBox } = threeBlocks(gapA, gapB);
+    const labelling = labelComponents(mask);
+    expect(labelling.count).toBe(3);
+    return selectBodyComponents(labelling, mask.width, mask.height, identityBox, {
+      neighbourPx,
+      includeFragments,
+    });
+  }
+
+  it("takes the component the identity box sits in", () => {
+    const result = select(20, 20, 0);
+    expect(result.identity).toHaveLength(1);
+    expect(result.selected).toEqual(result.identity);
+    expect(result.rejected).toHaveLength(2);
+  });
+
+  it("pulls in a fragment inside the reach and leaves one outside it alone", () => {
+    // NEAR is 8 px away, FAR is 40 px beyond that. A 10 px reach takes NEAR only.
+    const result = select(8, 40, 10);
+    expect(result.selected).toHaveLength(2);
+    expect(result.rejected).toHaveLength(1);
+  });
+
+  it("is exact at the pixel boundary — this is the defect that shipped", () => {
+    // A gap of exactly N px is bridged by a reach of N and NOT by a reach of N-1. The Yay/Çöl
+    // merge was precisely this: a documented radius that rounded to one pixel too many.
+    expect(select(5, 60, 4).selected).toHaveLength(1);
+    expect(select(5, 60, 5).selected).toHaveLength(2);
+  });
+
+  it("never chains — a fragment cannot drag its own neighbour in", () => {
+    // CORE—NEAR is 6 px and NEAR—FAR is 6 px, so FAR is 6 px from NEAR but 18 px from CORE.
+    // A transitive rule would take all three; measuring from the identity set never does.
+    const result = select(6, 6, 8);
+    expect(result.selected).toHaveLength(2);
+    expect(result.rejected).toHaveLength(1);
+  });
+
+  it("takes only the identity component when fragments are not requested", () => {
+    // `main-only` must mean main-only even when a fragment is well inside the reach.
+    const result = select(4, 40, 20, false);
+    expect(result.selected).toHaveLength(1);
+  });
+
+  it("reports rejected components largest-first, after the selection is final", () => {
+    const result = select(8, 40, 10);
+    const sizes = result.rejected.map((entry) => entry.size);
+    expect([...sizes].sort((a, b) => b - a)).toEqual(sizes);
+    // Anything reported as rejected must genuinely not be in the body.
+    for (const entry of result.rejected) expect(result.selected).not.toContain(entry.label);
+  });
+
+  it("returns nothing when the identity box touches no water", () => {
+    const { mask } = threeBlocks(20, 20);
+    const labelling = labelComponents(mask);
+    const result = selectBodyComponents(
+      labelling,
+      mask.width,
+      mask.height,
+      { x0: 0, y0: 0, x1: 2, y1: 2 },
+      { neighbourPx: 10, includeFragments: true },
+    );
+    expect(result.identity).toHaveLength(0);
+    expect(result.selected).toHaveLength(0);
+  });
+
+  it("refuses a fractional reach rather than rounding it", () => {
+    // Rounding a metre value into pixels is what merged two named lakes; a non-integer reach
+    // is now a programming error, not a silent nearest-pixel.
+    expect(() => select(8, 40, 4.5)).toThrow(/non-negative integer/);
+  });
+});

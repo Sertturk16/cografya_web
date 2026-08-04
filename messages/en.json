@@ -38,7 +38,8 @@
     "mapTitle": "Map of the provinces of Türkiye",
     "plateLabel": "Plate {code}",
     "attribution": "© OpenStreetMap contributors, ODbL",
-    "attributionJrc": "Seasonal lake outlines: JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
+    "attributionJrcLabel": "Seasonal lake outlines:",
+    "attributionJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
   },
   "About": {
     "metaTitle": "About",
@@ -50,10 +51,11 @@
     "dataIntro": "The maps on this site are built from open datasets. The source and licence of each layer is listed below.",
     "dataOsm": "Provincial boundaries, lakes and reservoirs of Türkiye: OpenStreetMap — © OpenStreetMap contributors, ODbL.",
     "dataNaturalEarth": "World country boundaries: Natural Earth (public domain).",
-    "dataJrc": "Seasonal and salt lake outlines: JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google.",
     "dataJrcCitationIntro": "Citation for the JRC Global Surface Water dataset:",
     "dataJrcCitation": "Jean-Francois Pekel, Andrew Cottam, Noel Gorelick, Alan S. Belward, High-resolution mapping of global surface water and its long-term changes. Nature 540, 418-422 (2016).",
-    "dataJrcDoi": "https://doi.org/10.1038/nature20584"
+    "dataJrcDoi": "https://doi.org/10.1038/nature20584",
+    "dataJrcLabel": "Seasonal and salt lake outlines:",
+    "dataJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
   },
   "Turkiye": {
     "metaTitle": "Map of Türkiye — 81 Provinces",

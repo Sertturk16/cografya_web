@@ -613,3 +613,82 @@ export function ringSignedArea(ring) {
   }
   return total / 2;
 }
+
+// --- body selection (the identity test) ----------------------------------------------
+
+/**
+ * Compose a body out of labelled components: the DEC 2026-08-04d identity test.
+ *
+ * Two steps, and the split is the whole point:
+ *
+ * 1. **Identity** — every component the caller's `identityBox` touches IS the body. The box
+ *    is pinned by hand in the body's core, so this answers "which water is the lake called
+ *    X" with a human's assertion rather than with a rectangle drawn around a neighbourhood.
+ * 2. **Fragments** — components within `neighbourPx` of the identity set join it, when the
+ *    caller asks for them. Measured from the identity set only and NOT chained, so a line of
+ *    seasonal pans cannot walk the selection across the countryside one hop at a time.
+ *
+ * ## Why this is a function and not four lines inside the fetch script
+ *
+ * It is the step that decides what a lake IS, it has already been wrong once in a way that
+ * shipped (Hirfanlı Baraj Gölü drawn as part of Tuz Gölü, and later Çöl Gölü drawn as part of
+ * Yay Gölü — → DEC 2026-08-04d / 08-04g), and it lives in a pipeline with NO CI gate because
+ * its input is a 505 MB download. Pulled in here it is exercised by synthetic masks like
+ * every other operator in this module, which is the only automated tripwire this algorithm
+ * can have.
+ *
+ * ## `neighbourPx` is pixels on purpose
+ *
+ * Callers used to pass metres. A GSW pixel is 0.00025° of ARC — ~21.8 m east-west and
+ * ~27.8 m north-south at Türkiye's lake latitudes, not 30 m — so a metre value both rounded
+ * (135 m and 164 m were the same structuring element) and misdescribed its own footprint.
+ * The integer the algorithm consumes is the honest unit.
+ *
+ * @param {Labelling} labelling
+ * @param {number} width
+ * @param {number} height
+ * @param {PixelBox} identityBox
+ * @param {{ neighbourPx?: number, includeFragments: boolean }} options
+ * @returns {{ identity: number[], selected: number[], rejected: { label: number, size: number }[] }}
+ *   `identity` and `selected` are ascending label lists; `rejected` is every OTHER labelled
+ *   component, largest first, so a caller can report what it chose not to take.
+ */
+export function selectBodyComponents(labelling, width, height, identityBox, options) {
+  const identity = componentsIntersecting(labelling, width, identityBox).map(({ label }) => label);
+  if (identity.length === 0) {
+    return { identity: [], selected: [], rejected: [] };
+  }
+
+  const selected = new Set(identity);
+  if (options.includeFragments) {
+    const neighbourPx = options.neighbourPx ?? 0;
+    if (!Number.isInteger(neighbourPx) || neighbourPx < 0) {
+      throw new Error(
+        `selectBodyComponents: neighbourPx must be a non-negative integer (got ${neighbourPx}). ` +
+          `A fractional radius silently rounds, which is how two named lakes were once merged.`,
+      );
+    }
+    if (neighbourPx > 0) {
+      const reach = dilate(maskFromLabels(labelling, width, height, identity), neighbourPx);
+      for (let i = 0; i < reach.data.length; i++) {
+        const label = labelling.labels[i] ?? 0;
+        if (label > 0 && reach.data[i]) selected.add(label);
+      }
+    }
+  }
+
+  // Built AFTER the selection is final, so "rejected" means rejected.
+  /** @type {{ label: number, size: number }[]} */
+  const rejected = [];
+  for (let label = 1; label <= labelling.count; label++) {
+    if (selected.has(label)) continue;
+    rejected.push({ label, size: labelling.sizes[label] ?? 0 });
+  }
+  rejected.sort((a, b) => b.size - a.size);
+
+  return {
+    identity: [...identity].sort((a, b) => a - b),
+    selected: [...selected].sort((a, b) => a - b),
+    rejected,
+  };
+}

@@ -14,9 +14,10 @@
  *
  * The recipe is the provenance. A paragraph can drift from what was actually run; an
  * executable cannot. Here that is not a preference but a requirement: the parameters
- * interact strongly and the output is very sensitive to them. Measured on Tuz Gölü, same
- * body, same layer, only the closing radius changed: 300 m → ~1 480 km², 600 m → ~1 900 km².
- * A number that swings that far on one constant has to live in code, next to the reason.
+ * interact strongly and the output is very sensitive to them. Measured on Tuz Gölü with THIS
+ * pipeline, same body, same layer, only the closing radius changed: 300 m → 1 292.6 km²,
+ * 450 m → 1 341.8, 600 m → 1 374.9. A number that moves 6 % on one constant has to live in
+ * code, next to the reason.
  *
  * ## What this file is NOT allowed to do (licence separation, → DEC 2026-08-01r-1)
  *
@@ -70,13 +71,12 @@ import {
 } from "./lib/jrc-raster.mjs";
 import {
   closeMask,
-  componentsIntersecting,
   countSet,
-  dilate,
   fillInteriorHoles,
   labelComponents,
   maskFromLabels,
   ringSignedArea,
+  selectBodyComponents,
   touchesBorder,
   traceRings,
 } from "./lib/jrc-morphology.mjs";
@@ -108,14 +108,30 @@ const GSW_VERSION = "v1.5 (1984–2024)";
 const OCCURRENCE_THRESHOLD = readNumberEnv("JRC_OCCURRENCE_THRESHOLD", 10);
 
 /**
- * Morphological closing radius, in metres. **300 m = 10 px at the 30 m grid.**
+ * Morphological closing radius, quoted in NOMINAL metres. **300 m = 10 px.**
+ *
+ * The ruled values land on whole pixels with no ambiguity (300 / 450 / 600 m = 10 / 15 /
+ * 20 px), which is the only reason this one may stay in metres — see `NOMINAL_PIXEL_SIZE_M`
+ * for why every other distance in this file is pinned in pixels. On the ground 10 px is
+ * ~218 m east-west and ~278 m north-south at these latitudes, not 300 m in both.
  *
  * What it buys: the dry salt-crust seams that split Tuz Gölü into three OSM fragments are
- * bridged, without inflating the shoreline. What it costs if raised: at 600 m the same
- * recipe inflates Tuz to ~2 105 km² (+25 %), well past the ÇŞB reference of 1 642 km².
+ * bridged, without inflating the shoreline.
+ *
+ * **What raising it costs — MEASURED with this pipeline, after Hirfanlı was removed from
+ * Tuz (→ DEC 2026-08-04d):**
+ *
+ *   300 m (10 px)   Tuz 1 292.6 km²   −21.3 % against the 1 642 km² ÇŞB reference
+ *   450 m (15 px)   Tuz 1 341.8 km²   −18.3 %
+ *   600 m (20 px)   Tuz 1 374.9 km²   −16.3 %
+ *
+ * **The radius does not close that gap** — even at 600 m the body is 16 % under the
+ * reference, so this constant is not the lever anyone should reach for to chase it. Earlier
+ * revisions of this docblock claimed "600 m → ~2 105 km² (+25 %), well past the reference";
+ * that figure predates the Hirfanlı correction and is withdrawn.
  *
  * **Reach is up to 2 × this radius, not this radius** — dilation grows both banks of a seam.
- * At 300 m the bridging ceiling is therefore 600 m. That correction is documented on
+ * At 10 px the bridging ceiling is therefore 20 px. That correction is documented on
  * `closeMask()` and pinned by `lib/map/jrc-morphology.test.ts`; the P7 plan's §11 T1 prose
  * said otherwise and was wrong. The physical parameter is unchanged.
  */
@@ -140,15 +156,34 @@ const FILL_INTERIOR_HOLES = true;
  */
 const SNAPSHOT_EPSILON_UNITS = readNumberEnv("JRC_SNAPSHOT_EPSILON", 0.05);
 
-/** Grid pitch, degrees. Mirrors `PIXEL_SIZE_DEG`; used for the metre↔pixel conversion. */
+/** Grid pitch, degrees. Mirrors `PIXEL_SIZE_DEG`. */
 const PIXEL_SIZE_DEG = 0.00025;
-/** Nominal ground size of one pixel, metres. GSW is a 30 m product. */
-const PIXEL_SIZE_M = 30;
+
+/**
+ * NOMINAL ground size of one pixel, metres — the "30 m" in "GSW is a 30 m product".
+ *
+ * **It is nominal, not true, and the difference matters.** GSW's grid is 0.00025° of ARC,
+ * not 30 m of ground. A pixel is `0.00025 × 111 195 ≈ 27.8 m` north-south everywhere, and
+ * `27.8 × cos(lat)` east-west — **21.8 m at Türkiye's lake latitudes**. So a structuring
+ * element of `r` pixels covers `r × 21.8 m` east-west and `r × 27.8 m` north-south: on the
+ * ground it is an ELLIPSE, and quoting it as "r × 30 m" overstates it by up to 27 %.
+ *
+ * This module therefore works in PIXELS and says so (see `IDENTITY_NEIGHBOUR_PX` and
+ * `CLOSING_RADIUS_PX`); metres appear only as reported ground footprints, computed per
+ * window latitude by `pixelGroundSizeM()`. → DEC 2026-08-04g §2.
+ *
+ * The alternative — an axis-true metric, i.e. a weighted distance transform so that a
+ * "300 m" radius really is 300 m on both axes — is deliberately NOT taken here: it would
+ * change the geometry of all nine bodies and invalidate the closing-radius frames the owner
+ * is about to rule on. It stays available as a follow-up if ground-true radii are ever
+ * wanted; what is not acceptable is a docblock that claims a precision the code lacks.
+ */
+const NOMINAL_PIXEL_SIZE_M = 30;
 
 /**
  * How the identity test turns raster components into a body.
  *
- * - `with-fragments` — the main body PLUS every component within `IDENTITY_NEIGHBOUR_M` of it.
+ * - `with-fragments` — the main body PLUS every component within `IDENTITY_NEIGHBOUR_PX` of it.
  * - `main-only`      — the main body alone.
  *
  * **This is a PRODUCT decision, not an engineering one, and it is not settled here.** The
@@ -169,34 +204,54 @@ const PIXEL_SIZE_M = 30;
 const COMPONENT_RULE = readEnumEnv("JRC_COMPONENT_RULE", ["with-fragments", "main-only"]);
 
 /**
- * How far from the main body a detached component may sit and still be the same lake.
+ * How far from the main body a detached component may sit and still be the same lake,
+ * **in pixels**.
  *
- * **2 km — ATLAS RULING, → DEC 2026-08-04d**, adopted together with the identity test after
- * NOVA established that the 264.4 km² lobe east of Tuz Gölü is **Hirfanlı Baraj Gölü** and its
- * upstream Kızılırmak channel, not part of Tuz. The measured gap between the two is 8.63 km
- * at this threshold (8.98 km between the OSM polygons), so 2 km separates them with a factor
- * of four to spare while still gathering a salt lake's own pans, which sit within a kilometre
- * or two of the shore.
+ * **67 px — the ruled 2 km (ATLAS, → DEC 2026-08-04d) expressed in the unit the algorithm
+ * actually works in.** At Türkiye's lake latitudes that footprint is ~1 460 m east-west and
+ * ~1 860 m north-south, NOT 2 000 m in both directions; the ruling's intent (separate Tuz
+ * Gölü from Hirfanlı Baraj Gölü, measured 8.63 km apart) survives that with a 4× margin.
  *
- * Why a DISTANCE and not a wider identity box: Tuz and Hirfanlı overlap in BOTH latitude and
- * longitude, so no rectangle can separate them — NOVA checked. Selection had to stop being a
- * question of geography-by-rectangle and become a question of identity.
+ * ## Why pixels and not metres (→ DEC 2026-08-04g §2)
  *
- * Deliberately NOT transitive: everything is measured from the main body, so a chain of pans
- * cannot walk the selection across the countryside one hop at a time.
+ * This constant was `2000` metres and each registry entry could override it in metres. That
+ * unit is a lie the code cannot honour: `Math.round(m / 30)` makes every value from 135 m to
+ * 164 m the same structuring element, and the true ground footprint is anisotropic anyway.
+ * The lie had a consequence — a documented "150 m keeps Yay Gölü and Çöl Gölü apart" was in
+ * fact 5 px, and 5 px MERGES them. Pinning the integer the algorithm consumes removes the
+ * class: there is nothing left to round.
  *
- * **A registry entry may lower it, and one does — see `gsw-09`.** Measured join distances,
- * this pipeline, at the pinned threshold:
+ * ## Why a distance at all, and why it is not transitive
  *
- *   Tuz Gölü      own eastern strip 112.6 km² joins at 1 500 m · Hirfanlı 255.6 km² stays out
- *   Yay Gölü      Çöl Gölü 31.5 km² joins at **210 m**
+ * Tuz and Hirfanlı overlap in BOTH latitude and longitude, so no rectangle can separate
+ * them — selection had to stop being geography-by-rectangle and become identity. Everything
+ * is measured from the MAIN body only, never chained, so a line of pans cannot walk the
+ * selection across the countryside one hop at a time.
  *
- * So no single radius satisfies both: Tuz NEEDS ≥ 1.5 km to keep its own arm, and anything
- * over ~200 m merges two separately named lakes at Sultan Sazlığı. 2 km is the default the
- * ruling set and the eight bodies it fits; the ninth says so out loud instead of quietly
- * moving everyone's constant.
+ * ## A registry entry may lower it, and one does
+ *
+ * Measured with this pipeline at the pinned threshold, sweeping ONE PIXEL AT A TIME:
+ *
+ *   Tuz Gölü   own eastern strip (112 km²) joins at **35 px**
+ *              Hirfanlı (250 km²) and Tersakan still OUT at 80 px — the default clears both
+ *   Yay Gölü   Çöl Gölü (25.9 km²) joins at **5 px**, stays separate at **4 px**
+ *
+ * So no single radius serves both: Tuz needs ≥ 35 px to keep its own arm, and 5 px merges
+ * two separately named lakes at Sultan Sazlığı. 67 px is the ruled default and the eight
+ * bodies it fits; the ninth says so out loud instead of quietly moving everyone's constant.
+ *
+ * Every figure above is a ONE-PIXEL sweep, not a sampled ladder. The 210 m that stood here
+ * before was a rung of a coarse [3, 7, 17, 34, 50, 67] px probe reported as if it were a
+ * measurement, and it is what let the Yay/Çöl merge through (→ DEC 2026-08-04g).
  */
-const IDENTITY_NEIGHBOUR_M = readNumberEnv("JRC_IDENTITY_NEIGHBOUR_M", 2000);
+const IDENTITY_NEIGHBOUR_PX = readNumberEnv("JRC_IDENTITY_NEIGHBOUR_PX", 67);
+
+/**
+ * When `JRC_IDENTITY_NEIGHBOUR_PX` is set EXPLICITLY it also overrides the per-body values,
+ * so a single run can render "what would this class look like at one reach" for the owner.
+ * Unset in CI and in the committed run, where each body's own pin governs.
+ */
+const NEIGHBOUR_PX_FORCED = (process.env.JRC_IDENTITY_NEIGHBOUR_PX ?? "") !== "";
 
 // --- Granules -----------------------------------------------------------------------
 
@@ -288,8 +343,8 @@ const GRANULES = {
  *    it is the main body. Each one sits at the deepest interior point of its own component
  *    (measured: the shallowest of the nine is 1.65 km of clearance, the box half-width is
  *    under 450 m), so it survives a threshold change rather than falling on a dry pixel.
- * 2. **`IDENTITY_NEIGHBOUR_M`** — components within 2 km of that main body join it; anything
- *    further away is a different lake, whatever box it happens to fall in.
+ * 2. **`IDENTITY_NEIGHBOUR_PX`** — components within that many pixels of the main body join
+ *    it; anything further away is a different lake, whatever box it happens to fall in.
  *
  * NOVA proposed using our OSM polygon for Tuz as the identity filter. This build does NOT:
  * the JRC file must not be a derivative of the ODbL database, and "we only used it to choose
@@ -317,7 +372,7 @@ const GRANULES = {
  * @type {{ id: string, name: string, wikidata: string | null,
  *   identity: { minLon: number, maxLon: number, minLat: number, maxLat: number },
  *   window: { minLon: number, maxLon: number, minLat: number, maxLat: number },
- *   neighbourM?: number, expectedKm2: number, note: string }[]}
+ *   neighbourPx?: number, expectedKm2: number, note: string }[]}
  */
 const REGISTRY = [
   {
@@ -447,16 +502,25 @@ const REGISTRY = [
     identity: { minLon: 35.258, maxLon: 35.266, minLat: 38.327, maxLat: 38.335 },
     // Widened after the clearance check caught the first window shaving this body.
     window: { minLon: 35.08, maxLon: 35.52, minLat: 38.16, maxLat: 38.52 },
-    // PROVISIONAL, AWAITING A RULING. Çöl Gölü — the southern open water of the same Sultan
-    // Sazlığı complex, 31.5 km² — joins this body at a measured 210 m, so the ruled 2 km
-    // default would draw two separately named lakes as one. 150 m keeps them apart and leaves
-    // this body as its main component alone (43.2 km², still clear of the 30 km² rung).
+    // PROVISIONAL, AWAITING A RULING — and the numbers below are a one-pixel sweep, not a
+    // sampled ladder (the previous "210 m" here was a probe rung, and it was wrong; the
+    // pipeline shipped the two lakes MERGED while this comment claimed they were apart,
+    // → DEC 2026-08-04g).
     //
-    // The question this constant stands in for is NOT an engineering one: DEC 2026-08-02q §G
-    // ruled "Yay Gölü is drawn" from a brief that defines Yay as "the open-water core of
-    // Sultan Sazlığı", and whether that core is one pan or two is a geography call. Both are
-    // one number apart and both go to the sample gate.
-    neighbourM: 150,
+    // Çöl Gölü — the southern open water of the same Sultan Sazlığı complex, measured
+    // 25.9 km² — joins this body at **5 px** and stays separate at **4 px**. The ruled 67 px
+    // default therefore draws the two separately named lakes as ONE 84.8 km² body.
+    //
+    // 4 px ships: this body is then its main component alone, 43.9 km², still clear of the
+    // 30 km² rung. That is the conservative choice, not the settled one — drawing two named
+    // lakes as one is the defect class DEC 2026-08-04d exists to kill, so the pipeline
+    // defaults to keeping them apart until someone decides otherwise.
+    //
+    // The decision is NOT engineering: DEC 2026-08-02q §G ruled "Yay Gölü is drawn" from a
+    // brief defining Yay as "the open-water core of Sultan Sazlığı", and whether that core is
+    // one pan or two is a geography call. Both hands are one integer apart and BOTH are in
+    // the sample set (`30-yay-separated` / `30-yay-merged`).
+    neighbourPx: 4,
     expectedKm2: 56.3,
     note: "no OSM counterpart; shown to the owner separately",
   },
@@ -499,32 +563,62 @@ function snapToGrid(value) {
   return Number(value.toFixed(5));
 }
 
-/** @param {number} metres */
-function metresToPixels(metres) {
-  return Math.round(metres / PIXEL_SIZE_M);
+/**
+ * True ground size of one pixel at a latitude, in metres.
+ *
+ * @param {number} latDeg
+ * @returns {{ ew: number, ns: number }}
+ */
+function pixelGroundSizeM(latDeg) {
+  const ns = PIXEL_SIZE_DEG * 111194.9;
+  return { ew: ns * Math.cos((latDeg * Math.PI) / 180), ns };
 }
 
 /**
- * Convert a lon/lat box to inclusive pixel bounds inside an already-read window, clamped to
- * it. Returns `null` when the box misses the window entirely.
+ * Nominal metres → whole pixels, for reading a legacy metre-quoted parameter.
+ *
+ * **Every use of this rounds**, and rounding is what turned a documented 150 m into the
+ * 5-pixel radius that merged two lakes (→ DEC 2026-08-04g): 135 m and 164 m are the SAME
+ * structuring element. Parameters whose value sits near a pixel boundary are pinned in
+ * pixels instead; this helper survives only for the closing radius, whose ruled values
+ * (300 / 450 / 600 m) land exactly on 10 / 15 / 20 px with no ambiguity.
+ *
+ * @param {number} metres
+ */
+function nominalMetresToPixels(metres) {
+  return Math.round(metres / NOMINAL_PIXEL_SIZE_M);
+}
+
+/**
+ * Convert a lon/lat box to inclusive pixel bounds inside an already-read window.
+ *
+ * THROWS rather than clamping when the box is not fully inside the window. A clamped
+ * identity box is a registry error wearing a disguise: the caller would silently test a
+ * different, smaller region than the one written down, and the body it identifies could
+ * change with the window. There is no legitimate reason for a core box — pinned at the
+ * deepest interior point of its own body — to hang over the edge of its own window.
  *
  * @param {{ originLon: number, originLat: number, pixelSizeDeg: number, width: number, height: number }} window
  * @param {{ minLon: number, maxLon: number, minLat: number, maxLat: number }} box
+ * @param {string} label For the error message.
+ * @returns {PixelBoxLocal}
  */
-function boxToPixels(window, box) {
-  const x0 = Math.max(0, Math.floor((box.minLon - window.originLon) / window.pixelSizeDeg));
-  const x1 = Math.min(
-    window.width - 1,
-    Math.ceil((box.maxLon - window.originLon) / window.pixelSizeDeg) - 1,
-  );
-  const y0 = Math.max(0, Math.floor((window.originLat - box.maxLat) / window.pixelSizeDeg));
-  const y1 = Math.min(
-    window.height - 1,
-    Math.ceil((window.originLat - box.minLat) / window.pixelSizeDeg) - 1,
-  );
-  if (x0 > x1 || y0 > y1) return null;
+function boxToPixels(window, box, label) {
+  const x0 = Math.floor((box.minLon - window.originLon) / window.pixelSizeDeg);
+  const x1 = Math.ceil((box.maxLon - window.originLon) / window.pixelSizeDeg) - 1;
+  const y0 = Math.floor((window.originLat - box.maxLat) / window.pixelSizeDeg);
+  const y1 = Math.ceil((window.originLat - box.minLat) / window.pixelSizeDeg) - 1;
+  if (x0 < 0 || y0 < 0 || x1 > window.width - 1 || y1 > window.height - 1 || x0 > x1 || y0 > y1) {
+    throw new Error(
+      `${label}: the identity box ${JSON.stringify(box)} is not fully inside its window. ` +
+        `Clamping it would quietly test a different region than the registry records — ` +
+        `widen \`window\` or move \`identity\`.`,
+    );
+  }
   return { x0, y0, x1, y1 };
 }
+
+/** @typedef {{ x0: number, y0: number, x1: number, y1: number }} PixelBoxLocal */
 
 /** @param {string} path */
 function sha256OfFile(path) {
@@ -556,7 +650,10 @@ async function ensureGranules() {
       if (!response.ok || !response.body) {
         throw new Error(`${url}: HTTP ${response.status}`);
       }
-      await pipeline(Readable.fromWeb(/** @type {any} */ (response.body)), createWriteStream(path));
+      await pipeline(
+        Readable.fromWeb(/** @type {import("node:stream/web").ReadableStream} */ (response.body)),
+        createWriteStream(path),
+      );
       process.stdout.write("done\n");
     }
 
@@ -581,7 +678,7 @@ async function ensureGranules() {
  * @param {(typeof REGISTRY)[number]} entry
  */
 async function buildBody(entry) {
-  const radiusPx = metresToPixels(CLOSING_RADIUS_M);
+  const radiusPx = nominalMetresToPixels(CLOSING_RADIUS_M);
   const clearancePx = 2 * radiusPx;
 
   const { mask, window, noDataPixels } = await readOccurrenceMask({
@@ -597,14 +694,21 @@ async function buildBody(entry) {
   }
 
   const labelling = labelComponents(mask);
-  // STEP 1 of the identity test: the component covering the hand-pinned core box IS the body.
-  const identityBox = boxToPixels(window, entry.identity);
-  if (!identityBox) {
-    throw new Error(`${entry.id} (${entry.name}): the identity box falls outside its own window.`);
-  }
-  const identified = componentsIntersecting(labelling, mask.width, identityBox);
-  const main = identified[0];
-  if (!main) {
+  // THE IDENTITY TEST (→ DEC 2026-08-04d). The composition itself lives in
+  // `jrc-morphology.mjs` and is unit-tested on synthetic masks — it is the step that decides
+  // what a lake IS, it has shipped wrong twice, and this pipeline has no CI gate.
+  const identityBox = boxToPixels(window, entry.identity, `${entry.id} (${entry.name})`);
+  const neighbourPx = NEIGHBOUR_PX_FORCED
+    ? IDENTITY_NEIGHBOUR_PX
+    : (entry.neighbourPx ?? IDENTITY_NEIGHBOUR_PX);
+  const { identity, selected, rejected } = selectBodyComponents(
+    labelling,
+    mask.width,
+    mask.height,
+    identityBox,
+    { neighbourPx, includeFragments: COMPONENT_RULE === "with-fragments" },
+  );
+  if (identity.length === 0) {
     throw new Error(
       `${entry.id} (${entry.name}): the identity box contains no water at occurrence ≥ ` +
         `${OCCURRENCE_THRESHOLD} %. A core box that hits nothing is a registry error, not an ` +
@@ -613,33 +717,7 @@ async function buildBody(entry) {
     );
   }
 
-  // STEP 2: components within `IDENTITY_NEIGHBOUR_M` of the main body join it. Measured from
-  // the MAIN body only, never chained, so the selection cannot walk across the countryside.
-  const selectedLabels = new Set([main.label]);
-  /** @type {{ label: number, size: number }[]} */
-  const rejected = [];
-  if (COMPONENT_RULE === "with-fragments") {
-    const reach = dilate(
-      maskFromLabels(labelling, mask.width, mask.height, [main.label]),
-      metresToPixels(entry.neighbourM ?? IDENTITY_NEIGHBOUR_M),
-    );
-    const withinReach = new Set();
-    for (let i = 0; i < reach.data.length; i++) {
-      const label = labelling.labels[i] ?? 0;
-      if (label > 0 && reach.data[i]) withinReach.add(label);
-    }
-    for (const label of withinReach) selectedLabels.add(label);
-    for (let label = 1; label <= labelling.count; label++) {
-      if (selectedLabels.has(label)) continue;
-      rejected.push({ label, size: labelling.sizes[label] ?? 0 });
-    }
-    rejected.sort((a, b) => b.size - a.size);
-  }
-  // The identity box may legitimately touch more than one component where two pans interleave
-  // at the core; those are the body too.
-  for (const { label } of identified) selectedLabels.add(label);
-
-  const raw = maskFromLabels(labelling, mask.width, mask.height, selectedLabels);
+  const raw = maskFromLabels(labelling, mask.width, mask.height, selected);
   const rawPixels = countSet(raw);
 
   // `extent` CROSS-CHECK (P7 plan §4.1 step 10). By construction occurrence > 0 implies
@@ -672,7 +750,8 @@ async function buildBody(entry) {
   if (touchesBorder(filled, clearancePx)) {
     throw new Error(
       `${entry.id} (${entry.name}): the finished body comes within ${clearancePx} px ` +
-        `(${clearancePx * PIXEL_SIZE_M} m) of the window edge. Outside the window is dry, so ` +
+        `(~${(clearancePx * pixelGroundSizeM(entry.window.minLat).ew).toFixed(0)} m EW) of the ` +
+        `window edge. Outside the window is dry, so ` +
         `closing shaves anything that reaches it — widen \`window\` in the registry. Note ` +
         `this is a CLEARANCE check, not a "touches the border" check: a lobe was measured ` +
         `losing ~9 km² while a zero-margin check stayed silent.`,
@@ -730,10 +809,12 @@ async function buildBody(entry) {
     areaKm2,
     polygons,
     componentsTotal: labelling.count,
-    componentsUsed: selectedLabels.size,
+    componentsUsed: selected.length,
+    componentsIdentity: identity.length,
     // Pixel area at THIS window's latitude, not the nominal 30 m × 30 m: a 0.00025° pixel is
     // ~27.8 m north-south but only ~21.8 m east-west at 38°N, so the nominal figure overstates
-    // a component by nearly half.
+    // a component by nearly half. Reported under BOTH component rules — "what this recipe
+    // chose not to take" is exactly as interesting when the answer is "everything".
     largestRejectedKm2:
       ((rejected[0]?.size ?? 0) *
         (window.pixelSizeDeg * 111194.9) ** 2 *
@@ -763,8 +844,9 @@ function loopSize(ring) {
 
 console.log(`fetch-tr-jrc-water → ${OUT}
   dataset          : JRC Global Surface Water ${GSW_VERSION}
-  recipe           : occurrence ≥ ${OCCURRENCE_THRESHOLD} % · closing r=${CLOSING_RADIUS_M} m (${metresToPixels(CLOSING_RADIUS_M)} px) · fill holes ${FILL_INTERIOR_HOLES} · ε=${SNAPSHOT_EPSILON_UNITS} svg units
-  identity test    : core box + components within ${IDENTITY_NEIGHBOUR_M} m of the main body
+  recipe           : occurrence ≥ ${OCCURRENCE_THRESHOLD} % · closing r=${nominalMetresToPixels(CLOSING_RADIUS_M)} px (nominal ${CLOSING_RADIUS_M} m) · fill holes ${FILL_INTERIOR_HOLES} · ε=${SNAPSHOT_EPSILON_UNITS} svg units
+  identity test    : core box + components within ${IDENTITY_NEIGHBOUR_PX} px of the main body
+  pixel on ground  : ${pixelGroundSizeM(38.5).ew.toFixed(1)} m EW × ${pixelGroundSizeM(38.5).ns.toFixed(1)} m NS at 38.5°N — NOT the nominal ${NOMINAL_PIXEL_SIZE_M} m
   component rule   : ${COMPONENT_RULE}
 `);
 
@@ -789,7 +871,11 @@ const features = results.map((result) => ({
     nodes: result.nodes,
     identity: result.entry.identity,
     window: result.entry.window,
-    identityNeighbourM: result.entry.neighbourM ?? IDENTITY_NEIGHBOUR_M,
+    identityNeighbourPx: NEIGHBOUR_PX_FORCED
+      ? IDENTITY_NEIGHBOUR_PX
+      : (result.entry.neighbourPx ?? IDENTITY_NEIGHBOUR_PX),
+    componentsIdentity: result.componentsIdentity,
+    componentsTotal: result.componentsTotal,
     componentsUsed: result.componentsUsed,
     extentCoveragePct: Number(result.extentCoveragePct.toFixed(2)),
   },
@@ -817,10 +903,10 @@ const output = {
     recipe: {
       occurrenceThresholdPercent: OCCURRENCE_THRESHOLD,
       closingRadiusM: CLOSING_RADIUS_M,
-      closingRadiusPx: metresToPixels(CLOSING_RADIUS_M),
+      closingRadiusPx: nominalMetresToPixels(CLOSING_RADIUS_M),
       fillInteriorHoles: FILL_INTERIOR_HOLES,
       componentRule: COMPONENT_RULE,
-      identityNeighbourM: IDENTITY_NEIGHBOUR_M,
+      identityNeighbourPx: IDENTITY_NEIGHBOUR_PX,
       snapshotEpsilonSvgUnits: SNAPSHOT_EPSILON_UNITS,
       pixelSizeDeg: PIXEL_SIZE_DEG,
     },

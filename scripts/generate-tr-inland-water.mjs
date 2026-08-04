@@ -319,7 +319,8 @@ if (snapshot.metadata?.licence === jrc.metadata?.licence) {
  * ignored here. `sourceLabel` exists only for the console report — no source name reaches the
  * artifact any more than an area does.
  *
- * @type {{ id: string, name: string, areaKm2: number, geometry: any, source: "osm" | "jrc" }[]}
+ * @typedef {{ type: string, coordinates: number[][][] | number[][][][] }} SourceGeometry
+ * @type {{ id: string, name: string, areaKm2: number, geometry: SourceGeometry, source: "osm" | "jrc" }[]}
  */
 const bodies = [];
 for (const feature of snapshot.features) {
@@ -416,6 +417,34 @@ for (const [duplicateId, keptId] of DRAWN_DUPLICATES) {
         `would remove the water itself, not the double count — re-check DRAWN_DUPLICATES.`,
     );
   }
+}
+
+/**
+ * A superseded OSM record may only be dropped while its JRC replacement is ITSELF drawn.
+ *
+ * Without this, a JRC body that falls under the rung takes its OSM twin down with it and the
+ * lake vanishes from all four surfaces in silence: the artifact loses two rows, and
+ * `tr-inland-water.test.ts`'s id-set derivation shrinks in lockstep, so the suite stays green
+ * while the map loses a lake. Karamık is one radius choice away from this — 37.8 km² against
+ * a 30 km² rung — and the owner's sample gate is currently offering radius variants.
+ *
+ * This is the exact twin of the `DRAWN_DUPLICATES` pre-check above, for the exact same
+ * reason: an exclusion must never be able to remove the water itself instead of the
+ * double count.
+ */
+for (const [jrcId, osmId] of SUPERSEDED_BY_JRC) {
+  if (osmId === null) continue;
+  const replacement = bodies.find((body) => body.source === "jrc" && body.id === jrcId);
+  if (replacement !== undefined && replacement.areaKm2 >= MIN_AREA_KM2) continue;
+  const superseded = bodies.find((body) => body.source === "osm" && body.id === osmId);
+  if (superseded === undefined || superseded.areaKm2 < MIN_AREA_KM2) continue;
+  throw new Error(
+    `${osmId} is superseded by ${jrcId}, but ${jrcId} measures ` +
+      `${replacement?.areaKm2?.toFixed(1) ?? "—"} km² and does not clear ` +
+      `MIN_AREA_KM2=${MIN_AREA_KM2}, while ${osmId} (${superseded.areaKm2.toFixed(1)} km²) ` +
+      `does. Dropping it now would remove the lake from the map entirely rather than replace ` +
+      `it — re-check the recipe or SUPERSEDED_BY_JRC before regenerating.`,
+  );
 }
 
 for (const body of bodies) {
@@ -577,7 +606,7 @@ console.log(`generate:water → ${OUT}
   threshold        : ${MIN_AREA_KM2} km²  ·  epsilon β=${EPSILON_BETA} clamped to [${EPSILON_MIN}, ${EPSILON_MAX}] svg units
   sources          : ${SRC_OSM.replace(`${ROOT}/`, "")} (ODbL) + ${SRC_JRC.replace(`${ROOT}/`, "")} (EC JRC/Google)
   bodies drawn     : ${drawn.length} (OSM ${drawn.filter((s) => s.source === "osm").length} · JRC ${drawn.filter((s) => s.source === "jrc").length}) (tier A ${counts.A} · B ${counts.B} · C ${counts.C}) · ${skipped} below threshold
-  superseded       : ${excludedSuperseded.length} OSM records replaced by a JRC body${excludedSuperseded.map((entry) => `\n      ${entry}`).join("")}
+  superseded       : ${excludedSuperseded.length} of ${[...SUPERSEDED_BY_JRC.values()].filter((id) => id !== null).length} mapped OSM records were above the rung and are now replaced${excludedSuperseded.map((entry) => `\n      ${entry}`).join("")}
   duplicates held  : ${excludedDuplicates.length} above threshold but not drawn${excludedDuplicates.map((entry) => `\n      ${entry}`).join("")}
   vertices         : ${vertices} · ${(pathBytes / vertices).toFixed(2)} B/vertex
   path data        : ${(pathBytes / 1024).toFixed(1)} kB · whole artifact ${(bytes / 1024).toFixed(1)} kB

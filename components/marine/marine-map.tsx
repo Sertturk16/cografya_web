@@ -156,12 +156,13 @@ export async function MarineMap({ locale, points, provinces }: MarineMapProps) {
         </svg>
 
         {/* Both source credits, required visibly next to the map (SPEC §5.2 / DEC 2026-07-10)
-            — see components/map/turkey-map-section.tsx for the full note. Same strings and same
-            corner as every other TR-frame surface: one `Map` namespace. */}
+            — see components/map/turkey-map-section.tsx for the full note, including why the
+            English licence string carries its own `lang="en"`. Same strings and same corner as
+            every other TR-frame surface: one `Map` namespace. */}
         <p className={styles.mapAttribution}>
           {tMap("attribution")}
           <br />
-          {tMap("attributionJrc")}
+          {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
         </p>
       </div>
       <figcaption className={styles.mapCaption}>{t("map.caption")}</figcaption>

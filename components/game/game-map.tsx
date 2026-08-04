@@ -305,12 +305,13 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
         </svg>
 
         {/* Both obligations stay visible wherever these shapes are drawn (SPEC §1) — see
-            components/map/turkey-map-section.tsx for the full note. Shared strings with the
-            /turkiye map: one source, never re-typed. */}
+            components/map/turkey-map-section.tsx for the full note, including why the English
+            licence string carries its own `lang="en"`. Shared strings with the /turkiye map:
+            one source, never re-typed. */}
         <p className={styles.attribution}>
           {tMap("attribution")}
           <br />
-          {tMap("attributionJrc")}
+          {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
         </p>
       </div>
 

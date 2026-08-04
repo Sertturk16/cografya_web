@@ -217,6 +217,14 @@ describe("T7 — no body swallows another", () => {
   });
 
   it("keeps every JRC body clear of the OSM bodies that are still drawn", () => {
+    // SEMANTICS, so nobody over-trusts this: the check is VERTEX-IN-POLYGON, not a full
+    // polygon intersection. It catches the failure mode it was built for — one body grossly
+    // containing another — and it would go red on a literal Hirfanlı regression, because
+    // `r1028112` is still drawn from OSM. It CANNOT see leakage into water that neither
+    // snapshot draws, which is exactly how Çöl Gölü got into Yay Gölü unnoticed
+    // (→ DEC 2026-08-04g). The tripwire for THAT class is the synthetic selection test in
+    // `jrc-morphology.test.ts` (T12), not this one.
+
     // THE component-leakage detector. Each JRC body grows from a hand-pinned seed box; a box
     // one step too wide takes the neighbour with it, and the output still looks like a lake.
     // Only the OSM bodies that are actually DRAWN matter — a superseded record is expected to
@@ -262,8 +270,12 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
   const REQUIRED = "Source: EC JRC/Google";
 
   it("renders the licensor's own wording untranslated on the map surfaces", () => {
-    expect(trMessages.Map.attributionJrc).toContain(REQUIRED);
-    expect(enMessages.Map.attributionJrc).toContain(REQUIRED);
+    // The English half is a SEPARATE key from the Turkish label precisely so it can be
+    // rendered inside `lang="en"` (WCAG 3.1.2) without wrapping Turkish prose in it. Both
+    // locales must carry the identical English string — it is the licence, not copy.
+    expect(trMessages.Map.attributionJrcEnglish).toContain(REQUIRED);
+    expect(enMessages.Map.attributionJrcEnglish).toContain(REQUIRED);
+    expect(trMessages.Map.attributionJrcEnglish).toBe(enMessages.Map.attributionJrcEnglish);
   });
 
   it("keeps the journal citation identical in both locales", () => {
@@ -271,8 +283,52 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
     // surface water…" would break the one job it has.
     expect(trMessages.About.dataJrcCitation).toBe(enMessages.About.dataJrcCitation);
     expect(trMessages.About.dataJrcDoi).toBe(enMessages.About.dataJrcDoi);
-    expect(trMessages.About.dataJrc).toContain(REQUIRED);
-    expect(enMessages.About.dataJrc).toContain(REQUIRED);
+    expect(trMessages.About.dataJrcEnglish).toBe(enMessages.About.dataJrcEnglish);
+    expect(trMessages.About.dataJrcEnglish).toContain(REQUIRED);
+  });
+
+  it('marks every untranslated English string with lang="en" where it renders', () => {
+    // The strings are only half the obligation; the wrapper is the other half, and a message
+    // file cannot assert it. Read the render sites as SOURCE — the repo runs a single `node`
+    // vitest environment with no jsdom, the same constraint `tr-inland-water.test.ts`
+    // documents. `marine-attribution.tsx` is the pattern being matched.
+    const sites: [string, string][] = [
+      ["../../components/map/turkey-map-section.tsx", "attributionJrcEnglish"],
+      ["../../components/game/game-map.tsx", "attributionJrcEnglish"],
+      ["../../components/marine/marine-map.tsx", "attributionJrcEnglish"],
+      ["../../app/[locale]/hakkimizda/page.tsx", "dataJrcEnglish"],
+      ["../../app/[locale]/hakkimizda/page.tsx", "dataJrcCitation"],
+    ];
+    for (const [relative, key] of sites) {
+      const source = readFileSync(fileURLToPath(new URL(relative, import.meta.url)), "utf8");
+      const rendered = source.indexOf(`t("${key}")`);
+      expect(rendered, `${relative} does not render ${key}`).toBeGreaterThan(-1);
+      // The nearest enclosing element before the interpolation must open a lang="en" scope.
+      const before = source.slice(0, rendered);
+      const lastSpan = before.lastIndexOf('<span lang="en">');
+      const lastClose = before.lastIndexOf("</span>");
+      expect(lastSpan, `${relative}: ${key} is not inside a lang="en" span`).toBeGreaterThan(
+        lastClose,
+      );
+    }
+  });
+
+  it("renders the JRC credit on exactly the surfaces that draw the JRC geometry", () => {
+    // The licence obligation travels WITH the material. A surface that gains the layer but
+    // not the credit is a licence breach; a surface that gains the credit without the layer
+    // claims a source it does not use. Both directions are asserted from source.
+    const surfaces = [
+      "../../components/map/turkey-map-section.tsx",
+      "../../components/game/game-map.tsx",
+      "../../components/marine/marine-map.tsx",
+      "../../components/map/world-map-section.tsx",
+    ];
+    for (const relative of surfaces) {
+      const source = readFileSync(fileURLToPath(new URL(relative, import.meta.url)), "utf8");
+      const drawsLayer = source.includes("InlandWaterLayer");
+      const credits = source.includes("attributionJrcEnglish");
+      expect(credits, `${relative}: draws=${drawsLayer} credits=${credits}`).toBe(drawsLayer);
+    }
   });
 });
 

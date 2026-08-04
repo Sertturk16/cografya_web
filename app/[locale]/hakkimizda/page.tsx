@@ -61,19 +61,31 @@ export default async function AboutPage({ params }: PageProps) {
 
           `dataJrcCitation` is IDENTICAL in tr and en, unaccented "Jean-Francois" and a plain
           hyphen in "418-422", because that is how the article is indexed — a citation is a
-          key, not prose, and translating one breaks the thing it exists to do. */}
+          key, not prose, and translating one breaks the thing it exists to do.
+
+          Both untranslated blocks therefore carry `lang="en"`, the same way
+          `components/marine/marine-attribution.tsx` marks the ECMWF and CMEMS notices: a
+          Turkish-voice screen reader reading an English citation with Turkish phonetics is
+          the regression that fix already closed once (WCAG 3.1.2). The bare proper nouns in
+          the list above (OpenStreetMap, Natural Earth, ODbL) are deliberately NOT wrapped —
+          a product name inside Turkish prose is not a foreign-language passage. */}
       <h2>{t("dataHeading")}</h2>
       <p>{t("dataIntro")}</p>
       <ul>
         <li>{t("dataOsm")}</li>
         <li>{t("dataNaturalEarth")}</li>
-        <li>{t("dataJrc")}</li>
+        <li>
+          {t("dataJrcLabel")} <span lang="en">{t("dataJrcEnglish")}</span>
+        </li>
       </ul>
       <p>
-        {t("dataJrcCitationIntro")} {t("dataJrcCitation")}{" "}
-        <a href={t("dataJrcDoi")} rel="noopener noreferrer">
-          {t("dataJrcDoi")}
-        </a>
+        {t("dataJrcCitationIntro")}{" "}
+        <span lang="en">
+          {t("dataJrcCitation")}{" "}
+          <a href={t("dataJrcDoi")} rel="noopener noreferrer">
+            {t("dataJrcDoi")}
+          </a>
+        </span>
       </p>
     </div>
   );

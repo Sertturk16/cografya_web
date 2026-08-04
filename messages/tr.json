@@ -38,7 +38,8 @@
     "mapTitle": "Türkiye il haritası",
     "plateLabel": "Plaka {code}",
     "attribution": "© OpenStreetMap katkıcıları, ODbL",
-    "attributionJrc": "Mevsimlik göl sınırları: JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
+    "attributionJrcLabel": "Mevsimlik göl sınırları:",
+    "attributionJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
   },
   "About": {
     "metaTitle": "Hakkımızda",
@@ -50,10 +51,11 @@
     "dataIntro": "Sitedeki haritalar açık veri kümelerinden üretiliyor. Her katmanın kaynağı ve lisansı aşağıda.",
     "dataOsm": "Türkiye il sınırları, göller ve baraj gölleri: OpenStreetMap — © OpenStreetMap katkıcıları, ODbL.",
     "dataNaturalEarth": "Dünya ülke sınırları: Natural Earth (kamu malı).",
-    "dataJrc": "Mevsimlik ve tuzlu göllerin sınırları: JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google.",
     "dataJrcCitationIntro": "JRC Global Surface Water veri kümesinin künyesi:",
     "dataJrcCitation": "Jean-Francois Pekel, Andrew Cottam, Noel Gorelick, Alan S. Belward, High-resolution mapping of global surface water and its long-term changes. Nature 540, 418-422 (2016).",
-    "dataJrcDoi": "https://doi.org/10.1038/nature20584"
+    "dataJrcDoi": "https://doi.org/10.1038/nature20584",
+    "dataJrcLabel": "Mevsimlik ve tuzlu göllerin sınırları:",
+    "dataJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
   },
   "Turkiye": {
     "metaTitle": "Türkiye Haritası — 81 İl",

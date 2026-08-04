@@ -207,7 +207,7 @@ impounding in 2022 and its polygon shows an intermediate state), so its area wil
 | **Publisher**              | European Commission Joint Research Centre / Google                                                                                                          |
 | **Bytes**                  | 84,402                                                                                                                                                      |
 | **Format**                 | GeoJSON `FeatureCollection`, 9 features (MultiPolygon), coordinates `[lon, lat]` (WGS84), plus a `metadata` block                                           |
-| **Per-feature properties** | `id`, `name`, `wikidata`, `areaKm2`, `rings`, `nodes`, `identity`, `window`, `identityNeighbourM`, `componentsUsed`, `componentsTotal`, `extentCoveragePct` |
+| **Per-feature properties** | `id`, `name`, `wikidata`, `areaKm2`, `rings`, `nodes`, `identity`, `window`, `identityNeighbourPx`, `componentsIdentity`, `componentsUsed`, `componentsTotal`, `extentCoveragePct` |
 | **Licence**                | Copernicus / EC JRC open data — free reuse **with attribution and citation**                                                                                |
 | **Required attribution**   | **`Source: EC JRC/Google`** — verbatim, never translated, rendered next to every TR-frame map                                                               |
 | **Required citation**      | Pekel et al. 2016, rendered on `/hakkimizda` (see below)                                                                                                    |
@@ -246,7 +246,7 @@ granule (cached, SHA-256 pinned)
   → window read
   → threshold occurrence >= 10 %          ← never `== 100`; 255 (no data) removed first
   → 4-connected component labelling
-  → IDENTITY TEST                          ← core box + components within 2 km of the main body
+  → IDENTITY TEST                          ← core box + components within N px of the body
   → morphological closing, r = 300 m       ← bridges dry salt-crust seams; reach is 2·r
   → interior hole filling                  ← a dried lake bed is part of the lake
   → `extent` cross-check                   ← every selected pixel must be inside max extent
@@ -256,9 +256,17 @@ granule (cached, SHA-256 pinned)
 
 Every constant is pinned at the top of `scripts/fetch-tr-jrc-water.mjs` with its rationale and
 is copied into this file's `metadata.recipe`. They interact strongly — on Tuz Gölü, changing
-only the closing radius moves the result from ~1,293 km² (300 m) to ~1,375 km² (600 m) — so
+only the closing radius moves the result from 1,292.6 km² (10 px) to 1,374.9 km² (20 px) — so
 the recipe is an executable, not a paragraph, and the owner approves a **rendered frame**,
 never a number (→ DEC 2026-08-02q §C).
+
+**Distances are pinned in PIXELS, not metres (→ DEC 2026-08-04g §2).** A GSW pixel is
+0.00025° of arc — ~21.8 m east-west and ~27.8 m north-south at Türkiye's lake latitudes, not
+30 m — so a metre-quoted radius both rounds (135 m and 164 m are the same structuring element)
+and misdescribes its own ground footprint. That cost a defect: a documented "150 m keeps Yay
+Gölü and Çöl Gölü apart" was really 5 px, and 5 px merges them. The neighbour reach is
+therefore an integer pixel count, globally `IDENTITY_NEIGHBOUR_PX` and per body via the
+registry's optional `neighbourPx` — which `gsw-09` uses (4 px) because Çöl Gölü joins at 5.
 
 **The identity test replaced an earlier "every component touching a seed box" rule** after that
 rule drew **Hirfanlı Baraj Gölü** as part of Tuz Gölü (→ DEC 2026-08-04d). The reservoir's
