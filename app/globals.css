@@ -286,6 +286,26 @@
      Referenced by scroll-margin-top on deep-link anchor targets so a followed fragment
      lands below the opaque sticky header, not underneath it. */
   --header-height: 3.5rem;
+  /* The SAME header once its nav wraps. `--header-height` above describes the single-row
+     desktop header only, but the header is `flex-wrap` and genuinely grows on narrow
+     viewports — measured on /turkiye: 177px at 390px wide (nav on three rows), 104px at
+     768px, 57px from 1024px up. An anchor offset built on the single-row value therefore
+     hides its own target on a phone, which is exactly the defect commit 069588f fixed with
+     local magic numbers; this token is where that measurement belongs instead (PR #44
+     review CR-I2). Deliberately a SEPARATE token rather than making --header-height itself
+     responsive: that one is also consumed by the game's viewport math
+     (game-map.module.css), and changing its value there is a different question with its
+     own testing. */
+  --header-height-wrapped: 11.125rem;
+}
+
+/* The one measured breakpoint (1024px = 64rem), where the nav stops wrapping and the two
+   header heights converge. Below it the wrapped value stays generous — a too-large anchor
+   offset only lands the target lower on screen, while a too-small one hides it. */
+@media (min-width: 64rem) {
+  :root {
+    --header-height-wrapped: var(--header-height);
+  }
 }
 
 *,

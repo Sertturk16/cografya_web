@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { EntityIndex } from "@/components/entity-index/entity-index";
 import { WorldMapSection } from "@/components/map/world-map-section";
 import { getCountriesResilient } from "@/lib/api/countries";
 import type { CountryListItem } from "@/lib/api/types";
 import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { type AlphabetBucket, bucketByInitial, flattenBuckets } from "@/lib/geo/alphabet";
+import { pickHubDescription } from "@/lib/seo/hub-description";
 import {
   collectionPageJsonLd,
   itemListJsonLd,
@@ -18,20 +21,68 @@ interface PageProps {
   params: Promise<{ locale: Locale }>;
 }
 
+/** Same-page anchor for the alphabetical section — locale-independent, never a URL. */
+const INDEX_SECTION_ID = "ulkeler";
+
 /** The localized slug (slug_tr for tr, slug_en for en). */
 function slugForLocale(country: CountryListItem, locale: Locale): string {
   return locale === "en" ? country.slugEn : country.slugTr;
 }
 
+/**
+ * The localized display name. Unlike provinces, country DTOs carry both names, so the EN
+ * hub shows English names — which is also why the country index collates with the PAGE
+ * locale (English names under English rules) while the province index is pinned to Turkish.
+ */
+function nameForLocale(country: CountryListItem, locale: Locale): string {
+  return locale === "en" ? country.nameEn : country.nameTr;
+}
+
+/**
+ * The page's one derivation of the country index — the `/turkiye` twin, see that file's
+ * note (review CR-M1 / FENER F-M2). The country index collates with the PAGE locale
+ * because country DTOs carry a name per locale.
+ */
+async function loadCountryIndex(
+  locale: Locale,
+): Promise<{ buckets: AlphabetBucket<ItemListEntry>[]; items: ItemListEntry[] }> {
+  // The published-country list is the authoritative set of pages that exist; the ItemList
+  // enumerates ONLY these (never an unseeded country → no soft-404 in structured data).
+  // Resilient fetch: a transient failure yields an empty list rather than breaking the page.
+  const countries = await getCountriesResilient();
+  // `nameForLocale`, not `nameTr`: the ItemList carries the SAME name the reader sees in
+  // the list and on the map, in both locales. It previously emitted Turkish names on the
+  // English hub — a latent §B5.7 divergence that only became obvious once the names became
+  // visible text.
+  const entries: ItemListEntry[] = countries.map((country) => ({
+    name: nameForLocale(country, locale),
+    path: getPathname({
+      locale,
+      href: { pathname: "/dunya/[slug]", params: { slug: slugForLocale(country, locale) } },
+    }),
+  }));
+
+  const buckets = bucketByInitial(entries, (entry) => entry.name, locale, INDEX_SECTION_ID);
+  return { buckets, items: flattenBuckets(buckets) };
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Dunya" });
+  // See the twin comment in `/turkiye`: the count comes from the same derivation the body
+  // renders, so the description cannot promise more than the page lists, and an empty list
+  // routes to the count-less variant (§B2.6).
+  const { items } = await loadCountryIndex(locale);
 
   return buildMetadata({
     locale,
     hrefForLocale: () => "/dunya",
     title: t("metaTitle"),
-    description: t("metaDescription"),
+    description: pickHubDescription(
+      t("metaDescription", { count: items.length }),
+      t("metaDescriptionFallback"),
+      items.length,
+    ),
   });
 }
 
@@ -51,18 +102,14 @@ export default async function DunyaPage({ params }: PageProps) {
   const tb = await getTranslations("Breadcrumb");
   const path = getPathname({ locale, href: "/dunya" });
 
-  // The published-country list is the authoritative set of pages that exist; the ItemList
-  // enumerates ONLY these (never an unseeded country → no soft-404 in structured data).
-  // Resilient fetch: a transient failure yields an empty list (→ ItemList with zero items)
-  // rather than breaking the page — the map section degrades the same way.
-  const countries = await getCountriesResilient();
-  const items: ItemListEntry[] = countries.map((country) => ({
-    name: country.nameTr,
-    path: getPathname({
-      locale,
-      href: { pathname: "/dunya/[slug]", params: { slug: slugForLocale(country, locale) } },
-    }),
-  }));
+  // ONE ordering feeds the visible A→Z list, the ItemList and the meta description
+  // (SEO-POLICY §B5.7).
+  const { buckets, items } = await loadCountryIndex(locale);
+  const description = pickHubDescription(
+    t("metaDescription", { count: items.length }),
+    t("metaDescriptionFallback"),
+    items.length,
+  );
 
   return (
     <div className="container page">
@@ -70,7 +117,7 @@ export default async function DunyaPage({ params }: PageProps) {
         schema={[
           collectionPageJsonLd({
             name: t("heading"),
-            description: t("metaDescription"),
+            description,
             path,
             locale,
           }),
@@ -88,6 +135,19 @@ export default async function DunyaPage({ params }: PageProps) {
       <p className="lede">{t("intro")}</p>
 
       <WorldMapSection locale={locale} />
+
+      {/* The alphabetical index (→ DEC 2026-08-04i §2), mirroring `/turkiye` one level up.
+          The six sovereignty-sensitive entries appear as plain rows under the exact display
+          names the map and hover cards already use — no added framing, no omissions
+          (owner ruling on plan Q4); the names come from the api, never from this file. */}
+      <EntityIndex
+        sectionId={INDEX_SECTION_ID}
+        headingId="dunya-index-heading"
+        heading={t("indexHeading")}
+        description={t("indexDescription", { count: items.length })}
+        letterNavLabel={t("indexLetterNavLabel")}
+        buckets={buckets}
+      />
     </div>
   );
 }

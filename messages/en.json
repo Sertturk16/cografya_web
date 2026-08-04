@@ -59,9 +59,13 @@
   },
   "Turkiye": {
     "metaTitle": "Map of Türkiye — 81 Provinces",
-    "metaDescription": "Explore the 81 provinces of Türkiye on an interactive map. Location, population, area, climate and landforms — sourced, structured detail pages for each province.",
+    "metaDescription": "Reach all {count} provinces of Türkiye from the interactive map or the alphabetical list. Population, area, climate and landforms on sourced detail pages.",
+    "metaDescriptionFallback": "Reach the provinces of Türkiye from the interactive map or the alphabetical list. Population, area, climate and landforms on sourced detail pages.",
     "heading": "Map of Türkiye",
     "intro": "Select a province to see its details.",
+    "indexHeading": "Provinces A–Z",
+    "indexDescription": "All {count} provinces of Türkiye, ordered by the Turkish alphabet. I and İ are separate letters there, so Isparta and İstanbul sit in different groups.",
+    "indexLetterNavLabel": "Jump to a letter",
     "gameCtaHeading": "Test what you have learned",
     "gameCtaLink": "Open the map game",
     "marineCtaHeading": "Seas and coastal provinces",
@@ -229,9 +233,13 @@
   },
   "Dunya": {
     "metaTitle": "World Map — Countries",
-    "metaDescription": "Explore the countries of the world on an interactive map. Location, capital, population, area and physical geography — sourced, structured detail pages for each country.",
+    "metaDescription": "An interactive world map and an alphabetical list of {count} countries. Capital, population, area and physical geography on every sourced country page.",
+    "metaDescriptionFallback": "An interactive world map and an alphabetical list of countries. Capital, population, area and physical geography on every sourced country page.",
     "heading": "World Map",
-    "intro": "Select a country to see its details."
+    "intro": "Select a country to see its details.",
+    "indexHeading": "Countries A–Z",
+    "indexDescription": "The {count} countries with a detail page, grouped by the first letter of their name.",
+    "indexLetterNavLabel": "Jump to a letter"
   },
   "WorldMap": {
     "mapTitle": "Map of world countries (regional)",
