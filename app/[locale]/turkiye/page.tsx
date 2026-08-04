@@ -7,7 +7,8 @@ import { getProvincesResilient } from "@/lib/api/provinces";
 import type { ProvinceListItem } from "@/lib/api/types";
 import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { bucketByInitial } from "@/lib/geo/alphabet";
+import { type AlphabetBucket, bucketByInitial, flattenBuckets } from "@/lib/geo/alphabet";
+import { pickHubDescription } from "@/lib/seo/hub-description";
 import {
   collectionPageJsonLd,
   itemListJsonLd,
@@ -37,25 +38,61 @@ function slugForLocale(province: ProvinceListItem, locale: Locale): string {
   return locale === "en" ? province.slugEn : province.slugTr;
 }
 
+/**
+ * The page's one derivation of the province index: fetch → localized entries → buckets →
+ * flat render order. `generateMetadata` and the body BOTH go through here (review CR-M1),
+ * so the count in the meta description is by construction the count the page renders —
+ * previously metadata used the raw api list while the body used the post-bucket list, two
+ * numbers that could disagree.
+ *
+ * The two calls per render share one fetch through Next's request memoization, the same
+ * coupling every hub in this repo relies on (FENER F-M2). Worth noting rather than
+ * defending: even if that memoization lapsed, both callers now run identical code over the
+ * same endpoint, so a divergence would need the api itself to change mid-render.
+ */
+async function loadProvinceIndex(
+  locale: Locale,
+): Promise<{ buckets: AlphabetBucket<ItemListEntry>[]; items: ItemListEntry[] }> {
+  // The published-province list is the authoritative set of pages that exist; the ItemList
+  // enumerates ONLY these (never an unseeded il → no soft-404 in structured data).
+  // Resilient fetch: a transient failure yields an empty list (→ no section, ItemList with
+  // zero items) rather than breaking the page — the map section degrades the same way.
+  const provinces = await getProvincesResilient();
+  const entries: ItemListEntry[] = provinces.map((province) => ({
+    name: province.nameTr,
+    path: getPathname({
+      locale,
+      href: { pathname: "/turkiye/[slug]", params: { slug: slugForLocale(province, locale) } },
+    }),
+  }));
+
+  const buckets = bucketByInitial(
+    entries,
+    (entry) => entry.name,
+    PROVINCE_COLLATION_LOCALE,
+    INDEX_SECTION_ID,
+  );
+  return { buckets, items: flattenBuckets(buckets) };
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Turkiye" });
-  // Same resilient list the page body renders; Next dedupes the underlying fetch within a
-  // render pass, so this costs nothing extra. The count is interpolated rather than written
-  // into the string so the description can never drift from what the page actually lists
-  // (Google explicitly encourages page-specific data in programmatic descriptions —
-  // `SEO-POLICY.md` §A2.2). When the list is empty (an api outage at build), the count-less
-  // variant is used instead: promising "81 il" over a page that shows none would be §B2.6.
-  const provinces = await getProvincesResilient();
+  // The count is interpolated rather than written into the string, so the description can
+  // never claim more than the page lists (`SEO-POLICY.md` §A2.2 encourages page-specific
+  // data in programmatic descriptions). The empty case routes to the count-less variant —
+  // see `pickHubDescription`.
+  const { items } = await loadProvinceIndex(locale);
 
   return buildMetadata({
     locale,
     hrefForLocale: () => "/turkiye",
     title: t("metaTitle"),
-    description:
-      provinces.length > 0
-        ? t("metaDescription", { count: provinces.length })
-        : t("metaDescriptionFallback"),
+    description: pickHubDescription(
+      t("metaDescription", { count: items.length }),
+      t("metaDescriptionFallback"),
+      items.length,
+    ),
   });
 }
 
@@ -77,30 +114,15 @@ export default async function TurkiyePage({ params }: PageProps) {
   const tb = await getTranslations("Breadcrumb");
   const path = getPathname({ locale, href: "/turkiye" });
 
-  // The published-province list is the authoritative set of pages that exist; the
-  // ItemList enumerates ONLY these (never an unseeded il → no soft-404 in structured
-  // data). Resilient fetch: a transient failure yields an empty list (→ ItemList with
-  // zero items) rather than breaking the page — the map section degrades the same way.
-  const provinces = await getProvincesResilient();
-  const entries: ItemListEntry[] = provinces.map((province) => ({
-    name: province.nameTr,
-    path: getPathname({
-      locale,
-      href: { pathname: "/turkiye/[slug]", params: { slug: slugForLocale(province, locale) } },
-    }),
-  }));
-
-  // ONE ordering feeds both the visible A→Z list and the ItemList below, so the structured
-  // data can never enumerate a name or an order the reader does not see (SEO-POLICY §B5.7).
-  const buckets = bucketByInitial(
-    entries,
-    (entry) => entry.name,
-    PROVINCE_COLLATION_LOCALE,
-    INDEX_SECTION_ID,
+  // ONE ordering feeds the visible A→Z list, the ItemList below and the meta description,
+  // so structured data can never enumerate a name or an order the reader does not see
+  // (SEO-POLICY §B5.7).
+  const { buckets, items } = await loadProvinceIndex(locale);
+  const description = pickHubDescription(
+    t("metaDescription", { count: items.length }),
+    t("metaDescriptionFallback"),
+    items.length,
   );
-  const items: ItemListEntry[] = buckets.flatMap((bucket) => [...bucket.items]);
-  const description =
-    items.length > 0 ? t("metaDescription", { count: items.length }) : t("metaDescriptionFallback");
 
   return (
     <div className="container page">

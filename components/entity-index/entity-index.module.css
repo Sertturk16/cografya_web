@@ -3,30 +3,21 @@
    brand hex, no --color-taupe on any text (3.86:1, sub-AA — DESIGN.md §5 hard rule). */
 
 /* Anchor-jump offset. The site header is `position: sticky; top: 0`, so without this the
-   browser aligns a jump target with the viewport top and the header covers it — measured
-   on the first sample run: clicking "İ" scrolled İstanbul/İzmir to the top with their
-   heading hidden underneath.
+   browser aligns a jump target with the viewport top and the header covers it — caught on
+   the first sample run: clicking "İ" scrolled İstanbul/İzmir to the top with their heading
+   hidden underneath.
 
    `scroll-margin-top` must sit on the ELEMENT CARRYING THE ID, which here is the `<h3>`
    itself (`.groupHeading`) and the `<section>` (`.index`) — never the wrapping `.group`
    div, which nothing targets.
 
-   Measured header heights on `/turkiye`: 177px at 390px wide (the nav wraps to three
-   rows), 104px at 768px, 57px from 1024px up. The mobile-first value clears the tallest
-   of those; the one breakpoint tightens it once the header is a single row. A too-LARGE
-   value only lands the heading lower on screen, while a too-small one hides it — so the
-   default deliberately errs large, and no breakpoint is keyed to nav copy that could
-   change length in another locale. */
+   The measurement lives in the token layer (`--header-height-wrapped`), not here: this is
+   the same `calc(header + 1rem)` shape the marine and climate anchor targets already use,
+   so a future header change is one token edit rather than three sets of magic numbers
+   (PR #44 review CR-I2). */
 .index,
 .groupHeading {
-  scroll-margin-top: 196px;
-}
-
-@media (min-width: 1000px) {
-  .index,
-  .groupHeading {
-    scroll-margin-top: 76px;
-  }
+  scroll-margin-top: calc(var(--header-height-wrapped) + 1rem);
 }
 
 .intro {
@@ -50,7 +41,15 @@
   min-width: 32px;
   min-height: 32px;
   padding-inline: 6px;
-  border: 1px solid var(--color-border);
+  /* NOT --color-border (#ddd5cc): that computes 1.45:1 against the chip's white fill and
+     1.37:1 against the page background — under WCAG 1.4.11's 3:1 floor for the boundary of
+     an interactive component, so the chip would read as floating text to a low-vision user
+     (PR #44 review A11Y-3). --color-taupe clears it on both grounds (3.86:1 on the fill,
+     3.64:1 on --color-bg, 3.21:1 on --color-surface). This is NOT the taupe trap DESIGN.md
+     §5 bans: that rule governs TEXT ("never body, nav, footer, or any essential text"),
+     while taupe's sanctioned role is exactly this — a decorative/secondary-UI boundary.
+     The chip's own label stays --color-primary-dark at 8.36:1. */
+  border: 1px solid var(--color-taupe);
   border-radius: var(--radius);
   /* primary-dark on bg = 7.89:1 (AAA). */
   color: var(--color-primary-dark);

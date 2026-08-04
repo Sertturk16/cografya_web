@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bucketByInitial } from "./alphabet";
+import { bucketByInitial, flattenBuckets } from "./alphabet";
 
 /**
  * Structural invariants of the hub index's alphabetical bucketing (CONVENTIONS §2 — no
@@ -67,24 +67,50 @@ const TR_EXPECTED_LETTERS = [
 describe("ICU sanity floor — Intl.Collator('tr') must be a real Turkish collator", () => {
   const tr = new Intl.Collator("tr");
 
-  it.each([
-    ["ac", "aç", "ad"],
-    ["ag", "ağ", "ah"],
-    ["ao", "aö", "ap"],
-    ["as", "aş", "at"],
-    ["au", "aü", "av"],
-  ])("orders %s < %s < %s (the Turkish letter is its own letter)", (before, letter, after) => {
-    expect(tr.compare(before, letter)).toBeLessThan(0);
-    expect(tr.compare(letter, after)).toBeLessThan(0);
-  });
-
-  it("orders dotless ı before dotted i", () => {
+  /**
+   * Every assertion here must DISCRIMINATE Turkish from a generic/root collator, or it
+   * guards nothing (PR #44 review TA-1). The original suite spent five cases on
+   * `ac < aç < ad`-shaped orderings, which is exactly the shape that does NOT discriminate:
+   * root collation sorts accented letters straight after their base letter too, so all five
+   * passed identically under `"und"` and `"en"` while claiming to prove Turkish support.
+   * What follows is the subset that genuinely fails on a degraded or wrong collator.
+   */
+  it("sorts dotless ı before dotted i — and root collation does the OPPOSITE", () => {
     expect(tr.compare("ı", "i")).toBeLessThan(0);
+    // The inequality probe is the actual guard: if ICU is missing or the locale silently
+    // falls back to root, this second expectation starts matching the first and fails.
+    expect(new Intl.Collator("und").compare("ı", "i")).toBeGreaterThan(0);
   });
 
   it("uppercases i to İ and ı to I under Turkish casing rules", () => {
     expect("i".toLocaleUpperCase("tr")).toBe("İ");
     expect("ı".toLocaleUpperCase("tr")).toBe("I");
+    // Same probe on the casing half: English casing must NOT produce the dotted capital.
+    expect("i".toLocaleUpperCase("en")).toBe("I");
+  });
+
+  /**
+   * The exact property `bucketByInitial`'s base-strength merge relies on, pinned rather
+   * than left implicit: at PRIMARY strength Turkish keeps each of these as its own letter
+   * (so they must stay separate buckets), while English treats them as accent variants of
+   * their base letter (so they must merge into one).
+   */
+  const TR_PRIMARY_LETTERS = ["ç", "ğ", "ı", "ö", "ş", "ü"] as const;
+  const baseOf = (letter: string) => letter.normalize("NFD")[0] ?? letter;
+
+  it.each(TR_PRIMARY_LETTERS)("treats %s as its own letter in Turkish", (letter) => {
+    const trBase = new Intl.Collator("tr", { sensitivity: "base" });
+    // `ı` does not decompose, so its base-letter partner is `i` by definition, not by NFD.
+    const partner = letter === "ı" ? "i" : baseOf(letter);
+    expect(trBase.compare(partner, letter)).not.toBe(0);
+  });
+
+  // `ı` is deliberately ABSENT: unlike the accented five, dotless i is a primary difference
+  // in English/root collation too, so it legitimately keeps its own bucket in every locale.
+  // Asserting a merge for it would pin a falsehood.
+  it.each(["ç", "ğ", "ö", "ş", "ü"])("treats %s as an accent variant in English", (letter) => {
+    const enBase = new Intl.Collator("en", { sensitivity: "base" });
+    expect(enBase.compare(baseOf(letter), letter)).toBe(0);
   });
 });
 
@@ -142,6 +168,39 @@ describe("bucketByInitial", () => {
     expect(buckets[0]?.items.map(labelOf)).toEqual(["Adva", "Ağva", "Ahva"]);
   });
 
+  it("merges an accent-variant initial into one bucket under English collation", () => {
+    // PR #44 review CR-I1, pinned with the reviewer's own shape: `Intl.Collator("en")`
+    // sorts "Åland" INTO the A-run, but `toLocaleUpperCase("en")` still yields "Å". Raw
+    // `letter === letter` merging therefore produced [A][Å][A…] — one letter split across
+    // two non-adjacent buckets, valid DOM and no failing test.
+    const items = ["Afghanistan", "Albania", "Åland", "Algeria"].map(row);
+    const buckets = bucketByInitial(items, labelOf, "en", "x");
+    expect(buckets).toHaveLength(1);
+    expect(buckets[0]?.items.map(labelOf)).toEqual(["Afghanistan", "Åland", "Albania", "Algeria"]);
+  });
+
+  it("never emits the same letter twice under English collation either", () => {
+    const items = ["Afghanistan", "Albania", "Åland", "Algeria", "Ćuprija", "Cuba", "Denmark"].map(
+      row,
+    );
+    const buckets = bucketByInitial(items, labelOf, "en", "x");
+    const sameLetter = new Intl.Collator("en", { sensitivity: "base" });
+    for (let i = 1; i < buckets.length; i += 1) {
+      // Stronger than string inequality: no two buckets may be the SAME LETTER for the
+      // collator, which is what "duplicate bucket" actually means in a diacritic locale.
+      expect(sameLetter.compare(buckets[i - 1]?.letter ?? "", buckets[i]?.letter ?? "")).not.toBe(
+        0,
+      );
+    }
+    expect(buckets.map((b) => b.items.length).reduce((a, b) => a + b, 0)).toBe(items.length);
+  });
+
+  it("still separates every Turkish letter under the same merge rule", () => {
+    // The other half of CR-I1's fix: base strength must NOT collapse Turkish primaries.
+    const buckets = bucketByInitial(TR_FIXTURE, labelOf, "tr", "x");
+    expect(buckets.map((b) => b.letter)).toEqual(TR_EXPECTED_LETTERS);
+  });
+
   it("honours the collation locale rather than assuming Turkish", () => {
     // The crisp tr-vs-en discriminator: Turkish sorts EVERY C word before EVERY Ç word,
     // while English treats ç as a c variant, so "Çavlak" lands next to "Cavlak" instead.
@@ -153,6 +212,10 @@ describe("bucketByInitial", () => {
     expect(bucketByInitial(items, labelOf, "en", "x").flatMap((b) => b.items.map(labelOf))).toEqual(
       ["Çavlak", "Czavlak"],
     );
+    // ...and English puts BOTH in ONE bucket where Turkish keeps two. Asserted so the locale
+    // difference shows up in the bucket SHAPE, not only in the item order — the gap CR-I1
+    // pointed at, where this fixture silently produced the duplicate-letter shape.
+    expect(bucketByInitial(items, labelOf, "en", "x")).toHaveLength(1);
   });
 
   it("excludes a blank name instead of emitting an empty anchor", () => {
@@ -175,5 +238,24 @@ describe("bucketByInitial", () => {
 
   it("returns no buckets for an empty input", () => {
     expect(bucketByInitial([], labelOf, "tr", "x")).toEqual([]);
+  });
+});
+
+describe("flattenBuckets", () => {
+  it("reproduces the rendered order exactly, so JSON-LD cannot drift from the page", () => {
+    const buckets = bucketByInitial(TR_FIXTURE, labelOf, "tr", "x");
+    const rendered = buckets.flatMap((b) => b.items.map(labelOf));
+    expect(flattenBuckets(buckets).map(labelOf)).toEqual(rendered);
+  });
+
+  it("preserves the entry count, including entries dropped by bucketing", () => {
+    const buckets = bucketByInitial([row("Avlak"), row("  "), row("Zavlak")], labelOf, "tr", "x");
+    // The blank name is excluded by `bucketByInitial`, so the flattened count is the count
+    // the page renders — which is exactly what the meta description interpolates (CR-M1).
+    expect(flattenBuckets(buckets)).toHaveLength(2);
+  });
+
+  it("returns an empty list for no buckets", () => {
+    expect(flattenBuckets([])).toEqual([]);
   });
 });

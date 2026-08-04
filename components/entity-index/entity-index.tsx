@@ -57,7 +57,17 @@ export function EntityIndex({
   if (buckets.length === 0) return null;
 
   return (
-    <section id={sectionId} className={`section ${styles.index}`} aria-labelledby={headingId}>
+    // `tabIndex={-1}` on every fragment target (this section and each letter heading below):
+    // a plain `id` scrolls the page but does NOT move keyboard/AT focus, so a letter jump
+    // would be a no-op for non-mouse users — the next Tab would resume from the letter strip
+    // at the top. Same fix the repo already applies to the skip-link target (PR #2) and to
+    // the marine deep-link rows. `:focus-visible` keeps the ring off for pointer users.
+    <section
+      id={sectionId}
+      tabIndex={-1}
+      className={`section ${styles.index}`}
+      aria-labelledby={headingId}
+    >
       <h2 id={headingId}>{heading}</h2>
       <p className={styles.intro}>{description}</p>
 
@@ -71,10 +81,13 @@ export function EntityIndex({
 
       {buckets.map((bucket) => (
         <div key={bucket.id} className={styles.group}>
-          <h3 id={bucket.id} className={styles.groupHeading}>
+          <h3 id={bucket.id} tabIndex={-1} className={styles.groupHeading}>
             {bucket.letter}
           </h3>
-          <ul className={styles.list}>
+          {/* `role="list"` is REQUIRED here, not redundant: Safari/VoiceOver strip implicit
+              list semantics from a `<ul>` styled `list-style: none`, which would turn the
+              277 links this section exists to expose back into unstructured link soup. */}
+          <ul role="list" className={styles.list}>
             {bucket.items.map((item) => (
               <li key={item.path}>
                 <a href={item.path} className={styles.link}>

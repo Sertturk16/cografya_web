@@ -29,6 +29,23 @@
  * and a broken jump target. The bucket's position is collision-free by construction. These
  * ids are same-page scroll anchors only: they are not URLs, carry no SEO surface, and are
  * regenerated with the page.
+ *
+ * ## "Same letter" is a COLLATION question, not a string comparison (PR #44 review CR-I1)
+ *
+ * Whether two initials belong in one bucket depends on the language, so it is answered by a
+ * second collator at `sensitivity: "base"` (primary strength — "is this the same letter?")
+ * rather than by `===`. The difference is not academic:
+ *
+ * - **Turkish** makes `ç ğ ı ö ş ü` PRIMARY differences, so base strength still separates
+ *   every one of them, `I`/`İ` included (verified: all six pairs compare non-zero).
+ * - **English** makes them SECONDARY, so `Intl.Collator("en")` sorts "Åland Islands" INTO
+ *   the A-run while `toLocaleUpperCase("en")` still yields a distinct "Å". Under `===`
+ *   merging that produced `[A][Å][A…]` — one letter split across two non-adjacent buckets,
+ *   two "A" chips and two "A" headings, with positional ids keeping the DOM valid so it
+ *   would have shipped silently the day such a country was seeded.
+ *
+ * At base strength both collapse into a single bucket labelled by its FIRST member's
+ * initial, which is the correct answer in each language from one rule.
  */
 
 /** One initial-letter group of an alphabetical index. */
@@ -45,11 +62,15 @@ export interface AlphabetBucket<T> {
  * Sorts `items` by their name under `collationLocale` and groups them into contiguous
  * initial-letter buckets, in that same collation order.
  *
- * Buckets are grown from the sorted sequence rather than keyed into a map: under a correct
- * collator equal initials are always contiguous, so if a letter ever DID reappear later it
- * would produce a second visible bucket instead of being silently folded back into the
- * first. `alphabet.test.ts` pins the one-bucket-per-letter invariant, so that shape fails
- * loudly in CI rather than quietly reordering the page.
+ * Buckets are grown from the sorted sequence rather than keyed into a map, so a letter that
+ * somehow reappeared out of sequence would produce a second VISIBLE bucket instead of being
+ * silently folded back into the first. `alphabet.test.ts` pins the no-duplicate-letter
+ * invariant in both locales, so that shape fails loudly in CI rather than quietly shipping.
+ *
+ * Note the trim asymmetry: the sort key and the initial come from the TRIMMED name, while
+ * the caller's original item — and therefore the rendered link text — is passed through
+ * untouched. Trimming here is a defensive floor for a contract that already promises clean
+ * required strings, so it must not silently rewrite what the page displays.
  *
  * The input array is never mutated (`flatMap` produces the working copy that gets sorted).
  */
@@ -60,6 +81,8 @@ export function bucketByInitial<T>(
   idPrefix: string,
 ): AlphabetBucket<T>[] {
   const collator = new Intl.Collator(collationLocale);
+  // Primary strength: "is this the same LETTER in this language?" — see the docblock.
+  const sameLetter = new Intl.Collator(collationLocale, { sensitivity: "base" });
 
   const entries = items.flatMap((item) => {
     const name = nameOf(item).trim();
@@ -77,7 +100,7 @@ export function bucketByInitial<T>(
   const buckets: { letter: string; id: string; items: T[] }[] = [];
   for (const entry of entries) {
     const current = buckets[buckets.length - 1];
-    if (current !== undefined && current.letter === entry.letter) {
+    if (current !== undefined && sameLetter.compare(current.letter, entry.letter) === 0) {
       current.items.push(entry.item);
     } else {
       buckets.push({
@@ -89,4 +112,15 @@ export function bucketByInitial<T>(
   }
 
   return buckets;
+}
+
+/**
+ * The bucketed items back as one flat list, in exactly the order the page renders them.
+ *
+ * This is the single source of the hub's `ItemList` JSON-LD and of the entity count in its
+ * meta description, so neither can drift from the visible list (`SEO-POLICY.md` §B5.7, and
+ * PR #44 review CR-M1 — the count previously came from the raw api list instead).
+ */
+export function flattenBuckets<T>(buckets: readonly AlphabetBucket<T>[]): T[] {
+  return buckets.flatMap((bucket) => [...bucket.items]);
 }
