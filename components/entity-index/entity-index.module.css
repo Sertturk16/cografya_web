@@ -2,11 +2,31 @@
    here is static layout over the global Terra token layer (DESIGN.md §2/§4); no hardcoded
    brand hex, no --color-taupe on any text (3.86:1, sub-AA — DESIGN.md §5 hard rule). */
 
-.index {
-  /* The header is `position: sticky`, so an anchor jump would otherwise park the heading
-     underneath it. Covers the tallest measured header (mobile, ~3 rows) plus breathing
-     room. Applied to the group headings too — every `#…` target on this page. */
-  scroll-margin-top: 200px;
+/* Anchor-jump offset. The site header is `position: sticky; top: 0`, so without this the
+   browser aligns a jump target with the viewport top and the header covers it — measured
+   on the first sample run: clicking "İ" scrolled İstanbul/İzmir to the top with their
+   heading hidden underneath.
+
+   `scroll-margin-top` must sit on the ELEMENT CARRYING THE ID, which here is the `<h3>`
+   itself (`.groupHeading`) and the `<section>` (`.index`) — never the wrapping `.group`
+   div, which nothing targets.
+
+   Measured header heights on `/turkiye`: 177px at 390px wide (the nav wraps to three
+   rows), 104px at 768px, 57px from 1024px up. The mobile-first value clears the tallest
+   of those; the one breakpoint tightens it once the header is a single row. A too-LARGE
+   value only lands the heading lower on screen, while a too-small one hides it — so the
+   default deliberately errs large, and no breakpoint is keyed to nav copy that could
+   change length in another locale. */
+.index,
+.groupHeading {
+  scroll-margin-top: 196px;
+}
+
+@media (min-width: 1000px) {
+  .index,
+  .groupHeading {
+    scroll-margin-top: 76px;
+  }
 }
 
 .intro {
@@ -46,7 +66,6 @@
 }
 
 .group {
-  scroll-margin-top: 200px;
   margin-bottom: 24px;
 }
 
