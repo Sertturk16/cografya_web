@@ -466,10 +466,14 @@ describe("T12 — the identity test composes a body from labelled components", (
   });
 
   it("is exact at the pixel boundary — this is the defect that shipped", () => {
-    // A gap of exactly N px is bridged by a reach of N and NOT by a reach of N-1. The Yay/Çöl
-    // merge was precisely this: a documented radius that rounded to one pixel too many.
-    expect(select(5, 60, 4).selected).toHaveLength(1);
-    expect(select(5, 60, 5).selected).toHaveLength(2);
+    // `gapA` counts the EMPTY columns between two blocks, so the nearest-pixel distance is
+    // `gapA + 1`. The reach must reach that distance exactly: one pixel short and the
+    // fragment stays out, one pixel over and it comes in. The Yay/Çöl merge was precisely
+    // this — a documented radius that rounded to one pixel too many.
+    const empties = 5;
+    const trueGapPx = empties + 1;
+    expect(select(empties, 60, trueGapPx - 1).selected).toHaveLength(1);
+    expect(select(empties, 60, trueGapPx).selected).toHaveLength(2);
   });
 
   it("never chains — a fragment cannot drag its own neighbour in", () => {

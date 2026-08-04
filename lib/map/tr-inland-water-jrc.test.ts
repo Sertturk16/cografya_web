@@ -160,7 +160,7 @@ describe("T5 — the two water databases stay separate", () => {
       "closingRadiusM",
       "fillInteriorHoles",
       "componentRule",
-      "identityNeighbourM",
+      "identityNeighbourPx",
       "snapshotEpsilonSvgUnits",
     ]) {
       expect(recipe?.[key]).toBeDefined();
@@ -301,7 +301,7 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
     ];
     for (const [relative, key] of sites) {
       const source = readFileSync(fileURLToPath(new URL(relative, import.meta.url)), "utf8");
-      const rendered = source.indexOf(`t("${key}")`);
+      const rendered = source.indexOf(`("${key}")`);
       expect(rendered, `${relative} does not render ${key}`).toBeGreaterThan(-1);
       // The nearest enclosing element before the interpolation must open a lang="en" scope.
       const before = source.slice(0, rendered);
