@@ -1,0 +1,263 @@
+/* Header search. Geometry rule: the SLOT is fixed-size and the island only swaps what is
+   inside it, so hydration and opening never move the header (CONVENTIONS §6 #9, CLS).
+   Every interactive boundary here clears the WCAG 1.4.11 3:1 floor against the white header
+   — the PR #44 A11Y-3 lesson, applied at build time rather than at review time. */
+
+.slot {
+  /* No width/height of its own on mobile: the trigger below IS the box, and the header must
+     not grow by a single pixel with the search closed (the PR-2 hard acceptance criterion).
+     Deliberately NOT positioned here — see `.panel`. */
+  display: flex;
+  align-items: center;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  /* 28×28, and the exact number is MEASURED, not chosen for looks. The binding acceptance
+     criterion for this work is that the header does not grow by a single pixel with search
+     closed, and on a 390px viewport the trigger shares the header's first row with the brand
+     link — whose line box is 30.72px. So the trigger must stay UNDER that or it, not the
+     brand, becomes the row's tallest item: at 44px the header grew 177→190px, at 32px it
+     still grew by 1.09px. 28px sits below the brand with ~2.7px of headroom and still clears
+     the WCAG 2.5.8 (AA) 24×24 target floor. (On desktop the row is 32.47px tall — set by the
+     locale switcher — so this control never drives the height there either.) */
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 7px;
+  border-radius: var(--radius);
+  /* --color-taupe (3.86:1 on the white header, 3.64:1 on --color-bg, 3.21:1 on
+     --color-surface) rather than --color-border (1.45:1) — a control boundary must be
+     perceivable. Taupe's sanctioned role is exactly this non-text UI boundary; the label
+     inside is --color-slate at 7.92:1. */
+  border: 1px solid var(--color-taupe);
+  background: #fff;
+  color: var(--color-slate);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.trigger:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* REQUIRED — the `hidden` attribute does not hide this control on its own. `[hidden]` is
+   applied only by the UA stylesheet's `display: none`, and `.trigger`'s author-origin
+   `display: inline-flex` above beats it unconditionally in the cascade (the repo ships no
+   `[hidden]` reset). Without this rule the collapsed trigger stayed rendered, focusable and
+   — below the desktop breakpoint, where its label is `display: none` — NAMELESS while the
+   panel was open (PR #45 review C1, WCAG 4.1.2).
+
+   `visibility: hidden` rather than `display: none` on purpose: `.slot` has no size of its
+   own ("the trigger IS the box"), so removing the trigger from flow would collapse the
+   header's first row — trading an a11y defect for the layout shift this whole design exists
+   to prevent. `visibility: hidden` keeps the box, exits the a11y tree AND the tab order. */
+.trigger[hidden] {
+  visibility: hidden;
+}
+
+.triggerText {
+  /* Hidden on narrow viewports: the trigger collapses to the icon alone so it fits beside
+     the brand on the FIRST header row and adds no row of its own. */
+  display: none;
+  white-space: nowrap;
+}
+
+.icon {
+  flex: none;
+}
+
+/* The open panel is ABSOLUTELY positioned, so opening the search overlays content instead of
+   pushing it — no layout shift at all, at any viewport.
+
+   WHICH element it is positioned against changes with the viewport, and that is the point.
+   Narrow: `.slot` is unpositioned, so the panel resolves against the sticky `.header` and
+   spans the viewport with a 16px inset — the mobile sheet. Anchoring it to the slot there
+   was a real bug caught in the sample pass: the trigger sits ~250px in on a 390px screen, so
+   a right-aligned 92vw panel started at −109px and the result names were clipped off-screen.
+   Wide: the slot becomes the containing block (see the media query) so the panel hangs
+   directly under the trigger, where a dropdown belongs when there is room for it. */
+.panel {
+  position: absolute;
+  top: 100%;
+  left: 16px;
+  right: 16px;
+  margin-top: 8px;
+  z-index: 50;
+  padding: 10px;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: 0 12px 28px rgb(43 38 34 / 14%);
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius);
+  color: var(--color-slate);
+}
+
+.inputRow:focus-within {
+  border-color: var(--color-primary);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-ink);
+}
+
+.input::placeholder {
+  /* Placeholder text is the one sanctioned --color-taupe text use (DESIGN.md §5); it is
+     never the only carrier of meaning — the visually-hidden <label> always states it. */
+  color: var(--color-taupe);
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-slate);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.close:hover {
+  color: var(--color-primary);
+}
+
+.results {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: min(50vh, 360px);
+  overflow-y: auto;
+}
+
+.resultItem {
+  margin: 0;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius);
+  color: var(--color-primary-dark);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.result:hover,
+.resultActive {
+  background: var(--color-chip-bg);
+}
+
+.resultName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.resultKind {
+  /* A TEXT badge: the province/country distinction is never carried by colour alone
+     (DESIGN.md §5). chip-ink on chip-bg = 6.59:1. */
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-chip-bg);
+  color: var(--color-chip-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.notice {
+  margin: 10px 4px 0;
+  color: var(--color-slate);
+  font-size: 0.9rem;
+}
+
+.seeAll {
+  display: block;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-primary-dark);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.seeAll:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* From the measured single-row header breakpoint upward the trigger also shows a SHORT word
+   next to the icon. Below it, it stays icon-only so it fits beside the brand on the header's
+   first row and adds no row of its own.
+
+   The label is deliberately one word ("Ara"), not the full placeholder, and the trigger has
+   NO fixed width — it sizes to its content. Measured why: with a 210px fixed trigger the
+   Turkish header needed 985px of a 984px line at 1024px wide and wrapped the nav onto a
+   second row, i.e. it sat one pixel from a 60px height jump, and the margin differs by 77px
+   between the Turkish and English nav. Sizing to content leaves ~119px of slack in the
+   tighter locale instead of −1px. */
+@media (min-width: 64rem) {
+  .trigger {
+    justify-content: flex-start;
+  }
+
+  .triggerText {
+    display: inline;
+  }
+
+  /* The slot becomes the panel's containing block only here, so the dropdown hangs from the
+     trigger rather than from the header. */
+  .slot {
+    position: relative;
+  }
+
+  .panel {
+    /* Measured: the trigger's bottom edge sits 42px below the header's top and the header is
+       57px tall, so 15px of margin puts the panel flush with the header's lower border
+       instead of overlapping it. */
+    left: 0;
+    right: auto;
+    width: 420px;
+    margin-top: 15px;
+  }
+}
