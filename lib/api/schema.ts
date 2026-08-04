@@ -152,9 +152,69 @@ export interface paths {
         };
         /**
          * Layer catalogue — units, direction conventions, calm thresholds, colour ramps.
-         * @description The machine-readable authority for how a value may be rendered. In particular directionConvention states, per layer, whether a degree means the direction the flow comes FROM or heads TOWARDS — the providers use both, inside the same API. Both arrow-unlock preconditions are met for the wind layers (the field is published and the wind-convention regression suite runs on CI). For the two ECMWF-PRIMARY layers (wind_speed_10m, wind_direction_10m), horizonEndUtc / updateFrequency / catalogueUpdatedAtUtc are resolved from the newest ingested model cycle — a local database read; this endpoint NEVER calls a provider. They are null while no cycle has been ingested yet or the newest one breached the 24 h cycle-age ceiling. The CMEMS-primary layers keep null until M4 resolves the CMEMS catalogue.
+         * @description The machine-readable authority for how a value may be rendered. In particular directionConvention states, per layer, whether a degree means the direction the flow comes FROM or heads TOWARDS — the providers use both, inside the same API. Both arrow-unlock preconditions are met for the wind layers (the field is published and the wind-convention regression suite runs on CI). For the two ECMWF-PRIMARY layers (wind_speed_10m, wind_direction_10m), horizonEndUtc / updateFrequency / catalogueUpdatedAtUtc are resolved from the newest ingested model cycle — a local database read; this endpoint NEVER calls a provider. They are null while no cycle has been ingested yet or the newest one breached the 24 h cycle-age ceiling. The three CMEMS-primary layers resolve the same fields from the stored STAC catalogue resolutions the warmup tour maintains — also a local cache read, never a provider call; they are null while no resolution is stored yet (cold cache) or not every serving product is resolved (a partial horizon minimum could overstate the horizon).
          */
         get: operations["MarineController_findAllLayers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marine/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Instant marine values for every reference point (the /deniz hub payload).
+         * @description CMEMS-sourced fields are answered from cache only — this endpoint NEVER waits for a provider. dataAvailable=false (cold cache) responses carry Cache-Control: no-store and MUST NOT be committed by ISR/SSG. Returns 404 while the marine feature is disabled.
+         */
+        get: operations["MarineController_getOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marine/points/{slug}/conditions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Instant values and the 5-day series for one marine reference point.
+         * @description The slug may be the TR or the EN one (both are routing keys). A cold cache may refresh this point’s own CMEMS values inline under one bounded deadline; a provider failure degrades the affected fields to unavailable, never the response.
+         */
+        get: operations["MarineController_getConditions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marine/provinces/{plateCode}/conditions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Marine conditions of every reference point published under one province.
+         * @description Two entries for the two-sea provinces (İstanbul, Çanakkale, Balıkesir); the entries legitimately disagree and each carries its own per-field statuses — one point’s outage never suppresses or fills the other. An inland province is a 404.
+         */
+        get: operations["MarineController_getProvinceConditions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -175,6 +235,46 @@ export interface paths {
          * @description The published methodology behind every band/category this API serves: the EAQI-2024 band table (EEA/ETC HE 2024/17, Table 5.2), the (lo, hi] boundary rule as a token, per-pollutant averaging periods (all hourly) and the dominant-pollutant tie-break order. The web repo renders from THIS payload and hardcodes none of it. Served from an in-code constant: answers 200 cold or warm and never calls the upstream provider.
          */
         get: operations["AirQualityController_getIndexSystem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/air-quality/provinces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Instant air-quality state of every province (the /hava hub payload).
+         * @description Plain array, bounded and small — one entry per province, in plate order, ALWAYS. On the cold path every entry carries status=unavailable and the response is Cache-Control: no-store, which ISR/SSG must not commit. This endpoint reads the local store only and NEVER waits for the provider. Band and category are TOKENS: the band table behind them is published at GET /api/air-quality/index-system and must not be hardcoded.
+         */
+        get: operations["AirQualityController_listProvinces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/air-quality/provinces/{plateCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Full air-quality state and the hourly series for one province.
+         * @description Answers 200 in every state: with no usable run the payload carries current.status=unavailable, series=null, dataAvailable=false and Cache-Control: no-store. The series concatenates the provider ANALYSIS product (steps before analysisEndUtc) with the FORECAST product (from analysisEndUtc onward); both halves are model output on a ~0.1° grid, neither is a station reading. A plate code that names no province is a 404. This endpoint never waits for the provider.
+         */
+        get: operations["AirQualityController_getProvince"];
         put?: never;
         post?: never;
         delete?: never;
@@ -285,78 +385,15 @@ export interface components {
              */
             month: number;
             /**
-             * @description Ortalama sıcaklık (°C). Çekirdek çift — yayınlanan her ilde doludur.
-             * @example 27.9
+             * @description 30 yıllık (1991-2020) aylık ortalama sıcaklık (°C). Çekirdek çift — her yayınlanan ilde doludur.
+             * @example 24.1
              */
-            tempMeanC: number | null;
+            tempMeanC: number;
             /**
-             * @description Ortalama en yüksek sıcaklık (°C).
-             * @example 33.2
+             * @description 30 yıllık (1991-2020) aylık toplam yağış ortalaması (mm). Çekirdek çift — her yayınlanan ilde doludur.
+             * @example 21.5
              */
-            tempMaxMeanC: number | null;
-            /**
-             * @description Ortalama en düşük sıcaklık (°C).
-             * @example 22.6
-             */
-            tempMinMeanC: number | null;
-            /**
-             * @description Aylık toplam yağış miktarı ortalaması (mm). Çekirdek çift.
-             * @example 4.7
-             */
-            precipitationMm: number | null;
-            /**
-             * @description Ortalama günlük güneşlenme süresi (saat).
-             * @example 11.2
-             */
-            sunshineHours: number | null;
-            /**
-             * @description Ortalama yağışlı gün sayısı.
-             * @example 2.1
-             */
-            rainyDays: number | null;
-            /**
-             * @description O ay ölçülmüş en yüksek sıcaklık (°C) — uç değer, ortalama değil.
-             * @example 45.6
-             */
-            tempRecordMaxC: number | null;
-            /**
-             * Format: date
-             * @description `tempRecordMaxC` gerçekleşme tarihi (ISO YYYY-MM-DD). Değerden bağımsız nullable.
-             * @example 2000-07-30
-             */
-            tempRecordMaxDate: string | null;
-            /**
-             * @description O ay ölçülmüş en düşük sıcaklık (°C) — uç değer, ortalama değil.
-             * @example 12.3
-             */
-            tempRecordMinC: number | null;
-            /**
-             * Format: date
-             * @description `tempRecordMinC` gerçekleşme tarihi (ISO YYYY-MM-DD). Değerden bağımsız nullable.
-             * @example 1976-07-05
-             */
-            tempRecordMinDate: string | null;
-        };
-        ClimateExtremeRecordDto: {
-            /**
-             * @description Ölçülen uç değer (ham sayı).
-             * @example 189.4
-             */
-            value: number;
-            /**
-             * Format: date
-             * @description Gerçekleşme tarihi (ISO YYYY-MM-DD). MGM tarihi basmadıysa null — değerden bağımsız nullable.
-             * @example 1968-12-26
-             */
-            date: string | null;
-        };
-        ClimateRecordsDto: {
-            /** @description Günlük toplam en yüksek yağış miktarı (mm). */
-            dailyMaxPrecipitationMm: components["schemas"]["ClimateExtremeRecordDto"] | null;
-            /** @description Günlük en hızlı rüzgâr (m/sn). */
-            fastestWindMs: components["schemas"]["ClimateExtremeRecordDto"] | null;
-            /** @description En yüksek kar yüksekliği (cm). */
-            maxSnowDepthCm: components["schemas"]["ClimateExtremeRecordDto"] | null;
+            precipitationMm: number;
         };
         SeasonalPrecipitationDto: {
             /**
@@ -382,13 +419,13 @@ export interface components {
         };
         ClimateDerivedDto: {
             /**
-             * @description Yıllık ortalama sıcaklık (°C) — 12 aylık ortalamanın ortalaması (TÜRETİLMİŞ, MGM değil).
-             * @example 19.1
+             * @description Yıllık ortalama sıcaklık (°C) — 12 aylık ortalamanın ortalaması (TÜRETİLMİŞ; kaynağa atfedilemez).
+             * @example 14.7
              */
             annualMeanTempC: number;
             /**
-             * @description Yıllık toplam yağış (mm) — 12 aylık toplamın toplamı (TÜRETİLMİŞ, MGM değil).
-             * @example 592.4
+             * @description Yıllık toplam yağış (mm) — 12 aylık toplamın toplamı (TÜRETİLMİŞ; kaynağa atfedilemez).
+             * @example 630.2
              */
             annualPrecipitationMm: number;
             /**
@@ -413,7 +450,7 @@ export interface components {
             driestMonth: number;
             /**
              * @description Yıllık sıcaklık farkı (°C) — en sıcak ile en soğuk ay ortalaması arası (TÜRETİLMİŞ).
-             * @example 20.4
+             * @example 18.3
              */
             annualTempRangeC: number;
             /** @description Mevsimsel yağış yüzdeleri (tam 100 eder) — TÜRETİLMİŞ. */
@@ -421,31 +458,29 @@ export interface components {
         };
         ClimateDto: {
             /**
-             * @description Kaynak seri kimliği — MGM Genel İstatistik tablosu (k=A), 81 il için tek seri.
-             * @example mgm_general
+             * @description Kaynak seri kimliği — Copernicus C3S ERA5-Land aylık ortalamaları, 81 il için tek dataset.
+             * @example era5_land_monthly
              * @enum {string}
              */
-            source: "mgm_general";
+            source: "era5_land_monthly";
             /**
-             * @description Bu serinin okunduğu MGM sayfası — il başına (MGM anahtarı Türkçe adla aynı değil).
-             * @example https://www.mgm.gov.tr/veridegerlendirme/il-ve-ilceler-istatistik.aspx?k=A&m=ICEL
+             * @description Serinin türetildiği ERA5-Land dataset sayfası — 81 ilde AYNI sabit değer (il başına sayfa yoktur).
+             * @example https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land-monthly-means
              */
             sourceUrl: string;
             /**
-             * @description Ölçüm periyodu başlangıç yılı — il başına değişir, sayfadan okunur.
-             * @example 1929
+             * @description Normal penceresi başlangıç yılı — WMO 1991-2020, 81 ilde sabit.
+             * @example 1991
              */
             periodStartYear: number;
             /**
-             * @description Ölçüm periyodu bitiş yılı.
-             * @example 2025
+             * @description Normal penceresi bitiş yılı — WMO 1991-2020, 81 ilde sabit.
+             * @example 2020
              */
             periodEndYear: number;
             /** @description Aylık normaller — tam 12 ay, 1-12 sırasıyla. */
             months: components["schemas"]["ClimateMonthlyNormalDto"][];
-            /** @description Tüm zamanların rekorları. */
-            records: components["schemas"]["ClimateRecordsDto"];
-            /** @description Seriden TÜRETİLMİŞ yıllık/uç/mevsimsel değerler — MGM’e atfedilemez. */
+            /** @description Seriden TÜRETİLMİŞ yıllık/uç/mevsimsel değerler — kaynağa atfedilemez. */
             derived: components["schemas"]["ClimateDerivedDto"];
         };
         HydrographyFeatureDto: {
@@ -577,7 +612,7 @@ export interface components {
              * @example MGM'nin 2023 Köppen sınıflandırması bu ili Csa (Akdeniz iklimi) olarak verir; ancak MGM'nin kendi raporu bu basitleştirilmiş yöntemin bölgesel ayırt ediciliğinin sınırlı olduğunu not düşer.
              */
             climateNoteTr: string | null;
-            /** @description İklim serisi (MGM k=A aylık normalleri + kaynak/dönem/rekorlar) + TÜRETİLMİŞ yıllık/mevsimsel değerler. Null = yayınlanabilir seri yok → web iklim bölümünü hiç render etmez. Türetilmiş değerler bizimdir, MGM'e atfedilemez; tüm sayılar ham (biçimlendirme web'in işi). */
+            /** @description İklim serisi (ERA5-Land 1991-2020 aylık normalleri + kaynak/dönem) + TÜRETİLMİŞ yıllık/mevsimsel değerler. Null = yayınlanabilir seri yok → web iklim bölümünü hiç render etmez. Türetilmiş değerler bizimdir, kaynağa atfedilemez; tüm sayılar ham (biçimlendirme web'in işi). */
             climate: components["schemas"]["ClimateDto"] | null;
             /** @description NOVA'nın il-il yazdığı iklim yorumu (TR) — mekanizma anlatan gerçek düzyazı. `climateNoteTr` (kilitli MGM Köppen uyarısı) DEĞİL; ayrı bir alandır. İçerik dalgaları doldurana kadar null. */
             climateNarrativeTr: string | null;
@@ -864,7 +899,7 @@ export interface components {
              */
             freshness: "fresh" | "stale" | null;
             /**
-             * @description The MODEL time this value belongs to (ISO-8601 UTC). For CMEMS this is the time WE sent: the GetFeatureInfo reply carries no time field at all, yet the time parameter does change the value — so an explicit time is always sent and never defaulted.
+             * @description The MODEL time this value belongs to (ISO-8601 UTC). For CMEMS this is the time WE sent: the GetFeatureInfo reply carries no time field at all, yet the time parameter does change the value — so an explicit time is always sent and never defaulted. At runtime that instant is the hour nearest to the request moment, clamped into the dataset’s resolved temporal extent — so around a horizon edge it may sit up to a few hours behind "now", honestly labelled here and still bounded by the server’s validity-age ceiling.
              * @example 2026-07-30T12:00:00.000Z
              */
             validAtUtc: string | null;
@@ -886,7 +921,7 @@ export interface components {
              */
             source: "cmems" | "ecmwf" | null;
             /**
-             * @description Provider dataset identifier, verbatim, when the provider reports one.
+             * @description Provider dataset identifier, verbatim, when the provider reports one. For CMEMS-sourced values the id is resolved from the provider STAC catalogue at runtime — never pinned in code — so the trailing version stamp (_2xxxxx) rotates with the provider and consumers must treat the string as opaque. Two values of the SAME field can therefore carry different ids across basins (and across a provider rotation) — never join on this string. ECMWF-sourced values carry null: that provider has no per-value dataset id, and modelRunAtUtc is the provenance there.
              * @example BLKSEA_ANALYSISFORECAST_PHY_007_001/cmems_mod_blk_phy-tem_anfc_mrm-500m_PT1H-i_202311
              */
             datasetId: string | null;
@@ -963,12 +998,12 @@ export interface components {
              */
             nameEn: string;
             /**
-             * @description Province-relative short label, used INSIDE /turkiye/{il} where the province name is already in the heading and repeating it would be noise.
+             * @description Province-relative short label, used INSIDE /turkiye/{il} where the province name is already in the heading and repeating it would be noise. GUARANTEE: derived from the point's seaBasin, and therefore UNIFORM across every point in a basin — the /deniz hub relies on it, taking the first point of a group as that basin's heading. Turning this into a per-point label would silently mislabel that heading, so it is a basin label that happens to be served per point, not a free-text field.
              * @example Marmara açıkları
              */
             coastLabelTr: string;
             /**
-             * @description Province-relative short label (EN).
+             * @description Province-relative short label (EN). Same per-basin uniformity guarantee.
              * @example Marmara offshore
              */
             coastLabelEn: string;
@@ -1014,38 +1049,40 @@ export interface components {
         };
         MarineAttributionDto: {
             /**
-             * @description Stable provider key.
+             * @description Stable provider key, 'ecmwf' or 'cmems'. Joins to MarineLayerDto.attributionId, so a renderer can name the provider behind each layer.
              * @example cmems
              */
             providerId: string;
             /**
-             * @description Provider display name.
-             * @example Copernicus Marine Service
+             * @description Provider display name, as the provider itself writes it in the mandated notice. Not a localizable label — do not translate it.
+             * @example E.U. Copernicus Marine Service
              */
             providerName: string;
             /**
-             * @description Licence name.
-             * @example Copernicus Marine Service licence
+             * @description Licence name, verbatim. The legal name of a licence is never translated.
+             * @example Copernicus Marine Service Commitments and Licence
              */
             licenceName: string;
             /**
-             * @description Licence URL.
-             * @example https://marine.copernicus.eu/
+             * @description Canonical licence URL. Use this exact URL — a localized Creative Commons variant is not the same document.
+             * @example https://marine.copernicus.eu/user-corner/service-commitments-and-licence
              */
             licenceUrl: string;
-            /** @description The notice the licence REQUIRES us to display, verbatim (TR). Not editorial copy — shortening or restyling it is a licence breach, so it is data, not a template. */
-            requiredNoticeTr: string;
-            /** @description The required notice, verbatim (EN). */
+            /** @description The notice the licence REQUIRES us to display, VERBATIM and IN ENGLISH. Not editorial copy: shortening, restyling, reordering or translating it is a licence breach, so it is data, not a template. Render it as-is and mark it lang="en" even on the Turkish locale. For ECMWF it starts with a copyright line whose year comes from the data behind this very response; when no ECMWF cycle has been ingested that line is OMITTED rather than faked, and the notice begins at the mandatory service sentence. */
             requiredNoticeEn: string;
-            /** @description Product DOI when the provider issues one, else null. */
+            /** @description The liability disclaimer the licence requires, VERBATIM and IN ENGLISH, or null where the licence imposes none. Separate from requiredNoticeEn because the two providers genuinely differ: ECMWF mandates a disclaimer, the Copernicus Marine licence does not. Merging them into one string would tell the reader CMEMS carries a disclaimer it does not. Render it next to the notice, same lang="en" rule. */
+            disclaimerEn: string | null;
+            /** @description Informational Turkish rendering of this row as a whole — the notice, plus the disclaimer where the licence imposes one (so the ECMWF row covers requiredNoticeEn AND disclaimerEn in a single paragraph, while the CMEMS row has no disclaimer to render). It stands ALONGSIDE requiredNoticeEn and MUST NEVER REPLACE IT — not even on the Turkish locale. ECMWF's terms say the wording "shall be attached" and, unlike the Copernicus framework, offer no "or any similar notice" escape, so the English text is the one that discharges the obligation. This field exists so a Turkish reader can understand it, not so a renderer can substitute it. Renamed from requiredNoticeTr in M5 precisely because the old name implied the opposite. */
+            explanationTr: string;
+            /** @description Deliberately null — DOIs live in data-provenance.md (DEC 2026-08-02g §2), not on the page. Serving one here would hand the web the easiest possible way to break that rule, and a single DOI cannot represent the five CMEMS products behind these values anyway: picking one would be a false statement about provenance. */
             doi: string | null;
-            /** @description Product title as the provider names it, when required by the licence. */
+            /** @description Deliberately null — same reasoning as doi. Neither licence requires a product title in the visible notice, and the marine values are merged across several products per field. */
             productTitle: string | null;
         };
         MarineOverviewDto: {
             points: components["schemas"]["MarineOverviewPointDto"][];
             /**
-             * @description When the server assembled this response (ISO-8601 UTC).
+             * @description When the freshest contributing value entered the server cache (ISO-8601 UTC) — deliberately DATA-derived rather than the wall clock, so the body stays byte-identical between requests that serve the same cached data and the weak ETag / 304 revalidation works. Falls back to the wall clock only on the dataAvailable=false response, which is no-store and never cached.
              * @example 2026-07-30T12:04:11.000Z
              */
             generatedAtUtc: string;
@@ -1145,19 +1182,19 @@ export interface components {
              * @example 3
              */
             stepHours: number;
-            /** @description Last instant the provider can serve (ISO-8601 UTC). NULL IN M1 — resolved from the provider catalogue in M3. The horizon is genuinely variable (4–9 days by product), so the web must read it here rather than hardcode a slider bound. */
+            /** @description Last instant the PRIMARY provider can serve (ISO-8601 UTC), or null while the provider catalogue is unresolved. ECMWF layers: the newest ingested cycle’s published horizon. CMEMS layers: the MINIMUM of the serving products’ temporal-extent ends — the layer is one field for every basin, so the only horizon it can honour everywhere is the earliest one; it nulls when any serving product is unresolved or open-ended. The horizon is genuinely variable (4–9 days by product), so the web must read it here rather than hardcode a slider bound. */
             horizonEndUtc: string | null;
             /**
-             * @description How often the provider re-runs the model, as the provider states it. NULL IN M1 — resolved from the provider catalogue in M3. Carried at LAYER level rather than per value because neither Faz-1 provider publishes a model-run time per value; a per-value field would be null 31 × 5 times per response.
-             * @example twice-daily: 00:00 UTC; 12:00 UTC
+             * @description How often the provider re-runs the model, as the provider states it — PROVIDER-VERBATIM and not machine-parseable by contract. For CMEMS layers this is the STAC updateFrequencies compaction; when the serving products state different cadences the distinct strings are joined with " | ". Null while the catalogue is unresolved. Carried at LAYER level rather than per value because neither Faz-1 provider publishes a model-run time per value.
+             * @example daily: 16:00; 20th of each month at 16UTC
              */
             updateFrequency: string | null;
-            /** @description When the provider last updated its catalogue entry (ISO-8601 UTC). NULL IN M1 — resolved from the provider catalogue in M3. */
+            /** @description When the provider last updated its catalogue entry (ISO-8601 UTC), or null while unresolved. ECMWF layers: the model-run time of the newest ingested cycle (that provider has no catalogue document to date-stamp). CMEMS layers: the NEWEST admp_updated stamp across the serving products. */
             catalogueUpdatedAtUtc: string | null;
             /** @description Colour ramp for this layer, ascending by value. */
             colorStops: components["schemas"]["MarineColorStopDto"][];
             /**
-             * @description Key of the MarineAttributionDto that must accompany this layer. Attribution ROWS are seeded in M5; the reference is frozen now so the join is stable.
+             * @description Key of the MarineAttributionDto that must accompany this layer. The rows themselves are a compiled catalogue (src/marine/marine-attribution-catalogue.ts), NOT a seeded table and NOT a resolving endpoint: they are served inline as attributions[] on the value responses (GET /api/marine/overview and GET /api/marine/provinces/{plateCode}/conditions). Join on this key to name the provider behind a layer.
              * @example cmems
              */
             attributionId: string;
@@ -1291,7 +1328,7 @@ export interface components {
         };
         AirQualitySeriesDto: {
             /**
-             * @description Step instants (ISO-8601 UTC). INVARIANT: every other array in this object has exactly this length; a missing step is null in place, never dropped and never invented. Every step is model FORECAST output — the series starts at the model run base time and contains no earlier step.
+             * @description Step instants (ISO-8601 UTC). INVARIANT: every other array in this object has exactly this length; a missing step is null in place, never dropped and never invented. Consecutive steps are exactly one hour apart. Steps BEFORE analysisEndUtc come from the provider ANALYSIS product; that instant and everything after it come from the FORECAST product. Both are model output, neither is an observation. When analysisEndUtc is null the series starts at the model run base time and contains no earlier step.
              * @example [
              *       "2026-08-01T00:00:00.000Z",
              *       "2026-08-01T01:00:00.000Z"
@@ -1299,12 +1336,17 @@ export interface components {
              */
             timesUtc: string[];
             /**
+             * @description The instant the ANALYSIS half ends and the FORECAST half begins — always the model run base time. Steps before this instant come from the provider’s ANALYSIS product; this instant and everything after it come from the FORECAST product. Both are model output, not observations. Null when this run carries no analysis product at all, in which case the whole series is forecast.
+             * @example 2026-08-01T00:00:00.000Z
+             */
+            analysisEndUtc: string | null;
+            /**
              * @description Hours between steps (always 1 in Faz-1).
              * @example 1
              */
             stepHours: number;
             /**
-             * @description End of the published horizon (run base + 96 h in Faz-1).
+             * @description End of the published horizon — the last entry of timesUtc (run base + 96 h in Faz-1).
              * @example 2026-08-05T00:00:00.000Z
              */
             horizonEndUtc: string;
@@ -1329,8 +1371,8 @@ export interface components {
             /** @example https://creativecommons.org/licenses/by/4.0/ */
             licenceUrl: string;
             /**
-             * @description Verbatim required attribution line — never translated.
-             * @example Contains modified Copernicus Atmosphere Monitoring Service Information 2026
+             * @description Verbatim required attribution line — never translated. The year is the run’s.
+             * @example Contains modified Copernicus Atmosphere Monitoring Service information 2026
              */
             attributionText: string;
             /**
@@ -1338,7 +1380,14 @@ export interface components {
              * @example Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.
              */
             disclaimerText: string;
-            /** @description i18n keys for the editorial notices (model nature, grid resolution, category-name translation). The API ships KEYS only; the texts are authored on the web side. */
+            /**
+             * @description i18n keys for the editorial notices (model nature, grid resolution, category-name translation). The API ships KEYS only; the texts are authored on the web side. Adding a key is additive; removing or renaming one is a breaking contract change.
+             * @example [
+             *       "airQuality.notice.modelOutput",
+             *       "airQuality.notice.gridResolution",
+             *       "airQuality.notice.categoryTranslation"
+             *     ]
+             */
             noticeKeys: string[];
         };
         AirQualityProvinceDto: {
@@ -1625,6 +1674,104 @@ export interface operations {
             };
         };
     };
+    MarineController_getOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarineOverviewDto"];
+                };
+            };
+            /** @description The marine feature is not enabled on this deployment. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MarineController_getConditions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description TR or EN slug. */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarineConditionsDto"];
+                };
+            };
+            /** @description The slug is not a well-formed kebab-case identifier. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No marine point matches the slug, or the marine feature is disabled. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MarineController_getProvinceConditions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Plaka kodu, zero-padded. */
+                plateCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarineProvinceConditionsDto"];
+                };
+            };
+            /** @description plateCode is not exactly two digits. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The province has no marine reference point (inland), or the marine feature is disabled. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AirQualityController_getIndexSystem: {
         parameters: {
             query?: never;
@@ -1641,6 +1788,61 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AirQualityIndexSystemDto"];
                 };
+            };
+        };
+    };
+    AirQualityController_listProvinces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AirQualityProvinceListItemDto"][];
+                };
+            };
+        };
+    };
+    AirQualityController_getProvince: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Two-digit zero-padded province plate code. */
+                plateCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AirQualityProvinceDto"];
+                };
+            };
+            /** @description plateCode is not exactly two digits. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No province carries this plate code. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
