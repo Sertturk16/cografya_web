@@ -8,6 +8,7 @@ import type { CountryListItem } from "@/lib/api/types";
 import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { type AlphabetBucket, bucketByInitial, flattenBuckets } from "@/lib/geo/alphabet";
+import { COUNTRY_INDEX_SECTION_ID } from "@/lib/geo/hub-index";
 import { pickHubDescription } from "@/lib/seo/hub-description";
 import {
   collectionPageJsonLd,
@@ -20,9 +21,6 @@ import { buildMetadata } from "@/lib/seo/metadata";
 interface PageProps {
   params: Promise<{ locale: Locale }>;
 }
-
-/** Same-page anchor for the alphabetical section — locale-independent, never a URL. */
-const INDEX_SECTION_ID = "ulkeler";
 
 /** The localized slug (slug_tr for tr, slug_en for en). */
 function slugForLocale(country: CountryListItem, locale: Locale): string {
@@ -62,7 +60,7 @@ async function loadCountryIndex(
     }),
   }));
 
-  const buckets = bucketByInitial(entries, (entry) => entry.name, locale, INDEX_SECTION_ID);
+  const buckets = bucketByInitial(entries, (entry) => entry.name, locale, COUNTRY_INDEX_SECTION_ID);
   return { buckets, items: flattenBuckets(buckets) };
 }
 
@@ -141,7 +139,7 @@ export default async function DunyaPage({ params }: PageProps) {
           names the map and hover cards already use — no added framing, no omissions
           (owner ruling on plan Q4); the names come from the api, never from this file. */}
       <EntityIndex
-        sectionId={INDEX_SECTION_ID}
+        sectionId={COUNTRY_INDEX_SECTION_ID}
         headingId="dunya-index-heading"
         heading={t("indexHeading")}
         description={t("indexDescription", { count: items.length })}

@@ -1,12 +1,15 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/routing";
 import { brandGlyphSvg } from "@/lib/brand/glyph";
 import { siteConfig } from "@/lib/seo/site";
 import { LocaleSwitcher } from "./locale-switcher";
+import { SiteSearch } from "./site-search/site-search";
 import styles from "./site-header.module.css";
 
 export async function SiteHeader() {
   const t = await getTranslations("Nav");
+  const locale = (await getLocale()) as Locale;
 
   return (
     <header className={styles.header}>
@@ -21,6 +24,13 @@ export async function SiteHeader() {
           />
           {siteConfig.name}
         </Link>
+        {/* Placed between the brand and the nav ON PURPOSE. `.inner` is `flex-wrap`, so at
+            390px the brand and this 44px trigger share the FIRST row — the nav still wraps
+            to rows two and three exactly as before and the header height is unchanged. It
+            also puts search early in the tab order, ahead of six nav links. When the mobile
+            header is reworked into a hamburger, the nav items move inside it and this
+            trigger stays where it is. */}
+        <SiteSearch locale={locale} />
         <nav aria-label={t("label")} className={styles.nav}>
           <Link href="/">{t("home")}</Link>
           <Link href="/turkiye">{t("turkiye")}</Link>

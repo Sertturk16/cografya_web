@@ -13,6 +13,19 @@
     "game": "Oyun",
     "about": "Hakkımızda"
   },
+  "Search": {
+    "label": "İl veya ülke ara",
+    "triggerLabel": "Ara",
+    "placeholder": "İl veya ülke ara",
+    "openLabel": "Aramayı aç",
+    "closeLabel": "Aramayı kapat",
+    "noResults": "Sonuç bulunamadı.",
+    "resultCount": "{count} sonuç",
+    "seeAll": "Tüm il ve ülke listesi",
+    "province": "İl",
+    "country": "Ülke",
+    "loadFailed": "Arama listesi şu an yüklenemedi."
+  },
   "Breadcrumb": {
     "label": "Sayfa yolu",
     "home": "Ana Sayfa",

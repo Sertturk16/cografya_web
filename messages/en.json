@@ -13,6 +13,19 @@
     "game": "Game",
     "about": "About"
   },
+  "Search": {
+    "label": "Search a province or country",
+    "triggerLabel": "Search",
+    "placeholder": "Search a province or country",
+    "openLabel": "Open search",
+    "closeLabel": "Close search",
+    "noResults": "No results found.",
+    "resultCount": "{count} results",
+    "seeAll": "Full province and country list",
+    "province": "Province",
+    "country": "Country",
+    "loadFailed": "The search list could not be loaded right now."
+  },
   "Breadcrumb": {
     "label": "Breadcrumb",
     "home": "Home",

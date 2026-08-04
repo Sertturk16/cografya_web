@@ -8,6 +8,7 @@ import type { ProvinceListItem } from "@/lib/api/types";
 import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { type AlphabetBucket, bucketByInitial, flattenBuckets } from "@/lib/geo/alphabet";
+import { PROVINCE_INDEX_SECTION_ID } from "@/lib/geo/hub-index";
 import { pickHubDescription } from "@/lib/seo/hub-description";
 import {
   collectionPageJsonLd,
@@ -29,9 +30,6 @@ interface PageProps {
  * (see `lib/geo/alphabet.ts`).
  */
 const PROVINCE_COLLATION_LOCALE = "tr";
-
-/** Same-page anchor for the alphabetical section — locale-independent, never a URL. */
-const INDEX_SECTION_ID = "iller";
 
 /** The localized slug (slug_tr for tr, slug_en for en). */
 function slugForLocale(province: ProvinceListItem, locale: Locale): string {
@@ -70,7 +68,7 @@ async function loadProvinceIndex(
     entries,
     (entry) => entry.name,
     PROVINCE_COLLATION_LOCALE,
-    INDEX_SECTION_ID,
+    PROVINCE_INDEX_SECTION_ID,
   );
   return { buckets, items: flattenBuckets(buckets) };
 }
@@ -155,7 +153,7 @@ export default async function TurkiyePage({ params }: PageProps) {
           critical gap. Deliberately above the two CTA cards, which are cross-links, not
           content. */}
       <EntityIndex
-        sectionId={INDEX_SECTION_ID}
+        sectionId={PROVINCE_INDEX_SECTION_ID}
         headingId="turkiye-index-heading"
         heading={t("indexHeading")}
         description={t("indexDescription", { count: items.length })}
