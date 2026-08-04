@@ -290,18 +290,29 @@ export function erode(mask, radiusPx) {
  *
  * **Bridging reach is up to 2 × radiusPx, not radiusPx.** Dilation grows BOTH banks of a
  * seam by `radiusPx`, so a channel narrower than `2 · radiusPx` gets bridged; nothing wider
- * ever does. At the pinned recipe value (r = 10 px = 300 m at 30 m pixels) that is a ceiling
- * of 600 m. The P7 plan's §11 T1 prose ("300 m bridged / 400 m NOT bridged") states the
- * reach as `radiusPx`; that is the one number in the plan this module contradicts, and the
- * contradiction is asserted in `lib/map/jrc-morphology.test.ts` rather than papered over.
- * The physical parameter itself is unchanged — r = 10 px is exactly what reproduces the
- * research measurement (verified end to end on Tuz Gölü, +0,2 %).
+ * ever does. At the pinned recipe value (r = 10 px) that is a ceiling of 20 px. The P7
+ * plan's §11 T1 prose ("300 m bridged / 400 m NOT bridged") states the reach as `radiusPx`;
+ * that is the one number in the plan this module contradicts, and the contradiction is
+ * asserted in `lib/map/jrc-morphology.test.ts` rather than papered over.
+ *
+ * **Radii here are PIXELS.** A GSW pixel is 0.00025° of arc — about 21.8 m east-west and
+ * 27.8 m north-south at Türkiye's lake latitudes, not the nominal 30 m — so 10 px covers
+ * ~218 × 278 m of ground, not 300 m in both directions, and quoting it in metres overstates
+ * it (→ DEC 2026-08-04g §2). The unit tests state their seams in nominal metres because that
+ * is how the recipe's ruled values are named; the operator itself only ever sees pixels.
  *
  * 2 × radiusPx is a CEILING, not a promise: where the two banks face each other along a
  * short front the bridge that dilation builds is thin enough for the erosion half to pinch
- * it off again. Measured on the synthetic case in the unit tests: a 570 m seam bridges
- * across a 60 px contact front and stays open across a 20 px one. Do not "fix" a stubborn
- * seam by enlarging the radius — at 600 m the recipe inflates Tuz Gölü by ~25 %.
+ * it off again. Measured on the synthetic case in the unit tests: a 19 px seam (nominal
+ * 570 m) bridges across a 60 px contact front and stays open across a 20 px one.
+ *
+ * Do not "fix" a stubborn seam by enlarging the radius — but not for the reason this
+ * docblock used to give. "At 600 m the recipe inflates Tuz Gölü by ~25 %" was measured
+ * before Hirfanlı Baraj Gölü was removed from Tuz (→ DEC 2026-08-04d) and is **withdrawn**.
+ * The real measurement, this pipeline, Tuz Gölü, against the 1 642 km² ÇŞB reference:
+ * 10 px → 1 292.6 km² (−21.3 %) · 15 px → 1 341.8 (−18.3 %) · 20 px → 1 374.9 (−16.3 %).
+ * Doubling the radius buys +6.4 % of area and never reaches the reference, so it is not the
+ * lever for a body that looks too small; the selection rule is.
  *
  * @param {Mask} mask
  * @param {number} radiusPx

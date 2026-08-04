@@ -75,7 +75,10 @@ export default async function AboutPage({ params }: PageProps) {
         <li>{t("dataOsm")}</li>
         <li>{t("dataNaturalEarth")}</li>
         <li>
-          {t("dataJrcLabel")} <span lang="en">{t("dataJrcEnglish")}</span>
+          {/* The full stop sits OUTSIDE the span: the sibling bullets end in one, and the
+              English string inside is the licence's own wording — punctuation is not ours
+              to add to it. */}
+          {t("dataJrcLabel")} <span lang="en">{t("dataJrcEnglish")}</span>.
         </li>
       </ul>
       <p>

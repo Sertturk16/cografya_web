@@ -201,16 +201,16 @@ impounding in 2022 and its polygon shows an intermediate state), so its area wil
 
 ## `tr-inland-water-jrc.geojson` — Türkiye seasonal + salt lakes (P7)
 
-| Field                      | Value                                                                                                                                                       |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Source dataset**         | **JRC Global Surface Water v1.5 (1984–2024)**, `occurrence` + `extent` layers, 30 m                                                                         |
-| **Publisher**              | European Commission Joint Research Centre / Google                                                                                                          |
-| **Bytes**                  | 84,402                                                                                                                                                      |
-| **Format**                 | GeoJSON `FeatureCollection`, 9 features (MultiPolygon), coordinates `[lon, lat]` (WGS84), plus a `metadata` block                                           |
+| Field                      | Value                                                                                                                                                                              |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Source dataset**         | **JRC Global Surface Water v1.5 (1984–2024)**, `occurrence` + `extent` layers, 30 m                                                                                                |
+| **Publisher**              | European Commission Joint Research Centre / Google                                                                                                                                 |
+| **Bytes**                  | 83,611                                                                                                                                                                             |
+| **Format**                 | GeoJSON `FeatureCollection`, 9 features (MultiPolygon), coordinates `[lon, lat]` (WGS84), plus a `metadata` block                                                                  |
 | **Per-feature properties** | `id`, `name`, `wikidata`, `areaKm2`, `rings`, `nodes`, `identity`, `window`, `identityNeighbourPx`, `componentsIdentity`, `componentsUsed`, `componentsTotal`, `extentCoveragePct` |
-| **Licence**                | Copernicus / EC JRC open data — free reuse **with attribution and citation**                                                                                |
-| **Required attribution**   | **`Source: EC JRC/Google`** — verbatim, never translated, rendered next to every TR-frame map                                                               |
-| **Required citation**      | Pekel et al. 2016, rendered on `/hakkimizda` (see below)                                                                                                    |
+| **Licence**                | Copernicus / EC JRC open data — free reuse **with attribution and citation**                                                                                                       |
+| **Required attribution**   | **`Source: EC JRC/Google`** — verbatim, never translated, rendered next to every TR-frame map                                                                                      |
+| **Required citation**      | Pekel et al. 2016, rendered on `/hakkimizda` (see below)                                                                                                                           |
 
 ### Why this file exists at all — the hybrid
 

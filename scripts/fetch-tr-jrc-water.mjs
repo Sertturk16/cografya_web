@@ -511,10 +511,12 @@ const REGISTRY = [
     // 25.9 km² — joins this body at **5 px** and stays separate at **4 px**. The ruled 67 px
     // default therefore draws the two separately named lakes as ONE 84.8 km² body.
     //
-    // 4 px ships: this body is then its main component alone, 43.9 km², still clear of the
-    // 30 km² rung. That is the conservative choice, not the settled one — drawing two named
-    // lakes as one is the defect class DEC 2026-08-04d exists to kill, so the pipeline
-    // defaults to keeping them apart until someone decides otherwise.
+    // 4 px ships: 45.18 km², one ring, still clear of the 30 km² rung. That is NOT "the main
+    // component alone" — at 4 px the body is its main component plus 94 sub-pixel-scale pans
+    // hugging its own shore (95 of the window's 1 072 components), which the closing then
+    // merges into one outline. Çöl Gölü is the nearest thing it excludes. The conservative
+    // choice, not the settled one: drawing two named lakes as one is the defect class
+    // DEC 2026-08-04d exists to kill, so the pipeline keeps them apart until someone decides.
     //
     // The decision is NOT engineering: DEC 2026-08-02q §G ruled "Yay Gölü is drawn" from a
     // brief defining Yay as "the open-water core of Sultan Sazlığı", and whether that core is
