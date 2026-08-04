@@ -228,9 +228,10 @@
 
 /* `min-width` was 640px when the table carried nine columns and horizontal scroll was the
    point. It now carries three (month + the ERA5-Land core pair), and 640px would have
-   forced a scrollbar on a phone for a table that fits — with a focusable scroll region
-   announcing itself as "horizontally scrollable" when there is nothing to scroll. 320px
-   keeps the columns from crushing while letting the table fit a 390px viewport. */
+   forced a scrollbar on a phone for a table that fits. 320px keeps the columns from
+   crushing while letting the table fit a 390px viewport — and it is also what still makes
+   the container genuinely scrollable at the 320px reflow width, which is why the scroll
+   region stays focusable (see `climate-table.tsx`). */
 .table {
   width: 100%;
   border-collapse: collapse;

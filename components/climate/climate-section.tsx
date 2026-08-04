@@ -26,8 +26,11 @@ const CHART_ANCHOR: Record<Locale, string> = {
 
 /**
  * The "Sıcaklık ve Yağış Grafiği" block — a new `<h3>` INSIDE the existing İklim `<h2>`
- * (PLAN §2 layout: it follows the Köppen methodology `<details>` and the NOVA narrative
- * slot). It is rendered ONLY when the province has a publishable climate series
+ * (PLAN §2 layout: it follows the untouchable MGM classification `<details>` (Köppen
+ * caveat) and the NOVA narrative slot). MGM still supplies the climate CLASSIFICATION
+ * (K1 / DEC 2026-08-04a); this component's series is what moved to ERA5-Land, and the two
+ * are separately sourced on purpose. It is rendered ONLY when the province has a
+ * publishable climate series
  * (`province.climate !== null`) and only on the TR locale (EN detail pages are noindex and
  * have no climate caveat text — SEO-POLICY §6). The gating lives in the page.
  *
