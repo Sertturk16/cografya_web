@@ -1,4 +1,4 @@
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { brandGlyphSvg } from "@/lib/brand/glyph";
@@ -7,9 +7,8 @@ import { LocaleSwitcher } from "./locale-switcher";
 import { SiteSearch } from "./site-search/site-search";
 import styles from "./site-header.module.css";
 
-export async function SiteHeader() {
+export async function SiteHeader({ locale }: { locale: Locale }) {
   const t = await getTranslations("Nav");
-  const locale = (await getLocale()) as Locale;
 
   return (
     <header className={styles.header}>

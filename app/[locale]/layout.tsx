@@ -63,7 +63,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           <a href="#main-content" className="skip-link">
             {t("skipToContent")}
           </a>
-          <SiteHeader />
+          <SiteHeader locale={locale} />
           {/* tabIndex={-1} makes the skip-link target programmatically focusable so
               AT focus actually moves here on activation — Safari/VoiceOver do not
               focus a plain id target otherwise (a11y). */}

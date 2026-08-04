@@ -20,7 +20,7 @@
     "openLabel": "Aramayı aç",
     "closeLabel": "Aramayı kapat",
     "noResults": "Sonuç bulunamadı.",
-    "resultCount": "{count} sonuç",
+    "resultCount": "{count, plural, other {# sonuç}}",
     "seeAll": "Tüm il ve ülke listesi",
     "province": "İl",
     "country": "Ülke",

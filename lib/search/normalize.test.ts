@@ -64,13 +64,32 @@ describe("foldForSearch", () => {
     expect(foldForSearch("()-–_")).toBe("");
   });
 
-  it("does NOT lowercase with English rules — the discriminating case", () => {
-    // Under English casing "I" lowercases to "i" directly and "İ" keeps a combining dot;
-    // both would still reach "i" here, so the probe that actually separates the two rules is
-    // that Turkish casing never leaves a dotted capital behind for the NFD pass to strip.
+  /**
+   * HONEST FINDING (PR #45 review TA45-I1). The previous version of this block claimed to be
+   * "the discriminating case" for the `"tr"` argument in `toLocaleLowerCase`. It was not:
+   * brute-forcing every code point 0x0000–0x2000 through the FULL pipeline produces identical
+   * output with `"tr"` and with `"en"`, because the explicit `ı→i` remap and the NFD
+   * mark-strip converge exactly the two inputs where the casing rules differ. Dropping the
+   * locale argument would not have failed a single test.
+   *
+   * So the claim is retired rather than restated. What IS asserted below is the true, useful
+   * pair: the locale genuinely matters at the PRE-FOLD layer, and the fold deliberately
+   * erases that difference downstream. Both halves are real invariants; neither pretends to
+   * guard something it cannot.
+   */
+  it("uses Turkish casing at the pre-fold layer, where the rules really do diverge", () => {
+    // Exactly two code points behave differently, and these are they.
     expect("I".toLocaleLowerCase("tr")).toBe("ı");
     expect("I".toLocaleLowerCase("en")).toBe("i");
-    // ...and folding routes both onto the same output regardless, which is the guarantee.
-    expect(foldForSearch("I")).toBe(foldForSearch("İ"));
+    expect("İ".toLocaleLowerCase("tr")).toBe("i");
+    expect("İ".toLocaleLowerCase("en")).toBe("i̇"); // i + combining dot above
+  });
+
+  it("converges every dotted/dotless i form on the same output — by design, not by locale", () => {
+    // The downstream guarantee. It holds BECAUSE of the ı→i remap and the mark-strip, which
+    // is why the pipeline's output is locale-independent even though its first step is not.
+    const forms = ["I", "İ", "ı", "i"];
+    expect(new Set(forms.map(foldForSearch)).size).toBe(1);
+    expect(foldForSearch("I")).toBe("i");
   });
 });

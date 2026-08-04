@@ -45,6 +45,21 @@
   color: var(--color-primary);
 }
 
+/* REQUIRED — the `hidden` attribute does not hide this control on its own. `[hidden]` is
+   applied only by the UA stylesheet's `display: none`, and `.trigger`'s author-origin
+   `display: inline-flex` above beats it unconditionally in the cascade (the repo ships no
+   `[hidden]` reset). Without this rule the collapsed trigger stayed rendered, focusable and
+   — below the desktop breakpoint, where its label is `display: none` — NAMELESS while the
+   panel was open (PR #45 review C1, WCAG 4.1.2).
+
+   `visibility: hidden` rather than `display: none` on purpose: `.slot` has no size of its
+   own ("the trigger IS the box"), so removing the trigger from flow would collapse the
+   header's first row — trading an a11y defect for the layout shift this whole design exists
+   to prevent. `visibility: hidden` keeps the box, exits the a11y tree AND the tab order. */
+.trigger[hidden] {
+  visibility: hidden;
+}
+
 .triggerText {
   /* Hidden on narrow viewports: the trigger collapses to the icon alone so it fits beside
      the brand on the FIRST header row and adds no row of its own. */

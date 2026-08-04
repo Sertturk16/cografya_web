@@ -38,6 +38,14 @@ describe("prepareSearchIndex", () => {
 });
 
 describe("searchPrepared", () => {
+  it("returns nothing for a query that simply does not match", () => {
+    // Previously only the empty/whitespace paths were covered, so a matcher that returned
+    // the whole corpus for an unmatched query would have passed (review TA45-M2).
+    const records = [record("Avlak", "/turkiye/avlak"), record("Bavlak", "/dunya/bavlak", "c")];
+    expect(search(records, "qqqq")).toEqual([]);
+    expect(search(records, "avlakk")).toEqual([]);
+  });
+
   it("returns nothing for an empty or whitespace-only query", () => {
     const records = [record("Avlak", "/turkiye/avlak")];
     expect(search(records, "")).toEqual([]);

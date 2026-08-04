@@ -20,7 +20,7 @@
     "openLabel": "Open search",
     "closeLabel": "Close search",
     "noResults": "No results found.",
-    "resultCount": "{count} results",
+    "resultCount": "{count, plural, one {# result} other {# results}}",
     "seeAll": "Full province and country list",
     "province": "Province",
     "country": "Country",

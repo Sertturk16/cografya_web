@@ -1,11 +1,14 @@
-import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { searchFallbackHref } from "@/lib/search/fallback-href";
 import { SearchCombobox } from "./search-combobox";
 
 /**
- * The header search (→ DEC 2026-08-04i §2). Server half: it resolves the fallback href and
- * the user-facing strings, then hands them to the client island.
+ * The header search (→ DEC 2026-08-04i §2). Server half: it resolves the fallback href for
+ * this locale and picks the matching index endpoint, then hands both to the client island.
+ *
+ * It deliberately resolves NO user-facing strings. The island reads them from
+ * `useTranslations` itself, which is what lets a count be formatted with real ICU
+ * pluralisation at the point the count is known (PR #45 review I1/M6).
  *
  * The island is what renders — including on the server. Before hydration (and forever, if
  * the bundle never arrives) it is a real `<a>` pointing at the alphabetical province index,
@@ -19,27 +22,11 @@ import { SearchCombobox } from "./search-combobox";
  * markup is emitted — Google removed the sitelinks search box on 2024-11-21, so it would be
  * dead structured data.
  */
-export async function SiteSearch({ locale }: { locale: Locale }) {
-  const t = await getTranslations("Search");
-
+export function SiteSearch({ locale }: { locale: Locale }) {
   return (
     <SearchCombobox
-      locale={locale}
       fallbackHref={searchFallbackHref(locale)}
       indexUrl={`/api/search-index/${locale}`}
-      labels={{
-        label: t("label"),
-        triggerLabel: t("triggerLabel"),
-        placeholder: t("placeholder"),
-        openLabel: t("openLabel"),
-        closeLabel: t("closeLabel"),
-        noResults: t("noResults"),
-        resultCount: t("resultCount"),
-        seeAll: t("seeAll"),
-        province: t("province"),
-        country: t("country"),
-        loadFailed: t("loadFailed"),
-      }}
     />
   );
 }

@@ -14,8 +14,13 @@
  * A hand-written Turkish map would leave `Côte d'Ivoire`, `Åland` and `Ćuprija` unfoldable,
  * and the country corpus is a world corpus. Five of the six Turkish letters DECOMPOSE under
  * NFD (`ç ğ ö ş ü` are base + combining mark), so stripping combining marks handles them and
- * every other accent in one rule. Dotless `ı` is the exception — it has no decomposition —
- * so it is mapped explicitly, before the NFD pass.
+ * every other DECOMPOSABLE accent in one rule. Dotless `ı` is the exception — it has no
+ * decomposition — so it is mapped explicitly, before the NFD pass.
+ *
+ * The scope of that claim is exactly "decomposable accents" (review M5). Latin letters that
+ * do NOT decompose — `ø đ ł æ œ ß þ` — and non-Latin scripts survive to the final step and
+ * become word separators rather than ASCII equivalents. None appears in today's TR/EN
+ * corpus; a name that needs one would need its own transliteration entry here.
  *
  * ## Order is load-bearing
  *

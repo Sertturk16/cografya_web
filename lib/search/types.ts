@@ -22,3 +22,25 @@ export type SearchIndexRecord = readonly [name: string, path: string, kind: Sear
 export interface SearchIndexPayload {
   readonly entries: readonly SearchIndexRecord[];
 }
+
+/**
+ * Runtime shape check for the fetched document.
+ *
+ * The island receives this over the network, so its shape is CHECKED rather than asserted
+ * with a cast: a truncated or malformed body should become the same honest "could not load"
+ * as a 500, not an array of `undefined`s that only fails later inside the matcher
+ * (PR #45 review M14).
+ */
+export function isSearchIndexPayload(value: unknown): value is SearchIndexPayload {
+  if (typeof value !== "object" || value === null) return false;
+  const entries: unknown = (value as { entries?: unknown }).entries;
+  if (!Array.isArray(entries)) return false;
+  return entries.every(
+    (entry) =>
+      Array.isArray(entry) &&
+      entry.length === 3 &&
+      typeof entry[0] === "string" &&
+      typeof entry[1] === "string" &&
+      (entry[2] === "p" || entry[2] === "c"),
+  );
+}

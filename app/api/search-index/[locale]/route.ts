@@ -57,8 +57,11 @@ export async function GET(_request: Request, ctx: { params: Promise<{ locale: st
     return new NextResponse(null, { status: 404 });
   }
 
-  // Resilient reads: an api outage yields an empty index rather than a failed request, so
-  // the island simply finds nothing and the box keeps its fallback link.
+  // Build-time resilient, runtime strict — the honest contract (review M2): the resilient
+  // helpers return `[]` only during `next build`, and RE-THROW at runtime, so an api outage
+  // during ISR regeneration surfaces as a 500 from this handler rather than an empty 200.
+  // Either way the island's `!response.ok` branch degrades to the fallback link, and a failed
+  // attempt no longer latches search off for the session.
   const [provinces, countries] = await Promise.all([
     getProvincesResilient(),
     getCountriesResilient(),
@@ -80,10 +83,12 @@ export async function GET(_request: Request, ctx: { params: Promise<{ locale: st
 
   return NextResponse.json(payload, {
     headers: {
-      // Every navigation on this site is a full page load, so the island remounts on each
-      // page and would otherwise re-request the index every time a reader opens the box.
-      // A short BROWSER lifetime fixes that (the in-module guard only covers one page),
-      // while `s-maxage` keeps shared caches on the same 1 h window as the content itself.
+      // A short BROWSER lifetime so a reader who searches, navigates and searches again does
+      // not re-download the index. (An earlier version of this comment justified it with
+      // "every navigation is a full page load", which is wrong — the header uses next-intl
+      // `Link`, i.e. client-side RSC navigation, and the island does not even remount. The
+      // cache window is still worth having for full loads and cross-tab visits; review M3.)
+      // `s-maxage` keeps shared caches on the same 1 h window as the content itself.
       // The browser window is deliberately much shorter than the content window: this file
       // may lag a freshly seeded entity by minutes, never by an hour.
       "Cache-Control": `public, max-age=300, s-maxage=${CONTENT_REVALIDATE_SECONDS}, stale-while-revalidate=86400`,

@@ -6,11 +6,33 @@ import { buildSearchIndex } from "./index-source";
  * Structural invariants of index construction (CONVENTIONS §2 — synthetic entities; the
  * contract under test is "which field feeds which locale", not any real place's data).
  */
-const province = (nameTr: string, slugTr: string, slugEn: string) =>
-  ({ plateCode: "00", nameTr, slugTr, slugEn }) as unknown as ProvinceListItem;
+// Real typed literals, not double casts: every consumed field is non-nullable in the
+// generated contract, so building the full shape is cheap and a contract change now breaks
+// the test instead of being hidden by an assertion (review M15). `ZZ` is a synthetic-fixture
+// ISO code reserved by CONVENTIONS §5 for exactly this.
+const province = (nameTr: string, slugTr: string, slugEn: string): ProvinceListItem => ({
+  plateCode: "00",
+  nameTr,
+  slugTr,
+  slugEn,
+  region: "MARMARA",
+  climateKoppen: null,
+  climateAnnualMeanTempC: null,
+});
 
-const country = (nameTr: string, nameEn: string, slugTr: string, slugEn: string) =>
-  ({ isoCode: "ZZ", nameTr, nameEn, slugTr, slugEn }) as unknown as CountryListItem;
+const country = (
+  nameTr: string,
+  nameEn: string,
+  slugTr: string,
+  slugEn: string,
+): CountryListItem => ({
+  isoCode: "ZZ",
+  nameTr,
+  nameEn,
+  slugTr,
+  slugEn,
+  continent: "AVRUPA",
+});
 
 const PROVINCES = [province("Şavlak", "savlak", "savlak-en")];
 const COUNTRIES = [country("Ülkeadı", "Countryname", "ulkeadi", "countryname")];
