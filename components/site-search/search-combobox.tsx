@@ -99,13 +99,20 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
   const optionId = useCallback((index: number) => `${baseId}-option-${index}`, [baseId]);
 
   /**
-   * Fetches the index at most once per SUCCESSFUL load. A failed attempt clears the guard so
-   * the next focus retries: the previous revision set the flag before the await and never
-   * reset it, which let one connectivity blip latch the search dead for as long as the island
-   * stayed mounted — and it stays mounted across client-side navigations (review I2).
+   * A USABLE index — non-null and non-empty. An empty one is treated as "not loaded yet"
+   * rather than as loaded, which is what makes the retry below reach the post-deploy case
+   * (see `indexUnavailable`).
+   */
+  const indexReady = entries !== null && entries.length > 0;
+
+  /**
+   * Fetches the index at most once per usable load. A failed OR empty result clears the
+   * guard so the next focus retries: the original revision set the flag before the await and
+   * never reset it, which let one connectivity blip latch the search dead for as long as the
+   * island stayed mounted — and it stays mounted across client-side navigations (review I2).
    */
   const ensureIndex = useCallback(async () => {
-    if (inFlight.current || entries !== null) return;
+    if (inFlight.current || indexReady) return;
     inFlight.current = true;
     setLoadFailed(false);
     const controller = new AbortController();
@@ -126,7 +133,7 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
       clearTimeout(timeout);
       inFlight.current = false;
     }
-  }, [indexUrl, entries]);
+  }, [indexUrl, indexReady]);
 
   const hits = useMemo(
     () =>
@@ -142,7 +149,20 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
   const hasQuery = query.trim().length > 0;
   /** Waiting on the index is NOT the same as having nothing to show for this query. */
   const isLoading = entries === null && !loadFailed;
-  const showNoResults = hasQuery && !isLoading && !loadFailed && hits.length === 0;
+  /**
+   * The index cannot answer anything right now — either the fetch failed, or it SUCCEEDED
+   * and returned zero entries.
+   *
+   * The empty case is not hypothetical: a CI build with no api service prerenders
+   * `{"entries":[]}`, which is a valid 200 and passes the payload guard, so it is what every
+   * reader gets between a deploy and the first ISR regeneration. Without this branch the
+   * panel would answer every query with "no results" during exactly that window — the false
+   * statement review CR-I3 was accepted to remove, still reachable through the other door
+   * (confirm-leg NEW-1). An empty index means "the list is unavailable", never "your search
+   * matched nothing".
+   */
+  const indexUnavailable = loadFailed || (entries !== null && entries.length === 0);
+  const showNoResults = hasQuery && !isLoading && !indexUnavailable && hits.length === 0;
 
   // Announce on a debounce — WCAG 4.1.3 without narrating every keystroke. The whole decision
   // lives inside the timeout, including the "say nothing" case: a synchronous setState in the
@@ -151,8 +171,14 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
   // certainty right after every deploy, when the prerendered index is empty (review I3).
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!open || !hasQuery || isLoading || loadFailed) {
+      if (!open || !hasQuery || isLoading) {
         setAnnouncement("");
+        return;
+      }
+      // An unavailable index is ANNOUNCED, not silently swallowed: a reader who cannot see
+      // the inline notice still needs to know why their query produced nothing.
+      if (indexUnavailable) {
+        setAnnouncement(t("loadFailed"));
         return;
       }
       setAnnouncement(
@@ -160,7 +186,7 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
       );
     }, 250);
     return () => clearTimeout(timer);
-  }, [open, hasQuery, isLoading, loadFailed, hits.length, t]);
+  }, [open, hasQuery, isLoading, indexUnavailable, hits.length, t]);
 
   // Focus restoration AFTER commit. Doing it inside `close()` used to work only because the
   // trigger was never really hidden; now that `[hidden]` genuinely removes it from the a11y
@@ -255,6 +281,9 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
    * focus on `<body>`.
    */
   const onBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    // A deliberate close (Escape, ×) is already restoring focus through the effect above;
+    // the blur it causes must not cancel that by re-closing with `restore: false`.
+    if (restoreFocus.current) return;
     if (event.currentTarget.contains(event.relatedTarget)) return;
     close(false);
   };
@@ -326,13 +355,24 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
               onChange={(event) => updateQuery(event.target.value)}
               onKeyDown={onKeyDown}
             />
-            <button type="button" className={styles.close} onClick={() => close(true)}>
+            <button
+              type="button"
+              className={styles.close}
+              // WebKit does not mouse-focus form controls (bug 254655), so clicking × fires
+              // `focusout` from the input with `relatedTarget === null` — which `onBlur`
+              // below would read as "focus left the control" and close WITHOUT restoring
+              // focus, dropping the reader on <body> (confirm-leg NEW-2). Preventing the
+              // mousedown default keeps focus on the input until `close(true)` hands it back
+              // deliberately, and costs nothing on engines that would have focused it.
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => close(true)}
+            >
               <span className={styles.srOnly}>{t("closeLabel")}</span>
               <span aria-hidden="true">×</span>
             </button>
           </div>
 
-          {loadFailed ? <p className={styles.notice}>{t("loadFailed")}</p> : null}
+          {indexUnavailable ? <p className={styles.notice}>{t("loadFailed")}</p> : null}
 
           {hits.length > 0 ? (
             <ul
