@@ -13,6 +13,10 @@ pnpm-lock.yaml
 lib/api/schema.ts
 # generate:map output — machine-written path data, kept as the generator emits it.
 lib/map/tr-provinces.generated.ts
+# generate:map's SECOND output: the decimated homepage thumbnail, emitted in the same run.
+# Same reason, and the same trap — Prettier splits the one-line shape objects across four
+# lines, which would make `generate:map:check` fail on a file nobody edited.
+lib/map/tr-provinces-mini.generated.ts
 # generate:world-map output — same, for the world (regional) country map.
 lib/map/world-countries.generated.ts
 # generate:water output — same, for the TR inland water layer. NOT optional: `generate:water:check`
