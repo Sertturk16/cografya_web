@@ -59,9 +59,13 @@
   },
   "Turkiye": {
     "metaTitle": "Türkiye Haritası — 81 İl",
-    "metaDescription": "Türkiye'nin 81 ilini interaktif haritada keşfet. Her il için konum, nüfus, yüzölçümü, iklim ve yüzey şekilleri; kaynaklı, düzenli detay sayfaları.",
+    "metaDescription": "Türkiye'nin {count} iline interaktif haritadan ya da alfabetik listeden ulaş. Her il için nüfus, yüzölçümü, iklim ve yeryüzü şekilleri; kaynaklı detay sayfaları.",
+    "metaDescriptionFallback": "Türkiye'nin illerine interaktif haritadan ya da alfabetik listeden ulaş. Her il için nüfus, yüzölçümü, iklim ve yeryüzü şekilleri; kaynaklı detay sayfaları.",
     "heading": "Türkiye Haritası",
     "intro": "Bir ile tıklayarak detaylarını görüntüle.",
+    "indexHeading": "Alfabetik İl Listesi",
+    "indexDescription": "Türkiye'nin {count} ili Türk alfabesi sırasıyla. I ve İ ayrı harfler olduğu için Isparta ile İstanbul ayrı gruplarda yer alır.",
+    "indexLetterNavLabel": "Baş harfe göre atla",
     "gameCtaHeading": "Öğrendiklerini oyunla sına",
     "gameCtaLink": "Harita oyununu aç",
     "marineCtaHeading": "Denizler ve kıyı illeri",
@@ -229,9 +233,13 @@
   },
   "Dunya": {
     "metaTitle": "Dünya Haritası — Ülkeler",
-    "metaDescription": "Dünya ülkelerini interaktif haritada keşfet. Her ülke için konum, başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
+    "metaDescription": "İnteraktif dünya haritası ve {count} ülkelik alfabetik liste. Her ülke için başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
+    "metaDescriptionFallback": "İnteraktif dünya haritası ve alfabetik ülke listesi. Her ülke için başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
     "heading": "Dünya Haritası",
-    "intro": "Bir ülkeye tıklayarak detaylarını görüntüle."
+    "intro": "Bir ülkeye tıklayarak detaylarını görüntüle.",
+    "indexHeading": "Alfabetik Ülke Listesi",
+    "indexDescription": "Detay sayfası bulunan {count} ülke, adlarının baş harfine göre gruplanmış halde.",
+    "indexLetterNavLabel": "Baş harfe göre atla"
   },
   "WorldMap": {
     "mapTitle": "Dünya ülkeleri haritası (bölgesel)",

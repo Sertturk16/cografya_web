@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { EntityIndex } from "@/components/entity-index/entity-index";
 import { TurkeyMapSection } from "@/components/map/turkey-map-section";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import type { ProvinceListItem } from "@/lib/api/types";
 import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { bucketByInitial } from "@/lib/geo/alphabet";
 import {
   collectionPageJsonLd,
   itemListJsonLd,
@@ -19,6 +21,17 @@ interface PageProps {
   params: Promise<{ locale: Locale }>;
 }
 
+/**
+ * Province labels are Turkish in BOTH locales — `ProvinceListItem` carries no `nameEn` —
+ * so the index collates with Turkish rules even on `/en/turkiye`. Collating Turkish names
+ * with English rules is what would mis-file "Ağrı" and "Çanakkale"
+ * (see `lib/geo/alphabet.ts`).
+ */
+const PROVINCE_COLLATION_LOCALE = "tr";
+
+/** Same-page anchor for the alphabetical section — locale-independent, never a URL. */
+const INDEX_SECTION_ID = "iller";
+
 /** The localized slug (slug_tr for tr, slug_en for en). */
 function slugForLocale(province: ProvinceListItem, locale: Locale): string {
   return locale === "en" ? province.slugEn : province.slugTr;
@@ -27,12 +40,22 @@ function slugForLocale(province: ProvinceListItem, locale: Locale): string {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Turkiye" });
+  // Same resilient list the page body renders; Next dedupes the underlying fetch within a
+  // render pass, so this costs nothing extra. The count is interpolated rather than written
+  // into the string so the description can never drift from what the page actually lists
+  // (Google explicitly encourages page-specific data in programmatic descriptions —
+  // `SEO-POLICY.md` §A2.2). When the list is empty (an api outage at build), the count-less
+  // variant is used instead: promising "81 il" over a page that shows none would be §B2.6.
+  const provinces = await getProvincesResilient();
 
   return buildMetadata({
     locale,
     hrefForLocale: () => "/turkiye",
     title: t("metaTitle"),
-    description: t("metaDescription"),
+    description:
+      provinces.length > 0
+        ? t("metaDescription", { count: provinces.length })
+        : t("metaDescriptionFallback"),
   });
 }
 
@@ -59,7 +82,7 @@ export default async function TurkiyePage({ params }: PageProps) {
   // data). Resilient fetch: a transient failure yields an empty list (→ ItemList with
   // zero items) rather than breaking the page — the map section degrades the same way.
   const provinces = await getProvincesResilient();
-  const items: ItemListEntry[] = provinces.map((province) => ({
+  const entries: ItemListEntry[] = provinces.map((province) => ({
     name: province.nameTr,
     path: getPathname({
       locale,
@@ -67,13 +90,25 @@ export default async function TurkiyePage({ params }: PageProps) {
     }),
   }));
 
+  // ONE ordering feeds both the visible A→Z list and the ItemList below, so the structured
+  // data can never enumerate a name or an order the reader does not see (SEO-POLICY §B5.7).
+  const buckets = bucketByInitial(
+    entries,
+    (entry) => entry.name,
+    PROVINCE_COLLATION_LOCALE,
+    INDEX_SECTION_ID,
+  );
+  const items: ItemListEntry[] = buckets.flatMap((bucket) => [...bucket.items]);
+  const description =
+    items.length > 0 ? t("metaDescription", { count: items.length }) : t("metaDescriptionFallback");
+
   return (
     <div className="container page">
       <JsonLd
         schema={[
           collectionPageJsonLd({
             name: t("heading"),
-            description: t("metaDescription"),
+            description,
             path,
             locale,
           }),
@@ -91,6 +126,20 @@ export default async function TurkiyePage({ params }: PageProps) {
       <p className="lede">{t("intro")}</p>
 
       <TurkeyMapSection locale={locale} />
+
+      {/* The alphabetical index (→ DEC 2026-08-04i §2). It sits directly under the map
+          because it is the SECOND way into the same 81 pages, not a footnote: the UX review
+          found the map was the only entry point and called that the site's single most
+          critical gap. Deliberately above the two CTA cards, which are cross-links, not
+          content. */}
+      <EntityIndex
+        sectionId={INDEX_SECTION_ID}
+        headingId="turkiye-index-heading"
+        heading={t("indexHeading")}
+        description={t("indexDescription", { count: items.length })}
+        letterNavLabel={t("indexLetterNavLabel")}
+        buckets={buckets}
+      />
 
       {/* Hub-and-spoke link to the map game (SPEC §10.4, CONVENTIONS §6 #10). It lives in
           the PAGE body, deliberately outside `TurkeyMapSection`: that component owns the

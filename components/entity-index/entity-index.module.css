@@ -1,0 +1,91 @@
+/* Alphabetical hub index (`/turkiye#iller`, `/dunya#ulkeler`). Zero client JS — every rule
+   here is static layout over the global Terra token layer (DESIGN.md §2/§4); no hardcoded
+   brand hex, no --color-taupe on any text (3.86:1, sub-AA — DESIGN.md §5 hard rule). */
+
+.index {
+  /* The header is `position: sticky`, so an anchor jump would otherwise park the heading
+     underneath it. Covers the tallest measured header (mobile, ~3 rows) plus breathing
+     room. Applied to the group headings too — every `#…` target on this page. */
+  scroll-margin-top: 200px;
+}
+
+.intro {
+  color: var(--color-slate);
+  max-width: 60ch;
+}
+
+.letterNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 28px;
+}
+
+.letterNav a {
+  /* ≥ 32×32 px: comfortably over the WCAG 2.5.8 (AA) 24×24 target minimum, and large
+     enough to be a realistic thumb target in the wrapped mobile row. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding-inline: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  /* primary-dark on bg = 7.89:1 (AAA). */
+  color: var(--color-primary-dark);
+  background: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.letterNav a:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.group {
+  scroll-margin-top: 200px;
+  margin-bottom: 24px;
+}
+
+.groupHeading {
+  /* A real <h3> because it really is the heading of a subgroup — not an <h3> chosen for
+     its size (SEO-POLICY §B3.7). The size is set here, the semantics by the tag. */
+  font-size: 1.05rem;
+  color: var(--color-primary-dark);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+
+.list {
+  /* Column COUNT is derived from the available width, so the list reflows from four
+     columns on a desktop hub to one on a 390 px phone with no media queries and no
+     layout shift. DOM order stays reading order, which keeps tab order correct. */
+  columns: 14rem;
+  column-gap: 32px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list li {
+  break-inside: avoid;
+}
+
+.link {
+  display: block;
+  /* ~32 px row height: dense enough for 196 rows, still over the 24×24 target floor. */
+  padding-block: 6px;
+  color: var(--color-primary-dark);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
