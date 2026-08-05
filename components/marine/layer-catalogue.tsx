@@ -181,7 +181,7 @@ export async function LayerCatalogue({ locale, layers }: LayerCatalogueProps) {
                   </td>
                   <td className={styles.td}>
                     {state === "live" ? (
-                      <ul className={styles.runList}>
+                      <ul role="list" className={styles.runList}>
                         {layer.updateFrequency !== null && (
                           <li>{tm("catalogue.cycle", { value: layer.updateFrequency })}</li>
                         )}

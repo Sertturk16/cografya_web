@@ -94,6 +94,24 @@ describe("Continents namespace", () => {
     expectResolves("Continents", key);
   });
 
+  it("forces AHEAD_OF_CONTRACT_CONTINENTS out the moment the contract catches up", () => {
+    // REMOVAL GUARD (→ PR #46 review CR-FR2-4). The list above is a deliberate escape hatch
+    // around a contract-sync debt, and the failure mode of an escape hatch is that it outlives
+    // its reason: once `pnpm codegen` brings ANTARKTIKA into the `Continent` union, the list
+    // would sit here forever, quietly asserting a value the exhaustive `CONTINENTS` map above
+    // already covers — two guards for one value, one of them lying about why it exists.
+    //
+    // `@ts-expect-error` is the mechanism BECAUSE it inverts: today the assignment is a type
+    // error (the union has no ANTARKTIKA) and the directive absorbs it. The day the union
+    // gains it, the assignment becomes legal, the directive becomes unused, and `tsc` fails
+    // with TS2578 — a red build whose fix is to delete the list and this test together.
+    for (const key of AHEAD_OF_CONTRACT_CONTINENTS) {
+      // @ts-expect-error -- remove AHEAD_OF_CONTRACT_CONTINENTS + this guard when this compiles
+      const inContract: Continent = key;
+      expect(inContract).toBe(key);
+    }
+  });
+
   it("carries the same key set in both locales", () => {
     expect(Object.keys(enMessages.Continents).sort()).toEqual(
       Object.keys(trMessages.Continents).sort(),

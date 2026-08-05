@@ -61,7 +61,7 @@ export async function VintageLine({ values }: VintageLineProps) {
   };
 
   return (
-    <ul className={styles.vintageList}>
+    <ul role="list" className={styles.vintageList}>
       {groups.map((group) => {
         // Widened deliberately: `tsc` covers today's two providers, this local covers a
         // third one arriving before the web regenerates its types. A provider we cannot

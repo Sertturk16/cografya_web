@@ -30,6 +30,10 @@ const HOME_KEYS = [
   "mapHeading",
   "mapBody",
   "mapLinkLabel",
+  // The world block's own heading + body — the band split (→ DEC 2026-08-05e) gave the world
+  // half its own section instead of hanging its link under "Türkiye'nin illeri".
+  "worldHeading",
+  "worldBody",
   "worldLinkLabel",
   "seaHeadingValues",
   "seaHeadingNoValues",

@@ -486,6 +486,14 @@ main {
 }
 
 /* ---- Province hub grid ---- */
+
+/* ANY `<ul>`/`<ol>` this file or a module strips `list-style` from must carry an explicit
+   `role="list"` in the markup. Safari + VoiceOver drop implicit list semantics from a list
+   whose marker is removed, so "list, 5 items" — the announcement that tells a screen-reader
+   user how many neighbours or how many crumbs there are — silently disappears. The rule is
+   repo-wide and applies to every such list (→ PR #46 review CR-FR2-2); the one deliberate
+   exception is the search panel's results, which is a `role="listbox"` and must not be
+   relabelled. `entity-index.tsx` carried the first instance of this note. */
 .province-grid {
   list-style: none;
   padding: 0;

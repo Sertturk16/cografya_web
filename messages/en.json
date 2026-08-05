@@ -2,7 +2,8 @@
   "Common": {
     "skipToContent": "Skip to main content",
     "localeSwitcherLabel": "Language selection",
-    "localeName": "English"
+    "localeName": "English",
+    "enWorkInProgress": "This English page is a work in progress: the detailed sections are currently available in Turkish only."
   },
   "Nav": {
     "label": "Primary navigation",
@@ -21,7 +22,8 @@
     "closeLabel": "Close search",
     "noResults": "No results found.",
     "resultCount": "{count, plural, one {# result} other {# results}}",
-    "seeAll": "Full province and country list",
+    "seeAllProvinces": "Full province list",
+    "seeAllCountries": "Full country list",
     "province": "Province",
     "country": "Country",
     "loadFailed": "The search list could not be loaded right now."
@@ -52,6 +54,8 @@
     "mapHeading": "The provinces of Türkiye",
     "mapBody": "Population, area, climate, landforms and hydrography for every province.",
     "mapLinkLabel": "Map of Türkiye and the province list",
+    "worldHeading": "The countries of the world",
+    "worldBody": "Location, population, area and physical geography for every country.",
     "worldLinkLabel": "World map and the country list",
     "seaHeadingValues": "The seas today",
     "seaHeadingNoValues": "The coasts of Türkiye",
@@ -189,6 +193,7 @@
     "climateHeading": "Climate of {name}",
     "climateValue": "{className} (Köppen: {koppen})",
     "climateClassOnly": "{className}",
+    "climatePlainNote": "This name is the Köppen classification MGM publishes; it does not always match the regional climate names used in school textbooks.",
     "climateNoteLabel": "MGM classification note",
     "hydrographyHeading": "Hydrography of {name}",
     "hydrographyTypeBaraj": "Dams",
@@ -206,8 +211,9 @@
     "similarClimateIntro": "Provinces with the same Köppen climate type ({koppen}) and the closest annual mean temperature:",
     "similarClimateAnchor": "{name} · {temp} °C",
     "sourcesLabel": "Sources",
-    "sources": "Data is grounded in official sources: population from TÜİK (ADNKS), area from the General Directorate of Mapping (HGM), district count from the Ministry of Interior; provincial-centre elevation/coordinates and the climate classification from MGM.",
+    "sources": "Data is grounded in official sources: population from TÜİK (ADNKS), area from the General Directorate of Mapping (HGM), district count from the Ministry of Interior; provincial-centre elevation and coordinates from MGM.",
     "sourcesExtra": "Additional section sources: {list}.",
+    "sourcesClimateClass": "climate classification from MGM",
     "sourcesLandform": "landforms MTA/HGM",
     "sourcesHydrography": "hydrography DSİ/İSKİ",
     "sourcesEconomy": "economic indicator TÜİK regional accounts",
@@ -328,7 +334,7 @@
     "independenceHeadingPlain": "Independence",
     "neighborsHeadingPlain": "Neighbouring Countries",
     "sourcesLabel": "Sources",
-    "sources": "Data is grounded in official and authoritative sources: country and capital names from the Turkish Ministry of Foreign Affairs; population from the World Bank (Geostat 2024 census for Georgia); area from the World Bank; continent and region classification from the UN Statistics Division (M49); neighbouring countries, government form, currency and physical geography from cross-checked multi-source references (Britannica and others).",
+    "sources": "Data is grounded in official and authoritative sources: country and capital names from the Turkish Ministry of Foreign Affairs; population from the World Bank; area from the World Bank; continent and region classification from the UN Statistics Division (M49); neighbouring countries, government form, currency and physical geography from cross-checked multi-source references (Britannica and others).",
     "backToMap": "Back to the world map"
   },
   "Deniz": {

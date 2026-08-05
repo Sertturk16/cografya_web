@@ -62,7 +62,7 @@ export function FeaturedCards({ headingId, heading, items }: FeaturedCardsProps)
   return (
     <section className="section" aria-labelledby={headingId}>
       <h2 id={headingId}>{heading}</h2>
-      <ul className={styles.cardGrid}>
+      <ul role="list" className={styles.cardGrid}>
         {items.map((item) => (
           <li key={item.id}>
             <a className={styles.card} href={item.href}>

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { CardArrow } from "@/components/card-arrow";
+import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
 import { ProseNote } from "@/components/prose-note";
 import {
   byIsoCode,
@@ -255,6 +257,9 @@ export default async function CountryDetailPage({ params }: PageProps) {
         ]}
       />
       <h1>{t("heading", { name })}</h1>
+      {/* EN only, and only because every narrative section below is TR-gated (→ DEC
+          2026-08-04i §4). Renders nothing on Turkish. */}
+      <EnWorkInProgressNotice locale={locale} />
       <p className="lede">{introText}</p>
 
       <section className="section">
@@ -264,7 +269,22 @@ export default async function CountryDetailPage({ params }: PageProps) {
             <dt>{t("continent")}</dt>
             <dd>{continent}</dd>
           </div>
-          {isTr && country.unSubregionTr !== null && (
+          {/* The UN M49 subregion, suppressed when it would just repeat the continent card
+              beside it (UX tour B28). Brezilya printed "Kıta: Güney Amerika" and "Bölge:
+              Güney Amerika" side by side, which reads as a rendering fault rather than as
+              two facts that happen to coincide — and for a whole continent's worth of
+              countries the two levels genuinely do coincide in M49.
+
+              Raw string equality on purpose: both sides are canonical Turkish names from a
+              controlled vocabulary (the `Continents` message catalogue and the api's own
+              `unSubregionTr`), so casing and spacing already agree. Folding or lowercasing
+              them would start matching pairs that are NOT the same place, which is a worse
+              failure than printing one redundant card.
+
+              Structured data is unaffected: `countryJsonLd` uses `containedInPlace:
+              continent` and never reads `unSubregionTr`, so nothing in the JSON-LD describes
+              a card this can hide. */}
+          {isTr && country.unSubregionTr !== null && country.unSubregionTr !== continent && (
             <div className={styles.fact}>
               <dt>{t("subregion")}</dt>
               <dd>{country.unSubregionTr}</dd>
@@ -366,7 +386,7 @@ export default async function CountryDetailPage({ params }: PageProps) {
       {neighbors.length > 0 && (
         <section className="section">
           <h2>{sectionHeading("neighbors")}</h2>
-          <ul className="province-grid">
+          <ul role="list" className="province-grid">
             {neighbors.map((neighbor) =>
               neighbor.kind === "link" ? (
                 <li key={neighbor.iso}>
@@ -375,7 +395,7 @@ export default async function CountryDetailPage({ params }: PageProps) {
                     href={{ pathname: "/dunya/[slug]", params: { slug: neighbor.slug } }}
                   >
                     <span>{neighbor.name}</span>
-                    <span aria-hidden="true">→</span>
+                    <CardArrow />
                   </Link>
                 </li>
               ) : (

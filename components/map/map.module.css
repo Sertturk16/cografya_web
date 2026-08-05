@@ -267,6 +267,15 @@
   border-radius: 6px;
 }
 
+/* Each notice is its own block box instead of two runs split by a `<br>`. Visually identical
+   (a block span stacks exactly where the break did); the difference is in the DOM, where the
+   two licence notices are now separate text runs rather than one string that reads
+   "ODbLMevsimlik" to a screen reader and to anything that copies `textContent` (UX tour B26).
+   The Türkiye map is the only surface that stacks two notices; `/dunya` renders one line. */
+.attributionLine {
+  display: block;
+}
+
 /* ---- Hover / focus card (the floating overlay) ---- */
 .card {
   position: absolute;

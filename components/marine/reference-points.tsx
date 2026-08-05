@@ -171,7 +171,7 @@ export async function ReferencePoints({
 
           <div className={styles.readingKey}>
             <h3 className={styles.subHeading}>{tm("values.readingKeyHeading")}</h3>
-            <ul className={styles.noteList}>
+            <ul role="list" className={styles.noteList}>
               <li>{tm("values.readingKeyArrow")}</li>
               <li>{tm("values.readingKeyCalm", { term: tm("calm.label") })}</li>
               <li>{tm("values.readingKeyStale")}</li>
@@ -211,7 +211,7 @@ export async function ReferencePoints({
                     {tm("basinPointCount", { count: group.points.length })}
                   </span>
                 </h3>
-                <ul className={styles.pointList}>
+                <ul role="list" className={styles.pointList}>
                   {group.points.map((point) => {
                     const name = locale === "en" ? point.nameEn : point.nameTr;
                     const province = provincesByPlate.get(point.plateCode);

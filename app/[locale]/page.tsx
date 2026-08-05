@@ -4,7 +4,12 @@ import { FeaturedCards, type FeaturedCardItem } from "@/components/home/featured
 import { SeaToday } from "@/components/home/sea-today";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
-import { getMarineLayersSafe, getMarineOverviewSafe, getMarinePointsSafe } from "@/lib/api/marine";
+import {
+  getMarineLayersSafe,
+  getMarineOverviewSafe,
+  getMarinePointsSafe,
+  MARINE_VALUES_REVALIDATE_SECONDS,
+} from "@/lib/api/marine";
 import { getMapSummaryResilient } from "@/lib/api/provinces";
 import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -25,6 +30,26 @@ import styles from "@/components/home/home.module.css";
 interface PageProps {
   params: Promise<{ locale: Locale }>;
 }
+
+/**
+ * The ISR window, DECLARED rather than inferred (→ PR #46 review CR-FR2-3).
+ *
+ * Next already derives a route's revalidate period from the shortest fetch in it, so the
+ * marine value read's 900 s was this page's window before this line existed — the behaviour is
+ * unchanged. What changes is that the page no longer depends on that inference to keep a
+ * PROMISE IT MAKES IN COPY: the "Bugün keşfet" headings claim the cards belong to today, and
+ * that claim is only true because the window turns over well inside a day. Someone removing
+ * the marine section, or swapping it for a longer-cached read, would silently stretch the
+ * window and make the heading lie, with nothing failing.
+ *
+ * Next requires a route segment config export to be a statically analyzable literal, so this
+ * cannot BE the constant (importing it into the value position fails the build with "Invalid
+ * segment configuration export"). The annotation is the guard instead — it is the shared
+ * constant's literal type, so moving `MARINE_VALUES_REVALIDATE_SECONDS` without moving this
+ * number is a type error rather than silent drift. Same pattern as
+ * `app/api/search-index/[locale]/route.ts`.
+ */
+export const revalidate: typeof MARINE_VALUES_REVALIDATE_SECONDS = 900;
 
 /**
  * NOTHING BELOW REACHES THE HEAD, AND THAT IS DELIBERATE.
@@ -191,7 +216,7 @@ export default async function HomePage({ params }: PageProps) {
             zero, and this page's rule everywhere else (FeaturedCards, SeaToday) is to render
             nothing rather than an empty shell. */}
         {(provinces.length > 0 || countries.length > 0 || scope.pointCount > 0) && (
-          <ul className={styles.chips}>
+          <ul role="list" className={styles.chips}>
             {provinces.length > 0 && (
               <li className="chip">{t("chipProvinces", { count: provinces.length })}</li>
             )}
@@ -216,24 +241,38 @@ export default async function HomePage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* The two map hubs, as a plain navigational band. This is what is left of the section
-          the Türkiye thumbnail used to head (→ DEC 2026-08-05b): heading, sentence and the two
-          links the owner kept, with no graphic between them — and therefore no ODbL chip
-          either. It is inline here rather than a component for the same reason the game band
-          below is: no data, no props, no branch. `<Link>` takes the UNLOCALIZED route and the
+      {/* The two map hubs, as TWO navigational blocks rather than one (owner ruling, → DEC
+          2026-08-05e; UX tour B19/Ç2). What is left of the section the Türkiye thumbnail used
+          to head (→ DEC 2026-08-05b) used to be a single "Türkiye'nin illeri" heading with
+          BOTH hub links stacked under it — so the world link sat under a Turkish-provinces
+          title and belonged, as far as a reader could tell, to Türkiye. On a phone the reading
+          order made it worse: map → il link → the heading → body → world link. Each corpus now
+          owns its own heading, body and link, and the mobile order falls out correct with no
+          extra rule.
+
+          Two sibling `<h2>`s, not an `<h2>` + `<h3>`: these are two peer destinations, and the
+          heading level is the page's OUTLINE, not a type scale (`SEO-POLICY.md` §B3.7). The
+          world block is the quieter of the two — that is spacing, in
+          `.exploreBlockSecondary`, not a demoted heading.
+
+          Still inline here rather than a component, for the same reason the game band below
+          is: no data, no props, no branch. `<Link>` takes the UNLOCALIZED route and the
           routing table localizes it — these are static hub paths, not slug routes, so nothing
           here needs `getPathname`. */}
       <section className="section" aria-labelledby="home-explore-heading">
         <h2 id="home-explore-heading">{t("mapHeading")}</h2>
         <p className={styles.exploreBody}>{t("mapBody")}</p>
-        <ul className={styles.exploreLinks}>
-          <li>
-            <Link href="/turkiye">{t("mapLinkLabel")}</Link>
-          </li>
-          <li>
-            <Link href="/dunya">{t("worldLinkLabel")}</Link>
-          </li>
-        </ul>
+        <p className={styles.exploreLink}>
+          <Link href="/turkiye">{t("mapLinkLabel")}</Link>
+        </p>
+      </section>
+
+      <section className={styles.exploreBlockSecondary} aria-labelledby="home-world-heading">
+        <h2 id="home-world-heading">{t("worldHeading")}</h2>
+        <p className={styles.exploreBody}>{t("worldBody")}</p>
+        <p className={styles.exploreLink}>
+          <Link href="/dunya">{t("worldLinkLabel")}</Link>
+        </p>
       </section>
 
       <SeaToday summary={marine} scope={scope} />

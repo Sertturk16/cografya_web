@@ -1,0 +1,21 @@
+/* The EN "work in progress" note (→ DEC 2026-08-04i §4). A quiet, factual box — it is not a
+   warning and must not read as one, so it uses the surface tint rather than any semantic
+   colour and carries no icon (the PR #3 lesson: an unintended signal is worse than none).
+
+   Border is --color-taupe, not --color-border: taupe measures 3.86:1 on white and 3.21:1 on
+   --color-surface, clearing WCAG 1.4.11's 3:1 floor for a non-text boundary, where
+   --color-border is 1.45:1. That is the A11Y-3 finding PR #44 and PR #46 both settled; a new
+   bordered box inherits the answer instead of re-deriving it. Text is --color-slate (7.92:1
+   on white, 6.58:1 on the surface tint) — never taupe, which DESIGN.md §5 reserves for
+   placeholder and non-text use. */
+.notice {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius);
+  color: var(--color-slate);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  max-width: 70ch;
+}

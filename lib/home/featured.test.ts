@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getPathname } from "@/i18n/navigation";
 import type { CountryMapSummary, ProvinceMapSummary } from "@/lib/api/types";
 import { TERRITORIES } from "@/lib/map/territories";
@@ -174,6 +174,46 @@ describe("pickDailyProvinces", () => {
   });
 });
 
+describe("pool ordering", () => {
+  /**
+   * The draw is a function of POSITION in the sorted pool, so the sort is part of the seed:
+   * anything that can reorder the pool can change which cards a day shows. The sort must
+   * therefore depend on nothing but the keys themselves.
+   *
+   * This is the guard for → PR #46 review CR-FR2-1. The previous implementation sorted with
+   * `localeCompare` and no explicit locale, i.e. in the RUNTIME's default collation — ambient
+   * state, exactly like the host clock the day key already refuses to trust. The failure is
+   * latent (both keys are ASCII, where tr and en collations agree today) and would surface as
+   * two servers disagreeing about "bugün", which is the hardest possible bug to see.
+   *
+   * Rather than trying to boot a second ICU locale, this pins the property directly: replace
+   * `localeCompare` with a deliberately INVERTED collation and require the draw not to move.
+   * Had either sort still gone through it, both assertions below would fail.
+   */
+  const DAY = "2026-03-14T09:00:00Z";
+
+  it("ignores the runtime's default collation entirely", () => {
+    const provinces = provincePool(40);
+    const countries = countryPoolFixture(40);
+    const expectedProvinces = pickDailyProvinces(provinces, "tr", DAY);
+    const expectedCountries = pickDailyCountries(countries, "tr", DAY);
+
+    const spy = vi.spyOn(String.prototype, "localeCompare").mockImplementation(function (
+      this: string,
+      that: string,
+    ) {
+      return this < that ? 1 : this > that ? -1 : 0;
+    });
+
+    try {
+      expect(pickDailyProvinces(provinces, "tr", DAY)).toEqual(expectedProvinces);
+      expect(pickDailyCountries(countries, "tr", DAY)).toEqual(expectedCountries);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
 describe("countryPool", () => {
   it("holds out EVERY registered territory and keeps everything else", () => {
     const territories = TERRITORIES.map((territory, index) =>
@@ -190,6 +230,23 @@ describe("countryPool", () => {
     const real = countryPoolFixture(5);
 
     expect(countryPool(real)).toEqual(real);
+  });
+
+  it("forces the territory-register proxy out the moment the contract publishes entityType", () => {
+    // REMOVAL GUARD (→ PR #46 review CR-FR2-4). `countryPool` answers "is this row a real
+    // country?" by asking the web's own territory register, because the committed contract has
+    // no `entityType` field to ask directly. That proxy is documented as a KNOWN IMPERFECTION
+    // in `featured.ts` — it also holds out VA, a sovereign state — and its correct life ends
+    // the day the contract sync lands. Escape hatches do not remove themselves, so this makes
+    // the removal a build failure rather than a comment nobody re-reads.
+    //
+    // Same inversion as the `AHEAD_OF_CONTRACT_CONTINENTS` guard: the assignment is a type
+    // error TODAY and the directive absorbs it. When `entityType` joins the DTO the directive
+    // goes unused and `tsc` fails with TS2578 — whose fix is to switch the filter to
+    // `entityType === "country"` and delete this test.
+    // @ts-expect-error -- switch countryPool to entityType + delete this guard when this compiles
+    const entityTypeKey: keyof CountryMapSummary = "entityType";
+    expect(entityTypeKey).toBe("entityType");
   });
 });
 
