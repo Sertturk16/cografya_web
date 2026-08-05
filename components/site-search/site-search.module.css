@@ -112,10 +112,17 @@
    that reads blue). The ring now belongs to the row, which is what the reader perceives as
    the search box.
 
-   `:focus-within` rather than `:has(:focus-visible)`: the only focusable descendant is a text
-   `<input>`, and per the `:focus-visible` UA heuristic a text input matches on POINTER focus
-   too — so the two selectors are equivalent here, and this one needs no support caveat. */
-.inputRow:focus-within {
+   Scoped to the INPUT, not `:focus-within`. The row has a second focusable child — the `.close`
+   button below, which is genuinely Tab-reachable (the combobox deliberately leaves Tab to the
+   browser, and its `onBlur` guard keeps the panel open while focus stays inside the slot). With
+   `:focus-within` the row drew its ring at the same time as the button drew the global one:
+   two concentric 3px accent rings on the very tab stop next to the one this rule was written to
+   clean up — MEASURED, `kanit-b13-arama-kapat-*`. Worse than the duplication, the outer ring
+   then named the wrong component: it says "the input is focused" while focus is on the button.
+   `:has()` is Baseline-available and this repo already ships it (`game-map.module.css`).
+   `.input:focus` rather than `:focus-visible` keeps today's behaviour exactly: a text input
+   matches `:focus-visible` on pointer focus too, so the box is ringed when clicked into. */
+.inputRow:has(.input:focus) {
   border-color: var(--color-primary);
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;

@@ -439,7 +439,9 @@
 }
 
 /* Visible keyboard focus on the map surface itself (SPEC §5 / WCAG 2.4.7). Inset so the
-   ring is not clipped by the SVG's overflow:hidden frame.
+   ring is not clipped by the SVG's overflow:hidden frame — and, since the canvas went
+   edge-to-edge, by `.mapRoot`'s own `overflow: hidden`, whose `--radius-lg` corners the
+   ring's square ones would otherwise run into.
 
    DELIBERATELY 2px `--color-primary`, not the site canon of 3px `--color-accent` (→ SPEC §5;
    re-confirmed as-is by Atlas ruling 2026-08-05, Q2). Two reasons it stays: the ring must be

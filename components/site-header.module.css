@@ -65,11 +65,16 @@
   display: flex;
   gap: 6px;
   align-items: center;
-  /* --color-taupe (3.86:1 on the white header) not --color-border (1.45:1). This pill is a
-     CONTROL and this border is its only visual boundary, so WCAG 1.4.11 asks for 3:1 against
-     the adjacent colour — the same measurement and the same fix already applied to the search
-     trigger in PR #44 (site-search.module.css `.trigger`). Taupe's sanctioned role is exactly
-     this non-text UI boundary; the labels inside stay --color-slate (7.92:1). */
+  /* --color-taupe (3.86:1 on the white header) not --color-border (1.45:1), matching the
+     measurement and fix already applied to the search trigger in PR #44
+     (site-search.module.css `.trigger`).
+     NOT a WCAG 1.4.11 obligation, and do not cite it as one: this element is a `<nav>`
+     grouping two links, so the border is the boundary of a GROUP, not of a control — the
+     controls are the links inside, which carry their own text contrast (--color-slate,
+     7.92:1) and their own focus/hover states. The reason is legibility of the grouping
+     itself: at 1.45:1 the pill that tells a reader "TR and EN belong together, and one of
+     them is active" was effectively invisible on the header. Taupe's sanctioned role is
+     exactly this kind of non-text boundary. */
   border: 1px solid var(--color-taupe);
   border-radius: 999px;
   padding: 3px 6px;

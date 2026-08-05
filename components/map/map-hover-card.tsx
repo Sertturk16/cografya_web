@@ -177,7 +177,29 @@ export function MapHoverCard() {
       );
       const anchorTop = a.top - c.top;
       const above = anchorTop - CARD_GAP - CARD_MAX_HEIGHT >= EDGE_INSET;
-      const top = above ? anchorTop - CARD_GAP : a.bottom - c.top + CARD_GAP;
+      // `top` is clamped to the container the same way `left` is two lines above — it was
+      // not, and a shape low in the frame pushed its card straight past the panel's bottom
+      // edge. MEASURED on `/turkiye` at 1440 (default view, no zoom): 13 provinces landed
+      // past that edge, Konya worst at 114px of a 176px card — its name row survived and
+      // the rule plus all three stat rows, the reason the card exists, did not. The panel
+      // clips (`map.module.css .mapRoot`), so "past the edge" means invisible, with no
+      // affordance that anything was cut.
+      //
+      // Only the BELOW branch needs it. In the ABOVE branch `top` is the card's BOTTOM edge
+      // and the shape is by construction inside the panel, so the card cannot pass the
+      // bottom; its top is already bounded by the `above` test itself.
+      //
+      // Clamped against CARD_MAX_HEIGHT, not a measured height, for the reason the placement
+      // note above gives: measuring here reads the PREVIOUS card. That over-clamps a 176px
+      // province card by 64px — the safe direction, and the same over-estimate the `above`
+      // decision already accepts. When the panel is shorter than the bound (the world map on
+      // a phone, 184px), the `Math.max` pins the card to the top inset instead: the tallest
+      // territory cards still lose their last rows there, but they start at the top of the
+      // panel rather than below it, which is strictly more content than before.
+      const rawTop = above ? anchorTop - CARD_GAP : a.bottom - c.top + CARD_GAP;
+      const top = above
+        ? rawTop
+        : Math.max(EDGE_INSET, Math.min(rawTop, c.height - CARD_MAX_HEIGHT - EDGE_INSET));
       const d = anchor.dataset;
       const stats: CardStat[] = [];
       for (let n = 1; n <= MAX_STATS; n++) {
