@@ -311,9 +311,16 @@ export function SearchCombobox({
   // Pre-hydration and no-JS: a real link to the alphabetical province index. It carries
   // `aria-label` because the visible word is `display: none` below the desktop breakpoint,
   // which would otherwise leave a NAMELESS link in the first HTML response — and that is the
-  // state the no-JS reader never leaves (review C2). The label names the destination this
-  // link actually has; it used to say "Tüm il ve ülke listesi" while going only to the
-  // province index, which was the same broken promise as the panel's old single row.
+  // state the no-JS reader never leaves (review C2).
+  //
+  // The name is `Search.label` ("İl veya ülke ara"), which names the CONTROL rather than one
+  // of its destinations (→ PR #47 review CR-M3). Both alternatives are worse: the old
+  // "Tüm il ve ülke listesi" promised two corpora from a link that reaches one — the exact
+  // defect this PR removes — and my first pass narrowed it to "Tüm il listesi", which told a
+  // screen-reader user the site search was a province list. `label` covers both hubs at the
+  // level that is actually true (this searches provinces and countries) and matches the
+  // `<label>` the hydrated input already carries, so the control keeps one identity across
+  // the upgrade.
   if (!mounted) {
     return (
       <div className={styles.slot}>
@@ -321,7 +328,7 @@ export function SearchCombobox({
           ref={triggerRef}
           className={styles.trigger}
           href={provinceIndexHref}
-          aria-label={t("seeAllProvinces")}
+          aria-label={t("label")}
         >
           <SearchIcon />
           <span className={styles.triggerText}>{t("triggerLabel")}</span>

@@ -14,6 +14,7 @@ import {
 import type { CountryDetail, CountryListItem } from "@/lib/api/types";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
 import { isSpecialStatusRow } from "@/lib/geo/sovereignty";
+import { showsSubregionCard } from "@/lib/geo/subregion";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { selectCountryMetaDescription } from "@/lib/seo/country-description";
@@ -275,16 +276,15 @@ export default async function CountryDetailPage({ params }: PageProps) {
               two facts that happen to coincide — and for a whole continent's worth of
               countries the two levels genuinely do coincide in M49.
 
-              Raw string equality on purpose: both sides are canonical Turkish names from a
-              controlled vocabulary (the `Continents` message catalogue and the api's own
-              `unSubregionTr`), so casing and spacing already agree. Folding or lowercasing
-              them would start matching pairs that are NOT the same place, which is a worse
-              failure than printing one redundant card.
+              The rule (and why it is exact equality rather than a folded comparison) lives in
+              `lib/geo/subregion.ts`; the cross-vocabulary coupling it depends on — catalogue
+              value vs api field — is pinned in its test, so a catalogue rename cannot silently
+              restore the duplicate card (→ PR #47 review CR-M1).
 
               Structured data is unaffected: `countryJsonLd` uses `containedInPlace:
               continent` and never reads `unSubregionTr`, so nothing in the JSON-LD describes
               a card this can hide. */}
-          {isTr && country.unSubregionTr !== null && country.unSubregionTr !== continent && (
+          {isTr && showsSubregionCard(continent, country.unSubregionTr) && (
             <div className={styles.fact}>
               <dt>{t("subregion")}</dt>
               <dd>{country.unSubregionTr}</dd>

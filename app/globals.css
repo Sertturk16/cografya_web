@@ -490,10 +490,18 @@ main {
 /* ANY `<ul>`/`<ol>` this file or a module strips `list-style` from must carry an explicit
    `role="list"` in the markup. Safari + VoiceOver drop implicit list semantics from a list
    whose marker is removed, so "list, 5 items" — the announcement that tells a screen-reader
-   user how many neighbours or how many crumbs there are — silently disappears. The rule is
-   repo-wide and applies to every such list (→ PR #46 review CR-FR2-2); the one deliberate
-   exception is the search panel's results, which is a `role="listbox"` and must not be
-   relabelled. `entity-index.tsx` carried the first instance of this note. */
+   user how many neighbours or how many crumbs there are — silently disappears
+   (→ PR #46 review CR-FR2-2). `entity-index.tsx` carried the first instance of this note.
+
+   COVERAGE, stated exactly rather than as "repo-wide":
+   · APPLIED to every markerless list outside `/oyun` — this file's `.province-grid` and
+     `.breadcrumb ol`, the four home lists, and the four marine lists.
+   · EXCEPTION, permanent: the search panel's results (`site-search.module.css .results`) is
+     a `role="listbox"`, which is already a list-shaped ARIA container; adding `role="list"`
+     would break the combobox's option ownership chain.
+   · DEFERRED, not exempt: the three game lists (`game-ui.module.css .missedList`,
+     `oyun/game.module.css .modeGrid` ×2) belong to the Kâşif PR-4 lane, which owns those
+     files. They are tracked there — do not read their absence as a decision. */
 .province-grid {
   list-style: none;
   padding: 0;

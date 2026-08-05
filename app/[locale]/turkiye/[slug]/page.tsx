@@ -23,6 +23,7 @@ import type { HydrographyFeature, ProvinceDetail, ProvinceListItem } from "@/lib
 import { isCoastalPlate, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { climateBlockGates } from "@/lib/climate/climate-block-gates";
 import { monthName } from "@/lib/climate/month";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
 import { administrativeAreaJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
@@ -346,14 +347,22 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // Benzer iklimli iller — TR-gated like the rest of the climate content (the block's
   // labels/intro are Turkish and it belongs inside the TR-only İklim section).
   const showSimilarClimate = isTr && similarClimate.length > 0;
-  // The İklim <h2> renders when the Köppen class line, the series, OR the similar-
-  // climate cross-links are present (so the block always has a heading to live under).
-  const showClimateSection =
-    isTr && (climate !== null || climateSeries !== null || showSimilarClimate);
-  // Does the MGM Köppen CLASSIFICATION line actually render? It is a different question from
-  // "is there a climate series" (that is `climateSeries`, ERA5-Land, a separate source), and
-  // the Kaynaklar line below now depends on this one specifically — see the note there.
-  const showClimateClass = showClimateSection && climate !== null;
+  // The three climate gates are ONE pure decision (`lib/climate/climate-block-gates.ts`,
+  // → PR #47 review TA47-M1): the section heading, the MGM classification line, and whether
+  // the Kaynaklar line cites that classification. The third is derived from the second by
+  // construction, which is what keeps the UX-tour B5 defect — a source cited for a section
+  // the locale gate never renders — from coming back through a later edit.
+  // `showClass` is deliberately NOT destructured: the JSX gates the class line on `climate`
+  // itself because it needs the null-narrowing to read `.className`/`.koppen`, and a parallel
+  // boolean beside it would be a second way to ask the same question. The gate object still
+  // computes and tests it — that is what `citeClassSource` is defined against.
+  const { showSection: showClimateSection, citeClassSource: citeClimateClassSource } =
+    climateBlockGates({
+      isTr,
+      hasClimateClass: climate !== null,
+      hasClimateSeries: climateSeries !== null,
+      hasSimilarClimate: showSimilarClimate,
+    });
 
   // JSON-LD climate facts — appended to the SAME additionalProperty array (PLAN §2: no
   // new schema type). Gated on the TR-gated series so structured data never describes a
@@ -396,10 +405,10 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // meant every EN province page claimed "…and the climate classification from MGM" while the
   // whole climate block sits behind the `isTr` gate and never renders there — a source cited
   // for content that is not on the page, which is exactly what the rule two lines down
-  // forbids. Conditioning it on the line that actually prints the class makes the rule
-  // structural instead of a promise a future edit could quietly break again. The elevation and
-  // coordinate half stays in the base string: those DO render in both locales.
-  if (showClimateClass) extraSources.push(t("sourcesClimateClass"));
+  // forbids. The flag comes from the same pure function that gates the line itself, so the two
+  // cannot disagree. The elevation and coordinate half stays in the base string: those DO
+  // render in both locales.
+  if (citeClimateClassSource) extraSources.push(t("sourcesClimateClass"));
   // Climate normals source joins the Kaynaklar line ONLY when the chart actually renders
   // (PLAN §2 — never cite a source for content that is not on the page).
   if (climateSeries !== null) extraSources.push(t("sourcesClimate"));
