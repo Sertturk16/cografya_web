@@ -76,14 +76,21 @@
    1.5em tall but the FILLED one was taller, because the 700-weight ✓/✕/▸ glyph raises the
    line box a fraction past the text's own. Measured on the running build, the map's top edge
    moved 307.86px → 309.38px the moment the first feedback appeared — the ~3px jump the UX
-   tour reported (B31), 1.52px of it real. A fixed box cannot grow, so it cannot push. */
+   tour reported (B31), 1.52px of it real.
+
+   THE FIX IS THE EXPLICIT `line-height`, NOT A FIXED HEIGHT. Pinning `height` did remove
+   the jump, and it also clipped the line the moment the text needed two of them — at 200%
+   text zoom, or with the longer EN retry sentence at 320px (→ PR #48 review CR48-I2). With
+   the line box pinned, the empty state and the one-line state are the same height by
+   construction, so `min-height` reserves exactly that and a genuinely wrapped sentence is
+   still allowed to push. A rare 1-line shift beats permanently unreadable feedback. */
 .feedback {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   margin: 0;
-  height: 1.6em;
+  min-height: 1.6em;
   font-size: 0.95rem;
   line-height: 1.6;
   color: var(--color-slate);

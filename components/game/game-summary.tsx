@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { provinceUrl } from "@/lib/game/province-url";
+import { shouldOpenReviewGroup } from "@/lib/game/review-group";
 import { MAX_STARS, STAR_THRESHOLDS, starsForScore, type RoundSummary } from "@/lib/game/round";
 import { targetsById, type GameTarget } from "@/lib/game/target";
 import { TrophyIcon } from "./game-icons";
@@ -19,13 +20,6 @@ interface GameSummaryProps {
   onClose: () => void;
   onReplay: () => void;
 }
-
-/**
- * How many "look again" chips may be shown open. Above this the group starts folded: the
- * 7-question region round can never reach it, an 81-question round easily can, and a list
- * long enough to push the score off a phone screen defeats its own purpose.
- */
-const REVIEW_OPEN_MAX = 12;
 
 /** One chip row of targets: a real link when the target has a page, plain text when not. */
 function TargetList({
@@ -236,7 +230,7 @@ export function GameSummary({
             either way: a real disclosure control, keyboard support included, no JavaScript
             of ours. */}
         {review.length > 0 ? (
-          <details className={styles.reviewGroup} open={review.length <= REVIEW_OPEN_MAX}>
+          <details className={styles.reviewGroup} open={shouldOpenReviewGroup(review.length)}>
             <summary className={styles.reviewSummary}>
               {t("summaryReviewHeading", { count: review.length })}
             </summary>

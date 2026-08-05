@@ -345,24 +345,33 @@
   fill: var(--game-reveal);
 }
 
-/* THE SHOWN ANSWER, and it now has to survive being looked at.
-   The line is WHITE (--game-reveal-edge), which reads only because the fill under it is a
-   near-black charcoal: measured on the running build, the base twin computes
-   `rgb(63 58 54)` and the hit twin's line `rgb(255 255 255)` at 3px. That is a working
-   combination but a brittle one — the whole signal rests on the fill landing, and a white
-   line alone on this parchment map would be invisible. `paint-order: stroke` plus a dark
-   outer halo makes the mark self-carrying: the shape stays readable even against a light
-   fill, which is what a colour-blind or low-vision player needs when the map is the only
-   thing telling them WHERE the answer was.
-   The dash animation stays (it is the "look here" of the frame), and it is still switched
-   off wholesale under `prefers-reduced-motion` at the end of this file. */
+/* THE SHOWN ANSWER — now the one state the player waits on, so it is the one that has to
+   survive being looked at.
+   The line is WHITE (--game-reveal-edge) and reads because the fill under it is a near-black
+   charcoal: measured on the running build, the base twin computes `rgb(63 58 54)` and this
+   line `rgb(255 255 255)` at 3px. Four signals carry the state — the fill, this line, the
+   marching dashes and the sentence in the live region — so no single one of them is load
+   bearing on its own (DESIGN.md §6.1 rule 3).
+   TWO DECLARATIONS WERE TRIED AND REMOVED (→ PR #48 review CR-M1/CR-M2). `paint-order:
+   stroke` did nothing measurable here: the hit twin has `fill: none`, so there is no fill
+   for the stroke to be ordered against. A `drop-shadow` halo was worse than nothing: a CSS
+   filter on an SVG element is evaluated in that element's own user space, so its 1.5px blur
+   would have grown with the map — the same trap `game-map.tsx` documents for the region
+   outline's `feMorphology` radius, which needs active compensation to avoid a ~25px band at
+   12×. A decorative halo is not worth a second zoom-compensation mechanism.
+
+   THE ANIMATION IS FINITE. It used to run `infinite`, which was harmless while the reveal
+   cleared itself after 2400 ms; now that the answer waits for "Devam" it would move for as
+   long as the player reads, and WCAG 2.2.2 gives moving content a five-second budget before
+   it must be pausable (→ PR #48 review A11Y48-I1). Four one-second passes catch the eye and
+   then settle to a static dashed outline, which is what the player actually reads the map
+   with. `forwards` keeps the settled frame; `prefers-reduced-motion` still removes the
+   motion entirely at the end of this file. */
 .hitEdge[data-state="reveal"] {
   stroke: var(--game-reveal-edge);
   stroke-width: 3;
   stroke-dasharray: 6 4;
-  paint-order: stroke;
-  filter: drop-shadow(0 0 1.5px var(--game-reveal));
-  animation: gameReveal 1s ease-in-out infinite;
+  animation: gameReveal 1s ease-in-out 4 forwards;
 }
 
 @keyframes gameReveal {
@@ -600,7 +609,6 @@
   background: var(--scrim-bg);
   padding: 3px 8px;
   border-radius: 6px;
-  text-align: right;
 }
 
 /* The two credits are separate elements now, not one paragraph split by a <br> — see the

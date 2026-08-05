@@ -2,6 +2,9 @@
 
 import {
   Fragment,
+  // Aliased: the delegated SVG listener below takes the DOM's `MouseEvent`, and an unaliased
+  // React import of the same name would shadow it in this file.
+  type MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -286,6 +289,28 @@ export function GameIsland({
     commitRound(next);
     if (next.status === "finished") setSummaryDismissed(false);
   }, [commitRound]);
+
+  /**
+   * "Devam", as pressed by a POINTER.
+   *
+   * The second click of a double-click is dropped — the same guard, for a closely related
+   * reason, that the map's own listener carries. Here the mechanism is React's: "Cevabı
+   * göster" and "Devam" render at the same position with the same element type, so React
+   * reuses the DOM node and swaps only the handler. A double-click therefore lands on BOTH
+   * — click 1 shows the answer, click 2 advances straight past it — and the shown answer
+   * flashes for the 150-300 ms between them. That is exactly the defect this PR exists to
+   * remove, reachable by an impatient double-tap (→ PR #48 review CR48-I1).
+   *
+   * `detail` is the browser's own click counter and is 0 for a keyboard activation, so
+   * Enter and Space on the button are untouched. The timer path does not go through here.
+   */
+  const onNextClick = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      if (event.detail > 1) return;
+      goNext();
+    },
+    [goNext],
+  );
 
   /** "Cevabı göster" — 0 points for this question, then on to the next (DEC 2026-07-30h). */
   const showAnswer = useCallback(() => {
@@ -583,7 +608,7 @@ export function GameIsland({
     <div className={styles.actions}>
       {round.status === "resolved" ? (
         <>
-          <button type="button" className={styles.primaryAction} onClick={goNext}>
+          <button type="button" className={styles.primaryAction} onClick={onNextClick}>
             {t("next")}
           </button>
           <button type="button" className={styles.action} onClick={restartRound}>
