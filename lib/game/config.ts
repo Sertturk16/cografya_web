@@ -33,8 +33,18 @@ export interface GameConfig {
   /** Final-score thresholds for 3 / 2 / 1 stars, descending. */
   readonly starThresholds: readonly number[];
   /**
-   * Wrong clicks past which a FOUND question still belongs on the "look again" list. Two,
-   * because one miss is a slip and two is a gap.
+   * Wrong clicks past which a FOUND question still belongs on the "look again" list.
+   *
+   * ONE — lowered from two on 2026-08-05, and the reason is a defect, not a taste change.
+   * At two, a target found on the SECOND click fell out of both end-of-round lists:
+   * "bilemedikleriniz" only ever holds questions that scored 0 (i.e. answers that were
+   * shown), so a province the player genuinely did not know — but eventually hit — was
+   * reported nowhere. The end screen then said "Hepsini bildin." to someone who had just
+   * missed one, which is the contradiction the UX tour caught (B9) and the exact list the
+   * tour asked for (Ö5: "the provinces you did not know on the first try, linked to their
+   * pages"). One wrong click is precisely "did not know it on the first try", so it is the
+   * honest threshold for a LEARNING list. It is not a penalty: scoring is untouched by this
+   * value, and these questions are still counted as found.
    */
   readonly reviewWrongThreshold: number;
 }
@@ -44,8 +54,17 @@ export const GAME_CONFIG: GameConfig = {
   minQuestionPoints: 1,
   halvingBase: 2,
   starThresholds: [85, 60, 40],
-  reviewWrongThreshold: 2,
+  reviewWrongThreshold: 1,
 };
 
 /** The most stars the end screen can award — derived, never a second literal. */
 export const MAX_STARS = GAME_CONFIG.starThresholds.length;
+
+/**
+ * The star thresholds, for the end screen to STATE them.
+ *
+ * Published rather than re-typed into a translation string: the sentence that explains the
+ * grade ("85 puan ve üzeri 3 yıldız…") is built from these very numbers, so tuning the
+ * ladder can never leave the explanation describing the old one.
+ */
+export const STAR_THRESHOLDS = GAME_CONFIG.starThresholds;

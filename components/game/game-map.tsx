@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { getTranslations } from "next-intl/server";
 import { InlandWaterLayer } from "@/components/map/inland-water-layer";
 import { MapZoomPan } from "@/components/map/map-zoom-pan";
+import type { GameModeId } from "@/lib/game/config";
 import { aspectOfViewBox } from "@/lib/game/map-bbox";
 import type { GameShapeEntry } from "@/lib/game/map-shapes";
 import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
@@ -42,6 +43,15 @@ interface GameMapProps {
   viewBox: string;
   /** `<title>` of the SVG — what assistive tech calls this picture. */
   title: string;
+  /**
+   * What this screen ASKS FOR — a bölge or an il. Two things depend on it and both must be
+   * settled in the first response rather than by the island's first effect: the stage's
+   * `data-game-mode` (which drives the region tints AND the region mode's transparent
+   * water, `game-map.module.css`) and the keyboard hint, which used to promise every player
+   * that Enter "selects that province" even where a click answers for a whole region
+   * (→ UX tour B22).
+   */
+  mode: GameModeId;
 }
 
 /**
@@ -126,11 +136,17 @@ interface GameMapProps {
  */
 const LAND_CLIP_ID = "game-map-land-clip";
 
-export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
+export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
   const t = await getTranslations("Game");
   const tMap = await getTranslations("Map");
   const titleId = "game-map-title";
   const instructionsId = "game-map-instructions";
+  // The keyboard hint's one mode-dependent sentence, injected into the otherwise identical
+  // instructions. Split rather than duplicated: everything else about zooming and panning
+  // is the same in both modes, and two full copies of a four-clause paragraph would drift.
+  const zoomInstructions = t("zoomInstructions", {
+    selectHint: mode === "regions" ? t("selectHintRegions") : t("selectHintProvinces"),
+  });
   // Does this round draw the whole country, or a slice of it? Derived from the frame rather
   // than passed as a flag: `game-screen.tsx` builds the region frame with `viewBoxForPaths`
   // and falls back to `MAP_VIEWBOX` for the full map, so the frame IS the answer and a new
@@ -177,7 +193,7 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
           the viewBox, so it is settled before any script runs and the overlays mount on top
           of it without moving a single pixel of the page (CLS budget, CONVENTIONS §6 #9).
           The CSS default is the full map's ratio, for the case the string is unreadable. */}
-      <div className={styles.stage} style={stageStyle} data-game-map>
+      <div className={styles.stage} style={stageStyle} data-game-map data-game-mode={mode}>
         {/* Rendered BEFORE the <svg> so the zoom controls come first in tab order — a
             keyboard player reaches +/−/reset without tabbing through every province (the
             solution already proven on /dunya). Visual position is unaffected: the layer is
@@ -189,7 +205,7 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
             zoomIn: t("zoomIn"),
             zoomOut: t("zoomOut"),
             reset: t("zoomReset"),
-            instructions: t("zoomInstructions"),
+            instructions: zoomInstructions,
             controls: t("zoomControls"),
           }}
         />
@@ -297,21 +313,45 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
               substitute (Keban and Atatürk fall inside Doğu Anadolu's box while lying outside
               it). The layer stays OUT of `viewBoxForPaths()`: the stage's aspect ratio is
               derived from the province shapes alone, so adding water cannot move the frame. */}
-          <InlandWaterLayer
-            clip={
-              isSubset ? { paths: shapes.map((shape) => shape.d), id: LAND_CLIP_ID } : undefined
-            }
-          />
+          {/* THE WRAPPER IS THE OWNER'S BÖLGE-MODE RULING, and it is deliberately on THIS
+              side of the boundary. Water swallowing clicks is a ruling
+              (→ DEC 2026-08-02k md. 5) that `inland-water.module.css` states, explains and
+              a contract test forbids inverting — for good reason: `pointer-events: none`
+              there would let a mid-lake click navigate on /turkiye and score an answer in
+              the two il modes.
+              In BÖLGE mode the same rule produces the wrong answer to a different question.
+              The target is a whole region, a lake is drawn inside one of its provinces, and
+              clicking the middle of Isparta hits Eğirdir and resolves to nothing at all —
+              the map simply ignores the player (owner live tour, 2026-08-05, finding #5).
+              So the exception is expressed where it belongs: a game-owned wrapper that only
+              the region mode's own stylesheet rule reaches. The shared layer, its stylesheet
+              and its contract test are untouched, and the il modes keep the original
+              behaviour exactly (`game-map.module.css` § BÖLGE MODU SUYU).
+              Paint order is unchanged — this <g> is still the <svg>'s last child, and the
+              clip stays on the layer's own group. */}
+          <g className={styles.waterHost}>
+            <InlandWaterLayer
+              clip={
+                isSubset ? { paths: shapes.map((shape) => shape.d), id: LAND_CLIP_ID } : undefined
+              }
+            />
+          </g>
         </svg>
 
         {/* Both obligations stay visible wherever these shapes are drawn (SPEC §1) — see
             components/map/turkey-map-section.tsx for the full note, including why the English
             licence string carries its own `lang="en"`. Shared strings with the /turkiye map:
             one source, never re-typed. */}
+        {/* TWO LINES, TWO ELEMENTS — not one paragraph with a <br>. The visual result is
+            identical; what changes is the TEXT. A <br> contributes no character, so the
+            node's text content ran the two credits together as "…ODbLMevsimlik göl
+            sınırları…", which is what a screen reader announces and what a copy-paste
+            produces (UX tour B26). Block-level spans separate them for real. */}
         <p className={styles.attribution}>
-          {tMap("attribution")}
-          <br />
-          {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
+          <span className={styles.attributionLine}>{tMap("attribution")}</span>
+          <span className={styles.attributionLine}>
+            {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
+          </span>
         </p>
       </div>
 
@@ -319,7 +359,7 @@ export async function GameMap({ shapes, viewBox, title }: GameMapProps) {
           (wired client-side by the zoom island). Visually hidden — the always-visible
           +/− buttons carry the sighted affordance. */}
       <p id={instructionsId} className={styles.srOnly}>
-        {t("zoomInstructions")}
+        {zoomInstructions}
       </p>
     </div>
   );

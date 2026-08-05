@@ -121,6 +121,53 @@ describe("the game map's paint layers", () => {
   });
 });
 
+/**
+ * REGRESSION SHIELD — the bölge-mode water exception (owner live tour, 2026-08-05, #5).
+ *
+ * Two halves, each invisible on its own if the other is deleted, and both silent:
+ *
+ *   1. the game's own `<g className={styles.waterHost}>` around the shared layer. Remove it
+ *      as "a pointless wrapper" and the CSS rule below matches nothing — clicking a lake in
+ *      bölge mode goes back to doing nothing at all, with no test failing;
+ *   2. `data-game-mode`, SERVER-rendered on the stage. It used to be written by the island
+ *      after mount; the rule needs it in the first response, and the region tints need it
+ *      at all. Delete the attribute and the whole bölge mode renders untinted.
+ *
+ * The scope is asserted too: the exception must stay pinned to `regions`. Unscoped, it would
+ * invert DEC 2026-08-02k md. 5 for the two il modes — a mid-lake click would answer the
+ * question there, which is exactly what the owner did NOT ask for.
+ */
+describe("the bölge mode's transparent water", () => {
+  it("wraps the shared layer in a game-owned host element", () => {
+    expect(MAP).toContain("<g className={styles.waterHost}>");
+    // The wrapper is the game's; the shared layer keeps its own clip and its own group.
+    expect(MAP.indexOf("styles.waterHost")).toBeLessThan(MAP.indexOf("<InlandWaterLayer"));
+  });
+
+  it("server-renders the mode on the stage", () => {
+    expect(MAP).toContain("data-game-mode={mode}");
+    // The island must not write it a second time: two writers, one attribute, no way to tell
+    // which one is stale.
+    expect(ISLAND).not.toContain("dataset.gameMode");
+  });
+
+  it("lifts pointer events off the water ONLY in the region mode", () => {
+    // `> *`, not the wrapper itself. The shared layer declares `pointer-events: auto` on its
+    // own group, and an INHERITED `none` loses to it — the first version of this rule sat on
+    // the wrapper, passed every check, and changed nothing on screen. Only the rendered
+    // sample caught it, so the shape of the selector is pinned here.
+    expect(CSS).toMatch(
+      /\.stage\[data-game-mode="regions"\] \.waterHost > \* \{[^}]*pointer-events: none;/,
+    );
+    // No unscoped escape hatch: every `.waterHost` rule that disables pointer events has to
+    // name the mode it applies to, or the two il modes lose DEC 2026-08-02k md. 5.
+    const unscoped = CSS.match(/(^|})[^{}]*\.waterHost[^{}]*\{[^}]*pointer-events: none;/g) ?? [];
+    for (const rule of unscoped) {
+      expect(rule).toContain('data-game-mode="regions"');
+    }
+  });
+});
+
 describe("the game island's two shape queries", () => {
   it("scopes the control attributes to the hit layer alone", () => {
     expect(ISLAND).toContain(`const HIT_SHAPES = '[data-map-layer="hit"] [data-plate]';`);
