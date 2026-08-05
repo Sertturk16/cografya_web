@@ -27,10 +27,22 @@ import { describe, expect, it } from "vitest";
  * lines, never what the notices say.
  */
 
-const source = readFileSync(new URL("./turkey-map-section.tsx", import.meta.url), "utf8").replace(
-  /\r\n/g,
-  "\n",
-);
+/**
+ * The component's source with every COMMENT removed — and that is not a detail.
+ *
+ * The file documents at length why the `<br>` had to go, so a naive scan of the raw text finds
+ * "`<br>`" in the prose and fails a passing build (which is exactly what happened on the first
+ * CI run of this file). The inverse is the more dangerous version of the same bug: a scan that
+ * counts the `{" "}` mentioned in a comment would report the separator present after someone
+ * deleted the real one.
+ *
+ * Both assertions therefore run against CODE ONLY. Block comments go first, so the `//` inside
+ * any URL they contain is gone before line comments are stripped.
+ */
+const source = readFileSync(new URL("./turkey-map-section.tsx", import.meta.url), "utf8")
+  .replace(/\r\n/g, "\n")
+  .replace(/\/\*[\s\S]*?\*\//g, " ")
+  .replace(/^[ \t]*\/\/.*$/gm, " ");
 
 describe("map attribution text-run separation", () => {
   it("keeps an explicit whitespace expression between the two attribution lines", () => {
