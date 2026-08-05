@@ -4,7 +4,10 @@ Frontend for the **Coğrafya platform** — an SEO-first, free geography educati
 (TR + EN). Built with **Next.js (App Router)** and TypeScript in `strict` mode.
 
 > Working title. The brand/domain is not final yet (provisional: "Terraloji").
-> This is the standalone web repo; the API lives in a separate repo (`cografya_api`).
+> This is the standalone web repo; the API lives in the separate
+> [`cografya_api`](https://github.com/Sertturk16/cografya_api) repo.
+
+Written and maintained by [Ömer Can Serttürk](https://github.com/Sertturk16).
 
 ## Stack
 
@@ -44,8 +47,8 @@ pnpm dev          # start the dev server at http://localhost:3000
 - **Commits:** Conventional Commits, enforced by commitlint on the `commit-msg` hook.
 - **Pre-commit:** `lint-staged` runs `eslint --fix` + Prettier on staged files and a
   project-wide `tsc --noEmit`.
-- **Branches:** `feature/* → dev` (squash PR). `main` is a placeholder until the
-  hosting / prod-promotion model is decided.
+- **Branches:** `feature/* → dev` (squash PR); `dev` is promoted to `main` as it
+  stabilizes.
 - **CI (GitHub Actions):** a `typecheck-and-lint` job and a `build` job run on every PR
   to `dev`/`main`. No deploy job yet — hosting is undecided.
 
@@ -107,9 +110,14 @@ in `next.config.ts` (never the deprecated `images.domains`).
 
 ## Roadmap notes (scope guard)
 
-PR-2w wired the i18n + SEO foundations + Terra theme on top of the PR-0w scaffold. The
-`app/[locale]/il/[slug]` province pages currently render from a **placeholder routing
-fixture** (`lib/geo/placeholder-provinces.ts`, names + slugs only, no geographic facts)
-that exists solely to exercise the localized-slug pattern end to end. Real province data
-arrives from the api repo (`cografya_api`, Deniz) — replace the fixture with the typed
-API client then.
+The i18n + SEO foundations and the Terra theme are wired on top of the initial
+scaffold. The `app/[locale]/il/[slug]` province pages currently render from a
+**placeholder routing fixture** (`lib/geo/placeholder-provinces.ts`, names + slugs
+only, no geographic facts) that exists solely to exercise the localized-slug pattern
+end to end. Real province data arrives from the
+[`cografya_api`](https://github.com/Sertturk16/cografya_api) repo — replace the
+fixture with the typed API client then.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
