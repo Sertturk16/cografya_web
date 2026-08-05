@@ -9,6 +9,8 @@ Frontend for the **Coğrafya platform** — an SEO-first, free geography educati
 
 Written and maintained by [Ömer Can Serttürk](https://github.com/Sertturk16).
 
+![Homepage (TR, Terra theme)](docs/screenshot-home.png)
+
 ## Stack
 
 - **Next.js 16** (App Router) · **React 19** · **TypeScript** (`strict` + `noUncheckedIndexedAccess`)
