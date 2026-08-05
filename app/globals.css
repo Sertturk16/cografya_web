@@ -374,6 +374,28 @@ a:hover {
   border-radius: 4px;
 }
 
+/* PROGRAMMATIC-ONLY focus targets (`tabindex="-1"`) draw no ring.
+   `tabindex="-1"` removes an element from the sequential focus order entirely: Tab never
+   lands here, so the ring can never tell a keyboard user "you are here". What it does
+   instead is draw a box around whatever the code just moved focus to — and these targets are
+   page-sized regions, not controls. Measured on this PR's before-audit (1440×900):
+   `<main id="main-content">` after the skip link = a 1440×3249 ring around the whole page;
+   `#iller` after a fragment jump = 1080×2543; the `/deniz` error `<h1>` = a full-width
+   1080×48 box (the owner's live-tour screenshot 20). The elements are still focused and
+   still announced — only the decoration is dropped, so WCAG 2.4.7 (which governs the
+   keyboard-OPERABLE interface) and 2.4.3 are both untouched. This is the one sanctioned
+   exception to DESIGN.md §5 "never remove focus without a compliant replacement"
+   (→ Atlas ruling 2026-08-05, Q1; noted in DESIGN.md §5).
+
+   `:where()` contributes ZERO specificity, so this rule sits at (0,1,0) — the same weight as
+   the base `:focus-visible` above and BELOW any module rule that deliberately asks for a ring
+   on such a target (`game-ui.module.css` `.question` / `.dialogHeading` / `.reviewSummary`,
+   all (0,2,0)). Those keep their rings; the game moves focus as a game mechanic and shows it
+   on purpose. */
+:where([tabindex="-1"]):focus-visible {
+  outline: none;
+}
+
 /* ---- Skip-to-content link (a11y) ---- */
 .skip-link {
   position: absolute;
@@ -509,6 +531,20 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 14px;
+}
+
+/* The GRID ITEM is the `<li>`, but the box the reader sees is the `.province-card` INSIDE it.
+   A grid item already stretches to its row's height; its child does not, so one long label
+   ("Çanakkale · 15,2 °C" wrapping to two lines) grew the row while the four short cards next
+   to it kept their content height — a ragged bottom edge (owner live-tour finding #2 / B27,
+   measured on the tour's screenshot 13 and reproduced in this PR's before-sample).
+
+   Making the `<li>` a grid container passes that stretch down: `align-items`/`justify-items`
+   default to `stretch`, so the single child fills the row height. The card's own
+   `align-items: center` is untouched, so the text in a grown card stays vertically centred —
+   which is exactly what the already-tall card does today. */
+.province-grid > li {
+  display: grid;
 }
 
 .province-card {

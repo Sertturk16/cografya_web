@@ -65,7 +65,12 @@
   display: flex;
   gap: 6px;
   align-items: center;
-  border: 1px solid var(--color-border);
+  /* --color-taupe (3.86:1 on the white header) not --color-border (1.45:1). This pill is a
+     CONTROL and this border is its only visual boundary, so WCAG 1.4.11 asks for 3:1 against
+     the adjacent colour — the same measurement and the same fix already applied to the search
+     trigger in PR #44 (site-search.module.css `.trigger`). Taupe's sanctioned role is exactly
+     this non-text UI boundary; the labels inside stay --color-slate (7.92:1). */
+  border: 1px solid var(--color-taupe);
   border-radius: 999px;
   padding: 3px 6px;
 }
