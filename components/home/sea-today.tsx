@@ -63,7 +63,7 @@ export async function SeaToday({ summary, scope }: SeaTodayProps) {
 
       {showValues ? (
         <>
-          <ul className={styles.basinGrid}>
+          <ul role="list" className={styles.basinGrid}>
             {summary.basins.map((basin) => (
               <li key={basin.basin} className={styles.basinCard}>
                 <span className={styles.basinLabel}>{basin.label}</span>

@@ -39,6 +39,18 @@
   margin-bottom: 8px;
 }
 
+/* The always-visible plain sentence under the class name (→ DEC 2026-08-04i §3). It sits
+   BETWEEN the class line and the collapsed MGM caveat on purpose: the caveat is correct but
+   arrives closed, so this is the sentence a reader who never opens it still gets. Body-text
+   contrast (--color-slate on white = 7.92:1); no new token, no new colour. */
+.climatePlainNote {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: var(--color-slate);
+  max-width: 70ch;
+  line-height: 1.55;
+}
+
 /* MGM classification caveat — MANDATORY, present in full (SEO + data-provenance:
    the caveat must travel with every Köppen code, CONVENTIONS §6 "no bare Csa").
    Owner UX ruling (2026-07-11): it must not be the page's primary narrative wall,

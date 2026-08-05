@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { CardArrow } from "@/components/card-arrow";
 import { ClimateSection } from "@/components/climate/climate-section";
+import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { ProvinceMarineSection } from "@/components/marine/province-marine-section";
 import { ProseNote } from "@/components/prose-note";
@@ -21,6 +23,7 @@ import type { HydrographyFeature, ProvinceDetail, ProvinceListItem } from "@/lib
 import { isCoastalPlate, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { climateBlockGates } from "@/lib/climate/climate-block-gates";
 import { monthName } from "@/lib/climate/month";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
 import { administrativeAreaJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
@@ -344,10 +347,22 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // Benzer iklimli iller — TR-gated like the rest of the climate content (the block's
   // labels/intro are Turkish and it belongs inside the TR-only İklim section).
   const showSimilarClimate = isTr && similarClimate.length > 0;
-  // The İklim <h2> renders when the Köppen class line, the series, OR the similar-
-  // climate cross-links are present (so the block always has a heading to live under).
-  const showClimateSection =
-    isTr && (climate !== null || climateSeries !== null || showSimilarClimate);
+  // The three climate gates are ONE pure decision (`lib/climate/climate-block-gates.ts`,
+  // → PR #47 review TA47-M1): the section heading, the MGM classification line, and whether
+  // the Kaynaklar line cites that classification. The third is derived from the second by
+  // construction, which is what keeps the UX-tour B5 defect — a source cited for a section
+  // the locale gate never renders — from coming back through a later edit.
+  // `showClass` is deliberately NOT destructured: the JSX gates the class line on `climate`
+  // itself because it needs the null-narrowing to read `.className`/`.koppen`, and a parallel
+  // boolean beside it would be a second way to ask the same question. The gate object still
+  // computes and tests it — that is what `citeClassSource` is defined against.
+  const { showSection: showClimateSection, citeClassSource: citeClimateClassSource } =
+    climateBlockGates({
+      isTr,
+      hasClimateClass: climate !== null,
+      hasClimateSeries: climateSeries !== null,
+      hasSimilarClimate: showSimilarClimate,
+    });
 
   // JSON-LD climate facts — appended to the SAME additionalProperty array (PLAN §2: no
   // new schema type). Gated on the TR-gated series so structured data never describes a
@@ -385,6 +400,15 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // base sources line is shown unchanged.
   const extraSources: string[] = [];
   if (showLandform) extraSources.push(t("sourcesLandform"));
+  // MGM's Köppen CLASSIFICATION moved out of the base `sources` string and into this
+  // conditional (UX tour B5). It used to be welded to the elevation/coordinates clause, which
+  // meant every EN province page claimed "…and the climate classification from MGM" while the
+  // whole climate block sits behind the `isTr` gate and never renders there — a source cited
+  // for content that is not on the page, which is exactly what the rule two lines down
+  // forbids. The flag comes from the same pure function that gates the line itself, so the two
+  // cannot disagree. The elevation and coordinate half stays in the base string: those DO
+  // render in both locales.
+  if (citeClimateClassSource) extraSources.push(t("sourcesClimateClass"));
   // Climate normals source joins the Kaynaklar line ONLY when the chart actually renders
   // (PLAN §2 — never cite a source for content that is not on the page).
   if (climateSeries !== null) extraSources.push(t("sourcesClimate"));
@@ -413,6 +437,9 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         ]}
       />
       <h1>{t("heading", { name })}</h1>
+      {/* EN only, and only because this page's substance is TR-gated below (→ DEC
+          2026-08-04i §4). Renders nothing on Turkish. */}
+      <EnWorkInProgressNotice locale={locale} />
       <p className="lede">{introText}</p>
 
       <section className="section">
@@ -530,6 +557,31 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
                        class name only — never a caveat-less Köppen code. */
                     t("climateClassOnly", { className: climate.className })}
               </p>
+              {/* THE VISIBLE PLAIN SENTENCE (→ DEC 2026-08-04i §3). A PRESENTATION change
+                  only: the class names and the Köppen codes are MGM's and are untouched
+                  (K1 / DEC 2026-08-04a), and the technical caveat stays in the collapsed
+                  box below.
+
+                  Why it earns a permanent line on 81 pages: 48 provinces carry the title
+                  "Akdeniz iklimi" and 33 of those sit outside the Akdeniz/Ege regions —
+                  Ankara (January mean −0,5 °C) and Van (−2,4 °C) among them (UX tour B6).
+                  The `<details>` explains exactly this, and it arrives CLOSED, so the
+                  student who never opens it memorises a heading that contradicts the
+                  curriculum. This sentence is the part that cannot be missed.
+
+                  It is deliberately class-INDEPENDENT: one sentence for all 81, not a
+                  per-Köppen-class table. Writing prose per class is content work and would
+                  cross the "presentation decision, not a data decision" line the ruling
+                  draws. It is also worded independently of the pending heading-format
+                  question (D1), so a later heading change shortens it rather than
+                  invalidating it.
+
+                  Gated with the caveat itself: where the caveat is absent the line above
+                  already falls back to a bare class name with no Köppen code, and there is
+                  then no code for this sentence to explain. */}
+              {province.climateNoteTr !== null && (
+                <p className={styles.climatePlainNote}>{t("climatePlainNote")}</p>
+              )}
               {/* The caveat stays MANDATORY and its text is never trimmed, but per the
                   owner's UX ruling it renders collapsed (progressive disclosure) so it
                   is present in full + crawlable without being the page's narrative wall
@@ -564,7 +616,9 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
               2026-07-20b). Hub-and-spoke same-climate cross-links (CONVENTIONS §6 #10).
               Uses the shared province-grid card (same as Komşu İller). Anchor = "il adı
               · N,N °C": the °C is CONTENT (part of the link's accessible name), only the
-              → arrow is aria-hidden. Temp is 1-decimal as delivered by the api (no
+              arrow is aria-hidden (`components/card-arrow.tsx` — inline SVG, because
+              U+2192 is outside the font subsets this site ships). Temp is 1-decimal as
+              delivered by the api (no
               re-rounding), locale-formatted. The fallback path (own annual mean null) may
               yield a null-temp sibling → then the card is name-only. */}
           {showSimilarClimate && (
@@ -575,7 +629,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
                   {t("similarClimateIntro", { koppen: province.climateKoppen })}
                 </p>
               )}
-              <ul className="province-grid">
+              <ul role="list" className="province-grid">
                 {similarClimate.map((similar) => (
                   <li key={similar.plateCode}>
                     <Link
@@ -596,7 +650,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
                             })
                           : similar.nameTr}
                       </span>
-                      <span aria-hidden="true">→</span>
+                      <CardArrow />
                     </Link>
                   </li>
                 ))}
@@ -691,7 +745,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       {neighbors.length > 0 && (
         <section className="section">
           <h2>{t("neighborsHeading", { name: sectionHeading("neighbors") })}</h2>
-          <ul className="province-grid">
+          <ul role="list" className="province-grid">
             {neighbors.map((neighbor) => (
               <li key={neighbor.plateCode}>
                 <Link
@@ -702,7 +756,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
                   }}
                 >
                   <span>{neighbor.nameTr}</span>
-                  <span aria-hidden="true">→</span>
+                  <CardArrow />
                 </Link>
               </li>
             ))}

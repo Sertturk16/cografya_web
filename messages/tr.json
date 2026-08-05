@@ -2,7 +2,8 @@
   "Common": {
     "skipToContent": "Ana içeriğe geç",
     "localeSwitcherLabel": "Dil seçimi",
-    "localeName": "Türkçe"
+    "localeName": "Türkçe",
+    "enWorkInProgress": "Bu İngilizce sayfa üzerinde çalışılıyor: ayrıntılı bölümler şimdilik yalnızca Türkçe olarak mevcut."
   },
   "Nav": {
     "label": "Ana gezinme",
@@ -21,7 +22,8 @@
     "closeLabel": "Aramayı kapat",
     "noResults": "Sonuç bulunamadı.",
     "resultCount": "{count, plural, other {# sonuç}}",
-    "seeAll": "Tüm il ve ülke listesi",
+    "seeAllProvinces": "Tüm il listesi",
+    "seeAllCountries": "Tüm ülke listesi",
     "province": "İl",
     "country": "Ülke",
     "loadFailed": "Arama listesi şu an yüklenemedi."
@@ -52,6 +54,8 @@
     "mapHeading": "Türkiye'nin illeri",
     "mapBody": "Her il için nüfus, yüzölçümü, iklim, yeryüzü şekilleri ve hidrografya.",
     "mapLinkLabel": "Türkiye haritası ve il listesi",
+    "worldHeading": "Dünya ülkeleri",
+    "worldBody": "Her ülke için konum, nüfus, yüzölçümü ve fiziki coğrafya.",
     "worldLinkLabel": "Dünya haritası ve ülke listesi",
     "seaHeadingValues": "Bugün denizler",
     "seaHeadingNoValues": "Türkiye kıyıları",
@@ -189,6 +193,7 @@
     "climateHeading": "{name} İklim",
     "climateValue": "{className} (Köppen: {koppen})",
     "climateClassOnly": "{className}",
+    "climatePlainNote": "Bu ad, MGM'nin Köppen iklim sınıflandırmasındaki karşılıktır; ders kitaplarındaki bölgesel iklim adlarıyla (örneğin karasal iklim) her zaman aynı olmayabilir.",
     "climateNoteLabel": "MGM sınıflandırma notu",
     "hydrographyHeading": "{name} Hidrografyası",
     "hydrographyTypeBaraj": "Barajlar",
@@ -206,8 +211,9 @@
     "similarClimateIntro": "Aynı Köppen iklim tipini ({koppen}) paylaşan, yıllık ortalama sıcaklığı en yakın iller:",
     "similarClimateAnchor": "{name} · {temp} °C",
     "sourcesLabel": "Kaynaklar",
-    "sources": "Veriler resmi kaynaklara dayanır: nüfus TÜİK (ADNKS), yüzölçümü Harita Genel Müdürlüğü (HGM), ilçe sayısı İçişleri Bakanlığı; il-merkezi rakım ve koordinatları ile iklim sınıflandırması MGM.",
+    "sources": "Veriler resmi kaynaklara dayanır: nüfus TÜİK (ADNKS), yüzölçümü Harita Genel Müdürlüğü (HGM), ilçe sayısı İçişleri Bakanlığı; il-merkezi rakım ve koordinatları MGM.",
     "sourcesExtra": "Ek bölüm kaynakları: {list}.",
+    "sourcesClimateClass": "iklim sınıflandırması MGM",
     "sourcesLandform": "yeryüzü şekilleri MTA/HGM",
     "sourcesHydrography": "hidrografya DSİ/İSKİ",
     "sourcesEconomy": "ekonomik gösterge TÜİK bölgesel hesaplar",
@@ -328,7 +334,7 @@
     "independenceHeadingPlain": "Bağımsızlık",
     "neighborsHeadingPlain": "Komşu Ülkeler",
     "sourcesLabel": "Kaynaklar",
-    "sources": "Veriler resmi ve otoriter kaynaklara dayanır: ülke ve başkent adları T.C. Dışişleri Bakanlığı; nüfus Dünya Bankası (Gürcistan için Geostat 2024 sayımı); yüzölçümü Dünya Bankası; kıta ve bölge sınıflandırması BM İstatistik Bölümü (M49); komşu ülkeler, yönetim biçimi, para birimi ve fiziki coğrafya çok kaynaklı çapraz kontrolle (Britannica vb.).",
+    "sources": "Veriler resmi ve otoriter kaynaklara dayanır: ülke ve başkent adları T.C. Dışişleri Bakanlığı; nüfus Dünya Bankası; yüzölçümü Dünya Bankası; kıta ve bölge sınıflandırması BM İstatistik Bölümü (M49); komşu ülkeler, yönetim biçimi, para birimi ve fiziki coğrafya çok kaynaklı çapraz kontrolle (Britannica vb.).",
     "backToMap": "Dünya haritasına dön"
   },
   "Deniz": {

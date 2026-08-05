@@ -37,6 +37,22 @@ import { routing, type Locale } from "@/i18n/routing";
  * the detail pages render them (i.e. when the `isTr` gates in
  * `app/[locale]/{turkiye,dunya}/[slug]/page.tsx` are removed). Flipping it while the pages
  * still render TR-gated chrome would re-expose the scaled-content surface.
+ *
+ * ## THE FLIP HAS A SECOND HALF: three visible notices (→ PR #47 review CR-M2)
+ *
+ * `<EnWorkInProgressNotice>` (`components/en-work-in-progress-notice.tsx`) tells an English
+ * reader that the detailed sections exist in Turkish only (→ DEC 2026-08-04i §4). It is NOT
+ * wired to this constant — it renders on `locale === "en"`, full stop — so flipping this
+ * switch alone would leave a "work in progress" banner sitting on top of finished English
+ * pages, which is the same class of dishonesty in the opposite direction.
+ *
+ * The three call sites, so the EN content wave does not have to hunt for them:
+ *   · `app/[locale]/turkiye/[slug]/page.tsx`
+ *   · `app/[locale]/dunya/[slug]/page.tsx`
+ *   · `app/[locale]/deniz/page.tsx`
+ *
+ * They are exactly today's `"trNarrative"` members. If a future surface joins or leaves that
+ * set, the notice list moves with it.
  */
 export const EN_CONTENT_READY: boolean = false;
 

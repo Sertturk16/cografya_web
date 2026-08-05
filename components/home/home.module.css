@@ -49,17 +49,21 @@
   max-width: 46ch;
 }
 
-/* The two hub links, stacked. Semantically a list because it IS a list of two navigational
-   destinations, and a screen reader announcing "list, 2 items" is the correct summary. The
-   underline comes from the global link style — nothing here is hover-only. */
-.exploreLinks {
-  list-style: none;
-  padding: 0;
+/* One hub link per block (→ DEC 2026-08-05e). This replaced a two-item `<ul>`: with the band
+   split, each block carries exactly one destination, and a one-item list announcing "list, 1
+   item" is noise rather than structure. The underline comes from the global link style —
+   nothing here is hover-only. */
+.exploreLink {
   margin: 14px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   font-weight: 600;
+}
+
+/* The world block is the SECONDARY half of the split band: same heading level (two peer
+   destinations — `SEO-POLICY.md` §B3.7 keeps headings an outline, not a type scale), but it
+   opens tighter than a full `.section` so the pair reads as one band with a leading half
+   rather than as two competing heroes. `--container-max` and every type token are untouched. */
+.exploreBlockSecondary {
+  margin-top: 24px;
 }
 
 /* ---- Bugün denizler ---- */

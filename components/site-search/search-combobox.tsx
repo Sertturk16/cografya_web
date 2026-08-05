@@ -42,7 +42,14 @@ const onClient = () => true;
 const onServer = () => false;
 
 interface SearchComboboxProps {
-  readonly fallbackHref: string;
+  /**
+   * `/turkiye#iller` for this locale. Two jobs, one destination: it is the pre-hydration /
+   * no-JS target of the collapsed trigger AND the panel's province-list link. See
+   * `lib/search/index-hrefs.ts` for why the fallback aims at the province index specifically.
+   */
+  readonly provinceIndexHref: string;
+  /** `/dunya#ulkeler` for this locale — the panel's second list link. */
+  readonly countryIndexHref: string;
   readonly indexUrl: string;
 }
 
@@ -56,6 +63,15 @@ interface SearchComboboxProps {
  * document contains a real crawlable link to the province index. Only after mount does the
  * element become a combobox. If the index cannot be loaded the control degrades back to
  * that same link rather than presenting a box that answers nothing.
+ *
+ * ## Two list links, not one
+ *
+ * The panel's closing row offers the province index AND the country index (owner live-tour
+ * finding #4). The single previous row said "Tüm il ve ülke listesi" and went only to
+ * `/turkiye#iller`, so a reader hunting a country was silently sent to the wrong corpus. The
+ * collapsed trigger still carries ONE href, because it is the no-JS surface and a single
+ * `<a>` cannot honestly offer two destinations; the second link arrives with the panel, which
+ * only exists once JS runs.
  *
  * ## Strings are resolved HERE, not handed down
  *
@@ -76,7 +92,11 @@ interface SearchComboboxProps {
  * and the negative tabindex preserves the combobox's single-tab-stop invariant. Focus
  * restoration happens after commit, never inside the handler that hides the target.
  */
-export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) {
+export function SearchCombobox({
+  provinceIndexHref,
+  countryIndexHref,
+  indexUrl,
+}: SearchComboboxProps) {
   const t = useTranslations("Search");
   const mounted = useSyncExternalStore(NEVER_CHANGES, onClient, onServer);
   const [open, setOpen] = useState(false);
@@ -288,14 +308,28 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
     close(false);
   };
 
-  // Pre-hydration and no-JS: a real link to the alphabetical index. It carries `aria-label`
-  // because the visible word is `display: none` below the desktop breakpoint, which would
-  // otherwise leave a NAMELESS link in the first HTML response — and that is the state the
-  // no-JS reader never leaves (review C2).
+  // Pre-hydration and no-JS: a real link to the alphabetical province index. It carries
+  // `aria-label` because the visible word is `display: none` below the desktop breakpoint,
+  // which would otherwise leave a NAMELESS link in the first HTML response — and that is the
+  // state the no-JS reader never leaves (review C2).
+  //
+  // The name is `Search.label` ("İl veya ülke ara"), which names the CONTROL rather than one
+  // of its destinations (→ PR #47 review CR-M3). Both alternatives are worse: the old
+  // "Tüm il ve ülke listesi" promised two corpora from a link that reaches one — the exact
+  // defect this PR removes — and my first pass narrowed it to "Tüm il listesi", which told a
+  // screen-reader user the site search was a province list. `label` covers both hubs at the
+  // level that is actually true (this searches provinces and countries) and matches the
+  // `<label>` the hydrated input already carries, so the control keeps one identity across
+  // the upgrade.
   if (!mounted) {
     return (
       <div className={styles.slot}>
-        <a ref={triggerRef} className={styles.trigger} href={fallbackHref} aria-label={t("seeAll")}>
+        <a
+          ref={triggerRef}
+          className={styles.trigger}
+          href={provinceIndexHref}
+          aria-label={t("label")}
+        >
           <SearchIcon />
           <span className={styles.triggerText}>{t("triggerLabel")}</span>
         </a>
@@ -315,7 +349,7 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
       <a
         ref={triggerRef}
         className={styles.trigger}
-        href={fallbackHref}
+        href={provinceIndexHref}
         aria-label={t("openLabel")}
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -408,9 +442,18 @@ export function SearchCombobox({ fallbackHref, indexUrl }: SearchComboboxProps) 
 
           {showNoResults ? <p className={styles.notice}>{t("noResults")}</p> : null}
 
-          <a className={styles.seeAll} href={fallbackHref}>
-            {t("seeAll")}
-          </a>
+          {/* One row, two corpora. Not a `role="list"`: these are two sibling links in a
+              footer row, not an enumeration of content — and the panel already owns a
+              listbox above, so a second list role here would add noise for AT rather than
+              structure. */}
+          <div className={styles.seeAllRow}>
+            <a className={styles.seeAllLink} href={provinceIndexHref}>
+              {t("seeAllProvinces")}
+            </a>
+            <a className={styles.seeAllLink} href={countryIndexHref}>
+              {t("seeAllCountries")}
+            </a>
+          </div>
 
           <div role="status" aria-live="polite" className={styles.srOnly}>
             {announcement}

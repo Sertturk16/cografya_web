@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
 import { LayerCatalogue } from "@/components/marine/layer-catalogue";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { MarineExplainers } from "@/components/marine/marine-explainers";
@@ -212,6 +213,11 @@ export default async function DenizPage({ params }: PageProps) {
         ]}
       />
       <h1>{t("heading")}</h1>
+      {/* EN only (→ DEC 2026-08-04i §4). This page is `"trNarrative"` for a different reason
+          from the detail pages — its substance is the seven hand-written Turkish explainer
+          blocks, deliberately not machine-translated (SEO-POLICY §B14) — but the reader's
+          experience is the same one the notice describes. Renders nothing on Turkish. */}
+      <EnWorkInProgressNotice locale={locale} />
       {/* The `<h1>` names the subject and does not move; the lede states what the reader
           will find and therefore does (see the head-promise block above). */}
       <p className="lede">{showValues ? t("lede") : t("ledeNoValues")}</p>

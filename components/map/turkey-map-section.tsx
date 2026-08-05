@@ -259,16 +259,27 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
             reason (WCAG 3.1.2): a Turkish-voice screen reader must not read an English
             licence string with Turkish phonetics. The Turkish label stands ALONGSIDE it.
 
-            One paragraph with a break rather than two absolutely-positioned siblings: the
-            chip is `position: absolute; bottom: 10px`, so a second `<p>` would land on top of
-            the first. This keeps the stylesheets closed (P6 kept them closed on purpose).
+            ONE paragraph, TWO block spans WITH A REAL SPACE BETWEEN THEM. The chip is
+            `position: absolute; bottom: 10px`, so a second `<p>` would land on top of the
+            first; that constraint is why this has to stay one paragraph.
+
+            The two notices used to be split by a `<br>`, which left them a SINGLE text run:
+            the DOM read "…ODbLMevsimlik göl sınırları:…" with the two licences welded
+            together (UX tour B26). Block spans alone do NOT fix that — `textContent`
+            concatenates regardless of layout, MEASURED on the running build — so the
+            separating space below is load-bearing, not formatting. With it, all three text
+            APIs agree: `textContent` separates the licences, `innerText` still breaks the
+            line, and AT gets two block boxes instead of one run. The space itself never
+            renders: whitespace between two block-level boxes is collapsed away, so the chip
+            is pixel-identical to the `<br>` version.
 
             NOT on the world map: it draws Natural Earth countries, not this water layer, and
             crediting a source a surface does not use is a false claim, not a courtesy. */}
         <p className={styles.attribution}>
-          {tMap("attribution")}
-          <br />
-          {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
+          <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
+          <span className={styles.attributionLine}>
+            {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
+          </span>
         </p>
       </div>
     </section>

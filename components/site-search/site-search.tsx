@@ -1,10 +1,10 @@
 import type { Locale } from "@/i18n/routing";
-import { searchFallbackHref } from "@/lib/search/fallback-href";
+import { countryIndexHref, provinceIndexHref } from "@/lib/search/index-hrefs";
 import { SearchCombobox } from "./search-combobox";
 
 /**
- * The header search (→ DEC 2026-08-04i §2). Server half: it resolves the fallback href for
- * this locale and picks the matching index endpoint, then hands both to the client island.
+ * The header search (→ DEC 2026-08-04i §2). Server half: it resolves the two hub-index hrefs
+ * for this locale and picks the matching index endpoint, then hands them to the client island.
  *
  * It deliberately resolves NO user-facing strings. The island reads them from
  * `useTranslations` itself, which is what lets a count be formatted with real ICU
@@ -25,7 +25,8 @@ import { SearchCombobox } from "./search-combobox";
 export function SiteSearch({ locale }: { locale: Locale }) {
   return (
     <SearchCombobox
-      fallbackHref={searchFallbackHref(locale)}
+      provinceIndexHref={provinceIndexHref(locale)}
+      countryIndexHref={countryIndexHref(locale)}
       indexUrl={`/api/search-index/${locale}`}
     />
   );

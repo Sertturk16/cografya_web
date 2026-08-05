@@ -198,18 +198,27 @@
   font-size: 0.9rem;
 }
 
-.seeAll {
-  display: block;
+/* The closing row: province index + country index, side by side (owner live-tour finding #4).
+   The separator rule lives on the ROW, once, so the two links do not each draw one; `gap`
+   rather than a margin so the row stays symmetric when it wraps on a narrow panel. */
+.seeAllRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
   margin-top: 8px;
-  padding: 9px 10px;
+  padding-top: 2px;
   border-top: 1px solid var(--color-border);
+}
+
+.seeAllLink {
+  padding: 9px 10px;
   color: var(--color-primary-dark);
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 700;
 }
 
-.seeAll:hover {
+.seeAllLink:hover {
   color: var(--color-primary);
   text-decoration: underline;
 }

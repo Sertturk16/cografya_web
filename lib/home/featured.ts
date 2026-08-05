@@ -119,6 +119,25 @@ function dailyDraw<T>(pool: readonly T[], count: number, seed: string): T[] {
   return drawn;
 }
 
+/**
+ * Pool ordering — a raw code-point comparison, deliberately NOT `localeCompare`.
+ *
+ * The draw below is a function of POSITION in the pool, so the sort is part of the seed: two
+ * machines that order the pool differently serve different cards under the same "bugün"
+ * heading. `localeCompare` with no explicit locale collates in the RUNTIME's default locale,
+ * which is ambient state this module otherwise takes care never to read (the same reason the
+ * day key pins Europe/Istanbul instead of trusting the host clock). Under a Turkish default
+ * collation, for instance, `I` and `İ` do not sort where an English one puts them.
+ *
+ * Both keys this orders are ASCII by construction — a 2-digit zero-padded plaka kodu and an
+ * ISO alpha-2 code — so a code-point comparison is not an approximation of the "right"
+ * collation here, it IS the total order, and it cannot be moved by an environment. Cheaper
+ * than an `Intl.Collator`, and no locale to forget to pass. (→ PR #46 review CR-FR2-1.)
+ */
+function byAsciiCode(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 /** How many cards each row may show. A cap, not a promise — a smaller pool yields fewer. */
 export const FEATURED_LIMIT = 3;
 
@@ -226,7 +245,7 @@ export function pickDailyProvinces(
   instant: Date | string,
   limit: number = FEATURED_LIMIT,
 ): FeaturedProvince[] {
-  const pool = [...summaries].sort((a, b) => a.plateCode.localeCompare(b.plateCode));
+  const pool = [...summaries].sort((a, b) => byAsciiCode(a.plateCode, b.plateCode));
   const drawn = dailyDraw(pool, limit, `${istanbulDayKey(instant)}:provinces`);
 
   return drawn.map((province) => ({
@@ -252,7 +271,7 @@ export function pickDailyCountries(
   instant: Date | string,
   limit: number = FEATURED_LIMIT,
 ): FeaturedCountry[] {
-  const pool = countryPool(countries).sort((a, b) => a.isoCode.localeCompare(b.isoCode));
+  const pool = countryPool(countries).sort((a, b) => byAsciiCode(a.isoCode, b.isoCode));
   const drawn = dailyDraw(pool, limit, `${istanbulDayKey(instant)}:countries`);
 
   return drawn.map((country) => ({

@@ -28,7 +28,7 @@ export async function Breadcrumb({ locale, items }: { locale: Locale; items: Cru
     <>
       <JsonLd schema={breadcrumbJsonLd(jsonItems)} />
       <nav aria-label={t("label")} className="breadcrumb">
-        <ol>
+        <ol role="list">
           {items.map((crumb, index) =>
             index < items.length - 1 ? (
               <li key={index}>

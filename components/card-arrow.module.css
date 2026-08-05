@@ -1,0 +1,10 @@
+/* The card arrow sits in a flex row (`.province-card`) opposite a label that may wrap to two
+   lines. `flex: none` stops it being squeezed when the label is long — the exact case that
+   made the arrow noticeable in the first place ("Çanakkale · 15,2 °C").
+
+   Colour and size come from the SVG itself (`currentColor`, `1em`), so there is nothing to
+   set here: the arrow follows the link's colour and the card's font size, which is what the
+   text glyph it replaces used to do for free. */
+.arrow {
+  flex: none;
+}
