@@ -3,33 +3,8 @@
  * Build-time generator: Türkiye il boundary GeoJSON → inline SVG `<path>` data.
  *
  * Reads the committed snapshot `data/tr-il-boundaries.geojson` (ODbL, see
- * `data/README.md`) and emits TWO artifacts from the ONE source, in ONE run:
- *
- *   lib/map/tr-provinces.generated.ts       ε=0.45 · 1 decimal — the INTERACTIVE map
- *     (`/turkiye`, `/oyun`): 81 hit targets, hover cards, zoom/pan.
- *   lib/map/tr-provinces-mini.generated.ts  ε=2    · 0 decimals — the HOMEPAGE thumbnail
- *     (`components/home/mini-turkey-map.tsx`): one link, no hover, no zoom.
- *
- * ## Why the mini artifact is SEPARATE rather than the same paths scaled down (→ plan §2.4)
- *
- * The homepage is the site's most-visited page and its byte budget is the tightest. Reusing
- * `PROVINCE_SHAPES` there costs 23.3 kB gzip of markup — and roughly twice that once Next
- * serializes the same markup a second time into the RSC flight payload (the measured ×2 the
- * `/turkiye` map documents). Decimating to ε=2 · 0 decimals keeps 42 % of the vertices and
- * costs 8.2 kB, which at the thumbnail's render width (~520 px for a 1000-unit viewBox ⇒
- * 0.52 px/unit) is a worst-case ~1.04 px deviation: invisible.
- *
- * It matters MORE later, not less: the queued geoBoundaries re-source (P2) grows the
- * interactive artifact ~3.8×. A homepage sharing that artifact would degrade on a wave that
- * has nothing to do with it; a homepage on its own decimation stays flat and merely gets a
- * more faithful outline.
- *
- * ## Why BOTH live in this ONE generator
- *
- * Same source, same `TR_FRAME`, same `NAME_TO_PLATE`, same run. Two generators could drift
- * in their source or frame assumptions silently — the exact failure class `assertFrameFit`
- * and `scripts/lib/tr-frame.mjs` exist to prevent. `pnpm generate:map:check` covers both
- * files, so neither can go stale on its own.
+ * `data/README.md`) and emits `lib/map/tr-provinces.generated.ts`: one simplified
+ * SVG path per province, keyed by plaka kodu, in a single shared viewBox.
  *
  * Run once and COMMIT the output (`pnpm generate:map`). CI/runtime never invoke
  * this — the app imports the committed artifact. The raw GeoJSON never reaches the
@@ -63,7 +38,6 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 const SRC = join(ROOT, "data", "tr-il-boundaries.geojson");
 const OUT = join(ROOT, "lib", "map", "tr-provinces.generated.ts");
-const OUT_MINI = join(ROOT, "lib", "map", "tr-provinces-mini.generated.ts");
 
 /**
  * GeoJSON feature `name` → official plaka kodu (zero-padded 2-digit). Static
@@ -162,14 +136,6 @@ const NAME_TO_PLATE = {
 const SIMPLIFY_EPSILON = 0.45; // Douglas-Peucker tolerance, in projected svg units
 const DECIMALS = 1; // coordinate rounding in the emitted path data
 
-// The MINI variant's tuning. ε is in the same projected svg units, so it converts straight
-// into a render-size bound: the thumbnail draws the 1000-unit viewBox at ~520 px (0.52
-// px/unit), so ε=2 caps the deviation at ~1.04 px and ε=3 at ~1.56 px. 2 was chosen from the
-// measured ladder in plan §2.4 (5,098 → 2,121 vertices, 23.3 → 8.2 kB gzip) and confirmed on
-// rendered samples. Zero decimals because a tenth of a unit is 0.05 px there — pure payload.
-const MINI_SIMPLIFY_EPSILON = 2;
-const MINI_DECIMALS = 0;
-
 /** Iterative Douglas-Peucker line simplification (avoids deep recursion). */
 function simplify(points, epsilon) {
   if (points.length < 3) return points.slice();
@@ -196,9 +162,8 @@ function simplify(points, epsilon) {
   return points.filter((_, i) => keep[i]);
 }
 
-/** @param {number} n @param {number} decimals */
-function round(n, decimals) {
-  return Number(n.toFixed(decimals));
+function round(n) {
+  return Number(n.toFixed(DECIMALS));
 }
 
 // --- Load + first pass: project every point, track projected bounds -----------
@@ -251,59 +216,32 @@ function outerRings(geometry) {
   return polys.map((poly) => poly[0]);
 }
 
-// --- Second pass: project every province's outer rings ONCE -------------------
-// Projection and the frame assertion are variant-INDEPENDENT, so they happen here rather
-// than inside the per-variant build: two variants must never disagree about whether the
-// source still fits the pinned frame, and running the check twice would only make a failure
-// print twice.
-/** @type {{ plateCode: string, geoName: string, rings: [number, number][][] }[]} */
-const projected = [];
+// --- Second pass: build one simplified path per province ----------------------
+/** @type {{ plateCode: string, geoName: string, d: string }[]} */
+const shapes = [];
 for (const feature of geojson.features) {
   const geoName = feature.properties?.name;
   const plateCode = NAME_TO_PLATE[geoName];
   if (!plateCode) {
     throw new Error(`No plate code mapped for GeoJSON province name "${geoName}"`);
   }
-  const rings = [];
+  const subpaths = [];
   for (const ring of outerRings(feature.geometry)) {
-    const points = ring.map(project);
+    const projected = ring.map(project);
     // Inverted safety net: with the frame pinned, "the source grew" can no longer move the
     // frame, so it has to surface as "the source no longer fits".
-    assertInsideFrame(points, { label: `${geoName} (${plateCode})` });
-    rings.push(points);
+    assertInsideFrame(projected, { label: `${geoName} (${plateCode})` });
+    const simplified = simplify(projected, SIMPLIFY_EPSILON);
+    if (simplified.length < 3) continue;
+    const d = simplified
+      .map(([x, y], i) => `${i === 0 ? "M" : "L"}${round(x)} ${round(y)}`)
+      .join("");
+    subpaths.push(`${d}Z`);
   }
-  projected.push({ plateCode, geoName, rings });
+  shapes.push({ plateCode, geoName, d: subpaths.join("") });
 }
 
-projected.sort((a, b) => a.plateCode.localeCompare(b.plateCode));
-
-/**
- * One simplification variant: same projected rings, its own tolerance and rounding.
- *
- * Both artifacts come out of this one function, so a change to how a `d` string is built
- * (the command letters, the separator, the closing `Z`) can never apply to one artifact and
- * not the other.
- *
- * @param {number} epsilon @param {number} decimals
- * @returns {{ plateCode: string, geoName: string, d: string }[]}
- */
-function buildShapes(epsilon, decimals) {
-  return projected.map(({ plateCode, geoName, rings }) => {
-    const subpaths = [];
-    for (const points of rings) {
-      const simplified = simplify(points, epsilon);
-      if (simplified.length < 3) continue;
-      const d = simplified
-        .map(([x, y], i) => `${i === 0 ? "M" : "L"}${round(x, decimals)} ${round(y, decimals)}`)
-        .join("");
-      subpaths.push(`${d}Z`);
-    }
-    return { plateCode, geoName, d: subpaths.join("") };
-  });
-}
-
-const shapes = buildShapes(SIMPLIFY_EPSILON, DECIMALS);
-const miniShapes = buildShapes(MINI_SIMPLIFY_EPSILON, MINI_DECIMALS);
+shapes.sort((a, b) => a.plateCode.localeCompare(b.plateCode));
 
 // --- Emit -------------------------------------------------------------------
 const body = shapes
@@ -384,66 +322,4 @@ console.log(
   `generate:map → ${OUT}\n  ${shapes.length} provinces · viewBox 0 0 ${VIEW_WIDTH} ${viewHeight} · ${(
     bytes / 1024
   ).toFixed(1)} kB`,
-);
-
-// --- Emit the MINI artifact ---------------------------------------------------
-// Deliberately NOT a second copy of the interface above. It carries `plateCode` + `d` and
-// nothing else — `geoName` is build-time provenance the thumbnail has no use for.
-//
-// It also does NOT re-export `MAP_VIEWBOX` from the primary artifact, tempting as that is:
-// that import would tie the homepage's module graph to the 63 kB interactive artifact and
-// leave the whole point of this file resting on a bundler's tree-shaking. The viewBox is
-// emitted as its own literal from the SAME `TR_FRAME` constants in the same run, and
-// `lib/map/tr-provinces-mini.test.ts` asserts the two strings are identical — single-sourced
-// at the generator, verified at the test, with no runtime coupling.
-// `MAP_PROJECTION` is not emitted at all: the thumbnail places no runtime coordinates.
-const miniBody = miniShapes
-  .map((s) => `  { plateCode: ${JSON.stringify(s.plateCode)}, d: ${JSON.stringify(s.d)} },`)
-  .join("\n");
-
-const miniOut = `// AUTO-GENERATED by scripts/generate-map-paths.mjs — DO NOT EDIT BY HAND.
-// Source: data/tr-il-boundaries.geojson (© OpenStreetMap katkıcıları, ODbL).
-// Regenerate with: pnpm generate:map  (this file and tr-provinces.generated.ts together)
-//
-// The DECIMATED Türkiye outline — ε=${MINI_SIMPLIFY_EPSILON} svg units, ${MINI_DECIMALS} decimals — for the homepage
-// thumbnail ONLY (\`components/home/mini-turkey-map.tsx\`). Same source, same run, same
-// pinned frame as the interactive artifact beside it; ${miniShapes.length} shapes, no hit targets.
-//
-// WHY A SECOND ARTIFACT EXISTS: the interactive paths cost ~23 kB gzip of markup, which the
-// site's most-visited page cannot spend on a decorative thumbnail — and the queued
-// geoBoundaries re-source grows them ~3.8× again. This one is drawn at ~520 px for a
-// 1000-unit viewBox (0.52 px/unit), so ε=${MINI_SIMPLIFY_EPSILON} is a worst-case ~${(MINI_SIMPLIFY_EPSILON * 0.52).toFixed(2)} px deviation.
-// Do NOT use it for anything clickable, hoverable or zoomable — at this tolerance the
-// outline is a picture, not a hit target.
-
-/** One decimated province outline, in the SAME \`MAP_VIEWBOX\` space as the primary artifact. */
-export interface MiniProvinceShape {
-  /** Plaka kodu (zero-padded 2-digit) — the join key to API province data (\`data-region\`). */
-  readonly plateCode: string;
-  /** SVG path \`d\` (one or more closed subpaths for provinces with islands). */
-  readonly d: string;
-}
-
-/**
- * The SAME viewBox string as \`MAP_VIEWBOX\` — both are emitted from the pinned \`TR_FRAME\`
- * in one generator run, and \`tr-provinces-mini.test.ts\` asserts they are identical. It is a
- * literal rather than a re-export so importing the thumbnail cannot drag the 63 kB
- * interactive artifact into the homepage's module graph.
- */
-export const MINI_MAP_VIEWBOX = "0 0 ${VIEW_WIDTH} ${viewHeight}" as const;
-
-export const MINI_PROVINCE_SHAPES: readonly MiniProvinceShape[] = [
-${miniBody}
-];
-`;
-
-writeFileSync(OUT_MINI, miniOut, "utf8");
-const miniBytes = Buffer.byteLength(miniOut, "utf8");
-const vertexCount = (list) => list.reduce((sum, s) => sum + (s.d.match(/[ML]/g)?.length ?? 0), 0);
-console.log(
-  `generate:map → ${OUT_MINI}\n  ${miniShapes.length} provinces · ε=${MINI_SIMPLIFY_EPSILON} · ${MINI_DECIMALS} decimals · ` +
-    `${vertexCount(miniShapes)} vertices (${(
-      (vertexCount(miniShapes) / vertexCount(shapes)) *
-      100
-    ).toFixed(0)}% of ${vertexCount(shapes)}) · ${(miniBytes / 1024).toFixed(1)} kB`,
 );

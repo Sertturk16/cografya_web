@@ -5,54 +5,121 @@ import type {
   ProvinceMapSummary,
 } from "@/lib/api/types";
 import type { Locale } from "@/i18n/routing";
+import { territoryFor } from "@/lib/map/territories";
 
 /**
- * The homepage's featured province / country cards: a CURATED list, intersected with what
- * the api actually publishes.
+ * The homepage's "Bugün keşfet" province / country cards: a DAY-SEEDED deterministic draw
+ * from what the api actually publishes (→ DEC 2026-08-05a).
  *
- * ## Why curated rather than derived (plan §4.1, mechanism M1)
+ * ## Why seeded, and emphatically not random
  *
- * The two derivable orderings both fail the page's job. "Top N by population" is İstanbul,
- * Ankara, İzmir forever — it teaches nothing and never changes. "Most complete page" is not a
- * field the contract carries, so it cannot be read. The point of these six cards is a spread
- * of regions and continents that invites a reader in, and that is an editorial judgement, not
- * a query. So it is written down, in one place, with its reasoning.
+ * The first shape here was a curated slug list (Rize/İstanbul/Mersin + Brezilya/Japonya/Çad).
+ * The owner retired it: six hand-picked entities never change, so the page never rewards a
+ * second visit, and the editorial cost grows with the corpus. The replacement uses NO
+ * `Math.random` anywhere in this module, deliberately:
  *
- * ## The safety that makes this shippable: INTERSECTION, always
+ * - the page is ISR-rendered, so a random draw would freeze one arbitrary set into the HTML
+ *   for a whole revalidate window anyway, and then jump unpredictably between windows;
+ * - a heading that says "BUGÜN keşfet" has to be TRUE. Seeded on the calendar day it is:
+ *   every render of the same Istanbul day yields the same six cards, and the next day yields
+ *   a different six. What the reader sees and what the heading claims agree.
+ * - and it stays testable — the whole mechanism is a pure function of (pool, locale, instant).
  *
- * A hand-written slug list is a standing invitation to link at a page that does not exist —
- * the soft-404 class `ENGINEERING.md` §4 #6 bans. So the list is never rendered directly:
- * `pickFeatured*` looks each slug up in the api's published set and DROPS anything it cannot
- * resolve. A retired or renamed entity silently produces one card fewer; it can never produce
- * a 404 link. That is also why the curated keys are TR slugs specifically — `slugTr` is the
- * api's stable editorial key, while the rendered href is always the locale's own slug.
+ * ## The soft-404 guarantee is now structural, not an intersection
  *
- * ## Rotation is deliberately absent (YAGNI)
- *
- * A date-seeded rotation was considered and deferred: it would change the HTML on every ISR
- * window for no measured benefit. The shape here takes it without a rewrite — a seed
- * parameter and a rotate-before-slice — so nothing has to be undone if it is ever wanted.
+ * The curated list needed an intersection against the published set, because a hand-written
+ * slug could name an entity the api does not publish (`ENGINEERING.md` §4 #6). Here the draw
+ * is taken FROM the published payload itself, so every card is by construction a published
+ * entity: an unresolvable link is not merely filtered out, it is unconstructible. The href is
+ * still built from the LOCALE's own slug, never the other locale's.
  */
 
 /**
- * The featured provinces, in render order (TR slugs — the api's stable editorial key).
+ * Europe/Istanbul calendar day as `YYYY-MM-DD` — the seed, and the only reason this module
+ * knows about time at all.
  *
- * Chosen for REGIONAL SPREAD, which is the one property a reader can feel on sight:
- * Rize (Karadeniz), İstanbul (Marmara), Mersin (Akdeniz) — a wet north coast, the country's
- * largest city, a southern Mediterranean province. Changing this list is an editorial act
- * (owner-approved from rendered samples), not a refactor.
+ * The zone is PINNED rather than read from the host: a server in UTC and a server in Istanbul
+ * must not disagree about which day it is, or two machines would serve different cards under
+ * the same heading. The instant is INJECTED (the page passes `new Date()`) so every function
+ * below stays pure and every test can pin a day.
+ *
+ * `en-GB` is chosen only for its unambiguous Gregorian parts; the parts are re-assembled by
+ * hand, so no locale's date FORMAT can leak into the seed.
  */
-export const FEATURED_PROVINCE_SLUGS: readonly string[] = ["rize", "istanbul", "mersin"];
+const ISTANBUL_DAY = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Europe/Istanbul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+export function istanbulDayKey(instant: Date | string): string {
+  const date = typeof instant === "string" ? new Date(instant) : instant;
+  const parts = ISTANBUL_DAY.formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((candidate) => candidate.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
 
 /**
- * The featured countries, in render order (TR slugs).
- *
- * Chosen for CONTINENTAL SPREAD and for the recognisable/unfamiliar balance the geography
- * brief asks for: Brezilya (Güney Amerika), Japonya (Asya), Çad (Afrika).
+ * FNV-1a (32-bit) over the seed string. A hash, not a cipher: all it owes is that two
+ * adjacent day strings land far apart, which it does. `Math.imul` keeps the multiply in
+ * 32-bit integer space — a plain `*` would lose the low bits to float64.
  */
-export const FEATURED_COUNTRY_SLUGS: readonly string[] = ["brezilya", "japonya", "cad"];
+function fnv1a32(text: string): number {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
 
-/** How many cards each row may show. A cap, not a promise — the intersection may yield fewer. */
+/**
+ * mulberry32 — a small, well-known seeded PRNG. It is here so the draw below is REPRODUCIBLE
+ * from the day string; nothing about its statistical quality matters for choosing three
+ * cards. The property that DOES matter is that it never reads a global source of entropy,
+ * which is what keeps this module pure.
+ */
+function mulberry32(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * `count` distinct members of `pool`, drawn deterministically from `seed`.
+ *
+ * The pool must arrive in a STABLE order (the callers sort by plaka kodu / ISO code): the
+ * draw is a function of position, so if the api ever reordered its response the same day
+ * would silently produce different cards.
+ *
+ * Draw-and-remove rather than "the slice at hash % n": consecutive slices of a sorted pool
+ * would put three alphabetically adjacent provinces on the page every day, which reads as a
+ * fragment of a list rather than as a discovery.
+ */
+function dailyDraw<T>(pool: readonly T[], count: number, seed: string): T[] {
+  const remaining = [...pool];
+  const random = mulberry32(fnv1a32(seed));
+  const size = Math.min(count, remaining.length);
+
+  const drawn: T[] = [];
+  for (let index = 0; index < size; index += 1) {
+    const [item] = remaining.splice(Math.floor(random() * remaining.length), 1);
+    // Unreachable — `random()` is [0,1) so the index is always in range — but the repo runs
+    // `noUncheckedIndexedAccess`, and stopping is better than pushing an `undefined` card.
+    if (item === undefined) break;
+    drawn.push(item);
+  }
+  return drawn;
+}
+
+/** How many cards each row may show. A cap, not a promise — a smaller pool yields fewer. */
 export const FEATURED_LIMIT = 3;
 
 /** One province card's data, already localized. Presentation-free: the component only prints. */
@@ -120,68 +187,80 @@ export function featuredPopulationFact(
 }
 
 /**
- * Curated slugs ∩ published provinces, in the CURATED order, capped at `limit`.
+ * The countries the daily draw may reach: real COUNTRY rows only — dalga-1's territory rows
+ * (the AQ/GL class) are held out (→ DEC 2026-08-05a §2).
  *
- * The order is the list's, not the api's: these three were picked as a sequence. Unresolvable
- * slugs are dropped silently by design — the alternative (rendering the card anyway) is the
- * soft-404 this function exists to make impossible.
+ * ## Why membership of `TERRITORIES`, and not an `entityType` field
+ *
+ * The live api DOES publish `entityType: "country" | "territory" | "special"` on the country
+ * DTOs — but the contract THIS repo has committed (`openapi/openapi.json` → `lib/api/schema.ts`)
+ * predates it, so the field is absent from the generated types and cannot be read here without
+ * a contract sync, which is an Atlas-coordinated cross-repo action and not this fix round's
+ * job. `lib/map/territories.ts` is the web's own, already owner-ruled register of every
+ * non-country shape on the world map, so it answers the same question from a source this repo
+ * already owns, with no second list to drift.
+ *
+ * MEASURED against the live api the day this landed, not assumed: of 199 published rows, the
+ * two the api itself types as non-country (AQ, GL) are both in `TERRITORIES`, and not one of
+ * the 197 country-typed rows is. So the filter is exactly the api's own answer today, and it
+ * stays conservative as dalga-1 continues — every territory it publishes comes from that same
+ * 43-shape register.
+ *
+ * KNOWN IMPERFECTION, recorded rather than hidden: `TERRITORIES` also contains VA (Vatican), a
+ * sovereign city-state deliberately absent from the 196-country corpus. Were it ever published
+ * as a country row it would be wrongly held out here. The real fix is to switch this to
+ * `entityType === "country"` the moment the contract sync lands — a follow-up handed to Atlas,
+ * not a silent TODO.
  */
-export function pickFeaturedProvinces(
-  summaries: readonly ProvinceMapSummary[],
-  locale: Locale,
-  slugs: readonly string[] = FEATURED_PROVINCE_SLUGS,
-  limit: number = FEATURED_LIMIT,
-): FeaturedProvince[] {
-  const published = new Map(summaries.map((province) => [province.slugTr, province]));
-
-  const picked: FeaturedProvince[] = [];
-  for (const slug of slugs) {
-    if (picked.length >= limit) break;
-    const province = published.get(slug);
-    if (province === undefined) continue;
-    picked.push({
-      plateCode: province.plateCode,
-      name: province.nameTr,
-      region: province.region,
-      slug: locale === "en" ? province.slugEn : province.slugTr,
-      population: province.population,
-      populationYear: province.populationYear,
-    });
-  }
-  return picked;
+export function countryPool(countries: readonly CountryMapSummary[]): CountryMapSummary[] {
+  return countries.filter((country) => territoryFor(country.isoCode) === undefined);
 }
 
 /**
- * Curated slugs ∩ published countries — the country mirror of `pickFeaturedProvinces`.
- *
- * It reads the MAP-SUMMARY payload rather than the plain country list, for the same reason the
- * province side does: the summary is the purpose-built lean payload that already carries the
- * one numeric fact a card shows, so the page joins one endpoint instead of two and the chip's
- * count is the count of entities the cards can actually resolve against. The plan left this
- * open as an assumption to VERIFY rather than guess (§12 #5) — `CountryMapSummaryDto` does
- * publish `population`, so no api work was needed and the card carries a fact.
+ * Today's provinces — drawn from ALL published provinces (81/81 eligible,
+ * → DEC 2026-08-05a §2).
  */
-export function pickFeaturedCountries(
+export function pickDailyProvinces(
+  summaries: readonly ProvinceMapSummary[],
+  locale: Locale,
+  instant: Date | string,
+  limit: number = FEATURED_LIMIT,
+): FeaturedProvince[] {
+  const pool = [...summaries].sort((a, b) => a.plateCode.localeCompare(b.plateCode));
+  const drawn = dailyDraw(pool, limit, `${istanbulDayKey(instant)}:provinces`);
+
+  return drawn.map((province) => ({
+    plateCode: province.plateCode,
+    name: province.nameTr,
+    region: province.region,
+    slug: locale === "en" ? province.slugEn : province.slugTr,
+    population: province.population,
+    populationYear: province.populationYear,
+  }));
+}
+
+/**
+ * Today's countries — drawn from {@link countryPool}, i.e. country rows only.
+ *
+ * The seed carries a different suffix from the province draw so the two rows are independent:
+ * one shared seed would move both grids in lockstep, and on a day whose hash lands low both
+ * would show their first-by-key entities together.
+ */
+export function pickDailyCountries(
   countries: readonly CountryMapSummary[],
   locale: Locale,
-  slugs: readonly string[] = FEATURED_COUNTRY_SLUGS,
+  instant: Date | string,
   limit: number = FEATURED_LIMIT,
 ): FeaturedCountry[] {
-  const published = new Map(countries.map((country) => [country.slugTr, country]));
+  const pool = countryPool(countries).sort((a, b) => a.isoCode.localeCompare(b.isoCode));
+  const drawn = dailyDraw(pool, limit, `${istanbulDayKey(instant)}:countries`);
 
-  const picked: FeaturedCountry[] = [];
-  for (const slug of slugs) {
-    if (picked.length >= limit) break;
-    const country = published.get(slug);
-    if (country === undefined) continue;
-    picked.push({
-      isoCode: country.isoCode,
-      name: locale === "en" ? country.nameEn : country.nameTr,
-      continent: country.continent,
-      slug: locale === "en" ? country.slugEn : country.slugTr,
-      population: country.population,
-      populationYear: country.populationYear,
-    });
-  }
-  return picked;
+  return drawn.map((country) => ({
+    isoCode: country.isoCode,
+    name: locale === "en" ? country.nameEn : country.nameTr,
+    continent: country.continent,
+    slug: locale === "en" ? country.slugEn : country.slugTr,
+    population: country.population,
+    populationYear: country.populationYear,
+  }));
 }

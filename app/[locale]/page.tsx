@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { FeaturedCards, type FeaturedCardItem } from "@/components/home/featured-cards";
-import { MiniTurkeyMap } from "@/components/home/mini-turkey-map";
 import { SeaToday } from "@/components/home/sea-today";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
@@ -11,8 +10,8 @@ import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
   featuredPopulationFact,
-  pickFeaturedCountries,
-  pickFeaturedProvinces,
+  pickDailyCountries,
+  pickDailyProvinces,
 } from "@/lib/home/featured";
 import {
   buildMarineHomeSummary,
@@ -57,8 +56,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * It used to be an `<h1>`, one sentence and two buttons in front of 81 provinces, ~196
  * countries, 30 marine reference points and a three-mode game — the UX review called it "the
  * product's weakest page and the one that will be seen most". The rebuild puts the substance
- * on it, in the owner's own order: a compressed hero with data-driven scope chips, the
- * Türkiye thumbnail, today's sea, featured entities, an invitation to the game.
+ * on it, in the owner's own order: a compressed hero with data-driven scope chips, a band
+ * pointing at the two map hubs, today's sea, today's entities, an invitation to the game.
+ *
+ * ## Two owner rulings from the live walkthrough
+ *
+ * The second section shipped as a decimated Türkiye thumbnail; the owner removed it
+ * (→ DEC 2026-08-05b — visible seams between provinces, no water layer) and kept its copy and
+ * its two links, which is why that band is now plain navigation and carries no ODbL chip: the
+ * notice is owed wherever the GEOMETRY is shown, and none is shown here any more. The card
+ * rows became a DAY-SEEDED draw (→ DEC 2026-08-05a); the mechanism, including why it is not
+ * `Math.random`, lives in `lib/home/featured.ts`. `new Date()` is read here and passed in, so
+ * the selection function stays pure: the page owns the clock, the library owns the rule. The
+ * route's ISR window is 900 s, so the draw turns over within a quarter-hour of Istanbul
+ * midnight — the heading says "bugün", not "şu an".
  *
  * ## Rendering: SSG → ISR, still full HTML in the first response
  *
@@ -80,7 +91,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *
  * ## What is deliberately NOT here
  *
- * No `ItemList` for the six featured cards (no rich result exists for it, and it would create
+ * No `ItemList` for the six daily cards (no rich result exists for it, and it would create
  * a second copy of the visible list to keep in sync forever — `SEO-POLICY.md` §B5.7). No
  * `SearchAction`/sitelinks-searchbox (Google retired it in Nov 2024). No breadcrumb (this is
  * the root). No second search box — the header owns site search, and a duplicate combobox
@@ -96,10 +107,9 @@ export default async function HomePage({ params }: PageProps) {
   const tDetail = await getTranslations("ProvinceDetail");
   const format = await getFormatter();
 
-  // Five independent reads, in parallel. Each of the two geo reads serves three jobs at once —
-  // the scope chip's count, the thumbnail's `data-region`, and the featured cards' identity
-  // and population — so the page joins the purpose-built map-summary payloads rather than a
-  // list plus a second call each.
+  // Five independent reads, in parallel. Each of the two geo reads serves two jobs at once —
+  // the scope chip's count and the daily cards' identity plus population — so the page joins
+  // the purpose-built map-summary payloads rather than a list plus a second call each.
   const [provinces, countries, marinePoints, marineOverview, marineLayers] = await Promise.all([
     getMapSummaryResilient(),
     getCountryMapSummaryResilient(),
@@ -136,7 +146,11 @@ export default async function HomePage({ params }: PageProps) {
     };
   };
 
-  const provinceCards: FeaturedCardItem[] = pickFeaturedProvinces(provinces, locale).map(
+  // ONE instant for both rows, read once: two `new Date()` calls could straddle midnight and
+  // put a "bugün" province row and a "bugün" country row from different days on one page.
+  const now = new Date();
+
+  const provinceCards: FeaturedCardItem[] = pickDailyProvinces(provinces, locale, now).map(
     (province) => ({
       id: province.plateCode,
       href: getPathname({
@@ -149,7 +163,7 @@ export default async function HomePage({ params }: PageProps) {
     }),
   );
 
-  const countryCards: FeaturedCardItem[] = pickFeaturedCountries(countries, locale).map(
+  const countryCards: FeaturedCardItem[] = pickDailyCountries(countries, locale, now).map(
     (country) => ({
       id: country.isoCode,
       href: getPathname({
@@ -202,19 +216,37 @@ export default async function HomePage({ params }: PageProps) {
         </div>
       </section>
 
-      <MiniTurkeyMap provinces={provinces} />
+      {/* The two map hubs, as a plain navigational band. This is what is left of the section
+          the Türkiye thumbnail used to head (→ DEC 2026-08-05b): heading, sentence and the two
+          links the owner kept, with no graphic between them — and therefore no ODbL chip
+          either. It is inline here rather than a component for the same reason the game band
+          below is: no data, no props, no branch. `<Link>` takes the UNLOCALIZED route and the
+          routing table localizes it — these are static hub paths, not slug routes, so nothing
+          here needs `getPathname`. */}
+      <section className="section" aria-labelledby="home-explore-heading">
+        <h2 id="home-explore-heading">{t("mapHeading")}</h2>
+        <p className={styles.exploreBody}>{t("mapBody")}</p>
+        <ul className={styles.exploreLinks}>
+          <li>
+            <Link href="/turkiye">{t("mapLinkLabel")}</Link>
+          </li>
+          <li>
+            <Link href="/dunya">{t("worldLinkLabel")}</Link>
+          </li>
+        </ul>
+      </section>
 
       <SeaToday summary={marine} scope={scope} />
 
       <FeaturedCards
-        headingId="home-featured-provinces"
-        heading={t("featuredProvinces")}
+        headingId="home-discover-provinces"
+        heading={t("discoverProvinces")}
         items={provinceCards}
       />
 
       <FeaturedCards
-        headingId="home-featured-countries"
-        heading={t("featuredCountries")}
+        headingId="home-discover-countries"
+        heading={t("discoverCountries")}
         items={countryCards}
       />
 

@@ -61,8 +61,8 @@
     "seaScope": "{points, plural, one {# reference point} other {# reference points}} across {basins, plural, one {# sea} other {# seas}}, in {provinces, plural, one {# coastal province} other {# coastal provinces}}.",
     "seaScopeFallback": "The offshore reference points and the measurement catalogue are on the sea page.",
     "seaLink": "Sea conditions along every coast",
-    "featuredProvinces": "Featured provinces",
-    "featuredCountries": "Featured countries",
+    "discoverProvinces": "Discover today: provinces",
+    "discoverCountries": "Discover today: countries",
     "gameHeading": "Test what you have learned on the map",
     "gameBody": "Three modes: find the region, find the province, find provinces region by region.",
     "gameCta": "Open the game"
@@ -262,7 +262,8 @@
     "AFRIKA": "Africa",
     "KUZEY_AMERIKA": "North America",
     "GUNEY_AMERIKA": "South America",
-    "OKYANUSYA": "Oceania"
+    "OKYANUSYA": "Oceania",
+    "ANTARKTIKA": "Antarctica"
   },
   "Dunya": {
     "metaTitle": "World Map — Countries",

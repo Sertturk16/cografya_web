@@ -61,8 +61,8 @@
     "seaScope": "{basins} denizde {points} referans noktası, {provinces} kıyı ili.",
     "seaScopeFallback": "Türkiye kıyılarındaki referans noktaları ve ölçüm kataloğu deniz sayfasında.",
     "seaLink": "Tüm kıyılarda deniz durumu",
-    "featuredProvinces": "Öne çıkan iller",
-    "featuredCountries": "Öne çıkan ülkeler",
+    "discoverProvinces": "Bugün keşfet: iller",
+    "discoverCountries": "Bugün keşfet: ülkeler",
     "gameHeading": "Öğrendiklerini haritada sına",
     "gameBody": "Üç mod: bölge bulma, il bulma, bölge bölge il bulma.",
     "gameCta": "Oyunu aç"
@@ -262,7 +262,8 @@
     "AFRIKA": "Afrika",
     "KUZEY_AMERIKA": "Kuzey Amerika",
     "GUNEY_AMERIKA": "Güney Amerika",
-    "OKYANUSYA": "Okyanusya"
+    "OKYANUSYA": "Okyanusya",
+    "ANTARKTIKA": "Antarktika"
   },
   "Dunya": {
     "metaTitle": "Dünya Haritası — Ülkeler",

@@ -5,9 +5,11 @@
    FOUR PROPERTIES ARE LOAD-BEARING, NOT COSMETIC:
 
    1. Every box that can be empty in one render and full in the next has a FIXED size
-      (`aspect-ratio` on the map frame, `min-height` on the cards). The value/no-value split
-      is decided server-side, so it cannot shift anything within a render — but the fixed
-      sizes are what keep the grid from reflowing between renders and what hold CLS < 0.1.
+      (`min-height` on the basin and entity cards). The value/no-value split is decided
+      server-side, so it cannot shift anything within a render — but the fixed sizes are what
+      keep the grids from reflowing between renders and what hold CLS < 0.1. The daily card
+      selection changes only across calendar days, i.e. only between renders, so it is the
+      same class of change and the same `min-height` covers it.
    2. Secondary text is --color-slate, never --color-taupe. Taupe is 3.86:1 on white:
       placeholder/decorative only, sub-AA for body copy (`ENGINEERING.md` §5).
    3. No `:hover`-only affordance. Every hover rule below has a matching resting state that
@@ -32,90 +34,32 @@
   margin: 18px 0 0;
 }
 
-/* ---- Mini Türkiye map ---- */
-.mapGrid {
-  display: grid;
-  gap: 24px;
-  align-items: center;
-}
+/* ---- Explore band (the two map hubs) ----
+   What is left of the section the mini Türkiye thumbnail used to head (→ DEC 2026-08-05b:
+   the owner removed the thumbnail; the copy and its two links stay). It is now a plain
+   navigational band — no graphic, and therefore NO ODbL attribution chip either: the notice
+   is owed wherever the GEOMETRY is shown, and no geometry is shown here any more. (The
+   marine ECMWF/Copernicus block at the bottom of the page is a different obligation on
+   different material and is untouched.)
 
-/* One measured breakpoint: below it the thumbnail sits above its copy, full width. */
-@media (min-width: 56rem) {
-  .mapGrid {
-    grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
-    gap: 32px;
-  }
-}
-
-.mapLink {
-  display: block;
-  text-decoration: none;
-}
-
-/* The RESERVED BOX. `aspect-ratio` matches the artifact's viewBox exactly (1000 × 429), so
-   the frame occupies its final height before the SVG paints and nothing below it moves. */
-.mapFrame {
-  display: block;
-  aspect-ratio: 1000 / 429;
-  background: var(--color-surface);
-  border: 1px solid var(--color-taupe); /* 3:1 boundary — header note 4 */
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.mapSvg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* Province outlines. `data-region` is written on every path but is NOT styled here: the
-   region palette and its mandatory legend are a single decision owed to `/turkiye` and this
-   thumbnail together (DESIGN.md §6.1 rule 5), and colouring one map first is how the two
-   would diverge. Colour arrives as one added block, exactly as `game-map.module.css` does it. */
-.mapSvg path {
-  fill: var(--province-fill);
-  stroke: var(--province-stroke);
-  stroke-width: 0.5px;
-  stroke-linejoin: round;
-}
-
-.mapLink:hover .mapFrame {
-  border-color: var(--color-primary);
-}
-
-.mapLink:hover .mapSvg path {
-  fill: var(--province-hover);
-}
-
-.mapLinkLabel {
-  display: inline-block;
-  margin-top: 12px;
-  font-weight: 700;
-  color: var(--color-primary-dark);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.mapLink:hover .mapLinkLabel {
-  color: var(--color-primary);
-}
-
-.mapCopy p {
+   No fixed box is needed here: the band's content is the same in every render, so it cannot
+   contribute to CLS. */
+.exploreBody {
   color: var(--color-slate);
   max-width: 46ch;
 }
 
-.mapAside {
+/* The two hub links, stacked. Semantically a list because it IS a list of two navigational
+   destinations, and a screen reader announcing "list, 2 items" is the correct summary. The
+   underline comes from the global link style — nothing here is hover-only. */
+.exploreLinks {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   font-weight: 600;
-}
-
-/* ODbL credit. Visible without interaction wherever the geometry is shown — that is the
-   obligation, not a styling preference. Small, but --color-slate rather than taupe. */
-.attribution {
-  margin: 12px 0 0;
-  font-size: 0.78rem;
-  color: var(--color-slate);
 }
 
 /* ---- Bugün denizler ---- */
