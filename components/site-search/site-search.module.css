@@ -117,7 +117,7 @@
    browser, and its `onBlur` guard keeps the panel open while focus stays inside the slot). With
    `:focus-within` the row drew its ring at the same time as the button drew the global one:
    two concentric 3px accent rings on the very tab stop next to the one this rule was written to
-   clean up — MEASURED, `kanit-b13-arama-kapat-*`. Worse than the duplication, the outer ring
+   clean up — MEASURED (PR #49 review, CR49-I2). Worse than the duplication, the outer ring
    then named the wrong component: it says "the input is focused" while focus is on the button.
    `:has()` is Baseline-available and this repo already ships it (`game-map.module.css`).
    `.input:focus` rather than `:focus-visible` keeps today's behaviour exactly: a text input
