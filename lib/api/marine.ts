@@ -118,7 +118,8 @@ export async function getMarineLayersResilient(): Promise<MarineLayer[]> {
 }
 
 /**
- * FAIL-SOFT point list, for the PROVINCE surface only.
+ * FAIL-SOFT point list, for the surfaces where the marine data is NOT the subject — the
+ * province pages and, since the rebuild, the homepage.
  *
  * Same URL, same ISR window and the same shared fetch entry as
  * `getMarinePointsResilient` — a different failure contract, because it is read from a
@@ -126,10 +127,12 @@ export async function getMarineLayersResilient(): Promise<MarineLayer[]> {
  * what preserves the last good render of them. On a province page the list is a GATE: it
  * answers "does this province have a coast", and the honest answer when it cannot be reached
  * is "we cannot tell right now", which means no section — never a 500 on a page about
- * Sinop's population.
+ * Sinop's population. The homepage reads it for the same class of reason: it feeds a scope
+ * chip and the value-less sea card, and an external provider chain may never turn the site's
+ * front door into a 500.
  *
- * The 27 coastal province pages read this on every regeneration, so its warnings go through
- * the shared limiter (see `lib/marine/warn-limiter.ts`).
+ * The 27 coastal province pages and the homepage all read this on every regeneration, so its
+ * warnings go through the shared limiter (see `lib/marine/warn-limiter.ts`).
  */
 export async function getMarinePointsSafe(): Promise<MarinePointListItem[]> {
   try {

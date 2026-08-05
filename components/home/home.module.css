@@ -1,0 +1,213 @@
+/* =============================================================================
+   Homepage layout (→ DEC 2026-08-04i §1). Token layer only — no brand hex (`#fff` is the
+   repo's established white, which has no token by design).
+
+   FOUR PROPERTIES ARE LOAD-BEARING, NOT COSMETIC:
+
+   1. Every box that can be empty in one render and full in the next has a FIXED size
+      (`min-height` on the basin and entity cards). The value/no-value split is decided
+      server-side, so it cannot shift anything within a render — but the fixed sizes are what
+      keep the grids from reflowing between renders and what hold CLS < 0.1. The daily card
+      selection changes only across calendar days, i.e. only between renders, so it is the
+      same class of change and the same `min-height` covers it.
+   2. Secondary text is --color-slate, never --color-taupe. Taupe is 3.86:1 on white:
+      placeholder/decorative only, sub-AA for body copy (`ENGINEERING.md` §5).
+   3. No `:hover`-only affordance. Every hover rule below has a matching resting state that
+      already carries the meaning (a real underline-able link, a bordered card).
+   4. EVERY BOX BORDER IS --color-taupe, NOT --color-border. Where a 1px border is a box's
+      ONLY boundary it is a non-text contrast surface and owes WCAG 1.4.11's 3:1:
+      --color-border (#ddd5cc) measures 1.45:1 on white, 1.37:1 on --color-bg and 1.21:1 on
+      --color-surface — invisible to a low-vision reader, and the card fills themselves are
+      only 1.06:1 against the page, so the border genuinely carries the separation. Taupe
+      clears it on all three grounds (3.86 / 3.64 / 3.21:1). Identical finding and identical
+      remedy as PR #44's A11Y-3 (`entity-index.module.css`); this is NOT the taupe trap
+      DESIGN.md §5 bans, which governs TEXT only.
+   ============================================================================= */
+
+/* ---- Hero scope chips ---- */
+.chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 18px 0 0;
+}
+
+/* ---- Explore band (the two map hubs) ----
+   What is left of the section the mini Türkiye thumbnail used to head (→ DEC 2026-08-05b:
+   the owner removed the thumbnail; the copy and its two links stay). It is now a plain
+   navigational band — no graphic, and therefore NO ODbL attribution chip either: the notice
+   is owed wherever the GEOMETRY is shown, and no geometry is shown here any more. (The
+   marine ECMWF/Copernicus block at the bottom of the page is a different obligation on
+   different material and is untouched.)
+
+   No fixed box is needed here: the band's content is the same in every render, so it cannot
+   contribute to CLS. */
+.exploreBody {
+  color: var(--color-slate);
+  max-width: 46ch;
+}
+
+/* The two hub links, stacked. Semantically a list because it IS a list of two navigational
+   destinations, and a screen reader announcing "list, 2 items" is the correct summary. The
+   underline comes from the global link style — nothing here is hover-only. */
+.exploreLinks {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+/* ---- Bugün denizler ---- */
+.basinGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  gap: 12px;
+}
+
+.basinCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 132px;
+  background: #fff;
+  border: 1px solid var(--color-taupe); /* 3:1 boundary — header note 4 */
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.basinLabel {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  line-height: 1.2;
+}
+
+.basinRow {
+  display: block;
+}
+
+.basinRowLabel {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-slate);
+}
+
+.basinRowValue {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+.basinRowNote {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--color-slate);
+}
+
+.seaVintage {
+  margin-top: 14px;
+  font-size: 0.82rem;
+  color: var(--color-slate);
+}
+
+.seaScope {
+  color: var(--color-slate);
+  max-width: 60ch;
+}
+
+.seaLink {
+  margin: 14px 0 0;
+  font-weight: 600;
+}
+
+/* ---- Featured entity cards ---- */
+.cardGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+/* The WHOLE card is the anchor: one target, one accessible name, nothing interactive nested
+   inside it. `min-height` keeps a card whose fact row is absent the same height as its
+   neighbours. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 116px;
+  background: #fff;
+  border: 1px solid var(--color-taupe); /* 3:1 boundary — header note 4 */
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  text-decoration: none;
+  color: var(--color-ink);
+}
+
+.card:hover {
+  border-color: var(--color-primary);
+}
+
+.cardName {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.card:hover .cardName {
+  color: var(--color-primary);
+}
+
+.cardMeta {
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+.cardFact {
+  margin-top: auto;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+.cardFactValue {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* ---- Game invite band ---- */
+/* A BAND, not a card with a lone button in the middle of it: the UX review filed that exact
+   pattern on `/turkiye` as a defect, and reproducing it here would ship a known fault. */
+.gameBand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-taupe); /* 3:1 boundary — header note 4 */
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+}
+
+.gameHeading {
+  margin-bottom: 4px;
+}
+
+.gameBody {
+  margin: 0;
+  color: var(--color-slate);
+  max-width: 52ch;
+}

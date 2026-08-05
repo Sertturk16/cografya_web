@@ -66,6 +66,29 @@ export async function getCountriesResilient(): Promise<CountryListItem[]> {
 }
 
 /**
+ * Build-safe country map summary — the country mirror of `getMapSummaryResilient()`
+ * (`lib/api/provinces.ts`), which documents the build-vs-runtime split in full.
+ *
+ * At BUILD an api outage yields `[]` so web CI (which has no api service) can still build; at
+ * RUNTIME it re-throws, so a transient blip leaves the last good static page in place rather
+ * than caching one that silently lost its country data. Used by the homepage, whose featured
+ * country cards need the numeric fields the plain list does not carry.
+ */
+export async function getCountryMapSummaryResilient(): Promise<CountryMapSummary[]> {
+  try {
+    return await getCountryMapSummary();
+  } catch (error) {
+    if (isProductionBuild()) {
+      console.warn(
+        `[countries] map-summary fetch failed during build; deferring to on-demand ISR. ${String(error)}`,
+      );
+      return [];
+    }
+    throw error;
+  }
+}
+
+/**
  * Index any ISO-code-bearing payload by its `isoCode` (the map's shape↔data join, the
  * neighbour cross-link resolution, …). Generic over the item type so the list and the
  * map-summary reuse one indexer. ISO codes are the api's uppercase alpha-2 values,

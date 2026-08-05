@@ -45,7 +45,27 @@
     "heading": "Explore Türkiye and the world through geography",
     "lede": "Free, sourced geography pages for the 81 provinces of Türkiye and the countries of the world.",
     "ctaMap": "Explore the Map",
-    "ctaAbout": "About the Platform"
+    "ctaAbout": "About the Platform",
+    "chipProvinces": "{count, plural, one {# province} other {# provinces}}",
+    "chipCountries": "{count, plural, one {# country} other {# countries}}",
+    "chipMarine": "{basins, plural, one {# sea} other {# seas}} · {points, plural, one {# point} other {# points}}",
+    "mapHeading": "The provinces of Türkiye",
+    "mapBody": "Population, area, climate, landforms and hydrography for every province.",
+    "mapLinkLabel": "Map of Türkiye and the province list",
+    "worldLinkLabel": "World map and the country list",
+    "seaHeadingValues": "The seas today",
+    "seaHeadingNoValues": "The coasts of Türkiye",
+    "seaTemperature": "Sea surface temperature",
+    "seaWave": "Wave height",
+    "seaMedian": "{count, plural, one {median of # point} other {median of # points}}",
+    "seaScope": "{points, plural, one {# reference point} other {# reference points}} across {basins, plural, one {# sea} other {# seas}}, in {provinces, plural, one {# coastal province} other {# coastal provinces}}.",
+    "seaScopeFallback": "The offshore reference points and the measurement catalogue are on the sea page.",
+    "seaLink": "Sea conditions along every coast",
+    "discoverProvinces": "Discover today: provinces",
+    "discoverCountries": "Discover today: countries",
+    "gameHeading": "Test what you have learned on the map",
+    "gameBody": "Three modes: find the region, find the province, find provinces region by region.",
+    "gameCta": "Open the game"
   },
   "Map": {
     "mapTitle": "Map of the provinces of Türkiye",
@@ -242,7 +262,8 @@
     "AFRIKA": "Africa",
     "KUZEY_AMERIKA": "North America",
     "GUNEY_AMERIKA": "South America",
-    "OKYANUSYA": "Oceania"
+    "OKYANUSYA": "Oceania",
+    "ANTARKTIKA": "Antarctica"
   },
   "Dunya": {
     "metaTitle": "World Map — Countries",

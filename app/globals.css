@@ -463,11 +463,15 @@ main {
 }
 
 /* ---- Hero (home) ---- */
+/* COMPRESSED from 40px to 26px block padding (→ DEC 2026-08-04i §1). The UX review's
+   complaint was "half a screen of empty beige below it", and the fix is not a bigger hero —
+   it is pulling the second section up so the Türkiye thumbnail's top edge clears the fold at
+   1440×900. The hero keeps its own scale; only the air around it shrinks. */
 .hero {
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 40px 32px;
+  padding: 26px 32px;
 }
 
 .hero h1 {
