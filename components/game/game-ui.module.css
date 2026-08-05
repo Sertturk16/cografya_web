@@ -70,16 +70,29 @@
   color: var(--color-slate);
 }
 
-/* The round's live region. It keeps its line height when empty so the block below it does
-   not jump each time feedback appears and clears. */
+/* The round's live region. Its height is RESERVED so the map below does not move each time
+   feedback appears and clears.
+   `height`, not `min-height`, and that is the fix: at `min-height: 1.5em` the empty line was
+   1.5em tall but the FILLED one was taller, because the 700-weight ✓/✕/▸ glyph raises the
+   line box a fraction past the text's own. Measured on the running build, the map's top edge
+   moved 307.86px → 309.38px the moment the first feedback appeared — the ~3px jump the UX
+   tour reported (B31), 1.52px of it real.
+
+   THE FIX IS THE EXPLICIT `line-height`, NOT A FIXED HEIGHT. Pinning `height` did remove
+   the jump, and it also clipped the line the moment the text needed two of them — at 200%
+   text zoom, or with the longer EN retry sentence at 320px (→ PR #48 review CR48-I2). With
+   the line box pinned, the empty state and the one-line state are the same height by
+   construction, so `min-height` reserves exactly that and a genuinely wrapped sentence is
+   still allowed to push. A rare 1-line shift beats permanently unreadable feedback. */
 .feedback {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
   gap: 6px;
   margin: 0;
-  min-height: 1.5em;
+  min-height: 1.6em;
   font-size: 0.95rem;
+  line-height: 1.6;
   color: var(--color-slate);
 }
 
@@ -309,13 +322,15 @@
 .missedPlain {
   display: inline-block;
   padding: 5px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: #fff;
   font-size: 0.85rem;
 }
 
+/* A chip that IS a link: it goes to that province's page, so it is allowed to look like
+   something you press. */
 .missedLink {
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: #fff;
   color: var(--color-primary-dark);
   text-decoration: none;
 }
@@ -325,6 +340,11 @@
   text-decoration: underline;
 }
 
+/* A chip that is NOT a link — the bölge mode, where a region has no page of its own yet.
+   It used to wear the same white pill with a border as its clickable twin, so the end
+   screen offered seven buttons that did nothing when pressed (owner live tour, 2026-08-05,
+   finding #7). Plain text now, in the same row rhythm: no border, no surface, no press
+   affordance. The il modes are untouched — their chips really do lead somewhere. */
 .missedPlain {
   color: var(--color-slate);
 }

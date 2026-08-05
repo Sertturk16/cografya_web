@@ -4,12 +4,23 @@
    map-chrome TOKENS from app/globals.css and nothing else, so a future game state colour
    can never bleed into the /turkiye or /dunya maps. */
 
+/* EDGE TO EDGE (owner, 2026-08-05). The card used to hold the map inside 10-20px of its own
+   padding, so on the widest screens the country was drawn smaller than the panel that
+   contained it for no reason anyone could see. The padding is gone; the border, the radius
+   and the parchment stay, and `overflow: hidden` moves here so the map is clipped by the
+   rounded corner instead of squaring it off.
+   THE TWO OVERLAYS ARE UNAFFECTED, and that was checked rather than assumed: both the zoom
+   controls (`map.module.css` `.zoomControls`) and the ODbL credit (`.attribution` below) are
+   positioned against the STAGE, not against this card, so they keep their own 12-14px inset
+   and simply travel outward with it. The frame's padding was never what held them off the
+   map — which is also why removing it cannot be the cause of the mobile overlap (B8, PR-4b). */
 .frame {
   position: relative;
+  overflow: hidden;
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: clamp(10px, 2vw, 20px);
+  padding: 0;
 }
 
 /* FIXED-SIZE STAGE. This is the FALLBACK ratio — MAP_VIEWBOX's own 1000 ÷ 429 = 2.331 — for
@@ -197,6 +208,36 @@
   pointer-events: none;
 }
 
+/* ---- BÖLGE MODU SUYU (owner canlı tur, 2026-08-05, bulgu #5) -----------------------------
+   The game's own wrapper around the shared inland-water layer (`game-map.tsx`), and the ONE
+   place the owner's bölge-mode exception is expressed.
+
+   THE DEFAULT IS NOT CHANGED. Water swallows the click everywhere else — that is
+   DEC 2026-08-02k md. 5, `inland-water.module.css` explains it at length, and
+   `inland-water-layer.contract.test.ts` fails the build if anyone puts `pointer-events:
+   none` in that file. Both il modes (81 il, bölge bölge il) therefore behave exactly as
+   before: a mid-lake click answers nothing, because there the question IS one province and
+   the lake is not it.
+
+   BÖLGE MODE IS A DIFFERENT QUESTION. The target is a whole region and any of its provinces
+   answers it, so a click inside Isparta means "Akdeniz" no matter what is drawn on top of
+   the spot the finger landed on. With the water holding the pointer, the middle of Isparta
+   resolved to nothing and the map ignored the player — measurably: the body centre of that
+   province matched no shape at all in the owner's tour.
+   `pointer-events: none` lets the click fall through to the hit twin underneath, which is
+   precisely the intended answer here. The water's LOOK is untouched.
+
+   THE CHILD, NOT THE WRAPPER, and this was caught by the rendered-sample run rather than by
+   reading: `pointer-events` IS inherited, but the shared layer sets `pointer-events: auto` on
+   ITSELF (`inland-water.module.css`, deliberately, as the ruling's own guard). An inherited
+   `none` therefore loses to the layer's explicit `auto` and the lake kept swallowing the
+   click with every check green. The rule has to name the element that declares `auto`, so
+   the wrapper's job is to be the SELECTOR ANCHOR — `> *` reaches the layer group itself,
+   outranks its single-class rule, and the water's own paths inherit from there. */
+.stage[data-game-mode="regions"] .waterHost > * {
+  pointer-events: none;
+}
+
 /* HIDDEN BY DEFAULT, and `display` rather than `visibility` or `opacity` on purpose: a
    `display: none` subtree is not rendered, so its filter is never evaluated. That is what
    keeps six unused silhouettes free, and it is why the seven `:has()` rules further down set
@@ -304,11 +345,33 @@
   fill: var(--game-reveal);
 }
 
+/* THE SHOWN ANSWER — now the one state the player waits on, so it is the one that has to
+   survive being looked at.
+   The line is WHITE (--game-reveal-edge) and reads because the fill under it is a near-black
+   charcoal: measured on the running build, the base twin computes `rgb(63 58 54)` and this
+   line `rgb(255 255 255)` at 3px. Four signals carry the state — the fill, this line, the
+   marching dashes and the sentence in the live region — so no single one of them is load
+   bearing on its own (DESIGN.md §6.1 rule 3).
+   TWO DECLARATIONS WERE TRIED AND REMOVED (→ PR #48 review CR-M1/CR-M2). `paint-order:
+   stroke` did nothing measurable here: the hit twin has `fill: none`, so there is no fill
+   for the stroke to be ordered against. A `drop-shadow` halo was worse than nothing: a CSS
+   filter on an SVG element is evaluated in that element's own user space, so its 1.5px blur
+   would have grown with the map — the same trap `game-map.tsx` documents for the region
+   outline's `feMorphology` radius, which needs active compensation to avoid a ~25px band at
+   12×. A decorative halo is not worth a second zoom-compensation mechanism.
+
+   THE ANIMATION IS FINITE. It used to run `infinite`, which was harmless while the reveal
+   cleared itself after 2400 ms; now that the answer waits for "Devam" it would move for as
+   long as the player reads, and WCAG 2.2.2 gives moving content a five-second budget before
+   it must be pausable (→ PR #48 review A11Y48-I1). Four one-second passes catch the eye and
+   then settle to a static dashed outline, which is what the player actually reads the map
+   with. `forwards` keeps the settled frame; `prefers-reduced-motion` still removes the
+   motion entirely at the end of this file. */
 .hitEdge[data-state="reveal"] {
   stroke: var(--game-reveal-edge);
   stroke-width: 3;
   stroke-dasharray: 6 4;
-  animation: gameReveal 1s ease-in-out infinite;
+  animation: gameReveal 1s ease-in-out 4 forwards;
 }
 
 @keyframes gameReveal {
@@ -546,4 +609,11 @@
   background: var(--scrim-bg);
   padding: 3px 8px;
   border-radius: 6px;
+}
+
+/* The two credits are separate elements now, not one paragraph split by a <br> — see the
+   markup note in `game-map.tsx`. `display: block` is what keeps the rendered result
+   identical while the TEXT stops running together for a screen reader and for copy-paste. */
+.attributionLine {
+  display: block;
 }

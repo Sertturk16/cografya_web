@@ -1,7 +1,7 @@
 import { GAME_CONFIG, type GameModeId } from "./config";
 
 // Re-exported so the end screen has ONE import for everything it needs to draw a result.
-export { MAX_STARS } from "./config";
+export { MAX_STARS, STAR_THRESHOLDS } from "./config";
 
 /**
  * The round engine (SPEC §5; mechanics locked by DEC 2026-07-30f/30h) — pure, DOM-free and
@@ -266,23 +266,17 @@ export function summarizeRound(state: RoundState): RoundSummary {
   };
 }
 
-/**
- * The HUD's running score pill (→ owner design direction, 2026-07-30).
+/*
+ * `runningScore()` used to live here — the HUD's live score pill, averaged over the
+ * questions answered so far. It is GONE, function and tests, because the owner removed the
+ * pill (2026-08-05 live tour): the score is not shown while the round is being played, only
+ * at the end. That is the same ruling DEC 2026-07-30m already made about the per-question
+ * value, one level up.
  *
- * Averaged over the questions ANSWERED SO FAR, not over the whole pool — the two differ
- * mid-round, and only this one is honest as a live figure: the pool average starts at 0 and
- * creeps up no matter how well you are playing, which reads as a punishment for being on
- * question 3 of 81. This one starts where the play is and converges on `summarizeRound`'s
- * final score exactly, because at the last question "answered" IS the pool.
- *
- * `null` before the first answer: there is nothing to average yet, and printing "100"
- * would be a claim about a round that has not been played.
+ * Deleted rather than kept "in case": it had exactly one caller, an engine export nobody
+ * reads is state that can drift with nothing to catch it, and the calculation is three
+ * lines if a future HUD ever wants it back.
  */
-export function runningScore(state: RoundState): number | null {
-  if (state.results.length === 0) return null;
-  const points = state.results.reduce((sum, result) => sum + result.score, 0);
-  return Math.round(points / state.results.length);
-}
 
 /** Stars for a final score. A presentation grade, thresholds from the config. */
 export function starsForScore(score: number): number {

@@ -90,7 +90,12 @@ export async function GameScreen({ locale, mode, modeName, region = null }: Game
         />
       </div>
 
-      <GameMap shapes={shapes} viewBox={viewBox} title={t("mapTitle", { mode: modeName })} />
+      <GameMap
+        shapes={shapes}
+        viewBox={viewBox}
+        title={t("mapTitle", { mode: modeName })}
+        mode={mode}
+      />
 
       {/* ACTION SLOT — the island portals its controls here, so they sit under the map (the
           thumb's half of a phone screen) while staying part of one island's state. Its

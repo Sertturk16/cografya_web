@@ -2,6 +2,9 @@
 
 import {
   Fragment,
+  // Aliased: the delegated SVG listener below takes the DOM's `MouseEvent`, and an unaliased
+  // React import of the same name would shadow it in this file.
+  type MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -19,7 +22,6 @@ import {
   createRound,
   currentTargetId,
   revealRound,
-  runningScore,
   summarizeRound,
   type AnswerOutcome,
   type RoundState,
@@ -101,12 +103,26 @@ const HIT_SHAPES = '[data-map-layer="hit"] [data-plate]';
  */
 const PAINTED_SHAPES = '[data-map-layer="base"] [data-plate], [data-map-layer="hit"] [data-plate]';
 
-/** Milliseconds the wrongly-picked shape stays marked before it returns (SPEC §5.3). */
-const WRONG_FLASH_MS = 700;
-/** Auto-advance delay after a right answer. */
-const CORRECT_HOLD_MS = 900;
-/** Auto-advance delay after the answer is shown — longer, because it has to be read. */
-const REVEAL_HOLD_MS = 2400;
+/**
+ * Milliseconds the wrongly-picked shape stays marked before it returns (SPEC §5.3).
+ *
+ * Raised from 700 ms after the 2026-08-05 UX tour reported the wrong answer as "marked with
+ * the same black stroke as hover" (B31). MEASURED, not guessed: at t+150 ms the picked shape
+ * really is red (`rgb(192 57 43)` fill + dark dotted line) and by t+800 ms it is already
+ * back to resting — the tour's screenshot was simply later than the flash. A signal that is
+ * gone before the eye returns from the question line to the map is, for the player, a signal
+ * that never happened.
+ */
+const WRONG_FLASH_MS = 1100;
+/**
+ * Auto-advance delay after a right answer. Also raised (900 → 1200) for the reason above:
+ * the tour read the correct answer as having NO positive feedback (B23) while
+ * `feedbackCorrect` was on screen the whole time — for 900 ms.
+ *
+ * A right answer keeps its timer: the player is already looking at the map, the shape stays
+ * green for the rest of the round, and nothing here has to be READ.
+ */
+const CORRECT_HOLD_MS = 1200;
 
 type Feedback = Exclude<AnswerOutcome, { kind: "ignored" }>;
 
@@ -274,6 +290,28 @@ export function GameIsland({
     if (next.status === "finished") setSummaryDismissed(false);
   }, [commitRound]);
 
+  /**
+   * "Devam", as pressed by a POINTER.
+   *
+   * The second click of a double-click is dropped — the same guard, for a closely related
+   * reason, that the map's own listener carries. Here the mechanism is React's: "Cevabı
+   * göster" and "Devam" render at the same position with the same element type, so React
+   * reuses the DOM node and swaps only the handler. A double-click therefore lands on BOTH
+   * — click 1 shows the answer, click 2 advances straight past it — and the shown answer
+   * flashes for the 150-300 ms between them. That is exactly the defect this PR exists to
+   * remove, reachable by an impatient double-tap (→ PR #48 review CR48-I1).
+   *
+   * `detail` is the browser's own click counter and is 0 for a keyboard activation, so
+   * Enter and Space on the button are untouched. The timer path does not go through here.
+   */
+  const onNextClick = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      if (event.detail > 1) return;
+      goNext();
+    },
+    [goNext],
+  );
+
   /** "Cevabı göster" — 0 points for this question, then on to the next (DEC 2026-07-30h). */
   const showAnswer = useCallback(() => {
     const { state, outcome } = revealRound(roundRef.current);
@@ -387,12 +425,13 @@ export function GameIsland({
       svg.removeAttribute("focusable");
     }
 
-    // Two attributes, because they answer two different questions. `data-game-mode` is
-    // what the map LOOKS like (the region tint, which stays on behind the end screen);
-    // `data-game-active` is whether it is a control surface right now (cursor and focus
-    // ring), which stops the moment the round finishes.
+    // `data-game-active` — whether the map is a control surface RIGHT NOW (cursor, focus
+    // ring), which stops the moment the round finishes. Its companion `data-game-mode` is
+    // no longer written here: it says what the map LOOKS like, the server has always known
+    // it, and one of its rules (the region mode's transparent water, `game-map.module.css`)
+    // must hold from the first response rather than from the island's first effect. One
+    // writer, and it is `game-map.tsx`.
     if (stage instanceof HTMLElement) {
-      stage.dataset.gameMode = mode;
       if (interactive) stage.dataset.gameActive = "true";
       else delete stage.dataset.gameActive;
     }
@@ -423,7 +462,7 @@ export function GameIsland({
       svg.setAttribute("role", "img");
       svg.setAttribute("focusable", "false");
     }
-  }, [interactive, mode, shapes]);
+  }, [interactive, shapes]);
 
   // --- DOM sync: answer marks ----------------------------------------------------------------
   useEffect(() => {
@@ -457,10 +496,25 @@ export function GameIsland({
     return () => window.clearTimeout(timer);
   }, [wrongAnswer]);
 
+  /**
+   * Auto-advance — for a RIGHT answer only (→ B3, rider #1 of Kâşif PR-4a).
+   *
+   * A shown answer used to advance itself after 2400 ms, and that is the defect the owner
+   * ranked first. The mechanism was never broken: measured on the running build, the
+   * revealed province carries `data-state="reveal"` on both twins (fill `rgb(63 58 54)`,
+   * 3px dashed line) and the sentence "▸ Bolu burası." is on screen from t+150 ms to
+   * t+2400 ms. What was broken is the PRODUCT: the player asks for the answer, their eyes
+   * are on the button they just pressed — under the map — and by the time they look up the
+   * map has moved on. The one moment the whole mode exists to create ("Niğde neredeymiş?")
+   * was spent on a timer nobody was watching.
+   *
+   * So a shown answer now WAITS. It stays until the player presses "Devam", which is also
+   * the strictly better answer for WCAG 2.2.1: the timed transition is not merely
+   * pausable, it is gone. `advanceRound` is unchanged — the button was always its caller.
+   */
   useEffect(() => {
-    if (round.status !== "resolved" || !feedback) return;
-    const hold = feedback.kind === "correct" ? CORRECT_HOLD_MS : REVEAL_HOLD_MS;
-    const timer = window.setTimeout(goNext, hold);
+    if (round.status !== "resolved" || feedback?.kind !== "correct") return;
+    const timer = window.setTimeout(goNext, CORRECT_HOLD_MS);
     return () => window.clearTimeout(timer);
   }, [round, feedback, goNext]);
 
@@ -485,7 +539,6 @@ export function GameIsland({
   // --- render -------------------------------------------------------------------------------------
   const finished = round.status === "finished";
   const summary = useMemo(() => summarizeRound(round), [round]);
-  const liveScore = runningScore(round);
 
   /**
    * NOTHING TO ASK — say so, and stop.
@@ -527,34 +580,51 @@ export function GameIsland({
     }
   }
 
+  /**
+   * The control row under the map.
+   *
+   * NOTHING while the end-of-round dialog is open, and that absence is a fix: the dialog
+   * carries its own "Tekrar oyna" and this row carried a second one, so the finished screen
+   * offered the same action twice — once inside the modal and once behind it (owner + UX
+   * tour, screenshot `30`). The row's height is reserved in CSS either way, so removing its
+   * contents moves nothing (CLS budget, CONVENTIONS §6 #9).
+   *
+   * While a question is RESOLVED, "Devam" is the primary control. Since a shown answer no
+   * longer advances itself, it is the only way forward — and it must not sit next to a
+   * louder "Baştan başlat" that throws the whole round away.
+   */
   const actions = finished ? (
-    <div className={styles.actions}>
-      <button type="button" className={styles.primaryAction} onClick={restartRound}>
-        {t("summaryReplay")}
-      </button>
-      {/* Rendered only when there IS a dismissed summary to reopen. Not `disabled`: this
-          repo's own recorded lesson is that a control which is present but does nothing is
-          worse than one that is absent — it takes a tab stop and explains nothing. */}
-      {summaryDismissed ? (
+    summaryDismissed ? (
+      <div className={styles.actions}>
+        <button type="button" className={styles.primaryAction} onClick={restartRound}>
+          {t("summaryReplay")}
+        </button>
         <button type="button" className={styles.action} onClick={() => setSummaryDismissed(false)}>
           {t("summaryReopen")}
         </button>
-      ) : null}
-    </div>
+      </div>
+    ) : null
   ) : (
     <div className={styles.actions}>
       {round.status === "resolved" ? (
-        <button type="button" className={styles.action} onClick={goNext}>
-          {t("next")}
-        </button>
+        <>
+          <button type="button" className={styles.primaryAction} onClick={onNextClick}>
+            {t("next")}
+          </button>
+          <button type="button" className={styles.action} onClick={restartRound}>
+            <RestartIcon size={18} /> {t("restart")}
+          </button>
+        </>
       ) : (
-        <button type="button" className={styles.action} onClick={showAnswer}>
-          {t("showAnswer")}
-        </button>
+        <>
+          <button type="button" className={styles.action} onClick={showAnswer}>
+            {t("showAnswer")}
+          </button>
+          <button type="button" className={styles.primaryAction} onClick={restartRound}>
+            <RestartIcon size={18} /> {t("restart")}
+          </button>
+        </>
       )}
-      <button type="button" className={styles.primaryAction} onClick={restartRound}>
-        <RestartIcon size={18} /> {t("restart")}
-      </button>
     </div>
   );
 
@@ -571,6 +641,12 @@ export function GameIsland({
         )}
       </p>
 
+      {/* ONE pill. The running-score pill that used to sit next to it is GONE — owner
+          ruling, 2026-08-05 live tour, and it is the same philosophy DEC 2026-07-30m
+          already applied to the per-question value: scoring works silently and surfaces
+          once, at the end. A number that climbs while you play invites you to play for the
+          number instead of for the map, and on question 3 of 81 it is not even a fair
+          summary of how it is going. */}
       <p className={styles.pills}>
         <span className={styles.pill}>
           {t("metaProgress", {
@@ -578,12 +654,6 @@ export function GameIsland({
             total: round.order.length,
           })}
         </span>
-        {/* The running score, averaged over the questions ANSWERED so far, so it lives on
-            the same 0-100 scale as the final result and converges on it exactly. Absent
-            until the first answer: there is nothing to average yet. */}
-        {liveScore !== null ? (
-          <span className={styles.pill}>{t("metaScore", { score: liveScore })}</span>
-        ) : null}
       </p>
 
       {/* Every state the map expresses with colour is ALSO said in words here — colour is

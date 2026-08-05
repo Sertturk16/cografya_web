@@ -8,7 +8,6 @@ import {
   MAX_STARS,
   pointsForAttempt,
   revealRound,
-  runningScore,
   shuffle,
   starsForScore,
   summarizeRound,
@@ -338,17 +337,29 @@ describe("summarizeRound", () => {
     expect(summarizeRound(state).missedTargetIds).toEqual([]);
   });
 
-  it("lists a target found after real searching as a REVIEW item, not a failure", () => {
+  // The threshold is ONE wrong click (`GAME_CONFIG.reviewWrongThreshold`, lowered
+  // 2026-08-05): "found, but not on the first try" is exactly what a learning list is for,
+  // and at two, a target missed once was reported nowhere at all — the end screen said
+  // "Hepsini bildin." to a player who had just missed one (UX tour B9 / Ö5).
+  it("lists every target that was NOT found on the first click as a REVIEW item", () => {
     let state = startRound(POOL);
     const asked = [...state.order];
-    state = solve(state, 0); // clean
-    state = solve(state, 1); // one slip — not review-worthy
+    state = solve(state, 0); // clean — first click
+    state = solve(state, 1); // one slip — review
     state = solve(state, 2); // two misses — review
     state = solve(state, 5); // five misses — review
     const summary = summarizeRound(state);
 
-    expect(summary.reviewTargetIds).toEqual([asked[2], asked[3]]);
+    expect(summary.reviewTargetIds).toEqual([asked[1], asked[2], asked[3]]);
     expect(summary.missedTargetIds).toEqual([]);
+  });
+
+  it("keeps a first-click answer out of the review list", () => {
+    let state = startRound(POOL);
+    state = solve(state, 0);
+    state = solve(state, 0);
+
+    expect(summarizeRound(state).reviewTargetIds).toEqual([]);
   });
 
   it("never puts a target in both the missed and the review list", () => {
@@ -397,33 +408,9 @@ describe("summarizeRound", () => {
   });
 });
 
-describe("runningScore", () => {
-  // The HUD pill. It is averaged over the questions ANSWERED SO FAR, not over the pool —
-  // the pool average starts at 0 and creeps up however well the round is going, which is
-  // the opposite of what a live figure should say.
-  it("is absent before the first answer", () => {
-    expect(runningScore(startRound(POOL))).toBeNull();
-  });
-
-  it("averages only the questions answered so far", () => {
-    let state = startRound(POOL);
-    state = solve(state, 0); // 100
-    expect(runningScore(state)).toBe(100);
-    state = solve(state, 1); // 50
-    expect(runningScore(state)).toBe(75);
-  });
-
-  it("converges on the final score exactly once the pool is exhausted", () => {
-    let state = startRound(POOL);
-    state = solve(state, 0);
-    state = solve(state, 1);
-    state = solve(state, 2);
-    state = advanceRound(revealRound(state).state);
-
-    expect(state.status).toBe("finished");
-    expect(runningScore(state)).toBe(summarizeRound(state).score);
-  });
-});
+// `runningScore` had its own describe block here. Both the function and the HUD pill it
+// fed were removed by owner ruling (2026-08-05): the score is not shown while the round is
+// played. The tests went with the code they described — there is nothing left to assert.
 
 describe("the removed clock and snapshot (DEC 2026-07-30m/30n)", () => {
   // A guard, not a formality: the seconds display and the localStorage snapshot were both
