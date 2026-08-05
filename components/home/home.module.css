@@ -1,7 +1,8 @@
 /* =============================================================================
-   Homepage layout (→ DEC 2026-08-04i §1). Token layer only — no literal hex.
+   Homepage layout (→ DEC 2026-08-04i §1). Token layer only — no brand hex (`#fff` is the
+   repo's established white, which has no token by design).
 
-   THREE PROPERTIES ARE LOAD-BEARING, NOT COSMETIC:
+   FOUR PROPERTIES ARE LOAD-BEARING, NOT COSMETIC:
 
    1. Every box that can be empty in one render and full in the next has a FIXED size
       (`aspect-ratio` on the map frame, `min-height` on the cards). The value/no-value split
@@ -11,6 +12,14 @@
       placeholder/decorative only, sub-AA for body copy (`ENGINEERING.md` §5).
    3. No `:hover`-only affordance. Every hover rule below has a matching resting state that
       already carries the meaning (a real underline-able link, a bordered card).
+   4. EVERY BOX BORDER IS --color-taupe, NOT --color-border. Where a 1px border is a box's
+      ONLY boundary it is a non-text contrast surface and owes WCAG 1.4.11's 3:1:
+      --color-border (#ddd5cc) measures 1.45:1 on white, 1.37:1 on --color-bg and 1.21:1 on
+      --color-surface — invisible to a low-vision reader, and the card fills themselves are
+      only 1.06:1 against the page, so the border genuinely carries the separation. Taupe
+      clears it on all three grounds (3.86 / 3.64 / 3.21:1). Identical finding and identical
+      remedy as PR #44's A11Y-3 (`entity-index.module.css`); this is NOT the taupe trap
+      DESIGN.md §5 bans, which governs TEXT only.
    ============================================================================= */
 
 /* ---- Hero scope chips ---- */
@@ -49,7 +58,7 @@
   display: block;
   aspect-ratio: 1000 / 429;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-taupe); /* 3:1 boundary — header note 4 */
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
@@ -125,7 +134,7 @@
   gap: 8px;
   min-height: 132px;
   background: #fff;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-taupe); /* 3:1 boundary — header note 4 */
   border-radius: var(--radius);
   padding: 14px 16px;
 }
@@ -196,7 +205,7 @@
   gap: 4px;
   min-height: 116px;
   background: #fff;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-taupe); /* 3:1 boundary — header note 4 */
   border-radius: var(--radius);
   padding: 16px 18px;
   text-decoration: none;
@@ -244,7 +253,7 @@
   justify-content: space-between;
   gap: 16px;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-taupe); /* 3:1 boundary — header note 4 */
   border-radius: var(--radius-lg);
   padding: 20px 24px;
 }

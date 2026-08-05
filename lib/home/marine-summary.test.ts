@@ -108,6 +108,43 @@ describe("buildMarineHomeSummary", () => {
     }
   });
 
+  /**
+   * THE DIVERGENT POINT ITSELF — the one state that justifies `marineSummaryShowsValues`
+   * existing at all, asserted from both sides at once.
+   *
+   * A payload that is publishable (`dataAvailable: true`, points present) but whose every
+   * field came back non-`ok` passes `/deniz`'s overview gate and yields ZERO cards here. If a
+   * later refactor "simplifies" the two signals into one, the homepage renders "Bugün
+   * denizler" over an empty grid — the broken promise the whole shape exists to prevent — and
+   * every other test in this file would still pass. This one would not.
+   */
+  it("keeps the two signals apart when the payload is publishable but every value is not ok", () => {
+    const payload = overview([
+      block(
+        {},
+        {
+          sst: { status: "no_data", value: null },
+          wave: { status: "not_supported", value: null },
+        },
+      ),
+      block(
+        { seaBasin: "aegean", coastLabelTr: "B denizi" },
+        {
+          sst: { status: "unavailable", value: null },
+          wave: { status: "no_data", value: null },
+        },
+      ),
+    ]);
+
+    // The overview gate says yes...
+    expect(marineShowsValues(payload)).toBe(true);
+    // ...and the summary still has nothing to show, so the heading must not claim otherwise.
+    const summary = buildMarineHomeSummary(payload, "tr");
+    expect(summary.basins).toEqual([]);
+    expect(summary.values).toEqual([]);
+    expect(marineSummaryShowsValues(summary)).toBe(false);
+  });
+
   it("takes the median of the ok values only", () => {
     const summary = buildMarineHomeSummary(
       overview([

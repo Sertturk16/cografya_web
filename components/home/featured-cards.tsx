@@ -36,9 +36,21 @@ interface FeaturedCardsProps {
  * outline, not a type scale (`SEO-POLICY.md` §B3.7). Six card titles promoted to `<h3>` would
  * claim six subsections of "Öne çıkan iller" that do not exist.
  *
- * WHY THE WHOLE CARD IS THE ANCHOR. One target, one accessible name ("Rize, Karadeniz"),
- * nothing nested inside a link that is itself interactive. The fixed `min-height` is a CLS
- * measure: a card whose fact row is absent must not be shorter than its neighbours.
+ * WHY THE WHOLE CARD IS THE ANCHOR. One target, nothing nested inside a link that is itself
+ * interactive, and NO `aria-label`: the accessible name is therefore the anchor's full visible
+ * text — name, then meta, then the fact row if it has one ("Rize Karadeniz Nüfus (2024)
+ * 336.000"). That is deliberate, not an oversight. An `aria-label` shortening it to
+ * "Rize, Karadeniz" would hide the number from a screen-reader user that a sighted user can
+ * see, and it would break voice control, where the spoken command has to match visible text.
+ * The fixed `min-height` is a CLS measure: a card whose fact row is absent must not be shorter
+ * than its neighbours.
+ *
+ * WHY A PLAIN `<a>` AND NOT next-intl's `<Link>`. `href` arrives ALREADY LOCALIZED — the page
+ * resolves it through `getPathname`, which is the only way to reach a localized dynamic slug.
+ * `<Link>` localizes its own href, so handing it a resolved path is how you ship `/en/en/…`;
+ * feeding it properly would mean threading `{pathname, params}` through this component and
+ * making an entity-agnostic renderer entity-aware. Same reasoning, same pattern as
+ * `entity-index.tsx` and the map sections.
  *
  * Renders NOTHING when the list is empty — an "Öne çıkan iller" heading over no cards is the
  * empty-section shape `SEO-POLICY.md` §B3.6 bans, and the api being briefly unreachable is
@@ -58,7 +70,7 @@ export function FeaturedCards({ headingId, heading, items }: FeaturedCardsProps)
               <span className={styles.cardMeta}>{item.meta}</span>
               {item.fact !== undefined && (
                 <span className={styles.cardFact}>
-                  <span className={styles.cardFactLabel}>{item.fact.label}</span>{" "}
+                  <span>{item.fact.label}</span>{" "}
                   <span className={styles.cardFactValue}>{item.fact.value}</span>
                 </span>
               )}

@@ -9,7 +9,11 @@ import { getMarineLayersSafe, getMarineOverviewSafe, getMarinePointsSafe } from 
 import { getMapSummaryResilient } from "@/lib/api/provinces";
 import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { pickFeaturedCountries, pickFeaturedProvinces } from "@/lib/home/featured";
+import {
+  featuredPopulationFact,
+  pickFeaturedCountries,
+  pickFeaturedProvinces,
+} from "@/lib/home/featured";
 import {
   buildMarineHomeSummary,
   marineScope,
@@ -58,7 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *
  * ## Rendering: SSG → ISR, still full HTML in the first response
  *
- * This page fetched nothing before; it now makes four reads. Next takes a route's effective
+ * This page fetched nothing before; it now makes five reads. Next takes a route's effective
  * revalidate period from its SHORTEST fetch, so the marine value read's 900 s (which mirrors
  * the api's own `s-maxage`) becomes this page's window. That is the known price of publishing
  * live numbers, `/deniz` already pays it, and it costs no SEO: the response is still
@@ -112,21 +116,25 @@ export default async function HomePage({ params }: PageProps) {
   const marineShowsValues = marineSummaryShowsValues(marine);
 
   /**
-   * The card's single fact, or `undefined`.
+   * The card's single fact, rendered.
    *
-   * A null population prints NO row rather than a dash — the map hover card's rule, for the
-   * same reason: a placeholder dash reads as a fault where an absence is simply an absence.
-   * The label reuses the `ProvinceDetail` strings so the card and the detail page name the
-   * same number identically, and it drops the year clause when the contract publishes none
-   * (which it does for most countries) rather than printing an empty parenthesis.
+   * The DECISIONS (null population ⇒ no row; null year ⇒ no year clause) live in
+   * `featuredPopulationFact`, where the repo's node-environment harness can pin them; what is
+   * left here is the part that genuinely needs the request — translating the key and
+   * formatting the number in the render locale. The labels are the `ProvinceDetail` strings,
+   * so a card and a detail page name the same number identically.
    */
-  const populationFact = (population: number | null, year: number | null) =>
-    population === null
-      ? undefined
-      : {
-          label: year !== null ? tDetail("populationWithYear", { year }) : tDetail("population"),
-          value: format.number(population),
-        };
+  const populationFact = (population: number | null, year: number | null) => {
+    const fact = featuredPopulationFact(population, year);
+    if (fact === null) return undefined;
+    return {
+      label:
+        fact.labelKey === "populationWithYear"
+          ? tDetail("populationWithYear", { year: fact.year })
+          : tDetail("population"),
+      value: format.number(fact.population),
+    };
+  };
 
   const provinceCards: FeaturedCardItem[] = pickFeaturedProvinces(provinces, locale).map(
     (province) => ({
@@ -164,20 +172,25 @@ export default async function HomePage({ params }: PageProps) {
 
         {/* Scope chips. Every number is COUNTED from the payload the page already fetched —
             a hardcoded "81 il" is a geography fact on the web side and would go quietly wrong
-            the day the api's set changes. A count that came back zero prints no chip at all. */}
-        <ul className={styles.chips}>
-          {provinces.length > 0 && (
-            <li className="chip">{t("chipProvinces", { count: provinces.length })}</li>
-          )}
-          {countries.length > 0 && (
-            <li className="chip">{t("chipCountries", { count: countries.length })}</li>
-          )}
-          {scope.pointCount > 0 && (
-            <li className="chip">
-              {t("chipMarine", { basins: scope.basinCount, points: scope.pointCount })}
-            </li>
-          )}
-        </ul>
+            the day the api's set changes. A count that came back zero prints no chip at all,
+            and the LIST ITSELF is gated too: with the api unreachable at build all three are
+            zero, and this page's rule everywhere else (FeaturedCards, SeaToday) is to render
+            nothing rather than an empty shell. */}
+        {(provinces.length > 0 || countries.length > 0 || scope.pointCount > 0) && (
+          <ul className={styles.chips}>
+            {provinces.length > 0 && (
+              <li className="chip">{t("chipProvinces", { count: provinces.length })}</li>
+            )}
+            {countries.length > 0 && (
+              <li className="chip">{t("chipCountries", { count: countries.length })}</li>
+            )}
+            {scope.pointCount > 0 && (
+              <li className="chip">
+                {t("chipMarine", { basins: scope.basinCount, points: scope.pointCount })}
+              </li>
+            )}
+          </ul>
+        )}
 
         <div className="hero-actions">
           <Link className="btn btn-primary" href="/turkiye">
@@ -189,7 +202,7 @@ export default async function HomePage({ params }: PageProps) {
         </div>
       </section>
 
-      <MiniTurkeyMap locale={locale} provinces={provinces} />
+      <MiniTurkeyMap provinces={provinces} />
 
       <SeaToday summary={marine} scope={scope} />
 

@@ -1,5 +1,6 @@
 import type { MarineOverview, MarinePointListItem, MarineValue } from "@/lib/api/types";
 import { basinLabel, groupPointsByBasin, type SeaBasin } from "@/lib/marine/basins";
+import { coastalPlateCodes } from "@/lib/marine/coastal";
 import { marinePublishableBlocks } from "@/lib/marine/overview";
 
 /**
@@ -120,7 +121,11 @@ export function buildMarineHomeSummary(
   // Group by the points the payload carries with it, so the digest inherits the api's own
   // basin set, traverse order and headings rather than restating any of the three.
   const groups = groupPointsByBasin(blocks.map((block) => block.point));
-  const blockBySlug = new Map(blocks.map((block) => [block.point.slugTr, block]));
+  // Keyed by OBJECT IDENTITY, not by slug: `groupPointsByBasin` regroups and reorders the very
+  // point objects it was handed (it copies arrays, never members), so identity is the exact
+  // join and it depends on no field being unique. A slug key would quietly mis-pair two blocks
+  // the day the payload repeated a `slugTr`.
+  const blockByPoint = new Map(blocks.map((block) => [block.point, block]));
 
   const basins: MarineBasinSummary[] = [];
   const values: MarineValue[] = [];
@@ -130,7 +135,7 @@ export function buildMarineHomeSummary(
     if (label === null) continue;
 
     const members = group.points
-      .map((point) => blockBySlug.get(point.slugTr))
+      .map((point) => blockByPoint.get(point))
       .filter((block) => block !== undefined);
 
     const sst = digest(members.map((block) => block.seaSurfaceTemperature));
@@ -157,12 +162,17 @@ export function buildMarineHomeSummary(
  * geography fact on the web side, and it would go quietly wrong the day the probe set moves.
  * An empty list yields all zeroes, and the caller then prints its count-less sentence rather
  * than "0 denizde 0 nokta".
+ *
+ * The province count is `coastalPlateCodes()` — the SAME function the province pages' coastal
+ * gate reads — rather than a second `new Set(…plateCode)` written here. "How many provinces
+ * have a coast" is one question, and two independent derivations of it would drift the day
+ * that rule changes (`lib/marine/coastal.ts` owns it).
  */
 export function marineScope(points: readonly MarinePointListItem[]): MarineScope {
   return {
     basinCount: new Set(points.map((point) => point.seaBasin)).size,
     pointCount: points.length,
-    provinceCount: new Set(points.map((point) => point.plateCode)).size,
+    provinceCount: coastalPlateCodes(points).size,
   };
 }
 

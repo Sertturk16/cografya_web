@@ -88,6 +88,38 @@ export interface FeaturedCountry {
 }
 
 /**
+ * The card's single fact, as a MESSAGE KEY + its number — or `null` for "print no row".
+ *
+ * Two decisions live here, and both are the silent-regression kind, which is why they are a
+ * tested pure function rather than an inline arrow in the page component (the plan's own rule:
+ * all logic goes under `lib/` as a pure function).
+ *
+ * 1. A `null` population prints NO row rather than a dash — the map hover card's rule, for the
+ *    same reason: a placeholder dash reads as a fault where an absence is simply an absence.
+ *    Note it is an explicit `=== null` check: a population of 0 is a real number and must
+ *    still print, so a truthiness test would be a bug.
+ * 2. A `null` year drops the year clause instead of printing an empty parenthesis — which is
+ *    the ordinary case for countries, whose contract publishes no `populationYear`.
+ *
+ * It returns a KEY and not a string, the way `MARINE_UNIT_KEY` does: translation and number
+ * formatting need the request's locale, so they stay in the component while the BRANCHING
+ * stays here, inside the node-environment test harness.
+ */
+export type FeaturedFact =
+  | { readonly labelKey: "population"; readonly population: number }
+  | { readonly labelKey: "populationWithYear"; readonly year: number; readonly population: number };
+
+export function featuredPopulationFact(
+  population: number | null,
+  year: number | null,
+): FeaturedFact | null {
+  if (population === null) return null;
+  return year === null
+    ? { labelKey: "population", population }
+    : { labelKey: "populationWithYear", year, population };
+}
+
+/**
  * Curated slugs ∩ published provinces, in the CURATED order, capped at `limit`.
  *
  * The order is the list's, not the api's: these three were picked as a sequence. Unresolvable

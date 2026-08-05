@@ -1,13 +1,11 @@
 import { getTranslations } from "next-intl/server";
-import { getPathname, Link } from "@/i18n/navigation";
-import type { Locale } from "@/i18n/routing";
+import { Link } from "@/i18n/navigation";
 import { byPlateCode } from "@/lib/api/provinces";
 import type { ProvinceMapSummary } from "@/lib/api/types";
 import { MINI_MAP_VIEWBOX, MINI_PROVINCE_SHAPES } from "@/lib/map/tr-provinces-mini.generated";
 import styles from "./home.module.css";
 
 interface MiniTurkeyMapProps {
-  locale: Locale;
   /**
    * The published provinces, used ONLY to stamp `data-region` on each shape. An empty list
    * (api unreachable at build) renders the same outline without the attribute.
@@ -57,20 +55,23 @@ interface MiniTurkeyMapProps {
  * water line is deliberately NOT repeated: this map draws no water, and crediting an unused
  * source is a false statement rather than a courtesy.
  */
-export async function MiniTurkeyMap({ locale, provinces }: MiniTurkeyMapProps) {
+export async function MiniTurkeyMap({ provinces }: MiniTurkeyMapProps) {
   const t = await getTranslations("Home");
   const tMap = await getTranslations("Map");
 
   const byPlate = byPlateCode(provinces);
-  const href = getPathname({ locale, href: "/turkiye" });
 
   return (
     <section className={`section ${styles.mapSection}`} aria-labelledby="home-map-heading">
       <div className={styles.mapGrid}>
         {/* The picture and its label are ONE anchor: the label is the link's accessible name
             and its visible text at the same time, so a pointer user, a keyboard user and a
-            screen-reader user all act on the same single target. */}
-        <a className={styles.mapLink} href={href}>
+            screen-reader user all act on the same single target.
+
+            `<Link>` with the UNLOCALIZED route, like the `/dunya` link beside it: the routing
+            table does the localization, and the prefetch it registers is already paid for by
+            the hero's own `/turkiye` button on this same page. */}
+        <Link className={styles.mapLink} href="/turkiye">
           <span className={styles.mapFrame}>
             <svg
               className={styles.mapSvg}
@@ -89,7 +90,7 @@ export async function MiniTurkeyMap({ locale, provinces }: MiniTurkeyMapProps) {
             </svg>
           </span>
           <span className={styles.mapLinkLabel}>{t("mapLinkLabel")}</span>
-        </a>
+        </Link>
 
         <div className={styles.mapCopy}>
           <h2 id="home-map-heading">{t("mapHeading")}</h2>

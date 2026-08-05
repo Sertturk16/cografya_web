@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getPathname } from "@/i18n/navigation";
 import type { CountryMapSummary, ProvinceMapSummary } from "@/lib/api/types";
-import { pickFeaturedCountries, pickFeaturedProvinces } from "./featured";
+import { featuredPopulationFact, pickFeaturedCountries, pickFeaturedProvinces } from "./featured";
 
 /**
  * The featured-card selection contract.
@@ -126,6 +126,42 @@ describe("pickFeaturedCountries", () => {
     const countries = [country("alpha", { continent: "OKYANUSYA" })];
 
     expect(pickFeaturedCountries(countries, "tr", ["alpha"])[0]?.continent).toBe("OKYANUSYA");
+  });
+
+  it("returns an empty list — not a throw — when the api published nothing", () => {
+    expect(pickFeaturedCountries([], "tr", ["alpha"])).toEqual([]);
+  });
+});
+
+/**
+ * The fact row's two branches. Both are the kind that fail SILENTLY — a card that quietly
+ * stops printing its population, or one that prints "Nüfus (null)" — so each is pinned here
+ * rather than left inside the page component, which this repo's node-environment harness
+ * cannot render.
+ */
+describe("featuredPopulationFact", () => {
+  it("prints NO row for a null population, whatever the year says", () => {
+    expect(featuredPopulationFact(null, 2024)).toBeNull();
+    expect(featuredPopulationFact(null, null)).toBeNull();
+  });
+
+  it("drops the year clause when the contract publishes no year (the country case)", () => {
+    expect(featuredPopulationFact(1234, null)).toEqual({
+      labelKey: "population",
+      population: 1234,
+    });
+  });
+
+  it("names the year when the contract publishes one (the province case)", () => {
+    expect(featuredPopulationFact(1234, 2024)).toEqual({
+      labelKey: "populationWithYear",
+      year: 2024,
+      population: 1234,
+    });
+  });
+
+  it("still prints a row for a population of zero (an absence, not a falsy number)", () => {
+    expect(featuredPopulationFact(0, null)).toEqual({ labelKey: "population", population: 0 });
   });
 });
 
