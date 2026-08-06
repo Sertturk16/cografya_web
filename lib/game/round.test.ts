@@ -482,14 +482,21 @@ describe("finishEarly", () => {
     // know it"; a question the round never reached is not a failure and must not appear in
     // the end screen's list — nor be counted as found.
     let state = startRound(POOL);
+    // The id is READ from the round, never assumed: `noShuffle` is a deterministic stub, not
+    // an identity — Fisher-Yates with `() => 0` swaps each position with the first, so the
+    // opening question is not `POOL[0]`. Asserting a position here would test the stub.
+    const shown = target(state);
     state = advanceRound(revealRound(state).state); // asked, shown ⇒ genuinely missed
+    const answered = target(state);
     state = solve(state);
     const summary = summarizeRound(finishEarly(state));
 
-    expect(summary.missedTargetIds).toHaveLength(1);
-    expect(summary.missedTargetIds[0]).toBe(POOL[0]);
+    expect(summary.missedTargetIds).toEqual([shown]);
+    expect(summary.missedTargetIds).not.toContain(answered);
+    // The two questions the round never reached are in neither column.
     expect(summary.found).toBe(1);
     expect(summary.total).toBe(2);
+    expect(summary.poolTotal).toBe(POOL.length);
   });
 
   it("does not charge the abandoned question's wrong clicks to the round", () => {
