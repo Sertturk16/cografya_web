@@ -94,7 +94,12 @@ ramp and not the Terra brand hues.
 - **Skip-to-content link** (`.skip-link`) whose target `<main>` is programmatically
   focusable (`tabIndex={-1}` — Safari/VoiceOver need it).
 - **Visible focus everywhere:** `:focus-visible` = `3px` accent (`#276b70`) outline,
-  `2px` offset. Never remove focus without a compliant replacement.
+  `2px` offset. Never remove focus without a compliant replacement. **One sanctioned
+  exception** (→ ruling 2026-08-05): `:where([tabindex="-1"]):focus-visible` draws no ring —
+  such an element is outside the sequential focus order, so Tab never lands on it and the ring
+  can only outline the page-sized region the code jumped to (`<main>` after the skip link, a
+  fragment section, the error `<h1>`). A module rule may still opt back in at (0,2,0), as the
+  game does.
 - **`prefers-reduced-motion: reduce`** disables transitions / smooth-scroll globally.
 - **State changes announce to AT** (WCAG 4.1.3): error boundaries move focus to the error
   heading (`tabIndex={-1}` + `focus()`); last-resort boundaries use `role="alert"`.

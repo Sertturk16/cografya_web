@@ -5,12 +5,30 @@
    shapes use a backdrop class — .provinceInert on the il map ("not published yet", recedes)
    and .landInert on the world map (permanent land, must read as land). */
 
+/* EDGE-TO-EDGE canvas (owner live-tour finding): no padding, so the SVG IS the panel.
+   The padding used to be `16px clamp(12px, 3vw, 28px) 40px`, and on `/dunya` that band was a
+   real defect rather than a taste question: `.worldRoot`'s backdrop is literal `--map-sea`,
+   so the 28px sides and 40px foot read as OCEAN that is not on the map — sea continuing past
+   the ±180° meridians and below Antarctica (UX tour screenshot 14). On `/turkiye` the same
+   band was parchment; harmless, but the two surfaces share this rule and the map should meet
+   its own frame on both.
+
+   `overflow: hidden` is the required partner: with no padding the SVG's square corners would
+   otherwise poke out of the panel's `--radius-lg` rounding. The border and the radius stay —
+   the panel keeps its identity, it just has nothing between its edge and the map.
+
+   Consequence, accepted and sampled: `.attribution` (bottom 10/14px) and `.zoomControls`
+   (top 12/14px right) used to sit in that padding band and now overlay the map itself. The
+   licence line keeps its `--scrim-bg` plate, so it stays legible and still satisfies the
+   "visible next to the map" ODbL/JRC obligation (SPEC §5.2 / DEC 2026-07-10) — its position
+   is unchanged, only what is behind it. */
 .mapRoot {
   position: relative;
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 16px clamp(12px, 3vw, 28px) 40px;
+  padding: 0;
+  overflow: hidden;
 }
 
 /* World map ONLY: the backdrop is literal SEA, so it is flat (never a gradient) and cool.
@@ -421,7 +439,19 @@
 }
 
 /* Visible keyboard focus on the map surface itself (SPEC §5 / WCAG 2.4.7). Inset so the
-   ring is not clipped by the SVG's overflow:hidden frame. */
+   ring is not clipped by the SVG's overflow:hidden frame — and, since the canvas went
+   edge-to-edge, by `.mapRoot`'s own `overflow: hidden`, whose `--radius-lg` corners the
+   ring's square ones would otherwise run into.
+
+   DELIBERATELY 2px `--color-primary`, not the site canon of 3px `--color-accent` (→ SPEC §5;
+   re-confirmed as-is by Atlas ruling 2026-08-05, Q2). Two reasons it stays: the ring must be
+   INSET (`outline-offset: -2px`) because the surface is clipped, and an inset accent ring
+   would sit on the sea fill it is drawn against, where terracotta separates and teal does
+   not; and the map is a pan/zoom SURFACE rather than a control in the page's normal reading
+   order, so it reads as a mode rather than a link. Measured on the before-audit: 2px solid
+   rgb(176 82 46) at offset −2px on `svg.svg[data-zoomable]` — the only stop in the whole
+   focus tour that is not the 3px accent ring. Do not "harmonise" this without a design
+   ruling. */
 .svg[data-zoomable]:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;

@@ -58,7 +58,13 @@
    plain, non-interactive text chip (distinct from the linked .province-card used
    for seeded neighbours), never a dead link. */
 .neighborTextCard {
-  display: block;
+  /* `flex` + `align-items: center`, not `block`: this chip shares a `.province-grid` row with
+     linked `.province-card` siblings, and since `.province-grid > li` stretches its child to
+     the row height (see `app/globals.css`), a `block` chip would grow but leave its text
+     pinned to the top while the linked cards centre theirs. Same vertical rhythm as the
+     siblings, with none of their interactivity. */
+  display: flex;
+  align-items: center;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);

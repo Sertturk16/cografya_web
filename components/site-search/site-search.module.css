@@ -105,8 +105,27 @@
   color: var(--color-slate);
 }
 
-.inputRow:focus-within {
+/* ONE ring, on the OUTER box. Before this PR the row drew a terracotta border while the
+   `<input>` inside it drew the global 3px accent ring, so a focused search box showed two
+   nested rings clipping each other — the single observation the owner made on the PR-A
+   samples ("the blue ring in the search panel"; the ring is `--color-accent`, a petrol-teal
+   that reads blue). The ring now belongs to the row, which is what the reader perceives as
+   the search box.
+
+   Scoped to the INPUT, not `:focus-within`. The row has a second focusable child — the `.close`
+   button below, which is genuinely Tab-reachable (the combobox deliberately leaves Tab to the
+   browser, and its `onBlur` guard keeps the panel open while focus stays inside the slot). With
+   `:focus-within` the row drew its ring at the same time as the button drew the global one:
+   two concentric 3px accent rings on the very tab stop next to the one this rule was written to
+   clean up — MEASURED (PR #49 review, CR49-I2). Worse than the duplication, the outer ring
+   then named the wrong component: it says "the input is focused" while focus is on the button.
+   `:has()` is Baseline-available and this repo already ships it (`game-map.module.css`).
+   `.input:focus` rather than `:focus-visible` keeps today's behaviour exactly: a text input
+   matches `:focus-visible` on pointer focus too, so the box is ringed when clicked into. */
+.inputRow:has(.input:focus) {
   border-color: var(--color-primary);
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .input {
@@ -114,11 +133,20 @@
   min-width: 0;
   min-height: 40px;
   border: none;
-  outline: none;
   background: transparent;
   font-family: var(--font-body);
   font-size: 1rem;
   color: var(--color-ink);
+}
+
+/* Suppressing the inner ring is stated at (0,2,0) against the global `:focus-visible` (0,1,0)
+   instead of the old unqualified `.input { outline: none }`, which tied at (0,1,0) with it and
+   was decided by SOURCE ORDER alone — globals happened to load last, so the input DID show a
+   ring today. A chunk-order change in a production build could have flipped that tie the other
+   way and left the box with no ring at all. The ring is not lost, it moved: `.inputRow`
+   above owns it. */
+.input:focus-visible {
+  outline: none;
 }
 
 .input::placeholder {
