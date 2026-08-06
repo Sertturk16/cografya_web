@@ -202,7 +202,7 @@
     "climateValue": "{name} · Köppen: {koppen}",
     "climateValueKoppenOnly": "Köppen: {koppen}",
     "climateClassOnly": "{className}",
-    "climatePlainNote": "In the line above, the first name is the regional climate name used in school textbooks; the second is MGM's Köppen code. The two classifications differ for most provinces.",
+    "climatePlainNote": "The line above shows the regional climate name used in school textbooks alongside MGM's Köppen code. The two differ for most provinces.",
     "climateNoteLabel": "MGM classification note",
     "hydrographyHeading": "Hydrography of {name}",
     "hydrographyTypeBaraj": "Dams",
