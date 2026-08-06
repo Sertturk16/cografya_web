@@ -199,7 +199,7 @@
     "elevationUnit": "m",
     "landformHeading": "{name} Yeryüzü Şekilleri",
     "climateHeading": "{name} İklim",
-    "climateValue": "{name} · {koppen} (Köppen)",
+    "climateValue": "{name} · {koppen} (Köppen)",
     "climateValueKoppenOnly": "Köppen: {koppen}",
     "climateClassOnly": "{className}",
     "climatePlainNote": "Ders kitabı adı ile Köppen kodu illerin çoğunda örtüşmez.",

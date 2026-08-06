@@ -199,7 +199,7 @@
     "elevationUnit": "m",
     "landformHeading": "Landforms of {name}",
     "climateHeading": "Climate of {name}",
-    "climateValue": "{name} · {koppen} (Köppen)",
+    "climateValue": "{name} · {koppen} (Köppen)",
     "climateValueKoppenOnly": "Köppen: {koppen}",
     "climateClassOnly": "{className}",
     "climatePlainNote": "The textbook name and the Köppen code differ for most provinces.",

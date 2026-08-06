@@ -85,6 +85,29 @@ describe("climate block message catalogue", () => {
     }
   });
 
+  it("binds the Köppen label to the code with a NON-BREAKING space, not an ordinary one", () => {
+    // The value line ends "<code> (Köppen)", where the parenthetical is a LABEL for the code
+    // immediately before it. With an ordinary space, 360px wraps between them and strands
+    // "(Köppen)" alone on its own line, away from the thing it labels — observed on the Van
+    // sample frame before this was fixed, and it would recur on all 81 province pages.
+    //
+    // WHY THIS NEEDS A TEST AT ALL: U+00A0 and U+0020 are visually IDENTICAL in the source
+    // file. A whitespace normalisation, an editor "trim", a copy-paste through a tool that
+    // folds spaces, or a well-meaning cleanup would silently swap it back, and every other
+    // check in the repo — including the separator test above — would still pass while the
+    // orphaned label returned to production. Nothing else can catch it.
+    //
+    // Structural only: asserts the CHARACTER CLASS of one separator, never any label wording.
+    const NBSP = " ";
+    for (const catalogue of Object.values(catalogues)) {
+      const value = catalogue.climateValue;
+      const afterPlaceholder = value.slice(value.indexOf("{koppen}") + "{koppen}".length);
+      expect(afterPlaceholder.startsWith(NBSP)).toBe(true);
+      // And the ordinary-space form must not be what got shipped.
+      expect(afterPlaceholder.startsWith(" ")).toBe(false);
+    }
+  });
+
   it("keeps the climate classification OUT of the base sources sentence", () => {
     // The base line is printed on every province page in both locales; the classification
     // clause is appended conditionally instead (UX tour B5 — EN pages cited a climate section
