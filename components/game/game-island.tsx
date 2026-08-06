@@ -21,6 +21,7 @@ import {
   answerRound,
   createRound,
   currentTargetId,
+  finishEarly,
   revealRound,
   summarizeRound,
   type AnswerOutcome,
@@ -50,6 +51,14 @@ export interface GameIslandProps {
   shapes: readonly GameShapeTargetEntry[];
   /** Localized region names, from the `Regions` message namespace. */
   regionLabels: RegionLabels;
+  /**
+   * May this screen offer "Turu bitir"? (→ DEC 2026-08-05g md. 2.)
+   *
+   * DERIVED on the server from the screen's own identity rather than decided here, so no
+   * region round can acquire the button by accident (`game-screen.tsx`). A seven-question
+   * round has nothing to escape from; an eighty-one-question one does.
+   */
+  allowEarlyFinish: boolean;
   /**
    * The locale's own province-detail path with `SLUG_PLACEHOLDER` where the slug goes,
    * resolved once on the server through `getPathname`. Passing the resolved shape rather
@@ -157,6 +166,7 @@ export function GameIsland({
   mode,
   shapes,
   regionLabels,
+  allowEarlyFinish,
   provinceUrlTemplate,
   hubUrl,
 }: GameIslandProps) {
@@ -182,6 +192,19 @@ export function GameIsland({
    * the randomness to disagree with.
    */
   const [round, setRound] = useState<RoundState>(() => createRound(mode, targetIds));
+  /**
+   * The targets already found this round — the map's one PERMANENT state.
+   *
+   * Hoisted out of the paint effect because two effects need it now: the paint effect writes
+   * `data-state` (which the hatch is drawn from) and the accessible-name effect appends the
+   * "solved" qualifier that says the same thing to a screen reader (→ PR #50 A11Y50-I1). One
+   * derivation, so the picture and the name can never disagree about what is finished.
+   */
+  const solvedTargetIds = useMemo(
+    () =>
+      new Set(round.results.filter((result) => result.score > 0).map((result) => result.targetId)),
+    [round.results],
+  );
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   /**
    * The most recent wrong answer, as the TARGET it named — not as the plate that was
@@ -279,6 +302,22 @@ export function GameIsland({
     }
     beginRound(createRound(mode, targetIds));
   }, [beginRound, mode, t, targetIds]);
+
+  /**
+   * "Turu bitir" (→ DEC 2026-08-05g md. 2) — end the round now and show the result.
+   *
+   * NO CONFIRMATION, and that is the difference from "Baştan başlat": this action does not
+   * throw anything away, it hands the player exactly what they have earned. A confirm dialog
+   * in front of a non-destructive action teaches people to dismiss confirm dialogs.
+   */
+  const endRoundEarly = useCallback(() => {
+    const next = finishEarly(roundRef.current);
+    if (next === roundRef.current) return;
+    setFeedback(null);
+    setWrongAnswer(null);
+    setSummaryDismissed(false);
+    commitRound(next);
+  }, [commitRound]);
 
   /** Dismiss the current question's feedback — the button and the timer share this. */
   const goNext = useCallback(() => {
@@ -440,14 +479,30 @@ export function GameIsland({
     // The base layer is `aria-hidden` as a whole and is never a control.
     for (const shape of svg.querySelectorAll(HIT_SHAPES)) {
       if (!(shape instanceof SVGElement)) continue;
-      const name = nameByPlate.get(shape.dataset.plate ?? "");
+      const plate = shape.dataset.plate ?? "";
+      const name = nameByPlate.get(plate);
       if (interactive && name) {
         shape.setAttribute("role", "button");
         shape.setAttribute("tabindex", "0");
         // The accessible name is the province's own name in BOTH modes. In region mode that
         // leaks nothing: which region a province belongs to is precisely what the mode
         // asks, and it is never written on the map (SPEC §6.1, §8.2).
-        shape.setAttribute("aria-label", name);
+        //
+        // PLUS "solved", once its target is (→ PR #50 review A11Y50-I1). Without it the map's
+        // one permanent state was visible ONLY as paint: a sighted player keeps a glanceable
+        // record of what is finished — that is the whole subject of I1 — while a screen-reader
+        // user tabbing the same seven or eighty-one shapes heard the identical name at every
+        // stop and had to remember the round instead of reading it.
+        // It is a NAME SUFFIX rather than `aria-disabled`, because the shape is not disabled:
+        // it still takes the click, and that click is still a wrong answer to the open
+        // question (`lib/game/shape-state.ts` — the map declines to REPAINT it, the engine
+        // still counts it). Announcing an operable control as disabled would trade a missing
+        // signal for a false one.
+        // It leaks nothing the hatch does not already show, and in bölge mode it names no
+        // region: it says this AREA is done, never which bölge it belongs to (SPEC §8.2).
+        const targetId = targetSet.plateToTarget[plate];
+        const solved = targetId !== undefined && solvedTargetIds.has(targetId);
+        shape.setAttribute("aria-label", solved ? t("shapeSolved", { name }) : name);
         shape.removeAttribute("aria-hidden");
       } else {
         shape.removeAttribute("role");
@@ -462,16 +517,17 @@ export function GameIsland({
       svg.setAttribute("role", "img");
       svg.setAttribute("focusable", "false");
     }
-  }, [interactive, shapes]);
+    // `solvedTargetIds` is in the list because the names now change DURING a round, not just
+    // when it opens or closes. The loop is idempotent — it writes the same three attributes
+    // every pass — so re-running it per answer costs 81 `setAttribute` calls next to the 162
+    // the paint effect already makes, and it keeps ONE writer for the accessible name.
+  }, [interactive, shapes, solvedTargetIds, targetSet, t]);
 
   // --- DOM sync: answer marks ----------------------------------------------------------------
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
 
-    const solved = new Set(
-      round.results.filter((result) => result.score > 0).map((result) => result.targetId),
-    );
     const revealed = feedback?.kind === "revealed" ? feedback.targetId : null;
 
     // BOTH painted twins (see PAINTED_SHAPES): the base twin carries the answer's fill, the
@@ -480,14 +536,14 @@ export function GameIsland({
       if (!(shape instanceof SVGElement)) continue;
       const state = deriveShapeState({
         targetId: targetSet.plateToTarget[shape.dataset.plate ?? ""],
-        solvedTargetIds: solved,
+        solvedTargetIds,
         revealedTargetId: revealed,
         wrongTargetId: wrongAnswer?.targetId ?? null,
       });
       if (state) shape.setAttribute("data-state", state);
       else shape.removeAttribute("data-state");
     }
-  }, [round, feedback, wrongAnswer, targetSet]);
+  }, [feedback, wrongAnswer, targetSet, solvedTargetIds]);
 
   // --- timers -----------------------------------------------------------------------------------
   useEffect(() => {
@@ -593,6 +649,39 @@ export function GameIsland({
    * longer advances itself, it is the only way forward — and it must not sit next to a
    * louder "Baştan başlat" that throws the whole round away.
    */
+  /**
+   * "Baştan başlat", written ONCE.
+   *
+   * The two branches below used to each spell this button out in full, differing in nothing
+   * but which of the pair was the loud one — two copies of one control that had to be kept in
+   * step by hand (→ PR #48 review, code-simplifier MINOR).
+   *
+   * ITS POSITION IS LOAD BEARING, so it does not move and it gets no `key`: it stays the
+   * SECOND child of both branches. React reuses a DOM node by position and element type, and
+   * PR #48's `event.detail > 1` guard on "Devam" (CR48-I1) exists precisely because the FIRST
+   * child is reused across a status change. Re-ordering these, or keying them apart, would
+   * change which node survives and reopen that defect. This dedup removes a duplicate, not a
+   * structure.
+   */
+  const restartButton = (
+    <button
+      type="button"
+      className={round.status === "resolved" ? styles.action : styles.primaryAction}
+      onClick={restartRound}
+    >
+      <RestartIcon size={18} /> {t("restart")}
+    </button>
+  );
+
+  /**
+   * "Turu bitir" — offered only where the length of the round is the problem it solves
+   * (→ DEC 2026-08-05g md. 2), and only once there is something to show.
+   *
+   * `results.length > 0` is the same guard `finishEarly` carries: ending a round before the
+   * first answer would open a result screen with no result on it.
+   */
+  const canFinishEarly = allowEarlyFinish && !finished && round.results.length > 0;
+
   const actions = finished ? (
     summaryDismissed ? (
       <div className={styles.actions}>
@@ -611,20 +700,24 @@ export function GameIsland({
           <button type="button" className={styles.primaryAction} onClick={onNextClick}>
             {t("next")}
           </button>
-          <button type="button" className={styles.action} onClick={restartRound}>
-            <RestartIcon size={18} /> {t("restart")}
-          </button>
+          {restartButton}
         </>
       ) : (
         <>
           <button type="button" className={styles.action} onClick={showAnswer}>
             {t("showAnswer")}
           </button>
-          <button type="button" className={styles.primaryAction} onClick={restartRound}>
-            <RestartIcon size={18} /> {t("restart")}
-          </button>
+          {restartButton}
         </>
       )}
+      {/* LAST, and outside the pair above: the two controls before it are the ones React
+          reuses across a status change, so a new button in front of them would shift that
+          reuse by one position. */}
+      {canFinishEarly ? (
+        <button type="button" className={styles.action} onClick={endRoundEarly}>
+          {t("finishTour")}
+        </button>
+      ) : null}
     </div>
   );
 
@@ -632,7 +725,11 @@ export function GameIsland({
     <div className={styles.head} data-tone={tone ?? undefined}>
       <p className={styles.question} ref={questionRef} tabIndex={-1} aria-live="polite">
         {finished ? (
-          t("summaryHeading")
+          // The SAME partial-aware pair the dialog's heading uses (→ PR #50 review CR50-M4).
+          // This line stays on screen after the dialog is dismissed, directly above the
+          // progress pill CR50-I1 corrected — "Tur bitti · Soru 6/81" would have fixed the
+          // number and left the sentence over it saying the map was finished.
+          t(summary.endedEarly ? "summaryHeadingPartial" : "summaryHeading")
         ) : (
           <>
             <span className={styles.questionLead}>{t("questionLead")}</span>{" "}
@@ -650,7 +747,16 @@ export function GameIsland({
       <p className={styles.pills}>
         <span className={styles.pill}>
           {t("metaProgress", {
-            index: finished ? round.order.length : round.index + 1,
+            // FINISHED READS `summary.total`, NOT the pool size (→ PR #50 review CR50-I1).
+            // Until "Turu bitir" existed the two were the same number by construction: the
+            // only way to finish was to walk `index` past the end. `finishEarly` leaves the
+            // index where the player stopped, so `order.length` here made the pill claim the
+            // whole map had been played — behind a dialog whose entire job is to say it had
+            // not. `summary.total` is the questions actually SCORED, which is the same
+            // `order.length` on a completed round and the honest number on a half one.
+            // `round.index + 1` is not the answer either: the question the player abandoned
+            // was never answered.
+            index: finished ? summary.total : round.index + 1,
             total: round.order.length,
           })}
         </span>

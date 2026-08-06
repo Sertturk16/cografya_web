@@ -36,6 +36,29 @@ const REGION_OUTLINE_FILTER_ID = "game-region-outline";
  */
 const REGION_OUTLINE_RADIUS = 1.4;
 
+/**
+ * ---- I1 · HOW A SOLVED TARGET IS MARKED ---------------------------------------------------
+ *
+ * THE DEFECT IT FIXES is not cosmetic (UX tour B24 / D6). Until now
+ * `.province[data-state="correct"]` painted a solved shape `--game-correct` (#5f8f3f), which
+ * OVERWROTE its region tint. In bölge mode that meant two things at once: a solved Doğu
+ * Anadolu (#009e73) turned into a second, barely distinguishable green — and by the end of the
+ * round all seven regions had collapsed into ONE colour, erasing the exact distinction the
+ * mode spent seven questions teaching. The tint rule in `game-map.module.css` now excludes
+ * only `wrong` and `reveal`, so a solved region KEEPS ITS COLOUR and "solved" is carried by a
+ * second, independent signal: a diagonal hatch painted into the hit twin.
+ *
+ * TWO VARIANTS WERE BUILT AND SAMPLED (→ DEC 2026-08-05g md. 1, Atlas AO-2) — this hatch and a
+ * per-target ✓ glyph. THE OWNER PICKED THE HATCH (2026-08-06), so the ✓ is gone: its fourth
+ * paint layer, its `interiorPointForPaths` helper, that helper's tests and the island's mark
+ * query all left with it, because an exported helper with no reader is state that drifts with
+ * nothing to catch it (the `runningScore` precedent). Do not re-add a variant switch: there is
+ * one solved mark, and it is this one.
+ */
+
+/** `id` of the diagonal pattern a solved shape is filled with. */
+const SOLVED_HATCH_ID = "game-solved-hatch";
+
 interface GameMapProps {
   /** The shapes to DRAW — already narrowed to the round's map (§ region mode). */
   shapes: readonly GameShapeEntry[];
@@ -83,7 +106,7 @@ interface GameMapProps {
  * `role="button"` names the moment there is something to answer, and swaps it back when
  * the round ends.
  *
- * ---- FOUR PAINT LAYERS OVER ONE COPY OF THE GEOMETRY (owner report 2026-08-02) ----------
+ * ---- THREE PAINT LAYERS OVER ONE COPY OF THE GEOMETRY (owner report 2026-08-02) ---------
  * The measured design study is `Owner's Inbox/ui-cila-arastirma/hover-overlay-plan.md`; the
  * full `<use>` rationale is in `components/map/turkey-map-section.tsx`, which carries the
  * same architecture. In short: shapes paint in plaka order, so a hovered province's border
@@ -95,8 +118,9 @@ interface GameMapProps {
  *                              resting border. Inert to the pointer, hidden from AT.
  *   <g data-map-layer=region>  §BÖLGE — seven silhouette groups, one per coğrafi bölge
  *   <g data-map-layer=hit>     one <use> per ANSWERABLE shape, unpainted at rest: the
- *                              tab stop, the click target, and the only place a hover, focus
- *                              or answer-state LINE is drawn — above every province layer
+ *                              tab stop, the click target, the only place a hover, focus or
+ *                              answer-state LINE is drawn — and, once solved, the only place
+ *                              I1's hatch is painted (see §I1 above)
  *   <InlandWaterLayer>         P6's lakes, still the LAST child (see the note at the call
  *                              site): water above the hit twin is what makes a mid-lake click
  *                              score nothing, so its paint position IS the ruling
@@ -248,6 +272,34 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
               />
               <feComposite in="grown" in2="SourceGraphic" operator="out" />
             </filter>
+
+            {/* I1 · "hatch" variant — the diagonal the hit twin is filled with once its
+                target is solved. `patternUnits="userSpaceOnUse"` ties the stripes to the MAP's
+                coordinate space, not to each shape's bounding box, so the pattern is
+                continuous across a region's provinces instead of restarting at every internal
+                border — which is what makes a solved bölge read as one solved area. It also
+                means the stripes narrow as the map is zoomed, exactly like the borders. */}
+            {/* THE INK AND THE FULL OPACITY ARE A MEASUREMENT, not a taste (→ PR #50 review
+                A11Y50-I2). This line is the ONLY thing that says "solved" on the map, so WCAG
+                1.4.11 asks it for 3:1 against every fill it can be drawn over — the seven
+                region tints in bölge mode plus `--game-correct` in the two il modes. The first
+                version was `--game-correct-edge` at `opacity: 0.55` and, alpha-blended onto
+                those eight fills, scored 1.53–2.74:1: it failed on all eight, i.e. the second
+                signal was harder to see than the colour difference it was there to supplement.
+                Opaque `--game-correct-edge` still fails three of the eight (Marmara 2.05,
+                Güneydoğu 2.75, il-mode green 2.78). `--color-ink-dark` at full opacity is the
+                value that clears all eight — 3.25 on Marmara (the binding case), 4.41 on the
+                il-mode green, 4.36–12.76 on the rest — and it is the same token, chosen against
+                the same seven tints, that the hover/focus line already uses (globals.css). */}
+            <pattern
+              id={SOLVED_HATCH_ID}
+              patternUnits="userSpaceOnUse"
+              width="6"
+              height="6"
+              patternTransform="rotate(45)"
+            >
+              <line x1="0" y1="0" x2="0" y2="6" stroke="var(--color-ink-dark)" strokeWidth="1.6" />
+            </pattern>
           </defs>
 
           {/* LAYER 1 — the painted map: fill, region tint and answer-state FILL. Decorative
@@ -288,7 +340,11 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
           {/* LAYER 3 — one invisible twin per ANSWERABLE shape: the tab stop, the click
               target, and the only place a hover / focus / answer-state LINE is drawn. An
               unseeded plate gets no twin — it is backdrop, it can never be an answer, and a
-              click on it is ignored exactly as before. */}
+              click on it is ignored exactly as before.
+              It is also where I1's solved hatch lands: this twin has no fill of its own, it
+              already sits above the painted map and below the water, and `pointer-events: all`
+              is unaffected by a fill it did not have — so the texture needed no fourth layer
+              (`game-map.module.css` §I1). */}
           <g data-map-layer="hit">
             {shapes.map((shape) =>
               shape.target ? (

@@ -285,28 +285,47 @@
 
 /* MODE 1 — the map is coloured by coğrafi bölge. A DATA encoding, so the values come from
    the categorical region token set, never from the Terra brand tokens (DESIGN.md §6.1
-   rule 1). `:not([data-state])` keeps the tint out of the way of the answer states below
-   without a specificity arms race: a shape that has a game state is no longer showing its
-   region, it is showing what the player just did. */
-.stage[data-game-mode="regions"] .province[data-region="MARMARA"]:not([data-state]) {
+   rule 1).
+
+   ---- I1 · A SOLVED REGION KEEPS ITS COLOUR (UX tour B24 / D6, → DEC 2026-08-05g md. 1) ----
+   The guard used to be `:not([data-state])`, which handed EVERY answer state the fill —
+   including `correct`. The consequence was the tour's complaint and it was worse than a
+   colour clash: a solved Doğu Anadolu (#009e73) became `--game-correct` (#5f8f3f), a second
+   green nobody could tell from the first, and by the last question all seven regions had
+   collapsed into that one green. A mode whose entire subject is "these seven areas are
+   different" ended by showing them as identical.
+   The guard now names only the two states that genuinely REPLACE the region on screen —
+   `wrong` and `reveal`, both of which last seconds and both of which are about the click, not
+   about the area. `correct` is permanent and is about the area, so it lets the tint stand and
+   says "solved" with a second, independent signal instead (§I1 SOLVED MARK, below).
+   Still no specificity arms race, and now in the other direction: at (0,6,0) these rules beat
+   `.province[data-state="correct"]` at (0,2,0) without either being marked important. */
+.stage[data-game-mode="regions"]
+  .province[data-region="MARMARA"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-marmara);
 }
-.stage[data-game-mode="regions"] .province[data-region="EGE"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="EGE"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-ege);
 }
-.stage[data-game-mode="regions"] .province[data-region="AKDENIZ"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="AKDENIZ"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-akdeniz);
 }
-.stage[data-game-mode="regions"] .province[data-region="IC_ANADOLU"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="IC_ANADOLU"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-ic-anadolu);
 }
-.stage[data-game-mode="regions"] .province[data-region="KARADENIZ"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="KARADENIZ"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-karadeniz);
 }
-.stage[data-game-mode="regions"] .province[data-region="DOGU_ANADOLU"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="DOGU_ANADOLU"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-dogu-anadolu);
 }
-.stage[data-game-mode="regions"] .province[data-region="GUNEYDOGU_ANADOLU"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="GUNEYDOGU_ANADOLU"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-guneydogu-anadolu);
 }
 
@@ -329,6 +348,57 @@
   stroke: var(--game-correct-edge);
   stroke-width: 2.5;
   stroke-dasharray: none;
+  /* THE ONE FILL ON THIS TWIN, and the exception is the point — see §I1 below. */
+  fill: url(#game-solved-hatch);
+}
+
+/* ---- §I1 SOLVED MARK — THE DIAGONAL HATCH ------------------------------------------------
+   The premise is stated with the tint rules above: the region tint SURVIVES a solved answer,
+   so solved-ness has to be a signal in its own right rather than a repainting. It is not
+   carried by colour alone either — the live region states every answer in words at the moment
+   it happens (DESIGN.md §6.1 rule 3).
+
+   Two variants were built and sampled (→ DEC 2026-08-05g md. 1, Atlas AO-2); the owner picked
+   this one on 2026-08-06 and the ✓ glyph, its fourth paint layer and its geometry helper were
+   deleted with the decision. The `data-solved-mark` switch on the stage went with them: with
+   one variant the `<pattern>` is always in `<defs>`, so the paint IRI below always resolves
+   and an attribute that can only ever hold one value is state with nothing to say.
+
+   THE HIT TWIN takes the fill (declared with the rest of that state, just above), and it
+   needs no layer of its own: it has no fill at rest, it already sits above the painted map and
+   below the water — exactly where a "this area is done" texture belongs — and
+   `pointer-events: all` is unaffected, so the shape answers as before. The ink and the pattern
+   geometry are documented at the `<pattern>` in `game-map.tsx`.
+
+   FORCED COLOURS — the fallback, and the honest limit of what was measured for it
+   (→ PR #50 review A11Y50-I3; this repo had no `forced-colors` rule anywhere before it).
+   `fill: url(#…)` is a PAINT SERVER, and forced-colours mode restricts paint to a small system
+   palette. `fill` and `stroke` are both in the set the mode adjusts, and what a UA does with a
+   non-palette paint server there is not something the spec pins down. So the state is re-stated
+   below in the two properties forced colours never touches — stroke WIDTH and DASH PATTERN —
+   which is the same reasoning the focus-step rule at the end of this file already records. The
+   result is a solved shape outlined in a long dash, which no other state on this map uses:
+   resting 1px solid, hover/focus solid, `wrong` a 1/3 dot, `reveal` a 6/4 dash.
+
+   WHAT THE HARNESS ACTUALLY MEASURED (`harness/pr4b-fix-round.mjs`, Chromium via Playwright's
+   `forcedColors: "active"`): the media query fires and this block applies — a solved shape
+   computes `stroke-width: 4px` / `stroke-dasharray: 12px, 5px` against an unsolved shape's
+   `1px` / `none`. What it could NOT exercise is the colour substitution itself: under that
+   emulation Chromium kept every author colour (the solved twin still computed
+   `fill: url(#game-solved-hatch)` and the tints under it their own hexes), so whether a REAL
+   OS high-contrast theme flattens or drops the pattern is still unverified here. That is the
+   argument for this block rather than against it — the fallback is written so the answer does
+   not matter.
+
+   The width is not load bearing on its own: on a FOCUSED solved shape the focus rules outrank
+   it (3px in the il modes, 4.5px in bölge mode) and only the dash survives. That is by design —
+   focus must stay the strongest thing on the map — and the dash is the half that carries the
+   state in every combination. */
+@media (forced-colors: active) {
+  .hitEdge[data-state="correct"] {
+    stroke-width: 4;
+    stroke-dasharray: 12 5;
+  }
 }
 
 .province[data-state="wrong"] {

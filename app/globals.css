@@ -14,6 +14,19 @@
 
   /* ---- Warm-stone neutrals ---- */
   --color-ink: #2b2622;
+  /* THE PALETTE'S DARKEST LINE INK — a warm near-black one step darker than --color-ink.
+     It is not "ink, but darker" for taste: it is the ONE neutral value measured to clear
+     WCAG 1.4.11's 3:1 graphical-object floor against EVERY surface this design system can
+     draw a meaningful line over, including all seven Okabe-Ito region tints. --color-ink
+     itself misses (2.89:1 on Marmara #0072b2, the binding case). The full table lives with
+     --game-hover-edge below, which is now an alias of this token.
+     PROMOTED FROM THAT GAME TOKEN (→ Atlas AG-1, 2026-08-06) once a second surface needed
+     the same value: a game-scoped name must not leak outside the game, and the alternative
+     was repeating a bare hex, which this layer exists to forbid.
+     Readers today: --game-hover-edge (hover/focus line on the play map) and the solved
+     hatch in components/game/game-map.module.css. ⚠ Re-run the table below before changing
+     it — every reader depends on the 3:1 floor, not on the shade. */
+  --color-ink-dark: #211c19;
   --color-slate: #57504a;
   --color-taupe: #8a8078; /* secondary UI / placeholder only */
   --color-border: #ddd5cc;
@@ -116,7 +129,7 @@
 
      It is a dark PETROL, not a neutral black: still a darker shade of the water it outlines
      (the atlas convention), still unmistakably cool against the warm administrative taupe,
-     and deliberately a different family from the warm near-black --game-hover-edge #211c19,
+     and deliberately a different family from the warm near-black --color-ink-dark #211c19,
      which is the only other near-black line on the play surface (and is 3px to this one's
      0.5px — a six-fold difference, so the two never read as the same line).
 
@@ -246,6 +259,8 @@
      a neighbour's own STROKE this line is low — reveal fill #3f3a36 1.50 · correct edge
      #2c451c 1.59 · wrong edge #5e1a13 1.31 — and against resting taupe 4.37. Recorded so
      the next person tuning this token can see them instead of rediscovering them.
+     The 4.41 row stopped being an adjacency case in PR #50: the solved hatch paints this same
+     ink DIRECTLY onto --game-correct, and 4.41:1 is what carries it (→ A11Y50-I2).
      WHY THE THREE LOW FIGURES ARE STILL NOT A 1.4.11 EXPOSURE — corrected reasoning, and
      the correction matters (→ PR #38 review round 2, R2-M1; the first wording claimed
      "white on reveal = 16.87" and generalised from it, and BOTH halves were wrong. White on
@@ -269,7 +284,7 @@
      (--province-fill #ffffff). The land-tone work (UI-cila P4) and the still-OPEN stroke
      polarity ruling (S4, → DEC 2026-08-01f item 5) both move the surfaces underneath this
      line; Marmara's 3.25:1 is the margin that will bite first. */
-  --game-hover-edge: #211c19;
+  --game-hover-edge: var(--color-ink-dark);
   /* Border weight for the state above. Owner-tunable from rendered samples, same role as
      --map-hover-width. 3px against the 1px resting --province-stroke. */
   --game-hover-width: 3px;

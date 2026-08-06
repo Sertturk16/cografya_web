@@ -137,12 +137,15 @@
     "showAnswer": "Cevabı göster",
     "next": "Devam",
     "restart": "Baştan başlat",
+    "finishTour": "Turu bitir",
     "confirmRestart": "Turu baştan başlatırsan şu ana kadarki ilerleme silinir. Baştan başlansın mı?",
     "feedbackCorrect": "Doğru: {name}",
     "feedbackRetry": "Burası {name}. Tekrar dene.",
     "feedbackRevealed": "{name} burası.",
     "summaryHeading": "Tur bitti",
+    "summaryHeadingPartial": "Yarım tur bitti",
     "summaryStars": "{count}/{max} yıldız",
+    "summaryPartial": "{poolTotal} sorunun {answered} tanesini oynadın.",
     "summaryStarsRule": "{three} puan ve üzeri 3 yıldız, {two} puan ve üzeri 2 yıldız, {one} puan ve üzeri 1 yıldız.",
     "summaryFirstTry": "{count}/{total} ilk denemede",
     "statScore": "Puan",
@@ -151,6 +154,7 @@
     "summaryMissedHeading": "Bilemediklerin",
     "summaryMissedNote": "Her il kendi detay sayfasına açılır.",
     "summaryMissedNone": "Hepsini ilk denemede bildin.",
+    "summaryMissedNonePartial": "Oynadıklarının hepsini ilk denemede bildin.",
     "summaryMissedNoneReveal": "Hiçbirinde cevabı göstermek zorunda kalmadın.",
     "summaryReviewHeading": "İlk denemede bilemediklerin ({count})",
     "summaryReviewNote": "Bunları sonunda buldun ama ilk denemede değil. Sayfalarına göz atmak iyi gelir.",
@@ -163,7 +167,8 @@
     "zoomControls": "Yakınlaştırma denetimleri",
     "zoomInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla başlangıç görünümüne dön. {selectHint} Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
     "selectHintProvinces": "Bir il odaktayken Enter veya boşluk tuşu o ili seçer.",
-    "selectHintRegions": "Bir il odaktayken Enter veya boşluk tuşu o ilin bağlı olduğu bölgeyi seçer."
+    "selectHintRegions": "Bir il odaktayken Enter veya boşluk tuşu o ilin bağlı olduğu bölgeyi seçer.",
+    "shapeSolved": "{name}, çözüldü"
   },
   "ProvinceDetail": {
     "metaTitle": "{name} Coğrafyası",

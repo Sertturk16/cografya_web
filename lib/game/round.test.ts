@@ -5,6 +5,7 @@ import {
   createRound,
   currentQuestionPoints,
   currentTargetId,
+  finishEarly,
   MAX_STARS,
   pointsForAttempt,
   revealRound,
@@ -408,6 +409,135 @@ describe("summarizeRound", () => {
   });
 });
 
+/**
+ * "Turu bitir" — ending a round early (→ DEC 2026-08-05g md. 2).
+ *
+ * The ruling amends exactly one sentence of DEC 2026-07-30h ("a round always visits every
+ * question") and nothing else. So the assertions below are as much about what did NOT change
+ * as about what did: the halving formula, the star ladder and the shape of the end-of-round
+ * package are all untouched, and a round that runs to the end must be scored bit for bit as
+ * it was before this function existed.
+ */
+describe("finishEarly", () => {
+  it("is a no-op before the first scored question", () => {
+    // An "end" that opens an empty result screen is not a result. Identity, not a copy: the
+    // caller may compare by reference to decide whether anything happened.
+    const state = startRound(POOL);
+    expect(finishEarly(state)).toBe(state);
+    // Wrong clicks alone are not a scored question either.
+    const onlyMisses = miss(state, 3);
+    expect(finishEarly(onlyMisses)).toBe(onlyMisses);
+  });
+
+  it("is a no-op on a round that already ended", () => {
+    let state = startRound(POOL);
+    for (let i = 0; i < POOL.length; i += 1) state = solve(state);
+    expect(state.status).toBe("finished");
+    expect(finishEarly(state)).toBe(state);
+    // …and it does not retro-label a completed round as a half one.
+    expect(finishEarly(state).endedEarly).toBe(false);
+  });
+
+  it("ends the round and records that the player did it", () => {
+    const state = finishEarly(solve(startRound(POOL)));
+    expect(state.status).toBe("finished");
+    expect(state.endedEarly).toBe(true);
+    // The pool is NOT truncated: "Soru 1/4" and "Yarım tur 1/4" both need the original size.
+    expect(state.order).toHaveLength(POOL.length);
+  });
+
+  it("starts every round as a full one", () => {
+    expect(startRound(POOL).endedEarly).toBe(false);
+    expect(summarizeRound(startRound(POOL)).endedEarly).toBe(false);
+  });
+
+  it("scores a half round over the questions that were SEEN", () => {
+    // Two of four, both right on the first click. Averaged over the pool this would report
+    // 50 for a player who got everything they were asked; averaged over what was asked it
+    // reports the truth. The FORMULA is DEC 2026-07-30h's, untouched — only the divisor is
+    // what md. 2 settles.
+    let state = startRound(POOL);
+    state = solve(state);
+    state = solve(state);
+    const summary = summarizeRound(finishEarly(state));
+
+    expect(summary.score).toBe(100);
+    expect(summary.total).toBe(2);
+    expect(summary.poolTotal).toBe(POOL.length);
+    expect(summary.found).toBe(2);
+    expect(summary.firstTry).toBe(2);
+  });
+
+  it("still applies the halving inside a half round", () => {
+    // 100 and 50, over two seen questions ⇒ 75. If the divisor ever silently became the pool
+    // again this would read 38.
+    let state = startRound(POOL);
+    state = solve(state);
+    state = solve(state, 1);
+    expect(summarizeRound(finishEarly(state)).score).toBe(75);
+  });
+
+  it("never reports an unasked target as one the player missed", () => {
+    // The honesty rule of the whole feature. "Bilemedim" means "it was asked and I did not
+    // know it"; a question the round never reached is not a failure and must not appear in
+    // the end screen's list — nor be counted as found.
+    let state = startRound(POOL);
+    // The id is READ from the round, never assumed: `noShuffle` is a deterministic stub, not
+    // an identity — Fisher-Yates with `() => 0` swaps each position with the first, so the
+    // opening question is not `POOL[0]`. Asserting a position here would test the stub.
+    const shown = target(state);
+    state = advanceRound(revealRound(state).state); // asked, shown ⇒ genuinely missed
+    const answered = target(state);
+    state = solve(state);
+    const summary = summarizeRound(finishEarly(state));
+
+    expect(summary.missedTargetIds).toEqual([shown]);
+    expect(summary.missedTargetIds).not.toContain(answered);
+    // The two questions the round never reached are in neither column.
+    expect(summary.found).toBe(1);
+    expect(summary.total).toBe(2);
+    expect(summary.poolTotal).toBe(POOL.length);
+  });
+
+  it("does not charge the abandoned question's wrong clicks to the round", () => {
+    // The player clicked around on a question they then walked away from. That question is
+    // not part of the round — it produced no result — so its clicks are not part of the
+    // round's "Yanlış tıklama" either.
+    let state = startRound(POOL);
+    state = solve(state, 2);
+    const withOpenMisses = miss(state, 3);
+    expect(summarizeRound(withOpenMisses).totalWrongs).toBe(5);
+    expect(summarizeRound(finishEarly(withOpenMisses)).totalWrongs).toBe(2);
+  });
+
+  it("leaves a completed round scored exactly as before", () => {
+    // The regression that matters most: three of the four modes never call `finishEarly` at
+    // all, and their end screens must be untouched by its existence.
+    //
+    // WHAT THIS TEST CANNOT SEE, recorded so nobody reads more into it than it proves
+    // (→ PR #50 review TA50-M1). On a completed round `results.length` and `order.length` are
+    // provably equal — every index produces exactly one result before `status` becomes
+    // `finished` — so a regression that dropped the divisor's ternary and always divided by
+    // `results.length` would still print 44 here. That case is caught one test up ("still
+    // applies the halving inside a half round", 75 vs the 38 a pool divisor gives); the two
+    // tests carry the guarantee TOGETHER, and deleting either leaves the other blind in one
+    // direction.
+    let state = startRound(POOL);
+    state = solve(state);
+    state = solve(state, 1);
+    state = solve(state, 2);
+    state = advanceRound(revealRound(state).state);
+    const summary = summarizeRound(state);
+
+    expect(summary.endedEarly).toBe(false);
+    expect(summary.total).toBe(POOL.length);
+    expect(summary.poolTotal).toBe(POOL.length);
+    // (100 + 50 + 25 + 0) / 4 = 43.75 ⇒ 44.
+    expect(summary.score).toBe(44);
+    expect(summary.found).toBe(3);
+  });
+});
+
 // `runningScore` had its own describe block here. Both the function and the HUD pill it
 // fed were removed by owner ruling (2026-08-05): the score is not shown while the round is
 // played. The tests went with the code they described — there is nothing left to assert.
@@ -421,6 +551,10 @@ describe("the removed clock and snapshot (DEC 2026-07-30m/30n)", () => {
 
     expect(Object.keys(state).sort()).toEqual([
       "currentWrongPicks",
+      // Added by DEC 2026-08-05g md. 2, and it is NOT the kind of field this guard exists to
+      // keep out: it records something the PLAYER did, inside the round, and it has a reader
+      // on the end screen. A clock had neither property.
+      "endedEarly",
       "index",
       "modeId",
       "order",

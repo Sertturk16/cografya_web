@@ -136,13 +136,18 @@ export function GameSummary({
           <TrophyIcon size={26} />
         </p>
 
+        {/* THE HEADING IS THE FIRST THING READ OUT, so it is the first thing that has to be
+            true (→ PR #50 review, author-surfaced + CR50-M4). "Tur bitti" over a round the
+            player ended after six of eighty-one questions reports a finished map; the
+            qualifier line below carried the whole correction, one heading too late for
+            anyone hearing the dialog rather than scanning it. */}
         <h2
           id="game-summary-heading"
           className={styles.dialogHeading}
           ref={headingRef}
           tabIndex={-1}
         >
-          {t("summaryHeading")}
+          {t(summary.endedEarly ? "summaryHeadingPartial" : "summaryHeading")}
         </h2>
 
         {/* The star row is DECORATION over numbers that are already on screen: the glyphs
@@ -157,6 +162,21 @@ export function GameSummary({
             {t("summaryStars", { count: stars, max: MAX_STARS })}
           </span>
         </p>
+
+        {/* HALF A ROUND SAYS SO — DEC 2026-08-05g md. 2 + Atlas AO-3.
+            The stars STAY: "skor kuralları değişmez", and a player who answered twelve of
+            twelve correctly earned three stars for the twelve they played. What would be
+            dishonest is letting those three stars stand next to nothing that says the map was
+            not finished — the exact class of defect the UX tour caught at B9, where the end
+            screen congratulated a player on knowing everything they had just missed.
+            So the honesty is carried by a SENTENCE rather than by degrading the grade: one
+            line, directly under the stars, naming both numbers. It no longer repeats "Yarım
+            tur" — the heading says that now — and states the two numbers only. */}
+        {summary.endedEarly ? (
+          <p className={styles.dialogPartial}>
+            {t("summaryPartial", { answered: summary.total, poolTotal: summary.poolTotal })}
+          </p>
+        ) : null}
 
         {/* The star rule, in one sentence. The row above shows a grade the numbers below
             cannot explain: 6 of 7 on the first try scores 93, which is three stars, and
@@ -206,9 +226,18 @@ export function GameSummary({
              to be SHOWN — so a player who missed a province once and then found it was told
              they had known everything (UX tour B9). The second sentence is the honest thing
              to say in that case: nothing had to be shown, but something is still worth a
-             second look, and the list is right underneath. */
+             second look, and the list is right underneath.
+             AND "hepsini" HAS TO MEAN SOMETHING (→ PR #50 review CR50-M4): on a round ended
+             after six of eighty-one it meant "all six", which is not what the word says. The
+             half-round wording scopes it to what was played. The reveal sentence needs no such
+             variant — "you never had to be shown an answer" is about the questions that were
+             asked either way, and claims nothing about the ones that were not. */
           <p className={styles.dialogNote}>
-            {review.length === 0 ? t("summaryMissedNone") : t("summaryMissedNoneReveal")}
+            {review.length > 0
+              ? t("summaryMissedNoneReveal")
+              : summary.endedEarly
+                ? t("summaryMissedNonePartial")
+                : t("summaryMissedNone")}
           </p>
         ) : (
           <>

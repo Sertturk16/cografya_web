@@ -37,7 +37,15 @@ import { REGION_KEYS } from "@/lib/game/region-slug";
  *    touch no province at all, so there is nothing left to win that cascade. The test below
  *    pins the replacement invariant instead: the probe must read the HIT layer (`.hitEdge`),
  *    because the base layer is `pointer-events: none` and can never match `:hover`.
- *  · `:not([data-state])` moved from the subject to the probe and is still asserted.
+ *  · `:not([data-state])` moved from the subject to the probe and is still asserted — but see
+ *    the tint test below: in PR-4b the TINT probe narrowed to the two transient states, so
+ *    that a solved region keeps its colour (I1 / D6). The hover and focus probes still read
+ *    `:not([data-state])` deliberately, and the reason is NOT that a solved region is
+ *    unpickable — it is pickable, and picking it is a wrong answer to the open question
+ *    (`lib/game/shape-state.ts`; an earlier wording of this note had that backwards). The
+ *    reason is that a hover silhouette is an invitation, and inviting a click that can only
+ *    cost the player points is the wrong invitation to draw. What the player DID outranks
+ *    where the pointer is.
  */
 
 const CSS = readFileSync(fileURLToPath(new URL("./game-map.module.css", import.meta.url)), "utf8")
@@ -66,9 +74,29 @@ describe("game-map.module.css region rules", () => {
     for (const region of REGION_KEYS) {
       // The selector AND its declaration: asserting the selector alone would pass on an
       // empty rule block (→ CR-R2-5).
+      //
+      // THE PROBE CHANGED IN PR-4b, and it is the fix, not a relaxation (I1 / D6,
+      // → DEC 2026-08-05g md. 1). It used to be `:not([data-state])`, which handed the tint
+      // over to EVERY answer state — including `correct`, the one that is permanent. A solved
+      // region therefore lost its colour, and a finished round showed all seven regions in one
+      // green. The probe now names only the two TRANSIENT states, so a solved region keeps its
+      // tint and says "solved" with a second signal instead.
       expect(CSS).toContain(
-        `[data-game-mode="regions"] .province[data-region="${region}"]:not([data-state]) { fill: var(${tintToken(region)}); }`,
+        `[data-game-mode="regions"] .province[data-region="${region}"]:not([data-state="wrong"]):not([data-state="reveal"]) { fill: var(${tintToken(region)}); }`,
       );
+    }
+  });
+
+  it("never lets the SOLVED state suppress a region's tint (D6)", () => {
+    // The regression itself, stated once and independently of the seven rules above: if
+    // `correct` ever reappears in a tint probe — as a bare `:not([data-state])` or by name —
+    // the bölge mode goes back to erasing its own lesson at the end of every round.
+    for (const match of CSS.matchAll(
+      /\[data-game-mode="regions"\] \.province\[data-region="[A-Z_]+"\]([^{]*)\{/g,
+    )) {
+      const probe = match[1] ?? "";
+      expect(probe).not.toContain("correct");
+      expect(probe).not.toContain(":not([data-state])");
     }
   });
 
