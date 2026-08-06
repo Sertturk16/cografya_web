@@ -612,6 +612,16 @@ export interface components {
              * @example MGM'nin 2023 Köppen sınıflandırması bu ili Csa (Akdeniz iklimi) olarak verir; ancak MGM'nin kendi raporu bu basitleştirilmiş yöntemin bölgesel ayırt ediciliğinin sınırlı olduğunu not düşer.
              */
             climateNoteTr: string | null;
+            /**
+             * @description MÜFREDAT iklim adı (MEB Coğrafya 9, Harita 1.39 terminolojisi). `climateClassTr` DEĞİLDİR: o alan MGM'nin kendi Köppen sınıf adıdır ve atıflı alıntıdır; bu alan, MEB ders kitabı haritasından bizim türettiğimiz ayrı bir editoryal katmandır ve MGM’ye atfedilemez. Sekiz kanonik değerden biri (Akdeniz / Karadeniz / İç Anadolu karasal / Doğu Anadolu karasal / Güneydoğu Anadolu karasal / Trakya karasal / Marmara geçiş / Göller Yöresi geçiş iklimi). Başlık dizgesi API’de KURULMAZ: web `<ad> · Köppen: <kod>` biçimini kendisi kurar (ayırıcı ve tipografi sunum kararıdır, EN sürümünde farklıdır). EN karşılığı bu dalgada yok.
+             * @example İç Anadolu karasal iklimi
+             */
+            climateCurriculumNameTr: string | null;
+            /**
+             * @description Müfredat adına eşlik eden açıklama notu (TR). Yalnız 15 ilde dolu, geri kalanında NULL — bu bir eksiklik değil, tasarım: not ya adın harita sınırındaki bir okuma olduğunu ya da addaki coğrafi etiketin ilin kendi bölgesinden farklı olduğunu açıklar. Köppen ile müfredat arasındaki genel gerilim BURADA DEĞİL, tüm illerde ortak olan `climateNoteTr` uyarısının içinde tek seferde karşılanır.
+             * @example Çorum, 776 metredeki merkeziyle Kızılırmak havzasına açılan yüksek bir platodadır. İl Karadeniz Bölgesi'ndedir, iklim adı ise güneydeki İç Anadolu'yu gösterir.
+             */
+            climateCurriculumNoteTr: string | null;
             /** @description İklim serisi (ERA5-Land 1991-2020 aylık normalleri + kaynak/dönem) + TÜRETİLMİŞ yıllık/mevsimsel değerler. Null = yayınlanabilir seri yok → web iklim bölümünü hiç render etmez. Türetilmiş değerler bizimdir, kaynağa atfedilemez; tüm sayılar ham (biçimlendirme web'in işi). */
             climate: components["schemas"]["ClimateDto"] | null;
             /** @description NOVA'nın il-il yazdığı iklim yorumu (TR) — mekanizma anlatan gerçek düzyazı. `climateNoteTr` (kilitli MGM Köppen uyarısı) DEĞİL; ayrı bir alandır. İçerik dalgaları doldurana kadar null. */
@@ -667,7 +677,7 @@ export interface components {
              * @description Kıta.
              * @enum {string}
              */
-            continent: "ASYA" | "AVRUPA" | "AFRIKA" | "KUZEY_AMERIKA" | "GUNEY_AMERIKA" | "OKYANUSYA";
+            continent: "ASYA" | "AVRUPA" | "AFRIKA" | "KUZEY_AMERIKA" | "GUNEY_AMERIKA" | "OKYANUSYA" | "ANTARKTIKA";
             /**
              * @description TR slug (routing key).
              * @example turkiye
@@ -699,7 +709,7 @@ export interface components {
              * @description Kıta.
              * @enum {string}
              */
-            continent: "ASYA" | "AVRUPA" | "AFRIKA" | "KUZEY_AMERIKA" | "GUNEY_AMERIKA" | "OKYANUSYA";
+            continent: "ASYA" | "AVRUPA" | "AFRIKA" | "KUZEY_AMERIKA" | "GUNEY_AMERIKA" | "OKYANUSYA" | "ANTARKTIKA";
             /**
              * @description TR slug (routing key — kart tıklaması).
              * @example turkiye
@@ -710,6 +720,22 @@ export interface components {
              * @example turkey
              */
             slugEn: string;
+            /**
+             * @description Varlık türü — `country` / `territory` / `special`. Kartın "ülke varsayan" davranışları (alt başlık, komşu sayısı satırı, "kalıcı nüfus yok" satırı) buna dallanır.
+             * @example country
+             * @enum {string}
+             */
+            entityType: "country" | "territory" | "special";
+            /**
+             * @description Onaylı kart alt başlığı (TR). `country` satırlarında null; `territory`/`special` satırlarında daima dolu — kıta adına düşmeyin (DEC 2026-08-01m).
+             * @example null
+             */
+            statusLabelTr: string | null;
+            /**
+             * @description Onaylı kart alt başlığı (EN). `statusLabelTr` ile aynı kural.
+             * @example null
+             */
+            statusLabelEn: string | null;
             /**
              * @description Nüfus (World Bank / UN). Null until fact-checked.
              * @example 85372000
@@ -725,6 +751,11 @@ export interface components {
              * @example 783562
              */
             areaKm2: number | null;
+            /**
+             * @description `areaKm2` yaklaşık mı? `true` ise kartta "≈" ile gösterilmelidir (DEC 2026-08-01l). Tek kaynak burasıdır — istemcide sabitlemeyin.
+             * @example false
+             */
+            areaIsApproximate: boolean;
             /**
              * @description Komşu ülke sayısı — SERVER-DERIVED from the neighbour ISO-code array length (the "ilçe sayısı" replacement). Always present (0 for island nations).
              * @example 8
@@ -766,7 +797,23 @@ export interface components {
              * @description Kıta.
              * @enum {string}
              */
-            continent: "ASYA" | "AVRUPA" | "AFRIKA" | "KUZEY_AMERIKA" | "GUNEY_AMERIKA" | "OKYANUSYA";
+            continent: "ASYA" | "AVRUPA" | "AFRIKA" | "KUZEY_AMERIKA" | "GUNEY_AMERIKA" | "OKYANUSYA" | "ANTARKTIKA";
+            /**
+             * @description Varlık türü — `country`: egemen devlet · `territory`: bağlı/özerk toprak · `special`: ülke kategorisine girmeyen özel statülü coğrafya. Her zaman doludur (işaretlenmemiş satır `country`). "Bir ülkedir" varsayan her davranış (JSON-LD tipi, meta cümlesi, kıta satırı, komşu sayısı satırı) bu alana dallanmalıdır — ada ya da slug'a bakarak çıkarım yapılmamalıdır.
+             * @example country
+             * @enum {string}
+             */
+            entityType: "country" | "territory" | "special";
+            /**
+             * @description Onaylı kart alt başlığı (TR), ör. "Danimarka Özerk Bölgesi". `country` satırlarında DAİMA null; `territory`/`special` satırlarında daima dolu. Kıta adına düşmeyin — boş etiket bir veri hatasıdır, bir yedek değil.
+             * @example null
+             */
+            statusLabelTr: string | null;
+            /**
+             * @description Onaylı kart alt başlığı (EN). `statusLabelTr` ile aynı kural.
+             * @example null
+             */
+            statusLabelEn: string | null;
             /**
              * @description BM alt-bölgesi (UNSD M49) TR etiketi.
              * @example Batı Asya
@@ -792,6 +839,11 @@ export interface components {
              * @example 783562
              */
             areaKm2: number | null;
+            /**
+             * @description `areaKm2` yaklaşık bir değer mi? `true` ise sunumda "≈" / "yaklaşık" ile verilmelidir (ör. Antarktika 14.200.000 km²; DEC 2026-08-01l). Her zaman doludur; işaretlenmemiş bir değer kesindir. Bunu istemci tarafında sabitlemeyin — tek kaynak burasıdır.
+             * @example false
+             */
+            areaIsApproximate: boolean;
             /**
              * @description Komşu ülke sayısı — SERVER-DERIVED: neighbour ISO-code array length (the "ilçe sayısı" replacement). Consume this rather than recomputing. Always present (0 for island nations).
              * @example 8
@@ -866,6 +918,12 @@ export interface components {
             hydrographyNoteTr: string | null;
             /** @description Egemenlik / uluslararası tanınma çerçevesi — serbest anlatı düzyazısı (TR). Yalnızca tanınma statüsü tartışmalı/standart-dışı ülkeler için doldurulur; sıradan ülkelerde null. */
             sovereigntyNoteTr: string | null;
+            /** @description Yerleşme / nüfus dağılışı — kısa düzyazı not (TR). İçerik dalgası dolduruncaya kadar null. */
+            settlementNoteTr: string | null;
+            /** @description Ekonomi — kısa düzyazı not (TR). İçerik dalgası dolduruncaya kadar null. */
+            economyNoteTr: string | null;
+            /** @description Yönetim / statü çerçevesi — kısa düzyazı not (TR). `sovereigntyNoteTr` DEĞİLDİR: bu sayfada görünen sıradan bir bölümdür (ör. "Grönland'ın Yönetimi"), diğeri tartışmalı tanınma için saklanan ve bugün render edilmeyen çerçeve metnidir. İçerik dalgası dolduruncaya kadar null. */
+            governanceNoteTr: string | null;
             /**
              * Format: date-time
              * @description Kayıt oluşturulma zamanı.
@@ -884,7 +942,7 @@ export interface components {
              */
             value: number | null;
             /**
-             * @description Canonical machine unit. Providers return three different strings for the same quantity (m / degree / degrees_C from CMEMS; m / ° / °C / km/h from Open-Meteo), so passthrough is not an option. Symbols are a display concern (web i18n).
+             * @description Canonical machine unit. Passthrough is not an option, because the two providers do not even agree on having one: CMEMS states its own unit string per field (m / degree / degrees_C), while ECMWF Open Data ships GRIB2, where the unit is implied by the parameter and no unit string is carried at all. Symbols are a display concern (web i18n).
              * @enum {string}
              */
             unit: "m" | "celsius" | "degree_true" | "meter_per_second";
@@ -1106,7 +1164,7 @@ export interface components {
             windSpeed10m: components["schemas"]["MarineValueDto"];
             /** @description Wind direction at 10 m. True north, clockwise, 0–360. Per-field from/towards meaning is published in GET /api/marine/layers → directionConvention. This field is 'from'. */
             windDirection10m: components["schemas"]["MarineValueDto"];
-            /** @description The 5-day series, or null. Nullable for a real case, not for convenience: CMEMS may be up while Open-Meteo is down, which yields instant values with no series. */
+            /** @description The 5-day series, or null. Nullable for a real case, not for convenience: the series is always ECMWF (MarineSeriesDto.source), while the instant values above are CMEMS-primary for the three ocean fields — so a point can hold instant values with no series whenever no publishable ECMWF series can be read (no publishable cycle, or the stored series is unreadable or past the cycle-age ceiling). */
             series: components["schemas"]["MarineSeriesDto"] | null;
             /**
              * @description SERVER-COMPUTED. True when the chart comes from a different model than the headline instant value, which measurably happens (~1.5–1.7 °C apart at the same point). When true the web MUST render the fixed i18n notice marine.series.sourceDiffersNotice. It is a boolean rather than a design-guide sentence precisely so it can be asserted in a contract test instead of quietly skipped.
