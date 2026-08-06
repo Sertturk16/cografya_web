@@ -21,21 +21,34 @@ import trMessages from "@/messages/tr.json";
 
 const CLIMATE_KEYS = [
   "climateHeading",
+  // Value line (WEB-KOPPEN, DEC 2026-08-05c): "<curriculum name> · Köppen: <code>". The name
+  // segment is `climateCurriculumNameTr`, NOT the MGM class name.
   "climateValue",
+  // Contract-legal fallback when `climateCurriculumNameTr` is null (plan §3 V-1) — code alone,
+  // never a bare name-less/code-less line.
+  "climateValueKoppenOnly",
+  // Defense-in-depth ONLY (§6 "no bare Csa"): renders when the mandatory MGM caveat itself is
+  // absent, a contract violation the api already guards against. Shows the MGM class name
+  // (`climateClassTr`), never the curriculum name — a different field from the two above.
   "climateClassOnly",
-  // The always-visible plain sentence (→ DEC 2026-08-04i §3). It exists because the MGM
-  // caveat below it arrives COLLAPSED, so this is the only explanation a reader who never
-  // opens the disclosure sees — a missing key here would be a silent return to that state.
+  // The always-visible plain sentence (→ DEC 2026-08-04i §3; re-worded for WEB-KOPPEN's V-5,
+  // adopting NOVA's cumle-taslaklari.md §3.1 text). The MGM caveat below it now renders OPEN
+  // by default (DEC 2026-08-05c), but this sentence stays: it is the only one that names which
+  // of the two heading names is which BEFORE a reader reads the caveat's own full text.
   "climatePlainNote",
   "climateNoteLabel",
   // Cited in the Kaynaklar line only when the Köppen class line actually renders (UX tour B5).
   "sourcesClimateClass",
+  // MEB curriculum-name attribution (WEB-KOPPEN plan §5) — its own entry, a distinct source
+  // family from MGM's classification, cited only when the curriculum name segment renders.
+  "sourcesClimateCurriculum",
 ] as const;
 
 /** Placeholders each templated key must carry, so a message can never drop an interpolation. */
 const REQUIRED_PLACEHOLDERS: Record<string, readonly string[]> = {
   climateHeading: ["name"],
-  climateValue: ["className", "koppen"],
+  climateValue: ["name", "koppen"],
+  climateValueKoppenOnly: ["koppen"],
   climateClassOnly: ["className"],
 };
 

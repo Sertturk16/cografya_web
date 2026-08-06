@@ -27,6 +27,18 @@
  * that caveat. So EN gets no climate block at all until real EN content lands
  * (`EN_CONTENT_READY`, `lib/seo/indexing.ts`). Keeping `isTr` inside this function means the
  * EN suppression is covered by the same tests, instead of being an `&&` a refactor can drop.
+ *
+ * ## `citeCurriculumSource` (WEB-KOPPEN, plan §5)
+ *
+ * A fourth, independent boolean added alongside the original three — not a restructuring of
+ * the function's shape (plan A-4). It mirrors `citeClassSource`'s own citation-parity
+ * invariant ("never cite a source for content not on the page", `page.tsx` L403-411) for the
+ * NEW MEB curriculum attribution: the curriculum name is a distinct source family from MGM's
+ * Köppen classification (DEC 2026-08-05c item 1), so it earns its own `extraSources` entry —
+ * gated on `hasCurriculumName`, NOT on `showClass` alone. The value line still renders when
+ * `climateCurriculumNameTr` is null (contract-legal fallback: code-only, `plan §3` V-1), and
+ * that fallback shows nothing MEB-sourced, so citing the MEB source there would cite content
+ * that is not on the page — exactly the class of bug this whole module exists to prevent.
  */
 
 export interface ClimateBlockInput {
@@ -38,6 +50,8 @@ export interface ClimateBlockInput {
   readonly hasClimateSeries: boolean;
   /** Are there same-climate cross-link cards to show? */
   readonly hasSimilarClimate: boolean;
+  /** Does the api carry a non-null `climateCurriculumNameTr` for this province? */
+  readonly hasCurriculumName: boolean;
 }
 
 export interface ClimateBlockGates {
@@ -47,10 +61,12 @@ export interface ClimateBlockGates {
   readonly showClass: boolean;
   /** Add `ProvinceDetail.sourcesClimateClass` to the Kaynaklar line. */
   readonly citeClassSource: boolean;
+  /** Add `ProvinceDetail.sourcesClimateCurriculum` to the Kaynaklar line (WEB-KOPPEN). */
+  readonly citeCurriculumSource: boolean;
 }
 
 export function climateBlockGates(input: ClimateBlockInput): ClimateBlockGates {
-  const { isTr, hasClimateClass, hasClimateSeries, hasSimilarClimate } = input;
+  const { isTr, hasClimateClass, hasClimateSeries, hasSimilarClimate, hasCurriculumName } = input;
 
   const showSection = isTr && (hasClimateClass || hasClimateSeries || hasSimilarClimate);
   const showClass = showSection && hasClimateClass;
@@ -62,5 +78,9 @@ export function climateBlockGates(input: ClimateBlockInput): ClimateBlockGates {
     // rather than as a repeated expression so the two can never drift apart, which is exactly
     // how the base-string version went wrong.
     citeClassSource: showClass,
+    // The MEB name segment renders only when the value line renders AND the api actually
+    // carries a curriculum name (the null branch shows the Köppen code alone — nothing
+    // MEB-sourced to cite).
+    citeCurriculumSource: showClass && hasCurriculumName,
   };
 }
