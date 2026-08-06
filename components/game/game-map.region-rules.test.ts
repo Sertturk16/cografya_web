@@ -40,8 +40,12 @@ import { REGION_KEYS } from "@/lib/game/region-slug";
  *  · `:not([data-state])` moved from the subject to the probe and is still asserted — but see
  *    the tint test below: in PR-4b the TINT probe narrowed to the two transient states, so
  *    that a solved region keeps its colour (I1 / D6). The hover and focus probes still read
- *    `:not([data-state])` deliberately: a solved region is no longer answerable, so lighting
- *    its silhouette under the cursor would advertise a target that cannot be picked.
+ *    `:not([data-state])` deliberately, and the reason is NOT that a solved region is
+ *    unpickable — it is pickable, and picking it is a wrong answer to the open question
+ *    (`lib/game/shape-state.ts`; an earlier wording of this note had that backwards). The
+ *    reason is that a hover silhouette is an invitation, and inviting a click that can only
+ *    cost the player points is the wrong invitation to draw. What the player DID outranks
+ *    where the pointer is.
  */
 
 const CSS = readFileSync(fileURLToPath(new URL("./game-map.module.css", import.meta.url)), "utf8")

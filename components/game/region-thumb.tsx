@@ -45,10 +45,14 @@ type ThumbStyle = CSSProperties & Record<"--region-thumb-aspect", string>;
  * all of them as the faint backdrop.
  *
  * Rendering the paths per card instead would put the artifact on the page seven times: 57.6 KB
- * raw becomes 403 KB. This element is the reason the feature costs ~21 KB gzip in total rather
- * than seven times that, and the cost is accepted as-is (→ Atlas AO-6): the page is `noindex`,
- * and the alternative — generating a second, decimated small-map artifact — is a build-script
- * investment nobody has asked for yet.
+ * raw becomes 403 KB. This element is the reason the feature costs what it does rather than
+ * seven times that. MEASURED on a production build, not estimated: +49 KB gzip on this route
+ * (16,899 → 67,230 B). The estimate that Atlas AO-6 was first approved against was ~21 KB and
+ * counted only the raw path bytes — in the App Router a server component's output is serialized
+ * TWICE, once into the HTML and once into the RSC flight payload, and the escaped second copy
+ * compresses less well. The revised figure is accepted as-is (→ Atlas AG-2): the page is
+ * `noindex`, and the alternative — generating a second, decimated small-map artifact — is a
+ * build-script investment nobody has asked for yet.
  *
  * `<svg>` with no size and `aria-hidden`: it paints nothing itself, it only defines.
  */
@@ -56,8 +60,20 @@ export function RegionThumbDefs({ shapes }: { shapes: readonly GameShapeEntry[] 
   return (
     <svg className={styles.thumbDefs} aria-hidden="true" focusable="false">
       <defs>
+        {/* `vectorEffect` BELONGS HERE, on the geometry, and the repo says so in four other
+            places (`game-map.tsx`, `game-map.module.css`, `map.module.css`,
+            `turkey-map-section.tsx`): it is not an inherited property, so declared on the
+            `<use>` — where these thumbs first put it — it never reaches the clone. The
+            measured consequence was that the outlines the stylesheet describes were not
+            there: at a ~300px card over a 1000-unit viewBox a `stroke-width: 1` renders at
+            ≈0.3 CSS px, so the thumbs were fill-only shapes (→ PR #50 review CR50-M1). */}
         {shapes.map((shape) => (
-          <path key={shape.plateCode} id={`${THUMB_ID_PREFIX}${shape.plateCode}`} d={shape.d} />
+          <path
+            key={shape.plateCode}
+            id={`${THUMB_ID_PREFIX}${shape.plateCode}`}
+            d={shape.d}
+            vectorEffect="non-scaling-stroke"
+          />
         ))}
         <g id={COUNTRY_ID}>
           {shapes.map((shape) => (

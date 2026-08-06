@@ -513,6 +513,15 @@ describe("finishEarly", () => {
   it("leaves a completed round scored exactly as before", () => {
     // The regression that matters most: three of the four modes never call `finishEarly` at
     // all, and their end screens must be untouched by its existence.
+    //
+    // WHAT THIS TEST CANNOT SEE, recorded so nobody reads more into it than it proves
+    // (→ PR #50 review TA50-M1). On a completed round `results.length` and `order.length` are
+    // provably equal — every index produces exactly one result before `status` becomes
+    // `finished` — so a regression that dropped the divisor's ternary and always divided by
+    // `results.length` would still print 44 here. That case is caught one test up ("still
+    // applies the halving inside a half round", 75 vs the 38 a pool divisor gives); the two
+    // tests carry the guarantee TOGETHER, and deleting either leaves the other blind in one
+    // direction.
     let state = startRound(POOL);
     state = solve(state);
     state = solve(state, 1);

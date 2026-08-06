@@ -125,11 +125,13 @@
   display: block;
 }
 
+/* `vector-effect` is NOT declared here: these classes sit on `<use>` elements, where the
+   property never reaches the clone. It is a presentation attribute on the `<defs>` geometry
+   in `region-thumb.tsx`, exactly as on the two full-size maps. */
 .thumbBase {
   fill: var(--province-inert);
   stroke: var(--color-border);
   stroke-width: 1;
-  vector-effect: non-scaling-stroke;
 }
 
 /* 4.26:1 against the backdrop it sits in — comfortably over WCAG 1.4.11's 3:1 floor for a
@@ -138,7 +140,6 @@
   fill: var(--color-primary);
   stroke: var(--color-primary-dark);
   stroke-width: 1;
-  vector-effect: non-scaling-stroke;
 }
 
 .modeName {

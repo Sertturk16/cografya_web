@@ -53,9 +53,14 @@ export default async function RegionPickerPage({ params }: PageProps) {
   // The cards' mini maps (→ DEC 2026-08-05g md. 3). Grouping comes from the api, through the
   // same join the game map uses — no geography is written here (CONVENTIONS §4).
   //
-  // DEGRADES, never breaks: `getMapSummaryResilient` is build-tolerant, so an api outage
-  // leaves every `target` null, every group empty, and this page renders exactly the cards it
-  // rendered before this change. A picture is what is lost, not the screen.
+  // BUILD-TOLERANT, which is narrower than "never breaks" and the difference is worth stating
+  // (→ PR #50 review CR50-M3). `getMapSummaryResilient` swallows an api error only when
+  // `isProductionBuild()`; everywhere else it re-throws. So: during `next build` an api outage
+  // leaves every `target` null, every group empty, and this page ships exactly the cards it
+  // shipped before this change — a picture is lost, not the screen. At runtime the page is
+  // static with ISR, so a later outage is served from the last good render. What genuinely
+  // changed is `pnpm dev` with the api down: this picker used to be api-free (`REGION_KEYS`
+  // alone) and now fails there like every other game screen already does.
   const summaries = await getMapSummaryResilient();
   const shapes = buildGameShapes(PROVINCE_SHAPES, summaries, locale);
   const membersByRegion = new Map<string, string[]>();

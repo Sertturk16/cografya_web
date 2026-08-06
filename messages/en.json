@@ -143,8 +143,9 @@
     "feedbackRetry": "That is {name}. Try again.",
     "feedbackRevealed": "{name} is here.",
     "summaryHeading": "Round over",
+    "summaryHeadingPartial": "Half a round over",
     "summaryStars": "{count}/{max} stars",
-    "summaryPartial": "Half a round: you played {answered} of {poolTotal} questions.",
+    "summaryPartial": "You played {answered} of {poolTotal} questions.",
     "summaryStarsRule": "{three} points or more earns 3 stars, {two} or more 2 stars, {one} or more 1 star.",
     "summaryFirstTry": "{count}/{total} on the first try",
     "statScore": "Score",
@@ -153,6 +154,7 @@
     "summaryMissedHeading": "What you missed",
     "summaryMissedNote": "Each province opens its own page.",
     "summaryMissedNone": "You got every one on the first try.",
+    "summaryMissedNonePartial": "You got every one you played on the first try.",
     "summaryMissedNoneReveal": "You never had to be shown an answer.",
     "summaryReviewHeading": "Not on the first try ({count})",
     "summaryReviewNote": "You found these in the end, but not on the first click. Their pages are worth a look.",
@@ -165,7 +167,8 @@
     "zoomControls": "Zoom controls",
     "zoomInstructions": "With the map focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to return to the starting view. {selectHint} With a mouse you can zoom with the wheel and pan by dragging; on a touch screen, pinch to zoom and drag with one finger to pan.",
     "selectHintProvinces": "With a province focused, Enter or Space selects that province.",
-    "selectHintRegions": "With a province focused, Enter or Space picks the region that province belongs to."
+    "selectHintRegions": "With a province focused, Enter or Space picks the region that province belongs to.",
+    "shapeSolved": "{name}, solved"
   },
   "ProvinceDetail": {
     "metaTitle": "Geography of {name}",

@@ -49,24 +49,23 @@ function code(source: string): string {
 const MAP = code(sourceOf("./game-map.tsx"));
 const ISLAND = code(sourceOf("./game-island.tsx"));
 const CSS = code(sourceOf("./game-map.module.css")).replace(/\s+/g, " ");
+// The token layer, for the shared ink the hatch is drawn in (→ Atlas AG-1).
+const GLOBALS = code(sourceOf("../../app/globals.css")).replace(/\s+/g, " ");
 
 /**
- * The layers, in the order they must paint: fills, then silhouettes, then lines, then the
- * solved marks.
- *
- * `mark` is I1's "check" variant (→ DEC 2026-08-05g md. 1). It is pinned at the SAME strength
- * as the other three rather than left unguarded because it is a variant: if the owner picks
- * it, its position is load bearing (a tick under the hit layer would be crossed out by the
- * answer's own line); if the owner picks "hatch" instead, this layer and this entry are
- * deleted together (→ Atlas AO-2). What must never happen is the layer surviving with nothing
- * asserting where it sits.
+ * The layers, in the order they must paint: fills, then silhouettes, then lines.
  *
  * NOT the whole paint order of this `<svg>`: `<InlandWaterLayer>` sits ABOVE all three and is
  * pinned in `components/map/inland-water-layer.contract.test.ts`, because that position is the
  * water layer's own contract (it is what makes a mid-lake click score nothing). Do not read
  * the list below as "these are all the children" — it is the twin split and nothing else.
+ *
+ * THERE IS NO FOURTH LAYER. I1 shipped two variants (→ DEC 2026-08-05g md. 1, Atlas AO-2) and
+ * the owner picked the hatch on 2026-08-06; the ✓ variant's `mark` layer was deleted with it,
+ * along with its entry here. The surviving variant needs no layer of its own — it paints into
+ * the hit twin — and it is pinned in its own describe block at the end of this file.
  */
-const LAYERS = ["base", "region", "hit", "mark"] as const;
+const LAYERS = ["base", "region", "hit"] as const;
 
 /**
  * The source of ONE layer group: from its marker attribute up to the next one (the last block
@@ -119,12 +118,6 @@ describe("the game map's paint layers", () => {
     // The silhouette layer re-uses the same geometry a third time. If it ever carried
     // `data-plate`, the island's "both twins" query would silently become "all three".
     expect(layerBlock("region")).not.toContain("data-plate");
-    // Neither does the mark layer, and that is a different reason: its marks are keyed by
-    // TARGET, so in bölge mode there are seven of them, not eighty-one. `data-plate` there
-    // would put the island's twin queries back to "all three layers" AND make the region
-    // mode draw eleven ticks for one answer.
-    expect(layerBlock("mark")).not.toContain("data-plate");
-    expect(layerBlock("mark")).toContain("data-target={targetId}");
   });
 
   it("gives only ANSWERABLE shapes a hit twin", () => {
@@ -208,21 +201,25 @@ describe("the game island's two shape queries", () => {
     // The regression this whole file exists for: an unscoped query returns both twins, which
     // is right for exactly one of the two loops and wrong for the other.
     expect(ISLAND).not.toMatch(/querySelectorAll\(\s*["'`]\[data-plate\]/);
-    // THREE now: the two twin queries plus I1's solved-mark query, which is scoped to its own
-    // layer and keyed by target rather than by plate. The count is asserted so that a fourth,
-    // unnamed query cannot appear without this file being read.
+    // TWO, and the count is asserted so that a third, unnamed query cannot appear without this
+    // file being read. (It was three while I1's ✓ variant had a mark layer of its own; that
+    // query left with the layer — a `querySelectorAll` that can never match anything is
+    // invisible to every gate in this repo.)
     const queries = ISLAND.match(/svg\.querySelectorAll\(/g) ?? [];
-    expect(queries).toHaveLength(3);
+    expect(queries).toHaveLength(2);
+    expect(ISLAND).not.toContain('data-map-layer="mark"');
   });
 
-  it("addresses the solved marks by target, inside their own layer", () => {
-    expect(ISLAND).toContain(`const MARK_SHAPES = '[data-map-layer="mark"] [data-target]';`);
-    // The marks say ONE thing — solved — so they must not be driven by `deriveShapeState`,
-    // which also answers `wrong` and `reveal`. A tick that flickers on a wrong click would be
-    // telling the player they had just solved the thing they got wrong.
+  it("keeps the accessible name in step with the solved state", () => {
+    // A11Y50-I1: the map's one PERMANENT state was visible only as paint, so a screen-reader
+    // user heard the same name at every stop whether or not that target was finished. The
+    // suffix is written in the SAME loop as the name — one writer — and it is a name, not
+    // `aria-disabled`: a solved shape still takes the click, and that click is still a wrong
+    // answer to the open question.
     expect(ISLAND).toMatch(
-      /querySelectorAll\(MARK_SHAPES\)[\s\S]{0,500}?solved\.has\(targetId\)[\s\S]{0,200}?setAttribute\("data-state", "correct"\)/,
+      /querySelectorAll\(HIT_SHAPES\)[\s\S]{0,1600}?setAttribute\(\s*"aria-label",\s*solved \? t\("shapeSolved", \{ name \}\) : name,?\s*\)/,
     );
+    expect(ISLAND).not.toContain('setAttribute("aria-disabled"');
   });
 });
 
@@ -285,14 +282,64 @@ describe("the solved-region tint (I1 / D6)", () => {
   });
 
   it("gives solved-ness a second signal that is not the fill", () => {
-    // Whichever variant the owner keeps, "solved" must still be SAID somewhere on the map —
-    // otherwise removing the green fill from the tint rule would just delete the feedback.
-    const hatch =
-      /\.stage\[data-solved-mark="hatch"\] \.hitEdge\[data-state="correct"\] \{[^}]*fill: url\(/.test(
-        CSS,
-      );
-    const check =
-      /\.markLayer \[data-target\]\[data-state="correct"\] \{[^}]*display: inline;/.test(CSS);
-    expect(hatch || check).toBe(true);
+    // "Solved" must still be SAID somewhere on the map — otherwise removing the green fill
+    // from the tint rule above would just delete the feedback rather than move it.
+    expect(CSS).toMatch(
+      /\.hitEdge\[data-state="correct"\] \{[^}]*fill: url\(#game-solved-hatch\);/,
+    );
+  });
+});
+
+/**
+ * REGRESSION SHIELD — I1's SOLVED HATCH, the variant that shipped.
+ *
+ * It had no CI coverage at all while it was the losing branch of a source-level constant
+ * (→ PR #50 review TA50-I1): the one assertion that named it was an `||` already satisfied by
+ * the other variant, so it would have passed on a hatch rule that did not even parse. It is
+ * now the ONLY thing on the map that says a target is finished, so each of the four properties
+ * that make it work is pinned separately below — every one of them can be dropped without
+ * `tsc`, `eslint` or `next build` noticing, and the symptom of three of the four is visible
+ * only mid-round.
+ */
+describe("the solved hatch (I1)", () => {
+  const PATTERN = MAP.slice(MAP.indexOf("<pattern"), MAP.indexOf("</pattern>"));
+
+  it("defines the pattern the stylesheet paints with", () => {
+    expect(PATTERN).toContain("id={SOLVED_HATCH_ID}");
+    expect(MAP).toContain('const SOLVED_HATCH_ID = "game-solved-hatch"');
+    // Unconditionally, in <defs>. An unresolvable paint IRI is an SVG error, not a no-op, so
+    // the pattern and the rule that references it have to ship together.
+    expect(MAP.indexOf("<pattern")).toBeGreaterThan(MAP.indexOf("<defs>"));
+    expect(MAP.indexOf("<pattern")).toBeLessThan(MAP.indexOf("</defs>"));
+  });
+
+  it("ties the stripes to the MAP's coordinate space, not to each shape's box", () => {
+    // The default is `objectBoundingBox`, and reverting to it is the silent regression this
+    // pins: the stripes would restart at every province's own box, so a solved bölge would
+    // read as eleven separately-hatched provinces instead of one finished area.
+    expect(PATTERN).toContain('patternUnits="userSpaceOnUse"');
+    expect(PATTERN).toContain('patternTransform="rotate(45)"');
+  });
+
+  it("draws the stripes in the one ink measured against all eight fills", () => {
+    // A11Y50-I2: `--game-correct-edge` at `opacity: 0.55` scored 1.53–2.74:1 against the seven
+    // region tints and the il modes' green — sub-3:1 on every one of them (WCAG 1.4.11). The
+    // shared near-black clears all eight. Both halves are pinned: the token AND the absence of
+    // the alpha that made the first version invisible.
+    expect(PATTERN).toContain('stroke="var(--color-ink-dark)"');
+    expect(PATTERN).not.toContain("opacity");
+    expect(GLOBALS).toMatch(/--color-ink-dark:\s*#211c19;/);
+    // The token is neutral and shared (→ Atlas AG-1); the game token aliases it rather than
+    // repeating the hex, so tuning one cannot silently desynchronise the other.
+    expect(GLOBALS).toContain("--game-hover-edge: var(--color-ink-dark);");
+  });
+
+  it("keeps a forced-colours fallback that does not depend on the paint server", () => {
+    // A11Y50-I3: forced colours restricts paint to a system palette and gives no guarantee
+    // about a `fill: url(#…)`. Width and dash pattern are the two things it never touches, so
+    // the solved state is re-stated in those.
+    expect(CSS).toMatch(
+      /@media \(forced-colors: active\) \{ \.hitEdge\[data-state="correct"\] \{[^}]*stroke-dasharray:/,
+    );
   });
 });
