@@ -251,6 +251,29 @@ describe("countryPool", () => {
   // silent TODO" (it also changes real filtering behaviour: VA is a KNOWN IMPERFECTION today).
   // So: guard deleted (its purpose served), `countryPool` left exactly as it was, and the
   // migration is surfaced to Atlas rather than performed inline in this PR.
+
+  // REPLACEMENT FORCING FUNCTION (PR #51 review I6b, `FU-WEB-ENTITYTYPE`). The type-level guard
+  // above cannot simply be reinstated as-is: `entityType` is now PERMANENTLY present on the
+  // generated type (it will not go missing again), so an "absent from the type" `@ts-expect-
+  // error` would refail immediately and leave CI red forever, not just for one commit. Instead
+  // this pins the CURRENT, deliberately-not-yet-migrated BEHAVIOUR with a synthetic row: an
+  // arbitrary REGISTERED territory code (never a hardcoded real ISO fact — read from
+  // `TERRITORIES` itself) marked `entityType: "country"` by the contract. `countryPool` still
+  // excludes it today, because it filters on `TERRITORIES` membership only and does not
+  // consult `entityType` at all — exactly the VA-shaped gap `featured.ts`'s own docstring
+  // records. The day someone migrates `countryPool` to read `entityType`, THIS assertion flips
+  // (the row would then be INCLUDED) and a human has to look, update or delete it — that flip,
+  // not a silent `FOLLOWUPS.md` row, is the forcing function.
+  it("excludes a country-typed row whose isoCode is also a registered territory (FU-WEB-ENTITYTYPE)", () => {
+    const [firstTerritory] = TERRITORIES;
+    if (!firstTerritory) throw new Error("TERRITORIES register is unexpectedly empty");
+    const probe = country("t-entitytype-probe", {
+      isoCode: firstTerritory.iso,
+      entityType: "country",
+    });
+
+    expect(countryPool([probe])).toEqual([]);
+  });
 });
 
 describe("pickDailyCountries", () => {

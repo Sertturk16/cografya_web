@@ -28,17 +28,34 @@
  * (`EN_CONTENT_READY`, `lib/seo/indexing.ts`). Keeping `isTr` inside this function means the
  * EN suppression is covered by the same tests, instead of being an `&&` a refactor can drop.
  *
- * ## `citeCurriculumSource` (WEB-KOPPEN, plan §5)
+ * ## `citeCurriculumSource` (WEB-KOPPEN, plan §5; gate corrected by PR #51 review I4)
  *
  * A fourth, independent boolean added alongside the original three — not a restructuring of
  * the function's shape (plan A-4). It mirrors `citeClassSource`'s own citation-parity
  * invariant ("never cite a source for content not on the page", `page.tsx` L403-411) for the
  * NEW MEB curriculum attribution: the curriculum name is a distinct source family from MGM's
  * Köppen classification (DEC 2026-08-05c item 1), so it earns its own `extraSources` entry —
- * gated on `hasCurriculumName`, NOT on `showClass` alone. The value line still renders when
- * `climateCurriculumNameTr` is null (contract-legal fallback: code-only, `plan §3` V-1), and
- * that fallback shows nothing MEB-sourced, so citing the MEB source there would cite content
- * that is not on the page — exactly the class of bug this whole module exists to prevent.
+ * gated on `hasCurriculumName` AND `hasClimateNote`, NOT on `showClass` alone. TWO independent
+ * fallbacks can each suppress the MEB name from the rendered value line, and the citation must
+ * track BOTH, not just one:
+ *   1. `hasCurriculumName === false` — the contract-legal code-only fallback (`plan §3` V-1):
+ *      the value line still renders ("Köppen: <code>" only), but nothing MEB-sourced is shown.
+ *   2. `hasClimateNote === false` — the pre-existing defense-in-depth fallback (`page.tsx`'s
+ *      `climateNoteTr === null` branch, `climateClassOnly`): the MGM class name prints and NO
+ *      curriculum-name segment renders at all, even when `hasCurriculumName` is true.
+ * PR #51's review round (I4) found the gate checked only (1) — a curriculum name could be
+ * cited while the page actually rendered the (1)-independent `climateClassOnly` fallback,
+ * attributing a name that was never on the page. `hasClimateNote` closes that gap.
+ *
+ * ## `showCurriculumNote` (WEB-KOPPEN plan §2/§3/A-1; extracted by PR #51 review — the
+ * curriculum-note-asymmetry-untested MINOR)
+ *
+ * The 15/81-province `climateCurriculumNoteTr` prose block used to be gated by a bare
+ * `!== null` check directly in `page.tsx`, which meant nothing could unit-test the 15-have /
+ * 66-don't-render-a-placeholder asymmetry (plan §2 V-2). Extracted here for the same reason
+ * the original three booleans were: `showClass` already answers "does `climate` exist AND
+ * does the section render", so the note block's real condition is that AND the note text
+ * itself being present — never independently of the section housing it.
  */
 
 export interface ClimateBlockInput {
@@ -52,6 +69,17 @@ export interface ClimateBlockInput {
   readonly hasSimilarClimate: boolean;
   /** Does the api carry a non-null `climateCurriculumNameTr` for this province? */
   readonly hasCurriculumName: boolean;
+  /**
+   * Does the api carry the mandatory MGM caveat (`climateNoteTr`) for this province? When
+   * false, the value line's defense-in-depth fallback (`climateClassOnly`) takes over and
+   * shows NEITHER the curriculum name NOR the Köppen code — so nothing MEB-sourced is on the
+   * page regardless of `hasCurriculumName` (PR #51 review I4).
+   */
+  readonly hasClimateNote: boolean;
+  /** Does the api carry a non-null `climateCurriculumNoteTr` (the 15/81 prose note) for this
+   *  province? A DIFFERENT field from `hasCurriculumName` above — the name and the note are
+   *  independently nullable. */
+  readonly hasCurriculumNoteText: boolean;
 }
 
 export interface ClimateBlockGates {
@@ -63,10 +91,21 @@ export interface ClimateBlockGates {
   readonly citeClassSource: boolean;
   /** Add `ProvinceDetail.sourcesClimateCurriculum` to the Kaynaklar line (WEB-KOPPEN). */
   readonly citeCurriculumSource: boolean;
+  /** Render the 15/81-province curriculum-note prose block (never an "eksik veri" placeholder
+   *  for the other 66 — plan §2 V-2). */
+  readonly showCurriculumNote: boolean;
 }
 
 export function climateBlockGates(input: ClimateBlockInput): ClimateBlockGates {
-  const { isTr, hasClimateClass, hasClimateSeries, hasSimilarClimate, hasCurriculumName } = input;
+  const {
+    isTr,
+    hasClimateClass,
+    hasClimateSeries,
+    hasSimilarClimate,
+    hasCurriculumName,
+    hasClimateNote,
+    hasCurriculumNoteText,
+  } = input;
 
   const showSection = isTr && (hasClimateClass || hasClimateSeries || hasSimilarClimate);
   const showClass = showSection && hasClimateClass;
@@ -78,9 +117,15 @@ export function climateBlockGates(input: ClimateBlockInput): ClimateBlockGates {
     // rather than as a repeated expression so the two can never drift apart, which is exactly
     // how the base-string version went wrong.
     citeClassSource: showClass,
-    // The MEB name segment renders only when the value line renders AND the api actually
-    // carries a curriculum name (the null branch shows the Köppen code alone — nothing
-    // MEB-sourced to cite).
-    citeCurriculumSource: showClass && hasCurriculumName,
+    // The MEB name segment is cited only when BOTH fallbacks that could suppress it are clear:
+    // the value line renders the class line at all (`showClass`), the api actually carries a
+    // curriculum name (`hasCurriculumName` — the code-only fallback shows nothing MEB-sourced),
+    // AND the mandatory MGM caveat is present (`hasClimateNote` — otherwise the defense-in-depth
+    // `climateClassOnly` fallback takes over and shows no curriculum name at all, PR #51 I4).
+    citeCurriculumSource: showClass && hasCurriculumName && hasClimateNote,
+    // Same shape as `citeClassSource`/`citeCurriculumSource`: derived, not a second place that
+    // could drift from the section's own gate. `showClass` already excludes EN and "no class"
+    // provinces; the note block's own field is the only thing left to check.
+    showCurriculumNote: showClass && hasCurriculumNoteText,
   };
 }

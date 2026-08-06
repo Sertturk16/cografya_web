@@ -3,7 +3,8 @@ import { climateBlockGates, type ClimateBlockInput } from "./climate-block-gates
 
 /**
  * The climate block's gating rules (→ PR #47 review TA47-M1; `citeCurriculumSource` →
- * WEB-KOPPEN plan §5).
+ * WEB-KOPPEN plan §5; `hasClimateNote`/I4 fix and `showCurriculumNote` extraction →
+ * PR #51 review).
  *
  * Structural only (`CONVENTIONS.md` §2): every case below is about which parts of the block
  * render for a given SHAPE of data. No case asserts a geographic fact.
@@ -15,6 +16,11 @@ const base: ClimateBlockInput = {
   hasClimateSeries: false,
   hasSimilarClimate: false,
   hasCurriculumName: false,
+  // Defaults to `true` (the caveat present) so every PRE-EXISTING case below keeps testing
+  // only the dimension it names — flipping it to `false` is its own dimension, covered in
+  // "the curriculum-name source citation" below (PR #51 review I4).
+  hasClimateNote: true,
+  hasCurriculumNoteText: false,
 };
 
 const gates = (over: Partial<ClimateBlockInput>) => climateBlockGates({ ...base, ...over });
@@ -26,6 +32,7 @@ describe("climateBlockGates", () => {
       showClass: false,
       citeClassSource: false,
       citeCurriculumSource: false,
+      showCurriculumNote: false,
     });
   });
 
@@ -57,6 +64,7 @@ describe("climateBlockGates", () => {
         showClass: false,
         citeClassSource: false,
         citeCurriculumSource: false,
+        showCurriculumNote: false,
       });
     });
 
@@ -66,6 +74,7 @@ describe("climateBlockGates", () => {
         showClass: false,
         citeClassSource: false,
         citeCurriculumSource: false,
+        showCurriculumNote: false,
       });
     });
   });
@@ -100,12 +109,25 @@ describe("climateBlockGates", () => {
       );
     });
 
-    it("does NOT cite the MEB source when the value line falls back to code-only", () => {
+    it("does NOT cite the MEB source when the value line falls back to code-only (null-name branch)", () => {
       // Contract-legal null-name branch (plan §3 V-1): the value line still renders
-      // ("Köppen: <kod>" only), but nothing MEB-sourced is on the page.
+      // ("Köppen: <kod>" only), but nothing MEB-sourced is on the page. This covers only ONE
+      // of the two independent fallbacks that can suppress the name — see the next case for
+      // the other (null-note) branch, which PR #51 review I4 found this gate used to miss.
       expect(gates({ hasClimateClass: true, hasCurriculumName: false }).citeCurriculumSource).toBe(
         false,
       );
+    });
+
+    it("does NOT cite the MEB source when the caveat itself is absent, even with a name (I4 — null-note branch)", () => {
+      // The OTHER independent fallback (`page.tsx`'s `climateNoteTr === null` → `climateClassOnly`):
+      // the MGM class name prints and NO curriculum-name segment renders at all, regardless of
+      // `hasCurriculumName`. PR #51 review found the gate checked only the null-name branch
+      // above and still cited MEB here — attributing a name that was never on the page.
+      expect(
+        gates({ hasClimateClass: true, hasCurriculumName: true, hasClimateNote: false })
+          .citeCurriculumSource,
+      ).toBe(false);
     });
 
     it("does NOT cite the MEB source when the class line itself does not render", () => {
@@ -120,6 +142,40 @@ describe("climateBlockGates", () => {
     it("never cites the curriculum source on EN", () => {
       expect(
         gates({ hasClimateClass: true, hasCurriculumName: true, isTr: false }).citeCurriculumSource,
+      ).toBe(false);
+    });
+  });
+
+  describe("the curriculum-note block (V-2 asymmetry — PR #51 review, curriculum-note-asymmetry-untested)", () => {
+    // The api's `climateCurriculumNoteTr` is populated for a MINORITY of provinces (some have
+    // it, most don't); the invariant under test is the SHAPE of that asymmetry — present text
+    // renders, absent text renders NOTHING (never a placeholder) — never a specific count.
+    it("shows the note only when the section AND the note text both exist", () => {
+      expect(gates({ hasClimateClass: true, hasCurriculumNoteText: true }).showCurriculumNote).toBe(
+        true,
+      );
+    });
+
+    it("shows nothing — not a placeholder — when the note text is absent", () => {
+      expect(
+        gates({ hasClimateClass: true, hasCurriculumNoteText: false }).showCurriculumNote,
+      ).toBe(false);
+    });
+
+    it("does not show the note when the class line itself does not render, even with note text", () => {
+      // Mirrors the citation gate's own "class line must render" guard: a note with no
+      // class/Köppen pair at all is not a real api shape today, but the derivation must not
+      // depend on that being true.
+      expect(
+        gates({ hasClimateClass: false, hasCurriculumNoteText: true, hasClimateSeries: true })
+          .showCurriculumNote,
+      ).toBe(false);
+    });
+
+    it("never shows the note on EN, even with note text", () => {
+      expect(
+        gates({ hasClimateClass: true, hasCurriculumNoteText: true, isTr: false })
+          .showCurriculumNote,
       ).toBe(false);
     });
   });

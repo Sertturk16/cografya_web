@@ -74,6 +74,17 @@ describe("climate block message catalogue", () => {
     });
   }
 
+  it("keeps the DEC-ruled middot separator between the value line's two placeholders (CR51-M3)", () => {
+    // DEC 2026-08-05c / plan-web.md §3 / cumle-taslaklari.md §6.3: "<name> · Köppen: <code>" —
+    // one space, middot (U+00B7), one space. Structural only: checks placeholder ORDER and the
+    // separator character, never the surrounding label text (that stays free to be re-worded
+    // in a content pass without this test caring).
+    const MIDDOT_SEPARATOR = /\{name\} · .*\{koppen\}/;
+    for (const catalogue of Object.values(catalogues)) {
+      expect(catalogue.climateValue).toMatch(MIDDOT_SEPARATOR);
+    }
+  });
+
   it("keeps the climate classification OUT of the base sources sentence", () => {
     // The base line is printed on every province page in both locales; the classification
     // clause is appended conditionally instead (UX tour B5 — EN pages cited a climate section
