@@ -21,21 +21,34 @@ import trMessages from "@/messages/tr.json";
 
 const CLIMATE_KEYS = [
   "climateHeading",
+  // Value line (WEB-KOPPEN, DEC 2026-08-05c): "<curriculum name> · Köppen: <code>". The name
+  // segment is `climateCurriculumNameTr`, NOT the MGM class name.
   "climateValue",
+  // Contract-legal fallback when `climateCurriculumNameTr` is null (plan §3 V-1) — code alone,
+  // never a bare name-less/code-less line.
+  "climateValueKoppenOnly",
+  // Defense-in-depth ONLY (§6 "no bare Csa"): renders when the mandatory MGM caveat itself is
+  // absent, a contract violation the api already guards against. Shows the MGM class name
+  // (`climateClassTr`), never the curriculum name — a different field from the two above.
   "climateClassOnly",
-  // The always-visible plain sentence (→ DEC 2026-08-04i §3). It exists because the MGM
-  // caveat below it arrives COLLAPSED, so this is the only explanation a reader who never
-  // opens the disclosure sees — a missing key here would be a silent return to that state.
+  // The always-visible plain sentence (→ DEC 2026-08-04i §3; re-worded for WEB-KOPPEN's V-5,
+  // adopting NOVA's cumle-taslaklari.md §3.1 text). The MGM caveat below it now renders OPEN
+  // by default (DEC 2026-08-05c), but this sentence stays: it is the only one that names which
+  // of the two heading names is which BEFORE a reader reads the caveat's own full text.
   "climatePlainNote",
   "climateNoteLabel",
   // Cited in the Kaynaklar line only when the Köppen class line actually renders (UX tour B5).
   "sourcesClimateClass",
+  // MEB curriculum-name attribution (WEB-KOPPEN plan §5) — its own entry, a distinct source
+  // family from MGM's classification, cited only when the curriculum name segment renders.
+  "sourcesClimateCurriculum",
 ] as const;
 
 /** Placeholders each templated key must carry, so a message can never drop an interpolation. */
 const REQUIRED_PLACEHOLDERS: Record<string, readonly string[]> = {
   climateHeading: ["name"],
-  climateValue: ["className", "koppen"],
+  climateValue: ["name", "koppen"],
+  climateValueKoppenOnly: ["koppen"],
   climateClassOnly: ["className"],
 };
 
@@ -60,6 +73,40 @@ describe("climate block message catalogue", () => {
       });
     });
   }
+
+  it("keeps the DEC-ruled middot separator between the value line's two placeholders (CR51-M3)", () => {
+    // DEC 2026-08-05c / plan-web.md §3 / cumle-taslaklari.md §6.3: "<name> · Köppen: <code>" —
+    // one space, middot (U+00B7), one space. Structural only: checks placeholder ORDER and the
+    // separator character, never the surrounding label text (that stays free to be re-worded
+    // in a content pass without this test caring).
+    const MIDDOT_SEPARATOR = /\{name\} · .*\{koppen\}/;
+    for (const catalogue of Object.values(catalogues)) {
+      expect(catalogue.climateValue).toMatch(MIDDOT_SEPARATOR);
+    }
+  });
+
+  it("binds the Köppen label to the code with a NON-BREAKING space, not an ordinary one", () => {
+    // The value line ends "<code> (Köppen)", where the parenthetical is a LABEL for the code
+    // immediately before it. With an ordinary space, 360px wraps between them and strands
+    // "(Köppen)" alone on its own line, away from the thing it labels — observed on the Van
+    // sample frame before this was fixed, and it would recur on all 81 province pages.
+    //
+    // WHY THIS NEEDS A TEST AT ALL: U+00A0 and U+0020 are visually IDENTICAL in the source
+    // file. A whitespace normalisation, an editor "trim", a copy-paste through a tool that
+    // folds spaces, or a well-meaning cleanup would silently swap it back, and every other
+    // check in the repo — including the separator test above — would still pass while the
+    // orphaned label returned to production. Nothing else can catch it.
+    //
+    // Structural only: asserts the CHARACTER CLASS of one separator, never any label wording.
+    const NBSP = " ";
+    for (const catalogue of Object.values(catalogues)) {
+      const value = catalogue.climateValue;
+      const afterPlaceholder = value.slice(value.indexOf("{koppen}") + "{koppen}".length);
+      expect(afterPlaceholder.startsWith(NBSP)).toBe(true);
+      // And the ordinary-space form must not be what got shipped.
+      expect(afterPlaceholder.startsWith(" ")).toBe(false);
+    }
+  });
 
   it("keeps the climate classification OUT of the base sources sentence", () => {
     // The base line is printed on every province page in both locales; the classification

@@ -269,9 +269,19 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
     province.latitude !== null && province.longitude !== null
       ? { latitude: province.latitude, longitude: province.longitude }
       : null;
+  // `curriculumName` rides alongside the MGM `className`/`koppen` pair (WEB-KOPPEN,
+  // DEC 2026-08-05c): the value line's primary content moved to the müfredat name, but the
+  // underlying `climateClassTr`/`climateKoppen` pair is untouched and still gates the whole
+  // `climate` object AND the defense-in-depth "no bare Csa" fallback (both unchanged fields).
+  // `curriculumName` itself does NOT gate `climate` — it is a separate, independently-nullable
+  // field consulted only inside the value-line branch below (plan §3 V-1).
   const climate =
     province.climateClassTr !== null && province.climateKoppen !== null
-      ? { className: province.climateClassTr, koppen: province.climateKoppen }
+      ? {
+          className: province.climateClassTr,
+          koppen: province.climateKoppen,
+          curriculumName: province.climateCurriculumNameTr,
+        }
       : null;
 
   // Giriş (intro) — SPEC §3.3. Layer 1: the hand-written `introTr` (genuine
@@ -344,25 +354,42 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // The NOVA narrative slot ships wired but empty (climateNarrativeTr is null for all 81).
   const climateSeries = isTr ? province.climate : null;
   const climateNarrative = isTr ? province.climateNarrativeTr : null;
+  // Müfredat notu (WEB-KOPPEN, plan §2/§3/V-2) — 15/81 provinces only; the other 66 render
+  // nothing (never an "eksik veri" placeholder). TR-gated like every other narrative field on
+  // this page; EN has no counterpart yet (Faz-3).
+  const curriculumNote = isTr ? province.climateCurriculumNoteTr : null;
   // Benzer iklimli iller — TR-gated like the rest of the climate content (the block's
   // labels/intro are Turkish and it belongs inside the TR-only İklim section).
   const showSimilarClimate = isTr && similarClimate.length > 0;
-  // The three climate gates are ONE pure decision (`lib/climate/climate-block-gates.ts`,
-  // → PR #47 review TA47-M1): the section heading, the MGM classification line, and whether
-  // the Kaynaklar line cites that classification. The third is derived from the second by
-  // construction, which is what keeps the UX-tour B5 defect — a source cited for a section
-  // the locale gate never renders — from coming back through a later edit.
+  // The climate gates are ONE pure decision (`lib/climate/climate-block-gates.ts`,
+  // → PR #47 review TA47-M1; `citeCurriculumSource` → WEB-KOPPEN plan §5): the section
+  // heading, the MGM classification line, whether the Kaynaklar line cites that
+  // classification, and whether it cites the new MEB curriculum attribution. The citation
+  // booleans are derived from the render booleans by construction, which is what keeps the
+  // UX-tour B5 defect — a source cited for a section the locale gate never renders — from
+  // coming back through a later edit.
   // `showClass` is deliberately NOT destructured: the JSX gates the class line on `climate`
   // itself because it needs the null-narrowing to read `.className`/`.koppen`, and a parallel
   // boolean beside it would be a second way to ask the same question. The gate object still
-  // computes and tests it — that is what `citeClassSource` is defined against.
-  const { showSection: showClimateSection, citeClassSource: citeClimateClassSource } =
-    climateBlockGates({
-      isTr,
-      hasClimateClass: climate !== null,
-      hasClimateSeries: climateSeries !== null,
-      hasSimilarClimate: showSimilarClimate,
-    });
+  // computes and tests it — that is what `citeClassSource`/`citeCurriculumSource` are defined
+  // against.
+  const {
+    showSection: showClimateSection,
+    citeClassSource: citeClimateClassSource,
+    citeCurriculumSource: citeClimateCurriculumSource,
+    showCurriculumNote,
+  } = climateBlockGates({
+    isTr,
+    hasClimateClass: climate !== null,
+    hasClimateSeries: climateSeries !== null,
+    hasSimilarClimate: showSimilarClimate,
+    hasCurriculumName: climate !== null && climate.curriculumName !== null,
+    // PR #51 review I4: the defense-in-depth fallback (`climateNoteTr === null` →
+    // `climateClassOnly`) suppresses the curriculum name from the value line even when
+    // `curriculumName` itself is non-null — the citation gate must see that too.
+    hasClimateNote: province.climateNoteTr !== null,
+    hasCurriculumNoteText: curriculumNote !== null,
+  });
 
   // JSON-LD climate facts — appended to the SAME additionalProperty array (PLAN §2: no
   // new schema type). Gated on the TR-gated series so structured data never describes a
@@ -409,6 +436,14 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // cannot disagree. The elevation and coordinate half stays in the base string: those DO
   // render in both locales.
   if (citeClimateClassSource) extraSources.push(t("sourcesClimateClass"));
+  // MEB curriculum-name attribution (WEB-KOPPEN plan §5) — its OWN entry, not merged into the
+  // MGM classification string above: the two are distinct source families per DEC 2026-08-05c
+  // item 1, and the gate (`citeCurriculumSource`) excludes BOTH fallbacks that can suppress the
+  // name from the rendered value line — the null-name/code-only branch AND the null-note
+  // `climateClassOnly` branch (PR #51 review I4 — the first version of this comment named only
+  // the first branch, which is exactly how the citation used to be able to name content that
+  // was not on the page) — so this can never cite a name that is not on the page.
+  if (citeClimateCurriculumSource) extraSources.push(t("sourcesClimateCurriculum"));
   // Climate normals source joins the Kaynaklar line ONLY when the chart actually renders
   // (PLAN §2 — never cite a source for content that is not on the page).
   if (climateSeries !== null) extraSources.push(t("sourcesClimate"));
@@ -549,46 +584,100 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           <h2>{t("climateHeading", { name: sectionHeading("climate") })}</h2>
           {climate && (
             <>
-              <p className={styles.climateValue}>
-                {province.climateNoteTr !== null
-                  ? t("climateValue", { className: climate.className, koppen: climate.koppen })
-                  : /* Defense-in-depth (§6 "no bare Csa"): if the mandatory caveat is
-                       absent (a contract violation the api already guards), show the
-                       class name only — never a caveat-less Köppen code. */
-                    t("climateClassOnly", { className: climate.className })}
-              </p>
-              {/* THE VISIBLE PLAIN SENTENCE (→ DEC 2026-08-04i §3). A PRESENTATION change
-                  only: the class names and the Köppen codes are MGM's and are untouched
-                  (K1 / DEC 2026-08-04a), and the technical caveat stays in the collapsed
-                  box below.
+              {/* Value line (WEB-KOPPEN, DEC 2026-08-05c): the müfredat (MEB curriculum)
+                  climate name replaces the MGM class name as the PRIMARY name here, paired
+                  with the untouched MGM Köppen code via a middot ("<ad> · Köppen: <kod>",
+                  cumle-taslaklari.md §6.3 — this is the value line, never the H2, which still
+                  carries the province name unchanged). `climateKoppen`/`climateClassTr`
+                  themselves are MGM's own, unedited (K1 / DEC 2026-08-04a) — only the primary
+                  NAME source and its separator are a presentation change.
 
-                  Why it earns a permanent line on 81 pages: 48 provinces carry the title
-                  "Akdeniz iklimi" and 33 of those sit outside the Akdeniz/Ege regions —
-                  Ankara (January mean −0,5 °C) and Van (−2,4 °C) among them (UX tour B6).
-                  The `<details>` explains exactly this, and it arrives CLOSED, so the
-                  student who never opens it memorises a heading that contradicts the
-                  curriculum. This sentence is the part that cannot be missed.
+                  Two independent nullable fields, two independent fallbacks, checked in this
+                  order:
+                  1. `climateNoteTr === null` — defense-in-depth (§6 "no bare Csa"): the
+                     mandatory caveat itself is absent (a contract violation the api already
+                     guards against), so the code is suppressed entirely and only the MGM
+                     class name prints — this branch is untouched by WEB-KOPPEN, still keys
+                     off `climateClassTr`, not the curriculum name (a different field).
+                  2. Otherwise, `climateCurriculumNameTr === null` (contract-legal, not
+                     observed in the 81-province seed today, plan §3 V-1) — the curriculum
+                     name segment is dropped and only the Köppen code prints
+                     ("Köppen: <kod>"), never a name-less blank or an invented name.
+
+                  A11y (PR #51 review — the middot moved from a parenthetical grouping to a
+                  bare "·"): VERIFIED, not fixed. U+00B7 MIDDLE DOT is ordinary running-text
+                  punctuation (Unicode category Po), and this exact unguarded construction is
+                  already the repo's own established pattern in a STRICTER context — the
+                  `similarClimateAnchor`/`chipMarine` message keys below use it as part of an
+                  interactive LINK's accessible name, a higher a11y bar than a static <p>. No
+                  wrapping/labelling change made; `climate-messages.test.ts`'s CR51-M3 test
+                  guards the separator format so a future edit cannot silently drop it. */}
+              <p className={styles.climateValue}>
+                {province.climateNoteTr === null
+                  ? t("climateClassOnly", { className: climate.className })
+                  : climate.curriculumName !== null
+                    ? t("climateValue", { name: climate.curriculumName, koppen: climate.koppen })
+                    : t("climateValueKoppenOnly", { koppen: climate.koppen })}
+              </p>
+              {/* THE VISIBLE PLAIN SENTENCE (→ DEC 2026-08-04i §3; re-worded for WEB-KOPPEN's
+                  V-5 — adopts NOVA's cumle-taslaklari.md §3.1 text, ruled by Atlas). A
+                  PRESENTATION change only: the class names and the Köppen codes are MGM's and
+                  are untouched (K1 / DEC 2026-08-04a), and the technical caveat now renders
+                  OPEN by default (DEC 2026-08-05c, below) rather than collapsed.
+
+                  Why it still earns a permanent line on 81 pages: the value line above now
+                  shows TWO names — a MEB curriculum name and an MGM Köppen code — and they do
+                  not always agree (48 provinces carry the MGM class "Akdeniz iklimi", 33 of
+                  those outside the Akdeniz/Ege regions, Ankara and Van among them, UX tour
+                  B6). This sentence is what tells a reader which name is which BEFORE they
+                  read the caveat's own full text.
 
                   It is deliberately class-INDEPENDENT: one sentence for all 81, not a
-                  per-Köppen-class table. Writing prose per class is content work and would
-                  cross the "presentation decision, not a data decision" line the ruling
-                  draws. It is also worded independently of the pending heading-format
-                  question (D1), so a later heading change shortens it rather than
-                  invalidating it.
+                  per-Köppen-class table — a presentation decision, not a data decision.
 
-                  Gated with the caveat itself: where the caveat is absent the line above
-                  already falls back to a bare class name with no Köppen code, and there is
-                  then no code for this sentence to explain. */}
-              {province.climateNoteTr !== null && (
+                  Gated on the SAME condition the two-name value line above uses (PR #51 review
+                  I5), not on the caveat alone: where the caveat is absent (`climateNoteTr ===
+                  null`) the value line falls back to the bare MGM class name, AND where the
+                  caveat is present but the curriculum name itself is null the value line falls
+                  back to the code-only branch — in EITHER case there is no second name/code
+                  pairing on the page for this sentence to explain. (Latent today: `curriculum
+                  Name` is non-null for all 81 seeded provinces, so this only changes behaviour
+                  the day the contract-legal null-name fallback is actually observed.) */}
+              {province.climateNoteTr !== null && climate.curriculumName !== null && (
                 <p className={styles.climatePlainNote}>{t("climatePlainNote")}</p>
               )}
-              {/* The caveat stays MANDATORY and its text is never trimmed, but per the
-                  owner's UX ruling it renders collapsed (progressive disclosure) so it
-                  is present in full + crawlable without being the page's narrative wall
-                  (see province-detail.module.css .climateNote). It stays FIRST — do not
-                  touch (2026-07-11 owner UX ruling). */}
+              {/* Müfredat notu (WEB-KOPPEN plan §2/§3/A-1) — 15/81 provinces. Plain prose,
+                  same treatment as the landform/hydrography notes (`.prose`, `ProseNote`):
+                  it is substantive per-province content the reader should see by default, not
+                  a caveat, so it gets no `<details>` wrapper and no label heading (unlike the
+                  MGM box below it). Sits directly under the plain sentence.
+
+                  GATED ON `showCurriculumNote` (climate-block-gates.ts), not a bare `!== null`
+                  check on `curriculumNote` alone (PR #51 review CR51-M2 / curriculum-note-
+                  asymmetry-untested): the block lives inside this `{climate && …}` fragment
+                  because it is presented as part of the climate section's primary read, not
+                  because it is logically a function of `climate`'s own fields — the api's
+                  `climateCurriculumNoteTr` is independently nullable from `climateClassTr`/
+                  `climateKoppen`. That coupling is accepted rather than decoupled: a province
+                  with a note but no MGM class/Köppen pair is not a real api shape today (the
+                  note is authored FOR a curriculum-name row), and decoupling would only move
+                  the block outside a section it has no other home in. `curriculumNote !== null`
+                  stays alongside `showCurriculumNote` for TS narrowing only — the two can never
+                  disagree, since `showCurriculumNote` is defined in terms of the same field. The
+                  other 66 provinces render nothing here, never an "eksik veri" placeholder
+                  (V-2). */}
+              {showCurriculumNote && curriculumNote !== null && (
+                <ProseNote text={curriculumNote} className={styles.prose} />
+              )}
+              {/* The caveat stays MANDATORY and its text is never trimmed. It used to render
+                  collapsed (progressive disclosure); DEC 2026-08-05c flips it to OPEN by
+                  default now that the value line carries two names that can disagree — the
+                  methodological explanation is no longer a secondary aside one click away, it
+                  is part of the primary read (see province-detail.module.css .climateNote).
+                  It stays FIRST among the trailing detail content — do not touch ordering
+                  (2026-07-11 owner UX ruling, unaffected by the open/closed change). */}
               {province.climateNoteTr !== null && (
-                <details className={styles.climateNote}>
+                <details className={styles.climateNote} open>
                   <summary className={styles.climateNoteSummary}>{t("climateNoteLabel")}</summary>
                   <p className={styles.climateNoteBody}>{province.climateNoteTr}</p>
                 </details>

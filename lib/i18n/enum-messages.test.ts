@@ -43,6 +43,7 @@ const CONTINENTS: Record<Continent, true> = {
   KUZEY_AMERIKA: true,
   GUNEY_AMERIKA: true,
   OKYANUSYA: true,
+  ANTARKTIKA: true,
 };
 
 const REGIONS: Record<GeographicRegion, true> = {
@@ -54,16 +55,6 @@ const REGIONS: Record<GeographicRegion, true> = {
   DOGU_ANADOLU: true,
   GUNEYDOGU_ANADOLU: true,
 };
-
-/**
- * Values the LIVE api publishes that the committed contract does not carry yet. Listing one
- * here is not a workaround — it is the record of a known contract-sync debt, and it keeps the
- * catalogue guard covering the value in the meantime.
- *
- * `ANTARKTIKA`: published by the api for AQ (dalga-1). Remove this list the moment the
- * contract sync lands and the union covers it on its own.
- */
-const AHEAD_OF_CONTRACT_CONTINENTS = ["ANTARKTIKA"] as const;
 
 /**
  * Only the two enum namespaces are pulled in — deliberately narrow. A whole-catalogue map
@@ -88,28 +79,6 @@ function expectResolves(namespace: EnumNamespace, key: string) {
 describe("Continents namespace", () => {
   it.each(Object.keys(CONTINENTS))("resolves the contract value %s in both locales", (key) => {
     expectResolves("Continents", key);
-  });
-
-  it.each(AHEAD_OF_CONTRACT_CONTINENTS)("resolves the live-api value %s too", (key) => {
-    expectResolves("Continents", key);
-  });
-
-  it("forces AHEAD_OF_CONTRACT_CONTINENTS out the moment the contract catches up", () => {
-    // REMOVAL GUARD (→ PR #46 review CR-FR2-4). The list above is a deliberate escape hatch
-    // around a contract-sync debt, and the failure mode of an escape hatch is that it outlives
-    // its reason: once `pnpm codegen` brings ANTARKTIKA into the `Continent` union, the list
-    // would sit here forever, quietly asserting a value the exhaustive `CONTINENTS` map above
-    // already covers — two guards for one value, one of them lying about why it exists.
-    //
-    // `@ts-expect-error` is the mechanism BECAUSE it inverts: today the assignment is a type
-    // error (the union has no ANTARKTIKA) and the directive absorbs it. The day the union
-    // gains it, the assignment becomes legal, the directive becomes unused, and `tsc` fails
-    // with TS2578 — a red build whose fix is to delete the list and this test together.
-    for (const key of AHEAD_OF_CONTRACT_CONTINENTS) {
-      // @ts-expect-error -- remove AHEAD_OF_CONTRACT_CONTINENTS + this guard when this compiles
-      const inContract: Continent = key;
-      expect(inContract).toBe(key);
-    }
   });
 
   it("carries the same key set in both locales", () => {

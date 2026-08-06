@@ -209,15 +209,22 @@ export function featuredPopulationFact(
  * The countries the daily draw may reach: real COUNTRY rows only — dalga-1's territory rows
  * (the AQ/GL class) are held out (→ DEC 2026-08-05a §2).
  *
- * ## Why membership of `TERRITORIES`, and not an `entityType` field
+ * ## Why membership of `TERRITORIES`, and not the `entityType` field (updated — PR #51 review I6)
  *
- * The live api DOES publish `entityType: "country" | "territory" | "special"` on the country
- * DTOs — but the contract THIS repo has committed (`openapi/openapi.json` → `lib/api/schema.ts`)
- * predates it, so the field is absent from the generated types and cannot be read here without
- * a contract sync, which is an Atlas-coordinated cross-repo action and not this fix round's
- * job. `lib/map/territories.ts` is the web's own, already owner-ruled register of every
- * non-country shape on the world map, so it answers the same question from a source this repo
- * already owns, with no second list to drift.
+ * The live api publishes `entityType: "country" | "territory" | "special"` on the country
+ * DTOs, and — since the WEB-KOPPEN openapi sync (this repo's PR #51, api #88) — the generated
+ * `CountryMapSummaryDto` carries it too: **the field is no longer absent from this repo's
+ * committed contract.** (An earlier version of this comment said it was; that claim went stale
+ * the moment the sync landed, in the same commit, and is corrected here rather than left to
+ * mislead the next reader.)
+ *
+ * This filter still does NOT read `entityType`. Switching to `entityType === "country"` is a
+ * REAL behaviour change (see the VA note below) now that the type exists to make it possible —
+ * not a mechanical unlock — so it stays a deliberate, Atlas-coordinated migration
+ * (`FU-WEB-ENTITYTYPE`) rather than something a fix round does inline. `lib/map/territories.ts`
+ * is the web's own, already owner-ruled register of every non-country shape on the world map,
+ * so it answers the same question from a source this repo already owns, with no second list to
+ * drift.
  *
  * MEASURED against the live api the day this landed, not assumed: of 199 published rows, the
  * two the api itself types as non-country (AQ, GL) are both in `TERRITORIES`, and not one of
@@ -227,9 +234,13 @@ export function featuredPopulationFact(
  *
  * KNOWN IMPERFECTION, recorded rather than hidden: `TERRITORIES` also contains VA (Vatican), a
  * sovereign city-state deliberately absent from the 196-country corpus. Were it ever published
- * as a country row it would be wrongly held out here. The real fix is to switch this to
- * `entityType === "country"` the moment the contract sync lands — a follow-up handed to Atlas,
- * not a silent TODO.
+ * as a country row it would be wrongly held out here. The type-level removal guard that used to
+ * force a human to look the day `entityType` arrived (PR #46 review CR-FR2-4, a `@ts-expect-
+ * error` in `featured.test.ts`) has now done its job and been retired — the field arrived in
+ * THIS PR. `featured.test.ts`'s `countryPool` describe block carries its replacement: a
+ * synthetic-fixture test that pins today's (deliberately not-yet-migrated) exclusion behaviour,
+ * so the day `countryPool` actually starts reading `entityType`, that assertion breaks and a
+ * human has to look — the forcing function this docstring used to promise without one.
  */
 export function countryPool(countries: readonly CountryMapSummary[]): CountryMapSummary[] {
   return countries.filter((country) => territoryFor(country.isoCode) === undefined);

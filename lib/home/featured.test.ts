@@ -45,6 +45,16 @@ function country(slugTr: string, over: Partial<CountryMapSummary> = {}): Country
     nameTr: `${slugTr}-tr`,
     nameEn: `${slugTr}-en`,
     continent: "AVRUPA",
+    // Contract sync (openapi #88): CountryMapSummaryDto now requires entityType +
+    // statusLabelTr/En + areaIsApproximate. The entityType default is "country" —
+    // countryPool's own territory-register filter is unchanged by this sync (see featured.ts's
+    // countryPool docstring: switching it to `entityType === "country"` is a follow-up handed
+    // to Atlas, not silently done here), so these defaults only keep every EXISTING fixture
+    // literal type-valid; none of the new fields is read by this module yet.
+    entityType: "country",
+    statusLabelTr: null,
+    statusLabelEn: null,
+    areaIsApproximate: false,
     slugTr,
     slugEn: `${slugTr}-en`,
     population: 5678,
@@ -232,21 +242,37 @@ describe("countryPool", () => {
     expect(countryPool(real)).toEqual(real);
   });
 
-  it("forces the territory-register proxy out the moment the contract publishes entityType", () => {
-    // REMOVAL GUARD (→ PR #46 review CR-FR2-4). `countryPool` answers "is this row a real
-    // country?" by asking the web's own territory register, because the committed contract has
-    // no `entityType` field to ask directly. That proxy is documented as a KNOWN IMPERFECTION
-    // in `featured.ts` — it also holds out VA, a sovereign state — and its correct life ends
-    // the day the contract sync lands. Escape hatches do not remove themselves, so this makes
-    // the removal a build failure rather than a comment nobody re-reads.
-    //
-    // Same inversion as the `AHEAD_OF_CONTRACT_CONTINENTS` guard: the assignment is a type
-    // error TODAY and the directive absorbs it. When `entityType` joins the DTO the directive
-    // goes unused and `tsc` fails with TS2578 — whose fix is to switch the filter to
-    // `entityType === "country"` and delete this test.
-    // @ts-expect-error -- switch countryPool to entityType + delete this guard when this compiles
-    const entityTypeKey: keyof CountryMapSummary = "entityType";
-    expect(entityTypeKey).toBe("entityType");
+  // REMOVAL-GUARD FIRED (→ PR #46 review CR-FR2-4), deliberately not auto-actioned here. The
+  // `@ts-expect-error` this test used to carry went stale the moment the WEB-KOPPEN openapi
+  // sync brought `entityType` into `CountryMapSummaryDto` (`tsc` failed with TS2578, as
+  // designed). The guard's job was only to force a human to look — it was not licence to
+  // silently switch `countryPool`'s production filter. `featured.ts`'s own `countryPool`
+  // docstring is explicit that the entityType migration is "a follow-up handed to Atlas, not a
+  // silent TODO" (it also changes real filtering behaviour: VA is a KNOWN IMPERFECTION today).
+  // So: guard deleted (its purpose served), `countryPool` left exactly as it was, and the
+  // migration is surfaced to Atlas rather than performed inline in this PR.
+
+  // REPLACEMENT FORCING FUNCTION (PR #51 review I6b, `FU-WEB-ENTITYTYPE`). The type-level guard
+  // above cannot simply be reinstated as-is: `entityType` is now PERMANENTLY present on the
+  // generated type (it will not go missing again), so an "absent from the type" `@ts-expect-
+  // error` would refail immediately and leave CI red forever, not just for one commit. Instead
+  // this pins the CURRENT, deliberately-not-yet-migrated BEHAVIOUR with a synthetic row: an
+  // arbitrary REGISTERED territory code (never a hardcoded real ISO fact — read from
+  // `TERRITORIES` itself) marked `entityType: "country"` by the contract. `countryPool` still
+  // excludes it today, because it filters on `TERRITORIES` membership only and does not
+  // consult `entityType` at all — exactly the VA-shaped gap `featured.ts`'s own docstring
+  // records. The day someone migrates `countryPool` to read `entityType`, THIS assertion flips
+  // (the row would then be INCLUDED) and a human has to look, update or delete it — that flip,
+  // not a silent `FOLLOWUPS.md` row, is the forcing function.
+  it("excludes a country-typed row whose isoCode is also a registered territory (FU-WEB-ENTITYTYPE)", () => {
+    const [firstTerritory] = TERRITORIES;
+    if (!firstTerritory) throw new Error("TERRITORIES register is unexpectedly empty");
+    const probe = country("t-entitytype-probe", {
+      isoCode: firstTerritory.iso,
+      entityType: "country",
+    });
+
+    expect(countryPool([probe])).toEqual([]);
   });
 });
 
