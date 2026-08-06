@@ -3,13 +3,17 @@
 Before task actions, read `ENGINEERING.md` completely. It is the provider-neutral,
 binding frontend handbook.
 
-For shared process and product state, also read:
+For shared process and product state, use the assigned task context manifest and read
+only its exact headings from:
 
 - the orchestration-root `ATLAS-OPERATIONS.md`
 - the orchestration-root `CONVENTIONS.md`
 - the orchestration-root `SEO-POLICY.md`
-- the orchestration-root `TASKS.md` when task state matters
-- the other relevant root policy documents
+- the exact `TASKS.md` entry when task state matters
+- the other root policy sections named by the manifest
+
+Never load full `CONVENTIONS.md`, `SEO-POLICY.md`, `TASKS.md`, or history ledgers by
+default.
 
 Codex-specific execution uses the `cografya_frontend_dev` profile from the orchestration
 root's `.codex/agents/`. Vera is the single writer. Never edit the sibling
