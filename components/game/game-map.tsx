@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { InlandWaterLayer } from "@/components/map/inland-water-layer";
 import { MapZoomPan } from "@/components/map/map-zoom-pan";
 import type { GameModeId } from "@/lib/game/config";
-import { aspectOfViewBox } from "@/lib/game/map-bbox";
+import { aspectOfViewBox, interiorPointForPaths } from "@/lib/game/map-bbox";
 import type { GameShapeEntry } from "@/lib/game/map-shapes";
 import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
 import styles from "./game-map.module.css";
@@ -35,6 +35,63 @@ const REGION_OUTLINE_FILTER_ID = "game-region-outline";
  * it must stay a single-line change.
  */
 const REGION_OUTLINE_RADIUS = 1.4;
+
+/**
+ * ---- I1 · HOW A SOLVED TARGET IS MARKED — TWO VARIANTS, ONE SWITCH ------------------------
+ *
+ * THE DEFECT BOTH OF THEM FIX is the same, and it is not cosmetic (UX tour B24 / D6). Until
+ * now `.province[data-state="correct"]` painted a solved shape `--game-correct` (#5f8f3f),
+ * which OVERWROTE its region tint. In bölge mode that meant two things at once: a solved Doğu
+ * Anadolu (#009e73) turned into a second, barely distinguishable green — and by the end of the
+ * round all seven regions had collapsed into ONE colour, erasing the exact distinction the
+ * mode spent seven questions teaching. The tint rule in `game-map.module.css` now excludes
+ * only `wrong` and `reveal`, so a solved region KEEPS ITS COLOUR in both variants, and
+ * "solved" is carried by a second, independent signal.
+ *
+ * Which second signal is the OWNER'S CALL from rendered samples (→ DEC 2026-08-05g md. 1,
+ * Atlas AO-2), so both are built, behind this one line:
+ *
+ *   "hatch" — a diagonal pattern painted into the hit twin. ~15 lines, no new layer, no
+ *             geometry, and it scales with the shape.
+ *   "check" — a ✓ glyph per TARGET (81 in the il modes, 7 in bölge mode — one per region,
+ *             not one per il). Costs a fourth layer and `interiorPointForPaths`, and it has
+ *             an HONEST FLAW the owner must see: MapZoomPan zooms by narrowing the viewBox,
+ *             so the glyph GROWS with the map. It is not compensated on purpose — PR #48
+ *             rejected a `drop-shadow` for precisely this reason (CR48-M2), and a decorative
+ *             mark is not worth a second zoom-compensation mechanism.
+ *
+ * AO-2 IS BINDING ON WHAT HAPPENS NEXT: once the owner picks, the loser is deleted BEFORE
+ * merge — and if "check" loses, `interiorPointForPaths` and its test go with it, because an
+ * exported helper with no reader is state that drifts with nothing to catch it (the
+ * `runningScore` precedent).
+ */
+const SOLVED_MARK: "hatch" | "check" = "check";
+
+/** `id` of the diagonal pattern the "hatch" variant paints a solved shape with. */
+const SOLVED_HATCH_ID = "game-solved-hatch";
+
+/**
+ * Half-width of the ✓ glyph, in the map's own user units.
+ *
+ * Sized against the SMALLEST target it has to sit inside rather than the average one: a mark
+ * that reads on Konya but overflows Yalova is a mark that is wrong where it matters.
+ */
+const CHECK_RADIUS = 4;
+
+/** `id` of the one shared ✓ group every solved mark `<use>`s. */
+const CHECK_SHAPE_ID = "game-solved-check";
+
+/**
+ * The ✓ itself, in units of {@link CHECK_RADIUS} so the glyph has ONE tunable.
+ *
+ * Drawn around the origin, because a `<use>`'s `x`/`y` translate the referenced content — so
+ * the mark's position is two attributes and the geometry ships once.
+ */
+const CHECK_D = [
+  `M ${-0.8 * CHECK_RADIUS} ${0.1 * CHECK_RADIUS}`,
+  `L ${-0.3 * CHECK_RADIUS} ${0.65 * CHECK_RADIUS}`,
+  `L ${0.85 * CHECK_RADIUS} ${-0.65 * CHECK_RADIUS}`,
+].join(" ");
 
 interface GameMapProps {
   /** The shapes to DRAW — already narrowed to the round's map (§ region mode). */
@@ -97,6 +154,8 @@ interface GameMapProps {
  *   <g data-map-layer=hit>     one <use> per ANSWERABLE shape, unpainted at rest: the
  *                              tab stop, the click target, and the only place a hover, focus
  *                              or answer-state LINE is drawn — above every province layer
+ *   <g data-map-layer=mark>    I1's "check" variant ONLY — one ✓ per solved TARGET, inert
+ *                              and hidden until the island marks it (see §I1 below)
  *   <InlandWaterLayer>         P6's lakes, still the LAST child (see the note at the call
  *                              site): water above the hit twin is what makes a mid-lake click
  *                              score nothing, so its paint position IS the ruling
@@ -187,13 +246,52 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
     else platesByRegion.set(region, [shape.plateCode]);
   }
 
+  /**
+   * I1 · "check" variant — where each target's ✓ goes.
+   *
+   * ONE MARK PER TARGET, which is the whole reason this is grouped rather than mapped: in
+   * bölge mode the answer is a REGION, so eleven ticks across Marmara would say the player
+   * answered eleven questions. The grouping is the same one the silhouette layer uses, and it
+   * is the api's (`shape.target.region`) — no geography is decided here (CONVENTIONS §4).
+   *
+   * A target whose interior point cannot be found draws NO mark rather than one placed by
+   * guesswork; `interiorPointForPaths` returns `null` exactly there.
+   */
+  const dByPlate = new Map(shapes.map((shape) => [shape.plateCode, shape.d]));
+  const markGroups: { targetId: string; paths: string[] }[] =
+    mode === "regions"
+      ? [...platesByRegion].map(([region, members]) => ({
+          targetId: region,
+          paths: members.map((plate) => dByPlate.get(plate) ?? ""),
+        }))
+      : shapes
+          .filter((shape) => shape.target !== null)
+          .map((shape) => ({ targetId: shape.plateCode, paths: [shape.d] }));
+  const solvedMarks =
+    SOLVED_MARK === "check"
+      ? markGroups.flatMap(({ targetId, paths }) => {
+          const point = interiorPointForPaths(paths.filter(Boolean));
+          return point ? [{ targetId, point }] : [];
+        })
+      : [];
+
   return (
     <div className={styles.frame}>
       {/* FIXED-SIZE STAGE. Fixed does not mean constant: the ratio is server-rendered from
           the viewBox, so it is settled before any script runs and the overlays mount on top
           of it without moving a single pixel of the page (CLS budget, CONVENTIONS §6 #9).
           The CSS default is the full map's ratio, for the case the string is unreadable. */}
-      <div className={styles.stage} style={stageStyle} data-game-map data-game-mode={mode}>
+      <div
+        className={styles.stage}
+        style={stageStyle}
+        data-game-map
+        data-game-mode={mode}
+        // I1 · which solved-mark variant this build renders. Scoping the stylesheet on it,
+        // rather than letting `fill: url(#game-solved-hatch)` resolve against a `<defs>` that
+        // may not hold the pattern, keeps each variant's CSS inert unless its own markup is
+        // present — an unresolvable paint IRI is an SVG error, not a no-op.
+        data-solved-mark={SOLVED_MARK}
+      >
         {/* Rendered BEFORE the <svg> so the zoom controls come first in tab order — a
             keyboard player reaches +/−/reset without tabbing through every province (the
             solution already proven on /dunya). Visual position is unaffected: the layer is
@@ -248,6 +346,47 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
               />
               <feComposite in="grown" in2="SourceGraphic" operator="out" />
             </filter>
+
+            {/* I1 · "hatch" variant — the diagonal the hit twin is filled with once its
+                target is solved. `patternUnits="userSpaceOnUse"` ties the stripes to the MAP's
+                coordinate space, not to each shape's bounding box, so the pattern is
+                continuous across a region's provinces instead of restarting at every internal
+                border — which is what makes a solved bölge read as one solved area. It also
+                means the stripes narrow as the map is zoomed, exactly like the borders. */}
+            {SOLVED_MARK === "hatch" ? (
+              <pattern
+                id={SOLVED_HATCH_ID}
+                patternUnits="userSpaceOnUse"
+                width="6"
+                height="6"
+                patternTransform="rotate(45)"
+              >
+                <line
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="6"
+                  stroke="var(--game-correct-edge)"
+                  strokeWidth="1.6"
+                  opacity="0.55"
+                />
+              </pattern>
+            ) : null}
+
+            {/* I1 · "check" variant — the ✓, defined ONCE and `<use>`d per solved target.
+                TWO PATHS, and that is a legibility requirement rather than decoration: this
+                mark has to read on seven region tints AND on the il modes' green, and
+                MEASURED against those eight fills neither ink alone clears the 3:1 floor for
+                a non-text graphic. White fails on the yellow (1.32:1) and the two lighter
+                blues; the dark green-black fails on the deep blue (2.05:1) and the vermillion.
+                A dark halo under a white glyph always leaves ONE of the two reading: ≥5:1 on
+                every dark tint, ≥4.6:1 on every light one. */}
+            {SOLVED_MARK === "check" ? (
+              <g id={CHECK_SHAPE_ID}>
+                <path className={styles.checkHalo} d={CHECK_D} />
+                <path className={styles.checkGlyph} d={CHECK_D} />
+              </g>
+            ) : null}
           </defs>
 
           {/* LAYER 1 — the painted map: fill, region tint and answer-state FILL. Decorative
@@ -302,6 +441,29 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
               ) : null,
             )}
           </g>
+
+          {/* LAYER 4 (I1 · "check" variant only) — one ✓ per SOLVED TARGET, above every line
+              the hit layer draws and below the water, which keeps the paint order rule
+              intact. Every glyph is rendered from the first response and stays
+              `display: none` until the island writes `data-state="correct"` onto its target's
+              mark: the map is never re-rendered by React, exactly as for every other state
+              (`game-island.tsx`).
+              Inert and hidden from assistive tech — it is a second rendering of something the
+              live region already says in words, and a tick that could take a click would
+              cover the target it sits on. */}
+          {SOLVED_MARK === "check" ? (
+            <g data-map-layer="mark" className={styles.markLayer} aria-hidden="true">
+              {solvedMarks.map(({ targetId, point }) => (
+                <use
+                  key={targetId}
+                  href={`#${CHECK_SHAPE_ID}`}
+                  x={point.x}
+                  y={point.y}
+                  data-target={targetId}
+                />
+              ))}
+            </g>
+          ) : null}
 
           {/* Painted after every province layer, exactly as on /turkiye — and it stays LAST
               now that the map is a layer stack. Water above the hit layer is what implements

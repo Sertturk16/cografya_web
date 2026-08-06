@@ -21,6 +21,7 @@ import {
   answerRound,
   createRound,
   currentTargetId,
+  finishEarly,
   revealRound,
   summarizeRound,
   type AnswerOutcome,
@@ -50,6 +51,14 @@ export interface GameIslandProps {
   shapes: readonly GameShapeTargetEntry[];
   /** Localized region names, from the `Regions` message namespace. */
   regionLabels: RegionLabels;
+  /**
+   * May this screen offer "Turu bitir"? (→ DEC 2026-08-05g md. 2.)
+   *
+   * DERIVED on the server from the screen's own identity rather than decided here, so no
+   * region round can acquire the button by accident (`game-screen.tsx`). A seven-question
+   * round has nothing to escape from; an eighty-one-question one does.
+   */
+  allowEarlyFinish: boolean;
   /**
    * The locale's own province-detail path with `SLUG_PLACEHOLDER` where the slug goes,
    * resolved once on the server through `getPathname`. Passing the resolved shape rather
@@ -102,6 +111,17 @@ const HIT_SHAPES = '[data-map-layer="hit"] [data-plate]';
  * `data-plate` today — the region-silhouette layer deliberately carries none.
  */
 const PAINTED_SHAPES = '[data-map-layer="base"] [data-plate], [data-map-layer="hit"] [data-plate]';
+/**
+ * MARK_SHAPES — I1's "check" variant (→ DEC 2026-08-05g md. 1). Keyed by TARGET, not by
+ * plate: in bölge mode one tick stands for a whole region, so there are seven of these where
+ * there are eighty-one hit twins.
+ *
+ * Queried unconditionally. The layer is rendered only by the "check" build of
+ * `game-map.tsx`, and an absent layer makes this an empty NodeList — so the island stays
+ * agnostic about which variant it is enhancing, and the loop below costs nothing in the
+ * "hatch" build.
+ */
+const MARK_SHAPES = '[data-map-layer="mark"] [data-target]';
 
 /**
  * Milliseconds the wrongly-picked shape stays marked before it returns (SPEC §5.3).
@@ -157,6 +177,7 @@ export function GameIsland({
   mode,
   shapes,
   regionLabels,
+  allowEarlyFinish,
   provinceUrlTemplate,
   hubUrl,
 }: GameIslandProps) {
@@ -279,6 +300,22 @@ export function GameIsland({
     }
     beginRound(createRound(mode, targetIds));
   }, [beginRound, mode, t, targetIds]);
+
+  /**
+   * "Turu bitir" (→ DEC 2026-08-05g md. 2) — end the round now and show the result.
+   *
+   * NO CONFIRMATION, and that is the difference from "Baştan başlat": this action does not
+   * throw anything away, it hands the player exactly what they have earned. A confirm dialog
+   * in front of a non-destructive action teaches people to dismiss confirm dialogs.
+   */
+  const endRoundEarly = useCallback(() => {
+    const next = finishEarly(roundRef.current);
+    if (next === roundRef.current) return;
+    setFeedback(null);
+    setWrongAnswer(null);
+    setSummaryDismissed(false);
+    commitRound(next);
+  }, [commitRound]);
 
   /** Dismiss the current question's feedback — the button and the timer share this. */
   const goNext = useCallback(() => {
@@ -487,6 +524,16 @@ export function GameIsland({
       if (state) shape.setAttribute("data-state", state);
       else shape.removeAttribute("data-state");
     }
+
+    // I1 · the solved marks, addressed by TARGET id. They express ONE state — solved — so
+    // they are not run through `deriveShapeState`: a wrong click or a shown answer is about
+    // the moment, and this layer is about what is finished.
+    for (const mark of svg.querySelectorAll(MARK_SHAPES)) {
+      if (!(mark instanceof SVGElement)) continue;
+      const targetId = mark.dataset.target ?? "";
+      if (solved.has(targetId)) mark.setAttribute("data-state", "correct");
+      else mark.removeAttribute("data-state");
+    }
   }, [round, feedback, wrongAnswer, targetSet]);
 
   // --- timers -----------------------------------------------------------------------------------
@@ -593,6 +640,39 @@ export function GameIsland({
    * longer advances itself, it is the only way forward — and it must not sit next to a
    * louder "Baştan başlat" that throws the whole round away.
    */
+  /**
+   * "Baştan başlat", written ONCE.
+   *
+   * The two branches below used to each spell this button out in full, differing in nothing
+   * but which of the pair was the loud one — two copies of one control that had to be kept in
+   * step by hand (→ PR #48 review, code-simplifier MINOR).
+   *
+   * ITS POSITION IS LOAD BEARING, so it does not move and it gets no `key`: it stays the
+   * SECOND child of both branches. React reuses a DOM node by position and element type, and
+   * PR #48's `event.detail > 1` guard on "Devam" (CR48-I1) exists precisely because the FIRST
+   * child is reused across a status change. Re-ordering these, or keying them apart, would
+   * change which node survives and reopen that defect. This dedup removes a duplicate, not a
+   * structure.
+   */
+  const restartButton = (
+    <button
+      type="button"
+      className={round.status === "resolved" ? styles.action : styles.primaryAction}
+      onClick={restartRound}
+    >
+      <RestartIcon size={18} /> {t("restart")}
+    </button>
+  );
+
+  /**
+   * "Turu bitir" — offered only where the length of the round is the problem it solves
+   * (→ DEC 2026-08-05g md. 2), and only once there is something to show.
+   *
+   * `results.length > 0` is the same guard `finishEarly` carries: ending a round before the
+   * first answer would open a result screen with no result on it.
+   */
+  const canFinishEarly = allowEarlyFinish && !finished && round.results.length > 0;
+
   const actions = finished ? (
     summaryDismissed ? (
       <div className={styles.actions}>
@@ -611,20 +691,24 @@ export function GameIsland({
           <button type="button" className={styles.primaryAction} onClick={onNextClick}>
             {t("next")}
           </button>
-          <button type="button" className={styles.action} onClick={restartRound}>
-            <RestartIcon size={18} /> {t("restart")}
-          </button>
+          {restartButton}
         </>
       ) : (
         <>
           <button type="button" className={styles.action} onClick={showAnswer}>
             {t("showAnswer")}
           </button>
-          <button type="button" className={styles.primaryAction} onClick={restartRound}>
-            <RestartIcon size={18} /> {t("restart")}
-          </button>
+          {restartButton}
         </>
       )}
+      {/* LAST, and outside the pair above: the two controls before it are the ones React
+          reuses across a status change, so a new button in front of them would shift that
+          reuse by one position. */}
+      {canFinishEarly ? (
+        <button type="button" className={styles.action} onClick={endRoundEarly}>
+          {t("finishTour")}
+        </button>
+      ) : null}
     </div>
   );
 

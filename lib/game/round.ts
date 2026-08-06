@@ -9,9 +9,12 @@ export { MAX_STARS, STAR_THRESHOLDS } from "./config";
  *
  * The rules live here and nowhere else:
  *
- * - a round shuffles its whole pool, so every target is asked exactly once, and the ONLY
- *   way a round ends is by running out of questions. There is no attempt budget, no way to
- *   lose early, and no way to be locked out of a question (→ DEC 2026-07-30h);
+ * - a round shuffles its whole pool, so every target is asked at most once, and there is no
+ *   attempt budget, no way to LOSE early and no way to be locked out of a question
+ *   (→ DEC 2026-07-30h). A round ends by running out of questions — or, in the 81-question
+ *   mode only, because the player asked it to (`finishEarly`, → DEC 2026-08-05g md. 2). DEC
+ *   2026-07-30h's "a round always visits every question" is amended exactly that far and no
+ *   further: nothing about SCORING changes, only how many questions there were to score;
  * - each question starts at 100 points and HALVES with every wrong click, whatever was
  *   clicked. It never reaches zero by itself: 100 · 50 · 25 · 13 · 6 · 3 · 2 · 1 · 1 …
  *   A player who keeps trying keeps earning something, and the only 0 is a shown answer;
@@ -76,6 +79,16 @@ export interface RoundState {
   readonly currentWrongPicks: readonly string[];
   readonly results: readonly QuestionResult[];
   readonly status: RoundStatus;
+  /**
+   * The round was ENDED BY THE PLAYER rather than by running out of questions
+   * (→ DEC 2026-08-05g md. 2). It is what makes the end screen honest: the score is averaged
+   * over the questions that were actually SEEN, and the screen says so in words.
+   *
+   * A flag rather than a truncated `order`, deliberately: `order.length` is still the size of
+   * the pool the player took on ("Soru 20/81", "Yarım tur 20/81"), and cutting the array
+   * would destroy the one number that makes a half round readable as a half round.
+   */
+  readonly endedEarly: boolean;
 }
 
 export type AnswerOutcome =
@@ -131,7 +144,29 @@ export function createRound(
     currentWrongPicks: [],
     results: [],
     status: order.length > 0 ? "asking" : "finished",
+    endedEarly: false,
   };
+}
+
+/**
+ * "Turu bitir" — end the round HERE and score what was played (→ DEC 2026-08-05g md. 2).
+ *
+ * The 81-question mode is roughly twenty minutes long, and before this the only ways out were
+ * to play all of it or to leave the page and lose everything. A player who has learned twenty
+ * provinces should be able to see what they learned.
+ *
+ * A NO-OP on a round that is already finished, and on one with no scored question yet: an
+ * "end" that produces an empty result screen is not a result, it is a dead end. The caller
+ * (`game-island.tsx`) hides the button in exactly the same two cases, so this guard is the
+ * engine's own restatement of the rule rather than the only place it lives.
+ *
+ * `currentWrongPicks` is CLEARED rather than carried into the summary. The question on screen
+ * was abandoned, not answered — it never becomes a `QuestionResult`, it is not in
+ * `missedTargetIds`, and the clicks spent on it are not part of a round it was never part of.
+ */
+export function finishEarly(state: RoundState): RoundState {
+  if (state.status === "finished" || state.results.length === 0) return state;
+  return { ...state, currentWrongPicks: [], status: "finished", endedEarly: true };
 }
 
 /** The target id being asked or just resolved; `null` once the round is over. */
@@ -213,15 +248,35 @@ export function advanceRound(state: RoundState): RoundState {
 }
 
 export interface RoundSummary {
-  /** Questions in the round. */
+  /**
+   * Questions that were SCORED — the denominator of every ratio on the end screen.
+   *
+   * The whole pool on a completed round, and the questions actually seen on one the player
+   * ended early. Keeping it "the scored questions" is what lets "Doğru 12/12" and "12/12 ilk
+   * denemede" stay literally true on a half round without either of them being touched.
+   */
   readonly total: number;
+  /**
+   * Size of the pool the round set out to cover — `total` again on a completed round, 81 on a
+   * half-played 81 İl round. The ONLY consumer is the "Yarım tur 12/81" line, which is what
+   * stops the stars above it from reading as a grade for the whole map.
+   */
+  readonly poolTotal: number;
+  /** The player ended the round themselves — see {@link finishEarly}. */
+  readonly endedEarly: boolean;
   /** The round's score out of 100 — the mean of the per-question points, rounded. */
   readonly score: number;
   /** Questions that were FOUND — anything that did not score 0. The end screen's "doğru". */
   readonly found: number;
   /** Questions found on the FIRST click (worth the full 100). */
   readonly firstTry: number;
-  /** Target ids that scored 0 — shown, or never reached (SPEC §5.4). */
+  /**
+   * Target ids that scored 0 — i.e. whose answer had to be SHOWN (SPEC §5.4).
+   *
+   * Built from `results` alone, which is what keeps it honest on a round ended early: a
+   * question that was never asked is not a question the player failed. "Bilemedim" must mean
+   * "it was asked and I did not know it", never "I did not get that far".
+   */
   readonly missedTargetIds: readonly string[];
   /**
    * Found, but only after `reviewWrongThreshold` wrong clicks or more. Not failures, so
@@ -253,11 +308,25 @@ export function summarizeRound(state: RoundState): RoundSummary {
       }
     }
   }
+  // THE DIVISOR, and it is the only thing DEC 2026-08-05g md. 2 changed about scoring.
+  //
+  // The formula is DEC 2026-07-30h's, untouched: the round's score is the MEAN of the
+  // per-question points, rounded, so every mode is scored out of 100 however long it is. What
+  // md. 2 settles is what "the questions" means once a round can end early — and it has to be
+  // the questions that were SEEN. Dividing a 12-question half round by 81 would report a
+  // score of 15 for a player who got twelve out of twelve right, which is not a harsher grade,
+  // it is a false one.
+  //
+  // On a round that ran to the end the two are the same number, so a completed round is scored
+  // bit for bit as before.
+  const scored = state.endedEarly ? state.results.length : state.order.length;
   return {
-    total: state.order.length,
-    // Averaged over the WHOLE pool, so a mid-round summary reads as progress towards the
-    // final number rather than as a score in its own right.
-    score: state.order.length === 0 ? 0 : Math.round(points / state.order.length),
+    total: scored,
+    poolTotal: state.order.length,
+    endedEarly: state.endedEarly,
+    // Averaged over the scored questions, so a mid-round summary reads as progress towards
+    // the final number rather than as a score in its own right.
+    score: scored === 0 ? 0 : Math.round(points / scored),
     found,
     firstTry,
     missedTargetIds,

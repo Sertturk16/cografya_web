@@ -101,6 +101,46 @@
   color: var(--color-primary-dark);
 }
 
+/* ---- BÖLGE SEÇ MİNİ HARİTASI (→ DEC 2026-08-05g md. 3, Atlas AO-5) ----------------------
+   Colours come from the Faz-1 MAP CHROME token family, which `app/globals.css` marks
+   explicitly as "not a data encoding" — the right set for a picture whose job is to point at
+   a place, not to encode a value. The highlight is the same on all seven cards on purpose;
+   see the note in `components/game/region-thumb.tsx`. */
+
+/* The shared `<defs>` block: it defines geometry and paints nothing. Kept in flow-free,
+   zero-size form rather than `display: none`, because a `display: none` ancestor makes some
+   engines skip resolving `<use href>` into the clones that DO paint. */
+.thumbDefs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* FIXED RATIO — the height of every card is known before the first paint (CLS). The fallback
+   is MAP_VIEWBOX's own 1000 ÷ 429, for the case the string is unreadable. */
+.thumb {
+  width: 100%;
+  aspect-ratio: var(--region-thumb-aspect, 2.331);
+  display: block;
+}
+
+.thumbBase {
+  fill: var(--province-inert);
+  stroke: var(--color-border);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* 4.26:1 against the backdrop it sits in — comfortably over WCAG 1.4.11's 3:1 floor for a
+   graphic that carries meaning, so the region is separable without relying on hue. */
+.thumbActive {
+  fill: var(--color-primary);
+  stroke: var(--color-primary-dark);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
 .modeName {
   font-size: 1.2rem;
   margin: 0;

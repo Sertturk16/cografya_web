@@ -158,6 +158,20 @@ export function GameSummary({
           </span>
         </p>
 
+        {/* HALF A ROUND SAYS SO — DEC 2026-08-05g md. 2 + Atlas AO-3.
+            The stars STAY: "skor kuralları değişmez", and a player who answered twelve of
+            twelve correctly earned three stars for the twelve they played. What would be
+            dishonest is letting those three stars stand next to nothing that says the map was
+            not finished — the exact class of defect the UX tour caught at B9, where the end
+            screen congratulated a player on knowing everything they had just missed.
+            So the honesty is carried by a SENTENCE rather than by degrading the grade: one
+            line, directly under the stars, naming both numbers. */}
+        {summary.endedEarly ? (
+          <p className={styles.dialogPartial}>
+            {t("summaryPartial", { answered: summary.total, poolTotal: summary.poolTotal })}
+          </p>
+        ) : null}
+
         {/* The star rule, in one sentence. The row above shows a grade the numbers below
             cannot explain: 6 of 7 on the first try scores 93, which is three stars, and
             nothing on this screen said why (UX tour B9). A grade the player cannot check is

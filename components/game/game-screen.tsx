@@ -61,6 +61,21 @@ export async function GameScreen({ locale, mode, modeName, region = null }: Game
   });
   const hubUrl = getPathname({ locale, href: "/oyun" });
 
+  /**
+   * Which screen may offer "Turu bitir" (→ DEC 2026-08-05g md. 2).
+   *
+   * DERIVED from this screen's own two inputs rather than passed down as a flag from the
+   * route: `mode === "provinces"` with NO region is, by definition, the 81 İl screen — the
+   * bölge-bölge-il rounds are `provinces` too, but they carry a region. A page-level boolean
+   * would be a second statement of the same fact, and a second statement can be wrong.
+   *
+   * The ruling is about ROUND LENGTH. Eighty-one questions is roughly twenty minutes and the
+   * only exits used to be finishing or losing everything; seven or eleven is not a round
+   * anyone needs rescuing from, and a button offering to cut it short would only invite a
+   * worse result.
+   */
+  const allowEarlyFinish = mode === "provinces" && region === null;
+
   return (
     <div className={styles.screen}>
       <p className={styles.backRow}>
@@ -85,6 +100,7 @@ export async function GameScreen({ locale, mode, modeName, region = null }: Game
           mode={mode}
           shapes={toTargetEntries(shapes)}
           regionLabels={regionLabels}
+          allowEarlyFinish={allowEarlyFinish}
           provinceUrlTemplate={provinceUrlTemplate}
           hubUrl={hubUrl}
         />

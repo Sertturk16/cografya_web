@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
-import { aspectOfViewBox, boundsOfPaths, parsePathPoints, viewBoxForPaths } from "./map-bbox";
+import {
+  aspectOfViewBox,
+  boundsOfPaths,
+  interiorPointForPaths,
+  parsePathPoints,
+  parsePathRings,
+  viewBoxForPaths,
+} from "./map-bbox";
 
 /**
  * Structural guards for the region-subset frame (never geography assertions — no test here
@@ -131,5 +138,93 @@ describe("viewBoxForPaths", () => {
     );
 
     expect(minX + width / 2).toBeCloseTo(105, 1);
+  });
+});
+
+describe("parsePathRings", () => {
+  it("splits a multi-subpath path into one ring per M", () => {
+    // Concatenating the subpaths — which `parsePathPoints` deliberately does — would join
+    // the last point of one piece to the first point of the next with a segment that is on
+    // no border anywhere, and a crossing count over that is meaningless.
+    expect(parsePathRings(`${RECT}M100 100L110 100L110 110L100 110Z`)).toHaveLength(2);
+    expect(parsePathRings(RECT)).toHaveLength(1);
+  });
+
+  it("drops anything that cannot enclose an area", () => {
+    expect(parsePathRings("M0 0L5 5Z")).toEqual([]);
+    expect(parsePathRings("")).toEqual([]);
+  });
+});
+
+/**
+ * `interiorPointForPaths` — STRUCTURE, NOT COORDINATES.
+ *
+ * No assertion below names a place or a number from the map. What is under test is the single
+ * invariant the function exists to provide: the point it returns is INSIDE the shapes it was
+ * given. That is checked by an even-odd test written HERE, independently of the module's own
+ * — a test that reused the implementation's containment check could only prove it is
+ * self-consistent.
+ *
+ * The invariant matters because the obvious alternative is wrong in a way that looks right:
+ * a bounding-box centre falls outside any sufficiently concave province (PR #48 measured
+ * exactly this when a bbox-centre click kept answering for a NEIGHBOUR), and a ✓ drawn there
+ * sits in the sea or on someone else's territory.
+ */
+function containsPoint(paths: readonly string[], x: number, y: number): boolean {
+  let inside = false;
+  for (const d of paths) {
+    for (const ring of parsePathRings(d)) {
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+        const [ax = 0, ay = 0] = ring[i] ?? [];
+        const [bx = 0, by = 0] = ring[j] ?? [];
+        if (ay > y !== by > y && x < ((bx - ax) * (y - ay)) / (by - ay) + ax) inside = !inside;
+      }
+    }
+  }
+  return inside;
+}
+
+describe("interiorPointForPaths", () => {
+  it("returns a point inside a simple rectangle", () => {
+    const point = interiorPointForPaths([RECT]);
+    expect(point).not.toBeNull();
+    expect(containsPoint([RECT], point!.x, point!.y)).toBe(true);
+  });
+
+  it("stays out of a concave shape's hollow", () => {
+    // A "C": its bounding-box centre is in the notch, i.e. outside the shape. This is the
+    // whole reason the function searches instead of averaging.
+    const C = "M0 0L100 0L100 20L20 20L20 80L100 80L100 100L0 100Z";
+    const point = interiorPointForPaths([C]);
+    expect(point).not.toBeNull();
+    expect(containsPoint([C], point!.x, point!.y)).toBe(true);
+    expect(containsPoint([C], 50, 50)).toBe(false); // the bbox centre — the trap
+  });
+
+  it("lands inside EVERY shape in the committed artifact", () => {
+    for (const shape of PROVINCE_SHAPES) {
+      const point = interiorPointForPaths([shape.d]);
+      expect(point, shape.plateCode).not.toBeNull();
+      expect(containsPoint([shape.d], point!.x, point!.y), shape.plateCode).toBe(true);
+    }
+  });
+
+  it("lands inside the union when several disjoint shapes are grouped", () => {
+    // The bölge-mode case: one mark for a group of provinces. The groups here are arbitrary
+    // slices of the artifact, NOT the coğrafi bölge — this file must not encode which
+    // province belongs where (CONVENTIONS §4), and a slice is the harder test anyway, since
+    // its members need not touch.
+    const size = Math.ceil(PROVINCE_SHAPES.length / 7);
+    for (let i = 0; i < PROVINCE_SHAPES.length; i += size) {
+      const paths = PROVINCE_SHAPES.slice(i, i + size).map((shape) => shape.d);
+      const point = interiorPointForPaths(paths);
+      expect(point, `group at ${i}`).not.toBeNull();
+      expect(containsPoint(paths, point!.x, point!.y), `group at ${i}`).toBe(true);
+    }
+  });
+
+  it("answers rather than guessing when there is nothing to be inside of", () => {
+    expect(interiorPointForPaths([])).toBeNull();
+    expect(interiorPointForPaths(["M5 5L5 5Z"])).toBeNull();
   });
 });

@@ -245,6 +245,23 @@
   color: var(--color-slate);
 }
 
+/* "Yarım tur: 12/81 soru." — the one line that keeps the star row above it honest when the
+   player ended the round themselves (→ DEC 2026-08-05g md. 2, Atlas AO-3).
+   Louder than `.dialogNote`: it is not an aside about the result, it is a qualifier ON the
+   result, and a reader who skims the stars and the score must not skim past it. It is TEXT,
+   not a badge — the numbers it names are the whole message, and `--color-slate` keeps it
+   above the 4.5:1 body-text floor where `--color-taupe` would not (ENGINEERING.md §5). */
+.dialogPartial {
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-slate);
+}
+
 .dialogFirstTry {
   margin: 0;
   font-size: 0.95rem;

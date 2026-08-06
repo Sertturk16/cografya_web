@@ -285,28 +285,47 @@
 
 /* MODE 1 — the map is coloured by coğrafi bölge. A DATA encoding, so the values come from
    the categorical region token set, never from the Terra brand tokens (DESIGN.md §6.1
-   rule 1). `:not([data-state])` keeps the tint out of the way of the answer states below
-   without a specificity arms race: a shape that has a game state is no longer showing its
-   region, it is showing what the player just did. */
-.stage[data-game-mode="regions"] .province[data-region="MARMARA"]:not([data-state]) {
+   rule 1).
+
+   ---- I1 · A SOLVED REGION KEEPS ITS COLOUR (UX tour B24 / D6, → DEC 2026-08-05g md. 1) ----
+   The guard used to be `:not([data-state])`, which handed EVERY answer state the fill —
+   including `correct`. The consequence was the tour's complaint and it was worse than a
+   colour clash: a solved Doğu Anadolu (#009e73) became `--game-correct` (#5f8f3f), a second
+   green nobody could tell from the first, and by the last question all seven regions had
+   collapsed into that one green. A mode whose entire subject is "these seven areas are
+   different" ended by showing them as identical.
+   The guard now names only the two states that genuinely REPLACE the region on screen —
+   `wrong` and `reveal`, both of which last seconds and both of which are about the click, not
+   about the area. `correct` is permanent and is about the area, so it lets the tint stand and
+   says "solved" with a second, independent signal instead (§I1 SOLVED MARK, below).
+   Still no specificity arms race, and now in the other direction: at (0,6,0) these rules beat
+   `.province[data-state="correct"]` at (0,2,0) without either being marked important. */
+.stage[data-game-mode="regions"]
+  .province[data-region="MARMARA"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-marmara);
 }
-.stage[data-game-mode="regions"] .province[data-region="EGE"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="EGE"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-ege);
 }
-.stage[data-game-mode="regions"] .province[data-region="AKDENIZ"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="AKDENIZ"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-akdeniz);
 }
-.stage[data-game-mode="regions"] .province[data-region="IC_ANADOLU"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="IC_ANADOLU"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-ic-anadolu);
 }
-.stage[data-game-mode="regions"] .province[data-region="KARADENIZ"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="KARADENIZ"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-karadeniz);
 }
-.stage[data-game-mode="regions"] .province[data-region="DOGU_ANADOLU"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="DOGU_ANADOLU"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-dogu-anadolu);
 }
-.stage[data-game-mode="regions"] .province[data-region="GUNEYDOGU_ANADOLU"]:not([data-state]) {
+.stage[data-game-mode="regions"]
+  .province[data-region="GUNEYDOGU_ANADOLU"]:not([data-state="wrong"]):not([data-state="reveal"]) {
   fill: var(--region-guneydogu-anadolu);
 }
 
@@ -329,6 +348,57 @@
   stroke: var(--game-correct-edge);
   stroke-width: 2.5;
   stroke-dasharray: none;
+}
+
+/* ---- §I1 SOLVED MARK — TWO VARIANTS, ONE OWNER DECISION ---------------------------------
+   Both exist so the owner can rule from rendered samples (→ DEC 2026-08-05g md. 1, AO-2);
+   the loser is DELETED before merge. The switch is `SOLVED_MARK` in `game-map.tsx`, and it
+   reaches this file as `data-solved-mark` on the stage — scoping on it is what keeps each
+   variant's rules inert when its markup is absent (an unresolvable `fill: url(#…)` is an SVG
+   error, not a silent no-op).
+
+   BOTH share the premise above: the region tint SURVIVES, and solved-ness is a signal in its
+   own right rather than a repainting. Neither is carried by colour alone — the live region
+   states every answer in words at the moment it happens (DESIGN.md §6.1 rule 3). */
+
+/* VARIANT "hatch" — the hit twin, which has no fill of its own, takes a diagonal one. It sits
+   above the base twin and below the water, which is exactly where a "this area is done"
+   texture belongs; `pointer-events: all` is unaffected, so the shape answers as before. */
+.stage[data-solved-mark="hatch"] .hitEdge[data-state="correct"] {
+  fill: url(#game-solved-hatch);
+}
+
+/* VARIANT "check" — the fourth layer. Inert, hidden from AT, and invisible until the island
+   marks the target it belongs to. */
+.markLayer {
+  pointer-events: none;
+}
+
+.markLayer [data-target] {
+  display: none;
+}
+
+.markLayer [data-target][data-state="correct"] {
+  display: inline;
+}
+
+/* The halo goes UNDER the glyph and is wider, so the pair reads as an outlined tick on every
+   region tint (see the measurement note in `game-map.tsx`). `stroke-linecap: round` on both:
+   a mitred tick at this size grows a spur at the elbow. */
+.checkHalo {
+  fill: none;
+  stroke: var(--game-correct-edge);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.checkGlyph {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .province[data-state="wrong"] {

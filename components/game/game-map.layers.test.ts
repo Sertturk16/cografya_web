@@ -51,14 +51,22 @@ const ISLAND = code(sourceOf("./game-island.tsx"));
 const CSS = code(sourceOf("./game-map.module.css")).replace(/\s+/g, " ");
 
 /**
- * The three layers, in the order they must paint: fills, then silhouettes, then lines.
+ * The layers, in the order they must paint: fills, then silhouettes, then lines, then the
+ * solved marks.
+ *
+ * `mark` is I1's "check" variant (→ DEC 2026-08-05g md. 1). It is pinned at the SAME strength
+ * as the other three rather than left unguarded because it is a variant: if the owner picks
+ * it, its position is load bearing (a tick under the hit layer would be crossed out by the
+ * answer's own line); if the owner picks "hatch" instead, this layer and this entry are
+ * deleted together (→ Atlas AO-2). What must never happen is the layer surviving with nothing
+ * asserting where it sits.
  *
  * NOT the whole paint order of this `<svg>`: `<InlandWaterLayer>` sits ABOVE all three and is
  * pinned in `components/map/inland-water-layer.contract.test.ts`, because that position is the
  * water layer's own contract (it is what makes a mid-lake click score nothing). Do not read
  * the list below as "these are all the children" — it is the twin split and nothing else.
  */
-const LAYERS = ["base", "region", "hit"] as const;
+const LAYERS = ["base", "region", "hit", "mark"] as const;
 
 /**
  * The source of ONE layer group: from its marker attribute up to the next one (the last block
@@ -75,7 +83,7 @@ function layerBlock(name: (typeof LAYERS)[number]): string {
 }
 
 describe("the game map's paint layers", () => {
-  it("declares the three layers exactly once each, in paint order", () => {
+  it("declares every layer exactly once, in paint order", () => {
     let previous = -1;
     for (const layer of LAYERS) {
       const occurrences = MAP.match(new RegExp(`data-map-layer="${layer}"`, "g")) ?? [];
@@ -111,6 +119,12 @@ describe("the game map's paint layers", () => {
     // The silhouette layer re-uses the same geometry a third time. If it ever carried
     // `data-plate`, the island's "both twins" query would silently become "all three".
     expect(layerBlock("region")).not.toContain("data-plate");
+    // Neither does the mark layer, and that is a different reason: its marks are keyed by
+    // TARGET, so in bölge mode there are seven of them, not eighty-one. `data-plate` there
+    // would put the island's twin queries back to "all three layers" AND make the region
+    // mode draw eleven ticks for one answer.
+    expect(layerBlock("mark")).not.toContain("data-plate");
+    expect(layerBlock("mark")).toContain("data-target={targetId}");
   });
 
   it("gives only ANSWERABLE shapes a hit twin", () => {
@@ -194,8 +208,21 @@ describe("the game island's two shape queries", () => {
     // The regression this whole file exists for: an unscoped query returns both twins, which
     // is right for exactly one of the two loops and wrong for the other.
     expect(ISLAND).not.toMatch(/querySelectorAll\(\s*["'`]\[data-plate\]/);
+    // THREE now: the two twin queries plus I1's solved-mark query, which is scoped to its own
+    // layer and keyed by target rather than by plate. The count is asserted so that a fourth,
+    // unnamed query cannot appear without this file being read.
     const queries = ISLAND.match(/svg\.querySelectorAll\(/g) ?? [];
-    expect(queries).toHaveLength(2);
+    expect(queries).toHaveLength(3);
+  });
+
+  it("addresses the solved marks by target, inside their own layer", () => {
+    expect(ISLAND).toContain(`const MARK_SHAPES = '[data-map-layer="mark"] [data-target]';`);
+    // The marks say ONE thing — solved — so they must not be driven by `deriveShapeState`,
+    // which also answers `wrong` and `reveal`. A tick that flickers on a wrong click would be
+    // telling the player they had just solved the thing they got wrong.
+    expect(ISLAND).toMatch(
+      /querySelectorAll\(MARK_SHAPES\)[\s\S]{0,500}?solved\.has\(targetId\)[\s\S]{0,200}?setAttribute\("data-state", "correct"\)/,
+    );
   });
 });
 
@@ -215,9 +242,57 @@ describe("the stylesheet's half of the split", () => {
       expect(CSS).toMatch(
         new RegExp(`\\.hitEdge\\[data-state="${state}"\\] \\{[^}]*stroke: var\\(`),
       );
-      // A fill on the hit twin would wash out the state colour underneath it; a stroke on the
-      // base twin is the paint-order defect this PR removed.
+      // A stroke on the base twin is the paint-order defect PR #40 removed. (The hit twin's
+      // FILL is no longer forbidden: I1's "hatch" variant deliberately paints a pattern into
+      // it — see the solved-mark block below, which pins that rule to its own variant.)
       expect(CSS).not.toMatch(new RegExp(`\\.province\\[data-state="${state}"\\] \\{[^}]*stroke:`));
     }
+  });
+});
+
+/**
+ * REGRESSION SHIELD — I1 / D6: A SOLVED REGION KEEPS ITS COLOUR.
+ *
+ * The defect this pins is subtle enough that it shipped once and survived a live tour before
+ * anyone could name it. The region tints were written `:not([data-state])`, so `correct` —
+ * the one permanent state — took the fill with it. Every solved region turned
+ * `--game-correct`, and a completed bölge round showed seven regions in ONE green: the mode
+ * erased its own lesson at the moment the player finished learning it.
+ *
+ * Nothing about that is visible in a type check, a lint pass or a screenshot of a round in
+ * progress. It is only visible at the END of a round, which is exactly when nobody is looking
+ * at the map any more, so it is pinned here instead.
+ */
+describe("the solved-region tint (I1 / D6)", () => {
+  const REGION_TINT =
+    /\.stage\[data-game-mode="regions"\]\s*\.province\[data-region="[A-Z_]+"\]([^{]*)\{\s*fill: var\(--region-[a-z-]+\);\s*\}/g;
+
+  it("keeps every region tint out of the way of ONLY the transient states", () => {
+    const matches = [...CSS.matchAll(REGION_TINT)];
+    // One rule per coğrafi bölge. A missing rule is an untinted region; the count is what
+    // makes "every" in this test's name true.
+    expect(matches).toHaveLength(7);
+    for (const match of matches) {
+      const guard = match[1] ?? "";
+      // `wrong` and `reveal` are about the CLICK and last a second or two — they replace the
+      // area on screen and should. `correct` is about the AREA and is permanent, so it must
+      // never appear here.
+      expect(guard).toContain(':not([data-state="wrong"])');
+      expect(guard).toContain(':not([data-state="reveal"])');
+      expect(guard).not.toMatch(/:not\(\[data-state\]\)/);
+      expect(guard).not.toContain("correct");
+    }
+  });
+
+  it("gives solved-ness a second signal that is not the fill", () => {
+    // Whichever variant the owner keeps, "solved" must still be SAID somewhere on the map —
+    // otherwise removing the green fill from the tint rule would just delete the feedback.
+    const hatch =
+      /\.stage\[data-solved-mark="hatch"\] \.hitEdge\[data-state="correct"\] \{[^}]*fill: url\(/.test(
+        CSS,
+      );
+    const check =
+      /\.markLayer \[data-target\]\[data-state="correct"\] \{[^}]*display: inline;/.test(CSS);
+    expect(hatch || check).toBe(true);
   });
 });
