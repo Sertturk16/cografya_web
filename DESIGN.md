@@ -273,3 +273,23 @@ set (§6.1 rule 1) and read only by `components/game/game-map.module.css`.
   fill. Tinting by region there would hand the player the answer, which is the product
   reason; the doctrine reason is the same one — colour must encode the variable under
   discussion, and in those modes that variable is not the region.
+
+## Kim neyi okur — kapsam sözleşmesi
+
+This table is the sole owner of this document's read scope. A role definition never
+restates that scope — it carries only the anchor id in the last column, and
+`Team/scripts/read-contract-lint.sh` (run by the orchestration root's `pre-commit` hook
+through `governance-lint.sh`) verifies that each id still stands in every definition file
+named beside it. The doctrine itself lives in §§1–6 above; this table says only who reads
+which of them, and when (→ DEC 2026-08-07a).
+
+<!-- read-contract -->
+
+| Rol      | Okur                                                                                               | Ne zaman                                                                                                                                        | Tanım dosyası                                                                        | Anchor               |
+| -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------- |
+| **Vera** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every visible UI change, before the component is written — in addition to, never instead of, the rendered-sample obligation in the header above | `.claude/agents/cografya-frontend-dev.md` `.codex/agents/cografya_frontend_dev.toml` | `READ-DESIGN-VISUAL` |
+
+<!-- /read-contract -->
+
+The owner is the design authority and reads rendered samples, not this file; that gate is
+held by a person, so it carries no anchor.
