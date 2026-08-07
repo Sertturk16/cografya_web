@@ -139,6 +139,13 @@ semantic colors (AQI / earthquake intensity / SST) stay STANDARD, never recolore
   code-reading — this is how PR#2 caught a real 500 hiding inside a "one-line" fix).
 - **Rendered samples** (screenshots / preview output) to the owner before AND after merge
   for every user-visible change. Never merge a visible UI change the owner hasn't seen.
+- **Delete `.next` before capturing a sample that follows a data change** (→ `FU-SAMPLE-CACHE`,
+  PR #54). Next persists a file-system data cache at `.next/cache/fetch-cache` that survives
+  a dev-server restart, so a page can keep serving the pre-seed payload while the database
+  already holds the new one. This shipped a real near-miss: the "after" frame of an api seed
+  fix came back byte-identical to its "before" frame, and would have shown the owner the OLD
+  text labelled as new, at the approval gate. `rm -rf .next`, restart, then capture — and
+  **assert the frame against the database**, never against the fact that the server restarted.
 
 ## 7. Branch flow & PR
 
