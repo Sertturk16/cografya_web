@@ -142,9 +142,9 @@ semantic colors (AQI / earthquake intensity / SST) stay STANDARD, never recolore
 - **Delete `.next` before capturing a sample that follows a data change** (→ `FU-SAMPLE-CACHE`,
   PR #54). Next persists a file-system data cache at `.next/cache/fetch-cache` that survives
   a dev-server restart, so a page can keep serving the pre-seed payload while the database
-  already holds the new one. This shipped a real near-miss: the "after" frame of an api seed
-  fix came back byte-identical to its "before" frame, and would have shown the owner the OLD
-  text labelled as new, at the approval gate. `rm -rf .next`, restart, then capture — and
+  already holds the new one. This was caught once, at the approval gate: the "after" frame of
+  an api seed fix came back byte-identical to its "before" frame and would have certified the
+  OLD text as new. `rm -rf .next`, restart, then capture — and
   **assert the frame against the database**, never against the fact that the server restarted.
 
 ## 7. Branch flow & PR

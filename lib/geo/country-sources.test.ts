@@ -34,7 +34,7 @@ import trMessages from "@/messages/tr.json";
  * `lib/climate/climate-messages.test.ts`. That is strictly stronger — it also catches a
  * dropped or renamed interpolation, which the old ban could not see.
  *
- * Structural only (`CONVENTIONS.md` §4): it asserts the SHAPE of the sentence — which
+ * Structural only (`CONVENTIONS.md` §2): it asserts the SHAPE of the sentence — which
  * placeholder, no country-specific qualifier, the §16 semicolon ceiling, ICU-formattable —
  * and never the wording of the source list or the name of any institution. Pinning
  * "CYSTAT" here would nail the api's seed to a web test.
@@ -61,12 +61,22 @@ const SOURCE_KEYS = Object.keys(REQUIRED_PLACEHOLDERS) as (keyof typeof REQUIRED
  * keys — the no-population variant is corpus-wide by construction too, even though exactly
  * one page reaches it today.
  */
-const COUNTRY_SPECIFIC_TOKENS = ["Geostat", "Gürcistan", "Georgia"] as const;
+const COUNTRY_SPECIFIC_TOKENS = [
+  "Geostat",
+  "Gürcistan",
+  "Georgia",
+  // Added with the no-population variant (PR #54). That key is written FOR one page, so
+  // naming the entity in it would be the Geostat shape again — the string must describe
+  // which fields it credits, never which country it was cut for.
+  "Antarktika",
+  "Antarctica",
+] as const;
 
 /**
  * `CONTENT-STYLE.md` §16: at most ONE semicolon per paragraph. The Kaynaklar line renders
- * as a single `<p>`, so the whole string is one paragraph. Both strings carried FOUR before
- * this work; the ceiling is pinned here so the next edit cannot quietly restore them.
+ * as a single `<p>`, so the whole string is one paragraph. `sources` carried FOUR in both
+ * locales before this work; `sourcesNoPopulation` is new here and never carried any. The
+ * ceiling is pinned for both so the next edit cannot quietly reintroduce the chain.
  */
 const MAX_SEMICOLONS_PER_PARAGRAPH = 1;
 
