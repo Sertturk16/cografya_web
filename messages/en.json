@@ -344,7 +344,8 @@
     "independenceHeadingPlain": "Independence",
     "neighborsHeadingPlain": "Neighbouring Countries",
     "sourcesLabel": "Sources",
-    "sources": "Data is grounded in official and authoritative sources: country and capital names from the Turkish Ministry of Foreign Affairs; population from the World Bank; area from the World Bank; continent and region classification from the UN Statistics Division (M49); neighbouring countries, government form, currency and physical geography from cross-checked multi-source references (Britannica and others).",
+    "sources": "Data is grounded in official and authoritative sources: country and capital names from the Turkish Ministry of Foreign Affairs, population from {populationSource}. Area comes from the World Bank, and continent and region classification from the UN Statistics Division (M49). Neighbouring countries, government form, currency and physical geography are cross-checked against multiple references (Britannica and others).",
+    "sourcesNoPopulation": "Data is grounded in official and authoritative sources: country names from the Turkish Ministry of Foreign Affairs. Area comes from the World Bank, and continent and region classification from the UN Statistics Division (M49). Neighbouring countries, government form, currency and physical geography are cross-checked against multiple references (Britannica and others).",
     "backToMap": "Back to the world map"
   },
   "Deniz": {

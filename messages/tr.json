@@ -344,7 +344,8 @@
     "independenceHeadingPlain": "Bağımsızlık",
     "neighborsHeadingPlain": "Komşu Ülkeler",
     "sourcesLabel": "Kaynaklar",
-    "sources": "Veriler resmi ve otoriter kaynaklara dayanır: ülke ve başkent adları T.C. Dışişleri Bakanlığı; nüfus Dünya Bankası; yüzölçümü Dünya Bankası; kıta ve bölge sınıflandırması BM İstatistik Bölümü (M49); komşu ülkeler, yönetim biçimi, para birimi ve fiziki coğrafya çok kaynaklı çapraz kontrolle (Britannica vb.).",
+    "sources": "Veriler resmi ve otoriter kaynaklara dayanır: ülke ve başkent adları T.C. Dışişleri Bakanlığı, nüfus {populationSource}. Yüzölçümü Dünya Bankası'ndan, kıta ve bölge sınıflandırması BM İstatistik Bölümü'nden (M49) alınır. Komşu ülkeler, yönetim biçimi, para birimi ve fiziki coğrafya çok kaynaklı çapraz kontrolle (Britannica vb.) doğrulanır.",
+    "sourcesNoPopulation": "Veriler resmi ve otoriter kaynaklara dayanır: ülke adları T.C. Dışişleri Bakanlığı. Yüzölçümü Dünya Bankası'ndan, kıta ve bölge sınıflandırması BM İstatistik Bölümü'nden (M49) alınır. Komşu ülkeler, yönetim biçimi, para birimi ve fiziki coğrafya çok kaynaklı çapraz kontrolle (Britannica vb.) doğrulanır.",
     "backToMap": "Dünya haritasına dön"
   },
   "Deniz": {
