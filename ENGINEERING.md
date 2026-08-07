@@ -215,3 +215,25 @@ Web-specific filter boundary:
   (§8 — review independence is a design choice, not an accident).
 - Data-viz / map color code is **Faz-2** — `DESIGN.md` ships the doctrine as documentation
   now; no scales module lands in this repo yet.
+
+## Kim neyi okur — kapsam sözleşmesi
+
+This table is the sole owner of this document's read scope. A role definition never
+restates that scope — it carries only the anchor id in the last column, and
+`Team/scripts/read-contract-lint.sh` (run by the orchestration root's `pre-commit` hook
+through `governance-lint.sh`) verifies that each id still stands in every definition file
+named beside it. The rules themselves live in §§1–10 above; this table says only who reads
+which of them, and when (→ DEC 2026-08-07a).
+
+<!-- read-contract -->
+
+| Rol                      | Okur                                                                                                                                                                                                                                                                                            | Ne zaman                                                                                                                                                                                                                                         | Tanım dosyası                                                                                                | Anchor              |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ------------------- |
+| **Vera** (single writer) | Mandatory: **§1** authority order · **§2** stack lock · **§4** SEO checklist (§4 sets its own "scan every PR" rule) · **§6** gates · **§7** branch/PR flow · **§10** do-NOT list. On demand: **§3** · **§5** · **§8** · **§9**                                                                  | The mandatory set on every PR in this repo. §3 when a route, rendering mode or sitemap surface changes; §5 whenever shipped UI changes; §8 when Atlas returns a consolidated review report; §9 on a fresh clone and before every `gh` invocation | `.claude/agents/cografya-frontend-dev.md` `.codex/agents/cografya_frontend_dev.toml`                         | `READ-ENG-WEB`      |
+| Review legs              | **§1** ground-truth order (this file beats a conflicting suggestion) · **§2** stack lock · **§4** SEO checklist · **§5** a11y floor · **§6** gates · **§10** do-NOT list — the repo truth a finding is scored against. §8 is the author's half; a leg reads it for context and never acts on it | Every review leg on a `cografya_web` PR, before assigning a severity                                                                                                                                                                             | `.claude/agents/pr-reviewer-high.md` `.claude/agents/pr-reviewer-medium.md` `.claude/agents/pr-validator.md` | `READ-ENG-REVIEWER` |
+
+<!-- /read-contract -->
+
+Readers with no definition file cannot be machine-checked and therefore carry no anchor:
+Atlas reads §6/§7 when routing or merging, and the owner sees only the rendered samples
+and the critical summary.
