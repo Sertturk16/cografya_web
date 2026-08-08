@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
@@ -40,20 +40,27 @@ const catalogues = { tr: trMessages.Nav, en: enMessages.Nav } as const;
 
 /**
  * The list above is hand-maintained, so on its own it can only ever prove that yesterday's
- * keys still resolve (review TA56-M4). These two files are the only consumers of the `Nav`
- * namespace; reading the keys they actually ask for is what ties the list to the code, so a
- * `t("menuHint")` added without a catalogue entry fails here instead of shipping the literal
- * string "Nav.menuHint" into every page's header with both locales in perfect parity.
+ * keys still resolve (review TA56-M4). Discovering every `Nav` consumer under `components/`
+ * and `app/` ties the list to the code, so a consumer added elsewhere cannot silently fall
+ * outside this guard and ship a literal key path with both locales in perfect parity.
  */
-const CONSUMERS = ["./site-nav.tsx", "./nav-disclosure.tsx"] as const;
+const ROOTS = [
+  { label: "components", url: new URL("../", import.meta.url) },
+  { label: "app", url: new URL("../../app/", import.meta.url) },
+] as const;
 
-const consumerSources = CONSUMERS.map((path) => ({
-  path,
-  source: readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8").replace(
-    /\/\*[\s\S]*?\*\//g,
-    " ",
-  ),
-}));
+const consumerSources = ROOTS.flatMap(({ label, url }) =>
+  readdirSync(url, { recursive: true, encoding: "utf8" })
+    .filter((name) => /\.(?:ts|tsx)$/.test(name) && !name.includes("node_modules"))
+    .map((name) => ({
+      path: `${label}/${name}`,
+      source: readFileSync(fileURLToPath(new URL(name, url)), "utf8").replace(
+        /\/\*[\s\S]*?\*\//g,
+        " ",
+      ),
+    }))
+    .filter(({ source }) => /(?:use|get)Translations\("Nav"\)/.test(source)),
+);
 
 describe("Nav message catalogue", () => {
   for (const [locale, catalogue] of Object.entries(catalogues)) {
@@ -68,6 +75,10 @@ describe("Nav message catalogue", () => {
 
   it("carries the SAME key set in both locales", () => {
     expect(Object.keys(enMessages.Nav).sort()).toEqual(Object.keys(trMessages.Nav).sort());
+  });
+
+  it("discovers at least one Nav consumer", () => {
+    expect(consumerSources.length).toBeGreaterThan(0);
   });
 
   it.each(consumerSources)("$path asks the Nav namespace for keys the list knows", ({ source }) => {

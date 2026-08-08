@@ -91,8 +91,13 @@ describe("the disclosure contract", () => {
   });
 
   it("closes on Escape and hands focus back to the button", () => {
-    expect(ISLAND).toMatch(/event\.key !== "Escape"/);
-    expect(ISLAND).toMatch(/close\(true\)/);
+    const onKeyDown = ISLAND.slice(
+      ISLAND.indexOf("const onKeyDown"),
+      ISLAND.indexOf("const onBlur"),
+    );
+    expect(onKeyDown.length).toBeGreaterThan(0);
+    expect(onKeyDown).toMatch(/event\.key !== "Escape"/);
+    expect(onKeyDown).toMatch(/close\(true\)/);
     expect(ISLAND).toMatch(/buttonRef\.current\?\.focus\(\)/);
   });
 });
@@ -106,18 +111,29 @@ describe("the WebKit mousedown guards", () => {
   it("keeps the trigger's guard (A11Y-1: the close button reopened the menu on iOS)", () => {
     const trigger = ISLAND.slice(ISLAND.indexOf("<button"), ISLAND.indexOf("</button>"));
     expect(trigger.length).toBeGreaterThan(0);
-    expect(trigger).toMatch(/onMouseDown=\{\(event\) => event\.preventDefault\(\)\}/);
+    expect(trigger).toMatch(/onMouseDown=\{\((\w+)\) => \1\.preventDefault\(\)\}/);
   });
 
   it("keeps the panel's guard (CR56-C1: no panel link navigated on iOS)", () => {
-    expect(ISLAND).toMatch(/const onPanelMouseDown[\s\S]{0,200}?event\.preventDefault\(\)/);
+    const handler = ISLAND.slice(
+      ISLAND.indexOf("const onPanelMouseDown"),
+      ISLAND.indexOf("const onPanelClick"),
+    );
+    expect(handler.length).toBeGreaterThan(0);
+    expect(handler).toMatch(/event\.preventDefault\(\)/);
     expect(ISLAND).toMatch(/onMouseDown=\{onPanelMouseDown\}/);
   });
 
-  it("scopes the panel's guard to the open state, leaving the desktop nav alone", () => {
-    // Above 64rem the panel element IS the inline desktop nav (`display: contents`), so an
-    // unconditional guard there would suppress mousedown defaults on the desktop links.
-    expect(ISLAND).toMatch(/onPanelMouseDown\s*=\s*\([^)]*\)\s*=>\s*\{\s*if \(open\)/);
+  it("scopes both panel handlers to open state", () => {
+    const mouseDown = ISLAND.slice(
+      ISLAND.indexOf("const onPanelMouseDown"),
+      ISLAND.indexOf("const onPanelClick"),
+    );
+    const click = ISLAND.slice(ISLAND.indexOf("const onPanelClick"), ISLAND.indexOf("return ("));
+    expect(mouseDown.length).toBeGreaterThan(0);
+    expect(click.length).toBeGreaterThan(0);
+    expect(mouseDown).toMatch(/if \(open\) event\.preventDefault\(\)/);
+    expect(click).toMatch(/if \(!open\) return/);
   });
 });
 
@@ -129,6 +145,8 @@ describe("the panel stylesheet carries the a11y-bearing rules", () => {
    * an invisible sheet (the PR #45 review C1 trap, WCAG 4.1.2).
    */
   it("hides the closed panel with `display: none` and reveals it with `display: flex`", () => {
+    expect(ISLAND).toMatch(/className=\{styles\.panel\}/);
+    expect(ISLAND).toMatch(/data-open=\{open \? "true" : "false"\}/);
     expect(CSS).toMatch(/\.panel\s*\{[^}]*display:\s*none/);
     expect(CSS).toMatch(/\.panel\[data-open="true"\]\s*\{[^}]*display:\s*flex/);
   });

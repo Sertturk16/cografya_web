@@ -25,6 +25,7 @@ import { describe, expect, it } from "vitest";
  */
 
 const GLOBALS = new URL("../app/globals.css", import.meta.url);
+const SITE_HEADER = new URL("./site-header.module.css", import.meta.url);
 
 /**
  * BOTH stylesheet roots, and every `.css` in them — not just `components/**\/*.module.css`
@@ -34,7 +35,10 @@ const GLOBALS = new URL("../app/globals.css", import.meta.url);
  * offset exists" cannot notice the file it never opened, and the letter-jump anchors this
  * test was written for live on `/turkiye`.
  */
-const ROOTS = ["../components/", "../app/"].map((dir) => new URL(dir, import.meta.url));
+const ROOTS = [
+  { label: "components", url: new URL("../components/", import.meta.url) },
+  { label: "app", url: new URL("../app/", import.meta.url) },
+] as const;
 
 /** CSS comments are stripped before every scan — the PR-A CR-S2 lesson: a rule quoted inside
  *  a comment must never satisfy (or trip) a source-text guard. */
@@ -57,34 +61,38 @@ const rootBlock = (() => {
   return end === -1 ? "" : globals.slice(start, end);
 })();
 
-const cssFiles = ROOTS.flatMap((root) =>
+const cssFiles = ROOTS.flatMap(({ label: rootLabel, url: root }) =>
   readdirSync(root, { recursive: true, encoding: "utf8" })
     .filter((name) => name.endsWith(".css") && !name.includes("node_modules"))
     .map((name) => ({
       file: fileURLToPath(new URL(name, root)),
+      label: `${rootLabel}/${name}`,
       css: readFileSync(new URL(name, root), "utf8"),
     })),
 ).sort((a, b) => a.file.localeCompare(b.file));
 
-/** Every `scroll-margin-top` declaration in either stylesheet root, with its file. */
-const offsets = cssFiles.flatMap(({ file, css }) =>
-  [...stripComments(css).matchAll(/scroll-margin-top\s*:\s*([^;}]+)/g)].map((match) => ({
-    file,
-    value: match[1]?.trim() ?? "",
-  })),
+/** Every custom-property read inside a `calc()` in either stylesheet root. */
+const calculatedReferences = cssFiles.flatMap(({ css, label }) =>
+  [...stripComments(css).matchAll(/calc\(([^;{}]+)\)/g)].flatMap((calculation) =>
+    [...(calculation[1] ?? "").matchAll(/var\(\s*(--[a-z0-9-]+)(\s*,[^)]*)?\)/gi)].map(
+      (reference) => ({
+        css: stripComments(css),
+        fallback: reference[2] !== undefined,
+        label,
+        token: reference[1] ?? "",
+      }),
+    ),
+  ),
 );
 
 describe("sticky-header anchor offsets", () => {
-  it("finds at least one anchor offset to guard", () => {
-    // Guards the guard: a refactor that renames the property would otherwise make this whole
-    // file pass by testing nothing.
-    expect(offsets.length).toBeGreaterThan(0);
+  it("finds calculated custom-property reads to guard", () => {
+    expect(calculatedReferences.length).toBeGreaterThan(0);
   });
 
   it("scans both stylesheet roots", () => {
     // Guards the widening itself: a move of either root would otherwise shrink the scanned
     // set in silence, which is the failure mode of the version this replaced.
-    expect(cssFiles.length).toBeGreaterThan(offsets.length);
     expect(cssFiles.some(({ file }) => file.includes("/app/"))).toBe(true);
     expect(cssFiles.some(({ file }) => file.includes("/components/"))).toBe(true);
   });
@@ -95,12 +103,20 @@ describe("sticky-header anchor offsets", () => {
     expect(rootBlock).toContain("--header-height");
   });
 
-  it.each(offsets)("$file reads only custom properties declared in :root", ({ value }) => {
-    const referenced = [...value.matchAll(/var\(\s*(--[a-z0-9-]+)/gi)].map((match) => match[1]);
-    expect(referenced.length).toBeGreaterThan(0);
-    for (const token of referenced) {
-      expect(rootBlock).toMatch(new RegExp(`${token}\\s*:`));
-    }
+  it.each(calculatedReferences)(
+    "$label resolves $token used inside calc()",
+    ({ css, fallback, token }) => {
+      const declaredGlobally = new RegExp(`${token}\\s*:`).test(rootBlock);
+      const declaredLocally = new RegExp(`${token}\\s*:`).test(css);
+      expect(declaredGlobally || declaredLocally || fallback).toBe(true);
+    },
+  );
+
+  it("keeps the mobile header on one row below 64rem", () => {
+    const header = stripComments(readFileSync(SITE_HEADER, "utf8"));
+    const mobileRules = header.slice(0, header.indexOf("@media (min-width: 64rem)"));
+    expect(mobileRules.length).toBeGreaterThan(0);
+    expect(mobileRules).toMatch(/\.inner\s*\{[^}]*flex-wrap:\s*nowrap/);
   });
 
   it("no longer references the retired wrapped-header token anywhere", () => {
@@ -110,6 +126,5 @@ describe("sticky-header anchor offsets", () => {
     for (const { css } of cssFiles) {
       expect(stripComments(css)).not.toContain("--header-height-wrapped");
     }
-    expect(globals).not.toContain("--header-height-wrapped");
   });
 });

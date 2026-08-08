@@ -301,9 +301,10 @@
      Referenced by scroll-margin-top on deep-link anchor targets so a followed fragment
      lands below the opaque sticky header, not underneath it.
 
-     TRUE AT EVERY VIEWPORT BECAUSE THE HEADER IS FORCED TO ONE ROW, not because it happens
-     to fit. The header used to wrap to 176.8px at ≤430px and 104.2px at 768px, so a companion
-     `--header-height-wrapped: 11.125rem` carried that measurement for anchor offsets
+     TRUE BELOW 64rem BECAUSE THE HEADER IS FORCED TO ONE ROW, not because it happens to fit.
+     At and above 64rem wrapping is allowed and the row currently fits with about 680px of
+     measured slack. The header used to wrap to 176.8px at ≤430px and 104.2px at 768px, so
+     a companion `--header-height-wrapped: 11.125rem` carried that measurement for offsets
      (PR #44 review CR-I2). The nav has moved into a disclosure panel that is out of flow in
      both states AND `site-header.module.css` sets `flex-wrap: nowrap` below 64rem, so the row
      cannot break at any width: a single ~55.7px row on a phone, 57.5px on the desktop. One
@@ -313,9 +314,10 @@
      351.5px (the width at which the brand, the search trigger and the menu button stop
      fitting inside `.container`'s `viewport − 40px`) and the header became 93.7px — so this
      token would have under-reported by 37.7px at 320px, the WCAG 1.4.10 reference width,
-     with THREE consumers reading it: the letter-jump offset on /turkiye, the marine and
-     climate anchor offsets, and the game's `--game-stage-cap` viewport math
-     (`game-map.module.css`). The token lying is the defect; one fix closes all three
+     with FIVE consumers reading it: the letter-jump offset on /turkiye, the marine and
+     climate anchor offsets, the game's `--game-stage-cap` viewport math
+     (`game-map.module.css`), and the mobile nav panel's viewport-height cap
+     (`site-nav.module.css`). The token lying is the defect; one fix closes all five
      (PR #56 review FENER-I1/CR56-I2).
 
      The retired name is written out here rather than silently deleted because

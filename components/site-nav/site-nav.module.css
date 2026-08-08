@@ -94,6 +94,7 @@
      (PR #56 review A11Y-3). The sibling search panel caps itself for exactly this reason.
      `overscroll-behavior: contain` keeps a flick inside the sheet from scrolling the page. */
   max-height: calc(100svh - var(--header-height) - 24px);
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -151,11 +152,9 @@
   .panel[data-open="true"] {
     display: contents;
     position: static;
-    /* Stated for the same reason as `position: static`: an element that generates no box has
-       no use for the mobile sheet's scroll cap, and leaving it declared would make a future
-       change of this block's `display` silently reintroduce a scroller on the desktop nav. */
-    max-height: none;
-    overflow: visible;
+    /* The mobile box properties above are inert while `display: contents` generates no box.
+       If this display mode changes, review the whole mobile sheet block — not only its scroll
+       declarations — because positioning, inset, padding, border and shadow would all return. */
   }
 
   /* Restores the pre-hamburger inline nav exactly: the same flex row, gaps, weight and size

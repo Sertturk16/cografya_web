@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import styles from "./site-nav.module.css";
 
@@ -73,10 +73,10 @@ export function NavDisclosure({ children }: { children: ReactNode }) {
   const restoreFocus = useRef(false);
   const panelId = `${useId()}-panel`;
 
-  const close = useCallback((restore: boolean) => {
+  const close = (restore: boolean) => {
     restoreFocus.current = restore;
     setOpen(false);
-  }, []);
+  };
 
   // Focus restoration AFTER commit: while the panel is open the button is still rendered, but
   // running `focus()` inside the handler that hides the target is the bug pattern the search
@@ -143,9 +143,14 @@ export function NavDisclosure({ children }: { children: ReactNode }) {
    * an engine workaround into server-rendered markup on every page at every viewport,
    * including desktop, where no defect exists.
    *
-   * SCOPED TO THE OPEN STATE. At 64rem and up this element is `display: contents` and its
-   * children ARE the inline desktop nav; that nav must keep its native mousedown behaviour.
-   * `open` can only be true where the panel is a floating sheet.
+   * SCOPED TO THE OPEN STATE. Normally that means the floating sheet below 64rem; `open` can
+   * survive a viewport crossing, though, so the guard may briefly remain active after this
+   * element becomes the inline desktop nav. In that stale state it also suppresses mouse
+   * focus and drag-to-select until focus leaves this root and `onBlur` closes the panel.
+   *
+   * The panel therefore carries anchors only. If a mouse-focusable control such as an input
+   * or select is added, narrow this guard to anchor targets; otherwise that control would be
+   * keyboard-focusable but not mouse-focusable.
    */
   const onPanelMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     if (open) event.preventDefault();
@@ -167,6 +172,8 @@ export function NavDisclosure({ children }: { children: ReactNode }) {
    * from, which is also the search island's pattern.
    */
   const onPanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!open) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
     if (event.target instanceof HTMLElement && event.target.closest("a")) {
       close(true);
     }

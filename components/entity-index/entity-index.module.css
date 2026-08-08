@@ -15,7 +15,7 @@
    `calc(header + 1rem)` shape the marine and climate anchor targets already use, so a future
    header change is one token edit rather than three sets of magic numbers (PR #44 review
    CR-I2). It read `--header-height-wrapped` until the mobile nav moved into a disclosure
-   panel; the header no longer wraps at any viewport, so the two tokens collapsed into one. */
+   panel; below 64rem the header is forced not to wrap, so the two tokens collapsed into one. */
 .index,
 .groupHeading {
   scroll-margin-top: calc(var(--header-height) + 1rem);

@@ -70,9 +70,11 @@
 .brandName {
   /* The shrinking half of the brand. It needs its own element because `text-overflow` acts on
      a block container, and the wordmark was a bare text child of an inline-flex box. Below
-     ~351.5px the name truncates with an ellipsis; at 360px and up nothing changes visually.
-     The text itself is untouched in the HTML — this is presentation, not content. */
+     ~351.5px the name first scales toward 0.95rem, then truncates with an ellipsis only when
+     that smaller wordmark still cannot fit. The text itself is untouched in the HTML — this
+     is presentation, not content. */
   min-width: 0;
+  font-size: clamp(0.95rem, 4.5vw, 1.2rem);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

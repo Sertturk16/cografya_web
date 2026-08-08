@@ -94,10 +94,12 @@ ramp and not the Terra brand hues.
   already used. Do not add a second breakpoint without a measurement in both locales.
 - **The single-row header is ENFORCED, and the wordmark is what gives way.** `.inner` is
   `flex-wrap: nowrap` below 64rem; the brand link is the one item allowed to shrink
-  (`min-width: 0`) and its wordmark truncates with an ellipsis. Moving the nav out of the row
+  (`min-width: 0`) and its wordmark scales with `clamp(0.95rem, 4.5vw, 1.2rem)` before it
+  truncates with an ellipsis. Moving the nav out of the row
   was not sufficient on its own: the remaining three items need **351.5px** of viewport to sit
   whole, so between 320 and 351.5px the row still wrapped to 93.7px and `--header-height` —
-  read by three anchor offsets and the game's viewport math — under-reported by 37.7px
+  read by three anchor offsets, the game's viewport math and the nav-panel height cap —
+  under-reported by 37.7px
   (PR #56 review FENER-I1). **320px and 360px are mandatory test viewports for any header
   change**, 320px because it is WCAG 1.4.10's reference width (and what 400% desktop zoom
   produces), 360px because a layout that fits at 390px can still break there.
