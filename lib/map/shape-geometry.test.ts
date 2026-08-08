@@ -94,8 +94,10 @@ describe("largestSubpathCenter", () => {
 
   it("breaks an area tie on vertex count, so degenerate shapes stay deterministic", () => {
     // Two zero-area subpaths (the artifact really contains such shapes — a 1 × 0 bbox).
+    // First: (0,0) → (10,0), 2 vertices. Second: (50,50) → (60,50) → (70,50), 3 vertices.
+    // Both have area 0, so the vertex count decides and the centre is the SECOND one's.
     const center = largestSubpathCenter("M0 0l10 0ZM50 50l10 0 10 0Z");
-    expect(center).toEqual({ x: 55, y: 50 });
+    expect(center).toEqual({ x: 60, y: 50 });
   });
 
   it("returns null when there is nothing to centre", () => {
