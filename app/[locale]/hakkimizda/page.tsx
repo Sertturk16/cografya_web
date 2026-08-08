@@ -73,6 +73,20 @@ export default async function AboutPage({ params }: PageProps) {
       <p>{t("dataIntro")}</p>
       <ul>
         <li>{t("dataOsm")}</li>
+        {/* L1 — ODbL §4.6's OFFER (→ DEC 2026-08-08c md.5). The chain closes through §4.4(c):
+            once a Produced Work made from an OSM-derived database is used publicly, the
+            derivative database counts as publicly used too, and §4.6 then asks for an offer of
+            it. The locator mini-map is what triggered this; the data itself was never the
+            missing piece (the repo is public and carries the snapshot, the generator and the
+            produced paths) — what was missing was a discoverable offer, which is this line.
+            Its home is this existing section, so it costs no new SEO surface: no route, no
+            metadata, no canonical, no hreflang, no sitemap entry.
+
+            It is licence text (CONTENT-STYLE §22 "dokunulmaz"), so it keeps the formal
+            register the rest of the list uses and is NOT trimmed to the interface-copy caps.
+            The repo path fragments are keys, not prose — they are identical in both
+            catalogues on purpose. */}
+        <li>{t("dataOsmOffer")}</li>
         <li>{t("dataNaturalEarth")}</li>
         <li>
           {/* The full stop sits OUTSIDE the span: the sibling bullets end in one, and the

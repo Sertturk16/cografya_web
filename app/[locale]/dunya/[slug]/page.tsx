@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { CardArrow } from "@/components/card-arrow";
+import { CountryFlag } from "@/components/country/country-flag";
 import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
+import { LocatorMap } from "@/components/map/locator-map";
 import { ProseNote } from "@/components/prose-note";
 import {
   byIsoCode,
@@ -16,6 +18,7 @@ import { sourcesMessage } from "@/lib/geo/country-sources";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
 import { isSpecialStatusRow } from "@/lib/geo/sovereignty";
 import { showsSubregionCard } from "@/lib/geo/subregion";
+import { COUNTRY_SHAPES } from "@/lib/map/world-countries.generated";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { selectCountryMetaDescription } from "@/lib/seo/country-description";
@@ -42,6 +45,16 @@ function slugForLocale(country: CountryDetail | CountryListItem, locale: Locale)
 function nameForLocale(country: CountryDetail | CountryListItem, locale: Locale): string {
   return locale === "en" ? country.nameEn : country.nameTr;
 }
+
+/**
+ * ISO 3166-1 alpha-2 → the country's own outline, for the locator mini-map.
+ *
+ * The artifact carries 240 shapes; 49 of them have no seeded page (Natural Earth backdrop
+ * entities). Only the ONE shape this page needs reaches the HTML — the shared world
+ * silhouette is a separate cached file (`/maps/world-countries.svg`). Built once at module
+ * scope, not searched per render.
+ */
+const COUNTRY_SHAPE_BY_ISO = new Map(COUNTRY_SHAPES.map((shape) => [shape.iso, shape.d] as const));
 
 /** One resolved neighbour: a seeded country (→ link) or an unseeded one (→ plain text). */
 type Neighbor =
@@ -251,6 +264,10 @@ export default async function CountryDetailPage({ params }: PageProps) {
       : t(COUNTRY_HEADING_KEY[slot].plain);
 
   const officialLanguages = isTr ? country.officialLanguagesTr : null;
+  // Ö1-B locator mini-map: this country's own outline from the committed artifact. The map
+  // makes NO new political claim — it draws exactly the shape `/dunya` already draws
+  // (Natural Earth de-facto, CY and QN separate, → DEC 2026-07-13).
+  const countryShapeD = COUNTRY_SHAPE_BY_ISO.get(country.isoCode);
 
   return (
     <div className="container page">
@@ -361,8 +378,34 @@ export default async function CountryDetailPage({ params }: PageProps) {
               <dd>{country.governmentFormTr}</dd>
             </div>
           )}
+          {/* G2 — the flag, as one more card in the existing auto-fill rhythm. NOT TR-gated:
+              a flag is data, not a narrative that needs translating (the same reasoning as the
+              marine block). Renders nothing when the row has no asset — see
+              components/country/country-flag.tsx for what that currently means for QN. */}
+          <CountryFlag
+            isoCode={country.isoCode}
+            label={t("flag")}
+            alt={t("flagAlt", { name })}
+            className={styles.fact}
+          />
         </dl>
       </section>
+
+      {/* Ö1-B — the world counterpart of the province locator, in the same slot: right after
+          the fact sheet, before the narrative sections. Absent (never a placeholder) if the
+          ISO code has no artifact shape; all 191 seeded codes resolve today (measured
+          2026-08-08), so this is a defence line rather than a known gap. */}
+      {countryShapeD !== undefined && (
+        <section className="section">
+          <h2>{sectionHeading("location")}</h2>
+          <LocatorMap
+            kind="country"
+            locale={locale}
+            d={countryShapeD}
+            alt={t("locationAlt", { name })}
+          />
+        </section>
+      )}
 
       {/* Yeryüzü Şekilleri — TR-gated prose (genuine per-country relief narrative). */}
       {landformNote !== null && (

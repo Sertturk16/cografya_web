@@ -1,0 +1,18 @@
+/* Country flag card image. Terra tokens only. */
+
+.flag {
+  display: block;
+  /* Fixed box, not intrinsic sizing: the source set is 4x3 but individual files differ in
+     internal resolution, and a fact card must not resize with them. 32 × 24 keeps the flag
+     far below any LCP candidacy while staying legible next to 1rem text. */
+  width: 32px;
+  height: 24px;
+  /* A hairline so a white-heavy flag (Japan, Poland) does not dissolve into the white card.
+     --color-border is the repo's hairline token; a flag is exempt from contrast rules, but
+     its EDGE is a graphical object like any other. */
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  /* Some files in the set are not exactly 4:3 internally; contain never crops the arms. */
+  object-fit: contain;
+  background: var(--color-bg);
+}

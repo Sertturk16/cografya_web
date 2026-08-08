@@ -23,9 +23,12 @@
      PROMOTED FROM THAT GAME TOKEN (→ Atlas AG-1, 2026-08-06) once a second surface needed
      the same value: a game-scoped name must not leak outside the game, and the alternative
      was repeating a bare hex, which this layer exists to forbid.
-     Readers today: --game-hover-edge (hover/focus line on the play map) and the solved
-     hatch in components/game/game-map.module.css. ⚠ Re-run the table below before changing
-     it — every reader depends on the 3:1 floor, not on the shade. */
+     Readers today: --game-hover-edge (hover/focus line on the play map), the solved hatch in
+     components/game/game-map.module.css, and the region-dot ring in
+     components/province/region-dot.module.css (the same seven tints, now on the white .fact
+     card of the province page — the surface the table below already covers). ⚠ Re-run the
+     table below before changing it — every reader depends on the 3:1 floor, not on the
+     shade. */
   --color-ink-dark: #211c19;
   --color-slate: #57504a;
   --color-taupe: #8a8078; /* secondary UI / placeholder only */

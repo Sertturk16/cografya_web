@@ -5,6 +5,8 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { CardArrow } from "@/components/card-arrow";
 import { ClimateSection } from "@/components/climate/climate-section";
 import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
+import { LocatorMap } from "@/components/map/locator-map";
+import { RegionDot } from "@/components/province/region-dot";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { ProvinceMarineSection } from "@/components/marine/province-marine-section";
 import { ProseNote } from "@/components/prose-note";
@@ -26,6 +28,7 @@ import { routing, type Locale } from "@/i18n/routing";
 import { climateBlockGates } from "@/lib/climate/climate-block-gates";
 import { monthName } from "@/lib/climate/month";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
+import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { administrativeAreaJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import {
@@ -41,6 +44,17 @@ interface PageProps {
 
 /** Hidrografya feature-group render order (baraj → nehir → göl). */
 const HYDROGRAPHY_TYPE_ORDER = ["baraj", "nehir", "gol"] as const;
+
+/**
+ * Plaka kodu → the province's own outline, for the locator mini-map.
+ *
+ * The whole 81-shape artifact is imported here, but ONLY this province's `d` reaches the
+ * HTML (≈ 0.7 KB gzip); the base silhouette every page shares is a separate cached file
+ * (`/maps/tr-provinces.svg`). Built once at module scope rather than searched per render.
+ */
+const PROVINCE_SHAPE_BY_PLATE = new Map(
+  PROVINCE_SHAPES.map((shape) => [shape.plateCode, shape.d] as const),
+);
 
 /** The localized slug (slug_tr for tr, slug_en for en) for a province. */
 function slugForLocale(province: ProvinceDetail | ProvinceListItem, locale: Locale): string {
@@ -330,6 +344,8 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // which feeds the "… of {name}" English messages (no Turkish suffix on an English heading).
   const sectionHeading = (slot: keyof typeof PROVINCE_HEADING_CASE): string =>
     headingName(locale, name, PROVINCE_HEADING_CASE[slot]);
+  // Ö1-A locator mini-map: this province's own outline from the committed artifact.
+  const provinceShapeD = PROVINCE_SHAPE_BY_PLATE.get(province.plateCode);
   // The landform note IS the whole section, so hoist the TR-gated, narrowed value
   // once: it both gates the section and feeds <ProseNote> as a plain `string`
   // (aliased null-check narrowing). Hydrography/settlement narrow at their own inner
@@ -482,7 +498,12 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         <dl className={styles.factSheet}>
           <div className={styles.fact}>
             <dt>{t("region")}</dt>
-            <dd>{region}</dd>
+            {/* G3 — the coğrafi bölge tint beside its name. `aria-hidden`, because the name
+                right next to it already carries the fact; see components/province/region-dot. */}
+            <dd>
+              <RegionDot region={province.region} />
+              {region}
+            </dd>
           </div>
           <div className={styles.fact}>
             <dt>{t("plateCode")}</dt>
@@ -540,6 +561,24 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           )}
         </dl>
       </section>
+
+      {/* Ö1-A — "Van nerede?", the question that follows "Van nedir?". Temel Bilgiler has just
+          given the region and the coordinates as TEXT; this is the same answer as a picture,
+          so it sits directly after it and before Deniz Durumu.
+
+          Absent (never a placeholder) if the plate code has no artifact shape. That is a
+          defence line, not a known gap: all 81 plate codes resolve today. */}
+      {provinceShapeD !== undefined && (
+        <section className="section">
+          <h2>{t("locationHeading", { name: sectionHeading("location") })}</h2>
+          <LocatorMap
+            kind="province"
+            locale={locale}
+            d={provinceShapeD}
+            alt={t("locationAlt", { name })}
+          />
+        </section>
+      )}
 
       {/* Deniz Durumu (W2b) — directly under Temel Bilgiler, above the prose. A reader who
           arrived asking "Sinop'ta deniz kaç derece" answers that question without scrolling;
