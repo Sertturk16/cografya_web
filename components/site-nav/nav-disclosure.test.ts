@@ -134,7 +134,20 @@ describe("the WebKit mousedown guards", () => {
     expect(mouseDown.length).toBeGreaterThan(0);
     expect(click.length).toBeGreaterThan(0);
     expect(mouseDown).toMatch(/if \(open\) event\.preventDefault\(\)/);
-    expect(click).toMatch(/if \(!open\) return/);
+    // The closed-state guard must be the handler body's first statement: `close(true)` writes
+    // the focus-restoration ref, so moving it above the guard recreates the desktop-panel bug.
+    expect(click).toMatch(
+      /const onPanelClick[\s\S]*?=>\s*\{\s*if \(!open\) return;\s*if \(event\.metaKey \|\| event\.ctrlKey \|\| event\.shiftKey \|\| event\.button !== 0\) return;\s*if \(event\.target instanceof HTMLElement && event\.target\.closest\("a"\)\) \{\s*close\(true\);/,
+    );
+
+    // Keep the binding in the panel's own anchored JSX region, not somewhere else in the
+    // component where a matching string would leave link activation unhandled.
+    const panelStart = ISLAND.indexOf("ref={panelRef}");
+    const panelEnd = ISLAND.indexOf("</div>", panelStart);
+    const panel = ISLAND.slice(panelStart, panelEnd);
+    expect(panelStart).toBeGreaterThan(-1);
+    expect(panelEnd).toBeGreaterThan(panelStart);
+    expect(panel).toMatch(/onClick=\{onPanelClick\}/);
   });
 });
 
@@ -156,6 +169,7 @@ describe("the panel stylesheet carries the a11y-bearing rules", () => {
     const panel = CSS.slice(CSS.indexOf(".panel {"), CSS.indexOf(".panel[data-open"));
     expect(panel.length).toBeGreaterThan(0);
     expect(panel).toMatch(/max-height:\s*calc\(/);
+    expect(panel).toMatch(/overflow-x:\s*hidden/);
     expect(panel).toMatch(/overflow-y:\s*auto/);
   });
 });

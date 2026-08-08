@@ -306,9 +306,10 @@
      measured slack. The header used to wrap to 176.8px at ≤430px and 104.2px at 768px, so
      a companion `--header-height-wrapped: 11.125rem` carried that measurement for offsets
      (PR #44 review CR-I2). The nav has moved into a disclosure panel that is out of flow in
-     both states AND `site-header.module.css` sets `flex-wrap: nowrap` below 64rem, so the row
-     cannot break at any width: a single ~55.7px row on a phone, 57.5px on the desktop. One
-     value covers both and the companion token is RETIRED.
+     both states AND `site-header.module.css` sets `flex-wrap: nowrap` below 64rem, so the
+     compact header cannot break: a single ~55.7px row on a phone. At and above 64rem wrapping
+     is allowed, but the row currently fits at 57.5px. One value covers both and the companion
+     token is RETIRED.
 
      The `nowrap` half is load-bearing, not tidiness. Without it the row still wrapped below
      351.5px (the width at which the brand, the search trigger and the menu button stop
