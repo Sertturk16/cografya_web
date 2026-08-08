@@ -129,7 +129,8 @@ describe("the WebKit mousedown guards", () => {
       ISLAND.indexOf("const onPanelMouseDown"),
       ISLAND.indexOf("const onPanelClick"),
     );
-    const click = ISLAND.slice(ISLAND.indexOf("const onPanelClick"), ISLAND.indexOf("return ("));
+    const clickStart = ISLAND.indexOf("const onPanelClick");
+    const click = ISLAND.slice(clickStart, ISLAND.indexOf("\n  return (", clickStart));
     expect(mouseDown.length).toBeGreaterThan(0);
     expect(click.length).toBeGreaterThan(0);
     expect(mouseDown).toMatch(/if \(open\) event\.preventDefault\(\)/);
