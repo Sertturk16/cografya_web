@@ -74,10 +74,9 @@ const cssFiles = ROOTS.flatMap(({ label: rootLabel, url: root }) =>
 /** Every custom-property read inside a `calc()` in either stylesheet root. */
 const calculatedReferences = cssFiles.flatMap(({ css, label }) =>
   [...stripComments(css).matchAll(/calc\(([^;{}]+)\)/g)].flatMap((calculation) =>
-    [...(calculation[1] ?? "").matchAll(/var\(\s*(--[a-z0-9-]+)(\s*,[^)]*)?\)/gi)].map(
+    [...(calculation[1] ?? "").matchAll(/var\(\s*(--[a-z0-9-]+)(?:\s*,[^)]*)?\)/gi)].map(
       (reference) => ({
         css: stripComments(css),
-        fallback: reference[2] !== undefined,
         label,
         token: reference[1] ?? "",
       }),
