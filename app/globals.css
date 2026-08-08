@@ -299,28 +299,20 @@
   --radius-lg: 16px;
   /* Sticky site-header height (padding-block 12px×2 + ~28px brand row + 1px border).
      Referenced by scroll-margin-top on deep-link anchor targets so a followed fragment
-     lands below the opaque sticky header, not underneath it. */
-  --header-height: 3.5rem;
-  /* The SAME header once its nav wraps. `--header-height` above describes the single-row
-     desktop header only, but the header is `flex-wrap` and genuinely grows on narrow
-     viewports — measured on /turkiye: 177px at 390px wide (nav on three rows), 104px at
-     768px, 57px from 1024px up. An anchor offset built on the single-row value therefore
-     hides its own target on a phone, which is exactly the defect commit 069588f fixed with
-     local magic numbers; this token is where that measurement belongs instead (PR #44
-     review CR-I2). Deliberately a SEPARATE token rather than making --header-height itself
-     responsive: that one is also consumed by the game's viewport math
-     (game-map.module.css), and changing its value there is a different question with its
-     own testing. */
-  --header-height-wrapped: 11.125rem;
-}
+     lands below the opaque sticky header, not underneath it.
 
-/* The one measured breakpoint (1024px = 64rem), where the nav stops wrapping and the two
-   header heights converge. Below it the wrapped value stays generous — a too-large anchor
-   offset only lands the target lower on screen, while a too-small one hides it. */
-@media (min-width: 64rem) {
-  :root {
-    --header-height-wrapped: var(--header-height);
-  }
+     NOW TRUE AT EVERY VIEWPORT, which it was not before the mobile hamburger. The header
+     used to wrap to 176.8px at ≤430px and 104.2px at 768px, so a companion
+     `--header-height-wrapped: 11.125rem` carried that measurement for anchor offsets
+     (PR #44 review CR-I2). The nav has moved into a disclosure panel that is out of flow in
+     both states, so the header is a single ~55.7px row on a phone and 57.5px on the desktop
+     — one value covers both and the companion token is RETIRED. It is named here rather
+     than silently deleted because `var(--header-height-wrapped)` against an undefined
+     property does not error: it invalidates the whole `calc()` and silently drops the anchor
+     offset to zero. The retirement also FIXES a measured defect it had grown: between 850px
+     (where the Turkish header already collapsed to one row) and 1024px (where the token
+     stopped compensating) a letter jump on /turkiye overshot its target by 136.9px. */
+  --header-height: 3.5rem;
 }
 
 *,

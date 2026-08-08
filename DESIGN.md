@@ -85,6 +85,13 @@ ramp and not the Terra brand hues.
   `.province-card` grid, `.breadcrumb` (visual, pairs with `BreadcrumbList` JSON-LD),
   `.placeholder-note` (dev-content flag, warning left-border). Component styling uses CSS
   Modules + the global token layer — **no hardcoded brand hex outside the token layer.**
+- **One breakpoint: `64rem` (1024px).** Below it the header is a single compact row (brand +
+  icon-only search trigger + hamburger) with the nav in a disclosure panel; from it up the nav
+  is inline and the search trigger gains its text label. The number is chosen, not measured
+  from the nav alone: the header collapses to one row at **850px in Turkish and 773px in
+  English** (binary-searched on the running build), and a breakpoint must be
+  locale-independent, so it sits above the later of the two — and on the value the repo
+  already used. Do not add a second breakpoint without a measurement in both locales.
 - **Brand mark:** single-sourced neutral globe in `lib/brand/glyph.ts`; `app/icon.svg`
   mirrors it by hand (a static file can't import) — keep the two in step. Still a
   placeholder pending the brand/logo decision (K7).
@@ -100,6 +107,15 @@ ramp and not the Terra brand hues.
   can only outline the page-sized region the code jumped to (`<main>` after the skip link, a
   fragment section, the error `<h1>`). A module rule may still opt back in at (0,2,0), as the
   game does.
+- **Touch targets: WCAG 2.2 §2.5.8 (AA) 24×24 CSS px is the floor**, and the header's own
+  controls sit right on it for a measured reason — the search trigger and the hamburger are
+  28×28 because anything taller than the brand link's 30.72px line box makes the header grow
+  (`site-search.module.css` / `site-nav.module.css`). Controls with room to be generous take
+  §2.5.5 (AAA) 44×44 instead: the disclosure panel's nav rows are 45.6px. **The one sanctioned
+  exception is map geography.** A province shape is covered by 2.5.8's "Essential" clause —
+  its presentation is required by the information it conveys, and enlarging Yalova to 24px
+  stops it being Yalova — so map targets are not measured against this floor; the remedy for a
+  small province is zoom, not a bigger shape.
 - **`prefers-reduced-motion: reduce`** disables transitions / smooth-scroll globally.
 - **State changes announce to AT** (WCAG 4.1.3): error boundaries move focus to the error
   heading (`tabIndex={-1}` + `focus()`); last-resort boundaries use `role="alert"`.

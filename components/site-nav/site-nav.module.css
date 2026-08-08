@@ -1,0 +1,156 @@
+/* Primary navigation + its mobile disclosure.
+   Mobile-first: the rules below the media query describe the COMPACT header (a hamburger
+   button plus an overlay panel); the `min-width: 64rem` block restores the inline desktop
+   nav byte-for-byte. Every colour is a `var(--token)` from the global Terra layer
+   (DESIGN.md §2) — no hardcoded brand hex here.
+
+   THE BREAKPOINT IS 64rem AND THE NUMBER IS MEASURED, NOT INHERITED. On `dev@e593d18` the
+   header collapses to a single row at 850px in Turkish and 773px in English (binary-searched
+   on the running build; at 768px BOTH locales still render a 104.2px two-row header, and at
+   ≤430px a 176.8px three-row one). A breakpoint has to be locale-independent, so it must sit
+   above the later of the two; 64rem is also the repo's only existing breakpoint — the width
+   at which `site-search.module.css` reveals the trigger's text label — so the header changes
+   character exactly once instead of twice. The deliberate cost is the 850–1023px band, where
+   the hamburger replaces a nav that already fit on one row. */
+
+.root {
+  /* The wrapper generates NO box: the button becomes a direct flex item of the header's
+     `.inner` and the panel resolves its absolute position against the sticky `<header>`,
+     exactly as the search panel does. Without this the wrapper would be a flex item and the
+     desktop header would gain a box between the search slot and the nav. */
+  display: contents;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 28×28, matching the search trigger next to it — and for the same MEASURED reason
+     (`site-search.module.css` `.trigger`): the header's first row is as tall as its tallest
+     item, and the brand link's line box is 30.72px. A control taller than that becomes the
+     row's height driver and the header grows. 28px stays under the brand and still clears
+     the WCAG 2.2 2.5.8 (AA) 24×24 target floor. Global `box-sizing: border-box` makes these
+     the outer box, border included. */
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--color-slate);
+  cursor: pointer;
+}
+
+.trigger:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.icon {
+  flex: none;
+}
+
+/* The panel is ABSOLUTELY positioned against the sticky header and spans the viewport with a
+   16px inset — the same mobile sheet geometry the search panel uses, and for the same reason:
+   opening the menu must overlay the page rather than push it, so the header cannot reflow and
+   CLS stays at zero.
+
+   `display: none` (not `[hidden]` + a visibility partner) is deliberate. The search trigger
+   needs `visibility: hidden` because its slot has no size of its own and removing it from
+   flow would collapse the header's first row; this panel is out of flow in BOTH states, so
+   `display: none` costs no layout and buys the stronger guarantee — the six links leave the
+   a11y tree and the tab order together, with no author-origin `display` left to beat the UA
+   rule (the PR #45 review C1 trap, WCAG 4.1.2). The links stay in the DOM and in the
+   server-rendered HTML either way: this rule changes visibility, never the link graph
+   (`SEO-POLICY.md` §B8.1/8.2). */
+.panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 16px;
+  right: 16px;
+  margin-top: 8px;
+  z-index: 50;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: 0 12px 28px rgb(43 38 34 / 14%);
+}
+
+.panel[data-open="true"] {
+  display: flex;
+}
+
+.nav {
+  /* Full-width rows inside the panel, so a tap anywhere on the row hits the link. */
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.nav a {
+  display: block;
+  /* 16px text at the global 1.6 line-height is 25.6px; 10px of vertical padding puts the row
+     at 45.6px, over the WCAG 2.2 2.5.5 (AAA) 44×44 recommendation rather than merely over
+     the 24×24 AA floor. The panel is an overlay, so the height costs no layout anywhere. */
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  color: var(--color-slate);
+  text-decoration: none;
+  /* A nav label is one unit: it moves to the next row intact rather than breaking mid-label. */
+  white-space: nowrap;
+}
+
+.nav a:hover {
+  color: var(--color-primary);
+  background: var(--color-chip-bg);
+}
+
+@media (min-width: 64rem) {
+  .trigger {
+    display: none;
+  }
+
+  /* The panel wrapper vanishes from layout too, so `<nav>` and the locale switcher become
+     direct flex children of the header's `.inner` again and the desktop header is unchanged.
+     Both selectors are listed because `.panel[data-open="true"]` above is more specific than
+     `.panel`, and the open state is meaningless once the nav is inline. `position: static`
+     is stated rather than assumed: an element that generates no box has no use for the
+     absolute positioning above, and leaving it in would rely on interop for that. */
+  .panel,
+  .panel[data-open="true"] {
+    display: contents;
+    position: static;
+  }
+
+  /* Restores the pre-hamburger inline nav exactly: the same flex row, gaps, weight and size
+     it carried in `site-header.module.css` before the list moved into this component. The
+     nav must wrap as WHOLE ITEMS, never inside a label — without `flex-wrap` the row cannot
+     break, so the items shrink below their content width and a two-word link ("Ana Sayfa")
+     splits across two lines (PR #26 review i1). */
+  .nav {
+    align-self: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 18px;
+    row-gap: 8px;
+    margin-left: auto;
+    font-size: 0.95rem;
+  }
+
+  .nav a {
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .nav a:hover {
+    background: none;
+  }
+}

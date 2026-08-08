@@ -12,7 +12,9 @@
     "dunya": "World",
     "deniz": "Sea",
     "game": "Game",
-    "about": "About"
+    "about": "About",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "Search": {
     "label": "Search a province or country",

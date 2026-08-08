@@ -9,9 +9,22 @@
 .inner {
   display: flex;
   align-items: center;
-  gap: 16px;
+  /* MEASURED, not tuned. Below 64rem the first row carries the brand link (229.5px at 360px
+     wide), the search trigger (34px) and the menu button (28px). At the desktop gap of 16px
+     that sums to 323.5px against the 320px `.page` gives it — 3.5px short, so the button
+     would wrap to a second row and hand back part of the height this change exists to
+     reclaim. 10px brings the row to 311.5px with 8.5px of slack. 360px is therefore a
+     REQUIRED test viewport for this header: a solution that fits at 390px can still wrap at
+     360px. */
+  gap: 10px;
   padding-block: 12px;
   flex-wrap: wrap;
+}
+
+@media (min-width: 64rem) {
+  .inner {
+    gap: 16px;
+  }
 }
 
 .brand {
@@ -35,31 +48,10 @@
   line-height: 0;
 }
 
-.nav {
-  /* The nav must wrap as WHOLE ITEMS, never inside a label. Without `flex-wrap` the row
-     cannot break, so the items shrink below their content width and a two-word link
-     ("Ana Sayfa") splits across two lines — visible at ≤ ~390 px in TR once the list grew
-     to five items (PR #26 review i1). `row-gap` keeps the second row legible; the item gap
-     stays 18px. */
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  row-gap: 8px;
-  margin-left: auto;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.nav a {
-  color: var(--color-slate);
-  text-decoration: none;
-  /* A nav label is one unit: it moves to the next row intact rather than breaking mid-label. */
-  white-space: nowrap;
-}
-
-.nav a:hover {
-  color: var(--color-primary);
-}
+/* `.nav` moved to `components/site-nav/site-nav.module.css` with the markup it styles: the
+   nav list now lives inside the disclosure, which owns both its inline desktop form and its
+   stacked panel form. The locale switcher below stays here — it travels into the panel as a
+   sibling of the nav but is otherwise unchanged at every viewport. */
 
 .localeSwitcher {
   display: flex;

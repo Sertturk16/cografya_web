@@ -11,13 +11,14 @@
    itself (`.groupHeading`) and the `<section>` (`.index`) — never the wrapping `.group`
    div, which nothing targets.
 
-   The measurement lives in the token layer (`--header-height-wrapped`), not here: this is
-   the same `calc(header + 1rem)` shape the marine and climate anchor targets already use,
-   so a future header change is one token edit rather than three sets of magic numbers
-   (PR #44 review CR-I2). */
+   The measurement lives in the token layer (`--header-height`), not here: this is the same
+   `calc(header + 1rem)` shape the marine and climate anchor targets already use, so a future
+   header change is one token edit rather than three sets of magic numbers (PR #44 review
+   CR-I2). It read `--header-height-wrapped` until the mobile nav moved into a disclosure
+   panel; the header no longer wraps at any viewport, so the two tokens collapsed into one. */
 .index,
 .groupHeading {
-  scroll-margin-top: calc(var(--header-height-wrapped) + 1rem);
+  scroll-margin-top: calc(var(--header-height) + 1rem);
 }
 
 .intro {
