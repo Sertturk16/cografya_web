@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createTranslator } from "next-intl";
 import { sourcesMessage } from "@/lib/geo/country-sources";
+import { TR_GATED_FIELD_LEXEMES } from "@/lib/seo/en-gated-lexemes";
+import { EN_CONTENT_READY } from "@/lib/seo/indexing";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
 
@@ -98,6 +100,27 @@ const MAX_SEMICOLONS_PER_PARAGRAPH = 1;
  */
 const POPULATION_LEXEME: Record<string, string> = { tr: "nüfus", en: "population" };
 
+/**
+ * The credits the ENGLISH sentence must KEEP, per key.
+ *
+ * {@link TR_GATED_FIELD_LEXEMES} bans what the EN page cannot show, and that ban has exactly
+ * one degenerate way to pass: delete the sentence. These lexemes name fields an English page
+ * really does draw, so they hold the floor from underneath.
+ *
+ * PER KEY, because the two sentences do not credit the same set (→ PR #55 `TA55-M3`).
+ * `sourcesNoPopulation` is the variant for a country whose `population` is null — today
+ * Antarktika alone — and that row has no capital either, so its sentence correctly credits
+ * none. Requiring `capital` there would demand a credit for a field the page does not draw,
+ * which is the very defect this file exists to catch, pointing the other way.
+ *
+ * Template lexemes only, like {@link POPULATION_LEXEME}: no institution name, no country, no
+ * figure, so `CONVENTIONS.md` §2's ban on per-entity literal facts is not engaged.
+ */
+const EN_EARNED_CREDIT_LEXEMES = {
+  sources: ["country", "capital", "continent", "area", "neighbouring"],
+  sourcesNoPopulation: ["country", "continent", "area", "neighbouring"],
+} as const satisfies Record<keyof typeof REQUIRED_PLACEHOLDERS, readonly string[]>;
+
 const catalogues = { tr: trMessages.CountryDetail, en: enMessages.CountryDetail } as const;
 
 /** Placeholder names an ICU pattern actually declares, in source order. */
@@ -165,6 +188,50 @@ describe("CountryDetail sources line", () => {
       });
     });
   }
+});
+
+describe("CountryDetail sources line — EN credit scope", () => {
+  it("stops the EN_CONTENT_READY flip from passing silently", () => {
+    // Without this assertion the whole describe block is INERT at the exact moment its
+    // docblocks say it matters (→ PR #55 `TA55-M1`, `FEN-M1`): both tests below read only
+    // `messages/en.json`, so they pass identically whether the switch is `false` or `true`,
+    // and the flip would ship two under-credited sentences on 199 pages with CI green.
+    //
+    // A TRIPWIRE rather than the mirrored `toBe(EN_CONTENT_READY)` shape of
+    // `lib/seo/indexing.test.ts:21-24`, because the post-flip wording is per key and cannot
+    // be written today: Antarktika reaches `sourcesNoPopulation` and has no capital, no
+    // currency, no government form and no subregion, so "after the flip both sentences credit
+    // everything again" is false for that key. Asserting the switch's current value states
+    // only what is knowable now — that the copy has not been revisited yet.
+    expect(
+      EN_CONTENT_READY,
+      "EN_CONTENT_READY is now `true`, so the English country page renders fields whose " +
+        "credits this suite still bans. Widen `CountryDetail.sources` and " +
+        "`sourcesNoPopulation` in `messages/en.json` to what each variant actually draws, " +
+        "narrow `TR_GATED_FIELD_LEXEMES` (`lib/seo/en-gated-lexemes.ts`) to whatever stays " +
+        "gated, then retire this tripwire. Full checklist: `lib/seo/indexing.ts`.",
+    ).toBe(false);
+  });
+
+  it.each(SOURCE_KEYS)("credits nothing in %s that the EN page does not render", (key) => {
+    const sentence = catalogues.en[key].toLowerCase();
+    for (const lexeme of TR_GATED_FIELD_LEXEMES) {
+      expect(
+        sentence.includes(lexeme),
+        `en.CountryDetail.${key} credits "${lexeme}", which the EN page does not render`,
+      ).toBe(false);
+    }
+  });
+
+  it.each(SOURCE_KEYS)("keeps the credits %s DOES earn", (key) => {
+    const sentence = catalogues.en[key].toLowerCase();
+    for (const lexeme of EN_EARNED_CREDIT_LEXEMES[key]) {
+      expect(
+        sentence.includes(lexeme),
+        `en.CountryDetail.${key} dropped the "${lexeme}" credit, which the EN page renders`,
+      ).toBe(true);
+    }
+  });
 });
 
 /**
