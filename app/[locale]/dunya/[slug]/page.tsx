@@ -12,6 +12,7 @@ import {
   getCountriesResilient,
 } from "@/lib/api/countries";
 import type { CountryDetail, CountryListItem } from "@/lib/api/types";
+import { sourcesMessage } from "@/lib/geo/country-sources";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
 import { isSpecialStatusRow } from "@/lib/geo/sovereignty";
 import { showsSubregionCard } from "@/lib/geo/subregion";
@@ -129,6 +130,22 @@ export default async function CountryDetailPage({ params }: PageProps) {
   const name = nameForLocale(country, locale);
   const continent = tContinents(country.continent);
   const capital = locale === "en" ? country.capitalNameEn : country.capitalNameTr;
+  // Population source credit for the Kaynaklar line — DATA-DRIVEN, never a web-side
+  // constant (→ DEC 2026-08-05j). The api resolves the value: ordinary rows carry the
+  // corpus-wide World Bank credit, the five exception rows (GL/CY/QN/TW/TR) carry the real
+  // institution. NEVER add a `?? "Dünya Bankası"` fallback here — the contract names itself
+  // the single source of truth, and a client-side default is precisely the mis-credit this
+  // field exists to end. Names arrive already correct per locale and are never translated,
+  // re-cased, or given an article by the web (the English article is inside the value).
+  //
+  // `null` arrives if and only if `population` is null (today: Antarktika alone). The line
+  // then drops the population clause entirely rather than claiming an unknown source.
+  // Which sentence, and with what interpolation — decided by the pure, tested helper in
+  // `lib/geo/country-sources.ts` rather than inline, so the branch sits inside vitest's
+  // `include` glob (→ PR #54 `TA54-M3`/`CR54-M3`).
+  const sources = sourcesMessage(
+    locale === "en" ? country.populationSourceNameEn : country.populationSourceNameTr,
+  );
   const selfHref = {
     pathname: "/dunya/[slug]",
     params: { slug: slugForLocale(country, locale) },
@@ -410,7 +427,8 @@ export default async function CountryDetailPage({ params }: PageProps) {
       )}
 
       <p className={styles.sources}>
-        <span className={styles.sourcesLabel}>{t("sourcesLabel")}:</span> {t("sources")}
+        <span className={styles.sourcesLabel}>{t("sourcesLabel")}:</span>{" "}
+        {sources.key === "sources" ? t("sources", sources.values) : t("sourcesNoPopulation")}
       </p>
 
       <p className="section">

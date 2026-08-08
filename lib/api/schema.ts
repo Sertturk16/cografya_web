@@ -835,6 +835,16 @@ export interface components {
              */
             populationYear: number | null;
             /**
+             * @description Nüfus kaynağı (TR) — the institution `population` was published by, already RESOLVED (sıradan satırlarda "Dünya Bankası", istisnalarda gerçek kurum adı). CÜMLE İÇİ TAM BİÇİMDİR: sonda nokta yok, başta "Kaynak:" yok — doğrudan bir şablona ("… nüfus {populationSourceNameTr}; …") yerleştirilebilir. `null` ANCAK VE ANCAK `population` de `null` ise gelir (bugün yalnız Antarktika) — bu durumda nüfus yan cümlesi tamamen çıkarılmalı, "kaynak yok" yazılmamalı. İstemcide sabitlemeyin veya kendi varsayılanınızı eklemeyin (`?? "Dünya Bankası"`) — tek doğruluk kaynağı burasıdır (`areaIsApproximate` emsali).
+             * @example Dünya Bankası
+             */
+            populationSourceNameTr: string | null;
+            /**
+             * @description Nüfus kaynağı (EN) — `populationSourceNameTr` ile AYNI kural ve AYNI null-invaryantı. İngilizce gereken artikel değerin İÇİNDEDİR (`the World Bank`, `the TRNC Statistical Institute's projection`) — istemci artikel eklemez. Kurum adları KURAL OLARAK ÇEVRİLMEZ; locale'e göre doğru ad zaten burada gelir (ör. `Grønlands Statistik` ↔ `Statistics Greenland`, kurumun kendi iki adı, bir çeviri çifti değil). TEK İSTİSNA (PR #98 inceleme, CR98-M10): TR satırının EN değeri de `TÜİK (ADNKS)`dir — 81 il EN sayfasının zaten aynı kısaltmayı kullanmasıyla (`population from TÜİK (ADNKS)`) platform-içi tutarlılık için bilinçli olarak çevrilmemiştir.
+             * @example the World Bank
+             */
+            populationSourceNameEn: string | null;
+            /**
              * @description Yüzölçümü (km², World Bank / UN).
              * @example 783562
              */
