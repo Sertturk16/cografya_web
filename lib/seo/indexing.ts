@@ -53,6 +53,25 @@ import { routing, type Locale } from "@/i18n/routing";
  *
  * They are exactly today's `"trNarrative"` members. If a future surface joins or leaves that
  * set, the notice list moves with it.
+ *
+ * ## AND A THIRD HALF: two EN source-credit strings (→ PR #54 `CR54-M2`, `n`)
+ *
+ * `messages/en.json` → `CountryDetail.sources` and `CountryDetail.sourcesNoPopulation` name
+ * the institutions behind the fields an English country page actually renders. Because the
+ * subregion, currency, government form and physical-geography prose are `isTr`-gated TODAY,
+ * those two sentences deliberately do NOT credit them — crediting a field the reader cannot
+ * see is what `CR54-M2` found on 198 pages.
+ *
+ * That correctness is pegged to the gates, not to the fields' existence. The moment the
+ * `isTr` gates come out of `app/[locale]/dunya/[slug]/page.tsx` those four start rendering
+ * in English and the same two sentences become UNDER-credited — the identical defect
+ * pointing the other way, and silent, because nothing fails. So the EN content wave widens
+ * both strings back and empties `TR_GATED_FIELD_LEXEMES` in
+ * `lib/geo/country-sources.test.ts`, which is the guard holding today's narrower wording.
+ *
+ * The continent credit is NOT part of that: `country.continent` has no locale gate, so it is
+ * earned in both locales now and after the flip. `CR54-M2` assumed otherwise and was refuted
+ * at plan stage; it must not be "re-fixed".
  */
 export const EN_CONTENT_READY: boolean = false;
 

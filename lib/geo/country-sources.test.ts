@@ -98,6 +98,44 @@ const MAX_SEMICOLONS_PER_PARAGRAPH = 1;
  */
 const POPULATION_LEXEME: Record<string, string> = { tr: "nüfus", en: "population" };
 
+/**
+ * Lexemes the ENGLISH Kaynaklar sentence may not contain, because the field each one names
+ * is `isTr`-gated in `app/[locale]/dunya/[slug]/page.tsx` and therefore never drawn on an
+ * English page (→ PR #54 `CR54-M2` + `n`).
+ *
+ * ## What shipped, and what the finding got wrong
+ *
+ * The EN sentence credited four things an English reader cannot see: the UN M49 SUBREGION
+ * (`isTr && showsSubregionCard(...)`, and the field is `unSubregionTr` — there is no EN
+ * counterpart), the government form (`isTr && governmentFormTr !== null`), the currency
+ * (`isTr && currencyNameTr !== null`) and the physical-geography prose (`landformNoteTr`,
+ * `climateNoteTr`, `hydrographyNoteTr`, `independenceNoteTr` — all `isTr`).
+ *
+ * The CONTINENT is deliberately NOT on this list. `CR54-M2` read "continent and region
+ * classification" as ONE credited item and assumed both halves were gated; they are not.
+ * `country.continent` is a locale-independent enum key printed through the `Continents`
+ * namespace with no gate at all, so the M49 credit is EARNED on an English page. Deleting
+ * it would be the same defect pointing the other way: a rendered field left uncredited.
+ * That is why `"continent"` must never be added here.
+ *
+ * ## Why a ban list, and the limit of one
+ *
+ * This is the mirror of {@link POPULATION_LEXEME}: a TEMPLATE lexeme, not a geography fact,
+ * so `CONVENTIONS.md` §2's ban on per-entity literal facts is not engaged — no country, no
+ * institution, no figure appears here. It matches substrings literally, so a REWORDED credit
+ * ("form of government", "the region it sits in") would slip through. It is kept anyway: this
+ * defect class shipped once and survived a full review round, and a guard that pins the exact
+ * wording that shipped beats no guard at all.
+ *
+ * ## When this list must CHANGE, not be deleted
+ *
+ * These fields are gated by locale, not by whether they exist. When `EN_CONTENT_READY`
+ * (`lib/seo/indexing.ts`) is flipped and the `isTr` gates come out, the English page starts
+ * rendering all four — at which point the sentence must credit them again and this list
+ * empties. The flip checklist in that file names this test so the content wave finds it.
+ */
+const TR_GATED_FIELD_LEXEMES = ["region", "currenc", "government", "physical geography"] as const;
+
 const catalogues = { tr: trMessages.CountryDetail, en: enMessages.CountryDetail } as const;
 
 /** Placeholder names an ICU pattern actually declares, in source order. */
@@ -165,6 +203,28 @@ describe("CountryDetail sources line", () => {
       });
     });
   }
+});
+
+describe("CountryDetail sources line — EN credit scope", () => {
+  it.each(SOURCE_KEYS)("credits nothing in %s that the EN page does not render", (key) => {
+    const sentence = catalogues.en[key].toLowerCase();
+    for (const lexeme of TR_GATED_FIELD_LEXEMES) {
+      expect(sentence).not.toContain(lexeme);
+    }
+  });
+
+  it("keeps the credits the EN page DOES earn", () => {
+    // The negative test above has one failure mode: satisfying it by deleting the whole
+    // sentence. These four are rendered on every English country page — continent
+    // unconditionally, the others whenever the api has the value — so they are pinned
+    // positively. Lexemes only; no institution name, no country, no figure.
+    for (const key of SOURCE_KEYS) {
+      const sentence = catalogues.en[key].toLowerCase();
+      for (const lexeme of ["country", "continent", "area", "neighbouring"]) {
+        expect(sentence).toContain(lexeme);
+      }
+    }
+  });
 });
 
 /**
