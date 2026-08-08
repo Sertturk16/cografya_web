@@ -301,17 +301,32 @@
      Referenced by scroll-margin-top on deep-link anchor targets so a followed fragment
      lands below the opaque sticky header, not underneath it.
 
-     NOW TRUE AT EVERY VIEWPORT, which it was not before the mobile hamburger. The header
-     used to wrap to 176.8px at ≤430px and 104.2px at 768px, so a companion
+     TRUE AT EVERY VIEWPORT BECAUSE THE HEADER IS FORCED TO ONE ROW, not because it happens
+     to fit. The header used to wrap to 176.8px at ≤430px and 104.2px at 768px, so a companion
      `--header-height-wrapped: 11.125rem` carried that measurement for anchor offsets
      (PR #44 review CR-I2). The nav has moved into a disclosure panel that is out of flow in
-     both states, so the header is a single ~55.7px row on a phone and 57.5px on the desktop
-     — one value covers both and the companion token is RETIRED. It is named here rather
-     than silently deleted because `var(--header-height-wrapped)` against an undefined
-     property does not error: it invalidates the whole `calc()` and silently drops the anchor
-     offset to zero. The retirement also FIXES a measured defect it had grown: between 850px
+     both states AND `site-header.module.css` sets `flex-wrap: nowrap` below 64rem, so the row
+     cannot break at any width: a single ~55.7px row on a phone, 57.5px on the desktop. One
+     value covers both and the companion token is RETIRED.
+
+     The `nowrap` half is load-bearing, not tidiness. Without it the row still wrapped below
+     351.5px (the width at which the brand, the search trigger and the menu button stop
+     fitting inside `.container`'s `viewport − 40px`) and the header became 93.7px — so this
+     token would have under-reported by 37.7px at 320px, the WCAG 1.4.10 reference width,
+     with THREE consumers reading it: the letter-jump offset on /turkiye, the marine and
+     climate anchor offsets, and the game's `--game-stage-cap` viewport math
+     (`game-map.module.css`). The token lying is the defect; one fix closes all three
+     (PR #56 review FENER-I1/CR56-I2).
+
+     The retired name is written out here rather than silently deleted because
+     `var(--header-height-wrapped)` against an undefined property does not error: it
+     invalidates the whole `calc()` and silently drops the anchor offset to zero.
+     `components/anchor-offset-token.test.ts` is the tripwire for that class.
+
+     The retirement also FIXED a measured defect the companion token had grown: between 850px
      (where the Turkish header already collapsed to one row) and 1024px (where the token
-     stopped compensating) a letter jump on /turkiye overshot its target by 136.9px. */
+     stopped compensating) a letter jump on /turkiye landed 136.9px below the header's bottom
+     edge — 120.9px more than the 16px gap the offset intends. */
   --header-height: 3.5rem;
 }
 

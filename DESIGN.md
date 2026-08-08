@@ -92,6 +92,15 @@ ramp and not the Terra brand hues.
   English** (binary-searched on the running build), and a breakpoint must be
   locale-independent, so it sits above the later of the two — and on the value the repo
   already used. Do not add a second breakpoint without a measurement in both locales.
+- **The single-row header is ENFORCED, and the wordmark is what gives way.** `.inner` is
+  `flex-wrap: nowrap` below 64rem; the brand link is the one item allowed to shrink
+  (`min-width: 0`) and its wordmark truncates with an ellipsis. Moving the nav out of the row
+  was not sufficient on its own: the remaining three items need **351.5px** of viewport to sit
+  whole, so between 320 and 351.5px the row still wrapped to 93.7px and `--header-height` —
+  read by three anchor offsets and the game's viewport math — under-reported by 37.7px
+  (PR #56 review FENER-I1). **320px and 360px are mandatory test viewports for any header
+  change**, 320px because it is WCAG 1.4.10's reference width (and what 400% desktop zoom
+  produces), 360px because a layout that fits at 390px can still break there.
 - **Brand mark:** single-sourced neutral globe in `lib/brand/glyph.ts`; `app/icon.svg`
   mirrors it by hand (a static file can't import) — keep the two in step. Still a
   placeholder pending the brand/logo decision (K7).

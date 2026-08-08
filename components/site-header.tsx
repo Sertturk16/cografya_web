@@ -18,7 +18,11 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
             aria-hidden="true"
             dangerouslySetInnerHTML={{ __html: brandGlyphSvg({ size: 28, radiusRatio: 0.29 }) }}
           />
-          {siteConfig.name}
+          {/* Its own element so the wordmark can be the part of the header that gives way on
+              a narrow phone: `text-overflow` needs a block container, and the row below 64rem
+              is `nowrap` so something has to shrink (review FENER-I1). The string is
+              unchanged in the HTML. */}
+          <span className={styles.brandName}>{siteConfig.name}</span>
         </Link>
         {/* Placed between the brand and the nav ON PURPOSE. It puts search early in the tab
             order, ahead of six nav links. The hamburger reworking anticipated in this

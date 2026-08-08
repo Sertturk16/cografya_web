@@ -34,10 +34,15 @@ import styles from "./site-nav.module.css";
  *
  * Escape (focus returns to the button), following a link inside it, and focus leaving the
  * component altogether. The last one is also what keeps the two header panels mutually
- * exclusive without either island knowing the other exists: reaching for the search trigger
- * moves focus out of this root, and reaching for this button blurs the search combobox, whose
- * own `onBlur` closes it. Both sheets anchor to the same header edge, so "both open" would be
- * two overlapping cards.
+ * exclusive without either island knowing the other exists, and the mechanism differs by
+ * direction. Reaching for the search trigger moves focus out of this root — in WebKit by
+ * clearing it, which the `onBlur` below still reads as "left" — so this panel closes on the
+ * press. Reaching for THIS button no longer blurs the search combobox on mousedown, because
+ * the button now prevents that default (see the trigger); the search sheet closes one frame
+ * later instead, when the open effect above moves focus to this panel's first link and the
+ * combobox's own `onBlur` fires. Same outcome, different beat — and it is the open effect,
+ * not the button, that carries it. Both sheets anchor to the same header edge, so "both open"
+ * would be two overlapping cards.
  *
  * ## No-JS reality, stated rather than implied
  *
@@ -47,6 +52,17 @@ import styles from "./site-nav.module.css";
  * this whole change exists to remove. The links remain in the document for machines, and for a
  * human the brand link in the first row reaches the homepage, which carries a body link to
  * every one of the five hubs.
+ *
+ * A THIRD option exists and was evaluated rather than missed (review CR56-M4): native
+ * `<details>`/`<summary>`, which is a real zero-JS disclosure and would close the gap above at
+ * mobile. It cannot express the desktop half. At 64rem and up the nav must be inline and
+ * permanently revealed with no summary, but a CLOSED `<details>` hides its non-summary children
+ * through a UA rule that three engines implement differently (`content-visibility` on the
+ * details content in current Chromium, historically `display` on the slot), so "always open
+ * above 64rem" needs either `open` toggled by JavaScript — the thing it was adopted to remove —
+ * or an author override betting on interop, which is exactly what `site-nav.module.css` refuses
+ * to do for `position: static`. Rendering a second, desktop-only nav instead would duplicate
+ * six hub links in every page's HTML. The trade-off above is therefore kept deliberately.
  */
 export function NavDisclosure({ children }: { children: ReactNode }) {
   const t = useTranslations("Nav");
@@ -102,14 +118,57 @@ export function NavDisclosure({ children }: { children: ReactNode }) {
   };
 
   /**
+   * THE PANEL'S LINKS DO NOT NAVIGATE IN WEBKIT WITHOUT THIS. Not a hardening measure — the
+   * defect it removes made every link in this panel dead on every browser on iOS (PR #56
+   * review CR56-C1, established by running the chain in a real WebKit build).
+   *
+   * WebKit does not mouse-focus a plain `<a href>`: `HTMLAnchorElement::isMouseFocusable()`
+   * is true only when the anchor carries an explicit `tabindex`. Worse, finding no
+   * mouse-focusable node it CLEARS focus rather than leaving it alone. The effect above put
+   * focus on the panel's first link, so pressing any other link fires `focusout` FROM that
+   * first link with `relatedTarget === null` — and both of `onBlur`'s guards miss it
+   * (`restoreFocus` is false; `contains(null)` is false), so `close(false)` runs. `focusout`
+   * is DiscreteEventPriority, so React commits `open: false` BEFORE mouseup:
+   * `.panel[data-open="true"]` stops matching, the anchor becomes `display: none`, WebKit
+   * re-hit-tests mouseup on what is now behind it and dispatches the click on BODY. The URL
+   * never changes. Chromium mouse-focuses the anchor, so CI, every desktop review and every
+   * rendered sample came back clean.
+   *
+   * Preventing the mousedown default is what stops it: WebKit runs its focus block only when
+   * the event was not swallowed, so nothing is focused, nothing is blurred, no `focusout`
+   * fires, and the click reaches the link. This is the same remedy the search × already
+   * carries for the sibling half of the same engine bug (`search-combobox.tsx:395-401`),
+   * applied to the element that needs it here. The alternative — `tabIndex` on the links —
+   * was rejected: `-1` removes all eight links from the tab order (WCAG 2.1.1) and `0` pushes
+   * an engine workaround into server-rendered markup on every page at every viewport,
+   * including desktop, where no defect exists.
+   *
+   * SCOPED TO THE OPEN STATE. At 64rem and up this element is `display: contents` and its
+   * children ARE the inline desktop nav; that nav must keep its native mousedown behaviour.
+   * `open` can only be true where the panel is a floating sheet.
+   */
+  const onPanelMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (open) event.preventDefault();
+  };
+
+  /**
    * Following a link closes the menu. It has to be explicit: this island stays mounted across
    * client-side navigations, so without it the panel would still be covering the page the
    * reader just asked for. Scoped to anchors, so a click on the panel's own padding does not
-   * dismiss the menu the reader is still reading.
+   * dismiss the menu the reader is still reading — a promise that only became TRUE with the
+   * mousedown guard above. Before it, padding is not focusable, so pressing it cleared focus
+   * in both engines, `onBlur` read the null `relatedTarget` as "focus left" and closed the
+   * panel; the comment described the intent rather than the behaviour (review A11Y-5).
+   *
+   * `close(true)` rather than `close(false)`: the reader activated a link while focus sat on
+   * a link inside a panel that is about to become `display: none`, which would drop focus on
+   * `<body>` and restart the next Tab from the skip link (review A11Y-4). Handing focus back
+   * to the button leaves it on a real control in the header the reader is navigating away
+   * from, which is also the search island's pattern.
    */
   const onPanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target instanceof HTMLElement && event.target.closest("a")) {
-      close(false);
+      close(true);
     }
   };
 
@@ -119,9 +178,26 @@ export function NavDisclosure({ children }: { children: ReactNode }) {
         ref={buttonRef}
         type="button"
         className={styles.trigger}
+        // A state-dependent NAME alongside `aria-expanded` is deliberate, not an oversight
+        // (review CR56-M3). ARIA APG's disclosure pattern keeps the name fixed; the reason
+        // this one does not is written where the pairing is locked —
+        // `messages.test.ts` "names the two disclosure states differently": a reader who
+        // navigates by name, through a rotor or an element list, never hears `aria-expanded`
+        // at all and would meet a control called "open menu" over an open menu.
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={open ? t("closeMenu") : t("openMenu")}
+        // WebKit does not mouse-focus form controls at all (bug 254655), so pressing this
+        // button fires `focusout` from whatever held focus with `relatedTarget === null`.
+        // On the search × that only dropped focus; here the control is a TOGGLE that reads
+        // `open` at click time, so the root `onBlur` closed the panel first and the click
+        // handler then read `open: false` and REOPENED it — the only way to close the
+        // primary navigation, broken across the whole iOS install base (review A11Y-1).
+        // Preventing the mousedown default keeps focus where it is until `onClick` decides,
+        // so `onBlur` never fires and `close(true)` restores focus deliberately. Identical
+        // to `search-combobox.tsx:395-401`. Unconditional there and here: with the panel
+        // closed there is nothing to close, so the guard costs nothing.
+        onMouseDown={(event) => event.preventDefault()}
         onClick={() => (open ? close(true) : setOpen(true))}
       >
         <MenuIcon open={open} />
@@ -131,6 +207,7 @@ export function NavDisclosure({ children }: { children: ReactNode }) {
         id={panelId}
         className={styles.panel}
         data-open={open ? "true" : "false"}
+        onMouseDown={onPanelMouseDown}
         onClick={onPanelClick}
       >
         {children}

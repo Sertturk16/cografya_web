@@ -1,8 +1,10 @@
 /* Primary navigation + its mobile disclosure.
    Mobile-first: the rules below the media query describe the COMPACT header (a hamburger
    button plus an overlay panel); the `min-width: 64rem` block restores the inline desktop
-   nav byte-for-byte. Every colour is a `var(--token)` from the global Terra layer
-   (DESIGN.md §2) — no hardcoded brand hex here.
+   nav byte-for-byte. No hardcoded BRAND hex here: every brand colour is a `var(--token)`
+   from the global Terra layer (DESIGN.md §2). The two literals below are neutrals the
+   sibling search module already uses for the same sheet — `#fff` for the card and
+   `rgb(43 38 34 / 14%)` for its shadow (review CR56-M2).
 
    THE BREAKPOINT IS 64rem AND THE NUMBER IS MEASURED, NOT INHERITED. On `dev@e593d18` the
    header collapses to a single row at 850px in Turkish and 773px in English (binary-searched
@@ -79,6 +81,21 @@
   border-radius: var(--radius-lg);
   background: #fff;
   box-shadow: 0 12px 28px rgb(43 38 34 / 14%);
+  /* THE PANEL MUST BE ABLE TO SCROLL. It is `position: absolute` inside a `position: sticky`
+     header, so it is pinned to the viewport's top edge and does NOT move with the document:
+     scrolling the page slides content BEHIND it and can never bring a clipped row into view.
+     Its content height is fixed by construction — six 45.6px rows + gaps + padding + the
+     locale switcher ≈ 350px, bottom edge ≈ 413px — which overflows a phone in landscape
+     (iPhone SE ≈ 320px of visual viewport height, iPhone 12/13 ≈ 340px with the URL bar).
+     Without a limit the last nav row and the language switcher sat below the fold while
+     remaining in the tab order: focus could reach a control that cannot be brought on screen
+     (WCAG 1.4.10 Reflow; 2.4.7 in spirit). Before this PR those links were in flow and simply
+     made the header taller, so the condition is one the disclosure introduced
+     (PR #56 review A11Y-3). The sibling search panel caps itself for exactly this reason.
+     `overscroll-behavior: contain` keeps a flick inside the sheet from scrolling the page. */
+  max-height: calc(100svh - var(--header-height) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .panel[data-open="true"] {
@@ -109,7 +126,13 @@
 }
 
 .nav a:hover {
-  color: var(--color-primary);
+  /* chip-ink on chip-bg, the pairing `DESIGN.md` §5's contrast table already verifies at
+     6.59:1. `--color-primary` on this background is 4.04:1 — below the 4.5:1 floor that
+     applies here, because a 1rem/600 row is not WCAG "large text" (that needs 24px, or
+     18.66px bold). The desktop block below clears the background, and the same primary on
+     white is 5.13:1, so the sub-AA pairing existed only inside this panel
+     (PR #56 review A11Y-2). */
+  color: var(--color-chip-ink);
   background: var(--color-chip-bg);
 }
 
@@ -128,6 +151,11 @@
   .panel[data-open="true"] {
     display: contents;
     position: static;
+    /* Stated for the same reason as `position: static`: an element that generates no box has
+       no use for the mobile sheet's scroll cap, and leaving it declared would make a future
+       change of this block's `display` silently reintroduce a scroller on the desktop nav. */
+    max-height: none;
+    overflow: visible;
   }
 
   /* Restores the pre-hamburger inline nav exactly: the same flex row, gaps, weight and size
@@ -151,6 +179,9 @@
   }
 
   .nav a:hover {
+    /* No chip behind the label up here, so the verified pairing is primary on white
+       (5.13:1) — the desktop hover is unchanged by A11Y-2. */
+    color: var(--color-primary);
     background: none;
   }
 }

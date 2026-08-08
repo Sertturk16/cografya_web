@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
@@ -36,6 +38,23 @@ const NAV_KEYS = [
 
 const catalogues = { tr: trMessages.Nav, en: enMessages.Nav } as const;
 
+/**
+ * The list above is hand-maintained, so on its own it can only ever prove that yesterday's
+ * keys still resolve (review TA56-M4). These two files are the only consumers of the `Nav`
+ * namespace; reading the keys they actually ask for is what ties the list to the code, so a
+ * `t("menuHint")` added without a catalogue entry fails here instead of shipping the literal
+ * string "Nav.menuHint" into every page's header with both locales in perfect parity.
+ */
+const CONSUMERS = ["./site-nav.tsx", "./nav-disclosure.tsx"] as const;
+
+const consumerSources = CONSUMERS.map((path) => ({
+  path,
+  source: readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8").replace(
+    /\/\*[\s\S]*?\*\//g,
+    " ",
+  ),
+}));
+
 describe("Nav message catalogue", () => {
   for (const [locale, catalogue] of Object.entries(catalogues)) {
     describe(locale, () => {
@@ -49,6 +68,21 @@ describe("Nav message catalogue", () => {
 
   it("carries the SAME key set in both locales", () => {
     expect(Object.keys(enMessages.Nav).sort()).toEqual(Object.keys(trMessages.Nav).sort());
+  });
+
+  it.each(consumerSources)("$path asks the Nav namespace for keys the list knows", ({ source }) => {
+    // The derivation is only sound while these files read THIS namespace; a second namespace
+    // in here would make every `t("…")` below an assertion about the wrong catalogue.
+    expect(source).toMatch(/(?:use|get)Translations\("Nav"\)/);
+    const namespaces = [...source.matchAll(/(?:use|get)Translations\("([^"]+)"\)/g)];
+    expect(namespaces.map((match) => match[1])).toEqual(["Nav"]);
+
+    const requested = [...source.matchAll(/\bt\("([^"]+)"\)/g)].map((match) => match[1]);
+    // Anchors the scan: a refactor that renamed the translator would pass vacuously.
+    expect(requested.length).toBeGreaterThan(0);
+    for (const key of requested) {
+      expect(NAV_KEYS).toContain(key);
+    }
   });
 
   it("names the two disclosure states differently", () => {
