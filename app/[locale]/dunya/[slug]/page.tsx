@@ -12,6 +12,7 @@ import {
   getCountriesResilient,
 } from "@/lib/api/countries";
 import type { CountryDetail, CountryListItem } from "@/lib/api/types";
+import { sourcesMessage } from "@/lib/geo/country-sources";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
 import { isSpecialStatusRow } from "@/lib/geo/sovereignty";
 import { showsSubregionCard } from "@/lib/geo/subregion";
@@ -139,8 +140,12 @@ export default async function CountryDetailPage({ params }: PageProps) {
   //
   // `null` arrives if and only if `population` is null (today: Antarktika alone). The line
   // then drops the population clause entirely rather than claiming an unknown source.
-  const populationSource =
-    locale === "en" ? country.populationSourceNameEn : country.populationSourceNameTr;
+  // Which sentence, and with what interpolation — decided by the pure, tested helper in
+  // `lib/geo/country-sources.ts` rather than inline, so the branch sits inside vitest's
+  // `include` glob (→ PR #54 `TA54-M3`/`CR54-M3`).
+  const sources = sourcesMessage(
+    locale === "en" ? country.populationSourceNameEn : country.populationSourceNameTr,
+  );
   const selfHref = {
     pathname: "/dunya/[slug]",
     params: { slug: slugForLocale(country, locale) },
@@ -423,7 +428,7 @@ export default async function CountryDetailPage({ params }: PageProps) {
 
       <p className={styles.sources}>
         <span className={styles.sourcesLabel}>{t("sourcesLabel")}:</span>{" "}
-        {populationSource === null ? t("sourcesNoPopulation") : t("sources", { populationSource })}
+        {sources.key === "sources" ? t("sources", sources.values) : t("sourcesNoPopulation")}
       </p>
 
       <p className="section">

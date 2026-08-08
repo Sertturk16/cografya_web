@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createTranslator } from "next-intl";
+import { sourcesMessage } from "@/lib/geo/country-sources";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
 
@@ -80,6 +81,23 @@ const COUNTRY_SPECIFIC_TOKENS = [
  */
 const MAX_SEMICOLONS_PER_PARAGRAPH = 1;
 
+/**
+ * The lexeme each locale's template puts immediately in front of the population credit.
+ *
+ * This is the only structural handle on the property that makes `sourcesNoPopulation` a
+ * distinct key rather than a copy of `sources`: that it credits NO population source
+ * (→ PR #54 `TA54-M2`). Every other assertion here is negative or shape-only, so before
+ * this one it was possible to rewrite the variant back to "… nüfus Dünya Bankası." and
+ * keep the whole suite green — the hardcoded-false-credit shape `DEC 2026-08-05j` exists
+ * to end, walking back in through the single page nobody watches.
+ *
+ * It is a TEMPLATE lexeme, not a geography fact, so `CONVENTIONS.md` §2's ban on per-entity
+ * literal facts is not engaged. The two assertions below move together: if the wording ever
+ * changes, both fail at once and one constant is updated, rather than the invariant rotting
+ * silently.
+ */
+const POPULATION_LEXEME: Record<string, string> = { tr: "nüfus", en: "population" };
+
 const catalogues = { tr: trMessages.CountryDetail, en: enMessages.CountryDetail } as const;
 
 /** Placeholder names an ICU pattern actually declares, in source order. */
@@ -113,6 +131,13 @@ describe("CountryDetail sources line", () => {
         );
       });
 
+      it("credits a population source in `sources` and none in `sourcesNoPopulation`", () => {
+        const lexeme = POPULATION_LEXEME[locale];
+        expect(lexeme).toBeDefined();
+        expect(catalogue.sources).toContain(lexeme);
+        expect(catalogue.sourcesNoPopulation).not.toContain(lexeme);
+      });
+
       it.each(SOURCE_KEYS)("formats %s through next-intl and substitutes it", (key) => {
         // Turkish carries apostrophes ("Bakanlığı'ndan"), which ICU treats as quoting when
         // they touch a brace — an editor moving one next to `{populationSource}` would
@@ -140,4 +165,49 @@ describe("CountryDetail sources line", () => {
       });
     });
   }
+});
+
+/**
+ * SELECTION guard (→ PR #54 `TA54-M3`). The catalogue tests above prove both sentences are
+ * well formed; they cannot prove the page picks the right one. These two failure modes are
+ * independent — the catalogue can be perfect while the branch is inverted — and the branch
+ * used to live inside the Server Component, which `vitest.config.ts` never collects.
+ *
+ * Structural only: no institution name, no country name, no population figure.
+ */
+describe("sourcesMessage", () => {
+  it("credits the resolved source and passes it through untouched", () => {
+    // A structural stub. The web must not transform the api's institution names — no
+    // casing, no article, no trimming — so the value is asserted identical, not merely
+    // present.
+    const resolved = "__SOURCE__";
+    expect(sourcesMessage(resolved)).toEqual({
+      key: "sources",
+      values: { populationSource: resolved },
+    });
+  });
+
+  it("takes the no-population sentence when the contract says `null`", () => {
+    expect(sourcesMessage(null)).toEqual({ key: "sourcesNoPopulation", values: {} });
+  });
+
+  it.each([
+    ["undefined — an api older than the field (deploy skew)", undefined],
+    ["empty string — present but carrying no credit", ""],
+  ])("takes the no-population sentence off-contract: %s", (_case, value) => {
+    // Neither state is reachable through the committed contract, which is exactly why an
+    // exact `=== null` check missed them: TypeScript proves them impossible against the
+    // spec, and the web never validates the response body at runtime.
+    expect(sourcesMessage(value)).toEqual({ key: "sourcesNoPopulation", values: {} });
+  });
+
+  it("never invents a credit of its own", () => {
+    // The api field comment forbids a client-side `?? "Dünya Bankası"` default. The unknown
+    // state must select the sentence written for it, never fabricate a source.
+    for (const empty of [null, undefined, ""]) {
+      const message = sourcesMessage(empty);
+      expect(message.key).toBe("sourcesNoPopulation");
+      expect(Object.keys(message.values)).toHaveLength(0);
+    }
+  });
 });
