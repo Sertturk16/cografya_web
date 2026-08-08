@@ -57,21 +57,44 @@ import { routing, type Locale } from "@/i18n/routing";
  * ## AND A THIRD HALF: two EN source-credit strings (→ PR #54 `CR54-M2`, `n`)
  *
  * `messages/en.json` → `CountryDetail.sources` and `CountryDetail.sourcesNoPopulation` name
- * the institutions behind the fields an English country page actually renders. Because the
- * subregion, currency, government form and physical-geography prose are `isTr`-gated TODAY,
- * those two sentences deliberately do NOT credit them — crediting a field the reader cannot
- * see is what `CR54-M2` found on 198 pages.
+ * the institutions behind the fields an English country page actually renders. The UN M49
+ * subregion, the official languages, the currency and the government form are `isTr`-gated
+ * fact-sheet cards; the landform, climate and hydrography prose is `isTr`-gated narrative;
+ * and the independence note is `isTr`-gated too, though it is a HISTORY section rather than
+ * physical geography (→ PR #55 `FEN-M2`) and carries its own attribution row. None of them is
+ * drawn in English TODAY, so those two sentences deliberately do not credit them — crediting
+ * a field the reader cannot see is what `CR54-M2` found, on all 199 pages: both variants
+ * carried it (→ PR #55 `CR55-M5`).
  *
- * That correctness is pegged to the gates, not to the fields' existence. The moment the
- * `isTr` gates come out of `app/[locale]/dunya/[slug]/page.tsx` those four start rendering
- * in English and the same two sentences become UNDER-credited — the identical defect
- * pointing the other way, and silent, because nothing fails. So the EN content wave widens
- * both strings back and empties `TR_GATED_FIELD_LEXEMES` in
- * `lib/geo/country-sources.test.ts`, which is the guard holding today's narrower wording.
+ * That correctness is pegged to the gates, not to the fields' existence — and the gated
+ * columns are `…Tr` with no EN counterpart, so pulling the `isTr` gates out ALONE would
+ * render TURKISH text on an English page (→ PR #55 `CR55-M3`), not English. The flip is this
+ * switch's own precondition above: the api serves the English counterparts AND the gates come
+ * out. At that moment the same two sentences become UNDER-credited — the identical defect
+ * pointing the other way, and silent, because nothing fails.
  *
- * The continent credit is NOT part of that: `country.continent` has no locale gate, so it is
- * earned in both locales now and after the flip. `CR54-M2` assumed otherwise and was refuted
- * at plan stage; it must not be "re-fixed".
+ * So the wave widens both strings and narrows `TR_GATED_FIELD_LEXEMES`
+ * (`lib/seo/en-gated-lexemes.ts`), the ONE list holding today's narrower wording. Three
+ * places move with it, and the checklist names all three rather than the first one
+ * (→ PR #55 `CR55-M2`):
+ *
+ *   · `lib/geo/country-sources.test.ts` — the credit ban, the positive floor under it, and a
+ *     tripwire that fails the moment this switch flips;
+ *   · `lib/seo/country-description.test.ts` — the same list applied to the meta-description
+ *     templates, which must not PROMISE those sections either;
+ *   · the `isTr` fact-sheet gates in `app/[locale]/dunya/[slug]/page.tsx` themselves.
+ *
+ * NOT a mechanical "restore the deleted words" (→ PR #55 `SG55-N1`). What came out included
+ * the UN M49 SUBREGION credit, and M49 attribution is not uniformly supportable across this
+ * corpus: the sovereignty gate recorded that QN and XK are not enumerated in UNSD's M49
+ * country-or-area list, and that TW's M49 entry carries a name contradicting the owner-ruled
+ * entity name (DEC 2026-07-13 §4). That question is OPEN and is the owner's; this note exists
+ * so the wave surfaces it instead of restoring a UN-recognition implication on the two rows
+ * where recognition is the contested question.
+ *
+ * The continent credit is not part of any of this — `country.continent` has no locale gate,
+ * so it is earned in both locales now and after the flip. The full refutation of `CR54-M2`'s
+ * second half lives once, in `lib/seo/en-gated-lexemes.ts`; it must not be "re-fixed" here.
  */
 export const EN_CONTENT_READY: boolean = false;
 

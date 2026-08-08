@@ -10,6 +10,7 @@ import {
   POPULATION_DESCRIPTION_KEY,
   selectCountryMetaDescription,
 } from "./country-description";
+import { TR_GATED_FIELD_LEXEMES } from "./en-gated-lexemes";
 
 describe("countryDescriptionVariant", () => {
   it("is deterministic for a given ISO code", () => {
@@ -342,18 +343,12 @@ describe("description copy honesty (SEO-POLICY §B2.6)", () => {
     // EN country pages render chrome + fact sheet only: landform / climate / hydrography /
     // independence prose is all `isTr`-gated. og:title and og:description are emitted even
     // on a noindex page, so an EN string must not advertise content the page does not have.
-    const forbidden = [
-      "climate",
-      "landform",
-      "physical geography",
-      "relief",
-      "hydrography",
-      "rivers",
-      "independence",
-      "currency",
-      "official language",
-      "government",
-    ];
+    //
+    // The list moved to `lib/seo/en-gated-lexemes.ts` (→ PR #55 `CR55-M1`). It used to be a
+    // local literal here while `lib/geo/country-sources.test.ts` kept a second, shorter copy
+    // for the same invariant on the `Sources:` sentence — two lists, divergent on the day the
+    // second landed. Promising a section and crediting its source are two failure modes of
+    // one rule, so both guards now read one list.
     for (const key of [
       ...Object.values(POPULATION_DESCRIPTION_KEY),
       AREA_DESCRIPTION_KEY,
@@ -362,7 +357,7 @@ describe("description copy honesty (SEO-POLICY §B2.6)", () => {
       GENERIC_DESCRIPTION_KEY,
     ]) {
       const template = (countryDetail.en[key] ?? "").toLowerCase();
-      for (const word of forbidden) {
+      for (const word of TR_GATED_FIELD_LEXEMES) {
         expect(template.includes(word), `en.CountryDetail.${key} promises "${word}"`).toBe(false);
       }
     }
