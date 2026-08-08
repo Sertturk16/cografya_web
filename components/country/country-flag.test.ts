@@ -66,7 +66,11 @@ describe("catalogue totality for this package's new keys", () => {
     ProvinceDetail: { withPlaceholder: ["locationHeading", "locationAlt"], plain: [] },
     CountryDetail: {
       withPlaceholder: ["locationHeading", "locationAlt", "flagAlt"],
-      plain: ["locationHeadingPlain", "flag"],
+      // `sovereigntyHeading` is deliberately in the PLAIN list: it carries no entity name,
+      // by ruling (→ DEC 2026-08-08l B1). An entity-named H2 exists to be independently
+      // extractable, which on a contested row is exactly what turns a section marker into a
+      // standalone possessive claim — see lib/geo/sovereignty.ts.
+      plain: ["locationHeadingPlain", "flag", "sovereigntyHeading"],
     },
     About: { withPlaceholder: [], plain: ["dataOsmOffer"] },
   } as const;

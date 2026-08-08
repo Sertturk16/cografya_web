@@ -16,7 +16,7 @@ import {
 import type { CountryDetail, CountryListItem } from "@/lib/api/types";
 import { sourcesMessage } from "@/lib/geo/country-sources";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
-import { isSpecialStatusRow } from "@/lib/geo/sovereignty";
+import { isSpecialStatusRow, showsCountryFlag, showsSovereigntyNote } from "@/lib/geo/sovereignty";
 import { showsSubregionCard } from "@/lib/geo/subregion";
 import { COUNTRY_SHAPES } from "@/lib/map/world-countries.generated";
 import { getPathname, Link } from "@/i18n/navigation";
@@ -263,6 +263,22 @@ export default async function CountryDetailPage({ params }: PageProps) {
         })
       : t(COUNTRY_HEADING_KEY[slot].plain);
 
+  // Egemenlik ve Tanınma — the api's `sovereigntyNoteTr`, the owner's verbatim framing for a
+  // contested row (seed docblock: "transcribed VERBATIM"). The web only renders it: no
+  // editing, no shortening, no re-paragraphing. `ProseNote` applies the "\n\n" convention as
+  // it stands, so Filistin's three-paragraph note arrives as three <p>.
+  //
+  // ONE decision, TWO consumers (→ DEC 2026-08-08l B2, path (a)): this same gate also
+  // decides whether the flag card renders on a special-status row, so the visual claim and
+  // the text that balances it can never appear apart. The reasoning — including why symmetric
+  // absence on EN is not the asymmetry DEC 2026-08-08c md.2 condemned — is in
+  // lib/geo/sovereignty.ts, the single decision place. Ordinary rows are untouched: 193
+  // countries keep their flag in both locales.
+  const sovereigntyNote = showsSovereigntyNote(locale, country.sovereigntyNoteTr)
+    ? country.sovereigntyNoteTr
+    : null;
+  const showsFlag = showsCountryFlag(locale, country.sovereigntyNoteTr);
+
   const officialLanguages = isTr ? country.officialLanguagesTr : null;
   // Ö1-B locator mini-map: this country's own outline from the committed artifact. The map
   // makes NO new political claim — it draws exactly the shape `/dunya` already draws
@@ -378,18 +394,36 @@ export default async function CountryDetailPage({ params }: PageProps) {
               <dd>{country.governmentFormTr}</dd>
             </div>
           )}
-          {/* G2 — the flag, as one more card in the existing auto-fill rhythm. NOT TR-gated:
-              a flag is data, not a narrative that needs translating (the same reasoning as the
-              marine block). Renders nothing when the row has no asset — see
+          {/* G2 — the flag, as one more card in the existing auto-fill rhythm. On an ORDINARY
+              row it is not TR-gated: a flag is data, not a narrative that needs translating
+              (the same reasoning as the marine block). On a SPECIAL-STATUS row it is gated on
+              `showsFlag`, which is the sovereignty note's own gate — the visual claim never
+              stands without the text that balances it (→ DEC 2026-08-08h / 08-08l B2).
+              Renders nothing when the row has no asset — see
               components/country/country-flag.tsx for what that currently means for QN. */}
-          <CountryFlag
-            isoCode={country.isoCode}
-            label={t("flag")}
-            alt={t("flagAlt", { name })}
-            className={styles.fact}
-          />
+          {showsFlag && (
+            <CountryFlag
+              isoCode={country.isoCode}
+              label={t("flag")}
+              alt={t("flagAlt", { name })}
+              className={styles.fact}
+            />
+          )}
         </dl>
       </section>
+
+      {/* Egemenlik ve Tanınma — between the two visual claims on this page (the flag inside
+          Temel Bilgiler, and the locator map's highlight below), which is the only ordering
+          that applies DEC 2026-08-08h's wording to the page flow: the reader meets the flag,
+          reads what grounds it, and only then meets the second visual. Present on the six
+          special-status rows and nowhere else; the section is ADDED, no existing section is
+          re-ordered. Plain, entity-free heading by ruling (→ DEC 2026-08-08l B1). */}
+      {sovereigntyNote !== null && (
+        <section className="section">
+          <h2>{t("sovereigntyHeading")}</h2>
+          <ProseNote text={sovereigntyNote} className={styles.prose} />
+        </section>
+      )}
 
       {/* Ö1-B — the world counterpart of the province locator, in the same slot: right after
           the fact sheet, before the narrative sections. Absent (never a placeholder) if the

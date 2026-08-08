@@ -354,7 +354,8 @@
     "locationHeadingPlain": "Konum",
     "locationAlt": "Dünya haritası üzerinde {name} konumu",
     "flag": "Bayrak",
-    "flagAlt": "{name} bayrağı"
+    "flagAlt": "{name} bayrağı",
+    "sovereigntyHeading": "Egemenlik ve Tanınma"
   },
   "Deniz": {
     "metaTitle": "Deniz Durumu: Rüzgâr, Dalga, Su Sıcaklığı",

@@ -354,7 +354,8 @@
     "locationHeadingPlain": "Location",
     "locationAlt": "Location of {name} on the world map",
     "flag": "Flag",
-    "flagAlt": "Flag of {name}"
+    "flagAlt": "Flag of {name}",
+    "sovereigntyHeading": "Sovereignty and Recognition"
   },
   "Deniz": {
     "metaTitle": "Sea State: Wind, Waves, Water Temperature",
