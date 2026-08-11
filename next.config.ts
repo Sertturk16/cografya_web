@@ -16,8 +16,16 @@ const nextConfig: NextConfig = {
   // warning, not a build error, and this repo has no deploy/bundling step for it to affect
   // (ENGINEERING §6: no deploy job until the hosting decision). Removing it would mean
   // codegenning 271 SVGs into TS modules, which the plan rejected as a second artifact.
+  // BOTH directories and BOTH routes. The first version declared only the package directory
+  // and only the flag route, which covered half of what actually reads from disk: our own
+  // `assets/flags/qn.svg` lives outside `node_modules`, and the country detail page reaches
+  // the same module through `hasFlag()` without ever touching `/flags/[flag]`. An untraced
+  // read there does not throw — `flag-set.ts` catches it — so the failure would have been a
+  // silent one: the Bayrak card gone from every package-backed country page, and a broken
+  // image on the single most sovereignty-sensitive page in the corpus.
   outputFileTracingIncludes: {
-    "/flags/[flag]": ["./node_modules/flag-icons/flags/4x3/**"],
+    "/flags/[flag]": ["./node_modules/flag-icons/flags/4x3/**", "./assets/flags/**"],
+    "/[locale]/dunya/[slug]": ["./node_modules/flag-icons/flags/4x3/**", "./assets/flags/**"],
   },
 
   // next/image conventions (CONVENTIONS §6 #9). No images ship yet, so no remote

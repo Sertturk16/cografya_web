@@ -2,35 +2,54 @@
   <!--
     Flag of the Turkish Republic of Northern Cyprus (QN), reconstructed by Cografya.
 
-    GEOMETRY comes from ONE source: the dimension table published by the TRNC Ministry of
-    National Education ("KKTC Bayrağının Ölçüleri", https://www.mebnet.net/KKTCBayragi),
-    which 15/1984 Bayrak Yasası m.2 backs. No pixel, path or outline was traced from that
-    page's dimension JPEG or from any third-party QN SVG (→ DEC 2026-08-08p).
+    SOURCES. The proportions come from the dimension table published by the TRNC Ministry of
+    National Education ("KKTC Bayrağının Ölçüleri", https://www.mebnet.net/KKTCBayragi). The
+    1984 flag law fixes the flag's form by reference to an annex to the law, and that annex
+    could not be obtained from any accessible official publication; the table is applied
+    BECAUSE the binding annex is unavailable, and it is not claimed here that the law endorses
+    the table. If the annex surfaces and disagrees, this file is wrong and should be redrawn.
+    No pixel, path or outline was traced from the ministry page's dimension image or from any
+    third-party rendering of this flag.
+
+    The table is silent on two things, so a SECOND source answers them, named below.
 
     Normalised G = 2 (height), L = 1.5 G = 3 (length), so the viewBox is the flag's own 3:2
     ratio. The 4:3 card that shows it is only a container: the image is centred with
     `contain`, never cropped and never stretched.
 
-      A = 1/2 G  = 1        outer crescent circle, cx
+    Read straight from the table:
       B = 1/2 G  = 1        outer crescent circle, diameter  -> r = .5
-      C = 1/16 G = .125     inner circle offset toward the fly -> cx = 1.125
+      C = 1/16 G = .125     distance between the two crescent centres
       D = 2/5 G  = .8       inner circle diameter -> r = .4
-      E = 1/3 G  = .666667  clearance between the inner circle and the star's circle
       F = 1/4 G  = .5       star's circumscribed circle -> R = .25
       N = 1/10 G = .2       red band
-      O = 1/10 G = .2       white band between each edge and its red band
-      M = 1/30 G            hoist sleeve: a sewing dimension, not a drawn element
+
+    Interpreted, because the table gives a length but not where it is measured. Each is the
+    only reading that yields this flag; the rejected alternative is given so a re-derivation
+    that picks the other one can tell a known fork from a defect:
+      A = 1/2 G  = 1        outer crescent cx, measured from the hoist EDGE (x = 0).
+                            Measured from the sleeve instead it would be 1.066667.
+      E = 1/3 G  = .666667  clearance between the two CIRCLES, not between their centres.
+                            Centre-to-centre puts the star at cx 1.791667, glued to the
+                            crescent with .016667 between them.
+      O = 1/10 G = .2       the white band between each EDGE and its red band, not any other
+                            white span. The central field is not a band and needs no size.
+      M = 1/30 G            hoist sleeve. A sewing dimension with no drawn element, so it
+                            appears in no shape below.
 
     Star centre: 1.125 + .4 + 2/3 + .25 = 293/120 = 2.441667. Inner vertex radius is the
     regular pentagram's own consequence, R * (3 - sqrt5)/2 = .0954915.
 
-    TWO VALUES ARE PRODUCT CHOICES, NOT OFFICIAL FACTS, and are recorded as such in
-    provenance/datasets.md. The examined official texts say only "al" (crimson) and fix no
-    numeric colour, and the table fixes no rotation for the star:
-      * #e30a17 is the red of tr.svg in the pinned flag-icons@7.5.0, taken for consistency
-        with the other 198 flags in the set. It is NOT an official TRNC hex.
+    THE SECOND SOURCE, and the two values that are product choices rather than official
+    facts. The examined official texts say only "al" (crimson) and fix no numeric colour, and
+    the table fixes no rotation for the star. Both were therefore taken from the flag set this
+    project already licenses and credits (flag-icons 7.5.0, tr.svg), which keeps them
+    reproducible and independently re-derivable from a pinned artifact:
+      * #e30a17 is that file's red, taken for consistency with the other 198 flags shown
+        beside this one. It is not an official TRNC colour value.
       * the star is turned so that one vertex points at the hoist, derived from the same
-        pinned artifact. It is NOT an official TRNC angle.
+        file's star. It is not an official TRNC angle.
+    Both are recorded the same way in this project's source ledger.
 
     The crescent is painted, not subtracted: the inner circle reaches .025 past the outer
     one, so an even-odd difference would fill that protruding lens. White over white leaves

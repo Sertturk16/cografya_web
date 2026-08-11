@@ -76,34 +76,20 @@ export const BASE_MAP_TOKEN_PINS = {
   "--color-slate": COLOR_SLATE,
 } as const;
 
-/* ── Locator variants (owner picks from rendered samples; the loser is deleted) ─────── */
+/* ── Türkiye silhouette paint ───────────────────────────────────────────────────────── */
 
 /**
- * The two Türkiye silhouette treatments the owner chooses between at the sample gate
- * (plan §4.3). BOTH are defined here and only one is selected by `TR_LOCATOR_VARIANT`
- * below, so the sample round can render each without a code rewrite; the losing entry is
- * deleted before merge (the DEC 2026-08-05g md.1 rule — two implementations never land
- * together).
+ * "İl mozaiği" — white land, taupe hairline boundaries: the same visual language as
+ * `/turkiye`, so a reader two clicks downstream recognises the map for free.
  *
- * - **V-A "düz siluet"** — one `--color-border` tone, no internal boundaries. The province
- *   outlines are still drawn, in the fill's OWN colour and 1.4 units wide, which is what
- *   closes the sub-pixel seams between neighbouring provinces (plan §3.5: worst-case
- *   separation 0.41 CSS px at the shipped width).
- * - **V-B "il mozaiği"** — white land, taupe hairline boundaries: the same visual language
- *   as `/turkiye`, so a reader two clicks downstream recognises the map for free.
+ * This shipped as one of two variants (V-A "düz siluet" was a single `--color-border` tone
+ * with no internal boundaries) so the sample round could render both without a code rewrite.
+ * **The variant scaffolding is now gone**, which is the obligation DEC 2026-08-05g md.1 states
+ * and the old docblock quoted at itself: two implementations never land together. Keeping the
+ * loser would have left a one-line constant that repaints all 81 province maps with CI green
+ * and no sample gate — `base-map-svg.test.ts` asserts nothing about fill or stroke.
  */
-export type TrLocatorVariant = "V-A" | "V-B";
-
-const TR_VARIANT_PAINT = {
-  "V-A": { fill: COLOR_BORDER, stroke: COLOR_BORDER, strokeWidth: 1.4 },
-  "V-B": { fill: PROVINCE_FILL, stroke: COLOR_TAUPE, strokeWidth: 0.8 },
-} as const satisfies Record<
-  TrLocatorVariant,
-  { fill: string; stroke: string; strokeWidth: number }
->;
-
-/** The shipped variant. Plan §4.3 recommends V-B; the owner rules from the samples. */
-export const TR_LOCATOR_VARIANT: TrLocatorVariant = "V-B";
+const TR_PAINT = { fill: PROVINCE_FILL, stroke: COLOR_TAUPE, strokeWidth: 0.8 } as const;
 
 /* ── Localized strings (read from the catalogues, never inlined) ────────────────────── */
 
@@ -131,14 +117,11 @@ function escapeXml(value: string): string {
  * offshore islands are separate closed subpaths, so the default `nonzero` fill rule is
  * correct here and one element is cheaper than 81.
  */
-export function buildTrBaseMapSvg(
-  locale: Locale,
-  variant: TrLocatorVariant = TR_LOCATOR_VARIANT,
-): string {
+export function buildTrBaseMapSvg(locale: Locale): string {
   const messages = MESSAGES[locale];
   const title = escapeXml(messages.Map.mapTitle);
   const credit = escapeXml(messages.Map.attribution);
-  const paint = TR_VARIANT_PAINT[variant];
+  const paint = TR_PAINT;
   const d = PROVINCE_SHAPES.map((shape) => shape.d).join("");
 
   return [
@@ -149,7 +132,10 @@ export function buildTrBaseMapSvg(
     // The drawn ODbL credit. `text-anchor="end"` right-aligns it into the measured empty
     // corner; `font-size` is in viewBox units, so it reads at ~16 px when the file is opened
     // on its own at natural width — which is the case this node exists for.
-    `<a xlink:href="${OSM_COPYRIGHT_URL}" href="${OSM_COPYRIGHT_URL}" target="_blank">`,
+    // `rel` is spelled out because this is a hand-built string: `react/jsx-no-target-blank`
+    // cannot see it, so the repo convention every JSX external link follows would otherwise
+    // stop exactly here.
+    `<a xlink:href="${OSM_COPYRIGHT_URL}" href="${OSM_COPYRIGHT_URL}" target="_blank" rel="noopener noreferrer">`,
     `<text x="990" y="418" text-anchor="end" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="${COLOR_SLATE}">${credit}</text>`,
     `</a>`,
     `</svg>`,
@@ -194,11 +180,29 @@ export function buildWorldBaseMapSvg(locale: Locale): string {
  * a dynamic segment to the route, and the artifacts have not changed since PR #39 (measured:
  * `git log` over `lib/map/` is empty across the whole range). The staleness window is an
  * ACCEPTED risk (plan R3), not a closed one.
+ *
+ * ## These responses are NOT compressed, and that is a deferral, not an oversight
+ *
+ * Measured on `next start`: with `Accept-Encoding: gzip` an HTML page from this same server
+ * comes back `Content-Encoding: gzip` while this route does not, so Next's own compression
+ * does not cover app-route responses. The world file is 208,324 B where gzip gives 58,293 B.
+ *
+ * It is not fixed here because it cannot be fixed here *correctly*. The route is
+ * `force-static`, so the body is written at build with no access to the request's
+ * `Accept-Encoding`; gzipping it would mean sending `Content-Encoding: gzip` to every client
+ * including one that never asked, permanently, on a public asset URL. Compression negotiation
+ * belongs to the serving layer, every mainstream host compresses `image/svg+xml` by default,
+ * and this repo has no hosting decision yet (ENGINEERING §6). The measurement is recorded here
+ * so whoever makes that decision inherits the number instead of rediscovering it.
  */
 export function baseMapResponse(svg: string): Response {
   return new Response(svg, {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
+      // Same containment pair as the flag route: SVG is active content served from our own
+      // origin, so it is sandboxed and never content-sniffed.
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
       "Cache-Control": "public, max-age=604800",
     },
   });

@@ -46,17 +46,12 @@ const CHART_ANCHOR: Record<Locale, string> = {
  *   without closing it, and takes no structural risk at all. Still far below 1080, so the
  *   number-to-label association the 560 px cap protects is intact.
  */
-export type D2Variant = "rails" | "minimal";
-
-export const D2_VARIANT: D2Variant = "rails";
-
-// `string | undefined` because CSS-module lookups are index accesses under
-// `noUncheckedIndexedAccess`; both names exist in climate.module.css and the variant test
-// asserts that, which is the guarantee a non-null assertion would only pretend to give.
-const D2_CLASS: Record<D2Variant, string | undefined> = {
-  rails: styles.d2Rails,
-  minimal: styles.d2Minimal,
-};
+/**
+ * The shipped D2 treatment. `minimal` — the one-line variant that moved the table cap
+ * 560 → 720 px — is DELETED rather than merged alongside it (DEC 2026-08-05g md.1), which is
+ * the rule the docblock above already quoted.
+ */
+export const D2_VARIANT = "rails" as const;
 
 /**
  * The "Sıcaklık ve Yağış Grafiği" block — a new `<h3>` INSIDE the existing İklim `<h2>`
@@ -119,10 +114,10 @@ export async function ClimateSection({
 
       <ClimateChart climate={climate} provinceName={provinceName} idSuffix={plateCode} />
 
-      {/* D2 — see the D2_VARIANT docblock. The wrapper pair carries NO layout of its own
-          outside the variant rules, so the `minimal` treatment renders exactly today's
-          single-column stack. Nothing here reorders the DOM. */}
-      <div className={`${styles.detailRow} ${D2_CLASS[D2_VARIANT]}`}>
+      {/* D2 — see the D2_VARIANT docblock. `.detailRow` carries NO layout of its own below the
+          1024 px breakpoint, so narrow viewports render exactly today's single-column stack.
+          Nothing here reorders the DOM. */}
+      <div className={`${styles.detailRow} ${styles.d2Rails}`}>
         <ClimateTable climate={climate} provinceName={provinceName} />
 
         <div className={styles.detailAside}>

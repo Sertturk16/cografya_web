@@ -87,7 +87,7 @@
     "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone.",
     "sourcing": "Content is grounded in authoritative sources and passes an independent verification step before publication.",
     "dataHeading": "Map and flag sources",
-    "dataIntro": "The maps and flags on this site come from open sources. The source and licence of each is listed below.",
+    "dataIntro": "The maps and flags on this site come from external sources. Their sources and licences are listed below.",
     "dataOsm": "Provincial boundaries, lakes and reservoirs of Türkiye: OpenStreetMap — © OpenStreetMap contributors, ODbL.",
     "dataNaturalEarth": "World country boundaries: Natural Earth (public domain).",
     "dataJrcCitationIntro": "Citation for the JRC Global Surface Water dataset:",
@@ -96,7 +96,7 @@
     "dataJrcLabel": "Seasonal and salt lake outlines:",
     "dataJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
     "dataOsmOffer": "The provincial boundary layer of Türkiye is derived from OpenStreetMap; under ODbL 4.6 the derivative dataset and the script that produces it are offered in the project's open source repository: github.com/Sertturk16/cografya_web (data/tr-il-boundaries.geojson, scripts/generate-map-paths.mjs, lib/map/tr-provinces.generated.ts).",
-    "dataFlagsLabel": "Country flags:",
+    "dataFlagsLabel": "Most country flags:",
     "dataFlagsCredit": "flag-icons — Copyright (c) 2013 Panayiotis Lipiridis, MIT License"
   },
   "Turkiye": {

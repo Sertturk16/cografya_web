@@ -63,9 +63,19 @@ describe("qn.svg — the red is the SET's red, and that is the whole reason it i
   });
 
   it("says in the file itself that the colour is not an official one", () => {
-    // The claim "this is the official TRNC hex" is exactly what DEC 2026-08-08p forbids, and
-    // the next person to open this file must not have to find a decision log to learn that.
-    expect(qn).toMatch(/NOT an official TRNC hex/);
+    // The asset is served publicly at a guessable URL, so its own comment is the only account
+    // of itself a reader gets — it must not be possible to read this file and come away
+    // believing the colour is a state's published value. Matched case-insensitively and on
+    // the load-bearing phrase only: pinning one exact sentence would fail CI on a reword with
+    // no defect present.
+    expect(qn).toMatch(/not an official/i);
+  });
+
+  it("does not carry this project's internal decision identifiers", () => {
+    // Same reason, inverted. The file is a sovereignty-sensitive artifact on a public URL;
+    // it states its sources and its two product choices in outward-facing language, and
+    // internal deliberation stays in the repo and the source ledger.
+    expect(qn).not.toMatch(/DEC \d{4}-\d{2}-\d{2}/);
   });
 });
 
@@ -80,7 +90,11 @@ describe("qn.svg — hygiene for an asset loaded through <img>", () => {
   });
 
   it("stays small enough that it can never be the page's weight problem", () => {
-    // The package's own median is ~804 B and its heaviest file is 181 KB; ours is primitives.
-    expect(Buffer.byteLength(qn, "utf8")).toBeLessThan(4096);
+    // Six primitives plus a provenance comment. The bound is loose on purpose — it exists to
+    // catch a pasted raster or an inlined third-party outline, not to police the comment,
+    // which is required to be complete (an auditor must be able to re-derive the geometry
+    // from this file alone). For scale: the package's median flag is ~804 B and its heaviest
+    // is 181 KB.
+    expect(Buffer.byteLength(qn, "utf8")).toBeLessThan(8192);
   });
 });

@@ -412,12 +412,21 @@ export default async function CountryDetailPage({ params }: PageProps) {
         </dl>
       </section>
 
-      {/* Egemenlik ve Tanınma — between the two visual claims on this page (the flag inside
-          Temel Bilgiler, and the locator map's highlight below), which is the only ordering
-          that applies DEC 2026-08-08h's wording to the page flow: the reader meets the flag,
-          reads what grounds it, and only then meets the second visual. Present on the six
-          special-status rows and nowhere else; the section is ADDED, no existing section is
-          re-ordered. Plain, entity-free heading by ruling (→ DEC 2026-08-08l B1). */}
+      {/* Egemenlik ve Tanınma — after the flag and before the locator map. The reader meets
+          the one visual claim this page makes, reads what grounds it, and only then meets the
+          map. That is a reading-order argument, not a rule about the map.
+
+          The locator highlight is NOT a second visual claim, and this comment used to say it
+          was (→ DEC 2026-08-11h md.2). CONVENTIONS §5's balancing rule binds flags, emblems,
+          status badges and recognition framing; a locator highlight of a boundary the base map
+          already draws is outside it, because `/dunya` and the indexable `/en/dunya` render
+          the same six shapes to the same reader before any detail page does. The line is a NEW
+          claim, not pixels on screen. That is why `showsCountryFlag` welds the flag to the note
+          and the map is gated only on having a shape: the weld covers what the rule covers.
+
+          Present on the six special-status rows and nowhere else; the section is ADDED, no
+          existing section is re-ordered. Plain, entity-free heading by ruling
+          (→ DEC 2026-08-08l B1). */}
       {sovereigntyNote !== null && (
         <section className="section">
           <h2>{t("sovereigntyHeading")}</h2>
@@ -427,8 +436,8 @@ export default async function CountryDetailPage({ params }: PageProps) {
 
       {/* Ö1-B — the world counterpart of the province locator, in the same slot: right after
           the fact sheet, before the narrative sections. Absent (never a placeholder) if the
-          ISO code has no artifact shape; all 191 seeded codes resolve today (measured
-          2026-08-08), so this is a defence line rather than a known gap. */}
+          ISO code has no artifact shape; all 199 seeded codes resolve today (re-measured
+          2026-08-11), so this is a defence line rather than a known gap. */}
       {countryShapeD !== undefined && (
         <section className="section">
           <h2>{sectionHeading("location")}</h2>
@@ -436,7 +445,14 @@ export default async function CountryDetailPage({ params }: PageProps) {
             kind="country"
             locale={locale}
             d={countryShapeD}
-            alt={t("locationAlt", { name })}
+            // The SAME suffixed form the <h2> directly above uses. Passing the bare name
+            // rendered "Dünya haritası üzerinde Brezilya konumu" — ungrammatical, and it is
+            // the figure's aria-label, so a Turkish screen-reader user heard it on every
+            // seeded country page while the heading beside it said "Brezilya'nın Konumu".
+            // One figure must not carry two constructions.
+            alt={t("locationAlt", {
+              name: headingName(locale, name, COUNTRY_HEADING_CASE.location),
+            })}
           />
         </section>
       )}

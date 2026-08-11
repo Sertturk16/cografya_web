@@ -79,3 +79,39 @@ describe("region dot ring", () => {
     expect(dotCss.match(/#[0-9a-fA-F]{3,8}\b/g)).toBeNull();
   });
 });
+
+describe("the dot's contract is bound on BOTH sides", () => {
+  // Everything above compares one stylesheet to another. That is genuinely one-sided: rename
+  // the attribute or drop <RegionDot> from the fact sheet and every assertion here still
+  // passes, because the CSS file is untouched and still self-consistent with the game map.
+  // The feature would be gone from all 81 province pages — `.dot` declares no default
+  // background, so each would ship a colourless ringed circle — with CI green.
+  //
+  // Source-read rather than render, the same technique `lib/geo/sovereignty.test.ts` uses:
+  // vitest runs in node with no jsdom and the page is an async server component.
+  function tsxCode(url: URL): string {
+    return readFileSync(url, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+      .replace(/^[ \t]*\/\/.*$/gm, " ");
+  }
+
+  const component = tsxCode(new URL("./region-dot.tsx", import.meta.url));
+  const provincePage = tsxCode(
+    new URL("../../app/[locale]/turkiye/[slug]/page.tsx", import.meta.url),
+  );
+
+  it("emits the attribute the seven CSS rules select on", () => {
+    expect(component).toMatch(/data-region=\{region\}/);
+  });
+
+  it("stays hidden from assistive technology, since the region name is beside it as text", () => {
+    expect(component).toMatch(/aria-hidden="true"/);
+  });
+
+  it("is rendered by the province page with the api's KEY, not its localized label", () => {
+    // The page holds both in one scope and renders them side by side. `province.region` is the
+    // enum key the selectors match; the local `region` is "İç Anadolu" and matches nothing.
+    expect(provincePage).toMatch(/<RegionDot region=\{province\.region\}/);
+  });
+});

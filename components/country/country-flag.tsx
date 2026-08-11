@@ -57,7 +57,11 @@ export function CountryFlag({ isoCode, label, alt, className }: CountryFlagProps
             element, and the fixed CSS box plus the 4:3 attribute pair hold CLS at zero. */}
         <img
           className={styles.flag}
-          src={`/flags/${isoCode}.svg`}
+          // Normalised, because `hasFlag` normalises before answering. An api row carrying
+          // "tr" or " TR" would otherwise pass the gate and emit a URL that is not one of the
+          // prerendered params — which, now that the route sets `dynamicParams = false`, is a
+          // hard 404 on a country page whose own gate just said the flag exists.
+          src={`/flags/${isoCode.trim().toUpperCase()}.svg`}
           alt={alt}
           width={4}
           height={3}

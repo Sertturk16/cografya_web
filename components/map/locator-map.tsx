@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
-import { largestSubpathCenter, needsRing, shapeBounds } from "@/lib/map/shape-geometry";
+import { centerOfBounds, largestSubpathBounds, needsRing } from "@/lib/map/shape-geometry";
 import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
 import { WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
 import styles from "./locator-map.module.css";
@@ -87,12 +87,12 @@ export async function LocatorMap({ kind, locale, d, alt }: LocatorMapProps) {
   const t = await getTranslations(kind === "province" ? "Map" : "WorldMap");
 
   // A locator ring, on the country map only and only where the highlight alone cannot be
-  // found: 92 of the 199 seeded countries (46 %) are under the threshold at the shipped render
-  // width (re-measured 2026-08-08 against the live seed). The centre comes from the LARGEST
-  // subpath, never the full bbox —
-  // France's overseas departments would otherwise put its ring in the Atlantic.
-  const bounds = shapeBounds(d);
-  const ringCenter = kind === "country" && needsRing(bounds) ? largestSubpathCenter(d) : null;
+  // found. ONE box answers both halves — whether to ring, and where — and that is the point
+  // (→ DEC 2026-08-11h md.1): deciding on the full bbox while drawing on the mainland left the
+  // Netherlands, Kiribati and Fiji unringed at a few pixels each. Measured on the live seed:
+  // 101 of the 199 seeded countries (51 %) take a ring under this reading, up from 92.
+  const mainland = kind === "country" ? largestSubpathBounds(d) : null;
+  const ringCenter = mainland !== null && needsRing(mainland) ? centerOfBounds(mainland) : null;
 
   return (
     <figure className={styles.figure} data-kind={kind}>
@@ -107,9 +107,16 @@ export async function LocatorMap({ kind, locale, d, alt }: LocatorMapProps) {
           alt=""
           width={width}
           height={height}
-          // Both viewport widths put this figure below the fold (plan §4.1), so it is never an
-          // LCP candidate and lazy loading costs nothing.
-          loading="lazy"
+          // NOT lazy, and the comment that used to say "below the fold" was measured false.
+          // At 1440×900 — the width the sample gate uses — the province figure is fully in
+          // view (top 670, height 196) and the country figure shows 182 px; at 1920×1080 both
+          // are fully visible. An in-viewport `loading="lazy"` image is skipped by the preload
+          // scanner and de-prioritised, which is exactly the wrong treatment for something
+          // that can be the LCP element at ~460 × 196 CSS px. Below 900 px tall it does sit
+          // under the fold, and on mobile it is far under it (top 1298 at 390×844), so eager
+          // loading costs those readers one request for a SHARED, cached, 17–52 KB file that
+          // every other detail page then reuses. That trade is worth taking against a
+          // non-negotiable (ENGINEERING §4 #9).
           decoding="async"
         />
         <svg

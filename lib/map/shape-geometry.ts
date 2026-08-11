@@ -37,9 +37,11 @@ export interface ShapeBounds {
  * A shape whose longest side is under this many units is drawn with a locator ring, because
  * the highlight alone is not findable at the size the figure actually renders: the country
  * figure is `min(100%, 560px)` wide (plan §5.2), i.e. a scale of 0.56 CSS px per unit, so
- * 18 units ≈ 10 CSS px. Measured consequence on the real corpus (re-measured 2026-08-08
- * against the live seed): 92 of the 199 seeded countries — 46 % — take a ring. That is not a
- * defect of the threshold; it is the size distribution of the world's countries.
+ * 18 units ≈ 10 CSS px. The side measured is the LARGEST SUBPATH's, not the whole shape's
+ * (→ `needsRing`, `DEC 2026-08-11h` md.1). Measured consequence on the real corpus
+ * (re-measured 2026-08-11 against the live seed): 141 of the 240 artifact shapes and
+ * 101 of the 199 seeded countries — 51 % — take a ring. That is not a defect of the
+ * threshold; it is the size distribution of the world's countries.
  *
  * Deliberately expressed in UNITS, not pixels: the artifact's units are the only
  * render-width-independent quantity available at build time.
@@ -138,8 +140,8 @@ export function shapeBounds(d: string): ShapeBounds | null {
 }
 
 /**
- * Centre of the LARGEST subpath, not of the whole shape's bounding box — and the difference
- * is the whole point of this function.
+ * Bounds of the LARGEST subpath, not of the whole shape — and the difference is the whole
+ * point of this function.
  *
  * France's artifact shape includes its overseas departments, so its full bbox is 322.0 units
  * wide (re-measured 2026-08-08) and its centre falls in the Atlantic. The Netherlands (206.2),
@@ -151,8 +153,10 @@ export function shapeBounds(d: string): ShapeBounds | null {
  * the mainland win over a scattered island set, and the tie-break keeps the result
  * deterministic for the degenerate shapes the artifact really contains (Singapore's bbox is
  * 1 × 0 units, so its area is 0).
+ *
+ * Exported because BOTH ring questions must be answered from this one box — see `needsRing`.
  */
-export function largestSubpathCenter(d: string): ShapePoint | null {
+export function largestSubpathBounds(d: string): ShapeBounds | null {
   let best: { bounds: ShapeBounds; count: number } | null = null;
   for (const points of parseSubpaths(d)) {
     const bounds = boundsOfPoints(points);
@@ -167,19 +171,44 @@ export function largestSubpathCenter(d: string): ShapePoint | null {
       best = { bounds, count: points.length };
     }
   }
-  if (best === null) return null;
-  return {
-    x: (best.bounds.minX + best.bounds.maxX) / 2,
-    y: (best.bounds.minY + best.bounds.maxY) / 2,
-  };
+  return best?.bounds ?? null;
+}
+
+/** Centre of a box. Split out so the ring's decision and its position share one input. */
+export function centerOfBounds(bounds: ShapeBounds): ShapePoint {
+  return { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
+}
+
+/** Centre of the largest subpath, or `null` for a shape with no vertices. */
+export function largestSubpathCenter(d: string): ShapePoint | null {
+  const bounds = largestSubpathBounds(d);
+  return bounds === null ? null : centerOfBounds(bounds);
 }
 
 /**
- * Does this shape need a locator ring? `true` when its longest side is under
- * `RING_MAX_EXTENT_UNITS`. A shape with no vertices at all also returns `true`: nothing is
- * drawn, so the ring is the only thing that could still answer "where".
+ * Does this shape need a locator ring? `true` when the longest side of the box it is given is
+ * under `RING_MAX_EXTENT_UNITS`.
+ *
+ * ## Which box the caller must pass — the correction in `DEC 2026-08-11h` md.1
+ *
+ * The LARGEST SUBPATH's box, the same one the ring's centre comes from. Passing the full
+ * shape bbox is what shipped first, and it applied the letter of `DEC 2026-08-08a` md.1 while
+ * losing its purpose ("make an unfindable shape findable"): the two geometries disagree
+ * wherever territory is scattered, and the disagreement always falls the wrong way. The
+ * Netherlands renders ≈5 CSS px of mainland while its bbox spans 206.2 units because of the
+ * Caribbean municipalities; Kiribati ≈0.6 px and Fiji ≈2.6 px because crossing the date line
+ * stretches their bboxes across ~96 % of the map. All three were judged "large" and drawn with
+ * no ring at all — a locator figure whose caption names a country the reader cannot find on it.
+ *
+ * The ruling updates the recorded consequence with the rule: **141 of the 240 artifact shapes**
+ * take a ring under this reading, where the full-bbox reading gave 127. Fourteen shapes move
+ * (NL, KI, FJ, PF, FM, BS, VU, SB, TF, GS, NC, PT, GR, SH); none loses a ring.
+ *
+ * Takes a non-null box on purpose. The empty-shape case used to be documented here as
+ * "ringed, because the ring is the only thing left" — which was never true: the only call site
+ * then asked for a centre, got `null` back, and drew nothing. A promise no code kept is worse
+ * than no promise, so the caller now handles the empty shape explicitly.
  */
-export function needsRing(bounds: ShapeBounds | null): boolean {
-  if (bounds === null) return true;
+export function needsRing(bounds: ShapeBounds): boolean {
   return Math.max(bounds.width, bounds.height) < RING_MAX_EXTENT_UNITS;
 }

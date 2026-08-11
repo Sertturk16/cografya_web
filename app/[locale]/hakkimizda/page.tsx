@@ -110,6 +110,15 @@ export default async function AboutPage({ params }: PageProps) {
             as the citation: a Turkish-voice screen reader must not read it with Turkish
             phonetics (WCAG 3.1.2).
 
+            The label says MOST country flags, not all of them, and that word is doing real
+            work (→ DEC 2026-08-11h md.3). One of the 199 is not from this set: it is ours,
+            drawn because the set declined to carry it. Crediting the package for the whole
+            corpus would attribute our own work to a third party in the very section that
+            exists to get attribution right. The exception is NOT named here — "we drew the
+            KKTC flag ourselves" is a new editorial statement on a sovereignty surface and
+            needs its own review, not a footnote. Narrowing the claim removes the false
+            attribution without making a new one; the source ledger carries the full record.
+
             The heading above widened from "Harita veri kaynakları" to name flags too. It did
             NOT widen to "data and visual sources": this section still deliberately excludes
             the climate, marine and statistical sources, and a heading that promised them

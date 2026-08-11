@@ -18,7 +18,19 @@
 }
 
 /* The panel language of /turkiye: border, large radius, surface→bg wash. The reader has
-   usually just come from that map, so this reads as the same object at another scale. */
+   usually just come from that map, so this reads as the same object at another scale.
+
+   MEASURED, so it is not re-derived: `box-sizing: border-box` + `aspect-ratio` does constrain
+   the BORDER box here, so the content box is 1 px smaller on each side than the ratio implies.
+   The consequence was checked in a browser at 1440×900 rather than argued from the spec — the
+   UA sizes the overlay `<svg>` as a replaced element from its own viewBox, so base and overlay
+   land on identical boxes (458.00 × 196.47 on the province figure, 558.00 × 290.70 on the
+   country one): horizontal offset 0.015 px, scale difference 0.007 %. Co-registration holds.
+   The base image is ~1.1 px taller than the content box and its bottom edge is clipped by
+   `overflow: hidden` — that lands in empty viewBox margin BELOW the drawn credit (which ends
+   at ~191 px of 195 px) and clips the overlay by the same amount, so nothing shifts relative
+   to anything. Left as is deliberately: `content-box` would resize every figure on 280 pages
+   for no visible gain. */
 .frame {
   position: relative;
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));

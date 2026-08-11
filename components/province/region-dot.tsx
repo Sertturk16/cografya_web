@@ -1,3 +1,4 @@
+import type { GeographicRegion } from "@/lib/api/types";
 import styles from "./region-dot.module.css";
 
 /**
@@ -29,8 +30,17 @@ import styles from "./region-dot.module.css";
  */
 
 interface RegionDotProps {
-  /** The api's region key (`MARMARA`, `IC_ANADOLU`, …) — the same key space the game uses. */
-  region: string;
+  /**
+   * The api's region key (`MARMARA`, `IC_ANADOLU`, …) — the same key space the game uses.
+   *
+   * The contract union, not `string`, and the call site is why. The province page holds BOTH
+   * `province.region` (this key) and a local `region` (its localized label, e.g. "İç Anadolu")
+   * in one scope and renders them side by side, so passing the wrong one used to compile.
+   * `data-region="İç Anadolu"` matches none of the seven selectors and `.dot` declares no
+   * default background, so the failure was a transparent circle inside a ring on all 81
+   * province pages — with tsc, eslint and every assertion green.
+   */
+  region: GeographicRegion;
 }
 
 export function RegionDot({ region }: RegionDotProps) {

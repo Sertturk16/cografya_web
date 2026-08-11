@@ -87,9 +87,11 @@ export interface ResolvedFlag {
 /**
  * Resolve one ISO code to a flag asset, or `null` when neither layer has it.
  *
- * `overrides` is injectable so the resolution ORDER can be unit-tested with a synthetic map:
- * the real map is empty today, and a test that asserts "QN resolves locally" would be
- * asserting a fact about a file this phase deliberately does not create.
+ * `overrides` and `dirs` are injectable so the resolution ORDER can be unit-tested against a
+ * synthetic directory pair. That keeps the mechanism's tests from naming any country: the
+ * shipped map's one entry is a product decision, and a test that hard-codes it would fail the
+ * day the decision changes rather than the day the mechanism breaks. The shipped map is
+ * checked separately, by key, in `flag-set.test.ts`.
  */
 export function resolveFlag(
   iso: string,
@@ -120,7 +122,18 @@ let availableIsoCodes: ReadonlySet<string> | null = null;
 
 export function flagIsoCodes(): ReadonlySet<string> {
   if (availableIsoCodes !== null) return availableIsoCodes;
-  const codes = new Set<string>(Object.keys(LOCAL_FLAG_OVERRIDES));
+  const codes = new Set<string>();
+
+  // The local layer is checked against the DISK, not trusted from its keys. Seeding the set
+  // from the keys alone made every failure mode of this module asymmetric in one country's
+  // favour: a build that could not read the package emitted a corpus where KKTC was the only
+  // flagged country on earth — the exact asymmetry DEC 2026-08-08c md.2 condemned, inverted
+  // and produced silently. It also let a key with no file report `hasFlag === true`, render
+  // the card, and then 404 the asset.
+  for (const code of Object.keys(LOCAL_FLAG_OVERRIDES)) {
+    if (resolveFlag(code)?.origin === "local") codes.add(code);
+  }
+
   try {
     for (const file of readdirSync(packageFlagDir())) {
       if (!file.endsWith(".svg")) continue;
@@ -132,9 +145,15 @@ export function flagIsoCodes(): ReadonlySet<string> {
       if (!/^[a-z]{2}$/.test(code)) continue;
       codes.add(code.toUpperCase());
     }
-  } catch {
-    // A missing package is a build/environment fault, not a page fault: every flag card then
-    // takes the fail-soft path and every country page still renders.
+  } catch (error) {
+    // Warn BEFORE degrading, the way `lib/api/countries.ts` does. The result is memoised on
+    // the next line, so a transient read fault would otherwise become permanent silent loss
+    // for the process lifetime: every flag card gone from 198 country pages, green build, no
+    // console line, no recovery short of a restart.
+    console.warn(
+      `[flag-set] could not read ${packageFlagDir()} — flag cards will be missing from country pages until this process restarts:`,
+      error,
+    );
   }
   availableIsoCodes = codes;
   return availableIsoCodes;
@@ -150,4 +169,43 @@ export function readFlagSvg(iso: string): string | null {
   const resolved = resolveFlag(iso);
   if (resolved === null) return null;
   return readFileSync(resolved.path, "utf8");
+}
+
+/** File extension of the public flag URL. The param carries it — see the route's docblock. */
+export const FLAG_URL_SUFFIX = ".svg";
+
+/**
+ * Turn a `/flags/{param}` URL segment into an ISO code this repo is willing to serve, or
+ * `null`.
+ *
+ * ## This is a SECURITY boundary, not a formatting helper
+ *
+ * The segment arrives from the URL and used to reach `path.join` + `readFileSync` with no
+ * validation of any kind. `join()` collapses `../`, so a request could walk out of the flag
+ * directory and have any readable `.svg` on the box returned from this site's own origin —
+ * as active content, since SVG executes script when navigated to directly. Two accidental
+ * constraints narrowed it (the appended suffix, the upper/lower round-trip) and neither was a
+ * control; on a case-insensitive filesystem the second one does not exist at all.
+ *
+ * The allow-list was always one import away. `flagIsoCodes()` is the same Set
+ * `generateStaticParams` filters against, so consulting it here makes the served set and the
+ * prerendered set the same set by construction rather than by coincidence. It also closes what
+ * a separate review leg measured independently from the outside: `/flags/ES-CT.svg`,
+ * `/flags/GB-ENG.svg` and `/flags/EU.svg` all returned 200, none of which is a seeded country.
+ *
+ * Case folding is normalisation, not sanitisation — the membership test is what makes this
+ * safe, and it runs BEFORE anything touches the filesystem.
+ *
+ * Lives in `lib/` rather than in the route on purpose: `vitest.config.ts` collects
+ * `lib/**` and nothing under `app/`, so a guard written in the handler would be the one piece
+ * of this feature that CI could never check.
+ */
+export function flagParamToIso(param: string): string | null {
+  if (!param.endsWith(FLAG_URL_SUFFIX)) return null;
+  const code = param.slice(0, -FLAG_URL_SUFFIX.length);
+  // Shape first: two ASCII letters, nothing else. `..`, separators, encoded separators and
+  // every other traversal payload fail here before the Set is even consulted.
+  if (!/^[A-Za-z]{2}$/.test(code)) return null;
+  const iso = code.toUpperCase();
+  return flagIsoCodes().has(iso) ? iso : null;
 }

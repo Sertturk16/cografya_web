@@ -332,13 +332,12 @@
 }
 
 /* ---- D2 · trailing-content layout (UX tour D2, frames 11/13) -----------------
-   TWO VARIANTS SHIP TOGETHER FOR ONE SAMPLE ROUND; the loser is deleted before merge
-   (DEC 2026-08-05g md.1). Which one is live is chosen in climate-section.tsx by
-   `D2_VARIANT` — the docblock there explains what each treatment does and why.
+   ONE variant ships. The `minimal` alternative was deleted with its class rather than merged
+   beside this one (DEC 2026-08-05g md.1); `d2-variant.test.ts` now asserts it is absent.
 
-   `.detailRow` and `.detailAside` are deliberately UNSTYLED at base width. Below the
-   breakpoint, and under the `minimal` variant at every width, they are plain block boxes,
-   so the table and the two notices stack exactly as they do on `dev` today. */
+   `.detailRow` and `.detailAside` are deliberately UNSTYLED at base width: below the
+   breakpoint they are plain block boxes, so the table and the two notices stack exactly as
+   they do on `dev` today. */
 .detailRow {
   display: block;
 }
@@ -377,10 +376,4 @@
        binds, so nothing about their measure changes. */
     margin-top: 22px;
   }
-}
-
-/* VARIANT "minimal". One rule. The dead space shrinks by 160px and does not close;
-   in exchange nothing structural moves at any width. */
-.d2Minimal .tableScroll {
-  max-width: 720px;
 }

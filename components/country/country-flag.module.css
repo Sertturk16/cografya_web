@@ -8,9 +8,13 @@
   width: 32px;
   height: 24px;
   /* A hairline so a white-heavy flag (Japan, Poland) does not dissolve into the white card.
-     --color-border is the repo's hairline token; a flag is exempt from contrast rules, but
-     its EDGE is a graphical object like any other. */
-  border: 1px solid var(--color-border);
+     A flag is exempt from contrast rules, but its EDGE is a graphical object like any other,
+     so the boundary has to clear WCAG 1.4.11's 3:1 — and --color-border #ddd5cc measures
+     1.45:1 against the white .fact card, an order of magnitude short of what the comment
+     claimed. --color-taupe is 3.86:1 and is the token DESIGN.md §5 already sanctions for a
+     non-text boundary (--province-stroke uses it for exactly this job). The claim and the
+     value now agree; before, only one of them could be true. */
+  border: 1px solid var(--color-taupe);
   border-radius: 2px;
   /* Some files in the set are not exactly 4:3 internally; contain never crops the arms. */
   object-fit: contain;
