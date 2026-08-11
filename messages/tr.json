@@ -12,7 +12,9 @@
     "dunya": "Dünya",
     "deniz": "Deniz",
     "game": "Oyun",
-    "about": "Hakkımızda"
+    "about": "Hakkımızda",
+    "openMenu": "Menüyü aç",
+    "closeMenu": "Menüyü kapat"
   },
   "Search": {
     "label": "İl veya ülke ara",

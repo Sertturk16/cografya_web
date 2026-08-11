@@ -54,18 +54,15 @@
    ≈54.7vh at 900 and ≈49vh at 800 — and it keeps working on the 768px-tall laptops the two
    mandated sizes do not cover.
 
-   WHAT THE CONSTANT DOES NOT COVER: NARROW WIDTHS. It is a desktop-layout measurement, and
-   the honest limit is the SITE HEADER, not this rule. Measured on the running build, the
-   header is 57px while its nav fits one row, but wraps to 145px at 430px wide and 177px at
-   375px and below — so the real chrome there is ~459-541px, not 397, and no arrangement of
-   this cap makes a phone fit (buying one would mean a ~175px-tall map, which is the trade
-   the short-viewport release below explicitly rejects). Phones therefore scroll, exactly as
-   they did before this rule existed; the cap is close to inert there anyway, because at
-   those widths the `100%` term of the `min()` usually wins. Making a phone fit is the head
-   slot's and the header's problem, not the stage's. The question block itself was checked
-   and is NOT part of the risk: at every width from 320px up, in both locales, with the
-   longest answer in the pool ("Afyonkarahisar") forced into it, the head slot still renders
-   its reserved height.
+   WHAT THE CONSTANT DOES NOT COVER: NARROW WIDTHS. It is a desktop-layout measurement. The
+   mobile-header disclosure now keeps the header at ~56px from 320px upward, and the running
+   build fits `/oyun/81-il` without document scroll at 390×844. That is an observed benefit,
+   not a proof that the 408px itemization below holds for every phone: the narrow-layout head
+   slot and answer pool have not been exhaustively re-measured against it. Until they are,
+   keep the cap-release threshold conservative instead of treating phone fit as guaranteed.
+   The question block itself was checked before this header change at every width from 320px
+   up, in both locales, with the longest answer in the pool ("Afyonkarahisar") forced into it;
+   it rendered its reserved height in that measurement.
 
    WHY `svh` AND NOT `dvh`. `dvh` is the DYNAMIC viewport height: it is recomputed live as a
    mobile browser's address bar collapses and expands during scroll. Feeding that into a

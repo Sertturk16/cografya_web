@@ -1,15 +1,12 @@
-import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { brandGlyphSvg } from "@/lib/brand/glyph";
 import { siteConfig } from "@/lib/seo/site";
-import { LocaleSwitcher } from "./locale-switcher";
+import { SiteNav } from "./site-nav/site-nav";
 import { SiteSearch } from "./site-search/site-search";
 import styles from "./site-header.module.css";
 
 export async function SiteHeader({ locale }: { locale: Locale }) {
-  const t = await getTranslations("Nav");
-
   return (
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
@@ -21,31 +18,23 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
             aria-hidden="true"
             dangerouslySetInnerHTML={{ __html: brandGlyphSvg({ size: 28, radiusRatio: 0.29 }) }}
           />
-          {siteConfig.name}
+          {/* Its own element so the wordmark can be the part of the header that gives way on
+              a narrow phone: `text-overflow` needs a block container, and the row below 64rem
+              is `nowrap` so something has to shrink (review FENER-I1). The string is
+              unchanged in the HTML. */}
+          <span className={styles.brandName}>{siteConfig.name}</span>
         </Link>
-        {/* Placed between the brand and the nav ON PURPOSE. `.inner` is `flex-wrap`, so at
-            390px the brand and this 44px trigger share the FIRST row — the nav still wraps
-            to rows two and three exactly as before and the header height is unchanged. It
-            also puts search early in the tab order, ahead of six nav links. When the mobile
-            header is reworked into a hamburger, the nav items move inside it and this
-            trigger stays where it is. */}
+        {/* Placed between the brand and the nav ON PURPOSE. It puts search early in the tab
+            order, ahead of six nav links. The hamburger reworking anticipated in this
+            comment has now happened: the nav items moved inside `SiteNav`'s panel and this
+            trigger stayed exactly where it was, sharing the header's first row with the
+            brand and the menu button. */}
         <SiteSearch locale={locale} />
-        <nav aria-label={t("label")} className={styles.nav}>
-          <Link href="/">{t("home")}</Link>
-          <Link href="/turkiye">{t("turkiye")}</Link>
-          <Link href="/dunya">{t("dunya")}</Link>
-          {/* The marine hub sits with the two map hubs, not under `/turkiye`: it spans 27
-              provinces and four seas, so no single province owns it. A nav link is also
-              what keeps it from being an orphan page (`SEO-POLICY.md` §B8) — the second
-              entry point is the cross-link on `/turkiye` (owner answer S8: both). */}
-          <Link href="/deniz">{t("deniz")}</Link>
-          {/* The game is a primary surface, not a sub-page of the map hub (owner answer
-              S4, → DEC 2026-07-30c) — so it sits in the top nav, after the two map hubs
-              and before the site-info link. */}
-          <Link href="/oyun">{t("game")}</Link>
-          <Link href="/hakkimizda">{t("about")}</Link>
-        </nav>
-        <LocaleSwitcher />
+        {/* Renders the six hub links as server-side `<a href>` at every viewport; below
+            64rem a client disclosure hides or reveals that subtree. Order matters here:
+            the menu button is the last control on the first row, after the search
+            trigger. */}
+        <SiteNav />
       </div>
     </header>
   );
