@@ -66,6 +66,24 @@ function exportedFunction(source: ts.SourceFile, name: string): ts.FunctionDecla
   return declaration;
 }
 
+function containsIdentifier(root: ts.Node, name: string): boolean {
+  return (
+    descendants(root, (node): node is ts.Identifier => ts.isIdentifier(node) && node.text === name)
+      .length > 0
+  );
+}
+
+/** Stable AST identity for the adapter's deliberately tiny call allow-list. */
+function callIdentity(call: ts.CallExpression): string {
+  const callee = call.expression;
+  if (ts.isIdentifier(callee)) return `identifier:${callee.text}`;
+  if (ts.isPropertyAccessExpression(callee)) {
+    const owner = ts.isIdentifier(callee.expression) ? callee.expression.text : "*";
+    return `member:${owner}.${callee.name.text}`;
+  }
+  return `syntax:${ts.SyntaxKind[callee.kind]}`;
+}
+
 /** Every `/maps/...svg` literal the locator component ships. */
 const mapUrls = [...locator.matchAll(/"(\/maps\/[^"]+\.svg)"/g)].map((m) => m[1]!);
 
@@ -136,26 +154,76 @@ describe("flag route URL", () => {
     expect(flagAdapter).not.toMatch(/\breadFileSync\b/);
     const source = parse(flagAdapterSource, "flag-route.server.ts");
     const decision = exportedFunction(source, "flagResponseForRequest");
-    const topLevelFunctions = source.statements.filter(ts.isFunctionDeclaration);
-    expect(topLevelFunctions.map((declaration) => declaration.name?.text)).toEqual([
-      "flagResponseForRequest",
-    ]);
+    const executableStatements = source.statements.filter(
+      (statement) => !ts.isImportDeclaration(statement),
+    );
+    expect(
+      executableStatements.length,
+      "adapter module may contain imports plus only the exported response decision",
+    ).toBe(1);
+    expect(
+      executableStatements[0],
+      "adapter module's sole executable statement must be flagResponseForRequest",
+    ).toBe(decision);
+    expect(
+      decision.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword),
+      "flagResponseForRequest must remain the adapter's exported decision",
+    ).toBe(true);
 
     const gateCalls = descendants(
       decision,
       (node): node is ts.CallExpression =>
-        ts.isCallExpression(node) && node.expression.getText(source) === "loadFlagSvgForRequest",
+        ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === "loadFlagSvgForRequest",
     );
-    expect(gateCalls).toHaveLength(1);
+    expect(
+      gateCalls,
+      "adapter decision must invoke the collectible gate exactly once",
+    ).toHaveLength(1);
 
     const gateResults = descendants(
       decision,
       (node): node is ts.VariableDeclaration =>
         ts.isVariableDeclaration(node) && node.name.getText(source) === "svg",
     );
-    expect(gateResults).toHaveLength(1);
-    expect(gateResults[0]?.initializer?.getText(source)).toBe(
-      `await ${gateCalls[0]?.getText(source)}`,
+    expect(
+      gateResults,
+      "adapter decision must have one gate-result binding named svg",
+    ).toHaveLength(1);
+    const gateInitializer = gateResults[0]?.initializer;
+    expect(
+      gateInitializer !== undefined &&
+        ts.isAwaitExpression(gateInitializer) &&
+        gateInitializer.expression === gateCalls[0],
+      "svg must be initialized directly from the awaited collectible gate",
+    ).toBe(true);
+    const gateResultList = gateResults[0]?.parent;
+    expect(
+      gateResultList !== undefined &&
+        ts.isVariableDeclarationList(gateResultList) &&
+        (gateResultList.flags & ts.NodeFlags.Const) !== 0,
+      "awaited gate result must remain a const binding",
+    ).toBe(true);
+
+    type Mutation = ts.BinaryExpression | ts.PrefixUnaryExpression | ts.PostfixUnaryExpression;
+    const gateResultMutations = descendants<Mutation>(decision, (node): node is Mutation => {
+      if (ts.isBinaryExpression(node)) {
+        const operator = node.operatorToken.kind;
+        const isAssignment =
+          operator >= ts.SyntaxKind.FirstAssignment && operator <= ts.SyntaxKind.LastAssignment;
+        return isAssignment && containsIdentifier(node.left, "svg");
+      }
+      if (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) {
+        const isUpdate =
+          node.operator === ts.SyntaxKind.PlusPlusToken ||
+          node.operator === ts.SyntaxKind.MinusMinusToken;
+        return isUpdate && containsIdentifier(node.operand, "svg");
+      }
+      return false;
+    });
+    expect(gateResultMutations, "awaited gate result must never be assigned to or updated").toEqual(
+      [],
     );
 
     const injectedReaders = descendants(
@@ -172,7 +240,23 @@ describe("flag route URL", () => {
       source,
       (node): node is ts.Identifier => ts.isIdentifier(node) && node.text === "readFlagSvg",
     );
-    expect(readerReferences).toHaveLength(2);
+    expect(
+      readerReferences,
+      "adapter module may reference readFlagSvg only in its import and gated injection",
+    ).toHaveLength(2);
+
+    const calls = descendants(decision, ts.isCallExpression).map(callIdentity).sort();
+    expect(
+      calls,
+      "adapter decision call graph may contain only the gate, membership mapping and logging",
+    ).toEqual(
+      [
+        "identifier:getCountriesForFlagAuthorization",
+        "identifier:loadFlagSvgForRequest",
+        "member:*.map",
+        "member:console.warn",
+      ].sort(),
+    );
   });
 
   it("derives every SVG response body from the collectible gate result", () => {
