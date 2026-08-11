@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   boundsOfPoints,
   largestSubpathBounds,
-  largestSubpathCenter,
   largestSubpathInteriorPoint,
   locatorRingCenter,
   needsRing,
@@ -79,33 +78,6 @@ describe("boundsOfPoints / shapeBounds", () => {
   it("spans every subpath, not just the first", () => {
     const bounds = shapeBounds("M0 0l10 0 0 10ZM100 100l10 0 0 10Z");
     expect(bounds).toEqual({ minX: 0, minY: 0, maxX: 110, maxY: 110, width: 110, height: 110 });
-  });
-});
-
-describe("largestSubpathCenter", () => {
-  it("picks the centre of the largest subpath, NOT the centre of the full bounding box", () => {
-    // A big mainland plus one far-away speck — the shape of every country with overseas
-    // territory. The full-bbox centre sits between them, i.e. nowhere.
-    const d = "M0 0l100 0 0 100 -100 0ZM900 400l2 0 0 2 -2 0Z";
-    const center = largestSubpathCenter(d);
-    expect(center).toEqual({ x: 50, y: 50 });
-
-    const full = shapeBounds(d);
-    expect(full).not.toBeNull();
-    const fullBoxCenter = { x: (full!.minX + full!.maxX) / 2, y: (full!.minY + full!.maxY) / 2 };
-    expect(center).not.toEqual(fullBoxCenter);
-  });
-
-  it("breaks an area tie on vertex count, so degenerate shapes stay deterministic", () => {
-    // Two zero-area subpaths (the artifact really contains such shapes — a 1 × 0 bbox).
-    // First: (0,0) → (10,0), 2 vertices. Second: (50,50) → (60,50) → (70,50), 3 vertices.
-    // Both have area 0, so the vertex count decides and the centre is the SECOND one's.
-    const center = largestSubpathCenter("M0 0l10 0ZM50 50l10 0 10 0Z");
-    expect(center).toEqual({ x: 60, y: 50 });
-  });
-
-  it("returns null when there is nothing to centre", () => {
-    expect(largestSubpathCenter("")).toBeNull();
   });
 });
 

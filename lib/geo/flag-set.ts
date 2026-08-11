@@ -3,7 +3,8 @@ import { join } from "node:path";
 import "server-only";
 
 /**
- * ISO 3166-1 alpha-2 → flag SVG asset. Build-time only; the package never reaches the client.
+ * ISO 3166-1 alpha-2 → flag SVG asset. Server-only; the package never reaches the client.
+ * Files are read while prerendering and again on first on-demand generation after a seed.
  *
  * ## Resolution order (→ plan §7.3, DEC 2026-08-08c md.2)
  *
@@ -56,6 +57,16 @@ function packageFlagDir(): string {
     "flag-icons",
     "flags",
     "4x3",
+  );
+}
+
+/** The pinned package's own declaration of the files that make up its flag corpus. */
+function packageFlagManifestPath(): string {
+  return join(
+    /*turbopackIgnore: true*/ process.cwd(),
+    "node_modules",
+    "flag-icons",
+    "country.json",
   );
 }
 
@@ -114,18 +125,60 @@ export function resolveFlag(
 }
 
 interface FlagCatalogueSources {
-  readonly packageFiles: () => readonly string[];
+  readonly packageFiles: () => Iterable<string>;
+  readonly expectedPackageFiles: () => Iterable<string>;
   readonly localOverrideOrigin: (code: string) => FlagOrigin | null;
+}
+
+/**
+ * Read the expected 4x3 filenames from `flag-icons`' own manifest.
+ *
+ * This is deliberately package-owned structure rather than a frontend country list. A
+ * missing/malformed manifest, malformed row, duplicate path or incomplete directory is an
+ * infrastructure fault and must abort catalogue publication.
+ */
+export function expectedPackageFlagFiles(manifestJson: string): ReadonlySet<string> {
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(manifestJson);
+  } catch (error) {
+    throw new Error(`[flag-set] flag-icons country.json is not valid JSON: ${String(error)}`);
+  }
+
+  if (!Array.isArray(manifest) || manifest.length === 0) {
+    throw new Error("[flag-set] flag-icons country.json must be a non-empty array");
+  }
+
+  const expected = new Set<string>();
+  for (const [index, row] of manifest.entries()) {
+    if (typeof row !== "object" || row === null || Array.isArray(row)) {
+      throw new Error(`[flag-set] flag-icons country.json row ${index} is malformed`);
+    }
+    const flagPath = (row as { flag_4x3?: unknown }).flag_4x3;
+    if (typeof flagPath !== "string") {
+      throw new Error(`[flag-set] flag-icons country.json row ${index} has no 4x3 path`);
+    }
+    const match = /^flags\/4x3\/([a-z0-9-]+\.svg)$/.exec(flagPath);
+    const file = match?.[1];
+    if (file === undefined) {
+      throw new Error(`[flag-set] flag-icons country.json row ${index} has an invalid 4x3 path`);
+    }
+    if (expected.has(file)) {
+      throw new Error(`[flag-set] flag-icons country.json repeats ${file}`);
+    }
+    expected.add(file);
+  }
+
+  return expected;
 }
 
 /**
  * Build one complete local + package catalogue without publishing intermediate state.
  *
- * Package enumeration deliberately runs first. If it fails, no local-only Set exists even
- * briefly; if a local override is missing, the otherwise-complete package Set is discarded
- * too. All 199 seeded rows are ruled to carry a flag, so either partial result would turn an
- * infrastructure fault into a sovereignty-visible asymmetry. The caller memoises only the
- * returned Set.
+ * Package manifest parsing and enumeration deliberately run before local overrides. If either
+ * fails, or if a non-throwing listing omits any manifest-declared 4x3 file, no local-only Set
+ * exists even briefly. If a local override is missing, the otherwise-complete package Set is
+ * discarded too. The caller memoises only the returned Set.
  *
  * Sources are injectable so CI can prove the failure branch. The production source stays a
  * direct directory read; no alternate catalogue or fallback list is introduced.
@@ -133,12 +186,19 @@ interface FlagCatalogueSources {
 export function buildFlagIsoCodes(
   sources: FlagCatalogueSources = {
     packageFiles: () => readdirSync(packageFlagDir()),
+    expectedPackageFiles: () =>
+      expectedPackageFlagFiles(readFileSync(packageFlagManifestPath(), "utf8")),
     localOverrideOrigin: (code) => resolveFlag(code)?.origin ?? null,
   },
 ): ReadonlySet<string> {
   const codes = new Set<string>();
+  const expectedFiles = sources.expectedPackageFiles();
+  const listedFiles = new Set(sources.packageFiles());
 
-  for (const file of sources.packageFiles()) {
+  for (const file of expectedFiles) {
+    if (!listedFiles.has(file)) {
+      throw new Error(`[flag-set] incomplete flag-icons package: missing ${file}`);
+    }
     if (!file.endsWith(".svg")) continue;
     const code = file.slice(0, -".svg".length);
     // The set carries 14 non-ISO-3166-1 keys (four international organisations and ten
@@ -151,9 +211,7 @@ export function buildFlagIsoCodes(
 
   for (const code of Object.keys(LOCAL_FLAG_OVERRIDES)) {
     if (sources.localOverrideOrigin(code) !== "local") {
-      throw new Error(
-        `[flag-set] local override ${code} does not resolve to a readable local asset`,
-      );
+      throw new Error(`[flag-set] local override ${code} does not resolve to a local asset`);
     }
     codes.add(code);
   }
@@ -187,9 +245,13 @@ export function hasFlag(iso: string): boolean {
   return flagIsoCodes().has(iso.trim().toUpperCase());
 }
 
-/** The raw SVG bytes for one ISO code, or `null` when it has no asset. */
-export function readFlagSvg(iso: string): string | null {
-  const resolved = resolveFlag(iso);
+/** The raw SVG bytes for one ISO code, or `null` when it has no asset. Read faults throw. */
+export function readFlagSvg(
+  iso: string,
+  overrides: Readonly<Record<string, string>> = LOCAL_FLAG_OVERRIDES,
+  dirs: { local?: string; package?: string } = {},
+): string | null {
+  const resolved = resolveFlag(iso, overrides, dirs);
   if (resolved === null) return null;
   return readFileSync(resolved.path, "utf8");
 }

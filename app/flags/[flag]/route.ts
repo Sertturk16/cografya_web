@@ -1,6 +1,7 @@
-import { getCountries, getCountriesResilient } from "@/lib/api/countries";
-import { flagIsoCodes, readFlagSvg } from "@/lib/geo/flag-set";
-import { flagParamsForCountries, loadFlagSvgForRequest } from "@/lib/geo/flag-route";
+import { getCountriesResilient } from "@/lib/api/countries";
+import { flagIsoCodes } from "@/lib/geo/flag-set";
+import { flagParamsForCountries } from "@/lib/geo/flag-route";
+import { flagResponseForRequest } from "@/lib/geo/flag-route.server";
 
 /**
  * `/flags/{ISO}.svg` — one static flag asset per country, emitted at build.
@@ -32,12 +33,21 @@ import { flagParamsForCountries, loadFlagSvgForRequest } from "@/lib/geo/flag-ro
 export const dynamic = "force-static";
 
 /**
+ * Origin Full Route Cache policy. The runtime membership fetch uses this same 60-second value
+ * for the same `/api/countries` Data Cache key, including when that key was populated before a
+ * post-build seed. Response `Cache-Control` only governs downstream caches; it is not a
+ * substitute for this explicit route revalidation contract.
+ */
+// Keep this literal: Next requires route-segment config values to be statically analyzable.
+export const revalidate = 60;
+
+/**
  * On-demand rendering is required because the detail route itself supports API-offline builds
  * and post-build seeds. It is safe only because `loadFlagSvgForRequest()` gates the decoded
  * segment by shape, resolved asset and CURRENT API corpus before the sole filesystem read.
  * Unknown, traversal-shaped and package-only params therefore reach neither the reader nor a
- * persistent false catalogue. A transient runtime API outage rejects instead of becoming an
- * empty memoised corpus; Next can retain the last good static artifact.
+ * long-lived false catalogue. Transient runtime API/read faults reject instead of becoming an
+ * empty memoised corpus or 404; Next can retain the last good static artifact.
  */
 export const dynamicParams = true;
 
@@ -52,42 +62,5 @@ export async function generateStaticParams() {
 
 export async function GET(_request: Request, { params }: RouteParams): Promise<Response> {
   const { flag } = await params;
-  const svg = await loadFlagSvgForRequest(flag, {
-    availableIsoCodes: flagIsoCodes,
-    getCountryIsoCodes: async () => (await getCountries()).map((country) => country.isoCode),
-    readSvg: readFlagSvg,
-    warn: (message, error) => console.warn(message, error),
-  });
-  // Unknown/absent ISO → a real 404, never an empty 200 body (the soft-404 rule, applied to an
-  // asset route). The country page's own gate means a reader never follows such a URL.
-  if (svg === null) {
-    return new Response("Not found", {
-      status: 404,
-      // RFC 9111 lets an intermediary apply heuristic freshness to an uncached 404, so a
-      // transient one could outlive its cause at the edge. A short explicit window bounds that
-      // without disabling caching. Invalid/package-only params and a valid corpus row whose
-      // asset disappeared after catalogue construction all land here; API outages throw and
-      // therefore never become a cached false 404.
-      headers: { "Cache-Control": "public, max-age=60" },
-    });
-  }
-
-  return new Response(svg, {
-    headers: {
-      "Content-Type": "image/svg+xml; charset=utf-8",
-      // SVG is an active-content format served from our own origin, so it carries the two
-      // containment headers the app sets nowhere else yet: `nosniff` stops a
-      // content-type-confusion path, and the sandboxing CSP means that even if a hostile SVG
-      // ever reached this route it could not run script in this origin. Cheap, and it is the
-      // layer that would have capped the impact of the traversal defect this range fixes.
-      "X-Content-Type-Options": "nosniff",
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
-      // Same 7-day window as the base maps (→ DEC 2026-08-08a md.2): plain `max-age`, no
-      // content hash, because a hash would need a dynamic filename segment and the upstream
-      // set is pinned to an exact version in `package.json` (a caret range would have made
-      // this sentence false — a lockfile refresh could change the bytes behind an unchanged
-      // URL for up to a week).
-      "Cache-Control": "public, max-age=604800",
-    },
-  });
+  return flagResponseForRequest(flag);
 }

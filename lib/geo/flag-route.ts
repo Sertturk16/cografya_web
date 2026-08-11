@@ -53,7 +53,8 @@ export interface FlagRequestDependencies {
  * read. A transient API outage rejects this call and is handled by Next's normal error/cache
  * path; it is intentionally NOT converted to `[]` or memoised as a false catalogue. That
  * preserves the last good route artifact instead of teaching the process that every country
- * vanished. A read fault after admission degrades to the route's short-lived 404 response.
+ * vanished. An admitted read fault is likewise rethrown after optional logging: Next can fail
+ * the build or retain the last good ISR artifact, never persist infrastructure failure as 404.
  */
 export async function loadFlagSvgForRequest(
   param: string,
@@ -71,6 +72,6 @@ export async function loadFlagSvgForRequest(
     return dependencies.readSvg(iso);
   } catch (error) {
     dependencies.warn?.(`[flag-route] admitted flag ${iso} could not be read`, error);
-    return null;
+    throw error;
   }
 }

@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
+import { LOCATOR_DESKTOP_PRELOAD_MEDIA } from "@/lib/map/locator-preload";
 import { locatorRingCenter, type ShapeBounds } from "@/lib/map/shape-geometry";
 import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
 import { WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
@@ -79,14 +80,11 @@ const RING_RADIUS_UNITS = 14;
 /**
  * Desktop discovery without making the below-fold mobile image eager.
  *
- * The lower measured desktop case was 1440 × 722: the province locator starts 53 px inside
- * that viewport and the country locator 5 px below it. At 1440 × 900 and 1920 × 1080 the
- * locator is substantially visible. Mobile evidence puts it around y=1298 at 390 × 844.
- * These media floors therefore cover the measured desktop-LCP candidates and exclude the
- * measured mobile/off-screen layout without hydration or a client viewport branch.
+ * The page's fixed outer column starts at 1120 CSS px; the lower measured height remains
+ * 720px. This includes the visible 1120–1439px desktop band (including 1366 × 768) while
+ * excluding the below-fold 390 × 844 mobile layout. The shared pure policy is emitted as a
+ * media query without hydration or a client viewport branch.
  */
-export const LOCATOR_DESKTOP_PRELOAD_MEDIA = "(min-width: 90rem) and (min-height: 45rem)";
-
 function viewBoxBounds(viewBox: string): ShapeBounds {
   const [minX = 0, minY = 0, width = 0, height = 0] = viewBox.split(" ").map(Number);
   return { minX, minY, maxX: minX + width, maxY: minY + height, width, height };

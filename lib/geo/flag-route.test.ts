@@ -63,18 +63,22 @@ describe("on-demand flag requests", () => {
     expect(readSvg).not.toHaveBeenCalled();
   });
 
-  it("degrades an admitted runtime read fault to absence", async () => {
-    const warn = vi.fn();
-    await expect(
-      loadFlagSvgForRequest("AA.svg", {
-        availableIsoCodes: () => available,
-        getCountryIsoCodes: async () => ["AA"],
-        readSvg: () => {
-          throw new Error("EACCES");
-        },
-        warn,
-      }),
-    ).resolves.toBeNull();
-    expect(warn).toHaveBeenCalledOnce();
-  });
+  it.each(["package", "local"] as const)(
+    "warns and rethrows an admitted %s-layer read fault",
+    async (layer) => {
+      const failure = new Error(`${layer} EACCES`);
+      const warn = vi.fn();
+      await expect(
+        loadFlagSvgForRequest("AA.svg", {
+          availableIsoCodes: () => available,
+          getCountryIsoCodes: async () => ["AA"],
+          readSvg: () => {
+            throw failure;
+          },
+          warn,
+        }),
+      ).rejects.toBe(failure);
+      expect(warn).toHaveBeenCalledOnce();
+    },
+  );
 });

@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { baseMapResponse } from "@/lib/map/base-map-svg";
 
@@ -30,7 +31,40 @@ function tsxCode(url: URL): string {
 
 const locator = tsxCode(new URL("./map/locator-map.tsx", import.meta.url));
 const flagCard = tsxCode(new URL("./country/country-flag.tsx", import.meta.url));
-const flagRoute = tsxCode(new URL("../app/flags/[flag]/route.ts", import.meta.url));
+const flagRouteUrl = new URL("../app/flags/[flag]/route.ts", import.meta.url);
+const flagAdapterUrl = new URL("../lib/geo/flag-route.server.ts", import.meta.url);
+const countriesUrl = new URL("../lib/api/countries.ts", import.meta.url);
+const flagRouteSource = readFileSync(flagRouteUrl, "utf8");
+const flagAdapterSource = readFileSync(flagAdapterUrl, "utf8");
+const flagRoute = tsxCode(flagRouteUrl);
+const flagAdapter = tsxCode(flagAdapterUrl);
+const countries = tsxCode(countriesUrl);
+
+function parse(source: string, fileName: string): ts.SourceFile {
+  return ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+}
+
+function descendants<T extends ts.Node>(
+  root: ts.Node,
+  predicate: (node: ts.Node) => node is T,
+): T[] {
+  const found: T[] = [];
+  const visit = (node: ts.Node) => {
+    if (predicate(node)) found.push(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(root);
+  return found;
+}
+
+function exportedFunction(source: ts.SourceFile, name: string): ts.FunctionDeclaration {
+  const declaration = source.statements.find(
+    (statement): statement is ts.FunctionDeclaration =>
+      ts.isFunctionDeclaration(statement) && statement.name?.text === name,
+  );
+  if (declaration === undefined) throw new Error(`Missing function ${name}`);
+  return declaration;
+}
 
 /** Every `/maps/...svg` literal the locator component ships. */
 const mapUrls = [...locator.matchAll(/"(\/maps\/[^"]+\.svg)"/g)].map((m) => m[1]!);
@@ -86,15 +120,81 @@ describe("flag route URL", () => {
     expect(existsSync(new URL("../app/flags/[flag]/route.ts", import.meta.url))).toBe(true);
   });
 
-  it("binds the reopened runtime handler to the tested corpus/filesystem gate", () => {
+  it("keeps the public handler mechanically bound to the complete gated response", () => {
     expect(flagRoute).toMatch(/export const dynamicParams = true/);
-    expect(flagRoute).toMatch(/loadFlagSvgForRequest\(flag,/);
-    expect(flagRoute).not.toMatch(/readFlagSvg\(flag\)/);
+    expect(flagRoute).not.toMatch(/\breadFlagSvg\b|\breadFileSync\b/);
+
+    const source = parse(flagRouteSource, "route.ts");
+    const handler = exportedFunction(source, "GET");
+    const returns = descendants(handler, ts.isReturnStatement);
+    expect(returns).toHaveLength(1);
+    expect(returns[0]?.expression?.getText(source)).toBe("flagResponseForRequest(flag)");
+    expect(descendants(handler, ts.isCallExpression)).toHaveLength(1);
+  });
+
+  it("injects the sole byte reader only into the collectible gate", () => {
+    expect(flagAdapter).not.toMatch(/\breadFileSync\b/);
+    const source = parse(flagAdapterSource, "flag-route.server.ts");
+    const decision = exportedFunction(source, "flagResponseForRequest");
+    const gateCalls = descendants(
+      decision,
+      (node): node is ts.CallExpression =>
+        ts.isCallExpression(node) && node.expression.getText(source) === "loadFlagSvgForRequest",
+    );
+    expect(gateCalls).toHaveLength(1);
+
+    const gateResults = descendants(
+      decision,
+      (node): node is ts.VariableDeclaration =>
+        ts.isVariableDeclaration(node) && node.name.getText(source) === "svg",
+    );
+    expect(gateResults).toHaveLength(1);
+    expect(gateResults[0]?.initializer?.getText(source)).toBe(
+      `await ${gateCalls[0]?.getText(source)}`,
+    );
+
+    const injectedReaders = descendants(
+      gateCalls[0]!,
+      (node): node is ts.PropertyAssignment =>
+        ts.isPropertyAssignment(node) && node.name.getText(source) === "readSvg",
+    );
+    expect(injectedReaders).toHaveLength(1);
+    expect(injectedReaders[0]?.initializer.getText(source)).toBe("readFlagSvg");
+
+    const readerReferences = descendants(
+      decision,
+      (node): node is ts.Identifier => ts.isIdentifier(node) && node.text === "readFlagSvg",
+    );
+    expect(readerReferences).toHaveLength(1);
+  });
+
+  it("derives every SVG response body from the collectible gate result", () => {
+    const source = parse(flagAdapterSource, "flag-route.server.ts");
+    const decision = exportedFunction(source, "flagResponseForRequest");
+    const responses = descendants(
+      decision,
+      (node): node is ts.NewExpression =>
+        ts.isNewExpression(node) && node.expression.getText(source) === "Response",
+    );
+    const bodies = responses.map((response) => response.arguments?.[0]?.getText(source));
+    expect(bodies).toEqual(['"Not found"', "svg"]);
   });
 
   it("keeps the no-link flag SVG on the stricter bare sandbox", () => {
-    expect(flagRoute).toContain("default-src 'none'; style-src 'unsafe-inline'; sandbox");
-    expect(flagRoute).not.toContain("allow-popups");
+    expect(flagAdapter).toContain("default-src 'none'; style-src 'unsafe-inline'; sandbox");
+    expect(flagAdapter).not.toContain("allow-popups");
+  });
+
+  it("binds pre-seed Data Cache recovery and origin 404 recovery to the same 60 seconds", () => {
+    // Both accessors use the identical request key. The flag-specific call's shorter
+    // revalidate therefore evaluates a list cached by the ordinary accessor before a seed.
+    expect(countries.match(/apiGet<CountryListItem\[]>\("\/api\/countries"/g)).toHaveLength(2);
+    expect(countries).toMatch(
+      /getCountriesForFlagAuthorization[\s\S]*?apiGet<CountryListItem\[]>\("\/api\/countries",\s*\{\s*revalidate: 60/,
+    );
+    expect(flagRoute).toMatch(/export const revalidate = 60/);
+    expect(flagAdapter).toContain("getCountriesForFlagAuthorization()");
+    expect(flagRoute).toContain("flagResponseForRequest(flag)");
   });
 });
 

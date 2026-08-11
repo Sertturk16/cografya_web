@@ -188,12 +188,6 @@ export function centerOfBounds(bounds: ShapeBounds): ShapePoint {
   return { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
 }
 
-/** Centre of the largest subpath, or `null` for a shape with no vertices. */
-export function largestSubpathCenter(d: string): ShapePoint | null {
-  const bounds = largestSubpathBounds(d);
-  return bounds === null ? null : centerOfBounds(bounds);
-}
-
 /** True for an interior point or a point on the polygon boundary. */
 export function pointInPolygon(point: ShapePoint, polygon: readonly ShapePoint[]): boolean {
   let inside = false;

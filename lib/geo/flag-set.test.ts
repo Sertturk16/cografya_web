@@ -1,14 +1,16 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
   buildFlagIsoCodes,
+  expectedPackageFlagFiles,
   flagIsoCodes,
   flagParamToIso,
   hasFlag,
   LOCAL_FLAG_OVERRIDES,
   memoizeFlagCatalogue,
+  readFlagSvg,
   resolveFlag,
 } from "./flag-set";
 
@@ -92,10 +94,59 @@ describe("the shipped override map", () => {
 });
 
 describe("atomic flag catalogue", () => {
+  it("traces the package manifest alongside both consumers' complete asset roots", () => {
+    const config = readFileSync(new URL("../../next.config.ts", import.meta.url), "utf8");
+    expect(config.match(/node_modules\/flag-icons\/country\.json/g)).toHaveLength(2);
+    expect(config.match(/node_modules\/flag-icons\/flags\/4x3\/\*\*/g)).toHaveLength(2);
+    expect(config.match(/assets\/flags\/\*\*/g)).toHaveLength(2);
+  });
+
+  it("derives the complete package contract from synthetic manifest paths", () => {
+    expect(
+      expectedPackageFlagFiles(
+        JSON.stringify([
+          { flag_4x3: "flags/4x3/aa.svg" },
+          { flag_4x3: "flags/4x3/synthetic-region.svg" },
+        ]),
+      ),
+    ).toEqual(new Set(["aa.svg", "synthetic-region.svg"]));
+  });
+
+  it.each([
+    ["invalid JSON", "{"],
+    ["non-array root", JSON.stringify({ flag_4x3: "flags/4x3/aa.svg" })],
+    ["malformed row", JSON.stringify([null])],
+    ["missing path", JSON.stringify([{}])],
+    ["path outside 4x3", JSON.stringify([{ flag_4x3: "../aa.svg" }])],
+    [
+      "duplicate path",
+      JSON.stringify([{ flag_4x3: "flags/4x3/aa.svg" }, { flag_4x3: "flags/4x3/aa.svg" }]),
+    ],
+  ])("rejects a %s manifest without publishing a catalogue", (_case, manifest) => {
+    expect(() => expectedPackageFlagFiles(manifest)).toThrow(/flag-icons country\.json/);
+  });
+
+  it("publishes neither layer when the package manifest read fails", () => {
+    const packageFiles = vi.fn(() => ["aa.svg"]);
+    const localOverrideOrigin = vi.fn(() => "local" as const);
+    expect(() =>
+      buildFlagIsoCodes({
+        expectedPackageFiles: () => {
+          throw new Error("ENOENT country.json");
+        },
+        packageFiles,
+        localOverrideOrigin,
+      }),
+    ).toThrow(/ENOENT country\.json/);
+    expect(packageFiles).not.toHaveBeenCalled();
+    expect(localOverrideOrigin).not.toHaveBeenCalled();
+  });
+
   it("publishes neither layer when package enumeration fails", () => {
     const localOverrideOrigin = vi.fn(() => "local" as const);
     expect(() =>
       buildFlagIsoCodes({
+        expectedPackageFiles: () => ["aa.svg"],
         packageFiles: () => {
           throw new Error("EACCES");
         },
@@ -103,6 +154,28 @@ describe("atomic flag catalogue", () => {
       }),
     ).toThrow(/EACCES/);
     expect(localOverrideOrigin).not.toHaveBeenCalled();
+  });
+
+  it("rejects a successful but partial package listing before consulting local overrides", () => {
+    const localOverrideOrigin = vi.fn(() => "local" as const);
+    expect(() =>
+      buildFlagIsoCodes({
+        expectedPackageFiles: () => ["aa.svg", "bb.svg"],
+        packageFiles: () => ["aa.svg"],
+        localOverrideOrigin,
+      }),
+    ).toThrow(/incomplete flag-icons package: missing bb\.svg/);
+    expect(localOverrideOrigin).not.toHaveBeenCalled();
+  });
+
+  it("rejects a complete package listing when any local override is unavailable", () => {
+    expect(() =>
+      buildFlagIsoCodes({
+        expectedPackageFiles: () => ["aa.svg"],
+        packageFiles: () => ["aa.svg"],
+        localOverrideOrigin: () => "package",
+      }),
+    ).toThrow(/local override/);
   });
 
   it("does not memoise a failed load and retries the whole transaction", () => {
@@ -117,6 +190,19 @@ describe("atomic flag catalogue", () => {
     expect([...load()]).toEqual(["AA", "BB"]);
     expect(load()).toBe(load());
     expect(attempts).toBe(2);
+  });
+});
+
+describe("final flag byte read", () => {
+  it.each(["local", "package"] as const)("propagates an admitted %s-layer read fault", (layer) => {
+    const local = tempDirWith({});
+    const pkg = tempDirWith({});
+    const code = layer === "local" ? "XX" : "YY";
+    const file = `${code.toLowerCase()}.svg`;
+    mkdirSync(join(layer === "local" ? local : pkg, file));
+
+    const overrides = layer === "local" ? { [code]: file } : {};
+    expect(() => readFlagSvg(code, overrides, { local, package: pkg })).toThrow();
   });
 });
 

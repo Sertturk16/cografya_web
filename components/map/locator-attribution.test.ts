@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { LOCATOR_DESKTOP_PRELOAD_MEDIA, shouldPreloadLocator } from "@/lib/map/locator-preload";
 
 /**
  * The PAGE-LEVEL half of the ODbL obligation.
@@ -49,12 +50,25 @@ describe("LocatorMap carries its own credit", () => {
     expect(locator).toMatch(/height=\{bounds\.height\}/);
   });
 
-  it("keeps the mobile image lazy and preloads only the measured desktop viewport", () => {
+  it("keeps the image natively lazy and emits the shared server-side preload query", () => {
     expect(locator).toMatch(/loading="lazy"/);
     expect(locator).toMatch(/rel="preload"/);
     expect(locator).toMatch(/as="image"/);
-    expect(locator).toContain("(min-width: 90rem) and (min-height: 45rem)");
     expect(locator).toMatch(/media=\{LOCATOR_DESKTOP_PRELOAD_MEDIA\}/);
+    expect(locator).not.toMatch(/["']use client["']/);
+    expect(LOCATOR_DESKTOP_PRELOAD_MEDIA).toBe("(min-width: 70rem) and (min-height: 45rem)");
+  });
+
+  it.each([
+    [390, 844, false],
+    [1120, 720, true],
+    [1120, 768, true],
+    [1366, 768, true],
+    [1440, 900, true],
+    [1119, 900, false],
+    [1366, 719, false],
+  ])("classifies %d × %d preload eligibility as %s", (width, height, expected) => {
+    expect(shouldPreloadLocator(width, height)).toBe(expected);
   });
 
   it("names the composite once for assistive tech and hides both children", () => {
