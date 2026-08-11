@@ -1,5 +1,6 @@
-import { getCountriesResilient } from "@/lib/api/countries";
-import { FLAG_URL_SUFFIX, flagIsoCodes, flagParamToIso, readFlagSvg } from "@/lib/geo/flag-set";
+import { getCountries, getCountriesResilient } from "@/lib/api/countries";
+import { flagIsoCodes, readFlagSvg } from "@/lib/geo/flag-set";
+import { flagParamsForCountries, loadFlagSvgForRequest } from "@/lib/geo/flag-route";
 
 /**
  * `/flags/{ISO}.svg` — one static flag asset per country, emitted at build.
@@ -23,28 +24,22 @@ import { FLAG_URL_SUFFIX, flagIsoCodes, flagParamToIso, readFlagSvg } from "@/li
  * rewriting this URL into a locale. So the extension moves into the parameter VALUE: the
  * segment is `[flag]` and the value is `TR.svg`. The public URL is unchanged.
  *
- * `force-static` + `generateStaticParams` prerenders every seeded country's flag at build, so
- * the package is read at BUILD time only and no binary is committed.
+ * `force-static` + `generateStaticParams` prerenders the build-time corpus. When the API is
+ * unavailable at build, or learns a country after the build, this route may render that flag
+ * on demand — but only after the runtime API corpus and the atomic asset catalogue both
+ * authorize it. No binary is committed.
  */
 export const dynamic = "force-static";
 
 /**
- * No on-demand rendering: a param outside `generateStaticParams` is a 404, decided by the
- * router before this module runs.
- *
- * This is the second half of the traversal fix, and it is not redundant with the validation in
- * `flagParamToIso` — the two bound different things. That gate bounds the FILESYSTEM READ to
- * the flag directories, which is the security property; it cannot know which countries this
- * site actually has pages for without an api call on every asset request. This export bounds
- * the SERVED URL SET to the seeded corpus, which is what makes `/flags/EU.svg` a 404 even
- * though the package carries `eu.svg` and the string gate accepts it. `force-static` alone does NOT close the runtime path — the prerender
- * manifest records `"fallback": null` for this route, and Next's app-route template only throws
- * `NoFallbackError` when `fallback === false`, so with the default `dynamicParams = true` an
- * unlisted param still reached the handler and was rendered on demand. Belt and braces on a
- * boundary that serves files from disk: one guard makes the wrong request unreachable, the
- * other makes it harmless if it ever becomes reachable again.
+ * On-demand rendering is required because the detail route itself supports API-offline builds
+ * and post-build seeds. It is safe only because `loadFlagSvgForRequest()` gates the decoded
+ * segment by shape, resolved asset and CURRENT API corpus before the sole filesystem read.
+ * Unknown, traversal-shaped and package-only params therefore reach neither the reader nor a
+ * persistent false catalogue. A transient runtime API outage rejects instead of becoming an
+ * empty memoised corpus; Next can retain the last good static artifact.
  */
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 interface RouteParams {
   params: Promise<{ flag: string }>;
@@ -52,23 +47,17 @@ interface RouteParams {
 
 export async function generateStaticParams() {
   const countries = await getCountriesResilient();
-  const available = flagIsoCodes();
-  // Only the seeded rows that actually HAVE an asset. Emitting the package's other ~80 files
-  // would ship flags for entities with no page, and emitting a seeded row with no asset would
-  // produce a 404 the fail-soft card is already designed never to reach.
-  return countries
-    .map((country) => country.isoCode)
-    .filter((iso) => available.has(iso))
-    .map((iso) => ({ flag: `${iso}${FLAG_URL_SUFFIX}` }));
+  return flagParamsForCountries(countries, flagIsoCodes());
 }
 
 export async function GET(_request: Request, { params }: RouteParams): Promise<Response> {
   const { flag } = await params;
-  // Validate BEFORE touching the filesystem. `flagParamToIso` is the allow-list gate and it
-  // lives in `lib/` so CI can actually test it; see its docblock for why an unvalidated param
-  // here was a path-traversal read primitive rather than a formatting bug.
-  const iso = flagParamToIso(flag);
-  const svg = iso === null ? null : readFlagSvg(iso);
+  const svg = await loadFlagSvgForRequest(flag, {
+    availableIsoCodes: flagIsoCodes,
+    getCountryIsoCodes: async () => (await getCountries()).map((country) => country.isoCode),
+    readSvg: readFlagSvg,
+    warn: (message, error) => console.warn(message, error),
+  });
   // Unknown/absent ISO → a real 404, never an empty 200 body (the soft-404 rule, applied to an
   // asset route). The country page's own gate means a reader never follows such a URL.
   if (svg === null) {
@@ -76,11 +65,9 @@ export async function GET(_request: Request, { params }: RouteParams): Promise<R
       status: 404,
       // RFC 9111 lets an intermediary apply heuristic freshness to an uncached 404, so a
       // transient one could outlive its cause at the edge. A short explicit window bounds that
-      // without disabling caching. Verified against a running server: with
-      // `dynamicParams = false` the ROUTER now answers most bad URLs before this handler runs
-      // (and sends its own no-store), so what is left for this branch is the narrow case of a
-      // prerendered param whose file has gone missing at runtime — which is exactly the
-      // transient the window is for.
+      // without disabling caching. Invalid/package-only params and a valid corpus row whose
+      // asset disappeared after catalogue construction all land here; API outages throw and
+      // therefore never become a cached false 404.
       headers: { "Cache-Control": "public, max-age=60" },
     });
   }

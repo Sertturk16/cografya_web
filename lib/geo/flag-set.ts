@@ -70,8 +70,8 @@ function localFlagDir(): string {
  * The key is the UPPERCASE ISO code the api uses; the value is the file name under
  * `assets/flags/`, lower-cased to match the package's own naming so the two layers read the
  * same way on disk. `lib/geo/flag-set.test.ts` pins that every key here resolves to a file
- * that actually exists: `flagIsoCodes()` trusts this map without a `stat`, so a key with no
- * file would let the card render and then 404 the asset.
+ * that actually exists, and catalogue construction refuses to publish any layer unless the
+ * package enumeration and every local override both succeed.
  */
 export const LOCAL_FLAG_OVERRIDES: Readonly<Record<string, string>> = { QN: "qn.svg" };
 
@@ -113,50 +113,73 @@ export function resolveFlag(
   return null;
 }
 
-/**
- * The set of ISO codes that have SOME flag asset — one directory read per process, so the
- * country page's "does this row get a flag card" check is a `Set` lookup rather than a `stat`
- * on every render.
- */
-let availableIsoCodes: ReadonlySet<string> | null = null;
+interface FlagCatalogueSources {
+  readonly packageFiles: () => readonly string[];
+  readonly localOverrideOrigin: (code: string) => FlagOrigin | null;
+}
 
-export function flagIsoCodes(): ReadonlySet<string> {
-  if (availableIsoCodes !== null) return availableIsoCodes;
+/**
+ * Build one complete local + package catalogue without publishing intermediate state.
+ *
+ * Package enumeration deliberately runs first. If it fails, no local-only Set exists even
+ * briefly; if a local override is missing, the otherwise-complete package Set is discarded
+ * too. All 199 seeded rows are ruled to carry a flag, so either partial result would turn an
+ * infrastructure fault into a sovereignty-visible asymmetry. The caller memoises only the
+ * returned Set.
+ *
+ * Sources are injectable so CI can prove the failure branch. The production source stays a
+ * direct directory read; no alternate catalogue or fallback list is introduced.
+ */
+export function buildFlagIsoCodes(
+  sources: FlagCatalogueSources = {
+    packageFiles: () => readdirSync(packageFlagDir()),
+    localOverrideOrigin: (code) => resolveFlag(code)?.origin ?? null,
+  },
+): ReadonlySet<string> {
   const codes = new Set<string>();
 
-  // The local layer is checked against the DISK, not trusted from its keys. Seeding the set
-  // from the keys alone made every failure mode of this module asymmetric in one country's
-  // favour: a build that could not read the package emitted a corpus where KKTC was the only
-  // flagged country on earth — the exact asymmetry DEC 2026-08-08c md.2 condemned, inverted
-  // and produced silently. It also let a key with no file report `hasFlag === true`, render
-  // the card, and then 404 the asset.
-  for (const code of Object.keys(LOCAL_FLAG_OVERRIDES)) {
-    if (resolveFlag(code)?.origin === "local") codes.add(code);
+  for (const file of sources.packageFiles()) {
+    if (!file.endsWith(".svg")) continue;
+    const code = file.slice(0, -".svg".length);
+    // The set carries 14 non-ISO-3166-1 keys (four international organisations and ten
+    // sub-national/dependent entries such as `gb-eng`, `es-ct`, `sh-ac`). They can never
+    // match an api `isoCode`, but filtering them out here keeps the exported set honest
+    // about what it is: a map of ISO alpha-2 codes.
+    if (!/^[a-z]{2}$/.test(code)) continue;
+    codes.add(code.toUpperCase());
   }
 
-  try {
-    for (const file of readdirSync(packageFlagDir())) {
-      if (!file.endsWith(".svg")) continue;
-      const code = file.slice(0, -".svg".length);
-      // The set carries 14 non-ISO-3166-1 keys (four international organisations and ten
-      // sub-national/dependent entries such as `gb-eng`, `es-ct`, `sh-ac`). They can never
-      // match an api `isoCode`, but filtering them out here keeps the exported set honest
-      // about what it is: a map of ISO alpha-2 codes.
-      if (!/^[a-z]{2}$/.test(code)) continue;
-      codes.add(code.toUpperCase());
+  for (const code of Object.keys(LOCAL_FLAG_OVERRIDES)) {
+    if (sources.localOverrideOrigin(code) !== "local") {
+      throw new Error(
+        `[flag-set] local override ${code} does not resolve to a readable local asset`,
+      );
     }
-  } catch (error) {
-    // Warn BEFORE degrading, the way `lib/api/countries.ts` does. The result is memoised on
-    // the next line, so a transient read fault would otherwise become permanent silent loss
-    // for the process lifetime: every flag card gone from 198 country pages, green build, no
-    // console line, no recovery short of a restart.
-    console.warn(
-      `[flag-set] could not read ${packageFlagDir()} — flag cards will be missing from country pages until this process restarts:`,
-      error,
-    );
+    codes.add(code);
   }
-  availableIsoCodes = codes;
-  return availableIsoCodes;
+
+  return codes;
+}
+
+/** Memoise only successful loads; a thrown load is retried rather than frozen as absence. */
+export function memoizeFlagCatalogue(load: () => ReadonlySet<string>): () => ReadonlySet<string> {
+  let memo: ReadonlySet<string> | null = null;
+  return () => {
+    if (memo !== null) return memo;
+    const complete = load();
+    memo = complete;
+    return complete;
+  };
+}
+
+/**
+ * The set of ISO codes that have SOME flag asset — one complete directory read per process,
+ * so the country page's gate is a Set lookup rather than a stat on every render.
+ */
+const loadAvailableIsoCodes = memoizeFlagCatalogue(buildFlagIsoCodes);
+
+export function flagIsoCodes(): ReadonlySet<string> {
+  return loadAvailableIsoCodes();
 }
 
 /** Does this ISO code have a flag asset? Drives the fail-soft gate on the country page. */
@@ -187,10 +210,10 @@ export const FLAG_URL_SUFFIX = ".svg";
  * constraints narrowed it (the appended suffix, the upper/lower round-trip) and neither was a
  * control; on a case-insensitive filesystem the second one does not exist at all.
  *
- * The allow-list was always one import away. `flagIsoCodes()` is the same Set
- * `generateStaticParams` filters against, so consulting it here makes the served set and the
- * prerendered set the same set by construction rather than by coincidence. It also closes what
- * a separate review leg measured independently from the outside: `/flags/ES-CT.svg`,
+ * The asset allow-list was always one import away. Consulting it here bounds the filesystem
+ * read to resolved local/package files; `lib/geo/flag-route.ts` then intersects this Set with
+ * the current API corpus to decide which of those assets is public. The two gates close what a
+ * separate review leg measured independently from the outside: `/flags/ES-CT.svg`,
  * `/flags/GB-ENG.svg` and `/flags/EU.svg` all returned 200, none of which is a seeded country.
  *
  * Case folding is normalisation, not sanitisation — the membership test is what makes this
@@ -200,12 +223,15 @@ export const FLAG_URL_SUFFIX = ".svg";
  * `lib/**` and nothing under `app/`, so a guard written in the handler would be the one piece
  * of this feature that CI could never check.
  */
-export function flagParamToIso(param: string): string | null {
+export function flagParamToIso(
+  param: string,
+  available: ReadonlySet<string> = flagIsoCodes(),
+): string | null {
   if (!param.endsWith(FLAG_URL_SUFFIX)) return null;
   const code = param.slice(0, -FLAG_URL_SUFFIX.length);
   // Shape first: two ASCII letters, nothing else. `..`, separators, encoded separators and
   // every other traversal payload fail here before the Set is even consulted.
   if (!/^[A-Za-z]{2}$/.test(code)) return null;
   const iso = code.toUpperCase();
-  return flagIsoCodes().has(iso) ? iso : null;
+  return available.has(iso) ? iso : null;
 }

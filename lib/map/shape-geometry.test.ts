@@ -1,16 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   boundsOfPoints,
-  centerOfBounds,
   largestSubpathBounds,
   largestSubpathCenter,
+  largestSubpathInteriorPoint,
+  locatorRingCenter,
   needsRing,
   parseSubpaths,
+  pointInPolygon,
   RING_MAX_EXTENT_UNITS,
   shapeBounds,
 } from "./shape-geometry";
 import { PROVINCE_SHAPES } from "./tr-provinces.generated";
-import { COUNTRY_SHAPES } from "./world-countries.generated";
+import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "./world-countries.generated";
 
 /**
  * Structural + invariant tests for the locator map's geometry (CONVENTIONS §2: structure,
@@ -107,6 +109,27 @@ describe("largestSubpathCenter", () => {
   });
 });
 
+describe("largestSubpathInteriorPoint", () => {
+  it("chooses land inside a synthetic concave mainland, not its empty bbox centre", () => {
+    const concave = "M0 0L10 0L10 10L8 10L8 2L2 2L2 10L0 10ZM100 100L101 100L101 101Z";
+    const point = largestSubpathInteriorPoint(concave);
+    const mainland = parseSubpaths(concave)[0]!;
+
+    expect(point).not.toEqual({ x: 5, y: 5 });
+    expect(point).not.toBeNull();
+    expect(pointInPolygon(point!, mainland)).toBe(true);
+  });
+
+  it("keeps a complete ring inside the viewBox at either horizontal edge", () => {
+    const viewBox = { minX: 0, minY: 0, maxX: 1000, maxY: 521, width: 1000, height: 521 };
+    const right = locatorRingCenter("M990 100L998 100L998 108L990 108Z", viewBox, 14);
+    const left = locatorRingCenter("M2 100L10 100L10 108L2 108Z", viewBox, 14);
+
+    expect(right).toEqual({ x: 986, y: 104 });
+    expect(left).toEqual({ x: 14, y: 104 });
+  });
+});
+
 describe("needsRing", () => {
   it("rings a shape strictly under the threshold and not one at it", () => {
     const box = (size: number) => ({
@@ -128,6 +151,10 @@ describe("needsRing", () => {
 });
 
 describe("the committed artifacts", () => {
+  const [minX = 0, minY = 0, width = 0, height = 0] = WORLD_MAP_VIEWBOX.split(" ").map(Number);
+  const worldBounds = { minX, minY, maxX: minX + width, maxY: minY + height, width, height };
+  const ringRadius = 14;
+
   it("parses every Türkiye province shape", () => {
     for (const shape of PROVINCE_SHAPES) {
       expect(() => parseSubpaths(shape.d), shape.plateCode).not.toThrow();
@@ -142,40 +169,20 @@ describe("the committed artifacts", () => {
     }
   });
 
-  it("places every ring centre inside the piece it was measured on", () => {
-    // NOT "inside the shape's full bounding box". That earlier claim was advertised as "the
-    // invariant that would have caught the France bug" and it cannot be: the centre of the
-    // largest subpath is inside the FULL bbox by construction, so the assertion passed for
-    // France before the fix and after it. It could never fail, which is another way of saying
-    // it tested nothing (→ DEC 2026-08-11h md.1, side note).
-    //
-    // What is asserted instead is the property the ring actually needs: the centre lands on
-    // the piece whose size decided the ring, so a ring can never sit on water between two
-    // territories. This one CAN fail — it fails for any implementation that measures one
-    // geometry and positions on another, which is exactly the defect this range fixes.
+  it("keeps every rendered country ring fully inside the world viewBox", () => {
     for (const shape of COUNTRY_SHAPES) {
       const mainland = largestSubpathBounds(shape.d);
       expect(mainland, shape.iso).not.toBeNull();
-      const center = centerOfBounds(mainland!);
-      expect(center.x, shape.iso).toBeGreaterThanOrEqual(mainland!.minX);
-      expect(center.x, shape.iso).toBeLessThanOrEqual(mainland!.maxX);
-      expect(center.y, shape.iso).toBeGreaterThanOrEqual(mainland!.minY);
-      expect(center.y, shape.iso).toBeLessThanOrEqual(mainland!.maxY);
-    }
-  });
-
-  it("rings the scattered-territory shapes the full-bbox reading judged large", () => {
-    // The concrete consequence of DEC 2026-08-11h md.1, pinned by BEHAVIOUR rather than by a
-    // count: these three are the ruling's own worked examples. Their full bounding boxes span
-    // most of the map (Caribbean municipalities; the date line) while the piece a reader
-    // actually sees is 0.6–5.0 CSS px at the shipped 560 px width. Asserting the pair — full
-    // box says "large", mainland says "ring" — is what would break if the decision geometry
-    // ever drifted back, and it names no total that a seed change could invalidate.
-    for (const iso of ["NL", "KI", "FJ"]) {
-      const shape = COUNTRY_SHAPES.find((s) => s.iso === iso);
-      expect(shape, iso).toBeDefined();
-      expect(needsRing(shapeBounds(shape!.d)!), `${iso} full bbox`).toBe(false);
-      expect(needsRing(largestSubpathBounds(shape!.d)!), `${iso} mainland`).toBe(true);
+      const center = locatorRingCenter(shape.d, worldBounds, ringRadius);
+      if (!needsRing(mainland!)) {
+        expect(center, shape.iso).toBeNull();
+        continue;
+      }
+      expect(center, shape.iso).not.toBeNull();
+      expect(center!.x - ringRadius, shape.iso).toBeGreaterThanOrEqual(worldBounds.minX);
+      expect(center!.x + ringRadius, shape.iso).toBeLessThanOrEqual(worldBounds.maxX);
+      expect(center!.y - ringRadius, shape.iso).toBeGreaterThanOrEqual(worldBounds.minY);
+      expect(center!.y + ringRadius, shape.iso).toBeLessThanOrEqual(worldBounds.maxY);
     }
   });
 });

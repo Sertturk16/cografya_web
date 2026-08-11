@@ -8,9 +8,9 @@ import trMessages from "@/messages/tr.json";
  * this package added.
  *
  * The gate is the point: a country row with no asset must render NOTHING — not an empty
- * `<img>`, not a placeholder, not a broken-image icon. Today exactly one seeded row takes
- * that path (`QN`), and that asymmetry is a surfaced owner decision, not something a test
- * should freeze in place — so this file asserts the MECHANISM and never the membership.
+ * `<img>`, not a placeholder, not a broken-image icon. No seeded row takes that path today:
+ * the package-backed set plus the local override cover all 199. The test still asserts the
+ * MECHANISM rather than freezing current membership.
  *
  * Source-read rather than render, for the repo's usual reason: vitest runs in node with no
  * jsdom and the call sites are async server components. Comments are stripped first so the

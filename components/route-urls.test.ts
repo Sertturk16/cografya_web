@@ -30,6 +30,7 @@ function tsxCode(url: URL): string {
 
 const locator = tsxCode(new URL("./map/locator-map.tsx", import.meta.url));
 const flagCard = tsxCode(new URL("./country/country-flag.tsx", import.meta.url));
+const flagRoute = tsxCode(new URL("../app/flags/[flag]/route.ts", import.meta.url));
 
 /** Every `/maps/...svg` literal the locator component ships. */
 const mapUrls = [...locator.matchAll(/"(\/maps\/[^"]+\.svg)"/g)].map((m) => m[1]!);
@@ -62,18 +63,38 @@ describe("map route URLs", () => {
       expect(url).toMatch(/\.en\.svg$/);
     }
   });
+
+  it.each([
+    ["/maps/tr-provinces.svg", 'buildTrBaseMapSvg("tr")'],
+    ["/maps/tr-provinces.en.svg", 'buildTrBaseMapSvg("en")'],
+    ["/maps/world-countries.svg", 'buildWorldBaseMapSvg("tr")'],
+    ["/maps/world-countries.en.svg", 'buildWorldBaseMapSvg("en")'],
+  ])("maps %s to the intended builder kind and locale", (url, call) => {
+    const route = readFileSync(new URL(`../app${url}/route.ts`, import.meta.url), "utf8");
+    expect(route).toContain(call);
+  });
 });
 
 describe("flag route URL", () => {
   it("builds its src from the /flags/{ISO}.svg template the route serves", () => {
-    // The route's param carries the extension (see its docblock), and `dynamicParams = false`
-    // now means a URL outside `generateStaticParams` is a hard 404 rather than an on-demand
-    // render — so the case and the suffix are load-bearing, not cosmetic.
+    // The route's param carries the extension (see its docblock), and the handler's runtime
+    // corpus gate consumes this normalized value — so the case and suffix are load-bearing.
     expect(flagCard).toMatch(/src=\{`\/flags\/\$\{isoCode\.trim\(\)\.toUpperCase\(\)\}\.svg`\}/);
   });
 
   it("has the dynamic route directory behind it", () => {
     expect(existsSync(new URL("../app/flags/[flag]/route.ts", import.meta.url))).toBe(true);
+  });
+
+  it("binds the reopened runtime handler to the tested corpus/filesystem gate", () => {
+    expect(flagRoute).toMatch(/export const dynamicParams = true/);
+    expect(flagRoute).toMatch(/loadFlagSvgForRequest\(flag,/);
+    expect(flagRoute).not.toMatch(/readFlagSvg\(flag\)/);
+  });
+
+  it("keeps the no-link flag SVG on the stricter bare sandbox", () => {
+    expect(flagRoute).toContain("default-src 'none'; style-src 'unsafe-inline'; sandbox");
+    expect(flagRoute).not.toContain("allow-popups");
   });
 });
 

@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
-import { centerOfBounds, largestSubpathBounds, needsRing } from "@/lib/map/shape-geometry";
+import { locatorRingCenter, type ShapeBounds } from "@/lib/map/shape-geometry";
 import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
 import { WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
 import styles from "./locator-map.module.css";
@@ -76,72 +76,76 @@ const BASE_MAP = {
 /** Ring radius in viewBox units — comfortably larger than the threshold it marks. */
 const RING_RADIUS_UNITS = 14;
 
-function viewBoxSize(viewBox: string): { width: number; height: number } {
-  const [, , width, height] = viewBox.split(" ").map(Number);
-  return { width: width ?? 0, height: height ?? 0 };
+/**
+ * Desktop discovery without making the below-fold mobile image eager.
+ *
+ * The lower measured desktop case was 1440 × 722: the province locator starts 53 px inside
+ * that viewport and the country locator 5 px below it. At 1440 × 900 and 1920 × 1080 the
+ * locator is substantially visible. Mobile evidence puts it around y=1298 at 390 × 844.
+ * These media floors therefore cover the measured desktop-LCP candidates and exclude the
+ * measured mobile/off-screen layout without hydration or a client viewport branch.
+ */
+export const LOCATOR_DESKTOP_PRELOAD_MEDIA = "(min-width: 90rem) and (min-height: 45rem)";
+
+function viewBoxBounds(viewBox: string): ShapeBounds {
+  const [minX = 0, minY = 0, width = 0, height = 0] = viewBox.split(" ").map(Number);
+  return { minX, minY, maxX: minX + width, maxY: minY + height, width, height };
 }
 
 export async function LocatorMap({ kind, locale, d, alt }: LocatorMapProps) {
   const map = BASE_MAP[kind];
-  const { width, height } = viewBoxSize(map.viewBox);
+  const bounds = viewBoxBounds(map.viewBox);
   const t = await getTranslations(kind === "province" ? "Map" : "WorldMap");
 
   // A locator ring, on the country map only and only where the highlight alone cannot be
-  // found. ONE box answers both halves — whether to ring, and where — and that is the point
-  // (→ DEC 2026-08-11h md.1): deciding on the full bbox while drawing on the mainland left the
-  // Netherlands, Kiribati and Fiji unringed at a few pixels each. Measured on the live seed:
-  // 101 of the 199 seeded countries (51 %) take a ring under this reading, up from 92.
-  const mainland = kind === "country" ? largestSubpathBounds(d) : null;
-  const ringCenter = mainland !== null && needsRing(mainland) ? centerOfBounds(mainland) : null;
+  // found. The largest land piece answers both halves: its bounds decide whether to ring, and
+  // a scan-line interior point positions the marker. Radius-aware clamping keeps the complete
+  // circle visible at the date-line edge. Measured on the live seed: 101 of 199 countries
+  // (51 %) take a ring under this reading, up from 92.
+  const ringCenter = kind === "country" ? locatorRingCenter(d, bounds, RING_RADIUS_UNITS) : null;
 
   return (
-    <figure className={styles.figure} data-kind={kind}>
-      <div className={styles.frame} role="img" aria-label={alt}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- ENGINEERING.md §4 #9
-            exception (→ DEC 2026-08-08a md.3): next/image cannot optimise SVG, and the CLS
-            guarantee it exists to provide is held here by the explicit width/height plus the
-            fixed aspect-ratio box on .frame. */}
-        <img
-          className={styles.base}
-          src={map.src[locale]}
-          alt=""
-          width={width}
-          height={height}
-          // NOT lazy, and the comment that used to say "below the fold" was measured false.
-          // At 1440×900 — the width the sample gate uses — the province figure is fully in
-          // view (top 670, height 196) and the country figure shows 182 px; at 1920×1080 both
-          // are fully visible. An in-viewport `loading="lazy"` image is skipped by the preload
-          // scanner and de-prioritised, which is exactly the wrong treatment for something
-          // that can be the LCP element at ~460 × 196 CSS px. Below 900 px tall it does sit
-          // under the fold, and on mobile it is far under it (top 1298 at 390×844), so eager
-          // loading costs those readers one request for a SHARED, cached, 17–52 KB file that
-          // every other detail page then reuses. That trade is worth taking against a
-          // non-negotiable (ENGINEERING §4 #9).
-          decoding="async"
-        />
-        <svg
-          className={styles.overlay}
-          viewBox={map.viewBox}
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-          focusable="false"
-        >
-          {/* `evenodd` matters on the world artifact (enclave holes are extra subpaths) and is
-              a no-op on the Türkiye one, so it is set unconditionally rather than branched. */}
-          <path className={styles.highlight} d={d} fillRule="evenodd" />
-          {ringCenter !== null && (
-            <circle
-              className={styles.ring}
-              cx={ringCenter.x}
-              cy={ringCenter.y}
-              r={RING_RADIUS_UNITS}
-            />
-          )}
-        </svg>
-      </div>
-      {/* ODbL / Natural Earth credit. Visible without interaction, and it survives the image
-          failing to load — which is the half of the obligation the drawn text cannot cover. */}
-      <figcaption className={styles.credit}>{t("attribution")}</figcaption>
-    </figure>
+    <>
+      <link rel="preload" as="image" href={map.src[locale]} media={LOCATOR_DESKTOP_PRELOAD_MEDIA} />
+      <figure className={styles.figure} data-kind={kind}>
+        <div className={styles.frame} role="img" aria-label={alt}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- ENGINEERING.md §4 #9
+              exception (→ DEC 2026-08-08a md.3): next/image cannot optimise SVG, and the CLS
+              guarantee it exists to provide is held here by the explicit width/height plus the
+              fixed aspect-ratio box on .frame. */}
+          <img
+            className={styles.base}
+            src={map.src[locale]}
+            alt=""
+            width={bounds.width}
+            height={bounds.height}
+            loading="lazy"
+            decoding="async"
+          />
+          <svg
+            className={styles.overlay}
+            viewBox={map.viewBox}
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            focusable="false"
+          >
+            {/* `evenodd` matters on the world artifact (enclave holes are extra subpaths) and is
+                a no-op on the Türkiye one, so it is set unconditionally rather than branched. */}
+            <path className={styles.highlight} d={d} fillRule="evenodd" />
+            {ringCenter !== null && (
+              <circle
+                className={styles.ring}
+                cx={ringCenter.x}
+                cy={ringCenter.y}
+                r={RING_RADIUS_UNITS}
+              />
+            )}
+          </svg>
+        </div>
+        {/* ODbL / Natural Earth credit. Visible without interaction, and it survives the image
+            failing to load — which is the half of the obligation the drawn text cannot cover. */}
+        <figcaption className={styles.credit}>{t("attribution")}</figcaption>
+      </figure>
+    </>
   );
 }

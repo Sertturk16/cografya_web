@@ -145,33 +145,42 @@ export function shapeBounds(d: string): ShapeBounds | null {
  *
  * France's artifact shape includes its overseas departments, so its full bbox is 322.0 units
  * wide (re-measured 2026-08-08) and its centre falls in the Atlantic. The Netherlands (206.2),
- * the United States (870.0) and Russia (794.9) have the same shape. A locator ring drawn at a
- * full-bbox centre would point at open ocean on exactly the countries a reader is most likely
- * to look up.
+ * the United States (870.0) and Russia (794.9) have the same shape. Measuring the largest
+ * piece keeps the decision local; `largestSubpathInteriorPoint()` then chooses actual land
+ * inside that piece rather than assuming its box centre is inside a concave polygon.
  *
  * "Largest" is by bounding-box AREA, with vertex count as the tie-break: area is what makes
  * the mainland win over a scattered island set, and the tie-break keeps the result
  * deterministic for the degenerate shapes the artifact really contains (Singapore's bbox is
  * 1 × 0 units, so its area is 0).
  *
- * Exported because BOTH ring questions must be answered from this one box — see `needsRing`.
+ * Exported because the ring threshold is defined on this box — see `needsRing`.
  */
-export function largestSubpathBounds(d: string): ShapeBounds | null {
-  let best: { bounds: ShapeBounds; count: number } | null = null;
+interface SubpathGeometry {
+  readonly points: readonly ShapePoint[];
+  readonly bounds: ShapeBounds;
+}
+
+function largestSubpathGeometry(d: string): SubpathGeometry | null {
+  let best: SubpathGeometry | null = null;
   for (const points of parseSubpaths(d)) {
     const bounds = boundsOfPoints(points);
     if (bounds === null) continue;
     const area = bounds.width * bounds.height;
     if (best === null) {
-      best = { bounds, count: points.length };
+      best = { bounds, points };
       continue;
     }
     const bestArea = best.bounds.width * best.bounds.height;
-    if (area > bestArea || (area === bestArea && points.length > best.count)) {
-      best = { bounds, count: points.length };
+    if (area > bestArea || (area === bestArea && points.length > best.points.length)) {
+      best = { bounds, points };
     }
   }
-  return best?.bounds ?? null;
+  return best;
+}
+
+export function largestSubpathBounds(d: string): ShapeBounds | null {
+  return largestSubpathGeometry(d)?.bounds ?? null;
 }
 
 /** Centre of a box. Split out so the ring's decision and its position share one input. */
@@ -183,6 +192,88 @@ export function centerOfBounds(bounds: ShapeBounds): ShapePoint {
 export function largestSubpathCenter(d: string): ShapePoint | null {
   const bounds = largestSubpathBounds(d);
   return bounds === null ? null : centerOfBounds(bounds);
+}
+
+/** True for an interior point or a point on the polygon boundary. */
+export function pointInPolygon(point: ShapePoint, polygon: readonly ShapePoint[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const a = polygon[i];
+    const b = polygon[j];
+    if (a === undefined || b === undefined) continue;
+
+    const cross = (point.y - a.y) * (b.x - a.x) - (point.x - a.x) * (b.y - a.y);
+    const onSegment =
+      Math.abs(cross) < 1e-9 &&
+      point.x >= Math.min(a.x, b.x) &&
+      point.x <= Math.max(a.x, b.x) &&
+      point.y >= Math.min(a.y, b.y) &&
+      point.y <= Math.max(a.y, b.y);
+    if (onSegment) return true;
+
+    if (a.y > point.y !== b.y > point.y) {
+      const crossingX = ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x;
+      if (point.x < crossingX) inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/**
+ * Find a real interior point of the largest land piece, not merely the centre of its box.
+ *
+ * The box centre is kept when it is inside. For a concave piece whose centre falls in a bay
+ * or notch, a horizontal scan line yields inside intervals and the widest interval's midpoint
+ * becomes the marker. Degenerate line-like artifact pieces fall back to the box centre.
+ */
+export function largestSubpathInteriorPoint(d: string): ShapePoint | null {
+  const geometry = largestSubpathGeometry(d);
+  if (geometry === null) return null;
+  const boxCenter = centerOfBounds(geometry.bounds);
+  if (pointInPolygon(boxCenter, geometry.points)) return boxCenter;
+
+  const y = boxCenter.y + Math.max(geometry.bounds.height, 1) * 1e-7;
+  const intersections: number[] = [];
+  for (let i = 0, j = geometry.points.length - 1; i < geometry.points.length; j = i++) {
+    const a = geometry.points[i];
+    const b = geometry.points[j];
+    if (a === undefined || b === undefined || a.y > y === b.y > y) continue;
+    intersections.push(((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x);
+  }
+  intersections.sort((a, b) => a - b);
+
+  let widest: ShapePoint | null = null;
+  let widestWidth = -1;
+  for (let i = 0; i + 1 < intersections.length; i += 2) {
+    const left = intersections[i];
+    const right = intersections[i + 1];
+    if (left === undefined || right === undefined || right - left <= widestWidth) continue;
+    widestWidth = right - left;
+    widest = { x: (left + right) / 2, y };
+  }
+  return widest ?? boxCenter;
+}
+
+/**
+ * The production ring decision and position, including radius-aware viewBox containment.
+ *
+ * An interior point near the date-line edge is clamped by at most one radius so the complete
+ * circle stays visible. The original land remains inside that circle; only the marker centre
+ * moves, which is preferable to clipping half the locator at the SVG boundary.
+ */
+export function locatorRingCenter(
+  d: string,
+  viewBox: ShapeBounds,
+  radius: number,
+): ShapePoint | null {
+  const mainland = largestSubpathBounds(d);
+  if (mainland === null || !needsRing(mainland)) return null;
+  const interior = largestSubpathInteriorPoint(d);
+  if (interior === null) return null;
+  return {
+    x: Math.min(Math.max(interior.x, viewBox.minX + radius), viewBox.maxX - radius),
+    y: Math.min(Math.max(interior.y, viewBox.minY + radius), viewBox.maxY - radius),
+  };
 }
 
 /**

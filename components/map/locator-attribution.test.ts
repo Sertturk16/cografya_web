@@ -38,27 +38,23 @@ describe("LocatorMap carries its own credit", () => {
 
   it("reads that string itself instead of accepting it as a prop", () => {
     // If the caller supplied it, an edit at ONE of two call sites could drop the credit from
-    // 81 or 191 pages without touching this file. Reading it here makes the chip travel with
+    // 81 or 199 pages without touching this file. Reading it here makes the chip travel with
     // the figure by construction.
     expect(locator).toMatch(/getTranslations\(\s*kind === "province" \? "Map" : "WorldMap"\s*\)/);
     expect(locator).not.toMatch(/\battribution\s*[:?]/);
   });
 
   it("keeps the base map an <img> with explicit dimensions (the CLS half of the §4 #9 exception)", () => {
-    expect(locator).toMatch(/width=\{width\}/);
-    expect(locator).toMatch(/height=\{height\}/);
+    expect(locator).toMatch(/width=\{bounds\.width\}/);
+    expect(locator).toMatch(/height=\{bounds\.height\}/);
   });
 
-  it("does NOT lazy-load the base map, which measurement showed is above the fold", () => {
-    // This assertion used to require `loading="lazy"`, on the component's stated ground that
-    // the figure sits below the fold at both sample widths. Measured in Chrome, that is false:
-    // at 1440×900 the province figure is fully visible (top 670, height 196) and the country
-    // figure shows 182 px. An in-viewport lazy image is skipped by the preload scanner and
-    // de-prioritised — the wrong treatment for something that can be the LCP element at
-    // ~460 × 196 CSS px, against a non-negotiable budget (ENGINEERING §4 #9).
-    //
-    // The flag card keeps its own `loading="lazy"` and should: 32 × 24 px can never be LCP.
-    expect(locator).not.toMatch(/loading="lazy"/);
+  it("keeps the mobile image lazy and preloads only the measured desktop viewport", () => {
+    expect(locator).toMatch(/loading="lazy"/);
+    expect(locator).toMatch(/rel="preload"/);
+    expect(locator).toMatch(/as="image"/);
+    expect(locator).toContain("(min-width: 90rem) and (min-height: 45rem)");
+    expect(locator).toMatch(/media=\{LOCATOR_DESKTOP_PRELOAD_MEDIA\}/);
   });
 
   it("names the composite once for assistive tech and hides both children", () => {

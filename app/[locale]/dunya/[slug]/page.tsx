@@ -49,7 +49,7 @@ function nameForLocale(country: CountryDetail | CountryListItem, locale: Locale)
 /**
  * ISO 3166-1 alpha-2 → the country's own outline, for the locator mini-map.
  *
- * The artifact carries 240 shapes; 49 of them have no seeded page (Natural Earth backdrop
+ * The artifact carries 240 shapes; 41 of them have no seeded page (Natural Earth backdrop
  * entities). Only the ONE shape this page needs reaches the HTML — the shared world
  * silhouette is a separate cached file (`/maps/world-countries.svg`). Built once at module
  * scope, not searched per render.

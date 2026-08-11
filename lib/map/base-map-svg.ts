@@ -199,10 +199,13 @@ export function baseMapResponse(svg: string): Response {
   return new Response(svg, {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      // Same containment pair as the flag route: SVG is active content served from our own
-      // origin, so it is sandboxed and never content-sniffed.
+      // The document itself stays sandboxed and never content-sniffed. Türkiye's drawn credit
+      // is a fixed, escaped OSM URL with target=_blank; allow only that user-activated popup
+      // and let the trusted destination escape the inherited crippled sandbox. The stricter
+      // flag response has no links and deliberately keeps a bare sandbox.
       "X-Content-Type-Options": "nosniff",
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+      "Content-Security-Policy":
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox allow-popups allow-popups-to-escape-sandbox",
       "Cache-Control": "public, max-age=604800",
     },
   });

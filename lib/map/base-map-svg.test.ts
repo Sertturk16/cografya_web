@@ -2,7 +2,12 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
-import { BASE_MAP_TOKEN_PINS, buildTrBaseMapSvg, buildWorldBaseMapSvg } from "./base-map-svg";
+import {
+  BASE_MAP_TOKEN_PINS,
+  baseMapResponse,
+  buildTrBaseMapSvg,
+  buildWorldBaseMapSvg,
+} from "./base-map-svg";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "./tr-provinces.generated";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "./world-countries.generated";
 
@@ -50,6 +55,15 @@ describe("buildTrBaseMapSvg", () => {
     expect(drawn, "the credit must be a <text> node wrapped in an <a>").not.toBeNull();
     expect(drawn?.[1]).toBe(trMessages.Map.attribution);
     expect(svg).toContain("https://www.openstreetmap.org/copyright");
+  });
+
+  it("keeps the standalone _blank credit compatible with the response sandbox", () => {
+    const svg = buildTrBaseMapSvg("tr");
+    const policy = baseMapResponse(svg).headers.get("Content-Security-Policy") ?? "";
+
+    expect(svg).toMatch(/<a [^>]*target="_blank"[^>]*>/);
+    expect(policy).toContain("sandbox allow-popups allow-popups-to-escape-sandbox");
+    expect(policy).toContain("default-src 'none'");
   });
 
   it("draws the EN credit on the EN file — the reason four routes exist", () => {

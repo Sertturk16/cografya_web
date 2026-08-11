@@ -58,9 +58,8 @@ export function CountryFlag({ isoCode, label, alt, className }: CountryFlagProps
         <img
           className={styles.flag}
           // Normalised, because `hasFlag` normalises before answering. An api row carrying
-          // "tr" or " TR" would otherwise pass the gate and emit a URL that is not one of the
-          // prerendered params — which, now that the route sets `dynamicParams = false`, is a
-          // hard 404 on a country page whose own gate just said the flag exists.
+          // "tr" or " TR" would otherwise pass the page gate but miss the runtime route's
+          // normalized API-corpus membership check.
           src={`/flags/${isoCode.trim().toUpperCase()}.svg`}
           alt={alt}
           width={4}
