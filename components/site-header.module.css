@@ -9,9 +9,34 @@
 .inner {
   display: flex;
   align-items: center;
-  gap: 16px;
+  /* `nowrap` is what MAKES the single-row header true below 64rem, rather than something the
+     measurements happened to allow. The first row carries the brand link (229.5px at its
+     natural width), the search trigger (34px) and the menu button (28px); with the 10px gap
+     that is 311.5px, and `.container` hands the row `viewport − 40px` (its 20px inline
+     padding on each side, `globals.css`). So the row only fits WHOLE at ≥351.5px. Between
+     320px and 351.5px the previous `wrap` sent the menu button to a second line and the
+     header became 93.7px — and `--header-height` is consumed by three anchor offsets AND the
+     game's viewport math, so the token would have been lying by 37.7px on the WCAG 1.4.10
+     reference width (PR #56 review FENER-I1/CR56-I2).
+
+     With `nowrap` the row cannot break; the brand shrinks and its wordmark ellipsises
+     instead, which degrades legibly for a name of any length in either locale rather than
+     depending on today's placeholder brand fitting. The gap now sets only how early that
+     truncation starts: 10px at 351.5px, 16px at 363.5px. **320px and 360px are both REQUIRED
+     test viewports for this header** — a solution that fits at 390px can still break at 360,
+     and one that fits at 360 can still break at 320. */
+  gap: 10px;
   padding-block: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+@media (min-width: 64rem) {
+  .inner {
+    /* The desktop header is restored byte-for-byte: `wrap` back on (the inline nav does its
+       own item-level wrapping inside it) and the original gap. */
+    gap: 16px;
+    flex-wrap: wrap;
+  }
 }
 
 .brand {
@@ -23,6 +48,11 @@
   font-size: 1.2rem;
   color: var(--color-primary-dark);
   text-decoration: none;
+  /* The one flex item on the header's first row that is ALLOWED to shrink. A flex item's
+     default `min-width: auto` refuses to go below its content, which under `nowrap` would
+     overflow the row instead of fitting it; the two icon controls beside it keep that default
+     (plus their own `min-width`) and stay whole. */
+  min-width: 0;
 }
 
 .glyph {
@@ -33,33 +63,27 @@
   width: 28px;
   height: 28px;
   line-height: 0;
+  /* Never part of what shrinks: the glyph is the brand's last legible remnant at 320px. */
+  flex: none;
 }
 
-.nav {
-  /* The nav must wrap as WHOLE ITEMS, never inside a label. Without `flex-wrap` the row
-     cannot break, so the items shrink below their content width and a two-word link
-     ("Ana Sayfa") splits across two lines — visible at ≤ ~390 px in TR once the list grew
-     to five items (PR #26 review i1). `row-gap` keeps the second row legible; the item gap
-     stays 18px. */
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  row-gap: 8px;
-  margin-left: auto;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.nav a {
-  color: var(--color-slate);
-  text-decoration: none;
-  /* A nav label is one unit: it moves to the next row intact rather than breaking mid-label. */
+.brandName {
+  /* The shrinking half of the brand. It needs its own element because `text-overflow` acts on
+     a block container, and the wordmark was a bare text child of an inline-flex box. Below
+     ~351.5px the name first scales toward 0.95rem, then truncates with an ellipsis only when
+     that smaller wordmark still cannot fit. The text itself is untouched in the HTML — this
+     is presentation, not content. */
+  min-width: 0;
+  font-size: clamp(0.95rem, 4.5vw, 1.2rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.nav a:hover {
-  color: var(--color-primary);
-}
+/* `.nav` moved to `components/site-nav/site-nav.module.css` with the markup it styles: the
+   nav list now lives inside the disclosure, which owns both its inline desktop form and its
+   stacked panel form. The locale switcher below stays here — it travels into the panel as a
+   sibling of the nav but is otherwise unchanged at every viewport. */
 
 .localeSwitcher {
   display: flex;
