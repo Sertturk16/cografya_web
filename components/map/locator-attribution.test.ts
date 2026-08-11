@@ -47,7 +47,18 @@ describe("LocatorMap carries its own credit", () => {
   it("keeps the base map an <img> with explicit dimensions (the CLS half of the §4 #9 exception)", () => {
     expect(locator).toMatch(/width=\{width\}/);
     expect(locator).toMatch(/height=\{height\}/);
-    expect(locator).toMatch(/loading="lazy"/);
+  });
+
+  it("does NOT lazy-load the base map, which measurement showed is above the fold", () => {
+    // This assertion used to require `loading="lazy"`, on the component's stated ground that
+    // the figure sits below the fold at both sample widths. Measured in Chrome, that is false:
+    // at 1440×900 the province figure is fully visible (top 670, height 196) and the country
+    // figure shows 182 px. An in-viewport lazy image is skipped by the preload scanner and
+    // de-prioritised — the wrong treatment for something that can be the LCP element at
+    // ~460 × 196 CSS px, against a non-negotiable budget (ENGINEERING §4 #9).
+    //
+    // The flag card keeps its own `loading="lazy"` and should: 32 × 24 px can never be LCP.
+    expect(locator).not.toMatch(/loading="lazy"/);
   });
 
   it("names the composite once for assistive tech and hides both children", () => {
