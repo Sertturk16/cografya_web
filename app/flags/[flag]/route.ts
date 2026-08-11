@@ -33,7 +33,11 @@ export const dynamic = "force-static";
  * router before this module runs.
  *
  * This is the second half of the traversal fix, and it is not redundant with the validation in
- * `flagParamToIso`. `force-static` alone does NOT close the runtime path — the prerender
+ * `flagParamToIso` — the two bound different things. That gate bounds the FILESYSTEM READ to
+ * the flag directories, which is the security property; it cannot know which countries this
+ * site actually has pages for without an api call on every asset request. This export bounds
+ * the SERVED URL SET to the seeded corpus, which is what makes `/flags/EU.svg` a 404 even
+ * though the package carries `eu.svg` and the string gate accepts it. `force-static` alone does NOT close the runtime path — the prerender
  * manifest records `"fallback": null` for this route, and Next's app-route template only throws
  * `NoFallbackError` when `fallback === false`, so with the default `dynamicParams = true` an
  * unlisted param still reached the handler and was rendered on demand. Belt and braces on a
