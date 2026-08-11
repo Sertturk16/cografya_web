@@ -136,6 +136,11 @@ describe("flag route URL", () => {
     expect(flagAdapter).not.toMatch(/\breadFileSync\b/);
     const source = parse(flagAdapterSource, "flag-route.server.ts");
     const decision = exportedFunction(source, "flagResponseForRequest");
+    const topLevelFunctions = source.statements.filter(ts.isFunctionDeclaration);
+    expect(topLevelFunctions.map((declaration) => declaration.name?.text)).toEqual([
+      "flagResponseForRequest",
+    ]);
+
     const gateCalls = descendants(
       decision,
       (node): node is ts.CallExpression =>
@@ -161,23 +166,37 @@ describe("flag route URL", () => {
     expect(injectedReaders).toHaveLength(1);
     expect(injectedReaders[0]?.initializer.getText(source)).toBe("readFlagSvg");
 
+    // Module-wide: exactly the import identifier plus the one gated injection. A sibling
+    // helper cannot gain a second reader reference while this assertion stays green.
     const readerReferences = descendants(
-      decision,
+      source,
       (node): node is ts.Identifier => ts.isIdentifier(node) && node.text === "readFlagSvg",
     );
-    expect(readerReferences).toHaveLength(1);
+    expect(readerReferences).toHaveLength(2);
   });
 
   it("derives every SVG response body from the collectible gate result", () => {
     const source = parse(flagAdapterSource, "flag-route.server.ts");
     const decision = exportedFunction(source, "flagResponseForRequest");
+    // Module-wide: a sibling helper cannot construct an extra response outside the decision
+    // subtree. The decision itself may return only its two locally constructed responses.
     const responses = descendants(
-      decision,
+      source,
       (node): node is ts.NewExpression =>
         ts.isNewExpression(node) && node.expression.getText(source) === "Response",
     );
     const bodies = responses.map((response) => response.arguments?.[0]?.getText(source));
     expect(bodies).toEqual(['"Not found"', "svg"]);
+
+    const returns = descendants(decision, ts.isReturnStatement);
+    expect(returns).toHaveLength(2);
+    for (const statement of returns) {
+      const expression = statement.expression;
+      if (expression === undefined || !ts.isNewExpression(expression)) {
+        throw new Error("flagResponseForRequest may return only a locally constructed Response");
+      }
+      expect(expression.expression.getText(source)).toBe("Response");
+    }
   });
 
   it("keeps the no-link flag SVG on the stricter bare sandbox", () => {

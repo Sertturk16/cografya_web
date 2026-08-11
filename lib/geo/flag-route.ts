@@ -41,7 +41,7 @@ export interface FlagRequestDependencies {
   readonly availableIsoCodes: () => ReadonlySet<string>;
   /** Runtime API corpus; failures must reject, never become a memoised empty Set. */
   readonly getCountryIsoCodes: () => Promise<readonly string[]>;
-  /** The only filesystem read, reached after every gate. */
+  /** The only filesystem read, reached after every gate; post-admission `null` is an error. */
   readonly readSvg: (iso: string) => string | null;
   readonly warn?: (message: string, error: unknown) => void;
 }
@@ -69,7 +69,11 @@ export async function loadFlagSvgForRequest(
   if (!servedFlagIsoCodes(countries, available).has(iso)) return null;
 
   try {
-    return dependencies.readSvg(iso);
+    const svg = dependencies.readSvg(iso);
+    if (svg === null) {
+      throw new Error(`[flag-route] admitted flag reader returned null for ${iso}`);
+    }
+    return svg;
   } catch (error) {
     dependencies.warn?.(`[flag-route] admitted flag ${iso} could not be read`, error);
     throw error;

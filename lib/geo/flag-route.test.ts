@@ -63,6 +63,19 @@ describe("on-demand flag requests", () => {
     expect(readSvg).not.toHaveBeenCalled();
   });
 
+  it("warns and rejects when an admitted reader returns null", async () => {
+    const warn = vi.fn();
+    await expect(
+      loadFlagSvgForRequest("AA.svg", {
+        availableIsoCodes: () => available,
+        getCountryIsoCodes: async () => ["AA"],
+        readSvg: () => null,
+        warn,
+      }),
+    ).rejects.toThrow(/admitted flag reader returned null/);
+    expect(warn).toHaveBeenCalledOnce();
+  });
+
   it.each(["package", "local"] as const)(
     "warns and rethrows an admitted %s-layer read fault",
     async (layer) => {
