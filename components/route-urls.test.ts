@@ -84,6 +84,66 @@ function callIdentity(call: ts.CallExpression): string {
   return `syntax:${ts.SyntaxKind[callee.kind]}`;
 }
 
+/** Normalize module/imported/local binding identity without relying on source formatting. */
+function importIdentities(source: ts.SourceFile): string[] {
+  const identities: string[] = [];
+  for (const statement of source.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) {
+      continue;
+    }
+    const moduleName = statement.moduleSpecifier.text;
+    const clause = statement.importClause;
+    if (clause === undefined) {
+      identities.push(`side-effect:${moduleName}`);
+      continue;
+    }
+    const clauseKind = clause.isTypeOnly ? "type" : "value";
+    if (clause.name !== undefined) {
+      identities.push(`${clauseKind}:${moduleName}:default->${clause.name.text}`);
+    }
+    const bindings = clause.namedBindings;
+    if (bindings === undefined) continue;
+    if (ts.isNamespaceImport(bindings)) {
+      identities.push(`${clauseKind}:${moduleName}:*->${bindings.name.text}`);
+      continue;
+    }
+    for (const element of bindings.elements) {
+      const kind = clause.isTypeOnly || element.isTypeOnly ? "type" : "value";
+      const imported = element.propertyName?.text ?? element.name.text;
+      identities.push(`${kind}:${moduleName}:${imported}->${element.name.text}`);
+    }
+  }
+  return identities.sort();
+}
+
+function bindingNames(name: ts.BindingName): string[] {
+  if (ts.isIdentifier(name)) return [name.text];
+  return name.elements.flatMap((element) =>
+    ts.isOmittedExpression(element) ? [] : bindingNames(element.name),
+  );
+}
+
+/** Value-space bindings that can shadow an imported guard or the platform Response. */
+function declaredValueBindings(root: ts.Node): string[] {
+  const names: string[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isVariableDeclaration(node) || ts.isParameter(node)) {
+      names.push(...bindingNames(node.name));
+    } else if (
+      ts.isFunctionDeclaration(node) ||
+      ts.isFunctionExpression(node) ||
+      ts.isClassDeclaration(node) ||
+      ts.isClassExpression(node) ||
+      ts.isEnumDeclaration(node)
+    ) {
+      if (node.name !== undefined) names.push(node.name.text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(root);
+  return names;
+}
+
 /** Every `/maps/...svg` literal the locator component ships. */
 const mapUrls = [...locator.matchAll(/"(\/maps\/[^"]+\.svg)"/g)].map((m) => m[1]!);
 
@@ -154,6 +214,19 @@ describe("flag route URL", () => {
     expect(flagAdapter).not.toMatch(/\breadFileSync\b/);
     const source = parse(flagAdapterSource, "flag-route.server.ts");
     const decision = exportedFunction(source, "flagResponseForRequest");
+    expect(
+      importIdentities(source),
+      "adapter guards must retain their exact value imports and server-only side effect",
+    ).toEqual(
+      [
+        "side-effect:server-only",
+        "value:./flag-route:loadFlagSvgForRequest->loadFlagSvgForRequest",
+        "value:./flag-set:flagIsoCodes->flagIsoCodes",
+        "value:./flag-set:readFlagSvg->readFlagSvg",
+        "value:@/lib/api/countries:getCountriesForFlagAuthorization->getCountriesForFlagAuthorization",
+      ].sort(),
+    );
+
     const executableStatements = source.statements.filter(
       (statement) => !ts.isImportDeclaration(statement),
     );
@@ -169,6 +242,21 @@ describe("flag route URL", () => {
       decision.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword),
       "flagResponseForRequest must remain the adapter's exported decision",
     ).toBe(true);
+
+    const guardedBindings = new Set([
+      "Response",
+      "flagIsoCodes",
+      "getCountriesForFlagAuthorization",
+      "loadFlagSvgForRequest",
+      "readFlagSvg",
+    ]);
+    const shadowedBindings = declaredValueBindings(decision).filter((name) =>
+      guardedBindings.has(name),
+    );
+    expect(
+      shadowedBindings,
+      "adapter decision must not shadow imported guards or the platform Response binding",
+    ).toEqual([]);
 
     const gateCalls = descendants(
       decision,
