@@ -314,7 +314,7 @@ which of them, and when (→ DEC 2026-08-07a).
 
 | Rol      | Okur                                                                                               | Ne zaman                                                                                                                                        | Tanım dosyası                                                                        | Anchor               |
 | -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------- |
-| **Vera** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every visible UI change, before the component is written — in addition to, never instead of, the rendered-sample obligation in the header above | `.claude/agents/cografya-frontend-dev.md` `.codex/agents/cografya_frontend_dev.toml` | `READ-DESIGN-VISUAL` |
+| **Vera** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every visible UI change, before the component is written — in addition to, never instead of, the rendered-sample obligation in the header above | `.claude/agents/cografya-frontend-dev.md` `.codex/agents/cografya-frontend-dev.toml` | `READ-DESIGN-VISUAL` |
 
 <!-- /read-contract -->
 
