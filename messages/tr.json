@@ -86,8 +86,8 @@
     "heading": "Hakkımızda",
     "body1": "Coğrafya Platformu, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir.",
     "sourcing": "İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer.",
-    "dataHeading": "Harita veri kaynakları",
-    "dataIntro": "Sitedeki haritalar açık veri kümelerinden üretiliyor. Her katmanın kaynağı ve lisansı aşağıda.",
+    "dataHeading": "Harita ve bayrak kaynakları",
+    "dataIntro": "Sitedeki haritalar ve bayraklar açık kaynaklardan geliyor. Her birinin kaynağı ve lisansı aşağıda.",
     "dataOsm": "Türkiye il sınırları, göller ve baraj gölleri: OpenStreetMap — © OpenStreetMap katkıcıları, ODbL.",
     "dataNaturalEarth": "Dünya ülke sınırları: Natural Earth (kamu malı).",
     "dataJrcCitationIntro": "JRC Global Surface Water veri kümesinin künyesi:",
@@ -95,7 +95,9 @@
     "dataJrcDoi": "https://doi.org/10.1038/nature20584",
     "dataJrcLabel": "Mevsimlik ve tuzlu göllerin sınırları:",
     "dataJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
-    "dataOsmOffer": "Türkiye il sınırları katmanı OpenStreetMap türevidir; ODbL 4.6 uyarınca türev veri kümesi ve onu üreten betik projenin açık kaynak deposunda sunulur: github.com/Sertturk16/cografya_web (data/tr-il-boundaries.geojson, scripts/generate-map-paths.mjs, lib/map/tr-provinces.generated.ts)."
+    "dataOsmOffer": "Türkiye il sınırları katmanı OpenStreetMap türevidir; ODbL 4.6 uyarınca türev veri kümesi ve onu üreten betik projenin açık kaynak deposunda sunulur: github.com/Sertturk16/cografya_web (data/tr-il-boundaries.geojson, scripts/generate-map-paths.mjs, lib/map/tr-provinces.generated.ts).",
+    "dataFlagsLabel": "Ülke bayrakları:",
+    "dataFlagsCredit": "flag-icons — Copyright (c) 2013 Panayiotis Lipiridis, MIT License"
   },
   "Turkiye": {
     "metaTitle": "Türkiye Haritası — 81 İl",

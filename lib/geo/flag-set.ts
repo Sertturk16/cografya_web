@@ -17,14 +17,17 @@ import "server-only";
  * and it is a bare `Record` rather than a plugin/registry abstraction because there is
  * exactly one candidate entry and no second use case (AO-6 / YAGNI).
  *
- * **It is EMPTY today, and that is a known, surfaced gap, not an oversight.** The one ISO the
- * package does not carry is `QN` (KKTC): the upstream maintainer declined it three times on
- * explicit political grounds (issues #549, #1186, #1268). DEC 2026-08-08c md.2 ruled that we
- * draw that flag ourselves from the KKTC Ministry of Education's official specification —
- * and that the asset is NOT produced in this phase. Until it lands, `QN` takes the fail-soft
- * path while `CY` renders a flag, which is exactly the asymmetry DEC 2026-08-08c called "not
- * silently neutral". It is carried openly to the owner's sample gate rather than papered over
- * here; see the PR body and `closing-summary-p1.md`.
+ * **It carries exactly one entry, `QN` (KKTC), and that entry is why the layer exists.** The
+ * upstream maintainer declined that flag three times on explicit political grounds (issues
+ * #549, #1186, #1268), so the set covers 198 of the 199 seeded rows. Rendering `CY` with a
+ * flag and `QN` without one is the asymmetry DEC 2026-08-08c md.2 called "not silently
+ * neutral"; the owner ruled that we close it with our own asset (DEC 2026-08-08m), and
+ * DEC 2026-08-08p fixed how that asset is built — 3:2, from the published dimension table
+ * alone. `assets/flags/qn.svg` carries the full derivation. Its geometry was verified
+ * independently of whoever drew it (DEC 2026-08-08n).
+ *
+ * The fail-soft third step therefore no longer manages a known gap. It is a defence line: a
+ * row added to the seed tomorrow must not drop into a broken `<img>`.
  *
  * ## Licence
  *
@@ -64,10 +67,13 @@ function localFlagDir(): string {
 /**
  * ISO codes we serve from our own committed asset instead of the package.
  *
- * Empty today by design (see the module docblock). The key is the UPPERCASE ISO code the api
- * uses; the value is the file name under `assets/flags/`.
+ * The key is the UPPERCASE ISO code the api uses; the value is the file name under
+ * `assets/flags/`, lower-cased to match the package's own naming so the two layers read the
+ * same way on disk. `lib/geo/flag-set.test.ts` pins that every key here resolves to a file
+ * that actually exists: `flagIsoCodes()` trusts this map without a `stat`, so a key with no
+ * file would let the card render and then 404 the asset.
  */
-export const LOCAL_FLAG_OVERRIDES: Readonly<Record<string, string>> = {};
+export const LOCAL_FLAG_OVERRIDES: Readonly<Record<string, string>> = { QN: "qn.svg" };
 
 /** Which layer a flag came from — the unit tests assert the ORDER, not the file list. */
 export type FlagOrigin = "local" | "package";

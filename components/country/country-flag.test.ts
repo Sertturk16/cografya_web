@@ -72,7 +72,7 @@ describe("catalogue totality for this package's new keys", () => {
       // standalone possessive claim — see lib/geo/sovereignty.ts.
       plain: ["locationHeadingPlain", "flag", "sovereigntyHeading"],
     },
-    About: { withPlaceholder: [], plain: ["dataOsmOffer"] },
+    About: { withPlaceholder: [], plain: ["dataOsmOffer", "dataFlagsLabel", "dataFlagsCredit"] },
   } as const;
 
   for (const [locale, messages] of Object.entries(catalogues)) {

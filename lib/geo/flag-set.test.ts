@@ -15,10 +15,11 @@ import { flagIsoCodes, hasFlag, LOCAL_FLAG_OVERRIDES, resolveFlag } from "./flag
  * fail-soft path exists for: a code with no asset anywhere resolves to `null`, never to a
  * broken path.
  *
- * The override layer is exercised with a SYNTHETIC directory rather than with `QN`. The real
- * override map is empty today because DEC 2026-08-08c md.2 places the KKTC asset in a later
- * phase; a test written against `QN` would assert the existence of a file this phase
- * deliberately does not create, and would then have to be rewritten the day it does.
+ * The override layer keeps being exercised with a SYNTHETIC directory even now that the real
+ * map has an entry. The two jobs are different: these cases pin the ORDER of the three layers,
+ * which must hold for any code, and naming `QN` in them would tie a mechanism test to one
+ * country. What the shipped map needs instead is a coverage check, which is the last block in
+ * this file and still names no country.
  */
 
 function tempDirWith(files: Record<string, string>): string {
@@ -66,10 +67,21 @@ describe("resolveFlag — resolution ORDER", () => {
 
 describe("the shipped override map", () => {
   it("is a plain record — the abstraction stays one line until a second case exists", () => {
-    // Asserting the SHAPE, not the contents: the map is empty today and will gain `QN`.
+    // Asserting the SHAPE, not the membership: which countries we ship an asset for is a
+    // product decision, and freezing it here would turn one into a failing unit test.
     for (const [code, file] of Object.entries(LOCAL_FLAG_OVERRIDES)) {
       expect(code).toMatch(/^[A-Z]{2}$/);
-      expect(file).toMatch(/\.svg$/);
+      expect(file).toMatch(/^[a-z]{2}\.svg$/);
+    }
+  });
+
+  it("has a real file behind every key it claims", () => {
+    // The gap this closes is concrete. `flagIsoCodes()` seeds its set from these keys without
+    // touching the disk, while `resolveFlag` requires the file to exist. A key with no file
+    // would therefore report `hasFlag === true`, render the card, and 404 the asset — a broken
+    // image on a country page, produced by the very layer that exists to prevent one.
+    for (const code of Object.keys(LOCAL_FLAG_OVERRIDES)) {
+      expect(resolveFlag(code)).toMatchObject({ origin: "local" });
     }
   });
 });

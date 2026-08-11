@@ -399,8 +399,8 @@ export default async function CountryDetailPage({ params }: PageProps) {
               (the same reasoning as the marine block). On a SPECIAL-STATUS row it is gated on
               `showsFlag`, which is the sovereignty note's own gate — the visual claim never
               stands without the text that balances it (→ DEC 2026-08-08h / 08-08l B2).
-              Renders nothing when the row has no asset — see
-              components/country/country-flag.tsx for what that currently means for QN. */}
+              Renders nothing when the row has no asset; every seeded row has one today, QN
+              through our own file (lib/geo/flag-set.ts). */}
           {showsFlag && (
             <CountryFlag
               isoCode={country.isoCode}

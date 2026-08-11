@@ -7,26 +7,28 @@ import styles from "./country-flag.module.css";
  * ## Why a fact card and not a mark beside the `<h1>`
  *
  * The `dl` already runs an `auto-fill` grid, so one more `<dt>/<dd>` pair costs zero layout
- * risk on 191 pages. Putting the flag in the title block would rewrite the heading area of
+ * risk on 199 pages. Putting the flag in the title block would rewrite the heading area of
  * every country page — a much larger blast radius for a purely cosmetic gain (plan §7.4).
  *
  * ## Fail-soft, and what it currently means
  *
  * A row whose ISO code has no asset renders NOTHING — never an empty `<img>`, never an "eksik
- * veri" placeholder. Today exactly one seeded row takes that path: `QN` (KKTC), because the
- * upstream MIT set refuses it and our own asset is not drawn yet (plan §7.6,
- * `lib/geo/flag-set.ts`). That leaves `CY` with a flag and `QN` without, which DEC 2026-08-08c
- * md.2 identified as NOT a neutral silence. It is deliberately surfaced at the owner's sample
- * gate (`/dunya/kibris-cumhuriyeti` beside `/dunya/kuzey-kibris-turk-cumhuriyeti`) rather than
- * resolved here — this component has no standing to settle it.
+ * veri" placeholder. No seeded row takes that path today: the package covers 198 of the 199,
+ * and `QN` (KKTC) resolves through our own asset (`lib/geo/flag-set.ts`, DEC 2026-08-08m /
+ * 08-08p). The guard stays because the seed can grow, not because a gap is open.
  *
  * ## A11y and CLS
  *
  * The flag is INFORMATIVE, so it carries a real alt ("Brezilya bayrağı") rather than `alt=""`;
  * a screen reader hears "Bayrak: Brezilya bayrağı". It is never the only carrier of the
  * country's name (the `<h1>` and the fact sheet already say it), so a failed load loses no
- * information. Explicit `width`/`height` in the source ratio (4:3) plus a fixed box hold
- * CLS at zero. WCAG's contrast rules do not apply to a flag (logo/brand exemption).
+ * information. Explicit `width`/`height` plus a fixed box hold CLS at zero. WCAG's contrast
+ * rules do not apply to a flag (logo/brand exemption).
+ *
+ * The 4:3 attribute pair is the ratio of the BOX, not a promise about the file. It matches
+ * the package's `flags/4x3` set, and our own `qn.svg` is 3:2 by law (DEC 2026-08-08p), so it
+ * sits centred inside the same box with a thin band above and below. That is the intended
+ * outcome: the card is a container, and the flag is never cropped or stretched to fill it.
  */
 
 interface CountryFlagProps {
@@ -48,8 +50,8 @@ export function CountryFlag({ isoCode, label, alt, className }: CountryFlagProps
       <dt>{label}</dt>
       <dd>
         {/* Plain <img>, not next/image — see the ENGINEERING §4 #9 exception and the reasoning
-            in components/map/locator-map.tsx. The 4:3 attribute pair is the SOURCE ratio of the
-            `flags/4x3` set; the rendered size is fixed in CSS. */}
+            in components/map/locator-map.tsx. The 4:3 attribute pair is the ratio of the CSS
+            box, which is what CLS depends on; the rendered size is fixed in CSS. */}
         {/* eslint-disable-next-line @next/next/no-img-element -- ENGINEERING.md §4 #9
             exception (→ DEC 2026-08-08a md.3). A 32 × 24 px flag can never be the LCP
             element, and the fixed CSS box plus the 4:3 attribute pair hold CLS at zero. */}
