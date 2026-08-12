@@ -107,6 +107,10 @@ function importIdentities(source: ts.SourceFile): string[] {
       identities.push(`${clauseKind}:${moduleName}:*->${bindings.name.text}`);
       continue;
     }
+    if (bindings.elements.length === 0) {
+      identities.push(`${clauseKind}:${moduleName}:{}`);
+      continue;
+    }
     for (const element of bindings.elements) {
       const kind = clause.isTypeOnly || element.isTypeOnly ? "type" : "value";
       const imported = element.propertyName?.text ?? element.name.text;
