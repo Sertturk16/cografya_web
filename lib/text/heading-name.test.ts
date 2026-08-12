@@ -31,7 +31,10 @@ describe("headingName — locale gate", () => {
 });
 
 describe("PROVINCE_HEADING_CASE — per-section mapping", () => {
-  it("assigns the intended genitive/locative split (3 + 3)", () => {
+  it("assigns the intended genitive/locative split (4 + 3)", () => {
+    // `location` joined the §19 six with the locator mini-map: "Van'ın Konumu" is a property
+    // OF the province, so genitive; the locative would read "a location inside Van".
+    expect(PROVINCE_HEADING_CASE.location).toBe("genitive");
     expect(PROVINCE_HEADING_CASE.landform).toBe("genitive");
     expect(PROVINCE_HEADING_CASE.hydrography).toBe("genitive");
     expect(PROVINCE_HEADING_CASE.neighbors).toBe("genitive");
@@ -40,9 +43,9 @@ describe("PROVINCE_HEADING_CASE — per-section mapping", () => {
     expect(PROVINCE_HEADING_CASE.economy).toBe("locative");
   });
 
-  it("covers exactly the six §19 slots and only genitive/locative values", () => {
+  it("covers exactly the seven slots and only genitive/locative values", () => {
     const slots = Object.keys(PROVINCE_HEADING_CASE) as ProvinceHeadingSlot[];
-    expect(slots).toHaveLength(6);
+    expect(slots).toHaveLength(7);
     for (const slot of slots) {
       expect(["genitive", "locative"]).toContain(PROVINCE_HEADING_CASE[slot]);
     }
@@ -53,7 +56,7 @@ describe("COUNTRY_HEADING_CASE — per-section mapping", () => {
   it("keeps the province assignment on every shared slot", () => {
     // One platform-wide slot→case convention: "X'in Hidrografyası" must not mean one thing
     // on /turkiye and another on /dunya. A drift here is what this assertion catches.
-    for (const slot of ["landform", "hydrography", "neighbors", "climate"] as const) {
+    for (const slot of ["location", "landform", "hydrography", "neighbors", "climate"] as const) {
       expect(COUNTRY_HEADING_CASE[slot]).toBe(PROVINCE_HEADING_CASE[slot]);
     }
   });
@@ -64,9 +67,9 @@ describe("COUNTRY_HEADING_CASE — per-section mapping", () => {
     expect(COUNTRY_HEADING_CASE.independence).toBe("genitive");
   });
 
-  it("covers exactly the five country slots and only genitive/locative values", () => {
+  it("covers exactly the six country slots and only genitive/locative values", () => {
     const slots = Object.keys(COUNTRY_HEADING_CASE) as CountryHeadingSlot[];
-    expect(slots).toHaveLength(5);
+    expect(slots).toHaveLength(6);
     for (const slot of slots) {
       expect(["genitive", "locative"]).toContain(COUNTRY_HEADING_CASE[slot]);
     }

@@ -86,15 +86,18 @@
     "heading": "About",
     "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone.",
     "sourcing": "Content is grounded in authoritative sources and passes an independent verification step before publication.",
-    "dataHeading": "Map data sources",
-    "dataIntro": "The maps on this site are built from open datasets. The source and licence of each layer is listed below.",
+    "dataHeading": "Map and flag sources",
+    "dataIntro": "The maps and flags on this site come from external sources. Their sources and licences are listed below.",
     "dataOsm": "Provincial boundaries, lakes and reservoirs of Türkiye: OpenStreetMap — © OpenStreetMap contributors, ODbL.",
     "dataNaturalEarth": "World country boundaries: Natural Earth (public domain).",
     "dataJrcCitationIntro": "Citation for the JRC Global Surface Water dataset:",
     "dataJrcCitation": "Jean-Francois Pekel, Andrew Cottam, Noel Gorelick, Alan S. Belward, High-resolution mapping of global surface water and its long-term changes. Nature 540, 418-422 (2016).",
     "dataJrcDoi": "https://doi.org/10.1038/nature20584",
     "dataJrcLabel": "Seasonal and salt lake outlines:",
-    "dataJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
+    "dataJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
+    "dataOsmOffer": "The provincial boundary layer of Türkiye is derived from OpenStreetMap; under ODbL 4.6 the derivative dataset and the script that produces it are offered in the project's open source repository: github.com/Sertturk16/cografya_web (data/tr-il-boundaries.geojson, scripts/generate-map-paths.mjs, lib/map/tr-provinces.generated.ts).",
+    "dataFlagsLabel": "Most country flags:",
+    "dataFlagsCredit": "flag-icons — Copyright (c) 2013 Panayiotis Lipiridis, MIT License"
   },
   "Turkiye": {
     "metaTitle": "Map of Türkiye — 81 Provinces",
@@ -232,7 +235,9 @@
     "sourcesClimate": "climate normals ERA5-Land (C3S/Copernicus)",
     "backToMap": "Back to the map of Türkiye",
     "marineHeading": "Sea state off {name}",
-    "marineSourcesHeading": "Sea data: sources and use"
+    "marineSourcesHeading": "Sea data: sources and use",
+    "locationHeading": "Location of {name}",
+    "locationAlt": "Location of {name} on the map of Türkiye"
   },
   "Climate": {
     "chartHeading": "Temperature and Precipitation Chart",
@@ -348,7 +353,13 @@
     "sourcesLabel": "Sources",
     "sources": "Data is grounded in official and authoritative sources: country and capital names from the Turkish Ministry of Foreign Affairs, population from {populationSource}. Continent classification comes from the UN Statistics Division (M49), and area from the World Bank. Neighbouring countries are cross-checked against multiple references (Britannica and others).",
     "sourcesNoPopulation": "Data is grounded in official and authoritative sources: country names from the Turkish Ministry of Foreign Affairs. Continent classification comes from the UN Statistics Division (M49), and area from the World Bank. The neighbouring-country count is cross-checked against multiple references (Britannica and others).",
-    "backToMap": "Back to the world map"
+    "backToMap": "Back to the world map",
+    "locationHeading": "Location of {name}",
+    "locationHeadingPlain": "Location",
+    "locationAlt": "Location of {name} on the world map",
+    "flag": "Flag",
+    "flagAlt": "Flag of {name}",
+    "sovereigntyHeading": "Sovereignty and Recognition"
   },
   "Deniz": {
     "metaTitle": "Sea State: Wind, Waves, Water Temperature",

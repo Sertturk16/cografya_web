@@ -25,6 +25,35 @@ const CHART_ANCHOR: Record<Locale, string> = {
 };
 
 /**
+ * D2 — the wide-screen dead space under the climate table (UX tour D2, frames `11`/`13`).
+ *
+ * At 1440 the page's content column is 1080 px. The chart row fills it, then `.tableScroll`
+ * stops at its deliberate 560 px cap and leaves ~520 × 500 px of empty parchment to its right,
+ * while the "Benzer İklime Sahip İller" grid below fills 1080 again — one page, two rhythms.
+ * The 560 px cap itself is CORRECT and stays (a 3-column table sprayed across 1080 px pulls
+ * each number away from its month label; the reason is written next to the rule).
+ *
+ * Two treatments go to the owner as rendered samples; the plan deliberately does NOT pick one
+ * (→ DEC 2026-08-08a md.4). The LOSER IS DELETED BEFORE MERGE — two implementations of the
+ * same decision never land together (DEC 2026-08-05g md.1).
+ *
+ * - **`rails`** — at ≥ 1024 px the trailing content becomes a two-column row whose columns use
+ *   the SAME flex basis as the chart row above, so the table lands directly under the chart at
+ *   the same edges and the source + licence blocks fill what used to be dead space. DOM order
+ *   is untouched (table, source, notice), and left→right reading order equals DOM order, so
+ *   WCAG 1.3.2 holds by construction rather than by argument.
+ * - **`minimal`** — one line: the table cap moves 560 → 720 px. It SHRINKS the dead space
+ *   without closing it, and takes no structural risk at all. Still far below 1080, so the
+ *   number-to-label association the 560 px cap protects is intact.
+ */
+/**
+ * The shipped D2 treatment. `minimal` — the one-line variant that moved the table cap
+ * 560 → 720 px — is DELETED rather than merged alongside it (DEC 2026-08-05g md.1), which is
+ * the rule the docblock above already quoted.
+ */
+export const D2_VARIANT = "rails" as const;
+
+/**
  * The "Sıcaklık ve Yağış Grafiği" block — a new `<h3>` INSIDE the existing İklim `<h2>`
  * (PLAN §2 layout: it follows the untouchable MGM classification `<details>` (Köppen
  * caveat) and the NOVA narrative slot). MGM still supplies the climate CLASSIFICATION
@@ -85,27 +114,32 @@ export async function ClimateSection({
 
       <ClimateChart climate={climate} provinceName={provinceName} idSuffix={plateCode} />
 
-      <ClimateTable climate={climate} provinceName={provinceName} />
+      {/* D2 — see the D2_VARIANT docblock. `.detailRow` carries NO layout of its own below the
+          1024 px breakpoint, so narrow viewports render exactly today's single-column stack.
+          Nothing here reorders the DOM. */}
+      <div className={`${styles.detailRow} ${styles.d2Rails}`}>
+        <ClimateTable climate={climate} provinceName={provinceName} />
 
-      <p className={styles.sourceLine}>
-        {t.rich("sourceLine", {
-          // Strings so ICU never group-separates the years (1991, not 1.991).
-          start: String(climate.periodStartYear),
-          end: String(climate.periodEndYear),
-          // Deliberately NOT `nofollow`: this is an editorial citation to the authoritative
-          // source the whole section's information-gain thesis rests on. `nofollow` is for
-          // untrusted / paid / UGC links; using it here would understate a real attribution.
-          // The api now serves ONE dataset URL for all 81 provinces (there is no per-province
-          // page in the Copernicus Climate Data Store), so this link points at the dataset.
-          source: (chunks) => (
-            <a href={climate.sourceUrl} target="_blank" rel="noopener noreferrer">
-              {chunks}
-            </a>
-          ),
-        })}
-      </p>
+        <div className={styles.detailAside}>
+          <p className={styles.sourceLine}>
+            {t.rich("sourceLine", {
+              // Strings so ICU never group-separates the years (1991, not 1.991).
+              start: String(climate.periodStartYear),
+              end: String(climate.periodEndYear),
+              // Deliberately NOT `nofollow`: this is an editorial citation to the authoritative
+              // source the whole section's information-gain thesis rests on. `nofollow` is for
+              // untrusted / paid / UGC links; using it here would understate a real attribution.
+              // The api now serves ONE dataset URL for all 81 provinces (there is no per-province
+              // page in the Copernicus Climate Data Store), so this link points at the dataset.
+              source: (chunks) => (
+                <a href={climate.sourceUrl} target="_blank" rel="noopener noreferrer">
+                  {chunks}
+                </a>
+              ),
+            })}
+          </p>
 
-      {/* CC-BY-4.0's required notice for the ERA5-Land series (data-provenance.md §0b).
+          {/* CC-BY-4.0's required notice for the ERA5-Land series (data-provenance.md §0b).
           Published VERBATIM, in English, in BOTH locales and marked `lang="en"` so a screen
           reader on the Turkish page does not read it with Turkish phonemes — the same
           treatment, and the same obligation, as the marine provider notices
@@ -117,10 +151,12 @@ export async function ClimateSection({
           the Copernicus information was generated, and this series comes from a committed
           2026 artifact. `new Date().getFullYear()` would silently claim a later year for
           data that did not change. */}
-      <p className={styles.sourceLine}>{t("sourceC3sNoticeIntro")}</p>
-      <p className={styles.licenceNotice} lang="en">
-        {t("attribution.c3sNotice")}
-      </p>
+          <p className={styles.sourceLine}>{t("sourceC3sNoticeIntro")}</p>
+          <p className={styles.licenceNotice} lang="en">
+            {t("attribution.c3sNotice")}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

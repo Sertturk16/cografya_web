@@ -1,0 +1,97 @@
+/* Locator mini-map (province + country detail pages). Terra tokens only.
+
+   A SEPARATE stylesheet from map.module.css on purpose: that file styles the INTERACTIVE hub
+   maps (hover/focus layers, zoom controls, hit twins) and this figure has none of that — it is
+   a static, non-clickable illustration. Sharing the file would also have put this package on a
+   collision course with the parallel mobile-nav package, which owns lines in it. */
+
+.figure {
+  margin: 0;
+  /* 460 px on the province page, 560 px on the country page — the widths the readability
+     measurements in plan §4.2/§5.1 were taken at. Never wider: the base map is a shared file,
+     so a bigger figure buys no more detail, only more empty parchment. */
+  width: min(100%, 460px);
+}
+
+.figure[data-kind="country"] {
+  width: min(100%, 560px);
+}
+
+/* The panel language of /turkiye: border, large radius, surface→bg wash. The reader has
+   usually just come from that map, so this reads as the same object at another scale.
+
+   MEASURED, so it is not re-derived: `box-sizing: border-box` + `aspect-ratio` does constrain
+   the BORDER box here, so the content box is 1 px smaller on each side than the ratio implies.
+   The consequence was checked in a browser at 1440×900 rather than argued from the spec — the
+   UA sizes the overlay `<svg>` as a replaced element from its own viewBox, so base and overlay
+   land on identical boxes (458.00 × 196.47 on the province figure, 558.00 × 290.70 on the
+   country one): horizontal offset 0.015 px, scale difference 0.007 %. Co-registration holds.
+   The base image is ~1.1 px taller than the content box and its bottom edge is clipped by
+   `overflow: hidden` — that lands in empty viewBox margin BELOW the drawn credit (which ends
+   at ~191 px of 195 px) and clips the overlay by the same amount, so nothing shifts relative
+   to anything. Left as is deliberately: `content-box` would resize every figure on 280 pages
+   for no visible gain. */
+.frame {
+  position: relative;
+  background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  /* Set from the artifact's own viewBox by the <img>'s width/height attributes below; stated
+     here too so the box reserves its height before the file arrives (CLS = 0, SEO §6 #9). */
+  aspect-ratio: 1000 / 429;
+}
+
+.figure[data-kind="country"] .frame {
+  aspect-ratio: 1000 / 521;
+  /* The world file paints its own sea, but the frame carries it too so the rounded corners
+     are sea rather than parchment while the image loads. */
+  background: var(--map-sea);
+}
+
+.base,
+.overlay {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The highlight is drawn in the SAME coordinate space as the base file, so the two are
+   co-registered by construction — the overlay is stacked exactly on top, never scaled
+   independently. */
+.overlay {
+  position: absolute;
+  inset: 0;
+}
+
+/* The entity's own outline. Colour is ONE of the two signals: the second is the heavier
+   stroke, so the highlight is not carried by hue alone (WCAG 1.4.1). Measured contrast
+   against the two base treatments: 5.76:1 (V-A flat) and 8.36:1 (V-B mosaic neighbours). */
+.highlight {
+  fill: var(--color-primary-dark);
+  stroke: var(--color-primary-dark);
+  /* vector-effect keeps the emphasis line at a constant device width no matter how the
+     figure is scaled, so a small country's outline does not thin away to nothing. */
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+
+/* Locator ring — country map only, and only under the measured size threshold
+   (lib/map/shape-geometry.ts). It marks WHERE to look; the fill inside it is the answer. */
+.ring {
+  fill: none;
+  stroke: var(--color-primary-dark);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Visible licence credit. Inside the figure but OUTSIDE the frame, so it survives the image
+   failing to load — the state in which the credit drawn into the file itself is invisible.
+   --color-slate, not --color-taupe: this is real text (DESIGN §5 / ENGINEERING §5). */
+.credit {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-slate);
+}

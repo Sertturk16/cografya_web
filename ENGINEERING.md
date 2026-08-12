@@ -97,6 +97,15 @@ noindex,follow>`. `robots.txt` Disallow is only for api/raw-file paths.
 9. **CWV budget: LCP < 2.5s · INP < 200ms · CLS < 0.1.** Maps/embeds lazy + fixed-size
    containers; `next/image` (explicit `width`/`height` or `fill` + sized box) +
    `next/font` always; third-party embeds (YouTube, Windy) behind facades.
+   **ONE EXCEPTION — build-emitted static SVG (→ DEC 2026-08-08a md.3).** A `.svg` asset this
+   repo emits at build (`/maps/*.svg`, `/flags/*.svg`) may be rendered with a plain `<img>`,
+   provided it carries explicit `width`/`height` **and** sits in a fixed `aspect-ratio` box.
+   Rationale, and the reason this is narrow rather than a general licence: `next/image` cannot
+   optimise SVG — it passes the bytes through unchanged, or refuses them without
+   `dangerouslyAllowSVG` — so on these assets it adds a runtime wrapper and a client component
+   for zero byte saving, while the CLS guarantee it exists to provide is already held by the
+   viewBox's intrinsic ratio plus the explicit dimensions. The exception does **not** extend to
+   raster images, to remote images, or to any SVG that arrives from outside the build.
 10. **Trailing-slash pinned** in `next.config.ts` (`trailingSlash: false`); breadcrumbs
     (visual + JSON-LD) on every detail page; hub-and-spoke internal links (neighbors /
     same-climate / related-concept blocks).

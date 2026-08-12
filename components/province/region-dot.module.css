@@ -1,0 +1,44 @@
+/* Region colour dot — the coğrafi bölge tint beside the "Bölge" value.
+
+   A DATA encoding, so the fills come from the categorical --region-* set and never from the
+   Terra brand tokens (DESIGN.md §6.1 rule 1 / §6.5). Same seven tokens, same seven keys, as
+   components/game/game-map.module.css — pinned side by side in region-dot.rules.test.ts so
+   the two consumers cannot drift into different colours for the same region. */
+
+.dot {
+  display: inline-block;
+  vertical-align: baseline;
+  width: 10px;
+  height: 10px;
+  margin-inline-end: 0.4em;
+  border-radius: 50%;
+  /* THE RING IS LOAD-BEARING, not decoration. Three of the seven tints are under WCAG
+     1.4.11's 3:1 against the white .fact card (İç Anadolu #f0e442 measures 1.32:1). The
+     palette itself is documented and may not be re-toned, so the boundary carries the
+     contrast: --color-ink-dark is the only neutral in this system that clears 3:1 against
+     all seven tints (worst case Marmara #0072b2 at 3.25:1). Never a bare hex here — the
+     token is the single source and app/globals.css owns the measurement table. */
+  border: 1px solid var(--color-ink-dark);
+}
+
+.dot[data-region="MARMARA"] {
+  background: var(--region-marmara);
+}
+.dot[data-region="EGE"] {
+  background: var(--region-ege);
+}
+.dot[data-region="AKDENIZ"] {
+  background: var(--region-akdeniz);
+}
+.dot[data-region="IC_ANADOLU"] {
+  background: var(--region-ic-anadolu);
+}
+.dot[data-region="KARADENIZ"] {
+  background: var(--region-karadeniz);
+}
+.dot[data-region="DOGU_ANADOLU"] {
+  background: var(--region-dogu-anadolu);
+}
+.dot[data-region="GUNEYDOGU_ANADOLU"] {
+  background: var(--region-guneydogu-anadolu);
+}

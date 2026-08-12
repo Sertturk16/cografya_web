@@ -47,17 +47,18 @@ export default async function AboutPage({ params }: PageProps) {
       <p className="lede">{t("body1")}</p>
       <p>{t("sourcing")}</p>
 
-      {/* MAP DATA SOURCES — a licence obligation, not a colophon.
+      {/* MAP AND FLAG SOURCES — a licence obligation, not a colophon.
           JRC Global Surface Water's terms require crediting "datasets AND the journal
           article", and one line under a map cannot carry a bibliographic citation. This
           section is its home (→ DEC 2026-08-03c, Q2 = a): the route already exists, so it
           costs no new SEO surface — no metadata, canonical, hreflang, sitemap entry or
           localized slug — while adding indexable text to a thin page.
 
-          Deliberately scoped to the MAPS, and the heading says so. A site-wide
-          /veri-kaynaklari page collecting every dataset (ECMWF, CMEMS, …) is a real SEO
-          surface and a separate task; promising completeness under this heading would be
-          the only way to get this wrong.
+          Deliberately scoped to the MAPS and the FLAGS, and the heading names both. A
+          site-wide /veri-kaynaklari page collecting every dataset (ECMWF, CMEMS, …) is a real
+          SEO surface and a separate task; promising completeness under this heading would be
+          the only way to get this wrong, which is why the heading grew by one noun rather
+          than into "data sources".
 
           `dataJrcCitation` is IDENTICAL in tr and en, unaccented "Jean-Francois" and a plain
           hyphen in "418-422", because that is how the article is indexed — a citation is a
@@ -73,12 +74,58 @@ export default async function AboutPage({ params }: PageProps) {
       <p>{t("dataIntro")}</p>
       <ul>
         <li>{t("dataOsm")}</li>
+        {/* L1 — ODbL §4.6's OFFER (→ DEC 2026-08-08c md.5). The chain closes through §4.4(c):
+            once a Produced Work made from an OSM-derived database is used publicly, the
+            derivative database counts as publicly used too, and §4.6 then asks for an offer of
+            it. The locator mini-map is what triggered this; the data itself was never the
+            missing piece (the repo is public and carries the snapshot, the generator and the
+            produced paths) — what was missing was a discoverable offer, which is this line.
+            Its home is this existing section, so it costs no new SEO surface: no route, no
+            metadata, no canonical, no hreflang, no sitemap entry.
+
+            It is licence text (CONTENT-STYLE §22 "dokunulmaz"), so it keeps the formal
+            register the rest of the list uses and is NOT trimmed to the interface-copy caps.
+            The repo path fragments are keys, not prose — they are identical in both
+            catalogues on purpose. */}
+        <li>{t("dataOsmOffer")}</li>
         <li>{t("dataNaturalEarth")}</li>
         <li>
           {/* The full stop sits OUTSIDE the span: the sibling bullets end in one, and the
               English string inside is the licence's own wording — punctuation is not ours
               to add to it. */}
           {t("dataJrcLabel")} <span lang="en">{t("dataJrcEnglish")}</span>.
+        </li>
+        {/* FLAGS — the second licence obligation in this list, and the one that was missing.
+            The country pages serve 198 SVG files taken from the MIT-licensed `flag-icons`
+            set, and MIT asks that the copyright notice travel with them
+            (provenance/datasets.md, `flag-icons` row: "preserve the MIT notice/permission
+            text and render the planned visible source credit"). Until now nothing on the
+            site named the set, so the flags shipped uncredited.
+
+            Shaped like the JRC bullet directly above, for the same reason: the label is ours
+            and is translated, the notice is the licence's own wording and is IDENTICAL in
+            both catalogues. "Copyright (c) 2013 Panayiotis Lipiridis" is copied character for
+            character from the package's LICENSE — a notice that gets tidied into "©" or
+            translated is no longer the notice MIT asks for. `lang="en"` for the same reason
+            as the citation: a Turkish-voice screen reader must not read it with Turkish
+            phonetics (WCAG 3.1.2).
+
+            The label says MOST country flags, not all of them, and that word is doing real
+            work (→ DEC 2026-08-11h md.3). One of the 199 is not from this set: it is ours,
+            drawn because the set declined to carry it. Crediting the package for the whole
+            corpus would attribute our own work to a third party in the very section that
+            exists to get attribution right. The exception is NOT named here — "we drew the
+            KKTC flag ourselves" is a new editorial statement on a sovereignty surface and
+            needs its own review, not a footnote. Narrowing the claim removes the false
+            attribution without making a new one; the source ledger carries the full record.
+
+            The heading above widened from "Harita veri kaynakları" to name flags too. It did
+            NOT widen to "data and visual sources": this section still deliberately excludes
+            the climate, marine and statistical sources, and a heading that promised them
+            would be the completeness claim the block comment at the top of this section
+            warns about. */}
+        <li>
+          {t("dataFlagsLabel")} <span lang="en">{t("dataFlagsCredit")}</span>.
         </li>
       </ul>
       <p>

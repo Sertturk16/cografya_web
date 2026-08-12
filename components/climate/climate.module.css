@@ -330,3 +330,50 @@
   max-width: 78ch;
   line-height: 1.5;
 }
+
+/* ---- D2 · trailing-content layout (UX tour D2, frames 11/13) -----------------
+   ONE variant ships. The `minimal` alternative was deleted with its class rather than merged
+   beside this one (DEC 2026-08-05g md.1); `d2-variant.test.ts` now asserts it is absent.
+
+   `.detailRow` and `.detailAside` are deliberately UNSTYLED at base width: below the
+   breakpoint they are plain block boxes, so the table and the two notices stack exactly as
+   they do on `dev` today. */
+.detailRow {
+  display: block;
+}
+
+.detailAside {
+  display: block;
+}
+
+/* VARIANT "rails". The two columns reuse the chart row's OWN flex basis values
+   (.chartFrame 420px / .summary 220px), so the table's left edge lands under the chart's
+   and the notices' under the summary's — alignment by construction rather than by two
+   independently tuned numbers that drift apart.
+
+   1024px is where the 1080px content column can actually hold two readable columns; below
+   it the single-column stack is what the UX tour praised (frame 39) and it is untouched. */
+@media (min-width: 1024px) {
+  .d2Rails {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 20px 28px;
+  }
+
+  .d2Rails .tableScroll {
+    flex: 1 1 420px;
+    min-width: 300px;
+    /* The cap moves to the RAIL, not to 1080: the column is ~640px wide, so the 560px
+       rule's reason (keep each number near its month label) still holds. */
+    max-width: none;
+  }
+
+  .d2Rails .detailAside {
+    flex: 1 1 220px;
+    min-width: 280px;
+    /* The notices already cap themselves at 78ch; inside a ~410px rail that cap never
+       binds, so nothing about their measure changes. */
+    margin-top: 22px;
+  }
+}

@@ -23,13 +23,13 @@ import { turkishGenitive, turkishLocative } from "./turkish-suffix";
 
 export type HeadingCase = "genitive" | "locative";
 
-/** The six §19 content sections whose <h2> carries the province name. */
+/** The content sections whose <h2> carries the province name (§19 + the locator block). */
 export type ProvinceHeadingSlot =
-  "landform" | "hydrography" | "neighbors" | "climate" | "settlement" | "economy";
+  "location" | "landform" | "hydrography" | "neighbors" | "climate" | "settlement" | "economy";
 
-/** The five §19 content sections whose <h2> carries the country name. */
+/** The content sections whose <h2> carries the country name (§19 + the locator block). */
 export type CountryHeadingSlot =
-  "landform" | "climate" | "hydrography" | "independence" | "neighbors";
+  "location" | "landform" | "climate" | "hydrography" | "independence" | "neighbors";
 
 /**
  * Grammatical case per §19 section, so the page reads as VARIED prose instead of
@@ -38,6 +38,9 @@ export type CountryHeadingSlot =
  * "the neighbouring provinces located IN X" — the wrong sense (→ closing-summary §2).
  */
 export const PROVINCE_HEADING_CASE = {
+  // "Van'ın Konumu" — the locator block asks "where is it", which is a property OF the
+  // province, so genitive. The locative "Van'da Konum" would mean "a location inside Van".
+  location: "genitive",
   landform: "genitive",
   hydrography: "genitive",
   neighbors: "genitive",
@@ -63,6 +66,9 @@ export const PROVINCE_HEADING_CASE = {
  * every heading either way, which is the UYARI-level item (§B3.4) this map exists to close.
  */
 export const COUNTRY_HEADING_CASE = {
+  // Same reading as the province page's `location` slot — one platform-wide assignment per
+  // slot, so "X'in Konumu" never means one thing on /turkiye and another on /dunya.
+  location: "genitive",
   landform: "genitive",
   hydrography: "genitive",
   neighbors: "genitive",
@@ -85,6 +91,7 @@ export const COUNTRY_HEADING_CASE = {
  * missing/typo'd key and ships the dotted key string into a live <h2> with CI green.
  */
 export const COUNTRY_HEADING_KEY = {
+  location: { named: "locationHeading", plain: "locationHeadingPlain" },
   landform: { named: "landformHeading", plain: "landformHeadingPlain" },
   climate: { named: "climateHeading", plain: "climateHeadingPlain" },
   hydrography: { named: "hydrographyHeading", plain: "hydrographyHeadingPlain" },

@@ -42,7 +42,8 @@ correctness boundary, not a preference.
 
 | Token             | Hex       | Use                                                       |
 | ----------------- | --------- | --------------------------------------------------------- |
-| `--color-ink`     | `#2b2622` | body text, headings                                       |
+| `--color-ink`      | `#2b2622` | body text, headings                                                              |
+| `--color-ink-dark` | `#211c19` | the palette's DARKEST line ink — the one neutral measured to clear WCAG 1.4.11's 3:1 against every surface this system draws a line over, including all seven §6.5 region tints (worst case Marmara `#0072b2`, 3.25:1). `--color-ink` itself misses there at 2.89:1. Use it for a line/border ON a data fill (map hover edge, region dot ring), never for text. The measurement table lives in `app/globals.css` — re-run it before changing the value |
 | `--color-slate`   | `#57504a` | secondary/essential text (lede, nav, footer, captions)    |
 | `--color-taupe`   | `#8a8078` | **placeholder / secondary-UI / decorative ONLY** (see §5) |
 | `--color-border`  | `#ddd5cc` | hairlines, card borders                                   |

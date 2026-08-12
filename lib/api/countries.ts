@@ -20,6 +20,22 @@ export async function getCountries(): Promise<CountryListItem[]> {
 }
 
 /**
+ * Freshness-bounded membership for `/flags/{ISO}.svg` runtime authorization.
+ *
+ * This deliberately uses the SAME `/api/countries` URL as `getCountries()` with a shorter
+ * revalidate. Next's Data Cache key is the request, so even when another consumer populated
+ * that key before a country was seeded, this read evaluates the older entry against 60
+ * seconds rather than its ordinary one-hour content window. The route exports the same value
+ * as its Full Route Cache revalidate, bounding both halves of a false-negative 404. Errors
+ * still throw so an outage cannot replace a last-good route artifact with an empty corpus.
+ */
+export async function getCountriesForFlagAuthorization(): Promise<CountryListItem[]> {
+  return apiGet<CountryListItem[]>("/api/countries", {
+    revalidate: 60,
+  });
+}
+
+/**
  * Bulk hover-card summary for the world SVG map (identity + population/area/neighbour-count),
  * keyed by ISO code. Purpose-built lean payload — one fetch, build-time embedded. Returns
  * only seeded countries; numeric fields are null until fact-checked. Throws on failure — the

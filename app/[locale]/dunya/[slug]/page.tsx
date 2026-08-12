@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { CardArrow } from "@/components/card-arrow";
+import { CountryFlag } from "@/components/country/country-flag";
 import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
+import { LocatorMap } from "@/components/map/locator-map";
 import { ProseNote } from "@/components/prose-note";
 import {
   byIsoCode,
@@ -14,8 +16,9 @@ import {
 import type { CountryDetail, CountryListItem } from "@/lib/api/types";
 import { sourcesMessage } from "@/lib/geo/country-sources";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
-import { isSpecialStatusRow } from "@/lib/geo/sovereignty";
+import { isSpecialStatusRow, showsCountryFlag, showsSovereigntyNote } from "@/lib/geo/sovereignty";
 import { showsSubregionCard } from "@/lib/geo/subregion";
+import { COUNTRY_SHAPES } from "@/lib/map/world-countries.generated";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { selectCountryMetaDescription } from "@/lib/seo/country-description";
@@ -42,6 +45,16 @@ function slugForLocale(country: CountryDetail | CountryListItem, locale: Locale)
 function nameForLocale(country: CountryDetail | CountryListItem, locale: Locale): string {
   return locale === "en" ? country.nameEn : country.nameTr;
 }
+
+/**
+ * ISO 3166-1 alpha-2 → the country's own outline, for the locator mini-map.
+ *
+ * The artifact carries 240 shapes; 41 of them have no seeded page (Natural Earth backdrop
+ * entities). Only the ONE shape this page needs reaches the HTML — the shared world
+ * silhouette is a separate cached file (`/maps/world-countries.svg`). Built once at module
+ * scope, not searched per render.
+ */
+const COUNTRY_SHAPE_BY_ISO = new Map(COUNTRY_SHAPES.map((shape) => [shape.iso, shape.d] as const));
 
 /** One resolved neighbour: a seeded country (→ link) or an unseeded one (→ plain text). */
 type Neighbor =
@@ -250,7 +263,27 @@ export default async function CountryDetailPage({ params }: PageProps) {
         })
       : t(COUNTRY_HEADING_KEY[slot].plain);
 
+  // Egemenlik ve Tanınma — the api's `sovereigntyNoteTr`, the owner's verbatim framing for a
+  // contested row (seed docblock: "transcribed VERBATIM"). The web only renders it: no
+  // editing, no shortening, no re-paragraphing. `ProseNote` applies the "\n\n" convention as
+  // it stands, so Filistin's three-paragraph note arrives as three <p>.
+  //
+  // ONE decision, TWO consumers (→ DEC 2026-08-08l B2, path (a)): this same gate also
+  // decides whether the flag card renders on a special-status row, so the visual claim and
+  // the text that balances it can never appear apart. The reasoning — including why symmetric
+  // absence on EN is not the asymmetry DEC 2026-08-08c md.2 condemned — is in
+  // lib/geo/sovereignty.ts, the single decision place. Ordinary rows are untouched: 193
+  // countries keep their flag in both locales.
+  const sovereigntyNote = showsSovereigntyNote(locale, country.sovereigntyNoteTr)
+    ? country.sovereigntyNoteTr
+    : null;
+  const showsFlag = showsCountryFlag(locale, country.sovereigntyNoteTr);
+
   const officialLanguages = isTr ? country.officialLanguagesTr : null;
+  // Ö1-B locator mini-map: this country's own outline from the committed artifact. The map
+  // makes NO new political claim — it draws exactly the shape `/dunya` already draws
+  // (Natural Earth de-facto, CY and QN separate, → DEC 2026-07-13).
+  const countryShapeD = COUNTRY_SHAPE_BY_ISO.get(country.isoCode);
 
   return (
     <div className="container page">
@@ -361,8 +394,68 @@ export default async function CountryDetailPage({ params }: PageProps) {
               <dd>{country.governmentFormTr}</dd>
             </div>
           )}
+          {/* G2 — the flag, as one more card in the existing auto-fill rhythm. On an ORDINARY
+              row it is not TR-gated: a flag is data, not a narrative that needs translating
+              (the same reasoning as the marine block). On a SPECIAL-STATUS row it is gated on
+              `showsFlag`, which is the sovereignty note's own gate — the visual claim never
+              stands without the text that balances it (→ DEC 2026-08-08h / 08-08l B2).
+              Renders nothing when the row has no asset; every seeded row has one today, QN
+              through our own file (lib/geo/flag-set.ts). */}
+          {showsFlag && (
+            <CountryFlag
+              isoCode={country.isoCode}
+              label={t("flag")}
+              alt={t("flagAlt", { name })}
+              className={styles.fact}
+            />
+          )}
         </dl>
       </section>
+
+      {/* Egemenlik ve Tanınma — after the flag and before the locator map. The reader meets
+          the one visual claim this page makes, reads what grounds it, and only then meets the
+          map. That is a reading-order argument, not a rule about the map.
+
+          The locator highlight is NOT a second visual claim, and this comment used to say it
+          was (→ DEC 2026-08-11h md.2). CONVENTIONS §5's balancing rule binds flags, emblems,
+          status badges and recognition framing; a locator highlight of a boundary the base map
+          already draws is outside it, because `/dunya` and the indexable `/en/dunya` render
+          the same six shapes to the same reader before any detail page does. The line is a NEW
+          claim, not pixels on screen. That is why `showsCountryFlag` welds the flag to the note
+          and the map is gated only on having a shape: the weld covers what the rule covers.
+
+          Present on the six special-status rows and nowhere else; the section is ADDED, no
+          existing section is re-ordered. Plain, entity-free heading by ruling
+          (→ DEC 2026-08-08l B1). */}
+      {sovereigntyNote !== null && (
+        <section className="section">
+          <h2>{t("sovereigntyHeading")}</h2>
+          <ProseNote text={sovereigntyNote} className={styles.prose} />
+        </section>
+      )}
+
+      {/* Ö1-B — the world counterpart of the province locator, in the same slot: right after
+          the fact sheet, before the narrative sections. Absent (never a placeholder) if the
+          ISO code has no artifact shape; all 199 seeded codes resolve today (re-measured
+          2026-08-11), so this is a defence line rather than a known gap. */}
+      {countryShapeD !== undefined && (
+        <section className="section">
+          <h2>{sectionHeading("location")}</h2>
+          <LocatorMap
+            kind="country"
+            locale={locale}
+            d={countryShapeD}
+            // The SAME suffixed form the <h2> directly above uses. Passing the bare name
+            // rendered "Dünya haritası üzerinde Brezilya konumu" — ungrammatical, and it is
+            // the figure's aria-label, so a Turkish screen-reader user heard it on every
+            // seeded country page while the heading beside it said "Brezilya'nın Konumu".
+            // One figure must not carry two constructions.
+            alt={t("locationAlt", {
+              name: headingName(locale, name, COUNTRY_HEADING_CASE.location),
+            })}
+          />
+        </section>
+      )}
 
       {/* Yeryüzü Şekilleri — TR-gated prose (genuine per-country relief narrative). */}
       {landformNote !== null && (
