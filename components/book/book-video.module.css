@@ -1,0 +1,125 @@
+/* Deneme bloğunun video yarısı — künye satırı, kapak (facade) ve oynatıcı kabı.
+   Terra tokens only (DESIGN.md §2); no hardcoded brand hex. Contrast per DESIGN §5:
+   slate on white 7.92:1 (AAA); the İzle button is the global `.btn-primary`, white on
+   terracotta 5.13:1 (AA). */
+
+/* ── Künye satırı: süre + yayın tarihi ────────────────────────────────────────────────── */
+
+/* A SIBLING of the swap point, never a child of the facade — and that is a rule, not a
+   layout preference. `SEO-POLICY.md` §B5 5.7 binds the markup to what the page SHOWS: a
+   `VideoObject` carrying `uploadDate` and `duration` may only exist where the reader can see
+   both. Inside the facade these two would vanish the moment the player replaced it. */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+.metaSeparator {
+  color: var(--color-border);
+}
+
+/* ── Kapak (facade) ve oynatıcı — AYNI kutu kuralı ────────────────────────────────────── */
+
+/* One box rule for both states, which is what makes the click-time swap pixel-stable in the
+   rich state (CLS).
+
+   `min-height: 200px` is a REQUIREMENT, not a taste: the provenance ledger's Required Minimum
+   Functionality rules put the player viewport at "at least 200×200 px". At a 320px viewport
+   this column is ~280px wide, so a pure 16:9 box would be 280×157 — under the floor. The
+   min-height wins there and YouTube letterboxes inside it, which is correct at every width
+   above it too. */
+.frame {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 9;
+  min-height: 200px;
+  background: var(--color-surface);
+}
+
+.thumbBox {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* NO border-radius and NO overflow clipping here, deliberately. The ledger bars any "overlay,
+   frame or visual element in front of any part of the player", and clipping the corners is
+   also hiding part of it. The facade above is OUR element and may be rounded; the player may
+   not. Nothing else is allowed inside this box either — no badge, no gradient, no tooltip, no
+   play button of our own — and `SPEC.md` §9's criterion 12 measures exactly that. */
+.playerBox {
+  border-radius: 0;
+  overflow: visible;
+}
+
+.player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* Fills the reserved box. `cover` rather than `contain` because the provider's 4:3 thumbnail
+   carries its own letterbox bars, and cropping them at display time restores the 16:9 frame
+   the video actually has. This is display fit, not a byte transformation: nothing is
+   downloaded, re-encoded or stored, so Developer Policies III.E.1 is untouched. */
+.thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Centred over the thumbnail — over OUR cover, never over a player: at this point no player
+   exists on the page at all. Solid rather than translucent so the label clears contrast over
+   whatever frame the video happens to open on. A TEXT button and not a play triangle: the
+   Branding Guidelines bar imitating YouTube's own brand features, which is also why the ruled
+   string is `İzle`. */
+.watchOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* WCAG 2.2 §2.5.5 (AAA) 44px, the same generosity the question cells take — these are the
+   block's primary controls and there is room. */
+.watchButton {
+  min-height: 44px;
+}
+
+/* The typographic and non-embeddable states reserve NO box: today every one of the 30 blocks
+   is typographic, and reserving 30 empty 16:9 rectangles would be a page of grey holes. The
+   growth on click is user-initiated and therefore excluded from CLS (`hadRecentInput`), which
+   `SPEC.md` §9's criterion 15 measures rather than assumes. */
+.plainControl {
+  display: inline-flex;
+  margin-bottom: 4px;
+}
+
+/* ── Erişilebilirlik yardımcıları ──────────────────────────────────────────────────────── */
+
+/* Visually hidden, AT-readable. Local to this module because the repo has no global utility
+   and four other modules already carry this exact block. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

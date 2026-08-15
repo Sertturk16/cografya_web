@@ -111,3 +111,10 @@ export type BookList = components["schemas"]["BookListDto"];
  *    untouchable class and are printed as received — never translated, shortened or
  *    reworded on the way to the page. */
 export type BookDetail = components["schemas"]["BookDetailDto"];
+/** One indexed deneme: its number IN THE BOOK, the video id the embed is built from, the
+ *  question index, and the nullable provider snapshot. */
+export type BookVideo = components["schemas"]["BookVideoDto"];
+/** The provider snapshot on one video — thumbnail (address AND dimensions), publication
+ *  instant, duration in both forms, and `embeddable`. Reached only through the non-null branch
+ *  of `BookVideo["youtube"]`; `lib/book/video-state.ts` is the single place that narrows it. */
+export type BookVideoYoutube = components["schemas"]["BookVideoYoutubeDto"];
