@@ -16,6 +16,7 @@ These files contain the role-specific mandate and checklists only:
 
 - `code-reviewer.md`
 - `a11y-reviewer.md`
+- `security-privacy-reviewer.md`
 - `pr-test-analyzer.md`
 - `code-simplifier.md`
 - `seo-reviewer.md` — retired pointer to FENER
