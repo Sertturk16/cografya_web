@@ -51,8 +51,8 @@ describe("apiGet request budget", () => {
     vi.useFakeTimers();
     const stub = stubHangingFetch();
 
-    // Floating on purpose: the request never settles until the budget fires, and the
-    // rejection is asserted by the next test. Attached here so no unhandled rejection leaks.
+    // The rejection is the NEXT test's subject; here it only has to be handled. `.catch` is
+    // attached synchronously, before any timer moves, for the reason spelled out below.
     const pending = apiGet("/api/anything").catch(() => undefined);
 
     await vi.advanceTimersByTimeAsync(TIMEOUT_MS - 1);
@@ -66,13 +66,19 @@ describe("apiGet request budget", () => {
     vi.useFakeTimers();
     const stub = stubHangingFetch();
 
-    const pending = apiGet("/api/anything");
-    await vi.advanceTimersByTimeAsync(TIMEOUT_MS);
-
+    // THE ASSERTION IS ATTACHED BEFORE TIME MOVES, and that ordering is load-bearing rather
+    // than stylistic. `advanceTimersByTimeAsync` fires the budget AND flushes the microtasks
+    // that settle the promise, so attaching `.rejects` afterwards leaves a window in which the
+    // rejection has no handler — Node reports an unhandled rejection and vitest fails the whole
+    // FILE while this assertion itself passes. Caught on CI, on its first run.
+    //
     // An abort is NOT an `ApiError`: no HTTP status exists behind it, so callers that map
     // specific statuses to `null` must not swallow it. Asserting the name rather than a bare
     // `toThrow()` is what pins that difference (the TEST61-M3 lesson).
-    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    const settled = expect(apiGet("/api/anything")).rejects.toMatchObject({ name: "AbortError" });
+
+    await vi.advanceTimersByTimeAsync(TIMEOUT_MS);
+    await settled;
     expect(stub.signal()?.aborted).toBe(true);
   });
 
