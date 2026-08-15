@@ -31,11 +31,18 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // next/image conventions (CONVENTIONS §6 #9). No images ship yet, so no remote
-  // sources are allowlisted. When the first remote image source lands, add it here
-  // via `images.remotePatterns` (NOT the deprecated `images.domains`). Local images
-  // go in `/public` and are always rendered through `next/image` with explicit
-  // width/height (or `fill` + a fixed-size container) to hold CLS < 0.1.
+  // next/image conventions (CONVENTIONS §6 #9 / ENGINEERING §4 #9). Local images live in
+  // `/public` — today `public/kitaplar/`, the book covers — and are always rendered through
+  // `next/image` with explicit width/height (or `fill` + a fixed-size container) to hold
+  // CLS < 0.1.
+  //
+  // `images.remotePatterns` is deliberately absent, and the FIRST remote image this app
+  // renders will not change that: the YouTube thumbnail on the book detail page is
+  // hotlinked under ENGINEERING §4 #9's second exception, so it never reaches the image
+  // optimiser and needs no allowlist entry. Read that item before adding a pattern here —
+  // an entry added by reflex would authorise the optimiser to fetch and store the very byte
+  // copy the provider's policy forbids. A future remote image we ARE permitted to copy
+  // still belongs here, via `remotePatterns` (never the deprecated `images.domains`).
 };
 
 export default withNextIntl(nextConfig);

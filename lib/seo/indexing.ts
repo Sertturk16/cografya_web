@@ -120,18 +120,28 @@ export const EN_CONTENT_READY: boolean = false;
  *   three of them would repeat the hub's own thin copy. The hub `/oyun` carries the query;
  *   these carry the play. Opening them up later is a one-word change here plus a sitemap
  *   line — the reversible direction.
+ * - `"trOnly"` — TR is indexable and the English twin is **permanently** out, so
+ *   {@link EN_CONTENT_READY} does not reach it. Today: the book tier, `/kitaplar` and
+ *   `/kitaplar/[slug]` (→ DEC 2026-08-15c for the detail page, DEC 2026-08-15g V-4 for the
+ *   hub). A Turkish exam-prep book has no English audience, and indexing the twin would
+ *   incur a debt of hand-written English prose that, unpaid, leaves a thin near-duplicate
+ *   page behind — so the answer does not change when the English wave lands.
+ *
+ *   THIS IS THE MEMBER THE OTHER THREE COULD NOT EXPRESS, and the gap was real rather than
+ *   cosmetic: `"trNarrative"` says "English is waiting for content" and OPENS on the flip,
+ *   `"noindex"` closes Turkish too — and Turkish is the entire value of this surface.
+ *   Named for the content shape, like its siblings, and deliberately not for the mechanism
+ *   (`"enPermanentNoindex"`): what is being described is a page whose substance exists in
+ *   one locale by nature, not a robots directive.
  */
-export type ContentSurface = "localized" | "trNarrative" | "noindex";
+export type ContentSurface = "localized" | "trNarrative" | "noindex" | "trOnly";
 
 /**
  * The locales in which a page of this surface may be indexed.
  *
- * The narrowed branch keeps the DEFAULT locale rather than excluding `"en"` by name. The
- * two are identical while `routing.locales` is `["tr", "en"]`, but they mean different
- * things: the invariant this module documents is *"the locale that owns the narrative is
- * never de-indexed"*, not *"English is de-indexed"*. Expressed this way, a future third
- * locale is de-indexed on TR-narrative surfaces by default and must opt IN — the same
- * fail-safe direction as `surface` defaulting to `"localized"`.
+ * The invariant this module documents is *"the locale that owns the narrative is never
+ * de-indexed"*, not *"English is de-indexed"* — see {@link defaultLocaleOnly}, which is
+ * where that distinction is now expressed and explained.
  */
 export function indexableLocales(surface: ContentSurface): readonly Locale[] {
   return indexableLocalesFor(surface, EN_CONTENT_READY);
@@ -141,25 +151,70 @@ export function indexableLocales(surface: ContentSurface): readonly Locale[] {
  * The same policy with the switch passed IN — the form the tests can interrogate.
  *
  * {@link EN_CONTENT_READY} is a module constant, so a test importing
- * {@link indexableLocales} can only ever see today's `false`, and under `false` the two
- * possible branch orders below produce identical output for EVERY surface. That made the
- * ordering — the one thing standing between a one-word flag flip and re-indexing a
- * deliberately de-indexed surface — untestable in practice. Taking the flag as a parameter
- * is the whole fix: the real function stays a one-liner over the constant, and the branch
- * order is pinned at the combination where it actually matters.
+ * {@link indexableLocales} can only ever see today's `false` — and under `false`,
+ * `"trOnly"` and `"trNarrative"` return the same thing for every input. Their difference
+ * is exactly what stands between a one-word flag flip and re-indexing a surface ruled
+ * permanently out, and it was untestable in practice. Taking the flag as a parameter is
+ * the whole fix: the shipped function stays a one-liner over the constant, and the
+ * behaviour is pinned at the combination where it actually differs.
  */
 export function indexableLocalesFor(
   surface: ContentSurface,
   enContentReady: boolean,
 ): readonly Locale[] {
-  // Checked FIRST, before the EN switch: a fully de-indexed surface is a property of the
-  // page, not of how much English content exists, so flipping `EN_CONTENT_READY` must
-  // never quietly index it. An empty list is also what keeps every downstream consumer
-  // honest without a second rule — `buildAlternates` emits a self-canonical and no
-  // `languages` map (the DEC 2026-07-18c "a noindex page leaves the hreflang cluster
-  // entirely" shape), and `sitemapEntriesFor` emits no `<url>` at all.
-  if (surface === "noindex") return [];
-  if (surface === "localized" || enContentReady) return routing.locales;
+  // EVERY SURFACE ANSWERS FOR ITSELF, AND THE ORDER OF THESE CASES CARRIES NOTHING.
+  //
+  // An earlier shape read `if (surface === "localized" || enContentReady) …` with the
+  // narrowed set as a trailing fallback, which made the answer for THREE surfaces depend
+  // on where the flag test sat in the chain: move it up one line and `"noindex"` or
+  // `"trOnly"` — both ruled permanently out of the index — would open the moment
+  // `EN_CONTENT_READY` flipped. That is more weight than statement order should carry, on
+  // a switch whose whole documented purpose is to be flipped one day by someone reading
+  // the comment above rather than this function.
+  //
+  // Naming the one surface the flag actually opens removes the dependence instead of
+  // documenting it. `"trNarrative"` is that surface by definition: it is the one whose
+  // substance is Turkish-only BECAUSE the English has not been written yet. The other
+  // three are statements about what the page IS, and no amount of English content changes
+  // them.
+  //
+  // The `switch` is deliberate over an if-chain: with no `default` and every case
+  // returning, adding a fifth `ContentSurface` member makes this function stop compiling
+  // ("not all code paths return a value"), so a new member cannot be introduced without a
+  // decision being made here — which is exactly where it has to be made.
+  switch (surface) {
+    // Out of the index in EVERY locale. The empty list is also what keeps each downstream
+    // consumer honest without a second rule — `buildAlternates` emits a self-canonical and
+    // no `languages` map (the DEC 2026-07-18c "a noindex page leaves the hreflang cluster
+    // entirely" shape), and `sitemapEntriesFor` emits no `<url>` at all.
+    case "noindex":
+      return [];
+    // Genuine hand-written copy in every locale.
+    case "localized":
+      return routing.locales;
+    // Permanently single-locale: the English twin is ruled out for good, so the flag is
+    // not consulted at all. Under today's `EN_CONTENT_READY = false` this is
+    // indistinguishable from `"trNarrative"` on every input — `indexing.test.ts` pins the
+    // difference at `true`, the only combination in which a test can observe it.
+    case "trOnly":
+      return defaultLocaleOnly();
+    // The ONE surface the switch opens.
+    case "trNarrative":
+      return enContentReady ? routing.locales : defaultLocaleOnly();
+  }
+}
+
+/**
+ * The narrowed locale set: the locale that OWNS the narrative, never "everything but
+ * English".
+ *
+ * Extracted because two branches above now return it, and the distinction it encodes is
+ * worth stating once rather than twice. Filtering to `routing.defaultLocale` and excluding
+ * `"en"` by name are identical while `routing.locales` is `["tr", "en"]`, but they mean
+ * different things: a future third locale is de-indexed BY DEFAULT on these surfaces and
+ * has to opt in — the same fail-safe direction as `surface` defaulting to `"localized"`.
+ */
+function defaultLocaleOnly(): readonly Locale[] {
   return routing.locales.filter((locale) => locale === routing.defaultLocale);
 }
 

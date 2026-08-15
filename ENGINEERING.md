@@ -106,6 +106,25 @@ noindex,follow>`. `robots.txt` Disallow is only for api/raw-file paths.
    for zero byte saving, while the CLS guarantee it exists to provide is already held by the
    viewBox's intrinsic ratio plus the explicit dimensions. The exception does **not** extend to
    raster images, to remote images, or to any SVG that arrives from outside the build.
+   **A SECOND EXCEPTION — a remote image whose provider forbids byte copies (→ DEC
+   2026-08-15c).** A remote image whose provider's own policy bars us from copying, caching or
+   transforming its bytes — today exactly one class, the YouTube video thumbnail on the book
+   detail page — is rendered with a plain `<img>` at the address the api publishes
+   (`BookVideoYoutubeDto.thumbnailUrl`, hotlinked, **never** constructed from the video id),
+   carrying the explicit `width`/`height` the same payload publishes, inside a fixed-ratio
+   box, and `loading="lazy"` **unless the image is the page's LCP candidate** — lazy-loading
+   the largest above-the-fold image delays the very metric this item exists to protect. Rationale, and why this is a second NARROW exception rather than a
+   widening of the first: `next/image` serves an optimised copy from our own origin, so the
+   optimiser fetches the remote bytes and writes them under `.next/cache/images` — that stored
+   copy is precisely what YouTube Developer Policies III.E.1 forbids without prior written
+   approval, and III.E.5 separately bars replacing API Data with independently computed data.
+   The provider policy wins over the "always" in this item. The CLS guarantee the rule exists
+   to provide is untouched: it comes from the two dimensions the contract publishes, not from
+   the loader. `unoptimized` is not the answer — it keeps the wrapper and removes the only
+   thing the wrapper buys. The exception covers **only** an image whose provider bars byte
+   copies. It does **not** reach our own raster assets (the book covers in `public/kitaplar/`
+   are our files and go through `next/image` like every other local image), and it grants no
+   general "remote images are exempt" licence.
 10. **Trailing-slash pinned** in `next.config.ts` (`trailingSlash: false`); breadcrumbs
     (visual + JSON-LD) on every detail page; hub-and-spoke internal links (neighbors /
     same-climate / related-concept blocks).

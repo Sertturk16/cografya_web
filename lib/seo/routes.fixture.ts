@@ -69,8 +69,21 @@ export const ROUTE_FIXTURES: readonly RouteFixture[] = [
  * cluster contains x-default" — and a fully de-indexed surface has no such locale. It gets
  * its own block in each policy test instead, asserting the opposite properties (no robots
  * silence, no `languages` map, no sitemap entry at all).
+ *
+ * `"trOnly"` (the book tier) IS in the list, and joining it here is the entire test cost of
+ * that surface. The matrix derives every expectation from `indexableLocales()` rather than
+ * from a hardcoded locale set, so adding the member runs the whole existing robots /
+ * canonical / hreflang / urlset contract over it without a single new assertion.
+ *
+ * What that does NOT do — and the distinction matters, because the two are easy to conflate
+ * — is check how `indexableLocalesFor` decides. These tests run against the live
+ * `EN_CONTENT_READY`, which is `false`, and under `false` `"trOnly"` and `"trNarrative"`
+ * answer identically for every input; the matrix would be just as green if the two surfaces
+ * were wired together. What it proves is that the CONSUMERS treat whatever
+ * `indexableLocales()` returns consistently. The decision itself is pinned in
+ * `indexing.test.ts`, at the flipped flag, which is the only place it becomes visible.
  */
-export const SURFACES = ["localized", "trNarrative"] as const;
+export const SURFACES = ["localized", "trNarrative", "trOnly"] as const;
 
 /**
  * A route of the fully de-indexed class — today the game's play screens (→ DEC

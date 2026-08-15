@@ -239,6 +239,171 @@ export function administrativeAreaJsonLd(args: {
 }
 
 /**
+ * `schema.org/Book` for a `/kitaplar/{slug}` book detail page — the book layer of the
+ * schema map (`SEO-POLICY.md` §B5 5.2, book surface table).
+ *
+ * The emitted field set is exactly the one §B5 names — `name`, `author`, `publisher`,
+ * `isbn`, `numberOfPages`, `inLanguage` — plus the `url` every builder in this file
+ * carries. Three deliberate absences, each with a rule behind it:
+ *
+ * · **No `Product`, no `offers`.** We publish a purchase link and no price (DEC
+ *   2026-08-15c), and a priceless `Offer` is precisely §B5 5.8's invented field. §B5 states
+ *   this ban in the book table itself.
+ * · **No `hasPart` / video nodes.** Declaring the solution videos as parts of the BOOK
+ *   would assert a relationship nobody has established — misleading markup under Google's
+ *   structured-data general guidelines. The videos carry their own `VideoObject` nodes.
+ * · **No `image`.** The cover is rendered and would be legitimate, but §B5's book field
+ *   list does not name it, and extending that list is a policy decision rather than an
+ *   implementation one (open with Atlas/FENER, to be ruled when the page is built).
+ *
+ * `inLanguage` is a PARAMETER and is not derived from the page locale. On a `CreativeWork`
+ * this field describes the WORK's language, not the chrome around it — and the contract
+ * carries no language column, so the builder asserts nothing and the caller supplies the
+ * value (`"tr"`: the book is printed in Turkish, which is also why `titleEn` is null).
+ *
+ * `authorNames` is emitted IN THE ORDER GIVEN and is never sorted: a credit order is
+ * published data, and re-ordering it to look tidy would rewrite it. The array's fidelity to
+ * the printed cover is the api's business, not this builder's — so this comment states what
+ * the builder does with the order, and deliberately makes no claim about what the book
+ * prints. An EMPTY array emits no `author` key at all: the contract permits `[]`, and an
+ * empty `author` is a field asserting nothing, which §B5 5.8 treats the same as a filled-in
+ * one. Every optional field likewise appears only when there is a value behind it.
+ */
+export function bookJsonLd(args: {
+  name: string;
+  /** Root-relative path to the book's canonical page, e.g. "/kitaplar/{slug}". */
+  path: string;
+  /** The language of the BOOK, supplied by the caller — never the page locale. */
+  inLanguage: string;
+  /** Authors in the order the contract supplies them. Never sorted. */
+  authorNames: readonly string[];
+  publisherName: string;
+  /** ISBN-13, digits only. Omitted when the api has no value. */
+  isbn?: string | null;
+  /** Printed page count. Omitted when the api has no value. */
+  numberOfPages?: number | null;
+  /** ISO date-time of the last data change (api `updated_at`) — §B5 5.9. */
+  dateModified?: string;
+}): JsonLdSchema {
+  const schema: JsonLdSchema = {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    name: args.name,
+    url: absoluteUrl(args.path),
+    inLanguage: args.inLanguage,
+    publisher: {
+      "@type": "Organization",
+      name: args.publisherName,
+    },
+  };
+
+  if (args.authorNames.length > 0) {
+    schema.author = args.authorNames.map((authorName) => ({
+      "@type": "Person",
+      name: authorName,
+    }));
+  }
+
+  if (args.isbn) {
+    schema.isbn = args.isbn;
+  }
+
+  if (args.numberOfPages !== undefined && args.numberOfPages !== null) {
+    schema.numberOfPages = args.numberOfPages;
+  }
+
+  if (args.dateModified) {
+    schema.dateModified = args.dateModified;
+  }
+
+  return schema;
+}
+
+/**
+ * `schema.org/VideoObject` for one video solution on a book detail page
+ * (`ENGINEERING.md` §4 #5 — "`VideoObject` for video solutions"; `SEO-POLICY.md` §B5 5.2).
+ *
+ * ## The required arguments are required ON PURPOSE — and they cover ONE of two gates
+ *
+ * `name`, `thumbnailUrl`, `uploadDate`, `duration` and `embedUrl` are non-optional in this
+ * signature. Three of them can only come from the api's provider-snapshot object, which is
+ * nullable and is null on the normal path today — so when there is no snapshot, a
+ * `VideoObject` cannot be constructed here **without inventing data**, and inventing it is
+ * exactly what §B5 5.8 rates BLOCKER. That much the type really does enforce, with no
+ * comment for anyone to remember.
+ *
+ * **It does not enforce the second gate, and the difference is worth stating rather than
+ * glossing.** The contract's other condition is `BookVideoYoutubeDto.embeddable`: a
+ * snapshot can exist while embedding is refused, and then the video cannot be watched on
+ * this page at all — which is Google's own precondition for the markup ("VideoObject
+ * structured data must be added to a page where users can watch the video"). No type holds
+ * that, because `embeddable === false` still produces a fully populated snapshot. It is the
+ * CALLER's gate: do not call this builder when `embeddable` is false. W1/W2 own it, and it
+ * belongs in their acceptance criteria rather than in a claim here.
+ *
+ * (Google's own required set is `name` + `thumbnailUrl` + `uploadDate`. `duration` is
+ * required here rather than optional because §B5 5.7 pairs it with visible page content: if
+ * it is in the markup it is on the page, and the page shows it whenever the snapshot
+ * exists. `embedUrl` is required because a `VideoObject` carrying neither `contentUrl` nor
+ * `embedUrl` names no playable resource at all — and on this surface there is no case where
+ * one is legitimately absent, since a block we cannot embed emits no markup in the first
+ * place. The builder still takes it as a parameter rather than composing it, so the player
+ * host stays W2's decision.)
+ *
+ * ## Two values that pass through untouched, and why
+ *
+ * · **`thumbnailUrl` is used exactly as the provider returned it.** It is never built from
+ *   the video id, normalised, resized or given a different host. YouTube Developer Policies
+ *   III.E.5 bars replacing API Data with independently computed data, and III.E.1 bars
+ *   producing byte copies — which is also why this image never reaches `next/image`
+ *   (`ENGINEERING.md` §4 #9, second exception).
+ * · **`duration` is the provider's raw ISO 8601 string**, not a value re-derived from the
+ *   parsed seconds. The contract publishes both precisely because a parser that reads
+ *   "PT6M8S" as 68 seconds satisfies every range check and is still wrong on the page.
+ *
+ * ## Two fields that are never emitted
+ *
+ * · **`description`** — recommended by Google, not required, and this surface has no
+ *   visible per-video summary. §B5 5.7 rates structured data that is not on the page a
+ *   BLOCKER, so emitting one would trade a nice-to-have for a violation.
+ * · **`hasPart` / `Clip`** — ruled: not emitted (Atlas, 2026-08-15, closing web SPEC E4).
+ *   Google defines a clip URL as the video's own URL plus a time QUERY PARAMETER; our ruled
+ *   deep link is a fragment (`#deneme-12-soru-3`), which does not satisfy that definition,
+ *   and generating query-parameter variants was rejected separately under §B12 12.2.c. A
+ *   `url` the page does not honour is a structured-data claim about a page behaviour that
+ *   does not exist.
+ *
+ * `json-ld.test.ts` asserts the absence of both keys — and asserts it over the emitted
+ * OBJECT, which is a narrower guard than "these fields can never come back". Since this
+ * builder has no parameter that could produce either key, the two are the same thing today;
+ * they would stop being the same the moment someone adds a `clips` argument and emits
+ * `hasPart` only when it is supplied. Whoever adds that argument is the one who has to
+ * reopen the ruling, and the test will not do it for them.
+ */
+export function videoObjectJsonLd(args: {
+  /** The video's visible title on our page. */
+  name: string;
+  /** The provider's thumbnail address, verbatim. NEVER constructed from the video id. */
+  thumbnailUrl: string;
+  /** ISO date-time the video was published (contract `publishedAtUtc`). */
+  uploadDate: string;
+  /** ISO 8601 duration, the provider's raw string (contract `durationIso`). */
+  duration: string;
+  /** The player address this page actually loads. The host is the caller's decision. */
+  embedUrl: string;
+}): JsonLdSchema {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: args.name,
+    thumbnailUrl: args.thumbnailUrl,
+    uploadDate: args.uploadDate,
+    duration: args.duration,
+    embedUrl: args.embedUrl,
+  };
+}
+
+/**
  * `schema.org/Country` for a `/dunya/{slug}` country detail page (CONVENTIONS §6 #5 schema
  * map — the geo layer at country scale). `Country` is a subtype of `AdministrativeArea`, so
  * this mirrors `administrativeAreaJsonLd` field-for-field, with three country-scale nuances

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { faqPageJsonLd, type FaqEntry, learningResourceJsonLd } from "./json-ld";
+import {
+  bookJsonLd,
+  faqPageJsonLd,
+  type FaqEntry,
+  learningResourceJsonLd,
+  videoObjectJsonLd,
+} from "./json-ld";
 import { absoluteUrl } from "./site";
 
 /**
@@ -99,5 +105,187 @@ describe("learningResourceJsonLd", () => {
       teaches: "Synthetic subject",
     });
     expect(schema.inLanguage).toBe("en");
+  });
+});
+
+/**
+ * The book layer's two builders (W0). Same purpose as the blocks above — pin the
+ * schema.org VOCABULARY that TypeScript cannot check, since `JsonLdSchema` is an
+ * index-signature type and a mistyped key ships markup validators silently drop.
+ *
+ * Two of these blocks assert an ABSENCE rather than a shape, which is unusual enough to
+ * state plainly: `description` and `Clip` are fields somebody could reasonably add in good
+ * faith, and both are barred for reasons that live outside this file. A test is the only
+ * form of that rule which survives a future contributor who has not read `SEO-POLICY.md`.
+ */
+describe("bookJsonLd", () => {
+  const book = {
+    name: "Synthetic Book",
+    path: "/kitaplar/synthetic-book",
+    inLanguage: "tr",
+    authorNames: ["Synthetic Author One", "Synthetic Author Two"],
+    publisherName: "Synthetic Publisher",
+    isbn: "9780000000000",
+    numberOfPages: 120,
+  };
+
+  it("emits the exact Book node shape §B5 5.2 names", () => {
+    expect(bookJsonLd(book)).toEqual({
+      "@context": "https://schema.org",
+      "@type": "Book",
+      name: "Synthetic Book",
+      url: absoluteUrl("/kitaplar/synthetic-book"),
+      inLanguage: "tr",
+      author: [
+        { "@type": "Person", name: "Synthetic Author One" },
+        { "@type": "Person", name: "Synthetic Author Two" },
+      ],
+      publisher: { "@type": "Organization", name: "Synthetic Publisher" },
+      isbn: "9780000000000",
+      numberOfPages: 120,
+    });
+  });
+
+  it("preserves the author order it was given", () => {
+    // A credit order is published data. Sorting it as a tidy-up would rewrite it — and
+    // the array's alphabetical order here is deliberately the REVERSE of the input, so a
+    // sort would be visible rather than coincidentally identical.
+    const schema = bookJsonLd({
+      ...book,
+      authorNames: ["Zeta Synthetic", "Alpha Synthetic"],
+    });
+    expect(schema.author).toEqual([
+      { "@type": "Person", name: "Zeta Synthetic" },
+      { "@type": "Person", name: "Alpha Synthetic" },
+    ]);
+  });
+
+  it("omits isbn, numberOfPages and dateModified when the CALLER passes no value", () => {
+    // Deliberately a statement about the builder, not about the api. `isbn13` and
+    // `pageCount` are REQUIRED and non-nullable on `BookDetailDto`, so today no caller can
+    // reach this branch through them — `dateModified` is the live case, since the contract
+    // carries no `updatedAt` yet. The branch is still the right shape: §B5 5.8 bars emitting
+    // a field with nothing behind it, and the builder must not become the place that
+    // invents one when a future field arrives nullable.
+    const schema = bookJsonLd({
+      name: book.name,
+      path: book.path,
+      inLanguage: book.inLanguage,
+      authorNames: book.authorNames,
+      publisherName: book.publisherName,
+      isbn: null,
+      numberOfPages: null,
+    });
+    expect(schema).not.toHaveProperty("isbn");
+    expect(schema).not.toHaveProperty("numberOfPages");
+    expect(schema).not.toHaveProperty("dateModified");
+  });
+
+  it("omits author entirely when the contract supplies an empty list", () => {
+    // `authorNames: []` is a permitted contract state, and `author: []` would be a field
+    // asserting nothing — the same §B5 5.8 defect as an invented value, pointing the other
+    // way. The key must be absent, not empty.
+    const schema = bookJsonLd({ ...book, authorNames: [] });
+    expect(schema).not.toHaveProperty("author");
+  });
+
+  it("carries dateModified through when the api supplies updated_at", () => {
+    const schema = bookJsonLd({ ...book, dateModified: "2026-01-02T03:04:05.000Z" });
+    expect(schema.dateModified).toBe("2026-01-02T03:04:05.000Z");
+  });
+
+  it("never emits Product/offers or declares the videos as parts of the book", () => {
+    // We publish a purchase link and no price, so a priceless `Offer` would be §B5 5.8's
+    // invented field; and declaring the solution videos as parts of the printed book
+    // asserts a relationship nobody established (misleading markup).
+    const schema = bookJsonLd(book);
+    expect(schema).not.toHaveProperty("offers");
+    expect(schema).not.toHaveProperty("hasPart");
+    expect(schema["@type"]).toBe("Book");
+  });
+
+  it("takes inLanguage from the caller rather than from a page locale", () => {
+    // The field describes the WORK, and the contract carries no language column — so the
+    // builder must not infer one. Passing a different value must change the output.
+    expect(bookJsonLd({ ...book, inLanguage: "de" }).inLanguage).toBe("de");
+  });
+});
+
+describe("videoObjectJsonLd", () => {
+  const video = {
+    name: "Synthetic video title",
+    thumbnailUrl: "https://i.ytimg.com/vi/syntheticId/hqdefault.jpg?sqp=abc&rs=def",
+    uploadDate: "2026-01-02T03:04:05.000Z",
+    duration: "PT6M8S",
+    embedUrl: "https://example.invalid/embed/syntheticId",
+  };
+
+  it("emits the exact VideoObject node shape", () => {
+    expect(videoObjectJsonLd(video)).toEqual({
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      name: "Synthetic video title",
+      thumbnailUrl: "https://i.ytimg.com/vi/syntheticId/hqdefault.jpg?sqp=abc&rs=def",
+      uploadDate: "2026-01-02T03:04:05.000Z",
+      duration: "PT6M8S",
+      embedUrl: "https://example.invalid/embed/syntheticId",
+    });
+  });
+
+  it("passes the provider's thumbnail address through byte for byte", () => {
+    // Developer Policies III.E.5 bars replacing API Data with independently computed data:
+    // the address is used as returned, never rebuilt from the video id. The query string
+    // and host below exist to make any normalisation visible as a failure.
+    const oddButValid = "https://i9.ytimg.com/vi_webp/x/maxresdefault.webp?v=1&sqp=-oaymwE%3D";
+    const schema = videoObjectJsonLd({ ...video, thumbnailUrl: oddButValid });
+    expect(schema.thumbnailUrl).toBe(oddButValid);
+  });
+
+  it("emits the provider's raw ISO duration, not a re-derived one", () => {
+    // The contract publishes the ISO string beside the parsed seconds because a parser
+    // reading "PT6M8S" as 68 seconds passes every range check and is still wrong.
+    expect(videoObjectJsonLd({ ...video, duration: "PT1H2M3S" }).duration).toBe("PT1H2M3S");
+  });
+
+  it("always carries an embedUrl, passed through from the caller", () => {
+    // A `VideoObject` with neither `contentUrl` nor `embedUrl` names no playable resource,
+    // and on this surface there is no legitimate case for one: a block that cannot be
+    // embedded emits no markup at all. The value is the caller's — the player host is W2's
+    // decision, not this builder's.
+    expect(videoObjectJsonLd(video).embedUrl).toBe("https://example.invalid/embed/syntheticId");
+  });
+
+  // WHAT THE TWO ABSENCE GUARDS BELOW DO AND DO NOT COVER. They assert over the object the
+  // builder emits for a complete argument set, which is the whole of its behaviour only
+  // because it has no parameter that could produce either key. They would NOT catch a
+  // future `clips`/`description` argument that emits its field solely when supplied — the
+  // person adding that argument is reopening a ruling, and these tests will not do it for
+  // them. Kept because the cheap guard covers today's shape exactly.
+  it("never emits description", () => {
+    // Recommended by Google, not required — and this surface renders no visible per-video
+    // summary, which makes it §B5 5.7's "structured data that is not on the page".
+    expect(videoObjectJsonLd(video)).not.toHaveProperty("description");
+  });
+
+  it("cannot be constructed without the provider snapshot's three fields", () => {
+    // THE BUILDER'S STATED SAFETY PROPERTY, ASSERTED AT COMPILE TIME. Its docblock claims
+    // that a `VideoObject` cannot be built when `youtube === null` without inventing data —
+    // a claim about the TYPE, which no runtime assertion can reach. `@ts-expect-error` can:
+    // the line below fails `tsc` (and therefore CI) the day any of the three provider
+    // fields becomes optional, which is the change that would quietly turn the guarantee
+    // into a comment.
+    // @ts-expect-error — omitting thumbnailUrl/uploadDate/duration must not typecheck.
+    const incomplete = () => videoObjectJsonLd({ name: "x", embedUrl: "y" });
+    expect(incomplete).toBeTypeOf("function");
+  });
+
+  it("never emits hasPart/Clip", () => {
+    // Ruled 2026-08-15 (web SPEC E4): Google's clip URL is the video URL plus a time QUERY
+    // PARAMETER; our ruled deep link is a fragment, and query-parameter variants were
+    // rejected under §B12 12.2.c. A `url` the page does not honour is a claim about a page
+    // behaviour that does not exist. This assertion is what keeps it out.
+    const schema = videoObjectJsonLd(video);
+    expect(schema).not.toHaveProperty("hasPart");
+    expect(JSON.stringify(schema)).not.toContain("Clip");
   });
 });

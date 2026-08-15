@@ -9,7 +9,7 @@ import { EN_CONTENT_READY, indexableLocales, indexableLocalesFor, isIndexable } 
  */
 describe("indexing policy", () => {
   it("never de-indexes the default locale, on any surface", () => {
-    for (const surface of ["localized", "trNarrative"] as const) {
+    for (const surface of ["localized", "trNarrative", "trOnly"] as const) {
       expect(indexableLocales(surface)).toContain(routing.defaultLocale);
     }
   });
@@ -40,6 +40,30 @@ describe("indexing policy", () => {
     expect(isIndexable(routing.defaultLocale, "noindex")).toBe(false);
   });
 
+  // The permanently-TR class (→ DEC 2026-08-15c + DEC 2026-08-15g V-4, the book tier). It
+  // is the mirror image of `"trNarrative"`: identical output today, opposite behaviour on
+  // the flip. Everything that can be told apart under today's flag is asserted here; the
+  // part that cannot is in the flipped block below, which is the whole reason that block
+  // exists.
+  it("indexes a trOnly surface in the default locale only", () => {
+    expect([...indexableLocales("trOnly")]).toEqual([routing.defaultLocale]);
+  });
+
+  it("never indexes a non-default locale on a trOnly surface", () => {
+    for (const locale of routing.locales) {
+      if (locale === routing.defaultLocale) continue;
+      expect(isIndexable(locale, "trOnly")).toBe(false);
+    }
+  });
+
+  it("does not tie the trOnly surface to the EN_CONTENT_READY switch", () => {
+    // Deliberately NOT written as `toBe(EN_CONTENT_READY)` — that is the `"trNarrative"`
+    // assertion above, and the difference between the two lines IS the new surface. This
+    // one must read `false` whatever the switch says, which is what the flipped block
+    // below proves for the case a module constant cannot reach.
+    expect(isIndexable("en", "trOnly")).toBe(false);
+  });
+
   // The branch ORDER, pinned at the only combination that can tell the two orders apart.
   // Every assertion above runs against today's `EN_CONTENT_READY = false`, under which
   // "noindex first" and "noindex last" are indistinguishable — so without this block a
@@ -54,6 +78,15 @@ describe("indexing policy", () => {
       expect([...indexableLocalesFor("trNarrative", true)]).toEqual([...routing.locales]);
     });
 
+    // THE ASSERTION THE `"trOnly"` SURFACE EXISTS FOR, and the only one that can tell it
+    // apart from `"trNarrative"` at all. Under today's `false` the two are byte-identical
+    // on every input, so if the `"trOnly"` branch were placed AFTER the switch instead of
+    // before it, every other test in this file would still pass — and the documented
+    // one-word flip would then index a book surface ruled permanently out of the index.
+    it("still keeps the trOnly surface to the default locale", () => {
+      expect([...indexableLocalesFor("trOnly", true)]).toEqual([routing.defaultLocale]);
+    });
+
     it("leaves the localized surface unchanged", () => {
       expect([...indexableLocalesFor("localized", true)]).toEqual([...routing.locales]);
     });
@@ -62,7 +95,7 @@ describe("indexing policy", () => {
   it("is exactly the injected form applied to the live switch", () => {
     // Keeps the two entry points from drifting apart: whatever the constant is today, the
     // shipped function must be its injected twin on every surface.
-    for (const surface of ["localized", "trNarrative", "noindex"] as const) {
+    for (const surface of ["localized", "trNarrative", "noindex", "trOnly"] as const) {
       expect([...indexableLocales(surface)]).toEqual([
         ...indexableLocalesFor(surface, EN_CONTENT_READY),
       ]);
@@ -70,7 +103,7 @@ describe("indexing policy", () => {
   });
 
   it("exposes no locale outside the routing table", () => {
-    for (const surface of ["localized", "trNarrative"] as const) {
+    for (const surface of ["localized", "trNarrative", "trOnly"] as const) {
       for (const locale of indexableLocales(surface)) {
         expect(routing.locales).toContain(locale);
       }
