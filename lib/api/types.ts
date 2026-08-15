@@ -86,3 +86,28 @@ export type MarineConditions = components["schemas"]["MarineConditionsDto"];
  *  point in `displayOrder` (two for the three two-sea provinces, which legitimately
  *  disagree), and the attribution rows. Consumed by the province pages in W2b. */
 export type MarineProvinceConditions = components["schemas"]["MarineProvinceConditionsDto"];
+
+// ---- Book (kitap video çözümleri — /kitaplar, W0) ---------------------------
+/** One book on the `/kitaplar` hub card: identity, the two localized slugs, and the two
+ *  coverage numbers the card shows. `coverImagePath` is a path inside THIS repo's own
+ *  `public/` directory (never a remote URL) or `null` when there is no cover to render. */
+export type BookListItem = components["schemas"]["BookListItemDto"];
+/** The `/api/books` pagination envelope (`items` + `page`/`pageSize`/`total`/`hasMore`).
+ *  The endpoint uses the repo's envelope rather than a flat array because the book set is
+ *  UNBOUNDED (→ DEC 2026-08-15e reversed the earlier four-row ceiling), so every consumer
+ *  must page until `hasMore === false` instead of reading one response — see
+ *  `lib/api/books.ts`, which is the only place that loop is written. */
+export type BookList = components["schemas"]["BookListDto"];
+/** One book's full payload: künye, editorial narrative, hand-written metadata, coverage
+ *  numbers, every indexed deneme with its question index, and the attribution rows.
+ *
+ *  TWO TRAPS THE CONTRACT DOCUMENTS, WORTH REPEATING AT THE ALIAS:
+ *  · `videos[].youtube` is `| null`, and null is the NORMAL path (the provider sync is a
+ *    later leg) — not an error, and not a reason to withhold the page. It is also the one
+ *    switch that decides whether `VideoObject` may be emitted at all (`SEO-POLICY.md` §B5
+ *    5.8: a field the api has no value for is never filled in).
+ *  · `attribution` is never empty, in any data state. It carries the canonical credit
+ *    strings from `provenance/integrations.md` verbatim; they are `CONTENT-STYLE.md` §22's
+ *    untouchable class and are printed as received — never translated, shortened or
+ *    reworded on the way to the page. */
+export type BookDetail = components["schemas"]["BookDetailDto"];

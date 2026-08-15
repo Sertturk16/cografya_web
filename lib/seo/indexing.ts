@@ -120,18 +120,28 @@ export const EN_CONTENT_READY: boolean = false;
  *   three of them would repeat the hub's own thin copy. The hub `/oyun` carries the query;
  *   these carry the play. Opening them up later is a one-word change here plus a sitemap
  *   line — the reversible direction.
+ * - `"trOnly"` — TR is indexable and the English twin is **permanently** out, so
+ *   {@link EN_CONTENT_READY} does not reach it. Today: the book tier, `/kitaplar` and
+ *   `/kitaplar/[slug]` (→ DEC 2026-08-15c for the detail page, DEC 2026-08-15g V-4 for the
+ *   hub). A Turkish exam-prep book has no English audience, and indexing the twin would
+ *   incur a debt of hand-written English prose that, unpaid, leaves a thin near-duplicate
+ *   page behind — so the answer does not change when the English wave lands.
+ *
+ *   THIS IS THE MEMBER THE OTHER THREE COULD NOT EXPRESS, and the gap was real rather than
+ *   cosmetic: `"trNarrative"` says "English is waiting for content" and OPENS on the flip,
+ *   `"noindex"` closes Turkish too — and Turkish is the entire value of this surface.
+ *   Named for the content shape, like its siblings, and deliberately not for the mechanism
+ *   (`"enPermanentNoindex"`): what is being described is a page whose substance exists in
+ *   one locale by nature, not a robots directive.
  */
-export type ContentSurface = "localized" | "trNarrative" | "noindex";
+export type ContentSurface = "localized" | "trNarrative" | "noindex" | "trOnly";
 
 /**
  * The locales in which a page of this surface may be indexed.
  *
- * The narrowed branch keeps the DEFAULT locale rather than excluding `"en"` by name. The
- * two are identical while `routing.locales` is `["tr", "en"]`, but they mean different
- * things: the invariant this module documents is *"the locale that owns the narrative is
- * never de-indexed"*, not *"English is de-indexed"*. Expressed this way, a future third
- * locale is de-indexed on TR-narrative surfaces by default and must opt IN — the same
- * fail-safe direction as `surface` defaulting to `"localized"`.
+ * The invariant this module documents is *"the locale that owns the narrative is never
+ * de-indexed"*, not *"English is de-indexed"* — see {@link defaultLocaleOnly}, which is
+ * where that distinction is now expressed and explained.
  */
 export function indexableLocales(surface: ContentSurface): readonly Locale[] {
   return indexableLocalesFor(surface, EN_CONTENT_READY);
@@ -159,7 +169,29 @@ export function indexableLocalesFor(
   // `languages` map (the DEC 2026-07-18c "a noindex page leaves the hreflang cluster
   // entirely" shape), and `sitemapEntriesFor` emits no `<url>` at all.
   if (surface === "noindex") return [];
+  // Checked before the switch for the SAME reason, and it is the only thing separating
+  // this surface from `"trNarrative"`: both narrow to the default locale today, and under
+  // today's `EN_CONTENT_READY = false` they are indistinguishable — the difference appears
+  // only on the flip, where `"trNarrative"` opens and this must not. Placed after the
+  // switch, the one-word flag flip documented above would silently index a surface that
+  // was ruled permanently out. `indexing.test.ts` pins this ordering at `true`, which is
+  // the only combination in which a test can see it.
+  if (surface === "trOnly") return defaultLocaleOnly();
   if (surface === "localized" || enContentReady) return routing.locales;
+  return defaultLocaleOnly();
+}
+
+/**
+ * The narrowed locale set: the locale that OWNS the narrative, never "everything but
+ * English".
+ *
+ * Extracted because two branches above now return it, and the distinction it encodes is
+ * worth stating once rather than twice. Filtering to `routing.defaultLocale` and excluding
+ * `"en"` by name are identical while `routing.locales` is `["tr", "en"]`, but they mean
+ * different things: a future third locale is de-indexed BY DEFAULT on these surfaces and
+ * has to opt in — the same fail-safe direction as `surface` defaulting to `"localized"`.
+ */
+function defaultLocaleOnly(): readonly Locale[] {
   return routing.locales.filter((locale) => locale === routing.defaultLocale);
 }
 

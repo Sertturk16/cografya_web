@@ -90,6 +90,32 @@ export const routing = defineRouting({
       tr: "/oyun/bolge-bolge-il/[bolge]",
       en: "/game/provinces-by-region/[bolge]",
     },
+    // The book tier: the `/kitaplar` hub + the book detail page (→ DEC 2026-08-15c; IA row
+    // in `CONVENTIONS.md` §5 + `SEO-POLICY.md` §B4). LOCALIZED segment, governed by the
+    // `/hakkimizda ↔ /en/about` and `/deniz ↔ /sea` precedent rather than the
+    // `/turkiye`/`/dunya` one: "kitaplar" does not read as English at all.
+    //
+    // BOTH EN URLS ARE PERMANENTLY `noindex` (`surface: "trOnly"`, `lib/seo/indexing.ts`) —
+    // the detail twin by DEC 2026-08-15c, the hub by DEC 2026-08-15g V-4. Declaring the
+    // segments here is still mandatory, for exactly the reason the `/deniz` entry above
+    // gives: a `noindex` page must still resolve to exactly ONE correct URL per locale, and
+    // changing that URL later owes a redirect. Canonical, hreflang, the sitemap entry and
+    // every internal link derive from these two lines through `getPathname` — none of them
+    // is ever hand-written.
+    //
+    // The dynamic `[slug]` VALUE is the localized slug (`slugTr` / `slugEn`) supplied
+    // per-locale by the caller from the api payload. They are two separate columns even
+    // though today's only book carries the same string in both — a product name is not
+    // translated, which is a consequence rather than a rule — and the web derives neither
+    // from the other (`SEO-POLICY.md` §B4 4.5, BLOCKER).
+    "/kitaplar": {
+      tr: "/kitaplar",
+      en: "/books",
+    },
+    "/kitaplar/[slug]": {
+      tr: "/kitaplar/[slug]",
+      en: "/books/[slug]",
+    },
   },
 });
 
