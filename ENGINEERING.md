@@ -111,8 +111,9 @@ noindex,follow>`. `robots.txt` Disallow is only for api/raw-file paths.
    transforming its bytes — today exactly one class, the YouTube video thumbnail on the book
    detail page — is rendered with a plain `<img>` at the address the api publishes
    (`BookVideoYoutubeDto.thumbnailUrl`, hotlinked, **never** constructed from the video id),
-   carrying `loading="lazy"` and the explicit `width`/`height` the same payload publishes,
-   inside a fixed-ratio box. Rationale, and why this is a second NARROW exception rather than a
+   carrying the explicit `width`/`height` the same payload publishes, inside a fixed-ratio
+   box, and `loading="lazy"` **unless the image is the page's LCP candidate** — lazy-loading
+   the largest above-the-fold image delays the very metric this item exists to protect. Rationale, and why this is a second NARROW exception rather than a
    widening of the first: `next/image` serves an optimised copy from our own origin, so the
    optimiser fetches the remote bytes and writes them under `.next/cache/images` — that stored
    copy is precisely what YouTube Developer Policies III.E.1 forbids without prior written

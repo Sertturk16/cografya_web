@@ -33,23 +33,26 @@ because a missing image is not an error condition anywhere in the chain.
 
 ## Files
 
-| File                                             | Bytes  | Dimensions |
-| ------------------------------------------------ | ------ | ---------- |
-| `ayt-cografya-konu-ozetli-brans-denemeleri.webp` | 63 764 | 480 × 758  |
+| File                                             | Dimensions |
+| ------------------------------------------------ | ---------- |
+| `ayt-cografya-konu-ozetli-brans-denemeleri.webp` | 480 × 758  |
 
 WebP with an alpha channel (transparent background), so it sits on whatever surface the
 card gives it rather than carrying its own backdrop.
 
-**Provenance lives in the ledger, not here.** Every asset in this directory has a row in
-the orchestration root's `provenance/datasets.md` recording its origin and the terms it
-may be used under. Check that row before adding, replacing or re-using a file — and do not
-mirror its contents into this page. A second copy of a provenance status drifts from the
-first, and this file is publicly served (see below), which makes it the wrong home for one.
+**Provenance is recorded outside this repository.** Every asset here has a row naming its
+origin and the terms it may be used under, kept with the project's other source records.
+**Ask before adding, replacing or re-using a file** — the row is written first, and it is
+not written from here. Do not mirror any of it into this page: a second copy of a
+provenance status drifts from the first, and this file is published (see below), which
+makes it the wrong home for one.
 
-> **Note that everything in this directory is public.** `public/` is served verbatim at the
-> site root, including this README — it answers `/kitaplar/README.md`. Keep it to
-> operational guidance for whoever adds the next file: no internal decision references, no
-> open-question status, nothing that would be wrong to publish.
+> **Everything in this directory is public.** `public/` is served verbatim at the site
+> root, this README included — it answers `/kitaplar/README.md`. Keep it to operational
+> guidance for whoever adds the next file: no internal file paths, no decision references,
+> no open-question status, nothing that would be wrong to publish. Facts that nothing
+> verifies do not belong here either — a byte count in a table is a claim that rots the
+> first time the file is re-encoded.
 
 ## Rendering
 

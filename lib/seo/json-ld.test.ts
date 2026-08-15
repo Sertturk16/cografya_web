@@ -160,8 +160,13 @@ describe("bookJsonLd", () => {
     ]);
   });
 
-  it("omits isbn, numberOfPages and dateModified when the api has no value", () => {
-    // §B5 5.8: a field the contract answers `null` for is left out, never filled in.
+  it("omits isbn, numberOfPages and dateModified when the CALLER passes no value", () => {
+    // Deliberately a statement about the builder, not about the api. `isbn13` and
+    // `pageCount` are REQUIRED and non-nullable on `BookDetailDto`, so today no caller can
+    // reach this branch through them — `dateModified` is the live case, since the contract
+    // carries no `updatedAt` yet. The branch is still the right shape: §B5 5.8 bars emitting
+    // a field with nothing behind it, and the builder must not become the place that
+    // invents one when a future field arrives nullable.
     const schema = bookJsonLd({
       name: book.name,
       path: book.path,
@@ -174,6 +179,14 @@ describe("bookJsonLd", () => {
     expect(schema).not.toHaveProperty("isbn");
     expect(schema).not.toHaveProperty("numberOfPages");
     expect(schema).not.toHaveProperty("dateModified");
+  });
+
+  it("omits author entirely when the contract supplies an empty list", () => {
+    // `authorNames: []` is a permitted contract state, and `author: []` would be a field
+    // asserting nothing — the same §B5 5.8 defect as an invented value, pointing the other
+    // way. The key must be absent, not empty.
+    const schema = bookJsonLd({ ...book, authorNames: [] });
+    expect(schema).not.toHaveProperty("author");
   });
 
   it("carries dateModified through when the api supplies updated_at", () => {
@@ -204,6 +217,7 @@ describe("videoObjectJsonLd", () => {
     thumbnailUrl: "https://i.ytimg.com/vi/syntheticId/hqdefault.jpg?sqp=abc&rs=def",
     uploadDate: "2026-01-02T03:04:05.000Z",
     duration: "PT6M8S",
+    embedUrl: "https://example.invalid/embed/syntheticId",
   };
 
   it("emits the exact VideoObject node shape", () => {
@@ -214,6 +228,7 @@ describe("videoObjectJsonLd", () => {
       thumbnailUrl: "https://i.ytimg.com/vi/syntheticId/hqdefault.jpg?sqp=abc&rs=def",
       uploadDate: "2026-01-02T03:04:05.000Z",
       duration: "PT6M8S",
+      embedUrl: "https://example.invalid/embed/syntheticId",
     });
   });
 
@@ -232,18 +247,36 @@ describe("videoObjectJsonLd", () => {
     expect(videoObjectJsonLd({ ...video, duration: "PT1H2M3S" }).duration).toBe("PT1H2M3S");
   });
 
-  it("emits embedUrl only when the caller supplies one", () => {
-    expect(videoObjectJsonLd(video)).not.toHaveProperty("embedUrl");
-    expect(
-      videoObjectJsonLd({ ...video, embedUrl: "https://example.invalid/embed/syntheticId" })
-        .embedUrl,
-    ).toBe("https://example.invalid/embed/syntheticId");
+  it("always carries an embedUrl, passed through from the caller", () => {
+    // A `VideoObject` with neither `contentUrl` nor `embedUrl` names no playable resource,
+    // and on this surface there is no legitimate case for one: a block that cannot be
+    // embedded emits no markup at all. The value is the caller's — the player host is W2's
+    // decision, not this builder's.
+    expect(videoObjectJsonLd(video).embedUrl).toBe("https://example.invalid/embed/syntheticId");
   });
 
+  // WHAT THE TWO ABSENCE GUARDS BELOW DO AND DO NOT COVER. They assert over the object the
+  // builder emits for a complete argument set, which is the whole of its behaviour only
+  // because it has no parameter that could produce either key. They would NOT catch a
+  // future `clips`/`description` argument that emits its field solely when supplied — the
+  // person adding that argument is reopening a ruling, and these tests will not do it for
+  // them. Kept because the cheap guard covers today's shape exactly.
   it("never emits description", () => {
     // Recommended by Google, not required — and this surface renders no visible per-video
     // summary, which makes it §B5 5.7's "structured data that is not on the page".
     expect(videoObjectJsonLd(video)).not.toHaveProperty("description");
+  });
+
+  it("cannot be constructed without the provider snapshot's three fields", () => {
+    // THE BUILDER'S STATED SAFETY PROPERTY, ASSERTED AT COMPILE TIME. Its docblock claims
+    // that a `VideoObject` cannot be built when `youtube === null` without inventing data —
+    // a claim about the TYPE, which no runtime assertion can reach. `@ts-expect-error` can:
+    // the line below fails `tsc` (and therefore CI) the day any of the three provider
+    // fields becomes optional, which is the change that would quietly turn the guarantee
+    // into a comment.
+    // @ts-expect-error — omitting thumbnailUrl/uploadDate/duration must not typecheck.
+    const incomplete = () => videoObjectJsonLd({ name: "x", embedUrl: "y" });
+    expect(incomplete).toBeTypeOf("function");
   });
 
   it("never emits hasPart/Clip", () => {

@@ -26,7 +26,15 @@ import type { BookDetail, BookList } from "@/lib/api/types";
  *   · two pages, so the `hasMore` transition is genuinely traversed rather than assumed;
  *   · a detail payload carrying BOTH `youtube: null` (today's normal path) and a populated
  *     `youtube` block (the enriched path a later api leg opens), so the two branches of the
- *     structured-data rule each have a payload to be built against.
+ *     structured-data rule each have a payload to be built against;
+ *   · **at least one book whose `slugEn` DIFFERS from its `slugTr`**, and at least one where
+ *     they match. Today's real book carries the same string in both — a product name is not
+ *     translated — and that is a fact about the DATA which the fixture must not reproduce as
+ *     its only case. With identical strings everywhere, a consumer that returned `slugTr`
+ *     for both locales would produce byte-identical output on every fixture and pass, while
+ *     deriving one locale's slug from the other is a `SEO-POLICY.md` §B4 4.5 BLOCKER. The
+ *     repo already makes this exact move for routes: `lib/seo/routes.fixture.ts` uses
+ *     `fixture-province-${locale}` for the same reason.
  */
 
 /** Page 1 of 2 — `hasMore: true`, so the loop must ask for a second page. */
@@ -38,7 +46,8 @@ export const BOOK_LIST_PAGE_1: BookList = {
   items: [
     {
       slugTr: "fixture-book-one",
-      slugEn: "fixture-book-one",
+      // Deliberately DIFFERENT from `slugTr` — see the coverage note above.
+      slugEn: "fixture-book-one-en",
       titleTr: "Fixture Book One",
       publisherName: "Fixture Publisher",
       examTrack: "AYT",
@@ -49,6 +58,7 @@ export const BOOK_LIST_PAGE_1: BookList = {
     },
     {
       slugTr: "fixture-book-two",
+      // Deliberately the SAME as `slugTr` — the state today's real book is in.
       slugEn: "fixture-book-two",
       titleTr: "Fixture Book Two",
       publisherName: "Fixture Publisher",
@@ -92,7 +102,8 @@ export const BOOK_LIST_PAGE_2: BookList = {
  */
 export const BOOK_DETAIL: BookDetail = {
   slugTr: "fixture-book-one",
-  slugEn: "fixture-book-one",
+  // Differs from `slugTr`, matching this book's list entry — see the coverage note above.
+  slugEn: "fixture-book-one-en",
   titleTr: "Fixture Book One",
   titleEn: null,
   publisherName: "Fixture Publisher",

@@ -58,6 +58,20 @@ const MAX_BOOK_PAGES = 20;
  * `<url>` rows in the sitemap — with nothing failing, nothing logging, and CI green. The
  * loud failure is caught one level up by `getBooksResilient`, which already knows the
  * difference between build and runtime.
+ *
+ * SHORTNESS HAS TWO CAUSES AND BOTH ARE GUARDED. `hasMore` stuck TRUE is caught by the page
+ * ceiling below. `hasMore` arriving prematurely FALSE — missing, null, or wrongly cleared —
+ * ends the loop through the success path and would return a short list looking like a
+ * complete one, which is the very failure the ceiling exists to prevent, entering by the
+ * other door. The completeness check after the loop closes it using a number the contract
+ * already publishes, so it costs no extra request.
+ *
+ * That check throws on a `total` mismatch rather than warning, and the cost is named
+ * because it is real: a book written between two page reads would move `total` and fail a
+ * build that had done nothing wrong. Accepted deliberately — books are seeded, not
+ * user-generated, so a concurrent write during a build is not a state this system produces;
+ * and if it ever did, the same loud failure is still the right answer, because a
+ * half-enumerated catalogue is exactly what must not reach the sitemap quietly.
  */
 export async function getBooks(): Promise<BookListItem[]> {
   const books: BookListItem[] = [];
@@ -65,7 +79,16 @@ export async function getBooks(): Promise<BookListItem[]> {
   for (let page = 1; page <= MAX_BOOK_PAGES; page += 1) {
     const response = await apiGet<BookList>(`/api/books?page=${page}&pageSize=${BOOKS_PAGE_SIZE}`);
     books.push(...response.items);
-    if (!response.hasMore) return books;
+
+    if (!response.hasMore) {
+      if (books.length !== response.total) {
+        throw new Error(
+          `[books] /api/books reported hasMore: false after ${books.length} of ` +
+            `${response.total} books; refusing to publish a partial catalogue.`,
+        );
+      }
+      return books;
+    }
   }
 
   throw new Error(
@@ -83,9 +106,10 @@ export async function getBooks(): Promise<BookListItem[]> {
  * build, and re-throw at RUNTIME so a transient api blip makes Next keep serving the last
  * good static artifact instead of caching an empty hub.
  *
- * At build, `[]` is not a silent hole either: the hub answers `notFound()` on an empty
- * list rather than rendering a heading with nothing under it, so the degraded state is
- * visible as a 404 rather than as a thin page.
+ * At build, `[]` must not become a silent hole, and that is an obligation W1 INHERITS
+ * rather than a behaviour that exists today: the hub it builds is required to answer
+ * `notFound()` on an empty list instead of rendering a heading with nothing under it, so a
+ * degraded build shows up as a 404 rather than as a thin page. No hub exists yet.
  */
 export async function getBooksResilient(): Promise<BookListItem[]> {
   try {
@@ -103,19 +127,32 @@ export async function getBooksResilient(): Promise<BookListItem[]> {
 
 /**
  * One book by its TR or EN slug (the api resolves both — the `ProvinceController`
- * precedent). Returns `null` on a genuine 404 so the page can call `notFound()`
- * (`ENGINEERING.md` §4 #6 — a real 404, never a soft-200); re-throws any other failure so
- * ISR keeps the last good render instead of caching a broken page.
+ * precedent). Returns `null` when the slug does not resolve to a book, so the page can
+ * call `notFound()` (`ENGINEERING.md` §4 #6 — a real 404, never a soft-200); re-throws any
+ * other failure so ISR keeps the last good render instead of caching a broken page.
+ *
+ * TWO STATUSES MEAN "NO SUCH BOOK", NOT ONE. The api's route contract splits the
+ * not-a-book case in two, and its own DTO says so: *"a slug that violates the shape answers
+ * 400; a well-formed unknown one answers 404"* (`cografya_api/src/book/dto/book-slug.params.ts`,
+ * published on the route as `@ApiBadRequestResponse`). Both are the same answer to the only
+ * question this function asks — the page maps both to `notFound()`.
+ *
+ * Mapping only 404 is what a reader would write from habit, and it fails on the ORDINARY
+ * case rather than an exotic one: a crawler following a mangled link, or a typo, sends a
+ * malformed slug, the api answers 400, and a page that re-threw would return a 500 where it
+ * owes a 404. Every OTHER status still re-throws — a 500 from the api is not "no such book",
+ * and turning it into one would cache a soft-404 over a real outage.
  *
  * The slug is path-encoded even though today's book slugs are ASCII by rule
  * (`GLOSSARY.md` §5): the value arrives from a route parameter, and a route parameter is
- * never interpolated raw regardless of how well-behaved the current data is.
+ * never interpolated raw regardless of how well-behaved the current data is. Encoding is
+ * normalisation and not validation, though — a shape guard is a W1 entry condition.
  */
 export async function getBookBySlug(slug: string): Promise<BookDetail | null> {
   try {
     return await apiGet<BookDetail>(`/api/books/${encodeURIComponent(slug)}`);
   } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
       return null;
     }
     throw error;

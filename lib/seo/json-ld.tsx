@@ -265,7 +265,9 @@ export function administrativeAreaJsonLd(args: {
  * published data, and re-ordering it to look tidy would rewrite it. The array's fidelity to
  * the printed cover is the api's business, not this builder's — so this comment states what
  * the builder does with the order, and deliberately makes no claim about what the book
- * prints. Every optional field is emitted only when the api actually has a value.
+ * prints. An EMPTY array emits no `author` key at all: the contract permits `[]`, and an
+ * empty `author` is a field asserting nothing, which §B5 5.8 treats the same as a filled-in
+ * one. Every optional field likewise appears only when there is a value behind it.
  */
 export function bookJsonLd(args: {
   name: string;
@@ -289,15 +291,18 @@ export function bookJsonLd(args: {
     name: args.name,
     url: absoluteUrl(args.path),
     inLanguage: args.inLanguage,
-    author: args.authorNames.map((authorName) => ({
-      "@type": "Person",
-      name: authorName,
-    })),
     publisher: {
       "@type": "Organization",
       name: args.publisherName,
     },
   };
+
+  if (args.authorNames.length > 0) {
+    schema.author = args.authorNames.map((authorName) => ({
+      "@type": "Person",
+      name: authorName,
+    }));
+  }
 
   if (args.isbn) {
     schema.isbn = args.isbn;
@@ -318,21 +323,32 @@ export function bookJsonLd(args: {
  * `schema.org/VideoObject` for one video solution on a book detail page
  * (`ENGINEERING.md` §4 #5 — "`VideoObject` for video solutions"; `SEO-POLICY.md` §B5 5.2).
  *
- * ## The four required arguments are required ON PURPOSE
+ * ## The required arguments are required ON PURPOSE — and they cover ONE of two gates
  *
- * `name`, `thumbnailUrl`, `uploadDate` and `duration` are non-optional in this signature,
- * and that is this builder's main safety property rather than an accident of style. Three
- * of the four can only come from the api's provider-snapshot object, which is nullable and
- * is null on the normal path today — so when there is no snapshot, a `VideoObject` cannot
- * be constructed here **without inventing data**, and inventing it is exactly what §B5 5.8
- * rates BLOCKER. The rule "emit `VideoObject` only when the provider data exists" is
- * therefore enforced by the type, not by a comment somebody has to remember.
+ * `name`, `thumbnailUrl`, `uploadDate`, `duration` and `embedUrl` are non-optional in this
+ * signature. Three of them can only come from the api's provider-snapshot object, which is
+ * nullable and is null on the normal path today — so when there is no snapshot, a
+ * `VideoObject` cannot be constructed here **without inventing data**, and inventing it is
+ * exactly what §B5 5.8 rates BLOCKER. That much the type really does enforce, with no
+ * comment for anyone to remember.
  *
- * (Google's own required set is `name` + `thumbnailUrl` + `uploadDate`, and it additionally
- * requires that the markup sit on a page where the video can actually be watched — so a
- * block that cannot be played on this page emits nothing at all. `duration` is required
- * here rather than optional because §B5 5.7 pairs it with visible page content: if it is in
- * the markup it is on the page, and the page shows it whenever the snapshot exists.)
+ * **It does not enforce the second gate, and the difference is worth stating rather than
+ * glossing.** The contract's other condition is `BookVideoYoutubeDto.embeddable`: a
+ * snapshot can exist while embedding is refused, and then the video cannot be watched on
+ * this page at all — which is Google's own precondition for the markup ("VideoObject
+ * structured data must be added to a page where users can watch the video"). No type holds
+ * that, because `embeddable === false` still produces a fully populated snapshot. It is the
+ * CALLER's gate: do not call this builder when `embeddable` is false. W1/W2 own it, and it
+ * belongs in their acceptance criteria rather than in a claim here.
+ *
+ * (Google's own required set is `name` + `thumbnailUrl` + `uploadDate`. `duration` is
+ * required here rather than optional because §B5 5.7 pairs it with visible page content: if
+ * it is in the markup it is on the page, and the page shows it whenever the snapshot
+ * exists. `embedUrl` is required because a `VideoObject` carrying neither `contentUrl` nor
+ * `embedUrl` names no playable resource at all — and on this surface there is no case where
+ * one is legitimately absent, since a block we cannot embed emits no markup in the first
+ * place. The builder still takes it as a parameter rather than composing it, so the player
+ * host stays W2's decision.)
  *
  * ## Two values that pass through untouched, and why
  *
@@ -355,8 +371,14 @@ export function bookJsonLd(args: {
  *   deep link is a fragment (`#deneme-12-soru-3`), which does not satisfy that definition,
  *   and generating query-parameter variants was rejected separately under §B12 12.2.c. A
  *   `url` the page does not honour is a structured-data claim about a page behaviour that
- *   does not exist. `json-ld.test.ts` asserts the ABSENCE of both keys, which is what stops
- *   either being reintroduced later as an enhancement.
+ *   does not exist.
+ *
+ * `json-ld.test.ts` asserts the absence of both keys — and asserts it over the emitted
+ * OBJECT, which is a narrower guard than "these fields can never come back". Since this
+ * builder has no parameter that could produce either key, the two are the same thing today;
+ * they would stop being the same the moment someone adds a `clips` argument and emits
+ * `hasPart` only when it is supplied. Whoever adds that argument is the one who has to
+ * reopen the ruling, and the test will not do it for them.
  */
 export function videoObjectJsonLd(args: {
   /** The video's visible title on our page. */
@@ -367,23 +389,18 @@ export function videoObjectJsonLd(args: {
   uploadDate: string;
   /** ISO 8601 duration, the provider's raw string (contract `durationIso`). */
   duration: string;
-  /** The player address this page actually loads. Omitted when the caller has none. */
-  embedUrl?: string | null;
+  /** The player address this page actually loads. The host is the caller's decision. */
+  embedUrl: string;
 }): JsonLdSchema {
-  const schema: JsonLdSchema = {
+  return {
     "@context": "https://schema.org",
     "@type": "VideoObject",
     name: args.name,
     thumbnailUrl: args.thumbnailUrl,
     uploadDate: args.uploadDate,
     duration: args.duration,
+    embedUrl: args.embedUrl,
   };
-
-  if (args.embedUrl) {
-    schema.embedUrl = args.embedUrl;
-  }
-
-  return schema;
 }
 
 /**

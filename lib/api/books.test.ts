@@ -108,9 +108,13 @@ describe("getBooks — paging", () => {
 
     await getBooks();
 
-    // The query contract is ruled (→ DEC 2026-08-15h md.3) but is not in the committed
-    // OpenAPI document yet, because the path itself is not. Pinning it here means the day
-    // B3 lands, a mismatch shows up as a failing test rather than as an empty hub.
+    // WHAT THIS PINS, AND WHAT IT CANNOT. It pins the request THIS module builds, so a
+    // silent edit to the parameter names or the page size fails here. It does NOT validate
+    // that against the api: the expectation is a literal copy of the string the code
+    // produces, so if the ruled contract (→ DEC 2026-08-15h md.3) and this module disagree,
+    // both sides of this assertion move together and it stays green. The real check is a
+    // live call, and it belongs to W1 — the path does not exist in the committed OpenAPI
+    // document yet, which is exactly why it is not a check that can be written here.
     expect(requestedUrl(stub, 1)).toBe("http://api.test/api/books?page=1&pageSize=100");
     expect(requestedUrl(stub, 2)).toBe("http://api.test/api/books?page=2&pageSize=100");
   });
@@ -130,7 +134,26 @@ describe("getBooks — paging", () => {
   it("re-throws an api failure instead of returning a partial catalogue", async () => {
     apiAnswersInOrder(ok(BOOK_LIST_PAGE_1), notOk(502));
 
-    await expect(getBooks()).rejects.toThrow();
+    // The status is asserted, not just "something threw": a page-2 failure and a bug in
+    // this test's own stub both satisfy a bare `toThrow()`.
+    await expect(getBooks()).rejects.toMatchObject({ name: "ApiError", status: 502 });
+  });
+
+  // CODE61-M3: the ceiling catches `hasMore` stuck TRUE; this catches it arriving
+  // prematurely FALSE, which ends the loop through the SUCCESS path and would otherwise
+  // return a short catalogue that looks complete.
+  it("throws when hasMore clears before the published total is reached", async () => {
+    apiAnswersInOrder(ok({ ...BOOK_LIST_PAGE_1, hasMore: false }));
+
+    await expect(getBooks()).rejects.toThrow(/partial catalogue/);
+  });
+
+  it("accepts a single complete page whose length matches the total", async () => {
+    // The completeness check must not fire on the ordinary one-page case — a guard that
+    // rejects the normal path is worse than no guard.
+    apiAnswersInOrder(ok({ ...BOOK_LIST_PAGE_2, total: BOOK_LIST_PAGE_2.items.length }));
+
+    await expect(getBooks()).resolves.toHaveLength(BOOK_LIST_PAGE_2.items.length);
   });
 });
 
@@ -142,9 +165,14 @@ describe("getBooksResilient — the build-vs-runtime split", () => {
       vi.fn(() => Promise.resolve(notOk(404))),
     );
 
-    // CI has no api service, so a build must survive the outage; the hub then answers 404
-    // on an empty list rather than rendering a heading with nothing under it.
+    // CI has no api service, so a build must survive the outage; W1's hub then owes a 404
+    // on an empty list rather than a heading with nothing under it.
     await expect(getBooksResilient()).resolves.toEqual([]);
+
+    // The degrade is only safe because it is ANNOUNCED. A silent `[]` during a build is
+    // indistinguishable from a genuinely empty catalogue, so the warning is part of the
+    // contract rather than debug noise.
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("[books]"));
   });
 
   it("re-throws at runtime, so ISR keeps the last good render", async () => {
@@ -154,7 +182,7 @@ describe("getBooksResilient — the build-vs-runtime split", () => {
       vi.fn(() => Promise.resolve(notOk(502))),
     );
 
-    await expect(getBooksResilient()).rejects.toThrow();
+    await expect(getBooksResilient()).rejects.toMatchObject({ name: "ApiError", status: 502 });
   });
 });
 
@@ -165,21 +193,49 @@ describe("getBookBySlug", () => {
     await expect(getBookBySlug("fixture-book-one")).resolves.toEqual(BOOK_DETAIL);
   });
 
-  it("returns null on a genuine 404 so the page can call notFound()", async () => {
-    apiAnswersInOrder(notOk(404));
+  // BOTH STATUSES THE API USES FOR "NO SUCH BOOK". The route contract splits the case in
+  // two — a malformed slug answers 400, a well-formed unknown one answers 404
+  // (`cografya_api/src/book/dto/book-slug.params.ts`, published as `@ApiBadRequestResponse`)
+  // — and the page owes `notFound()` for both. The 400 row is the one that was missing: a
+  // crawler following a mangled link is the ordinary case, not an exotic one, and a
+  // re-thrown 400 turns a page that owes a 404 into a 500.
+  it.each([
+    ["404, a well-formed slug that matches no book", 404],
+    ["400, a slug that violates the api's shape rule", 400],
+  ])("returns null on %s so the page can call notFound()", async (_label, status) => {
+    apiAnswersInOrder(notOk(status));
 
     // `null` is what keeps an unknown slug a REAL 404 instead of a soft-200
-    // (`ENGINEERING.md` §4 #6). Any other value here would be that regression.
+    // (`ENGINEERING.md` §4 #6). Any other outcome here is that regression.
     await expect(getBookBySlug("no-such-book")).resolves.toBeNull();
   });
 
+  // The complement, and the reason the mapping is two statuses rather than "4xx": a 500 is
+  // NOT "no such book", and mapping it to `null` would cache a soft-404 over a real outage.
   it.each([
-    ["a 5xx from the api", () => Promise.resolve(notOk(500))],
-    ["a transport failure, where fetch itself rejects", () => Promise.reject(new TypeError("x"))],
-  ])("re-throws on %s, so ISR never caches a broken page", async (_label, outcome) => {
-    vi.stubGlobal("fetch", vi.fn(outcome));
+    ["a 5xx from the api", 500],
+    ["a 403 from the api", 403],
+  ])("re-throws on %s, so ISR never caches a broken page", async (_label, status) => {
+    apiAnswersInOrder(notOk(status));
 
-    await expect(getBookBySlug("fixture-book-one")).rejects.toThrow();
+    // Asserted on the ApiError's own status rather than with a bare `toThrow()`: the point
+    // is WHICH rejection surfaced, and a bare matcher passes on any of them — including a
+    // TypeError from a typo in the test itself.
+    await expect(getBookBySlug("fixture-book-one")).rejects.toMatchObject({
+      name: "ApiError",
+      status,
+    });
+  });
+
+  it("re-throws a transport failure, where fetch itself rejects", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new TypeError("fetch failed"))),
+    );
+
+    // No status exists here — `apiGet` never sees a response — so this rejection must reach
+    // the caller as the TypeError it is, not as an ApiError.
+    await expect(getBookBySlug("fixture-book-one")).rejects.toThrow(TypeError);
   });
 
   it("path-encodes the slug it was handed", async () => {
