@@ -81,6 +81,19 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/**
+ * A SELF-CONSISTENT one-page response: `hasMore: false` **and** a `total` equal to its own
+ * item count.
+ *
+ * `BOOK_LIST_PAGE_2` is page 2 of a three-book set, so its `total: 3` is correct in that
+ * role and wrong when the page is served alone — one item claiming a catalogue of three is
+ * precisely the "short list arriving through the success path" that the completeness check
+ * exists to reject. It rejected it: this constant exists because the guard failed the two
+ * tests below on its first CI run, on a fixture misuse that had been invisible while the
+ * guard did not exist.
+ */
+const SINGLE_COMPLETE_PAGE = { ...BOOK_LIST_PAGE_2, total: BOOK_LIST_PAGE_2.items.length };
+
 describe("getBooks — paging", () => {
   it("follows hasMore across pages and concatenates in the api's order", async () => {
     apiAnswersInOrder(ok(BOOK_LIST_PAGE_1), ok(BOOK_LIST_PAGE_2));
@@ -96,7 +109,7 @@ describe("getBooks — paging", () => {
   });
 
   it("stops as soon as a page reports hasMore: false", async () => {
-    const stub = apiAnswersInOrder(ok(BOOK_LIST_PAGE_2));
+    const stub = apiAnswersInOrder(ok(SINGLE_COMPLETE_PAGE));
 
     await getBooks();
 
@@ -151,9 +164,9 @@ describe("getBooks — paging", () => {
   it("accepts a single complete page whose length matches the total", async () => {
     // The completeness check must not fire on the ordinary one-page case — a guard that
     // rejects the normal path is worse than no guard.
-    apiAnswersInOrder(ok({ ...BOOK_LIST_PAGE_2, total: BOOK_LIST_PAGE_2.items.length }));
+    apiAnswersInOrder(ok(SINGLE_COMPLETE_PAGE));
 
-    await expect(getBooks()).resolves.toHaveLength(BOOK_LIST_PAGE_2.items.length);
+    await expect(getBooks()).resolves.toHaveLength(SINGLE_COMPLETE_PAGE.items.length);
   });
 });
 
