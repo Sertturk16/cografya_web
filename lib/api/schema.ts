@@ -283,6 +283,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List books, paginated (lean payload for the /kitaplar hub).
+         * @description Returns the shared list envelope. Read every book by paging until hasMore is false — the book tier is unbounded, so there is no single request that returns all of them.
+         */
+        get: operations["BookController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/books/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get one book by its TR or EN slug, with its full question index.
+         * @description One request carries the whole page: künye, coverage, every deneme and all its questions. There is deliberately no separate videos endpoint — the SSG build makes one round trip.
+         */
+        get: operations["BookController_findBySlug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1542,6 +1582,291 @@ export interface components {
             /** @description Deterministic dominant-pollutant tie-break order when two pollutants share the worst band. */
             tieBreakOrder: ("pm2_5" | "pm10" | "no2" | "o3" | "so2")[];
         };
+        BookListItemDto: {
+            /**
+             * @description TR routing key — /kitaplar/{slugTr}.
+             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             */
+            slugTr: string;
+            /**
+             * @description EN routing key — /en/books/{slugEn}. Equal to slugTr for this book because a product name is not translated; that is a consequence, not a rule, and the two are separate columns. The EN twin is permanently noindex by owner ruling and still needs exactly one URL.
+             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             */
+            slugEn: string;
+            /**
+             * @description The book's full title as printed on the cover.
+             * @example AYT Coğrafya Konu Özetli Branş Denemeleri
+             */
+            titleTr: string;
+            /**
+             * @description Publisher, as credited. Feeds Book.publisher in the structured data.
+             * @example Coğrafya Gurmesi Yayınları
+             */
+            publisherName: string;
+            /**
+             * @description Which exam this book prepares for. A closed set — adding a member is a breaking contract change, because it can break an exhaustive switch in the consumer.
+             * @example AYT
+             * @enum {string}
+             */
+            examTrack: "AYT" | "TYT" | "YKS" | "KPSS" | "LGS";
+            /**
+             * @description A path inside the web repo's own public/ directory — never a remote URL, enforced by a database constraint. The api neither receives nor serves image bytes on this leg. Null means there is no cover to render.
+             * @example /kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri.jpg
+             */
+            coverImagePath: string | null;
+            /**
+             * @description How many denemeler of this book have an indexed video solution. Present on the card so the hub carries real content of its own rather than being a bare list of links.
+             * @example 30
+             */
+            videoCount: number;
+            /**
+             * @description How many individual question solutions are indexed, across every video.
+             * @example 180
+             */
+            questionCount: number;
+            /**
+             * @description Hub ordering. Read with a deterministic secondary sort — equal values must not leave the order to chance.
+             * @example 1
+             */
+            displayOrder: number;
+            /**
+             * Format: date-time
+             * @description ISO 8601 UTC instant this book last changed, across its own row AND its videos and questions. Feeds sitemap lastmod and Book.dateModified — use it directly, never the build time.
+             * @example 2026-08-15T09:12:33.000Z
+             */
+            updatedAt: string;
+        };
+        BookListDto: {
+            /**
+             * @description Requested page, 1-based.
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Requested page size. Each endpoint documents its own ceiling.
+             * @example 50
+             */
+            pageSize: number;
+            /**
+             * @description Total rows matching the applied filter, across all pages.
+             * @example 630
+             */
+            total: number;
+            /**
+             * @description Whether a further page exists after this one.
+             * @example true
+             */
+            hasMore: boolean;
+            /** @description The page of books, ordered by displayOrder ascending and tie-broken by slugTr. The tie-break is not decoration: displayOrder is hand-assigned and may repeat, and offset pagination without a total order can serve the same book on two pages. slugTr carries a UNIQUE constraint, which is what makes the ordering total rather than merely intended. */
+            items: components["schemas"]["BookListItemDto"][];
+        };
+        BookCoverageDto: {
+            /**
+             * @description How many denemeler of this book have a video solution indexed here.
+             * @example 30
+             */
+            videoCount: number;
+            /**
+             * @description How many individual question solutions are indexed, across every video.
+             * @example 180
+             */
+            questionCount: number;
+            /**
+             * @description Exactly which deneme numbers are covered, ascending. Ranges for display ("1–13") are the web layer's to derive; the api publishes the set, never a formatted string.
+             * @example [
+             *       1,
+             *       2,
+             *       3,
+             *       15,
+             *       33,
+             *       40
+             *     ]
+             */
+            denemeNumbers: number[];
+            /**
+             * @description How many denemeler the BOOK contains — a künye fact, not a coverage figure. It is not derived from videoCount, and nothing forces the two apart: a fully covered book makes them equal. Non-nullable: the owner checked the book (K-E), and denemeler 14 and 22 DO exist there — only their solution videos are missing.
+             * @example 40
+             */
+            denemeCount: number;
+        };
+        BookVideoQuestionDto: {
+            /**
+             * @description The question position inside its deneme, from 1, gapless. The reader-facing "Soru 3" label is composed in the web layer from this number and an i18n key.
+             * @example 3
+             */
+            questionNo: number;
+            /**
+             * @description Whole seconds from the start of the video to this question's solution — the jump target handed to the player (DEC 2026-08-15d: the jump happens inside the loaded player, not by rebuilding the embed URL). DO NOT assume the first question starts at 0 — the measured set of first-question seconds is {0, 2, 6, 11, 94}, so 0 is an ordinary value and not a sentinel.
+             * @example 94
+             */
+            startSecond: number;
+        };
+        BookVideoYoutubeDto: {
+            /** @description Thumbnail URL exactly as the provider returned it. NEVER construct this address from the video id — replacing API Data with independently computed data is barred (Developer Policies III.E.5). Hotlink it; do not copy, cache or optimise the bytes (III.E.1), which is why image optimisation is off on this surface. */
+            thumbnailUrl: string;
+            /** @description Thumbnail width in pixels, as reported. Render the image with explicit dimensions: the facade reserves its box from these two numbers, which is how this surface holds CLS at 0. */
+            thumbnailWidth: number;
+            /** @description Thumbnail height in pixels, as reported. */
+            thumbnailHeight: number;
+            /**
+             * Format: date-time
+             * @description The video's publication instant, UTC. Feeds VideoObject.uploadDate.
+             */
+            publishedAtUtc: string;
+            /**
+             * @description Duration as the provider's raw ISO 8601 string. Published beside the parsed seconds because the two are cross-checked on the write path: a parser that reads "PT6M8S" as 68 seconds passes every range invariant and is still wrong on the page.
+             * @example PT6M8S
+             */
+            durationIso: string;
+            /**
+             * @description Duration in seconds, parsed from durationIso. B4 obligation, not an existing guarantee: the write path re-derives the ISO string from this integer and refuses a row that does not round-trip. No write path exists yet, so read the equality as a specified invariant.
+             * @example 368
+             */
+            durationSeconds: number;
+            /** @description Whether the provider permits embedding. FALSE is not an error: the page then shows a typographic facade instead of the player and stays complete. */
+            embeddable: boolean;
+            /**
+             * Format: date-time
+             * @description When WE fetched this snapshot, UTC — the instant the 30-day retention clock is measured from. Publish it as an absolute timestamp if it is shown at all; never as a standing promise about update frequency.
+             */
+            dataFetchedAtUtc: string;
+        };
+        BookVideoDto: {
+            /**
+             * @description The deneme's number IN THE BOOK — not its position in the playlist. The two diverge (+1 after 14, +2 after 21) because denemeler 14 and 22 exist in the book while their solution videos do not. The playlist position is stored nowhere and is never published.
+             * @example 12
+             */
+            denemeNo: number;
+            /**
+             * @description The YouTube video id, 11 characters — the identifier the embed is built from. Load the player only on a click or key press, never on hover, and place nothing on top of it once it is in. Moving between questions happens INSIDE the loaded player through the IFrame Player API, not by rebuilding the embed URL per question (owner ruling DEC 2026-08-15d): six questions per video would otherwise cost six full player reloads.
+             * @example dQw4w9WgXcQ
+             */
+            youtubeVideoId: string;
+            /** @description The question index for this deneme, ascending by questionNo and by startSecond. It must be readable and clickable WITHOUT JavaScript: SEO-POLICY §12.2.b treats a page whose body exists to send the visitor elsewhere as a BLOCKER, and this index is what keeps the page on the right side of that line. */
+            questions: components["schemas"]["BookVideoQuestionDto"][];
+            /** @description Provider-sourced enrichment, or NULL — and null is a normal state, not an error: the sync may never have run, the data may have aged past its serve threshold, or the video may have stopped being returned. When it is null, do NOT emit VideoObject and fall back to a typographic facade; the rest of this object is unaffected. */
+            youtube: components["schemas"]["BookVideoYoutubeDto"] | null;
+        };
+        BookAttributionDto: {
+            /**
+             * @description Machine token for whom this row credits. Both rows are always present; the reader-facing grouping is the web layer's decision, not a reason to drop one.
+             * @enum {string}
+             */
+            providerId: "youtube" | "partner";
+            /** @description Provider name as credited. Verbatim from the provenance ledger (provenance/integrations.md, "YouTube attribution — canonical strings"); never translated or shortened. */
+            providerName: string;
+            /** @description The required attribution line, verbatim and untranslated. Its canonical text lives in provenance/integrations.md and is byte-pinned by a spec beside the catalogue. Display is the web repo's decision; carrying it on every response removes "it was not shown" as a possibility. */
+            requiredNoticeTr: string;
+            /** @description Licence URL when the obligation arises from a licence, or null when it does not. Null is a statement, not a gap: inventing a plausible URL would misdescribe the terms. */
+            licenceUrl: string | null;
+            /** @description Link the credit should point at — the channel or the publisher — or null. The Branding Guidelines require a YouTube logo used for attribution to link back to YouTube content or to a YouTube component. */
+            channelUrl: string | null;
+        };
+        BookDetailDto: {
+            /**
+             * @description TR routing key — /kitaplar/{slugTr}.
+             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             */
+            slugTr: string;
+            /**
+             * @description EN routing key — /en/books/{slugEn}. Equal to slugTr for this book because a product name is not translated; that is a consequence, not a rule, and the two are separate columns. The EN twin is permanently noindex by owner ruling and still needs exactly one URL.
+             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             */
+            slugEn: string;
+            /**
+             * @description The book's full title as printed on the cover.
+             * @example AYT Coğrafya Konu Özetli Branş Denemeleri
+             */
+            titleTr: string;
+            /**
+             * @description Publisher, as credited. Feeds Book.publisher in the structured data.
+             * @example Coğrafya Gurmesi Yayınları
+             */
+            publisherName: string;
+            /**
+             * @description Which exam this book prepares for. A closed set — adding a member is a breaking contract change, because it can break an exhaustive switch in the consumer.
+             * @example AYT
+             * @enum {string}
+             */
+            examTrack: "AYT" | "TYT" | "YKS" | "KPSS" | "LGS";
+            /**
+             * @description A path inside the web repo's own public/ directory — never a remote URL, enforced by a database constraint. The api neither receives nor serves image bytes on this leg. Null means there is no cover to render.
+             * @example /kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri.jpg
+             */
+            coverImagePath: string | null;
+            /**
+             * @description How many denemeler of this book have an indexed video solution. Present on the card so the hub carries real content of its own rather than being a bare list of links.
+             * @example 30
+             */
+            videoCount: number;
+            /**
+             * @description How many individual question solutions are indexed, across every video.
+             * @example 180
+             */
+            questionCount: number;
+            /**
+             * @description Hub ordering. Read with a deterministic secondary sort — equal values must not leave the order to chance.
+             * @example 1
+             */
+            displayOrder: number;
+            /**
+             * Format: date-time
+             * @description ISO 8601 UTC instant this book last changed, across its own row AND its videos and questions. Feeds sitemap lastmod and Book.dateModified — use it directly, never the build time.
+             * @example 2026-08-15T09:12:33.000Z
+             */
+            updatedAt: string;
+            /** @description Null today, deliberately: a product name has no translation, and SEO-POLICY §B14 14.2 omits a field with no counterpart rather than machine-filling it. Render the TR title on the EN page rather than inventing one. */
+            titleEn: string | null;
+            /**
+             * @description Authors in the order the BOOK prints them. This is a published render order — iterate it as given and never sort it alphabetically as a tidy-up. The example above is a placeholder, not real seeded data.
+             * @example [
+             *       "Ada Lovelace",
+             *       "Grace Hopper"
+             *     ]
+             */
+            authorNames: string[];
+            /**
+             * @description ISBN-13, exactly 13 digits, no hyphens. Feeds Book.isbn.
+             * @example 9786259490069
+             */
+            isbn13: string;
+            /**
+             * @description Printed page count. Feeds Book.numberOfPages.
+             * @example 144
+             */
+            pageCount: number;
+            /**
+             * @description How many denemeler the BOOK contains — a künye fact, distinct from how many have video solutions. Also present inside coverage; both come from the same value.
+             * @example 40
+             */
+            denemeCount: number;
+            /** @description The editorial narrative, hand-written and reviewed against CONTENT-STYLE and SEO-POLICY Part A. Paragraphs are separated by a blank line; render it as prose, never as a single run-on block. */
+            introTr: string;
+            /** @description Null today (SEO-POLICY §B14 14.2). The EN page carries no narrative rather than a machine-translated one; the EN twin is permanently noindex by owner ruling. */
+            introEn: string | null;
+            /** @description Hand-written page title (SEO-POLICY A1). It comes from the api rather than a web-side pattern because four books can be written by hand where 81 provinces could not — pass it through buildMetadata, do not bypass the helper. */
+            metaTitleTr: string;
+            /** @description Hand-written meta description carrying a concrete fact (SEO-POLICY A2), not a generic phrase and not derived from a template. */
+            metaDescriptionTr: string;
+            /**
+             * @description The channel the solutions are published on — attribution and the channel link.
+             * @example UCH7D1zOgHykrHfx5Q7WERmw
+             */
+            youtubeChannelId: string;
+            /** @description The playlist, carried for the attribution link ONLY. No code path on our side queries it: the video set is fixed by seed, so a playlist edit cannot silently change this page. */
+            youtubePlaylistId: string | null;
+            /**
+             * @description Outbound "Satın Al" link to the seller, or null when there is none — render no button on null. **No price is published anywhere, by rule**: CONVENTIONS §4 bars pricing, and a price on a page we do not control goes stale. Always https, enforced by a database constraint, because this value becomes an href on a public page.
+             * @example https://www.kitapisler.com/cografya-gurmesi-yayinlari-ayt-cografya-konu-ozetli-brans-denemeleri_106636.html
+             */
+            purchaseUrl: string | null;
+            /** @description What this index actually covers, as numbers. The counts belong to the interface rather than to the prose (owner ruling); the editorial text asserts nothing about them. */
+            coverage: components["schemas"]["BookCoverageDto"];
+            /** @description Every indexed deneme with its question index, ascending by denemeNo. The 180-row index must be readable and clickable without JavaScript — that is what keeps this page clear of SEO-POLICY §12.2.b. */
+            videos: components["schemas"]["BookVideoDto"][];
+            /** @description Never empty, on any response, in any data state — an empty array would be a breach of the attribution obligation rather than a degraded widget. Two rows: the YouTube source credit and the content partner credit; neither substitutes for the other. */
+            attribution: components["schemas"]["BookAttributionDto"][];
+        };
         EarthquakeEventDto: {
             /**
              * Format: uuid
@@ -1720,279 +2045,6 @@ export interface components {
             items: components["schemas"]["EarthquakeEventDto"][];
             /** @description This endpoint's extension to the shared envelope: applied filter, data freshness and the mandatory attribution. Not part of the core five and not inherited by any other list. */
             meta: components["schemas"]["EarthquakeListMetaDto"];
-        };
-        BookListItemDto: {
-            /**
-             * @description TR routing key — /kitaplar/{slugTr}.
-             * @example ayt-cografya-konu-ozetli-brans-denemeleri
-             */
-            slugTr: string;
-            /**
-             * @description EN routing key — /en/books/{slugEn}. Equal to slugTr for this book because a product name is not translated; that is a consequence, not a rule, and the two are separate columns. The EN twin is permanently noindex by owner ruling and still needs exactly one URL.
-             * @example ayt-cografya-konu-ozetli-brans-denemeleri
-             */
-            slugEn: string;
-            /**
-             * @description The book's full title as printed on the cover.
-             * @example AYT Coğrafya Konu Özetli Branş Denemeleri
-             */
-            titleTr: string;
-            /**
-             * @description Publisher, as credited. Feeds Book.publisher in the structured data.
-             * @example Coğrafya Gurmesi Yayınları
-             */
-            publisherName: string;
-            /**
-             * @description Which exam this book prepares for. A closed set — adding a member is a breaking contract change, because it can break an exhaustive switch in the consumer.
-             * @example AYT
-             * @enum {string}
-             */
-            examTrack: "AYT" | "TYT" | "YKS" | "KPSS" | "LGS";
-            /**
-             * @description A path inside the web repo's own public/ directory — never a remote URL, enforced by a database constraint. The api neither receives nor serves image bytes on this leg. Null means there is no cover to render.
-             * @example /kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri.jpg
-             */
-            coverImagePath: string | null;
-            /**
-             * @description How many denemeler of this book have an indexed video solution. Present on the card so the hub carries real content of its own rather than being a bare list of links.
-             * @example 30
-             */
-            videoCount: number;
-            /**
-             * @description How many individual question solutions are indexed, across every video.
-             * @example 180
-             */
-            questionCount: number;
-            /**
-             * @description Hub ordering. Read with a deterministic secondary sort — equal values must not leave the order to chance.
-             * @example 1
-             */
-            displayOrder: number;
-        };
-        BookListDto: {
-            /**
-             * @description Requested page, 1-based.
-             * @example 1
-             */
-            page: number;
-            /**
-             * @description Requested page size. Each endpoint documents its own ceiling.
-             * @example 50
-             */
-            pageSize: number;
-            /**
-             * @description Total rows matching the applied filter, across all pages.
-             * @example 630
-             */
-            total: number;
-            /**
-             * @description Whether a further page exists after this one.
-             * @example true
-             */
-            hasMore: boolean;
-            /** @description The page of books, ordered by displayOrder ascending and tie-broken by slugTr. The tie-break is not decoration: displayOrder is hand-assigned and may repeat, and offset pagination without a total order can serve the same book on two pages. slugTr carries a UNIQUE constraint, which is what makes the ordering total rather than merely intended. */
-            items: components["schemas"]["BookListItemDto"][];
-        };
-        BookCoverageDto: {
-            /**
-             * @description How many denemeler of this book have a video solution indexed here.
-             * @example 30
-             */
-            videoCount: number;
-            /**
-             * @description How many individual question solutions are indexed, across every video.
-             * @example 180
-             */
-            questionCount: number;
-            /**
-             * @description Exactly which deneme numbers are covered, ascending. Ranges for display ("1–13") are the web layer's to derive; the api publishes the set, never a formatted string.
-             * @example [
-             *       1,
-             *       2,
-             *       3,
-             *       15,
-             *       33,
-             *       40
-             *     ]
-             */
-            denemeNumbers: number[];
-            /**
-             * @description How many denemeler the BOOK contains — a künye fact, not a coverage figure. It is not derived from videoCount, and nothing forces the two apart: a fully covered book makes them equal. Non-nullable: the owner checked the book (K-E), and denemeler 14 and 22 DO exist there — only their solution videos are missing.
-             * @example 40
-             */
-            denemeCount: number;
-        };
-        BookVideoQuestionDto: {
-            /**
-             * @description The question position inside its deneme, from 1, gapless. The reader-facing "Soru 3" label is composed in the web layer from this number and an i18n key.
-             * @example 3
-             */
-            questionNo: number;
-            /**
-             * @description Whole seconds from the start of the video to this question's solution — the jump target handed to the player (DEC 2026-08-15d: the jump happens inside the loaded player, not by rebuilding the embed URL). DO NOT assume the first question starts at 0 — the measured set of first-question seconds is {0, 2, 6, 11, 94}, so 0 is an ordinary value and not a sentinel.
-             * @example 94
-             */
-            startSecond: number;
-        };
-        BookVideoYoutubeDto: {
-            /** @description Thumbnail URL exactly as the provider returned it. NEVER construct this address from the video id — replacing API Data with independently computed data is barred (Developer Policies III.E.5). Hotlink it; do not copy, cache or optimise the bytes (III.E.1), which is why image optimisation is off on this surface. */
-            thumbnailUrl: string;
-            /** @description Thumbnail width in pixels, as reported. Render the image with explicit dimensions: the facade reserves its box from these two numbers, which is how this surface holds CLS at 0. */
-            thumbnailWidth: number;
-            /** @description Thumbnail height in pixels, as reported. */
-            thumbnailHeight: number;
-            /**
-             * Format: date-time
-             * @description The video's publication instant, UTC. Feeds VideoObject.uploadDate.
-             */
-            publishedAtUtc: string;
-            /**
-             * @description Duration as the provider's raw ISO 8601 string. Published beside the parsed seconds because the two are cross-checked on the write path: a parser that reads "PT6M8S" as 68 seconds passes every range invariant and is still wrong on the page.
-             * @example PT6M8S
-             */
-            durationIso: string;
-            /**
-             * @description Duration in seconds, parsed from durationIso. B4 obligation, not an existing guarantee: the write path re-derives the ISO string from this integer and refuses a row that does not round-trip. No write path exists yet, so read the equality as a specified invariant.
-             * @example 368
-             */
-            durationSeconds: number;
-            /** @description Whether the provider permits embedding. FALSE is not an error: the page then shows a typographic facade instead of the player and stays complete. */
-            embeddable: boolean;
-            /**
-             * Format: date-time
-             * @description When WE fetched this snapshot, UTC — the instant the 30-day retention clock is measured from. Publish it as an absolute timestamp if it is shown at all; never as a standing promise about update frequency.
-             */
-            dataFetchedAtUtc: string;
-        };
-        BookVideoDto: {
-            /**
-             * @description The deneme's number IN THE BOOK — not its position in the playlist. The two diverge (+1 after 14, +2 after 21) because denemeler 14 and 22 exist in the book while their solution videos do not. The playlist position is stored nowhere and is never published.
-             * @example 12
-             */
-            denemeNo: number;
-            /**
-             * @description The YouTube video id, 11 characters — the identifier the embed is built from. Load the player only on a click or key press, never on hover, and place nothing on top of it once it is in. Moving between questions happens INSIDE the loaded player through the IFrame Player API, not by rebuilding the embed URL per question (owner ruling DEC 2026-08-15d): six questions per video would otherwise cost six full player reloads.
-             * @example dQw4w9WgXcQ
-             */
-            youtubeVideoId: string;
-            /** @description The question index for this deneme, ascending by questionNo and by startSecond. It must be readable and clickable WITHOUT JavaScript: SEO-POLICY §12.2.b treats a page whose body exists to send the visitor elsewhere as a BLOCKER, and this index is what keeps the page on the right side of that line. */
-            questions: components["schemas"]["BookVideoQuestionDto"][];
-            /** @description Provider-sourced enrichment, or NULL — and null is a normal state, not an error: the sync may never have run, the data may have aged past its serve threshold, or the video may have stopped being returned. When it is null, do NOT emit VideoObject and fall back to a typographic facade; the rest of this object is unaffected. */
-            youtube: components["schemas"]["BookVideoYoutubeDto"] | null;
-        };
-        BookAttributionDto: {
-            /**
-             * @description Machine token for whom this row credits. Both rows are always present; the reader-facing grouping is the web layer's decision, not a reason to drop one.
-             * @enum {string}
-             */
-            providerId: "youtube" | "partner";
-            /** @description Provider name as credited. Verbatim from the provenance ledger (provenance/integrations.md, "YouTube attribution — canonical strings"); never translated or shortened. */
-            providerName: string;
-            /** @description The required attribution line, verbatim and untranslated. Its canonical text lives in provenance/integrations.md and is byte-pinned by a spec when it lands in B3. Display is the web repo's decision; carrying it on every response removes "it was not shown" as a possibility. */
-            requiredNoticeTr: string;
-            /** @description Licence URL when the obligation arises from a licence, or null when it does not. Null is a statement, not a gap: inventing a plausible URL would misdescribe the terms. */
-            licenceUrl: string | null;
-            /** @description Link the credit should point at — the channel or the publisher — or null. The Branding Guidelines require a YouTube logo used for attribution to link back to YouTube content or to a YouTube component. */
-            channelUrl: string | null;
-        };
-        BookDetailDto: {
-            /**
-             * @description TR routing key — /kitaplar/{slugTr}.
-             * @example ayt-cografya-konu-ozetli-brans-denemeleri
-             */
-            slugTr: string;
-            /**
-             * @description EN routing key — /en/books/{slugEn}. Equal to slugTr for this book because a product name is not translated; that is a consequence, not a rule, and the two are separate columns. The EN twin is permanently noindex by owner ruling and still needs exactly one URL.
-             * @example ayt-cografya-konu-ozetli-brans-denemeleri
-             */
-            slugEn: string;
-            /**
-             * @description The book's full title as printed on the cover.
-             * @example AYT Coğrafya Konu Özetli Branş Denemeleri
-             */
-            titleTr: string;
-            /**
-             * @description Publisher, as credited. Feeds Book.publisher in the structured data.
-             * @example Coğrafya Gurmesi Yayınları
-             */
-            publisherName: string;
-            /**
-             * @description Which exam this book prepares for. A closed set — adding a member is a breaking contract change, because it can break an exhaustive switch in the consumer.
-             * @example AYT
-             * @enum {string}
-             */
-            examTrack: "AYT" | "TYT" | "YKS" | "KPSS" | "LGS";
-            /**
-             * @description A path inside the web repo's own public/ directory — never a remote URL, enforced by a database constraint. The api neither receives nor serves image bytes on this leg. Null means there is no cover to render.
-             * @example /kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri.jpg
-             */
-            coverImagePath: string | null;
-            /**
-             * @description How many denemeler of this book have an indexed video solution. Present on the card so the hub carries real content of its own rather than being a bare list of links.
-             * @example 30
-             */
-            videoCount: number;
-            /**
-             * @description How many individual question solutions are indexed, across every video.
-             * @example 180
-             */
-            questionCount: number;
-            /**
-             * @description Hub ordering. Read with a deterministic secondary sort — equal values must not leave the order to chance.
-             * @example 1
-             */
-            displayOrder: number;
-            /** @description Null today, deliberately: a product name has no translation, and SEO-POLICY §B14 14.2 omits a field with no counterpart rather than machine-filling it. Render the TR title on the EN page rather than inventing one. */
-            titleEn: string | null;
-            /**
-             * @description Authors in the order the BOOK prints them. This is a published render order — iterate it as given and never sort it alphabetically as a tidy-up.
-             * @example [
-             *       "Murat Çakır",
-             *       "Murat Karagöz"
-             *     ]
-             */
-            authorNames: string[];
-            /**
-             * @description ISBN-13, exactly 13 digits, no hyphens. Feeds Book.isbn.
-             * @example 9786259490069
-             */
-            isbn13: string;
-            /**
-             * @description Printed page count. Feeds Book.numberOfPages.
-             * @example 144
-             */
-            pageCount: number;
-            /**
-             * @description How many denemeler the BOOK contains — a künye fact, distinct from how many have video solutions. Also present inside coverage; both come from the same value.
-             * @example 40
-             */
-            denemeCount: number;
-            /** @description The editorial narrative, hand-written and reviewed against CONTENT-STYLE and SEO-POLICY Part A. Paragraphs are separated by a blank line; render it as prose, never as a single run-on block. */
-            introTr: string;
-            /** @description Null today (SEO-POLICY §B14 14.2). The EN page carries no narrative rather than a machine-translated one; the EN twin is permanently noindex by owner ruling. */
-            introEn: string | null;
-            /** @description Hand-written page title (SEO-POLICY A1). It comes from the api rather than a web-side pattern because four books can be written by hand where 81 provinces could not — pass it through buildMetadata, do not bypass the helper. */
-            metaTitleTr: string;
-            /** @description Hand-written meta description carrying a concrete fact (SEO-POLICY A2), not a generic phrase and not derived from a template. */
-            metaDescriptionTr: string;
-            /**
-             * @description The channel the solutions are published on — attribution and the channel link.
-             * @example UCH7D1zOgHykrHfx5Q7WERmw
-             */
-            youtubeChannelId: string;
-            /** @description The playlist, carried for the attribution link ONLY. No code path on our side queries it: the video set is fixed by seed, so a playlist edit cannot silently change this page. */
-            youtubePlaylistId: string | null;
-            /**
-             * @description Outbound "Satın Al" link to the seller, or null when there is none — render no button on null. **No price is published anywhere, by rule**: CONVENTIONS §4 bars pricing, and a price on a page we do not control goes stale. Always https, enforced by a database constraint, because this value becomes an href on a public page.
-             * @example https://www.kitapisler.com/cografya-gurmesi-yayinlari-ayt-cografya-konu-ozetli-brans-denemeleri_106636.html
-             */
-            purchaseUrl: string | null;
-            /** @description What this index actually covers, as numbers. The counts belong to the interface rather than to the prose (owner ruling); the editorial text asserts nothing about them. */
-            coverage: components["schemas"]["BookCoverageDto"];
-            /** @description Every indexed deneme with its question index, ascending by denemeNo. The 180-row index must be readable and clickable without JavaScript — that is what keeps this page clear of SEO-POLICY §12.2.b. */
-            videos: components["schemas"]["BookVideoDto"][];
-            /** @description Never empty, on any response, in any data state — an empty array would be a breach of the attribution obligation rather than a degraded widget. Two rows: the YouTube source credit and the content partner credit; neither substitutes for the other. */
-            attribution: components["schemas"]["BookAttributionDto"][];
         };
     };
     responses: never;
@@ -2358,6 +2410,73 @@ export interface operations {
                 content?: never;
             };
             /** @description No province carries this plate code. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BookController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Page to read, 1-based. The ceiling exists so a crawler cannot walk an unbounded OFFSET sequence; a page past the end answers 200 with an empty items array, never 404. */
+                page?: number;
+                /** @description Rows per page. Read every book by paging until hasMore is false; this ceiling is the contract that bounds how many requests that takes. */
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookListDto"];
+                };
+            };
+            /** @description A query parameter is out of range, not an integer, or not recognised. Unknown parameters are rejected rather than ignored. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BookController_findBySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description TR or EN slug of the book — both resolve to the same row, so each locale asks with its own. Lowercase ASCII letters, digits and hyphens only. */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookDetailDto"];
+                };
+            };
+            /** @description The slug is not a well-formed slug (lowercase ASCII letters, digits and hyphens, 1-140 characters). Distinct from 404, which means the slug is well-formed and matches no book; a client rendering a page should treat both as "not found". */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No book matches the given slug. */
             404: {
                 headers: {
                     [name: string]: unknown;

@@ -55,6 +55,7 @@ export const BOOK_LIST_PAGE_1: BookList = {
       videoCount: 2,
       questionCount: 4,
       displayOrder: 1,
+      updatedAt: "2026-01-02T03:04:05.000Z",
     },
     {
       slugTr: "fixture-book-two",
@@ -68,6 +69,7 @@ export const BOOK_LIST_PAGE_1: BookList = {
       videoCount: 0,
       questionCount: 0,
       displayOrder: 2,
+      updatedAt: "2026-01-03T03:04:05.000Z",
     },
   ],
 };
@@ -89,6 +91,7 @@ export const BOOK_LIST_PAGE_2: BookList = {
       videoCount: 1,
       questionCount: 2,
       displayOrder: 3,
+      updatedAt: "2026-01-04T03:04:05.000Z",
     },
   ],
 };
@@ -112,6 +115,9 @@ export const BOOK_DETAIL: BookDetail = {
   videoCount: 2,
   questionCount: 4,
   displayOrder: 1,
+  // Required since the api opened its read side; it feeds the sitemap's `lastmod` and
+  // `Book.dateModified`, so a fixture without it would let a consumer forget both.
+  updatedAt: "2026-01-02T03:04:05.000Z",
   authorNames: ["Fixture Author Alpha", "Fixture Author Beta"],
   isbn13: "9780000000000",
   pageCount: 120,
