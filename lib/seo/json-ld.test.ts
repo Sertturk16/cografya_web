@@ -291,6 +291,12 @@ describe("videoObjectJsonLd", () => {
     ["a plaintext scheme", "http://i.ytimg.com/vi/x/hqdefault.jpg"],
     ["a value that is not a URL at all", "hqdefault.jpg"],
     ["an empty string", ""],
+    // THE ROW THAT PINS PARSE-OVER-STRING-MATCH (→ PR #62 review `TEST62-M6`). Everything
+    // left of `@` is USERINFO, so this URL's host is `evil.test` — but the provider's own
+    // hostname appears literally in the string, which is exactly what a check written with
+    // `startsWith`/`includes` on the raw address would accept. The rows above catch a
+    // dot-less suffix; only this one catches a reader who "simplified" the `new URL()` parse.
+    ["the provider host as a userinfo segment", "https://i.ytimg.com@evil.test/vi/x/hq.jpg"],
   ])("emits nothing for %s, and says so", (_case, thumbnailUrl) => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
@@ -313,7 +319,10 @@ describe("videoObjectJsonLd", () => {
   it("never emits description", () => {
     // Recommended by Google, not required — and this surface renders no visible per-video
     // summary, which makes it §B5 5.7's "structured data that is not on the page".
-    expect(videoObjectJsonLd(video)).not.toHaveProperty("description");
+    // Through `emitted()` (→ PR #62 review `TEST62-M4`): `expect(null).not.toHaveProperty(…)`
+    // passes, so a builder that started refusing every input would satisfy this assertion
+    // while emitting no markup at all.
+    expect(emitted(video)).not.toHaveProperty("description");
   });
 
   it("cannot be constructed without the provider snapshot's three fields", () => {
@@ -333,7 +342,9 @@ describe("videoObjectJsonLd", () => {
     // PARAMETER; our ruled deep link is a fragment, and query-parameter variants were
     // rejected under §B12 12.2.c. A `url` the page does not honour is a claim about a page
     // behaviour that does not exist. This assertion is what keeps it out.
-    const schema = videoObjectJsonLd(video);
+    // `emitted()` for the same reason as the block above: `JSON.stringify(null)` is `"null"`,
+    // which contains no "Clip" either (→ PR #62 review `TEST62-M4`).
+    const schema = emitted(video);
     expect(schema).not.toHaveProperty("hasPart");
     expect(JSON.stringify(schema)).not.toContain("Clip");
   });

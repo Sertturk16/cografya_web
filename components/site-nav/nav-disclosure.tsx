@@ -18,13 +18,16 @@ import styles from "./site-nav.module.css";
  *
  * ## The links are the SERVER's, and they never move
  *
- * `children` is a server-rendered `<nav>` carrying six real `<a href>` plus the locale
+ * `children` is a server-rendered `<nav>` carrying one real `<a href>` per hub plus the locale
  * switcher. This island receives it and only toggles a `data-open` attribute; it never
  * builds, rewrites or conditionally renders a link. That is the binding shape of this work
- * (`SEO-POLICY.md` §B8.1/8.2): the six hub entry points sit in the first HTML response at
- * every viewport, so the internal link graph is byte-identical to the pre-hamburger header
- * and no crawler has to run JavaScript to find `/turkiye`, `/dunya`, `/deniz`, `/oyun` or
- * `/hakkimizda`.
+ * (`SEO-POLICY.md` §B8.1/8.2): EVERY hub entry point sits in the first HTML response at every
+ * viewport, so the internal link graph is byte-identical to the pre-hamburger header and no
+ * crawler has to run JavaScript to find any of them.
+ *
+ * The set itself is named in exactly one place — `site-nav.tsx`, which builds it — and is
+ * deliberately NOT counted or listed again here (→ PR #62 review `CODE62-M1`: this comment
+ * said "six" and enumerated five routes while `/kitaplar` was being added in the same commit).
  *
  * Above 64rem the panel is `display: contents` and the button is `display: none`, so this
  * component's state stops having any visual meaning and the desktop nav renders inline

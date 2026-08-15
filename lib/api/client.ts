@@ -24,6 +24,17 @@ export const CONTENT_REVALIDATE_SECONDS = 3600;
  * ceiling times this budget is its worst case, so "unbounded" becomes a finite number that
  * can be reasoned about.
  *
+ * ONE PATH IT DOES NOT REACH, STATED SO THE COVERAGE CLAIM ABOVE IS NOT READ AS TOTAL
+ * (→ PR #62 review `SEC62-M1`/`CODE62-M3`). Next's patched `fetch` deliberately drops the
+ * caller's signal when it is refreshing a stale cache entry —
+ * `next/dist/server/lib/patch-fetch.js`, `doOriginalFetch(isStale)`: *"don't pass through
+ * signal when revalidating"*, then `signal: isStale ? undefined : signal` (verified byte-exact
+ * in the installed 16.2.10). So an ISR revalidation of an already-cached entry runs
+ * unbudgeted, and this timeout covers the cold read and every uncached call rather than
+ * literally every request. That is not a regression — before this constant there was no
+ * budget on any path — and closing it would need a `Promise.race` wrapper around the call,
+ * which is a design decision, not a fix to slip into a review round.
+ *
  * 15 s is deliberately generous. This api is our own service on the same network, and the
  * value guards a HANG, not slowness — a threshold tight enough to also catch "slow" would
  * turn a cold start or a first uncached province read into a build failure, which is the

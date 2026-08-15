@@ -164,3 +164,21 @@
   border-color: var(--color-primary);
   background: var(--color-surface);
 }
+
+/* ── Kaynak beyanı ────────────────────────────────────────────────────────────────────── */
+
+/* Deliberately the SAME geometry, size and color as the province and country pages' Kaynaklar
+   line (`province-detail.module.css`): the reader meets one source-statement form across every
+   detail page rather than a per-hub variant, and slate on white is 7.92:1 (AAA) — the token
+   `--color-taupe` would be sub-AA here and is barred for body text (`DESIGN.md` §5). */
+.sources {
+  margin-top: 40px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  max-width: 70ch;
+}
+
+.sourcesLabel {
+  font-weight: 700;
+  color: var(--color-ink);
+}

@@ -505,10 +505,10 @@
   },
   "Kitaplar": {
     "metaTitle": "Coğrafya Kitaplarının Video Çözümleri",
-    "metaDescription": "Coğrafya deneme kitaplarının video çözümleri: toplam {videoCount} deneme videosu ve {questionCount} soru çözümü. Her kitabın yayınevi ve kapsamı listede.",
+    "metaDescription": "Coğrafya deneme kitaplarının video çözümleri: toplam {videoCount} video çözüm ve {questionCount} soru çözümü. Her kitabın yayınevi ve kapsamı listede.",
     "heading": "Coğrafya Kitapları",
     "lede": "Video çözümler yayıncının kendi kanalında yayımlanıyor.",
-    "cardVideos": "{count} deneme videosu",
+    "cardVideos": "{count} video çözüm",
     "cardQuestions": "{count} soru çözümü"
   },
   "BookDetail": {
@@ -517,7 +517,7 @@
     "coverageNote": "Kitaptaki {denemeCount} denemeden {videoCount} tanesinin video çözümü var.",
     "denemeHeading": "Deneme {no}",
     "questionLabel": "Soru {no}",
-    "badgeVideos": "{count} deneme videosu",
+    "badgeVideos": "{count} video çözüm",
     "badgeQuestions": "{count} soru çözümü",
     "coverAlt": "{title} kitabının kapağı",
     "purchase": "Satın al",
@@ -527,7 +527,8 @@
     "isbnLabel": "ISBN",
     "pageCountLabel": "Sayfa sayısı",
     "denemeCountLabel": "Deneme sayısı",
-    "examLabel": "Sınav"
+    "examLabel": "Sınav",
+    "sourcesLabel": "Kaynaklar"
   },
   "NotFound": {
     "metaTitle": "Sayfa bulunamadı",

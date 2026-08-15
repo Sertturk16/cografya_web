@@ -491,10 +491,10 @@
   },
   "Kitaplar": {
     "metaTitle": "Video Solutions for Geography Books",
-    "metaDescription": "Video solutions for geography practice-test books: {videoCount} deneme videos and {questionCount} question solutions. Each book lists its publisher and coverage.",
+    "metaDescription": "Video solutions for geography practice-test books: {videoCount} video solutions and {questionCount} question solutions. Each book lists its publisher and coverage.",
     "heading": "Geography Books",
     "lede": "The video solutions are published on the publisher's own channel.",
-    "cardVideos": "{count, plural, one {# deneme video} other {# deneme videos}}",
+    "cardVideos": "{count, plural, one {# video solution} other {# video solutions}}",
     "cardQuestions": "{count, plural, one {# question solution} other {# question solutions}}"
   },
   "BookDetail": {
@@ -503,7 +503,7 @@
     "coverageNote": "{videoCount} of the book's {denemeCount} denemeler have a video solution.",
     "denemeHeading": "Deneme {no}",
     "questionLabel": "Question {no}",
-    "badgeVideos": "{count, plural, one {# deneme video} other {# deneme videos}}",
+    "badgeVideos": "{count, plural, one {# video solution} other {# video solutions}}",
     "badgeQuestions": "{count, plural, one {# question solution} other {# question solutions}}",
     "coverAlt": "Cover of {title}",
     "purchase": "Buy",
@@ -513,7 +513,8 @@
     "isbnLabel": "ISBN",
     "pageCountLabel": "Page count",
     "denemeCountLabel": "Deneme count",
-    "examLabel": "Exam"
+    "examLabel": "Exam",
+    "sourcesLabel": "Sources"
   },
   "NotFound": {
     "metaTitle": "Page not found",

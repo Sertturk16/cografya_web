@@ -21,12 +21,8 @@ interface PageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-/**
- * The localized slug (`slugTr` for tr, `slugEn` for en).
- *
- * Two separate columns, read separately — never one derived from the other, even though
- * today's only book carries the same string in both (`SEO-POLICY.md` §B4 4.5, BLOCKER).
- */
+/** The localized slug (`slugTr` for tr, `slugEn` for en) — two columns, never one derived
+ *  from the other (`SEO-POLICY.md` §B4 4.5, BLOCKER). */
 function slugForLocale(book: BookListItem, locale: Locale): string {
   return locale === "en" ? book.slugEn : book.slugTr;
 }

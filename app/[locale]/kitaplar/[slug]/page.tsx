@@ -139,6 +139,11 @@ export default async function BookDetailPage({ params }: PageProps) {
   // `"trNarrative"`: no English text is coming later either.
   const introText = locale === "tr" ? book.introTr : null;
 
+  // The credit row this page owes, SELECTED BY THE CONTRACT'S DISCRIMINATOR — never by
+  // matching the notice text, or a ledger edit would silently drop the row it identifies.
+  // Why only this one, and why `undefined` renders nothing, is at the render site below.
+  const partnerAttribution = book.attribution.find((row) => row.providerId === "partner");
+
   return (
     <div className="container page">
       <JsonLd
@@ -202,16 +207,20 @@ export default async function BookDetailPage({ params }: PageProps) {
           </p>
           {/* Outbound seller link, and a PLAIN one: the owner ruled it is not an affiliate
               or commission link (→ DEC 2026-08-15g V-5), so it carries no `rel="sponsored"`
-              — marking a plain link as sponsored would be as wrong as the reverse. `noopener`
-              is what the new tab needs; the accessible name says where it goes, because a
-              link that changes context should say so (WCAG 3.2.5). No price appears anywhere
-              on this page, by rule. */}
+              — marking a plain link as sponsored would be as wrong as the reverse.
+              `noopener noreferrer` is what the new tab needs: `noopener` severs the
+              `window.opener` handle, and `noreferrer` is added alongside it (→ PR #62 review
+              `SEC62-M3`) because the seller has no need to be told which page sent the reader
+              and this repo's three earlier outbound links already carry the pair — one form,
+              not two. The accessible name says where the link goes, because a link that
+              changes context should say so (WCAG 3.2.5). No price appears anywhere on this
+              page, by rule. */}
           {book.purchaseUrl !== null && (
             <a
               className="btn btn-primary"
               href={book.purchaseUrl}
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               aria-label={t("purchaseAria")}
             >
               {t("purchase")}
@@ -297,6 +306,39 @@ export default async function BookDetailPage({ params }: PageProps) {
           </section>
         ))}
       </section>
+
+      {/* THE SOURCE STATEMENT (`SEO-POLICY.md` §B15 15.4/15.5; → PR #62 review `FENER62-I2`).
+          This page carries material the partner produced, so it names the partner — and it
+          names it with the api's OWN string rather than a sentence written here.
+          `requiredNoticeTr` is `CONTENT-STYLE.md` §22's untouchable class: printed as
+          received, never translated, shortened, reworded or re-typed by hand. It is also what
+          keeps 15.5 satisfied, since it names the two real parties instead of a generic
+          "resmi kaynaklar".
+
+          THE PARTNER ROW ONLY, AND THAT IS THE WHOLE W1 DECISION. The contract's other row is
+          the YouTube source credit, and printing it today would cite a source for content this
+          page does not carry — no player, no thumbnail, no `VideoObject`, by the same chain
+          the class docblock above sets out. It lands WITH the player in W2, from this same
+          array; nothing here needs rewriting when it does.
+
+          SELECTED BY `providerId`, WHICH IS A CONTRACT ENUM, never by matching the notice
+          text: a credit line identified by its own words is a line that disappears the day the
+          ledger rewords it. `undefined` renders nothing rather than a fallback sentence — the
+          row is contractually always present, so its absence is a contract break, and
+          inventing an attribution is exactly what an untouchable string forbids (the
+          `marine-attribution` precedent: the copyright line is omitted, not faked).
+
+          `lang="tr"` ON THE NOTICE, NOT ON THE ROW. The notice is a Turkish sentence on BOTH
+          locales, so the EN page has to declare its language or a screen reader reads it with
+          English phonetics (WCAG 3.1.2, `ENGINEERING.md` §5 — the mirror of the marine block's
+          `lang="en"` on the Turkish page). The label beside it is localized interface copy and
+          stays in the page's own language. */}
+      {partnerAttribution !== undefined && (
+        <p className={styles.sources}>
+          <span className={styles.sourcesLabel}>{t("sourcesLabel")}:</span>{" "}
+          <span lang="tr">{partnerAttribution.requiredNoticeTr}</span>
+        </p>
+      )}
     </div>
   );
 }
