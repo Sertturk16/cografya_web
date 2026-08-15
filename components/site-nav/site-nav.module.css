@@ -6,14 +6,16 @@
    sibling search module already uses for the same sheet — `#fff` for the card and
    `rgb(43 38 34 / 14%)` for its shadow (review CR56-M2).
 
-   THE BREAKPOINT IS 64rem AND THE NUMBER IS MEASURED, NOT INHERITED. On `dev@e593d18` the
-   header collapses to a single row at 850px in Turkish and 773px in English (binary-searched
-   on the running build; at 768px BOTH locales still render a 104.2px two-row header, and at
-   ≤430px a 176.8px three-row one). A breakpoint has to be locale-independent, so it must sit
-   above the later of the two; 64rem is also the repo's only existing breakpoint — the width
-   at which `site-search.module.css` reveals the trigger's text label — so the header changes
-   character exactly once instead of twice. The deliberate cost is the 850–1023px band, where
-   the hamburger replaces a nav that already fit on one row. */
+   THE BREAKPOINT IS 64rem AND THE NUMBER IS MEASURED, NOT INHERITED — and the measurement
+   lives in ONE place, `DESIGN.md` §4, not here. It used to be written out in both, and the
+   day a seventh nav link landed (owner ruling V-6, → DEC 2026-08-15g) both copies became
+   false at once; only one of them would reliably have been found. What belongs in this file
+   is the design consequence, which does not move with the numbers: a breakpoint has to be
+   locale-independent, so it sits above the later of the two locales' collapse widths, and
+   64rem is also the repo's only existing breakpoint — the width at which
+   `site-search.module.css` reveals the trigger's text label — so the header changes character
+   exactly once instead of twice. The deliberate cost is the band between the collapse width
+   and 1024px, where the hamburger replaces a nav that would still have fit on one row. */
 
 .root {
   /* The wrapper generates NO box: the button becomes a direct flex item of the header's

@@ -1,7 +1,15 @@
 # `public/kitaplar/` — book cover assets, and the route this directory can shadow
 
-Files here are served from the site root, so `public/kitaplar/x.webp` answers
-`/kitaplar/x.webp`. This is the repo's first `public/` directory.
+Files under `public/kitaplar/` are served from the site root, so
+`public/kitaplar/x.webp` answers `/kitaplar/x.webp`. This is the repo's first `public/`
+directory.
+
+**This file lives in `docs/` and not beside the assets it describes, on purpose.**
+Everything under `public/` is served verbatim, so a README kept there answered
+`/kitaplar/README.md` — a crawlable 200 sitting inside an indexable route family, reachable
+by anyone who guessed the address (PR #61 review `FENER61-M4`; Atlas ruled it could stay for
+W0 and move at W1). There is no way to keep a note inside that directory without publishing
+it, so it moved out and `next.config.ts`'s `next/image` note points here.
 
 ---
 
@@ -40,19 +48,18 @@ because a missing image is not an error condition anywhere in the chain.
 WebP with an alpha channel (transparent background), so it sits on whatever surface the
 card gives it rather than carrying its own backdrop.
 
-**Provenance is recorded outside this repository.** Every asset here has a row naming its
+**Provenance is recorded outside this repository.** Every asset there has a row naming its
 origin and the terms it may be used under, kept with the project's other source records.
 **Ask before adding, replacing or re-using a file** — the row is written first, and it is
-not written from here. Do not mirror any of it into this page: a second copy of a
-provenance status drifts from the first, and this file is published (see below), which
-makes it the wrong home for one.
+not written from here. Do not mirror any of it into this page either: a second copy of a
+provenance status drifts from the first, and the ledger is the only home for one.
 
-> **Everything in this directory is public.** `public/` is served verbatim at the site
-> root, this README included — it answers `/kitaplar/README.md`. Keep it to operational
-> guidance for whoever adds the next file: no internal file paths, no decision references,
-> no open-question status, nothing that would be wrong to publish. Facts that nothing
-> verifies do not belong here either — a byte count in a table is a claim that rots the
-> first time the file is re-encoded.
+> **Every FILE under `public/kitaplar/` is public, and this note no longer is.** Moving it
+> to `docs/` removed the published address, not the discipline that address demanded: what
+> goes into that directory is still served verbatim at the site root, so an asset added
+> there is an asset published. Facts that nothing verifies do not belong in this page for
+> a separate reason — a byte count in a table is a claim that rots the first time the file
+> is re-encoded, wherever the table lives.
 
 ## Rendering
 

@@ -12,6 +12,7 @@
     "dunya": "Dünya",
     "deniz": "Deniz",
     "game": "Oyun",
+    "kitaplar": "Kitaplar",
     "about": "Hakkımızda",
     "openMenu": "Menüyü aç",
     "closeMenu": "Menüyü kapat"
@@ -36,7 +37,8 @@
     "turkiye": "Türkiye",
     "dunya": "Dünya",
     "game": "Oyun",
-    "deniz": "Deniz"
+    "deniz": "Deniz",
+    "kitaplar": "Kitaplar"
   },
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
@@ -500,6 +502,32 @@
     },
     "hubLinkPoint": "{label} satırını dört denizin tablosunda gör",
     "hubLinkAll": "Türkiye kıyılarının tamamında deniz durumu"
+  },
+  "Kitaplar": {
+    "metaTitle": "Coğrafya Kitaplarının Video Çözümleri",
+    "metaDescription": "Coğrafya deneme kitaplarının video çözümleri: toplam {videoCount} deneme videosu ve {questionCount} soru çözümü. Her kitabın yayınevi ve kapsamı listede.",
+    "heading": "Coğrafya Kitapları",
+    "lede": "Video çözümler yayıncının kendi kanalında yayımlanıyor.",
+    "cardVideos": "{count} deneme videosu",
+    "cardQuestions": "{count} soru çözümü"
+  },
+  "BookDetail": {
+    "kunyeHeading": "{title} künyesi",
+    "videosHeading": "{title} video çözümleri",
+    "coverageNote": "Kitaptaki {denemeCount} denemeden {videoCount} tanesinin video çözümü var.",
+    "denemeHeading": "Deneme {no}",
+    "questionLabel": "Soru {no}",
+    "badgeVideos": "{count} deneme videosu",
+    "badgeQuestions": "{count} soru çözümü",
+    "coverAlt": "{title} kitabının kapağı",
+    "purchase": "Satın al",
+    "purchaseAria": "Satın al — satıcının sitesinde açılır",
+    "publisherLabel": "Yayınevi",
+    "authorsLabel": "Yazarlar",
+    "isbnLabel": "ISBN",
+    "pageCountLabel": "Sayfa sayısı",
+    "denemeCountLabel": "Deneme sayısı",
+    "examLabel": "Sınav"
   },
   "NotFound": {
     "metaTitle": "Sayfa bulunamadı",

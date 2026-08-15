@@ -62,7 +62,7 @@ import styles from "./site-nav.module.css";
  * above 64rem" needs either `open` toggled by JavaScript — the thing it was adopted to remove —
  * or an author override betting on interop, which is exactly what `site-nav.module.css` refuses
  * to do for `position: static`. Rendering a second, desktop-only nav instead would duplicate
- * six hub links in every page's HTML. The trade-off above is therefore kept deliberately.
+ * every hub link in every page's HTML. The trade-off above is therefore kept deliberately.
  */
 export function NavDisclosure({ children }: { children: ReactNode }) {
   const t = useTranslations("Nav");

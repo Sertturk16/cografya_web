@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   bookJsonLd,
   faqPageJsonLd,
@@ -220,6 +220,21 @@ describe("videoObjectJsonLd", () => {
     embedUrl: "https://example.invalid/embed/syntheticId",
   };
 
+  /**
+   * The builder returns `null` when the thumbnail host fails its assertion, so every
+   * field-level case below has to say which of the two outcomes it is asserting about.
+   * Throwing here rather than asserting non-null inline keeps that failure legible: a case
+   * that silently started returning `null` would otherwise fail on a property of `null`,
+   * several lines from the cause.
+   */
+  function emitted(args: Parameters<typeof videoObjectJsonLd>[0]) {
+    const schema = videoObjectJsonLd(args);
+    if (schema === null) {
+      throw new Error(`expected a VideoObject for provider-hosted ${args.thumbnailUrl}`);
+    }
+    return schema;
+  }
+
   it("emits the exact VideoObject node shape", () => {
     expect(videoObjectJsonLd(video)).toEqual({
       "@context": "https://schema.org",
@@ -237,14 +252,13 @@ describe("videoObjectJsonLd", () => {
     // the address is used as returned, never rebuilt from the video id. The query string
     // and host below exist to make any normalisation visible as a failure.
     const oddButValid = "https://i9.ytimg.com/vi_webp/x/maxresdefault.webp?v=1&sqp=-oaymwE%3D";
-    const schema = videoObjectJsonLd({ ...video, thumbnailUrl: oddButValid });
-    expect(schema.thumbnailUrl).toBe(oddButValid);
+    expect(emitted({ ...video, thumbnailUrl: oddButValid }).thumbnailUrl).toBe(oddButValid);
   });
 
   it("emits the provider's raw ISO duration, not a re-derived one", () => {
     // The contract publishes the ISO string beside the parsed seconds because a parser
     // reading "PT6M8S" as 68 seconds passes every range check and is still wrong.
-    expect(videoObjectJsonLd({ ...video, duration: "PT1H2M3S" }).duration).toBe("PT1H2M3S");
+    expect(emitted({ ...video, duration: "PT1H2M3S" }).duration).toBe("PT1H2M3S");
   });
 
   it("always carries an embedUrl, passed through from the caller", () => {
@@ -252,7 +266,42 @@ describe("videoObjectJsonLd", () => {
     // and on this surface there is no legitimate case for one: a block that cannot be
     // embedded emits no markup at all. The value is the caller's — the player host is W2's
     // decision, not this builder's.
-    expect(videoObjectJsonLd(video).embedUrl).toBe("https://example.invalid/embed/syntheticId");
+    expect(emitted(video).embedUrl).toBe("https://example.invalid/embed/syntheticId");
+  });
+
+  // THE HOST ASSERTION (→ PR #61 review `SEC61-M3`). The address becomes markup AND, in W2,
+  // an `<img src>` the reader's browser fetches before any click, so the builder refuses to
+  // publish one it cannot vouch for. It ASSERTS rather than rewriting: rebuilding the URL
+  // from the video id is what Developer Policies III.E.5 bars, so there is no repair — only
+  // publish or do not.
+  it.each([
+    ["the canonical thumbnail host", "https://i.ytimg.com/vi/x/hqdefault.jpg"],
+    ["a numbered thumbnail host", "https://i9.ytimg.com/vi_webp/x/maxresdefault.webp"],
+    ["a youtube.com host", "https://www.youtube.com/vi/x/hqdefault.jpg"],
+  ])("emits a VideoObject for %s", (_case, thumbnailUrl) => {
+    expect(videoObjectJsonLd({ ...video, thumbnailUrl })).not.toBeNull();
+  });
+
+  it.each([
+    // The two shapes a bare `includes("ytimg.com")` or a dot-less suffix would let through.
+    ["a lookalike registrable domain", "https://evil-ytimg.com/vi/x/hqdefault.jpg"],
+    ["the provider host as a left-hand label", "https://i.ytimg.com.attacker.test/x.jpg"],
+    ["an unrelated host", "https://cdn.example.invalid/vi/x/hqdefault.jpg"],
+    // http would be blocked as mixed content on an https page before anyone saw it.
+    ["a plaintext scheme", "http://i.ytimg.com/vi/x/hqdefault.jpg"],
+    ["a value that is not a URL at all", "hqdefault.jpg"],
+    ["an empty string", ""],
+  ])("emits nothing for %s, and says so", (_case, thumbnailUrl) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      expect(videoObjectJsonLd({ ...video, thumbnailUrl })).toBeNull();
+      // A silent `null` is indistinguishable from a video that simply has no snapshot, which
+      // is the ordinary path — so the refusal has to be audible (the TEST61-M7 lesson).
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]?.[0]).toContain(thumbnailUrl);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   // WHAT THE TWO ABSENCE GUARDS BELOW DO AND DO NOT COVER. They assert over the object the

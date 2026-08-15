@@ -5,7 +5,7 @@ import { NavDisclosure } from "./nav-disclosure";
 import styles from "./site-nav.module.css";
 
 /**
- * The header's primary navigation. Server half: it resolves the six labels and hands the
+ * The header's primary navigation. Server half: it resolves the seven labels and hands the
  * finished `<nav>` — real `<a href>` elements, one per hub — to the client disclosure as
  * children. The island never sees a route or a label, only a subtree it may show or hide,
  * which is what keeps the link graph identical at every viewport (`SEO-POLICY.md` §B8.1/8.2).
@@ -32,6 +32,14 @@ export async function SiteNav() {
             S4, → DEC 2026-07-30c) — so it sits in the top nav, after the two map hubs
             and before the site-info link. */}
         <Link href="/oyun">{t("game")}</Link>
+        {/* The book hub (owner ruling V-6, → DEC 2026-08-15g). It sits here rather than
+            being reached only from the home page because §B8 8.1 wants every indexable page
+            behind at least one static internal link, and a nav link is the one entry point
+            that exists on every page. The ruling carried a measured cost and it is paid in
+            `DESIGN.md` §4: a seventh link moves the width at which the header collapses to
+            one row, so both locales were re-measured on the running build and the numbers
+            in that section are this link's, not the six-link ones. */}
+        <Link href="/kitaplar">{t("kitaplar")}</Link>
         <Link href="/hakkimizda">{t("about")}</Link>
       </nav>
       <LocaleSwitcher />

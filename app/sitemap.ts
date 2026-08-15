@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getBooksResilient } from "@/lib/api/books";
 import { getCountryBySlug, getCountriesResilient } from "@/lib/api/countries";
 import { getProvinceBySlug, getProvincesResilient, isProductionBuild } from "@/lib/api/provinces";
 import type { CountryDetail, ProvinceDetail } from "@/lib/api/types";
@@ -6,10 +7,11 @@ import { sitemapEntriesFor } from "@/lib/seo/sitemap-entries";
 
 /**
  * Root sitemap — a single flat urlset served at `/sitemap.xml` (the URL `robots.ts` points
- * at). Composition: static hubs (5 pages × 2 locales = 10) + provinces + countries at ONE
- * entry each (TR only — their EN counterparts are `noindex`, see `sitemapEntriesFor` in
+ * at). Composition: static hubs + provinces, countries and books at ONE entry each (TR only
+ * — their EN counterparts are `noindex`, see `sitemapEntriesFor` in
  * `lib/seo/sitemap-entries.ts`) — a valid, self-contained sitemap far under Google's
- * 50k-per-file hard limit.
+ * 50k-per-file hard limit. The book tier does not move that arithmetic: it adds one hub and
+ * one URL per book.
  *
  * SPLIT TRIGGER STATUS (CONVENTIONS §6 #7). The convention's proactive split-to-a-sitemap-
  * index trigger (a second content hub; province×locale > ~150) is now crossed by adding the
@@ -91,6 +93,52 @@ async function provinceEntries(): Promise<MetadataRoute.Sitemap> {
   );
 }
 
+/**
+ * Book hub + book detail pages (`"trOnly"` — one `<url>` each, TR only, since both English
+ * twins are permanently `noindex`).
+ *
+ * TWO THINGS ARE DIFFERENT FROM THE TWO BUILDERS AROUND IT, and both are deliberate.
+ *
+ * **The hub travels with its books instead of sitting in `staticEntries()`.** `/kitaplar`
+ * answers `notFound()` on an empty catalogue (see the page's own note), and §B6 6.8 rates a
+ * 404 URL in the sitemap a BLOCKER — so the hub's `<url>` has to be conditional on the same
+ * list the page reads, which is only possible where that list is in hand. An api outage at
+ * build therefore drops the hub and its books together, which is exactly right: it drops
+ * precisely the URLs that will 404.
+ *
+ * **No detail fetch.** The province and country builders resolve every entity to its detail
+ * record for one field — `updatedAt` — because their list DTOs do not carry it. `Book*` DTOs
+ * do (→ DEC 2026-08-15i md.4, added to `BookListItemDto` for this reason), so the real
+ * `lastmod` (`ENGINEERING.md` §4 #7, §B6 6.9 — never the build time) costs no extra request
+ * here, and an unbounded catalogue never becomes an N+1.
+ */
+async function bookEntries(): Promise<MetadataRoute.Sitemap> {
+  const books = await getBooksResilient();
+  if (books.length === 0) return [];
+
+  // The hub's own `lastmod` is the most recent change across the books it lists — the only
+  // honest answer for a page whose whole content is that list, and still a real `updated_at`
+  // rather than the build clock.
+  const hubLastModified = new Date(
+    Math.max(...books.map((book) => new Date(book.updatedAt).getTime())),
+  );
+
+  return [
+    ...sitemapEntriesFor(() => "/kitaplar", hubLastModified, 0.7, "trOnly"),
+    ...books.flatMap((book) =>
+      sitemapEntriesFor(
+        (locale) => ({
+          pathname: "/kitaplar/[slug]",
+          params: { slug: locale === "en" ? book.slugEn : book.slugTr },
+        }),
+        new Date(book.updatedAt),
+        0.7,
+        "trOnly",
+      ),
+    ),
+  ];
+}
+
 /** Countries hub. Same shape/resilience as the province builder, one hub up. */
 async function countryEntries(): Promise<MetadataRoute.Sitemap> {
   const countries = await getCountriesResilient();
@@ -126,9 +174,13 @@ async function countryEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Per-hub builders concatenated into one flat urlset. Provinces + countries fetch in
-  // parallel (independent hubs); a build-time api outage degrades each to empty per its own
-  // resilience, never failing the sitemap.
-  const [provinces, countries] = await Promise.all([provinceEntries(), countryEntries()]);
-  return [...staticEntries(), ...provinces, ...countries];
+  // Per-hub builders concatenated into one flat urlset. Provinces, countries and books fetch
+  // in parallel (independent hubs); a build-time api outage degrades each to empty per its
+  // own resilience, never failing the sitemap.
+  const [provinces, countries, books] = await Promise.all([
+    provinceEntries(),
+    countryEntries(),
+    bookEntries(),
+  ]);
+  return [...staticEntries(), ...provinces, ...countries, ...books];
 }

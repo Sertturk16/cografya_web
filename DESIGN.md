@@ -40,15 +40,15 @@ correctness boundary, not a preference.
 
 **Warm-stone neutrals**
 
-| Token             | Hex       | Use                                                       |
-| ----------------- | --------- | --------------------------------------------------------- |
-| `--color-ink`      | `#2b2622` | body text, headings                                                              |
+| Token              | Hex       | Use                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--color-ink`      | `#2b2622` | body text, headings                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `--color-ink-dark` | `#211c19` | the palette's DARKEST line ink — the one neutral measured to clear WCAG 1.4.11's 3:1 against every surface this system draws a line over, including all seven §6.5 region tints (worst case Marmara `#0072b2`, 3.25:1). `--color-ink` itself misses there at 2.89:1. Use it for a line/border ON a data fill (map hover edge, region dot ring), never for text. The measurement table lives in `app/globals.css` — re-run it before changing the value |
-| `--color-slate`   | `#57504a` | secondary/essential text (lede, nav, footer, captions)    |
-| `--color-taupe`   | `#8a8078` | **placeholder / secondary-UI / decorative ONLY** (see §5) |
-| `--color-border`  | `#ddd5cc` | hairlines, card borders                                   |
-| `--color-surface` | `#f1e9de` | raised surfaces, hero band                                |
-| `--color-bg`      | `#fbf8f3` | parchment page background                                 |
+| `--color-slate`    | `#57504a` | secondary/essential text (lede, nav, footer, captions)                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `--color-taupe`    | `#8a8078` | **placeholder / secondary-UI / decorative ONLY** (see §5)                                                                                                                                                                                                                                                                                                                                                                                              |
+| `--color-border`   | `#ddd5cc` | hairlines, card borders                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `--color-surface`  | `#f1e9de` | raised surfaces, hero band                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `--color-bg`       | `#fbf8f3` | parchment page background                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 **Chips / semantic**
 
@@ -89,10 +89,36 @@ ramp and not the Terra brand hues.
 - **One breakpoint: `64rem` (1024px).** Below it the header is a single compact row (brand +
   icon-only search trigger + hamburger) with the nav in a disclosure panel; from it up the nav
   is inline and the search trigger gains its text label. The number is chosen, not measured
-  from the nav alone: the header collapses to one row at **850px in Turkish and 773px in
-  English** (binary-searched on the running build), and a breakpoint must be
-  locale-independent, so it sits above the later of the two — and on the value the repo
+  from the nav alone: a breakpoint must be locale-independent, so it sits above the width at
+  which the LATER of the two locales stops fitting on one row — and on the value the repo
   already used. Do not add a second breakpoint without a measurement in both locales.
+
+  **The measurement, re-run with SEVEN nav links (`/kitaplar` added by owner ruling V-6,
+  → DEC 2026-08-15g; `FU-WEB-MENU-BREAKPOINT`).** Two numbers, and they answer different
+  questions.
+
+  1. **The one that decides whether the breakpoint still works, measured on real viewports
+     with no injection:** at 1024px the header is a single 57.5px row in **both** locales, and
+     stays one row at every width above it (1025 / 1100 / 1280 / 1440 checked). At 1023px the
+     nav is in the disclosure panel and the compact row is 55.7px. So `64rem` continues to
+     hold with seven links, which is what makes the ruling shippable.
+  2. **The collapse widths, which are now INFORMATIONAL only:** with the inline nav present,
+     the row stops fitting below **979px in Turkish and 907px in English**. Both sit under the
+     breakpoint, so no real viewport ever renders them — below 1024px the nav is not inline at
+     all. Method: the viewport stays at 1600px so the desktop rules apply, and the header's own
+     `.container` is capped at the width under test — the container is full-width with 20px of
+     inline padding, so a cap of X hands the flex row the same `X − 40` a viewport of X would.
+     Binary-searched to 0.5px, with the two-row height (104.2px) observed one pixel below each
+     result as the control that the search found a transition rather than its own lower bound.
+
+  **The previously recorded pair (850 TR / 773 EN, measured on `dev@e593d18`) is restated
+  rather than adjusted, and that is deliberate.** Running the method above against SIX links —
+  the same header this section used to describe — returns 903px and 845px, not 850 and 773. So
+  the old pair is not reproducible on today's build and cannot serve as a baseline: the delta
+  between six and seven links under one method is ~76px (TR) and ~62px (EN), while the ~53px
+  and ~72px gap to the recorded numbers predates this change. Reporting the difference as if
+  it were the seventh link's cost would have been wrong in both directions.
+
 - **The single-row header is ENFORCED, and the wordmark is what gives way.** `.inner` is
   `flex-wrap: nowrap` below 64rem; the brand link is the one item allowed to shrink
   (`min-width: 0`) and its wordmark scales with `clamp(0.95rem, 4.5vw, 1.2rem)` before it
@@ -313,10 +339,10 @@ which of them, and when (→ DEC 2026-08-07a).
 
 <!-- read-contract -->
 
-| Rol      | Okur                                                                                               | Ne zaman                                                                                                                                        | Tanım dosyası                                                                        | Anchor               |
-| -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------- |
-| **Vera** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every visible UI change, before the component is written — in addition to, never instead of, the rendered-sample obligation in the header above | `.claude/agents/cografya-frontend-dev.md` `.codex/agents/cografya-frontend-dev.toml` | `READ-DESIGN-VISUAL` |
-| **İRİS** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every design tour, in Phase 0, before opening a browser | `.claude/agents/cografya-design-critic.md` `.codex/agents/cografya-design-critic.toml` | `READ-DESIGN-CRITIC` |
+| Rol      | Okur                                                                                               | Ne zaman                                                                                                                                        | Tanım dosyası                                                                          | Anchor               |
+| -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------- |
+| **Vera** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every visible UI change, before the component is written — in addition to, never instead of, the rendered-sample obligation in the header above | `.claude/agents/cografya-frontend-dev.md` `.codex/agents/cografya-frontend-dev.toml`   | `READ-DESIGN-VISUAL` |
+| **İRİS** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every design tour, in Phase 0, before opening a browser                                                                                         | `.claude/agents/cografya-design-critic.md` `.codex/agents/cografya-design-critic.toml` | `READ-DESIGN-CRITIC` |
 
 <!-- /read-contract -->
 

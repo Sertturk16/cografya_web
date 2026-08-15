@@ -320,6 +320,35 @@ export function bookJsonLd(args: {
 }
 
 /**
+ * Hostname suffixes the video thumbnail may come from.
+ *
+ * Written as SUFFIXES with the leading dot, which is what makes the check safe: `endsWith`
+ * on `".ytimg.com"` accepts `i.ytimg.com` and `i9.ytimg.com` and rejects `evil-ytimg.com`
+ * (it ends in `-ytimg.com`) and `ytimg.com.attacker.test`. A bare `"ytimg.com"` suffix, or a
+ * `includes()`, would accept both.
+ */
+const PROVIDER_THUMBNAIL_HOST_SUFFIXES = [".ytimg.com", ".youtube.com"] as const;
+
+/**
+ * Whether an address is a provider-served thumbnail — the gate for
+ * {@link videoObjectJsonLd}, which explains why it exists.
+ *
+ * `https` is required alongside the host: the address becomes an `<img src>` on an https
+ * page, so an `http` one would be blocked as mixed content anyway and is not a value we
+ * would publish in structured data either. A string `new URL()` cannot parse fails closed.
+ */
+export function isProviderThumbnailUrl(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:") return false;
+  return PROVIDER_THUMBNAIL_HOST_SUFFIXES.some((suffix) => parsed.hostname.endsWith(suffix));
+}
+
+/**
  * `schema.org/VideoObject` for one video solution on a book detail page
  * (`ENGINEERING.md` §4 #5 — "`VideoObject` for video solutions"; `SEO-POLICY.md` §B5 5.2).
  *
@@ -350,13 +379,29 @@ export function bookJsonLd(args: {
  * place. The builder still takes it as a parameter rather than composing it, so the player
  * host stays W2's decision.)
  *
+ * ## The host is ASSERTED, and the builder answers `null` rather than rewriting (→ PR #61
+ * review `SEC61-M3`)
+ *
+ * `thumbnailUrl` arrives from the api and is emitted into the page AND (in W2) into an
+ * `<img src>` that the reader's browser fetches before any click. That makes its host a
+ * decision this repo has to be able to state, not one it inherits: an address on some other
+ * origin would publish a third-party request we never authorised and would claim, in
+ * structured data, that the provider served it. So the builder checks the hostname ends in
+ * `.ytimg.com` or `.youtube.com` and, when it does not, emits **no markup at all** and warns.
+ *
+ * ASSERT, NEVER REWRITE — the two are opposites here. Rebuilding the address from the video
+ * id is precisely what Developer Policies III.E.5 bars (API Data replaced with independently
+ * computed data), so "fixing" a wrong host is not available as a repair. Refusing to publish
+ * is the only correct answer, and it is also the safe one: no `VideoObject` is a lost rich
+ * result, a wrong one is misleading markup.
+ *
  * ## Two values that pass through untouched, and why
  *
- * · **`thumbnailUrl` is used exactly as the provider returned it.** It is never built from
- *   the video id, normalised, resized or given a different host. YouTube Developer Policies
- *   III.E.5 bars replacing API Data with independently computed data, and III.E.1 bars
- *   producing byte copies — which is also why this image never reaches `next/image`
- *   (`ENGINEERING.md` §4 #9, second exception).
+ * · **`thumbnailUrl` is used exactly as the provider returned it** once it passes the host
+ *   assertion. It is never built from the video id, normalised, resized or given a different
+ *   host. YouTube Developer Policies III.E.5 bars replacing API Data with independently
+ *   computed data, and III.E.1 bars producing byte copies — which is also why this image
+ *   never reaches `next/image` (`ENGINEERING.md` §4 #9, second exception).
  * · **`duration` is the provider's raw ISO 8601 string**, not a value re-derived from the
  *   parsed seconds. The contract publishes both precisely because a parser that reads
  *   "PT6M8S" as 68 seconds satisfies every range check and is still wrong on the page.
@@ -391,7 +436,15 @@ export function videoObjectJsonLd(args: {
   duration: string;
   /** The player address this page actually loads. The host is the caller's decision. */
   embedUrl: string;
-}): JsonLdSchema {
+}): JsonLdSchema | null {
+  if (!isProviderThumbnailUrl(args.thumbnailUrl)) {
+    console.warn(
+      `[json-ld] refusing to emit VideoObject for "${args.name}": thumbnailUrl is not on a ` +
+        `provider host (${args.thumbnailUrl}).`,
+    );
+    return null;
+  }
+
   return {
     "@context": "https://schema.org",
     "@type": "VideoObject",

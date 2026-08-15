@@ -12,6 +12,7 @@
     "dunya": "World",
     "deniz": "Sea",
     "game": "Game",
+    "kitaplar": "Books",
     "about": "About",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
@@ -36,7 +37,8 @@
     "turkiye": "Türkiye",
     "dunya": "World",
     "game": "Game",
-    "deniz": "Sea"
+    "deniz": "Sea",
+    "kitaplar": "Books"
   },
   "Footer": {
     "tagline": "A free, open geography education platform.",
@@ -486,6 +488,32 @@
     },
     "hubLinkPoint": "See the {label} row in the four-seas table",
     "hubLinkAll": "Sea state along the whole coast of Türkiye"
+  },
+  "Kitaplar": {
+    "metaTitle": "Video Solutions for Geography Books",
+    "metaDescription": "Video solutions for geography practice-test books: {videoCount} deneme videos and {questionCount} question solutions. Each book lists its publisher and coverage.",
+    "heading": "Geography Books",
+    "lede": "The video solutions are published on the publisher's own channel.",
+    "cardVideos": "{count, plural, one {# deneme video} other {# deneme videos}}",
+    "cardQuestions": "{count, plural, one {# question solution} other {# question solutions}}"
+  },
+  "BookDetail": {
+    "kunyeHeading": "Publication details of {title}",
+    "videosHeading": "Video solutions for {title}",
+    "coverageNote": "{videoCount} of the book's {denemeCount} denemeler have a video solution.",
+    "denemeHeading": "Deneme {no}",
+    "questionLabel": "Question {no}",
+    "badgeVideos": "{count, plural, one {# deneme video} other {# deneme videos}}",
+    "badgeQuestions": "{count, plural, one {# question solution} other {# question solutions}}",
+    "coverAlt": "Cover of {title}",
+    "purchase": "Buy",
+    "purchaseAria": "Buy — opens on the seller's site",
+    "publisherLabel": "Publisher",
+    "authorsLabel": "Authors",
+    "isbnLabel": "ISBN",
+    "pageCountLabel": "Page count",
+    "denemeCountLabel": "Deneme count",
+    "examLabel": "Exam"
   },
   "NotFound": {
     "metaTitle": "Page not found",
