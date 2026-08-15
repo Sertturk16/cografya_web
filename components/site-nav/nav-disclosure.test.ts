@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
  *
  *  1. `children` is a server-rendered subtree that the island may show or hide and NEVER
  *     conditionally render (`SEO-POLICY.md` §B8.1/8.2). The most natural "improvement" a
- *     later edit can make to a hidden panel — `{open && children}` — removes six hub links
+ *     later edit can make to a hidden panel — `{open && children}` — removes EVERY hub link
  *     from the first HTML response of every page below 64rem. `typecheck`, `lint`, `test`
  *     and `build` all stay green, and the desktop rendered sample looks identical, because
  *     nothing asserts that the links are unconditional.

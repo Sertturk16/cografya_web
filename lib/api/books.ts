@@ -46,6 +46,45 @@ const BOOKS_PAGE_SIZE = 100;
 const MAX_BOOK_PAGES = 20;
 
 /**
+ * The slug alphabet and length the api's own route parameter accepts, mirrored — NOT
+ * re-invented (`cografya_api/src/book/dto/book-slug.params.ts`: `/^[a-z0-9-]+$/`,
+ * `@Length(1, 140)`, the ceiling being `books.slug_tr varchar(140)`).
+ *
+ * WHY A SHAPE CHECK ON OUR SIDE AT ALL (→ PR #61 review `SEC61-M2`). `getBookBySlug`
+ * percent-encodes the value, and the docblock there used to present that as if it closed the
+ * question — but encoding is NORMALISATION, not validation. `encodeURIComponent` leaves
+ * `.`, `-`, `_`, `~`, `!`, `*`, `'`, `(` and `)` untouched, so a route parameter of `.` or
+ * `..` survives it and reaches the api as a path segment. Under Express's non-strict
+ * routing that is not necessarily the 400 the contract promises: `/api/books/.` normalises
+ * to the COLLECTION endpoint, which answers 200 with a list envelope — a shape this function
+ * would then hand to a page typed as a single book.
+ *
+ * The guard therefore refuses to make the request at all and answers `null`, which the page
+ * turns into `notFound()` — the same answer as the api's 400 and 404, and the right one:
+ * a string outside this alphabet is not a slug any book can hold.
+ */
+const BOOK_SLUG_PATTERN = /^[a-z0-9-]+$/;
+const BOOK_SLUG_MAX_LENGTH = 140;
+
+/**
+ * Whether a route parameter is shaped like a book slug.
+ *
+ * Exported so it is unit-testable — and it lives in `lib/` rather than beside the page for
+ * a mechanical reason: `vitest.config.ts` collects only `lib/**` and `components/**`, so a
+ * guard placed under `app/` is a guard CI cannot see.
+ *
+ * DELIBERATELY THE API'S SUPERSET, NOT THE SEED'S GATE. The seed additionally refuses a
+ * leading, trailing or doubled hyphen (`/^[a-z0-9]+(?:-[a-z0-9]+)*$/`), which is correct
+ * where it decides what may be WRITTEN as a permanent address. This one decides only what
+ * is worth a request, and `--foo-` is not dangerous — merely unmatchable. Tightening it
+ * would turn a 404 into a different 404 for a value no book can hold either way, while
+ * silently disagreeing with the contract it mirrors.
+ */
+export function isBookSlugShape(slug: string): boolean {
+  return slug.length <= BOOK_SLUG_MAX_LENGTH && BOOK_SLUG_PATTERN.test(slug);
+}
+
+/**
  * Every book, in the api's own order (`displayOrder` ascending, tie-broken by `slugTr`).
  *
  * Reads pages until `hasMore === false`. Throws on failure, and — the deliberate part —
@@ -143,12 +182,17 @@ export async function getBooksResilient(): Promise<BookListItem[]> {
  * owes a 404. Every OTHER status still re-throws — a 500 from the api is not "no such book",
  * and turning it into one would cache a soft-404 over a real outage.
  *
- * The slug is path-encoded even though today's book slugs are ASCII by rule
- * (`GLOSSARY.md` §5): the value arrives from a route parameter, and a route parameter is
- * never interpolated raw regardless of how well-behaved the current data is. Encoding is
- * normalisation and not validation, though — a shape guard is a W1 entry condition.
+ * The slug is SHAPE-CHECKED before anything else ({@link isBookSlugShape}) and only then
+ * path-encoded — and the honest description of the pair is that the check now does the work
+ * and the encoding is defence in depth. `encodeURIComponent` is a NO-OP on every value the
+ * check admits (`[a-z0-9-]` are all unreserved), so it changes no request that is made
+ * today; it stays because it is the line that keeps a future loosening of the alphabet from
+ * silently becoming a path-injection, and removing it would make that loosening a one-line
+ * change with no remaining guard. A value that fails the check never becomes a request.
  */
 export async function getBookBySlug(slug: string): Promise<BookDetail | null> {
+  if (!isBookSlugShape(slug)) return null;
+
   try {
     return await apiGet<BookDetail>(`/api/books/${encodeURIComponent(slug)}`);
   } catch (error) {

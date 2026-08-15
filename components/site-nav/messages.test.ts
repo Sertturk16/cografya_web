@@ -9,7 +9,7 @@ import trMessages from "@/messages/tr.json";
  * pattern).
  *
  * next-intl does not fail a build on a missing key — it logs and renders the dotted key path
- * in place of the copy. This namespace names the six hub links in the header of EVERY page,
+ * in place of the copy. This namespace names every hub link in the header of EVERY page,
  * so a typo ships "Nav.hakkimizda" as a visible link label site-wide with CI green. The two
  * disclosure labels are worse than visible: they are the menu button's ONLY accessible name
  * below 64rem, where the button has no text of its own, so a missing key leaves a screen
@@ -30,6 +30,11 @@ const NAV_KEYS = [
   "dunya",
   "deniz",
   "game",
+  // The book hub, added to the nav by owner ruling V-6 (→ DEC 2026-08-15g). This list is
+  // hand-maintained and the consumer scan below is what forced this line: `site-nav.tsx`
+  // started asking for the key and the scan failed until the list knew about it, which is
+  // the guard doing exactly what its docblock claims.
+  "kitaplar",
   "about",
   // The disclosure button's accessible name, one per state.
   "openMenu",

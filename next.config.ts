@@ -34,7 +34,10 @@ const nextConfig: NextConfig = {
   // next/image conventions (CONVENTIONS §6 #9 / ENGINEERING §4 #9). Local images live in
   // `/public` — today `public/kitaplar/`, the book covers — and are always rendered through
   // `next/image` with explicit width/height (or `fill` + a fixed-size container) to hold
-  // CLS < 0.1.
+  // CLS < 0.1. That directory has one more trap of its own — a file placed there is served
+  // AHEAD of the router and can shadow `/kitaplar/[slug]` — and the note for whoever adds
+  // the next asset is `docs/public-kitaplar.md`. It sits in `docs/` rather than beside the
+  // files because anything under `public/` is itself published.
   //
   // `images.remotePatterns` is deliberately absent, and the FIRST remote image this app
   // renders will not change that: the YouTube thumbnail on the book detail page is

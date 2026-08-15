@@ -1,15 +1,21 @@
 import type { MetadataRoute } from "next";
+import { getBooksResilient } from "@/lib/api/books";
 import { getCountryBySlug, getCountriesResilient } from "@/lib/api/countries";
 import { getProvinceBySlug, getProvincesResilient, isProductionBuild } from "@/lib/api/provinces";
 import type { CountryDetail, ProvinceDetail } from "@/lib/api/types";
+import { bookSitemapEntries } from "@/lib/seo/book-sitemap";
 import { sitemapEntriesFor } from "@/lib/seo/sitemap-entries";
 
 /**
  * Root sitemap — a single flat urlset served at `/sitemap.xml` (the URL `robots.ts` points
- * at). Composition: static hubs (5 pages × 2 locales = 10) + provinces + countries at ONE
- * entry each (TR only — their EN counterparts are `noindex`, see `sitemapEntriesFor` in
+ * at). Composition: static hubs + provinces, countries and books at ONE entry each (TR only
+ * — their EN counterparts are `noindex`, see `sitemapEntriesFor` in
  * `lib/seo/sitemap-entries.ts`) — a valid, self-contained sitemap far under Google's
- * 50k-per-file hard limit.
+ * 50k-per-file hard limit. The book tier adds one hub and one URL per book — which leaves the
+ * 50k arithmetic untouched but is NOT "no change to the trigger" (→ PR #62 review
+ * `FENER62-M4`): `/kitaplar` is a third content hub, and the convention's hub condition was
+ * already crossed by `/dunya`. Crossed once or twice, the standing exception below is what
+ * governs, and it is unchanged.
  *
  * SPLIT TRIGGER STATUS (CONVENTIONS §6 #7). The convention's proactive split-to-a-sitemap-
  * index trigger (a second content hub; province×locale > ~150) is now crossed by adding the
@@ -91,6 +97,21 @@ async function provinceEntries(): Promise<MetadataRoute.Sitemap> {
   );
 }
 
+/**
+ * Book hub + book detail pages.
+ *
+ * DATA ONLY — the composition rule moved to `lib/seo/book-sitemap.ts` (→ PR #62 review
+ * `TEST62-I1`). What that file owns is the conditional part: an empty catalogue emits no hub
+ * `<url>`, because the hub answers `notFound()` in that state and §B6 6.8 rates a 404 URL in
+ * a sitemap a BLOCKER. It sits in `lib/` because that is the only side of this repo vitest
+ * collects, and a conditional SEO rule CI cannot see is one a later refactor can drop
+ * silently. Everything left here is the fetch and its build-vs-runtime resilience, which is
+ * this file's half of the split its own docblock describes.
+ */
+async function bookEntries(): Promise<MetadataRoute.Sitemap> {
+  return bookSitemapEntries(await getBooksResilient());
+}
+
 /** Countries hub. Same shape/resilience as the province builder, one hub up. */
 async function countryEntries(): Promise<MetadataRoute.Sitemap> {
   const countries = await getCountriesResilient();
@@ -126,9 +147,13 @@ async function countryEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Per-hub builders concatenated into one flat urlset. Provinces + countries fetch in
-  // parallel (independent hubs); a build-time api outage degrades each to empty per its own
-  // resilience, never failing the sitemap.
-  const [provinces, countries] = await Promise.all([provinceEntries(), countryEntries()]);
-  return [...staticEntries(), ...provinces, ...countries];
+  // Per-hub builders concatenated into one flat urlset. Provinces, countries and books fetch
+  // in parallel (independent hubs); a build-time api outage degrades each to empty per its
+  // own resilience, never failing the sitemap.
+  const [provinces, countries, books] = await Promise.all([
+    provinceEntries(),
+    countryEntries(),
+    bookEntries(),
+  ]);
+  return [...staticEntries(), ...provinces, ...countries, ...books];
 }

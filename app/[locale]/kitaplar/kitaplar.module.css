@@ -1,0 +1,90 @@
+/* Kitap hub'ı — kart ızgarası. Terra tokens only (DESIGN.md §2); no hardcoded brand hex.
+   `#fff` is the same card neutral `.card`/`.province-card` already use in the global layer.
+   Contrast verified against DESIGN §5: ink on white 14.13:1 (AAA), slate on white 7.92:1
+   (AAA), primary-dark on white 7.89:1 (AAA), chip-ink on chip-bg 6.59:1 (AA). */
+
+.grid {
+  list-style: none;
+  padding: 0;
+  margin: 32px 0 0;
+  display: grid;
+  /* ONE COLUMN AT 320 AND 360 (DESIGN.md §4's mandatory viewports): a card carries a cover
+     beside a title, a publisher and two chips, so the track floor is deliberately far above
+     `.province-grid`'s 200px. At 360px the container gives 320px of content width, so a
+     360px floor cannot fit two tracks; on the 1120px container it yields three.
+
+     `min(360px, 100%)` and NOT a bare `360px`: a bare minimum larger than the container is
+     the standard `auto-fill` overflow trap — the track keeps its 360px and the row spills
+     past the viewport, which is exactly the horizontal overflow the 320px viewport exists to
+     catch. `min()` collapses the floor to the available width instead. */
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+  gap: 16px;
+}
+
+/* The grid ITEM is the `<li>`; the box the reader sees is the `.card` inside it. Making the
+   item a grid container passes the row's stretch down to that single child, so a two-line
+   title cannot leave the card next to it short (the same fix `.province-grid > li` carries
+   in the global layer). */
+.grid > li {
+  display: grid;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+.card:hover {
+  border-color: var(--color-primary);
+}
+
+/* FIXED BOX, CONTAINED IMAGE — the whole CLS story for a cover. The contract publishes a
+   path and no dimensions (web SPEC §4.5/A3), so the box's size is ours and the image's
+   RATIO is the file's: `contain` letterboxes whatever arrives inside a reserved rectangle,
+   which means a cover of any proportion reserves its space before it loads. `flex: none`
+   keeps the box from shrinking when a long title pushes against it. */
+.cardCover {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 72px;
+  height: 108px;
+}
+
+.cardCoverImage {
+  object-fit: contain;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cardTitle {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+.cardPublisher {
+  font-size: 0.9rem;
+  color: var(--color-slate);
+}
+
+.cardBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}

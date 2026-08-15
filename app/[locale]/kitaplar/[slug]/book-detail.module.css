@@ -1,0 +1,184 @@
+/* Kitap detay sayfası — künye, kapak ve soru dizini. Terra tokens only (DESIGN.md §2); no
+   hardcoded brand hex. `#fff` is the same card neutral the global layer already uses.
+   Contrast verified against DESIGN §5: ink on white 14.13:1 (AAA), slate on white 7.92:1
+   (AAA), primary-dark on white 7.89:1 (AAA), primary-dark on surface 6.95:1 (AA). */
+
+/* ── Giriş şeridi: kapak + anlatı ─────────────────────────────────────────────────────── */
+
+.intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+/* FIXED BOX, CONTAINED IMAGE. The contract publishes a cover PATH and no width/height pair
+   (web SPEC §4.5/A3), so the box's size is ours and the ratio is the file's: `contain`
+   letterboxes any proportion inside a rectangle that is reserved before the image loads,
+   which is the whole CLS guarantee `next/image`'s explicit dimensions would otherwise give.
+   `flex: none` keeps it from shrinking beside the prose. */
+.coverBox {
+  position: relative;
+  flex: none;
+  width: 180px;
+  height: 270px;
+}
+
+.coverImage {
+  object-fit: contain;
+}
+
+.introBody {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.prose {
+  max-width: 70ch;
+  line-height: 1.7;
+  color: var(--color-ink);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+/* ── Künye ────────────────────────────────────────────────────────────────────────────── */
+
+.factSheet {
+  margin: 0;
+  display: grid;
+  /* `min()` and not a bare 180px: an `auto-fill` floor wider than the container keeps its
+     width and spills the row past the viewport — the horizontal overflow the 320px viewport
+     exists to catch. */
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+  gap: 14px;
+}
+
+.fact {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.fact dt {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-slate);
+  margin-bottom: 4px;
+}
+
+.fact dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+/* An ISBN is an identifier rather than a measurement, so it is set smaller and allowed to
+   break: 13 digits at the value size above overflow a 180px card at 320px. */
+.fact dd.factIdentifier {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+/* ── Video çözümler: kapsam cümlesi + deneme blokları + soru dizini ───────────────────── */
+
+.coverageNote {
+  margin: 0 0 24px;
+  max-width: 70ch;
+  color: var(--color-slate);
+}
+
+.deneme {
+  margin-top: 24px;
+}
+
+/* THE FRAGMENT OFFSET, and it is not decoration. `#deneme-12` is part of the IA
+   (`SEO-POLICY.md` §B4's book row), so §B4 4.9 requires the target to land BELOW the sticky
+   header and be visible at every viewport, 320px included. The measurement lives in the
+   global token layer, never here — `components/anchor-offset-token.test.ts` is the tripwire
+   for the failure mode that makes this silent: `var()` on an undefined property invalidates
+   the whole `calc()`, the declaration is dropped, and the offset becomes zero with nothing
+   erroring. */
+.denemeHeading {
+  scroll-margin-top: calc(var(--header-height) + 1rem);
+  font-size: 1.1rem;
+  font-family: var(--font-heading);
+  color: var(--color-primary-dark);
+  margin: 0 0 10px;
+}
+
+.questionGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  /* THE TRACK FLOOR IS MEASURED, AND IT SITS INSIDE A NARROW WINDOW. Two requirements pull
+     against each other and 168px is the value that satisfies both.
+
+     · ONE COLUMN AT 320 AND 360 (DESIGN.md §4's mandatory viewports, web SPEC §9 item 8). At
+       360px the container gives 320px of content, so a second track needs the floor to drop
+       to (320 − 8)/2 = 156px. Anything above 156px stays single-column there.
+     · SIX ON A ROW ON THE FULL CONTAINER. A deneme carries six questions, and a floor that
+       only fits five leaves a lone sixth cell under every one of the 30 blocks. At the
+       1120px container's 1080px of content, six tracks need the floor at or below
+       (1080 − 5×8)/6 = 173.3px. The first version used 180px and produced exactly that
+       orphan row, caught in the sample rather than in the code.
+
+     Between 1024px and ~1120px of viewport the row still breaks 5 + 1: no single intrinsic
+     floor covers every width, and this is the honest cost of an intrinsic grid rather than a
+     per-count media query. It is stated instead of being papered over. */
+  grid-template-columns: repeat(auto-fill, minmax(min(168px, 100%), 1fr));
+  gap: 8px;
+}
+
+.questionLink {
+  /* Same offset as the deneme heading: `#deneme-12-soru-3` is an IA fragment too, and it is
+     the row itself that carries the id, so the row is what has to clear the header. */
+  scroll-margin-top: calc(var(--header-height) + 1rem);
+  display: flex;
+  align-items: center;
+  /* 44px, WCAG 2.2 §2.5.5 (AAA) rather than the 24×24 §2.5.8 floor: these are the page's
+     primary controls and there is room to be generous, the same call `site-nav`'s disclosure
+     rows make at 45.6px. */
+  min-height: 44px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+.questionLink:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+/* ── Kaynak beyanı ────────────────────────────────────────────────────────────────────── */
+
+/* Deliberately the SAME geometry, size and color as the province and country pages' Kaynaklar
+   line (`province-detail.module.css`): the reader meets one source-statement form across every
+   detail page rather than a per-hub variant, and slate on white is 7.92:1 (AAA) — the token
+   `--color-taupe` would be sub-AA here and is barred for body text (`DESIGN.md` §5). */
+.sources {
+  margin-top: 40px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  max-width: 70ch;
+}
+
+.sourcesLabel {
+  font-weight: 700;
+  color: var(--color-ink);
+}

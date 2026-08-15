@@ -6,14 +6,16 @@
    sibling search module already uses for the same sheet — `#fff` for the card and
    `rgb(43 38 34 / 14%)` for its shadow (review CR56-M2).
 
-   THE BREAKPOINT IS 64rem AND THE NUMBER IS MEASURED, NOT INHERITED. On `dev@e593d18` the
-   header collapses to a single row at 850px in Turkish and 773px in English (binary-searched
-   on the running build; at 768px BOTH locales still render a 104.2px two-row header, and at
-   ≤430px a 176.8px three-row one). A breakpoint has to be locale-independent, so it must sit
-   above the later of the two; 64rem is also the repo's only existing breakpoint — the width
-   at which `site-search.module.css` reveals the trigger's text label — so the header changes
-   character exactly once instead of twice. The deliberate cost is the 850–1023px band, where
-   the hamburger replaces a nav that already fit on one row. */
+   THE BREAKPOINT IS 64rem AND THE NUMBER IS MEASURED, NOT INHERITED — and the measurement
+   lives in ONE place, `DESIGN.md` §4, not here. It used to be written out in both, and the
+   day a seventh nav link landed (owner ruling V-6, → DEC 2026-08-15g) both copies became
+   false at once; only one of them would reliably have been found. What belongs in this file
+   is the design consequence, which does not move with the numbers: a breakpoint has to be
+   locale-independent, so it sits above the later of the two locales' collapse widths, and
+   64rem is also the repo's only existing breakpoint — the width at which
+   `site-search.module.css` reveals the trigger's text label — so the header changes character
+   exactly once instead of twice. The deliberate cost is the band between the collapse width
+   and 1024px, where the hamburger replaces a nav that would still have fit on one row. */
 
 .root {
   /* The wrapper generates NO box: the button becomes a direct flex item of the header's
@@ -60,7 +62,7 @@
    `display: none` (not `[hidden]` + a visibility partner) is deliberate. The search trigger
    needs `visibility: hidden` because its slot has no size of its own and removing it from
    flow would collapse the header's first row; this panel is out of flow in BOTH states, so
-   `display: none` costs no layout and buys the stronger guarantee — the six links leave the
+   `display: none` costs no layout and buys the stronger guarantee — every nav link leaves the
    a11y tree and the tab order together, with no author-origin `display` left to beat the UA
    rule (the PR #45 review C1 trap, WCAG 4.1.2). The links stay in the DOM and in the
    server-rendered HTML either way: this rule changes visibility, never the link graph
@@ -84,9 +86,14 @@
   /* THE PANEL MUST BE ABLE TO SCROLL. It is `position: absolute` inside a `position: sticky`
      header, so it is pinned to the viewport's top edge and does NOT move with the document:
      scrolling the page slides content BEHIND it and can never bring a clipped row into view.
-     Its content height is fixed by construction — six 45.6px rows + gaps + padding + the
-     locale switcher ≈ 350px, bottom edge ≈ 413px — which overflows a phone in landscape
-     (iPhone SE ≈ 320px of visual viewport height, iPhone 12/13 ≈ 340px with the URL bar).
+     Its content height is fixed by construction — one 45.6px row per nav link + gaps +
+     padding + the locale switcher — and GROWS with the link set, which is why the cap below
+     is written against the viewport rather than against a row count (→ PR #62 review
+     `A11Y62-M4`: the arithmetic here was measured at six rows and `/kitaplar` made it seven
+     in the same commit). At the six rows measured in PR #56 the panel already stood at
+     ≈ 350px with its bottom edge at ≈ 413px, which overflows a phone in landscape
+     (iPhone SE ≈ 320px of visual viewport height, iPhone 12/13 ≈ 340px with the URL bar);
+     every link added since only moves it further past that line.
      Without a limit the last nav row and the language switcher sat below the fold while
      remaining in the tab order: focus could reach a control that cannot be brought on screen
      (WCAG 1.4.10 Reflow; 2.4.7 in spirit). Before this PR those links were in flow and simply

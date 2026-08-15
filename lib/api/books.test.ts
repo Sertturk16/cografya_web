@@ -4,7 +4,7 @@ import {
   BOOK_LIST_PAGE_1,
   BOOK_LIST_PAGE_2,
 } from "@/test/fixtures/books/book-fixtures";
-import { getBookBySlug, getBooks, getBooksResilient } from "./books";
+import { getBookBySlug, getBooks, getBooksResilient, isBookSlugShape } from "./books";
 import { isProductionBuild } from "./provinces";
 
 // Both hoisted above the imports by vitest, for the same reasons `lib/api/marine.test.ts`
@@ -251,13 +251,58 @@ describe("getBookBySlug", () => {
     await expect(getBookBySlug("fixture-book-one")).rejects.toThrow(TypeError);
   });
 
-  it("path-encodes the slug it was handed", async () => {
+  it("asks for the slug it was handed, as one path segment", async () => {
     const stub = apiAnswersInOrder(ok(BOOK_DETAIL));
 
-    // The value reaches here from a route parameter, so it is encoded regardless of how
-    // well-behaved today's slugs are (`GLOSSARY.md` §5 keeps them ASCII by rule).
-    await getBookBySlug("a b/../c");
+    await getBookBySlug("fixture-book-one");
 
-    expect(requestedUrl(stub, 1)).toBe("http://api.test/api/books/a%20b%2F..%2Fc");
+    expect(requestedUrl(stub, 1)).toBe("http://api.test/api/books/fixture-book-one");
+  });
+});
+
+// THE SHAPE GUARD (→ PR #61 review `SEC61-M2`). It sits in `lib/` and not beside the page
+// for a mechanical reason: `vitest.config.ts` collects only `lib/**` and `components/**`,
+// so a guard under `app/` is one CI cannot see.
+describe("isBookSlugShape", () => {
+  it.each([
+    ["today's real slug shape", "ayt-cografya-konu-ozetli-brans-denemeleri"],
+    ["digits", "deneme-2026"],
+    ["a single character", "a"],
+    // The api's own pattern is a deliberate SUPERSET of the seed's write-time gate: it
+    // permits a leading/trailing/doubled hyphen, which no book can hold but which is
+    // unmatchable rather than dangerous. Mirroring the superset keeps the two sides in
+    // agreement about which values are a 404 and which are a 400.
+    ["a shape the seed gate would refuse but the api accepts", "--foo-"],
+    ["the maximum column length", "a".repeat(140)],
+  ])("accepts %s", (_case, slug) => {
+    expect(isBookSlugShape(slug)).toBe(true);
+  });
+
+  it.each([
+    // The case the finding was actually about: `encodeURIComponent` leaves `.` untouched,
+    // so a bare dot survives normalisation and, under Express's non-strict routing,
+    // `/api/books/.` resolves to the COLLECTION endpoint — a 200 carrying a list envelope
+    // where a single book was expected.
+    ["a bare dot", "."],
+    ["a parent-directory segment", ".."],
+    ["a path separator", "a/b"],
+    ["an unencoded space", "a b"],
+    ["uppercase", "Ayt-Cografya"],
+    ["a Turkish character the slug rule folds away", "coğrafya"],
+    ["an empty string", ""],
+    ["one character past the column length", "a".repeat(141)],
+  ])("refuses %s", (_case, slug) => {
+    expect(isBookSlugShape(slug)).toBe(false);
+  });
+
+  it("refuses a malformed slug without issuing a request at all", async () => {
+    const stub = vi.fn(() => Promise.resolve(ok(BOOK_DETAIL)));
+    vi.stubGlobal("fetch", stub);
+
+    // `null`, so the page answers `notFound()` — the same answer as the api's 400, reached
+    // without asking. The request count is the assertion that matters: a guard that returns
+    // the right value after making the call would not have closed the finding.
+    await expect(getBookBySlug("..")).resolves.toBeNull();
+    expect(stub).not.toHaveBeenCalled();
   });
 });

@@ -25,12 +25,12 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
           <span className={styles.brandName}>{siteConfig.name}</span>
         </Link>
         {/* Placed between the brand and the nav ON PURPOSE. It puts search early in the tab
-            order, ahead of six nav links. The hamburger reworking anticipated in this
+            order, ahead of the nav links. The hamburger reworking anticipated in this
             comment has now happened: the nav items moved inside `SiteNav`'s panel and this
             trigger stayed exactly where it was, sharing the header's first row with the
             brand and the menu button. */}
         <SiteSearch locale={locale} />
-        {/* Renders the six hub links as server-side `<a href>` at every viewport; below
+        {/* Renders the hub links as server-side `<a href>` at every viewport; below
             64rem a client disclosure hides or reveals that subtree. Order matters here:
             the menu button is the last control on the first row, after the search
             trigger. */}
