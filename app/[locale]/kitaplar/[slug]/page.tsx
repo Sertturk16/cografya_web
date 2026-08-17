@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { Fragment } from "react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { DenemeFacade, DenemeMeta } from "@/components/book/deneme-facade";
+import { DenemePlayer } from "@/components/book/deneme-player";
+import { DenemeVideo } from "@/components/book/deneme-video";
 import { ProseNote } from "@/components/prose-note";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getBookBySlug, getBooksResilient } from "@/lib/api/books";
+import { formatDuration } from "@/lib/book/duration";
+import { resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
-import { bookJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { canonicalEmbedUrl } from "@/lib/youtube/embed";
+import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import styles from "./book-detail.module.css";
 
@@ -105,13 +112,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * carries `scroll-margin-top` so a followed fragment lands below the sticky header at every
  * viewport, 320px included (§B4 4.9).
  *
- * ## What is deliberately absent here and lands in W2
+ * ## The player (W2) is an addition to this index, never a replacement for it
  *
- * No player, no iframe, no thumbnail, no `VideoObject`, no visible duration or publish date.
- * Every one of those depends on the api's provider snapshot, which is `null` on the normal
- * path today, and the markup rule is a chain: `uploadDate`/`duration` may only be emitted
- * where the page shows them (§B5 5.7), and a `VideoObject` may only be emitted on a page
- * where the video can be watched. This page shows none of it and emits none of it.
+ * Each block is wrapped by a client island that delegates one listener over its own rows; the
+ * rows themselves are untouched server markup and still resolve with JavaScript off. The
+ * player arrives only on a click or a key press, only inside the block that was pressed, and
+ * only one at a time — so the first response still carries no iframe at all.
+ *
+ * The provider snapshot (`videos[].youtube`) is `null` on the normal path today, which is why
+ * the covers are typographic and no `VideoObject` is emitted: the markup rule is a chain —
+ * `uploadDate`/`duration` may only be emitted where the page SHOWS them (§B5 5.7), and a
+ * `VideoObject` only where the video can actually be watched. `lib/book/video-state.ts` is the
+ * single place that decides which of the three states a block is in, so the visible facts and
+ * the structured data cannot drift apart.
  */
 export default async function BookDetailPage({ params }: PageProps) {
   const { locale, slug } = await params;
@@ -139,10 +152,42 @@ export default async function BookDetailPage({ params }: PageProps) {
   // `"trNarrative"`: no English text is coming later either.
   const introText = locale === "tr" ? book.introTr : null;
 
-  // The credit row this page owes, SELECTED BY THE CONTRACT'S DISCRIMINATOR — never by
-  // matching the notice text, or a ledger edit would silently drop the row it identifies.
-  // Why only this one, and why `undefined` renders nothing, is at the render site below.
-  const partnerAttribution = book.attribution.find((row) => row.providerId === "partner");
+  // Each block's facade state, resolved ONCE and read by three places: the visible cover, the
+  // künye row, and the structured data. One resolution is what keeps them from disagreeing.
+  const videoStates = book.videos.map((video) => ({ video, state: resolveVideoState(video) }));
+
+  // Which credit rows this page owes — selected by the contract's own machine token, never by
+  // matching the notice text, and never re-ordered (see the source statement's comment below).
+  const attributionRows = book.attribution.filter(
+    (row) => row.providerId !== "youtube" || book.videos.length > 0,
+  );
+
+  // `VideoObject` for every block a reader can actually watch here, and for no other. The
+  // filter is the state machine's own answer rather than a condition repeated at this site —
+  // `youtube === null` and `embeddable === false` both resolve away from "rich", and the
+  // builder additionally refuses a thumbnail that is not on a provider host (→ PR #61 review
+  // SEC61-M3), returning `null` rather than markup.
+  //
+  // `name` is composed from two strings this page already prints verbatim — the `<h1>` title
+  // and the block's own `<h3>` — so §B5 5.7 ("no data in the markup that is not on the page")
+  // is satisfied by construction while the search result still says which book it belongs to.
+  //
+  // Emitted on the English page too, from this same path. That page is permanently `noindex`,
+  // so the markup is inert there; a second code path to suppress it would be more surface for
+  // the same outcome (Atlas ruling AK-12/E-W2-6).
+  const videoSchemas = videoStates.flatMap(({ video, state }) => {
+    if (state.kind !== "rich") return [];
+    const schema = videoObjectJsonLd({
+      name: `${title} — ${t("denemeHeading", { no: video.denemeNo })}`,
+      thumbnailUrl: state.youtube.thumbnailUrl,
+      uploadDate: state.youtube.publishedAtUtc,
+      // The provider's RAW ISO string, never re-derived from the parsed seconds: the contract
+      // publishes both precisely because "PT6M8S" read as 68 seconds passes every range check.
+      duration: state.youtube.durationIso,
+      embedUrl: canonicalEmbedUrl(video.youtubeVideoId),
+    });
+    return schema === null ? [] : [schema];
+  });
 
   return (
     <div className="container page">
@@ -160,6 +205,11 @@ export default async function BookDetailPage({ params }: PageProps) {
           dateModified: book.updatedAt,
         })}
       />
+      {/* One `<script>` carrying the array, rather than one per block: a top-level array is
+          valid JSON-LD and Google reads it, and 30 separate elements would say the same thing
+          in 30 times the markup. Emitted only when the array is non-empty — today it is empty
+          on real data, because every snapshot is `null`. */}
+      {videoSchemas.length > 0 && <JsonLd schema={videoSchemas} />}
       <Breadcrumb
         locale={locale}
         items={[
@@ -182,8 +232,7 @@ export default async function BookDetailPage({ params }: PageProps) {
             deferring the LCP image delays the metric the budget exists to protect.
 
             `null` is a normal contract state and renders NOTHING — no frame, no placeholder,
-            no "cover coming soon". Today's seed is null (the api's `cover_image_path` is not
-            filled yet), so the live page currently takes this branch. */}
+            no "cover coming soon". */}
         {book.coverImagePath !== null && (
           <div className={styles.coverBox}>
             <Image
@@ -212,9 +261,12 @@ export default async function BookDetailPage({ params }: PageProps) {
               `window.opener` handle, and `noreferrer` is added alongside it (→ PR #62 review
               `SEC62-M3`) because the seller has no need to be told which page sent the reader
               and this repo's three earlier outbound links already carry the pair — one form,
-              not two. The accessible name says where the link goes, because a link that
-              changes context should say so (WCAG 3.2.5). No price appears anywhere on this
-              page, by rule. */}
+              not two. The accessible name says where the link goes AND that it opens in a new
+              tab, because a link that changes context should say so (WCAG 3.2.5). Both halves,
+              because this page's other outbound control — the facade's "YouTube'da izle" —
+              discloses the tab, and one page that discloses it on one link and not the other
+              teaches the reader that the silent one stays put (→ PR #63 review `CS63R2-M1`).
+              No price appears anywhere on this page, by rule. */}
           {book.purchaseUrl !== null && (
             <a
               className="btn btn-primary"
@@ -280,31 +332,97 @@ export default async function BookDetailPage({ params }: PageProps) {
           })}
         </p>
 
-        {book.videos.map((video) => (
-          <section key={video.denemeNo} className={styles.deneme}>
-            <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
-              {t("denemeHeading", { no: video.denemeNo })}
-            </h3>
-            <ul role="list" className={styles.questionGrid}>
-              {video.questions.map((question) => {
-                const fragment = questionFragment(video.denemeNo, question.questionNo);
-                return (
-                  <li key={question.questionNo}>
-                    {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link
-                        real: `#deneme-12-soru-3` is copyable, shareable and enters browser
-                        history, and it resolves to this element with no JavaScript involved.
-                        An `<a href>` rather than a `<button>` for the same reason — §B8 8.2
-                        rates JavaScript navigation a BLOCKER, and W2's player wiring attaches
-                        to these links rather than replacing them. */}
-                    <a id={fragment} href={`#${fragment}`} className={styles.questionLink}>
-                      {t("questionLabel", { no: question.questionNo })}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
+        {videoStates.map(({ video, state }) => {
+          /* ONE value, four consumers. `playable` is false for a video the provider refuses to
+             embed, and every part of the block has to agree about it: the island intercepts
+             nothing, the swap point may not reach its iframe branch even if the store somehow
+             says otherwise (→ PR #63 review `CODE63-I1`), and the rows neither announce a video
+             jump nor perform one. Computed here rather than re-derived at each site, for the
+             same reason `resolveVideoState` is called once. */
+          const playable = state.kind !== "external";
+          return (
+            /* The block's own client island. It renders THIS `<section>` and delegates one
+               listener over everything inside it; the markup below is unchanged server output.
+               When the block is not playable the island intercepts nothing at all — those rows
+               keep their plain fragment behaviour, because there is no player for them to
+               seek. */
+            <DenemePlayer
+              key={video.denemeNo}
+              className={styles.deneme}
+              denemeNo={video.denemeNo}
+              playable={playable}
+            >
+              <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
+                {t("denemeHeading", { no: video.denemeNo })}
+              </h3>
+              <DenemeMeta state={state} />
+              <DenemeVideo
+                denemeNo={video.denemeNo}
+                videoId={video.youtubeVideoId}
+                title={t("playerTitle", { no: video.denemeNo })}
+                playable={playable}
+                facade={
+                  <DenemeFacade
+                    denemeNo={video.denemeNo}
+                    videoId={video.youtubeVideoId}
+                    state={state}
+                  />
+                }
+              />
+              <ul role="list" className={styles.questionGrid}>
+                {video.questions.map((question) => {
+                  const fragment = questionFragment(video.denemeNo, question.questionNo);
+                  return (
+                    <li key={question.questionNo}>
+                      {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link
+                          real: `#deneme-12-soru-3` is copyable, shareable and enters browser
+                          history, and it resolves to this element with no JavaScript involved.
+                          An `<a href>` rather than a `<button>` for the same reason — §B8 8.2
+                          rates JavaScript navigation a BLOCKER, and W2's player wiring attaches
+                          to these links rather than replacing them.
+
+                          `data-second` is the jump target the block's island reads on a click.
+                          The video id is NOT repeated here: the island is per-block and already
+                          holds it, so 180 copies of one string would be dead weight in every
+                          response (a deliberate departure from `SPEC.md` §4.3's letter, ruled by
+                          Atlas as AK-12/E-W2-1).
+
+                          THE NAME SAYS WHERE THE QUESTION IS, because W2 changed what the row
+                          DOES without changing what it says (→ PR #63 review `A11Y63-I2`). A
+                          links-list or rotor user meets 180 rows named `Soru 1`…`Soru 6`, and
+                          pressing one now opens a player and moves focus into a cross-origin
+                          frame. The suffix states a FACT about the question — question 3 is at
+                          3:24 of the video — rather than promising a behaviour, so it stays
+                          true for a reader with no JavaScript, for whom the row is still the
+                          plain fragment jump it always was. It begins with the visible token,
+                          which is also what keeps WCAG 2.5.3 satisfied here.
+
+                          ONLY WHERE THERE IS A PLAYER TO JUMP IN. In an `external` block the
+                          row really is nothing but a fragment jump, and giving two differently
+                          behaving rows one name is what WCAG 3.2.4 asks us not to do. */}
+                      <a
+                        id={fragment}
+                        href={`#${fragment}`}
+                        className={styles.questionLink}
+                        data-second={question.startSecond}
+                        aria-label={
+                          playable
+                            ? t("questionLabelAria", {
+                                no: question.questionNo,
+                                time: formatDuration(question.startSecond),
+                              })
+                            : undefined
+                        }
+                      >
+                        {t("questionLabel", { no: question.questionNo })}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </DenemePlayer>
+          );
+        })}
       </section>
 
       {/* THE SOURCE STATEMENT (`SEO-POLICY.md` §B15 15.4/15.5; → PR #62 review `FENER62-I2`).
@@ -315,28 +433,51 @@ export default async function BookDetailPage({ params }: PageProps) {
           keeps 15.5 satisfied, since it names the two real parties instead of a generic
           "resmi kaynaklar".
 
-          THE PARTNER ROW ONLY, AND THAT IS THE WHOLE W1 DECISION. The contract's other row is
-          the YouTube source credit, and printing it today would cite a source for content this
-          page does not carry — no player, no thumbnail, no `VideoObject`, by the same chain
-          the class docblock above sets out. It lands WITH the player in W2, from this same
-          array; nothing here needs rewriting when it does.
+          BOTH ROWS NOW, WHICH IS THE W2 HALF OF THIS BLOCK. W1 printed the partner row alone
+          because the page carried no YouTube content to cite. It carries it now: every block
+          can load a player on a press, so the source credit is owed — and the ledger's own
+          position is that carrying both is strictly safer than either alone. The array is
+          iterated AS THE CONTRACT ORDERS IT and never sorted; re-ordering a published credit
+          rewrites it.
 
-          SELECTED BY `providerId`, WHICH IS A CONTRACT ENUM, never by matching the notice
-          text: a credit line identified by its own words is a line that disappears the day the
-          ledger rewords it. `undefined` renders nothing rather than a fallback sentence — the
-          row is contractually always present, so its absence is a contract break, and
-          inventing an attribution is exactly what an untouchable string forbids (the
-          `marine-attribution` precedent: the copyright line is omitted, not faked).
+          **THIS DOES NOT CLOSE THE ATTRIBUTION OBLIGATION.** The provenance ledger says it in
+          as many words — "a text credit alone does not discharge the obligation": Developer
+          Policies III.E.4 and the Branding Guidelines additionally require the YouTube logo on
+          any page where the API has a presence, and that logo is an asset this repo does not
+          have yet. It lands in W3, together with the link back to YouTube content. Nothing
+          here may be read as the obligation being met.
 
-          `lang="tr"` ON THE NOTICE, NOT ON THE ROW. The notice is a Turkish sentence on BOTH
-          locales, so the EN page has to declare its language or a screen reader reads it with
-          English phonetics (WCAG 3.1.2, `ENGINEERING.md` §5 — the mirror of the marine block's
-          `lang="en"` on the Turkish page). The label beside it is localized interface copy and
-          stays in the page's own language. */}
-      {partnerAttribution !== undefined && (
+          THE YOUTUBE ROW IS GATED ON THERE BEING A VIDEO; THE PARTNER ROW IS NOT. A book with
+          no indexed video has no player, no thumbnail and no YouTube presence, so it owes that
+          provider nothing. The partner's row is a different obligation and W2 first got this
+          wrong by gating both together (→ PR #63 review `FENER63-M1`/`CODE63-M1`): the partner
+          sentence credits the BOOK as well as its solutions, so a seeded video-less book would
+          have rendered publisher material with no credit line at all — a transparency
+          regression against W1, which printed that row unconditionally. Splitting the gate is
+          the whole of the fix; nothing else about the block changes, and on today's data both
+          rows render exactly as before.
+
+          SELECTED AND ORDERED BY THE CONTRACT, never by matching the notice text: a credit
+          line identified by its own words is a line that disappears the day the ledger rewords
+          it. An empty array renders nothing rather than a fallback sentence — the rows are
+          contractually always present, so their absence is a contract break, and inventing an
+          attribution is exactly what an untouchable string forbids (the `marine-attribution`
+          precedent: the copyright line is omitted, not faked).
+
+          `lang="tr"` ON THE NOTICES, NOT ON THE ROW. Both are Turkish sentences on BOTH
+          locales, so the EN page has to declare their language or a screen reader reads them
+          with English phonetics (WCAG 3.1.2, `ENGINEERING.md` §5 — the mirror of the marine
+          block's `lang="en"` on the Turkish page). The label beside them is localized interface
+          copy and stays in the page's own language. */}
+      {attributionRows.length > 0 && (
         <p className={styles.sources}>
           <span className={styles.sourcesLabel}>{t("sourcesLabel")}:</span>{" "}
-          <span lang="tr">{partnerAttribution.requiredNoticeTr}</span>
+          {attributionRows.map((row, index) => (
+            <Fragment key={row.providerId}>
+              {index > 0 && <span aria-hidden="true"> · </span>}
+              <span lang="tr">{row.requiredNoticeTr}</span>
+            </Fragment>
+          ))}
         </p>
       )}
     </div>
