@@ -72,7 +72,15 @@ export default async function AboutPage({ params }: PageProps) {
           a product name inside Turkish prose is not a foreign-language passage. */}
       <h2>{t("dataHeading")}</h2>
       <p>{t("dataIntro")}</p>
-      <ul>
+      {/* The class carries ONE declaration — `overflow-wrap: break-word`, so the repository
+          address in the §4.6 offer below can break at 320px instead of widening the document
+          (design tour A4: this page reported `scrollWidth` 321 against 320, in both locales).
+          It is a shared opt-in utility in `app/globals.css`, NOT a module of this page's own:
+          one declaration in its own module is a second render-blocking stylesheet on an
+          indexable page, and a class selector reaches nothing that does not ask for it
+          (FENER64-M1). The licence STRING is untouchable (CONTENT-STYLE §22) — only how the
+          browser may break it changes. */}
+      <ul className="wrap-long-tokens">
         <li>{t("dataOsm")}</li>
         {/* L1 — ODbL §4.6's OFFER (→ DEC 2026-08-08c md.5). The chain closes through §4.4(c):
             once a Produced Work made from an OSM-derived database is used publicly, the

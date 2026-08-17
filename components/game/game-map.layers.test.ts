@@ -343,3 +343,48 @@ describe("the solved hatch (I1)", () => {
     );
   });
 });
+
+/**
+ * WHERE THE CREDIT SITS (design tour A1). The ODbL/JRC line used to be an absolutely
+ * positioned plate INSIDE `.stage`. Measured on the running build, that plate covered 304 ×
+ * 61.3 of a 318 × 136.4 stage at 360px, and `elementFromPoint` at each province's own centre
+ * found the chrome over 62 of 81 targets at 320px and 41 of 81 at 360px — the game was not
+ * playable on a phone.
+ *
+ * Two independent facts carry the fix and EITHER ONE reverting alone restores the defect: the
+ * `<p>` is a sibling of the stage, and the rule leaves the line in normal flow. Neither revert
+ * breaks a type, a lint rule or a build, and the CSS comment right above the rule spells the
+ * old declarations out for anyone tidying the file — which is precisely the shape
+ * `flag-attribution.test.ts` describes: "an attribution obligation is the kind of thing a
+ * refactor drops silently, because nothing breaks when it goes."
+ *
+ * STRUCTURE, NOT LICENCE TEXT. Neither assertion reads a character of either credit string;
+ * where those strings live and that they are byte-identical across the two map surfaces is
+ * `components/map/attribution-separation.test.ts`'s job, not this one's.
+ */
+describe("the ODbL/JRC credit sits under the play stage, never on it (design tour A1)", () => {
+  it("renders the credit <p> outside the .stage subtree", () => {
+    const stage = MAP.indexOf("className={styles.stage}");
+    const credit = MAP.indexOf("className={styles.attribution}");
+    expect(stage).toBeGreaterThan(-1);
+    expect(credit).toBeGreaterThan(stage);
+
+    // The stage has to be CLOSED before the credit appears: the last `</svg>` before the
+    // credit, then the `</div>` that ends the stage. Asserted positionally rather than by
+    // nesting depth because that is what a source scan can see — a credit moved back inside
+    // the stage would sit after `</svg>` with the stage's `</div>` still open behind it.
+    const between = MAP.slice(stage, credit);
+    expect(between).toContain("</svg>");
+    expect(between.lastIndexOf("</div>")).toBeGreaterThan(between.lastIndexOf("</svg>"));
+  });
+
+  it("keeps .attribution in normal flow, with no plate behind it", () => {
+    // `CSS` is comment-stripped and whitespace-collapsed, so `[^}]*` cannot cross into the
+    // next rule and the trailing space before `{` keeps `.attributionLine` out.
+    expect(CSS).toMatch(/\.attribution \{[^}]*\}/);
+    // Any `position` at all, not only `absolute`: `sticky` and `fixed` lift the line back onto
+    // the map just as effectively, and `--scrim-bg` was the visible half of the old plate.
+    expect(CSS).not.toMatch(/\.attribution \{[^}]*position:/);
+    expect(CSS).not.toMatch(/\.attribution \{[^}]*background/);
+  });
+});

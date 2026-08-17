@@ -2,11 +2,93 @@
    (DESIGN.md §2); no hardcoded brand hex. Contrast verified against DESIGN §5:
    slate on white 7.92:1 (AAA), slate on surface 6.58:1 (AA), ink on white AAA. */
 
+/* INTRINSIC, NOT A BREAKPOINT (design tour A5). Two changes, both measured on the running
+   build with 8 cards:
+
+   `auto-fill` → `auto-fit`. `auto-fill` keeps the empty track slots it created, so at 1440 the
+   8 cards laid out [5, 3] and the last row ended in a column and a half of nothing; `auto-fit`
+   collapses the unused tracks and the same 8 cards distribute across the width they actually
+   have. On the country page the difference was starker — 11 cards fell as [5, 5, 1], one card
+   alone next to ~875px of empty parchment.
+
+   `180px` → `min(150px, 100%)`. 180 is wider than half of a 320px column minus the gap, so
+   below ~374px the sheet collapsed to ONE column and eight cards became eight full-width rows.
+   150 fits two. The `min(…, 100%)` half is the guard for the narrow end: a bare `minmax(150px,
+   1fr)` cannot go under 150px, so on a 320px screen the track would overflow its own
+   container; `min(150px, 100%)` lets the track shrink to the column when the column is the
+   smaller of the two.
+
+   No media query is added, deliberately — DESIGN.md §4 pins ONE breakpoint (64rem) and asks
+   for a two-locale measurement before a second. `auto-fit` reads the content's own size, so it
+   never opens that question. Measured after: 360px → 2 columns, 1440px in the A8 row → 3. */
 .factSheet {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 14px;
+}
+
+/* ---- The fact sheet and the locator map share one row on wide screens (design tour A8) ----
+
+   Measured before: "Temel Bilgiler" and "X'in Konumu" were two stacked full-width sections, so
+   at 1440 the locator figure was 460px of picture on a 1080px line — 42.6% used, 57.4% empty
+   parchment, every province page.
+
+   The map is NOT enlarged to fill that: `locator-map.module.css` fixes 460/560px on a measured
+   argument ("a bigger figure buys no more detail, only more empty parchment"). The row is what
+   changes, not the figure.
+
+   `flex-wrap` again rather than a media query, for the reason above. `flex: 1 1 360px` on the
+   main column is the whole mobile behaviour: when 360px of basis plus the figure no longer fit,
+   the row breaks by itself and the two sections stack exactly as they do today.
+
+   THE VERTICAL RHYTHM IS CARRIED BY THE ROW, NOT BY THE ITEMS, and that is why the two
+   sections drop the global `.section` class here. `.section` is one declaration —
+   `margin-top: 40px` — and on a flex item that margin does not collapse: kept alongside a
+   `gap: 24px` shorthand it would stack, and the moment the row wrapped on a phone the gap
+   between the two sections would read 64px instead of today's 40px. Moving the same 40px onto
+   the row's own `margin-top` and `row-gap` reproduces today's spacing exactly, in both states:
+   40px above the row, 40px between the two sections once they stack, and a 24px column gap
+   that only ever applies while they are side by side.
+
+   `min-width: 0` on the children because a flex item's default `min-width: auto` refuses to
+   shrink below its content's min-content width; without it a long fact value could push the
+   row wider than the container. */
+.detailRow {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  row-gap: 40px;
+  margin-top: 40px;
+}
+
+.detailRow > * {
+  min-width: 0;
+}
+
+.detailMain {
+  flex: 1 1 360px;
+}
+
+/* THE BASIS IS A NUMBER, and `auto` was measured to be wrong here. With `flex: 0 1 auto` the
+   column's basis is its own max-content width, and the widest thing in it is not the figure —
+   it is the `<h2>`. Measured on the running build at 1440: the aside came out 302px and the
+   460px figure shrank to fill it, i.e. the layout fix would have made the locator map SMALLER
+   than it is today. Stating the basis restores it: 360 + 460 + 24 = 844 fits a 1080px column,
+   so the main column grows to 596 and the figure renders at its full 460.
+
+   The same number also decides where the row breaks, and it breaks in the right place:
+   flex-wrap splits a line when the HYPOTHETICAL sizes overflow it, so below ~884px of viewport
+   the two sections stack — no media query, and the figure is never squeezed into a half-width
+   column on a tablet.
+
+   460 mirrors `locator-map.module.css` `.figure` (`width: min(100%, 460px)`), which stays the
+   single source of the FIGURE's size: this is a layout basis, not a second cap. If that file's
+   number ever changes, the figure still obeys its own rule — it simply would not use the extra
+   room until this basis follows. Shrink is left at 1 so a wrapped line at 320px hands the
+   section the column it actually has. */
+.detailAside {
+  flex: 0 1 460px;
 }
 
 .fact {
@@ -23,6 +105,18 @@
   margin-bottom: 4px;
 }
 
+/* THE VALUE MAY BE ONE UNBREAKABLE WORD, and the track is a LENGTH minimum, not `auto` — so a
+   track never grows to fit it. Measured on the running build, and the condition predates the
+   A5 change rather than starting with it: on `dev`, `/dunya/turkiye`'s "Cumhurbaşkanlığı"
+   already painted 21.2px past its own `dd` box at 1440 (5 tracks of ~205px), and Sri Lanka's
+   "Jayewardenepura" 15.2px. Narrower tracks make it worse and move it to a width where the
+   card sits against the viewport edge: at 360px the sheet is now two 153px tracks, so the ink
+   would leave the card AND the document, which is the horizontal scroll A3/A4 exist to remove.
+
+   `break-word`, not `anywhere`, for the reason `hakkimizda`'s twin fix states: `anywhere` also
+   shrinks the box's min-content contribution, which is an input to the grid's own track
+   sizing — this rule is meant to change where a word breaks, not how the sheet is laid out.
+   `dt` needs nothing: those are our own short labels, not seeded free text. */
 .fact dd {
   margin: 0;
   font-size: 1.25rem;
@@ -30,6 +124,7 @@
   font-family: var(--font-heading);
   color: var(--color-ink);
   line-height: 1.2;
+  overflow-wrap: break-word;
 }
 
 .climateValue {

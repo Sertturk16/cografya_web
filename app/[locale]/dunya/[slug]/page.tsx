@@ -313,14 +313,28 @@ export default async function CountryDetailPage({ params }: PageProps) {
       <EnWorkInProgressNotice locale={locale} />
       <p className="lede">{introText}</p>
 
-      <section className="section">
-        <h2>{t("keyFactsHeading")}</h2>
-        <dl className={styles.factSheet}>
-          <div className={styles.fact}>
-            <dt>{t("continent")}</dt>
-            <dd>{continent}</dd>
-          </div>
-          {/* The UN M49 subregion, suppressed when it would just repeat the continent card
+      {/* ONE ROW (design tour A8) — the country half of the same change made on
+          `/turkiye/[slug]`: "Temel Bilgiler" and the locator figure share a line on a wide
+          screen and stack back to today's layout when the row no longer fits
+          (`country-detail.module.css` `.detailRow`; wrap, not a media query — DESIGN.md §4).
+          Headings, their levels and their order are untouched; ruling AK-14 E2 keeps the
+          location `<h2>` that the mockup dropped.
+
+          THE MAIN COLUMN IS A WRAPPER, not the fact-sheet section itself, and only because of
+          the six special-status rows: on those, "Egemenlik ve Tanınma" sits between the facts
+          and the map by a documented reading-order decision (see the section's own note
+          below). Wrapping both into the main column preserves that order exactly — facts,
+          note, map — where hopping the note over the figure would not. */}
+      <div className={styles.detailRow}>
+        <div className={styles.detailMain}>
+          <section>
+            <h2>{t("keyFactsHeading")}</h2>
+            <dl className={styles.factSheet}>
+              <div className={styles.fact}>
+                <dt>{t("continent")}</dt>
+                <dd>{continent}</dd>
+              </div>
+              {/* The UN M49 subregion, suppressed when it would just repeat the continent card
               beside it (UX tour B28). Brezilya printed "Kıta: Güney Amerika" and "Bölge:
               Güney Amerika" side by side, which reads as a rendering fault rather than as
               two facts that happen to coincide — and for a whole continent's worth of
@@ -334,85 +348,88 @@ export default async function CountryDetailPage({ params }: PageProps) {
               Structured data is unaffected: `countryJsonLd` uses `containedInPlace:
               continent` and never reads `unSubregionTr`, so nothing in the JSON-LD describes
               a card this can hide. */}
-          {isTr && showsSubregionCard(continent, country.unSubregionTr) && (
-            <div className={styles.fact}>
-              <dt>{t("subregion")}</dt>
-              <dd>{country.unSubregionTr}</dd>
-            </div>
-          )}
-          {capital !== null && (
-            <div className={styles.fact}>
-              <dt>{t("capital")}</dt>
-              <dd>{capital}</dd>
-            </div>
-          )}
-          {country.population !== null && (
-            <div className={styles.fact}>
-              <dt>{t("population")}</dt>
-              <dd>{format.number(country.population)}</dd>
-            </div>
-          )}
-          {country.areaKm2 !== null && (
-            <div className={styles.fact}>
-              <dt>{t("area")}</dt>
-              <dd>
-                {format.number(country.areaKm2)} {t("areaUnit")}
-              </dd>
-            </div>
-          )}
-          <div className={styles.fact}>
-            <dt>{t("neighborCount")}</dt>
-            <dd>{format.number(country.neighborCount)}</dd>
-          </div>
-          <div className={styles.fact}>
-            <dt>{t("isoCode")}</dt>
-            <dd>
-              {country.isoCodeAlpha3 !== null
-                ? `${country.isoCode} / ${country.isoCodeAlpha3}`
-                : country.isoCode}
-            </dd>
-          </div>
-          {isTr && officialLanguages !== null && officialLanguages.length > 0 && (
-            <div className={styles.fact}>
-              <dt>{officialLanguages.length > 1 ? t("languagePlural") : t("language")}</dt>
-              <dd>{officialLanguages.join(", ")}</dd>
-            </div>
-          )}
-          {isTr && country.currencyNameTr !== null && (
-            <div className={styles.fact}>
-              <dt>{t("currency")}</dt>
-              <dd>
-                {country.currencyCode !== null
-                  ? t("currencyValue", { name: country.currencyNameTr, code: country.currencyCode })
-                  : country.currencyNameTr}
-              </dd>
-            </div>
-          )}
-          {isTr && country.governmentFormTr !== null && (
-            <div className={styles.fact}>
-              <dt>{t("governmentForm")}</dt>
-              <dd>{country.governmentFormTr}</dd>
-            </div>
-          )}
-          {/* G2 — the flag, as one more card in the existing auto-fill rhythm. On an ORDINARY
+              {isTr && showsSubregionCard(continent, country.unSubregionTr) && (
+                <div className={styles.fact}>
+                  <dt>{t("subregion")}</dt>
+                  <dd>{country.unSubregionTr}</dd>
+                </div>
+              )}
+              {capital !== null && (
+                <div className={styles.fact}>
+                  <dt>{t("capital")}</dt>
+                  <dd>{capital}</dd>
+                </div>
+              )}
+              {country.population !== null && (
+                <div className={styles.fact}>
+                  <dt>{t("population")}</dt>
+                  <dd>{format.number(country.population)}</dd>
+                </div>
+              )}
+              {country.areaKm2 !== null && (
+                <div className={styles.fact}>
+                  <dt>{t("area")}</dt>
+                  <dd>
+                    {format.number(country.areaKm2)} {t("areaUnit")}
+                  </dd>
+                </div>
+              )}
+              <div className={styles.fact}>
+                <dt>{t("neighborCount")}</dt>
+                <dd>{format.number(country.neighborCount)}</dd>
+              </div>
+              <div className={styles.fact}>
+                <dt>{t("isoCode")}</dt>
+                <dd>
+                  {country.isoCodeAlpha3 !== null
+                    ? `${country.isoCode} / ${country.isoCodeAlpha3}`
+                    : country.isoCode}
+                </dd>
+              </div>
+              {isTr && officialLanguages !== null && officialLanguages.length > 0 && (
+                <div className={styles.fact}>
+                  <dt>{officialLanguages.length > 1 ? t("languagePlural") : t("language")}</dt>
+                  <dd>{officialLanguages.join(", ")}</dd>
+                </div>
+              )}
+              {isTr && country.currencyNameTr !== null && (
+                <div className={styles.fact}>
+                  <dt>{t("currency")}</dt>
+                  <dd>
+                    {country.currencyCode !== null
+                      ? t("currencyValue", {
+                          name: country.currencyNameTr,
+                          code: country.currencyCode,
+                        })
+                      : country.currencyNameTr}
+                  </dd>
+                </div>
+              )}
+              {isTr && country.governmentFormTr !== null && (
+                <div className={styles.fact}>
+                  <dt>{t("governmentForm")}</dt>
+                  <dd>{country.governmentFormTr}</dd>
+                </div>
+              )}
+              {/* G2 — the flag, as one more card in the existing auto-fill rhythm. On an ORDINARY
               row it is not TR-gated: a flag is data, not a narrative that needs translating
               (the same reasoning as the marine block). On a SPECIAL-STATUS row it is gated on
               `showsFlag`, which is the sovereignty note's own gate — the visual claim never
               stands without the text that balances it (→ DEC 2026-08-08h / 08-08l B2).
               Renders nothing when the row has no asset; every seeded row has one today, QN
               through our own file (lib/geo/flag-set.ts). */}
-          {showsFlag && (
-            <CountryFlag
-              isoCode={country.isoCode}
-              label={t("flag")}
-              alt={t("flagAlt", { name })}
-              className={styles.fact}
-            />
-          )}
-        </dl>
-      </section>
+              {showsFlag && (
+                <CountryFlag
+                  isoCode={country.isoCode}
+                  label={t("flag")}
+                  alt={t("flagAlt", { name })}
+                  className={styles.fact}
+                />
+              )}
+            </dl>
+          </section>
 
-      {/* Egemenlik ve Tanınma — after the flag and before the locator map. The reader meets
+          {/* Egemenlik ve Tanınma — after the flag and before the locator map. The reader meets
           the one visual claim this page makes, reads what grounds it, and only then meets the
           map. That is a reading-order argument, not a rule about the map.
 
@@ -425,37 +442,42 @@ export default async function CountryDetailPage({ params }: PageProps) {
           and the map is gated only on having a shape: the weld covers what the rule covers.
 
           Present on the six special-status rows and nowhere else; the section is ADDED, no
-          existing section is re-ordered. Plain, entity-free heading by ruling
-          (→ DEC 2026-08-08l B1). */}
-      {sovereigntyNote !== null && (
-        <section className="section">
-          <h2>{t("sovereigntyHeading")}</h2>
-          <ProseNote text={sovereigntyNote} className={styles.prose} />
-        </section>
-      )}
+          existing section is re-ordered — including by the A8 row above, which is why it
+          travels inside the main column and keeps its own `.section` margin there. Plain,
+          entity-free heading by ruling (→ DEC 2026-08-08l B1). */}
+          {sovereigntyNote !== null && (
+            <section className="section">
+              <h2>{t("sovereigntyHeading")}</h2>
+              <ProseNote text={sovereigntyNote} className={styles.prose} />
+            </section>
+          )}
+        </div>
 
-      {/* Ö1-B — the world counterpart of the province locator, in the same slot: right after
-          the fact sheet, before the narrative sections. Absent (never a placeholder) if the
-          ISO code has no artifact shape; all 199 seeded codes resolve today (re-measured
-          2026-08-11), so this is a defence line rather than a known gap. */}
-      {countryShapeD !== undefined && (
-        <section className="section">
-          <h2>{sectionHeading("location")}</h2>
-          <LocatorMap
-            kind="country"
-            locale={locale}
-            d={countryShapeD}
-            // The SAME suffixed form the <h2> directly above uses. Passing the bare name
-            // rendered "Dünya haritası üzerinde Brezilya konumu" — ungrammatical, and it is
-            // the figure's aria-label, so a Turkish screen-reader user heard it on every
-            // seeded country page while the heading beside it said "Brezilya'nın Konumu".
-            // One figure must not carry two constructions.
-            alt={t("locationAlt", {
-              name: headingName(locale, name, COUNTRY_HEADING_CASE.location),
-            })}
-          />
-        </section>
-      )}
+        {/* Ö1-B — the world counterpart of the province locator, in the same slot: right after
+            the fact sheet, before the narrative sections; beside it on a wide screen since the
+            A8 row. Absent (never a placeholder) if the ISO code has no artifact shape; all 199
+            seeded codes resolve today (re-measured 2026-08-11), so this is a defence line
+            rather than a known gap. When it is absent the row has one child and the fact sheet
+            fills the container exactly as it did before the wrapper existed. */}
+        {countryShapeD !== undefined && (
+          <section className={styles.detailAside}>
+            <h2>{sectionHeading("location")}</h2>
+            <LocatorMap
+              kind="country"
+              locale={locale}
+              d={countryShapeD}
+              // The SAME suffixed form the <h2> directly above uses. Passing the bare name
+              // rendered "Dünya haritası üzerinde Brezilya konumu" — ungrammatical, and it is
+              // the figure's aria-label, so a Turkish screen-reader user heard it on every
+              // seeded country page while the heading beside it said "Brezilya'nın Konumu".
+              // One figure must not carry two constructions.
+              alt={t("locationAlt", {
+                name: headingName(locale, name, COUNTRY_HEADING_CASE.location),
+              })}
+            />
+          </section>
+        )}
+      </div>
 
       {/* Yeryüzü Şekilleri — TR-gated prose (genuine per-country relief narrative). */}
       {landformNote !== null && (
