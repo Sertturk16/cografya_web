@@ -106,6 +106,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * keeps this page on the right side of that line, and it is why the rows are HTML the first
  * response carries rather than something a player renders later.
  *
+ * ## The index is a default-closed accordion, and every one of those rows is still in the HTML
+ *
+ * Thirty blocks × six rows rendered flat is a ~20,000px wall at 320px, which is what the
+ * accordion removes. What it does NOT remove is a single byte of the index: each block is a
+ * native `<details>` whose panel is server-rendered and merely collapsed, so all 180 `<a href>`
+ * are in the first response exactly as before. That distinction is the whole SEO argument —
+ * Google's mobile-first guidance recommends accordions in as many words, on the condition that
+ * the content stay equivalent, and the failure mode it warns about is mounting the panel on
+ * the client, which this page never does.
+ *
+ * Native `<details>` rather than a scripted disclosure, deliberately: it keeps the rows
+ * operable with JavaScript off, hands keyboard and AT semantics to the UA, and adds no
+ * hydration to a 30-block page. The repo's other disclosure (`nav-disclosure.tsx`) went the
+ * scripted route for a reason that does not exist here — its menu has to be permanently open
+ * above 64rem, which a closed `<details>` cannot express.
+ *
  * The fragments (`#deneme-12`, `#deneme-12-soru-3`) are part of the IA (`SEO-POLICY.md`
  * §B4's book row) and deliberately NOT routes: a page per deneme or per question would be
  * 30 and 180 near-identical thin pages, which is §B12 12.1's shape exactly. Each target
@@ -119,12 +135,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * player arrives only on a click or a key press, only inside the block that was pressed, and
  * only one at a time — so the first response still carries no iframe at all.
  *
- * The provider snapshot (`videos[].youtube`) is `null` on the normal path today, which is why
- * the covers are typographic and no `VideoObject` is emitted: the markup rule is a chain —
- * `uploadDate`/`duration` may only be emitted where the page SHOWS them (§B5 5.7), and a
- * `VideoObject` only where the video can actually be watched. `lib/book/video-state.ts` is the
- * single place that decides which of the three states a block is in, so the visible facts and
- * the structured data cannot drift apart.
+ * The provider snapshot (`videos[].youtube`) is now POPULATED on the normal path — the sync leg
+ * ran on 2026-08-17 and all thirty blocks resolve to `rich`, with a real thumbnail, duration and
+ * publication date (this paragraph said the opposite while the snapshots were still null; it is
+ * corrected here rather than left to rot, because the rule below now actually fires). The markup
+ * rule is a chain (§B5 5.7): `uploadDate`/`duration` may only be emitted where the page SHOWS
+ * them, and a `VideoObject` only where the video can actually be watched.
+ *
+ * THAT CHAIN IS WHY THE VIDEO KÜNYE SITS IN THE `<summary>`. With the index collapsed by
+ * default, the block's body is not visible until the reader opens it, while `<summary>` is
+ * visible in both states — so duration and publication date live there and the thirty
+ * `VideoObject` blocks stay honest without depending on a panel being open.
+ * `lib/book/video-state.ts` is still the single place that decides which of the three states a
+ * block is in, so the visible facts and the structured data cannot drift apart.
  */
 export default async function BookDetailPage({ params }: PageProps) {
   const { locale, slug } = await params;
@@ -155,6 +178,31 @@ export default async function BookDetailPage({ params }: PageProps) {
   // Each block's facade state, resolved ONCE and read by three places: the visible cover, the
   // künye row, and the structured data. One resolution is what keeps them from disagreeing.
   const videoStates = book.videos.map((video) => ({ video, state: resolveVideoState(video) }));
+
+  /* The jump strip's two inputs, and they are DIFFERENT FACTS rather than one derived from the
+     other. `denemeCount` is how many denemeler the BOOK has (a künye fact); `denemeNumbers` is
+     exactly which of them have an indexed solution. The api publishes the set on purpose —
+     "Ranges for display are the web layer's to derive; the api publishes the set, never a
+     formatted string" — because the covered numbers are not a contiguous range: today they are
+     1–13, 15–21, 23, 24 and 33–40. A strip built from the count alone, or from
+     `min…max` of the set, would link ten fragments that do not exist (§B8 8.9, BLOCKER).
+     A `Set` rather than `.includes()` in the loop: 40 iterations over a 30-element array is
+     nothing, but the lookup states the intent.
+
+     THE COVERED SET IS DERIVED FROM THE BLOCKS THAT ACTUALLY RENDER, not from
+     `coverage.denemeNumbers`. Both fields describe the same thing and are set-equal on today's
+     live data (measured: both `[1..13, 15..21, 23, 24, 33..40]`), but they are two independent
+     contract fields, and only one of them is the source of the `id`s these links point at. A
+     `denemeNumbers` entry with no row in `videos[]` would render `<a href="#deneme-25">` with no
+     target — a broken in-page anchor, which §B8 8.9 rates BLOCKER — and it would ship green,
+     because typecheck, lint and the structure test all still pass and the dead tile looks
+     exactly like a working one. Deriving from `videoStates` makes "every jump href has a
+     target" true by construction rather than by the two projections agreeing (→ PR #66 review
+     `FENER66-M2` (validated) / `CODE66-M8` / `TA66-M3`). `coverage.denemeNumbers` stays what it
+     reads as: a künye fact. This is the same discipline `resolveVideoState` already applies one
+     level down — resolve once, so two consumers cannot drift. */
+  const jumpNumbers = Array.from({ length: book.coverage.denemeCount }, (_, index) => index + 1);
+  const coveredDenemeNumbers = new Set(videoStates.map(({ video }) => video.denemeNo));
 
   // Which credit rows this page owes — selected by the contract's own machine token, never by
   // matching the notice text, and never re-ordered (see the source statement's comment below).
@@ -207,8 +255,11 @@ export default async function BookDetailPage({ params }: PageProps) {
       />
       {/* One `<script>` carrying the array, rather than one per block: a top-level array is
           valid JSON-LD and Google reads it, and 30 separate elements would say the same thing
-          in 30 times the markup. Emitted only when the array is non-empty — today it is empty
-          on real data, because every snapshot is `null`. */}
+          in 30 times the markup. Emitted only when the array is non-empty; on today's data all
+          thirty snapshots resolve to `rich`, so it carries thirty nodes. (This sentence said the
+          opposite — "today it is empty, because every snapshot is `null`" — while the docblock
+          above had already been corrected, leaving the file contradicting itself about the one
+          fact the `VideoObject` chain turns on; → PR #66 review `FENER66-M3` / `CODE66-M2`.) */}
       {videoSchemas.length > 0 && <JsonLd schema={videoSchemas} />}
       <Breadcrumb
         locale={locale}
@@ -320,17 +371,62 @@ export default async function BookDetailPage({ params }: PageProps) {
 
       <section className="section">
         <h2>{t("videosHeading", { title })}</h2>
-        {/* The coverage fact as its own sentence (owner ruling V-2, → DEC 2026-08-15g): the
-            list shows only the denemeler that HAVE a solution, and this line states the
-            relation between the two numbers instead of the list padding itself with rows for
-            the rest. Both numbers are facts the künye and the badges already carry; neither
-            declares a deficiency. */}
-        <p className={styles.coverageNote}>
-          {t("coverageNote", {
-            denemeCount: book.coverage.denemeCount,
-            videoCount: book.coverage.videoCount,
-          })}
-        </p>
+
+        {/* THE COVERAGE SENTENCE IS GONE, and its removal is the ruling rather than a tidy-up.
+            It used to read "Kitaptaki 40 denemeden 30 tanesinin video çözümü var." — the exact
+            line DEC 2026-08-17c cites when it bars announcing the total or ratio of what is
+            missing (`CONTENT-STYLE.md` §22, "eksik-vurgusu"): the reader did not need that
+            number at that point, and we were the ones putting the gap in front of them.
+
+            The half the reader DOES need survives, at the point of use. The ruling's own
+            litmus is whether someone would otherwise act on a wrong expectation, and here they
+            would: the covered denemeler are 1–13, 15–21, 23, 24 and 33–40, so the index skips
+            14, 22 and 25–32, and a reader holding the book and looking for deneme 14 meets a
+            hole with no explanation. The jump strip below answers exactly that, once, where the
+            question is asked — a neutral non-link rather than a sentence about a shortfall.
+
+            V-2 (→ DEC 2026-08-15g) is untouched: the LIST is still only the denemeler that have
+            a solution. What changed is that the sentence which used to carry the coverage fact
+            no longer exists, so the strip carries the necessary part of it instead. */}
+        <nav className={styles.jump} aria-labelledby="denemeye-atla">
+          <h3 id="denemeye-atla" className={styles.jumpHeading}>
+            {t("jumpHeading")}
+          </h3>
+          <ul role="list" className={styles.jumpList}>
+            {jumpNumbers.map((no) => {
+              const covered = coveredDenemeNumbers.has(no);
+              return (
+                <li key={no}>
+                  {/* A REAL `<a href>` FOR EVERY NUMBER THAT HAS A TARGET, AND NOTHING FOR THE
+                      REST. `SEO-POLICY.md` §B8 8.9 rates a link to a fragment that does not
+                      exist a BLOCKER, and the covered set is NOT a contiguous range — the api
+                      publishes `denemeNumbers` precisely because the gaps are scattered
+                      (14, 22, 25–32 today). Deriving the strip from `denemeCount` alone and
+                      linking all of it would ship ten dead anchors.
+
+                      THE VISIBLE TEXT IS THE BARE NUMBER AND THE ACCESSIBLE NAME IS NOT.
+                      Thirty links named "1"…"40" tell a screen-reader user nothing, so the
+                      full name sits in a visually-hidden span while the digit is
+                      `aria-hidden`. The name still CONTAINS the visible label, which is what
+                      WCAG 2.5.3 asks and what keeps speech input working — saying "12" matches
+                      "Deneme 12". `title` was rejected for this job: Google treats it as anchor
+                      text only for an EMPTY `<a>`, and these are not empty. */}
+                  {covered ? (
+                    <a className={styles.jumpItem} href={`#${denemeFragment(no)}`}>
+                      <span className={styles.srOnly}>{t("denemeHeading", { no })}</span>
+                      <span aria-hidden="true">{no}</span>
+                    </a>
+                  ) : (
+                    <span className={`${styles.jumpItem} ${styles.jumpItemEmpty}`}>
+                      <span className={styles.srOnly}>{t("jumpNoVideo", { no })}</span>
+                      <span aria-hidden="true">{no}</span>
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
         {videoStates.map(({ video, state }) => {
           /* ONE value, four consumers. `playable` is false for a video the provider refuses to
@@ -341,7 +437,7 @@ export default async function BookDetailPage({ params }: PageProps) {
              same reason `resolveVideoState` is called once. */
           const playable = state.kind !== "external";
           return (
-            /* The block's own client island. It renders THIS `<section>` and delegates one
+            /* The block's own client island. It renders THIS `<details>` and delegates one
                listener over everything inside it; the markup below is unchanged server output.
                When the block is not playable the island intercepts nothing at all — those rows
                keep their plain fragment behaviour, because there is no player for them to
@@ -352,29 +448,101 @@ export default async function BookDetailPage({ params }: PageProps) {
               denemeNo={video.denemeNo}
               playable={playable}
             >
-              <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
-                {t("denemeHeading", { no: video.denemeNo })}
-              </h3>
-              <DenemeMeta state={state} />
-              <DenemeVideo
-                denemeNo={video.denemeNo}
-                videoId={video.youtubeVideoId}
-                title={t("playerTitle", { no: video.denemeNo })}
-                playable={playable}
-                facade={
-                  <DenemeFacade
-                    denemeNo={video.denemeNo}
-                    videoId={video.youtubeVideoId}
-                    state={state}
+              {/* THE CLOSED ROW. A native `<summary>` and not a `<button aria-expanded>` or an
+                  `<a href>`: it is a disclosure control, so `ENGINEERING.md` §5's "`<button>`
+                  vs `<a>` correctly" already settles it, and FENER's brief adds the sharper
+                  reason — turning the toggle into a link would make one press both navigate
+                  and change panel state, which then needs `preventDefault` and becomes the
+                  JavaScript navigation §B8 8.2 rates a BLOCKER. Native also means the row opens
+                  with JavaScript off, which is what keeps the 180-row index the PAGE rather
+                  than something a script assembles (§B12 12.2.b).
+
+                  THE `<h3>` STAYS, INSIDE THE SUMMARY. `<summary>`'s content model is phrasing
+                  content "optionally intermixed with heading content", so this is valid — and
+                  the alternative both mockups drew (demoting it to a `<span>`) would delete
+                  thirty headings from the document outline for a purely visual gain. The `id`
+                  rides on the heading exactly as before, which keeps `#deneme-12` stable AND
+                  puts it in the summary — the first slot, always rendered — so the fragment
+                  resolves whether or not the panel is open. */}
+              <summary className={styles.denemeSummary}>
+                {/* THE HEADING IS A DIRECT CHILD, with no wrapper around it. `<summary>`'s
+                    content model is phrasing content "optionally intermixed with heading
+                    content", but that permission does not pass through an intervening element:
+                    `<span>` is phrasing-only, so an `<h3>` inside one is a content-model
+                    violation — and no flow container is legal in `<summary>` either, which
+                    leaves "no wrapper" as the only conforming shape (→ PR #66 review
+                    `FENER66-M1` / `CODE66-M1` / `A11Y66-M1`, three legs independently, one
+                    adversarially validated). The wrapping line the layout needs is now built by
+                    `.denemeSummary` itself; the chevron is taken out of flow so the heading and
+                    the fact strip can wrap as a pair. */}
+                <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
+                  {t("denemeHeading", { no: video.denemeNo })}
+                </h3>
+                {/* The scannable facts, and the reason the row is worth collapsing to. The count
+                    is real per-block data rather than the constant it looks like: the contract
+                    does not promise six. It names QUESTION SOLUTIONS, not questions — `GLOSSARY.md`
+                    §4.2's scope note bars compressing the two into one phrase, because what is
+                    measured is that each video solves six questions, never that the book's deneme
+                    contains six (→ PR #66 review `CS66-I1`; the label read "{count} soru" and
+                    published the unverified half). `badgeQuestions` on this same page already
+                    carried the careful wording. */}
+                <span className={styles.denemeFacts}>
+                  <span>{t("denemeQuestionCount", { count: video.questions.length })}</span>
+                  {/* SEPARATOR AND KÜNYE TOGETHER OR NEITHER. `DenemeMeta` renders nothing in the
+                      `typographic` and `external` states, so a separator outside this conditional
+                      left a dangling "6 soru ·" on any block whose provider snapshot had aged out
+                      or whose video refuses embedding (→ PR #66 review `CODE66-I1`). Invisible in
+                      today's samples because all thirty blocks are `rich`; the aging path is
+                      normal, not exceptional, and reaches one row at a time. */}
+                  {state.kind === "rich" && (
+                    <>
+                      <span className={styles.factSeparator} aria-hidden="true">
+                        ·
+                      </span>
+                      <DenemeMeta state={state} />
+                    </>
+                  )}
+                </span>
+                {/* Decorative: the open/closed state is already on the `<summary>` itself in
+                    the accessibility tree, so naming this would announce it twice. */}
+                <svg
+                  className={styles.chevron}
+                  viewBox="0 0 20 20"
+                  width="20"
+                  height="20"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M6 8l4 4 4-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
-                }
-              />
-              <ul role="list" className={styles.questionGrid}>
-                {video.questions.map((question) => {
-                  const fragment = questionFragment(video.denemeNo, question.questionNo);
-                  return (
-                    <li key={question.questionNo}>
-                      {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link
+                </svg>
+              </summary>
+              <div className={styles.denemeBody}>
+                <DenemeVideo
+                  denemeNo={video.denemeNo}
+                  videoId={video.youtubeVideoId}
+                  title={t("playerTitle", { no: video.denemeNo })}
+                  playable={playable}
+                  facade={
+                    <DenemeFacade
+                      denemeNo={video.denemeNo}
+                      videoId={video.youtubeVideoId}
+                      state={state}
+                    />
+                  }
+                />
+                <ul role="list" className={styles.questionGrid}>
+                  {video.questions.map((question) => {
+                    const fragment = questionFragment(video.denemeNo, question.questionNo);
+                    return (
+                      <li key={question.questionNo}>
+                        {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link
                           real: `#deneme-12-soru-3` is copyable, shareable and enters browser
                           history, and it resolves to this element with no JavaScript involved.
                           An `<a href>` rather than a `<button>` for the same reason — §B8 8.2
@@ -400,26 +568,27 @@ export default async function BookDetailPage({ params }: PageProps) {
                           ONLY WHERE THERE IS A PLAYER TO JUMP IN. In an `external` block the
                           row really is nothing but a fragment jump, and giving two differently
                           behaving rows one name is what WCAG 3.2.4 asks us not to do. */}
-                      <a
-                        id={fragment}
-                        href={`#${fragment}`}
-                        className={styles.questionLink}
-                        data-second={question.startSecond}
-                        aria-label={
-                          playable
-                            ? t("questionLabelAria", {
-                                no: question.questionNo,
-                                time: formatDuration(question.startSecond),
-                              })
-                            : undefined
-                        }
-                      >
-                        {t("questionLabel", { no: question.questionNo })}
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
+                        <a
+                          id={fragment}
+                          href={`#${fragment}`}
+                          className={styles.questionLink}
+                          data-second={question.startSecond}
+                          aria-label={
+                            playable
+                              ? t("questionLabelAria", {
+                                  no: question.questionNo,
+                                  time: formatDuration(question.startSecond),
+                                })
+                              : undefined
+                          }
+                        >
+                          {t("questionLabel", { no: question.questionNo })}
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             </DenemePlayer>
           );
         })}

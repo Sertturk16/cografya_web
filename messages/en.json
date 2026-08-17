@@ -500,8 +500,10 @@
   "BookDetail": {
     "kunyeHeading": "Publication details of {title}",
     "videosHeading": "Video solutions for {title}",
-    "coverageNote": "{videoCount} of the book's {denemeCount} denemeler have a video solution.",
     "denemeHeading": "Deneme {no}",
+    "denemeQuestionCount": "{count, plural, one {# question solution} other {# question solutions}}",
+    "jumpHeading": "Jump to a Deneme",
+    "jumpNoVideo": "Deneme {no}, no video solution",
     "questionLabel": "Question {no}",
     "questionLabelAria": "Question {no}, at {time} in the video",
     "watch": "Watch",

@@ -6,6 +6,22 @@ import { closeVideo, openVideo } from "./active-video";
 /**
  * One deneme block: server-rendered children, and ONE delegated listener over all of them.
  *
+ * ## The root is the `<details>` itself, and that is required rather than tidy
+ *
+ * The index is a default-closed accordion. Two things follow that a wrapper `<section>` could
+ * not give:
+ *
+ * · **`toggle` does not bubble.** Closing a block whose player is loaded has to tear the player
+ *   down — a collapsed `<details>` hides its content visually but does NOT stop media, so the
+ *   reader would be left with audio playing and no visible control. The listener therefore has
+ *   to sit on the element that fires the event.
+ * · **The reveal below needs the element, not a descendant of it.**
+ *
+ * The delegated click handler is unchanged by this and deliberately does NOT act on the
+ * summary: `<summary>` carries neither `data-second` nor `data-player-open`, so a press on the
+ * row falls straight through to the browser's own open/close. That is the whole of FENER's
+ * K15 — the accordion must not become JavaScript-driven, and here it never is.
+ *
  * ## Thirty listeners, not a hundred and eighty
  *
  * The page carries 30 blocks of 6 questions. Binding a handler per question would be 180
@@ -87,14 +103,14 @@ export function DenemePlayer({
   children,
 }: {
   /** Optional exactly as React types it: a CSS-module lookup is `string | undefined` under
-   *  `noUncheckedIndexedAccess`, and this element is the page's `<section>`, so its styling
+   *  `noUncheckedIndexedAccess`, and this element is the page's accordion row, so its styling
    *  belongs to the page's own module rather than to this island. */
   className?: string;
   denemeNo: number;
   playable: boolean;
   children: ReactNode;
 }) {
-  const rootRef = useRef<HTMLElement>(null);
+  const rootRef = useRef<HTMLDetailsElement>(null);
   /**
    * The second the İzle button should start from — 0 unless the reader arrived on a link to
    * one of THIS block's questions.
@@ -112,17 +128,89 @@ export function DenemePlayer({
   const hashStartSecond = useRef(0);
 
   useEffect(() => {
-    if (!playable) return;
     const id = window.location.hash.slice(1);
     if (id === "") return;
+    // `getElementById` finds a node inside a CLOSED `<details>` too, which is what makes both
+    // halves below work without the panel having to be open first.
     const target = document.getElementById(id);
     const root = rootRef.current;
     if (target === null || root === null || !root.contains(target)) return;
+
+    /* ONLY A TARGET INSIDE THE PANEL OPENS THE PANEL.
+       `#deneme-12` addresses the `<h3>` in the summary, which is visible in both states, and
+       the approved plan (§4.2, FENER K6) says what should happen there: the reader lands on the
+       closed row and opens it. Auto-opening for it made this page answer one fragment two ways
+       — a page LOAD on `#deneme-12` expanded the block, while pressing "12" in the jump strip
+       on the already-loaded page did not (no mount, and the native reveal does not fire for a
+       first-slot target). The strip is new in this PR, so the plan's own waiver for the missing
+       `hashchange` listener — "no path reaches this gap today" — stopped being true the moment
+       it landed (→ PR #66 review `CODE66-M4`). Scoping the reveal to second-slot targets makes
+       both paths agree with the plan instead of adding a listener to chase the deviation.
+
+       THE SCROLL IS A CORRECTION, AND ON TODAY'S BUILD IT CORRECTS NOTHING. Re-measured after
+       the token grew to 6rem (2026-08-17, → PR #66 review `CODE66R2-M1`): `#deneme-12-soru-3`
+       lands at 167.7–168.7px against a 168px `scroll-margin-top`, in Chromium AND Firefox, at
+       320/360/768, in both locales, with JavaScript on and off. The branch below therefore
+       measures, finds the row on its mark, and moves nothing. It stays because the misplacement
+       it corrects was real and engine-specific — on the 4.5rem token Firefox put the row under
+       the sticky summary while Chromium did not — and an engine that scrolls before the reveal
+       reflows the block reopens exactly that §B4 4.9 breach.
+
+       IT MEASURES BEFORE IT MOVES, which is what keeps it from becoming a scroll-jack: this
+       effect runs after hydration, so an unconditional scroll would yank a reader who had
+       already started moving (→ `CODE66-M5`).
+
+       A NARROWER GUARD WAS TRIED AND REJECTED — correct ONLY a row that is currently on screen,
+       on the reasoning that an off-screen row means the reader has scrolled away. The round-1
+       record defended that rejection with a measurement this file also contradicted fifteen
+       lines further up, and neither figure reproduces on the shipped build, so both are gone
+       rather than reconciled after the fact. The reason survives without them: at mount, "off
+       screen" does not mean "the reader moved on", it means the engine scrolled wrong — which is
+       the one case the correction exists for, so a guard that skips it inverts the fix. The
+       residual is stated rather than engineered around: a reader who starts scrolling between
+       first paint and hydration can be pulled back once, on a page with one small island, at
+       most once per load.
+
+       WITH JAVASCRIPT OFF none of this runs, and the honest degradation is written down rather
+       than implied: both engines still reveal the panel and land the row on the same 168px mark
+       (measured in the same run, JS disabled); an engine that does not would leave the reader on
+       the closed row, one press from the answer. Nothing is unreachable in either case. */
+    const summary = root.querySelector(":scope > summary");
+    if (summary !== null && summary.contains(target)) return;
+
+    const engineRevealed = root.open;
+    if (!engineRevealed) {
+      root.open = true;
+      target.scrollIntoView();
+    } else {
+      const wanted = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+      const top = target.getBoundingClientRect().top;
+      if (Math.abs(top - wanted) > 1) target.scrollIntoView();
+    }
+
+    // Everything below is the PLAYER's half and stays gated on `playable`: a block the provider
+    // refuses to embed has no player to seek, but it still has a row to reveal.
+    if (!playable) return;
     const raw = target.dataset.second;
     if (raw === undefined) return;
     const second = Number.parseInt(raw, 10);
     if (Number.isFinite(second)) hashStartSecond.current = second;
   }, [playable]);
+
+  /**
+   * Collapsing a block tears its player down.
+   *
+   * A closed `<details>` hides its content but does not stop what is inside it: the iframe
+   * keeps its browsing context, so the recording carries on playing with every visible control
+   * gone. Reusing `closeVideo` means the swap point renders the facade again, which removes the
+   * frame outright — the same mechanism the unmount cleanup below already relies on.
+   *
+   * Guarded on `open` so the OPENING half is a no-op, and scoped to this block so opening a
+   * second deneme cannot close a player the reader is watching in a third.
+   */
+  const onToggle = (event: React.ToggleEvent<HTMLDetailsElement>) => {
+    if (!event.currentTarget.open) closeVideo(denemeNo);
+  };
 
   // Scoped to THIS block: the no-op on the twenty-nine that were not playing is what keeps a
   // single block leaving the list from closing a player the reader is watching in another one.
@@ -157,8 +245,10 @@ export function DenemePlayer({
   };
 
   return (
-    <section ref={rootRef} className={className} onClick={onClick}>
+    // No `open` attribute: every panel is closed in the server's HTML (K4), and the only thing
+    // that ever opens one is the reader's own press or the reveal above.
+    <details ref={rootRef} className={className} onClick={onClick} onToggle={onToggle}>
       {children}
-    </section>
+    </details>
   );
 }

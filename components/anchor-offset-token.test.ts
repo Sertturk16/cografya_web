@@ -84,14 +84,47 @@ const calculatedReferences = cssFiles.flatMap(({ css, label }) =>
   ),
 );
 
-/** The sticky-header token is deliberately global: all five readers must resolve it at every
- * viewport. Other `calc()` tokens may be selector- or at-rule-scoped, so this test must not
- * mistake a declaration elsewhere in the same file for their definition. */
-const headerHeightReaders = calculatedReferences.filter(({ token }) => token === "--header-height");
+/**
+ * The tokens an anchor offset may read, which MUST therefore be declared unconditionally.
+ *
+ * Both are measurements of something opaque that a followed fragment has to land below, and
+ * both are consumed from more than one place, which is why they live in the token layer rather
+ * than in the module that reads them. Other `calc()` tokens may legitimately be selector- or
+ * at-rule-scoped, so the filter is a list rather than "everything inside a calc()" — this test
+ * must not mistake a declaration elsewhere in the same file for a global definition.
+ *
+ * · `--header-height` — the sticky site header. Five readers.
+ * · `--deneme-summary-height` — the sticky OPEN-deneme summary on the book detail page, the
+ *   SECOND addend of that page's question-row offset. It joined this guard with the accordion:
+ *   the row it offsets sits inside the collapsed panel, so if this token ever dangles the
+ *   `calc()` collapses, the offset silently becomes zero, and every deep link to a question
+ *   lands behind the summary — the exact silent class described above, on the one surface
+ *   whose deep links are a documented product guarantee.
+ */
+const GLOBAL_OFFSET_TOKENS = ["--header-height", "--deneme-summary-height"] as const;
+
+const offsetTokenReaders = calculatedReferences.filter(({ token }) =>
+  (GLOBAL_OFFSET_TOKENS as readonly string[]).includes(token),
+);
 
 describe("sticky-header anchor offsets", () => {
   it("finds sticky-header token readers to guard", () => {
-    expect(headerHeightReaders.length).toBeGreaterThan(0);
+    expect(offsetTokenReaders.length).toBeGreaterThan(0);
+  });
+
+  it.each(GLOBAL_OFFSET_TOKENS)("%s is declared in the unconditional :root block", (token) => {
+    // Asserted for every token in the list, not merely for those a reader happens to use
+    // today: a token that loses its last reader still has to keep its declaration honest, and
+    // one that gains a reader must not depend on this test being edited to notice.
+    expect(new RegExp(`${token}\\s*:`).test(rootBlock)).toBe(true);
+  });
+
+  it("guards at least one reader of each offset token", () => {
+    // The other direction, and the reason it is separate: the assertion above passes happily
+    // for a token nothing reads, which is how a guard quietly stops guarding.
+    for (const token of GLOBAL_OFFSET_TOKENS) {
+      expect(offsetTokenReaders.some((reader) => reader.token === token)).toBe(true);
+    }
   });
 
   it("scans both stylesheet roots", () => {
@@ -107,12 +140,9 @@ describe("sticky-header anchor offsets", () => {
     expect(rootBlock).toContain("--header-height");
   });
 
-  it.each(headerHeightReaders)(
-    "$label resolves the global sticky-header token used inside calc()",
-    () => {
-      expect(/--header-height\s*:/.test(rootBlock)).toBe(true);
-    },
-  );
+  it.each(offsetTokenReaders)("$label resolves $token used inside calc()", ({ token }) => {
+    expect(new RegExp(`${token}\\s*:`).test(rootBlock)).toBe(true);
+  });
 
   it("keeps the mobile header on one row below 64rem", () => {
     const header = stripComments(readFileSync(SITE_HEADER, "utf8"));

@@ -334,6 +334,50 @@
      stopped compensating) a letter jump on /turkiye landed 136.9px below the header's bottom
      edge — 120.9px more than the 16px gap the offset intends. */
   --header-height: 3.5rem;
+  /* Sticky OPEN-deneme summary height on the book detail page — the SECOND addend of that
+     page's question-row anchor offset (`book-detail.module.css` `.questionLink`).
+
+     Why it is here and not in the module: `components/anchor-offset-token.test.ts` requires
+     every custom property an anchor offset reads inside `calc()` to be declared in the
+     UNCONDITIONAL `:root` block. That is not bookkeeping — `var()` against an undefined or
+     at-rule-scoped property invalidates the whole declaration, the offset silently becomes
+     zero, and nothing errors. The same class retired `--header-height-wrapped`.
+
+     WHY AN OFFSET IS NEEDED AT ALL: the open deneme's `<summary>` is `position: sticky`, so a
+     followed `#deneme-12-soru-3` clears the site header and then lands UNDERNEATH that
+     summary. `SEO-POLICY.md` §B4 4.9 requires the target to be visible at every viewport, and
+     PR #56 is the precedent for what a lying offset costs.
+
+     MEASURED IN BOTH LOCALES, NOT PICKED (2026-08-17, Chromium, live api data with all 30
+     snapshots present). The height is content-driven and largest where the fact strip wraps
+     under the heading, so the value is the WORST case across the four mandatory viewports AND
+     both locales:
+
+       TR  320px 68px · 360px 68px · 768px 47px · 1440px 47px
+       EN  320px 96px · 360px 68px · 768px 47px · 1440px 47px
+
+     REAL DATA IS NOT THE WIDEST CASE, and neither is Turkish. Re-run with the longest string
+     this code can emit — a two-digit count, an hour-long `H:MM:SS` duration and the longest
+     long-form date — the row reaches 96px at 320 and 360 in both locales, and stays 47px from
+     768 up. Between 360 and 768 it simply stops wrapping, so no intermediate width exceeds the
+     wrapped case.
+
+     THE BILINGUAL HALF IS WHY THIS NUMBER MOVED. The first version measured Turkish only and
+     declared 4.5rem/72px, which the English page already exceeded on real data at 320px — the
+     fact strip is 244px there against 229px in Turkish ("6 question solutions" vs "6 soru
+     çözümü"), so it takes three lines instead of two and the offset under-reported by 24px.
+     That is precisely the §B4 4.9 defect this token exists to prevent, and `DESIGN.md` §4's
+     "no intrinsic layout decision without a measurement in BOTH locales" is the rule that
+     catches it (→ PR #66 review `CODE66-M3`).
+
+     6rem = 96px covers the measured worst case in both locales; the `+ 1rem` in each consumer's
+     `calc()` supplies the breathing room on top. The rounding direction is the asymmetry, not a
+     preference: over-shooting only adds whitespace above the target, under-shooting hides the
+     row behind the sticky summary.
+
+     Re-measure IN BOTH LOCALES when the summary's content changes (a third fact, a longer
+     label, a larger type scale). */
+  --deneme-summary-height: 6rem;
 }
 
 *,

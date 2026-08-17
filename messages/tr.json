@@ -514,8 +514,10 @@
   "BookDetail": {
     "kunyeHeading": "{title} künyesi",
     "videosHeading": "{title} video çözümleri",
-    "coverageNote": "Kitaptaki {denemeCount} denemeden {videoCount} tanesinin video çözümü var.",
     "denemeHeading": "Deneme {no}",
+    "denemeQuestionCount": "{count} soru çözümü",
+    "jumpHeading": "Denemeye atla",
+    "jumpNoVideo": "Deneme {no}, video çözümü yok",
     "questionLabel": "Soru {no}",
     "questionLabelAria": "Soru {no}, videoda {time}",
     "watch": "İzle",
