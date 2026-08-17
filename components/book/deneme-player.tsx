@@ -6,6 +6,22 @@ import { closeVideo, openVideo } from "./active-video";
 /**
  * One deneme block: server-rendered children, and ONE delegated listener over all of them.
  *
+ * ## The root is the `<details>` itself, and that is required rather than tidy
+ *
+ * The index is a default-closed accordion. Two things follow that a wrapper `<section>` could
+ * not give:
+ *
+ * · **`toggle` does not bubble.** Closing a block whose player is loaded has to tear the player
+ *   down — a collapsed `<details>` hides its content visually but does NOT stop media, so the
+ *   reader would be left with audio playing and no visible control. The listener therefore has
+ *   to sit on the element that fires the event.
+ * · **The reveal below needs the element, not a descendant of it.**
+ *
+ * The delegated click handler is unchanged by this and deliberately does NOT act on the
+ * summary: `<summary>` carries neither `data-second` nor `data-player-open`, so a press on the
+ * row falls straight through to the browser's own open/close. That is the whole of FENER's
+ * K15 — the accordion must not become JavaScript-driven, and here it never is.
+ *
  * ## Thirty listeners, not a hundred and eighty
  *
  * The page carries 30 blocks of 6 questions. Binding a handler per question would be 180
@@ -87,14 +103,14 @@ export function DenemePlayer({
   children,
 }: {
   /** Optional exactly as React types it: a CSS-module lookup is `string | undefined` under
-   *  `noUncheckedIndexedAccess`, and this element is the page's `<section>`, so its styling
+   *  `noUncheckedIndexedAccess`, and this element is the page's accordion row, so its styling
    *  belongs to the page's own module rather than to this island. */
   className?: string;
   denemeNo: number;
   playable: boolean;
   children: ReactNode;
 }) {
-  const rootRef = useRef<HTMLElement>(null);
+  const rootRef = useRef<HTMLDetailsElement>(null);
   /**
    * The second the İzle button should start from — 0 unless the reader arrived on a link to
    * one of THIS block's questions.
@@ -112,17 +128,63 @@ export function DenemePlayer({
   const hashStartSecond = useRef(0);
 
   useEffect(() => {
-    if (!playable) return;
     const id = window.location.hash.slice(1);
     if (id === "") return;
+    // `getElementById` finds a node inside a CLOSED `<details>` too, which is what makes both
+    // halves below work without the panel having to be open first.
     const target = document.getElementById(id);
     const root = rootRef.current;
     if (target === null || root === null || !root.contains(target)) return;
+
+    /* THE REVEAL, and why the scroll is UNCONDITIONAL while the open is not.
+       `#deneme-12-soru-3` names a row inside this block's collapsed panel. The HTML Standard
+       covers it — "scroll to the fragment" runs the ancestor revealing algorithm, which sets
+       `open` on a `details` whose SECOND slot holds the target — and both engines available
+       here do implement it, with JavaScript off as well as on. So the `open` line below is a
+       belt-and-braces for engines that do not, not the mechanism.
+
+       THE SCROLL IS THE PART THAT ACTUALLY HAD TO BE FIXED, and Firefox is what showed it.
+       An earlier version only scrolled on the branch that had itself opened the panel, on the
+       reasoning that an engine which already revealed it had also already scrolled correctly.
+       Measured, that is false: at 320px Firefox landed the row at y=105 while the sticky
+       summary's bottom edge sat at y=124, so the first 19px of the row was behind it — the
+       engine scrolls before the reveal reflows the block, and its own correction does not
+       account for the summary that is about to stick. Chromium put the same row at y=144 at
+       every width. Calling `scrollIntoView` unconditionally makes both agree on 144, because it
+       is computed from the row's own `scroll-margin-top` — the two-addend offset in
+       `book-detail.module.css` — rather than from whatever the engine did first. It is
+       idempotent, so re-running it where the engine was already right costs nothing.
+
+       WITH JAVASCRIPT OFF none of this runs, and the honest degradation is written down rather
+       than implied: both engines here still reveal the panel and land the row in view
+       (measured); an engine that does not would leave the reader on the closed row, one press
+       from the answer. Nothing is unreachable in either case. */
+    if (!root.open) root.open = true;
+    target.scrollIntoView();
+
+    // Everything below is the PLAYER's half and stays gated on `playable`: a block the provider
+    // refuses to embed has no player to seek, but it still has a row to reveal.
+    if (!playable) return;
     const raw = target.dataset.second;
     if (raw === undefined) return;
     const second = Number.parseInt(raw, 10);
     if (Number.isFinite(second)) hashStartSecond.current = second;
   }, [playable]);
+
+  /**
+   * Collapsing a block tears its player down.
+   *
+   * A closed `<details>` hides its content but does not stop what is inside it: the iframe
+   * keeps its browsing context, so the recording carries on playing with every visible control
+   * gone. Reusing `closeVideo` means the swap point renders the facade again, which removes the
+   * frame outright — the same mechanism the unmount cleanup below already relies on.
+   *
+   * Guarded on `open` so the OPENING half is a no-op, and scoped to this block so opening a
+   * second deneme cannot close a player the reader is watching in a third.
+   */
+  const onToggle = (event: React.SyntheticEvent<HTMLDetailsElement>) => {
+    if (!event.currentTarget.open) closeVideo(denemeNo);
+  };
 
   // Scoped to THIS block: the no-op on the twenty-nine that were not playing is what keeps a
   // single block leaving the list from closing a player the reader is watching in another one.
@@ -157,8 +219,10 @@ export function DenemePlayer({
   };
 
   return (
-    <section ref={rootRef} className={className} onClick={onClick}>
+    // No `open` attribute: every panel is closed in the server's HTML (K4), and the only thing
+    // that ever opens one is the reader's own press or the reveal above.
+    <details ref={rootRef} className={className} onClick={onClick} onToggle={onToggle}>
       {children}
-    </section>
+    </details>
   );
 }

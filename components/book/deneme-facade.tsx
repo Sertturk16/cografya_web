@@ -13,8 +13,20 @@ import styles from "./book-video.module.css";
  * only where the page shows them. The facade is REPLACED by the player on click; if these two
  * lived inside it they would leave the page at that moment, while the markup asserting them
  * stayed. As a sibling of the swap point they survive the swap, which is what the chain
- * actually asks for. It is also the order `SPEC.md` §4.3 sets out — heading, künye row,
- * facade, question grid — where the two are listed apart.
+ * actually asks for.
+ *
+ * ## It renders INSIDE the deneme's `<summary>`, and that is the accordion's half of the chain
+ *
+ * The index is a default-closed accordion, so the block's body is not visible until the reader
+ * opens it. `<summary>` is the one part that is visible in BOTH states, which is why this row
+ * moved there (FENER's §B8 brief, K14): the two facts a `VideoObject` asserts are on the page
+ * whether or not the panel is open, rather than one press away. That is strictly stronger than
+ * the pre-accordion arrangement, and it also settles the alternative — leaving the date in the
+ * body would have meant dropping `uploadDate` from the markup, i.e. losing a valid field to a
+ * presentation choice.
+ *
+ * It is therefore a `<span>` rather than a `<p>`: `<summary>`'s content model is phrasing
+ * content, optionally intermixed with heading content, and a `<p>` is neither.
  *
  * Rendered ONLY in the rich state, because only there does a snapshot exist. In the other two
  * the page shows nothing about duration or date, and emits nothing about them either.
@@ -33,7 +45,7 @@ export async function DenemeMeta({ state }: { state: BookVideoState }) {
   const { durationIso, durationSeconds, publishedAtUtc } = state.youtube;
 
   return (
-    <p className={styles.meta}>
+    <span className={styles.meta}>
       <span className={styles.srOnly}>{t("durationLabel")}</span>
       <time dateTime={durationIso}>{formatDuration(durationSeconds)}</time>
       <span className={styles.metaSeparator} aria-hidden="true">
@@ -46,7 +58,7 @@ export async function DenemeMeta({ state }: { state: BookVideoState }) {
       <time dateTime={publishedAtUtc}>
         {format.dateTime(new Date(publishedAtUtc), { dateStyle: "long" })}
       </time>
-    </p>
+    </span>
   );
 }
 

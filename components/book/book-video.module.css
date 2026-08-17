@@ -9,12 +9,17 @@
    layout preference. `SEO-POLICY.md` §B5 5.7 binds the markup to what the page SHOWS: a
    `VideoObject` carrying `uploadDate` and `duration` may only exist where the reader can see
    both. Inside the facade these two would vanish the moment the player replaced it. */
+/* The video künye row — now a phrasing-level element inside the deneme's `<summary>`
+   (`deneme-facade.tsx`), not a paragraph above the facade. `inline-flex` rather than `flex`
+   because it shares a line with the question count inside the summary's fact strip and must
+   sit on that line rather than start its own; the bottom margin is gone for the same reason.
+   Slate on the summary's `--color-surface` is 6.58:1 (AA, `DESIGN.md` §5). */
 .meta {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 6px;
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 0.85rem;
   color: var(--color-slate);
 }

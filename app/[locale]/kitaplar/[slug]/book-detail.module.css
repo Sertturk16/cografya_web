@@ -91,14 +91,174 @@
 
 /* ── Video çözümler: kapsam cümlesi + deneme blokları + soru dizini ───────────────────── */
 
-.coverageNote {
+/* ── Atlama şeridi ────────────────────────────────────────────────────────────────────── */
+
+.jump {
   margin: 0 0 24px;
-  max-width: 70ch;
+}
+
+.jumpHeading {
+  font-size: 0.95rem;
+  font-family: var(--font-heading);
+  color: var(--color-primary-dark);
+  margin: 0 0 10px;
+}
+
+/* INTRINSIC, NOT A BREAKPOINT. `DESIGN.md` §4 pins ONE breakpoint (64rem) and forbids adding a
+   second without a measurement in both locales; `auto-fill` + `minmax` sets the column count
+   from the available width instead, so this strip reflows at every viewport without declaring
+   one. `min(2.75rem, 100%)` and not a bare 2.75rem: a floor wider than the container keeps its
+   width and pushes the row past the viewport, which is the horizontal overflow the 320px
+   viewport exists to catch (the same guard `.factSheet` above carries). */
+.jumpList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(2.75rem, 100%), 1fr));
+  gap: 6px;
+}
+
+/* 44×44, WCAG 2.2 §2.5.5 (AAA) rather than the 24×24 §2.5.8 floor — `DESIGN.md` §5's "controls
+   with room to be generous" class, the same call the question rows and the nav disclosure rows
+   make. `tabular-nums` so two-digit numbers sit on one optical grid rather than jittering. */
+.jumpItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+a.jumpItem:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+/* THE DENEMELER WITH NO VIDEO SOLUTION. Not a link, because there is no fragment to point at —
+   linking one would be a broken in-page anchor (`SEO-POLICY.md` §B8 8.9, BLOCKER).
+
+   THE MEANING IS NOT CARRIED BY COLOUR. `DESIGN.md` §5's last line bars encoding meaning by
+   colour alone, so the state is drawn as a dashed border (shape) and stated in words in a
+   visually-hidden span inside the element (text). Slate on the parchment page background is
+   7.48:1 (§5's table), so the muted treatment is a weight/border change rather than a drop
+   below the contrast floor — the number stays as readable as its neighbours, it simply stops
+   looking pressable. */
+.jumpItemEmpty {
+  border-style: dashed;
+  background: transparent;
+  font-weight: 500;
   color: var(--color-slate);
 }
 
+/* ── Deneme akordeonu ─────────────────────────────────────────────────────────────────── */
+
+/* NO WRAPPING `overflow` CONTAINER ANYWHERE ON THIS LIST, and that is load-bearing rather than
+   a style choice: `position: sticky` resolves against the nearest scrollport, so an ancestor
+   with `overflow: hidden` — the obvious way to clip a bordered list's corners — would silently
+   kill the sticky summary below with nothing erroring. The list is therefore built from
+   hairlines between rows instead of a box around them. */
 .deneme {
-  margin-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+.deneme:last-of-type {
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* THE CLOSED ROW / THE TRIGGER.
+   `list-style: none` plus the WebKit pseudo-element removes the UA disclosure marker (we draw
+   our own chevron); `display: grid` is what lets the row lay itself out, and it also removes
+   the marker in engines that key it to `display: list-item`. */
+.denemeSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  cursor: pointer;
+  list-style: none;
+  background: var(--color-bg);
+}
+
+.denemeSummary::-webkit-details-marker {
+  display: none;
+}
+
+.denemeSummary:hover {
+  background: var(--color-surface);
+}
+
+/* Heading and facts share one wrapping flex line: side by side where there is room, facts
+   dropping under the heading where there is not. Deliberately NOT a media query — see the
+   `.jumpList` note; this is the same reason. */
+.denemeSummaryText {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+  min-width: 0;
+}
+
+.denemeFacts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+.factSeparator {
+  color: var(--color-border);
+}
+
+.chevron {
+  flex: none;
+  color: var(--color-primary-dark);
+  transition: transform 0.18s ease;
+}
+
+/* THE OPEN ROW STICKS — and only the open one. Thirty sticky closed rows would pile up against
+   the header one after another; one sticky open row is what keeps "which deneme am I in"
+   answered while the reader scrolls its six questions.
+
+   `top` is the header token, so the two edges meet: the site header is `position: sticky;
+   top: 0` and 3.5rem tall. `z-index` sits BELOW the header's 40 — this row scrolls under it,
+   never over it. The background must be opaque or the question rows show through, and
+   `--color-surface` doubles as the open-state signal (ink on surface is 12.44:1, AAA).
+
+   KNOWN 3px SLIVER AT ≤360px, MEASURED AND LEFT ALONE ON PURPOSE. `--header-height` is 56px,
+   but the real header measures 53.0px at 320 and 360 (the brand wordmark clamps smaller there),
+   55.7px at 768 and 57.5px at 1440. So this row pins 3px below the header's bottom edge on the
+   two narrow viewports and a thin band of scrolling content shows through. A local
+   `calc(var(--header-height) - 4px)` would close it and was rejected: it trades a 3px gap on
+   mobile for ~5.5px of this row's top padding hidden behind the header on desktop, i.e. one
+   artifact for another. The real defect is the token, which FIVE consumers read (three anchor
+   offsets, the game's stage cap, the nav panel's height cap) — re-measuring it is its own task
+   with its own evidence, not a side effect of an accordion change. Tracked with Atlas. */
+.deneme[open] > .denemeSummary {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 5;
+  background: var(--color-surface);
+  box-shadow: inset 0 -1px 0 var(--color-border);
+}
+
+.deneme[open] > .denemeSummary .chevron {
+  transform: rotate(180deg);
+}
+
+.denemeBody {
+  padding: 4px 4px 20px;
 }
 
 /* THE FRAGMENT OFFSET, and it is not decoration. `#deneme-12` is part of the IA
@@ -108,12 +268,38 @@
    for the failure mode that makes this silent: `var()` on an undefined property invalidates
    the whole `calc()`, the declaration is dropped, and the offset becomes zero with nothing
    erroring. */
+/* ONE ADDEND HERE, unlike `.questionLink` below, and the difference is not an oversight: this
+   heading lives INSIDE the sticky summary, so scrolling it to `header + 1rem` puts the summary
+   itself flush under the header — exactly where it will stick. Adding the summary's own height
+   would push it a whole row too far down. */
 .denemeHeading {
   scroll-margin-top: calc(var(--header-height) + 1rem);
   font-size: 1.1rem;
   font-family: var(--font-heading);
   color: var(--color-primary-dark);
-  margin: 0 0 10px;
+  margin: 0;
+  /* A FIXED FLOOR SO EVERY ROW WRAPS THE SAME WAY — this fixes a measured defect rather than
+     polishing one, and the number is measured rather than picked.
+
+     The summary lays the heading and the fact strip out on one wrapping flex line. At 360px
+     that line has 280px, the fact strip is 179px and the gap 12px, so whether the strip stays
+     beside the title or drops beneath it came down to the WIDTH OF THE HEADING'S DIGITS —
+     which in Fraunces are proportional and span 86.6px ("Deneme 1") to 102.4px ("Deneme 40"),
+     ten distinct values across the thirty rows. The result was 25 rows on two lines and 5 on
+     one, in no order a reader could infer: broken rhythm, not a layout rule.
+
+     `font-variant-numeric: tabular-nums` was tried first and REJECTED after measurement: the
+     computed style applies, but the widths do not move, because the self-hosted Fraunces subset
+     carries no `tnum` feature. Shipping it would have been an inert declaration next to a
+     comment claiming it fixed something.
+
+     6.5rem = 104px clears the widest measured heading (102.4px), so the heading contributes a
+     CONSTANT to the line for every row: 104 + 12 + 179 = 295px. That is above the 240px and
+     280px available at 320 and 360 (all thirty rows wrap) and far below the 688px at 768 (none
+     wrap). The behaviour is now a property of the viewport instead of a property of which
+     digits a deneme number happens to contain — which is also what lets
+     `--deneme-summary-height` describe a single height per viewport. */
+  min-width: 6.5rem;
 }
 
 .questionGrid {
@@ -141,9 +327,16 @@
 }
 
 .questionLink {
-  /* Same offset as the deneme heading: `#deneme-12-soru-3` is an IA fragment too, and it is
-     the row itself that carries the id, so the row is what has to clear the header. */
-  scroll-margin-top: calc(var(--header-height) + 1rem);
+  /* TWO ADDENDS, NOT ONE — and the second is why this line changed with the accordion.
+     `#deneme-12-soru-3` is an IA fragment (`SEO-POLICY.md` §B4's book row) and the row itself
+     carries the id, so the row is what has to end up visible. Clearing the site header is no
+     longer enough: the row sits inside an OPEN deneme, whose `<summary>` is sticky at exactly
+     `--header-height`, so an offset of header + 1rem parks the row underneath that summary.
+     §B4 4.9 asks for the target to be visible at every viewport, and PR #56 is the standing
+     lesson about what an offset that under-reports actually costs.
+     The summary's measured height lives in the token layer with its method — see
+     `--deneme-summary-height` in `app/globals.css`. */
+  scroll-margin-top: calc(var(--header-height) + var(--deneme-summary-height) + 1rem);
   display: flex;
   align-items: center;
   /* 44px, WCAG 2.2 §2.5.5 (AAA) rather than the 24×24 §2.5.8 floor: these are the page's
