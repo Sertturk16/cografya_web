@@ -46,6 +46,12 @@ export function dispatchMapCamera(
  * Narrow a listener's `Event` to the camera event. A type predicate rather than a cast: the
  * listener receives `Event`, and asserting the detail's shape instead of checking it is how a
  * future third dispatcher would reach `detail.shapes` on an object that has none.
+ *
+ * WHAT IT PROMISES, EXACTLY (review CODE69-M4): that `detail.shapes` is an array — not that
+ * its members are elements. Naming `SVGGraphicsElement` here would tie this module to a DOM
+ * global it does not otherwise touch, and it is the one half of the contract that runs under
+ * `node` in the unit suite. The member check belongs to the listener, which only ever runs in
+ * a browser, and `map-zoom-pan.tsx` carries it.
  */
 export function isMapCameraEvent(event: Event): event is CustomEvent<MapCameraEventDetail> {
   if (!(event instanceof CustomEvent)) return false;

@@ -380,3 +380,71 @@ describe("unionBox (a shown answer can be a whole bölge)", () => {
     ).toEqual({ x: 10, y: 5, w: 100, h: 55 });
   });
 });
+
+/* The other half of both new branches (→ PR #69 review TA69-M1). A stage WIDER than the map
+   is unreachable today — the phone formula floors at the map's own ratio, `/dunya` renders
+   `height: auto`, and `map-bbox.ts` floors a region frame at 1 against a world of 2.5 — so
+   this is the branch that goes live unexercised the first time any surface gets a landscape
+   stage. `contain` is also the only way to reach `clampPan`'s x-axis oversize branch
+   strictly; everything above it reaches only the `w === world.w` equality. */
+const WIDE_ASPECT = 4;
+
+describe("fitViewToAspect for a stage wider than the world", () => {
+  it("crops north-south instead of east-west (cover)", () => {
+    const view = fitViewToAspect(WORLD, WIDE_ASPECT, "cover");
+    expect(view.w).toBe(1000);
+    expect(view.h).toBe(250);
+    expect(view.x).toBe(0);
+    expect(view.y).toBe(75); // centred on the world's centre: (400 − 250) / 2
+  });
+
+  it("grows past the world's width so all of it stays visible (contain)", () => {
+    const view = fitViewToAspect(WORLD, WIDE_ASPECT, "contain");
+    expect(view.h).toBe(400);
+    expect(view.w).toBe(1600);
+    expect(view.x).toBe(-300); // (1000 − 1600) / 2
+    expect(view.y).toBe(0);
+  });
+
+  it("centres a view wider than the world instead of pinning it to an edge", () => {
+    const contain = fitViewToAspect(WORLD, WIDE_ASPECT, "contain");
+    const dragged = { ...contain, x: contain.x + 500 };
+    expect(clampPan(dragged, WORLD).x).toBeCloseTo(contain.x, 6);
+  });
+});
+
+describe("ASPECT_EPSILON is a pinned constant, not whatever the test says it is", () => {
+  it("is half a percent", () => {
+    // The suite's own precedent: MIN_ZOOM / MAX_ZOOM are pinned to literals. Without this the
+    // epsilon cases below build their input FROM the constant and pass at any value — widen it
+    // past ~0.485 and the ruled 1.2 phone stage reads as "the same shape as the world", the
+    // crop and the magnification this whole feature exists for go inert, and every other test
+    // in this file still passes (→ TA69-M2).
+    expect(ASPECT_EPSILON).toBe(0.005);
+  });
+
+  it("reframes an aspect a full percent away from the world's", () => {
+    // Stated in absolute terms, so it does not reference the constant it is guarding.
+    const drifted = 2.5 * 1.01;
+    expect(fitViewToAspect(WORLD, drifted, "cover")).not.toEqual(WORLD);
+    expect(fitViewToAspect(WORLD, drifted, "contain")).not.toEqual(WORLD);
+  });
+});
+
+describe("the opening frame is always a legal zoom", () => {
+  it("stays inside [MIN_ZOOM, MAX_ZOOM] across every aspect a stage can take", () => {
+    // `fitViewToAspect` does not clamp, and the opening view is written straight to the
+    // attribute without passing through `clampZoom` (→ TA69-M6). The claim is a RANGE claim,
+    // not a universal one: it holds over the aspects today's layout can produce — the region
+    // frame's floor of 1 (`lib/game/map-bbox.ts` MIN_ASPECT) at one end, a landscape stage at
+    // the other. Below ~0.19 against this world it would genuinely open past 12×, which is why
+    // that floor is load-bearing rather than cosmetic.
+    for (let aspect = 1; aspect <= 6; aspect += 0.05) {
+      const base = fitViewToAspect(WORLD, aspect, "contain");
+      const opening = fitViewToAspect(WORLD, aspect, "cover");
+      const zoom = zoomOf(base, opening);
+      expect(zoom).toBeGreaterThanOrEqual(MIN_ZOOM);
+      expect(zoom).toBeLessThanOrEqual(MAX_ZOOM);
+    }
+  });
+});

@@ -35,8 +35,9 @@ export const MAX_ZOOM = 12;
  */
 export const ASPECT_EPSILON = 0.005;
 
-/** Aspect ratio (width ÷ height) of a viewBox rectangle. */
-export function aspectOf(box: ViewBox): number {
+/** Aspect ratio (width ÷ height) of a viewBox rectangle. Module-local: `lib/game/map-bbox.ts`
+ *  already exports `aspectOfViewBox` for callers outside this file (review CODE69-M3). */
+function aspectOf(box: ViewBox): number {
   return box.w / box.h;
 }
 

@@ -193,7 +193,12 @@ export function MapZoomPan({
       // it), so the page may have it; the moment the view is vertically cropped the map needs
       // it back. One attribute, read only by the game's stylesheet: /dunya keeps its
       // unconditional `touch-action: none` because its own rules never mention this.
-      const cropsVertically = v.h < world.h - 0.5;
+      //
+      // The tolerance is RELATIVE, like `ASPECT_EPSILON` and unlike the absolute half-unit
+      // this used to carry (review CODE69-M6): the module's contract is projection-agnostic,
+      // and a map whose viewBox height is of order ten user units would read as "cropped" a
+      // whole 5% early against a fixed 0.5.
+      const cropsVertically = v.h < world.h * (1 - 1e-3);
       svg.toggleAttribute("data-vertical-pan", cropsVertically);
     };
     const scheduleWrite = () => {
@@ -273,6 +278,10 @@ export function MapZoomPan({
       reset,
     };
 
+    /** Same rectangle, to the bit — the "did the frame actually change" test below. */
+    const sameFrame = (a: ViewBox, b: ViewBox) =>
+      a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+
     /**
      * Derive both rectangles from the box the stage actually rendered, and write the view.
      *
@@ -285,12 +294,30 @@ export function MapZoomPan({
      * There is no visible step at hydration: the server ships
      * `preserveAspectRatio="xMidYMid slice"`, whose painted rectangle IS the `"cover"` fit
      * computed here, so the explicit viewBox written on mount replaces an identical framing.
+     *
+     * A REFRAME THAT CHANGES NOTHING MUST DO NOTHING — least of all cancel an animation
+     * (review CODE69-C1, adversarially validated with a live A/B). `/dunya` renders its
+     * `<svg>` at `height: auto`, so the element's box height is derived from the very
+     * `viewBox` this island writes on every tween frame; `formatViewBox` rounds w and h
+     * independently, so each write moves that height by a LayoutUnit or two and the
+     * ResizeObserver below fires MID-TWEEN. With the tail unconditional, the observer
+     * cancelled the tween on its first or second frame and wrote the interpolated rectangle
+     * as final: measured on the branch, one `+` press delivered 1.028× of its 1.800× step
+     * and the reset button needed 13 presses to reach the world view.
+     *
+     * The guard is exact rather than tolerant on purpose: `fitViewToAspect` answers every
+     * aspect within `ASPECT_EPSILON` with the world ITSELF, so on any surface whose stage
+     * carries the map's own shape both sides are the same four numbers and the feedback path
+     * is closed at the source. `force` belongs to the two callers that must rebuild whatever
+     * the arithmetic says — mount, and a bfcache restore, where the attribute sitting on the
+     * element is not one this island wrote.
      */
-    const reframe = () => {
+    const reframe = (force = false) => {
       const rect = svg.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
       const aspect = rect.width / rect.height;
       const nextBase = fitViewToAspect(world, aspect, "contain");
+      if (!force && sameFrame(nextBase, base)) return;
       if (userAdjusted) {
         // Keep the player's zoom and the point they were looking at; rebuild the shape.
         const zoom = zoomOf(base, view);
@@ -540,7 +567,12 @@ export function MapZoomPan({
         w: box.width,
         h: box.height,
       });
-      if (next !== view) animateTo(next); // identity-unchanged when already fully visible
+      if (next === view) return; // identity-unchanged when already fully visible
+      // A pan the USER caused, so a later re-measure must keep it (review A11Y69-M1): without
+      // this, rotating the phone re-derived the opening frame and threw the focused province
+      // back off screen while DOM focus was still on it (WCAG 2.4.7).
+      userAdjusted = true;
+      animateTo(next);
     };
 
     // Reset to the opening view on a bfcache restore (SPEC §7 — no persistence). It goes
@@ -550,7 +582,10 @@ export function MapZoomPan({
       if (ev.persisted) {
         cancelTween();
         userAdjusted = false;
-        reframe();
+        // FORCED: the restored attribute is a zoomed view this island did not write, so the
+        // frame arithmetic alone cannot tell that anything needs rewriting — on `/dunya` it
+        // says the frame is the world both before and after.
+        reframe(true);
       }
     };
 
@@ -565,7 +600,11 @@ export function MapZoomPan({
       if (!isMapCameraEvent(event)) return;
       const boxes: ViewBox[] = [];
       for (const shape of event.detail.shapes) {
-        if (!svg.contains(shape)) continue;
+        // The element check is HERE rather than in the predicate (review CODE69-M4): the
+        // predicate is the module's node-testable half and may not name a DOM global, while
+        // this listener only ever runs in a browser. A future dispatcher sending plate codes
+        // instead of elements is then filtered out, not a `TypeError` inside `contains`.
+        if (!(shape instanceof SVGGraphicsElement) || !svg.contains(shape)) continue;
         const box = shape.getBBox();
         if (box.width <= 0 || box.height <= 0) continue;
         boxes.push({ x: box.x, y: box.y, w: box.width, h: box.height });
@@ -573,13 +612,17 @@ export function MapZoomPan({
       const target = unionBox(boxes);
       if (!target) return;
       const next = viewToIncludeShape(view, world, target);
-      if (next !== view) animateTo(next); // identity-unchanged when already fully visible
+      if (next === view) return; // identity-unchanged when already fully visible
+      // Same reason as `onFocusIn`: the player pressed "Cevabı göster" and this frame is the
+      // answer to it, so a rotation must not discard it (review CODE69-M5).
+      userAdjusted = true;
+      animateTo(next);
     };
 
-    // Re-derive the frames when the stage's box changes shape — an orientation change, a
-    // desktop resize, or the phone height cap starting to bind. Cheap by construction: one
-    // measurement and one attribute write, and on a surface whose stage carries the map's own
-    // shape it recomputes the same two rectangles it already had.
+    // Re-derive the frames when the stage's box changes SHAPE — an orientation change, a
+    // desktop resize, or the phone height cap starting to bind. Never forced: a box that
+    // resizes without changing shape (every `/dunya` frame, see `reframe`) must leave the
+    // view, and any tween running over it, alone.
     const resizeObserver = new ResizeObserver(() => reframe());
 
     // Make the SVG a keyboard-focusable pan/zoom surface without disturbing the crawlable
@@ -588,8 +631,10 @@ export function MapZoomPan({
     svg.setAttribute("data-zoomable", "true");
     svg.setAttribute("aria-describedby", instructionsId);
     // Derive the opening frame and write it. Also defends against a bfcache-restored zoomed
-    // attribute (the effect doesn't re-run on restore).
-    reframe();
+    // attribute (the effect doesn't re-run on restore) — hence forced: `base` starts as the
+    // world, so on `/dunya` the arithmetic would otherwise find nothing to do and leave a
+    // restored attribute in place.
+    reframe(true);
 
     svg.addEventListener("wheel", onWheel, { passive: false });
     svg.addEventListener("pointerdown", onPointerDown);

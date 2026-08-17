@@ -170,7 +170,7 @@
     "summaryClose": "Close",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "zoomReset": "Show the whole map",
+    "zoomReset": "Show whole map",
     "zoomControls": "Zoom controls",
     "zoomInstructions": "With the map focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to show the whole map. {selectHint} With a mouse you can zoom with the wheel and pan by dragging; on a touch screen, pinch to zoom and drag with one finger to pan.",
     "selectHintProvinces": "With a province focused, Enter or Space selects that province.",
