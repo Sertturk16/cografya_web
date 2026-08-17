@@ -48,8 +48,9 @@ function flatCode(source: string): string {
 }
 
 const VIDEO = flatCode(sourceOf("./deneme-video.tsx"));
-const PLAYER = flatCode(sourceOf("./deneme-player.tsx"));
-const FACADE = flatCode(sourceOf("./deneme-facade.tsx"));
+const BENCH = flatCode(sourceOf("./video-bench.tsx"));
+const STAGE = flatCode(sourceOf("./bench-stage.tsx"));
+const TIMELINE = flatCode(sourceOf("./bench-timeline.tsx"));
 const PAGE = flatCode(sourceOf("../../app/[locale]/kitaplar/[slug]/page.tsx"));
 
 /** The `playerEmbedSrc({ … })` argument object, as written. Everything asserted about the
@@ -88,17 +89,20 @@ describe("the iframe src's second", () => {
   });
 });
 
-describe("the player only opens for a block that has one", () => {
+describe("the player only opens for a video that has one", () => {
   it("requires `playable` alongside the store's answer", () => {
     // → PR #63 review CODE63-I1: without this a stale store can force the iframe branch on an
-    // `external` block, embedding a video the provider has refused embedding for.
-    expect(VIDEO).toMatch(/const isActive = playable && active !== null/);
+    // `external` video, embedding a video the provider has refused embedding for. The bench did
+    // not weaken it — the stage checks `playable` before handing `active` down, and the swap
+    // point checks it again rather than trusting the caller.
+    expect(VIDEO).toMatch(/const isActive = video\.playable && active !== null/);
   });
 
-  it("clears the store when the block leaves the page", () => {
+  it("clears the store when the bench leaves the page", () => {
     // The module-level store outlives a client-side route change; this cleanup is what stops a
     // return visit from rendering an autoplaying iframe with no click anywhere in between.
-    expect(PLAYER).toMatch(/return \(\) => \{ closeVideo\(denemeNo\); \};/);
+    // One island now, so the reset is unconditional where the per-block close had to be scoped.
+    expect(BENCH).toContain("useEffect(() => resetBench, [])");
   });
 });
 
@@ -106,9 +110,9 @@ describe("the click gate", () => {
   it("bails out before preventDefault on a modifier or middle press", () => {
     // "Open this question in a new tab" is browser behaviour we must not take away, so the
     // bail has to come FIRST — asserted by position, not merely by presence.
-    const bail = PLAYER.indexOf("event.metaKey || event.ctrlKey");
-    const narrowing = PLAYER.indexOf("closest<HTMLElement>(");
-    const prevented = PLAYER.indexOf("event.preventDefault()");
+    const bail = BENCH.indexOf("event.metaKey || event.ctrlKey");
+    const narrowing = BENCH.indexOf("closest<HTMLElement>(");
+    const prevented = BENCH.indexOf("event.preventDefault()");
     expect(bail).toBeGreaterThan(0);
     expect(narrowing).toBeGreaterThan(bail);
     expect(prevented).toBeGreaterThan(narrowing);
@@ -116,20 +120,25 @@ describe("the click gate", () => {
     // three tokens stay in order, the case passes, and Ctrl/Cmd-click silently stops opening a
     // new tab (→ `TA63R2-M1`). The sibling case below asserts its own `return` for exactly this
     // reason, so this is the file's own standard rather than a new one.
-    expect(PLAYER).toMatch(/if \(event\.metaKey \|\| event\.ctrlKey[^)]*\) \{ return; \}/);
+    expect(BENCH).toMatch(/if \(event\.metaKey \|\| event\.ctrlKey[^)]*\) \{ return; \}/);
   });
 
   it("intercepts only the two controls that carry a data hook", () => {
-    expect(PLAYER).toContain('closest<HTMLElement>("[data-second], [data-player-open]")');
+    expect(BENCH).toContain('closest<HTMLElement>("[data-second], [data-player-open]")');
   });
 
-  it("selects hooks that the facade and the page still emit", () => {
-    // The other end of the same string contract. Guarded at the reader's end only, a rename in
-    // either emitter leaves the selector above green while `closest()` matches nothing: İzle
-    // stops opening a player, rows stop jumping, and tsc, ESLint and every screenshot agree
-    // that nothing happened (→ `TA63R2-M3`).
-    expect(FACADE).toContain('data-player-open=""');
+  it("selects hooks that the cover, the timeline and the page still emit", () => {
+    // The other end of the same string contract, now with THREE emitters. Guarded at the
+    // reader's end only, a rename in any of them leaves the selector above green while
+    // `closest()` matches nothing: İzle stops opening a player, rows and ticks stop jumping, and
+    // tsc, ESLint and every screenshot agree that nothing happened (→ `TA63R2-M3`).
+    expect(VIDEO).toContain('data-player-open=""');
     expect(PAGE).toContain("data-second={question.startSecond}");
+    expect(TIMELINE).toContain("data-second={question.second}");
+    // And the third hook the bench added: without `data-deneme` the island can resolve no video
+    // at all, so every press falls through and the page silently becomes fragment-only.
+    expect(PAGE).toContain("data-deneme={video.denemeNo}");
+    expect(STAGE).toContain("data-deneme={video.denemeNo}");
   });
 });
 
@@ -146,11 +155,13 @@ describe("the two attributes the privacy rulings put on this surface", () => {
   it("asks the browser to send no referrer with the hotlinked thumbnail", () => {
     // The second of DEC 2026-08-15k's two cheap measures, and it was already dropped once —
     // at planning time, before review restored it (→ `VAL63-I1`, `TA63R2-M2`). A JSX tidy-up
-    // is enough to drop it again, and the rendered frame stays pixel-identical.
-    expect(FACADE).toContain('referrerPolicy="no-referrer"');
+    // is enough to drop it again, and the rendered frame stays pixel-identical. It moved from
+    // the facade file into the swap point when the cover became client-rendered; the attribute
+    // did not change and neither did the reason.
+    expect(VIDEO).toContain('referrerPolicy="no-referrer"');
   });
 
-  it("leaves a non-playable block's rows entirely alone", () => {
-    expect(PLAYER).toMatch(/if \(!playable \|\| event\.defaultPrevented\) return;/);
+  it("leaves a non-playable video's rows entirely alone", () => {
+    expect(BENCH).toMatch(/if \(video === undefined \|\| !video\.playable\) return;/);
   });
 });

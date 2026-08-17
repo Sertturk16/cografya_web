@@ -1,19 +1,162 @@
-/* Deneme bloğunun video yarısı — künye satırı, kapak (facade) ve oynatıcı kabı.
+/* Tezgâhın sahnesi ve dizin satırının video künyesi — kapak (facade), oynatıcı kabı,
+   sahne künyesi ve zaman şeridi.
    Terra tokens only (DESIGN.md §2); no hardcoded brand hex. Contrast per DESIGN §5:
    slate on white 7.92:1 (AAA); the İzle button is the global `.btn-primary`, white on
    terracotta 5.13:1 (AA). */
 
+/* ── Sahne ────────────────────────────────────────────────────────────────────────────── */
+
+/* THE STAGE STICKS ONLY WHERE THERE IS A SECOND COLUMN TO STICK BESIDE.
+   Below 64rem the stage sits above the index in one column and scrolls away normally: a sticky
+   player there would take 200px+ off a 568px viewport — the provider's own minimum player size
+   is what makes that floor non-negotiable — and the reader would be studying through a slot.
+
+   `top` IS THE SAME EXPRESSION `.player`'s `scroll-margin-top` USES, and the pairing is the
+   point rather than a coincidence:
+
+   · it keeps the player clear of the site header. A smaller value parks the box's top edge
+     UNDER a `position: sticky` header — and "no overlay, frame or visual element in front of any
+     part of the player" is a rule we do not want to be arguing about;
+   · it makes `deneme-video.tsx`'s corrective scroll a no-op in the sticky state. That effect
+     compares the box's measured `top` against its own `scroll-margin-top` and only scrolls when
+     the box is above its mark; with the two expressions equal, a stuck stage measures exactly on
+     its mark and nothing moves. Change one and the other has to change with it. */
+/* `min-width: 0` IS NOT BOILERPLATE HERE — it fixes a measured 56px horizontal overflow at the
+   two mandatory narrow viewports. A grid item's default `min-width: auto` refuses to shrink below
+   its content's min-content width, and `.frame` below combines `aspect-ratio: 16/9` with
+   `min-height: 200px`, which gives it an intrinsic minimum WIDTH of 200 × 16/9 ≈ 355.6px. At a
+   320px viewport the column is 280px, so the stage pushed `document.scrollWidth` to 356 and the
+   page scrolled sideways — `DESIGN.md` §4 makes 320 and 360 mandatory test viewports precisely
+   for this, and `SEO-POLICY.md` §B4 4.9's sibling requirement (WCAG 1.4.10 Reflow) is what it
+   breaks. With the floor released the frame takes the column's 280px and the `min-height` keeps
+   the box at 280×200, which is the letterboxed shape `.frame`'s own comment already describes.
+   The accordion never showed this because its frame lived inside a collapsed panel. */
+.stage {
+  min-width: 0;
+}
+
+@media (min-width: 64rem) {
+  .stage {
+    position: sticky;
+    top: calc(var(--header-height) + 1rem);
+  }
+}
+
+/* THE CAPTION'S HEIGHT IS RESERVED, and it is the second half of "selecting a video moves
+   nothing but the stage". The heading's width varies with the deneme number and the fact strip's
+   with the duration, so the line count can tip between videos at a given viewport; without a
+   floor the timeline below — and, in the one-column layout, the entire index — would step up and
+   down as the reader moves through the book. Measured as the two-line height at 320px, which is
+   the widest the strip ever wraps in either locale. */
+.stageCaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-height: 3.1rem;
+  margin: 10px 0 0;
+}
+
+.stageName {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--color-primary-dark);
+}
+
+.stageFacts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+/* ── Zaman şeridi ─────────────────────────────────────────────────────────────────────── */
+
+/* THE SIGNATURE ELEMENT: the questions placed along the video's real duration, so "question 5 is
+   near the end" is readable at a glance instead of six rows of numbers.
+
+   POSITION IS THE ENCODING AND THE NUMBER IS THE LABEL — nothing here is carried by colour alone
+   (`DESIGN.md` §5's last line). The card's height is FIXED by its own padding plus the bar and
+   the label lane, so it is identical for a 4-minute video and an 11-minute one; a card that grew
+   with content would move the index under the reader on every selection. */
+.timeline {
+  margin-top: 14px;
+  padding: 16px 24px 12px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+/* The bar is inset by the card's padding so the 0% and 100% ticks stay inside the card rather
+   than being clipped by it — question 1 starts at 0:00 on most videos, so the left-end tick is
+   the common case, not an edge case. */
+.timelineBar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  margin-bottom: 38px;
+}
+
+/* The whole tick — dot plus time — is the link, so the target is the 24px dot AND the label
+   beneath it rather than the dot alone. `translateX(-50%)` centres it on its own percentage. */
+.tick {
+  position: absolute;
+  top: -9px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--color-primary-dark);
+}
+
+/* 24×24 is WCAG 2.2 §2.5.8's (AA) floor exactly, and unlike the question cells this control
+   cannot be generous: its position IS its meaning, so a 44px dot would overlap its neighbours at
+   the measured spacings and stop reporting where the question is. That is §2.5.8's own
+   "Essential" case — the same clause `DESIGN.md` §5 already invokes for map geography, where
+   enlarging a province stops it being that province. The question is never reachable ONLY here:
+   the same six links sit in the index row below at 44px. */
+.tickDot {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--color-primary);
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tick:hover .tickDot {
+  background: var(--color-surface);
+  border-color: var(--color-primary-dark);
+}
+
+/* Slate on white is 7.92:1 (AAA). `tabular-nums` so the times sit on one optical grid. */
+.tickTime {
+  font-size: 0.7rem;
+  color: var(--color-slate);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Künye satırı: süre + yayın tarihi ────────────────────────────────────────────────── */
 
-/* A SIBLING of the swap point, never a child of the facade — and that is a rule, not a
-   layout preference. `SEO-POLICY.md` §B5 5.7 binds the markup to what the page SHOWS: a
-   `VideoObject` carrying `uploadDate` and `duration` may only exist where the reader can see
-   both. Inside the facade these two would vanish the moment the player replaced it. */
-/* The video künye row — now a phrasing-level element inside the deneme's `<summary>`
-   (`deneme-facade.tsx`), not a paragraph above the facade. `inline-flex` rather than `flex`
-   because it shares a line with the question count inside the summary's fact strip and must
-   sit on that line rather than start its own; the bottom margin is gone for the same reason.
-   Slate on the summary's `--color-surface` is 6.58:1 (AA, `DESIGN.md` §5). */
+/* NEVER A CHILD OF THE COVER — and that is a rule, not a layout preference. `SEO-POLICY.md`
+   §B5 5.7 binds the markup to what the page SHOWS: a `VideoObject` carrying `uploadDate` and
+   `duration` may only exist where the reader can see both. Inside the cover these two would
+   vanish the moment the player replaced it, on the one video that happens to be on the stage.
+   They live on the index ROW instead (`deneme-meta.tsx`) — thirty rows, thirty visible pairs,
+   none of them touched by what the stage is doing.
+   `inline-flex` rather than `flex` because it shares a line with the question count inside the
+   row's fact strip and must sit on that line rather than start its own. Slate on the page
+   background is 7.48:1 (AAA, `DESIGN.md` §5). */
 .meta {
   display: inline-flex;
   flex-wrap: wrap;
@@ -44,10 +187,17 @@
    this column is ~280px wide, so a pure 16:9 box would be 280×157 — under the floor. The
    min-height wins there and YouTube letterboxes inside it, which is correct at every width
    above it too. */
+/* `margin-inline: auto` IS THE PARTNER SUGGESTION, ACCEPTED WHERE IT HELPS (→ AK-23, Q6).
+   Between 564px and 1023px the layout is one column and the 560px cap leaves real dead space —
+   168px of empty parchment beside the player at 768. Centring closes it. It is inert from 64rem
+   up, where the stage's own column is narrower than the cap, and that is the half of the
+   suggestion that was declined: page-centring the player at desktop would undo the two-column
+   reading the whole bench exists to create. */
 .frame {
   position: relative;
   width: 100%;
   max-width: 560px;
+  margin-inline: auto;
   aspect-ratio: 16 / 9;
   min-height: 200px;
   background: var(--color-surface);
@@ -87,11 +237,17 @@
      ours.
 
    So this declaration is worth making only because `deneme-video.tsx` reads it back and scrolls
-   the element itself; the two addends are the site header and the open deneme's sticky summary,
-   the same pair the question rows carry. Measured cost of not doing it: pressing question six of
-   a block the reader has already scrolled through left the autoplaying player 292px ABOVE the
-   viewport in both engines — not partly covered, entirely gone — which is the Required Minimum
-   Functionality breach ("a player must not begin playing off-screen") the ledger names. */
+   the element itself.
+
+   ONE ADDEND NOW. The second used to be the open deneme's sticky `<summary>`; there is no
+   accordion and `--deneme-summary-height` is retired with it. The value is also `.stage`'s
+   sticky `top` above, and the two must stay equal — see that rule for why.
+
+   Measured cost of not doing it, and the bench made it larger rather than smaller: pressing
+   question six of a video the reader has scrolled to left the autoplaying player 292px above the
+   viewport in both engines when the player was inside the block; the stage sits at the TOP of
+   the section, so the same press from row thirty is now thousands of pixels away. "A player must
+   not begin playing off-screen" is the ledger's rule and this is what keeps it. */
 .player {
   position: absolute;
   inset: 0;
@@ -99,7 +255,7 @@
   height: 100%;
   border: 0;
   display: block;
-  scroll-margin-top: calc(var(--header-height) + var(--deneme-summary-height) + 1rem);
+  scroll-margin-top: calc(var(--header-height) + 1rem);
 }
 
 /* Fills the reserved box. `cover` rather than `contain` because the provider's 4:3 thumbnail
@@ -133,14 +289,13 @@
   min-height: 44px;
 }
 
-/* The typographic and non-embeddable states reserve NO box: today every one of the 30 blocks
-   is typographic, and reserving 30 empty 16:9 rectangles would be a page of grey holes. The
-   growth on click is user-initiated and therefore excluded from CLS (`hadRecentInput`), which
-   `SPEC.md` §9's criterion 15 measures rather than assumes. */
-.plainControl {
-  display: inline-flex;
-  margin-bottom: 4px;
-}
+/* `.plainControl` IS GONE, AND ITS REMOVAL REVERSES AN EARLIER DECISION ON PURPOSE. It existed
+   so the typographic and non-embeddable states reserved NO box, with a stated reason: thirty
+   empty 16:9 rectangles would have been a page of grey holes. There is ONE box now, so that
+   reason does not transfer — and the opposite property matters here. A stage whose height
+   changed with the selected video's state would move the whole index every time the reader
+   pressed a question, on a page whose entire premise is that pressing a question moves nothing
+   but the stage. All three cover states therefore share `.frame`. */
 
 /* ── Erişilebilirlik yardımcıları ──────────────────────────────────────────────────────── */
 

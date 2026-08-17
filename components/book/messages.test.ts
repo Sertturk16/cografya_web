@@ -27,13 +27,17 @@ const BOOK_DETAIL_KEYS = [
   "kunyeHeading",
   "videosHeading",
   "denemeHeading",
-  // The accordion's closed row (this PR).
+  // The index row's fact strip.
   "denemeQuestionCount",
-  // The jump strip (this PR). `jumpNoVideo` is an accessible name with no visible twin.
+  // The jump strip. `jumpNoVideo` is an accessible name with no visible twin.
   "jumpHeading",
   "jumpNoVideo",
   "questionLabel",
   "questionLabelAria",
+  // The bench's timeline. Another accessible name with no visible twin: the strip's meaning is
+  // carried by the ticks' POSITION, which is exactly the part that does not reach the
+  // accessibility tree, so a missing key here leaves a group of six links named by a dotted path.
+  "timelineLabel",
   "watch",
   "watchAria",
   "watchOnYoutube",
@@ -159,8 +163,9 @@ describe("BookDetail message catalogue", () => {
       // holds two — `t` for BookDetail and `tb` for Breadcrumb — so requiring a single namespace
       // per file would be wrong here; what has to hold is the BINDING the key scan below reads.
       //
-      // EVERY `t` binding, not exactly one: `deneme-facade.tsx` holds two components and binds
-      // the same namespace in each. What must not exist is a `t` bound to a different namespace.
+      // EVERY `t` binding, not exactly one: a file may hold more than one component and bind the
+      // same namespace in each (`deneme-meta.tsx` did while it also held the facade). What must
+      // not exist is a `t` bound to a different namespace.
       const tBindings = [...source.matchAll(T_BINDING)].map((match) => match[1] ?? match[2]);
       expect(tBindings.length).toBeGreaterThan(0);
       expect([...new Set(tBindings)]).toEqual(["BookDetail"]);

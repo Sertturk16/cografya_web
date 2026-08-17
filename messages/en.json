@@ -506,6 +506,7 @@
     "jumpNoVideo": "Deneme {no}, no video solution",
     "questionLabel": "Question {no}",
     "questionLabelAria": "Question {no}, at {time} in the video",
+    "timelineLabel": "Where the questions fall in the video",
     "watch": "Watch",
     "watchAria": "Watch — video solution for Deneme {no}",
     "watchOnYoutube": "Watch on YouTube",

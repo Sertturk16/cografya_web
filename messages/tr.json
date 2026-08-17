@@ -520,6 +520,7 @@
     "jumpNoVideo": "Deneme {no}, video çözümü yok",
     "questionLabel": "Soru {no}",
     "questionLabelAria": "Soru {no}, videoda {time}",
+    "timelineLabel": "Soruların videodaki yeri",
     "watch": "İzle",
     "watchAria": "İzle — Deneme {no} video çözümü",
     "watchOnYoutube": "YouTube'da izle",

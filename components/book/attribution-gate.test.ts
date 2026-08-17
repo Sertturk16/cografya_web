@@ -137,8 +137,8 @@ describe("the book page's source statement", () => {
     }
     // …and the disclosure is made inside the link that does it, rather than beside it. Asserted
     // against the anchor SLICE: the title's word "every" is scoped to this page on purpose —
-    // `deneme-facade.tsx`'s own new-tab link is outside this corpus and outside this range
-    // (→ PR #65 review `TA65-M6`, widening handed to Atlas).
+    // the stage's own new-tab link (the `external` cover in `deneme-video.tsx`) is outside this
+    // corpus and outside this range (→ PR #65 review `TA65-M6`, widening handed to Atlas).
     expect(sourceAnchor()).not.toBe("");
     expect(sourceAnchor()).toContain('t("sourceNewTab")');
   });
