@@ -29,13 +29,26 @@
   display: grid;
 }
 
-/* `justify-content: space-between` is what pins the arrow to the card's right edge, and it is
-   the SAME declaration `.province-card` carries in the global layer — this module had simply
-   not copied it. Without it the three children pack against the start, so at any width where
-   the card is wider than its content the arrow floats mid-card: measured 138px of dead space
-   to its right at 768px, where a single-column grid stretches the card to 728px. Every other
-   viewport already measured 1px, which is why the defect is invisible at 320/360/1024/1440 and
-   why this change moves nothing there. */
+/* WHAT PINS THE ARROW IS `.cardBody`'s GROWTH, and `space-between` sits under it as parity with
+   the sibling rule. Both halves are needed, and the reason is the child count.
+
+   The starting state had neither: `.province-card` carries `space-between` in the global layer
+   and this module had not copied it, so the three children packed against the start and the
+   arrow floated mid-card — 138px of dead space to its right at 768px, where a single-column
+   grid stretches the card to 728px. Every other viewport measured 1px.
+
+   `space-between` ALONE is not the fix, and the first commit of this PR shipped it alone: with
+   three children and no growable one, `justify-content` splits that same 138px equally between
+   BOTH gaps. The arrow reaches the right edge and the cover is pushed away from the title it
+   belongs to — measured at 768, title x 127 → 195.5 and cover↔title 16px → 84.5px, an orphan
+   image with a hole behind it. `.cardBody { flex: 1 1 auto }` below claims the free space first,
+   so both gaps stay at their declared 16px and `justify-content` is left nothing to distribute.
+
+   The trigger is width-versus-content, not a viewport: today's single long-titled seed fills the
+   card at 1024 and 1440, so the split only reproduces at 768 there — but a shorter title puts the
+   same hole at any width. `space-between` stays even though the grow makes it inert at every
+   child count: it is the declaration the sibling card carries, and re-diverging from
+   `.province-card` is the exact drift this rule closed. */
 .card {
   display: flex;
   align-items: center;
@@ -70,9 +83,15 @@
   object-fit: contain;
 }
 
+/* `flex: 1 1 auto` — grow is the only part that changes from the default `0 1 auto`: the basis
+   stays `auto` and the shrink stays 1, so nothing about how the body behaves when the card is
+   TOO NARROW moves. It changes only where free space lands when the card is too WIDE (see
+   `.card` above). `min-width: 0` below is what lets the shrink half actually work on a flex item
+   whose min-content is a long title. */
 .cardBody {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: 6px;
   min-width: 0;
 }

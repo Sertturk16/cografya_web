@@ -9,8 +9,9 @@
    the one with a long one. `introTr` is nullable by contract and `introEn` is null permanently,
    so the English page — and any Turkish book whose narrative is not written yet — renders an
    intro body of two chips and a button: 106.8px beside a 270px cover. Pinned to the start, that
-   left a measured 163.2px × 876px empty rectangle under them at 768 and 1440, which reads as a
-   broken band rather than as breathing room.
+   left a measured 163.2px-tall empty rectangle under them — 524px wide at 768 and 876px wide at
+   1440, the body's own width at each — which reads as a broken band rather than as breathing
+   room.
 
    Centring is safe in the other direction because the taller item is the one that gives way: on
    the Turkish page the body is the taller of the two, so it is the COVER that shifts (8px at
@@ -37,12 +38,18 @@
   width: 180px;
   height: 270px;
   /* CENTRES ONLY WHEN THE STRIP HAS WRAPPED, and it needs no breakpoint to know the difference.
-     Below 64rem the cover sits alone on its flex line: 180px inside a 280px column at 320 and a
-     320px column at 360, left-aligned, with 100–140px of ragged space beside it while every
-     other element on the page uses the full column. Auto margins absorb a flex line's leftover
-     space, so the cover centres there.
+     The strip wraps when the two flex bases stop fitting side by side: 180px cover + 24px gap +
+     `.introBody`'s 320px basis = 524px of container, which the page's 20px gutters put at a
+     564px viewport. MEASURED BY SWEEP, not derived: 562 wraps, 564 does not. So the wrapped case
+     is 320 and 360 only — 768 is already a single line, and this comment is NOT about 64rem,
+     which is the one breakpoint `DESIGN.md` §4 pins and which has nothing to do with this rule.
 
-     From 768 up it is inert, and that is a property of the box rather than a hope: `.introBody`
+     Wrapped, the cover sits alone on its line — 180px inside a 280px column at 320 and a 320px
+     column at 360, left-aligned, with 100–140px of ragged space beside it while every other
+     element uses the full column. Auto margins absorb a flex line's leftover space, so the cover
+     centres there.
+
+     From 564 up it is inert, and that is a property of the box rather than a hope: `.introBody`
      is `flex: 1 1 320px`, so flex-grow consumes the free space during line sizing and leaves the
      auto margins nothing to absorb. Measured both ways — cover x moves 20 → 70 at 320 and
      20 → 90 at 360, and stays at 20 / 180 at 768 / 1440. */
@@ -88,9 +95,11 @@
 
      With the sibling rule: 1440 and 1024 both resolve to a single [6] row, and 360 drops to
      [2, 2, 2] and 350px. The cost is real and is not hidden: 768 moves from a balanced [3, 3] to
-     [4, 2] and the block grows 195px → 233px. That trade was taken deliberately (owner-approved
-     at the Faz-1 gate) because the province page at 768 is ALREADY [4, 4] on a 171.5px track —
-     so this page lands on its sibling's measurement instead of keeping a private one.
+     [4, 2] and the block grows 195px → 233px. The trade was recorded as an open assumption in the
+     task's `fix-plan.md` and cleared at the Faz-1 plan gate — an Atlas plan approval, NOT an
+     owner ruling, and this comment previously claimed the latter. What actually carries the
+     decision is the reason: the province page at 768 is ALREADY [4, 4] on a 171.5px track, so
+     this page lands on its sibling's measurement instead of keeping a private one.
 
      `min()` rather than a bare 150px, unchanged in intent from the rule it replaces: an
      `auto-fit` floor wider than the container keeps its width and spills the row past the
@@ -113,6 +122,23 @@
   margin-bottom: 4px;
 }
 
+/* `overflow-wrap: break-word` TRAVELS WITH THE TRACK RULE ABOVE. The two landed together in
+   `f32e5af` on the province and country sheets and must not be separated, because narrowing the
+   floor to 150px is what makes the value box too small for a seeded token: at 360 the sheet goes
+   from one column to [2, 2, 2] and a value's content width goes 286px → 119px. Künye values are
+   api free text — a publisher or an author surname of 13 characters ("Karahasanoğlu") measures
+   161px in this face and size.
+
+   Measured, at 360 with the rule removed: the value overflows its own card by 42px and the
+   document's `scrollWidth` reads 365 against a 360 client width — horizontal scroll at one of
+   the two viewports `DESIGN.md` §4 makes mandatory. With the rule, 0 and 360/360. 320 is not the
+   trigger viewport: its single column leaves 246px, so it takes a ~23-character token to spill
+   there, and even then the overflow stays inside the document.
+
+   `break-word` and NOT `anywhere`, for the reason the province sheet's own comment states:
+   `anywhere` also shrinks the box's min-content contribution, which is an input to the grid's
+   track sizing. This rule is meant to change where a word breaks, not how the sheet is laid out.
+   `dt` needs nothing — those are our own short labels, not seeded text. */
 .fact dd {
   margin: 0;
   font-size: 1.25rem;
@@ -120,6 +146,7 @@
   font-family: var(--font-heading);
   color: var(--color-ink);
   line-height: 1.2;
+  overflow-wrap: break-word;
 }
 
 /* An ISBN is an identifier rather than a measurement, so it is set smaller and allowed to
