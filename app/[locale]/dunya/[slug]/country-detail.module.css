@@ -3,11 +3,52 @@
    (DESIGN.md §2); no hardcoded brand hex. Contrast verified against DESIGN §5:
    slate on white 7.92:1 (AAA), ink on white AAA. */
 
+/* INTRINSIC, NOT A BREAKPOINT (design tour A5) — the il page's rule, for the same measured
+   reasons; the full argument lives in `province-detail.module.css` next to its twin. The
+   country sheet is where `auto-fill` showed worst: 11 cards at 1440 laid out [5, 5, 1], a
+   single card alone beside ~875px of empty parchment. Measured after: 360px → 2 columns,
+   1440px inside the A8 row → 3, last row [.., 2]. */
 .factSheet {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 14px;
+}
+
+/* ---- Fact sheet + locator map on one row (design tour A8) ----
+   Same pattern and same rationale as `province-detail.module.css` (the row carries the 40px
+   rhythm the global `.section` class used to, so wrapping on a phone reproduces today's
+   spacing exactly; `flex: 1 1 360px` is what makes the row break by itself instead of by a
+   media query).
+
+   ONE DIFFERENCE, and it is a markup one: on the six special-status rows a third section —
+   "Egemenlik ve Tanınma" — sits BETWEEN the fact sheet and the locator map, and its position
+   is a documented reading-order decision (the reader meets the flag, reads what grounds it,
+   then meets the map). So on those pages the note travels INSIDE the main column rather than
+   being hopped over: DOM order stays fact sheet → note → map, and the wide layout puts the
+   note under the facts with the figure beside both. */
+.detailRow {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  row-gap: 40px;
+  margin-top: 40px;
+}
+
+.detailRow > * {
+  min-width: 0;
+}
+
+.detailMain {
+  flex: 1 1 360px;
+}
+
+/* 560, mirroring `locator-map.module.css` `.figure[data-kind="country"]` — the country figure
+   is the wider of the two. The reason the basis is stated at all, and why it is a layout basis
+   rather than a second cap on the figure, is written out in `province-detail.module.css`; the
+   short version is that `auto` resolved to the `<h2>`'s width and shrank the map to 304px. */
+.detailAside {
+  flex: 0 1 560px;
 }
 
 .fact {

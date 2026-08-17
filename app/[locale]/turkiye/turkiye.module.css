@@ -2,8 +2,45 @@
    SPEC §10.4, and the marine hub); the map itself is styled by
    components/map/map.module.css. */
 
+/* The two cross-link cards on ONE row (design tour A9). Measured before: two cards, each 700px
+   wide inside a 1080px column, stacked at `top` 3362 and 3543.8 — two short, structurally
+   identical blocks running down the left of an otherwise empty page foot.
+
+   NEGATIVE CONTROL, run rather than assumed: lifting `max-width` alone widened both cards to
+   1080px and left them stacked (`sameRow: false`). The wrapper is what pairs them; the
+   `max-width` release is what lets each take half the line once paired.
+
+   `flex-wrap` and no media query, for the reason `province-detail.module.css` states at
+   length: DESIGN.md §4 pins ONE breakpoint and asks for a two-locale measurement before a
+   second, and a wrap driven by the content's own basis never opens that question. Both cards
+   are peers here, so both take the same `flex: 1 1 360px` — below ~744px of column the row
+   breaks by itself and the page goes back to today's stack.
+
+   The row carries the 40px rhythm the global `.section` class used to put on each block; on a
+   flex item that margin would not collapse, so keeping it there and adding a `gap` would make
+   the wrapped spacing 64px instead of 40px. */
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  row-gap: 40px;
+  margin-top: 40px;
+}
+
+.ctaRow > * {
+  min-width: 0;
+  flex: 1 1 360px;
+}
+
 .ctaCard {
   max-width: 70ch;
+}
+
+/* Inside the row the line-length cap has no work left to do: the row itself is what bounds a
+   card's width, and 70ch would only reintroduce the empty right-hand side the row removes.
+   The cap stays on the rule above so a card rendered outside a row keeps it. */
+.ctaRow .ctaCard {
+  max-width: none;
 }
 
 .ctaCard h2 {

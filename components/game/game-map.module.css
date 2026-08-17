@@ -9,11 +9,14 @@
    contained it for no reason anyone could see. The padding is gone; the border, the radius
    and the parchment stay, and `overflow: hidden` moves here so the map is clipped by the
    rounded corner instead of squaring it off.
-   THE TWO OVERLAYS ARE UNAFFECTED, and that was checked rather than assumed: both the zoom
-   controls (`map.module.css` `.zoomControls`) and the ODbL credit (`.attribution` below) are
-   positioned against the STAGE, not against this card, so they keep their own 12-14px inset
-   and simply travel outward with it. The frame's padding was never what held them off the
-   map — which is also why removing it cannot be the cause of the mobile overlap (B8, PR-4b). */
+   THE OVERLAY THAT REMAINS IS UNAFFECTED, and that was checked rather than assumed: the zoom
+   controls (`map.module.css` `.zoomControls`) are positioned against the STAGE, not against
+   this card, so they keep their own 12-14px inset and simply travel outward with it. The
+   frame's padding was never what held them off the map — which is also why removing it cannot
+   be the cause of the mobile overlap (B8, PR-4b).
+   The ODbL credit used to be the second overlay and is not one any more: since the design tour
+   it is a flow line UNDER the stage, inside this frame (`.attribution` below). The frame's
+   `padding: 0` is why that line carries its own inset. */
 .frame {
   position: relative;
   overflow: hidden;
@@ -54,10 +57,22 @@
    ≈54.7vh at 900 and ≈49vh at 800 — and it keeps working on the 768px-tall laptops the two
    mandated sizes do not cover.
 
-   WHAT THE CONSTANT DOES NOT COVER: NARROW WIDTHS. It is a desktop-layout measurement. The
-   mobile-header disclosure now keeps the header at ~56px from 320px upward, and the running
-   build fits `/oyun/81-il` without document scroll at 390×844. That is an observed benefit,
-   not a proof that the 408px itemization below holds for every phone: the narrow-layout head
+   WHAT THE CONSTANT DOES NOT COVER, ITEM ONE: THE CREDIT LINE UNDER THE STAGE. The design
+   tour moved the ODbL/JRC credit out of the stage and into the frame (`.attribution` below),
+   which adds ~48px of chrome BELOW the map that this constant does not itemize. Re-measured
+   on the running build after that move, the thing the cap exists to protect still holds — the
+   question, the map and the action row are all above the fold — but the margin is now thin:
+   the last control's bottom edge sits at 869px of 900 at 1440×900 (was 821), and at 799px of
+   800 at 1280×800 (was 750). One pixel is not a fit anyone should plan around, so the next
+   change to this page's chrome re-measures both mandated viewports first; the constant itself
+   was deliberately left alone here rather than retuned as a side effect of a layout fix.
+
+   WHAT THE CONSTANT DOES NOT COVER, ITEM TWO: NARROW WIDTHS. It is a desktop-layout
+   measurement. The mobile-header disclosure keeps the header at ~56px from 320px upward. The
+   build used to fit `/oyun/81-il` with no document scroll at 390×844; with the credit line
+   below the stage it now scrolls 24px there (55px at 360×800), while the interactive block
+   still sits well above the fold (last control at 561px of 844). That was an observed benefit,
+   never a proof that the 408px itemization below holds for every phone: the narrow-layout head
    slot and answer pool have not been exhaustively re-measured against it. Until they are,
    keep the cap-release threshold conservative instead of treating phone fit as guaranteed.
    The question block itself was checked before this header change at every width from 320px
@@ -665,17 +680,24 @@
   }
 }
 
-/* ODbL attribution — required visibly next to the map (licence obligation, not styling). */
+/* ODbL attribution — required visibly next to the map (licence obligation, not styling).
+
+   ON THIS SURFACE IT IS A FOOTER LINE, NOT AN OVERLAY, and that is the one thing this rule
+   says that `map.module.css`'s does not. The overlay version was measured covering 304 × 61.3
+   of a 318 × 136.4 stage at 360px — 42.8% of the play area — and `elementFromPoint` at each
+   province's own centre found 41 of 81 targets under chrome at 360px, 62 of 81 at 320px. The
+   plate is gone with the absolute positioning: in flow the line sits on the frame's parchment
+   and needs no scrim to stay legible (--color-slate on --color-bg = 7.48:1, DESIGN §5).
+
+   The credit is still VISIBLE and still inside the map component (DEC 2026-07-10 md.4), one
+   line under the stage — the same place `locator-map.module.css` `.credit` puts it. The
+   margin supplies the inset the frame's `padding: 0` no longer does. Font size, colour and
+   the two-line structure are unchanged; not one character of either licence string moved. */
 .attribution {
-  position: absolute;
-  right: 14px;
-  bottom: 10px;
-  margin: 0;
+  margin: 6px 14px 10px;
   font-size: 0.72rem;
+  line-height: 1.4;
   color: var(--color-slate);
-  background: var(--scrim-bg);
-  padding: 3px 8px;
-  border-radius: 6px;
 }
 
 /* The two credits are separate elements now, not one paragraph split by a <br> — see the

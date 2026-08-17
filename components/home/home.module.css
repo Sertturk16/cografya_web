@@ -58,6 +58,17 @@
   font-weight: 600;
 }
 
+/* 24px target — the same usability fix, and the same honest framing, as
+   `marine.module.css` `.pointList a` (design tour A7, ruling AK-14 E6). These three home-page
+   hub links sit hundreds of pixels apart, so WCAG 2.2 §2.5.8's Spacing exception was never in
+   question; the anchor box was simply 22px tall. Nothing about the type changes. */
+.exploreLink a,
+.seaLink a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
 /* The world block is the SECONDARY half of the split band: same heading level (two peer
    destinations — `SEO-POLICY.md` §B3.7 keeps headings an outline, not a type scale), but it
    opens tighter than a full `.section` so the pair reads as one band with a leading half

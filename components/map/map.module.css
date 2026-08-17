@@ -266,8 +266,14 @@
 }
 
 /* ODbL attribution — required visibly next to the map (SPEC §5.2 / DEC 2026-07-10).
-   It owns the bottom-right corner of EVERY map surface (il map, world map, game map) and
-   never moves. It is now the ONLY bottom-anchored element: the one-time zoom hint that used
+   It owns the bottom-right corner of the two NAVIGATION map surfaces this stylesheet serves —
+   the il map and the world map. It used to claim the game map too, and that claim is no longer
+   true: the design tour measured the same overlay covering 42.8% of the play stage at 360px
+   and occluding 41 of 81 targets, so `game-map.module.css` now renders its own credit as a
+   flow line under the stage. The obligation is identical on all three surfaces (visible, in
+   the map component, text unchanged); only the placement differs, and it differs because one
+   surface is played on and two are navigated.
+   Within this stylesheet it is still the ONLY bottom-anchored element: the one-time zoom hint that used
    to stack one band above it was removed outright (owner ruling 2026-08-02) — it covered
    the map's south-west corner, its `pointer-events: auto` box swallowed clicks on whatever
    was under it, and on a short stage it crowded this licence line. If a bottom-left overlay

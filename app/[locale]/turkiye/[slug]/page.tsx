@@ -493,92 +493,111 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       <EnWorkInProgressNotice locale={locale} />
       <p className="lede">{introText}</p>
 
-      <section className="section">
-        <h2>{t("keyFactsHeading")}</h2>
-        <dl className={styles.factSheet}>
-          <div className={styles.fact}>
-            <dt>{t("region")}</dt>
-            {/* G3 — the coğrafi bölge tint beside its name. `aria-hidden`, because the name
+      {/* ONE ROW, TWO SECTIONS (design tour A8). "Temel Bilgiler" and "X'in Konumu" used to be
+          two stacked full-width sections, which left the 460px locator figure sitting on a
+          1080px line with 57.4% of it empty. They are the same two sections, in the same DOM
+          order, with the same headings — a wrapper puts them side by side when there is room
+          and lets the row wrap back to today's stacked layout when there is not
+          (`province-detail.module.css` `.detailRow`; no media query, DESIGN.md §4).
+
+          THE `<h2>`s STAY. The design mockup dropped "X'in Konumu" and left the figure under a
+          bare legend; ruling AK-14 E2 keeps it — the heading carries the entity name and is
+          part of the SEO outline on all 81 pages (`SEO-POLICY.md` §B3.7). Nothing about the
+          heading text, level or order changes here.
+
+          The two sections drop the global `.section` class and the row carries that 40px
+          rhythm instead; the stylesheet explains why the margin cannot stay on a flex item. */}
+      <div className={styles.detailRow}>
+        <section className={styles.detailMain}>
+          <h2>{t("keyFactsHeading")}</h2>
+          <dl className={styles.factSheet}>
+            <div className={styles.fact}>
+              <dt>{t("region")}</dt>
+              {/* G3 — the coğrafi bölge tint beside its name. `aria-hidden`, because the name
                 right next to it already carries the fact; see components/province/region-dot. */}
-            <dd>
-              <RegionDot region={province.region} />
-              {region}
-            </dd>
-          </div>
-          <div className={styles.fact}>
-            <dt>{t("plateCode")}</dt>
-            <dd>{province.plateCode}</dd>
-          </div>
-          {province.population !== null && (
-            <div className={styles.fact}>
-              <dt>
-                {province.populationYear
-                  ? t("populationWithYear", { year: province.populationYear })
-                  : t("population")}
-              </dt>
-              <dd>{format.number(province.population)}</dd>
-            </div>
-          )}
-          {province.areaKm2 !== null && (
-            <div className={styles.fact}>
-              <dt>{t("area")}</dt>
               <dd>
-                {format.number(province.areaKm2)} {t("areaUnit")}
+                <RegionDot region={province.region} />
+                {region}
               </dd>
             </div>
-          )}
-          {province.districtCount !== null && (
             <div className={styles.fact}>
-              <dt>{t("districtCount")}</dt>
-              <dd>{format.number(province.districtCount)}</dd>
+              <dt>{t("plateCode")}</dt>
+              <dd>{province.plateCode}</dd>
             </div>
-          )}
-          {province.elevationM !== null && (
-            <div className={styles.fact}>
-              <dt>{t("elevation")}</dt>
-              <dd>
-                {format.number(province.elevationM)} {t("elevationUnit")}
-              </dd>
-            </div>
-          )}
-          {geo && (
-            <div className={styles.fact}>
-              <dt>{t("coordinates")}</dt>
-              <dd>
-                {geo.latitude}, {geo.longitude}
-              </dd>
-            </div>
-          )}
-          {/* Nüfus yoğunluğu — derived, renders today (server-computed from the two
+            {province.population !== null && (
+              <div className={styles.fact}>
+                <dt>
+                  {province.populationYear
+                    ? t("populationWithYear", { year: province.populationYear })
+                    : t("population")}
+                </dt>
+                <dd>{format.number(province.population)}</dd>
+              </div>
+            )}
+            {province.areaKm2 !== null && (
+              <div className={styles.fact}>
+                <dt>{t("area")}</dt>
+                <dd>
+                  {format.number(province.areaKm2)} {t("areaUnit")}
+                </dd>
+              </div>
+            )}
+            {province.districtCount !== null && (
+              <div className={styles.fact}>
+                <dt>{t("districtCount")}</dt>
+                <dd>{format.number(province.districtCount)}</dd>
+              </div>
+            )}
+            {province.elevationM !== null && (
+              <div className={styles.fact}>
+                <dt>{t("elevation")}</dt>
+                <dd>
+                  {format.number(province.elevationM)} {t("elevationUnit")}
+                </dd>
+              </div>
+            )}
+            {geo && (
+              <div className={styles.fact}>
+                <dt>{t("coordinates")}</dt>
+                <dd>
+                  {geo.latitude}, {geo.longitude}
+                </dd>
+              </div>
+            )}
+            {/* Nüfus yoğunluğu — derived, renders today (server-computed from the two
               locked values); "≈" flags the rounding. (SPEC §3.1 #3 / §4.2.) */}
-          {province.populationDensity !== null && (
-            <div className={styles.fact}>
-              <dt>{t("populationDensity")}</dt>
-              <dd>
-                ≈ {format.number(province.populationDensity)} {t("populationDensityUnit")}
-              </dd>
-            </div>
-          )}
-        </dl>
-      </section>
-
-      {/* Ö1-A — "Van nerede?", the question that follows "Van nedir?". Temel Bilgiler has just
-          given the region and the coordinates as TEXT; this is the same answer as a picture,
-          so it sits directly after it and before Deniz Durumu.
-
-          Absent (never a placeholder) if the plate code has no artifact shape. That is a
-          defence line, not a known gap: all 81 plate codes resolve today. */}
-      {provinceShapeD !== undefined && (
-        <section className="section">
-          <h2>{t("locationHeading", { name: sectionHeading("location") })}</h2>
-          <LocatorMap
-            kind="province"
-            locale={locale}
-            d={provinceShapeD}
-            alt={t("locationAlt", { name })}
-          />
+            {province.populationDensity !== null && (
+              <div className={styles.fact}>
+                <dt>{t("populationDensity")}</dt>
+                <dd>
+                  ≈ {format.number(province.populationDensity)} {t("populationDensityUnit")}
+                </dd>
+              </div>
+            )}
+          </dl>
         </section>
-      )}
+
+        {/* Ö1-A — "Van nerede?", the question that follows "Van nedir?". Temel Bilgiler has
+            just given the region and the coordinates as TEXT; this is the same answer as a
+            picture, so it sits directly after it — now beside it on a wide screen, still
+            directly after it on a phone — and before Deniz Durumu.
+
+            Absent (never a placeholder) if the plate code has no artifact shape. That is a
+            defence line, not a known gap: all 81 plate codes resolve today. When it is absent
+            the row has a single child and the fact sheet simply fills the container, which is
+            what it did before this wrapper existed. */}
+        {provinceShapeD !== undefined && (
+          <section className={styles.detailAside}>
+            <h2>{t("locationHeading", { name: sectionHeading("location") })}</h2>
+            <LocatorMap
+              kind="province"
+              locale={locale}
+              d={provinceShapeD}
+              alt={t("locationAlt", { name })}
+            />
+          </section>
+        )}
+      </div>
 
       {/* Deniz Durumu (W2b) — directly under Temel Bilgiler, above the prose. A reader who
           arrived asking "Sinop'ta deniz kaç derece" answers that question without scrolling;

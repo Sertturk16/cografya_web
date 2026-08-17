@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import type { Locale } from "@/i18n/routing";
 import { buildMetadata } from "@/lib/seo/metadata";
+import styles from "./hakkimizda.module.css";
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;
@@ -72,7 +73,10 @@ export default async function AboutPage({ params }: PageProps) {
           a product name inside Turkish prose is not a foreign-language passage. */}
       <h2>{t("dataHeading")}</h2>
       <p>{t("dataIntro")}</p>
-      <ul>
+      {/* The class carries ONE declaration — `overflow-wrap: break-word`, so the repository
+          address in the §4.6 offer below can break at 320px instead of widening the document.
+          See `hakkimizda.module.css`; no licence string changes. */}
+      <ul className={styles.sourceList}>
         <li>{t("dataOsm")}</li>
         {/* L1 — ODbL §4.6's OFFER (→ DEC 2026-08-08c md.5). The chain closes through §4.4(c):
             once a Produced Work made from an OSM-derived database is used publicly, the

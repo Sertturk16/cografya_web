@@ -182,7 +182,21 @@
   font-size: 0.9rem;
 }
 
+/* A 24px-tall target, and the honest framing matters (design tour A7, ruling AK-14 E6).
+   This does NOT close a WCAG 2.2 §2.5.8 failure: the vertical pitch between two of these
+   links is 29.05px (measured, every width, both locales), so 24px circles centred on them do
+   not intersect and the Spacing exception already applied. It is a USABILITY fix — the link
+   box was 20px tall, this list of 30 reference points is the page's real navigation surface,
+   and 20px is what a thumb misses.
+
+   `inline-flex` + `align-items: center` rather than padding: padding on an inline box grows
+   the painted background without growing the line box, so the row pitch (and therefore the
+   list's rhythm) would move while the hit area only half-followed. Type size, weight and
+   colour are untouched. */
 .pointList a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   color: var(--color-primary-dark);
 }
 
@@ -194,7 +208,24 @@
 
 /* ---- Layer catalogue table -------------------------------------------------- */
 
+/* `position: relative` is NOT decoration — it is what keeps this page from scrolling
+   sideways (design tour A3). Measured on the running build: `/deniz` reported a 369px
+   `scrollWidth` in a 320px viewport, `/en/sea` 389px, at both 320 and 360.
+
+   The escapees are the `.srOnly` spans the value-less cells render (`layer-catalogue.tsx`,
+   the spoken counterpart of a visual "—"). They are `position: absolute`, and an absolutely
+   positioned box takes its containing block from the nearest POSITIONED ancestor — of which
+   this scroller, being `static`, was not one. So their containing block was the initial one,
+   the viewport, and `overflow` only ever clips descendants of its own containing block: the
+   spans slipped past this scroller and enlarged the DOCUMENT's scrollable area instead of the
+   860px one they are drawn inside.
+
+   One declaration, no visual effect: it changes nothing about this box, only which box the
+   spans belong to. The fix does NOT belong on `.srOnly` — forcing it `static` (the obvious
+   alternative) does not work on an inline `<span>`, where `width`/`height` do not apply, and
+   it would undo the screen-reader hiding the class exists for. */
 .tableScroll {
+  position: relative;
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);

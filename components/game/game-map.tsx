@@ -393,23 +393,43 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
             />
           </g>
         </svg>
-
-        {/* Both obligations stay visible wherever these shapes are drawn (SPEC §1) — see
-            components/map/turkey-map-section.tsx for the full note, including why the English
-            licence string carries its own `lang="en"`. Shared strings with the /turkiye map:
-            one source, never re-typed. */}
-        {/* TWO LINES, TWO ELEMENTS — not one paragraph with a <br>. The visual result is
-            identical; what changes is the TEXT. A <br> contributes no character, so the
-            node's text content ran the two credits together as "…ODbLMevsimlik göl
-            sınırları…", which is what a screen reader announces and what a copy-paste
-            produces (UX tour B26). Block-level spans separate them for real. */}
-        <p className={styles.attribution}>
-          <span className={styles.attributionLine}>{tMap("attribution")}</span>
-          <span className={styles.attributionLine}>
-            {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
-          </span>
-        </p>
       </div>
+
+      {/* Both obligations stay visible wherever these shapes are drawn (SPEC §1) — see
+          components/map/turkey-map-section.tsx for the full note, including why the English
+          licence string carries its own `lang="en"`. Shared strings with the /turkiye map:
+          one source, never re-typed.
+
+          BELOW THE STAGE, NOT ON IT (design tour A1). On the play surface the credit used to
+          be an absolutely-positioned plate INSIDE `.stage`, and at phone widths that plate
+          covered 42.8% of the map: measured on the running build, the chrome sitting over a
+          province's own centre point occluded 62 of 81 targets at 320px and 41 of 81 at 360px.
+          A play surface whose targets are under the licence line is not a play surface.
+
+          The credit stays VISIBLE — it moves out of the stage into the frame, one flow line
+          under the map, exactly the shape `locator-map.module.css` `.credit` already ships
+          ("inside the figure but outside the frame"). DEC 2026-07-10 md.4 asks the ODbL
+          attribution to remain "visible (map footer/component)", and a line in the map's own
+          component footer is that sentence. It is deliberately NOT a `<details>` disclosure:
+          a credit that is closed by default is not visible.
+
+          The `/turkiye` and `/dunya` maps are NOT touched — there the credit still overlays
+          the map from `map.module.css`, because those surfaces are navigation, not play. */}
+      {/* TWO LINES, TWO ELEMENTS — not one paragraph with a <br>. The visual result is
+          identical; what changes is the TEXT. A <br> contributes no character, so the
+          node's text content ran the two credits together as "…ODbLMevsimlik göl
+          sınırları…", which is what a screen reader announces and what a copy-paste
+          produces (UX tour B26). Block-level spans separate them for real — and the `{" "}`
+          between them is what actually inserts the character: `textContent` ignores layout,
+          so two block spans with nothing between them re-weld into one run. That defect was
+          fixed on `/turkiye` and never here; `attribution-separation.test.ts` now guards both
+          files. */}
+      <p className={styles.attribution}>
+        <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
+        <span className={styles.attributionLine}>
+          {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
+        </span>
+      </p>
 
       {/* Keyboard-controls description the zoomable SVG points at via aria-describedby
           (wired client-side by the zoom island). Visually hidden — the always-visible
