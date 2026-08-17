@@ -182,3 +182,71 @@
   font-weight: 700;
   color: var(--color-ink);
 }
+
+/* THE YOUTUBE CREDIT'S LINK — mark and sentence as ONE visual unit, and one link.
+   `inline-flex` so the 28px mark and the 0.85rem sentence share a centre line inside a
+   paragraph that keeps wrapping around them; `gap` rather than a margin so the spacing
+   belongs to the pair and not to either half. No colour is declared: the global `a` rule's
+   `--color-primary-dark` (7.89:1 on bg, AAA) applies, and the mark itself is printed in the
+   provider's own colour, which is the one place `DESIGN.md` §2's token rule does not reach —
+   it governs surfaces WE draw, and a brand mark is not ours to re-tint. No raw hex is added
+   here either way. */
+.sourceLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* THE UNIT'S OWN ALIGNMENT AGAINST THE PARAGRAPH, which `align-items` does NOT set: that
+     property positions the mark and the sentence relative to each other INSIDE the box, and
+     says nothing about where the box sits on the line it shares with the `Kaynaklar:` label,
+     the separator and the partner credit. A flex container exports the baseline of its first
+     baseline-aligned item; with `align-items: center` no item is baseline-aligned, so the UA
+     synthesizes one from the border box — the 28px box is hung by its BOTTOM EDGE on the
+     paragraph's baseline and the whole credit floats 10px above the text beside it (measured
+     on the pre-fix frames: link baseline y177, label and partner baseline y187 at 1280).
+     `middle` centres the box on the parent's baseline + half its x-height instead, which is
+     the alignment the two halves of this rule were always meant to have (→ PR #65 review
+     `CODE65-I1`). */
+  vertical-align: middle;
+  /* Cancelled on the link and re-applied to the sentence below, for a mechanical reason: an
+     underline on the anchor is drawn across its atomic inline children too, so the line would
+     run under the logo — a decoration through a brand mark, which is exactly what "do not
+     modify the file in any way" is about. The link therefore stays underlined where a link
+     should be, and the mark stays clean. */
+  text-decoration: none;
+}
+
+/* The visible sentence — the underline the reader identifies a link by. `span` and not a
+   class, because the notice element may not carry one: `attribution-gate.test.ts` pins it as
+   `<span lang="tr">{row.requiredNoticeTr}</span>` so that the untouchable string cannot be
+   decorated, wrapped or re-typed on its way to the page. The visually-hidden suffix is matched
+   too and takes the underline with it, which costs nothing at 1×1px. */
+.sourceLink span {
+  text-decoration: underline;
+}
+
+/* HEIGHT ONLY, WIDTH FROM THE FILE. The element carries the asset's real 1255×1075, so the
+   browser derives its aspect ratio from those attributes and computes the width itself —
+   28 × (1255/1075) ≈ 32.7px. Pinning a rounded pair instead (35×30) would stretch the mark by
+   ~0.06% and touch the one rule the Branding Guidelines state absolutely. 28px is the BOX; the
+   mark inside the file occupies 53.86% of the canvas height, so what the reader sees is a
+   ≈15.1px mark optically matched to the 13.6px line beside it, with the file's own clear space
+   filling the rest. The box is fixed before the bytes arrive, so it costs no layout shift. */
+.sourceMark {
+  height: 28px;
+  width: auto;
+}
+
+/* Visually hidden, AT-readable. Local to this module because the repo has no global utility
+   and five other modules already carry this exact block. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

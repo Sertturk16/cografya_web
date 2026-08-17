@@ -1,8 +1,13 @@
 # `public/kitaplar/` — book cover assets, and the route this directory can shadow
 
 Files under `public/kitaplar/` are served from the site root, so
-`public/kitaplar/x.webp` answers `/kitaplar/x.webp`. This is the repo's first `public/`
-directory.
+`public/kitaplar/x.webp` answers `/kitaplar/x.webp`. It was the repo's first `public/`
+directory and is no longer the only one: `public/marka/` carries the YouTube branding mark
+(PR #65). **The trap below belongs to `public/`, not to this directory** — everything under
+it is served ahead of the router, so each directory shadows whatever route shares its
+prefix. `kitaplar/` shares one and `marka/` shares none today, which is why the rules are
+written out here rather than in a second note; check the collision before adding the next
+directory, not after.
 
 **This file lives in `docs/` and not beside the assets it describes, on purpose.**
 Everything under `public/` is served verbatim, so a README kept there answered
