@@ -3,7 +3,7 @@
     "skipToContent": "Ana içeriğe geç",
     "localeSwitcherLabel": "Dil seçimi",
     "localeName": "Türkçe",
-    "enWorkInProgress": "Bu İngilizce sayfa üzerinde çalışılıyor: ayrıntılı bölümler şimdilik yalnızca Türkçe olarak mevcut."
+    "enWorkInProgress": "Bu sayfanın ayrıntılı bölümleri şimdilik Türkçe."
   },
   "Nav": {
     "label": "Ana gezinme",
@@ -297,7 +297,7 @@
     "heading": "Dünya Haritası",
     "intro": "Bir ülkeye tıklayarak detaylarını görüntüle.",
     "indexHeading": "Alfabetik Ülke Listesi",
-    "indexDescription": "Detay sayfası bulunan {count} ülke, adlarının baş harfine göre gruplanmış halde.",
+    "indexDescription": "{count} ülke, adlarının baş harfine göre gruplanmış halde.",
     "indexLetterNavLabel": "Baş harfe göre atla"
   },
   "WorldMap": {
@@ -448,9 +448,9 @@
       "cycle": "Çevrim: {value}",
       "horizon": "Tahmin ufku: {value} UTC",
       "catalogueUpdated": "Katalog: {value} UTC",
-      "noModelRun": "Model künyesi sıradaki aşamada yayımlanacak.",
+      "noModelRun": "Bu katman için künye yok.",
       "notApplicable": "Bu katman için geçerli değil",
-      "nextPhase": "Sıradaki aşama"
+      "nextPhase": "Künye yok"
     },
     "freshness": {
       "stale": "{since} UTC'den beri tazelenemedi",
