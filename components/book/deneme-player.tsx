@@ -136,31 +136,55 @@ export function DenemePlayer({
     const root = rootRef.current;
     if (target === null || root === null || !root.contains(target)) return;
 
-    /* THE REVEAL, and why the scroll is UNCONDITIONAL while the open is not.
-       `#deneme-12-soru-3` names a row inside this block's collapsed panel. The HTML Standard
-       covers it — "scroll to the fragment" runs the ancestor revealing algorithm, which sets
-       `open` on a `details` whose SECOND slot holds the target — and both engines available
-       here do implement it, with JavaScript off as well as on. So the `open` line below is a
-       belt-and-braces for engines that do not, not the mechanism.
+    /* ONLY A TARGET INSIDE THE PANEL OPENS THE PANEL.
+       `#deneme-12` addresses the `<h3>` in the summary, which is visible in both states, and
+       the approved plan (§4.2, FENER K6) says what should happen there: the reader lands on the
+       closed row and opens it. Auto-opening for it made this page answer one fragment two ways
+       — a page LOAD on `#deneme-12` expanded the block, while pressing "12" in the jump strip
+       on the already-loaded page did not (no mount, and the native reveal does not fire for a
+       first-slot target). The strip is new in this PR, so the plan's own waiver for the missing
+       `hashchange` listener — "no path reaches this gap today" — stopped being true the moment
+       it landed (→ PR #66 review `CODE66-M4`). Scoping the reveal to second-slot targets makes
+       both paths agree with the plan instead of adding a listener to chase the deviation.
 
-       THE SCROLL IS THE PART THAT ACTUALLY HAD TO BE FIXED, and Firefox is what showed it.
-       An earlier version only scrolled on the branch that had itself opened the panel, on the
-       reasoning that an engine which already revealed it had also already scrolled correctly.
-       Measured, that is false: at 320px Firefox landed the row at y=105 while the sticky
-       summary's bottom edge sat at y=124, so the first 19px of the row was behind it — the
-       engine scrolls before the reveal reflows the block, and its own correction does not
-       account for the summary that is about to stick. Chromium put the same row at y=144 at
-       every width. Calling `scrollIntoView` unconditionally makes both agree on 144, because it
-       is computed from the row's own `scroll-margin-top` — the two-addend offset in
-       `book-detail.module.css` — rather than from whatever the engine did first. It is
-       idempotent, so re-running it where the engine was already right costs nothing.
+       THE SCROLL CORRECTS A MEASURED MISPLACEMENT, and only that. Firefox at 320px landed the
+       row at y=105 with the sticky summary's bottom edge at y=124 — the first 19px hidden —
+       because it scrolls before the reveal reflows the block and does not account for a summary
+       that is about to stick; Chromium put the same row at y=144 at every width. But this
+       effect runs after hydration, so scrolling unconditionally opens a window where a reader
+       who has already started scrolling gets yanked back (→ `CODE66-M5`).
+
+       The correction therefore fires whenever the row is off its mark, and is skipped only when
+       the row is already exactly where `scroll-margin-top` puts it — which is the common case
+       (Chromium, every width, both locales) and the one worth not touching.
+
+       A NARROWER GUARD WAS TRIED AND MEASURED WRONG. Restricting the correction to rows that are
+       currently ON SCREEN — on the reasoning that an off-screen row means the reader has scrolled
+       away and should be left alone — breaks the exact case the scroll exists for: Firefox at
+       320px landed the row at y=-204, i.e. off screen ABOVE the viewport, and the guard then
+       declined to correct it and left the deep link pointing at nothing visible. At mount, "off
+       screen" does not mean "the reader moved on"; it means the engine scrolled wrong. The
+       residual cost is accepted and stated rather than engineered around: a reader who starts
+       scrolling in the window between first paint and hydration is pulled back once. That window
+       is small on this page (one small island), it happens at most once per load, and the
+       alternative is a reproducible §B4 4.9 breach on a real engine at a mandatory viewport.
 
        WITH JAVASCRIPT OFF none of this runs, and the honest degradation is written down rather
        than implied: both engines here still reveal the panel and land the row in view
        (measured); an engine that does not would leave the reader on the closed row, one press
        from the answer. Nothing is unreachable in either case. */
-    if (!root.open) root.open = true;
-    target.scrollIntoView();
+    const summary = root.querySelector(":scope > summary");
+    if (summary !== null && summary.contains(target)) return;
+
+    const engineRevealed = root.open;
+    if (!engineRevealed) {
+      root.open = true;
+      target.scrollIntoView();
+    } else {
+      const wanted = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+      const top = target.getBoundingClientRect().top;
+      if (Math.abs(top - wanted) > 1) target.scrollIntoView();
+    }
 
     // Everything below is the PLAYER's half and stays gated on `playable`: a block the provider
     // refuses to embed has no player to seek, but it still has a row to reveal.
@@ -182,7 +206,7 @@ export function DenemePlayer({
    * Guarded on `open` so the OPENING half is a no-op, and scoped to this block so opening a
    * second deneme cannot close a player the reader is watching in a third.
    */
-  const onToggle = (event: React.SyntheticEvent<HTMLDetailsElement>) => {
+  const onToggle = (event: React.ToggleEvent<HTMLDetailsElement>) => {
     if (!event.currentTarget.open) closeVideo(denemeNo);
   };
 

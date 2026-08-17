@@ -89,7 +89,7 @@
   overflow-wrap: anywhere;
 }
 
-/* ── Video çözümler: kapsam cümlesi + deneme blokları + soru dizini ───────────────────── */
+/* ── Video çözümler: atlama şeridi + deneme akordeonu + soru dizini ───────────────────── */
 
 /* ── Atlama şeridi ────────────────────────────────────────────────────────────────────── */
 
@@ -154,6 +154,16 @@ a.jumpItem:hover {
    looking pressable. */
 .jumpItemEmpty {
   border-style: dashed;
+  /* THE SHAPE CUE HAS TO BE VISIBLE TO BE A CUE. This rule claims the state is carried by shape
+     rather than colour, and with `--color-border` it was not: #ddd5cc is 1.37:1 against the page
+     background and 1.45:1 against the covered tile's own white fill, i.e. below the 3:1 floor
+     `ENGINEERING.md` §5 sets for a UI boundary — so a reader with reduced contrast sensitivity,
+     a greyscale display or a poor projector met forty near-identical tiles and could not tell
+     which were pressable (→ PR #66 review `A11Y66-M2`). `--color-slate` is 7.48:1 on the page
+     background, so the dashed edge is now actually perceivable and the non-colour cue is real.
+     The covered tiles keep the repo-wide `--color-border` hairline; that pattern is a separate,
+     pre-existing question (`A11Y66-P1`) and is not changed here on one page. */
+  border-color: var(--color-slate);
   background: transparent;
   font-weight: 500;
   color: var(--color-slate);
@@ -178,12 +188,24 @@ a.jumpItem:hover {
    `list-style: none` plus the WebKit pseudo-element removes the UA disclosure marker (we draw
    our own chevron); `display: grid` is what lets the row lay itself out, and it also removes
    the marker in engines that key it to `display: list-item`. */
+/* THE HEADING AND THE FACT STRIP ARE DIRECT CHILDREN, so the layout lives here rather than in a
+   wrapper. A `<span>` around them would be a content-model violation (`<span>` is phrasing-only
+   and `<h3>` is heading content) and no flow container is legal inside `<summary>` either, so
+   this element has to do the wrapping itself (→ PR #66 review `FENER66-M1`).
+
+   The chevron is taken OUT OF FLOW for the same reason: with three flex items the strip would
+   wrap the chevron down beside the facts, whereas it belongs pinned to the right of the row at
+   every width. Absolute positioning keeps the heading and the facts as the only two items on
+   the wrapping line, which is exactly the pair-wrapping behaviour the previous wrapper gave. */
 .denemeSummary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 4px;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 2px;
+  /* Right padding reserves the chevron's lane so a long fact strip cannot run under it. */
+  padding: 12px 32px 12px 4px;
   cursor: pointer;
   list-style: none;
   background: var(--color-bg);
@@ -200,14 +222,6 @@ a.jumpItem:hover {
 /* Heading and facts share one wrapping flex line: side by side where there is room, facts
    dropping under the heading where there is not. Deliberately NOT a media query — see the
    `.jumpList` note; this is the same reason. */
-.denemeSummaryText {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 12px;
-  min-width: 0;
-}
-
 .denemeFacts {
   display: flex;
   flex-wrap: wrap;
@@ -221,8 +235,14 @@ a.jumpItem:hover {
   color: var(--color-border);
 }
 
+/* Out of flow so the heading and the fact strip wrap as a pair (see `.denemeSummary`). Centred
+   on the row rather than pinned to a line box, so it stays put whether the row is one line or
+   two. */
 .chevron {
-  flex: none;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--color-primary-dark);
   transition: transform 0.18s ease;
 }
@@ -253,8 +273,10 @@ a.jumpItem:hover {
   box-shadow: inset 0 -1px 0 var(--color-border);
 }
 
+/* The translate has to be restated: `transform` is one property, so a bare `rotate(180deg)`
+   here would drop the vertical centring above and hang the chevron off the row's midline. */
 .deneme[open] > .denemeSummary .chevron {
-  transform: rotate(180deg);
+  transform: translateY(-50%) rotate(180deg);
 }
 
 .denemeBody {

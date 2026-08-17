@@ -348,24 +348,36 @@
      summary. `SEO-POLICY.md` §B4 4.9 requires the target to be visible at every viewport, and
      PR #56 is the precedent for what a lying offset costs.
 
-     MEASURED, NOT PICKED (2026-08-17, Chromium, live api data with all 30 snapshots present).
-     The height is content-driven and largest where the fact strip wraps under the heading, so
-     the value is the WORST case across the four mandatory viewports, rounded up to the next
-     half-rem: 320px 68px · 360px 68px · 768px 47px · 1440px 47px. Between 360 and 768 the row
-     simply stops wrapping, so no intermediate width exceeds the 2-line case.
+     MEASURED IN BOTH LOCALES, NOT PICKED (2026-08-17, Chromium, live api data with all 30
+     snapshots present). The height is content-driven and largest where the fact strip wraps
+     under the heading, so the value is the WORST case across the four mandatory viewports AND
+     both locales:
 
-     REAL DATA WAS NOT ASSUMED TO BE THE WIDEST CASE. The same measurement was re-run with the
-     longest string this code can emit substituted in — a two-digit question count, an
-     hour-long `H:MM:SS` duration and the longest Turkish long-form date ("31 Aralık 2026") —
-     and the row did not grow at any of the four widths (68/68/47/47 again): at 320 it is
-     already two lines and the longer text still fits in two.
+       TR  320px 68px · 360px 68px · 768px 47px · 1440px 47px
+       EN  320px 96px · 360px 68px · 768px 47px · 1440px 47px
 
-     4.5rem = 72px clears the 68px worst case. The rounding direction is the asymmetry, not a
+     REAL DATA IS NOT THE WIDEST CASE, and neither is Turkish. Re-run with the longest string
+     this code can emit — a two-digit count, an hour-long `H:MM:SS` duration and the longest
+     long-form date — the row reaches 96px at 320 and 360 in both locales, and stays 47px from
+     768 up. Between 360 and 768 it simply stops wrapping, so no intermediate width exceeds the
+     wrapped case.
+
+     THE BILINGUAL HALF IS WHY THIS NUMBER MOVED. The first version measured Turkish only and
+     declared 4.5rem/72px, which the English page already exceeded on real data at 320px — the
+     fact strip is 244px there against 229px in Turkish ("6 question solutions" vs "6 soru
+     çözümü"), so it takes three lines instead of two and the offset under-reported by 24px.
+     That is precisely the §B4 4.9 defect this token exists to prevent, and `DESIGN.md` §4's
+     "no intrinsic layout decision without a measurement in BOTH locales" is the rule that
+     catches it (→ PR #66 review `CODE66-M3`).
+
+     6rem = 96px covers the measured worst case in both locales; the `+ 1rem` in each consumer's
+     `calc()` supplies the breathing room on top. The rounding direction is the asymmetry, not a
      preference: over-shooting only adds whitespace above the target, under-shooting hides the
-     row behind the sticky summary — which is the defect §B4 4.9 exists to prevent.
+     row behind the sticky summary.
 
-     Re-measure when the summary's content changes (a third fact, a larger type scale). */
-  --deneme-summary-height: 4.5rem;
+     Re-measure IN BOTH LOCALES when the summary's content changes (a third fact, a longer
+     label, a larger type scale). */
+  --deneme-summary-height: 6rem;
 }
 
 *,

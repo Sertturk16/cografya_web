@@ -187,9 +187,22 @@ export default async function BookDetailPage({ params }: PageProps) {
      1–13, 15–21, 23, 24 and 33–40. A strip built from the count alone, or from
      `min…max` of the set, would link ten fragments that do not exist (§B8 8.9, BLOCKER).
      A `Set` rather than `.includes()` in the loop: 40 iterations over a 30-element array is
-     nothing, but the lookup states the intent. */
+     nothing, but the lookup states the intent.
+
+     THE COVERED SET IS DERIVED FROM THE BLOCKS THAT ACTUALLY RENDER, not from
+     `coverage.denemeNumbers`. Both fields describe the same thing and are set-equal on today's
+     live data (measured: both `[1..13, 15..21, 23, 24, 33..40]`), but they are two independent
+     contract fields, and only one of them is the source of the `id`s these links point at. A
+     `denemeNumbers` entry with no row in `videos[]` would render `<a href="#deneme-25">` with no
+     target — a broken in-page anchor, which §B8 8.9 rates BLOCKER — and it would ship green,
+     because typecheck, lint and the structure test all still pass and the dead tile looks
+     exactly like a working one. Deriving from `videoStates` makes "every jump href has a
+     target" true by construction rather than by the two projections agreeing (→ PR #66 review
+     `FENER66-M2` (validated) / `CODE66-M8` / `TA66-M3`). `coverage.denemeNumbers` stays what it
+     reads as: a künye fact. This is the same discipline `resolveVideoState` already applies one
+     level down — resolve once, so two consumers cannot drift. */
   const jumpNumbers = Array.from({ length: book.coverage.denemeCount }, (_, index) => index + 1);
-  const coveredDenemeNumbers = new Set(book.coverage.denemeNumbers);
+  const coveredDenemeNumbers = new Set(videoStates.map(({ video }) => video.denemeNo));
 
   // Which credit rows this page owes — selected by the contract's own machine token, never by
   // matching the notice text, and never re-ordered (see the source statement's comment below).
@@ -242,8 +255,11 @@ export default async function BookDetailPage({ params }: PageProps) {
       />
       {/* One `<script>` carrying the array, rather than one per block: a top-level array is
           valid JSON-LD and Google reads it, and 30 separate elements would say the same thing
-          in 30 times the markup. Emitted only when the array is non-empty — today it is empty
-          on real data, because every snapshot is `null`. */}
+          in 30 times the markup. Emitted only when the array is non-empty; on today's data all
+          thirty snapshots resolve to `rich`, so it carries thirty nodes. (This sentence said the
+          opposite — "today it is empty, because every snapshot is `null`" — while the docblock
+          above had already been corrected, leaving the file contradicting itself about the one
+          fact the `VideoObject` chain turns on; → PR #66 review `FENER66-M3` / `CODE66-M2`.) */}
       {videoSchemas.length > 0 && <JsonLd schema={videoSchemas} />}
       <Breadcrumb
         locale={locale}
@@ -449,21 +465,43 @@ export default async function BookDetailPage({ params }: PageProps) {
                   puts it in the summary — the first slot, always rendered — so the fragment
                   resolves whether or not the panel is open. */}
               <summary className={styles.denemeSummary}>
-                <span className={styles.denemeSummaryText}>
-                  <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
-                    {t("denemeHeading", { no: video.denemeNo })}
-                  </h3>
-                  {/* The scannable facts, and the reason the row is worth collapsing to. The
-                      question count is real per-block data rather than the constant it looks
-                      like: the contract does not promise six, and `GLOSSARY.md` §4.2 says in as
-                      many words that the per-deneme count is not a known invariant. */}
-                  <span className={styles.denemeFacts}>
-                    <span>{t("denemeQuestionCount", { count: video.questions.length })}</span>
-                    <span className={styles.factSeparator} aria-hidden="true">
-                      ·
-                    </span>
-                    <DenemeMeta state={state} />
-                  </span>
+                {/* THE HEADING IS A DIRECT CHILD, with no wrapper around it. `<summary>`'s
+                    content model is phrasing content "optionally intermixed with heading
+                    content", but that permission does not pass through an intervening element:
+                    `<span>` is phrasing-only, so an `<h3>` inside one is a content-model
+                    violation — and no flow container is legal in `<summary>` either, which
+                    leaves "no wrapper" as the only conforming shape (→ PR #66 review
+                    `FENER66-M1` / `CODE66-M1` / `A11Y66-M1`, three legs independently, one
+                    adversarially validated). The wrapping line the layout needs is now built by
+                    `.denemeSummary` itself; the chevron is taken out of flow so the heading and
+                    the fact strip can wrap as a pair. */}
+                <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
+                  {t("denemeHeading", { no: video.denemeNo })}
+                </h3>
+                {/* The scannable facts, and the reason the row is worth collapsing to. The count
+                    is real per-block data rather than the constant it looks like: the contract
+                    does not promise six. It names QUESTION SOLUTIONS, not questions — `GLOSSARY.md`
+                    §4.2's scope note bars compressing the two into one phrase, because what is
+                    measured is that each video solves six questions, never that the book's deneme
+                    contains six (→ PR #66 review `CS66-I1`; the label read "{count} soru" and
+                    published the unverified half). `badgeQuestions` on this same page already
+                    carried the careful wording. */}
+                <span className={styles.denemeFacts}>
+                  <span>{t("denemeQuestionCount", { count: video.questions.length })}</span>
+                  {/* SEPARATOR AND KÜNYE TOGETHER OR NEITHER. `DenemeMeta` renders nothing in the
+                      `typographic` and `external` states, so a separator outside this conditional
+                      left a dangling "6 soru ·" on any block whose provider snapshot had aged out
+                      or whose video refuses embedding (→ PR #66 review `CODE66-I1`). Invisible in
+                      today's samples because all thirty blocks are `rich`; the aging path is
+                      normal, not exceptional, and reaches one row at a time. */}
+                  {state.kind === "rich" && (
+                    <>
+                      <span className={styles.factSeparator} aria-hidden="true">
+                        ·
+                      </span>
+                      <DenemeMeta state={state} />
+                    </>
+                  )}
                 </span>
                 {/* Decorative: the open/closed state is already on the `<summary>` itself in
                     the accessibility tree, so naming this would announce it twice. */}
