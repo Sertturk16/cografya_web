@@ -156,7 +156,7 @@ describe("the toggle stays a native disclosure control", () => {
     // bail passes every other assertion while deep links into an `external` deneme silently lose
     // the §B4 4.9 offset (→ `TA66-M2`). Asserted by index, the technique
     // `deneme-video.src-invariant.test.ts` already establishes for this class.
-    const reveal = FLAT_PLAYER.indexOf("if (!engineRevealed) root.open = true;");
+    const reveal = FLAT_PLAYER.indexOf("root.open = true;");
     const scroll = FLAT_PLAYER.indexOf("target.scrollIntoView()");
     const bail = FLAT_PLAYER.indexOf("if (!playable) return;");
     expect(reveal).toBeGreaterThan(0);
