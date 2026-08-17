@@ -468,14 +468,102 @@ export default async function BookDetailPage({ params }: PageProps) {
           locales, so the EN page has to declare their language or a screen reader reads them
           with English phonetics (WCAG 3.1.2, `ENGINEERING.md` §5 — the mirror of the marine
           block's `lang="en"` on the Turkish page). The label beside them is localized interface
-          copy and stays in the page's own language. */}
+          copy and stays in the page's own language.
+
+          W3 CLOSES WHAT W2's PARAGRAPH ABOVE LEFT OPEN, and it closes it HERE rather than at
+          the player. Developer Policies III.E.4 and the Branding Guidelines ask for two things
+          the text credit alone cannot give: the official YouTube branding logo "on any page
+          where the YouTube API has a presence", and that logo linking "back to YouTube content
+          or to a YouTube component". Both land on the `youtube` credit row — the logo beside
+          the notice, the whole row inside one link (→ DEC 2026-08-17b).
+
+          THE OBLIGATION IS PAGE-LEVEL, AND SO IS THE ELEMENT — which is why "visible in both
+          states" holds structurally rather than by a condition. This block sits BELOW the 30
+          deneme blocks and outside `DenemeVideo`'s swap point, so it is in the same DOM whether
+          every block shows a typographic cover or one of them has traded its cover for an
+          iframe. Nothing here reads the player's state, and nothing may start to: a mark that
+          depends on the state machine is a mark that can be absent in one of the two states.
+          It is deliberately NOT repeated per block (30 copies of one mark strain the ledger's
+          "the logo may not be the page's most prominent element" line, and in the loaded state
+          the mark would have to sit outside the player box anyway).
+
+          NOTHING IS PLACED OVER THE PLAYER. The Required Minimum Functionality rule and
+          `book-video.module.css`'s `.playerBox` comment both stand untouched by this change.
+
+          ONLY THE `youtube` ROW IS LINKED, AND THE GATE KEYS ON THE PROVIDER TOKEN — not on
+          `channelUrl`, which the contract also populates on the `partner` row today. The
+          partner credit stays plain text by ruling (DEC 2026-08-17b): the Branding Guidelines
+          govern the YouTube mark, and turning the publisher's untouchable sentence into a link
+          to a YouTube channel would credit the wrong party with the wrong address.
+
+          `channelUrl === null` PRINTS NO MARK AT ALL. The logo may not appear without the link
+          back — so if the contract ever stops publishing the address, this row degrades to the
+          plain-text credit it was in W2. That is a CONTRACT BREAK rather than a design state,
+          and it is handled the way `marine-attribution` handles a missing copyright line: the
+          element is omitted, never faked, and no fallback address is invented from a video id.
+
+          THE NEW-TAB DISCLOSURE IS A VISUALLY-HIDDEN SUFFIX, NOT AN `aria-label`, and that
+          departs from the two outbound links above on purpose. Their visible text is ours to
+          compose, so an `aria-label` can restate it. This link's visible text is
+          `requiredNoticeTr` — `CONTENT-STYLE.md` §22's untouchable class — and an `aria-label`
+          REPLACES the accessible name with a sentence we wrote, which is exactly what an
+          untouchable string forbids. The suffix leaves the notice standing as its own text node
+          and appends to it, so the accessible name still begins with the visible text (WCAG
+          2.5.3) while the reader is told the link changes context (WCAG 3.2.5). The suffix is in
+          the PAGE's language while the notice keeps `lang="tr"` — the same WCAG 3.1.2 split the
+          notices already make.
+
+          `alt=""` ON THE MARK, because in THIS context it is decorative: the link's own text
+          already says "Video kaynağı: YouTube", and naming the image "YouTube logosu" would make
+          a screen reader announce the same fact twice (`SEO-POLICY.md` §B9 9.2; the same call as
+          the thumbnail's, → PR #63 review `FENER63-M2`).
+
+          THE FILE IS THE PROVIDER'S OWN BYTES. `public/marka/yt_icon_red_digital.png` is the
+          unmodified `01 Red` digital icon from YouTube's brand archive
+          (sha256 `1027b1b0…7a83`, identical to the file inside the downloaded zip — the
+          acquisition record is `Owner's Inbox/kitap-video-web/youtube-brand/KAYNAK.md`). It is
+          never recoloured, re-drawn, cropped or re-proportioned: `width`/`height` are the file's
+          REAL pixel dimensions rather than a rounded pair, so the ratio the browser applies is
+          the file's own, and the clear space the guidelines require is already inside the canvas
+          (an 827×579 mark with 214/248px of margin around it) — printing the file whole
+          preserves it automatically. `next/image` is `ENGINEERING.md` §4 #9's "always" and this
+          asset meets neither narrow exception: it is not a build-emitted SVG and its provider
+          does not bar byte copies — YouTube publishes it FOR republication (Atlas ruling AK-15
+          /E2). Re-encoding is not one of the modifications the guidelines name; colour, ratio and
+          crop all survive it, and the 4× closeup sample is the evidence. */}
       {attributionRows.length > 0 && (
         <p className={styles.sources}>
           <span className={styles.sourcesLabel}>{t("sourcesLabel")}:</span>{" "}
           {attributionRows.map((row, index) => (
             <Fragment key={row.providerId}>
               {index > 0 && <span aria-hidden="true"> · </span>}
-              <span lang="tr">{row.requiredNoticeTr}</span>
+              {/* THE NOTICE ELEMENT IS WRITTEN OUT IDENTICALLY IN BOTH BRANCHES rather than
+                  hoisted into a shared variable, and that is not an oversight. `lang="tr"` and
+                  the bare `{row.requiredNoticeTr}` interpolation are what `attribution-gate.
+                  test.ts` reads out of THIS file's source; a hoisted element would satisfy that
+                  scan from one site while the branch that actually renders showed something
+                  else. Two literal copies mean the guard is looking at both. */}
+              {row.providerId === "youtube" && row.channelUrl !== null ? (
+                <a
+                  className={styles.sourceLink}
+                  href={row.channelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Image
+                    src="/marka/yt_icon_red_digital.png"
+                    alt=""
+                    width={1255}
+                    height={1075}
+                    sizes="34px"
+                    className={styles.sourceMark}
+                  />
+                  <span lang="tr">{row.requiredNoticeTr}</span>
+                  <span className={styles.srOnly}>{t("sourceNewTab")}</span>
+                </a>
+              ) : (
+                <span lang="tr">{row.requiredNoticeTr}</span>
+              )}
             </Fragment>
           ))}
         </p>

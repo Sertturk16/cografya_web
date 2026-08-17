@@ -81,6 +81,37 @@ describe("the book page's source statement", () => {
     expect(PAGE).toContain("{attributionRows.map((row, index) => (");
   });
 
+  it("pins the predicate's OPERATOR RELATION and not merely its tokens", () => {
+    // The residue `TA63R3-M1` recorded and W3 closes (`FU-BOOK-GUARD-DEBT`). The five cases
+    // above all pass against `row.providerId === "youtube" && book.videos.length > 0` — the
+    // tokens are identical and only the operators differ — yet that mutant drops the partner's
+    // credit entirely and keeps the YouTube row on a video-less book, i.e. it inverts the very
+    // fix this file exists to hold. The recorded "better shape" (hoisting the predicate into
+    // `lib/book/attribution-rows.ts`) is deliberately NOT taken: it rewrites production code to
+    // suit a test, and the same hole closes here with one line.
+    expect(rowPredicate()).toMatch(
+      /row\.providerId\s*!==\s*"youtube"\s*\|\|\s*book\.videos\.length\s*>\s*0/,
+    );
+  });
+
+  it("backs every new-tab claim with the one target/rel form", () => {
+    // `TA63R3-M3`, and W3 is why it is closed NOW rather than later: this page tells the reader
+    // "yeni sekmede açılır" a second time — for the YouTube credit link — and a claim about
+    // behaviour with nothing pinning the behaviour is a claim that survives its own deletion.
+    // Both halves matter: `target="_blank"` makes the sentence true, and `rel="noopener
+    // noreferrer"` is the repo's single form for it (→ PR #62 review `SEC62-M3`), never one
+    // link's variant of it.
+    const newTabAnchors = PAGE.match(/<a\s[^>]*target="_blank"[^>]*>/g) ?? [];
+    expect(newTabAnchors).toHaveLength(2); // the seller link, and W3's YouTube credit link
+    for (const anchor of newTabAnchors) {
+      expect(anchor).toContain('rel="noopener noreferrer"');
+    }
+    // …and the disclosure is made inside the link that does it, rather than beside it.
+    expect(PAGE).toMatch(
+      /<a className=\{styles\.sourceLink\}[\s\S]*?t\("sourceNewTab"\)[\s\S]*?<\/a>/,
+    );
+  });
+
   it("prints each notice as received, inside its own language", () => {
     // Printed verbatim from the row — never translated, shortened or retyped — and `lang="tr"`
     // because both notices are Turkish sentences on BOTH locales (WCAG 3.1.2).
