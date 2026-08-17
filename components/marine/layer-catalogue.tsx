@@ -58,8 +58,11 @@ const SOURCE_KEY: Record<"cmems" | "ecmwf", string> = {
  *    once and then cached into being wrong; an absolute stamp only gets older
  *    (`lib/marine/model-run.ts`).
  * 2. **Null is a state, not an unknown.** A layer with no ingested cycle says so in words
- *    ("Sıradaki aşama" + "Model künyesi sıradaki aşamada yayımlanacak") — no invented date,
- *    no "coming soon", no estimate.
+ *    ("Künye yok" + "Bu katman için künye yok.") — no invented date, no estimate, and no
+ *    "coming soon". That last clause is younger than the rule: until PR #67 these two cells
+ *    read "Sıradaki aşama" + "Model künyesi sıradaki aşamada yayımlanacak", which promised a
+ *    rollout stage `marineLayerState` never computes. DEC 2026-08-17c removed the promise, so
+ *    the copy now states the present absence and nothing else.
  * 3. **The all-null render is a first-class case, not an edge case.** With
  *    `MARINE_ENABLED=false` (today's production default) or a stopped ingest, EVERY row is
  *    in that state and the table must still read correctly.
@@ -173,8 +176,12 @@ export async function LayerCatalogue({ locale, layers }: LayerCatalogueProps) {
                         truth — the provider carries no such field in this sea at all. With
                         the value band shipping, the same string would have had to mean both
                         "arriving later" in this table and "never arriving" one section above
-                        it. The copy is unchanged; only its key moved, so the frozen key is
-                        back to its contract meaning and nothing was lost. */}
+                        it. A1 moved only the key and left the copy as it stood, so the frozen
+                        key went back to its contract meaning and nothing was lost. PR #67 then
+                        replaced this key's copy under DEC 2026-08-17c: it reads "Künye yok" /
+                        "No model run" today, while the frozen key still reads "Bu denizde
+                        yayımlanmıyor" / "Not published in this sea". The separation A1 built
+                        is what this comment is about, and it is unaffected by that rewrite. */}
                     <span className={state === "live" ? styles.statusLive : styles.statusNext}>
                       {state === "live" ? tm("status.live") : tm("catalogue.nextPhase")}
                     </span>

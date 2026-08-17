@@ -29,8 +29,9 @@ export const MODEL_INSTANT_FORMAT = {
  * Parses an ISO-8601 künye instant into a `Date`, or `null` when there is nothing honest to
  * show — the field is absent (`null`), empty, or unparseable.
  *
- * `null` in, `null` out is the whole contract: the caller renders the layer's "next phase"
- * wording, never a fabricated or epoch-fallback date. An unparseable string is treated the
+ * `null` in, `null` out is the whole contract: the caller renders the layer's no-künye
+ * wording (`Marine.catalogue.noModelRun`), never a fabricated or epoch-fallback date. An
+ * unparseable string is treated the
  * same way as an absent one on purpose — `new Date("nonsense")` yields an Invalid Date that
  * `Intl` throws on, which would take the whole page down over one bad field.
  */

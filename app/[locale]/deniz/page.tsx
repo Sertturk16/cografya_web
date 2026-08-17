@@ -65,8 +65,12 @@ const MARINE_SURFACE: ContentSurface = "trNarrative";
  * was the only place a status word appeared. The contract means something else by it — a
  * PERMANENT product truth, "the provider carries no such field in this sea" — and with real
  * values on the page the same string would have had to mean both "arriving later" and "never
- * arriving" one section apart. The catalogue's wording moved to `Marine.catalogue.nextPhase`
- * (copy unchanged) and the frozen key is back to its contract meaning. No key was lost.
+ * arriving" one section apart. The catalogue's wording moved to `Marine.catalogue.nextPhase`,
+ * unchanged at the time, and the frozen key is back to its contract meaning. No key was lost.
+ *
+ * That moved copy was itself replaced later, under DEC 2026-08-17c (PR #67): the catalogue's
+ * status column reads "Künye yok" / "No model run" today, with no roadmap promise in it. The
+ * key separation A1 established is unaffected.
  */
 
 /** The blocks exist only in the locale that owns the narrative. */

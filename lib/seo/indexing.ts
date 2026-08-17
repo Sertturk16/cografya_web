@@ -43,8 +43,10 @@ import { routing, type Locale } from "@/i18n/routing";
  * `<EnWorkInProgressNotice>` (`components/en-work-in-progress-notice.tsx`) tells an English
  * reader that the detailed sections exist in Turkish only (→ DEC 2026-08-04i §4). It is NOT
  * wired to this constant — it renders on `locale === "en"`, full stop — so flipping this
- * switch alone would leave a "work in progress" banner sitting on top of finished English
- * pages, which is the same class of dishonesty in the opposite direction.
+ * switch alone would leave the "detailed sections of this page are in Turkish for now" notice
+ * sitting on top of finished English pages, which is the same class of dishonesty in the
+ * opposite direction. (The notice called itself a "work in progress" until DEC 2026-08-17e
+ * h.4 rewrote it; the wiring gap this paragraph describes is unchanged.)
  *
  * The three call sites, so the EN content wave does not have to hunt for them:
  *   · `app/[locale]/turkiye/[slug]/page.tsx`

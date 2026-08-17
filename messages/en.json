@@ -3,7 +3,7 @@
     "skipToContent": "Skip to main content",
     "localeSwitcherLabel": "Language selection",
     "localeName": "English",
-    "enWorkInProgress": "This English page is a work in progress: the detailed sections are currently available in Turkish only."
+    "enWorkInProgress": "The detailed sections of this page are in Turkish for now."
   },
   "Nav": {
     "label": "Primary navigation",
@@ -297,7 +297,7 @@
     "heading": "World Map",
     "intro": "Select a country to see its details.",
     "indexHeading": "Countries A–Z",
-    "indexDescription": "The {count} countries with a detail page, grouped by the first letter of their name.",
+    "indexDescription": "{count} countries, grouped by the first letter of their name.",
     "indexLetterNavLabel": "Jump to a letter"
   },
   "WorldMap": {
@@ -434,9 +434,9 @@
       "cycle": "Cycle: {value}",
       "horizon": "Forecast horizon: {value} UTC",
       "catalogueUpdated": "Catalogue: {value} UTC",
-      "noModelRun": "The model run details arrive in the next phase.",
+      "noModelRun": "No run details for this layer.",
       "notApplicable": "Not applicable to this layer",
-      "nextPhase": "Next phase"
+      "nextPhase": "No model run"
     },
     "freshness": {
       "stale": "Not refreshed since {since} UTC",

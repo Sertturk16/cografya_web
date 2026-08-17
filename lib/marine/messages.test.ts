@@ -123,9 +123,11 @@ describe("Marine.* keys exist in both catalogues", () => {
 
   it("declares catalogue.nextPhase as a string distinct from status.notSupported", () => {
     // HALF of the A1 guard: the two CATALOGUE ENTRIES must not carry the same copy. Atlas
-    // ruling A1 moved the catalogue's "arriving later" wording to its own key so one string
-    // could not mean both that and the contract's "never arriving" one section apart. This
-    // assertion sees only the JSON — the component half is the test below it, and the two
+    // ruling A1 moved the catalogue's own no-künye wording to its own key so one string could
+    // not mean both that and the contract's "never arriving" one section apart. (The wording
+    // A1 moved did read "arriving later"; DEC 2026-08-17c replaced it with a present-state
+    // absence. What this asserts is the key separation, which that rewrite does not touch.)
+    // This assertion sees only the JSON — the component half is the test below it, and the two
     // are deliberately separate because each catches a different way of undoing A1.
     expectNonEmptyString(trMarine, "catalogue.nextPhase");
     expectNonEmptyString(enMarine, "catalogue.nextPhase");
