@@ -96,10 +96,10 @@
      With the sibling rule: 1440 and 1024 both resolve to a single [6] row, and 360 drops to
      [2, 2, 2] and 350px. The cost is real and is not hidden: 768 moves from a balanced [3, 3] to
      [4, 2] and the block grows 195px → 233px. The trade was recorded as an open assumption in the
-     task's `fix-plan.md` and cleared at the Faz-1 plan gate — an Atlas plan approval, NOT an
-     owner ruling, and this comment previously claimed the latter. What actually carries the
-     decision is the reason: the province page at 768 is ALREADY [4, 4] on a 171.5px track, so
-     this page lands on its sibling's measurement instead of keeping a private one.
+     task's `fix-plan.md` and cleared at the Faz-1 plan gate — an Atlas plan approval, NOT an owner
+     ruling. What actually carries the decision is the reason: the province page at 768 is ALREADY
+     [4, 4] on a 171.5px track, so this page lands on its sibling's measurement instead of keeping
+     a private one.
 
      `min()` rather than a bare 150px, unchanged in intent from the rule it replaces: an
      `auto-fit` floor wider than the container keeps its width and spills the row past the
@@ -131,9 +131,12 @@
 
    Measured, at 360 with the rule removed: the value overflows its own card by 42px and the
    document's `scrollWidth` reads 365 against a 360 client width — horizontal scroll at one of
-   the two viewports `DESIGN.md` §4 makes mandatory. With the rule, 0 and 360/360. 320 is not the
-   trigger viewport: its single column leaves 246px, so it takes a ~23-character token to spill
-   there, and even then the overflow stays inside the document.
+   the two viewports `DESIGN.md` §4 makes mandatory. With the rule, 0 and 360/360.
+
+   320 is the LOOSER of the two viewports, not the tighter one, because its single column leaves a
+   246px content box. Two thresholds there, and they are different numbers: at this face and size
+   (~12.4px/char) a token needs ~20 characters to leave its own card, and ~23 to reach the document
+   edge. Both are far past the 13 that already spill at 360, which is why 360 is the trigger.
 
    `break-word` and NOT `anywhere`, for the reason the province sheet's own comment states:
    `anywhere` also shrinks the box's min-content contribution, which is an input to the grid's
