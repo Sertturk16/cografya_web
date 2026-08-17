@@ -11,10 +11,11 @@ import { ProseNote } from "@/components/prose-note";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getBookBySlug, getBooksResilient } from "@/lib/api/books";
+import { formatDuration } from "@/lib/book/duration";
 import { resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
 import { canonicalEmbedUrl } from "@/lib/youtube/embed";
-import { bookJsonLd, JsonLd, videoObjectJsonLd, type JsonLdSchema } from "@/lib/seo/json-ld";
+import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import styles from "./book-detail.module.css";
 
@@ -155,6 +156,12 @@ export default async function BookDetailPage({ params }: PageProps) {
   // künye row, and the structured data. One resolution is what keeps them from disagreeing.
   const videoStates = book.videos.map((video) => ({ video, state: resolveVideoState(video) }));
 
+  // Which credit rows this page owes — selected by the contract's own machine token, never by
+  // matching the notice text, and never re-ordered (see the source statement's comment below).
+  const attributionRows = book.attribution.filter(
+    (row) => row.providerId !== "youtube" || book.videos.length > 0,
+  );
+
   // `VideoObject` for every block a reader can actually watch here, and for no other. The
   // filter is the state machine's own answer rather than a condition repeated at this site —
   // `youtube === null` and `embeddable === false` both resolve away from "rich", and the
@@ -180,7 +187,7 @@ export default async function BookDetailPage({ params }: PageProps) {
       embedUrl: canonicalEmbedUrl(video.youtubeVideoId),
     });
     return schema === null ? [] : [schema];
-  }) satisfies JsonLdSchema[];
+  });
 
   return (
     <div className="container page">
@@ -322,65 +329,97 @@ export default async function BookDetailPage({ params }: PageProps) {
           })}
         </p>
 
-        {videoStates.map(({ video, state }) => (
-          /* The block's own client island. It renders THIS `<section>` and delegates one
-             listener over everything inside it; the markup below is unchanged server output.
-             `playable` is false for a video the provider refuses to embed, and then the island
-             intercepts nothing at all — those rows keep their plain fragment behaviour, because
-             there is no player for them to seek. */
-          <DenemePlayer
-            key={video.denemeNo}
-            className={styles.deneme}
-            denemeNo={video.denemeNo}
-            playable={state.kind !== "external"}
-          >
-            <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
-              {t("denemeHeading", { no: video.denemeNo })}
-            </h3>
-            <DenemeMeta state={state} />
-            <DenemeVideo
+        {videoStates.map(({ video, state }) => {
+          /* ONE value, four consumers. `playable` is false for a video the provider refuses to
+             embed, and every part of the block has to agree about it: the island intercepts
+             nothing, the swap point may not reach its iframe branch even if the store somehow
+             says otherwise (→ PR #63 review `CODE63-I1`), and the rows neither announce a video
+             jump nor perform one. Computed here rather than re-derived at each site, for the
+             same reason `resolveVideoState` is called once. */
+          const playable = state.kind !== "external";
+          return (
+            /* The block's own client island. It renders THIS `<section>` and delegates one
+               listener over everything inside it; the markup below is unchanged server output.
+               When the block is not playable the island intercepts nothing at all — those rows
+               keep their plain fragment behaviour, because there is no player for them to
+               seek. */
+            <DenemePlayer
+              key={video.denemeNo}
+              className={styles.deneme}
               denemeNo={video.denemeNo}
-              videoId={video.youtubeVideoId}
-              title={t("playerTitle", { no: video.denemeNo })}
-              facade={
-                <DenemeFacade
-                  denemeNo={video.denemeNo}
-                  videoId={video.youtubeVideoId}
-                  state={state}
-                />
-              }
-            />
-            <ul role="list" className={styles.questionGrid}>
-              {video.questions.map((question) => {
-                const fragment = questionFragment(video.denemeNo, question.questionNo);
-                return (
-                  <li key={question.questionNo}>
-                    {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link
-                        real: `#deneme-12-soru-3` is copyable, shareable and enters browser
-                        history, and it resolves to this element with no JavaScript involved.
-                        An `<a href>` rather than a `<button>` for the same reason — §B8 8.2
-                        rates JavaScript navigation a BLOCKER, and W2's player wiring attaches
-                        to these links rather than replacing them.
+              playable={playable}
+            >
+              <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
+                {t("denemeHeading", { no: video.denemeNo })}
+              </h3>
+              <DenemeMeta state={state} />
+              <DenemeVideo
+                denemeNo={video.denemeNo}
+                videoId={video.youtubeVideoId}
+                title={t("playerTitle", { no: video.denemeNo })}
+                playable={playable}
+                facade={
+                  <DenemeFacade
+                    denemeNo={video.denemeNo}
+                    videoId={video.youtubeVideoId}
+                    state={state}
+                  />
+                }
+              />
+              <ul role="list" className={styles.questionGrid}>
+                {video.questions.map((question) => {
+                  const fragment = questionFragment(video.denemeNo, question.questionNo);
+                  return (
+                    <li key={question.questionNo}>
+                      {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link
+                          real: `#deneme-12-soru-3` is copyable, shareable and enters browser
+                          history, and it resolves to this element with no JavaScript involved.
+                          An `<a href>` rather than a `<button>` for the same reason — §B8 8.2
+                          rates JavaScript navigation a BLOCKER, and W2's player wiring attaches
+                          to these links rather than replacing them.
 
-                        `data-second` is the jump target the block's island reads on a click.
-                        The video id is NOT repeated here: the island is per-block and already
-                        holds it, so 180 copies of one string would be dead weight in every
-                        response (a deliberate departure from `SPEC.md` §4.3's letter, ruled by
-                        Atlas as AK-12/E-W2-1). */}
-                    <a
-                      id={fragment}
-                      href={`#${fragment}`}
-                      className={styles.questionLink}
-                      data-second={question.startSecond}
-                    >
-                      {t("questionLabel", { no: question.questionNo })}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </DenemePlayer>
-        ))}
+                          `data-second` is the jump target the block's island reads on a click.
+                          The video id is NOT repeated here: the island is per-block and already
+                          holds it, so 180 copies of one string would be dead weight in every
+                          response (a deliberate departure from `SPEC.md` §4.3's letter, ruled by
+                          Atlas as AK-12/E-W2-1).
+
+                          THE NAME SAYS WHERE THE QUESTION IS, because W2 changed what the row
+                          DOES without changing what it says (→ PR #63 review `A11Y63-I2`). A
+                          links-list or rotor user meets 180 rows named `Soru 1`…`Soru 6`, and
+                          pressing one now opens a player and moves focus into a cross-origin
+                          frame. The suffix states a FACT about the question — question 3 is at
+                          3:24 of the video — rather than promising a behaviour, so it stays
+                          true for a reader with no JavaScript, for whom the row is still the
+                          plain fragment jump it always was. It begins with the visible token,
+                          which is also what keeps WCAG 2.5.3 satisfied here.
+
+                          ONLY WHERE THERE IS A PLAYER TO JUMP IN. In an `external` block the
+                          row really is nothing but a fragment jump, and giving two differently
+                          behaving rows one name is what WCAG 3.2.4 asks us not to do. */}
+                      <a
+                        id={fragment}
+                        href={`#${fragment}`}
+                        className={styles.questionLink}
+                        data-second={question.startSecond}
+                        aria-label={
+                          playable
+                            ? t("questionLabelAria", {
+                                no: question.questionNo,
+                                time: formatDuration(question.startSecond),
+                              })
+                            : undefined
+                        }
+                      >
+                        {t("questionLabel", { no: question.questionNo })}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </DenemePlayer>
+          );
+        })}
       </section>
 
       {/* THE SOURCE STATEMENT (`SEO-POLICY.md` §B15 15.4/15.5; → PR #62 review `FENER62-I2`).
@@ -405,9 +444,15 @@ export default async function BookDetailPage({ params }: PageProps) {
           have yet. It lands in W3, together with the link back to YouTube content. Nothing
           here may be read as the obligation being met.
 
-          GATED ON THERE BEING A VIDEO AT ALL. A book with no indexed video has no player, no
-          thumbnail and no YouTube presence, so it owes no source credit; the partner credit
-          goes with it, since the sentence credits the video solutions.
+          THE YOUTUBE ROW IS GATED ON THERE BEING A VIDEO; THE PARTNER ROW IS NOT. A book with
+          no indexed video has no player, no thumbnail and no YouTube presence, so it owes that
+          provider nothing. The partner's row is a different obligation and W2 first got this
+          wrong by gating both together (→ PR #63 review `FENER63-M1`/`CODE63-M1`): the partner
+          sentence credits the BOOK as well as its solutions, so a seeded video-less book would
+          have rendered publisher material with no credit line at all — a transparency
+          regression against W1, which printed that row unconditionally. Splitting the gate is
+          the whole of the fix; nothing else about the block changes, and on today's data both
+          rows render exactly as before.
 
           SELECTED AND ORDERED BY THE CONTRACT, never by matching the notice text: a credit
           line identified by its own words is a line that disappears the day the ledger rewords
@@ -421,10 +466,10 @@ export default async function BookDetailPage({ params }: PageProps) {
           with English phonetics (WCAG 3.1.2, `ENGINEERING.md` §5 — the mirror of the marine
           block's `lang="en"` on the Turkish page). The label beside them is localized interface
           copy and stays in the page's own language. */}
-      {book.videos.length > 0 && book.attribution.length > 0 && (
+      {attributionRows.length > 0 && (
         <p className={styles.sources}>
           <span className={styles.sourcesLabel}>{t("sourcesLabel")}:</span>{" "}
-          {book.attribution.map((row, index) => (
+          {attributionRows.map((row, index) => (
             <Fragment key={row.providerId}>
               {index > 0 && <span aria-hidden="true"> · </span>}
               <span lang="tr">{row.requiredNoticeTr}</span>

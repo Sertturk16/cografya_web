@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef } from "react";
-import { openVideo } from "./active-video";
+import { closeVideo, openVideo } from "./active-video";
 
 /**
  * One deneme block: server-rendered children, and ONE delegated listener over all of them.
@@ -45,6 +45,17 @@ import { openVideo } from "./active-video";
  * delegated `onClick` covers "a click or a key press" — which is the only way the ledger
  * permits the player to load. There is deliberately no `mouseover`, `pointerover` or
  * `touchstart` handler anywhere in this component tree.
+ *
+ * ## The block also CLOSES its player on the way out, and that is what keeps the rule true
+ *
+ * The store is module state, and a client-side route change does not re-evaluate the module —
+ * so without this the open player would survive leaving the page and reappear, autoplaying, on
+ * the reader's next arrival, with no click and no key press anywhere in between (→ PR #63
+ * review `CODE63-I1`). The cleanup lives here rather than in a page-level marker component for
+ * two reasons: this island is already the only thing that opens a player, so open and close
+ * sit in one file; and a route change unmounts all thirty blocks, so the one holding the
+ * player clears it and the rest are no-ops. It does NOT fire when a block merely stops being
+ * the active one — that block does not unmount, it just renders its facade again.
  */
 export function DenemePlayer({
   className,
@@ -89,6 +100,14 @@ export function DenemePlayer({
     const second = Number.parseInt(raw, 10);
     if (Number.isFinite(second)) hashStartSecond.current = second;
   }, [playable]);
+
+  // Scoped to THIS block: the no-op on the twenty-nine that were not playing is what keeps a
+  // single block leaving the list from closing a player the reader is watching in another one.
+  useEffect(() => {
+    return () => {
+      closeVideo(denemeNo);
+    };
+  }, [denemeNo]);
 
   const onClick = (event: React.MouseEvent<HTMLElement>) => {
     if (!playable || event.defaultPrevented) return;

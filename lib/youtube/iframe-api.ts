@@ -24,6 +24,16 @@
  * The API signals readiness through a single global callback, so an existing one is chained
  * rather than replaced. Nothing else on this site defines it today; the chaining costs one
  * line and removes a class of silent breakage from whatever lands next.
+ *
+ * ## Both failures are retryable, deliberately
+ *
+ * The script can fail two ways — it never loads, or it loads and signals ready without
+ * exposing `window.YT` (a content blocker serving an empty body does the second). Both clear
+ * the memo, so the reader's next press tries again; neither turns a one-off into a dead
+ * jump-to-question for the rest of the page visit. There is one path this cannot cover: a
+ * script that loads and never calls the callback at all leaves the promise unsettled, since
+ * there is nothing to hear. That costs the reader the jump, never the player — the frame is a
+ * plain iframe and plays on its own.
  */
 
 /** The player handle. Only what this page calls is declared — see the file docblock. */
@@ -63,6 +73,11 @@ export function loadIframeApi(): Promise<YouTubeApi> {
       previous?.();
       const api = window.YT;
       if (api === undefined) {
+        // Cleared here for the same reason `onerror` clears it: a memoised rejection would
+        // make the failure permanent for the rest of the page visit, and the two rejection
+        // paths having different retry semantics is a difference nobody chose (→ PR #63
+        // review `CODE63-M3`/`SEC63-M3`, and `TA63-M2` on the undocumented asymmetry).
+        pending = null;
         reject(new Error("[youtube] iframe_api signalled ready without exposing window.YT"));
         return;
       }

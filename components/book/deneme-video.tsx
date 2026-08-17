@@ -35,24 +35,38 @@ import styles from "./book-video.module.css";
  *
  * The IFrame Player API's `destroy()` removes the iframe ELEMENT, and this element belongs to
  * React — which is about to remove it too. Racing the two is the "node to be removed is not a
- * child" class of error. Dropping the reference is enough: React's removal tears down the
- * frame, and with it the playback and the browsing context. What `destroy()` would additionally
- * release is an internal message listener, on a page where a reader opens a handful of players
- * at most; the trade is stated rather than silently taken.
+ * child" class of error: the cleanup below runs as a passive effect, AFTER React has already
+ * committed the facade in this element's place, so `destroy()` would be reaching for a node
+ * whose parent is gone. Dropping the reference is enough for the thing that matters: React's
+ * removal tears down the frame, and with it the playback and the browsing context.
+ *
+ * What is knowingly leaked, at its real size (→ PR #63 review `CODE63-M2`): one `YT.Player`
+ * object and the window `message` listener it registered, per BLOCK SWITCH — not per page. A
+ * reader working through a 30-block index can plausibly leave 10–30 of them behind in a
+ * session. No functional failure is constructible from it (the API filters incoming messages
+ * by `event.source`, and a detached frame's `contentWindow` is null), so the cost is bounded
+ * memory growth for the length of one page visit; it is stated at that size rather than
+ * described as a handful.
  */
 export function DenemeVideo({
   denemeNo,
   videoId,
   title,
+  playable,
   facade,
 }: {
   denemeNo: number;
   videoId: string;
   title: string;
+  /** False for a video the provider refuses to embed. It is the same value the block's island
+   *  receives, and it is required here as well as there: the island decides what a CLICK does,
+   *  while this decides what a stale store may render without one — an `external` block must
+   *  not be able to reach the iframe branch by any route (→ PR #63 review `CODE63-I1`). */
+  playable: boolean;
   facade: ReactNode;
 }) {
   const active = useActiveVideo();
-  const isActive = active !== null && active.denemeNo === denemeNo;
+  const isActive = playable && active !== null && active.denemeNo === denemeNo;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -131,6 +145,11 @@ export function DenemeVideo({
   if (!isActive) return facade;
 
   return (
+    // `data-player-box` is not styling and not dead markup: it is the handle `SPEC.md` §9's
+    // criterion 12 addresses when it measures that this box holds the iframe and NOTHING else
+    // — no badge, no gradient, no play button of our own — which is the Required Minimum
+    // Functionality rule the facade architecture rests on. A class name would not do: classes
+    // are hashed by CSS Modules and the check would break on a rename it should not care about.
     <div className={`${styles.frame} ${styles.playerBox}`} data-player-box="">
       <iframe
         ref={iframeRef}
@@ -141,7 +160,18 @@ export function DenemeVideo({
           startSecond: active.loadStartSecond,
         })}
         title={title}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        // DELEGATED ONLY WHAT A DENEME RECORDING USES. `allow` is a Permissions-Policy
+        // delegation, not a feature list: Chrome's default for the motion sensors is `self`,
+        // so naming `accelerometer`/`gyroscope` here is precisely what would unblock a motion
+        // stream for the cross-origin frame — and those two serve 360°/VR steering, which a
+        // lecture recording does not have. Sensor calibration offsets are a published
+        // cookieless fingerprinting vector, i.e. the identifier the `youtube-nocookie` host
+        // exists to deny, so granting them would undo that choice for nothing (KVKK m.4,
+        // "ilgili, sınırlı ve ölçülü"; → PR #63 review `SEC63-I1`). Dropped from YouTube's own
+        // embed-dialog snippet deliberately, and only those two: `clipboard-write` and
+        // `web-share` back the player's own "copy video URL at current time" and mobile share,
+        // which are the reader's controls and are NOT verified unused.
+        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
         allowFullScreen
       />
     </div>

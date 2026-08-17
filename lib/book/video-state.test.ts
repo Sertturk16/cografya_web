@@ -59,6 +59,21 @@ describe("resolveVideoState", () => {
     expect(state).toEqual({ kind: "typographic" });
   });
 
+  it("puts the embeddable gate FIRST when both gates would fire", () => {
+    // Gate precedence, asserted because reordering the two conditions is a silent change:
+    // resolving `typographic` here would hand the reader an İzle button that loads an embed the
+    // provider has refused, which is the one outcome neither gate may produce (→ PR #63
+    // TA63-M5).
+    const state = resolveVideoState(
+      video({
+        ...snapshot,
+        embeddable: false,
+        thumbnailUrl: "https://evil-ytimg.com/vi/x/hqdefault.jpg",
+      }),
+    );
+    expect(state).toEqual({ kind: "external" });
+  });
+
   it("accepts a numbered provider subdomain", () => {
     const state = resolveVideoState(
       video({ ...snapshot, thumbnailUrl: "https://i9.ytimg.com/vi/x/hqdefault.jpg" }),

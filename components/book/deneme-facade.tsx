@@ -88,9 +88,18 @@ export async function DenemeMeta({ state }: { state: BookVideoState }) {
  * candidate and carries `priority`. The exception's carve-out ("unless the image is the page's
  * LCP candidate") is checked by measurement rather than by assumption; see the closing summary.
  *
+ * `referrerPolicy="no-referrer"` is the SECOND of the two cheap measures DEC 2026-08-15k made
+ * part of its own ruling — the first being the provider-host gate that runs before this
+ * component is reached (`lib/book/video-state.ts`). Without it the thumbnail request would
+ * disclose our origin to `i.ytimg.com` where the ruling ordered none. It was dropped at
+ * planning time rather than decided against, and restored in the #63 fix round (`VAL63-I1`).
+ *
  * `alt=""`: the frame is decorative here. The block is already named by its heading and the
  * control carries its own accessible name, so a described thumbnail would announce the same
  * fact a third time — and any description we wrote would be of an image we have never seen.
+ * It follows that the thumbnail stays out of Google Images, and that is intended rather than
+ * incidental (→ PR #63 review `FENER63-M2`): the image is the provider's, we may not copy its
+ * bytes, and the surface we want indexed is the page, not a frame of someone else's video.
  */
 export async function DenemeFacade({
   denemeNo,
@@ -103,6 +112,19 @@ export async function DenemeFacade({
 }) {
   const t = await getTranslations("BookDetail");
 
+  /* BOTH CONTROLS' ACCESSIBLE NAMES BEGIN WITH THEIR VISIBLE TEXT (WCAG 2.5.3 Label in Name,
+     Level A / technique failure F96 — → PR #63 review `A11Y63-I1`). Thirty buttons reading
+     `İzle` need to be told apart by a screen reader, but a name that REPLACES the visible word
+     breaks speech input: a Voice Control user says "İzle" at the only video control on the page
+     and nothing matches. So the disambiguation is appended to the visible token rather than
+     substituted for it.
+
+     Kept as `aria-label` rather than a visually-hidden suffix span, which is the other shape
+     that satisfies the SC: this page's own W1 half already established it one section up
+     (`purchase` / `purchaseAria` → "Satın al — satıcının sitesinde açılır"), and one page with
+     two conventions for the same job is the thing worth avoiding. `featured-cards.tsx`'s
+     recorded "NO `aria-label`" doctrine is not in conflict — it forbids a label that HIDES
+     visible content by shortening it, which is the opposite of these. */
   if (state.kind === "external") {
     return (
       <a
@@ -154,6 +176,7 @@ export async function DenemeFacade({
         height={thumbnailHeight}
         loading="lazy"
         decoding="async"
+        referrerPolicy="no-referrer"
       />
       <span className={styles.watchOverlay}>{control}</span>
     </div>

@@ -19,8 +19,16 @@
  * ever stops working, the revert is this one constant.
  *
  * The API SCRIPT itself is served from `www.youtube.com` and that is a knowing trade: it is
- * fetched only after the reader's click, so nothing from either host is requested by a reader
- * who never presses play.
+ * fetched only after the reader's click, so neither PLAYER host is contacted by a reader who
+ * never presses play.
+ *
+ * That is a statement about these two hosts and not about the page (→ PR #63 review
+ * `SEC63-M1`). In the rich state the facade hotlinks the provider's thumbnail from
+ * `i.ytimg.com`, and that request fires as the image nears the viewport, before any click —
+ * the ruled behaviour of DEC 2026-08-15k, whose two cheap measures (provider-host gate,
+ * `referrerPolicy="no-referrer"`) are what it is conditioned on. So the pre-click property is
+ * "no player, no cookie-capable frame and no third-party script", not "no third-party request
+ * at all"; today it happens to be both, because every block on real data is typographic.
  */
 const EMBED_ORIGIN = "https://www.youtube-nocookie.com";
 const WATCH_ORIGIN = "https://www.youtube.com";

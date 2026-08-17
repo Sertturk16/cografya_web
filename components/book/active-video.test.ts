@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createActiveVideoStore } from "./active-video";
+import { closeVideo, createActiveVideoStore, openVideo } from "./active-video";
 
 /**
  * "One player on the page" and "changing question does not reload" are both properties of this
@@ -58,6 +58,38 @@ describe("active video store", () => {
     expect(second?.seekNonce).not.toBe(first?.seekNonce);
   });
 
+  it("closes on the block that HAS the player open", () => {
+    // The store is module state on the shipped surface, so it outlives a client-side route
+    // change; without this the next arrival at the page would render an autoplaying iframe with
+    // no click in between (→ PR #63 review CODE63-I1).
+    const store = createActiveVideoStore();
+    store.open(12, 94);
+    store.close(12);
+    expect(store.getSnapshot()).toBeNull();
+  });
+
+  it("ignores a close from a block that is not the open one", () => {
+    // A route change unmounts all thirty blocks and every one of them calls close. Scoping is
+    // what keeps a single block leaving the list from stopping a player in another block.
+    const store = createActiveVideoStore();
+    store.open(12, 94);
+    store.close(3);
+    expect(store.getSnapshot()?.denemeNo).toBe(12);
+  });
+
+  it("notifies subscribers on close, and only when something actually closed", () => {
+    const store = createActiveVideoStore();
+    store.open(12, 0);
+    let calls = 0;
+    store.subscribe(() => {
+      calls += 1;
+    });
+    store.close(3);
+    expect(calls).toBe(0);
+    store.close(12);
+    expect(calls).toBe(1);
+  });
+
   it("notifies subscribers and stops after unsubscribe", () => {
     const store = createActiveVideoStore();
     let calls = 0;
@@ -69,5 +101,24 @@ describe("active video store", () => {
     unsubscribe();
     store.open(2, 0);
     expect(calls).toBe(1);
+  });
+});
+
+/**
+ * The page does not hold the store object — it imports two detached functions. A refactor that
+ * reached for `this` inside either method would keep every case above green (they all call
+ * through the instance) while the first İzle press on a real page threw (→ PR #63 review
+ * TA63-M3). These two exercise the exported references the way the components do.
+ *
+ * They run against the module singleton and are therefore order-dependent among themselves;
+ * they leave it closed, which is the state every other case in this file assumes of its own
+ * fresh instance.
+ */
+describe("the detached exports the page actually calls", () => {
+  it("opens and closes the singleton through the bare references", () => {
+    const open = openVideo;
+    const close = closeVideo;
+    expect(() => open(12, 94)).not.toThrow();
+    expect(() => close(12)).not.toThrow();
   });
 });

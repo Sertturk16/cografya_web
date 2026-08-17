@@ -21,6 +21,15 @@ describe("playerEmbedSrc", () => {
     expect(url.searchParams.get("origin")).toBe("https://example.test");
   });
 
+  it("keeps the reader inside the page and spares them a second press", () => {
+    // Dropping `playsinline` sends every iOS reader to native fullscreen, out of the question
+    // index they are working through; dropping `autoplay` costs a second press after the one
+    // that loaded the player. Neither is visible to CI in any other way (→ PR #63 TA63-M4).
+    const url = new URL(playerEmbedSrc({ ...base, startSecond: 0 }));
+    expect(url.searchParams.get("playsinline")).toBe("1");
+    expect(url.searchParams.get("autoplay")).toBe("1");
+  });
+
   it("omits `start` at zero and emits it above zero", () => {
     // Zero is an ORDINARY first-question value in this corpus (the measured set is
     // {0, 2, 6, 11, 94}), so it is skipped for being the default, not for being a sentinel.
