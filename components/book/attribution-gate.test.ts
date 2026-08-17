@@ -54,6 +54,18 @@ function rowPredicate(): string {
   return match?.[1] ?? "";
 }
 
+/** The linked credit row's anchor, opening tag to closing tag. Everything claimed about what
+ *  lives INSIDE that link is asserted against this slice rather than the whole file, because a
+ *  `[\s\S]*?` reaching from the opening tag to `t("sourceNewTab")` and on to some later `</a>`
+ *  proves nothing about containment: it holds today only because this anchor's `</a>` happens
+ *  to be the file's last, and the first `<a>` added below the source statement would silently
+ *  turn the claim into a coincidence (→ PR #65 review `TA65-M4`). The non-greedy match stops at
+ *  the FIRST `</a>` after the opening tag, and anchors do not nest. */
+function sourceAnchor(): string {
+  const match = /<a className=\{styles\.sourceLink\}[\s\S]*?<\/a>/.exec(PAGE);
+  return match?.[0] ?? "";
+}
+
 describe("the book page's source statement", () => {
   it("still derives its rows by filtering the contract's own array", () => {
     // Anchors. Without them every assertion below could pass vacuously after a rename, which
@@ -92,9 +104,26 @@ describe("the book page's source statement", () => {
     expect(rowPredicate()).toMatch(
       /row\.providerId\s*!==\s*"youtube"\s*\|\|\s*book\.videos\.length\s*>\s*0/,
     );
+    // …anchored at the predicate's HEAD, because the pattern above certifies a SUBSTRING. A
+    // negation wrapping the untouched inner text — `(row) => !(row.providerId !== "youtube" ||
+    // book.videos.length > 0)` — keeps every token and operator, matches, and inverts the gate
+    // completely: the partner row disappears and the YouTube row survives only on a video-less
+    // book, i.e. both halves of the W2 regression restored at once (→ PR #65 review `TA65-M5` /
+    // `CODE65-M1`).
+    expect(rowPredicate().trim()).toMatch(/^\(row\)\s*=>\s*row\.providerId\s*!==/);
   });
 
-  it("backs every new-tab claim with the one target/rel form", () => {
+  it("keys the LINKED row on the provider token, never on the address alone", () => {
+    // WHICH PARTY RECEIVES THE YOUTUBE BRAND MARK, and the one line of this page that decides
+    // it. The api populates `channelUrl` on the PARTNER row too, so the tempting simplification
+    // to `row.channelUrl !== null` wraps the publisher's own untouchable notice in a YouTube
+    // logo linking to a YouTube channel — the wrong-party credit `DEC 2026-08-17b` hüküm 2
+    // forbids in as many words. Every other case in this file passes with the `providerId` half
+    // removed (→ PR #65 review `TA65-M1`).
+    expect(PAGE).toContain('row.providerId === "youtube" && row.channelUrl !== null ? (');
+  });
+
+  it("backs every new-tab claim ON THIS PAGE with the one target/rel form", () => {
     // `TA63R3-M3`, and W3 is why it is closed NOW rather than later: this page tells the reader
     // "yeni sekmede açılır" a second time — for the YouTube credit link — and a claim about
     // behaviour with nothing pinning the behaviour is a claim that survives its own deletion.
@@ -106,15 +135,41 @@ describe("the book page's source statement", () => {
     for (const anchor of newTabAnchors) {
       expect(anchor).toContain('rel="noopener noreferrer"');
     }
-    // …and the disclosure is made inside the link that does it, rather than beside it.
-    expect(PAGE).toMatch(
-      /<a className=\{styles\.sourceLink\}[\s\S]*?t\("sourceNewTab"\)[\s\S]*?<\/a>/,
-    );
+    // …and the disclosure is made inside the link that does it, rather than beside it. Asserted
+    // against the anchor SLICE: the title's word "every" is scoped to this page on purpose —
+    // `deneme-facade.tsx`'s own new-tab link is outside this corpus and outside this range
+    // (→ PR #65 review `TA65-M6`, widening handed to Atlas).
+    expect(sourceAnchor()).not.toBe("");
+    expect(sourceAnchor()).toContain('t("sourceNewTab")');
+  });
+
+  it("keeps the branding mark itself — the file, its emptiness of alt, its real pixels", () => {
+    // W3's actual deliverable, and until PR #65's review the one element in this range with no
+    // assertion anywhere in the repo (→ `TA65-M3`). Each of the three is load-bearing and each
+    // fails silently: a cleanup that drops `alt=""` makes a screen reader announce YouTube twice
+    // inside one link name; a "tidy" to a rounded 35×30 stretches the mark, which is the single
+    // thing the Branding Guidelines forbid absolutely; a changed `src` swaps the licensed `01
+    // Red` file for one whose acquisition is not recorded. None of them breaks a type, a lint, a
+    // build or a rendered credit sentence — the page keeps reading correct while the obligation
+    // goes unmet. Structural, not factual: the file NAME and the file's OWN dimensions, never
+    // its bytes or a provider's words.
+    expect(sourceAnchor()).toContain('src="/marka/yt_icon_red_digital.png"');
+    expect(sourceAnchor()).toContain('alt=""');
+    expect(sourceAnchor()).toContain("width={1255}");
+    expect(sourceAnchor()).toContain("height={1075}");
   });
 
   it("prints each notice as received, inside its own language", () => {
     // Printed verbatim from the row — never translated, shortened or retyped — and `lang="tr"`
     // because both notices are Turkish sentences on BOTH locales (WCAG 3.1.2).
-    expect(PAGE).toMatch(/<span lang="tr">\{row\.requiredNoticeTr\}<\/span>/);
+    //
+    // COUNTED, NOT MATCHED. The page writes the notice out twice on purpose — once in the linked
+    // branch, once in the plain one — and a single-match assertion is satisfied by EITHER copy
+    // alone, so dropping `lang="tr"` from the linked branch only left all seven cases green, the
+    // TR sample byte-identical (the attribute is invisible) and a screen reader on /en reading
+    // the Turkish notice with English phonetics. Measured on the real file: the mutation leaves
+    // the single-match form passing and takes the count from 2 to 1 (→ PR #65 review `TA65-M2`).
+    const notices = PAGE.match(/<span lang="tr">\{row\.requiredNoticeTr\}<\/span>/g) ?? [];
+    expect(notices).toHaveLength(2);
   });
 });

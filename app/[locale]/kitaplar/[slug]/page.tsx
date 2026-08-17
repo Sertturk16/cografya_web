@@ -501,6 +501,17 @@ export default async function BookDetailPage({ params }: PageProps) {
           plain-text credit it was in W2. That is a CONTRACT BREAK rather than a design state,
           and it is handled the way `marine-attribution` handles a missing copyright line: the
           element is omitted, never faked, and no fallback address is invented from a video id.
+          A CONSTANT `https://www.youtube.com` FALLBACK WAS WEIGHED AND REFUSED (→ PR #65 review
+          `FENER65-M3`), because it is the wrong trade in three directions: it is a second
+          address living in web, which AK-15/E1 puts at the contract source precisely so there is
+          only one; it is not the address the api published, so the mark would link back to
+          something we chose rather than something the credit names; and it would REMOVE the one
+          symptom this break still has. The absent mark is visible in any rendered sample; a
+          plausible-looking platform link is visible nowhere, so the fallback would buy a
+          discharged obligation by hiding the regression that broke it. The structural close is
+          the contract's, not this file's: `BookAttributionDto.channelUrl` is typed nullable
+          while `buildBookAttribution()` sets a compiled constant on every row, and narrowing the
+          DTO is what makes this branch unreachable by construction.
 
           THE NEW-TAB DISCLOSURE IS A VISUALLY-HIDDEN SUFFIX, NOT AN `aria-label`, and that
           departs from the two outbound links above on purpose. Their visible text is ours to
@@ -512,6 +523,18 @@ export default async function BookDetailPage({ params }: PageProps) {
           2.5.3) while the reader is told the link changes context (WCAG 3.2.5). The suffix is in
           the PAGE's language while the notice keeps `lang="tr"` — the same WCAG 3.1.2 split the
           notices already make.
+
+          THE SUFFIX CARRIES ITS OWN LEADING COMMA, and it is in the message value rather than in
+          this file (→ PR #65 review `A11Y65-M1` / `CODE65-M4`). Two reasons, and neither is
+          typography. JSX strips a newline-only gap between adjacent elements, so without it the
+          DOM holds `…YouTube</span><span>yeni sekmede…` with no separating text node at all, and
+          whether the accessible name gets a space is left to each engine's block-boundary
+          heuristic — a property nothing in the code guarantees. And the page's two other new-tab
+          disclosures both punctuate the same join (`purchaseAria`, `watchOnYoutubeAria`), so an
+          unpunctuated third one would deliver one disclosure two ways on one page, which is the
+          axis `CS63R2-M1` was resolved to keep single. The comma sits in the localized value
+          because punctuation belongs to the string it punctuates; the untouchable notice stays
+          one unedited text node either way.
 
           `alt=""` ON THE MARK, because in THIS context it is decorative: the link's own text
           already says "Video kaynağı: YouTube", and naming the image "YouTube logosu" would make
@@ -526,7 +549,16 @@ export default async function BookDetailPage({ params }: PageProps) {
           REAL pixel dimensions rather than a rounded pair, so the ratio the browser applies is
           the file's own, and the clear space the guidelines require is already inside the canvas
           (an 827×579 mark with 214/248px of margin around it) — printing the file whole
-          preserves it automatically. `next/image` is `ENGINEERING.md` §4 #9's "always" and this
+          preserves it automatically. `sizes="34px"` IS DERIVED, NOT PICKED (→ PR #65 review
+          `CODE65-M2`): the box the CSS module builds is 28 × (1255/1075) ≈ 32.7px wide, and 34
+          is that figure rounded UP past the next whole pixel, so a sub-pixel difference can
+          never make the browser select a candidate narrower than what it draws. It is a
+          selection hint rather than a layout declaration — the layout comes from the two
+          attributes above — and it is load-bearing: without it `next/image` builds the srcset
+          from `width`/`2×width` and ships a kilobyte-class render for a 33px mark, where with it
+          the browser takes `w=48`. The one coupling to keep in mind is that the figure it
+          rounds lives in `book-detail.module.css`'s `.sourceMark`, so a height change there is a
+          change here. `next/image` is `ENGINEERING.md` §4 #9's "always" and this
           asset meets neither narrow exception: it is not a build-emitted SVG and its provider
           does not bar byte copies — YouTube publishes it FOR republication (Atlas ruling AK-15
           /E2). Re-encoding is not one of the modifications the guidelines name; colour, ratio and

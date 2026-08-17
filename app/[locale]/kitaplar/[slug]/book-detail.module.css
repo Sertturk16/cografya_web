@@ -195,6 +195,18 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  /* THE UNIT'S OWN ALIGNMENT AGAINST THE PARAGRAPH, which `align-items` does NOT set: that
+     property positions the mark and the sentence relative to each other INSIDE the box, and
+     says nothing about where the box sits on the line it shares with the `Kaynaklar:` label,
+     the separator and the partner credit. A flex container exports the baseline of its first
+     baseline-aligned item; with `align-items: center` no item is baseline-aligned, so the UA
+     synthesizes one from the border box — the 28px box is hung by its BOTTOM EDGE on the
+     paragraph's baseline and the whole credit floats 10px above the text beside it (measured
+     on the pre-fix frames: link baseline y177, label and partner baseline y187 at 1280).
+     `middle` centres the box on the parent's baseline + half its x-height instead, which is
+     the alignment the two halves of this rule were always meant to have (→ PR #65 review
+     `CODE65-I1`). */
+  vertical-align: middle;
   /* Cancelled on the link and re-applied to the sentence below, for a mechanical reason: an
      underline on the anchor is drawn across its atomic inline children too, so the line would
      run under the logo — a decoration through a brand mark, which is exactly what "do not

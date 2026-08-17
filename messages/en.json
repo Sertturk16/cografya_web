@@ -523,7 +523,7 @@
     "denemeCountLabel": "Deneme count",
     "examLabel": "Exam",
     "sourcesLabel": "Sources",
-    "sourceNewTab": "opens in a new tab"
+    "sourceNewTab": ", opens in a new tab"
   },
   "NotFound": {
     "metaTitle": "Page not found",

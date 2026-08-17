@@ -537,7 +537,7 @@
     "denemeCountLabel": "Deneme sayısı",
     "examLabel": "Sınav",
     "sourcesLabel": "Kaynaklar",
-    "sourceNewTab": "yeni sekmede açılır"
+    "sourceNewTab": ", yeni sekmede açılır"
   },
   "NotFound": {
     "metaTitle": "Sayfa bulunamadı",

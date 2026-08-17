@@ -32,12 +32,15 @@ const nextConfig: NextConfig = {
   },
 
   // next/image conventions (CONVENTIONS §6 #9 / ENGINEERING §4 #9). Local images live in
-  // `/public` — today `public/kitaplar/`, the book covers — and are always rendered through
-  // `next/image` with explicit width/height (or `fill` + a fixed-size container) to hold
-  // CLS < 0.1. That directory has one more trap of its own — a file placed there is served
-  // AHEAD of the router and can shadow `/kitaplar/[slug]` — and the note for whoever adds
-  // the next asset is `docs/public-kitaplar.md`. It sits in `docs/` rather than beside the
-  // files because anything under `public/` is itself published.
+  // `/public` — `public/kitaplar/` (the book covers) and `public/marka/` (the YouTube
+  // branding mark) — and are always rendered through `next/image` with explicit width/height
+  // (or `fill` + a fixed-size container) to hold CLS < 0.1. The trap belongs to `public/`
+  // itself and not to one directory in it: a file placed anywhere under it is served AHEAD
+  // of the router, so each directory shadows whatever route shares its prefix. `kitaplar/`
+  // shares one with `/kitaplar/[slug]`, `marka/` shares none today, and the next directory
+  // added here is a route collision waiting to be checked. The note for whoever adds an
+  // asset is `docs/public-kitaplar.md`. It sits in `docs/` rather than beside the files
+  // because anything under `public/` is itself published.
   //
   // `images.remotePatterns` is deliberately absent, and the FIRST remote image this app
   // renders will not change that: the YouTube thumbnail on the book detail page is
