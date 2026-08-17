@@ -62,6 +62,24 @@ function embedSrcArgs(): string {
   return match?.[1] ?? "";
 }
 
+/**
+ * The delegated click handler's body, and NOTHING else in the island — the same slice discipline
+ * `embedSrcArgs()` above applies to the `src`.
+ *
+ * The ordering assertions below are positional, and positions are only meaningful inside one
+ * function. The bench island has a SECOND `closest<HTMLElement>(` call — the hash effect resolves
+ * the arrived-at video the same way — and it is written earlier in the file, so a whole-file
+ * `indexOf` reported that the narrowing preceded the modifier bail and failed a guard on code
+ * whose order was correct. Scoping it makes the guard stronger rather than looser: neither a new
+ * `closest` elsewhere in the island nor a reordering inside the handler can be mistaken for the
+ * other.
+ */
+function clickHandler(): string {
+  const start = BENCH.indexOf("const onClick = (event");
+  const end = BENCH.indexOf("return ( <div ref={rootRef}");
+  return start < 0 || end < 0 || end <= start ? "" : BENCH.slice(start, end);
+}
+
 describe("the iframe src's second", () => {
   // Anchors. Without them every assertion below could pass vacuously after a rename, which is
   // the one way a source-scan guard fails silently.
@@ -110,9 +128,12 @@ describe("the click gate", () => {
   it("bails out before preventDefault on a modifier or middle press", () => {
     // "Open this question in a new tab" is browser behaviour we must not take away, so the
     // bail has to come FIRST — asserted by position, not merely by presence.
-    const bail = BENCH.indexOf("event.metaKey || event.ctrlKey");
-    const narrowing = BENCH.indexOf("closest<HTMLElement>(");
-    const prevented = BENCH.indexOf("event.preventDefault()");
+    const handler = clickHandler();
+    // Anchors the slice: an empty one would make every ordering assertion below pass on nothing.
+    expect(handler).not.toBe("");
+    const bail = handler.indexOf("event.metaKey || event.ctrlKey");
+    const narrowing = handler.indexOf("closest<HTMLElement>(");
+    const prevented = handler.indexOf("event.preventDefault()");
     expect(bail).toBeGreaterThan(0);
     expect(narrowing).toBeGreaterThan(bail);
     expect(prevented).toBeGreaterThan(narrowing);
