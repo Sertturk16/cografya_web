@@ -201,12 +201,20 @@ describe("the game island's two shape queries", () => {
     // The regression this whole file exists for: an unscoped query returns both twins, which
     // is right for exactly one of the two loops and wrong for the other.
     expect(ISLAND).not.toMatch(/querySelectorAll\(\s*["'`]\[data-plate\]/);
-    // TWO, and the count is asserted so that a third, unnamed query cannot appear without this
-    // file being read. (It was three while I1's ✓ variant had a mark layer of its own; that
-    // query left with the layer — a `querySelectorAll` that can never match anything is
-    // invisible to every gate in this repo.)
+    // THREE, and the count is asserted so that a fourth, unnamed query cannot appear without
+    // this file being read. It has moved before: three while I1's ✓ variant had a mark layer
+    // of its own, two once that layer went, and three again since the camera effect
+    // (→ DEC 2026-08-17g md. 4) resolves the shapes a shown answer covers. That one reads
+    // HIT_SHAPES and matches the revealed target's own plates, which is why it is a scoped
+    // query rather than the unscoped kind this test exists to bar.
+    //
+    // THE COUNT IS THE TRIPWIRE, NOT THE RULE. What actually has to hold is that every query
+    // goes through one of the two named constants — asserted directly below, so an inline
+    // selector cannot slip in under the right count.
+    const named = ISLAND.match(/svg\.querySelectorAll\((HIT_SHAPES|PAINTED_SHAPES)\)/g) ?? [];
     const queries = ISLAND.match(/svg\.querySelectorAll\(/g) ?? [];
-    expect(queries).toHaveLength(2);
+    expect(queries).toHaveLength(3);
+    expect(named).toHaveLength(queries.length);
     expect(ISLAND).not.toContain('data-map-layer="mark"');
   });
 
