@@ -27,22 +27,27 @@
   margin-top: 40px;
 }
 
+/* `display: grid` is what makes the two CARDS the same height, and it is not cosmetic at every
+   width. The `<section>`s are stretched flex items, so they already match; the `.card` inside
+   each was only as tall as its own content, and the two headings do not wrap together.
+   Measured on the running build: at 800px the TR row rendered 170px against 139px (the game
+   heading wraps to two lines, the marine one does not), at 850px 172 against 140, and the EN
+   row 174 against 141 at 900px — a 30px step between two cards sitting side by side. A grid
+   container with one child stretches it in both axes, so the card fills the section it was
+   already given (CODE64-M3). The whole live range 800-1440 measured equal after. */
 .ctaRow > * {
   min-width: 0;
   flex: 1 1 360px;
+  display: grid;
 }
 
-.ctaCard {
-  max-width: 70ch;
-}
-
-/* Inside the row the line-length cap has no work left to do: the row itself is what bounds a
-   card's width, and 70ch would only reintroduce the empty right-hand side the row removes.
-   The cap stays on the rule above so a card rendered outside a row keeps it. */
-.ctaRow .ctaCard {
-  max-width: none;
-}
-
+/* NO LINE-LENGTH CAP HERE, and no rule cancelling one. The row is what bounds a card's width
+   now, and a `max-width: 70ch` on the card only ever reintroduced the empty right-hand side
+   the row exists to remove. The first version of this file kept the cap "so a card rendered
+   outside a row keeps it" — a card outside a row is a page this repo does not have: both
+   `.ctaCard` instances live inside `.ctaRow` and this stylesheet has exactly one importer
+   (`app/[locale]/turkiye/page.tsx`), so the pair of rules was a dead declaration and a
+   dead override (CODE64-M2). If a third, row-less CTA is ever added, it gets its cap then. */
 .ctaCard h2 {
   margin-top: 0;
 }

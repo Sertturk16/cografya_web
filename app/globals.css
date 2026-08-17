@@ -476,6 +476,21 @@ main {
   padding: 22px 24px;
 }
 
+/* Opt-in wrapping for a block that contains a token no line break can fall inside — a URL, a
+   licence identifier, a dataset name. Nothing gets this behaviour without asking for it: a
+   class selector reaches exactly the elements that carry the class.
+
+   It lives here rather than in a page's own module because a CSS module is a SEPARATE
+   render-blocking `<link>`: /hakkimizda's one-declaration module measured 65 bytes and took the
+   page's stylesheet count from 1 to 2, which is a round trip before first paint on a cold
+   mobile connection for a rule that could ride a sheet the page already loads (FENER64-M1,
+   web #64). `break-word`, not `anywhere`: `anywhere` also shrinks the box's min-content
+   contribution, so it changes how the element negotiates space inside a grid or flex parent —
+   a side effect a wrapping fix should not have. */
+.wrap-long-tokens {
+  overflow-wrap: break-word;
+}
+
 /* ---- Buttons ---- */
 .btn {
   display: inline-flex;

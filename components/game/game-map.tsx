@@ -406,11 +406,14 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
           province's own centre point occluded 62 of 81 targets at 320px and 41 of 81 at 360px.
           A play surface whose targets are under the licence line is not a play surface.
 
-          The credit stays VISIBLE — it moves out of the stage into the frame, one flow line
-          under the map, exactly the shape `locator-map.module.css` `.credit` already ships
-          ("inside the figure but outside the frame"). DEC 2026-07-10 md.4 asks the ODbL
-          attribution to remain "visible (map footer/component)", and a line in the map's own
-          component footer is that sentence. It is deliberately NOT a `<details>` disclosure:
+          The credit stays VISIBLE — it moves out of the stage into `.frame`, one flow line
+          under the map. Same shape as `locator-map.module.css` `.credit`: still inside the map
+          component, but outside the bordered box the map itself is drawn in — which is
+          `.stage` here and what that file calls its `.frame`. (The word "frame" names a
+          different box in the two stylesheets; the arrangement is the same one.)
+
+          DEC 2026-07-10 md.4 asks the ODbL attribution to remain "visible (map
+          footer/component)", and a line in the map's own component footer is that sentence. It is deliberately NOT a `<details>` disclosure:
           a credit that is closed by default is not visible.
 
           The `/turkiye` and `/dunya` maps are NOT touched — there the credit still overlays

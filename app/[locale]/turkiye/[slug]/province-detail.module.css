@@ -105,6 +105,18 @@
   margin-bottom: 4px;
 }
 
+/* THE VALUE MAY BE ONE UNBREAKABLE WORD, and the track is a LENGTH minimum, not `auto` — so a
+   track never grows to fit it. Measured on the running build, and the condition predates the
+   A5 change rather than starting with it: on `dev`, `/dunya/turkiye`'s "Cumhurbaşkanlığı"
+   already painted 21.2px past its own `dd` box at 1440 (5 tracks of ~205px), and Sri Lanka's
+   "Jayewardenepura" 15.2px. Narrower tracks make it worse and move it to a width where the
+   card sits against the viewport edge: at 360px the sheet is now two 153px tracks, so the ink
+   would leave the card AND the document, which is the horizontal scroll A3/A4 exist to remove.
+
+   `break-word`, not `anywhere`, for the reason `hakkimizda`'s twin fix states: `anywhere` also
+   shrinks the box's min-content contribution, which is an input to the grid's own track
+   sizing — this rule is meant to change where a word breaks, not how the sheet is laid out.
+   `dt` needs nothing: those are our own short labels, not seeded free text. */
 .fact dd {
   margin: 0;
   font-size: 1.25rem;
@@ -112,6 +124,7 @@
   font-family: var(--font-heading);
   color: var(--color-ink);
   line-height: 1.2;
+  overflow-wrap: break-word;
 }
 
 .climateValue {

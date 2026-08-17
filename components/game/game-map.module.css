@@ -54,8 +54,11 @@
    viewports: the 66vh starting value still overflowed 900px-tall screens by ~91px, and the
    percentage that does fit an 800px screen (≈50vh) then wastes 50px of a 900px one.
    Subtracting the constant fits every viewport HEIGHT by construction — it works out to
-   ≈54.7vh at 900 and ≈49vh at 800 — and it keeps working on the 768px-tall laptops the two
-   mandated sizes do not cover.
+   ≈54.7vh at 900 and ≈49vh at 800 — and it still fits the 768px-tall laptops the two mandated
+   sizes do not cover. READ THE NEXT PARAGRAPH BEFORE RELYING ON THAT: since the credit line
+   moved below the stage the fit is measured at ~1px on an 800px-tall screen, and because the
+   cap is `100svh − constant` the same ~1px is what "fits" means at 768 too. It fits; it has no
+   margin left.
 
    WHAT THE CONSTANT DOES NOT COVER, ITEM ONE: THE CREDIT LINE UNDER THE STAGE. The design
    tour moved the ODbL/JRC credit out of the stage and into the frame (`.attribution` below),
@@ -66,6 +69,20 @@
    800 at 1280×800 (was 750). One pixel is not a fit anyone should plan around, so the next
    change to this page's chrome re-measures both mandated viewports first; the constant itself
    was deliberately left alone here rather than retuned as a side effect of a layout fix.
+
+   THOSE TWO NUMBERS ARE THE LOOSE CASE, and a fold measurement taken only on `/oyun/81-il`
+   (or `/oyun/bolge-bulma`, which draws the same full-country frame) reads the same 869. The
+   REGION rounds are the tight one: `/oyun/bolge-bolge-il/{bölge}` takes its aspect from the
+   region's own bbox, and at 1440×900 a narrow frame is CAP-bound where the full map is
+   width-bound — Ege at 1.165 renders a 573 × 492 stage against the full map's 1078 × 462, so
+   its last control sits 30px lower. Measured, same build, same run:
+
+     1440 × 900   81-il / bölge-bulma   821 → 869      bölge-bölge-il/ege   850 → 899
+     1280 × 800   81-il / bölge-bulma   750 → 799      bölge-bölge-il/ege   750 → 799
+
+   At 1280×800 the cap binds in both modes, so the two coincide; at 1440×900 they do not, and
+   the region rounds are the case the retune has to satisfy (CODE64-M6). Nothing is off-screen
+   in either — 899 of 900 is still a fit, by 1px.
 
    WHAT THE CONSTANT DOES NOT COVER, ITEM TWO: NARROW WIDTHS. It is a desktop-layout
    measurement. The mobile-header disclosure keeps the header at ~56px from 320px upward. The

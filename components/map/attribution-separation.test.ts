@@ -6,8 +6,11 @@ import { describe, expect, it } from "vitest";
  *
  * ## What broke, and why the obvious fix was not one
  *
- * The Türkiye map stacks two licence notices in one absolutely-positioned `<p>` (it has to be
- * one element — a second `<p>` would land on top of the first). Split by a `<br>`, they were a
+ * The Türkiye map stacks two licence notices in one `<p>`. On that surface the `<p>` is
+ * absolutely positioned over the map, so it HAS to be one element — a second `<p>` would land
+ * on top of the first. (On the game surface it no longer has to be: design tour A1 moved that
+ * credit out of the stage into normal flow. It stays one `<p>` there because the two notices
+ * are one credit, not because the layout forces it.) Split by a `<br>`, the notices were a
  * SINGLE text run: `textContent` read "…ODbLMevsimlik göl sınırları:…", welding the OSM/ODbL
  * credit to the JRC one.
  *

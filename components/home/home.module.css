@@ -140,6 +140,9 @@
   max-width: 60ch;
 }
 
+/* The 24px target rule for `.seaLink a` is NOT here: it shares one declaration block with
+   `.exploreLink a` up in the explore section, because the two are the same fix on the same
+   three links. Named here so an edit to this block can see it (CODE64-M7). */
 .seaLink {
   margin: 14px 0 0;
   font-weight: 600;

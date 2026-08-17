@@ -65,6 +65,11 @@
   margin-bottom: 4px;
 }
 
+/* One unbreakable seeded word can be wider than the track, and a LENGTH track minimum never
+   grows to fit it — the full argument, with the measured numbers, is on this rule's twin in
+   `province-detail.module.css`. This page is where it bites hardest: `governmentFormTr` and
+   `capitalNameTr` are the two seeded fields that carry a 15-16 character single token
+   ("Cumhurbaşkanlığı" on /dunya/turkiye, "Jayewardenepura" on /dunya/sri-lanka). */
 .fact dd {
   margin: 0;
   font-size: 1.25rem;
@@ -72,6 +77,7 @@
   font-family: var(--font-heading);
   color: var(--color-ink);
   line-height: 1.2;
+  overflow-wrap: break-word;
 }
 
 /* Prose sections (Yeryüzü Şekilleri, İklim, Hidrografya, Bağımsızlık) — genuine
