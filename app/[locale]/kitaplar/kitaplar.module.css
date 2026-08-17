@@ -29,9 +29,30 @@
   display: grid;
 }
 
+/* WHAT PINS THE ARROW IS `.cardBody`'s GROWTH, BELOW. `justify-content: space-between` here is
+   byte-parity with the rule `.province-card` carries in the global layer and nothing more: once a
+   growable item is on the line, positive free space is always consumed before `justify-content`
+   sees it, so this declaration is inert at every child count — 2 when `coverImagePath` is null, 3
+   otherwise. It stays for parity, not because it is doing work.
+
+   With neither, the three children pack against the start and the arrow floats mid-card: 138px of
+   dead space to its right at 768px, where a single-column grid stretches the card to 728px. Every
+   other viewport measured 1px.
+
+   `space-between` alone does not fix that, it relocates it. With three children and no growable
+   one, `justify-content` splits the same 138px equally between BOTH gaps, so the arrow reaches
+   the right edge at the cost of the cover leaving the title it belongs to — measured at 768,
+   title x 127 → 195.5 and cover↔title 16px → 84.5px, an orphan image with a hole behind it.
+   `.cardBody { flex: 1 1 auto }` claims that space during flexible-length resolution instead, so
+   both gaps stay at their declared 16px.
+
+   The trigger is width-versus-content, not a viewport: today's single long-titled seed fills the
+   card at 1024 and 1440, so the split reproduces only at 768 there — but a shorter title puts the
+   same hole at any width. */
 .card {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   background: #fff;
   border: 1px solid var(--color-border);
@@ -62,9 +83,15 @@
   object-fit: contain;
 }
 
+/* `flex: 1 1 auto` — grow is the only part that changes from the default `0 1 auto`: the basis
+   stays `auto` and the shrink stays 1, so nothing about how the body behaves when the card is
+   TOO NARROW moves. It changes only where free space lands when the card is too WIDE (see
+   `.card` above). `min-width: 0` below is what lets the shrink half actually work on a flex item
+   whose min-content is a long title. */
 .cardBody {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: 6px;
   min-width: 0;
 }
