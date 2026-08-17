@@ -29,9 +29,17 @@
   display: grid;
 }
 
+/* `justify-content: space-between` is what pins the arrow to the card's right edge, and it is
+   the SAME declaration `.province-card` carries in the global layer — this module had simply
+   not copied it. Without it the three children pack against the start, so at any width where
+   the card is wider than its content the arrow floats mid-card: measured 138px of dead space
+   to its right at 768px, where a single-column grid stretches the card to 728px. Every other
+   viewport already measured 1px, which is why the defect is invisible at 320/360/1024/1440 and
+   why this change moves nothing there. */
 .card {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   background: #fff;
   border: 1px solid var(--color-border);

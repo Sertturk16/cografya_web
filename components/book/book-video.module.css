@@ -24,8 +24,14 @@
   color: var(--color-slate);
 }
 
+/* `--color-taupe` for the same reason `.factSeparator` in `book-detail.module.css` carries it,
+   and changed in the same commit because the two dots sit on ONE line inside the same `<summary>`
+   — leaving this one as a hairline token would have separated the question count from the
+   duration in one colour and the duration from the date in another. Both are `aria-hidden`
+   decorative marks, which is the class `DESIGN.md` §5's taupe rule permits and the class the
+   breadcrumb separator already uses. */
 .metaSeparator {
-  color: var(--color-border);
+  color: var(--color-taupe);
 }
 
 /* ── Kapak (facade) ve oynatıcı — AYNI kutu kuralı ────────────────────────────────────── */

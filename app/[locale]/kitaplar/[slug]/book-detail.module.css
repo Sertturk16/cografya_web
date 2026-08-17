@@ -5,10 +5,23 @@
 
 /* ── Giriş şeridi: kapak + anlatı ─────────────────────────────────────────────────────── */
 
+/* `center` AND NOT `flex-start`, and the case it fixes is the one with no narrative rather than
+   the one with a long one. `introTr` is nullable by contract and `introEn` is null permanently,
+   so the English page — and any Turkish book whose narrative is not written yet — renders an
+   intro body of two chips and a button: 106.8px beside a 270px cover. Pinned to the start, that
+   left a measured 163.2px × 876px empty rectangle under them at 768 and 1440, which reads as a
+   broken band rather than as breathing room.
+
+   Centring is safe in the other direction because the taller item is the one that gives way: on
+   the Turkish page the body is the taller of the two, so it is the COVER that shifts (8px at
+   1440, 21.5px at 768) and the prose keeps its position. The strip's own height does not change
+   at any viewport, so nothing below it moves and the change costs no layout shift. At 320 and
+   360 the two are on separate flex lines, where `align-items` has nothing to centre against and
+   the measurement confirms no movement at all. */
 .intro {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   gap: 24px;
   margin-top: 24px;
 }
@@ -23,6 +36,17 @@
   flex: none;
   width: 180px;
   height: 270px;
+  /* CENTRES ONLY WHEN THE STRIP HAS WRAPPED, and it needs no breakpoint to know the difference.
+     Below 64rem the cover sits alone on its flex line: 180px inside a 280px column at 320 and a
+     320px column at 360, left-aligned, with 100–140px of ragged space beside it while every
+     other element on the page uses the full column. Auto margins absorb a flex line's leftover
+     space, so the cover centres there.
+
+     From 768 up it is inert, and that is a property of the box rather than a hope: `.introBody`
+     is `flex: 1 1 320px`, so flex-grow consumes the free space during line sizing and leaves the
+     auto margins nothing to absorb. Measured both ways — cover x moves 20 → 70 at 320 and
+     20 → 90 at 360, and stays at 20 / 180 at 768 / 1440. */
+  margin-inline: auto;
 }
 
 .coverImage {
@@ -52,10 +76,26 @@
 .factSheet {
   margin: 0;
   display: grid;
-  /* `min()` and not a bare 180px: an `auto-fill` floor wider than the container keeps its
-     width and spills the row past the viewport — the horizontal overflow the 320px viewport
-     exists to catch. */
-  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+  /* THE SAME DECLARATION THE PROVINCE AND COUNTRY FACT SHEETS CARRY, character for character
+     (`province-detail.module.css`, `country-detail.module.css`). This page kept `auto-fill` at a
+     180px floor because PR #64's design-tour round moved the other two and missed this one, so
+     what looks like a design change here is a missed propagation being closed.
+
+     What the 180px floor produced, measured on live data: six künye cards landed [5, 1] at BOTH
+     1024 and 1440, leaving the ISBN card alone on its own row with ~875px of empty parchment
+     beside it — the shape İRİS's tour recorded as A5 on three pages, of which this was the last
+     one still open. At 360px the same floor stacked all six in one column, 584px tall.
+
+     With the sibling rule: 1440 and 1024 both resolve to a single [6] row, and 360 drops to
+     [2, 2, 2] and 350px. The cost is real and is not hidden: 768 moves from a balanced [3, 3] to
+     [4, 2] and the block grows 195px → 233px. That trade was taken deliberately (owner-approved
+     at the Faz-1 gate) because the province page at 768 is ALREADY [4, 4] on a 171.5px track —
+     so this page lands on its sibling's measurement instead of keeping a private one.
+
+     `min()` rather than a bare 150px, unchanged in intent from the rule it replaces: an
+     `auto-fit` floor wider than the container keeps its width and spills the row past the
+     viewport, which is the horizontal overflow the 320px viewport exists to catch. */
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 14px;
 }
 
@@ -234,8 +274,20 @@ a.jumpItem:hover {
   color: var(--color-slate);
 }
 
+/* `--color-taupe`, NOT `--color-border`, and the distinction is what the two tokens are for.
+   `--color-border` draws hairlines under other elements; asked to be a glyph it measured 1.21:1
+   against the open row's `--color-surface` and 1.37:1 against the page background, i.e. the dot
+   separating "6 soru çözümü", the duration and the publication date was effectively not drawn
+   and the three facts read as one run-on string.
+
+   `--color-taupe` is `DESIGN.md` §5's decorative/secondary-UI token and this is exactly the case
+   its own rule names: the breadcrumb's `::after "/"` separator in the global layer is the same
+   mark doing the same job with the same token. The taupe rule bars it from body, nav, footer and
+   any essential text, none of which this is — the element is `aria-hidden`, so it carries no
+   information a reader could lose, which is also why this is a legibility fix rather than a
+   contrast failure being closed. */
 .factSeparator {
-  color: var(--color-border);
+  color: var(--color-taupe);
 }
 
 /* Out of flow so the heading and the fact strip wrap as a pair (see `.denemeSummary`). Centred
