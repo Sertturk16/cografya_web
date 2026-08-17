@@ -261,9 +261,12 @@ export default async function BookDetailPage({ params }: PageProps) {
               `window.opener` handle, and `noreferrer` is added alongside it (→ PR #62 review
               `SEC62-M3`) because the seller has no need to be told which page sent the reader
               and this repo's three earlier outbound links already carry the pair — one form,
-              not two. The accessible name says where the link goes, because a link that
-              changes context should say so (WCAG 3.2.5). No price appears anywhere on this
-              page, by rule. */}
+              not two. The accessible name says where the link goes AND that it opens in a new
+              tab, because a link that changes context should say so (WCAG 3.2.5). Both halves,
+              because this page's other outbound control — the facade's "YouTube'da izle" —
+              discloses the tab, and one page that discloses it on one link and not the other
+              teaches the reader that the silent one stays put (→ PR #63 review `CS63R2-M1`).
+              No price appears anywhere on this page, by rule. */}
           {book.purchaseUrl !== null && (
             <a
               className="btn btn-primary"

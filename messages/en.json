@@ -515,7 +515,7 @@
     "badgeQuestions": "{count, plural, one {# question solution} other {# question solutions}}",
     "coverAlt": "Cover of {title}",
     "purchase": "Buy",
-    "purchaseAria": "Buy — opens on the seller's site",
+    "purchaseAria": "Buy — opens on the seller's site in a new tab",
     "publisherLabel": "Publisher",
     "authorsLabel": "Authors",
     "isbnLabel": "ISBN",

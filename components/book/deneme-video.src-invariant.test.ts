@@ -19,6 +19,12 @@ import { describe, expect, it } from "vitest";
  * middle-click still open a new tab" rested on prose alone, and `preventDefault()` reaching
  * one of those presses is not a defect any screenshot shows.
  *
+ * Round 2 added the three neighbours that share exactly this property — a defect no gate we
+ * run can see (→ `TA63R2-M2`, `TA63R2-M3`): the two privacy-ruled attributes on this surface
+ * (`allow` without the motion sensors, `referrerPolicy` on the hotlinked thumbnail), and the
+ * EMITTING side of the `data-second` / `data-player-open` contract. A string contract guarded
+ * at the reader's end only is not guarded, so the facade and the page are read here too.
+ *
  * WHY IT READS SOURCE INSTEAD OF RENDERING. `vitest.config.ts` runs a single `node`
  * environment with no jsdom, so no component render or DOM event is available in this repo
  * (tracked FU-WEB-JSDOM). The same constraint produced `nav-disclosure.test.ts` and
@@ -43,6 +49,8 @@ function flatCode(source: string): string {
 
 const VIDEO = flatCode(sourceOf("./deneme-video.tsx"));
 const PLAYER = flatCode(sourceOf("./deneme-player.tsx"));
+const FACADE = flatCode(sourceOf("./deneme-facade.tsx"));
+const PAGE = flatCode(sourceOf("../../app/[locale]/kitaplar/[slug]/page.tsx"));
 
 /** The `playerEmbedSrc({ … })` argument object, as written. Everything asserted about the
  *  `src` is asserted about THIS slice rather than the whole file, so a `seekSecond` that is
@@ -104,10 +112,42 @@ describe("the click gate", () => {
     expect(bail).toBeGreaterThan(0);
     expect(narrowing).toBeGreaterThan(bail);
     expect(prevented).toBeGreaterThan(narrowing);
+    // Position alone would survive an edit that keeps the condition and drops its body — the
+    // three tokens stay in order, the case passes, and Ctrl/Cmd-click silently stops opening a
+    // new tab (→ `TA63R2-M1`). The sibling case below asserts its own `return` for exactly this
+    // reason, so this is the file's own standard rather than a new one.
+    expect(PLAYER).toMatch(/if \(event\.metaKey \|\| event\.ctrlKey[^)]*\) \{ return; \}/);
   });
 
   it("intercepts only the two controls that carry a data hook", () => {
     expect(PLAYER).toContain('closest<HTMLElement>("[data-second], [data-player-open]")');
+  });
+
+  it("selects hooks that the facade and the page still emit", () => {
+    // The other end of the same string contract. Guarded at the reader's end only, a rename in
+    // either emitter leaves the selector above green while `closest()` matches nothing: İzle
+    // stops opening a player, rows stop jumping, and tsc, ESLint and every screenshot agree
+    // that nothing happened (→ `TA63R2-M3`).
+    expect(FACADE).toContain('data-player-open=""');
+    expect(PAGE).toContain("data-second={question.startSecond}");
+  });
+});
+
+describe("the two attributes the privacy rulings put on this surface", () => {
+  it("delegates no motion sensor to the player frame", () => {
+    // `allow` is a Permissions-Policy delegation, so naming the sensors is what would unblock
+    // a motion stream for the cross-origin frame — a published cookieless fingerprinting
+    // vector, and the identifier the `youtube-nocookie` host exists to deny (→ `SEC63-I1`).
+    // Re-pasting YouTube's own embed-dialog snippet is how it comes back.
+    expect(VIDEO).toContain('allow="autoplay;');
+    expect(VIDEO).not.toMatch(/allow="[^"]*(accelerometer|gyroscope)/);
+  });
+
+  it("asks the browser to send no referrer with the hotlinked thumbnail", () => {
+    // The second of DEC 2026-08-15k's two cheap measures, and it was already dropped once —
+    // at planning time, before review restored it (→ `VAL63-I1`, `TA63R2-M2`). A JSX tidy-up
+    // is enough to drop it again, and the rendered frame stays pixel-identical.
+    expect(FACADE).toContain('referrerPolicy="no-referrer"');
   });
 
   it("leaves a non-playable block's rows entirely alone", () => {

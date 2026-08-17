@@ -48,6 +48,12 @@ import { useSyncExternalStore } from "react";
  * That is the one state this whole architecture exists to make unreachable (→ PR #63 review
  * `CODE63-I1`), and it was reachable in three presses: İzle, breadcrumb, back.
  *
+ * "Unreachable" has one knowing exception, and it is not recorded twice: a same-route remount
+ * commits the new tree before the departing block's cleanup runs, so the store is still stale
+ * for that one render. Its scope, the path that reaches it today and the condition that would
+ * turn it into a real defect are written where the cleanup lives — `deneme-player.tsx`, "One
+ * tick is not covered".
+ *
  * `close` is therefore SCOPED to a block rather than global. The caller is the block's own
  * island, from its unmount cleanup (`deneme-player.tsx`), and a route change unmounts all
  * thirty of them at once — so the one holding the open player clears it and the other

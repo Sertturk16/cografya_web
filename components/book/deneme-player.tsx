@@ -56,6 +56,29 @@ import { closeVideo, openVideo } from "./active-video";
  * sit in one file; and a route change unmounts all thirty blocks, so the one holding the
  * player clears it and the rest are no-ops. It does NOT fire when a block merely stops being
  * the active one — that block does not unmount, it just renders its facade again.
+ *
+ * ## One tick is not covered, and that is known rather than overlooked
+ *
+ * This cleanup is a passive effect, so on a SAME-ROUTE remount — where React deletes the old
+ * subtree and inserts the new one in a single commit — the new block renders BEFORE the old
+ * block's cleanup runs, and reads a store that is still stale. The section above therefore
+ * states an invariant with one exception, not an absolute (→ PR #63 review `CODER2-M1`).
+ *
+ * The path that reaches it today is the header's language switcher: `/kitaplar/{slug}` and
+ * `/en/books/{slug}` are different segments, so the subtree is re-created, and next-intl's
+ * `Link` makes it a client transition rather than a document load. A reader who pressed İzle
+ * seconds earlier gets one commit of that block's iframe back, then the cleanup fires and it
+ * is gone — no playback, no focus move, no persistent frame; one embed request that repeats a
+ * request the same reader authorised in this same document, for this same video. That is why
+ * it is accepted rather than fixed here.
+ *
+ * WHAT WOULD MAKE IT A REAL DEFECT, so that whoever gets there does not have to rediscover it:
+ * a direct book→book link. The store's `denemeNo` would then match a block of a DIFFERENT
+ * book, and the tick would request an embed for a video the reader never asked for — the
+ * gesture-free third-party request this whole architecture exists to prevent. No such link
+ * exists on this page today. Whoever adds one closes the residue in the same change; full
+ * closure scopes the store to the page instance, which is a plan-w2 architecture decision and
+ * sits with Atlas as a tracked follow-up.
  */
 export function DenemePlayer({
   className,
