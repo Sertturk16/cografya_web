@@ -170,9 +170,9 @@
     "summaryClose": "Close",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "zoomReset": "Reset the map view",
+    "zoomReset": "Show the whole map",
     "zoomControls": "Zoom controls",
-    "zoomInstructions": "With the map focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to return to the starting view. {selectHint} With a mouse you can zoom with the wheel and pan by dragging; on a touch screen, pinch to zoom and drag with one finger to pan.",
+    "zoomInstructions": "With the map focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to show the whole map. {selectHint} With a mouse you can zoom with the wheel and pan by dragging; on a touch screen, pinch to zoom and drag with one finger to pan.",
     "selectHintProvinces": "With a province focused, Enter or Space selects that province.",
     "selectHintRegions": "With a province focused, Enter or Space picks the region that province belongs to.",
     "shapeSolved": "{name}, solved"

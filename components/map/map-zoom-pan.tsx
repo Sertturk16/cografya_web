@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { MAP_CAMERA_EVENT, isMapCameraEvent } from "@/lib/map/map-camera";
 import {
   CLICK_MOVE_THRESHOLD_PX,
   type ViewBox,
   clampPan,
+  fitViewToAspect,
   formatViewBox,
   isRealClick,
   moveDistance,
   panBy,
   parseViewBox,
+  unionBox,
   viewToIncludeShape,
   zoomAtPoint,
   zoomFromPinch,
@@ -39,6 +42,22 @@ interface MapZoomPanProps {
   /** id of the visually-hidden instructions element the `<svg>` describes itself with. */
   instructionsId: string;
   labels: MapZoomPanLabels;
+  /**
+   * WHERE the control cluster sits, expressed as the two classes that position it — the
+   * caller's own, so a surface can place the buttons without this file learning about it
+   * (→ DEC 2026-08-17g md. 3: on a phone the game's cluster leaves the map entirely).
+   *
+   * They REPLACE the shared overlay classes rather than being appended: the game's cluster
+   * is a row in the frame's flow, which is not a variation on `position: absolute; inset: 0`
+   * but its opposite, and a caller that has to out-specify six declarations from another
+   * module is the override-soup this prop exists to avoid. The BUTTONS keep the shared
+   * `.zoomButton` look either way — only placement is the caller's.
+   *
+   * Omitted (the `/dunya` case) they are exactly today's classes, so that surface renders the
+   * same markup it always has.
+   */
+  layerClassName?: string;
+  controlsClassName?: string;
 }
 
 /* REMOVED 2026-08-02 (owner ruling): the one-time "scroll to zoom" hint box (SPEC §9) and
@@ -69,12 +88,14 @@ const PAN_START_PX = CLICK_MOVE_THRESHOLD_PX;
  * `/dunya` world map and, from Kâşif PR-2, by the `/oyun` game map — where zoom is not a
  * convenience but the only way to reach the smallest provinces on a phone (SPEC §7.2).
  *
- * It is a thin sibling of the server-rendered `<svg>` inside whichever container it is
- * mounted in (`[data-map-root]` on `/dunya`, `[data-game-map]` on `/oyun`) — it resolves
- * that container as its own `parentElement` rather than by name, which is why one
- * component serves both. Exactly the same "reach the shared container, enhance it
- * imperatively" pattern as
- * `MapHoverCard`. It NEVER re-renders the map per frame: the viewBox is mutated directly
+ * It enhances the server-rendered `<svg>` found inside whichever element it is mounted in —
+ * resolved as its own `parentElement` rather than by name, which is why one component serves
+ * both surfaces. Exactly the same "reach the shared container, enhance it imperatively"
+ * pattern as `MapHoverCard`. Since the game's cluster moved out of the map box the host and
+ * the SVG's own parent are no longer always the same element, so the two roles are named
+ * apart inside the effect: the HOST is where the buttons live, the CANVAS (`svg.parentElement`
+ * — `.mapRoot` on `/dunya`, `.stage` on `/oyun`) is what carries `data-panning` and swallows
+ * a drag's click. It NEVER re-renders the map per frame: the viewBox is mutated directly
  * on the element and batched through `requestAnimationFrame`, so pan/zoom scrubbing stays
  * INP-safe (SPEC §8). All the SEO surface (the crawlable country `<a>` links, JSON-LD,
  * metadata, hreflang) is untouched server HTML — this only adds interaction on top.
@@ -85,7 +106,13 @@ const PAN_START_PX = CLICK_MOVE_THRESHOLD_PX;
  * keyboard (+/−/arrows/0/Home when the map is focused, SPEC §5) · reduced-motion skips
  * the zoom tween (SPEC §6).
  */
-export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps) {
+export function MapZoomPan({
+  viewBox,
+  instructionsId,
+  labels,
+  layerClassName,
+  controlsClassName,
+}: MapZoomPanProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   // Imperative control handles wired up on mount; the rendered buttons call through
   // these so the JSX never needs the live viewBox in React state.
@@ -96,12 +123,36 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
   } | null>(null);
 
   useEffect(() => {
-    const container = rootRef.current?.parentElement;
-    const svg = container?.querySelector("svg");
-    if (!(container instanceof HTMLElement) || !(svg instanceof SVGSVGElement)) return;
+    // The island is a sibling of the `<svg>` on /dunya and a sibling of the STAGE that holds
+    // it in the game (the game's cluster left the map box, → DEC 2026-08-17g md. 3), so the
+    // search is a descendant one and the contract is "the element I am mounted in contains
+    // exactly one <svg>".
+    const host = rootRef.current?.parentElement;
+    const svg = host?.querySelector("svg");
+    if (!(host instanceof HTMLElement) || !(svg instanceof SVGSVGElement)) return;
+
+    // The element that carries `data-panning` and swallows the click of a drag is the SVG's
+    // OWN parent, not the island's host. Today those are the same element on both surfaces
+    // (`.mapRoot` on /dunya, `.stage` in the game) — naming it this way is what keeps them
+    // the same now that the island's host can be one level further out. Eight game CSS rules
+    // are written against `.stage[data-panning]`, and they would have gone quiet.
+    const canvas = svg.parentElement;
+    if (!(canvas instanceof HTMLElement)) return;
 
     const world = parseViewBox(viewBox);
+    // The 1× REFERENCE and the OPENING frame. They are the world itself wherever the stage
+    // carries the map's own shape — /dunya, every region round, and the game's own desktop
+    // layout — because `fitViewToAspect` answers a matching aspect with the world
+    // (`ASPECT_EPSILON`). Where the stage has a shape of its own (the phone's 1.2 stage) the
+    // reference grows to hold the whole country, and the opening frame is the crop that pays
+    // for the scale (→ DEC 2026-08-17g md. 1/md. 2).
+    let base: ViewBox = { ...world };
     let view: ViewBox = { ...world };
+    // Until the player moves the map themselves, a re-measure re-derives the opening frame
+    // rather than preserving the current one: rotating a phone should re-frame the country,
+    // not keep a crop computed for the other orientation. After the first interaction the
+    // player's view is theirs and only its shape is rebuilt.
+    let userAdjusted = false;
 
     const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -134,6 +185,16 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
     const writeNow = (v: ViewBox) => {
       svg.setAttribute("viewBox", formatViewBox(v));
       writeZoomRadii(v);
+      // --- who owns the vertical finger ------------------------------------------------
+      // A stage tall enough to matter (the phone's 1.2 box is half the screen) cannot also
+      // hold `touch-action: none` unconditionally: the page under it would be unscrollable
+      // wherever the map is. The rule falls out of the view itself — while every row of the
+      // world is on screen a vertical drag moves the map by exactly nothing (`clampPan` pins
+      // it), so the page may have it; the moment the view is vertically cropped the map needs
+      // it back. One attribute, read only by the game's stylesheet: /dunya keeps its
+      // unconditional `touch-action: none` because its own rules never mention this.
+      const cropsVertically = v.h < world.h - 0.5;
+      svg.toggleAttribute("data-vertical-pan", cropsVertically);
     };
     const scheduleWrite = () => {
       if (applyRaf !== null) return;
@@ -191,9 +252,20 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
     // Center-anchored discrete zoom used by the buttons and the +/- keys.
     const zoomStep = (factor: number) => {
       cancelTween();
-      animateTo(zoomAtPoint(view, world, zoomOf(world, view) * factor, 0.5, 0.5));
+      userAdjusted = true;
+      animateTo(zoomAtPoint(view, world, zoomOf(base, view) * factor, 0.5, 0.5, base));
     };
-    const reset = () => animateTo({ ...world });
+    /**
+     * "Show the whole map" (→ DEC 2026-08-17g md. 4). The target is the 1× REFERENCE, not the
+     * frame the map opened with: on a phone those differ, and the owner ruled that the button
+     * a player presses to see everything must actually show everything. On every surface
+     * whose stage carries the map's own shape the two are the same rectangle and this is the
+     * reset it has always been.
+     */
+    const reset = () => {
+      userAdjusted = true;
+      animateTo({ ...base });
+    };
 
     apiRef.current = {
       zoomIn: () => zoomStep(ZOOM_STEP),
@@ -201,13 +273,45 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
       reset,
     };
 
+    /**
+     * Derive both rectangles from the box the stage actually rendered, and write the view.
+     *
+     * MEASURED, not passed in: the phone stage's height is `min(width / 1.2, viewport cap)`
+     * with a floor at the map's own ratio, so its aspect is a LAYOUT outcome and no server
+     * constant could state it. The box itself is settled by CSS before this runs — the
+     * fixed-size-container rule is untouched (ENGINEERING §3, CLS budget §4 #9) — and what
+     * this decides is only which part of the world is drawn inside it.
+     *
+     * There is no visible step at hydration: the server ships
+     * `preserveAspectRatio="xMidYMid slice"`, whose painted rectangle IS the `"cover"` fit
+     * computed here, so the explicit viewBox written on mount replaces an identical framing.
+     */
+    const reframe = () => {
+      const rect = svg.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const aspect = rect.width / rect.height;
+      const nextBase = fitViewToAspect(world, aspect, "contain");
+      if (userAdjusted) {
+        // Keep the player's zoom and the point they were looking at; rebuild the shape.
+        const zoom = zoomOf(base, view);
+        base = nextBase;
+        view = zoomAtPoint(view, world, zoom, 0.5, 0.5, base);
+      } else {
+        base = nextBase;
+        view = fitViewToAspect(world, aspect, "cover");
+      }
+      cancelTween();
+      writeNow(view);
+    };
+
     // --- wheel zoom, cursor-anchored, direct 1:1 (no tween) --------------------------
     const onWheel = (e: WheelEvent) => {
       e.preventDefault(); // never scroll the page while zooming the map
       cancelTween();
+      userAdjusted = true;
       const { fx, fy } = svgFraction(e.clientX, e.clientY);
       const factor = Math.exp(-e.deltaY * 0.0015); // smooth exponential
-      setView(zoomAtPoint(view, world, zoomOf(world, view) * factor, fx, fy));
+      setView(zoomAtPoint(view, world, zoomOf(base, view) * factor, fx, fy, base));
     };
 
     // --- pointer pan (single) + pinch (two), no capture so native click stays intact -
@@ -246,7 +350,7 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
       } else if (pointers.size === 2) {
         const [a, b] = [...pointers.values()];
         if (a && b) {
-          pinchStart = { dist: clientDistance(a, b), zoom: zoomOf(world, view) };
+          pinchStart = { dist: clientDistance(a, b), zoom: zoomOf(base, view) };
           panOrigin = null; // suspend single-finger pan during the pinch
         }
       }
@@ -265,7 +369,8 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
           const midY = (a.y + b.y) / 2;
           const { fx, fy } = svgFraction(midX, midY);
           const targetZoom = zoomFromPinch(pinchStart.zoom, pinchStart.dist, dist);
-          setView(zoomAtPoint(view, world, targetZoom, fx, fy));
+          userAdjusted = true;
+          setView(zoomAtPoint(view, world, targetZoom, fx, fy, base));
         }
         markPanning();
         return;
@@ -279,6 +384,7 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
         const dyClient = p.y - panOrigin.cy;
         maxMove = Math.max(maxMove, moveDistance(dxClient, dyClient));
         if (!panning && maxMove < PAN_START_PX) return; // still a candidate tap
+        userAdjusted = true;
         markPanning();
         // Convert client px delta into world units, then move opposite the drag.
         const worldPerPxX = view.w / rect.width;
@@ -299,11 +405,11 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
     const markPanning = () => {
       if (panning) return;
       panning = true;
-      container.dataset.panning = "true";
+      canvas.dataset.panning = "true";
     };
     const endPanning = () => {
       panning = false;
-      delete container.dataset.panning;
+      delete canvas.dataset.panning;
     };
 
     const onPointerUp = (e: PointerEvent) => {
@@ -345,8 +451,9 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
     // unseeded backdrop — the expected "zoom into empty sea" gesture.
     const onDblClick = (e: MouseEvent) => {
       e.preventDefault();
+      userAdjusted = true;
       const { fx, fy } = svgFraction(e.clientX, e.clientY);
-      animateTo(zoomAtPoint(view, world, zoomOf(world, view) * ZOOM_STEP, fx, fy));
+      animateTo(zoomAtPoint(view, world, zoomOf(base, view) * ZOOM_STEP, fx, fy, base));
     };
 
     // --- keyboard, only while the map surface itself is focused (SPEC §5) ------------
@@ -354,6 +461,7 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
       if (e.target !== svg) return; // don't hijack keys while a country <a> is focused
       const panX = view.w * KEY_PAN_FRACTION;
       const panY = view.h * KEY_PAN_FRACTION;
+      if (e.key.startsWith("Arrow")) userAdjusted = true;
       switch (e.key) {
         case "+":
         case "=":
@@ -435,34 +543,68 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
       if (next !== view) animateTo(next); // identity-unchanged when already fully visible
     };
 
-    // Reset to the world view on a bfcache restore (SPEC §7 — no persistence).
+    // Reset to the opening view on a bfcache restore (SPEC §7 — no persistence). It goes
+    // through `reframe` so a restore into a different orientation re-derives the frame from
+    // the box that is actually on screen.
     const onPageShow = (ev: PageTransitionEvent) => {
       if (ev.persisted) {
         cancelTween();
-        view = { ...world };
-        writeNow(view);
+        userAdjusted = false;
+        reframe();
       }
     };
+
+    /**
+     * "Cevabı göster" pans the map to the answer — and does nothing else (→ DEC 2026-08-17g
+     * md. 4). `viewToIncludeShape` is the whole implementation: it never zooms IN, which is
+     * what keeps Kâşif SPEC §7.2's ban intact (an automatic zoom would hand the player the
+     * answer), and it centres a target larger than the view — the bölge case, where the
+     * answer is a dozen provinces and their union may not fit at the current zoom.
+     */
+    const onCamera = (event: Event) => {
+      if (!isMapCameraEvent(event)) return;
+      const boxes: ViewBox[] = [];
+      for (const shape of event.detail.shapes) {
+        if (!svg.contains(shape)) continue;
+        const box = shape.getBBox();
+        if (box.width <= 0 || box.height <= 0) continue;
+        boxes.push({ x: box.x, y: box.y, w: box.width, h: box.height });
+      }
+      const target = unionBox(boxes);
+      if (!target) return;
+      const next = viewToIncludeShape(view, world, target);
+      if (next !== view) animateTo(next); // identity-unchanged when already fully visible
+    };
+
+    // Re-derive the frames when the stage's box changes shape — an orientation change, a
+    // desktop resize, or the phone height cap starting to bind. Cheap by construction: one
+    // measurement and one attribute write, and on a surface whose stage carries the map's own
+    // shape it recomputes the same two rectangles it already had.
+    const resizeObserver = new ResizeObserver(() => reframe());
 
     // Make the SVG a keyboard-focusable pan/zoom surface without disturbing the crawlable
     // country <a> tab order (SPEC §5) or its existing <title> labelling.
     svg.setAttribute("tabindex", "0");
     svg.setAttribute("data-zoomable", "true");
     svg.setAttribute("aria-describedby", instructionsId);
-    // Defend against a bfcache-restored zoomed attribute (effect doesn't re-run on restore).
-    writeNow(view);
+    // Derive the opening frame and write it. Also defends against a bfcache-restored zoomed
+    // attribute (the effect doesn't re-run on restore).
+    reframe();
 
     svg.addEventListener("wheel", onWheel, { passive: false });
     svg.addEventListener("pointerdown", onPointerDown);
     svg.addEventListener("dblclick", onDblClick);
     svg.addEventListener("keydown", onKeyDown);
     svg.addEventListener("focusin", onFocusIn);
-    container.addEventListener("click", onClickCapture, true);
+    svg.addEventListener(MAP_CAMERA_EVENT, onCamera);
+    canvas.addEventListener("click", onClickCapture, true);
     window.addEventListener("pageshow", onPageShow);
+    resizeObserver.observe(svg);
 
     return () => {
       if (applyRaf !== null) cancelAnimationFrame(applyRaf);
       cancelTween();
+      resizeObserver.disconnect();
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
@@ -471,7 +613,8 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
       svg.removeEventListener("dblclick", onDblClick);
       svg.removeEventListener("keydown", onKeyDown);
       svg.removeEventListener("focusin", onFocusIn);
-      container.removeEventListener("click", onClickCapture, true);
+      svg.removeEventListener(MAP_CAMERA_EVENT, onCamera);
+      canvas.removeEventListener("click", onClickCapture, true);
       window.removeEventListener("pageshow", onPageShow);
       endPanning();
       apiRef.current = null;
@@ -479,8 +622,12 @@ export function MapZoomPan({ viewBox, instructionsId, labels }: MapZoomPanProps)
   }, [viewBox, instructionsId]);
 
   return (
-    <div ref={rootRef} className={styles.zoomLayer}>
-      <div className={styles.zoomControls} role="group" aria-label={labels.controls}>
+    <div ref={rootRef} className={layerClassName ?? styles.zoomLayer}>
+      <div
+        className={controlsClassName ?? styles.zoomControls}
+        role="group"
+        aria-label={labels.controls}
+      >
         <button
           type="button"
           className={styles.zoomButton}

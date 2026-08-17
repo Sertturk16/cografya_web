@@ -16,6 +16,7 @@ import {
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import type { GameShapeTargetEntry } from "@/lib/game/map-shapes";
+import { dispatchMapCamera } from "@/lib/map/map-camera";
 import {
   advanceRound,
   answerRound,
@@ -544,6 +545,41 @@ export function GameIsland({
       else shape.removeAttribute("data-state");
     }
   }, [feedback, wrongAnswer, targetSet, solvedTargetIds]);
+
+  /**
+   * --- DOM sync: the camera, for a SHOWN answer only (→ DEC 2026-08-17g md. 4) --------------
+   *
+   * THE DEFECT IT FIXES. Since the phone stage took a shape of its own, roughly half the
+   * country's width is off screen at rest and panning is normal play. Press "Cevabı göster"
+   * while looking at the east and Bolu is marked — somewhere you cannot see. The player
+   * presses the one button whose entire job is to show them the answer and nothing appears to
+   * happen.
+   *
+   * WHAT IS DELIBERATELY NOT DONE. No zoom, in either direction. Kâşif SPEC §7.2 bars
+   * auto-zooming to a target because the zoom itself would answer the question; that ban is
+   * absolute while the question is open, and this fires only once it has been given up on.
+   * The pan is the smallest thing that makes the button honest, so it is the only thing sent.
+   *
+   * WHY IT DOES NOT READ `data-state`. The revealed shapes are resolved from the round's own
+   * target id, so this effect does not depend on the paint effect above having run first —
+   * two effects in one commit whose order is a fact about declaration order is exactly the
+   * coupling that goes wrong when someone reorders them. It also fires once per shown answer:
+   * `feedback` is a fresh object per outcome, and every other kind returns immediately.
+   */
+  useEffect(() => {
+    if (feedback?.kind !== "revealed") return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    const revealed: SVGGraphicsElement[] = [];
+    for (const node of svg.querySelectorAll(HIT_SHAPES)) {
+      if (!(node instanceof SVGGraphicsElement)) continue;
+      const plate = node.getAttribute("data-plate") ?? "";
+      // In bölge mode every province of the region shares its target id, so this collects the
+      // whole answer and the map pans to the union of it.
+      if (targetSet.plateToTarget[plate] === feedback.targetId) revealed.push(node);
+    }
+    dispatchMapCamera(svg, revealed);
+  }, [feedback, targetSet]);
 
   // --- timers -----------------------------------------------------------------------------------
   useEffect(() => {

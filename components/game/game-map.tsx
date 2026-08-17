@@ -217,26 +217,30 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
           the viewBox, so it is settled before any script runs and the overlays mount on top
           of it without moving a single pixel of the page (CLS budget, CONVENTIONS §6 #9).
           The CSS default is the full map's ratio, for the case the string is unreadable. */}
-      <div className={styles.stage} style={stageStyle} data-game-map data-game-mode={mode}>
-        {/* Rendered BEFORE the <svg> so the zoom controls come first in tab order — a
-            keyboard player reaches +/−/reset without tabbing through every province (the
-            solution already proven on /dunya). Visual position is unaffected: the layer is
-            absolutely positioned, and the island finds the <svg> by query. */}
-        <MapZoomPan
-          viewBox={viewBox}
-          instructionsId={instructionsId}
-          labels={{
-            zoomIn: t("zoomIn"),
-            zoomOut: t("zoomOut"),
-            reset: t("zoomReset"),
-            instructions: zoomInstructions,
-            controls: t("zoomControls"),
-          }}
-        />
-
+      <div
+        className={styles.stage}
+        style={stageStyle}
+        data-game-map
+        data-game-mode={mode}
+        /* WHICH SIZING MODEL THE STAGE USES ON A PHONE (→ DEC 2026-08-17g md. 1, ruling O4).
+           A whole-country round takes the ruled 1.2 target and is cropped east-west to pay
+           for the scale; a region round keeps the frame its own bounds produced, because
+           cropping there would push part of the ASKED-FOR region off screen. Derived from the
+           frame, exactly like `isSubset` above — a second prop could only ever disagree. */
+        data-game-frame={isSubset ? "subset" : "country"}
+      >
         <svg
           className={styles.svg}
           viewBox={viewBox}
+          /* THE STAGE MAY NOW BE A DIFFERENT SHAPE FROM THE MAP (→ DEC 2026-08-17g md. 1), and
+             this attribute is what makes the first paint correct without a script. `slice`
+             fills the box and crops the overflow — the same rectangle `MapZoomPan` computes
+             for its opening view — so with JavaScript off the phone still gets the framed,
+             magnified map, and when the island writes its explicit viewBox nothing moves.
+             Once the island is running every view it writes carries the box's own aspect, so
+             `slice` and the default `meet` paint identically from then on; leaving it means a
+             sub-pixel mismatch crops a hair rather than letterboxing one. */
+          preserveAspectRatio="xMidYMid slice"
           role="img"
           aria-labelledby={titleId}
           focusable="false"
@@ -417,7 +421,12 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
           a credit that is closed by default is not visible.
 
           The `/turkiye` and `/dunya` maps are NOT touched — there the credit still overlays
-          the map from `map.module.css`, because those surfaces are navigation, not play. */}
+          the map from `map.module.css`, because those surfaces are navigation, not play.
+
+          IT IS RENDERED BEFORE THE ZOOM CLUSTER, and on a phone the two share one line when
+          the width allows (`game-map.module.css`). Reading order and visual order agree —
+          credit left, buttons right — which is why this is markup order rather than a flex
+          `order`. The credit carries no link, so nothing about the keyboard path changes. */}
       {/* TWO LINES, TWO ELEMENTS — not one paragraph with a <br>. The visual result is
           identical; what changes is the TEXT. A <br> contributes no character, so the
           node's text content ran the two credits together as "…ODbLMevsimlik göl
@@ -433,6 +442,39 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
           {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
         </span>
       </p>
+
+      {/* THE ZOOM CLUSTER, OUT OF THE MAP BOX (→ DEC 2026-08-17g md. 3).
+          It used to be an absolutely-positioned overlay inside the stage, and on a phone that
+          overlay was 132px of vertical buttons over a 119px stage: the last 11 of 81 targets
+          the design tour found under chrome were all under these three buttons. Below the
+          64rem breakpoint it is now a row in the frame's flow — on the credit's line where the
+          width allows, under it where it does not — so it cannot cover a province at any zoom
+          level. From 64rem up it goes back to being an overlay: measured occlusion there is
+          0–1 of 81 and the vertical budget is the scarce thing (`game-map.module.css`).
+
+          TAB ORDER, AND WHY THE OLD "RENDERED FIRST" NOTE IS GONE. The cluster used to sit
+          before the <svg> so a keyboard player reached +/−/reset without passing 81 provinces.
+          The keyboard path is the MAP SURFACE itself: the <svg> is `tabindex="0"`, comes
+          before its own shapes, carries `+ − 0 Home` and the arrow keys, and points at the
+          instructions below via aria-describedby. So the buttons are the pointer affordance,
+          and they sit where this screen already puts its controls — after the map, next to
+          "Devam" and "Cevabı göster", which have always been below it. Placing them first in
+          the DOM and last visually (a flex `order` split) was considered and rejected: a
+          focus order that disagrees with the visual one is a worse trade than a late
+          secondary control. */}
+      <MapZoomPan
+        viewBox={viewBox}
+        instructionsId={instructionsId}
+        layerClassName={styles.zoomLayer}
+        controlsClassName={styles.zoomControls}
+        labels={{
+          zoomIn: t("zoomIn"),
+          zoomOut: t("zoomOut"),
+          reset: t("zoomReset"),
+          instructions: zoomInstructions,
+          controls: t("zoomControls"),
+        }}
+      />
 
       {/* Keyboard-controls description the zoomable SVG points at via aria-describedby
           (wired client-side by the zoom island). Visually hidden — the always-visible
