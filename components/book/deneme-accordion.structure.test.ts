@@ -31,9 +31,16 @@ const sourceOf = (relative: string) =>
 /** Comments stripped before every scan — the PR-A CR-S2 lesson: a rule quoted inside a comment
  *  must never satisfy (or trip) a source-text guard. This file's own prose says `<button>` and
  *  `{open &&` in several places, so without this the negative assertions below would fail on
- *  their own documentation. */
+ *  their own documentation.
+ *
+ *  A JSX comment comes out as a UNIT first — the shape `attribution-gate.test.ts` already uses —
+ *  and that is what makes adjacency assertable at all. Dropping only the C-style body leaves the
+ *  braces that wrapped it standing between two elements that ARE adjacent in the tree, so "the
+ *  heading has no wrapper around it" could not be written as a regex, and the assertion that
+ *  claimed to check it checked nothing (→ PR #66 review `TA66R2-M1` / `CODE66R2-M4`). */
 const stripComments = (source: string) =>
   source
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .split("\n")
     .filter((line) => !line.trimStart().startsWith("//"))
@@ -135,8 +142,14 @@ describe("the toggle stays a native disclosure control", () => {
     expect(FLAT_PAGE).toMatch(/<h3\s+id=\{denemeFragment\(video\.denemeNo\)\}/);
     // DIRECT CHILD, not wrapped. That permission does not pass through an intervening `<span>`
     // (phrasing-only), and no flow container is legal in `<summary>` either, so a wrapper of any
-    // kind is a content-model violation (→ `FENER66-M1`). Asserted by adjacency.
-    expect(FLAT_PAGE).toMatch(/<summary className=\{styles\.denemeSummary\}>\s*(\{\/\*)?/);
+    // kind is a content-model violation (→ `FENER66-M1`). Asserted by adjacency — really, this
+    // time: the previous form ended in an optional group over a possibly-empty run of whitespace,
+    // so it reduced to the substring test the `it` above already makes, and the group could never
+    // have matched anyway because the stripper had already deleted every JSX comment. A wrapper
+    // under any OTHER name than the retired one walked straight past it (→ `TA66R2-M1`).
+    expect(FLAT_PAGE).toMatch(
+      /<summary className=\{styles\.denemeSummary\}>\s*<h3 id=\{denemeFragment\(video\.denemeNo\)\}/,
+    );
     expect(FLAT_PAGE).not.toContain("denemeSummaryText");
   });
 
@@ -157,13 +170,36 @@ describe("the toggle stays a native disclosure control", () => {
     // the §B4 4.9 offset (→ `TA66-M2`). Asserted by index, the technique
     // `deneme-video.src-invariant.test.ts` already establishes for this class.
     const reveal = FLAT_PLAYER.indexOf("root.open = true;");
-    const scroll = FLAT_PLAYER.indexOf("target.scrollIntoView()");
+    const firstScroll = FLAT_PLAYER.indexOf("target.scrollIntoView()");
+    // BOTH occurrences, not just the first. The effect scrolls in two branches — the
+    // engine-did-not-reveal path and the measure-and-correct path — and the one that runs on both
+    // measured engines is the SECOND. Pinning only `indexOf` left "move just the `else` block
+    // below the bail" passing while the correction was lost on the real path (→ `CODE66R2-M5`).
+    const lastScroll = FLAT_PLAYER.lastIndexOf("target.scrollIntoView()");
     const bail = FLAT_PLAYER.indexOf("if (!playable) return;");
     expect(reveal).toBeGreaterThan(0);
-    expect(scroll).toBeGreaterThan(0);
+    expect(firstScroll).toBeGreaterThan(0);
     expect(bail).toBeGreaterThan(0);
-    expect(scroll).toBeGreaterThan(reveal);
-    expect(bail).toBeGreaterThan(scroll);
+    expect(firstScroll).toBeGreaterThan(reveal);
+    expect(lastScroll).toBeGreaterThanOrEqual(firstScroll);
+    expect(bail).toBeGreaterThan(lastScroll);
+  });
+
+  it("keeps the three round-1 fixes that only a source scan can see", () => {
+    // Each of these landed as production behaviour with an explanatory comment and no guard, and
+    // each has a one-line revert that passes everything else (→ `TA66R2-M5`). None is visible in a
+    // rendered frame: two are load-time behaviours and the third only shows on a block whose
+    // provider snapshot has aged out, which today is none of them.
+    //
+    // (a) `CODE66-M4` — the reveal is scoped to targets INSIDE the panel, so `#deneme-N` answers
+    //     the same way on a page load as it does from the jump strip.
+    expect(FLAT_PLAYER).toMatch(/root\.querySelector\(\s*":scope > summary"/);
+    // (b) `CODE66-M5` — the corrective scroll runs only when the row is off its mark; deleting the
+    //     comparison restores the post-hydration scroll-jack.
+    expect(FLAT_PLAYER).toMatch(/Math\.abs\(top - wanted\) > 1/);
+    // (c) `CODE66-I1` — the separator and the künye are rendered together or not at all; without
+    //     the condition a non-`rich` row ends in a dangling "·".
+    expect(FLAT_PAGE).toContain('{state.kind === "rich" && (');
   });
 });
 
@@ -182,6 +218,11 @@ describe("the jump strip emits no dead fragment", () => {
     // The branch is what binds the inputs to the output, and it was unpinned: inverting the
     // condition to `!coveredDenemeNumbers.has(no)` passed every assertion here while the strip
     // linked precisely the ten numbers that have no target (→ `TA66-M3`).
+    //
+    // The DERIVATION is where that inversion actually lives, and pinning the JSX plus a
+    // `toContain` on the membership test did not reach it — the mutated line still contains the
+    // substring (→ `TA66R2-M2`). Asserted whole.
+    expect(FLAT_PAGE).toMatch(/const covered = coveredDenemeNumbers\.has\(no\);/);
     expect(FLAT_PAGE).toMatch(
       /\{covered \? \(\s*<a className=\{styles\.jumpItem\} href=\{`#\$\{denemeFragment\(no\)\}`\}/,
     );

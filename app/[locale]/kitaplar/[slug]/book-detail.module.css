@@ -186,7 +186,7 @@ a.jumpItem:hover {
 
 /* THE CLOSED ROW / THE TRIGGER.
    `list-style: none` plus the WebKit pseudo-element removes the UA disclosure marker (we draw
-   our own chevron); `display: grid` is what lets the row lay itself out, and it also removes
+   our own chevron); `display: flex` is what lets the row lay itself out, and it also removes
    the marker in engines that key it to `display: list-item`. */
 /* THE HEADING AND THE FACT STRIP ARE DIRECT CHILDREN, so the layout lives here rather than in a
    wrapper. A `<span>` around them would be a content-model violation (`<span>` is phrasing-only
@@ -219,9 +219,12 @@ a.jumpItem:hover {
   background: var(--color-surface);
 }
 
-/* Heading and facts share one wrapping flex line: side by side where there is room, facts
-   dropping under the heading where there is not. Deliberately NOT a media query — see the
-   `.jumpList` note; this is the same reason. */
+/* THE FACT STRIP, and the wrapping here is its OWN rather than the row's. The heading-and-strip
+   pair wraps on `.denemeSummary`'s line (see its note above); `flex-wrap` on this element is what
+   lets the three facts break INSIDE the strip when the strip alone overruns the line — the
+   English page at 320px, where the row is three lines tall rather than two. The sentence that
+   used to stand here described `.denemeSummaryText` and outlived it by one commit
+   (→ PR #66 review `CODE66R2-M2`). */
 .denemeFacts {
   display: flex;
   flex-wrap: wrap;
@@ -303,12 +306,11 @@ a.jumpItem:hover {
   /* A FIXED FLOOR SO EVERY ROW WRAPS THE SAME WAY — this fixes a measured defect rather than
      polishing one, and the number is measured rather than picked.
 
-     The summary lays the heading and the fact strip out on one wrapping flex line. At 360px
-     that line has 280px, the fact strip is 179px and the gap 12px, so whether the strip stays
-     beside the title or drops beneath it came down to the WIDTH OF THE HEADING'S DIGITS —
-     which in Fraunces are proportional and span 86.6px ("Deneme 1") to 102.4px ("Deneme 40"),
-     ten distinct values across the thirty rows. The result was 25 rows on two lines and 5 on
-     one, in no order a reader could infer: broken rhythm, not a layout rule.
+     The summary lays the heading and the fact strip out on one wrapping flex line. Whether the
+     strip stays beside the title or drops beneath it came down to the WIDTH OF THE HEADING'S
+     DIGITS — which in Fraunces are proportional and span 86.6px ("Deneme 1") to 102.4px
+     ("Deneme 40"), ten distinct values across the thirty rows. The result was 25 rows on two
+     lines and 5 on one, in no order a reader could infer: broken rhythm, not a layout rule.
 
      `font-variant-numeric: tabular-nums` was tried first and REJECTED after measurement: the
      computed style applies, but the widths do not move, because the self-hosted Fraunces subset
@@ -316,11 +318,19 @@ a.jumpItem:hover {
      comment claiming it fixed something.
 
      6.5rem = 104px clears the widest measured heading (102.4px), so the heading contributes a
-     CONSTANT to the line for every row: 104 + 12 + 179 = 295px. That is above the 240px and
-     280px available at 320 and 360 (all thirty rows wrap) and far below the 688px at 768 (none
-     wrap). The behaviour is now a property of the viewport instead of a property of which
-     digits a deneme number happens to contain — which is also what lets
-     `--deneme-summary-height` describe a single height per viewport. */
+     CONSTANT to the line for every row, and whether the strip drops beneath it becomes a
+     property of the viewport instead of a property of which digits a deneme number happens to
+     contain — which is also what lets `--deneme-summary-height` describe a single height per
+     viewport.
+
+     THE STRIP'S OWN WIDTH IS DELIBERATELY NOT RESTATED HERE. It is maintained with
+     `--deneme-summary-height` in `app/globals.css`, which is the comment that turns it into a
+     height; this paragraph kept a private copy and carried a stale 179px from the moment the
+     round-1 label change made it 229px (→ PR #66 review `CODE66R2-M3`). What this rule needs is
+     the comparison, and it holds with room in both directions (re-measured 2026-08-17, Chromium,
+     live data): 104px + the 12px column gap + the strip overruns the summary's flex line at 320
+     and 360 — 244px and 284px of line, either locale — so all thirty rows wrap identically, and
+     clears it easily at 768 (692px of line), where none wraps. */
   min-width: 6.5rem;
 }
 

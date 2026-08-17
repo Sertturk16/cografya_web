@@ -147,32 +147,34 @@ export function DenemePlayer({
        it landed (→ PR #66 review `CODE66-M4`). Scoping the reveal to second-slot targets makes
        both paths agree with the plan instead of adding a listener to chase the deviation.
 
-       THE SCROLL CORRECTS A MEASURED MISPLACEMENT, and only that. Firefox at 320px landed the
-       row at y=105 with the sticky summary's bottom edge at y=124 — the first 19px hidden —
-       because it scrolls before the reveal reflows the block and does not account for a summary
-       that is about to stick; Chromium put the same row at y=144 at every width. But this
-       effect runs after hydration, so scrolling unconditionally opens a window where a reader
-       who has already started scrolling gets yanked back (→ `CODE66-M5`).
+       THE SCROLL IS A CORRECTION, AND ON TODAY'S BUILD IT CORRECTS NOTHING. Re-measured after
+       the token grew to 6rem (2026-08-17, → PR #66 review `CODE66R2-M1`): `#deneme-12-soru-3`
+       lands at 167.7–168.7px against a 168px `scroll-margin-top`, in Chromium AND Firefox, at
+       320/360/768, in both locales, with JavaScript on and off. The branch below therefore
+       measures, finds the row on its mark, and moves nothing. It stays because the misplacement
+       it corrects was real and engine-specific — on the 4.5rem token Firefox put the row under
+       the sticky summary while Chromium did not — and an engine that scrolls before the reveal
+       reflows the block reopens exactly that §B4 4.9 breach.
 
-       The correction therefore fires whenever the row is off its mark, and is skipped only when
-       the row is already exactly where `scroll-margin-top` puts it — which is the common case
-       (Chromium, every width, both locales) and the one worth not touching.
+       IT MEASURES BEFORE IT MOVES, which is what keeps it from becoming a scroll-jack: this
+       effect runs after hydration, so an unconditional scroll would yank a reader who had
+       already started moving (→ `CODE66-M5`).
 
-       A NARROWER GUARD WAS TRIED AND MEASURED WRONG. Restricting the correction to rows that are
-       currently ON SCREEN — on the reasoning that an off-screen row means the reader has scrolled
-       away and should be left alone — breaks the exact case the scroll exists for: Firefox at
-       320px landed the row at y=-204, i.e. off screen ABOVE the viewport, and the guard then
-       declined to correct it and left the deep link pointing at nothing visible. At mount, "off
-       screen" does not mean "the reader moved on"; it means the engine scrolled wrong. The
-       residual cost is accepted and stated rather than engineered around: a reader who starts
-       scrolling in the window between first paint and hydration is pulled back once. That window
-       is small on this page (one small island), it happens at most once per load, and the
-       alternative is a reproducible §B4 4.9 breach on a real engine at a mandatory viewport.
+       A NARROWER GUARD WAS TRIED AND REJECTED — correct ONLY a row that is currently on screen,
+       on the reasoning that an off-screen row means the reader has scrolled away. The round-1
+       record defended that rejection with a measurement this file also contradicted fifteen
+       lines further up, and neither figure reproduces on the shipped build, so both are gone
+       rather than reconciled after the fact. The reason survives without them: at mount, "off
+       screen" does not mean "the reader moved on", it means the engine scrolled wrong — which is
+       the one case the correction exists for, so a guard that skips it inverts the fix. The
+       residual is stated rather than engineered around: a reader who starts scrolling between
+       first paint and hydration can be pulled back once, on a page with one small island, at
+       most once per load.
 
        WITH JAVASCRIPT OFF none of this runs, and the honest degradation is written down rather
-       than implied: both engines here still reveal the panel and land the row in view
-       (measured); an engine that does not would leave the reader on the closed row, one press
-       from the answer. Nothing is unreachable in either case. */
+       than implied: both engines still reveal the panel and land the row on the same 168px mark
+       (measured in the same run, JS disabled); an engine that does not would leave the reader on
+       the closed row, one press from the answer. Nothing is unreachable in either case. */
     const summary = root.querySelector(":scope > summary");
     if (summary !== null && summary.contains(target)) return;
 

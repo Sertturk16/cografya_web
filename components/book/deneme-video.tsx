@@ -114,11 +114,31 @@ export function DenemeVideo({
   // `<body>` and the next Tab would restart from the skip link. It moves to the player, which
   // carries its own accessible name through `title`. After commit, and after paint, because
   // focusing a node the same handler is replacing is the bug pattern this repo has already paid
-  // for once (PR #45 review C1/I5). The default scroll-into-view is WANTED here: the Required
-  // Minimum Functionality rules ask that a player not start playing off-screen.
+  // for once (PR #45 review C1/I5).
+  //
+  // THE SCROLL IS OURS, NOT THE ENGINE'S — measured, after two rounds of assuming otherwise
+  // (→ PR #66 review `CODE66-M6`, then `CODE66R2-I1`). `focus()` on a cross-origin iframe scrolls
+  // NOTHING: at 320px in both Playwright engines the page offset does not move by a pixel, while
+  // the same probe's control (`focus()` on a question row, on a `<summary>`) scrolls both by
+  // hundreds. Focusing a frame owner moves the focused area into the nested document, so any
+  // scroll happens there. The measured cost was a player 292px above the viewport, autoplaying,
+  // after pressing question six of a block the reader had scrolled through — the Required Minimum
+  // Functionality breach the facade architecture exists to respect.
+  //
+  // `preventScroll` so the decision stays ours on an engine that DOES scroll a frame owner, and
+  // the correction runs only when the player sits above its own offset: a box that is already in
+  // view must not be yanked, which is the scroll-jack `deneme-player.tsx` records one file away
+  // (`CODE66-M5`). The offset itself is read back from `book-video.module.css`, so the sticky
+  // summary's height stays a single measurement in the token layer.
   useEffect(() => {
     if (!isActive) return;
-    const frame = requestAnimationFrame(() => iframeRef.current?.focus());
+    const frame = requestAnimationFrame(() => {
+      const iframe = iframeRef.current;
+      if (iframe === null) return;
+      iframe.focus({ preventScroll: true });
+      const wanted = Number.parseFloat(getComputedStyle(iframe).scrollMarginTop) || 0;
+      if (iframe.getBoundingClientRect().top < wanted - 1) iframe.scrollIntoView();
+    });
     return () => cancelAnimationFrame(frame);
   }, [isActive, active?.loadToken]);
 
