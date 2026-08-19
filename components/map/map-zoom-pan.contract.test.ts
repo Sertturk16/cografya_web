@@ -69,6 +69,24 @@ const MAP_CSS = sourceOf("./map.module.css");
 /** Every `zoomAtPoint(…)` call, tolerating one level of nested parentheses in its arguments. */
 const ZOOM_AT_POINT_CALLS = ISLAND.match(/zoomAtPoint\((?:[^()]|\([^()]*\))*\)/g) ?? [];
 
+/**
+ * `reframe`'s own body — its declaration up to the next handler in the file, the slicing
+ * shape `nav-disclosure.test.ts` already uses. EVERY positional claim about this function
+ * must be scoped here: the island calls `cancelTween()` in eleven places (`animateTo`,
+ * `zoomStep`, wheel, pointer, four keyboard branches, `onPageShow`, the effect's cleanup —
+ * and `reframe`), so "the guard sits above the cancel" written as
+ * `/guard[\s\S]*cancelTween\(\)/` over the whole flat file matches one of the other ten
+ * whatever `reframe` does, and can never go red (review TA69R2-I1).
+ *
+ * Either marker missing, or the two reordered, collapses the slice to `""` rather than to
+ * some wider stretch of the file — so a rename cannot quietly widen the scan back to the
+ * shape this replaces. Every assertion below is red on `""`.
+ */
+const REFRAME_START = ISLAND.indexOf("const reframe = (force = false)");
+const REFRAME_END = ISLAND.indexOf("const onWheel = (e: WheelEvent)");
+const REFRAME_BODY =
+  REFRAME_START >= 0 && REFRAME_END > REFRAME_START ? ISLAND.slice(REFRAME_START, REFRAME_END) : "";
+
 describe("the 1× reference is the stage's own frame, not the world", () => {
   // Anchors. Without them every assertion below could pass vacuously after a rename, which is
   // the one way a source-scan guard fails silently.
@@ -111,9 +129,20 @@ describe("a reframe that changes nothing does nothing (CODE69-C1)", () => {
   it("still cancels the tween once it has decided to rebuild", () => {
     // The guard must sit ABOVE the cancel, not replace it: a genuine reframe still has to
     // stop an animation that is flying toward a rectangle of the old shape.
-    expect(ISLAND).toMatch(
-      /if \(!force && sameFrame\(nextBase, base\)\) return;[\s\S]*cancelTween\(\);/,
-    );
+    //
+    // Scoped to `reframe`'s body and asserted BY INDEX, because the claim is positional and
+    // the file is not: written as `/guard[\s\S]*cancelTween\(\);/` over the whole flat
+    // island, the tail matched one of the ten other `cancelTween()` calls and the test
+    // passed with the cancel deleted from `reframe` outright — the only guard CODE69-C1 has
+    // could never go red (review TA69R2-I1, measured both ways).
+    expect(REFRAME_BODY.length).toBeGreaterThan(0);
+    const guard = REFRAME_BODY.indexOf("if (!force && sameFrame(nextBase, base)) return;");
+    const cancel = REFRAME_BODY.indexOf("cancelTween();");
+    expect(guard).toBeGreaterThanOrEqual(0);
+    expect(cancel).toBeGreaterThan(guard);
+    // Exactly one, so that `indexOf` speaks for the whole body: with two calls the order
+    // above describes only the first, and the second could then sit anywhere.
+    expect(REFRAME_BODY.match(/cancelTween\(\)/g) ?? []).toHaveLength(1);
   });
 
   it("never forces the observer's own call", () => {
