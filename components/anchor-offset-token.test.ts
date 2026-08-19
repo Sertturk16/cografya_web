@@ -93,15 +93,22 @@ const calculatedReferences = cssFiles.flatMap(({ css, label }) =>
  * at-rule-scoped, so the filter is a list rather than "everything inside a calc()" — this test
  * must not mistake a declaration elsewhere in the same file for a global definition.
  *
- * · `--header-height` — the sticky site header. Five readers.
- * · `--deneme-summary-height` — the sticky OPEN-deneme summary on the book detail page, the
- *   SECOND addend of that page's question-row offset. It joined this guard with the accordion:
- *   the row it offsets sits inside the collapsed panel, so if this token ever dangles the
- *   `calc()` collapses, the offset silently becomes zero, and every deep link to a question
- *   lands behind the summary — the exact silent class described above, on the one surface
- *   whose deep links are a documented product guarantee.
+ * · `--header-height` — the sticky site header. Its readers include the book page's two anchor
+ *   offsets, the game's viewport math and the nav panel's height cap.
+ *
+ * `--deneme-summary-height` USED TO BE THE SECOND ENTRY and is retired with the accordion it
+ * measured (bench PR, `KITAP-D1`): the row it offset sat inside a collapsed panel under a sticky
+ * `<summary>`, and neither the panel nor the sticky row exists any more. Its absence is asserted
+ * below rather than merely un-listed — a list this test no longer mentions is a list that cannot
+ * fail, and the point of the retired-token case is that a reintroduced reference would be reading
+ * a property nothing declares.
  */
-const GLOBAL_OFFSET_TOKENS = ["--header-height", "--deneme-summary-height"] as const;
+const GLOBAL_OFFSET_TOKENS = ["--header-height"] as const;
+
+/** Tokens that were retired and must not come back as a dangling `var()`. `var()` against an
+ *  undefined property invalidates the entire `calc()`, so the offset silently becomes zero and
+ *  nothing errors — which is why absence is worth a test at all. */
+const RETIRED_TOKENS = ["--header-height-wrapped", "--deneme-summary-height"] as const;
 
 const offsetTokenReaders = calculatedReferences.filter(({ token }) =>
   (GLOBAL_OFFSET_TOKENS as readonly string[]).includes(token),
@@ -151,12 +158,14 @@ describe("sticky-header anchor offsets", () => {
     expect(mobileRules).toMatch(/\.inner\s*\{[^}]*flex-wrap:\s*nowrap/);
   });
 
-  it("no longer references the retired wrapped-header token anywhere", () => {
-    // It described a header that cannot occur any more (the nav moved into a disclosure and
-    // `.inner` is `nowrap` below 64rem), so a reintroduced reference would be reading a
-    // property nothing declares.
+  it.each(RETIRED_TOKENS)("no longer references the retired %s anywhere", (token) => {
+    // `--header-height-wrapped` described a header that cannot occur any more (the nav moved
+    // into a disclosure and `.inner` is `nowrap` below 64rem); `--deneme-summary-height`
+    // measured an accordion row the bench removed. In both cases a reintroduced reference would
+    // be reading a property nothing declares — and the declaration side has to stay gone too,
+    // or the next reader finds a token with no owner and assumes it means something.
     for (const { css } of cssFiles) {
-      expect(stripComments(css)).not.toContain("--header-height-wrapped");
+      expect(stripComments(css)).not.toContain(token);
     }
   });
 });

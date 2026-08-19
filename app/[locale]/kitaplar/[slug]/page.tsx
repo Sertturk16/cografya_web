@@ -4,15 +4,17 @@ import { notFound } from "next/navigation";
 import { Fragment } from "react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
-import { DenemeFacade, DenemeMeta } from "@/components/book/deneme-facade";
-import { DenemePlayer } from "@/components/book/deneme-player";
-import { DenemeVideo } from "@/components/book/deneme-video";
+import type { BenchVideo } from "@/components/book/bench-stage";
+import { DenemeMeta } from "@/components/book/deneme-meta";
+import { VideoBench } from "@/components/book/video-bench";
 import { ProseNote } from "@/components/prose-note";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getBookBySlug, getBooksResilient } from "@/lib/api/books";
 import { formatDuration } from "@/lib/book/duration";
-import { resolveVideoState } from "@/lib/book/video-state";
+import { PUBLISHED_DATE_FORMAT } from "@/lib/book/published-date";
+import { denemeFragment, questionFragment, videoTitle } from "@/lib/book/video-identity";
+import { isPlayable, resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
 import { canonicalEmbedUrl } from "@/lib/youtube/embed";
 import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
@@ -39,15 +41,11 @@ function slugForLocale(book: BookDetail | BookListItem, locale: Locale): string 
   return locale === "en" ? book.slugEn : book.slugTr;
 }
 
-/** The stable fragment id of one deneme block (`SEO-POLICY.md` §B4's book row). */
-function denemeFragment(denemeNo: number): string {
-  return `deneme-${denemeNo}`;
-}
-
-/** The stable fragment id of one question row — `#deneme-12-soru-3`, IA, not a route. */
-function questionFragment(denemeNo: number, questionNo: number): string {
-  return `${denemeFragment(denemeNo)}-soru-${questionNo}`;
-}
+/* THE TWO FRAGMENT BUILDERS AND THE TITLE BUILDER MOVED TO `lib/book/video-identity.ts`, and the
+   move is the whole of this PR's answer to `DEC 2026-08-17i`. They were the only three places
+   this page assumed a deneme book — how a video is NAMED and how it is ADDRESSED — and they now
+   sit in one module with the timeline and the structured data importing the same functions. When
+   the api grows a per-video display title (`FU-BOOK-GENERIC-CONTRACT`), one function learns it. */
 
 /**
  * SSG the books that exist; anything else falls through to `notFound()` (`ENGINEERING.md`
@@ -106,21 +104,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * keeps this page on the right side of that line, and it is why the rows are HTML the first
  * response carries rather than something a player renders later.
  *
- * ## The index is a default-closed accordion, and every one of those rows is still in the HTML
+ * ## The index is a WORKBENCH now, and the accordion is gone
  *
- * Thirty blocks × six rows rendered flat is a ~20,000px wall at 320px, which is what the
- * accordion removes. What it does NOT remove is a single byte of the index: each block is a
- * native `<details>` whose panel is server-rendered and merely collapsed, so all 180 `<a href>`
- * are in the first response exactly as before. That distinction is the whole SEO argument —
- * Google's mobile-first guidance recommends accordions in as many words, on the condition that
- * the content stay equivalent, and the failure mode it warns about is mounting the panel on
- * the client, which this page never does.
+ * One stage holds the page's only player; the thirty rows sit beside it with all six questions
+ * already open. Pressing a question moves the stage, not the page — which is the whole of the
+ * change: a reader working from deneme 3 to deneme 31 no longer loses the video, and reaching
+ * "deneme 24, question 3" costs one press instead of three (jump → open → press).
  *
- * Native `<details>` rather than a scripted disclosure, deliberately: it keeps the rows
- * operable with JavaScript off, hands keyboard and AT semantics to the UA, and adds no
- * hydration to a 30-block page. The repo's other disclosure (`nav-disclosure.tsx`) went the
- * scripted route for a reason that does not exist here — its menu has to be permanently open
- * above 64rem, which a closed `<details>` cannot express.
+ * **Removing the accordion costs the index nothing, and that is checkable rather than argued.**
+ * The collapsed panel was server markup that was merely hidden, so all 180 `<a href>` were always
+ * in the first response; they still are, now visible. What the accordion bought was page length,
+ * and both ends of that trade are measured at ONE viewport so they can be read against each
+ * other: at 320px in Turkish the accordion page was **4,894px** and this one is **8,241px**,
+ * against ~20,000px for thirty flat blocks. The bench pays the difference back a different way:
+ * the six question cells are laid out as a compact grid rather than one full-width row each, and
+ * the thirty per-block player boxes collapse into one stage. Both figures come from the sample
+ * gate's own JSON — `kareler-d1/once/olcum-before.json` and
+ * `kareler-d1/sonra-fix/olcum-sonra-fix.json`, key `tr-320` — and the sentence names which build
+ * each belongs to because the first draft said "this build" for the accordion's number while
+ * sitting in the bench's file, which reads as a measurement of the page you are looking at
+ * (→ PR #70 review `FENER70-M3`).
+ *
+ * The one property the accordion had that this does not is that a closed row is a smaller target
+ * surface for a reader who wants only the list. That is a real loss and it is the price of the
+ * one-press promise, taken knowingly (→ AK-23).
  *
  * The fragments (`#deneme-12`, `#deneme-12-soru-3`) are part of the IA (`SEO-POLICY.md`
  * §B4's book row) and deliberately NOT routes: a page per deneme or per question would be
@@ -128,12 +135,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * carries `scroll-margin-top` so a followed fragment lands below the sticky header at every
  * viewport, 320px included (§B4 4.9).
  *
- * ## The player (W2) is an addition to this index, never a replacement for it
+ * ## The player is an addition to this index, never a replacement for it
  *
- * Each block is wrapped by a client island that delegates one listener over its own rows; the
- * rows themselves are untouched server markup and still resolve with JavaScript off. The
- * player arrives only on a click or a key press, only inside the block that was pressed, and
- * only one at a time — so the first response still carries no iframe at all.
+ * The workbench is wrapped by ONE client island that delegates a single listener over the stage
+ * and all thirty rows; the rows themselves are untouched server markup and still resolve with
+ * JavaScript off. The player arrives only on a click or a key press, only on the stage, and only
+ * one at a time — so the first response still carries no iframe at all.
  *
  * The provider snapshot (`videos[].youtube`) is now POPULATED on the normal path — the sync leg
  * ran on 2026-08-17 and all thirty blocks resolve to `rich`, with a real thumbnail, duration and
@@ -142,12 +149,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * rule is a chain (§B5 5.7): `uploadDate`/`duration` may only be emitted where the page SHOWS
  * them, and a `VideoObject` only where the video can actually be watched.
  *
- * THAT CHAIN IS WHY THE VIDEO KÜNYE SITS IN THE `<summary>`. With the index collapsed by
- * default, the block's body is not visible until the reader opens it, while `<summary>` is
- * visible in both states — so duration and publication date live there and the thirty
- * `VideoObject` blocks stay honest without depending on a panel being open.
+ * THAT CHAIN IS WHY THE VIDEO KÜNYE SITS ON THE ROW HEAD. It used to sit in the `<summary>`
+ * because that was the part visible while the panel was closed; nothing is closed now, so the
+ * pair simply sits on the row — thirty visible pairs for thirty `VideoObject` blocks, in the
+ * first response, with no press required. The stage caption shows the SELECTED video's pair too,
+ * but the stage shows one video at a time and its selection is client state, so it can never be
+ * what discharges the chain for the other twenty-nine (→ AK-23, Q4).
  * `lib/book/video-state.ts` is still the single place that decides which of the three states a
- * block is in, so the visible facts and the structured data cannot drift apart.
+ * video is in, so the visible facts and the structured data cannot drift apart.
  */
 export default async function BookDetailPage({ params }: PageProps) {
   const { locale, slug } = await params;
@@ -204,6 +213,60 @@ export default async function BookDetailPage({ params }: PageProps) {
   const jumpNumbers = Array.from({ length: book.coverage.denemeCount }, (_, index) => index + 1);
   const coveredDenemeNumbers = new Set(videoStates.map(({ video }) => video.denemeNo));
 
+  /* THE STAGE'S PAYLOAD — the only thing on this page that crosses into the client bundle.
+     Built from the SAME `videoStates` the index rows render from, so the stage and the rows can
+     never describe different videos.
+
+     THREE THINGS ARE DELIBERATELY ABSENT and their absence is what keeps this small. No copy:
+     every reader-facing string on the stage is resolved from the catalogue inside the client
+     component, not shipped thirty times. No derived values: `formatDuration` is pure and runs
+     there. No state machine: `resolveVideoState`'s discriminated union stays on the server and
+     what crosses is its ANSWER (`rich`, `playable`), so `lib/book/video-state.ts` remains the
+     single place those three states are decided.
+
+     ONE FIELD IS PRE-FORMATTED AND IT IS THE EXCEPTION THAT NAMES THE RULE. `publishedText` is
+     built here, with `getFormatter`, because `i18n/request.ts` pins `timeZone: "UTC"` for the
+     whole project — "the same build prints a different DAY depending on which machine rendered
+     it" — and formatting the date in the browser would make that guarantee depend on the
+     provider inheriting the request config into the client. It is also the same call
+     `DenemeMeta` makes for the row — and since PR #70's review the two share their options object
+     (`lib/book/published-date.ts`) rather than each writing `dateStyle` out, so "they cannot
+     disagree about the day" is structural rather than a convention (→ `TA70-M7`).
+
+     Measured payload (live data, 30 videos): see the closing summary's size table. */
+  const benchVideos: BenchVideo[] = videoStates.map(({ video, state }) => ({
+    denemeNo: video.denemeNo,
+    videoId: video.youtubeVideoId,
+    playable: isPlayable(state),
+    questions: video.questions.map((question) => ({
+      no: question.questionNo,
+      second: question.startSecond,
+    })),
+    rich:
+      state.kind === "rich"
+        ? {
+            thumbnailUrl: state.youtube.thumbnailUrl,
+            thumbnailWidth: state.youtube.thumbnailWidth,
+            thumbnailHeight: state.youtube.thumbnailHeight,
+            durationIso: state.youtube.durationIso,
+            durationSeconds: state.youtube.durationSeconds,
+            publishedAtUtc: state.youtube.publishedAtUtc,
+            publishedText: format.dateTime(
+              new Date(state.youtube.publishedAtUtc),
+              PUBLISHED_DATE_FORMAT,
+            ),
+          }
+        : null,
+  }));
+
+  /* WHICH VIDEO THE STAGE OPENS ON, and it is derived from the blocks that actually render —
+     never from `coverage.denemeNumbers`. Both fields describe the same thing and are set-equal on
+     today's data, but only one of them is the source of the markup the stage's `data-deneme` has
+     to match, and a default naming a video with no row would put the stage and the index on
+     different videos at first paint (the `FENER66-M2` discipline, applied to the new surface).
+     The array is the contract's own order, so this is the book's first covered deneme. */
+  const defaultDenemeNo = benchVideos[0]?.denemeNo ?? null;
+
   // Which credit rows this page owes — selected by the contract's own machine token, never by
   // matching the notice text, and never re-ordered (see the source statement's comment below).
   const attributionRows = book.attribution.filter(
@@ -226,7 +289,10 @@ export default async function BookDetailPage({ params }: PageProps) {
   const videoSchemas = videoStates.flatMap(({ video, state }) => {
     if (state.kind !== "rich") return [];
     const schema = videoObjectJsonLd({
-      name: `${title} — ${t("denemeHeading", { no: video.denemeNo })}`,
+      // THROUGH THE SHARED BUILDER, not a second composition of the same string: this must be
+      // byte-identical to the `<h3>` the row prints, or §B5 5.7 has markup naming something the
+      // page does not show. `lib/book/video-identity.ts` is the one place that decides it.
+      name: `${title} — ${videoTitle(t, video)}`,
       thumbnailUrl: state.youtube.thumbnailUrl,
       uploadDate: state.youtube.publishedAtUtc,
       // The provider's RAW ISO string, never re-derived from the parsed seconds: the contract
@@ -428,170 +494,150 @@ export default async function BookDetailPage({ params }: PageProps) {
           </ul>
         </nav>
 
-        {videoStates.map(({ video, state }) => {
-          /* ONE value, four consumers. `playable` is false for a video the provider refuses to
-             embed, and every part of the block has to agree about it: the island intercepts
-             nothing, the swap point may not reach its iframe branch even if the store somehow
-             says otherwise (→ PR #63 review `CODE63-I1`), and the rows neither announce a video
-             jump nor perform one. Computed here rather than re-derived at each site, for the
-             same reason `resolveVideoState` is called once. */
-          const playable = state.kind !== "external";
-          return (
-            /* The block's own client island. It renders THIS `<details>` and delegates one
-               listener over everything inside it; the markup below is unchanged server output.
-               When the block is not playable the island intercepts nothing at all — those rows
-               keep their plain fragment behaviour, because there is no player for them to
-               seek. */
-            <DenemePlayer
-              key={video.denemeNo}
-              className={styles.deneme}
-              denemeNo={video.denemeNo}
-              playable={playable}
-            >
-              {/* THE CLOSED ROW. A native `<summary>` and not a `<button aria-expanded>` or an
-                  `<a href>`: it is a disclosure control, so `ENGINEERING.md` §5's "`<button>`
-                  vs `<a>` correctly" already settles it, and FENER's brief adds the sharper
-                  reason — turning the toggle into a link would make one press both navigate
-                  and change panel state, which then needs `preventDefault` and becomes the
-                  JavaScript navigation §B8 8.2 rates a BLOCKER. Native also means the row opens
-                  with JavaScript off, which is what keeps the 180-row index the PAGE rather
-                  than something a script assembles (§B12 12.2.b).
+        {/* THE WORKBENCH — one stage, thirty rows, one delegated listener.
 
-                  THE `<h3>` STAYS, INSIDE THE SUMMARY. `<summary>`'s content model is phrasing
-                  content "optionally intermixed with heading content", so this is valid — and
-                  the alternative both mockups drew (demoting it to a `<span>`) would delete
-                  thirty headings from the document outline for a purely visual gain. The `id`
-                  rides on the heading exactly as before, which keeps `#deneme-12` stable AND
-                  puts it in the summary — the first slot, always rendered — so the fragment
-                  resolves whether or not the panel is open. */}
-              <summary className={styles.denemeSummary}>
-                {/* THE HEADING IS A DIRECT CHILD, with no wrapper around it. `<summary>`'s
-                    content model is phrasing content "optionally intermixed with heading
-                    content", but that permission does not pass through an intervening element:
-                    `<span>` is phrasing-only, so an `<h3>` inside one is a content-model
-                    violation — and no flow container is legal in `<summary>` either, which
-                    leaves "no wrapper" as the only conforming shape (→ PR #66 review
-                    `FENER66-M1` / `CODE66-M1` / `A11Y66-M1`, three legs independently, one
-                    adversarially validated). The wrapping line the layout needs is now built by
-                    `.denemeSummary` itself; the chevron is taken out of flow so the heading and
-                    the fact strip can wrap as a pair. */}
-                <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
-                  {t("denemeHeading", { no: video.denemeNo })}
-                </h3>
-                {/* The scannable facts, and the reason the row is worth collapsing to. The count
-                    is real per-block data rather than the constant it looks like: the contract
-                    does not promise six. It names QUESTION SOLUTIONS, not questions — `GLOSSARY.md`
-                    §4.2's scope note bars compressing the two into one phrase, because what is
-                    measured is that each video solves six questions, never that the book's deneme
-                    contains six (→ PR #66 review `CS66-I1`; the label read "{count} soru" and
-                    published the unverified half). `badgeQuestions` on this same page already
-                    carried the careful wording. */}
-                <span className={styles.denemeFacts}>
-                  <span>{t("denemeQuestionCount", { count: video.questions.length })}</span>
-                  {/* SEPARATOR AND KÜNYE TOGETHER OR NEITHER. `DenemeMeta` renders nothing in the
-                      `typographic` and `external` states, so a separator outside this conditional
-                      left a dangling "6 soru ·" on any block whose provider snapshot had aged out
-                      or whose video refuses embedding (→ PR #66 review `CODE66-I1`). Invisible in
-                      today's samples because all thirty blocks are `rich`; the aging path is
-                      normal, not exceptional, and reaches one row at a time. */}
-                  {state.kind === "rich" && (
-                    <>
-                      <span className={styles.factSeparator} aria-hidden="true">
-                        ·
-                      </span>
-                      <DenemeMeta state={state} />
-                    </>
-                  )}
-                </span>
-                {/* Decorative: the open/closed state is already on the `<summary>` itself in
-                    the accessibility tree, so naming this would announce it twice. */}
-                <svg
-                  className={styles.chevron}
-                  viewBox="0 0 20 20"
-                  width="20"
-                  height="20"
-                  aria-hidden="true"
-                  focusable="false"
+            The island renders the stage and wraps the index; the thirty rows below are UNCHANGED
+            SERVER MARKUP passed as children, exactly as the accordion's rows were. That
+            composition is what keeps the 180 `<a href>` in the first response while the player
+            lives in a client component: React renders the island on the server too, so the stage's
+            cover is in the HTML as well — with no iframe anywhere in it.
+
+            `defaultDenemeNo === null` means the book has no indexed video at all. The bench is
+            then not rendered and neither is an empty stage; the section keeps its heading and its
+            jump strip, which is the honest shape for a book whose solutions are not indexed here.
+            On today's data it is unreachable — every seeded book has thirty videos — but the
+            contract permits `videos: []` and an empty stage would be a 16:9 grey rectangle with a
+            caption naming nothing. */}
+        {defaultDenemeNo !== null && (
+          <VideoBench
+            className={styles.workbench}
+            indexClassName={styles.index}
+            videos={benchVideos}
+            defaultDenemeNo={defaultDenemeNo}
+          >
+            {videoStates.map(({ video, state }) => {
+              /* ONE value, three consumers. `playable` is false for a video the provider refuses
+                 to embed, and every part of the surface has to agree about it: the island
+                 intercepts nothing for it, the swap point may not reach its iframe branch even if
+                 the store somehow says otherwise (→ PR #63 review `CODE63-I1`), and the rows
+                 neither announce a video jump nor perform one. Read through `isPlayable` rather
+                 than spelled out here, for the same reason `resolveVideoState` is called once —
+                 two sites writing `state.kind !== "external"` are two places to miss on the day a
+                 fourth state arrives (→ PR #70 review `SIMP70-M5`). */
+              const playable = isPlayable(state);
+              return (
+                /* THE ROW. An `<article>` and no disclosure control at all: with the panel gone
+                   there is no state to toggle, so the `<summary>`/`<button aria-expanded>`
+                   question the accordion had to answer does not arise. The `<h3>` keeps the `id`,
+                   which is what keeps `#deneme-12` stable across this change — the fragment is
+                   binding IA (`SEO-POLICY.md` §B4's book row) and nothing about the layout is
+                   allowed to move it.
+
+                   `aria-labelledby` POINTS AT THAT SAME `<h3>`, and it is what an `<article>` owes
+                   its reader. `role="article"` is a landmark-adjacent region that appears by name
+                   in a screen reader's element list, and a heading INSIDE an element does not name
+                   it — so thirty rows arrived as thirty unnamed "article"s (→ PR #70 review
+                   `A11Y70-M1`). The id it borrows is the fragment id, which already exists and is
+                   already unique per video.
+
+                   `data-deneme` SITS HERE NOW, AND IT WAS ON THE `<ul>` UNTIL PR #70's REVIEW.
+                   That is why `#deneme-15` scrolled correctly and left the stage on the book's
+                   first video: the fragment resolves to the `<h3>`, and `closest("[data-deneme]")`
+                   from the `<h3>` walked past a `<ul>` that is its SIBLING and found nothing at
+                   all (→ `FENER70-M2` / `CODE70-M5`). On the article it covers both the heading
+                   and every question row beneath it, which is the whole subtree the island can be
+                   asked about — still one attribute per video, not one per question. */
+                <article
+                  key={video.denemeNo}
+                  className={styles.deneme}
+                  aria-labelledby={denemeFragment(video.denemeNo)}
+                  data-deneme={video.denemeNo}
                 >
-                  <path
-                    d="M6 8l4 4 4-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </summary>
-              <div className={styles.denemeBody}>
-                <DenemeVideo
-                  denemeNo={video.denemeNo}
-                  videoId={video.youtubeVideoId}
-                  title={t("playerTitle", { no: video.denemeNo })}
-                  playable={playable}
-                  facade={
-                    <DenemeFacade
-                      denemeNo={video.denemeNo}
-                      videoId={video.youtubeVideoId}
-                      state={state}
-                    />
-                  }
-                />
-                <ul role="list" className={styles.questionGrid}>
-                  {video.questions.map((question) => {
-                    const fragment = questionFragment(video.denemeNo, question.questionNo);
-                    return (
-                      <li key={question.questionNo}>
-                        {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link
-                          real: `#deneme-12-soru-3` is copyable, shareable and enters browser
-                          history, and it resolves to this element with no JavaScript involved.
-                          An `<a href>` rather than a `<button>` for the same reason — §B8 8.2
-                          rates JavaScript navigation a BLOCKER, and W2's player wiring attaches
-                          to these links rather than replacing them.
+                  <div className={styles.denemeHead}>
+                    <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
+                      {videoTitle(t, video)}
+                    </h3>
+                    {/* The scannable facts. The count is real per-block data rather than the
+                        constant it looks like: the contract does not promise six. It names
+                        QUESTION SOLUTIONS, not questions — `GLOSSARY.md` §4.2's scope note bars
+                        compressing the two into one phrase, because what is measured is that each
+                        video solves six questions, never that the book's deneme contains six
+                        (→ PR #66 review `CS66-I1`). */}
+                    <span className={styles.denemeFacts}>
+                      <span>{t("denemeQuestionCount", { count: video.questions.length })}</span>
+                      {/* SEPARATOR AND KÜNYE TOGETHER OR NEITHER. `DenemeMeta` renders nothing in
+                          the `typographic` and `external` states, so a separator outside this
+                          conditional left a dangling "6 soru ·" on any video whose provider
+                          snapshot had aged out or whose video refuses embedding (→ PR #66 review
+                          `CODE66-I1`). Invisible in today's samples because all thirty are `rich`;
+                          the aging path is normal, not exceptional, and reaches one row at a
+                          time. */}
+                      {state.kind === "rich" && (
+                        <>
+                          <span className={styles.factSeparator} aria-hidden="true">
+                            ·
+                          </span>
+                          <DenemeMeta state={state} />
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  <ul role="list" className={styles.questionGrid}>
+                    {video.questions.map((question) => {
+                      const fragment = questionFragment(video.denemeNo, question.questionNo);
+                      return (
+                        <li key={question.questionNo}>
+                          {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link
+                            real: `#deneme-12-soru-3` is copyable, shareable and enters browser
+                            history, and it resolves to this element with no JavaScript involved.
+                            An `<a href>` rather than a `<button>` for the same reason — §B8 8.2
+                            rates JavaScript navigation a BLOCKER, and the player wiring attaches
+                            to these links rather than replacing them.
 
-                          `data-second` is the jump target the block's island reads on a click.
-                          The video id is NOT repeated here: the island is per-block and already
-                          holds it, so 180 copies of one string would be dead weight in every
-                          response (a deliberate departure from `SPEC.md` §4.3's letter, ruled by
-                          Atlas as AK-12/E-W2-1).
+                            `data-second` is the jump target the island reads on a click. The video
+                            id is NOT repeated here: the island resolves the video from
+                            `data-deneme` on the list above, so 180 copies of one string would be
+                            dead weight in every response (a deliberate departure from `SPEC.md`
+                            §4.3's letter, ruled by Atlas as AK-12/E-W2-1).
 
-                          THE NAME SAYS WHERE THE QUESTION IS, because W2 changed what the row
-                          DOES without changing what it says (→ PR #63 review `A11Y63-I2`). A
-                          links-list or rotor user meets 180 rows named `Soru 1`…`Soru 6`, and
-                          pressing one now opens a player and moves focus into a cross-origin
-                          frame. The suffix states a FACT about the question — question 3 is at
-                          3:24 of the video — rather than promising a behaviour, so it stays
-                          true for a reader with no JavaScript, for whom the row is still the
-                          plain fragment jump it always was. It begins with the visible token,
-                          which is also what keeps WCAG 2.5.3 satisfied here.
+                            THE NAME SAYS WHERE THE QUESTION IS, because the player wiring changed
+                            what the row DOES without changing what it says (→ PR #63 review
+                            `A11Y63-I2`). A links-list or rotor user meets 180 rows named
+                            `Soru 1`…`Soru 6`, and pressing one now moves the stage and starts a
+                            player. The suffix states a FACT about the question — question 3 is at
+                            3:24 of the video — rather than promising a behaviour, so it stays true
+                            for a reader with no JavaScript, for whom the row is still the plain
+                            fragment jump it always was. It begins with the visible token, which is
+                            also what keeps WCAG 2.5.3 satisfied here.
 
-                          ONLY WHERE THERE IS A PLAYER TO JUMP IN. In an `external` block the
-                          row really is nothing but a fragment jump, and giving two differently
-                          behaving rows one name is what WCAG 3.2.4 asks us not to do. */}
-                        <a
-                          id={fragment}
-                          href={`#${fragment}`}
-                          className={styles.questionLink}
-                          data-second={question.startSecond}
-                          aria-label={
-                            playable
-                              ? t("questionLabelAria", {
-                                  no: question.questionNo,
-                                  time: formatDuration(question.startSecond),
-                                })
-                              : undefined
-                          }
-                        >
-                          {t("questionLabel", { no: question.questionNo })}
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            </DenemePlayer>
-          );
-        })}
+                            ONLY WHERE THERE IS A PLAYER TO JUMP IN. In an `external` block the row
+                            really is nothing but a fragment jump, and giving two differently
+                            behaving rows one name is what WCAG 3.2.4 asks us not to do. */}
+                          <a
+                            id={fragment}
+                            href={`#${fragment}`}
+                            className={styles.questionLink}
+                            data-second={question.startSecond}
+                            aria-label={
+                              playable
+                                ? t("questionLabelAria", {
+                                    no: question.questionNo,
+                                    time: formatDuration(question.startSecond),
+                                  })
+                                : undefined
+                            }
+                          >
+                            {t("questionLabel", { no: question.questionNo })}
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </article>
+              );
+            })}
+          </VideoBench>
+        )}
       </section>
 
       {/* THE SOURCE STATEMENT (`SEO-POLICY.md` §B15 15.4/15.5; → PR #62 review `FENER62-I2`).
