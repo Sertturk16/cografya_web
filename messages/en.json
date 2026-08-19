@@ -352,6 +352,7 @@
     "hydrographyHeadingPlain": "Hydrography",
     "neighborsHeadingPlain": "Neighbouring Countries",
     "neighborVia": "{name} ({territory})",
+    "neighborViaThrough": "{name} (via {territory})",
     "sourcesLabel": "Sources",
     "sources": "Data is grounded in official and authoritative sources: country and capital names from the Turkish Ministry of Foreign Affairs, population from {populationSource}. Continent classification comes from the UN Statistics Division (M49), and area from the World Bank. Neighbouring countries are cross-checked against multiple references (Britannica and others).",
     "sourcesNoPopulation": "Data is grounded in official and authoritative sources: country names from the Turkish Ministry of Foreign Affairs. Continent classification comes from the UN Statistics Division (M49), and area from the World Bank. The neighbouring-country count is cross-checked against multiple references (Britannica and others).",

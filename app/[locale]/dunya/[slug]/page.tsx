@@ -186,9 +186,13 @@ export default async function CountryDetailPage({ params }: PageProps) {
   // This changes the TEXT of a card and nothing else: `neighborIsoCodes` is the published
   // render order (AS-6c), so it is still walked in order, still deduped the same way, and no
   // code is reordered, dropped or added.
+  // WHICH sentence, and with what interpolation, is decided by the pure helper — not here.
+  // One pair (MA→ES) takes a mechanism wording instead of the identifying one by owner ruling
+  // (→ DEC 2026-08-19k); putting that choice in the module keeps it inside vitest's `lib/**`
+  // glob and keeps both strings in the locale catalogues.
   const neighborLabel = (name: string, iso: string): string => {
     const via = neighborViaTerritory(country.isoCode, iso, locale);
-    return via === null ? name : t("neighborVia", { name, territory: via });
+    return via === null ? name : t(via.key, { name, territory: via.territory });
   };
   const neighbors: Neighbor[] = [];
   try {
@@ -446,10 +450,12 @@ export default async function CountryDetailPage({ params }: PageProps) {
                   className={styles.fact}
                 />
               )}
-              {/* Bağımsızlık — was its own <h2> section until DEC 2026-08-17e h.2. The note is
-              a SINGLE SENTENCE on 173 of the 199 seeded rows, and `CONTENT-STYLE.md` §19's
-              section threshold bars opening an H2 for a body under two sentences; the fact
-              belongs in the künye instead. Removing the section also drops one identical
+              {/* Bağımsızlık — was its own <h2> section until DEC 2026-08-17e h.2. Of the 199
+              seeded rows 173 carry a note (20 explicit null, 6 omit the field), and 169 of
+              those 173 are a SINGLE SENTENCE — only GR, AZ, AF and AT run to two. So
+              `CONTENT-STYLE.md` §19's section threshold ("no H2 for a body under two
+              sentences") bars the section on 169 of the 173 pages that rendered it, and the
+              fact belongs in the künye instead. Removing the section also drops one identical
               heading skeleton from 173 pages (SEO-POLICY §B3.6 + §B10) without losing a word
               of body text — the same sentence renders here.
 
@@ -463,7 +469,24 @@ export default async function CountryDetailPage({ params }: PageProps) {
               kutlanır") that any client-side date extraction would silently drop.
 
               Still `isTr`-gated exactly as the section was, so the EN page is unchanged and
-              `TR_GATED_FIELD_LEXEMES` keeps its `independence` entry. */}
+              `TR_GATED_FIELD_LEXEMES` keeps its `independence` entry.
+
+              RAW TEXT, not `ProseNote`, and that is a choice with a condition attached
+              (→ `TA72-M3`/`A11Y72-M1`). `ProseNote` implements the repo's "\n\n" paragraph
+              convention; a `<dd>` renders it as one run. Every one of the 173 seeded notes is
+              a single paragraph — 0 contain "\n\n", measured — so the convention has nothing
+              to do here today, and a künye value is a datum slot rather than a prose slot.
+              THE CONDITION: if a content wave ever gives this field two paragraphs, this must
+              go back through `ProseNote` (or the field must stay single-paragraph by an api
+              invariant). Do not treat the raw `<dd>` as settled for a multi-paragraph value.
+
+              SPECIAL-STATUS ROWS carry NO gate here, and that is today's data rather than a
+              guarantee (→ `SOV72-M2`). All six (CY, QN, IL, PS, TW, XK) have a null/absent
+              note, so the row cannot render on them; unlike the old section, whose entity-named
+              H2 was suppressed by `entityNamedHeadings`, a künye row has no such de-escalation
+              to apply. Filling `independenceNoteTr` on a contested row is therefore an OWNER
+              decision, not a content-wave detail: it would typeset a contested claim as a
+              settled datum beside Başkent/Nüfus. */}
               {independenceNote !== null && (
                 <div className={`${styles.fact} ${styles.factWide}`}>
                   <dt>{t("independence")}</dt>

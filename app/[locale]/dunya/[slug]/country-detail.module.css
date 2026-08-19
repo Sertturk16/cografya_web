@@ -88,6 +88,12 @@
    either squeeze into one column or, with `auto-fit`, leave the row ragged. Spanning the row
    is what lets the text set at a readable measure.
 
+   `max-width: 70ch` is that measure, and it has to be stated rather than inherited from the
+   layout: today the line length is bounded only by the locator figure sitting beside the fact
+   sheet in `.detailRow`, so on any row where the aside is absent — a country with no artifact
+   shape — the card would run the full container width. Same cap as `.prose` below, which is
+   the treatment this card borrows (→ PR #72 `CR72-M2` / `A11Y72-M2`).
+
    The type reset — the shared `.fact dd` is 1.25rem/700 Fraunces with `line-height: 1.2`,
    tuned for values like "Bakü". The seeded notes run 30–329 characters (median 56); at that
    size the longest rows render as a wall of bold display serif, and `overflow-wrap:
@@ -101,6 +107,7 @@
 }
 
 .factWide dd {
+  max-width: 70ch;
   font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 400;
