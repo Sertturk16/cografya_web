@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { formatDuration } from "@/lib/book/duration";
+import { videoTitle } from "@/lib/book/video-identity";
 import { watchUrl } from "@/lib/youtube/embed";
 import { useBenchState } from "./active-video";
 import { BenchTimeline } from "./bench-timeline";
@@ -81,6 +82,14 @@ export interface BenchVideo {
  * with the selected video's state would move the entire index every time the reader pressed a
  * question, on a page whose whole point is that pressing a question moves nothing but the stage.
  *
+ * ALL THREE OF THE STAGE'S BLOCKS HOLD THAT INVARIANT, and until PR #70's review only two did.
+ * `.frame` reserves the cover box and `.stageCaption` a two-line floor, but the timeline card was
+ * printed only in the `rich` state — 88px that appeared and disappeared with the SELECTION, which
+ * is a client-state change reaching a shift the reader did not ask for (→ `FENER70-I1`,
+ * validated). The gate now lives inside `BenchTimeline`, which drops the ticks and keeps the card.
+ * Anything added to this stage later is bound by the same rule: reserve it in all three states or
+ * do not put it above the index.
+ *
  * ## Nothing is placed over the player
  *
  * The İzle control sits over OUR cover, and the cover is REPLACED by the iframe rather than
@@ -107,7 +116,6 @@ export function BenchStage({
   if (video === undefined) return null;
 
   const rich = video.rich;
-  const isActive = video.playable && active !== null && active.denemeNo === video.denemeNo;
 
   return (
     /* `data-deneme` is the island's only way to know which video a press belongs to, and it is
@@ -115,9 +123,16 @@ export function BenchStage({
        stage and the thirty index rows. The index puts the same attribute on each row's question
        list, so `closest("[data-deneme]")` answers the question from either side. */
     <div className={styles.stage} data-deneme={video.denemeNo}>
+      {/* `active` IS HANDED DOWN WHOLE, and the gate is the swap point's alone. This site used to
+          re-derive `video.playable && active?.denemeNo === video.denemeNo` and pass `null` when it
+          failed — the same expression `deneme-video.tsx` computes again on arrival, because that
+          component checks `playable` for itself rather than trusting a caller (→ PR #63 review
+          `CODE63-I1`). Two copies of one gate is not defence in depth when only one of them
+          decides anything: the child's is the one that reaches the iframe branch, and this one
+          could only ever agree with it (→ PR #70 review `SIMP70-M1`). */}
       <DenemeVideo
         video={video}
-        active={isActive ? active : null}
+        active={active}
         title={t("playerTitle", { no: video.denemeNo })}
         watchLabel={t("watch")}
         watchAriaLabel={t("watchAria", { no: video.denemeNo })}
@@ -131,7 +146,10 @@ export function BenchStage({
           satisfies `SEO-POLICY.md` §B5 5.7 for all thirty `VideoObject` blocks; this copy is a
           convenience for the reader whose eyes are on the player, not the compliance surface. */}
       <p className={styles.stageCaption}>
-        <span className={styles.stageName}>{t("denemeHeading", { no: video.denemeNo })}</span>
+        {/* Through the shared builder, exactly as the index row and `VideoObject.name` are. The
+            three strings must be one string (§B5 5.7), and this caption was the consumer outside
+            the seam (→ PR #70 review `FENER70-M1` / `CODE70-M4`). */}
+        <span className={styles.stageName}>{videoTitle(t, video)}</span>
         <span className={styles.stageFacts}>
           <span>{t("denemeQuestionCount", { count: video.questions.length })}</span>
           {rich !== null && (
@@ -151,17 +169,17 @@ export function BenchStage({
         </span>
       </p>
 
-      {/* Only where a duration exists to place the questions against: the strip's whole encoding
-          is proportional position, and without `durationSeconds` there is nothing to be
-          proportional to. The questions are never lost with it — they are in the index row below,
-          as they are for every one of the thirty videos. */}
-      {rich !== null && (
-        <BenchTimeline
-          denemeNo={video.denemeNo}
-          questions={video.questions}
-          durationSeconds={rich.durationSeconds}
-        />
-      )}
+      {/* UNCONDITIONAL, AND THE `rich` GATE IS INSIDE THE COMPONENT. The strip's whole encoding is
+          proportional position, so without `durationSeconds` there is nothing to be proportional
+          to and the ticks are dropped — but the CARD stays, because a box that appears and
+          disappears with the selection moves the thirty rows below it (→ `FENER70-I1`). The
+          questions are never lost either way: they are in the index row below, as they are for
+          every one of the thirty videos. */}
+      <BenchTimeline
+        denemeNo={video.denemeNo}
+        questions={video.questions}
+        durationSeconds={rich?.durationSeconds ?? null}
+      />
     </div>
   );
 }

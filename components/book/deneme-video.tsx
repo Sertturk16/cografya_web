@@ -98,9 +98,11 @@ export function DenemeVideo({
   watchOnYoutubeUrl,
 }: {
   video: BenchVideo;
-  /** The loaded player's state, or `null` when this video is showing its cover. The caller has
-   *  already checked `playable`; this component checks it again rather than trusting that, so a
-   *  stale store cannot reach the iframe branch by any route (→ PR #63 review `CODE63-I1`). */
+  /** The store's loaded player, WHATEVER video it belongs to — or `null` when none is loaded.
+   *  This component decides for itself whether that player is this video's and whether this video
+   *  is `playable` at all, so a stale store cannot reach the iframe branch by any route (→ PR #63
+   *  review `CODE63-I1`). The stage used to pre-filter it and pass `null` on a mismatch, which was
+   *  the same gate computed twice with only this copy deciding anything (→ `SIMP70-M1`). */
   active: ActiveVideo | null;
   title: string;
   watchLabel: string;
@@ -159,6 +161,37 @@ export function DenemeVideo({
   // focusing a node the same handler is replacing is the bug pattern this repo has already paid
   // for once (PR #45 review C1/I5).
   //
+  // AND ONLY WHEN THAT IS ACTUALLY WHAT HAPPENED — the condition is now checked rather than
+  // assumed (→ PR #70 review `A11Y70-M2`). The rationale above holds for the stage's İzle button,
+  // which the iframe replaces; it does NOT hold for the 180 index rows, which survive the commit
+  // still focused. Moving focus off a control that is still there took a keyboard reader working
+  // through one deneme's questions away from the list on every press. `document.activeElement`
+  // answers the question the comment was already asking: body (or nothing) means the trigger is
+  // gone and focus has nowhere to be.
+  //
+  // LOAD PATH ONLY. A seek inside the open video replaces no control at all, so there is nothing
+  // to rescue — which is also why this effect keeps the load key while the scroll below does not.
+  useEffect(() => {
+    if (!isActive) return;
+    const frame = requestAnimationFrame(() => {
+      const iframe = iframeRef.current;
+      if (iframe === null) return;
+      const focused = document.activeElement;
+      if (focused !== null && focused !== document.body) return;
+      iframe.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isActive, active?.loadToken]);
+
+  // THE CORRECTIVE SCROLL, AND IT IS A SEPARATE EFFECT BECAUSE IT RUNS ON A DIFFERENT SET OF
+  // EVENTS (→ PR #70 review `CODE70-I1`). Both halves used to share `[isActive, loadToken]`, and
+  // `loadToken` is FROZEN across a seek by design — so pressing a second question of the video
+  // already on the stage moved the audio and moved nothing else. Below 64rem the stage is not
+  // sticky, so from row thirty that is a press with no visible effect at all, while the identical
+  // press on a NEIGHBOURING deneme scrolled: one gesture, two behaviours, and five of every six
+  // questions on the silent side. `seekNonce` is what makes a repeat jump to one second
+  // distinguishable, so it is the key that has to be here.
+  //
   // THE SCROLL IS OURS, NOT THE ENGINE'S — measured, after two rounds of assuming otherwise
   // (→ PR #66 review `CODE66-M6`, then `CODE66R2-I1`). `focus()` on a cross-origin iframe scrolls
   // NOTHING: at 320px in both Playwright engines the page offset does not move by a pixel, while
@@ -168,22 +201,21 @@ export function DenemeVideo({
   // THE BENCH CHANGED THE DIRECTION THIS CORRECTS, AND THAT IS WHY IT MATTERS MORE NOW. The stage
   // sits ABOVE the index, so a reader who presses question six of video thirty is pressing a
   // control that is thousands of pixels BELOW the player about to start — the Required Minimum
-  // Functionality breach ("a player must not begin playing off-screen") in its largest form.
-  // `preventScroll` keeps the decision ours on an engine that DOES scroll a frame owner, and the
+  // Functionality breach ("a player must not begin playing off-screen") in its largest form. The
   // correction runs only when the player sits above its own offset: a box already in view must
   // not be yanked. Above 64rem the stage is sticky at exactly the offset this reads back, so the
-  // comparison finds the box on its mark and moves nothing.
+  // comparison finds the box on its mark and moves nothing — which is what makes running this on
+  // every seek free at the width where the stage never left the viewport.
   useEffect(() => {
     if (!isActive) return;
     const frame = requestAnimationFrame(() => {
       const iframe = iframeRef.current;
       if (iframe === null) return;
-      iframe.focus({ preventScroll: true });
       const wanted = Number.parseFloat(getComputedStyle(iframe).scrollMarginTop) || 0;
       if (iframe.getBoundingClientRect().top < wanted - 1) iframe.scrollIntoView();
     });
     return () => cancelAnimationFrame(frame);
-  }, [isActive, active?.loadToken]);
+  }, [isActive, active?.loadToken, active?.seekNonce]);
 
   // Jump-to-question. A fresh load carries its second in the `src` already, so the first pass
   // only records what it saw; every later nonce is a real jump.

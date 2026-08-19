@@ -14,8 +14,18 @@ import { useSyncExternalStore } from "react";
  * · **First paint.** The stage shows a video and no player exists anywhere on the page (zero
  *   iframes in the first response is the whole facade architecture). `selected` therefore has to
  *   be meaningful while `active` is `null`.
- * · **Closing.** Tearing a player down returns the stage to that video's cover rather than
- *   blanking it, so `close()` clears `active` and leaves `selected` where it is.
+ * · **Arriving on a fragment.** `#deneme-33-soru-4` moves the stage to video 33 and arms İzle with
+ *   that question's second; it loads nothing, because a hash is neither a click nor a key press.
+ *   `selected` moves while `active` stays `null`, which is the same shape as first paint and is
+ *   reached by a different path.
+ *
+ * A `close(denemeNo)` method used to be the second bullet here. It is gone with the control that
+ * would have called it: the stage offers no way to dismiss a loaded player, so the method, its
+ * export and the two cases that certified it were surface nothing could reach — and a test that
+ * proves a state machine handles an event no code emits is confidence bought rather than earned
+ * (→ PR #70 review `CODE70-M3` / `SIMP70-M6`). The day a close control lands, the method comes
+ * back with it; `select()`'s teardown branch below already covers the only teardown the page can
+ * perform today.
  *
  * `selected === null` means **"whatever the server chose"**. The default is page data — the first
  * video that actually rendered — and `getServerSnapshot()` takes no arguments and must return a
@@ -114,8 +124,6 @@ export interface ActiveVideoStore {
   select(denemeNo: number): void;
   /** Moves the stage AND loads/seeks its player. */
   open(denemeNo: number, startSecond: number): void;
-  /** Closes the player IF `denemeNo` is the video that has it open; the selection survives. */
-  close(denemeNo: number): void;
   /** Clears both axes — the page is leaving. */
   reset(): void;
 }
@@ -149,9 +157,15 @@ export function createActiveVideoStore(): ActiveVideoStore {
       return EMPTY;
     },
     select(denemeNo) {
+      // The stage holds ONE player, so moving to another video drops it; moving to the video that
+      // already has it keeps it. Both cases are the same sentence: work out what the next state
+      // WOULD be, and commit only if it differs. The previous three-term guard said the same
+      // thing by enumerating when a change is absent, which is the harder half to read and the
+      // half that goes wrong when a third axis arrives (→ PR #70 review `SIMP70-M4`).
       const keepsPlayer = state.active !== null && state.active.denemeNo === denemeNo;
-      if (state.selected === denemeNo && (keepsPlayer || state.active === null)) return;
-      commit({ selected: denemeNo, active: keepsPlayer ? state.active : null });
+      const active = keepsPlayer ? state.active : null;
+      if (state.selected === denemeNo && state.active === active) return;
+      commit({ selected: denemeNo, active });
     },
     open(denemeNo, startSecond) {
       seekNonce += 1;
@@ -168,10 +182,6 @@ export function createActiveVideoStore(): ActiveVideoStore {
             };
       commit({ selected: denemeNo, active });
     },
-    close(denemeNo) {
-      if (state.active === null || state.active.denemeNo !== denemeNo) return;
-      commit({ selected: state.selected, active: null });
-    },
     reset() {
       if (state === EMPTY) return;
       commit(EMPTY);
@@ -183,7 +193,6 @@ const store = createActiveVideoStore();
 
 export const selectVideo = store.select;
 export const openVideo = store.open;
-export const closeVideo = store.close;
 export const resetBench = store.reset;
 
 export function useBenchState(): BenchState {

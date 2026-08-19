@@ -47,20 +47,38 @@
    with the duration, so the line count can tip between videos at a given viewport; without a
    floor the timeline below — and, in the one-column layout, the entire index — would step up and
    down as the reader moves through the book. Measured as the two-line height at 320px, which is
-   the widest the strip ever wraps in either locale. */
+   the widest the strip ever wraps in either locale.
+
+   IT CARRIES `.frame`'s CAP AND CENTRING TOO, and the three-line rule below is why. The cover box
+   is capped at 560px and centred from 564px up; the caption and the strip were not, so between
+   564 and 1023px the player sat in the middle of the column while the line naming it and the strip
+   placing its questions started 84px to its left (measured at 768: a 560px player centred in 728px
+   of column). "Where the question falls in THIS video" cannot be read against a player it is not
+   aligned with (→ PR #70 review `CODE70-M2`). Inert below 564 and from 64rem up, exactly as the
+   cap on `.frame` is, and for the same reason: outside that band the column is narrower than the
+   cap. */
 .stageCaption {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 10px;
   min-height: 3.1rem;
-  margin: 10px 0 0;
+  margin: 10px auto 0;
+  max-width: 560px;
 }
 
+/* SMALLER THAN A REAL HEADING, deliberately, and the direction was reversed after review. At
+   1.15rem/600 in the heading face this `<p>` out-weighed the thirty `<h3>` index rows it sits
+   above (1.05rem), so the visual outline and the document outline disagreed about what the most
+   important line in the section was — WCAG 1.3.1's F2 shape (→ PR #70 review `A11Y70-M5`).
+   Marking it up AS a heading was the other exit and is worse: the caption follows client state,
+   so the outline would gain a heading whose text changes when the reader presses a question, and
+   `<h3>Deneme 12</h3>` would then exist twice in one document. It is a caption, so it is styled
+   below the headings it captions. */
 .stageName {
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 1.15rem;
+  font-size: 1rem;
   color: var(--color-primary-dark);
 }
 
@@ -81,9 +99,22 @@
    POSITION IS THE ENCODING AND THE NUMBER IS THE LABEL — nothing here is carried by colour alone
    (`DESIGN.md` §5's last line). The card's height is FIXED by its own padding plus the bar and
    the label lane, so it is identical for a 4-minute video and an 11-minute one; a card that grew
-   with content would move the index under the reader on every selection. */
+   with content would move the index under the reader on every selection.
+
+   THAT HEIGHT IS ALSO WHY THE EMPTY CARD COSTS NOTHING TO RENDER. `bench-timeline.tsx` prints
+   this card in all three cover states and drops only the ticks, which are absolutely positioned
+   inside `.timelineBar` and contribute no height — so `1 + 16 + 6 + 38 + 12 + 1 = 74px` holds
+   whether six ticks are in it or none, and the 88px shift a selection used to cause (74 plus this
+   rule's own 14px margin) is not expressible any more (→ PR #70 review `FENER70-I1`). Nothing
+   here may become `height: auto` or lose the bar's fixed lane without that guarantee going with
+   it.
+
+   The cap and the centring mirror `.frame`'s — see `.stageCaption` for why the three have to
+   agree. */
 .timeline {
   margin-top: 14px;
+  margin-inline: auto;
+  max-width: 560px;
   padding: 16px 24px 12px;
   background: #fff;
   border: 1px solid var(--color-border);

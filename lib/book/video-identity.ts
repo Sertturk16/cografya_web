@@ -19,8 +19,13 @@
  */
 
 /** The minimum a video has to carry to be named and addressed. Deliberately structural rather
- *  than `BookVideo`: the JSON-LD call site and the timeline both hold less than a full DTO. */
-export interface VideoIdentity {
+ *  than `BookVideo`: the JSON-LD call site and the stage both hold less than a full DTO.
+ *
+ *  Not exported, and neither is `VideoTitleTranslator` below: both exist to type `videoTitle`'s
+ *  parameters, every caller satisfies them structurally, and an exported name nothing imports is
+ *  surface that reads as an API (→ PR #70 review `SIMP70-M6`). Exporting either is a one-word
+ *  change on the day a consumer needs to name it. */
+interface VideoIdentity {
   readonly denemeNo: number;
 }
 
@@ -41,7 +46,7 @@ export function questionFragment(denemeNo: number, questionNo: number): string {
  * and a client `useTranslations` binding satisfy it, so the same function serves the page, the
  * stage and the structured-data call site without either side importing the other's runtime.
  */
-export type VideoTitleTranslator = (key: "denemeHeading", values: { no: number }) => string;
+type VideoTitleTranslator = (key: "denemeHeading", values: { no: number }) => string;
 
 /**
  * The video's visible title — the string the reader sees on the index row, on the stage caption
@@ -51,6 +56,12 @@ export type VideoTitleTranslator = (key: "denemeHeading", values: { no: number }
  * and `VideoObject.name` is composed from this title plus the book's `<h1>`. One function is what
  * makes that agreement structural instead of three call sites happening to pass the same
  * arguments.
+ *
+ * THE STAGE CAPTION WAS THE ONE CONSUMER OUTSIDE THE SEAM until PR #70's review, and the docblock
+ * above counted it while the code did not import it (→ `FENER70-M1` / `CODE70-M4`). That is the
+ * exact shape this file exists to prevent: when `FU-BOOK-GENERIC-CONTRACT` teaches this function a
+ * per-video display title, a caption still spelling `t("denemeHeading", …)` by hand keeps printing
+ * "Deneme 12" while the row beside it prints the real one.
  */
 export function videoTitle(t: VideoTitleTranslator, video: VideoIdentity): string {
   return t("denemeHeading", { no: video.denemeNo });

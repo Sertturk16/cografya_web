@@ -58,6 +58,25 @@ const STAGE = stripComments(sourceOf("./bench-stage.tsx"));
 const TIMELINE = stripComments(sourceOf("./bench-timeline.tsx"));
 const IDENTITY = stripComments(sourceOf("../../lib/book/video-identity.ts"));
 
+/** CSS comments use only the C-style form, so the `//`-line filter above would be wrong here —
+ *  a `//` inside a `url()` is not a comment. */
+const STYLES = sourceOf("./book-video.module.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+
+/**
+ * Every value a named property takes inside every rule matching `selector`, in source order.
+ *
+ * A list rather than a single string, and every caller asserts its length: a selector that
+ * stopped matching, or a property that quietly gained a second declaration, both look like a
+ * clean pass to `indexOf`. The `(?:^|;)` anchor is what keeps `top` from matching inside
+ * `scroll-margin-top`.
+ */
+const declaredValues = (selector: string, property: string): string[] =>
+  [...STYLES.matchAll(new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`, "g"))].flatMap((rule) =>
+    [...(rule[1] ?? "").matchAll(new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*([^;]+)`, "g"))].map(
+      (declaration) => (declaration[1] ?? "").trim(),
+    ),
+  );
+
 /**
  * Whitespace-collapsed copies, for every assertion that spans more than one token.
  *
@@ -186,6 +205,26 @@ describe("the delegated listener stays narrow", () => {
     expect(FLAT_STAGE).toContain("data-deneme={video.denemeNo}");
   });
 
+  it("puts the row's data-deneme on the element that CONTAINS its heading", () => {
+    // `closest()` walks ANCESTORS. With the attribute on the question `<ul>`, a fragment landing
+    // on `#deneme-15` — whose `id` is on the `<h3>`, a SIBLING of that list — resolved to nothing
+    // and the stage silently stayed on the book's first video, while the same attribute answered
+    // correctly from a question row one level down (→ PR #70 review `FENER70-M2` / `CODE70-M5`).
+    // Presence alone cannot tell those two placements apart, so the containment is what is
+    // asserted: the attribute is on the `<article>`, and the `<ul>` no longer carries one.
+    expect(FLAT_PAGE).toMatch(/<article[^>]*\bdata-deneme=\{video\.denemeNo\}/);
+    expect(FLAT_PAGE).not.toMatch(/<ul[^>]*\bdata-deneme=/);
+    // And the id that landing resolves to is inside it.
+    expect(FLAT_PAGE).toMatch(/<article[^>]*>\s*<div className=\{styles\.denemeHead\}>\s*<h3 id=/);
+  });
+
+  it("names each of the thirty index rows", () => {
+    // An `<article>` is a region a screen reader lists by name, and a heading INSIDE an element
+    // does not name it — so the rows arrived as thirty unnamed "article"s (→ `A11Y70-M1`). The
+    // name borrows the fragment id, which already exists and is already unique per video.
+    expect(FLAT_PAGE).toMatch(/<article[^>]*aria-labelledby=\{denemeFragment\(video\.denemeNo\)\}/);
+  });
+
   it("never opens a player for a video the provider refuses to embed", () => {
     // `CODE63-I1`'s invariant, restated on the new shape: the island refuses the press, and the
     // swap point refuses the render even if a stale store says otherwise.
@@ -209,6 +248,92 @@ describe("the delegated listener stays narrow", () => {
     expect(hashEffect.length).toBeGreaterThan(0);
     expect(hashEffect).toContain("selectVideo(denemeNo)");
     expect(hashEffect).not.toContain("openVideo(");
+  });
+});
+
+describe("the stage reserves its height in every cover state", () => {
+  it("renders the timeline card outside the rich gate", () => {
+    // 88px of CLS on the aging path, and the path is a shared deep link rather than an edge case:
+    // the server renders the book's FIRST video, hydration moves the stage to the linked one, and
+    // a card that only exists in the `rich` state disappears under a reader already looking at the
+    // rows below it (→ PR #70 review `FENER70-I1`, validated). The gate belongs inside the
+    // component, which drops the ticks and keeps the box.
+    expect(FLAT_STAGE).toMatch(/<BenchTimeline denemeNo=/);
+    expect(FLAT_STAGE).toContain("durationSeconds={rich?.durationSeconds ?? null}");
+    expect(FLAT_STAGE).not.toMatch(/\{rich !== null && \(?\s*<BenchTimeline/);
+  });
+
+  it("gives the empty card the same box as the full one", () => {
+    // The two branches must not merely both exist — they must be the same two elements, or the
+    // reserved height is a different number from the occupied one and the shift comes back
+    // smaller instead of gone. Both branches build `.timeline` around `.timelineBar`, whose 6px
+    // height and 38px label lane are fixed and whose ticks are absolutely positioned.
+    expect(TIMELINE).toMatch(
+      /return \(\s*<div className=\{styles\.timeline\}>\s*<div className=\{styles\.timelineBar\} \/>/,
+    );
+    expect(FLAT_TIMELINE).toContain(
+      '<div className={styles.timeline} role="group" aria-label={t("timelineLabel")}>',
+    );
+    expect(FLAT_TIMELINE).not.toContain("return null");
+    // The card's height must stay a composition rather than a restated number: a `min-height`
+    // here would be a second declaration of one measurement, free to drift from the first.
+    expect(declaredValues(".timeline", "min-height")).toEqual([]);
+    expect(declaredValues(".timelineBar", "height")).toEqual(["6px"]);
+    expect(declaredValues(".timelineBar", "margin-bottom")).toEqual(["38px"]);
+  });
+
+  it("keeps the caption's floor and the two-line measurement behind it", () => {
+    expect(declaredValues(".stageCaption", "min-height")).toHaveLength(1);
+  });
+
+  it("aligns the caption and the strip with the player they describe", () => {
+    // `.frame` is capped and centred, so between 564px and 1023px an uncapped caption started
+    // 84px to the player's left and the strip placed its questions against nothing
+    // (→ PR #70 review `CODE70-M2`). One cap, three elements — asserted as EQUALITY rather than
+    // as three separate presence checks, because a cap that drifts on one of them is the defect.
+    const caps = [".frame", ".stageCaption", ".timeline"].map((selector) => {
+      const values = declaredValues(selector, "max-width");
+      expect(values).toHaveLength(1);
+      return values[0];
+    });
+    expect(new Set(caps).size).toBe(1);
+  });
+});
+
+describe("the two scroll offsets that have to be one number", () => {
+  it("pins the sticky stage to the same offset the player's scroll margin reads back", () => {
+    // `deneme-video.tsx` compares the player's measured `top` against its own `scroll-margin-top`
+    // and scrolls only when the box is above its mark. Above 64rem the stage is stuck at exactly
+    // that offset, so the comparison finds it ON the mark and moves nothing. Let the two
+    // expressions drift and every İzle press at desktop fires a `scrollIntoView` that yanks a box
+    // already in view — invisible in a static frame, and the source calls the pairing
+    // load-bearing without anything checking it (→ PR #70 review `TA70-M4`).
+    const stickyTop = declaredValues(".stage", "top");
+    const playerMargin = declaredValues(".player", "scroll-margin-top");
+    expect(stickyTop).toHaveLength(1);
+    expect(playerMargin).toHaveLength(1);
+    expect(stickyTop[0]).toBe(playerMargin[0]);
+  });
+});
+
+describe("the guards the accordion's retired test used to carry", () => {
+  it("corrects the fragment landing only when it is actually displaced", () => {
+    // An unconditional `scrollIntoView` here is a scroll-jack: a reader who started moving between
+    // first paint and hydration is pulled back (→ PR #66 review `CODE66-M5`). The condition was
+    // pinned by `deneme-accordion.structure.test.ts`; the behaviour moved to the bench and the
+    // assertion did not follow it (→ PR #70 review `TA70-M1`).
+    expect(FLAT_BENCH).toContain(
+      "if (Math.abs(target.getBoundingClientRect().top - wanted) > 1) target.scrollIntoView();",
+    );
+  });
+
+  it("keeps the row's künye and its separator behind ONE condition", () => {
+    // `DenemeMeta` renders nothing outside the `rich` state, so a separator outside this gate
+    // leaves a dangling "6 soru çözümü ·" on any row whose provider snapshot has aged out
+    // (→ PR #66 review `CODE66-I1`). Invisible on today's 30/30 rich data; the aging path is
+    // normal and reaches one row at a time, so it would ship CI-green (→ `TA70-M2`).
+    expect(FLAT_PAGE).toContain('{state.kind === "rich" && ( <> <span');
+    expect(FLAT_PAGE).toContain("<DenemeMeta state={state} />");
   });
 });
 

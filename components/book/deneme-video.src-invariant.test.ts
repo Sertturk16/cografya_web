@@ -124,7 +124,44 @@ describe("the player only opens for a video that has one", () => {
   });
 });
 
+describe("the two effects a press has to reach", () => {
+  it("re-runs the corrective scroll on a seek inside the OPEN video", () => {
+    // `loadToken` is frozen across a seek by design — it is the field the `src` reads, and the
+    // whole point of DEC 2026-08-15d is that a jump does not reload the frame. So an effect keyed
+    // on it alone runs for a NEW video and never for another question of the one already on the
+    // stage: below 64rem, where the stage is not sticky, pressing question 4 from row thirty moved
+    // the audio and nothing else, while the identical press on a neighbouring deneme scrolled
+    // (→ PR #70 review `CODE70-I1`). `seekNonce` is the only key that distinguishes a repeat jump,
+    // so the scroll has to carry it — and it must NOT be added to the load effects, which would
+    // attach a second `YT.Player` to a live element on every question.
+    expect(VIDEO).toContain("}, [isActive, active?.loadToken, active?.seekNonce]);");
+    expect(VIDEO.match(/\}, \[isActive, active\?\.loadToken\]\);/g)).toHaveLength(2);
+  });
+
+  it("moves focus only when the pressed control actually left the DOM", () => {
+    // The stated reason for taking focus is that the İzle button is REPLACED by the iframe, so
+    // focus would fall to `<body>`. A question row is not replaced — it keeps focus, and moving it
+    // to the player took a keyboard reader out of the list on every press (→ `A11Y70-M2`). The
+    // condition the comment was already describing is now the code's.
+    expect(VIDEO).toContain("const focused = document.activeElement;");
+    expect(VIDEO).toMatch(/if \(focused !== null && focused !== document\.body\) return;/);
+    // `preventScroll` stays: the scroll decision belongs to the effect below, on every engine.
+    expect(VIDEO).toContain("iframe.focus({ preventScroll: true })");
+  });
+});
+
 describe("the click gate", () => {
+  it("bails on an event another handler has already taken", () => {
+    // A press this island did not originate must pass through untouched, and the bail has to be
+    // the FIRST thing in the handler — after it, `preventDefault` has already been considered.
+    // No user-visible defect is constructible today (nothing nests a second handler inside the
+    // bench), which is exactly why it is a guard rather than a fix: it is the shape a later
+    // addition breaks silently (→ PR #70 review `TA70-M5`).
+    const handler = clickHandler();
+    expect(handler).not.toBe("");
+    expect(handler).toMatch(/^const onClick = \(event[^)]*\) => \{ if \(event\.defaultPrevented\)/);
+  });
+
   it("bails out before preventDefault on a modifier or middle press", () => {
     // "Open this question in a new tab" is browser behaviour we must not take away, so the
     // bail has to come FIRST — asserted by position, not merely by presence.

@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  closeVideo,
-  createActiveVideoStore,
-  openVideo,
-  resetBench,
-  selectVideo,
-} from "./active-video";
+import { createActiveVideoStore, openVideo, resetBench, selectVideo } from "./active-video";
 
 /**
  * "One player on the page", "changing question does not reload", and "the stage keeps showing a
@@ -20,6 +14,20 @@ describe("bench store", () => {
     // The server snapshot is what makes hydration safe by construction: the first client frame
     // agrees with the server that the stage shows the server's default and holds no player.
     expect(store.getServerSnapshot()).toEqual({ selected: null, active: null });
+  });
+
+  it("keeps the server snapshot EMPTY after the client store has moved", () => {
+    // THE ASSERTION ABOVE CANNOT SEE THIS, and on a fresh store it never could: both getters
+    // return the same object there, so `getServerSnapshot() { return state; }` passed every case
+    // in this file (→ PR #70 review `TA70-M6`). What the server getter has to promise is that it
+    // is CONSTANT — React consults it while hydrating a full document load, and a snapshot that
+    // followed module state would render an iframe the server's HTML does not contain, which is
+    // the hydration mismatch `reset` exists to prevent from the other direction.
+    const store = createActiveVideoStore();
+    store.open(12, 94);
+    expect(store.getSnapshot().active).not.toBeNull();
+    expect(store.getServerSnapshot()).toEqual({ selected: null, active: null });
+    expect(store.getServerSnapshot()).toBe(store.getServerSnapshot());
   });
 
   it("returns the SAME snapshot reference while nothing changes", () => {
@@ -100,20 +108,18 @@ describe("bench store", () => {
     expect(second?.seekNonce).not.toBe(first?.seekNonce);
   });
 
-  it("closes the player but keeps the video on the stage", () => {
-    // The difference between the two axes, stated as a case: closing returns the stage to that
-    // video's cover rather than blanking it.
+  it("keeps the stage on a video whose player it just dropped", () => {
+    // The difference between the two axes, stated as a case: moving away from a loaded video
+    // leaves the OTHER video selected with no player, rather than blanking the stage. (This was
+    // asserted through `close()` until PR #70's review removed that unreachable method; the
+    // property is the store's, not the method's, so it is re-asserted on the path that reaches
+    // it — → `CODE70-M3`.)
     const store = createActiveVideoStore();
     store.open(12, 94);
-    store.close(12);
+    store.select(13);
+    expect(store.getSnapshot()).toEqual({ selected: 13, active: null });
+    store.select(12);
     expect(store.getSnapshot()).toEqual({ selected: 12, active: null });
-  });
-
-  it("ignores a close from a video that is not the open one", () => {
-    const store = createActiveVideoStore();
-    store.open(12, 94);
-    store.close(3);
-    expect(store.getSnapshot().active?.denemeNo).toBe(12);
   });
 
   it("clears BOTH axes on reset", () => {
@@ -126,16 +132,21 @@ describe("bench store", () => {
     expect(store.getSnapshot()).toEqual({ selected: null, active: null });
   });
 
-  it("notifies subscribers on close, and only when something actually closed", () => {
+  it("notifies subscribers only when the selection actually changes something", () => {
+    // BOTH BRANCHES OF `select`'s NO-OP GUARD, in one case. A snapshot rebuilt where nothing moved
+    // is an infinite render loop under `useSyncExternalStore`, and the guard was rewritten in this
+    // round (→ PR #70 review `SIMP70-M4`) — so the case asserts the rewrite kept both answers.
     const store = createActiveVideoStore();
     store.open(12, 0);
     let calls = 0;
     store.subscribe(() => {
       calls += 1;
     });
-    store.close(3);
+    store.select(12);
     expect(calls).toBe(0);
-    store.close(12);
+    store.select(3);
+    expect(calls).toBe(1);
+    store.select(3);
     expect(calls).toBe(1);
   });
 
@@ -174,14 +185,12 @@ describe("bench store", () => {
  * instance.
  */
 describe("the detached exports the components actually call", () => {
-  it("selects, opens, closes and resets the singleton through the bare references", () => {
+  it("selects, opens and resets the singleton through the bare references", () => {
     const select = selectVideo;
     const open = openVideo;
-    const close = closeVideo;
     const reset = resetBench;
     expect(() => select(24)).not.toThrow();
     expect(() => open(12, 94)).not.toThrow();
-    expect(() => close(12)).not.toThrow();
     expect(() => reset()).not.toThrow();
   });
 });

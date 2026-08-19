@@ -1,5 +1,6 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import { formatDuration } from "@/lib/book/duration";
+import { PUBLISHED_DATE_FORMAT } from "@/lib/book/published-date";
 import type { BookVideoState } from "@/lib/book/video-state";
 import styles from "./book-video.module.css";
 
@@ -59,9 +60,13 @@ export async function DenemeMeta({ state }: { state: BookVideoState }) {
           is UTC, and restating it in a local zone would silently move a late-evening
           publication to the next day on one machine and not another. This server formatting is
           also the source of the stage's `publishedText` — the client stage takes the finished
-          string rather than re-formatting, so the two can never disagree about the day. */}
+          string rather than re-formatting, so the two can never disagree about the day.
+          THE STYLE COMES FROM `lib/book/published-date.ts` and not from a literal here: the two
+          `format.dateTime` calls on this surface agreed by convention until PR #70's review
+          (→ `TA70-M7`), and a `dateStyle` changed on one of them printed two different dates for
+          one video with every gate green. */}
       <time dateTime={publishedAtUtc}>
-        {format.dateTime(new Date(publishedAtUtc), { dateStyle: "long" })}
+        {format.dateTime(new Date(publishedAtUtc), PUBLISHED_DATE_FORMAT)}
       </time>
     </span>
   );

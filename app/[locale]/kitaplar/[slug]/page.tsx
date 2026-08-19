@@ -12,8 +12,9 @@ import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getBookBySlug, getBooksResilient } from "@/lib/api/books";
 import { formatDuration } from "@/lib/book/duration";
+import { PUBLISHED_DATE_FORMAT } from "@/lib/book/published-date";
 import { denemeFragment, questionFragment, videoTitle } from "@/lib/book/video-identity";
-import { resolveVideoState } from "@/lib/book/video-state";
+import { isPlayable, resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
 import { canonicalEmbedUrl } from "@/lib/youtube/embed";
 import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
@@ -112,11 +113,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *
  * **Removing the accordion costs the index nothing, and that is checkable rather than argued.**
  * The collapsed panel was server markup that was merely hidden, so all 180 `<a href>` were always
- * in the first response; they still are, now visible. What the accordion bought was page length —
- * measured on this build at 4,894px (320px, tr) against ~20,000px for thirty flat blocks — and
- * the bench pays that back a different way: the six question cells are laid out as a compact grid
- * rather than one full-width row each, and the thirty per-block player boxes collapse into one
- * stage. The after-measurement is in the closing summary.
+ * in the first response; they still are, now visible. What the accordion bought was page length,
+ * and both ends of that trade are measured at ONE viewport so they can be read against each
+ * other: at 320px in Turkish the accordion page was **4,894px** and this one is **8,241px**,
+ * against ~20,000px for thirty flat blocks. The bench pays the difference back a different way:
+ * the six question cells are laid out as a compact grid rather than one full-width row each, and
+ * the thirty per-block player boxes collapse into one stage. Both figures come from the sample
+ * gate's own JSON — `kareler-d1/once/olcum-before.json` and
+ * `kareler-d1/sonra-fix/olcum-sonra-fix.json`, key `tr-320` — and the sentence names which build
+ * each belongs to because the first draft said "this build" for the accordion's number while
+ * sitting in the bench's file, which reads as a measurement of the page you are looking at
+ * (→ PR #70 review `FENER70-M3`).
  *
  * The one property the accordion had that this does not is that a closed row is a smaller target
  * surface for a reader who wants only the list. That is a real loss and it is the price of the
@@ -222,13 +229,15 @@ export default async function BookDetailPage({ params }: PageProps) {
      whole project — "the same build prints a different DAY depending on which machine rendered
      it" — and formatting the date in the browser would make that guarantee depend on the
      provider inheriting the request config into the client. It is also the same call
-     `DenemeMeta` makes for the row, so the two cannot disagree about the day.
+     `DenemeMeta` makes for the row — and since PR #70's review the two share their options object
+     (`lib/book/published-date.ts`) rather than each writing `dateStyle` out, so "they cannot
+     disagree about the day" is structural rather than a convention (→ `TA70-M7`).
 
      Measured payload (live data, 30 videos): see the closing summary's size table. */
   const benchVideos: BenchVideo[] = videoStates.map(({ video, state }) => ({
     denemeNo: video.denemeNo,
     videoId: video.youtubeVideoId,
-    playable: state.kind !== "external",
+    playable: isPlayable(state),
     questions: video.questions.map((question) => ({
       no: question.questionNo,
       second: question.startSecond,
@@ -242,9 +251,10 @@ export default async function BookDetailPage({ params }: PageProps) {
             durationIso: state.youtube.durationIso,
             durationSeconds: state.youtube.durationSeconds,
             publishedAtUtc: state.youtube.publishedAtUtc,
-            publishedText: format.dateTime(new Date(state.youtube.publishedAtUtc), {
-              dateStyle: "long",
-            }),
+            publishedText: format.dateTime(
+              new Date(state.youtube.publishedAtUtc),
+              PUBLISHED_DATE_FORMAT,
+            ),
           }
         : null,
   }));
@@ -510,17 +520,39 @@ export default async function BookDetailPage({ params }: PageProps) {
                  to embed, and every part of the surface has to agree about it: the island
                  intercepts nothing for it, the swap point may not reach its iframe branch even if
                  the store somehow says otherwise (→ PR #63 review `CODE63-I1`), and the rows
-                 neither announce a video jump nor perform one. Computed here rather than
-                 re-derived at each site, for the same reason `resolveVideoState` is called once. */
-              const playable = state.kind !== "external";
+                 neither announce a video jump nor perform one. Read through `isPlayable` rather
+                 than spelled out here, for the same reason `resolveVideoState` is called once —
+                 two sites writing `state.kind !== "external"` are two places to miss on the day a
+                 fourth state arrives (→ PR #70 review `SIMP70-M5`). */
+              const playable = isPlayable(state);
               return (
                 /* THE ROW. An `<article>` and no disclosure control at all: with the panel gone
                    there is no state to toggle, so the `<summary>`/`<button aria-expanded>`
                    question the accordion had to answer does not arise. The `<h3>` keeps the `id`,
                    which is what keeps `#deneme-12` stable across this change — the fragment is
                    binding IA (`SEO-POLICY.md` §B4's book row) and nothing about the layout is
-                   allowed to move it. */
-                <article key={video.denemeNo} className={styles.deneme}>
+                   allowed to move it.
+
+                   `aria-labelledby` POINTS AT THAT SAME `<h3>`, and it is what an `<article>` owes
+                   its reader. `role="article"` is a landmark-adjacent region that appears by name
+                   in a screen reader's element list, and a heading INSIDE an element does not name
+                   it — so thirty rows arrived as thirty unnamed "article"s (→ PR #70 review
+                   `A11Y70-M1`). The id it borrows is the fragment id, which already exists and is
+                   already unique per video.
+
+                   `data-deneme` SITS HERE NOW, AND IT WAS ON THE `<ul>` UNTIL PR #70's REVIEW.
+                   That is why `#deneme-15` scrolled correctly and left the stage on the book's
+                   first video: the fragment resolves to the `<h3>`, and `closest("[data-deneme]")`
+                   from the `<h3>` walked past a `<ul>` that is its SIBLING and found nothing at
+                   all (→ `FENER70-M2` / `CODE70-M5`). On the article it covers both the heading
+                   and every question row beneath it, which is the whole subtree the island can be
+                   asked about — still one attribute per video, not one per question. */
+                <article
+                  key={video.denemeNo}
+                  className={styles.deneme}
+                  aria-labelledby={denemeFragment(video.denemeNo)}
+                  data-deneme={video.denemeNo}
+                >
                   <div className={styles.denemeHead}>
                     <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
                       {videoTitle(t, video)}
@@ -550,13 +582,7 @@ export default async function BookDetailPage({ params }: PageProps) {
                       )}
                     </span>
                   </div>
-                  {/* `data-deneme` ON THE LIST, thirty times — not on each of the 180 rows, and
-                      not held in a closure. The bench has ONE delegated listener over the stage
-                      and every row, so "which video does this press belong to" has to be readable
-                      from the DOM; `closest("[data-deneme]")` answers it from a question row here
-                      and from the stage's own wrapper there, with one attribute per video instead
-                      of one per question. */}
-                  <ul role="list" className={styles.questionGrid} data-deneme={video.denemeNo}>
+                  <ul role="list" className={styles.questionGrid}>
                     {video.questions.map((question) => {
                       const fragment = questionFragment(video.denemeNo, question.questionNo);
                       return (

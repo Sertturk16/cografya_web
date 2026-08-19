@@ -48,6 +48,19 @@ export type BookVideoState =
   | { readonly kind: "external" }
   | { readonly kind: "typographic" };
 
+/**
+ * Whether this page can play the video at all — the one derivation of "not `external`".
+ *
+ * It is the answer four places need (the island's click gate, the swap point's iframe branch, the
+ * stage's payload and the row's accessible names), and it was written out at two of them
+ * (→ PR #70 review `SIMP70-M5`). Naming it here is the same discipline `resolveVideoState` itself
+ * applies one level up: the union is decided once, so the sites reading it cannot answer
+ * differently on the day a fourth state arrives.
+ */
+export function isPlayable(state: BookVideoState): boolean {
+  return state.kind !== "external";
+}
+
 export function resolveVideoState(video: BookVideo): BookVideoState {
   const youtube = video.youtube;
   if (youtube === null) return { kind: "typographic" };

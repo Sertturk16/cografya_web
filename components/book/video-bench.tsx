@@ -60,6 +60,24 @@ import { BenchStage, type BenchVideo } from "./bench-stage";
  * The selection is read from the DOM rather than passed down, because the rows already carry both
  * the id and the second, so it costs nothing in the payload.
  */
+/**
+ * Which video a node belongs to, or `null` — the island's ONE way of answering that.
+ *
+ * Both entry points ask it: the hash effect about the element a fragment resolved to, and the
+ * delegated handler about the control that was pressed. They asked it with the same five lines
+ * written twice (→ PR #70 review `SIMP70-M3`), and the copies could answer differently the day
+ * one of them learned about a second attribute.
+ *
+ * `Number.parseInt` on a missing attribute yields `NaN`, which is why the finite check is the
+ * return value rather than a comment: `data-deneme` is markup, so "absent" and "not a number" are
+ * both reachable from a page edit, and neither may resolve to video 0.
+ */
+function denemeNoOf(node: Element): number | null {
+  const holder = node.closest<HTMLElement>("[data-deneme]");
+  const denemeNo = Number.parseInt(holder?.dataset.deneme ?? "", 10);
+  return Number.isFinite(denemeNo) ? denemeNo : null;
+}
+
 export function VideoBench({
   className,
   indexClassName,
@@ -89,9 +107,8 @@ export function VideoBench({
     const root = rootRef.current;
     if (target === null || root === null || !root.contains(target)) return;
 
-    const holder = target.closest<HTMLElement>("[data-deneme]");
-    const denemeNo = Number.parseInt(holder?.dataset.deneme ?? "", 10);
-    if (!Number.isFinite(denemeNo)) return;
+    const denemeNo = denemeNoOf(target);
+    if (denemeNo === null) return;
 
     const video = videos.find((candidate) => candidate.denemeNo === denemeNo);
     if (video === undefined) return;
@@ -103,16 +120,20 @@ export function VideoBench({
       if (Number.isFinite(second)) hashStartSecond.current = second;
     }
 
-    /* THE CORRECTIVE SCROLL, AND IT MEASURES BEFORE IT MOVES. Selecting a video swaps the stage's
-       contents, and the stage sits ABOVE the index — so if its height ever changed with the
-       selection, every row below would move out from under a reader the engine had already
-       scrolled into place. The stylesheet reserves the box in all three cover states precisely so
-       that cannot happen, and this branch is the tripwire for the day someone unreserves one: it
-       re-measures the target against its own `scroll-margin-top` and corrects only a real
-       displacement.
-       An unconditional scroll here would be a scroll-jack — a reader who started moving between
-       first paint and hydration would be pulled back (→ PR #66 review `CODE66-M5`). The residual
-       is stated rather than engineered around: at most once per load, on a page with one island. */
+    /* THE CORRECTIVE SCROLL, AND IT MEASURES THE PRE-SWAP LAYOUT. `selectVideo` above schedules a
+       re-render; React has not committed it when this line runs, so what is measured is the page
+       as the server rendered it. That is CORRECT here and it is correct for one reason only —
+       every block of the stage reserves its height in all three cover states, so the swap changes
+       no geometry to re-measure. It is NOT a tripwire for the day someone unreserves one: it
+       could not see that shift, because the shift happens after it (→ PR #70 review `CODE70-M1`).
+       The invariant is held where it is stated — `.frame`, `.stageCaption` and the timeline card,
+       each of which reserves its box for the non-rich states — and `bench.structure.test.ts` is
+       what fails when one of them stops.
+       What this line IS for is the ordinary fragment landing: it re-measures the target against
+       its own `scroll-margin-top` and corrects only a real displacement. An unconditional scroll
+       would be a scroll-jack — a reader who started moving between first paint and hydration would
+       be pulled back (→ PR #66 review `CODE66-M5`). The residual is stated rather than engineered
+       around: at most once per load, on a page with one island. */
     const wanted = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
     if (Math.abs(target.getBoundingClientRect().top - wanted) > 1) target.scrollIntoView();
   }, [videos]);
@@ -133,9 +154,8 @@ export function VideoBench({
     const trigger = event.target.closest<HTMLElement>("[data-second], [data-player-open]");
     if (trigger === null) return;
 
-    const holder = trigger.closest<HTMLElement>("[data-deneme]");
-    const denemeNo = Number.parseInt(holder?.dataset.deneme ?? "", 10);
-    if (!Number.isFinite(denemeNo)) return;
+    const denemeNo = denemeNoOf(trigger);
+    if (denemeNo === null) return;
     const video = videos.find((candidate) => candidate.denemeNo === denemeNo);
     if (video === undefined || !video.playable) return;
 

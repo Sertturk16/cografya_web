@@ -41,6 +41,29 @@ import styles from "./book-video.module.css";
  * behaviour, so it stays true for a reader with no JavaScript, for whom the tick is the plain
  * fragment jump it always was.
  *
+ * ## THE CARD IS RENDERED IN EVERY STATE, AND THAT IS A LAYOUT-SHIFT REQUIREMENT
+ *
+ * `durationSeconds === null` is the `typographic` and `external` states: no provider snapshot, so
+ * there is nothing to place the questions against. The ticks are dropped there — but the CARD is
+ * not, and the difference is 88px of Cumulative Layout Shift on a page whose stage sits ABOVE
+ * thirty index rows (→ PR #70 review `FENER70-I1`, validated).
+ *
+ * The reachable path is a shared deep link. `#deneme-33-soru-4` renders on the server with the
+ * book's FIRST video on the stage; hydration then moves the stage to video 33, and if that video's
+ * snapshot has aged out — which the contract calls the normal path, not an error — a card that
+ * existed in the first response disappears under a reader who is already looking at the rows below
+ * it. `hadRecentInput` is false on that shift, so all of it counts, against a budget of
+ * CLS < 0.1 (`ENGINEERING.md` §4 #9, `SEO-POLICY.md` §B11 11.12).
+ *
+ * THE EMPTY CARD'S HEIGHT IS NOT A NUMBER ANYWHERE. It is the same `.timeline` padding and the
+ * same `.timelineBar` — whose 6px height and 38px label lane are fixed and whose ticks are
+ * absolutely positioned — so the two states measure identically by construction. A `min-height`
+ * holding the same 74px was the other candidate and was refused for the reason this repo refuses
+ * every restated measurement: two declarations of one height drift, and the drift is invisible.
+ *
+ * The empty card carries no `role="group"` and no label, because there is nothing in it to group.
+ * An empty labelled group is a name announced over no content, which is worse than the silence.
+ *
  * ## Geometry
  *
  * `left` is the only inline style on this surface and it is data, not design: a percentage
@@ -56,13 +79,21 @@ export function BenchTimeline({
 }: {
   denemeNo: number;
   questions: readonly { readonly no: number; readonly second: number }[];
-  durationSeconds: number;
+  /** `null` in the two non-rich states — the card still renders, with no ticks in it. */
+  durationSeconds: number | null;
 }) {
   const t = useTranslations("BookDetail");
+
   // A zero or negative duration is unreachable through the contract (its minimum is 1) and would
-  // divide every tick to Infinity. Rendering nothing is the honest answer: the rows below still
-  // carry all six questions.
-  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return null;
+  // divide every tick to Infinity; `null` is the ordinary no-snapshot case. Both land here, and
+  // both keep the box.
+  if (durationSeconds === null || !Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    return (
+      <div className={styles.timeline}>
+        <div className={styles.timelineBar} />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.timeline} role="group" aria-label={t("timelineLabel")}>
