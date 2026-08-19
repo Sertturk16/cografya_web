@@ -370,6 +370,16 @@ export interface components {
              * @example 14.2
              */
             climateAnnualMeanTempC: number | null;
+            /**
+             * @description İl merkezi enlemi (decimal degrees) — MGM il-merkez istasyonu. Detay DTO’sundaki `latitude` ile AYNI sütun, aynı değer; liste yolunda hiçbir türetme yok. CBS ölçüm araçlarının (mesafe / koordinat) 81’lik il seçimi bu alan olmadan kurulamaz — ve poligon merkezinden türetmek bir alternatif DEĞİL: `GLOSSARY.md` §1 alan ağırlık merkezini il merkeziyle karıştırmayı adıyla yasaklıyor, ve iki nokta arasındaki fark ölçülen mesafeye doğrudan geçer. Saf toplama, kırıcı değil.
+             * @example 40.9819
+             */
+            latitude: number | null;
+            /**
+             * @description İl merkezi boylamı (decimal degrees) — MGM il-merkez istasyonu. Gerekçesi ve kaynağı `latitude` ile aynı; ikisi tek bir noktanın iki yarısıdır ve birlikte eklenir.
+             * @example 28.8208
+             */
+            longitude: number | null;
         };
         ProvinceMapSummaryDto: {
             /**
@@ -1719,7 +1729,7 @@ export interface components {
              */
             durationIso: string;
             /**
-             * @description Duration in seconds, parsed from durationIso. B4 obligation, not an existing guarantee: the write path re-derives the ISO string from this integer and refuses a row that does not round-trip. No write path exists yet, so read the equality as a specified invariant.
+             * @description Duration in seconds, parsed from durationIso. The write path re-derives the ISO string from this integer and refuses a row that does not round-trip, so the two fields are guaranteed to agree on every served object.
              * @example 368
              */
             durationSeconds: number;
@@ -1849,7 +1859,7 @@ export interface components {
             /** @description Hand-written meta description carrying a concrete fact (SEO-POLICY A2), not a generic phrase and not derived from a template. */
             metaDescriptionTr: string;
             /**
-             * @description The channel the solutions are published on — attribution and the channel link.
+             * @description The channel the solutions are published on. The attribution rows carry the channel address themselves in channelUrl; it is not composed from this id, so do not build a link out of it.
              * @example UCH7D1zOgHykrHfx5Q7WERmw
              */
             youtubeChannelId: string;

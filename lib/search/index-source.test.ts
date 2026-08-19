@@ -18,6 +18,12 @@ const province = (nameTr: string, slugTr: string, slugEn: string): ProvinceListI
   region: "MARMARA",
   climateKoppen: null,
   climateAnnualMeanTempC: null,
+  // Added when the api began publishing the il-merkezi point (CBS-P2 E0). Null here on
+  // purpose: the search index never reads a coordinate, so a fixture that carried one would
+  // imply a dependency this module does not have. The comment above is the reason this
+  // breakage is welcome — the contract change surfaced as a compile error rather than hiding.
+  latitude: null,
+  longitude: null,
 });
 
 const country = (
