@@ -695,7 +695,27 @@ export function MapZoomPan({
           aria-label={labels.reset}
           onClick={() => apiRef.current?.reset()}
         >
-          <span aria-hidden="true">⤢</span>
+          {/*
+            DRAWN, NOT TYPED — this is the fix (→ DEC 2026-08-19a md. 8). This button used
+            to carry the character ⤢ (U+2922), which readers took for "fullscreen". The
+            cause is mechanical, not aesthetic: `lib/fonts.ts` loads Nunito Sans with the
+            `latin` + `latin-ext` subsets, which cover `+` (U+002B) and `−` (U+2212) — the
+            two siblings above — but NOT U+2922, so that one character alone was handed to
+            whatever system font the reader had, and most of them draw U+2922 as the
+            expand-to-fullscreen icon. Every rotate-back CHARACTER is outside those subsets
+            too (U+21BA ↺, U+27F2 ⟲), so swapping one character for another would place the
+            same bet again (`ENGINEERING.md` §5).
+
+            AND IT IS A CSS MASK, NOT AN INLINE <svg>, WHICH IS LOAD BEARING. This island's
+            controller finds the map with `host.querySelector("svg")` (see the mount effect
+            above), a descendant search whose stated contract is "the element I am mounted
+            in contains exactly one <svg>". On /dunya the island precedes the map in the
+            DOM, so an <svg> in this button IS the first match: the controller then drives
+            the 20px icon — measured, it took the map's `239.5 0 521 521` viewBox — and the
+            240-path world map never moves again. A mask paints the same drawing with no
+            element in the DOM, so the contract holds untouched on both surfaces.
+          */}
+          <span aria-hidden="true" className={styles.resetGlyph} />
         </button>
       </div>
     </div>
