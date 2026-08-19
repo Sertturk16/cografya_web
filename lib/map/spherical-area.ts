@@ -46,8 +46,12 @@
  * This is not a regression — the body is byte-identical to the `.mjs` it moved from, and the
  * three generator consumers only ever feed it Türkiye rings. What changed is the AUDIENCE:
  * the same commit exported it to browser code whose typed-coordinate path accepts the whole
- * world. Faz-1's tools are bounded to the Türkiye frame (25.6–45.1° E) and cannot reach the
- * seam; a future worldwide caller must clamp or split its rings before calling this.
+ * world. The drawn MAP cannot reach the seam; the TYPED input path can (SPEC §6 makes it the
+ * primary path and §6.2 accepts out-of-frame coordinates), so the browser-facing adapter
+ * `measure.ts` → `ringAreaKm2` GUARDS it and returns `null` rather than a number. This tuple
+ * export is deliberately left unguarded: its three callers are build generators feeding
+ * Türkiye rings, and a signature change here would ripple into scripts outside this module's
+ * business (→ PR #71 round-2 review CODE71R2-I2).
  *
  * **`SPEC.md` §6.5(a) claimed the opposite and has been corrected in place**: the claim is
  * true for haversine (verified to 14 digits across the seam) and false for this formula.

@@ -9,6 +9,7 @@ import {
   parseLatLon,
   polylineLengthKm,
   ringAreaKm2,
+  ringCrossesAntimeridian,
   ringPerimeterKm,
   ringSelfIntersects,
   scaleBarKm,
@@ -170,6 +171,10 @@ describe("ringPerimeterKm", () => {
     // haversineKm(last, first)` — measure.ts's own expression verbatim — so both sides moved
     // together under any rewrite and it could only ever prove internal consistency.
     const perimeter = ringPerimeterKm(ring);
+    // A PINNED VALUE ALONGSIDE THE PROPERTY (→ PR #71 round-2 review CODE71R2-M1). The
+    // properties alone survive three mutations the tautology they replaced caught — a wrong
+    // closing pair, and a doubled closing leg, both still satisfy them. Captured, not derived.
+    expect(perimeter).toBeCloseTo(340.01450922591584, 9);
     expect(perimeter).toBeGreaterThan(polylineLengthKm(ring));
     for (let i = 0; i < ring.length; i++) {
       const from = ring[i];
@@ -218,6 +223,49 @@ describe("ringAreaKm2 — the adapter over the shared formula", () => {
 
   it("ignores winding direction", () => {
     expect(ringAreaKm2([...ring].reverse())).toBe(ringAreaKm2(ring));
+  });
+});
+
+describe("ringAreaKm2 — the antimeridian guard", () => {
+  const seamRing: GeoPoint[] = [
+    { lon: 179.5, lat: 39 },
+    { lon: -179.5, lat: 39 },
+    { lon: -179.5, lat: 40 },
+    { lon: 179.5, lat: 40 },
+  ];
+
+  it("refuses a ring that crosses the seam instead of returning 359x the truth", () => {
+    // ROUND 1 SHIPPED A SENTENCE INSTEAD OF A GUARD (→ PR #71 round-2 review CODE71R2-I2). It
+    // claimed Faz-1's tools "cannot reach the seam"; SPEC §6 makes typed coordinate entry the
+    // primary path and §6.2 accepts a coordinate outside the Türkiye frame, so the input can
+    // reach it even though the drawn map cannot. `null` is what carries the obligation to the
+    // caller through the type system.
+    expect(ringCrossesAntimeridian(seamRing)).toBe(true);
+    expect(ringAreaKm2(seamRing)).toBeNull();
+  });
+
+  it("does not fire on a ring inside one longitude branch", () => {
+    // The control: the guard must not refuse the rings the tool actually measures.
+    const turkishRing: GeoPoint[] = [
+      { lon: 32, lat: 39 },
+      { lon: 33, lat: 39 },
+      { lon: 33, lat: 40 },
+      { lon: 32, lat: 40 },
+    ];
+    expect(ringCrossesAntimeridian(turkishRing)).toBe(false);
+    expect(ringAreaKm2(turkishRing)).toBe(9540.512136366135);
+  });
+
+  it("does not fire on a wide ring that stays on one branch", () => {
+    // A 170-degree span is legal; only a STEP wider than 180 is the seam.
+    expect(
+      ringCrossesAntimeridian([
+        { lon: -85, lat: 10 },
+        { lon: 85, lat: 10 },
+        { lon: 85, lat: 20 },
+        { lon: -85, lat: 20 },
+      ]),
+    ).toBe(false);
   });
 });
 
@@ -303,12 +351,12 @@ describe("ringSelfIntersects", () => {
     ).toBe(true);
   });
 
-  it("does not flag a ring that returns through a point it already used", () => {
-    // THE DOCUMENTED SEMANTICS for a degenerate spike (→ PR #71 review CODE71-I1/M3). Under
-    // the old index-based rule this returned true; under the coordinate-based one the edges
-    // meet at a shared point and are exempt, which is what the module's original docblock
-    // always claimed and what the area tool wants: the answer for a spike is an area of
-    // nearly zero, not a refusal to show a number.
+  it("flags a ring that returns through a point it already used", () => {
+    // FLIPPED BACK, DELIBERATELY (→ PR #71 round-2 review CODE71R2-I1). Round 1 declared this
+    // shape simple because "its area is legitimately near zero" — but nothing in a ring's
+    // structure separates it from a figure-eight whose lobes are large, which is what the
+    // reviewer's 350-of-351 sweep showed. A vertex revisited at a non-adjacent position means
+    // the outline touches itself, and SPEC §6.3's answer to that is no number.
     expect(
       ringSelfIntersects([
         { lon: 30, lat: 38 },
@@ -316,7 +364,53 @@ describe("ringSelfIntersects", () => {
         { lon: 30, lat: 38 },
         { lon: 31, lat: 40 },
       ]),
-    ).toBe(false);
+    ).toBe(true);
+  });
+
+  it("flags a figure-eight pinched at one shared vertex", () => {
+    // THE CASE THE ROUND-1 FIX BROKE. Reported simple, so the area tool served the
+    // winding-cancelled difference of the two lobes: 1 109.59 km² for lobes totalling
+    // 75 757.72 km², understated 68× with a correct-looking perimeter beside it.
+    expect(
+      ringSelfIntersects([
+        { lon: 31, lat: 40 },
+        { lon: 33, lat: 38 },
+        { lon: 29, lat: 38 },
+        { lon: 31, lat: 40 },
+        { lon: 33, lat: 42 },
+        { lon: 29, lat: 42 },
+      ]),
+    ).toBe(true);
+  });
+
+  it("flags the worst case the random ring sweep found", () => {
+    // From the reviewer's 300 000-ring harness: of the 351 self-touching rings the round-1
+    // rule called simple, 350 showed an area differing from their lobe sum by more than 1 %.
+    // This is the extreme member (10 103.9 km² shown against 28 624.4 km² actual), kept as a
+    // sample of that class rather than as a second copy of the shape above.
+    expect(
+      ringSelfIntersects([
+        { lon: 33, lat: 41 },
+        { lon: 37, lat: 39 },
+        { lon: 29, lat: 42 },
+        { lon: 33, lat: 41 },
+        { lon: 37, lat: 42 },
+        { lon: 35, lat: 42 },
+      ]),
+    ).toBe(true);
+  });
+
+  it("still flags a bow-tie written in explicitly closed form", () => {
+    // Normalisation must drop the repeated closing vertex WITHOUT swallowing the crossing.
+    expect(
+      ringSelfIntersects([
+        { lon: 30, lat: 38 },
+        { lon: 32, lat: 40 },
+        { lon: 32, lat: 38 },
+        { lon: 30, lat: 40 },
+        { lon: 30, lat: 38 },
+      ]),
+    ).toBe(true);
   });
 
   it("does not fire on three collinear vertices along one side", () => {
@@ -359,6 +453,8 @@ describe("scaleBarKm", () => {
     if (!narrow || !wide) return;
     expect(wide.km).toBe(narrow.km);
     expect(wide.px).toBeCloseTo(narrow.px * 2, 8);
+    // Linearity alone survives `px` being scaled by any constant; one captured value closes it.
+    expect(narrow.px).toBeCloseTo(190.8648808850294, 9);
   });
 
   it("stays inside the fraction of the view it is allowed", () => {
@@ -392,6 +488,13 @@ describe("scaleBarKm", () => {
     // intent is what it missed.
     expect(scaleBarKm(500, 800, 90)).toBeNull();
     expect(scaleBarKm(500, 800, -90)).toBeNull();
+  });
+
+  it("returns null just above the pole, where the label would be centimetres", () => {
+    // The round-1 floor sat on the VIEW, so this still produced a bar labelled 0.0002 km
+    // (→ PR #71 round-2 review CODE71R2-M2). The floor is on the label now.
+    expect(scaleBarKm(500, 800, 89.9999)).toBeNull();
+    expect(scaleBarKm(0.0006, 800, 39)).toBeNull();
   });
 
   it("returns null for a view too small to carry a bar", () => {
@@ -560,6 +663,16 @@ describe("parseLatLon", () => {
     expect(result.point.lon).toBeCloseTo(32.85, 10);
   });
 
+  it("lets a cardinal on the FIRST half settle the order too", () => {
+    // CODE71-M1's fix changed behaviour in two directions and round 1 pinned only one
+    // (→ PR #71 round-2 review R2TEST71-M8).
+    const result = parseLatLon("39.92K 32.85", TR);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.point.lat).toBeCloseTo(39.92, 10);
+    expect(result.point.lon).toBeCloseTo(32.85, 10);
+  });
+
   it("lets the direction letter win over a leading minus, as documented", () => {
     // The documented precedence had no test, so a future edit reversing it would change a
     // coordinate tool's answer with CI green (→ PR #71 review TEST71-M4).
@@ -586,6 +699,12 @@ describe("parseLatLon", () => {
       reason: "unreadable",
     });
     expect(parseLatLon(`39.5°30' 32°51'00"D`, TR)).toStrictEqual({
+      ok: false,
+      reason: "unreadable",
+    });
+    // The third guard line, unpinned in round 1: a fractional MINUTE combined with seconds
+    // states the same quantity twice (→ PR #71 round-2 review R2TEST71-M4).
+    expect(parseLatLon(`39°30.5'12"K 32°51'00"D`, TR)).toStrictEqual({
       ok: false,
       reason: "unreadable",
     });

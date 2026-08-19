@@ -167,16 +167,47 @@ export function ringPerimeterKm(points: readonly GeoPoint[]): number {
  * water generators have always used. The formula itself is NOT reimplemented here — see
  * `lib/map/spherical-area.ts` for why there is exactly one copy of it in this repo.
  *
- * **DOMAIN: the ring must not cross the antimeridian** (→ PR #71 review CODE71-I2). The
- * underlying formula sums longitude DIFFERENCES, so a step from +179.5° to −179.5° is read as
- * a 359° sweep rather than a 1° one, and the answer comes back ~359× too large with no signal.
- * Faz-1's tools are bounded to the Türkiye frame (25.6–45.1° E) and cannot reach it; a future
- * worldwide caller must clamp or split its input first. `spherical-area.ts`'s header carries
- * the measurement.
+ * **RETURNS `null` FOR A RING THAT CROSSES THE ANTIMERIDIAN** (→ PR #71 rounds 1–2, CODE71-I2
+ * then CODE71R2-I2). The underlying formula sums longitude DIFFERENCES, so a step from +179.5°
+ * to −179.5° reads as a 359° sweep rather than a 1° one and the answer comes back ~359× too
+ * large with no signal.
+ *
+ * ROUND 1 DOCUMENTED THAT AND SHIPPED NO GUARD, on the strength of a sentence claiming Faz-1's
+ * tools "cannot reach the seam". That claim was false and the SPEC's own text refutes it: SPEC
+ * §6 makes TYPED coordinate entry the primary path for every tool, and §6.2 explicitly accepts
+ * a valid coordinate outside the Türkiye frame rather than clamping it. The drawn MAP cannot
+ * reach the seam; the INPUT can, and the input is the only thing the formula cares about.
+ *
+ * So the guard is here rather than the promise. `null` — not `NaN`, not a wrong number — is
+ * what makes the type system carry the obligation to the caller: the area tool must already
+ * render "no number" for a self-intersecting ring (SPEC §6.3), so this is the same branch, not
+ * a new one. `spherical-area.ts`'s tuple export is deliberately NOT given this guard: three
+ * build generators call it with Türkiye rings and a signature change there would ripple into
+ * scripts this module has no business touching.
  */
-export function ringAreaKm2(points: readonly GeoPoint[]): number {
+export function ringAreaKm2(points: readonly GeoPoint[]): number | null {
+  if (ringCrossesAntimeridian(points)) return null;
   const ring: LonLat[] = points.map((point) => [point.lon, point.lat]);
   return ringAreaKm2FromTuples(ring);
+}
+
+/**
+ * Whether consecutive vertices step across the ±180° seam.
+ *
+ * A longitude delta above 180° between neighbouring vertices cannot be the short way round, so
+ * it is the seam being crossed. Exported so a caller can explain the refusal to the reader in
+ * words rather than showing an empty result with no reason (SPEC §22: problem, then fix).
+ */
+export function ringCrossesAntimeridian(points: readonly GeoPoint[]): boolean {
+  const n = points.length;
+  if (n < 2) return false;
+  for (let i = 0; i < n; i++) {
+    const from = points[i];
+    const to = points[(i + 1) % n];
+    if (!from || !to) continue;
+    if (Math.abs(to.lon - from.lon) > 180) return true;
+  }
+  return false;
 }
 
 /**
@@ -216,42 +247,94 @@ export function ringAreaKm2(points: readonly GeoPoint[]): number {
  * to "do these bounding boxes touch". A duplicated point is a click the reader made twice,
  * not a shape that crosses itself.
  *
- * ## What it does not catch, stated accurately and verified
+ * ## A SELF-TOUCH IS AN INTERSECTION (→ PR #71 round-2 review CODE71R2-I1)
  *
- * Any two edges meeting at a shared point are exempt, so a ring that returns through a point
- * it already used (`[A,B,A,C]`) reads as non-intersecting. That is the intended semantics and
- * it is asserted: the area of such a spike is legitimately near zero, and refusing to show a
- * number for it would be the same defect as refusing one for a closed ring. Note this is a
- * BEHAVIOUR CHANGE from the first version, which reported that shape as self-intersecting —
- * the index-based rule caught it by accident while getting closed rings wrong.
+ * Round 1 replaced the index rule with a bare coordinate rule, and that over-corrected: it
+ * exempted every shared-endpoint pair no matter how far apart the two edges sit in the ring.
+ * A figure-eight pinched at ONE vertex then reported simple, and `ringAreaKm2` served the
+ * winding-cancelled DIFFERENCE of its two lobes — measured at 1 109.59 km² for lobes totalling
+ * 75 757.72 km², which is the exact number this predicate exists to suppress. A random sweep
+ * of the same shape class found 350 of 351 rings materially wrong.
+ *
+ * The rule that satisfies both rounds keeps them in the right order. The ring is NORMALISED
+ * first — consecutive duplicate vertices collapsed cyclically, a repeated closing vertex
+ * dropped — and only then is the exemption applied BY RING POSITION. Normalisation is what
+ * made round 1's closed rings and duplicated vertices false positives; index adjacency is what
+ * keeps a distant self-touch a real intersection. Neither half works alone.
+ *
+ * ## `[A,B,A,C]` is therefore self-intersecting, and that is deliberate
+ *
+ * The round-1 fix declared this shape simple; it is not, and the reasoning behind that
+ * declaration was wrong rather than merely different. The claim was that its area is
+ * "legitimately near zero", but the same shape scaled up is a figure-eight whose lobes are
+ * anything but zero — nothing in the ring's structure distinguishes the two, which is what the
+ * 350-of-351 sweep demonstrates. `A` reappearing at a non-adjacent position means the outline
+ * visits one point twice, and the honest answer to "what is the area of this?" is to refuse a
+ * number, exactly as SPEC §6.3 requires.
+ *
+ * ## What it still does not catch
+ *
+ * Edges that are adjacent in the NORMALISED ring are exempt, so a ring doubling back along its
+ * immediate neighbour is not flagged. The four collinear-overlap branches of `segmentsCross`
+ * also remain unreached in isolation by any test (round-1 TEST71-M7): a reviewer probed for a
+ * ring that distinguishes them and could not build one, so they stand as defensive code with
+ * their value unproven in both directions rather than as verified behaviour.
  */
 export function ringSelfIntersects(points: readonly GeoPoint[]): boolean {
-  const n = points.length;
+  const ring = normaliseRing(points);
+  const n = ring.length;
   if (n < 4) return false;
   for (let i = 0; i < n; i++) {
-    const a1 = points[i];
-    const a2 = points[(i + 1) % n];
-    if (!a1 || !a2 || samePoint(a1, a2)) continue;
+    const a1 = ring[i];
+    const a2 = ring[(i + 1) % n];
+    if (!a1 || !a2) continue;
     for (let j = i + 1; j < n; j++) {
-      const b1 = points[j];
-      const b2 = points[(j + 1) % n];
-      if (!b1 || !b2 || samePoint(b1, b2)) continue;
-      // Edges meeting at a shared point touch there by construction; that is not a crossing.
-      if (sharesEndpoint(a1, a2, b1, b2)) continue;
+      // Adjacent IN THE RING — the next edge, and the closing pair when `i` is the first.
+      // These two meet by construction; any other shared point is a self-touch.
+      if (j === i + 1) continue;
+      if (i === 0 && j === n - 1) continue;
+      const b1 = ring[j];
+      const b2 = ring[(j + 1) % n];
+      if (!b1 || !b2) continue;
       if (segmentsCross(a1, a2, b1, b2)) return true;
     }
   }
   return false;
 }
 
+/**
+ * Removes the duplicate vertices that make ring POSITION an unreliable notion, so the
+ * adjacency test above can be trusted.
+ *
+ * Two forms, and both arrive from this package's own contracts: a repeated CLOSING vertex
+ * (`[A,B,C,A]` — what the water generators pass and what `ringAreaKm2` documents as accepted)
+ * and consecutive repeats anywhere (`[A,A,B,C]` — a reader clicking the same point twice).
+ * Neither changes the shape; both shift every index after them, which is how round 1's
+ * index-only rule came to call a closed triangle self-intersecting.
+ *
+ * A vertex repeated at a NON-adjacent position is left alone on purpose. That is the pinch of
+ * a figure-eight, not a redundant click, and collapsing it would hide exactly the case
+ * CODE71R2-I1 is about.
+ */
+function normaliseRing(points: readonly GeoPoint[]): GeoPoint[] {
+  const collapsed: GeoPoint[] = [];
+  for (const point of points) {
+    const previous = collapsed[collapsed.length - 1];
+    if (previous && samePoint(previous, point)) continue;
+    collapsed.push(point);
+  }
+  while (collapsed.length > 1) {
+    const first = collapsed[0];
+    const last = collapsed[collapsed.length - 1];
+    if (first && last && samePoint(first, last)) collapsed.pop();
+    else break;
+  }
+  return collapsed;
+}
+
 /** Exact coordinate equality — these points come from the same clicks, never from arithmetic. */
 function samePoint(a: GeoPoint, b: GeoPoint): boolean {
   return a.lon === b.lon && a.lat === b.lat;
-}
-
-/** Whether two segments meet at any endpoint. */
-function sharesEndpoint(a1: GeoPoint, a2: GeoPoint, b1: GeoPoint, b2: GeoPoint): boolean {
-  return samePoint(a1, b1) || samePoint(a1, b2) || samePoint(a2, b1) || samePoint(a2, b2);
 }
 
 /** Sign of the cross product of `ab × ac`: >0 counter-clockwise, <0 clockwise, 0 collinear. */
@@ -301,8 +384,8 @@ export interface ScaleBar {
 /** The 1-2-5 mantissas, tried largest first. */
 const NICE_MANTISSAS = [5, 2, 1] as const;
 
-/** Smallest view width, in km, that can carry a bar worth labelling. */
-const MIN_USABLE_VIEW_KM = 0.001;
+/** Smallest distance, in km, worth printing on a scale bar (one metre). */
+const MIN_USABLE_BAR_KM = 0.001;
 
 /**
  * The scale bar for the CURRENT view (SPEC §6.4).
@@ -335,9 +418,7 @@ export function scaleBarKm(
   if (!Number.isFinite(maxFraction) || maxFraction <= 0) return null;
 
   const totalKm = viewWidthUnits * kmPerMapUnitAt(centerLatitude);
-  // One metre across the whole view is far below any real map and safely above the ~1e-16
-  // that a pole latitude produces; below it there is no bar worth labelling.
-  if (!(totalKm >= MIN_USABLE_VIEW_KM)) return null;
+  if (!(totalKm > 0)) return null;
 
   const targetKm = totalKm * maxFraction;
   const exponent = Math.floor(Math.log10(targetKm));
@@ -349,7 +430,11 @@ export function scaleBarKm(
       break;
     }
   }
-  if (!Number.isFinite(km) || km <= 0) return null;
+  // THE FLOOR IS ON THE LABEL, NOT ON THE VIEW (→ PR #71 round-2 review CODE71R2-M2). Round 1
+  // put it on `totalKm`, which left the bar it was meant to stop still producible just above
+  // the boundary: `scaleBarKm(500, 800, 89.9999)` returned a bar labelled 0.0002 km. What the
+  // guard is for is a label no reader can use, so it is measured on the label.
+  if (!Number.isFinite(km) || km < MIN_USABLE_BAR_KM) return null;
 
   return { km, px: (km / totalKm) * renderedWidthPx };
 }
@@ -420,7 +505,8 @@ export interface DmsParts {
  * Decimal degrees into DMS parts — OUR precision format, not the curriculum's (SPEC §6.2).
  *
  * **The earlier claim here ("the form the curriculum uses") was measured false and is
- * corrected** (→ `QUESTIONS.md` AK-26, NOVA 2026-08-19). Across the 71 pages of MEB/EBA
+ * corrected** (measurement: `Owner's Inbox/cbs-p2/prose/arac-prose-draft.md` §"71 sayfa", NOVA
+ * 2026-08-19; term ruling: `QUESTIONS.md` AK-26). Across the 71 pages of MEB/EBA
  * Coğrafya 9's first unit the word `saniye` appears zero times and no degree-minute string
  * occurs; what the book actually prints is a whole degree plus a direction letter (`30° K`).
  * So DMS is the resolution WE choose to offer, and only the direction letters are
