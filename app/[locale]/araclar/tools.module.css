@@ -1,0 +1,71 @@
+/* Page layout for the CBS tool tier: the hub's card grid and a tool page's reading column.
+   Terra tokens only (`DESIGN.md` §2); the island's own controls live in
+   `components/tools/tools.module.css`, next to the component that renders them. */
+
+/* ---- Hub ------------------------------------------------------------------------------ */
+
+.intro {
+  max-width: 62ch;
+}
+
+.intro p {
+  margin: 0 0 14px;
+}
+
+/* `auto-FILL`, not the `/oyun` hub's `auto-fit`, and the difference is the whole reason this
+   rule is written out rather than copied. `auto-fit` collapses the empty tracks and lets the
+   surviving items stretch, so with ONE tool the card spanned the full 1120px container and
+   read as a stray banner (measured on the first sample pass). `auto-fill` keeps the empty
+   tracks, so today's single card sits at a readable card width and the second and third land
+   beside it in PR-C/PR-D with nothing here reopened. */
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toolCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toolName {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.toolBody {
+  margin: 0;
+  color: var(--color-slate);
+}
+
+/* ---- Tool page ------------------------------------------------------------------------ */
+
+/* The reading column. A measuring page is read before it is used, and prose set across the
+   full 1120px container is not read at all (`DESIGN.md` §3); the map below it keeps the whole
+   container width, which is what a map wants. */
+.prose {
+  max-width: 62ch;
+}
+
+.prose p {
+  margin: 0 0 14px;
+}
+
+.prose h2 {
+  margin: 28px 0 10px;
+}
+
+.toolSection {
+  margin-top: 32px;
+}
+
+.sourceLine {
+  margin-top: 24px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}

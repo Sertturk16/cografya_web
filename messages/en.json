@@ -39,7 +39,8 @@
     "dunya": "World",
     "game": "Game",
     "deniz": "Sea",
-    "kitaplar": "Books"
+    "kitaplar": "Books",
+    "araclar": "Tools"
   },
   "Footer": {
     "tagline": "A free, open geography education platform.",
@@ -74,7 +75,10 @@
     "discoverCountries": "Discover today: countries",
     "gameHeading": "Test what you have learned on the map",
     "gameBody": "Three modes: find the region, find the province, find provinces region by region.",
-    "gameCta": "Open the game"
+    "gameCta": "Open the game",
+    "toolsHeading": "Measure on the map",
+    "toolsBody": "Work out the great-circle distance between two points, or along a route with several stops.",
+    "toolsCta": "Open the tools"
   },
   "Map": {
     "mapTitle": "Map of the provinces of Türkiye",
@@ -529,6 +533,62 @@
     "examLabel": "Exam",
     "sourcesLabel": "Sources",
     "sourceNewTab": ", opens in a new tab"
+  },
+  "Tools": {
+    "hub": {
+      "metaTitle": "Measurement Tools on the Map of Türkiye",
+      "metaDescription": "Measure great-circle distance on the map of Türkiye and its 81 provinces: between two points, or along a route with several stops. No sign-up.",
+      "heading": "Geography Tools",
+      "mesafeName": "Great-circle distance",
+      "mesafeBody": "Measure the distance between two points, or along a route with several stops."
+    },
+    "mesafe": {
+      "metaTitle": "Distance Measurement Tool: Two Points or a Route",
+      "metaDescription": "Measure the great-circle distance between two points on the map of Türkiye, or the total length of a route with up to twenty stops.",
+      "heading": "Great-Circle Distance on the Map of Türkiye",
+      "teaches": "measuring great-circle distance between points on the map of Türkiye",
+      "toolHeading": "Measure on the map"
+    },
+    "map": {
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "zoomReset": "Show the whole map",
+      "zoomControls": "Zoom controls",
+      "zoomInstructions": "With the map focused, press + or = to zoom in and − to zoom out; pan with the arrow keys and press 0 or Home to show the whole map. With a mouse you can zoom with the wheel and pan by dragging; on a touch screen pinch to zoom and drag with one finger."
+    },
+    "ui": {
+      "controlsLabel": "Measurement controls",
+      "provinceLabel": "Add a provincial centre",
+      "provincePlaceholder": "Select a province",
+      "coordinateLabel": "Add a coordinate",
+      "coordinatePlaceholder": "39.92, 32.85",
+      "addPoint": "Add",
+      "undo": "Undo the last point",
+      "clear": "Clear",
+      "download": "Download PNG",
+      "pointsLabel": "Points placed",
+      "pointName": "Point {index}: {lat} {lon}",
+      "pointRemoveHint": "Press Enter to delete it.",
+      "pointRemove": "Delete point {index}",
+      "legName": "Leg {index}: {distance} kilometres",
+      "resultEmpty": "Click the map, type a coordinate or select a province.",
+      "resultOnePoint": "Select the second point.",
+      "resultTwoPoints": "{distance} kilometres between the two points.",
+      "resultRoute": "A route with {count} points, {distance} kilometres in total.",
+      "limitReached": "The limit is {limit} points. Delete one to place another.",
+      "outsideFrame": "This point is outside the map frame.",
+      "errorEmpty": "The coordinate field is empty. Type a latitude and longitude as 39.92, 32.85.",
+      "errorUnreadable": "I could not read that coordinate. Type it as 39.92, 32.85 or 39°55'12\"N 32°51'00\"E.",
+      "errorLatitude": "Latitude cannot exceed 90 degrees. Correct the value.",
+      "errorLongitude": "Longitude cannot exceed 180 degrees. Correct the value.",
+      "scaleBar": "Linear scale: {km} kilometres",
+      "kmShort": "{km} km",
+      "downloadFailed": "The image could not be created. Reload the page and try again.",
+      "north": "N",
+      "south": "S",
+      "east": "E",
+      "west": "W"
+    }
   },
   "NotFound": {
     "metaTitle": "Page not found",

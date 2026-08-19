@@ -130,9 +130,21 @@ export const routing = defineRouting({
     // Declaring the segments is still mandatory, for the reason the `/deniz` and
     // `/kitaplar` entries give above: a `noindex` page must resolve to exactly ONE correct
     // URL per locale, and changing that URL later owes a redirect.
+    //
+    // ONE TOOL SEGMENT TODAY, NOT FOUR (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7).
+    // `plan-web.md` §2.1 lists four pathnames because it describes the finished tier; the
+    // recorded deviation is that `/araclar/alan-hesaplama` and `/araclar/koordinat-bulma`
+    // land WITH their pages (PR-C / PR-D). A declared pathname with no page behind it is a
+    // 404 the hub would have to link to or the sitemap would have to carry, and A4/3 rates a
+    // dead link a BLOCKER. The cost of adding a segment later is one line here; the cost of
+    // declaring it early is a broken URL in the index.
     "/araclar": {
       tr: "/araclar",
       en: "/tools",
+    },
+    "/araclar/mesafe-olcme": {
+      tr: "/araclar/mesafe-olcme",
+      en: "/tools/distance",
     },
   },
 });

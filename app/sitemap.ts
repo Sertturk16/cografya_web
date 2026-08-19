@@ -54,6 +54,17 @@ function staticEntries(): MetadataRoute.Sitemap {
     // on that single entry is therefore `tr` + `x-default`, mirroring exactly what
     // `buildAlternates` puts in the page head.
     ...sitemapEntriesFor(() => "/deniz", now, 0.7, "trNarrative"),
+    // The CBS tool tier. `"trNarrative"` for the same reason as `/deniz` (→ DEC 2026-08-19a
+    // md.6): the tool is locale-independent but its doorway defence is Turkish prose, so
+    // `/en/tools*` is `noindex` and must NOT appear here — a `noindex` URL in a sitemap is a
+    // §B6 6.8 BLOCKER, and the surface argument is what keeps it out.
+    //
+    // TWO ENTRIES, NOT FOUR. `plan-web.md` §3.2 lists four because it describes the finished
+    // tier; area calculation and coordinate lookup have no page yet, and a sitemap URL that
+    // 404s is the same BLOCKER pointing the other way (→ `Owner's Inbox/cbs-p2/pr-b/
+    // TASK-CONTEXT.md` md.7). They join here in PR-C/PR-D, with their pages.
+    ...sitemapEntriesFor(() => "/araclar", now, 0.7, "trNarrative"),
+    ...sitemapEntriesFor(() => "/araclar/mesafe-olcme", now, 0.6, "trNarrative"),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
   ];
 }

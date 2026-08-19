@@ -307,6 +307,22 @@ export default async function HomePage({ params }: PageProps) {
         </div>
       </section>
 
+      {/* The CBS tool hub's static internal link — `SEO-POLICY.md` §B8 8.1 asks every
+          indexable page to be reachable from at least one, and the hub also sits in the header
+          nav (→ DEC 2026-08-19g md.1). Two entrances rather than one is deliberate: the nav is
+          a list of names, and this band is where the tool tier gets a sentence.
+
+          The same `<section>` + `<h2>` + one-link pattern the two map bands above use, so it
+          needs no CSS of its own. `<Link>` takes the UNLOCALIZED route and the routing table
+          localizes it. */}
+      <section className="section" aria-labelledby="home-tools-heading">
+        <h2 id="home-tools-heading">{t("toolsHeading")}</h2>
+        <p className={styles.exploreBody}>{t("toolsBody")}</p>
+        <p className={styles.exploreLink}>
+          <Link href="/araclar">{t("toolsCta")}</Link>
+        </p>
+      </section>
+
       {/* LAST on the page, and only when a derived value is actually shown above.
           ECMWF's terms say the notice "shall be attached" and offer no "or any similar notice"
           escape, and Copernicus Marine's attribution obligation travels with the derived

@@ -45,6 +45,15 @@ export const ROUTE_FIXTURES: readonly RouteFixture[] = [
     name: "localized-segment route (/deniz ↔ /en/sea)",
     hrefForLocale: () => "/deniz",
   },
+  // The CBS tool tier — the first NESTED static localized-segment route (`/araclar/mesafe-olcme`
+  // ↔ `/en/tools/distance`). Every other fixture above is one segment deep, so nothing in the
+  // policy matrix had ever run a two-segment static path through `getPathname`; a hub-relative
+  // URL is exactly where a hand-built path would slip in and hreflang would stop being
+  // symmetric.
+  {
+    name: "nested localized-segment route (/araclar/mesafe-olcme ↔ /en/tools/distance)",
+    hrefForLocale: () => "/araclar/mesafe-olcme",
+  },
   {
     name: "localized-slug province route (/turkiye/[slug])",
     hrefForLocale: (locale) => ({
