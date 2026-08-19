@@ -158,7 +158,7 @@ export interface NeighborViaLabel {
  *
  * Returning a key rather than a finished string is the shape `lib/geo/country-sources.ts`
  * already uses on this same page, for the same two reasons: the choice stays a pure function
- * inside vitest's `lib/**` glob instead of a branch buried in a 500-line async Server
+ * inside vitest's include glob for `lib` instead of a branch buried in a 500-line async Server
  * Component, and the copy itself stays in `messages/*.json` where the locale catalogues and
  * the content-style gate can see it.
  */

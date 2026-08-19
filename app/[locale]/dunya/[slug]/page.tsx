@@ -188,8 +188,15 @@ export default async function CountryDetailPage({ params }: PageProps) {
   // code is reordered, dropped or added.
   // WHICH sentence, and with what interpolation, is decided by the pure helper — not here.
   // One pair (MA→ES) takes a mechanism wording instead of the identifying one by owner ruling
-  // (→ DEC 2026-08-19k); putting that choice in the module keeps it inside vitest's `lib/**`
-  // glob and keeps both strings in the locale catalogues.
+  // (→ DEC 2026-08-19k); putting that choice in the module keeps it inside the vitest include
+  // glob for `lib`, and keeps both strings in the locale catalogues.
+  //
+  // Do NOT write a `lib` glob literally in this file. Several source-invariant tests read
+  // page.tsx and strip comments with a non-greedy `/*…*/` regex; the two characters that open
+  // a block comment also sit inside that glob pattern, so writing it here silently swallows
+  // ~145 lines of real code before the stripper's next close and turns those guards green
+  // against a file they can no longer see. Cost the round one red CI, caught by
+  // lib/geo/sovereignty.test.ts.
   const neighborLabel = (name: string, iso: string): string => {
     const via = neighborViaTerritory(country.isoCode, iso, locale);
     return via === null ? name : t(via.key, { name, territory: via.territory });

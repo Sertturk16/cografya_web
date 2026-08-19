@@ -62,9 +62,11 @@ describe("the country page's neighbour-label wiring", () => {
   it("labels BOTH neighbour branches through the same helper", () => {
     // The seeded branch (a real link) and the unseeded branch (plain text). Dropping the
     // helper on either one ships a bare name on that branch only — invisible in a sample
-    // that happens to show the other.
-    const calls = PAGE.match(/neighborLabel\(/g) ?? [];
-    expect(calls.length).toBeGreaterThanOrEqual(3); // 1 definition + 2 call sites
+    // that happens to show the other. Counted as `label: neighborLabel(`, the property
+    // assignment both pushes use: the definition reads `const neighborLabel = (` and so is
+    // deliberately NOT in this count.
+    const calls = PAGE.match(/label: neighborLabel\(/g) ?? [];
+    expect(calls).toHaveLength(2);
     expect(PAGE).toContain('kind: "link"');
     expect(PAGE).toContain('kind: "text"');
   });
