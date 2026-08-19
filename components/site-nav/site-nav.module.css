@@ -144,7 +144,7 @@
   background: var(--color-chip-bg);
 }
 
-@media (min-width: 64rem) {
+@media (min-width: 66rem) {
   .trigger {
     display: none;
   }

@@ -86,12 +86,41 @@ ramp and not the Terra brand hues.
   `.province-card` grid, `.breadcrumb` (visual, pairs with `BreadcrumbList` JSON-LD),
   `.placeholder-note` (dev-content flag, warning left-border). Component styling uses CSS
   Modules + the global token layer — **no hardcoded brand hex outside the token layer.**
-- **One breakpoint: `64rem` (1024px).** Below it the header is a single compact row (brand +
-  icon-only search trigger + hamburger) with the nav in a disclosure panel; from it up the nav
-  is inline and the search trigger gains its text label. The number is chosen, not measured
-  from the nav alone: a breakpoint must be locale-independent, so it sits above the width at
-  which the LATER of the two locales stops fitting on one row — and on the value the repo
-  already used. Do not add a second breakpoint without a measurement in both locales.
+- **TWO breakpoint numbers, and they do different jobs.** The **nav-collapse** breakpoint is
+  **`66rem` (1056px)**: below it the header is a single compact row (brand + icon-only search
+  trigger + hamburger) with the nav in a disclosure panel; from it up the nav is inline and the
+  search trigger gains its text label. The **content-layout** breakpoint stays **`64rem`
+  (1024px)** and is where a body layout changes column count (book detail, the book video
+  stage, the game's zoom cluster). Neither number is chosen freely: a breakpoint must be
+  locale-independent, so the nav one sits above the width at which the LATER of the two locales
+  stops fitting on one row. Do not add a THIRD without a measurement in both locales.
+
+  **Why they split, and why it is not a licence to multiply (→ DEC 2026-08-19g md.3, owner-ruled
+  on rendered frames).** This file said "one breakpoint" until an EIGHTH nav link
+  (`/araclar`, owner ruling O-1) was measured against it. The two numbers now answer different
+  questions: 66rem is a fact about how much horizontal room eight Turkish nav labels plus the
+  locale switcher need, and 64rem is a judgement about when a column of prose should become two.
+  Coupling them meant the tool hub could not enter the nav without silently relaying out the
+  book pages and the game map, none of which the owner saw. The three header files
+  (`site-header.module.css`, `site-nav/site-nav.module.css`, `site-search/site-search.module.css`)
+  move together and are the whole of the nav breakpoint — they share one row's width budget.
+
+  **The eight-link measurement (2026-08-19, method below, both locales):**
+
+  1. **The width the row needs:** **1051.2px in Turkish**, 966.1px in English. The Turkish
+     number is what picks 66rem: 1056 clears it by 4.8px, and the rule above asks for the later
+     locale.
+  2. **What 64rem did with eight links:** at 1024px the Turkish header was **104.2px — two
+     rows** — against 57.5px in English. The item that wrapped was **not** a nav label but the
+     TR/EN switcher, pushed off the end. At 1052px Turkish returned to 57.5px.
+  3. **The accepted cost:** viewports from 1024px to 1055px now see the collapsed menu instead
+     of the inline nav. Owner-ruled with frames rather than inferred.
+
+  **A measurement trap this cost one run to find, recorded so the next one does not pay it.**
+  Taken at `networkidle` the Turkish header measured 57.5px at 1024px — single row, no problem,
+  and wrong. The self-hosted fonts had not applied yet and the fallback face is narrower, so the
+  row fit. **Await `document.fonts.ready` before reading any header height**; two independent
+  methods disagreed until that was added, and then agreed exactly.
 
   **The measurement, re-run with SEVEN nav links (`/kitaplar` added by owner ruling V-6,
   → DEC 2026-08-15g; `FU-WEB-MENU-BREAKPOINT`).** Two numbers, and they answer different

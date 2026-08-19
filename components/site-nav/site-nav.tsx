@@ -40,6 +40,12 @@ export async function SiteNav() {
             one row, so both locales were re-measured on the running build and the numbers
             in that section are this link's, not the six-link ones. */}
         <Link href="/kitaplar">{t("kitaplar")}</Link>
+        {/* The CBS tool hub (owner ruling O-1, → DEC 2026-08-19g md.1). The EIGHTH link, and
+            it did not fit: at 64rem the Turkish row went to two rows because the locale
+            switcher was pushed off the end (104.2px against 57.5px, measured on frames the
+            owner ruled on). The nav-collapse breakpoint moved to 66rem in the same change —
+            `DESIGN.md` §4 carries the measurement and the accepted 1024-1055px cost. */}
+        <Link href="/araclar">{t("araclar")}</Link>
         <Link href="/hakkimizda">{t("about")}</Link>
       </nav>
       <LocaleSwitcher />

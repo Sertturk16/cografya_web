@@ -151,16 +151,24 @@ describe("sticky-header anchor offsets", () => {
     expect(new RegExp(`${token}\\s*:`).test(rootBlock)).toBe(true);
   });
 
-  it("keeps the mobile header on one row below 64rem", () => {
+  it("keeps the mobile header on one row below the nav-collapse breakpoint", () => {
     const header = stripComments(readFileSync(SITE_HEADER, "utf8"));
-    const mobileRules = header.slice(0, header.indexOf("@media (min-width: 64rem)"));
+    // The breakpoint is FOUND, not spelled out. It was written as the literal
+    // `@media (min-width: 64rem)` until the nav-collapse breakpoint moved to 66rem
+    // (owner ruling O-1, → DEC 2026-08-19g md.3), and a literal that no longer occurs makes
+    // `indexOf` return -1, `slice(0, -1)` return almost the whole file, and this assertion
+    // pass while measuring the desktop block it was written to exclude. Searching for the
+    // first media query cannot degrade that way, whatever the number becomes.
+    const firstMediaQuery = header.search(/@media \(min-width:/);
+    expect(firstMediaQuery).toBeGreaterThan(-1);
+    const mobileRules = header.slice(0, firstMediaQuery);
     expect(mobileRules.length).toBeGreaterThan(0);
     expect(mobileRules).toMatch(/\.inner\s*\{[^}]*flex-wrap:\s*nowrap/);
   });
 
   it.each(RETIRED_TOKENS)("no longer references the retired %s anywhere", (token) => {
     // `--header-height-wrapped` described a header that cannot occur any more (the nav moved
-    // into a disclosure and `.inner` is `nowrap` below 64rem); `--deneme-summary-height`
+    // into a disclosure and `.inner` is `nowrap` below the nav-collapse breakpoint); `--deneme-summary-height`
     // measured an accordion row the bench removed. In both cases a reintroduced reference would
     // be reading a property nothing declares — and the declaration side has to stay gone too,
     // or the next reader finds a token with no owner and assumes it means something.
