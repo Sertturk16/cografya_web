@@ -80,8 +80,35 @@
   overflow-wrap: break-word;
 }
 
-/* Prose sections (Yeryüzü Şekilleri, İklim, Hidrografya, Bağımsızlık) — genuine
-   per-country narrative, rendered from the api's …NoteTr fields. */
+/* The Bağımsızlık künye card (→ DEC 2026-08-17e h.2). It is the one fact whose VALUE is a
+   sentence rather than a datum, so it takes the full row and body typography instead of the
+   display treatment above. Both halves are load-bearing and neither is cosmetic:
+
+   `grid-column: 1 / -1` — the track minimum is 150px, so a sentence in a normal cell would
+   either squeeze into one column or, with `auto-fit`, leave the row ragged. Spanning the row
+   is what lets the text set at a readable measure.
+
+   The type reset — the shared `.fact dd` is 1.25rem/700 Fraunces with `line-height: 1.2`,
+   tuned for values like "Bakü". The seeded notes run 30–329 characters (median 56); at that
+   size the longest rows render as a wall of bold display serif, and `overflow-wrap:
+   break-word` starts hyphen-free mid-word breaks — visible today on `/dunya/azerbaycan`,
+   where "cumhuriyeti" splits across lines in the Yönetim Biçimi card. Body font, 1rem and
+   the 1.6 body leading (DESIGN.md §3) are the values the rest of the site's prose uses.
+   `overflow-wrap` is inherited from `.fact dd` and stays: it is the guard for a long
+   unbreakable token, which prose can still contain. */
+.factWide {
+  grid-column: 1 / -1;
+}
+
+.factWide dd {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Prose sections (Yeryüzü Şekilleri, İklim, Hidrografya) — genuine per-country narrative,
+   rendered from the api's …NoteTr fields. */
 .prose {
   color: var(--color-slate);
   max-width: 70ch;

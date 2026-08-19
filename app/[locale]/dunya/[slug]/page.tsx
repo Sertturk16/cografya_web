@@ -253,8 +253,9 @@ export default async function CountryDetailPage({ params }: PageProps) {
   // extractable, which on a contested row reads as a standalone possessive assertion over
   // prose that deliberately hedges (e.g. island-wide hydrography, or a neighbour list whose
   // mandated explanatory note is not rendered yet). Rationale + the trade this costs:
-  // lib/geo/sovereignty.ts. This also gates the `independence` slot, which would otherwise
-  // ship "X'in Bağımsızlığı" as an H2 the moment a content wave fills independenceNoteTr.
+  // lib/geo/sovereignty.ts. It used to gate an `independence` slot too; that section is gone
+  // (→ DEC 2026-08-17e h.2) and the fact now renders as a plain-labelled künye row, so there
+  // is no entity-named heading left for it to suppress.
   const entityNamedHeadings = !isSpecialStatusRow(country.sovereigntyNoteTr);
   const sectionHeading = (slot: CountryHeadingSlot): string =>
     entityNamedHeadings
@@ -426,6 +427,30 @@ export default async function CountryDetailPage({ params }: PageProps) {
                   className={styles.fact}
                 />
               )}
+              {/* Bağımsızlık — was its own <h2> section until DEC 2026-08-17e h.2. The note is
+              a SINGLE SENTENCE on 173 of the 199 seeded rows, and `CONTENT-STYLE.md` §19's
+              section threshold bars opening an H2 for a body under two sentences; the fact
+              belongs in the künye instead. Removing the section also drops one identical
+              heading skeleton from 173 pages (SEO-POLICY §B3.6 + §B10) without losing a word
+              of body text — the same sentence renders here.
+
+              LAST card, and spanning the full row (`.factWide`), for two reasons that are not
+              interchangeable: the value is prose, not a datum, so it takes body typography
+              rather than the 1.25rem/700 display treatment the short cards share; and a
+              full-width card placed last closes the sheet instead of cutting the auto-fill
+              rhythm in half. It is rendered VERBATIM — the api publishes free text, not a
+              structured date ("serbest metin, yapılandırılmış tarih değil"), and the
+              sentences carry sourced qualifications ("…millî gün ise 18 Eylül 1810'da
+              kutlanır") that any client-side date extraction would silently drop.
+
+              Still `isTr`-gated exactly as the section was, so the EN page is unchanged and
+              `TR_GATED_FIELD_LEXEMES` keeps its `independence` entry. */}
+              {independenceNote !== null && (
+                <div className={`${styles.fact} ${styles.factWide}`}>
+                  <dt>{t("independence")}</dt>
+                  <dd>{independenceNote}</dd>
+                </div>
+              )}
             </dl>
           </section>
 
@@ -503,15 +528,6 @@ export default async function CountryDetailPage({ params }: PageProps) {
         <section className="section">
           <h2>{sectionHeading("hydrography")}</h2>
           <ProseNote text={hydrographyNote} className={styles.prose} />
-        </section>
-      )}
-
-      {/* Bağımsızlık — TR-gated free-text note; null (omitted) for continuous states like
-          İran where a colonial-independence date is inapplicable. */}
-      {independenceNote !== null && (
-        <section className="section">
-          <h2>{sectionHeading("independence")}</h2>
-          <ProseNote text={independenceNote} className={styles.prose} />
         </section>
       )}
 
