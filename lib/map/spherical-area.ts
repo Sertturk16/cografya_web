@@ -36,6 +36,22 @@
  * into a recomputation of the formula under test — that is the one edit that would make the
  * file pass while proving nothing.
  *
+ * ## SUPPORTED DOMAIN — the ring must not cross the antimeridian (→ PR #71 review CODE71-I2)
+ *
+ * The sum below runs over longitude DIFFERENCES, so a step from +179.5° to −179.5° reads as a
+ * 359° sweep instead of a 1° one. Measured: a 1°×1° ring straddling ±180° returns
+ * 3 425 043.86 km² against a true ~9 540 km², a factor of 359, **silently**. There is no
+ * signal and no `NaN`; the number simply comes back wrong.
+ *
+ * This is not a regression — the body is byte-identical to the `.mjs` it moved from, and the
+ * three generator consumers only ever feed it Türkiye rings. What changed is the AUDIENCE:
+ * the same commit exported it to browser code whose typed-coordinate path accepts the whole
+ * world. Faz-1's tools are bounded to the Türkiye frame (25.6–45.1° E) and cannot reach the
+ * seam; a future worldwide caller must clamp or split its rings before calling this.
+ *
+ * **`SPEC.md` §6.5(a) claimed the opposite and has been corrected in place**: the claim is
+ * true for haversine (verified to 14 digits across the seam) and false for this formula.
+ *
  * ## Why spherical rather than planar
  *
  * The planar shoelace formula is wrong by tens of percent at Türkiye's latitudes, because a

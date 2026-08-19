@@ -126,6 +126,51 @@ describe("ringAreaKm2 — invariants", () => {
     ).toBe(0);
   });
 
+  it("is hemisphere-symmetric: a southern ring equals its northern twin", () => {
+    // The `sin(latitude)` term changes sign across the equator and `Math.abs` is applied to
+    // the TOTAL, so the two must agree exactly. An edit that moved the `Math.abs` to each term
+    // would leave every other vector in this file untouched and break exactly this
+    // (→ PR #71 review TEST71-M6).
+    expect(
+      ringAreaKm2([
+        [32, -40],
+        [33, -40],
+        [33, -39],
+        [32, -39],
+      ]),
+    ).toBe(ringAreaKm2(BOX));
+  });
+
+  it("returns the captured value for a ring straddling the equator", () => {
+    expect(
+      ringAreaKm2([
+        [32, -0.5],
+        [33, -0.5],
+        [33, 0.5],
+        [32, 0.5],
+      ]),
+    ).toBe(12364.188935608721);
+  });
+
+  it("KNOWN LIMITATION: a ring crossing the antimeridian is not supported", () => {
+    // This pins a DOMAIN, not a desired answer (→ PR #71 review CODE71-I2). The formula sums
+    // longitude differences, so the ±180° step reads as 359° and the result is ~359× the
+    // truth, silently. The module header states the domain; this is what makes a future
+    // "fix" impossible to land unnoticed — if someone makes the formula seam-safe, this test
+    // fails and they must come here and delete it deliberately.
+    const seamRing: readonly LonLat[] = [
+      [179.5, 39],
+      [-179.5, 39],
+      [-179.5, 40],
+      [179.5, 40],
+    ];
+    const wrong = ringAreaKm2(seamRing);
+    expect(wrong).toBe(3425043.856955437);
+    // Stated as a relationship as well as a value, so the reason it is wrong survives even if
+    // the constant is ever re-captured: the same 1°×1° extent inside the domain is ~9 540 km².
+    expect(wrong / ringAreaKm2(BOX)).toBeGreaterThan(300);
+  });
+
   it("returns 0 for a degenerate ring whose vertices coincide", () => {
     expect(
       ringAreaKm2([

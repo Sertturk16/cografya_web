@@ -28,7 +28,9 @@ import { MAP_PROJECTION } from "./tr-provinces.generated";
  *
  * What IS pinned is the module's own contract: the projection inverse round-trips, distance
  * is symmetric and obeys the triangle inequality, area ignores winding, the scale bar reacts
- * to latitude, and typed coordinates parse in both the notations the curriculum uses.
+ * to latitude, and typed coordinates parse in both notations the tool offers. (Not "the notations the
+ * curriculum uses" — that phrasing was measured false, → AK-26: the curriculum prints whole
+ * degrees plus a direction letter and never seconds.)
  */
 
 /** Turkish direction letters, as `messages/tr.json` will carry them. */
@@ -80,8 +82,16 @@ describe("kmPerMapUnitAt", () => {
     // correction, so a bar computed from that constant is wrong by this much at the edges —
     // a ~9 % band, in an instrument whose whole job is to be trusted.
     const reference = kmPerMapUnitAt(REFERENCE_LATITUDE);
-    expect(kmPerMapUnitAt(35.8) / reference - 1).toBeCloseTo(0.043, 3);
-    expect(kmPerMapUnitAt(42.2) / reference - 1).toBeCloseTo(-0.047, 3);
+    // Precision 2, not 3 (→ PR #71 review TEST71-M3). The quantity is a pure function of the
+    // GENERATED `MAP_PROJECTION.cosLat`, and at precision 3 the southern figure had already
+    // consumed 59 % of its tolerance: a legitimate ODbL snapshot refresh moving the reference
+    // latitude by ~0.02° would turn this red on a file nobody edited. SPEC §6.4's published
+    // figures stay as the assertion; only the band widens.
+    expect(kmPerMapUnitAt(35.8) / reference - 1).toBeCloseTo(0.043, 2);
+    expect(kmPerMapUnitAt(42.2) / reference - 1).toBeCloseTo(-0.047, 2);
+    // The SIGNS and the ordering carry the contract and stay exact.
+    expect(kmPerMapUnitAt(35.8)).toBeGreaterThan(reference);
+    expect(kmPerMapUnitAt(42.2)).toBeLessThan(reference);
   });
 
   it("agrees with haversine about how long a degree is — one Earth, not two", () => {
@@ -154,16 +164,21 @@ describe("ringPerimeterKm", () => {
     { lon: 31, lat: 39 },
   ];
 
-  it("adds the closing leg to the open length", () => {
-    const first = ring[0];
-    const last = ring[ring.length - 1];
-    expect(first).toBeDefined();
-    expect(last).toBeDefined();
-    if (!first || !last) return;
-    expect(ringPerimeterKm(ring)).toBeCloseTo(
-      polylineLengthKm(ring) + haversineKm(last, first),
-      10,
-    );
+  it("exceeds the open path it closes, and no side reaches half of it", () => {
+    // AN INDEPENDENT PROPERTY, not a restatement of the body (→ PR #71 review TEST71-M2). The
+    // previous assertion compared the result against `polylineLengthKm(ring) +
+    // haversineKm(last, first)` — measure.ts's own expression verbatim — so both sides moved
+    // together under any rewrite and it could only ever prove internal consistency.
+    const perimeter = ringPerimeterKm(ring);
+    expect(perimeter).toBeGreaterThan(polylineLengthKm(ring));
+    for (let i = 0; i < ring.length; i++) {
+      const from = ring[i];
+      const to = ring[(i + 1) % ring.length];
+      if (!from || !to) continue;
+      // Triangle inequality on a closed ring: no single side can reach half the perimeter,
+      // or the shape could not close.
+      expect(haversineKm(from, to)).toBeLessThan(perimeter / 2);
+    }
   });
 
   it("is zero below three points, matching ringAreaKm2", () => {
@@ -246,6 +261,64 @@ describe("ringSelfIntersects", () => {
     expect(ringSelfIntersects([{ lon: 30, lat: 38 }])).toBe(false);
   });
 
+  it("is false for an explicitly CLOSED ring", () => {
+    // The regression that made the exemption coordinate-based (→ PR #71 review CODE71-I1).
+    // `ringAreaKm2`'s docblock invites closed rings and the generators pass them, so an
+    // index-based adjacency rule made two functions in this module disagree about one input:
+    // the area tool would have refused a legitimate polygon.
+    expect(
+      ringSelfIntersects([
+        { lon: 30, lat: 38 },
+        { lon: 32, lat: 38 },
+        { lon: 32, lat: 40 },
+        { lon: 30, lat: 38 },
+      ]),
+    ).toBe(false);
+  });
+
+  it("is false for a ring with a duplicated vertex, wherever it sits", () => {
+    // A repeated point is a click the reader made twice. Each position is listed because the
+    // old index-based rule failed on all three and a single case would not have shown it.
+    const a = { lon: 30, lat: 38 };
+    const b = { lon: 32, lat: 38 };
+    const c = { lon: 32, lat: 40 };
+    expect(ringSelfIntersects([a, a, b, c])).toBe(false);
+    expect(ringSelfIntersects([a, b, b, c])).toBe(false);
+    expect(ringSelfIntersects([a, b, c, c])).toBe(false);
+  });
+
+  it("catches a crossing between edges that are far apart in the ring", () => {
+    // THE MUTATION-KILLING CASE (→ PR #71 review CODE71-I1, reviewer-supplied). Under the old
+    // two-condition index skip, collapsing both conditions to `j === n - 1` left every other
+    // assertion in this file green; this ring flips, because the crossing is between edge 2
+    // and the closing edge 4.
+    expect(
+      ringSelfIntersects([
+        { lon: 30, lat: 38 },
+        { lon: 34, lat: 38 },
+        { lon: 34, lat: 42 },
+        { lon: 28, lat: 40 },
+        { lon: 30, lat: 44 },
+      ]),
+    ).toBe(true);
+  });
+
+  it("does not flag a ring that returns through a point it already used", () => {
+    // THE DOCUMENTED SEMANTICS for a degenerate spike (→ PR #71 review CODE71-I1/M3). Under
+    // the old index-based rule this returned true; under the coordinate-based one the edges
+    // meet at a shared point and are exempt, which is what the module's original docblock
+    // always claimed and what the area tool wants: the answer for a spike is an area of
+    // nearly zero, not a refusal to show a number.
+    expect(
+      ringSelfIntersects([
+        { lon: 30, lat: 38 },
+        { lon: 32, lat: 38 },
+        { lon: 30, lat: 38 },
+        { lon: 31, lat: 40 },
+      ]),
+    ).toBe(false);
+  });
+
   it("does not fire on three collinear vertices along one side", () => {
     // A legitimate shape: the reader clicked twice along a straight edge. Treating a
     // collinear touch between ADJACENT edges as a crossing would reject it.
@@ -274,14 +347,18 @@ describe("scaleBarKm", () => {
     }
   });
 
-  it("keeps its pixel width proportional to the distance it claims", () => {
-    const view = 500;
-    const widthPx = 800;
-    const bar = scaleBarKm(view, widthPx, 39);
-    expect(bar).not.toBeNull();
-    if (!bar) return;
-    const totalKm = view * kmPerMapUnitAt(39);
-    expect(bar.px).toBeCloseTo((bar.km / totalKm) * widthPx, 8);
+  it("scales its pixel width with the rendered width, at a constant km", () => {
+    // A PROPERTY, not the body (→ PR #71 review TEST71-M2). The previous assertion recomputed
+    // `(bar.km / totalKm) * widthPx`, which is measure.ts's own expression, so it passed under
+    // any consistent rewrite. Doubling the rendered width must double the bar while the round
+    // distance it claims is unchanged — the same view, drawn twice as wide.
+    const narrow = scaleBarKm(500, 800, 39);
+    const wide = scaleBarKm(500, 1600, 39);
+    expect(narrow).not.toBeNull();
+    expect(wide).not.toBeNull();
+    if (!narrow || !wide) return;
+    expect(wide.km).toBe(narrow.km);
+    expect(wide.px).toBeCloseTo(narrow.px * 2, 8);
   });
 
   it("stays inside the fraction of the view it is allowed", () => {
@@ -308,6 +385,25 @@ describe("scaleBarKm", () => {
     expect(scaleBarKm(Number.NaN, 800, 39)).toBeNull();
     expect(scaleBarKm(500, 800, 91)).toBeNull();
   });
+
+  it("returns null at exactly the poles", () => {
+    // ±90 passed the old `Math.abs(latitude) > 90` guard and produced a bar labelled ~1e-17 km
+    // (→ PR #71 review CODE71-M7). Unreachable from the Türkiye frame; the guard's own stated
+    // intent is what it missed.
+    expect(scaleBarKm(500, 800, 90)).toBeNull();
+    expect(scaleBarKm(500, 800, -90)).toBeNull();
+  });
+
+  it("returns null for a view too small to carry a bar", () => {
+    // The docblock promised this branch before the code had it (→ PR #71 review TEST71-M5):
+    // probed at 1e-300 the old version still returned `{ km: 2e-301 }`.
+    expect(scaleBarKm(1e-300, 800, 39)).toBeNull();
+  });
+
+  it("rejects an unusable maxFraction", () => {
+    expect(scaleBarKm(500, 800, 39, 0)).toBeNull();
+    expect(scaleBarKm(500, 800, 39, Number.NaN)).toBeNull();
+  });
 });
 
 describe("kmDecimalsFor", () => {
@@ -328,6 +424,16 @@ describe("kmDecimalsFor", () => {
   it("is defensive about non-finite input", () => {
     expect(kmDecimalsFor(Number.NaN, 3)).toBe(0);
     expect(kmDecimalsFor(0.13, Number.NaN)).toBe(0);
+  });
+
+  it("pins both thresholds the contract names", () => {
+    // SPEC §6.1's cut is "< 10 km" and §6.6's is "kmPerPixel < 1"; neither boundary was
+    // exercised, so a `<` -> `<=` slip at either passed every assertion
+    // (→ PR #71 review TEST71-M1). A 10 km leg rendering as "10,0 km" is the visible failure.
+    expect(kmDecimalsFor(0.13, 10)).toBe(0);
+    expect(kmDecimalsFor(0.13, 9.999)).toBe(1);
+    expect(kmDecimalsFor(1, 3)).toBe(0);
+    expect(kmDecimalsFor(0.999, 3)).toBe(1);
   });
 });
 
@@ -442,6 +548,70 @@ describe("parseLatLon", () => {
     expect(parseLatLon("kuzeye doğru", TR)).toStrictEqual({ ok: false, reason: "unreadable" });
     expect(parseLatLon("91, 32", TR)).toStrictEqual({ ok: false, reason: "latitudeOutOfRange" });
     expect(parseLatLon("39, 181", TR)).toStrictEqual({ ok: false, reason: "longitudeOutOfRange" });
+  });
+
+  it("lets a cardinal on EITHER half settle the order", () => {
+    // Consulting only the first half rejected this as unreadable although it is unambiguous:
+    // the second says north, so the first can only be longitude (→ PR #71 review CODE71-M1).
+    const result = parseLatLon("32.85 39.92K", TR);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.point.lat).toBeCloseTo(39.92, 10);
+    expect(result.point.lon).toBeCloseTo(32.85, 10);
+  });
+
+  it("lets the direction letter win over a leading minus, as documented", () => {
+    // The documented precedence had no test, so a future edit reversing it would change a
+    // coordinate tool's answer with CI green (→ PR #71 review TEST71-M4).
+    const result = parseLatLon("-39.92K 32.85D", TR);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.point.lat).toBeCloseTo(39.92, 10);
+  });
+
+  it("rejects a single token with no second half", () => {
+    expect(parseLatLon("39.92", TR)).toStrictEqual({ ok: false, reason: "unreadable" });
+  });
+
+  it("rejects malformed DMS instead of normalising it into a confident wrong answer", () => {
+    // `39°75'00"K` used to parse as 40.25 and `39.5°30'` as 40.0 — a wrong coordinate
+    // presented as a right one, which is worse than the unreadable path §6.2 designs for
+    // (→ PR #71 review CODE71-M2).
+    expect(parseLatLon(`39°75'00"K 32°51'00"D`, TR)).toStrictEqual({
+      ok: false,
+      reason: "unreadable",
+    });
+    expect(parseLatLon(`39°30'75"K 32°51'00"D`, TR)).toStrictEqual({
+      ok: false,
+      reason: "unreadable",
+    });
+    expect(parseLatLon(`39.5°30' 32°51'00"D`, TR)).toStrictEqual({
+      ok: false,
+      reason: "unreadable",
+    });
+  });
+
+  it("still accepts a fractional FINAL component", () => {
+    // The rejection above must not swallow legitimate precision: fractional seconds, and a
+    // bare fractional degree with no sub-components, are both valid.
+    expect(parseLatLon(`39°55'12.5"K 32°51'00"D`, TR).ok).toBe(true);
+    expect(parseLatLon("39.92 32.85", TR).ok).toBe(true);
+  });
+
+  it("depends on every cardinal letter being exactly one character", () => {
+    // The contract `CardinalLetters` cannot express (→ PR #71 review CODE71-M6). A bundle
+    // carrying words instead of letters silently turns EVERY typed DMS coordinate into
+    // `unreadable`, which is a total failure of the primary keyboard path — so the
+    // requirement is pinned rather than left to the docblock.
+    const words: CardinalLetters = {
+      north: "Kuzey",
+      south: "Guney",
+      east: "Dogu",
+      west: "Bati",
+    };
+    expect(parseLatLon(`39°55'12"K 32°51'00"D`, words).ok).toBe(false);
+    for (const letter of Object.values(TR)) expect(letter).toHaveLength(1);
+    for (const letter of Object.values(EN)) expect(letter).toHaveLength(1);
   });
 
   it("rejects a pair that names the same axis twice", () => {

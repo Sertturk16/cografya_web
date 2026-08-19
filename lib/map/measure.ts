@@ -82,11 +82,18 @@ export function unprojectMapPoint(point: MapPoint): GeoPoint {
 /**
  * Ground kilometres spanned by one SVG unit, measured east-west at a given latitude.
  *
- * THIS IS THE FUNCTION THAT MAKES THE SCALE BAR HONEST. The map is projected with a single
+ * THIS IS WHAT MAKES THE SCALE BAR HONEST EAST-WEST. The map is projected with a single
  * `cos(reference latitude)` correction pinned at 38.96° N, so one SVG unit is 1.677 km there
  * and demonstrably not elsewhere: +4.3 % at Hatay's latitude, −4.7 % north of Sinop. A scale
  * bar computed from the fixed constant tells the reader a lie that roams across a 9 % band,
  * which is not acceptable in a measuring instrument (SPEC §6.4).
+ *
+ * **One axis, not two** (→ PR #71 review CODE71-M4). The VERTICAL scale in this projection is
+ * constant at `KM_PER_DEGREE / scale`, so a bar corrected for east-west reading is off by the
+ * same band with the opposite sign when a reader measures north-south with it: at 35.8° N,
+ * 1.750 km/unit horizontally against 1.677 vertically. That is SPEC §6.4's contract exactly
+ * and not a defect — but the UI must not present the bar as isotropic, and this sentence is
+ * here so the tool PR does not assume it is.
  */
 export function kmPerMapUnitAt(latitude: number): number {
   const { cosLat, scale } = MAP_PROJECTION;
@@ -159,6 +166,13 @@ export function ringPerimeterKm(points: readonly GeoPoint[]): number {
  * The one adapter between this module's `{ lon, lat }` objects and the tuple contract the
  * water generators have always used. The formula itself is NOT reimplemented here — see
  * `lib/map/spherical-area.ts` for why there is exactly one copy of it in this repo.
+ *
+ * **DOMAIN: the ring must not cross the antimeridian** (→ PR #71 review CODE71-I2). The
+ * underlying formula sums longitude DIFFERENCES, so a step from +179.5° to −179.5° is read as
+ * a 359° sweep rather than a 1° one, and the answer comes back ~359× too large with no signal.
+ * Faz-1's tools are bounded to the Türkiye frame (25.6–45.1° E) and cannot reach it; a future
+ * worldwide caller must clamp or split its input first. `spherical-area.ts`'s header carries
+ * the measurement.
  */
 export function ringAreaKm2(points: readonly GeoPoint[]): number {
   const ring: LonLat[] = points.map((point) => [point.lon, point.lat]);
@@ -181,12 +195,35 @@ export function ringAreaKm2(points: readonly GeoPoint[]): number {
  * cross in one space exactly when they cross in the other. The answer is therefore identical
  * either way, and lon/lat is the space the caller already holds.
  *
- * ## What it deliberately does not catch
+ * ## The exemption is by COORDINATE, not by index (→ PR #71 review CODE71-I1)
  *
- * Edges that SHARE a vertex are skipped, so a zero-area spike — the ring doubling back along
- * itself — reads as non-intersecting. Catching it would mean treating every collinear touch
- * as a crossing, which fires on legitimate shapes with three points in a line. The tool's
- * answer for a spike is a correct area of nearly zero, not a wrong number.
+ * Two edges that meet at a shared point touch there by construction, and that touch is not a
+ * crossing. The first version of this function expressed "meet" as an INDEX relationship —
+ * the next edge, plus the wrap-around pair — and that was wrong in a way the area tool
+ * reaches on its own contract. Measured on the shipped code: an explicitly CLOSED ring
+ * `[A,B,C,A]` returned `true`, and so did any ring with a repeated vertex (`[A,A,B,C]`,
+ * `[A,B,B,C]`, `[A,B,C,C]`). `ringAreaKm2`'s docblock invites exactly those closed rings, so
+ * the two functions in this module disagreed about the same input.
+ *
+ * Comparing coordinates fixes both classes at once and removes the index bookkeeping that
+ * made it fragile: an index-based skip can be collapsed to a single condition and stay green
+ * on a whole test file, which is how the same review found it a second time.
+ *
+ * ## Degenerate edges
+ *
+ * A zero-length edge — the repeated vertex above — is skipped rather than tested. It has no
+ * direction, so every orientation test against it is collinear and every comparison degrades
+ * to "do these bounding boxes touch". A duplicated point is a click the reader made twice,
+ * not a shape that crosses itself.
+ *
+ * ## What it does not catch, stated accurately and verified
+ *
+ * Any two edges meeting at a shared point are exempt, so a ring that returns through a point
+ * it already used (`[A,B,A,C]`) reads as non-intersecting. That is the intended semantics and
+ * it is asserted: the area of such a spike is legitimately near zero, and refusing to show a
+ * number for it would be the same defect as refusing one for a closed ring. Note this is a
+ * BEHAVIOUR CHANGE from the first version, which reported that shape as self-intersecting —
+ * the index-based rule caught it by accident while getting closed rings wrong.
  */
 export function ringSelfIntersects(points: readonly GeoPoint[]): boolean {
   const n = points.length;
@@ -194,19 +231,27 @@ export function ringSelfIntersects(points: readonly GeoPoint[]): boolean {
   for (let i = 0; i < n; i++) {
     const a1 = points[i];
     const a2 = points[(i + 1) % n];
-    if (!a1 || !a2) continue;
+    if (!a1 || !a2 || samePoint(a1, a2)) continue;
     for (let j = i + 1; j < n; j++) {
-      // Skip the two edges that share a vertex with edge `i` (the next one, and — when `i`
-      // is the first edge — the last one, which closes the ring back onto it).
-      if (j === i + 1) continue;
-      if (i === 0 && j === n - 1) continue;
       const b1 = points[j];
       const b2 = points[(j + 1) % n];
-      if (!b1 || !b2) continue;
+      if (!b1 || !b2 || samePoint(b1, b2)) continue;
+      // Edges meeting at a shared point touch there by construction; that is not a crossing.
+      if (sharesEndpoint(a1, a2, b1, b2)) continue;
       if (segmentsCross(a1, a2, b1, b2)) return true;
     }
   }
   return false;
+}
+
+/** Exact coordinate equality — these points come from the same clicks, never from arithmetic. */
+function samePoint(a: GeoPoint, b: GeoPoint): boolean {
+  return a.lon === b.lon && a.lat === b.lat;
+}
+
+/** Whether two segments meet at any endpoint. */
+function sharesEndpoint(a1: GeoPoint, a2: GeoPoint, b1: GeoPoint, b2: GeoPoint): boolean {
+  return samePoint(a1, b1) || samePoint(a1, b2) || samePoint(a2, b1) || samePoint(a2, b2);
 }
 
 /** Sign of the cross product of `ab × ac`: >0 counter-clockwise, <0 clockwise, 0 collinear. */
@@ -256,6 +301,9 @@ export interface ScaleBar {
 /** The 1-2-5 mantissas, tried largest first. */
 const NICE_MANTISSAS = [5, 2, 1] as const;
 
+/** Smallest view width, in km, that can carry a bar worth labelling. */
+const MIN_USABLE_VIEW_KM = 0.001;
+
 /**
  * The scale bar for the CURRENT view (SPEC §6.4).
  *
@@ -267,8 +315,13 @@ const NICE_MANTISSAS = [5, 2, 1] as const;
  * point of the signature: see {@link kmPerMapUnitAt} for the 9 % band a fixed constant would
  * put the reader inside.
  *
- * Returns `null` for a view that cannot produce a bar (non-finite or non-positive inputs, or
- * a target so small it rounds away), so the caller draws nothing rather than a bar of `NaN`.
+ * Returns `null` for a view that cannot produce a usable bar, so the caller draws nothing
+ * rather than a bar of `NaN` or a bar labelled `1e-17 km`. "Usable" is a measured floor, not
+ * a sign check (→ PR #71 review CODE71-M7 / TEST71-M5): `Math.abs(latitude) > 90` let exactly
+ * ±90 through, where `kmPerMapUnitAt` is ~1e-16 and the bar became a label no reader could
+ * use. The earlier docblock also promised a "target so small it rounds away" branch that the
+ * code did not have — probed at `viewWidthUnits = 1e-300` it still returned a bar. Both are
+ * now the same one-metre floor on `totalKm`.
  */
 export function scaleBarKm(
   viewWidthUnits: number,
@@ -282,7 +335,9 @@ export function scaleBarKm(
   if (!Number.isFinite(maxFraction) || maxFraction <= 0) return null;
 
   const totalKm = viewWidthUnits * kmPerMapUnitAt(centerLatitude);
-  if (!(totalKm > 0)) return null;
+  // One metre across the whole view is far below any real map and safely above the ~1e-16
+  // that a pole latitude produces; below it there is no bar worth labelling.
+  if (!(totalKm >= MIN_USABLE_VIEW_KM)) return null;
 
   const targetKm = totalKm * maxFraction;
   const exponent = Math.floor(Math.log10(targetKm));
@@ -338,7 +393,16 @@ export type LatLonAxis = "lat" | "lon";
  */
 export type CardinalKey = "north" | "south" | "east" | "west";
 
-/** The four localized letters, supplied by the caller from the message bundle. */
+/**
+ * The four localized letters, supplied by the caller from the message bundle.
+ *
+ * **Each value must be exactly ONE character** (→ PR #71 review CODE71-M6). {@link parseLatLon}
+ * recognises a direction by comparing the input's last character against these values, so a
+ * bundle carrying "Kuzey"/"North" would match nothing and turn EVERY typed DMS coordinate into
+ * `unreadable` — a total, silent failure of the keyboard path, which SPEC §10.1 makes the
+ * PRIMARY input path rather than a convenience. The type cannot express the constraint, so it
+ * is stated here and pinned by a test.
+ */
 export type CardinalLetters = Readonly<Record<CardinalKey, string>>;
 
 /** A coordinate in degrees, minutes and seconds, plus its direction. */
@@ -353,7 +417,14 @@ export interface DmsParts {
 }
 
 /**
- * Decimal degrees into DMS parts — the form the curriculum uses (SPEC §6.2).
+ * Decimal degrees into DMS parts — OUR precision format, not the curriculum's (SPEC §6.2).
+ *
+ * **The earlier claim here ("the form the curriculum uses") was measured false and is
+ * corrected** (→ `QUESTIONS.md` AK-26, NOVA 2026-08-19). Across the 71 pages of MEB/EBA
+ * Coğrafya 9's first unit the word `saniye` appears zero times and no degree-minute string
+ * occurs; what the book actually prints is a whole degree plus a direction letter (`30° K`).
+ * So DMS is the resolution WE choose to offer, and only the direction letters are
+ * curriculum-verified. No reader-facing copy may give this notation curriculum standing.
  *
  * ROUNDING IS DONE HERE, NOT AT DISPLAY TIME, and that is what stops the classic `60"` bug.
  * Rounding 39.99999° to whole seconds naively yields `39°59'60"`, which is not a coordinate;
@@ -384,7 +455,17 @@ export function toDmsParts(value: number, axis: LatLonAxis, secondsDecimals = 0)
   return { degrees, minutes, seconds, cardinal };
 }
 
-/** DMS parts back to signed decimal degrees. */
+/**
+ * DMS parts back to signed decimal degrees — the inverse that PROVES {@link toDmsParts}.
+ *
+ * It has no production consumer today and that is deliberate rather than an oversight
+ * (→ PR #71 review CODE71-M5): the tool's two directions are a click becoming a coordinate
+ * (`unprojectMapPoint` + `toDmsParts`) and typed text becoming a point (`parseLatLon`),
+ * neither of which needs parts-to-degrees. What it buys is a round-trip assertion that can
+ * fail — without it, `toDmsParts` could only be checked against a restatement of its own
+ * arithmetic, which is the tautology `spherical-area.ts` warns about. Kept exported for that
+ * reason, named here so the next reader does not delete it as dead code.
+ */
 export function dmsToDegrees(parts: DmsParts): number {
   const magnitude = parts.degrees + parts.minutes / 60 + parts.seconds / 3600;
   return parts.cardinal === "south" || parts.cardinal === "west" ? -magnitude : magnitude;
@@ -442,7 +523,18 @@ function parseComponent(
   let magnitude: number;
   if (dms) {
     sign = dms[1] === "-" ? -1 : 1;
-    magnitude = toNumber(dms[2]) + toNumber(dms[3]) / 60 + toNumber(dms[4]) / 3600;
+    const degrees = toNumber(dms[2]);
+    const minutes = toNumber(dms[3]);
+    const seconds = toNumber(dms[4]);
+    // MALFORMED DMS IS REJECTED, NOT NORMALISED (→ PR #71 review CODE71-M2). `39°75'00"K`
+    // used to come back as a confident 40.25 and `39.5°30'` as 40.0 — a wrong coordinate
+    // presented as a right one, which is worse than the `unreadable` path §6.2 designs for.
+    // A sub-degree component at or past 60 is not a coordinate, and a FRACTIONAL degree
+    // combined with minutes or seconds states the same quantity twice.
+    if (minutes >= 60 || seconds >= 60) return null;
+    if (!Number.isInteger(degrees) && (dms[3] !== undefined || dms[4] !== undefined)) return null;
+    if (!Number.isInteger(minutes) && dms[4] !== undefined) return null;
+    magnitude = degrees + minutes / 60 + seconds / 3600;
   } else if (decimal) {
     sign = decimal[1] === "-" ? -1 : 1;
     magnitude = toNumber(decimal[2]);
@@ -513,15 +605,20 @@ export function parseLatLon(input: string, letters: CardinalLetters): ParseLatLo
   const second = parseComponent(halves[1], letters);
   if (!first || !second) return { ok: false, reason: "unreadable" };
 
-  const firstIsLongitude = first.cardinal === "east" || first.cardinal === "west";
+  // EITHER half's cardinal settles the order (→ PR #71 review CODE71-M1). Consulting only the
+  // first meant `"32.85 39.92K"` was rejected as unreadable although it is unambiguous: the
+  // second half says north, so the first can only be longitude. The docblock above promised
+  // that a reader who types longitude first still gets the point they meant, and with one
+  // letter present that promise now holds whichever half carries it.
+  const isLongitude = (cardinal: CardinalKey | null) => cardinal === "east" || cardinal === "west";
+  const isLatitude = (cardinal: CardinalKey | null) => cardinal === "north" || cardinal === "south";
+  const firstIsLongitude = isLongitude(first.cardinal) || isLatitude(second.cardinal);
   const latSide = firstIsLongitude ? second : first;
   const lonSide = firstIsLongitude ? first : second;
 
   // A pair naming the same axis twice ("39K 32K") is not a coordinate.
-  const latIsLatitude =
-    latSide.cardinal === null || latSide.cardinal === "north" || latSide.cardinal === "south";
-  const lonIsLongitude =
-    lonSide.cardinal === null || lonSide.cardinal === "east" || lonSide.cardinal === "west";
+  const latIsLatitude = latSide.cardinal === null || isLatitude(latSide.cardinal);
+  const lonIsLongitude = lonSide.cardinal === null || isLongitude(lonSide.cardinal);
   if (!latIsLatitude || !lonIsLongitude) return { ok: false, reason: "unreadable" };
 
   const lat = latSide.cardinal === "south" ? -latSide.magnitude : latSide.magnitude;

@@ -10,8 +10,12 @@
 
 import { perpDistance } from "./map-topology.mjs";
 
-/**
+/*
  * Spherical ring area — re-exported under this module's original name.
+ *
+ * A PLAIN block comment, not a JSDoc one (→ PR #71 review CODE71-M8): JSDoc attached to a
+ * re-export statement does not travel to the re-exported symbol, so none of this would have
+ * surfaced on hover at the three call sites anyway. It is file-level prose and now says so.
  *
  * THE BODY MOVED to `lib/map/spherical-area.ts` (CBS-P2 SPEC §5.2), and it moved rather
  * than being copied: the browser's measurement tools need the same answer this module has
@@ -42,6 +46,21 @@ import { perpDistance } from "./map-topology.mjs";
  * this path. And the target is deliberately a LEAF with zero imports — an `@/…` alias would
  * not resolve under plain node, and a transitive dependency would drag the whole app's
  * module graph into a build script.
+ *
+ * TWO KNOWN, ACCEPTED SIDE EFFECTS OF THAT SPECIFIER — recorded so neither is diagnosed a
+ * second time (→ PR #71 review CODE71-M9 / CODE71-M10):
+ *
+ *  1. This file carries `// @ts-check`, and an editor honouring it reports TS5097 ("an import
+ *     path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled")
+ *     on the line below. It reaches NO gate: tsconfig's `include` covers `.ts|.tsx|.mts` and
+ *     not `.mjs`, so `pnpm typecheck` never sees this file. `// @ts-check` is KEPT rather than
+ *     dropped — this module still does real ring stitching and simplification, and trading all
+ *     of that checking for one editor squiggle is the worse deal.
+ *  2. Importing this module prints a `[MODULE_TYPELESS_PACKAGE_JSON]` warning on stderr, because
+ *     the package has no `"type"` field and node must re-parse the `.ts` target as ESM. The
+ *     generators still exit 0 and `generate:water:check` is unaffected. Both remedies — adding
+ *     `"type": "module"` to `package.json`, or a `--no-warnings` flag on every generate script —
+ *     cost more than the line of stderr they remove.
  */
 export { ringAreaKm2 as measureRingAreaKm2 } from "../../lib/map/spherical-area.ts";
 
