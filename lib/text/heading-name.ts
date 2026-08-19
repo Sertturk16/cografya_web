@@ -28,8 +28,7 @@ export type ProvinceHeadingSlot =
   "location" | "landform" | "hydrography" | "neighbors" | "climate" | "settlement" | "economy";
 
 /** The content sections whose <h2> carries the country name (§19 + the locator block). */
-export type CountryHeadingSlot =
-  "location" | "landform" | "climate" | "hydrography" | "independence" | "neighbors";
+export type CountryHeadingSlot = "location" | "landform" | "climate" | "hydrography" | "neighbors";
 
 /**
  * Grammatical case per §19 section, so the page reads as VARIED prose instead of
@@ -55,15 +54,17 @@ export const PROVINCE_HEADING_CASE = {
  * platform-wide convention, so "X'in Hidrografyası" never means one thing on `/turkiye` and
  * another on `/dunya`.
  *
- * `independence` is the only new slot and is genitive: "Şili'nin Bağımsızlığı" is the
- * natural reading, whereas the locative "Şili'de Bağımsızlık" would describe independence
- * happening *inside* the country rather than the country's own independence.
- *
- * The result is 4 genitive + 1 locative, not the province's 3 + 3. That is deliberate: of
- * the five country sections only `climate` has a natural locative reading, and manufacturing
+ * The result is 3 genitive + 1 locative, not the province's 3 + 3. That is deliberate: of
+ * the four country sections only `climate` has a natural locative reading, and manufacturing
  * more locatives would ship awkward Turkish to buy down a NOT-level checklist item
  * (SEO-POLICY §B3.5 — heading-skeleton variety). Naturalness wins; the entity name is in
  * every heading either way, which is the UYARI-level item (§B3.4) this map exists to close.
+ *
+ * There WAS a fifth slot, `independence`, and its removal is a ruling rather than a cleanup
+ * (→ DEC 2026-08-17e h.2): the section it titled carried a single sentence on 173 of 199
+ * country rows, and `CONTENT-STYLE.md` §19's section threshold bars opening an H2 for a body
+ * shorter than two sentences. The fact now renders as a "Temel Bilgiler" row, which needs a
+ * plain label and no grammatical case — so the slot has no remaining reader.
  */
 export const COUNTRY_HEADING_CASE = {
   // Same reading as the province page's `location` slot — one platform-wide assignment per
@@ -72,7 +73,6 @@ export const COUNTRY_HEADING_CASE = {
   landform: "genitive",
   hydrography: "genitive",
   neighbors: "genitive",
-  independence: "genitive",
   climate: "locative",
 } as const satisfies Record<CountryHeadingSlot, HeadingCase>;
 
@@ -95,7 +95,6 @@ export const COUNTRY_HEADING_KEY = {
   landform: { named: "landformHeading", plain: "landformHeadingPlain" },
   climate: { named: "climateHeading", plain: "climateHeadingPlain" },
   hydrography: { named: "hydrographyHeading", plain: "hydrographyHeadingPlain" },
-  independence: { named: "independenceHeading", plain: "independenceHeadingPlain" },
   neighbors: { named: "neighborsHeading", plain: "neighborsHeadingPlain" },
 } as const satisfies Record<CountryHeadingSlot, { named: string; plain: string }>;
 

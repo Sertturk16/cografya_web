@@ -16,6 +16,7 @@ import {
 import type { CountryDetail, CountryListItem } from "@/lib/api/types";
 import { sourcesMessage } from "@/lib/geo/country-sources";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
+import { neighborViaTerritory } from "@/lib/geo/neighbor-via-territory";
 import { isSpecialStatusRow, showsCountryFlag, showsSovereigntyNote } from "@/lib/geo/sovereignty";
 import { showsSubregionCard } from "@/lib/geo/subregion";
 import { COUNTRY_SHAPES } from "@/lib/map/world-countries.generated";
@@ -56,10 +57,17 @@ function nameForLocale(country: CountryDetail | CountryListItem, locale: Locale)
  */
 const COUNTRY_SHAPE_BY_ISO = new Map(COUNTRY_SHAPES.map((shape) => [shape.iso, shape.d] as const));
 
-/** One resolved neighbour: a seeded country (→ link) or an unseeded one (→ plain text). */
+/**
+ * One resolved neighbour: a seeded country (→ link) or an unseeded one (→ plain text).
+ *
+ * `label` is what the card prints. It is usually just the country's name, but on the five
+ * pairs whose border runs through a non-mainland territory it carries the parenthetical
+ * ("Fransa (Fransız Guyanası)", → DEC 2026-08-19e md.1). The name is resolved into a label
+ * here rather than at render so the two branches cannot drift apart.
+ */
 type Neighbor =
-  | { kind: "link"; name: string; slug: string; iso: string }
-  | { kind: "text"; name: string; iso: string };
+  | { kind: "link"; label: string; slug: string; iso: string }
+  | { kind: "text"; label: string; iso: string };
 
 // SSG the real countries; unknown slugs fall through to notFound() (never a soft-200),
 // per CONVENTIONS §6 #6. Build-safe: if the api is unreachable during `next build` the
@@ -171,6 +179,28 @@ export default async function CountryDetailPage({ params }: PageProps) {
   // omitted on EN (no EN name available) — never a dead link (the unseeded-il-omit pattern,
   // relaxed to "show as text" for countries per the brief). Best-effort: a list-fetch
   // failure just hides the block rather than breaking the (already-loaded) detail page.
+  //
+  // A neighbour whose border runs through a non-mainland territory gets ONE parenthetical in
+  // its label — "Fransa (Fransız Guyanası)" on Brezilya (→ DEC 2026-08-19e md.1). Which pairs
+  // qualify is the api's own reciprocity rule, transcribed in `lib/geo/neighbor-via-territory`.
+  // This changes the TEXT of a card and nothing else: `neighborIsoCodes` is the published
+  // render order (AS-6c), so it is still walked in order, still deduped the same way, and no
+  // code is reordered, dropped or added.
+  // WHICH sentence, and with what interpolation, is decided by the pure helper — not here.
+  // One pair (MA→ES) takes a mechanism wording instead of the identifying one by owner ruling
+  // (→ DEC 2026-08-19k); putting that choice in the module keeps it inside the vitest include
+  // glob for `lib`, and keeps both strings in the locale catalogues.
+  //
+  // Do NOT write a `lib` glob literally in this file. Several source-invariant tests read
+  // page.tsx and strip comments with a non-greedy `/*…*/` regex; the two characters that open
+  // a block comment also sit inside that glob pattern, so writing it here silently swallows
+  // ~145 lines of real code before the stripper's next close and turns those guards green
+  // against a file they can no longer see. Cost the round one red CI, caught by
+  // lib/geo/sovereignty.test.ts.
+  const neighborLabel = (name: string, iso: string): string => {
+    const via = neighborViaTerritory(country.isoCode, iso, locale);
+    return via === null ? name : t(via.key, { name, territory: via.territory });
+  };
   const neighbors: Neighbor[] = [];
   try {
     const byIso = byIsoCode(await getCountries());
@@ -182,13 +212,13 @@ export default async function CountryDetailPage({ params }: PageProps) {
       if (seeded) {
         neighbors.push({
           kind: "link",
-          name: nameForLocale(seeded, locale),
+          label: neighborLabel(nameForLocale(seeded, locale), iso),
           slug: slugForLocale(seeded, locale),
           iso,
         });
       } else if (isTr) {
         const textName = neighborCountryNameTr(iso);
-        if (textName) neighbors.push({ kind: "text", name: textName, iso });
+        if (textName) neighbors.push({ kind: "text", label: neighborLabel(textName, iso), iso });
       }
     }
   } catch (error) {
@@ -253,8 +283,9 @@ export default async function CountryDetailPage({ params }: PageProps) {
   // extractable, which on a contested row reads as a standalone possessive assertion over
   // prose that deliberately hedges (e.g. island-wide hydrography, or a neighbour list whose
   // mandated explanatory note is not rendered yet). Rationale + the trade this costs:
-  // lib/geo/sovereignty.ts. This also gates the `independence` slot, which would otherwise
-  // ship "X'in Bağımsızlığı" as an H2 the moment a content wave fills independenceNoteTr.
+  // lib/geo/sovereignty.ts. It used to gate an `independence` slot too; that section is gone
+  // (→ DEC 2026-08-17e h.2) and the fact now renders as a plain-labelled künye row, so there
+  // is no entity-named heading left for it to suppress.
   const entityNamedHeadings = !isSpecialStatusRow(country.sovereigntyNoteTr);
   const sectionHeading = (slot: CountryHeadingSlot): string =>
     entityNamedHeadings
@@ -426,6 +457,49 @@ export default async function CountryDetailPage({ params }: PageProps) {
                   className={styles.fact}
                 />
               )}
+              {/* Bağımsızlık — was its own <h2> section until DEC 2026-08-17e h.2. Of the 199
+              seeded rows 173 carry a note (20 explicit null, 6 omit the field), and 169 of
+              those 173 are a SINGLE SENTENCE — only GR, AZ, AF and AT run to two. So
+              `CONTENT-STYLE.md` §19's section threshold ("no H2 for a body under two
+              sentences") bars the section on 169 of the 173 pages that rendered it, and the
+              fact belongs in the künye instead. Removing the section also drops one identical
+              heading skeleton from 173 pages (SEO-POLICY §B3.6 + §B10) without losing a word
+              of body text — the same sentence renders here.
+
+              LAST card, and spanning the full row (`.factWide`), for two reasons that are not
+              interchangeable: the value is prose, not a datum, so it takes body typography
+              rather than the 1.25rem/700 display treatment the short cards share; and a
+              full-width card placed last closes the sheet instead of cutting the auto-fill
+              rhythm in half. It is rendered VERBATIM — the api publishes free text, not a
+              structured date ("serbest metin, yapılandırılmış tarih değil"), and the
+              sentences carry sourced qualifications ("…millî gün ise 18 Eylül 1810'da
+              kutlanır") that any client-side date extraction would silently drop.
+
+              Still `isTr`-gated exactly as the section was, so the EN page is unchanged and
+              `TR_GATED_FIELD_LEXEMES` keeps its `independence` entry.
+
+              RAW TEXT, not `ProseNote`, and that is a choice with a condition attached
+              (→ `TA72-M3`/`A11Y72-M1`). `ProseNote` implements the repo's "\n\n" paragraph
+              convention; a `<dd>` renders it as one run. Every one of the 173 seeded notes is
+              a single paragraph — 0 contain "\n\n", measured — so the convention has nothing
+              to do here today, and a künye value is a datum slot rather than a prose slot.
+              THE CONDITION: if a content wave ever gives this field two paragraphs, this must
+              go back through `ProseNote` (or the field must stay single-paragraph by an api
+              invariant). Do not treat the raw `<dd>` as settled for a multi-paragraph value.
+
+              SPECIAL-STATUS ROWS carry NO gate here, and that is today's data rather than a
+              guarantee (→ `SOV72-M2`). All six (CY, QN, IL, PS, TW, XK) have a null/absent
+              note, so the row cannot render on them; unlike the old section, whose entity-named
+              H2 was suppressed by `entityNamedHeadings`, a künye row has no such de-escalation
+              to apply. Filling `independenceNoteTr` on a contested row is therefore an OWNER
+              decision, not a content-wave detail: it would typeset a contested claim as a
+              settled datum beside Başkent/Nüfus. */}
+              {independenceNote !== null && (
+                <div className={`${styles.fact} ${styles.factWide}`}>
+                  <dt>{t("independence")}</dt>
+                  <dd>{independenceNote}</dd>
+                </div>
+              )}
             </dl>
           </section>
 
@@ -506,15 +580,6 @@ export default async function CountryDetailPage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Bağımsızlık — TR-gated free-text note; null (omitted) for continuous states like
-          İran where a colonial-independence date is inapplicable. */}
-      {independenceNote !== null && (
-        <section className="section">
-          <h2>{sectionHeading("independence")}</h2>
-          <ProseNote text={independenceNote} className={styles.prose} />
-        </section>
-      )}
-
       {neighbors.length > 0 && (
         <section className="section">
           <h2>{sectionHeading("neighbors")}</h2>
@@ -526,14 +591,14 @@ export default async function CountryDetailPage({ params }: PageProps) {
                     className="province-card"
                     href={{ pathname: "/dunya/[slug]", params: { slug: neighbor.slug } }}
                   >
-                    <span>{neighbor.name}</span>
+                    <span>{neighbor.label}</span>
                     <CardArrow />
                   </Link>
                 </li>
               ) : (
                 <li key={neighbor.iso}>
                   {/* Unseeded neighbour: plain text, NOT a link (no page yet). */}
-                  <span className={styles.neighborTextCard}>{neighbor.name}</span>
+                  <span className={styles.neighborTextCard}>{neighbor.label}</span>
                 </li>
               ),
             )}

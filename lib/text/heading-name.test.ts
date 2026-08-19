@@ -61,15 +61,19 @@ describe("COUNTRY_HEADING_CASE — per-section mapping", () => {
     }
   });
 
-  it("assigns the country-only `independence` slot the genitive", () => {
-    // "Şili'nin Bağımsızlığı" — the locative would describe independence happening INSIDE
-    // the country rather than the country's own independence.
-    expect(COUNTRY_HEADING_CASE.independence).toBe("genitive");
+  it("has NO `independence` slot — the section became a fact-sheet row (DEC 2026-08-17e h.2)", () => {
+    // The inverse of the assertion that used to stand here. "X'in Bağımsızlığı" titled a
+    // one-sentence body on 173 of 199 country rows, which `CONTENT-STYLE.md` §19's section
+    // threshold bars; the fact moved into "Temel Bilgiler" and needs a plain label, not a
+    // grammatical case. Re-adding the slot would silently reopen the section, so the ruling
+    // is guarded rather than merely applied.
+    expect(Object.keys(COUNTRY_HEADING_CASE)).not.toContain("independence");
+    expect(Object.keys(COUNTRY_HEADING_KEY)).not.toContain("independence");
   });
 
-  it("covers exactly the six country slots and only genitive/locative values", () => {
+  it("covers exactly the five country slots and only genitive/locative values", () => {
     const slots = Object.keys(COUNTRY_HEADING_CASE) as CountryHeadingSlot[];
-    expect(slots).toHaveLength(6);
+    expect(slots).toHaveLength(5);
     for (const slot of slots) {
       expect(["genitive", "locative"]).toContain(COUNTRY_HEADING_CASE[slot]);
     }

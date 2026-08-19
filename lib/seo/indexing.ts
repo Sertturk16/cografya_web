@@ -62,8 +62,10 @@ import { routing, type Locale } from "@/i18n/routing";
  * the institutions behind the fields an English country page actually renders. The UN M49
  * subregion, the official languages, the currency and the government form are `isTr`-gated
  * fact-sheet cards; the landform, climate and hydrography prose is `isTr`-gated narrative;
- * and the independence note is `isTr`-gated too, though it is a HISTORY section rather than
- * physical geography (→ PR #55 `FEN-M2`) and carries its own attribution row. None of them is
+ * and the independence note is `isTr`-gated too, though it is a HISTORY fact rather than
+ * physical geography (→ PR #55 `FEN-M2`) and carries its own attribution row. It is a
+ * fact-sheet row rather than a section since DEC 2026-08-17e h.2; the gate is unchanged, so
+ * this paragraph's conclusion is too. None of them is
  * drawn in English TODAY, so those two sentences deliberately do not credit them — crediting
  * a field the reader cannot see is what `CR54-M2` found, on all 199 pages: both variants
  * carried it (→ PR #55 `CR55-M5`).
