@@ -1,0 +1,235 @@
+/* CBS tool island — the measuring surface's overlay and its control strip.
+   No hardcoded BRAND hex (`DESIGN.md` §2); the one neutral literal is `#fff` for the field
+   background, as in the search and nav sheets. Every colour that carries identity is a
+   `var(--token)` reference, and the
+   measurement line is deliberately a CHROME colour, not a data ramp. The line and the point
+   markers show INTERFACE STATE (where you clicked), they do not encode a value, so §6.1/1's
+   "brand ≠ data" boundary puts them on the brand side; `--map-1…6` stays reserved for the
+   elevation data it is named for. */
+
+/* ---- Overlay inside the map ---------------------------------------------------------- */
+
+/* The `<g>` the island portals its markers into. Inert to the pointer so a click near a point
+   still belongs to the map: a point is removed from the list under the map, where the control
+   is a real 44px button rather than a 6px dot (WCAG 2.5.8). */
+.overlay {
+  pointer-events: none;
+}
+
+.measureLine {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* The line keeps its 3px on screen at every zoom level — without this it thickens with the
+     view exactly as the province borders did (measured on the game map: a 1px border became a
+     ~12px band at 12×). It is a graphical object carrying meaning, so WCAG 1.4.11 asks 3:1
+     against what it is drawn over; the measured ratios are in the PR's closing summary. */
+  vector-effect: non-scaling-stroke;
+}
+
+.marker {
+  fill: var(--color-primary);
+  stroke: var(--color-on-primary);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The island's own layer inside `.mapRoot`: it carries the scale bar and nothing else. It is
+   NOT an `<svg>` on purpose — `MapZoomPan` and this island both find the map with
+   `host.querySelector("svg")`, and a second SVG inside the map box would win that lookup
+   (the zoom cluster's reset mark is a CSS mask for the same reason). */
+.overlayLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ÇİZGİ ÖLÇEK — the reader-facing name is the curriculum's (`GLOSSARY.md` §4.3, AK-26 md.1);
+   `scaleBar` survives in code only. Bottom LEFT, because `.attribution` owns the bottom right
+   on every map surface in this repo and the licence line may never be crowded. */
+.scaleBar {
+  position: absolute;
+  left: 14px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 8px 5px;
+  border-radius: 6px;
+  background: var(--scrim-bg);
+  color: var(--color-slate);
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.scaleBarRule {
+  height: 6px;
+  border: 1px solid var(--color-slate);
+  border-top: 0;
+}
+
+/* ---- Control strip ------------------------------------------------------------------- */
+
+/* The reserved box — the `game-screen.module.css` `--game-action-row` pattern, one number and
+   no media query (`DESIGN.md` §4 does not spend a third breakpoint on a reserve).
+
+   THE NUMBER IS MEASURED, and so is what it does not cover. The empty strip is 173px from
+   560px up (the two fields side by side), 257px at 480 and 360px, and 311px at 320px, where
+   the fields stack and the action row wraps. 11rem = 176px therefore reserves the box exactly
+   wherever the strip is one compact block, and leaves the taller narrow case partly
+   unreserved. That trade is deliberate and was measured rather than argued: a reserve set to
+   the TALLEST state would leave 84–138px of dead space under the controls at every desktop
+   load, while the unreserved remainder at ≤480px produced a layout-shift score of **0** at
+   320, 360 and 1440px (PerformanceObserver, `layout-shift`, island mounted) — the strip sits
+   below the fold at those widths, under a 121–190px map and several screens of prose.
+
+   The strip also grows when a reader places a point. That is user-initiated and is not a
+   layout shift by definition. */
+.controlsSlot {
+  min-height: 11rem;
+  margin-top: 16px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+/* 15rem, not a percentage: two fields sit side by side from ~34rem up and stack below it,
+   with no media query and no horizontal scroll at 320px (`DESIGN.md` §4's mandatory widths). */
+.field {
+  display: flex;
+  flex: 1 1 15rem;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-slate);
+}
+
+.fieldRow {
+  display: flex;
+  gap: 8px;
+}
+
+.select,
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius);
+  background: #fff;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-ink);
+}
+
+.addButton {
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+/* The island's single polite live region. It reproduces `.controls`' own column rhythm so the
+   measurement line and the out-of-frame note sit exactly where they sat before the region
+   wrapped them (→ PR #73 review `A11Y73-I1`): same 14px gap, no box of its own. */
+.live {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.result {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-slate);
+}
+
+.error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-danger);
+}
+
+.legs,
+.points {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+  color: var(--color-slate);
+}
+
+.pointRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pointRemove {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-primary-dark);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pointRemove:hover {
+  background: var(--color-surface);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---- Reduced motion ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .measureLine,
+  .marker {
+    transition: none;
+  }
+}

@@ -13,6 +13,7 @@
     "deniz": "Deniz",
     "game": "Oyun",
     "kitaplar": "Kitaplar",
+    "araclar": "Araçlar",
     "about": "Hakkımızda",
     "openMenu": "Menüyü aç",
     "closeMenu": "Menüyü kapat"
@@ -38,7 +39,8 @@
     "dunya": "Dünya",
     "game": "Oyun",
     "deniz": "Deniz",
-    "kitaplar": "Kitaplar"
+    "kitaplar": "Kitaplar",
+    "araclar": "Araçlar"
   },
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
@@ -73,7 +75,10 @@
     "discoverCountries": "Bugün keşfet: ülkeler",
     "gameHeading": "Öğrendiklerini haritada sına",
     "gameBody": "Üç mod: bölge bulma, il bulma, bölge bölge il bulma.",
-    "gameCta": "Oyunu aç"
+    "gameCta": "Oyunu aç",
+    "toolsHeading": "Haritada ölç",
+    "toolsBody": "Kuş uçuşu mesafeyi iki nokta ya da çok duraklı bir güzergâh boyunca hesapla.",
+    "toolsCta": "Araçları aç"
   },
   "Map": {
     "mapTitle": "Türkiye il haritası",
@@ -542,6 +547,84 @@
     "examLabel": "Sınav",
     "sourcesLabel": "Kaynaklar",
     "sourceNewTab": ", yeni sekmede açılır"
+  },
+  "Tools": {
+    "hub": {
+      "metaTitle": "Türkiye Haritasında Ölçüm Araçları",
+      "metaDescription": "Türkiye'nin 81 ilini gösteren harita üzerinde kuş uçuşu mesafe ölçülür: iki nokta arası ya da çok duraklı bir güzergâh. Kayıt gerekmez.",
+      "heading": "Coğrafya Araçları",
+      "introP1": "Coğrafya 9, coğrafi bilgi sistemlerini anlatırken mekânsal verinin nokta, çizgi ve alansal katmanlar hâlinde sayısallaştırıldığını söyler. Buradaki araç o katmanlardan çizgiyle çalışır: iki noktayı birleştiren çizgi, aradaki kuş uçuşu uzaklığı verir.",
+      "introP2": "Ölçüm haritanın kendisinden okunur. Araç, Türkiye'nin 81 ilini gösteren harita üzerinde çalışır ve haritanın üstünde kalıcı bir çizgi ölçek durur.",
+      "mesafeName": "Kuş uçuşu mesafe",
+      "mesafeBody": "İki nokta ya da çok duraklı bir güzergâh boyunca uzaklığı haritada ölç."
+    },
+    "mesafe": {
+      "metaTitle": "Kuş Uçuşu Mesafe Ölçme: İki Nokta ve Güzergâh",
+      "metaDescription": "Türkiye'nin en kuzeyi ile en güneyi arasındaki kuş uçuşu uzaklık yaklaşık 666 kilometredir. Haritada iki nokta ya da çok duraklı bir güzergâh ölçülür.",
+      "heading": "Haritada Kuş Uçuşu Mesafe Ölçme",
+      "teaches": "kuş uçuşu mesafe, harita ölçeği ve büyük daire",
+      "lede": "MEB Coğrafya 9, koordinat bölümünün sonunda öğrenciye Ankara ile Kayseri arasındaki kuş uçuşu uzaklığın yaklaşık kaç kilometre olduğunu sorar. Kitabın harita bölümünde verdiği yöntem bir kâğıt şeridini haritaya işaretleyip çizgi ölçeğin üzerine yerleştirmektir. Buradaki araç aynı işi yapar, kâğıt yerine iki noktanın koordinatını kullanır.",
+      "nedirHeading": "Kuş uçuşu mesafe",
+      "nedirP1": "Kuş uçuşu mesafe, iki nokta arasındaki en kısa yoldur. Ölçüm arazi engellerini, yolları ve yerleşimleri hesaba katmaz. Yalnız iki noktanın enlem ve boylamını kullanır.",
+      "nedirP2": "Terim ders kitabının kendi sözcüğüdür. Türkiye'nin en kuzeyi ile en güneyi arasındaki kuş uçuşu uzaklık kitapta yaklaşık 666 kilometre olarak verilir. Aynı ünitede öğrenciden bir plan üzerinde postane ile banka arasındaki kuş uçuşu mesafeyi bulması istenir.",
+      "karayoluHeading": "Karayolu mesafesinden farkı",
+      "karayoluP1": "İki şehir arasındaki uzaklık için iki ayrı sayı dolaşır ve ikisi de doğrudur. <ankara>Ankara</ankara> ile <kayseri>Kayseri</kayseri> arasında karayolu mesafesi, ders kitabının aynı iki şehir için sorduğu kuş uçuşu uzaklıktan daha uzundur. Yol vadileri dolaşır ve yerleşimlere uğrar.",
+      "karayoluP2": "Farkın yönü hiçbir zaman değişmez. Yeryüzünde iki nokta arasında gidilen her güzergâh, o iki noktanın kuş uçuşu uzaklığından ya uzundur ya da ona eşittir. Bir navigasyon uygulamasının verdiği kilometre ile bu aracın verdiği kilometre bu yüzden birbirinin yerine geçmez.",
+      "olcekHeading": "Harita ölçeği ve çizgi ölçek",
+      "olcekP1": "Haritada ölçülen uzunluğu kilometreye çeviren şey ölçektir. Coğrafya 9 ölçeği haritanın elemanları arasında sayar ve iki türünü ayırır: kesir ölçek ve çizgi ölçek. Çizgi ölçekte küçültme oranı eşit bölümlenmiş bir çizgi üzerinde gösterilir, çizginin üzerindeki sayılar gerçek uzaklığı verir.",
+      "olcekP2": "Kitap çizgi ölçeği kesir ölçeğe göre daha kullanışlı sayar. Gerekçesi şudur: harita büyütülüp küçültüldüğünde çizgi de onunla birlikte ölçeklenir ve oranını korur. Ekrandaki harita da yakınlaştırılıp uzaklaştırılan bir haritadır, bu yüzden araç sayfalarında kalıcı bir çizgi ölçek durur ve her yakınlaştırmada yeniden hesaplanır.",
+      "olcekP3": "Çizgi ölçek, haritanın görünen kesiminin orta enlemine göre hesaplanır. Tek bir sabit değere bağlı kalmak, ölçeği Türkiye'nin güney ucunda yüzde 4,3, kuzey ucunda yüzde 4,7 kaydırır.",
+      "buyukdaireHeading": "Büyük daire",
+      "buyukdaireP1": "Küre üzerinde iki noktayı birleştiren en kısa yol düz bir çizgi değil, bir yaydır. Bu yay, kürenin merkezinden geçen bir düzlemin yüzeyi kestiği çember üzerindedir ve o çembere büyük daire denir. Araç mesafeyi bu yay üzerinden hesaplar.",
+      "buyukdaireP2": "Harita ise düzlemdir. Coğrafya 9, dünyanın küresel şekli yüzünden hatasız bir düzlem aktarımının mümkün olmadığını söyler ve projeksiyon yöntemlerini böyle tanımlar: bazılarında açı, bazılarında alan, bazılarında uzunluk korunur. Kıtalar arası bir uçuş rotasının dünya haritasında kuzeye doğru kavis çizmesinin sebebi budur.",
+      "buyukdaireP3": "Türkiye ölçeğinde kavis ölçümü değil çizimi ilgilendirir. Ülke 36°–42° kuzey paralelleri ve 26°–45° doğu meridyenleri arasındadır. Komşu iki il arasında yay ile onu birleştiren doğru parçası ekranda ayrışmaz, ülkenin bir ucundan diğerine çekilen bir hatta ise yay gözle görülür biçimde kuzeye kaçar. Araç her iki durumda da uzaklığı küre üzerinden ölçer, ekrana çizdiği çizgi ise düzdür.",
+      "toolHeading": "Haritada ölç",
+      "sonucHeading": "Sonuç nasıl okunur",
+      "sonucP1": "Araç, gösterdiği basamak sayısını yakınlaştırma seviyesine göre seçer. Uzaklaştırılmış bir haritada tek bir tıklamanın taşıdığı belirsizlik birkaç kilometreye çıkar, bu yüzden sonuç tam sayı kilometre yazılır. Yakınlaştırıldıkça aynı tıklama daha küçük bir alanı gösterir ve sonuç bir ondalık basamak kazanır.",
+      "sonucP2": "Yazıyla girilen koordinat bu belirsizliği taşımaz. Ondalık dereceyle verilen bir nokta metre mertebesinde bellidir, ölçüm de o keskinlikte okunur.",
+      "sonucP3": "Güzergâh modunda toplam, ardışık noktalar arasındaki kuş uçuşu parçaların toplamıdır. Ders kitabının kâğıt şeridiyle akarsu uzunluğu ölçme örneği tam olarak bunu yapar ve yolu üç parçaya bölerek toplar. Ara noktalar seyrekleştikçe sonuç gerçek yolun altında kalır.",
+      "kaynak": "Kaynak: MEB Coğrafya 9 ders kitabı, 1. Ünite."
+    },
+    "map": {
+      "zoomIn": "Yakınlaştır",
+      "zoomOut": "Uzaklaştır",
+      "zoomReset": "Haritanın tamamını göster",
+      "zoomControls": "Yakınlaştırma denetimleri",
+      "zoomInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla haritanın tamamını göster. Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin."
+    },
+    "ui": {
+      "controlsLabel": "Ölçüm denetimleri",
+      "provinceLabel": "İl merkezi ekle",
+      "provincePlaceholder": "İl seç",
+      "coordinateLabel": "Koordinat ekle",
+      "coordinatePlaceholder": "39.92, 32.85",
+      "addPoint": "Ekle",
+      "undo": "Geri al",
+      "clear": "Temizle",
+      "download": "PNG indir",
+      "pointsLabel": "Konan noktalar",
+      "pointName": "{index}. nokta: {lat} {lon}",
+      "pointRemove": "{index}. noktayı sil",
+      "legName": "{index}. bacak: {distance} kilometre",
+      "resultEmpty": "Ölçüm için iki nokta gerekir.",
+      "resultOnePoint": "İkinci noktayı seç.",
+      "resultTwoPoints": "İki nokta arası {distance} kilometre.",
+      "resultRoute": "{count} noktalı güzergâh toplam {distance} kilometre.",
+      "limitReached": "Nokta sınırı {limit}. Yeni nokta için bir noktayı sil.",
+      "outsideFrame": "Bu nokta harita çerçevesinin dışında.",
+      "errorNoProvince": "İl seçilmedi. Listeden bir il seç.",
+      "errorEmpty": "Koordinat alanı boş. Enlem ve boylamı 39.92, 32.85 biçiminde yaz.",
+      "errorUnreadable": "Bu koordinat okunamadı. 39.92, 32.85 ya da 39°55'12\"K 32°51'00\"D biçiminde yaz.",
+      "errorLatitude": "Enlem 90 dereceyi aşamaz. Değeri düzelt.",
+      "errorLongitude": "Boylam 180 dereceyi aşamaz. Değeri düzelt.",
+      "scaleBar": "Çizgi ölçek: {km} kilometre",
+      "kmShort": "{km} km",
+      "downloadFailed": "Görüntü oluşturulamadı. Sayfayı yenileyip yeniden dene.",
+      "north": "K",
+      "south": "G",
+      "east": "D",
+      "west": "B"
+    }
   },
   "NotFound": {
     "metaTitle": "Sayfa bulunamadı",

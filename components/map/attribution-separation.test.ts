@@ -29,7 +29,7 @@ import { describe, expect, it } from "vitest";
  * Structural only (`CONVENTIONS.md` §2): it asserts the separator exists between the two
  * lines, never what the notices say.
  *
- * ## Why it now guards TWO files
+ * ## Why it guards a LIST of files
  *
  * The fix above landed on `turkey-map-section.tsx` and this test was written to watch exactly
  * that one file. The game map carries its own copy of the same two-notice markup in its own
@@ -38,14 +38,27 @@ import { describe, expect, it } from "vitest";
  * `/oyun/81-il` served `ODbL</span><span …>Mevsimlik` while `/turkiye` served
  * `ODbL</span> <span …>Mevsimlik`. A guard that covers one of two identical surfaces reports
  * the wrong thing about the other, so the case list below is what the test iterates — adding
- * a third stacked-notice surface means adding a row, not writing a second file.
+ * a stacked-notice surface means adding a row, not writing a second file.
+ *
+ * `components/tools/tool-map.tsx` is the third row (→ PR #73 review `TEST73-I2`), and it is
+ * the one where the defect travels furthest: `components/tools/tool-png.ts` bakes the same
+ * band into a downloaded PNG that leaves the site with it (SPEC §9.3).
+ *
+ * THE PATTERNS BELOW NAME NO IMPORT IDENTIFIER. The first two surfaces import their stylesheet
+ * as `styles`; the tool map imports the shared map sheet as `mapStyles`, so a row added under a
+ * `styles.`-hardcoded pattern would have failed on a correct file. The identifier is matched as
+ * a local binding name, which is the part of the expression that is genuinely free.
  */
 
 /** Every component that stacks the two licence notices in one `<p>`. */
 const CASES = [
   { name: "turkey-map-section.tsx", url: new URL("./turkey-map-section.tsx", import.meta.url) },
   { name: "game-map.tsx", url: new URL("../game/game-map.tsx", import.meta.url) },
+  { name: "tool-map.tsx", url: new URL("../tools/tool-map.tsx", import.meta.url) },
 ] as const;
+
+/** `{styles.attributionLine}` / `{mapStyles.attributionLine}` — any local module binding. */
+const ATTRIBUTION_LINE_CLASS = String.raw`\{[A-Za-z_$][\w$]*\.attributionLine\}`;
 
 /**
  * The component's source with every COMMENT removed — and that is not a detail.
@@ -73,9 +86,9 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url }) 
   it("keeps an explicit whitespace expression between the two attribution lines", () => {
     // Matches `</span>{" "}` followed by the second `.attributionLine` span, tolerating the
     // line breaks Prettier may introduce around it.
-    const separated = /<\/span>\s*\{" "\}\s*<span className=\{styles\.attributionLine\}>/.test(
-      source,
-    );
+    const separated = new RegExp(
+      String.raw`</span>\s*\{" "\}\s*<span className=${ATTRIBUTION_LINE_CLASS}>`,
+    ).test(source);
 
     expect(
       separated,
@@ -91,7 +104,8 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url }) 
   });
 
   it("still renders both notices as separate block spans", () => {
-    const lineSpans = source.match(/<span className=\{styles\.attributionLine\}>/g) ?? [];
+    const lineSpans =
+      source.match(new RegExp(String.raw`<span className=${ATTRIBUTION_LINE_CLASS}>`, "g")) ?? [];
     expect(lineSpans).toHaveLength(2);
   });
 });

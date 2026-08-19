@@ -273,7 +273,7 @@
    second row, i.e. it sat one pixel from a 60px height jump, and the margin differs by 77px
    between the Turkish and English nav. Sizing to content leaves ~119px of slack in the
    tighter locale instead of −1px. */
-@media (min-width: 64rem) {
+@media (min-width: 66rem) {
   .trigger {
     justify-content: flex-start;
   }

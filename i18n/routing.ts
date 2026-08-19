@@ -116,6 +116,36 @@ export const routing = defineRouting({
       tr: "/kitaplar/[slug]",
       en: "/books/[slug]",
     },
+    // The CBS tool tier (→ DEC 2026-08-19a md.3/md.4). LOCALIZED segment, governed by the
+    // `/hakkimizda ↔ /en/about`, `/deniz ↔ /en/sea` and `/kitaplar ↔ /en/books` precedent
+    // rather than the `/turkiye`/`/dunya` one: "araçlar" does not read as English at all.
+    //
+    // FOUR STATIC ROUTES RATHER THAN ONE `[slug]` ROUTE (plan-web.md §2.2, Atlas ruling
+    // V-1); the direct precedent is `/oyun`'s three mode screens above. It also makes
+    // `SEO-POLICY.md` §B4 4.5 unbreakable here — there is no slug value to derive per
+    // locale — and it turns an unknown tool path into Next's own 404 rather than something
+    // a page has to remember to call `notFound()` for.
+    //
+    // The EN twins are `noindex` (`surface: "trNarrative"`, md.6, the `/deniz` pattern).
+    // Declaring the segments is still mandatory, for the reason the `/deniz` and
+    // `/kitaplar` entries give above: a `noindex` page must resolve to exactly ONE correct
+    // URL per locale, and changing that URL later owes a redirect.
+    //
+    // ONE TOOL SEGMENT TODAY, NOT FOUR (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7).
+    // `plan-web.md` §2.1 lists four pathnames because it describes the finished tier; the
+    // recorded deviation is that `/araclar/alan-hesaplama` and `/araclar/koordinat-bulma`
+    // land WITH their pages (PR-C / PR-D). A declared pathname with no page behind it is a
+    // 404 the hub would have to link to or the sitemap would have to carry, and A4/3 rates a
+    // dead link a BLOCKER. The cost of adding a segment later is one line here; the cost of
+    // declaring it early is a broken URL in the index.
+    "/araclar": {
+      tr: "/araclar",
+      en: "/tools",
+    },
+    "/araclar/mesafe-olcme": {
+      tr: "/araclar/mesafe-olcme",
+      en: "/tools/distance",
+    },
   },
 });
 

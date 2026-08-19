@@ -35,6 +35,10 @@ const NAV_KEYS = [
   // started asking for the key and the scan failed until the list knew about it, which is
   // the guard doing exactly what its docblock claims.
   "kitaplar",
+  // The CBS tool hub, added to the nav by owner ruling O-1 (→ DEC 2026-08-19g md.1/md.3). The
+  // list caught this one exactly as the note above describes: `site-nav.tsx` started asking
+  // for the key in the same branch and the consumer scan below failed until this row landed.
+  "araclar",
   "about",
   // The disclosure button's accessible name, one per state.
   "openMenu",

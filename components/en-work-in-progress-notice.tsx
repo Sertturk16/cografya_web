@@ -7,8 +7,10 @@ import styles from "./en-work-in-progress-notice.module.css";
  *
  * ## Which pages get it, and why exactly those
  *
- * It belongs on the `"trNarrative"` surface and nowhere else — today `/en/turkiye/[slug]`,
- * `/en/dunya/[slug]` and `/en/sea` (`lib/seo/indexing.ts` defines the set and the reason).
+ * It belongs on the `"trNarrative"` surface and nowhere else. `lib/seo/indexing.ts` defines
+ * that set, lists every call site and gives the reason; the enumeration is NOT repeated here,
+ * because the copy that once was went stale the day the CBS tool tier joined the surface and
+ * the two lists then disagreed (→ PR #73 review `FENER73-M4` / `CODE73-M12`).
  * Those are the pages whose SUBSTANCE exists in Turkish only: the api's narrative fields and
  * the hand-written marine explainers are all TR, so the English rendering is chrome around a
  * fact sheet. The UX tour measured the gap rather than guessing at it — EN Rize is ~59 KB of

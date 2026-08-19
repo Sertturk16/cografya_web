@@ -8,14 +8,17 @@ import { sitemapEntriesFor } from "@/lib/seo/sitemap-entries";
 
 /**
  * Root sitemap — a single flat urlset served at `/sitemap.xml` (the URL `robots.ts` points
- * at). Composition: static hubs + provinces, countries and books at ONE entry each (TR only
+ * at). Composition: static hubs (`/turkiye`, `/dunya`, `/oyun`, `/deniz`, `/kitaplar`,
+ * `/araclar`) + provinces, countries and books at ONE entry each (TR only
  * — their EN counterparts are `noindex`, see `sitemapEntriesFor` in
  * `lib/seo/sitemap-entries.ts`) — a valid, self-contained sitemap far under Google's
- * 50k-per-file hard limit. The book tier adds one hub and one URL per book — which leaves the
+ * 50k-per-file hard limit. The book tier adds one hub and one URL per book, and the CBS tool
+ * tier a hub plus one URL per published tool — which leaves the
  * 50k arithmetic untouched but is NOT "no change to the trigger" (→ PR #62 review
- * `FENER62-M4`): `/kitaplar` is a third content hub, and the convention's hub condition was
- * already crossed by `/dunya`. Crossed once or twice, the standing exception below is what
- * governs, and it is unchanged.
+ * `FENER62-M4`, extended by PR #73 `FENER73-M2`): `/kitaplar` and `/araclar` are further
+ * content hubs, and the convention's hub condition was
+ * already crossed by `/dunya`. Crossed once or several times, the standing exception below is
+ * what governs, and it is unchanged.
  *
  * SPLIT TRIGGER STATUS (CONVENTIONS §6 #7). The convention's proactive split-to-a-sitemap-
  * index trigger (a second content hub; province×locale > ~150) is now crossed by adding the
@@ -54,6 +57,17 @@ function staticEntries(): MetadataRoute.Sitemap {
     // on that single entry is therefore `tr` + `x-default`, mirroring exactly what
     // `buildAlternates` puts in the page head.
     ...sitemapEntriesFor(() => "/deniz", now, 0.7, "trNarrative"),
+    // The CBS tool tier. `"trNarrative"` for the same reason as `/deniz` (→ DEC 2026-08-19a
+    // md.6): the tool is locale-independent but its doorway defence is Turkish prose, so
+    // `/en/tools*` is `noindex` and must NOT appear here — a `noindex` URL in a sitemap is a
+    // §B6 6.8 BLOCKER, and the surface argument is what keeps it out.
+    //
+    // TWO ENTRIES, NOT FOUR. `plan-web.md` §3.2 lists four because it describes the finished
+    // tier; area calculation and coordinate lookup have no page yet, and a sitemap URL that
+    // 404s is the same BLOCKER pointing the other way (→ `Owner's Inbox/cbs-p2/pr-b/
+    // TASK-CONTEXT.md` md.7). They join here in PR-C/PR-D, with their pages.
+    ...sitemapEntriesFor(() => "/araclar", now, 0.7, "trNarrative"),
+    ...sitemapEntriesFor(() => "/araclar/mesafe-olcme", now, 0.6, "trNarrative"),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
   ];
 }

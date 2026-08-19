@@ -9,7 +9,9 @@
 .inner {
   display: flex;
   align-items: center;
-  /* `nowrap` is what MAKES the single-row header true below 64rem, rather than something the
+  /* `nowrap` is what MAKES the single-row header true below the nav-collapse breakpoint
+     (`DESIGN.md` §4 owns that number; this file's own `@media` below is the other half of it),
+     rather than something the
      measurements happened to allow. The first row carries the brand link (229.5px at its
      natural width), the search trigger (34px) and the menu button (28px); with the 10px gap
      that is 311.5px, and `.container` hands the row `viewport − 40px` (its 20px inline
@@ -30,7 +32,7 @@
   flex-wrap: nowrap;
 }
 
-@media (min-width: 64rem) {
+@media (min-width: 66rem) {
   .inner {
     /* The desktop header is restored byte-for-byte: `wrap` back on (the inline nav does its
        own item-level wrapping inside it) and the original gap. */

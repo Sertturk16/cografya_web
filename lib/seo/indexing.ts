@@ -48,13 +48,18 @@ import { routing, type Locale } from "@/i18n/routing";
  * opposite direction. (The notice called itself a "work in progress" until DEC 2026-08-17e
  * h.4 rewrote it; the wiring gap this paragraph describes is unchanged.)
  *
- * The three call sites, so the EN content wave does not have to hunt for them:
+ * The call sites, so the EN content wave does not have to hunt for them:
  *   · `app/[locale]/turkiye/[slug]/page.tsx`
  *   · `app/[locale]/dunya/[slug]/page.tsx`
  *   · `app/[locale]/deniz/page.tsx`
+ *   · `app/[locale]/araclar/page.tsx`
+ *   · `app/[locale]/araclar/mesafe-olcme/page.tsx`
  *
  * They are exactly today's `"trNarrative"` members. If a future surface joins or leaves that
- * set, the notice list moves with it.
+ * set, the notice list moves with it — the CBS tool tier is the surface that joined
+ * (→ DEC 2026-08-19a md.6), and it joined for the `/deniz` reason rather than the api one:
+ * the tool works in either language, but the explanatory text that keeps it out of §B12.2's
+ * doorway class exists in Turkish only.
  *
  * ## AND A THIRD HALF: two EN source-credit strings (→ PR #54 `CR54-M2`, `n`)
  *
@@ -112,9 +117,10 @@ export const EN_CONTENT_READY: boolean = false;
  *   locale-independent. These stay fully indexable in both locales.
  * - `"trNarrative"` — the page's substance is TURKISH-ONLY, so the EN rendering is
  *   chrome-only. Today: `/turkiye/[slug]` and `/dunya/[slug]`, whose substance is the api's
- *   TR-only narrative fields, and `/deniz`, whose substance is seven hand-written Turkish
+ *   TR-only narrative fields, `/deniz`, whose substance is seven hand-written Turkish
  *   explainer blocks in `messages/tr.json` that are deliberately NOT machine-translated
- *   (`SEO-POLICY.md` §B14). The surface is named after the api case because that is where
+ *   (`SEO-POLICY.md` §B14), and the CBS tool tier (`/araclar` + its tool pages), whose
+ *   substance is the Turkish text SPEC §4.3 requires around an interactive instrument. The surface is named after the api case because that is where
  *   it started; what it actually encodes is "the narrative exists in one locale only",
  *   whatever holds the narrative. Flipping `EN_CONTENT_READY` still fixes every member at
  *   once — for `/deniz` that means writing the English blocks, not translating them.

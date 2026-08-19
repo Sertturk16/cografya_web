@@ -48,6 +48,11 @@ const HOME_KEYS = [
   "gameHeading",
   "gameBody",
   "gameCta",
+  // The CBS tool band (→ DEC 2026-08-19a md.3/md.4): the tool hub's static internal link from
+  // the homepage, alongside the header nav entry.
+  "toolsHeading",
+  "toolsBody",
+  "toolsCta",
 ] as const;
 
 /** Placeholders each templated key must carry, so a message can never drop an interpolation. */
