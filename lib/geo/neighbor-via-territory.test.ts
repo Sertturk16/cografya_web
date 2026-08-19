@@ -39,9 +39,12 @@ describe("neighborViaTerritory — the ruled pairs", () => {
     // The whole CG↔AO border is Cabinda's — the Angolan mainland is cut off by the DR Congo
     // corridor. Verified in the base-data source of record (africa.md:458/:526), which is also
     // the fifth family the module's since-deleted "measured count" twice failed to include.
-    expect(neighborViaTerritory("CG", "AO", "tr")?.territory).toBe("Kabinda");
+    // Both locales carry the same spelling: the name is not translated, and the TR form is
+    // the one the base-data record already prints (→ AK-29a, which corrected an initial
+    // `Kabinda` that no project source used).
+    expect(neighborViaTerritory("CG", "AO", "tr")?.territory).toBe("Cabinda");
     expect(neighborViaTerritory("CG", "AO", "en")?.territory).toBe("Cabinda");
-    // IDENTIFY form by ruling (→ AK-29): no state claims Cabinda, so the mechanism wording
+    // IDENTIFY form by ruling (→ AK-29a): no state claims Cabinda, so the mechanism wording
     // would imply a dispute that does not exist.
     expect(neighborViaTerritory("CG", "AO", "tr")?.key).toBe("neighborVia");
     // Angola's other neighbours reach it across the mainland and take no entry.

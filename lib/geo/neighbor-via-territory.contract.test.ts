@@ -155,7 +155,7 @@ describe("CountryDetail keys minted by the künye row and the neighbour parenthe
     // And the identify form stays identify — including the newest pair.
     expect(render("tr", "BR", "FR", "Fransa")).toBe("Fransa (Fransız Guyanası)");
     expect(render("tr", "TR", "AZ", "Azerbaycan")).toBe("Azerbaycan (Nahçıvan)");
-    expect(render("tr", "CG", "AO", "Angola")).toBe("Angola (Kabinda)");
+    expect(render("tr", "CG", "AO", "Angola")).toBe("Angola (Cabinda)");
     expect(render("en", "CG", "AO", "Angola")).toBe("Angola (Cabinda)");
   });
 

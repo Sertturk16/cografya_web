@@ -66,19 +66,24 @@
  *
  * ## Where the names come from
  *
- * None is coined here — each ROOT is the form the seeded corpus already prints in its own
- * prose, so the card and the page's narrative read the same name (the discipline
- * `neighbor-country-names.ts` follows, for the same reason). Two of the four are the corpus
- * string verbatim; two take the corpus's bare root without its generic, because
- * `CONTENT-STYLE.md` §22 caps a card title at four words and the parenthetical only has to
- * answer "which piece". Verified field by field at `dev @ ba4ce94`:
+ * None is coined here — each ROOT is the form a project source already prints, so the card and
+ * the page's narrative read the same name (the discipline `neighbor-country-names.ts` follows,
+ * for the same reason). Some are the source string verbatim; some take its bare root without
+ * the generic, because `CONTENT-STYLE.md` §22 caps a card title at four words and the
+ * parenthetical only has to answer "which piece". Verified field by field at `dev @ ba4ce94`:
  *
- * | Label | Corpus source | Relation |
+ * | Label | Source | Relation |
  * | --- | --- | --- |
  * | `Fransız Guyanası` | FR `introTr`, SR `hydrographyNoteTr` | verbatim |
  * | `Kaliningrad` | LT `introTr` "Kaliningrad Oblastı", PL `introTr` "Kaliningrad eksklavı" | bare root |
  * | `Nahçıvan` | AZ `introTr` "Nahçıvan Özerk Cumhuriyeti" | bare root |
  * | `Ceuta ve Melilla` | ES `introTr`, MA `landformNoteTr` | verbatim |
+ * | `Cabinda` | base-data `africa.md:458`/`:526` (Turkish prose) | verbatim |
+ *
+ * The last row is sourced from the base-data record rather than the seed, because the seed
+ * prose never names it — that gap is exactly what made its first spelling wrong (see the
+ * `CABINDA` entry below). A label whose only source is the base-data document is legitimate
+ * but weaker, and worth saying out loud rather than letting the table imply seed backing.
  *
  * (The SR citation is `hydrographyNoteTr` — "…doğuda Fransız Guyanası ile sınırı çizen
  * Marowijne (Maroni) Nehri…". An earlier draft of this docblock said `landformNoteTr`, which
@@ -126,20 +131,21 @@ const NAHCIVAN: ViaTerritory = { tr: "Nahçıvan", en: "Nakhchivan", wording: "i
  * vakası … (Sovereign Limits + çapraz kaynak ile doğrulandı)" and `:526` states the CG side
  * ("Angola'ya sınır Cabinda eksklavı üzerinden").
  *
- * IDENTIFY form, ruled (→ AK-29). The `"through"` carve exists for a territory claimed by the
+ * IDENTIFY form, ruled (→ AK-29a). The `"through"` carve exists for a territory claimed by the
  * very state whose page renders the card; no state claims Cabinda, so using the mechanism
  * wording here would IMPLY a dispute that does not exist — the carve has to stay narrow to
  * keep meaning anything.
  *
- * ⚠ TR SPELLING IS UNVERIFIED AGAINST THE CORPUS, and this is the one label of the five that
- * is. The other four repeat a form the seed prose already prints; `Kabinda`/`Cabinda` appears
- * NOWHERE in `cografya_api/src/database/seeds/` (measured; the same sweep returns the other
- * four), and every Turkish mention in the base-data document spells it `Cabinda` — the `K-`
- * form comes from AK-29, not from a project source. Shipped as ruled, recorded here rather
- * than quietly adopted; surfaced to Atlas for the pending `GLOSSARY.md` §6 row, which is where
- * the two forms get reconciled.
+ * TR SPELLING — the corpus form won, and the round trip is worth recording. The first ruling
+ * (AK-29) set the TR label to `Kabinda`. That form appears NOWHERE in
+ * `cografya_api/src/database/seeds/` (measured; the same sweep returns the other four labels),
+ * while every Turkish mention in `Owner's Inbox/dunya-haritasi-base-data/africa.md` spells it
+ * `Cabinda`. It shipped once, flagged rather than quietly adopted, and AK-29a corrected it:
+ * the `K-` form had come from the question's own wording, not from any project source. So this
+ * label now satisfies the same rule as the other four — it repeats a form a project source
+ * already prints — and TR and EN coincide because the name is not translated.
  */
-const KABINDA: ViaTerritory = { tr: "Kabinda", en: "Cabinda", wording: "identify" };
+const CABINDA: ViaTerritory = { tr: "Cabinda", en: "Cabinda", wording: "identify" };
 /**
  * The one `"through"` entry, and the reason the discriminator exists at all (→ DEC
  * 2026-08-19k, owner-ruled; raised as `SOV72-C1` and adversarially validated).
@@ -176,7 +182,7 @@ export const NEIGHBOR_VIA_TERRITORY: Readonly<
   TR: { AZ: NAHCIVAN },
   // Province — the Angolan mainland is cut off from Congo-Republic by the DR Congo corridor,
   // so the entire CG↔AO border is Cabinda's.
-  CG: { AO: KABINDA },
+  CG: { AO: CABINDA },
   // Autonomous cities — see CEUTA_MELILLA above for why this pair alone takes "through".
   MA: { ES: CEUTA_MELILLA },
 };
