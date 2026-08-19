@@ -26,19 +26,36 @@
  * is derived from it rather than from a scan.
  *
  * **The authority is the RULING, not the seed docblock that quotes it.** DEC 2026-07-13 names
- * the qualifying families itself — France/French Guiana, Russia/Kaliningrad AND
+ * qualifying families itself — France/French Guiana, Russia/Kaliningrad AND
  * Azerbaijan/Nakhchivan — while the seed docblock above gives only the first two, as examples
  * ("e.g."). Deriving the set from the examples silently dropped Nakhchivan; that omission
  * shipped and was caught in review (`SOV72-I1`/`CR72-I1`). The lesson is recorded here because
  * the trap is not obvious: an illustrative list read as an exhaustive one produces a table
  * that looks measured and is short by a family.
  *
- * **A continent-mismatch scan is the wrong query and misses two of the four** — Kaliningrad
- * has both ends in Europe and TR↔AZ has both ends in Asia, so a sweep keyed on "the neighbour
- * is on another continent" silently drops each. Against all 199 seeded rows at `cografya_api`
- * `dev @ ba4ce94` the rule yields **four** families; the FORWARD direction of each is below.
- * Gibraltar (ES↔GB) and Hans Island (DK↔CA) are absent from the corpus by that same
- * correction, so they need no entry here.
+ * **THIS DOCBLOCK STATES NO FAMILY COUNT, ON PURPOSE (→ `SOV72R2-I1`).** It carried one twice —
+ * "three families", then "four" — and both were false at the very commit they cited: the first
+ * missed Nakhchivan, the second missed Angola/Cabinda. A count is a measurement that rots the
+ * moment the corpus grows, while reading as verified fact; the table below is the only
+ * enumeration, and any check derives its expectation from the table's own content rather than
+ * from a number written here. What IS durable is the METHOD, so that is what is recorded:
+ *
+ *   1. take DEC 2026-07-13's test — a fully constitutionally-integrated territory
+ *      (DROM-equivalent / oblast / autonomous republic / province);
+ *   2. for each seeded pair, ask whether the ENTIRE shared border runs through such a
+ *      territory rather than through the neighbour's mainland;
+ *   3. search the corpus by CONTENT for that condition — `eksklav|exclave|enklav|enclave`
+ *      across the seed and the base-data source of record — never by continent mismatch,
+ *      which misses Kaliningrad (both ends in Europe) and TR↔AZ (both ends in Asia), and
+ *      never by a name the family is merely expected to carry.
+ *   4. Discard the enclave STATES that sweep also returns: San Marino and Vatikan inside
+ *      Italy, Lesotho inside South Africa. Those are sovereign neighbours in their own right,
+ *      not exclave-mediated borders; Oecusse (TL↔ID) and Musandam (OM↔AE) are discarded too,
+ *      because both pairs also touch on the mainland.
+ *
+ * Last run of that method: 2026-08-19 against `cografya_api` `dev @ ba4ce94`, all 199 seeded
+ * rows plus `Owner's Inbox/dunya-haritasi-base-data/*.md`. Gibraltar (ES↔GB) and Hans Island
+ * (DK↔CA) are absent from the corpus by DEC 2026-07-13's own correction and need no entry.
  *
  * ## Direction — forward only, deliberately (→ Atlas ruling on this plan's S2)
  *
@@ -103,6 +120,27 @@ const FRENCH_GUIANA: ViaTerritory = {
 const KALININGRAD: ViaTerritory = { tr: "Kaliningrad", en: "Kaliningrad", wording: "identify" };
 const NAHCIVAN: ViaTerritory = { tr: "Nahçıvan", en: "Nakhchivan", wording: "identify" };
 /**
+ * Angola's Cabinda province — the whole CG↔AO border is its, the Angolan mainland being cut
+ * off by the DR Congo corridor. Verified in the base-data source of record, not inferred:
+ * `Owner's Inbox/dunya-haritasi-base-data/africa.md:458` records it as a "Doğrulanmış eksklav
+ * vakası … (Sovereign Limits + çapraz kaynak ile doğrulandı)" and `:526` states the CG side
+ * ("Angola'ya sınır Cabinda eksklavı üzerinden").
+ *
+ * IDENTIFY form, ruled (→ AK-29). The `"through"` carve exists for a territory claimed by the
+ * very state whose page renders the card; no state claims Cabinda, so using the mechanism
+ * wording here would IMPLY a dispute that does not exist — the carve has to stay narrow to
+ * keep meaning anything.
+ *
+ * ⚠ TR SPELLING IS UNVERIFIED AGAINST THE CORPUS, and this is the one label of the five that
+ * is. The other four repeat a form the seed prose already prints; `Kabinda`/`Cabinda` appears
+ * NOWHERE in `cografya_api/src/database/seeds/` (measured; the same sweep returns the other
+ * four), and every Turkish mention in the base-data document spells it `Cabinda` — the `K-`
+ * form comes from AK-29, not from a project source. Shipped as ruled, recorded here rather
+ * than quietly adopted; surfaced to Atlas for the pending `GLOSSARY.md` §6 row, which is where
+ * the two forms get reconciled.
+ */
+const KABINDA: ViaTerritory = { tr: "Kabinda", en: "Cabinda", wording: "identify" };
+/**
  * The one `"through"` entry, and the reason the discriminator exists at all (→ DEC
  * 2026-08-19k, owner-ruled; raised as `SOV72-C1` and adversarially validated).
  *
@@ -136,6 +174,9 @@ export const NEIGHBOR_VIA_TERRITORY: Readonly<
   // the api's own row says so ("TR ONLY via the Nahçıvan exclave — EXCLAVE-INCLUSIVE per the
   // locked rule", country.seed-data.ts). AM and IR need no entry: both also touch the mainland.
   TR: { AZ: NAHCIVAN },
+  // Province — the Angolan mainland is cut off from Congo-Republic by the DR Congo corridor,
+  // so the entire CG↔AO border is Cabinda's.
+  CG: { AO: KABINDA },
   // Autonomous cities — see CEUTA_MELILLA above for why this pair alone takes "through".
   MA: { ES: CEUTA_MELILLA },
 };

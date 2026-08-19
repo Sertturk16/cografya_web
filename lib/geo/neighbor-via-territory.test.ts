@@ -35,6 +35,21 @@ describe("neighborViaTerritory — the ruled pairs", () => {
     expect(neighborViaTerritory("IR", "AZ", "tr")).toBeNull();
   });
 
+  it("names Cabinda on the Congo-Republic card", () => {
+    // The whole CG↔AO border is Cabinda's — the Angolan mainland is cut off by the DR Congo
+    // corridor. Verified in the base-data source of record (africa.md:458/:526), which is also
+    // the fifth family the module's since-deleted "measured count" twice failed to include.
+    expect(neighborViaTerritory("CG", "AO", "tr")?.territory).toBe("Kabinda");
+    expect(neighborViaTerritory("CG", "AO", "en")?.territory).toBe("Cabinda");
+    // IDENTIFY form by ruling (→ AK-29): no state claims Cabinda, so the mechanism wording
+    // would imply a dispute that does not exist.
+    expect(neighborViaTerritory("CG", "AO", "tr")?.key).toBe("neighborVia");
+    // Angola's other neighbours reach it across the mainland and take no entry.
+    expect(neighborViaTerritory("CD", "AO", "tr")).toBeNull();
+    expect(neighborViaTerritory("ZM", "AO", "tr")).toBeNull();
+    expect(neighborViaTerritory("NA", "AO", "tr")).toBeNull();
+  });
+
   it("uses the MECHANISM wording for the one contested pair, and only it", () => {
     // → DEC 2026-08-19k (owner-ruled). On Morocco's own page the identifying form
     // "İspanya (Ceuta ve Melilla)" reads as an attribution of two cities Morocco claims;
@@ -57,6 +72,7 @@ describe("neighborViaTerritory — the ruled pairs", () => {
       ["LT", "RU"],
       ["PL", "RU"],
       ["TR", "AZ"],
+      ["CG", "AO"],
     ] as const) {
       expect(neighborViaTerritory(host, neighbor, "tr")?.key).toBe("neighborVia");
     }
@@ -81,15 +97,30 @@ describe("neighborViaTerritory — the ruled pairs", () => {
     expect(neighborViaTerritory("AZ", "TR", "tr")).toBeNull();
   });
 
-  it("carries exactly the six forward pairs the ruling's four families yield", () => {
-    // DEC 2026-07-13 names four qualifying families; two of them (French Guiana, Kaliningrad)
-    // touch two hosts each. A seventh entry appearing here without a ruling is what this
-    // counts — and the count is stated as families × hosts so it cannot be "fixed" by
-    // editing the number.
+  it("carries exactly the pairs the ruling's method yields, and no unannounced extra", () => {
+    // NO FAMILY COUNT IS ASSERTED HERE, and its absence is the point (→ SOV72R2-I1). The
+    // module claimed "three families", then "four", and both were false at the very commit
+    // they cited — the first missed Nakhchivan, the second missed Cabinda. A count reads as a
+    // verified fact and rots the moment the corpus grows.
+    //
+    // What is pinned instead is the ENUMERATION, so a new entry is a deliberate edit here
+    // rather than something a number can be nudged to cover. This list is the derivation's
+    // OUTPUT, last re-run 2026-08-19 against cografya_api dev @ ba4ce94 by the method the
+    // module docblock records: a content sweep for exclave-mediated borders — never a
+    // continent mismatch (misses Kaliningrad and TR→AZ), never a name the family is merely
+    // expected to carry.
     const pairs = Object.entries(NEIGHBOR_VIA_TERRITORY).flatMap(([host, byNeighbor]) =>
       Object.keys(byNeighbor).map((neighbor) => `${host}->${neighbor}`),
     );
-    expect(pairs.sort()).toEqual(["BR->FR", "LT->RU", "MA->ES", "PL->RU", "SR->FR", "TR->AZ"]);
+    expect(pairs.sort()).toEqual([
+      "BR->FR", // French Guiana
+      "CG->AO", // Cabinda
+      "LT->RU", // Kaliningrad
+      "MA->ES", // Ceuta and Melilla
+      "PL->RU", // Kaliningrad
+      "SR->FR", // French Guiana
+      "TR->AZ", // Nakhchivan
+    ]);
   });
 
   it("keys are ISO 3166-1 alpha-2 in shape, derived from the table not restated", () => {

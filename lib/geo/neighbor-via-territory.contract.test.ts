@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
-import { NEIGHBOR_VIA_TERRITORY } from "./neighbor-via-territory";
+import { NEIGHBOR_VIA_TERRITORY, neighborViaTerritory } from "./neighbor-via-territory";
 
 /**
  * REGRESSION SHIELD — the WIRING between the pair table and the rendered card.
@@ -71,6 +71,15 @@ describe("the country page's neighbour-label wiring", () => {
     expect(PAGE).toContain('kind: "text"');
   });
 
+  it("selects the template from the pair, never from a literal key", () => {
+    // → TA72R2-I1. `t(via.key, …)` is the whole mechanism behind DEC 2026-08-19k: collapse it
+    // to `t("neighborVia", …)` and the Fas card silently reverts to the identify form —
+    // "İspanya (Ceuta ve Melilla)", the exact attribution the owner ruled out — with every
+    // module test still green, because the module would still be returning the right key.
+    expect(PAGE).toContain("t(via.key, { name, territory: via.territory })");
+    expect(PAGE).not.toMatch(/t\(\s*["']neighborVia(?:Through)?["']/);
+  });
+
   it("renders the resolved label, not the raw name", () => {
     // `neighbor.name` was renamed to `neighbor.label` precisely so a missed rename is a
     // compile error rather than a silently bare card.
@@ -121,6 +130,34 @@ describe("CountryDetail keys minted by the künye row and the neighbour parenthe
       });
     }
   }
+
+  it("composes the owner-ruled Fas string character-for-character", () => {
+    // → TA72R2-I1, the end-to-end half. The source invariant above proves the page passes
+    // `via.key`; this proves the pair + catalogue actually COMPOSE the ruled sentence, so a
+    // silent edit to either the template or the territory value fails here rather than on a
+    // sovereignty-sensitive live page. Interpolation mirrors next-intl's `{placeholder}`
+    // substitution; it is deliberately not imported, so the assertion stays a pure string
+    // check with no ICU behaviour to drift.
+    const render = (locale: "tr" | "en", host: string, neighbor: string, name: string): string => {
+      const via = neighborViaTerritory(host, neighbor, locale);
+      if (via === null) throw new Error(`no entry for ${host}->${neighbor}`);
+      // The two catalogues are structurally identical but nominally distinct types, so the
+      // union cannot be indexed by a computed key without widening one of them first.
+      const catalogue: Record<string, string> = CATALOGUES[locale].CountryDetail;
+      const template = catalogue[via.key];
+      if (template === undefined) throw new Error(`missing ${locale} key ${via.key}`);
+      return template.replace("{name}", name).replace("{territory}", via.territory);
+    };
+
+    // The ruling itself (DEC 2026-08-19k): mechanism wording, no attribution.
+    expect(render("tr", "MA", "ES", "İspanya")).toBe("İspanya (Ceuta ve Melilla üzerinden)");
+    expect(render("en", "MA", "ES", "Spain")).toBe("Spain (via Ceuta and Melilla)");
+    // And the identify form stays identify — including the newest pair.
+    expect(render("tr", "BR", "FR", "Fransa")).toBe("Fransa (Fransız Guyanası)");
+    expect(render("tr", "TR", "AZ", "Azerbaycan")).toBe("Azerbaycan (Nahçıvan)");
+    expect(render("tr", "CG", "AO", "Angola")).toBe("Angola (Kabinda)");
+    expect(render("en", "CG", "AO", "Angola")).toBe("Angola (Cabinda)");
+  });
 
   it("every wording the table can select has a key in BOTH catalogues", () => {
     // Derived from the table rather than restated, so a future wording cannot be added to
