@@ -16,6 +16,7 @@ import {
 import type { CountryDetail, CountryListItem } from "@/lib/api/types";
 import { sourcesMessage } from "@/lib/geo/country-sources";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
+import { neighborViaTerritory } from "@/lib/geo/neighbor-via-territory";
 import { isSpecialStatusRow, showsCountryFlag, showsSovereigntyNote } from "@/lib/geo/sovereignty";
 import { showsSubregionCard } from "@/lib/geo/subregion";
 import { COUNTRY_SHAPES } from "@/lib/map/world-countries.generated";
@@ -56,10 +57,17 @@ function nameForLocale(country: CountryDetail | CountryListItem, locale: Locale)
  */
 const COUNTRY_SHAPE_BY_ISO = new Map(COUNTRY_SHAPES.map((shape) => [shape.iso, shape.d] as const));
 
-/** One resolved neighbour: a seeded country (→ link) or an unseeded one (→ plain text). */
+/**
+ * One resolved neighbour: a seeded country (→ link) or an unseeded one (→ plain text).
+ *
+ * `label` is what the card prints. It is usually just the country's name, but on the five
+ * pairs whose border runs through a non-mainland territory it carries the parenthetical
+ * ("Fransa (Fransız Guyanası)", → DEC 2026-08-19e md.1). The name is resolved into a label
+ * here rather than at render so the two branches cannot drift apart.
+ */
 type Neighbor =
-  | { kind: "link"; name: string; slug: string; iso: string }
-  | { kind: "text"; name: string; iso: string };
+  | { kind: "link"; label: string; slug: string; iso: string }
+  | { kind: "text"; label: string; iso: string };
 
 // SSG the real countries; unknown slugs fall through to notFound() (never a soft-200),
 // per CONVENTIONS §6 #6. Build-safe: if the api is unreachable during `next build` the
@@ -171,6 +179,17 @@ export default async function CountryDetailPage({ params }: PageProps) {
   // omitted on EN (no EN name available) — never a dead link (the unseeded-il-omit pattern,
   // relaxed to "show as text" for countries per the brief). Best-effort: a list-fetch
   // failure just hides the block rather than breaking the (already-loaded) detail page.
+  //
+  // A neighbour whose border runs through a non-mainland territory gets ONE parenthetical in
+  // its label — "Fransa (Fransız Guyanası)" on Brezilya (→ DEC 2026-08-19e md.1). Which pairs
+  // qualify is the api's own reciprocity rule, transcribed in `lib/geo/neighbor-via-territory`.
+  // This changes the TEXT of a card and nothing else: `neighborIsoCodes` is the published
+  // render order (AS-6c), so it is still walked in order, still deduped the same way, and no
+  // code is reordered, dropped or added.
+  const neighborLabel = (name: string, iso: string): string => {
+    const via = neighborViaTerritory(country.isoCode, iso, locale);
+    return via === null ? name : t("neighborVia", { name, territory: via });
+  };
   const neighbors: Neighbor[] = [];
   try {
     const byIso = byIsoCode(await getCountries());
@@ -182,13 +201,13 @@ export default async function CountryDetailPage({ params }: PageProps) {
       if (seeded) {
         neighbors.push({
           kind: "link",
-          name: nameForLocale(seeded, locale),
+          label: neighborLabel(nameForLocale(seeded, locale), iso),
           slug: slugForLocale(seeded, locale),
           iso,
         });
       } else if (isTr) {
         const textName = neighborCountryNameTr(iso);
-        if (textName) neighbors.push({ kind: "text", name: textName, iso });
+        if (textName) neighbors.push({ kind: "text", label: neighborLabel(textName, iso), iso });
       }
     }
   } catch (error) {
@@ -542,14 +561,14 @@ export default async function CountryDetailPage({ params }: PageProps) {
                     className="province-card"
                     href={{ pathname: "/dunya/[slug]", params: { slug: neighbor.slug } }}
                   >
-                    <span>{neighbor.name}</span>
+                    <span>{neighbor.label}</span>
                     <CardArrow />
                   </Link>
                 </li>
               ) : (
                 <li key={neighbor.iso}>
                   {/* Unseeded neighbour: plain text, NOT a link (no page yet). */}
-                  <span className={styles.neighborTextCard}>{neighbor.name}</span>
+                  <span className={styles.neighborTextCard}>{neighbor.label}</span>
                 </li>
               ),
             )}
