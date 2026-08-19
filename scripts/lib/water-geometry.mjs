@@ -10,35 +10,42 @@
 
 import { perpDistance } from "./map-topology.mjs";
 
-/** Mean Earth radius (IUGG), metres. */
-const EARTH_RADIUS_M = 6371008.8;
-const DEG_TO_RAD = Math.PI / 180;
+/**
+ * Spherical ring area — re-exported under this module's original name.
+ *
+ * THE BODY MOVED to `lib/map/spherical-area.ts` (CBS-P2 SPEC §5.2), and it moved rather
+ * than being copied: the browser's measurement tools need the same answer this module has
+ * been giving the water generators, and two implementations of one formula eventually
+ * disagree. There the disagreement would read as a lake changing rung on one side and a
+ * wrong area on the other, with nothing failing.
+ *
+ * NOTHING ABOUT THIS MODULE'S CONTRACT CHANGED. The three consumers
+ * (`fetch-tr-inland-water.mjs`, `generate-tr-inland-water.mjs`, `fetch-tr-jrc-water.mjs`)
+ * still import `measureRingAreaKm2` from here, with the same signature and the same numbers.
+ *
+ * WHAT `pnpm generate:water:check` ACTUALLY PROVES ABOUT THAT, MEASURED RATHER THAN ASSUMED.
+ * It proves the WIRING: with the specifier below deliberately broken the gate exits 1, so a
+ * module this offline generator cannot load can never reach `dev`. It does NOT prove the
+ * ARITHMETIC — the Earth radius was temporarily changed by 30 % and the regenerated artifact
+ * came back BYTE-IDENTICAL, gate still green. The reason is visible at
+ * `generate-tr-inland-water.mjs:499`: in the offline step this function feeds `sourceArea`,
+ * which is aggregated only into the console's area-loss report and never into the emitted
+ * file. The threshold ladder it does drive lives in the NETWORK fetch step, which CI
+ * deliberately never runs.
+ *
+ * So the arithmetic is guarded by `lib/map/spherical-area.test.ts` alone, and that test is
+ * load-bearing rather than decorative. This paragraph exists because the first version of it
+ * claimed the gate covered both halves, and a positive control disproved it.
+ *
+ * TWO THINGS ABOUT THE SPECIFIER ARE LOAD-BEARING. The `.ts` extension is explicit because
+ * node resolves this itself and strips the types natively (Node 24); there is no bundler in
+ * this path. And the target is deliberately a LEAF with zero imports — an `@/…` alias would
+ * not resolve under plain node, and a transitive dependency would drag the whole app's
+ * module graph into a build script.
+ */
+export { ringAreaKm2 as measureRingAreaKm2 } from "../../lib/map/spherical-area.ts";
 
 /** @typedef {[number, number]} LonLat */
-
-/**
- * Spherical area of a lon/lat ring, in km² (unsigned).
- *
- * The planar shoelace formula would be wrong here by ~30 % at Türkiye's latitudes because a
- * degree of longitude is not a degree of latitude. This is the standard spherical-excess
- * form (the one turf.js uses); at these sizes it agrees with published figures to well
- * inside the tolerance a drawing threshold needs.
- *
- * @param {LonLat[]} ring
- */
-export function measureRingAreaKm2(ring) {
-  const n = ring.length;
-  if (n < 3) return 0;
-  let total = 0;
-  for (let i = 0; i < n; i++) {
-    const lower = ring[(i - 1 + n) % n];
-    const middle = ring[i];
-    const upper = ring[(i + 1) % n];
-    if (!lower || !middle || !upper) continue;
-    total += (upper[0] - lower[0]) * DEG_TO_RAD * Math.sin(middle[1] * DEG_TO_RAD);
-  }
-  return Math.abs((total * EARTH_RADIUS_M * EARTH_RADIUS_M) / 2) / 1e6;
-}
 
 /**
  * Stitch an Overpass relation's `outer` / `inner` members into closed rings.
