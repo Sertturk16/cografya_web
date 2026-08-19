@@ -146,7 +146,9 @@ export function polylineLengthKm(points: readonly GeoPoint[]): number {
  * Defined as the open length plus the closing leg, so it is `polylineLengthKm` plus one
  * segment rather than a second traversal with its own rounding behaviour. Fewer than three
  * points is not a ring and returns 0, matching {@link ringAreaKm2}: the two numbers appear
- * side by side and must not disagree about whether a shape exists yet.
+ * side by side and must not disagree about whether a shape exists yet. They CAN differ in
+ * another way now, and legitimately: {@link ringAreaKm2} also returns `null` for a ring crossing
+ * the antimeridian, where a perimeter is still well defined and still returned (→ CODE71R3-M6).
  */
 export function ringPerimeterKm(points: readonly GeoPoint[]): number {
   if (points.length < 3) return 0;
@@ -194,9 +196,17 @@ export function ringAreaKm2(points: readonly GeoPoint[]): number | null {
 /**
  * Whether consecutive vertices step across the ±180° seam.
  *
- * A longitude delta above 180° between neighbouring vertices cannot be the short way round, so
- * it is the seam being crossed. Exported so a caller can explain the refusal to the reader in
- * words rather than showing an empty result with no reason (SPEC §22: problem, then fix).
+ * DELIBERATELY CONSERVATIVE (→ PR #71 round-3 review CODE71R3-M5). A step wider than 180° is
+ * refused because it cannot be TOLD APART from a seam crossing, not because it must be one: a
+ * ring genuinely spanning the long way round is summed correctly by the formula and is still
+ * refused. The trade is one-directional on purpose — the cost is the safe no-number branch SPEC
+ * §6.3 already defines, and the alternative risks a silently 359×-wrong number. A caller needing
+ * the long way round densifies the ring; vertices under 180° apart measure the same region (equal
+ * to 1 ULP, measured).
+ *
+ * Exported so a caller can explain the refusal in words instead of showing an empty result with
+ * no reason (`CONTENT-STYLE.md` §22: problem, then fix — NOT SPEC §22, which is a bibliography;
+ * → CODE71R3-M3).
  */
 export function ringCrossesAntimeridian(points: readonly GeoPoint[]): boolean {
   const n = points.length;
@@ -226,7 +236,7 @@ export function ringCrossesAntimeridian(points: readonly GeoPoint[]): boolean {
  * cross in one space exactly when they cross in the other. The answer is therefore identical
  * either way, and lon/lat is the space the caller already holds.
  *
- * ## The exemption is by COORDINATE, not by index (→ PR #71 review CODE71-I1)
+ * ## Round 1: the exemption moved from index to COORDINATE (→ CODE71-I1; SUPERSEDED below)
  *
  * Two edges that meet at a shared point touch there by construction, and that touch is not a
  * crossing. The first version of this function expressed "meet" as an INDEX relationship —
@@ -434,6 +444,11 @@ export function scaleBarKm(
   // put it on `totalKm`, which left the bar it was meant to stop still producible just above
   // the boundary: `scaleBarKm(500, 800, 89.9999)` returned a bar labelled 0.0002 km. What the
   // guard is for is a label no reader can use, so it is measured on the label.
+  //
+  // ONE BEHAVIOUR MOVED WITH IT (→ round-3 CODE71R3-M7): a tiny view combined with an absurd
+  // `maxFraction` used to be refused by the view floor and is now accepted, because the label it
+  // produces is legitimately large. That is the right answer for the quantity being guarded, and
+  // it is recorded rather than left as a surprise for the next reader.
   if (!Number.isFinite(km) || km < MIN_USABLE_BAR_KM) return null;
 
   return { km, px: (km / totalKm) * renderedWidthPx };
@@ -487,6 +502,12 @@ export type CardinalKey = "north" | "south" | "east" | "west";
  * `unreadable` — a total, silent failure of the keyboard path, which SPEC §10.1 makes the
  * PRIMARY input path rather than a convenience. The type cannot express the constraint, so it
  * is stated here and pinned by a test.
+ *
+ * **NEVER the `compass.*` block.** `messages/{tr,en}.json` already carry word-valued directions
+ * (`compass.n = "kuzey"/"north"`), which is the nearest thing a UI author would reach for and the
+ * one thing that must not be passed here: it matches no single character, so every typed DMS
+ * coordinate becomes `unreadable` with CI green (→ CODE71R2-M4, re-filed as CODE71R3-M8 after my
+ * round-2 record claimed this note had landed and it had not).
  */
 export type CardinalLetters = Readonly<Record<CardinalKey, string>>;
 
@@ -504,13 +525,22 @@ export interface DmsParts {
 /**
  * Decimal degrees into DMS parts — OUR precision format, not the curriculum's (SPEC §6.2).
  *
- * **The earlier claim here ("the form the curriculum uses") was measured false and is
- * corrected** (measurement: `Owner's Inbox/cbs-p2/prose/arac-prose-draft.md` §"71 sayfa", NOVA
- * 2026-08-19; term ruling: `QUESTIONS.md` AK-26). Across the 71 pages of MEB/EBA
- * Coğrafya 9's first unit the word `saniye` appears zero times and no degree-minute string
- * occurs; what the book actually prints is a whole degree plus a direction letter (`30° K`).
- * So DMS is the resolution WE choose to offer, and only the direction letters are
- * curriculum-verified. No reader-facing copy may give this notation curriculum standing.
+ * DMS is the resolution WE offer. The curriculum ALSO uses it, so this is an alignment and not
+ * a contrast (→ `QUESTIONS.md` AK-28; measurement: `Owner's Inbox/cbs-p2/prose/arac-prose-draft.md`
+ * row K-9, corrected in Rev.2):
+ *
+ *  · the scanned corpus is **52 printed pages** (24-75) of the `bolum1234` unit, not the 71 an
+ *    earlier version of this docblock claimed — that figure counted 404 bodies saved as HTML;
+ *  · the book DOES divide a degree into minutes: printed p.43 prints `39° 55' K · 32° 52' D`.
+ *    An earlier sweep reported no such string because it searched `NN°NN'` while the book sets a
+ *    space and a typographic U+2019;
+ *  · `saniye` appears zero times across those 52 pages, but the `usak` printing teaches DMS by
+ *    name with a `saniye` definition on printed p.51.
+ *
+ * TWO EARLIER VERSIONS OF THIS PARAGRAPH WERE WRONG IN OPPOSITE DIRECTIONS — first claiming the
+ * curriculum uses DMS, then claiming it never prints minutes — and the second was WORSE for
+ * carrying a precise citation to a document that retracts it. A dated pointer closes a question
+ * a vague one would have invited someone to check. Reader-facing copy states neither extreme.
  *
  * ROUNDING IS DONE HERE, NOT AT DISPLAY TIME, and that is what stops the classic `60"` bug.
  * Rounding 39.99999° to whole seconds naively yields `39°59'60"`, which is not a coordinate;

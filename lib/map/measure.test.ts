@@ -256,6 +256,28 @@ describe("ringAreaKm2 — the antimeridian guard", () => {
     expect(ringAreaKm2(turkishRing)).toBe(9540.512136366135);
   });
 
+  it("pins the boundary the predicate uses", () => {
+    // Exactly 180 is accepted, just past it is refused (→ PR #71 round-3 review CODE71R3-M4).
+    // The existing cases sat far from the threshold (steps of 359, 1 and 170), so a `>` -> `>=`
+    // slip passed all of them.
+    expect(
+      ringCrossesAntimeridian([
+        { lon: -90, lat: 10 },
+        { lon: 90, lat: 10 },
+        { lon: 90, lat: 20 },
+        { lon: -90, lat: 20 },
+      ]),
+    ).toBe(false);
+    expect(
+      ringCrossesAntimeridian([
+        { lon: -90.0001, lat: 10 },
+        { lon: 90, lat: 10 },
+        { lon: 90, lat: 20 },
+        { lon: -90.0001, lat: 20 },
+      ]),
+    ).toBe(true);
+  });
+
   it("does not fire on a wide ring that stays on one branch", () => {
     // A 170-degree span is legal; only a STEP wider than 180 is the seam.
     expect(
