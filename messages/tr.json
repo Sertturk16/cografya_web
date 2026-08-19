@@ -170,9 +170,9 @@
     "summaryClose": "Kapat",
     "zoomIn": "Yakınlaştır",
     "zoomOut": "Uzaklaştır",
-    "zoomReset": "Harita görünümüne sıfırla",
+    "zoomReset": "Haritanın tamamını göster",
     "zoomControls": "Yakınlaştırma denetimleri",
-    "zoomInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla başlangıç görünümüne dön. {selectHint} Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
+    "zoomInstructions": "Harita odaktayken yakınlaştırmak için + veya =, uzaklaştırmak için − tuşuna bas; ok tuşlarıyla kaydır, 0 veya Home tuşuyla haritanın tamamını göster. {selectHint} Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
     "selectHintProvinces": "Bir il odaktayken Enter veya boşluk tuşu o ili seçer.",
     "selectHintRegions": "Bir il odaktayken Enter veya boşluk tuşu o ilin bağlı olduğu bölgeyi seçer.",
     "shapeSolved": "{name}, çözüldü"

@@ -9,14 +9,12 @@
    contained it for no reason anyone could see. The padding is gone; the border, the radius
    and the parchment stay, and `overflow: hidden` moves here so the map is clipped by the
    rounded corner instead of squaring it off.
-   THE OVERLAY THAT REMAINS IS UNAFFECTED, and that was checked rather than assumed: the zoom
-   controls (`map.module.css` `.zoomControls`) are positioned against the STAGE, not against
-   this card, so they keep their own 12-14px inset and simply travel outward with it. The
-   frame's padding was never what held them off the map — which is also why removing it cannot
-   be the cause of the mobile overlap (B8, PR-4b).
-   The ODbL credit used to be the second overlay and is not one any more: since the design tour
-   it is a flow line UNDER the stage, inside this frame (`.attribution` below). The frame's
-   `padding: 0` is why that line carries its own inset. */
+   NEITHER OVERLAY IS ONE ANY MORE, and the padding removal is why each carries its own inset.
+   The ODbL credit became a flow line UNDER the stage at the design tour (`.attribution`
+   below). The zoom cluster followed it out of the map at DEC 2026-08-17g md. 3: it is the
+   game's own `.zoomLayer` / `.zoomControls` now, anchored to THIS card — an overlay in its
+   top-right corner from 64rem up, a flow row in the frame's last line below that. The shared
+   `map.module.css` overlay rules no longer reach this surface at all. */
 .frame {
   position: relative;
   overflow: hidden;
@@ -60,36 +58,24 @@
    cap is `100svh − constant` the same ~1px is what "fits" means at 768 too. It fits; it has no
    margin left.
 
-   WHAT THE CONSTANT DOES NOT COVER, ITEM ONE: THE CREDIT LINE UNDER THE STAGE. The design
-   tour moved the ODbL/JRC credit out of the stage and into the frame (`.attribution` below),
-   which adds ~48px of chrome BELOW the map that this constant does not itemize. Re-measured
-   on the running build after that move, the thing the cap exists to protect still holds — the
-   question, the map and the action row are all above the fold — but the margin is now thin:
-   the last control's bottom edge sits at 869px of 900 at 1440×900 (was 821), and at 799px of
-   800 at 1280×800 (was 750). One pixel is not a fit anyone should plan around, so the next
-   change to this page's chrome re-measures both mandated viewports first; the constant itself
-   was deliberately left alone here rather than retuned as a side effect of a layout fix.
+   THE CREDIT LINE UNDER THE STAGE IS ITEMIZED NOW, and the retune that put it there is what
+   this constant's 232px residual records (see the list below). Before it, the credit's ~48px
+   sat outside the arithmetic and the fit had shrunk to 1px: the last control's bottom edge
+   read 869 of 900 at 1440×900 and 799 of 800 at 1280×800, with the REGION rounds tighter
+   still (899 of 900 at 1440×900, where a narrow frame is cap-bound while the full map is
+   width-bound). Those are the numbers the retune answers, not the current state — the current
+   state is measured in this PR's own run and recorded with the sample frames.
 
-   THOSE TWO NUMBERS ARE THE LOOSE CASE, and a fold measurement taken only on `/oyun/81-il`
-   (or `/oyun/bolge-bulma`, which draws the same full-country frame) reads the same 869. The
-   REGION rounds are the tight one: `/oyun/bolge-bolge-il/{bölge}` takes its aspect from the
-   region's own bbox, and at 1440×900 a narrow frame is CAP-bound where the full map is
-   width-bound — Ege at 1.165 renders a 573 × 492 stage against the full map's 1078 × 462, so
-   its last control sits 30px lower. Measured, same build, same run:
+   THE RULE THE EPISODE LEAVES BEHIND: the next change to this page's chrome re-measures both
+   mandated viewports FIRST, and adds the item to the list rather than leaving the constant
+   alone as a side effect of a layout fix. That is exactly how 48px went missing.
 
-     1440 × 900   81-il / bölge-bulma   821 → 869      bölge-bölge-il/ege   850 → 899
-     1280 × 800   81-il / bölge-bulma   750 → 799      bölge-bölge-il/ege   750 → 799
-
-   At 1280×800 the cap binds in both modes, so the two coincide; at 1440×900 they do not, and
-   the region rounds are the case the retune has to satisfy (CODE64-M6). Nothing is off-screen
-   in either — 899 of 900 is still a fit, by 1px.
-
-   WHAT THE CONSTANT DOES NOT COVER, ITEM TWO: NARROW WIDTHS. It is a desktop-layout
+   WHAT THE CONSTANT DOES NOT COVER: NARROW WIDTHS. It is a desktop-layout
    measurement. The mobile-header disclosure keeps the header at ~56px from 320px upward. The
    build used to fit `/oyun/81-il` with no document scroll at 390×844; with the credit line
    below the stage it now scrolls 24px there (55px at 360×800), while the interactive block
    still sits well above the fold (last control at 561px of 844). That was an observed benefit,
-   never a proof that the 408px itemization below holds for every phone: the narrow-layout head
+   never a proof that the 456px itemization below holds for every phone: the narrow-layout head
    slot and answer pool have not been exhaustively re-measured against it. Until they are,
    keep the cap-release threshold conservative instead of treating phone fit as guaranteed.
    The question block itself was checked before this header change at every width from 320px
@@ -108,7 +94,7 @@
    THE CONSTANT, ITEMIZED (measured on the running build; every line reproducible). Three
    addends are read from custom properties instead of being retyped: `--header-height` is an
    existing global token, and the two slot heights are declared in `game-screen.module.css`
-   next to the slots that reserve them. What is left is the 184px residual below, which sums
+   next to the slots that reserve them. What is left is the 232px residual below, which sums
    EXACTLY — check it before you change it:
 
      header bottom border          1   (--header-height is the 56px box; the border is extra)
@@ -123,12 +109,28 @@
      .frame padding-bottom        20
      .frame border-bottom          1
      action slot margin-top       16
+     credit line under the stage  48   (6 + 2 x 16.13 + 10 — see `.attribution`)
      slack                        11
                                  ---
-                                  184
+                                  232
 
    Plus the three variables: 56 (header) + 116 (head slot) + 52 (action row) = 224.
-   Total 408, against 397px of real chrome — 308 above the stage, 89 below it.
+   Total 456.
+
+   THE 48 IS THE ITEM THE PREVIOUS 184 DID NOT COVER (→ DEC 2026-08-17g, SPEC §8). The design
+   tour moved the ODbL/JRC credit out of the stage and into the frame, and the constant was
+   deliberately left alone at the time rather than retuned as a side effect of a layout fix —
+   which is why the fit had shrunk to 1px on an 800px-tall screen. Adding the line the chrome
+   actually gained restores the margins that existed before it: predicted 869 -> ~851 at
+   1440x900 and 799 -> ~751 at 1280x800, both re-measured on this PR's run.
+
+   THE ZOOM CLUSTER ADDS NOTHING TO THIS LIST ABOVE 64rem, where it is an overlay: out of
+   flow, zero height. Below that breakpoint it is a row in the frame's flow, and the stage is
+   then sized by one of two models — the phone formula further down for a COUNTRY round,
+   which carries its own constant, and this list for a REGION round, which ruling O4 keeps on
+   the desktop model at every width. The region round is therefore the one frame that has to
+   pay for the row out of this constant, and `--game-stage-zoom-row` is where it does
+   (review CODE69-I1; the phone block sets it, everything else leaves it at zero).
 
    The 11px of slack covers sub-pixel rounding and small chrome drift. It does NOT cover the
    question wrapping to a second line: at ≥1280px the question is 2.4rem/1.15, so a wrapped
@@ -136,20 +138,27 @@
    strings do not wrap in either locale (measured); if a longer one is ever added, the head
    slot's own reservation is what has to move, not this slack.
 
-   RELEASING THE CAP ON SHORT VIEWPORTS. Below ~648px of viewport height the cap can no
-   longer buy a fit worth having: it would hand back a map under 240px tall while the column
-   still scrolls — a smaller map AND a scrollbar, which is worse than the uncapped layout on
-   both counts (a landscape phone, or a desktop window at 200% zoom, lands here). So at that
-   point the cap steps aside entirely and the map goes back to filling the column. The
-   breakpoint is 240px (the smallest map worth showing) + 408px (the constant above) = 648.
-   Crossing it is a step, not a slide (240px of map at 648, full column at 647) — that is
+   RELEASING THE CAP ON SHORT VIEWPORTS. Below the threshold below, the cap can no longer buy
+   a fit worth having: it would hand back a map under 240px tall while the column still
+   scrolls — a smaller map AND a scrollbar, which is worse than the uncapped layout on both
+   counts (a landscape phone, or a desktop window at 200% zoom, lands here). So at that point
+   the cap steps aside entirely and the map goes back to filling the column. The threshold is
+   240px (the smallest map worth showing) + the constant above, and it MOVES WITH THAT
+   CONSTANT — it was left behind at 648 once already, while the constant went from 408 to 456
+   (review CODE69-M1). Today: 240 + 456 = 696, so the cap is released at 695 and below, and
+   240 + 456 + 52 = 748 for the region round below 64rem that also pays for the zoom row.
+   Crossing it is a step, not a slide (240px of map at 696, full column at 695) — that is
    inherent to releasing a cap, and it is only ever crossed by resizing a window, never by
    scrolling, which is precisely why `svh` above matters. */
 .stage {
   --game-stage-aspect: 2.331;
+  /* Zero everywhere the zoom cluster is an overlay; the phone block hands the region round
+     its 52px. Named rather than folded into the residual so the itemized list above stays
+     the whole of the desktop model. */
+  --game-stage-zoom-row: 0px;
   --game-stage-cap: calc(
     100svh - var(--header-height) - var(--game-head-slot, 116px) - var(--game-action-row, 52px) -
-      184px
+      232px - var(--game-stage-zoom-row)
   );
   position: relative;
   aspect-ratio: var(--game-stage-aspect);
@@ -157,13 +166,21 @@
   margin-inline: auto;
 }
 
-/* Below the breakpoint the cap has no job left (see above): the map takes the full column
-   again and the page scrolls, which is what it did before the cap existed. */
-@media (max-height: 647px) {
+/* Below the threshold the cap has no job left (see above): the map takes the full column
+   again and the page scrolls, which is what it did before the cap existed. The region round's
+   own threshold — 52px later, because its constant is 52px larger below 64rem — sits with the
+   rest of the phone rules at the end of this file. */
+@media (max-height: 695px) {
   .stage {
     width: 100%;
   }
 }
+
+/* The stage's PHONE sizing model and the chrome placement that goes with it live at the END
+   of this file, with the rest of the responsive overrides — they have to come after the base
+   rules they adjust, and two of them were silently reset by a later `margin` shorthand before
+   they did. Search "THE PHONE STAGE".
+*/
 
 .svg {
   display: block;
@@ -666,11 +683,81 @@
   display: block;
 }
 
+/* ---- THE ZOOM CLUSTER (→ DEC 2026-08-17g md. 3; markup note in `game-map.tsx`) -----------
+   These two classes are handed to `MapZoomPan` as its layer/controls classes, so the shared
+   overlay rules in `map.module.css` are untouched and `/dunya` renders exactly what it always
+   has. The buttons themselves still come from that file — only where the cluster sits is the
+   game's business.
+
+   BUTTONS STAY 40x40 (the shared `.zoomButton`). DESIGN.md §5 offers 44x44 to a control with
+   room, and the row has the room; the 4px is spent on the vertical budget instead, which on a
+   568px-tall phone is the scarcer of the two. 40 is what shipped, so this is not a regression
+   in either direction, and every button clears the 24px AA floor with 16px to spare. */
+.zoomLayer {
+  display: flex;
+  justify-content: flex-end;
+  /* The `auto` left margin is in the SHORTHAND rather than in the phone block below it,
+     because a later `margin` shorthand would silently reset it — which it did, and the row
+     rendered left-aligned under the credit until the frame was measured.
+     THE 4px AT THE BOTTOM IS THE FOCUS RING (review A11Y69-M2). When the cluster is the
+     frame's last line, `.frame { overflow: hidden }` clips whatever sits below the border box
+     — and `.zoomButton:focus-visible` draws a 2px outline at a 2px offset, i.e. exactly 4px
+     out. Without this the ring rendered on three sides for a keyboard player at 320px. From
+     64rem up the overlay block below resets the whole shorthand, so it costs that layout
+     nothing. */
+  margin: 8px 14px 4px auto;
+}
+
+.zoomControls {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+/* From the breakpoint up the cluster goes back to being an overlay — measured occlusion there
+   is 0 of 81 at 1440 and 1 of 81 at 768, and the vertical budget is what is actually scarce
+   (the itemized cap above). It is anchored to the FRAME rather than to the stage, which is
+   also the better answer on a region round: there the stage is centred and much narrower than
+   the panel, so a stage-anchored cluster floated in the middle of the parchment. The layer is
+   sized to its own content rather than spanning the map, so it needs no `pointer-events`
+   dance to let clicks through — there is nothing under it but the panel's own corner. */
+@media (min-width: 64rem) {
+  .zoomLayer {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    margin: 0;
+  }
+
+  .zoomControls {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
 /* Grab cursors while the shared zoom/pan island is dragging the stage — the game map's
    own copy of the rules map.module.css applies to `.mapRoot` (different container, same
-   `data-panning` contract from MapZoomPan). */
+   `data-panning` contract from MapZoomPan).
+
+   WHO GETS THE VERTICAL FINGER (→ SPEC §6.4). `touch-action: none` over a 136px strip costs
+   nothing; over the 300px stage the phone now draws it would make half the screen refuse to
+   scroll the page. `pan-y` is the resting state — while every latitude is on screen a
+   vertical drag moves the map by exactly nothing, so the page may have it, and the map still
+   gets the horizontal drags and the pinch. `pan-y` disallows the browser's own pinch-zoom, so
+   a two-finger gesture normally reaches us — but not unconditionally (review CODE69-M7): a
+   pinch whose centroid drifts upward can still be claimed by the scroller, which cancels our
+   pointers, and the player repeats the gesture. The trade is deliberate; the alternative is a
+   300px strip of the screen that refuses to scroll the page.
+   `data-vertical-pan` is written by the island the moment the view IS vertically cropped,
+   and then the map takes the finger back.
+   `/dunya` is unaffected: its stylesheet declares `touch-action: none` unconditionally and
+   never mentions this attribute. */
 .stage .svg[data-zoomable] {
   cursor: grab;
+  touch-action: pan-y;
+}
+
+.stage .svg[data-zoomable][data-vertical-pan] {
   touch-action: none;
 }
 
@@ -722,4 +809,169 @@
    identical while the TEXT stops running together for a screen reader and for copy-paste. */
 .attributionLine {
   display: block;
+}
+
+/* ---- THE PHONE STAGE (→ DEC 2026-08-17g md. 1) -------------------------------------------
+   Below the repo's single breakpoint the stage stops taking the map's own shape and takes a
+   shape of its own: the owner ruled 1.2, against Türkiye's 2.331. The map is then cropped
+   east-west and every latitude stays on screen, which is where the scale comes from —
+   measured at 360px wide: 318 x 136.4 and 0.318 px/uu today, 360 x 300 and 0.699 after, so
+   Yalova's short side goes from 5.2px to 11.5px. Half the country's width is off screen at
+   rest and the player pans; that trade is the ruling.
+
+   WHY THE DESKTOP MODEL CANNOT BE REUSED HERE. It caps the WIDTH and lets the ratio turn that
+   into a height, which is right when the map may be narrower than its column. On a phone it
+   is exactly wrong: the same arithmetic at a 1.2 target hands a 568px-tall phone a 130px-wide
+   map inside a 360px column — a smaller map AND empty gutters, on the screen the whole change
+   exists for. So the phone caps the HEIGHT and lets the ASPECT relax.
+
+   THE FORMULA, and each of its three parts is load-bearing:
+
+     height = max( 100cqw / 2.331 , min( 100cqw / 1.2 , cap ) )
+
+   · `100cqw / target` is the ruled 1.2 box. `cqw` (hence `container-type` on `.frame`) rather
+     than `vw`: a scrollbar would make `vw` overstate the column by its own width.
+   · `min(…, cap)` keeps the round playable on a short screen — the question, the map and the
+     action row have to be on the fold together, which is the same thing the desktop cap buys
+     and the same subtraction, with the phone's own chrome.
+   · `max(100cqw / 2.331, …)` is the FLOOR, and it is what makes this change unable to
+     regress: 2.331 is the map's own ratio, and at that ratio the crop is zero, so a viewport
+     too short for anything better lands exactly on today's full-width strip instead of
+     something worse. The degradation is continuous — 360 x 800 gives the full 1.2 box, 700
+     gives 1.46, 648 gives 1.85, and everything below settles on 2.331.
+
+   One formula, no new breakpoint. DESIGN.md §4 asks for a measurement in both locales before
+   a second one is added; this needs none because the curve is continuous.
+
+   REGION ROUNDS ARE EXCLUDED (`data-game-frame="subset"`, ruling O4). Their frame already
+   comes from their own bounds — measured 2.55x the 81-il scale — and cropping it would push
+   part of the region the question is ABOUT off screen. They keep the desktop model at every
+   width, which is what they have today. */
+@media (max-width: 63.999rem) {
+  .frame {
+    /* Full bleed (design tour A2 mockup): the container's 20px of inline padding is a known
+       constant, so undoing it needs no viewport arithmetic. The side border and the radius go
+       with it — a rounded corner against the screen edge is not a corner. */
+    container-type: inline-size;
+    margin-inline: -20px;
+    border-inline: 0;
+    border-radius: 0;
+
+    /* THE CREDIT AND THE ZOOM ROW SHARE A LINE WHEN THEY FIT. Both are chrome under the map,
+       and stacking them unconditionally spends ~48px of the fold twice on a screen that has
+       none to spare (a 568px-tall phone puts the action row under the fold either way, so
+       every pixel here is one the player has to scroll for). `flex-wrap` decides per width
+       with no second breakpoint: at 360 they sit on one line, at 320 the credit takes the
+       line and the buttons drop below it, right-aligned. The stage keeps a line of its own,
+       by one of the two routes below — so nothing can ever come up beside the map. */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* HOW THE MAP GETS ITS OWN LINE, and why it takes two rules rather than one
+     (review CODE69-I1). A definite `flex-basis` REPLACES `width` in main-size resolution, so
+     `flex: 0 0 100%` on every stage silently switched off `--game-stage-cap` below this
+     breakpoint — including for the region rounds ruling O4 explicitly keeps ON the desktop
+     model. Measured cost at 768x1024: Ege rendered 768 x 659 instead of its capped
+     717.6 x 616, and the action row went under the fold, which is the complaint the cap
+     exists to fix.
+
+     A COUNTRY round's phone width IS 100%, so the basis only states what the width already
+     says and nothing is lost. A REGION round keeps an auto basis and therefore its capped
+     width; the line break then comes from the credit, which is given a full-width basis after
+     a subset stage. The stage's own `margin-inline: auto` centres it on the line it now owns
+     alone, exactly as it does above the breakpoint. */
+  .stage {
+    flex: 0 0 100%;
+  }
+
+  .stage[data-game-frame="subset"] {
+    flex: 0 1 auto;
+    /* The row the desktop constant does not itemize (see the list at the top of this file):
+       here the cluster is in flow, 8px margin + 40px button + 4px focus-ring margin. */
+    --game-stage-zoom-row: 52px;
+  }
+
+  .stage[data-game-frame="subset"] ~ .attribution {
+    flex-basis: 100%;
+  }
+
+  .stage[data-game-frame="country"] {
+    --game-stage-target-aspect: 1.2;
+    /* THE CROP STOPS PAYING FOR ITSELF ONCE THE MAP IS BIG ENOUGH, and this is the term that
+       says so. 300px is the ruled 1.2 box at 360px — the reference phone width DESIGN.md §4
+       makes mandatory — so at 320 and 360 the target is met exactly and this term is inert.
+       Above that it binds, and every further pixel of width goes into showing MORE of the
+       country at the same scale instead of into a taller box: at 430 the stage is 430 x 300
+       (0.70 px/uu, 61% of the width visible) against 360's 360 x 300 (0.70, 51%). By 700px
+       the strip alone is 300px tall, the floor takes over, and the crop is gone — which is
+       why a 768px tablet keeps the whole country, as it does today. The alternative was a
+       second breakpoint, and DESIGN.md §4 asks for a measurement in both locales before one
+       is added; this needs none. */
+    --game-stage-max-height: 300px;
+    /* The phone's own chrome constant, measured on the running build the same way the desktop
+       one is (this PR's run, 360 x 800): 278.7px above the stage and 133.3px below it, plus
+       the zoom row this change adds. Minus the three variables (56 + 116 + 52) that are
+       subtracted by name, the residual is 240 — which, like the desktop list, is a MEASURED
+       number and not a budget: re-measure it before changing it. The one derived addend is
+       the zoom row's last 4px, which is a declared margin (see `.zoomLayer` below) rather
+       than a measurement, so it moves the total by exactly its own size.
+
+         above the stage             278.7   (header + page top + back row + h1 + head slot)
+         below the stage             133.3   (frame border + credit band + action row + gap)
+         zoom row, when it wraps      52     (8 margin + 40 button + 4 focus-ring margin)
+                                    ------
+                                     464   - (56 + 116 + 52) = 240 */
+    --game-stage-cap-phone: calc(
+      100svh - var(--header-height) - var(--game-head-slot, 116px) - var(--game-action-row, 52px) -
+        240px
+    );
+    width: 100%;
+    /* `aspect-ratio` is inert once both width and height are definite; the property stays
+       declared above because the desktop model still reads it, and `--game-stage-aspect` is
+       still the floor's operand here. */
+    height: max(
+      calc(100cqw / var(--game-stage-aspect)),
+      min(
+        calc(100cqw / var(--game-stage-target-aspect)),
+        var(--game-stage-max-height),
+        var(--game-stage-cap-phone)
+      )
+    );
+  }
+
+  /* The credit takes the rest of the line and wraps the buttons off it when it cannot hold
+     its own basis. Measured: at 768 the two share a line and save 48px of chrome; at 320 and
+     360 the credit is three to four lines whatever width it gets, so sharing would only trade
+     the buttons' 40px for the same amount of extra wrapping — the browser reaches that
+     conclusion by itself from this basis, at every width, with no second breakpoint. */
+  .attribution {
+    flex: 1 1 200px;
+    margin-block: 6px 8px;
+  }
+}
+
+/* The region round's own cap release. Its constant is 52px larger than the desktop one below
+   this breakpoint (`--game-stage-zoom-row`), so the height at which the cap stops buying a fit
+   worth having moves with it: 240 + 456 + 52 = 748. Above 64rem the cluster is an overlay
+   again and the shared release at 695 is the whole rule. */
+@media (max-width: 63.999rem) and (max-height: 747px) {
+  .stage[data-game-frame="subset"] {
+    width: 100%;
+  }
+}
+
+/* A viewport too short to hold the round anyway (the desktop cap already steps aside here —
+   see the release rule above). The two margins the map's own chrome owns are tightened to
+   give the action row back what they can; the buttons keep their 40px, because a control that
+   is hard to hit is not a saving. */
+@media (max-width: 63.999rem) and (max-height: 695px) {
+  .attribution {
+    margin-block: 4px 4px;
+  }
+
+  .zoomLayer {
+    margin-top: 4px;
+  }
 }

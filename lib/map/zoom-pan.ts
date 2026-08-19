@@ -22,6 +22,88 @@ export const MIN_ZOOM = 1;
 export const MAX_ZOOM = 12;
 
 /**
+ * How far a rendered box's aspect may drift from the world's before this module treats the
+ * two as DIFFERENT shapes (→ DEC 2026-08-17g md. 1).
+ *
+ * A layout box is measured in device pixels and rounded; `/dunya` renders its `<svg>` with
+ * `height: auto`, so its box carries the viewBox's own ratio to within a rounding error, and
+ * the game's region rounds size their stage from the very frame they draw. Without a
+ * tolerance those surfaces would "crop" themselves by a hundredth of a percent — a real
+ * viewBox string change on a page this work is not allowed to touch. Half a percent is far
+ * below any deliberate reframing (the phone stage asks for 1.2 against the country's 2.331,
+ * a 94% difference) and far above sub-pixel noise.
+ */
+export const ASPECT_EPSILON = 0.005;
+
+/** Aspect ratio (width ÷ height) of a viewBox rectangle. Module-local: `lib/game/map-bbox.ts`
+ *  already exports `aspectOfViewBox` for callers outside this file (review CODE69-M3). */
+function aspectOf(box: ViewBox): number {
+  return box.w / box.h;
+}
+
+/**
+ * The 1× reference rectangle for a stage whose aspect differs from the world's
+ * (→ DEC 2026-08-17g md. 1/md. 2).
+ *
+ * Two rectangles are needed once the stage stops carrying the map's own shape, and they are
+ * NOT interchangeable:
+ *
+ * - `"cover"` — the largest rectangle of `aspect` that fits INSIDE the world. This is what
+ *   the phone opens with: the country is cropped east–west, every latitude stays on screen,
+ *   and the scale is the whole point of the taller stage (360 × 300 ⇒ 514.8 × 429 user
+ *   units ⇒ 0.699 px/uu against today's 0.36). It is exactly the rectangle
+ *   `preserveAspectRatio="xMidYMid slice"` paints before any script runs, which is why
+ *   hydration moves nothing.
+ * - `"contain"` — the smallest rectangle of `aspect` that CONTAINS the world. This is what
+ *   the reset button returns to: the whole country visible, with backdrop above and below
+ *   rather than a cropped edge (owner ruling: "sıfırla = tüm ülke").
+ *
+ * Both are centred on the world's centre. When the stage already carries the world's shape —
+ * `/dunya` and every region round — the two collapse onto the world itself and this whole
+ * layer is inert (see `ASPECT_EPSILON`).
+ */
+export function fitViewToAspect(
+  world: ViewBox,
+  aspect: number,
+  mode: "cover" | "contain",
+): ViewBox {
+  if (!Number.isFinite(aspect) || aspect <= 0) return { ...world };
+  const worldAspect = aspectOf(world);
+  if (Math.abs(aspect - worldAspect) / worldAspect < ASPECT_EPSILON) return { ...world };
+
+  // One branch per mode, both expressed as "which side is the binding one".
+  const h =
+    mode === "cover" ? Math.min(world.h, world.w / aspect) : Math.max(world.h, world.w / aspect);
+  const w = h * aspect;
+  return {
+    x: world.x + world.w / 2 - w / 2,
+    y: world.y + world.h / 2 - h / 2,
+    w,
+    h,
+  };
+}
+
+/**
+ * The smallest rectangle containing every box given, or `null` for an empty list — the
+ * camera's target when a shown answer covers several shapes (a bölge is seven to fourteen
+ * provinces, → DEC 2026-08-17g md. 4).
+ */
+export function unionBox(boxes: readonly ViewBox[]): ViewBox | null {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const box of boxes) {
+    if (box.x < minX) minX = box.x;
+    if (box.y < minY) minY = box.y;
+    if (box.x + box.w > maxX) maxX = box.x + box.w;
+    if (box.y + box.h > maxY) maxY = box.y + box.h;
+  }
+  if (!Number.isFinite(minX) || !Number.isFinite(minY)) return null;
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+/**
  * Click-vs-drag disambiguation threshold (SPEC §4, amended owner-ruled 2026-07-18). A
  * pointer gesture is a real click (→ let the country `<a>` navigate) purely on MOVEMENT:
  * if it barely moved it navigates, no matter how long it was held. Anything past the
@@ -59,24 +141,45 @@ export function clampZoom(zoom: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 }
 
-/** Current zoom of a view relative to the world-fit rectangle (world.w / view.w). */
-export function zoomOf(world: ViewBox, view: ViewBox): number {
-  return world.w / view.w;
+/**
+ * Current zoom of a view relative to a REFERENCE rectangle (reference.w / view.w).
+ *
+ * The reference is the world on every surface whose stage carries the map's own shape, and
+ * the `"contain"` fit of the stage's aspect where it does not (`fitViewToAspect`). The
+ * signature is unchanged because the reference was always the first argument — callers pass
+ * a different rectangle, not a different function.
+ */
+export function zoomOf(reference: ViewBox, view: ViewBox): number {
+  return reference.w / view.w;
 }
 
 /**
- * Clamp a view's origin so the rectangle stays fully inside the world bbox (SPEC §1 —
- * "no pan into empty space beyond the world"). Width/height are assumed already ≤ world
- * (guaranteed by `clampZoom`, zoom ≥ 1), so `maxX/maxY ≥ world origin` and the range is
- * non-empty; at 1× the view is forced back onto the world origin.
+ * Clamp a view's origin so the rectangle stays inside the world bbox (SPEC §1 — "no pan into
+ * empty space beyond the world"), per axis.
+ *
+ * THE OVERSIZED CASE IS NEW and it is what makes the reset view legal (→ DEC 2026-08-17g
+ * md. 4). Until the stage was allowed a shape of its own, a view could never be larger than
+ * the world on either axis: `clampZoom` floors the zoom at 1× and 1× WAS the world. The
+ * "whole country in a 1.2 stage" rectangle is taller than the world, and the old arithmetic
+ * answered that by pinning it to the world's bottom edge — the country would have sat glued
+ * to the top of the box with all the empty space below it. An axis whose view is at least as
+ * large as the world is CENTRED instead, exactly as `viewToIncludeShape` already centres a
+ * shape bigger than the viewport.
+ *
+ * The equal case (view size === world size) resolves to the world's own origin in BOTH the
+ * old and the new arithmetic, which is why every surface whose stage carries the map's own
+ * shape is untouched by this change.
  */
 export function clampPan(view: ViewBox, world: ViewBox): ViewBox {
-  const maxX = world.x + world.w - view.w;
-  const maxY = world.y + world.h - view.h;
+  const axis = (start: number, size: number, worldStart: number, worldSize: number): number =>
+    size >= worldSize
+      ? worldStart + worldSize / 2 - size / 2
+      : Math.min(worldStart + worldSize - size, Math.max(worldStart, start));
+
   return {
     ...view,
-    x: Math.min(maxX, Math.max(world.x, view.x)),
-    y: Math.min(maxY, Math.max(world.y, view.y)),
+    x: axis(view.x, view.w, world.x, world.w),
+    y: axis(view.y, view.h, world.y, world.h),
   };
 }
 
@@ -85,6 +188,15 @@ export function clampPan(view: ViewBox, world: ViewBox): ViewBox {
  * viewport position (fracX, fracY) stationary — this is what makes wheel/double-click
  * zoom "anchor to the cursor" (SPEC §2). fracX/fracY ∈ [0, 1] measured from the view's
  * top-left. Result is clamped to the zoom range AND panned back inside the world bbox.
+ *
+ * `base` is the 1× REFERENCE rectangle and defaults to the world, which is what every caller
+ * passed before the stage was allowed a shape of its own — so the default path is the
+ * arithmetic this function has always run, character for character. On a surface whose stage
+ * has a different aspect the reference is `fitViewToAspect(world, aspect, "contain")`, and
+ * splitting the two arguments is the whole of the aspect-awareness: the SIZE of a view comes
+ * from the reference, the BOUNDS it may not leave come from the world. Rebuilding the size
+ * from the world (as this did) is what would letterbox a 1.2 stage — the view would keep the
+ * country's 2.331 shape inside a box that no longer has it.
  */
 export function zoomAtPoint(
   view: ViewBox,
@@ -92,10 +204,11 @@ export function zoomAtPoint(
   targetZoom: number,
   fracX: number,
   fracY: number,
+  base: ViewBox = world,
 ): ViewBox {
   const z = clampZoom(targetZoom);
-  const w = world.w / z;
-  const h = world.h / z;
+  const w = base.w / z;
+  const h = base.h / z;
   // World-space point currently sitting under (fracX, fracY) of the viewport.
   const px = view.x + fracX * view.w;
   const py = view.y + fracY * view.h;
