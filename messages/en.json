@@ -77,7 +77,7 @@
     "gameBody": "Three modes: find the region, find the province, find provinces region by region.",
     "gameCta": "Open the game",
     "toolsHeading": "Measure on the map",
-    "toolsBody": "Work out the great-circle distance between two points, or along a route with several stops.",
+    "toolsBody": "Measure the great-circle distance between two points, or a route with several stops.",
     "toolsCta": "Open the tools"
   },
   "Map": {
@@ -568,7 +568,6 @@
       "download": "Download PNG",
       "pointsLabel": "Points placed",
       "pointName": "Point {index}: {lat} {lon}",
-      "pointRemoveHint": "Press Enter to delete it.",
       "pointRemove": "Delete point {index}",
       "legName": "Leg {index}: {distance} kilometres",
       "resultEmpty": "A measurement needs two points.",
@@ -577,8 +576,9 @@
       "resultRoute": "A route with {count} points, {distance} kilometres in total.",
       "limitReached": "The limit is {limit} points. Delete one to place another.",
       "outsideFrame": "This point is outside the map frame.",
+      "errorNoProvince": "No province selected. Pick one from the list.",
       "errorEmpty": "The coordinate field is empty. Type a latitude and longitude as 39.92, 32.85.",
-      "errorUnreadable": "I could not read that coordinate. Type it as 39.92, 32.85 or 39°55'12\"N 32°51'00\"E.",
+      "errorUnreadable": "That coordinate could not be read. Type it as 39.92, 32.85 or 39°55'12\"N 32°51'00\"E.",
       "errorLatitude": "Latitude cannot exceed 90 degrees. Correct the value.",
       "errorLongitude": "Longitude cannot exceed 180 degrees. Correct the value.",
       "scaleBar": "Linear scale: {km} kilometres",

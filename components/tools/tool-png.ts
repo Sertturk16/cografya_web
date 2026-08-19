@@ -254,5 +254,9 @@ function triggerDownload(blob: Blob, fileName: string): void {
   window.document.body.append(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  // Revoked on the NEXT task, not on this line: the download's own fetch of the blob URL is
+  // queued rather than synchronous, and a browser that resolves it after the click task would
+  // produce no file and no message — `downloadToolPng` resolves normally, so the caller's
+  // `downloadFailed` never fires (→ PR #73 review `CODE73-M5`).
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }

@@ -304,15 +304,20 @@
      Referenced by scroll-margin-top on deep-link anchor targets so a followed fragment
      lands below the opaque sticky header, not underneath it.
 
-     TRUE BELOW 64rem BECAUSE THE HEADER IS FORCED TO ONE ROW, not because it happens to fit.
-     At and above 64rem wrapping is allowed and the row currently fits with about 680px of
-     measured slack. The header used to wrap to 176.8px at ≤430px and 104.2px at 768px, so
+     TRUE BELOW THE NAV-COLLAPSE BREAKPOINT BECAUSE THE HEADER IS FORCED TO ONE ROW, not
+     because it happens to fit. At and above it wrapping is allowed and the row fits, but the
+     margin is thin and MUST be re-measured whenever the row's contents change: `DESIGN.md` §4
+     carries the current measurement — 1051.2px needed in Turkish against 1056px available,
+     4.8px of slack — and owns the breakpoint's number, which is why neither is written out
+     here. (This paragraph read "about 680px of measured slack" until the eighth nav link;
+     the slack was gone and the sentence would have licensed skipping the next measurement,
+     which is the PR #56 defect arriving from stale evidence → PR #73 review `FENER73-M1`.)
+     The header used to wrap to 176.8px at ≤430px and 104.2px at 768px, so
      a companion `--header-height-wrapped: 11.125rem` carried that measurement for offsets
      (PR #44 review CR-I2). The nav has moved into a disclosure panel that is out of flow in
-     both states AND `site-header.module.css` sets `flex-wrap: nowrap` below 64rem, so the
-     compact header cannot break: a single ~55.7px row on a phone. At and above 64rem wrapping
-     is allowed, but the row currently fits at 57.5px. One value covers both and the companion
-     token is RETIRED.
+     both states AND `site-header.module.css` sets `flex-wrap: nowrap` below the breakpoint, so
+     the compact header cannot break: a single ~55.7px row on a phone. Above it the row fits at
+     57.5px. One value covers both and the companion token is RETIRED.
 
      The `nowrap` half is load-bearing, not tidiness. Without it the row still wrapped below
      351.5px (the width at which the brand, the search trigger and the menu button stop

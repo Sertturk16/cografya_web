@@ -1,5 +1,7 @@
 /* CBS tool island — the measuring surface's overlay and its control strip.
-   Terra tokens only (`DESIGN.md` §2): every colour here is a `var(--token)` reference and the
+   No hardcoded BRAND hex (`DESIGN.md` §2); the one neutral literal is `#fff` for the field
+   background, as in the search and nav sheets. Every colour that carries identity is a
+   `var(--token)` reference, and the
    measurement line is deliberately a CHROME colour, not a data ramp. The line and the point
    markers show INTERFACE STATE (where you clicked), they do not encode a value, so §6.1/1's
    "brand ≠ data" boundary puts them on the brand side; `--map-1…6` stays reserved for the
@@ -142,6 +144,15 @@
   flex: none;
   min-height: 44px;
   padding: 0 16px;
+}
+
+/* The island's single polite live region. It reproduces `.controls`' own column rhythm so the
+   measurement line and the out-of-frame note sit exactly where they sat before the region
+   wrapped them (→ PR #73 review `A11Y73-I1`): same 14px gap, no box of its own. */
+.live {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .result {

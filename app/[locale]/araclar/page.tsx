@@ -120,7 +120,9 @@ export default async function ToolsHubPage({ params }: PageProps) {
         </div>
       )}
 
-      <ul className={styles.toolGrid}>
+      {/* `role="list"` because `list-style: none` drops list semantics in Safari/VoiceOver —
+          the repo's settled treatment on every card grid it already ships. */}
+      <ul className={styles.toolGrid} role="list">
         {tools.map((tool) => (
           <li key={tool.pathname} className={`card ${styles.toolCard}`}>
             {/* The card's own name is the link: the anchor text names the destination, which

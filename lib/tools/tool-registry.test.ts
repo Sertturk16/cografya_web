@@ -58,6 +58,19 @@ describe("tool registry", () => {
     }
   });
 
+  it("declares no tool route the register does not know about", () => {
+    // The direction the other three assertions leave open (→ PR #73 review `TEST73-M1`). A
+    // `/araclar/…` pathname in the routing table with no register entry and no page passes
+    // everything else here — and it is the ENABLING half of the hub-card path: the hub's card
+    // list is a hand-written tuple in `app/`, outside vitest's collection, and a card's `href`
+    // only has to be a DECLARED `AppPathname` to type-check. Close this direction and a card
+    // cannot point at a route that has no page (`SEO-POLICY.md` A4/3, §B8 8.8).
+    const declared = Object.keys(routing.pathnames)
+      .filter((pathname) => pathname.startsWith(`${TOOL_HUB_PATHNAME}/`))
+      .sort();
+    expect(declared).toEqual(TOOL_REGISTRY.map((tool) => tool.pathname).sort());
+  });
+
   it("matches the pages on disk exactly, in both directions", () => {
     expect(pageSegments).toEqual(TOOL_REGISTRY.map((tool) => trSegmentOf(tool.pathname)).sort());
   });
@@ -88,6 +101,13 @@ describe("tool registry", () => {
   it("keeps every slug inside the transliteration set GLOSSARY §5 allows", () => {
     for (const tool of TOOL_REGISTRY) {
       expect(trSegmentOf(tool.pathname)).toMatch(/^[a-z0-9-]+$/);
+    }
+    // The HUB's own segment, in both locales (→ review `TEST73-M2`). `trSegmentOf` never ran
+    // over it, so `"/araclar": { tr: "/araçlar" }` would have passed every assertion in this
+    // file — a non-ASCII segment in an indexable URL is the thing GLOSSARY §5 exists to stop.
+    for (const locale of routing.locales) {
+      const hub = getPathname({ locale, href: TOOL_HUB_PATHNAME });
+      expect(hub.slice(hub.lastIndexOf("/") + 1)).toMatch(/^[a-z0-9-]+$/);
     }
   });
 

@@ -120,6 +120,7 @@ describe("the surfaces that consume the layer", () => {
     "../map/turkey-map-section.tsx",
     "../game/game-map.tsx",
     "../marine/marine-map.tsx",
+    "../tools/tool-map.tsx",
   ] as const;
 
   /**
@@ -134,13 +135,17 @@ describe("the surfaces that consume the layer", () => {
   const LAYERED_SURFACES = ["../map/turkey-map-section.tsx", "../game/game-map.tsx"] as const;
 
   it("is rendered by every file that draws the TR frame", () => {
-    // THREE files, FOUR surfaces: `game-map.tsx` serves both the full-country round and the
+    // FOUR files, FIVE surfaces: `game-map.tsx` serves both the full-country round and the
     // region rounds — same component, different viewBox — so the file count and the surface
     // count are deliberately not the same number.
     //
     // `/deniz` is the one that is easy to forget and the one where the omission reads worst:
-    // a lake-less Türkiye on the water page (→ DEC 2026-08-02k md. 4).
-    expect(SURFACES).toHaveLength(3);
+    // a lake-less Türkiye on the water page (→ DEC 2026-08-02k md. 4). The CBS tool map joined
+    // the list in PR #73 (review `TEST73-I3`), and it carries the same omission one step
+    // further: `components/tools/tool-png.ts` reads `[data-tool-water] path` for the export, so
+    // a layer dropped there ships a PNG that credits `Source: EC JRC/Google` for a layer the
+    // file does not contain.
+    expect(SURFACES).toHaveLength(4);
     for (const surface of SURFACES) {
       expect(code(sourceOf(surface))).toMatch(/<InlandWaterLayer[\s/>]/);
     }
@@ -164,7 +169,13 @@ describe("the surfaces that consume the layer", () => {
     expect(game).toMatch(/const isSubset = viewBox !== MAP_VIEWBOX;/);
     // The full-country surfaces must NOT clip: every body in the artifact is Turkish and the
     // whole country is on screen, so a clip there is ~57 kB of markup that changes no pixel.
-    for (const surface of ["../map/turkey-map-section.tsx", "../marine/marine-map.tsx"]) {
+    // The tool map is one of them — it draws `MAP_VIEWBOX` — so it is named here rather than
+    // left out of a list that claims to enumerate them.
+    for (const surface of [
+      "../map/turkey-map-section.tsx",
+      "../marine/marine-map.tsx",
+      "../tools/tool-map.tsx",
+    ]) {
       expect(code(sourceOf(surface))).not.toMatch(/\bclip=/);
     }
   });

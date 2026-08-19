@@ -34,13 +34,13 @@ type StaticPathname = Exclude<AppPathname, `${string}[${string}`>;
  * ## Why the message keys are NOT in here
  *
  * next-intl types message keys, and a key assembled from a registry field
- * (`t(\`hub.\${entry.id}Name\`)`) opts out of that check silently — the `/oyun` hub records
- * the same reasoning at its own card tuple. So the hub names its cards with literal keys and
- * uses this file for the parts a literal cannot carry: the route and the schema type.
+ * (`t(\`hub.\${stem}Name\`)`) opts out of that check silently — the `/oyun` hub records the
+ * same reasoning at its own card tuple. So the hub names its cards with literal keys and uses
+ * this file for the parts a literal cannot carry: the route and the schema type. There is
+ * deliberately no `id` field: it would be a key stem this file forbids assembling, and nothing
+ * read it (→ PR #73 review `SIMP73-M2`).
  */
 export interface ToolRegistryEntry {
-  /** Stable id — also the message-key stem inside `Tools` (`Tools.mesafe.*`). */
-  readonly id: string;
   /** The tool's own route, as declared in `i18n/routing.ts`. */
   readonly pathname: StaticPathname;
   /**
@@ -57,7 +57,6 @@ export interface ToolRegistryEntry {
 
 /** Distance measurement (`/araclar/mesafe-olcme` ↔ `/en/tools/distance`) — Faz-1's tool. */
 export const DISTANCE_TOOL = {
-  id: "mesafe",
   pathname: "/araclar/mesafe-olcme",
   learningResourceType: "Interactive tool",
 } as const satisfies ToolRegistryEntry;

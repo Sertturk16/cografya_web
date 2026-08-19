@@ -116,8 +116,38 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
   const [points, setPoints] = useState<readonly PlacedPoint[]>([]);
   const [draft, setDraft] = useState("");
   const [province, setProvince] = useState("");
-  const [error, setError] = useState<string | null>(null);
+
+  /**
+   * TWO error channels, not one (→ PR #73 review `A11Y73-I2`).
+   *
+   * `fieldError` belongs to the coordinate input and is the ONLY one wired to its
+   * `aria-invalid` / `aria-describedby`. `statusError` carries the tool-level messages — the
+   * point limit, an empty picker, a failed export — which are about the instrument and not
+   * about that field. With one shared string, placing a 21st point from the MAP marked an
+   * empty, untouched input invalid and described it with a remedy belonging to another
+   * control (WCAG 4.1.2 + 3.3.1).
+   */
+  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
   const nextKey = useRef(0);
+  const controlsRef = useRef<HTMLDivElement | null>(null);
+  const removeButtons = useRef(new Map<number, HTMLButtonElement>());
+  const focusAfterRemoval = useRef<number | "group" | null>(null);
+
+  /**
+   * The placed points, mirrored into a ref.
+   *
+   * The map's click listener is installed in an effect, so reading `points` from its closure
+   * would either go stale or re-install the listener on every point. The mirror is what lets
+   * the limit check — a side effect, because it shows a message — live OUTSIDE the state
+   * updater, which React requires to be pure (→ `A11Y73-I2`). `removePoint` reads it for the
+   * same reason: it needs the neighbouring row's key before the row is gone.
+   */
+  const pointsRef = useRef<readonly PlacedPoint[]>([]);
+  useEffect(() => {
+    pointsRef.current = points;
+  }, [points]);
 
   const letters: CardinalLetters = useMemo(
     () => ({ north: t("north"), south: t("south"), east: t("east"), west: t("west") }),
@@ -195,15 +225,19 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
 
   const addPoint = useCallback(
     (point: GeoPoint, source: PointSource) => {
-      setPoints((previous) => {
-        if (previous.length >= MAX_POINTS) {
-          setError(t("limitReached", { limit: MAX_POINTS }));
-          return previous;
-        }
-        setError(null);
-        nextKey.current += 1;
-        return [...previous, { key: nextKey.current, point, source }];
-      });
+      if (pointsRef.current.length >= MAX_POINTS) {
+        setStatusError(t("limitReached", { limit: MAX_POINTS }));
+        return;
+      }
+      setStatusError(null);
+      nextKey.current += 1;
+      const key = nextKey.current;
+      // The updater re-checks the cap and stays pure: the mirror above is read at event time,
+      // and the twenty-point ceiling is the one invariant that may not depend on when React
+      // happened to flush.
+      setPoints((previous) =>
+        previous.length >= MAX_POINTS ? previous : [...previous, { key, point, source }],
+      );
     },
     [t],
   );
@@ -212,6 +246,11 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
     if (!surface) return;
     const { svg } = surface;
     const onClick = (event: MouseEvent) => {
+      // A double-click is the map's OWN gesture — `MapZoomPan` zooms on it — and the browser
+      // delivers two ordinary `click` events before `dblclick`. Without this guard the reader
+      // who zooms in also gets two coincident points and an announced "0 kilometre" leg they
+      // never placed (→ `CODE73-I1`). It covers a triple-click too.
+      if (event.detail > 1) return;
       const matrix = svg.getScreenCTM();
       if (matrix === null) return;
       const local = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
@@ -222,18 +261,42 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
   }, [surface, addPoint]);
 
   const removePoint = useCallback((key: number) => {
+    // WHERE FOCUS GOES, decided before the row is gone (→ `A11Y73-I3`). The activated button
+    // unmounts with its `<li>`, so without this focus falls to `<body>` and a keyboard user
+    // re-traverses the whole page for every deletion — and this list is the ONLY keyboard
+    // deletion path the tool has (recorded deviation 4). The row that takes the deleted row's
+    // index inherits the focus, the row above it when the last one goes, and the labelled
+    // control group when the list empties: at zero points every action button is disabled,
+    // and a disabled button cannot hold focus.
+    const current = pointsRef.current;
+    const index = current.findIndex((placed) => placed.key === key);
+    const successor = index === -1 ? undefined : (current[index + 1] ?? current[index - 1]);
+    focusAfterRemoval.current = successor?.key ?? "group";
     setPoints((previous) => previous.filter((placed) => placed.key !== key));
-    setError(null);
+    setStatusError(null);
   }, []);
+
+  useEffect(() => {
+    const target = focusAfterRemoval.current;
+    if (target === null) return;
+    focusAfterRemoval.current = null;
+    if (target === "group") {
+      controlsRef.current?.focus();
+      return;
+    }
+    removeButtons.current.get(target)?.focus();
+  }, [points]);
 
   const undo = useCallback(() => {
     setPoints((previous) => previous.slice(0, -1));
-    setError(null);
+    setFieldError(null);
+    setStatusError(null);
   }, []);
 
   const clear = useCallback(() => {
     setPoints([]);
-    setError(null);
+    setFieldError(null);
+    setStatusError(null);
     setDraft("");
     setProvince("");
   }, []);
@@ -247,19 +310,27 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
         latitudeOutOfRange: t("errorLatitude"),
         longitudeOutOfRange: t("errorLongitude"),
       };
-      setError(messages[result.reason]);
+      setFieldError(messages[result.reason]);
       return;
     }
+    setFieldError(null);
     addPoint(result.point, "typed");
     setDraft("");
   }, [addPoint, draft, letters, t]);
 
   const submitProvince = useCallback(() => {
     const picked = findProvincePoint(provincePoints, province);
-    if (picked === null) return;
+    if (picked === null) {
+      // The placeholder is the select's INITIAL value, so this is the ordinary "pressed Ekle
+      // before opening the list" case rather than an impossible state. The sibling coordinate
+      // form answers the same action with `errorEmpty`; silence here left a screen-reader
+      // user unable to tell a skipped step from a broken tool (→ `A11Y73-I4`).
+      setStatusError(t("errorNoProvince"));
+      return;
+    }
     addPoint(picked.point, "province");
     setProvince("");
-  }, [addPoint, province, provincePoints]);
+  }, [addPoint, province, provincePoints, t]);
 
   // ---- Derived measurement --------------------------------------------------------------
 
@@ -281,12 +352,20 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
   const uncertaintyKm = points.some((placed) => placed.source === "map")
     ? (kmPerPixel ?? Number.POSITIVE_INFINITY)
     : PRECISE_POINT_UNCERTAINTY_KM;
-  const decimals = kmDecimalsFor(uncertaintyKm, totalKm);
 
+  // The decimals belong to the value being SHOWN, which is what `kmDecimalsFor`'s second
+  // parameter means. Deriving them once from the route TOTAL printed a 400 m leg as
+  // "0 kilometre" on any route past 10 km — the instrument stating that two separately
+  // listed points are in the same place (→ `CODE73-I2`, SPEC §6.1 as ratified by AK-30 md.2).
   const formatKm = useCallback(
-    (km: number) =>
-      format.number(km, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }),
-    [decimals, format],
+    (km: number) => {
+      const decimals = kmDecimalsFor(uncertaintyKm, km);
+      return format.number(km, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+    },
+    [format, uncertaintyKm],
   );
 
   const formatAxis = useCallback(
@@ -368,7 +447,7 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
       fileName: `${downloadName}-${stamp}.png`,
     }).catch((reason: unknown) => {
       console.warn(`[tools] PNG export failed. ${String(reason)}`);
-      setError(t("downloadFailed"));
+      setStatusError(t("downloadFailed"));
     });
   }, [bar, downloadName, format, geoPoints, surface, t, view]);
 
@@ -398,7 +477,15 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
   );
 
   const controls = (
-    <div className={styles.controls} role="group" aria-label={t("controlsLabel")}>
+    // `tabIndex={-1}` adds no tab stop; it is the landing place for focus when the last point
+    // is deleted and every action button is disabled (→ `A11Y73-I3`).
+    <div
+      ref={controlsRef}
+      tabIndex={-1}
+      className={styles.controls}
+      role="group"
+      aria-label={t("controlsLabel")}
+    >
       <div className={styles.inputs}>
         <form
           className={styles.field}
@@ -449,8 +536,8 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
               autoComplete="off"
               placeholder={t("coordinatePlaceholder")}
               value={draft}
-              aria-invalid={error !== null}
-              aria-describedby={error !== null ? "tool-coordinate-error" : undefined}
+              aria-invalid={fieldError !== null}
+              aria-describedby={fieldError !== null ? "tool-coordinate-error" : undefined}
               onChange={(event) => setDraft(event.target.value)}
             />
             <button type="submit" className={`btn btn-ghost ${styles.addButton}`}>
@@ -460,22 +547,35 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
         </form>
       </div>
 
-      {error !== null && (
+      {/* The field's own error, and only it, is what `aria-describedby` points at. */}
+      {fieldError !== null && (
         <p id="tool-coordinate-error" className={styles.error} role="alert">
-          {error}
+          {fieldError}
         </p>
       )}
 
-      {/* The result is a SENTENCE, not a bare number, and it is announced as one: a screen
-          reader hearing "331" alone learns nothing (`plan-web.md` §8/2, WCAG 4.1.3). */}
-      <p className={styles.result} aria-live="polite">
-        {resultText}
-      </p>
+      {statusError !== null && (
+        <p className={styles.error} role="alert">
+          {statusError}
+        </p>
+      )}
 
-      {outsideFrame && <p className={styles.note}>{t("outsideFrame")}</p>}
+      {/* ONE polite region, mounted before the reader touches anything, carrying both things a
+          change can say: the measurement and the out-of-frame note. The result is a SENTENCE
+          rather than a bare number — a screen reader hearing "331" alone learns nothing
+          (`plan-web.md` §8/2, WCAG 4.1.3). The note was a plain `<p>` outside every live
+          region, so a point in Russia was drawn nowhere and announced nowhere either
+          (→ `A11Y73-I1`); it lives INSIDE the region rather than carrying its own, because a
+          live region inserted together with its text is missed by some screen readers. */}
+      <div className={styles.live} aria-live="polite">
+        <p className={styles.result}>{resultText}</p>
+        {outsideFrame && <p className={styles.note}>{t("outsideFrame")}</p>}
+      </div>
 
       {legs.length > 0 && (
-        <ol className={styles.legs}>
+        // `role="list"` because `list-style: none` drops list semantics in Safari/VoiceOver —
+        // the repo's settled treatment (`breadcrumb.tsx`, the hubs, `featured-cards`).
+        <ol className={styles.legs} role="list">
           {legs.map((leg, index) => (
             <li key={leg.key}>{t("legName", { index: index + 1, distance: formatKm(leg.km) })}</li>
           ))}
@@ -484,8 +584,10 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
 
       {points.length > 0 && (
         <>
-          <p className={styles.label}>{t("pointsLabel")}</p>
-          <ul className={styles.points}>
+          <p id="tool-points-label" className={styles.label}>
+            {t("pointsLabel")}
+          </p>
+          <ul className={styles.points} role="list" aria-labelledby="tool-points-label">
             {points.map((placed, index) => (
               <li key={placed.key} className={styles.pointRow}>
                 <span>
@@ -497,6 +599,13 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
                 </span>
                 <button
                   type="button"
+                  ref={(node) => {
+                    if (node === null) {
+                      removeButtons.current.delete(placed.key);
+                    } else {
+                      removeButtons.current.set(placed.key, node);
+                    }
+                  }}
                   className={styles.pointRemove}
                   aria-label={t("pointRemove", { index: index + 1 })}
                   onClick={() => removePoint(placed.key)}

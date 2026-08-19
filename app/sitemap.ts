@@ -8,14 +8,17 @@ import { sitemapEntriesFor } from "@/lib/seo/sitemap-entries";
 
 /**
  * Root sitemap — a single flat urlset served at `/sitemap.xml` (the URL `robots.ts` points
- * at). Composition: static hubs + provinces, countries and books at ONE entry each (TR only
+ * at). Composition: static hubs (`/turkiye`, `/dunya`, `/oyun`, `/deniz`, `/kitaplar`,
+ * `/araclar`) + provinces, countries and books at ONE entry each (TR only
  * — their EN counterparts are `noindex`, see `sitemapEntriesFor` in
  * `lib/seo/sitemap-entries.ts`) — a valid, self-contained sitemap far under Google's
- * 50k-per-file hard limit. The book tier adds one hub and one URL per book — which leaves the
+ * 50k-per-file hard limit. The book tier adds one hub and one URL per book, and the CBS tool
+ * tier a hub plus one URL per published tool — which leaves the
  * 50k arithmetic untouched but is NOT "no change to the trigger" (→ PR #62 review
- * `FENER62-M4`): `/kitaplar` is a third content hub, and the convention's hub condition was
- * already crossed by `/dunya`. Crossed once or twice, the standing exception below is what
- * governs, and it is unchanged.
+ * `FENER62-M4`, extended by PR #73 `FENER73-M2`): `/kitaplar` and `/araclar` are further
+ * content hubs, and the convention's hub condition was
+ * already crossed by `/dunya`. Crossed once or several times, the standing exception below is
+ * what governs, and it is unchanged.
  *
  * SPLIT TRIGGER STATUS (CONVENTIONS §6 #7). The convention's proactive split-to-a-sitemap-
  * index trigger (a second content hub; province×locale > ~150) is now crossed by adding the

@@ -1,21 +1,23 @@
 /* Primary navigation + its mobile disclosure.
    Mobile-first: the rules below the media query describe the COMPACT header (a hamburger
-   button plus an overlay panel); the `min-width: 64rem` block restores the inline desktop
-   nav byte-for-byte. No hardcoded BRAND hex here: every brand colour is a `var(--token)`
+   button plus an overlay panel); the `min-width` block at the bottom of this file restores the
+   inline desktop nav byte-for-byte. No hardcoded BRAND hex here: every brand colour is a `var(--token)`
    from the global Terra layer (DESIGN.md §2). The two literals below are neutrals the
    sibling search module already uses for the same sheet — `#fff` for the card and
    `rgb(43 38 34 / 14%)` for its shadow (review CR56-M2).
 
-   THE BREAKPOINT IS 64rem AND THE NUMBER IS MEASURED, NOT INHERITED — and the measurement
-   lives in ONE place, `DESIGN.md` §4, not here. It used to be written out in both, and the
-   day a seventh nav link landed (owner ruling V-6, → DEC 2026-08-15g) both copies became
-   false at once; only one of them would reliably have been found. What belongs in this file
-   is the design consequence, which does not move with the numbers: a breakpoint has to be
-   locale-independent, so it sits above the later of the two locales' collapse widths, and
-   64rem is also the repo's only existing breakpoint — the width at which
-   `site-search.module.css` reveals the trigger's text label — so the header changes character
-   exactly once instead of twice. The deliberate cost is the band between the collapse width
-   and 1024px, where the hamburger replaces a nav that would still have fit on one row. */
+   THE NAV-COLLAPSE BREAKPOINT IS MEASURED, NOT INHERITED — and the measurement lives in ONE
+   place, `DESIGN.md` §4, so this file names no number for it. It used to be written out in
+   both, and the day a seventh nav link landed (owner ruling V-6, → DEC 2026-08-15g) both
+   copies became false at once; only one of them would reliably have been found. The eighth
+   link (the CBS tool hub) moved the number again and reproduced exactly that, which is why the
+   number is gone from here rather than updated (→ PR #73 review `CODE73-M7` / `SIMP73-M8`).
+   What belongs in this file is the design consequence, which does not move with the numbers: a
+   breakpoint has to be locale-independent, so it sits above the later of the two locales'
+   collapse widths, and `site-search.module.css` reveals the trigger's text label at the same
+   width — so the header changes character exactly once instead of twice. The deliberate cost
+   is the band between the collapse width and 1024px, where the hamburger replaces a nav that
+   would still have fit on one row. */
 
 .root {
   /* The wrapper generates NO box: the button becomes a direct flex item of the header's
