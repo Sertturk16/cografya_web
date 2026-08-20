@@ -55,6 +55,21 @@ const MEASURE_STROKE_PX = 3;
 const MARKER_RADIUS_PX = 5;
 const MARKER_STROKE_PX = 1.5;
 
+/**
+ * How solid the area tool's ring fill is, on screen and in the export.
+ *
+ * Kept in step with `.measureArea`'s `fill-opacity` in `tools.module.css` BY HAND, because the
+ * export builds its own SVG string from scratch rather than serialising the live DOM (the
+ * class-based paint does not survive serialisation — `plan-web.md` §9.2).
+ *
+ * The value is a MEASURED CONTRAST FLOOR rather than a taste setting, and the measurement lives
+ * next to the CSS rule (→ PR #75 review `A11Y75-M2`): the wash repaints the province borders it
+ * encloses, and at the previous 0.18 one of the two neighbours fell to 2.733:1 against WCAG
+ * 1.4.11's 3:1. Changing it here without changing it there ships a downloaded picture whose
+ * contrast differs from the screen's — silently, since no test compares them.
+ */
+const RING_FILL_OPACITY = 0.07;
+
 export interface ToolPngOptions {
   /** The live map — geometry, current view and resolved colours are all read from it. */
   readonly svg: SVGSVGElement;
@@ -62,6 +77,16 @@ export interface ToolPngOptions {
   readonly attribution: HTMLElement | null;
   /** The measurement, in lon/lat. */
   readonly points: readonly GeoPoint[];
+  /**
+   * Whether the points form a closed ring — the area tool — rather than an open path.
+   *
+   * The file has to show what the screen showed. The area tool closes the ring for the reader
+   * (SPEC §6.3) and paints the enclosed surface, so an export that drew an open polyline would
+   * hand them a picture of a different shape from the one they measured. The fill colour is the
+   * SAME token already read for the line, so this opens no new colour decision
+   * (`DESIGN.md` §2, and §6.1/1: the ring shows interface state, it does not encode data).
+   */
+  readonly closed?: boolean;
   /**
    * The scale bar as the page shows it, or `null` when the view cannot produce one.
    *
@@ -126,7 +151,7 @@ function attributionLines(element: HTMLElement | null): string[] {
 }
 
 export async function downloadToolPng(options: ToolPngOptions): Promise<void> {
-  const { svg, points, scaleBar, fileName } = options;
+  const { svg, points, scaleBar, fileName, closed } = options;
 
   const lines = attributionLines(options.attribution);
   if (lines.length === 0) {
@@ -160,9 +185,16 @@ export async function downloadToolPng(options: ToolPngOptions): Promise<void> {
   const round = (value: number) => Number(value.toFixed(2));
 
   const projected = points.map((point) => projectToMapPoint(point.lon, point.lat));
+  const vertices = projected.map((p) => `${round(p.x)},${round(p.y)}`).join(" ");
+  const strokeAttrs = `stroke="${lineColour}" stroke-width="${round(MEASURE_STROKE_PX * unitsPerPx)}" stroke-linecap="round" stroke-linejoin="round"`;
+  // A ring needs three points; below that `closed` describes a shape that does not exist yet
+  // and the open path is the honest picture.
+  const drawsRing = closed === true && projected.length > 2;
   const polyline =
     projected.length > 1
-      ? `<polyline points="${projected.map((p) => `${round(p.x)},${round(p.y)}`).join(" ")}" fill="none" stroke="${lineColour}" stroke-width="${round(MEASURE_STROKE_PX * unitsPerPx)}" stroke-linecap="round" stroke-linejoin="round"/>`
+      ? drawsRing
+        ? `<polygon points="${vertices}" fill="${lineColour}" fill-opacity="${RING_FILL_OPACITY}" ${strokeAttrs}/>`
+        : `<polyline points="${vertices}" fill="none" ${strokeAttrs}/>`
       : "";
   const markers = projected
     .map(

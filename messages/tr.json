@@ -76,8 +76,8 @@
     "gameHeading": "Öğrendiklerini haritada sına",
     "gameBody": "Üç mod: bölge bulma, il bulma, bölge bölge il bulma.",
     "gameCta": "Oyunu aç",
-    "toolsHeading": "Haritada ölç",
-    "toolsBody": "Kuş uçuşu mesafeyi ölç, haritadaki bir noktanın enlemini ve boylamını bul.",
+    "toolsHeading": "Harita araçları",
+    "toolsBody": "Kuş uçuşu mesafeyi ölç, bir noktanın enlemini ve boylamını bul, çizdiğin alanı hesapla.",
     "toolsCta": "Araçları aç"
   },
   "Map": {
@@ -551,14 +551,16 @@
   "Tools": {
     "hub": {
       "metaTitle": "Türkiye Haritasında Ölçüm ve Konum Araçları",
-      "metaDescription": "Türkiye'nin 81 ilini gösteren harita üzerinde iki araç çalışır: kuş uçuşu mesafe ölçme ve enlem-boylam bulma. Kayıt gerekmez.",
+      "metaDescription": "Türkiye'nin 81 ilini gösteren harita üzerinde üç araç çalışır: kuş uçuşu mesafe ölçme, enlem-boylam bulma ve alan hesaplama. Kayıt gerekmez.",
       "heading": "Coğrafya Araçları",
-      "introP1": "Coğrafya 9, coğrafi bilgi sistemlerini anlatırken mekânsal verinin nokta, çizgi ve alansal katmanlar hâlinde sayısallaştırıldığını söyler. Buradaki iki araç o katmanlardan ikisiyle çalışır: tek bir nokta koordinat verir, iki noktayı birleştiren çizgi mesafeyi ölçer.",
-      "introP2": "Hangisinin gerektiği ölçülecek şeye bağlıdır. Bir yerin adresi soruluyorsa koordinat bulma işe yarar. Uzaklık soruluyorsa mesafe ölçme devreye girer. İkisi de Türkiye'nin 81 ilini gösteren aynı harita üzerinde çalışır ve ikisinde de haritanın üstünde kalıcı bir çizgi ölçek durur.",
+      "introP1": "Coğrafya 9, coğrafi bilgi sistemlerini anlatırken mekânsal verinin nokta, çizgi ve alansal katmanlar hâlinde sayısallaştırıldığını söyler. Buradaki üç araç tam olarak o üç katmana karşılık gelir: tek bir nokta koordinat verir, iki noktayı birleştiren çizgi mesafeyi ölçer, kapanan bir çizgi ise alanı.",
+      "introP2": "Hangisinin gerektiği ölçülecek şeye bağlıdır. Bir yerin adresi soruluyorsa koordinat bulma işe yarar. Uzaklık ya da bir yüzeyin büyüklüğü soruluyorsa mesafe ölçme ve alan hesaplama devreye girer. Üçü de aynı Türkiye haritası üzerinde çalışır ve üçünde de haritanın üstünde kalıcı bir çizgi ölçek durur.",
       "mesafeName": "Kuş uçuşu mesafe",
       "mesafeBody": "İki nokta ya da çok duraklı bir güzergâh boyunca uzaklığı haritada ölç.",
       "koordinatName": "Koordinat bulma",
-      "koordinatBody": "Haritadaki bir noktanın enlemini ve boylamını iki gösterimde birden oku."
+      "koordinatBody": "Haritadaki bir noktanın enlemini ve boylamını iki gösterimde birden oku.",
+      "alanName": "Alan hesaplama",
+      "alanBody": "Haritada kapattığın çokgenin alanını ve çevresini hesapla."
     },
     "mesafe": {
       "metaTitle": "Kuş Uçuşu Mesafe Ölçme: İki Nokta ve Güzergâh",
@@ -611,6 +613,29 @@
       "sonucP3": "Yerel saat farkı da aynı iki sayıdan çıkar. Ders kitabının örneği 33° doğu meridyenindeki <ankara>Ankara</ankara> ile 45° doğu meridyenindeki <igdir>Iğdır</igdir>'ı karşılaştırır. On iki derecelik boylam farkı, her meridyene düşen dört dakikayla çarpılınca 48 dakika verir.",
       "kaynak": "Kaynak: MEB Coğrafya 9 ders kitabı, 1. Ünite."
     },
+    "alan": {
+      "metaTitle": "Çokgen Çizerek Alan Hesaplama",
+      "metaDescription": "Haritada en az üç nokta ile kapatılan şeklin alanı küre yüzeyinde hesaplanır. Karşılaştırma için: İstanbul'un yüzölçümü 5.461 kilometrekaredir.",
+      "heading": "Haritada Alan ve Çevre Hesaplama",
+      "teaches": "harita projeksiyonlarında alan korunumu ve yüzölçümü",
+      "lede": "Alan ölçmek önce bir sınır çizmeyi gerektirir. Araç en az üç nokta ister, son noktayı ilkine kendisi bağlar ve kapanan şeklin içinde kalan yüzeyi hesaplar. Sonuç kilometrekare olarak, çevre ise kilometre olarak verilir.",
+      "sinirHeading": "Çizilen sınır bir seçimdir",
+      "sinirP1": "Çizilen sınırın kendisi bir seçimdir. Girintili bir körfezi üç noktayla da otuz noktayla da çevrelemek mümkündür, iki şekil aynı sayıyı vermez. Nokta sıklaştıkça şekil gerçek kıyıya yaklaşır ve alan değişmeyi sürdürür.",
+      "sinirP2": "Coğrafya 9'un plan uygulaması aynı işi kâğıt üzerinde yaptırır: öğrenciden bir planda gösterilen toplam alanı metrekare cinsinden bulması istenir. Ölçek bilinmeden o sayı üretilemez.",
+      "kureHeading": "Düzlem harita, küresel yüzey",
+      "kureP1": "Ekrandaki harita düzlemdir, ölçtüğü yüzey ise küreseldir. Dünyanın küresel olduğu için düzleme hatasız aktarılamadığını, geliştirilen yöntemlerden kimisinin açıyı, kimisinin alanı, kimisinin uzunluğu koruduğunu Coğrafya 9 projeksiyon bölümünde yazar. Bir haritada üçünün üçü birden korunmaz.",
+      "kureP2": "Araç bu yüzden ekrandaki şeklin piksel alanını ölçmez. Köşe noktalarının enlem ve boylamını alır, alanı kürenin yüzeyinde hesaplar. Düzlem formülüyle çalışmak Türkiye ölçeğinde ölçülebilir bir sapma üretir ve öğrenciye yanlış bir sayı gösterir.",
+      "yuzolcumuHeading": "Yüzölçümü ile çizilen alan",
+      "yuzolcumuP1": "Bir ilin yüzölçümü bu araçla üretilmez. Sitede yayımlanan il yüzölçümleri Harita Genel Müdürlüğü'nün il ve ilçe alanları dosyasından gelir. <istanbul>İstanbul</istanbul> için bu değer 5.461, <ankara>Ankara</ankara> için 25.632 kilometrekaredir.",
+      "yuzolcumuP2": "O rakamlar da bir haritadan hesaplanmıştır. Dosyanın kendi notu, hesabın 2014 tarihli 1:1.000.000 ölçekli harita üzerinden yapıldığını ve değerlerin resmî nitelik taşımadığını belirtir. Kurumsal sayı da bir ölçek seçiminin sonucudur.",
+      "yuzolcumuP3": "Buradan çıkan ölçü şudur: elle çizilen bir sınırla bulunan alan, bir ilin resmî yüzölçümünün yerine geçmez. Araç büyüklük duygusu ve hesap pratiği verir; resmî değer ilin kendi sayfasında durur.",
+      "toolHeading": "Haritada alan hesapla",
+      "sonucHeading": "Çıkan iki sayı",
+      "sonucP1": "Alan ve çevre birlikte okunur. Aynı alana sahip iki şekilden girintili olanın çevresi daha uzundur. Fark, kıyı çizgisi kıvrımlı bir ili düz kenarlı bir çokgenle çevrelerken hemen görünür.",
+      "sonucP2": "Şekil kendini kesiyorsa sayı gösterilmez. Kendini kesen bir çokgende hangi bölgenin \"iç\" olduğu belirsizdir, çıkacak sayının da bir karşılığı olmaz.",
+      "sonucP3": "Noktaların saat yönünde mi tersinde mi verildiği sonucu değiştirmez. Hesap işaretsiz büyüklüğü döndürür.",
+      "kaynak": "Kaynak: MEB Coğrafya 9 ders kitabı, 1. Ünite · Harita Genel Müdürlüğü, il ve ilçe alanları (1:1.000.000 ölçekli hesaplama, resmî nitelik taşımaz)."
+    },
     "map": {
       "zoomIn": "Yakınlaştır",
       "zoomOut": "Uzaklaştır",
@@ -644,6 +669,12 @@
       "coordinateDecimal": "Nokta ondalık derece ile {lat}, {lon}.",
       "coordinateDms": "Aynı nokta DMS ile {lat}, {lon}.",
       "coordinateProvince": "Nokta <link>{name}</link> sınırları içinde.",
+      "areaEmpty": "Alan için haritada en az üç nokta gerekir.",
+      "areaNeedsMore": "{placed} nokta kondu, {remaining} nokta daha gerekir.",
+      "areaResult": "Kapanan şeklin alanı {area} kilometrekare.",
+      "areaPerimeter": "Şeklin çevresi {perimeter} kilometre.",
+      "areaSelfIntersects": "Şekil kendini kesiyor. Noktalardan birini sil.",
+      "areaSeam": "Şekil 180° meridyenini geçiyor, bu yüzden alanı ölçülemez. Noktaları tek yarımkürede topla.",
       "limitReached": "Nokta sınırı {limit}. Yeni nokta için bir noktayı sil.",
       "outsideFrame": "Bu nokta harita çerçevesinin dışında.",
       "errorNoProvince": "İl seçilmedi. Listeden bir il seç.",

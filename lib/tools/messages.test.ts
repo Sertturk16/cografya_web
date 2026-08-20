@@ -15,10 +15,14 @@ import trMessages from "@/messages/tr.json";
  * `<title>Tools.mesafe.metaTitle</title>` on an indexable page with all three CI jobs green
  * (`ENGINEERING.md` §4 #2).
  *
- * The TR-only / both-locale split is the second half and the sharper one. Only ten keys are
- * rendered outside the `rendersProse` / `rendersIntro` gates; the rest exist in Turkish alone
- * because `SEO-POLICY.md` §B14 bars machine-translating the narrative. Nothing pinned that
- * boundary, and PR-C/PR-D are obliged to rewrite several of these same keys.
+ * The TR-only / both-locale split is the second half and the sharper one. A minority of keys
+ * are rendered outside the `rendersProse` / `rendersIntro` gates — head, headings, cards and
+ * JSON-LD — and the rest exist in Turkish alone because `SEO-POLICY.md` §B14 bars
+ * machine-translating the narrative. Nothing pinned that boundary, and every PR in this tier
+ * has had to rewrite several of these same keys. The two lists below ARE the boundary, and
+ * they are compared against the catalogue in both directions rather than counted here: a
+ * written count is a second copy of a fact the assertion already establishes, and it went
+ * stale within one PR of being written.
  *
  * Structural only (`CONVENTIONS.md` §2): every assertion is about whether a key RESOLVES, what
  * shape its value has, or which catalogue carries it — never about what any string says. The
@@ -52,7 +56,7 @@ const enTools = flatten((enMessages as Catalogue).Tools);
  * that are pure interface vocabulary and therefore symmetric. Asserted against the catalogue
  * below, so a new `Tools.*` namespace cannot slip past this file by not being mentioned in it.
  */
-const PROSE_NAMESPACES = ["hub", "koordinat", "mesafe"] as const;
+const PROSE_NAMESPACES = ["alan", "hub", "koordinat", "mesafe"] as const;
 const CHROME_NAMESPACES = ["map", "ui"] as const;
 
 /** Keys inside a prose namespace that BOTH locales render — head, headings, cards, JSON-LD. */
@@ -74,6 +78,13 @@ const BOTH_LOCALE_KEYS = [
   "koordinat.heading",
   "koordinat.teaches",
   "koordinat.toolHeading",
+  "alan.metaTitle",
+  "alan.metaDescription",
+  "alan.heading",
+  "alan.teaches",
+  "alan.toolHeading",
+  "hub.alanName",
+  "hub.alanBody",
 ] as const;
 
 /** Keys inside a prose namespace that exist in Turkish ONLY (§B14, the `/deniz` precedent). */
@@ -117,6 +128,22 @@ const TR_ONLY_KEYS = [
   "koordinat.sonucP2",
   "koordinat.sonucP3",
   "koordinat.kaynak",
+  "alan.lede",
+  "alan.sinirHeading",
+  "alan.sinirP1",
+  "alan.sinirP2",
+  "alan.kureHeading",
+  "alan.kureP1",
+  "alan.kureP2",
+  "alan.yuzolcumuHeading",
+  "alan.yuzolcumuP1",
+  "alan.yuzolcumuP2",
+  "alan.yuzolcumuP3",
+  "alan.sonucHeading",
+  "alan.sonucP1",
+  "alan.sonucP2",
+  "alan.sonucP3",
+  "alan.kaynak",
 ] as const;
 
 function expectNonEmptyString(catalogue: Map<string, unknown>, key: string): void {
@@ -131,9 +158,9 @@ function keysUnder(catalogue: Map<string, unknown>, namespace: string): string[]
 
 describe("the Tools namespace is fully classified", () => {
   it("declares exactly the namespaces this file knows how to judge", () => {
-    // The anchor for everything below: a new `Tools.alan` namespace (PR-D) has to be classified
-    // as prose or chrome here before its keys can ship, rather than silently falling outside
-    // every assertion in this file.
+    // The anchor for everything below: a new `Tools.*` namespace has to be classified as prose
+    // or chrome here before its keys can ship, rather than silently falling outside every
+    // assertion in this file. `alan` arrived through exactly this gate in PR-D.
     expect(Object.keys((trMessages as Catalogue).Tools as Catalogue).sort()).toEqual(
       [...PROSE_NAMESPACES, ...CHROME_NAMESPACES].sort(),
     );
@@ -342,17 +369,20 @@ describe("the consumer scan itself", () => {
 });
 
 describe("every Tools key the code asks for exists", () => {
-  it("discovers a consumer for each of the five namespaces", () => {
+  it("discovers a consumer for every namespace the catalogue declares", () => {
     // Anti-vacuity, and the reason it is an equality: a scan that found nothing, or that lost a
     // surface to a refactor, would satisfy every per-key assertion below by having nothing to
     // check.
-    expect([...new Set(bindings.map((entry) => entry.namespace))].sort()).toEqual([
-      "Tools.hub",
-      "Tools.koordinat",
-      "Tools.map",
-      "Tools.mesafe",
-      "Tools.ui",
-    ]);
+    //
+    // The expected set is DERIVED from the classification above rather than written out a
+    // second time (→ PR-D). The frozen list this replaces named five namespaces and went red
+    // the moment a sixth shipped, which is a test failing on correct code — the `TA56-M4` rot
+    // direction, in the one place that had escaped it. Derivation also makes the assertion
+    // STRONGER, not weaker: it now closes both directions at once, so a declared namespace no
+    // file opens (a surface deleted but left classified) fails here too.
+    const declared = [...PROSE_NAMESPACES, ...CHROME_NAMESPACES].map((ns) => `Tools.${ns}`).sort();
+    expect(declared.length).toBeGreaterThan(0);
+    expect([...new Set(bindings.map((entry) => entry.namespace))].sort()).toEqual(declared);
   });
 
   it.each(bindings)("$path asks $namespace for keys the catalogue carries", (entry) => {

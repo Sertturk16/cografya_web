@@ -7,7 +7,12 @@ import { routing, type Locale } from "@/i18n/routing";
 import type { ContentSurface } from "@/lib/seo/indexing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { COORDINATE_TOOL, DISTANCE_TOOL, TOOL_HUB_PATHNAME } from "@/lib/tools/tool-registry";
+import {
+  AREA_TOOL,
+  COORDINATE_TOOL,
+  DISTANCE_TOOL,
+  TOOL_HUB_PATHNAME,
+} from "@/lib/tools/tool-registry";
 import styles from "./tools.module.css";
 
 interface PageProps {
@@ -47,19 +52,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * UYARI-level item rather than a BLOCKER, and it is also the difference between a hub worth
  * indexing and a doorway.
  *
- * ## Two cards today, and that is a rule rather than a gap
+ * ## Three cards, and the count in the copy was never a description of the plan
  *
- * Area calculation is written, planned and unbuilt. A card for it would be a link to a 404,
- * and `SEO-POLICY.md` A4/3 rates a dead link a BLOCKER — outranking `plan-web.md` §2.1's
- * four-row route table, which describes the finished tier
- * (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7). No "coming soon" card either: an
- * announcement of what is missing is exactly what `CONTENT-STYLE.md` §22's eksik-vurgusu rule
- * removes.
+ * A card landed only when its page did: a card for an unbuilt tool is a link to a 404, and
+ * `SEO-POLICY.md` A4/3 rates a dead link a BLOCKER — outranking `plan-web.md` §2.1's four-row
+ * route table, which describes the finished tier
+ * (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7). There was never a "coming soon" card
+ * either: an announcement of what is missing is exactly what `CONTENT-STYLE.md` §22's
+ * eksik-vurgusu rule removes.
  *
- * The intro moves with the card grid. PR-B narrowed NOVA's three-tool paragraph to the one
- * tool that was live; this PR restores its second half (`md.7.1`) for the two that now are.
- * The count in the copy tracks what ships, because a hub that announces three tools and shows
- * two is the eksik-vurgusu rule broken from the other side.
+ * The intro moved with the card grid the whole way. PR-B narrowed NOVA's three-tool paragraph
+ * to the one tool that was live, PR-C restored its second half for two (`md.7.1`), and PR-D
+ * returns it to NOVA's own three-tool text now that the tier is complete. The count in the copy
+ * tracks what ships, because a hub that announces three tools and shows two is the
+ * eksik-vurgusu rule broken from the other side.
  *
  * ## Rendering
  *
@@ -86,6 +92,11 @@ export default async function ToolsHubPage({ params }: PageProps) {
       pathname: COORDINATE_TOOL.pathname,
       name: t("koordinatName"),
       body: t("koordinatBody"),
+    },
+    {
+      pathname: AREA_TOOL.pathname,
+      name: t("alanName"),
+      body: t("alanBody"),
     },
   ] as const;
 

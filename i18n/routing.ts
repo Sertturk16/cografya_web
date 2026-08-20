@@ -132,16 +132,16 @@ export const routing = defineRouting({
     // URL per locale, and changing that URL later owes a redirect.
     //
     // A TOOL SEGMENT LANDS WITH ITS PAGE, NOT BEFORE IT
-    // (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7). `plan-web.md` §2.1 lists four
-    // pathnames because it describes the finished tier; the recorded deviation is that each
-    // tool's segment arrives in the PR that builds it — distance in PR-B, coordinate lookup
-    // in PR-C, and `/araclar/alan-hesaplama` still to come in PR-D. A declared pathname with
-    // no page behind it is a 404 the hub would have to link to or the sitemap would have to
-    // carry, and A4/3 rates a dead link a BLOCKER. The cost of adding a segment later is one
-    // line here; the cost of declaring it early is a broken URL in the index.
+    // (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7). `plan-web.md` §2.1 lists all four
+    // pathnames at once because it describes the finished tier; the recorded deviation is that
+    // each tool's segment arrived in the PR that built it — distance in PR-B, coordinate lookup
+    // in PR-C, area calculation in PR-D, which is the one that completes the table. A declared
+    // pathname with no page behind it is a 404 the hub would have to link to or the sitemap
+    // would have to carry, and A4/3 rates a dead link a BLOCKER. The cost of adding a segment
+    // late is one line here; the cost of declaring it early is a broken URL in the index.
     //
     // The TR segments are `GLOSSARY.md` §4.3's canonical tool names put through §5's folding
-    // (`ölçme → olcme`, `bulma → bulma`); `tool-registry.test.ts` pins the result to
+    // (`ölçme → olcme`, `bulma → bulma`, `hesaplama → hesaplama`); `tool-registry.test.ts` pins it to
     // `[a-z0-9-]+` in both locales.
     "/araclar": {
       tr: "/araclar",
@@ -154,6 +154,10 @@ export const routing = defineRouting({
     "/araclar/koordinat-bulma": {
       tr: "/araclar/koordinat-bulma",
       en: "/tools/coordinates",
+    },
+    "/araclar/alan-hesaplama": {
+      tr: "/araclar/alan-hesaplama",
+      en: "/tools/area",
     },
   },
 });

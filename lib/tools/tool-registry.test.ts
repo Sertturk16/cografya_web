@@ -102,6 +102,10 @@ describe("tool registry", () => {
     expect(getPathname({ locale: "en", href: "/araclar/koordinat-bulma" })).toBe(
       "/en/tools/coordinates",
     );
+    expect(getPathname({ locale: "tr", href: "/araclar/alan-hesaplama" })).toBe(
+      "/araclar/alan-hesaplama",
+    );
+    expect(getPathname({ locale: "en", href: "/araclar/alan-hesaplama" })).toBe("/en/tools/area");
   });
 
   it("keeps every slug inside the transliteration set GLOSSARY §5 allows", () => {

@@ -29,6 +29,38 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* THE AREA TOOL'S CLOSED RING. Same stroke as `.measureLine` — the outline is the graphical
+   object WCAG 1.4.11 measures, and it is painted OVER the fill rather than under it — plus a
+   light wash of the same token so the enclosed surface reads as enclosed. `fill-opacity` is a
+   number, not a colour, so no hex enters and `--color-primary` stays the single source
+   (`DESIGN.md` §2; §6.1/1 puts an interface-state ring on the brand side of brand-vs-data).
+   The value is mirrored by `RING_FILL_OPACITY` in `tool-png.ts`, which builds its own SVG
+   string and cannot inherit this rule.
+
+   THE OPACITY IS A CONTRAST FLOOR, NOT A TASTE SETTING (→ PR #75 review `A11Y75-M2`). The ring
+   is the last child of the `<svg>`, so the wash repaints every province border it encloses, and
+   `globals.css`'s `--province-stroke` note requires that border to clear WCAG 1.4.11's 3:1
+   "against EVERY fill it borders" — a set this wash joined. Both neighbours were computed from
+   the token values and the alpha compositing, then read back from a rendered frame:
+
+     washed border vs washed province fill  #ffffff        0.18 -> 3.222:1   0.07 -> 3.610:1
+     washed border vs washed map surround   --color-surface 0.18 -> 2.733:1  0.07 -> 3.022:1
+
+   The second pair is the binding one and it FAILED at 0.18. The surround is a
+   `--color-surface -> --color-bg` gradient (`map.module.css` `.mapRoot`), so the darker end is
+   the worst case and the figure above uses it. 0.07 is the highest hundredth that clears both;
+   0.08 lands at 2.996:1 against that same end, which is why the review's suggested 0.08 is a
+   near miss rather than a target. Re-measure both pairs before changing this number. */
+.measureArea {
+  fill: var(--color-primary);
+  fill-opacity: 0.07;
+  stroke: var(--color-primary);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
 .marker {
   fill: var(--color-primary);
   stroke: var(--color-on-primary);
@@ -46,8 +78,39 @@
   pointer-events: none;
 }
 
+/* ODbL/JRC CREDIT — required visibly next to the map (licence obligation, not styling).
+
+   A FLOW LINE UNDER THE MAP BOX, NOT AN OVERLAY, and that is the one thing this rule says that
+   `map.module.css`'s does not. It is the treatment `game-map.module.css` already records, moved
+   here because this surface had the identical defect: the overlay plate measured 304 x 61.3 over
+   a 318 x 136.4 stage at 360px — 42.8% of the map — and `elementFromPoint` at each province's own
+   centre found 41 of 81 targets under chrome at 360px, 61 of 81 at 320px. The owner rejected the
+   frame that showed it.
+
+   The plate goes with the absolute positioning: in flow the line sits on the page's parchment and
+   needs no scrim to stay legible (--color-slate on --color-bg = 7.48:1, DESIGN §5). Font size,
+   colour and the two-line structure are unchanged, and not one character of either licence string
+   moved. The credit is still visible and still inside the map component (DEC 2026-07-10 md.4).
+
+   WHY A LOCAL COPY RATHER THAN AN EDIT TO `map.module.css`: that rule is shared with `/turkiye`
+   and `/dunya`, where the same defect is live and measured but out of this PR's scope. Editing
+   the shared rule would silently relayout two surfaces nobody reviewed here. */
+.attribution {
+  margin: 6px 14px 10px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--color-slate);
+}
+
+/* Two block spans, not one paragraph split by a <br> — `attribution-separation.test.ts`. The
+   rendered result is identical; what it protects is the TEXT, which a <br> welds into
+   "…ODbLMevsimlik göl sınırları…" for a screen reader and for copy-paste. */
+.attributionLine {
+  display: block;
+}
+
 /* ÇİZGİ ÖLÇEK — the reader-facing name is the curriculum's (`GLOSSARY.md` §4.3, AK-26 md.1);
-   `scaleBar` survives in code only. Bottom LEFT, because `.attribution` owns the bottom right
+   `scaleBar` survives in code only. Bottom LEFT, and it now has the bottom edge to itself
    on every map surface in this repo and the licence line may never be crowded. */
 .scaleBar {
   position: absolute;
@@ -240,6 +303,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .measureLine,
+  .measureArea,
   .marker {
     transition: none;
   }

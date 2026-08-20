@@ -55,6 +55,7 @@ import { routing, type Locale } from "@/i18n/routing";
  *   · `app/[locale]/araclar/page.tsx`
  *   · `app/[locale]/araclar/mesafe-olcme/page.tsx`
  *   · `app/[locale]/araclar/koordinat-bulma/page.tsx`
+ *   · `app/[locale]/araclar/alan-hesaplama/page.tsx`
  *
  * They are exactly today's `"trNarrative"` members. If a future surface joins or leaves that
  * set, the notice list moves with it — the CBS tool tier is the surface that joined

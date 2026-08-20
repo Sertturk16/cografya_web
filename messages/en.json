@@ -76,8 +76,8 @@
     "gameHeading": "Test what you have learned on the map",
     "gameBody": "Three modes: find the region, find the province, find provinces region by region.",
     "gameCta": "Open the game",
-    "toolsHeading": "Measure on the map",
-    "toolsBody": "Measure great-circle distance, or find a point's latitude and longitude.",
+    "toolsHeading": "Map tools",
+    "toolsBody": "Measure great-circle distance, find a point's latitude and longitude, or calculate an area you draw.",
     "toolsCta": "Open the tools"
   },
   "Map": {
@@ -537,12 +537,14 @@
   "Tools": {
     "hub": {
       "metaTitle": "Measurement and Location Tools on the Map of Türkiye",
-      "metaDescription": "Two tools run on the map of Türkiye and its 81 provinces: great-circle distance measurement and latitude-longitude lookup. No sign-up.",
+      "metaDescription": "Three tools run on the map of Türkiye and its 81 provinces: great-circle distance, latitude-longitude lookup and area calculation. No sign-up.",
       "heading": "Geography Tools",
       "mesafeName": "Great-circle distance",
       "mesafeBody": "Measure the distance between two points, or along a route with several stops.",
       "koordinatName": "Coordinate lookup",
-      "koordinatBody": "Read a point's latitude and longitude in two notations at once."
+      "koordinatBody": "Read a point's latitude and longitude in two notations at once.",
+      "alanName": "Area calculation",
+      "alanBody": "Measure the area and perimeter of a polygon you close on the map."
     },
     "mesafe": {
       "metaTitle": "Distance Measurement Tool: Two Points or a Route",
@@ -557,6 +559,13 @@
       "heading": "Latitude and Longitude on the Map of Türkiye",
       "teaches": "reading a point's latitude and longitude off the map of Türkiye in decimal degrees and DMS",
       "toolHeading": "Find a coordinate on the map"
+    },
+    "alan": {
+      "metaTitle": "Polygon Area and Perimeter Calculator",
+      "metaDescription": "Close a polygon of at least three points on the map of Türkiye and read its area in square kilometres and its perimeter in kilometres.",
+      "heading": "Area and Perimeter on the Map of Türkiye",
+      "teaches": "calculating the area and perimeter of a polygon drawn on the map of Türkiye",
+      "toolHeading": "Calculate an area on the map"
     },
     "map": {
       "zoomIn": "Zoom in",
@@ -591,6 +600,12 @@
       "coordinateDecimal": "The point is {lat}, {lon} in decimal degrees.",
       "coordinateDms": "The same point is {lat}, {lon} in DMS.",
       "coordinateProvince": "The point is inside <link>{name}</link>.",
+      "areaEmpty": "An area needs at least three points on the map.",
+      "areaNeedsMore": "{placed, plural, one {# point} other {# points}} placed, {remaining} more needed.",
+      "areaResult": "The closed shape covers {area} square kilometres.",
+      "areaPerimeter": "Its perimeter is {perimeter} kilometres.",
+      "areaSelfIntersects": "The shape crosses itself. Delete one of the points.",
+      "areaSeam": "The shape crosses the 180° meridian, so its area cannot be measured. Keep the points within one hemisphere.",
       "limitReached": "The limit is {limit} points. Delete one to place another.",
       "outsideFrame": "This point is outside the map frame.",
       "errorNoProvince": "No province selected. Pick one from the list.",
