@@ -21,7 +21,11 @@
    (top 12/14px right) used to sit in that padding band and now overlay the map itself. The
    licence line keeps its `--scrim-bg` plate, so it stays legible and still satisfies the
    "visible next to the map" ODbL/JRC obligation (SPEC §5.2 / DEC 2026-07-10) — its position
-   is unchanged, only what is behind it. */
+   is unchanged, only what is behind it.
+
+   That last paragraph now describes `/turkiye` ALONE. `/dunya` took `.attributionFlow` below
+   and no longer overlays its credit on the map; the plated `.attribution` has one consumer
+   left. `.mapRoot` itself is still shared by both. */
 .mapRoot {
   position: relative;
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
@@ -289,6 +293,51 @@
   background: var(--scrim-bg);
   padding: 3px 8px;
   border-radius: 6px;
+}
+
+/* THE WORLD MAP'S CREDIT, IN FLOW UNDER THE PANEL (`FU-DUNYA-ZOOM-ORTUSU`).
+   `/turkiye` keeps `.attribution` above, untouched and unmeasured by this change; only
+   `world-map-section.tsx` consumes this class, and adding a class relayouts nothing that does
+   not name it.
+
+   WHAT IT FIXES. The plate above is absolutely positioned bottom-right, which is exactly where
+   the zoom cluster's reset button ends on a short stage: at 320px the button was NOT clipped
+   (the geometric method reads a full 40px at every width) but the plate cut it into pieces —
+   14.50px of hittable height in total and a longest UNINTERRUPTED run of 9.00px (9.50px on
+   `/en/dunya`), measured by stepping the button's own centre axis at 0.25px. A target you can
+   only hit in two 9px slivers is worse than a clipped one, and only the run number shows it;
+   the total alone reads like an ordinary crop.
+
+   WHY THE CREDIT MOVES INSTEAD OF THE CLUSTER. Laying the cluster down as a row inside the
+   panel — the treatment the tool pages take, and the shared rule that would have covered both
+   — was built and measured here too: it frees the button, but it grows the panel from 146.83px
+   to 198.83px and the new band is `--map-sea`, i.e. literal ocean past the ±180° meridians.
+   That band is the defect the edge-to-edge note at the top of this file records the owner
+   rejecting on a live tour. Moving the credit frees the button and leaves the panel at exactly
+   the 146.83px it is today, because an absolutely positioned plate never contributed to that
+   height in the first place.
+
+   WHAT IT DOES NOT FIX, stated because the first draft of this note got it wrong. Country
+   shapes with chrome on their own centre point go 25/240 -> 20/240 at 320px, 19 -> 14 at
+   360px and 14 -> 11 at 384px: the plate's own share is 5, 5 and 3. The remainder is the zoom
+   cluster, which on this surface is still the shared overlay — deliberately, and for a reason
+   that is not taste. `world-map-section.tsx` renders it before the ~190 crawlable country
+   links so a keyboard reader reaches +/-/reset without tabbing through the map (review I3),
+   and the tool pages' row treatment cannot be lifted here without the sea band above. Whether
+   this map wants a row of its own is a separate question with its own frames.
+
+   In flow the line needs no scrim: `--color-slate` on the page's `--color-bg` is 7.48:1
+   (`DESIGN.md` §5), against a plate that only existed to survive being over the map. This is
+   the treatment `game-map.module.css` and `tools.module.css` already carry, for the same
+   reason, and the credit stays visible and stays inside the map component (DEC 2026-07-10
+   md. 4). The STRING is untouched — Natural Earth is public domain and owes no attribution at
+   all (`provenance/datasets.md`, 2026-08-19 row), so this line is a product choice whose
+   wording is not this change's business. */
+.attributionFlow {
+  margin: 6px 14px 10px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--color-slate);
 }
 
 /* Each notice is its own block box instead of two runs split by a `<br>`. Visually identical

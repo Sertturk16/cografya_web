@@ -424,9 +424,28 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
         <p id={instructionsId} className={styles.srOnly}>
           {tMap("keyboardInstructions")}
         </p>
-
-        <p className={styles.attribution}>{tMap("attribution")}</p>
       </div>
+
+      {/* BELOW THE MAP BOX, NOT ON IT (`FU-DUNYA-ZOOM-ORTUSU`) — the treatment the game and the
+          CBS tool pages already landed, arriving here last because this surface's defect was
+          OCCLUSION rather than clipping and needed its own measurement to see.
+
+          The plate sat bottom-right, which is where the zoom cluster's reset button ends on a
+          short stage: at 320px the button was whole geometrically but hittable only in slivers
+          — 14.50px in total, longest uninterrupted run 9.00px (9.50px in English). In flow all
+          three buttons measure a full 40px, and the panel stays at exactly the 146.83px it is
+          today, because an absolutely positioned plate never contributed to that height. What
+          this does NOT do is clear the map: country shapes with chrome on their centre go
+          25/240 to 20/240 at 320px, and the remainder is the zoom cluster, which stays an
+          overlay here (`map.module.css` has the measurement and the reason).
+
+          NOT ONE CHARACTER OF THE STRING MOVED: the message key, its locale pair and its
+          `lang` context are untouched. `/turkiye` is NOT touched either — it keeps the plated
+          `.attribution` from `map.module.css`, its own credit-occlusion item is measured and
+          still open (`FU-TURKIYE-ATIF-ORTUSU`, 59 of 81 il centres under chrome at 320px), and
+          widening this change into it would relayout a surface nobody reviewed here. That is
+          the same boundary `tools.module.css` drew when the tool pages did this. */}
+      <p className={styles.attributionFlow}>{tMap("attribution")}</p>
     </section>
   );
 }
