@@ -15,9 +15,31 @@
  *
  * Skipping is the safe failure for a typo and the WRONG failure for a genuine new duty: if
  * the api adds a fifth notice because a fifth honest-presentation obligation appeared, this
- * repo drops it silently. Two things hold the line, neither of them this file: the api's own
- * rule that adding a key is an Atlas notification, and `notice-keys.test.ts`, which pins the
- * four slots so a contract that grows is a code change here rather than a silent omission.
+ * repo drops it silently — no throw, no warn, no build signal, CI green, and the caveat never
+ * reaches 81 indexable pages in either locale.
+ *
+ * ### What actually holds the line, stated exactly (→ PR #76 review CODE76-I1 + TEST76-I2)
+ *
+ * An earlier version of this docblock named two guards and the second did not exist: it
+ * credited `notice-keys.test.ts` with "pinning the four slots", while that test's key list was
+ * a hand-typed copy of the very array declared below. Both sides moved together, so the check
+ * could not fail for the reason it was written. A false safety claim is worse than the risk
+ * stated bare, because it retires the follow-up. The honest statement is:
+ *
+ * - **ADD (a fifth key appears) — NOT held on this side.** Nothing in this repo can see it.
+ *   `noticeKeys` is `string[]` in the spec, so codegen cannot narrow it; the vendored spec's
+ *   own `example` lists two of the four keys, so an addition need not change any web artifact.
+ *   The only thing standing here is the api's rule that adding a key is an Atlas notification.
+ *   The durable fix is an `enum` on `Pm25AttributionDto.noticeKeys` in the api's OpenAPI
+ *   source: codegen would then emit a union, and a fifth key would break `pnpm typecheck` here
+ *   the moment the spec is refreshed. Tracked as `FU-API-NOTICEKEYS-ENUM` (Deniz) — it is an
+ *   api change, and a web-side gate that only pretended to close it would be worse.
+ * - **RENAME / REMOVE — held, but only as far as the vendored spec carries the key.**
+ *   `notice-keys.test.ts` extracts every `airPollution.notice.*` string the committed
+ *   `openapi/openapi.json` actually contains and asserts each one resolves to a slot below.
+ *   That list is derived from the api-owned artifact rather than restated, so a key that is
+ *   renamed in the spec goes red on the next mirror refresh. Its limit is stated in the test:
+ *   it sees only what the spec's `example` carries, which today is two of the four keys.
  *
  * ## Where each notice goes is NOT this file's business
  *

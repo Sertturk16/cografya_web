@@ -281,6 +281,7 @@
   },
   "AirPollution": {
     "valueLabel": "Yıllık ortalama PM2.5 ({year})",
+    "jsonLdLabel": "Yıllık ortalama PM2.5 — il merkezi hücresi ({year})",
     "unit": "µg/m³",
     "notice": {
       "annualMean": "Yıllık ortalamadır. Bugünün hava kalitesini göstermez.",

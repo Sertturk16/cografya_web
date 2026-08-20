@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { PM25_NOTICE_SLOTS } from "@/lib/air/notice-keys";
 
 /**
  * This repo's vitest environment is `node` and the section is an async server component, so
@@ -77,6 +78,35 @@ describe("the licence block travels with the values", () => {
   });
 });
 
+/**
+ * THE CAVEATS THEMSELVES, not just their catalogue entries (→ PR #76 review TEST76-I1).
+ *
+ * The catalogue tests pin that each notice string EXISTS in both locales; none of them pins
+ * that a component ever PRINTS it. Before this block, three of the four render sites had no
+ * assertion at all, so deleting the pair under the value line — a plausible
+ * `CONTENT-STYLE.md` §7 "caveat pile" tidy-up, since the section's own docblock frames
+ * placement as an editorial judgement — left 124 test files, `tsc`, `eslint` and the build
+ * green while 81 indexable pages lost the sentence saying the number is not a provincial
+ * average (DEC 2026-08-19d md.1).
+ *
+ * Structural, and it loops over the whitelist the code already exports rather than a list
+ * written here, so a fifth slot arrives with its own render assertion for free.
+ */
+describe("every notice slot the code can render is actually rendered", () => {
+  it.each(PM25_NOTICE_SLOTS)("prints notice.%s somewhere in the section", (slot) => {
+    // `sectionCode`, not `section`: the docblock NAMES two of these keys while explaining
+    // where they go, so the raw source would satisfy this on prose alone.
+    expect(sectionCode).toContain(`notice.${slot}`);
+  });
+
+  it("POSITIVE CONTROL — the same check reports a slot the section does not render", () => {
+    // Without this, a source that stopped printing every notice would still pass if the
+    // substring happened to appear for another reason. The fabricated slot is held here and
+    // written into no file this suite measures.
+    expect(sectionCode).not.toContain("notice.aSlotTheSectionNeverPrints");
+  });
+});
+
 describe("the section is gated on the payload, in both directions", () => {
   it("renders only when the api published a series", () => {
     expect(pageCode).toMatch(/\{pm25Annual !== null && \(\s*<AirPollutionSection/);
@@ -93,6 +123,17 @@ describe("the section is gated on the payload, in both directions", () => {
     // SEO-POLICY §B5 5.7/5.8: structured data may not carry what the page does not show,
     // and a null field is never filled in.
     expect(pageCode).toMatch(/if \(pm25Annual !== null\) \{\s*\n\s*additionalProperty\.push/);
+  });
+
+  it("names the node with the reading-point label, never the bare value label", () => {
+    // FENER76-I1: `additionalProperty` describes the ENTITY, so a node named with the visible
+    // `valueLabel` asserts a provincial average — the reading DEC 2026-08-19d md.1 rejected —
+    // and a `PropertyValue` travels without the caveat printed beneath it. Scoped to the PM2.5
+    // branch, because `valueLabel` is correct everywhere else it appears.
+    const branch = /if \(pm25Annual !== null\) \{([\s\S]*?)\n {2}\}/.exec(pageCode)?.[1];
+    expect(branch).toBeDefined();
+    expect(branch).toContain('tAir("jsonLdLabel"');
+    expect(branch).not.toContain('tAir("valueLabel"');
   });
 
   it("puts the SAME rounded number in the structured data as on the page", () => {

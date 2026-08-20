@@ -281,6 +281,7 @@
   },
   "AirPollution": {
     "valueLabel": "Annual mean PM2.5 ({year})",
+    "jsonLdLabel": "Annual mean PM2.5 — province-centre cell ({year})",
     "unit": "µg/m³",
     "notice": {
       "annualMean": "This is an annual mean. It does not show today's air quality.",

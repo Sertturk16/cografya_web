@@ -449,15 +449,27 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // latest value is on the page as a headline figure, and the table's numbers belong to the
   // table. The number is `roundPm25`'d — the SAME rounding the value line prints, applied
   // once in one helper, so the two representations cannot diverge into a 5.7 argument.
-  // The NAME is the same `valueLabel` the page prints above the figure, and that string names
-  // PM2.5 explicitly for a structured-data reason: on the page the H2 supplies the subject,
-  // but a `PropertyValue` node travels without it, so "2024 yıllık ortalaması" would have
-  // described nothing to a machine. One string, self-describing in both places.
+  // THE NAME CARRIES THE READING POINT, and it is its own key rather than the visible
+  // `valueLabel` (→ PR #76 review FENER76-I1, validated). `additionalProperty` is defined by
+  // schema.org as a characteristic OF THE ENTITY, so a node named "Yıllık ortalama PM2.5
+  // (2024)" asserts, unqualified, that the PROVINCE's annual mean is that number — which the
+  // page denies one line below the same figure (`notice.provinceCentrePoint`) and the contract
+  // forbids in as many words (`Pm25AnnualDto.readingPoint`: "bu bir il ORTALAMASI DEĞİLDİR
+  // (→ DEC 2026-08-19d md.1). Arayüz bunu ima etmemelidir."). A `PropertyValue` travels
+  // decontextualised BY DESIGN — an aggregator or an answer surface restates the node without
+  // the disclaimer beneath it, on 81 provinces × 2 locales — so the qualification has to live
+  // inside the node or it does not travel at all. The earlier version of this comment saw half
+  // of the trap and qualified the label for the YEAR only; the reading point is the other half.
+  // Every component of the phrase is already visible on the page (§B5 5.7's own requirement):
+  // "Yıllık ortalama PM2.5" is the value line's own label, and "il merkezi"/"hücre"
+  // ("province centre"/"cell" on EN) are `notice.provinceCentrePoint`'s own words — no
+  // vocabulary is invented here. `air-messages.test.ts` pins that pairing so the markup cannot
+  // outlive the copy that backs it.
   // `unitCode` is deliberately absent: the UN/CEFACT Rec 20 code for µg/m³ is unverified,
   // and an invented code is exactly 5.8's forbidden move. `unitText` alone is valid.
   if (pm25Annual !== null) {
     additionalProperty.push({
-      name: tAir("valueLabel", { year: String(pm25Annual.latestYear) }),
+      name: tAir("jsonLdLabel", { year: String(pm25Annual.latestYear) }),
       value: roundPm25(pm25Annual.latestValueUgM3),
       unitText: pm25DisplayUnit(pm25Annual.unit, tAir("unit")),
     });
