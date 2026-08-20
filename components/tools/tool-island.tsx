@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormatter, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import {
   haversineKm,
   kmDecimalsFor,
@@ -10,20 +11,62 @@ import {
   parseLatLon,
   polylineLengthKm,
   scaleBarKm,
+  toDmsParts,
   unprojectMapPoint,
   type CardinalLetters,
   type GeoPoint,
+  type LatLonAxis,
   type ParseFailureReason,
 } from "@/lib/map/measure";
 import { projectToMapPoint } from "@/lib/map/projection";
+import {
+  boundsOfPoints,
+  parseSubpaths,
+  pointInPolygon,
+  type ShapeBounds,
+  type ShapePoint,
+} from "@/lib/map/shape-geometry";
 import { parseViewBox, type ViewBox } from "@/lib/map/zoom-pan";
 import { findProvincePoint, type ProvincePoint } from "@/lib/tools/province-points";
 import { downloadToolPng } from "./tool-png";
 import styles from "./tools.module.css";
 
+/**
+ * Which tool this island is being: a distance measurement, or a coordinate lookup.
+ *
+ * ONE island file with a mode rather than one per tool — `plan-web.md` §3.3 asks for exactly
+ * that ("ilgili modun gövdesi"), and §17.3 records the condition: the modes stay together
+ * while they are small, and split when the island outgrows the single `dynamic()` import.
+ * What they genuinely share is not cosmetic — the surface lookup, the live `viewBox` read, the
+ * screen-to-map matrix, the çizgi ölçek, the three input paths, the PNG pipeline and the
+ * out-of-frame rule are one implementation each, and duplicating them is how two tools start
+ * disagreeing about where a point is.
+ */
+export type ToolMode = "distance" | "coordinate";
+
+/**
+ * A province the coordinate tool may NAME and LINK when a point lands inside it (SPEC §6.2's
+ * last row).
+ *
+ * The slug is resolved by the PAGE, from the api's own `slugTr`/`slugEn` — `SEO-POLICY.md`
+ * §B4 4.5 bans deriving one per locale by hand, and the island has no api access to do it
+ * with. A province the api does not publish is simply absent from this list and its name never
+ * appears: A4/3 forbids linking an entity that is not live, and naming one we cannot link
+ * would be worse, not better.
+ */
+export interface ProvinceArea {
+  readonly plateCode: string;
+  readonly name: string;
+  readonly slug: string;
+}
+
 export interface ToolIslandProps {
+  /** Which tool's body to render. */
+  mode: ToolMode;
   /** The picker's options — every province whose il-merkezi point the api publishes. */
   provincePoints: readonly ProvincePoint[];
+  /** Coordinate mode only: the provinces a placed point may be reported inside. */
+  provinceAreas?: readonly ProvinceArea[];
   /** ASCII file-name stem for the PNG export (SPEC §9.4). */
   downloadName: string;
   /** The map's home frame, passed in rather than imported (see the note on the import list). */
@@ -72,8 +115,76 @@ interface ViewState {
   readonly widthPx: number;
 }
 
+/** One province's outlines, parsed once: its rings plus the box that lets most lookups skip it. */
+interface ProvinceShape {
+  readonly plateCode: string;
+  readonly bounds: ShapeBounds;
+  readonly rings: readonly (readonly ShapePoint[])[];
+}
+
 /**
- * The measuring island: everything interactive on `/araclar/mesafe-olcme`.
+ * Parsed province outlines, per map element.
+ *
+ * ## Where the geometry comes from — the DOM, not an import
+ *
+ * The same rule `tool-png.ts` records and `game-map.tsx` states as a hard one: the 81 outlines
+ * are ALREADY in the server HTML, and importing `lib/map/tr-provinces.generated.ts` into a
+ * client module would ship 64 KB of path data a second time as JavaScript. The `<path>` nodes
+ * in `<defs>` carry `data-plate-code` for exactly this lookup, so neither file has to know the
+ * other's `id` prefix.
+ *
+ * ## Lazy, then kept — `plan-web.md` §5.6
+ *
+ * Nothing is parsed until the reader places their first point, and then it is parsed once. A
+ * `WeakMap` keyed on the live `<svg>` rather than a module-level list, so a client navigation
+ * away from the tool does not leave 81 parsed polygons pinned in memory.
+ */
+const provinceShapeCache = new WeakMap<SVGSVGElement, readonly ProvinceShape[]>();
+
+function provinceShapesOf(svg: SVGSVGElement): readonly ProvinceShape[] {
+  const cached = provinceShapeCache.get(svg);
+  if (cached !== undefined) return cached;
+
+  const shapes: ProvinceShape[] = [];
+  for (const node of svg.querySelectorAll("defs path[data-plate-code]")) {
+    const plateCode = node.getAttribute("data-plate-code");
+    const d = node.getAttribute("d");
+    if (plateCode === null || d === null) continue;
+    let rings: ShapePoint[][];
+    try {
+      rings = parseSubpaths(d);
+    } catch {
+      // `parseSubpaths` throws rather than returning a wrong answer on an unsupported command.
+      // Skipping the shape costs one province its name; guessing would cost the reader a wrong
+      // one, and a wrong province on a coordinate readout is invisible.
+      continue;
+    }
+    const bounds = boundsOfPoints(rings.flat());
+    if (bounds === null) continue;
+    shapes.push({ plateCode, bounds, rings });
+  }
+
+  provinceShapeCache.set(svg, shapes);
+  return shapes;
+}
+
+/** The plaka kodu of the province containing a MAP-space point, or `null` outside all of them. */
+function provinceAtPoint(svg: SVGSVGElement, point: ShapePoint): string | null {
+  for (const shape of provinceShapesOf(svg)) {
+    // Box test first: it rejects ~80 of the 81 shapes with four comparisons each, so the
+    // ray-casting cost is paid on the one or two whose box actually contains the point.
+    const { minX, minY, maxX, maxY } = shape.bounds;
+    if (point.x < minX || point.x > maxX || point.y < minY || point.y > maxY) continue;
+    // A province's `d` is one subpath per landmass (islands included) and no holes, so
+    // membership is a disjunction rather than an even-odd fill of the whole path.
+    if (shape.rings.some((ring) => pointInPolygon(point, ring))) return shape.plateCode;
+  }
+  return null;
+}
+
+/**
+ * The tool island: everything interactive on `/araclar/mesafe-olcme` and
+ * `/araclar/koordinat-bulma`.
  *
  * ## Where it renders — three places, one component
  *
@@ -106,9 +217,16 @@ interface ViewState {
  * produces the wrong point the moment the element's box ratio departs from the viewBox's
  * (`plan-web.md` §5.2). In a measuring instrument that error would be invisible.
  */
-export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIslandProps) {
+export function ToolIsland({
+  mode,
+  provincePoints,
+  provinceAreas = [],
+  downloadName,
+  baseViewBox,
+}: ToolIslandProps) {
   const t = useTranslations("Tools.ui");
   const format = useFormatter();
+  const isCoordinate = mode === "coordinate";
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [surface, setSurface] = useState<Surface | null>(null);
@@ -225,6 +343,17 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
 
   const addPoint = useCallback(
     (point: GeoPoint, source: PointSource) => {
+      if (isCoordinate) {
+        // ONE POINT, AND A NEW ONE REPLACES IT. SPEC §6.2 describes a two-way conversion —
+        // click a point and read its coordinate, or type a coordinate and see the point — not
+        // an accumulation. A second marker would raise a question the readout cannot answer
+        // ("which of these is the coordinate?"), so the tool answers it structurally rather
+        // than with a "clear first" instruction, and therefore never has a limit to refuse at.
+        setStatusError(null);
+        nextKey.current += 1;
+        setPoints([{ key: nextKey.current, point, source }]);
+        return;
+      }
       if (pointsRef.current.length >= MAX_POINTS) {
         setStatusError(t("limitReached", { limit: MAX_POINTS }));
         return;
@@ -239,7 +368,7 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
         previous.length >= MAX_POINTS ? previous : [...previous, { key, point, source }],
       );
     },
-    [t],
+    [isCoordinate, t],
   );
 
   useEffect(() => {
@@ -287,13 +416,22 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
     removeButtons.current.get(target)?.focus();
   }, [points]);
 
+  // THE SIBLING OF `removePoint`'s FOCUS RULE, and it was missing (→ PR #73 `PRE_EXISTING`,
+  // `FU-73-UNDO-CLEAR-FOCUS`). Both buttons carry `disabled={points.length === 0}`, so the
+  // activation that empties the list is also the one that disables the button under the
+  // reader's finger; the browser blurs it and focus falls to `<body>` — the same WCAG 2.4.3
+  // failure `A11Y73-I3` fixed for the per-point delete buttons, reached through the two
+  // controls a keyboard user is most likely to use. `"group"` is the labelled control group,
+  // which takes focus precisely because a disabled button cannot.
   const undo = useCallback(() => {
+    if (pointsRef.current.length <= 1) focusAfterRemoval.current = "group";
     setPoints((previous) => previous.slice(0, -1));
     setFieldError(null);
     setStatusError(null);
   }, []);
 
   const clear = useCallback(() => {
+    focusAfterRemoval.current = "group";
     setPoints([]);
     setFieldError(null);
     setStatusError(null);
@@ -386,6 +524,44 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
     [format, letters],
   );
 
+  /**
+   * The same value in degrees, minutes and seconds — SPEC §6.2 asks for BOTH notations.
+   *
+   * Assembled here rather than from a message key because `°`, `'` and `"` are NOTATION, not
+   * copy: they are written identically in Turkish and English, and the only localized part is
+   * the direction letter, which already comes from the bundle. The rounding — including the
+   * `59'60"` overflow — is `toDmsParts`' job and deliberately not this component's; the two-digit
+   * padding is the conventional written form and keeps a column of readouts from jittering.
+   */
+  const formatDms = useCallback(
+    (value: number, axis: LatLonAxis) => {
+      const parts = toDmsParts(value, axis);
+      const minutes = String(parts.minutes).padStart(2, "0");
+      const seconds = String(parts.seconds).padStart(2, "0");
+      return `${parts.degrees}°${minutes}'${seconds}"${letters[parts.cardinal]}`;
+    },
+    [letters],
+  );
+
+  /** Coordinate mode's single point. `null` until the reader places one. */
+  const activePoint = isCoordinate ? (points[0] ?? null) : null;
+
+  /**
+   * The province the point fell inside, when the api published a page for it (SPEC §6.2).
+   *
+   * Deferred to render rather than done in the click handler so the parse cost lands once, in
+   * a memo React can skip, instead of inside the interaction that placed the point (INP).
+   */
+  const containingProvince = useMemo(() => {
+    if (surface === null || activePoint === null || provinceAreas.length === 0) return null;
+    const plateCode = provinceAtPoint(
+      surface.svg,
+      projectToMapPoint(activePoint.point.lon, activePoint.point.lat),
+    );
+    if (plateCode === null) return null;
+    return provinceAreas.find((area) => area.plateCode === plateCode) ?? null;
+  }, [activePoint, provinceAreas, surface]);
+
   const legs = useMemo(() => {
     if (points.length < 3) return [];
     const values: { key: number; km: number }[] = [];
@@ -429,8 +605,12 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
 
   // ---- Export ----------------------------------------------------------------------------
 
+  // One point is a complete picture for a coordinate lookup and an incomplete one for a
+  // measurement, so the export threshold follows the mode rather than the polyline.
+  const minExportPoints = isCoordinate ? 1 : 2;
+
   const download = useCallback(() => {
-    if (!surface || geoPoints.length < 2) return;
+    if (!surface || geoPoints.length < minExportPoints) return;
     const stamp = new Date().toISOString().slice(0, 10);
     downloadToolPng({
       svg: surface.svg,
@@ -449,12 +629,55 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
       console.warn(`[tools] PNG export failed. ${String(reason)}`);
       setStatusError(t("downloadFailed"));
     });
-  }, [bar, downloadName, format, geoPoints, surface, t, view]);
+  }, [bar, downloadName, format, geoPoints, minExportPoints, surface, t, view]);
 
   // ---- Render -----------------------------------------------------------------------------
 
   const markerRadius = view ? (MARKER_RADIUS_PX * view.box.w) / view.widthPx : 3;
   const projected = points.map((placed) => projectToMapPoint(placed.point.lon, placed.point.lat));
+
+  /**
+   * The polite region's body — one complete sentence per line, never a bare number
+   * (`plan-web.md` §8/2, WCAG 4.1.3).
+   *
+   * Coordinate mode prints the decimal degrees first because that is the answer the reader
+   * asked for, the DMS line second because SPEC §6.2 wants both notations, and the province
+   * line only when the point is genuinely inside one.
+   */
+  const resultBody = !isCoordinate ? (
+    <p className={styles.result}>{resultText}</p>
+  ) : activePoint === null ? (
+    <p className={styles.result}>{t("coordinateEmpty")}</p>
+  ) : (
+    <>
+      <p className={styles.result}>
+        {t("coordinateDecimal", {
+          lat: formatAxis(activePoint.point.lat, "lat"),
+          lon: formatAxis(activePoint.point.lon, "lon"),
+        })}
+      </p>
+      <p className={styles.readoutLine}>
+        {t("coordinateDms", {
+          lat: formatDms(activePoint.point.lat, "lat"),
+          lon: formatDms(activePoint.point.lon, "lon"),
+        })}
+      </p>
+      {containingProvince !== null && (
+        <p className={styles.readoutLine}>
+          {t.rich("coordinateProvince", {
+            name: containingProvince.name,
+            link: (chunks) => (
+              <Link
+                href={{ pathname: "/turkiye/[slug]", params: { slug: containingProvince.slug } }}
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
+        </p>
+      )}
+    </>
+  );
 
   const overlay = (
     <>
@@ -484,7 +707,7 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
       tabIndex={-1}
       className={styles.controls}
       role="group"
-      aria-label={t("controlsLabel")}
+      aria-label={isCoordinate ? t("coordinateControlsLabel") : t("controlsLabel")}
     >
       <div className={styles.inputs}>
         <form
@@ -494,8 +717,11 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
             submitProvince();
           }}
         >
+          {/* "Ekle" is honest where points accumulate and misleading where the next one
+              replaces the last, so the two modes label the same control differently rather
+              than sharing a word that is only half true. */}
           <label className={styles.label} htmlFor="tool-province">
-            {t("provinceLabel")}
+            {isCoordinate ? t("coordinateProvinceLabel") : t("provinceLabel")}
           </label>
           <div className={styles.fieldRow}>
             <select
@@ -512,7 +738,7 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
               ))}
             </select>
             <button type="submit" className={`btn btn-ghost ${styles.addButton}`}>
-              {t("addPoint")}
+              {isCoordinate ? t("showPoint") : t("addPoint")}
             </button>
           </div>
         </form>
@@ -525,7 +751,7 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
           }}
         >
           <label className={styles.label} htmlFor="tool-coordinate">
-            {t("coordinateLabel")}
+            {isCoordinate ? t("coordinateInputLabel") : t("coordinateLabel")}
           </label>
           <div className={styles.fieldRow}>
             <input
@@ -541,7 +767,7 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
               onChange={(event) => setDraft(event.target.value)}
             />
             <button type="submit" className={`btn btn-ghost ${styles.addButton}`}>
-              {t("addPoint")}
+              {isCoordinate ? t("showPoint") : t("addPoint")}
             </button>
           </div>
         </form>
@@ -568,7 +794,7 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
           (→ `A11Y73-I1`); it lives INSIDE the region rather than carrying its own, because a
           live region inserted together with its text is missed by some screen readers. */}
       <div className={styles.live} aria-live="polite">
-        <p className={styles.result}>{resultText}</p>
+        {resultBody}
         {outsideFrame && <p className={styles.note}>{t("outsideFrame")}</p>}
       </div>
 
@@ -582,7 +808,11 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
         </ol>
       )}
 
-      {points.length > 0 && (
+      {/* The point list is the DISTANCE tool's keyboard deletion path and its running record of
+          what has been placed. Coordinate mode holds one point whose value the readout above
+          already states in two notations, so a list would repeat it and add a delete control
+          that duplicates "Temizle" — §22's "do not write what the interface shows". */}
+      {!isCoordinate && points.length > 0 && (
         <>
           <p id="tool-points-label" className={styles.label}>
             {t("pointsLabel")}
@@ -619,14 +849,19 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
       )}
 
       <div className={styles.actions}>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={undo}
-          disabled={points.length === 0}
-        >
-          {t("undo")}
-        </button>
+        {/* No "Geri al" in coordinate mode: with one point it does exactly what "Temizle"
+            does, and two controls for one action is a choice the reader has to make for no
+            gain. */}
+        {!isCoordinate && (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={undo}
+            disabled={points.length === 0}
+          >
+            {t("undo")}
+          </button>
+        )}
         <button
           type="button"
           className="btn btn-ghost"
@@ -639,7 +874,7 @@ export function ToolIsland({ provincePoints, downloadName, baseViewBox }: ToolIs
           type="button"
           className="btn btn-primary"
           onClick={download}
-          disabled={points.length < 2}
+          disabled={points.length < minExportPoints}
         >
           {t("download")}
         </button>

@@ -163,6 +163,17 @@
   color: var(--color-ink);
 }
 
+/* The coordinate tool's second and third answer lines — the DMS notation and the province the
+   point fell inside. They are PEERS of the decimal readout, not asides, so they take the body
+   size and `--color-ink` rather than `.note`'s smaller slate: SPEC §6.2 asks for both notations
+   as output, and typographically demoting one of them would say the opposite. The decimal line
+   keeps `.result`'s heading face because it is the answer the reader asked for. */
+.readoutLine {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-ink);
+}
+
 .note {
   margin: 0;
   font-size: 0.9rem;

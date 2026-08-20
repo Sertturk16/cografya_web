@@ -96,6 +96,12 @@ describe("tool registry", () => {
       "/araclar/mesafe-olcme",
     );
     expect(getPathname({ locale: "en", href: "/araclar/mesafe-olcme" })).toBe("/en/tools/distance");
+    expect(getPathname({ locale: "tr", href: "/araclar/koordinat-bulma" })).toBe(
+      "/araclar/koordinat-bulma",
+    );
+    expect(getPathname({ locale: "en", href: "/araclar/koordinat-bulma" })).toBe(
+      "/en/tools/coordinates",
+    );
   });
 
   it("keeps every slug inside the transliteration set GLOSSARY §5 allows", () => {

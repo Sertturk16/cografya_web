@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { TOOL_HUB_PATHNAME, TOOL_REGISTRY } from "./tool-registry";
@@ -43,13 +43,26 @@ function codeOnly(relativePath: string): string {
 }
 
 const SITEMAP = codeOnly("../../app/sitemap.ts");
+
+/**
+ * Every page file under the tool hub — DISCOVERED, not listed.
+ *
+ * A hand-written list would let PR-D's page ship without its `TOOLS_SURFACE` ever being
+ * compared to its sitemap row, which is the rot direction `TA56-M4` names: the list would
+ * still pass while describing yesterday's tier.
+ */
+const TOOLS_DIR = new URL("../../app/[locale]/araclar/", import.meta.url);
 const PAGE_SOURCES = [
-  { path: "app/[locale]/araclar/page.tsx", code: codeOnly("../../app/[locale]/araclar/page.tsx") },
-  {
-    path: "app/[locale]/araclar/mesafe-olcme/page.tsx",
-    code: codeOnly("../../app/[locale]/araclar/mesafe-olcme/page.tsx"),
-  },
-] as const;
+  "page.tsx",
+  ...readdirSync(fileURLToPath(TOOLS_DIR), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `${entry.name}/page.tsx`)
+    .filter((relative) => existsSync(fileURLToPath(new URL(relative, TOOLS_DIR))))
+    .sort(),
+].map((relative) => ({
+  path: `app/[locale]/araclar/${relative}`,
+  code: codeOnly(`../../app/[locale]/araclar/${relative}`),
+}));
 
 /** Every tool-tier pathname that may appear in an internal surface today. */
 const PUBLISHED = [TOOL_HUB_PATHNAME, ...TOOL_REGISTRY.map((tool) => tool.pathname)].sort();
@@ -82,15 +95,18 @@ describe("the tool tier's sitemap rows", () => {
 
   it("passes the same surface the page files declare", () => {
     expect(toolEntries.length).toBeGreaterThan(0);
+    // Anti-vacuity: the discovery above must have found the hub plus one page per published
+    // tool, or the surface comparison below is comparing nothing.
+    expect(PAGE_SOURCES.length).toBe(PUBLISHED.length);
     const declared = PAGE_SOURCES.map(({ path, code }) => {
       const match = /const TOOLS_SURFACE: ContentSurface = "([^"]+)"/.exec(code);
       if (match === null) throw new Error(`${path} must declare TOOLS_SURFACE`);
       return match[1]!;
     });
 
-    // One value across the whole tier: the two pages and every sitemap row. The head↔sitemap
+    // One value across the whole tier: every page and every sitemap row. The head↔sitemap
     // symmetry `lib/seo/sitemap-entries.ts` guarantees is only as good as the argument it is
-    // handed, and that argument is written out three times.
+    // handed, and that argument is written out once per page and once per row.
     expect(new Set([...declared, ...toolEntries.map((entry) => entry.surface)]).size).toBe(1);
   });
 });

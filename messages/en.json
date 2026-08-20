@@ -77,7 +77,7 @@
     "gameBody": "Three modes: find the region, find the province, find provinces region by region.",
     "gameCta": "Open the game",
     "toolsHeading": "Measure on the map",
-    "toolsBody": "Measure the great-circle distance between two points, or a route with several stops.",
+    "toolsBody": "Measure great-circle distance, or find a point's latitude and longitude.",
     "toolsCta": "Open the tools"
   },
   "Map": {
@@ -536,11 +536,13 @@
   },
   "Tools": {
     "hub": {
-      "metaTitle": "Measurement Tools on the Map of Türkiye",
-      "metaDescription": "Measure great-circle distance on the map of Türkiye and its 81 provinces: between two points, or along a route with several stops. No sign-up.",
+      "metaTitle": "Measurement and Location Tools on the Map of Türkiye",
+      "metaDescription": "Two tools run on the map of Türkiye and its 81 provinces: great-circle distance measurement and latitude-longitude lookup. No sign-up.",
       "heading": "Geography Tools",
       "mesafeName": "Great-circle distance",
-      "mesafeBody": "Measure the distance between two points, or along a route with several stops."
+      "mesafeBody": "Measure the distance between two points, or along a route with several stops.",
+      "koordinatName": "Coordinate lookup",
+      "koordinatBody": "Read a point's latitude and longitude in two notations at once."
     },
     "mesafe": {
       "metaTitle": "Distance Measurement Tool: Two Points or a Route",
@@ -548,6 +550,13 @@
       "heading": "Great-Circle Distance on the Map of Türkiye",
       "teaches": "measuring great-circle distance between points on the map of Türkiye",
       "toolHeading": "Measure on the map"
+    },
+    "koordinat": {
+      "metaTitle": "Latitude, Longitude and Coordinate Lookup",
+      "metaDescription": "Read the latitude and longitude of any point on the map of Türkiye, shown in decimal degrees and in degrees, minutes and seconds.",
+      "heading": "Latitude and Longitude on the Map of Türkiye",
+      "teaches": "reading a point's latitude and longitude off the map of Türkiye in decimal degrees and DMS",
+      "toolHeading": "Find a coordinate on the map"
     },
     "map": {
       "zoomIn": "Zoom in",
@@ -574,6 +583,14 @@
       "resultOnePoint": "Select the second point.",
       "resultTwoPoints": "{distance} kilometres between the two points.",
       "resultRoute": "A route with {count} points, {distance} kilometres in total.",
+      "coordinateControlsLabel": "Coordinate controls",
+      "coordinateProvinceLabel": "Select a provincial centre",
+      "coordinateInputLabel": "Type a coordinate",
+      "showPoint": "Show",
+      "coordinateEmpty": "A coordinate needs one point on the map.",
+      "coordinateDecimal": "The point is {lat}, {lon} in decimal degrees.",
+      "coordinateDms": "The same point is {lat}, {lon} in DMS.",
+      "coordinateProvince": "The point is inside <link>{name}</link>.",
       "limitReached": "The limit is {limit} points. Delete one to place another.",
       "outsideFrame": "This point is outside the map frame.",
       "errorNoProvince": "No province selected. Pick one from the list.",

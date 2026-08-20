@@ -52,7 +52,7 @@ const enTools = flatten((enMessages as Catalogue).Tools);
  * that are pure interface vocabulary and therefore symmetric. Asserted against the catalogue
  * below, so a new `Tools.*` namespace cannot slip past this file by not being mentioned in it.
  */
-const PROSE_NAMESPACES = ["hub", "mesafe"] as const;
+const PROSE_NAMESPACES = ["hub", "koordinat", "mesafe"] as const;
 const CHROME_NAMESPACES = ["map", "ui"] as const;
 
 /** Keys inside a prose namespace that BOTH locales render — head, headings, cards, JSON-LD. */
@@ -62,11 +62,18 @@ const BOTH_LOCALE_KEYS = [
   "hub.heading",
   "hub.mesafeName",
   "hub.mesafeBody",
+  "hub.koordinatName",
+  "hub.koordinatBody",
   "mesafe.metaTitle",
   "mesafe.metaDescription",
   "mesafe.heading",
   "mesafe.teaches",
   "mesafe.toolHeading",
+  "koordinat.metaTitle",
+  "koordinat.metaDescription",
+  "koordinat.heading",
+  "koordinat.teaches",
+  "koordinat.toolHeading",
 ] as const;
 
 /** Keys inside a prose namespace that exist in Turkish ONLY (§B14, the `/deniz` precedent). */
@@ -93,6 +100,23 @@ const TR_ONLY_KEYS = [
   "mesafe.sonucP2",
   "mesafe.sonucP3",
   "mesafe.kaynak",
+  "koordinat.lede",
+  "koordinat.sistemHeading",
+  "koordinat.sistemP1",
+  "koordinat.sistemP2",
+  "koordinat.sistemP3",
+  "koordinat.derecekmHeading",
+  "koordinat.derecekmP1",
+  "koordinat.derecekmP2",
+  "koordinat.gosterimHeading",
+  "koordinat.gosterimP1",
+  "koordinat.gosterimP2",
+  "koordinat.gosterimP3",
+  "koordinat.sonucHeading",
+  "koordinat.sonucP1",
+  "koordinat.sonucP2",
+  "koordinat.sonucP3",
+  "koordinat.kaynak",
 ] as const;
 
 function expectNonEmptyString(catalogue: Map<string, unknown>, key: string): void {
@@ -107,8 +131,8 @@ function keysUnder(catalogue: Map<string, unknown>, namespace: string): string[]
 
 describe("the Tools namespace is fully classified", () => {
   it("declares exactly the namespaces this file knows how to judge", () => {
-    // The anchor for everything below: a new `Tools.alan` namespace has to be classified as
-    // prose or chrome here before its keys can ship, rather than silently falling outside
+    // The anchor for everything below: a new `Tools.alan` namespace (PR-D) has to be classified
+    // as prose or chrome here before its keys can ship, rather than silently falling outside
     // every assertion in this file.
     expect(Object.keys((trMessages as Catalogue).Tools as Catalogue).sort()).toEqual(
       [...PROSE_NAMESPACES, ...CHROME_NAMESPACES].sort(),
@@ -233,43 +257,98 @@ const DIRECT_NAMESPACE =
 const OBJECT_NAMESPACE =
   /const\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?(?:use|get)Translations\(\s*\{[^}]*namespace:\s*"([^"]+)"[^}]*\}\s*\)/g;
 
+/**
+ * Every `Tools.*` binding one source file opens, and the keys each one asks for.
+ *
+ * ## DECLARATION-SCOPED, not file-scoped (→ PR #73 review `FIXV73-M4`)
+ *
+ * Keying a binding's calls by NAME over the whole file merges two bindings that share a name
+ * and attributes every call to both. While every such pair opened the SAME namespace that was
+ * lossless; the moment one file opens two DIFFERENT `Tools` namespaces under one local name —
+ * `const t = await getTranslations("Tools.hub")` in `generateMetadata` and
+ * `const t = await getTranslations("Tools.koordinat")` in the component, which is exactly the
+ * shape this tier's pages take — every key resolves against the wrong namespace and the suite
+ * goes red on correct code.
+ *
+ * So a REPEATED name is cut into windows: each declaration owns the source from itself to the
+ * next redeclaration of that same name, and the first one owns everything before it too. A
+ * name declared ONCE still owns the whole file, so this narrows only where the old key was
+ * ambiguous and nothing that used to be scanned stops being scanned.
+ *
+ * Exported shape, one file's worth — `path` is attached by the caller.
+ */
+function scanBindings(source: string): Omit<ToolsBinding, "path">[] {
+  const declared = [...source.matchAll(DIRECT_NAMESPACE), ...source.matchAll(OBJECT_NAMESPACE)]
+    .filter((match) => match[2]?.startsWith("Tools"))
+    .sort((a, b) => a.index - b.index);
+
+  return declared.map((match, index) => {
+    const binding = match[1]!;
+    const namespace = match[2]!;
+    const repeated = declared.filter((entry) => entry[1] === binding).length > 1;
+    const next = declared.slice(index + 1).find((later) => later[1] === binding);
+    const first = declared.findIndex((entry) => entry[1] === binding) === index;
+    const window = repeated
+      ? source.slice(first ? 0 : match.index, next?.index ?? source.length)
+      : source;
+    // `(?<![\w$.])` keeps `t(` from matching `format.t(` or `next(`; `.rich` is how the pages
+    // pass province links into `karayoluP1`, `derecekmP2` and `sonucP3`.
+    const calls = new RegExp(String.raw`(?<![\w$.])${binding}(?:\.rich)?\(\s*"([^"]+)"`, "g");
+    return {
+      binding,
+      namespace,
+      requested: [...window.matchAll(calls)].map((call) => call[1]!),
+    };
+  });
+}
+
+/** Comments out, so a docblock naming a key is not a request and one naming a namespace is not a binding. */
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
+}
+
 const bindings: ToolsBinding[] = CONSUMER_ROOTS.flatMap(({ label, url }) =>
   readdirSync(fileURLToPath(url), { recursive: true, encoding: "utf8" })
     .filter((name) => /\.(?:ts|tsx)$/.test(name) && !/\.test\.tsx?$/.test(name))
-    .flatMap((name) => {
-      // Comments stripped first: a docblock naming a key must not be read as a request, and a
-      // docblock naming a namespace must not mint a binding.
-      const source = readFileSync(fileURLToPath(new URL(name, url)), "utf8")
-        .replace(/\/\*[\s\S]*?\*\//g, " ")
-        .replace(/^[ \t]*\/\/.*$/gm, " ");
-      const declared = [
-        ...source.matchAll(DIRECT_NAMESPACE),
-        ...source.matchAll(OBJECT_NAMESPACE),
-      ].filter((match) => match[2]?.startsWith("Tools"));
-
-      return declared.map((match) => {
-        const binding = match[1]!;
-        const namespace = match[2]!;
-        // `(?<![\w$.])` keeps `t(` from matching `format.t(` or `next(`; `.rich` is how the
-        // page passes the two province links into `karayoluP1`.
-        const calls = new RegExp(String.raw`(?<![\w$.])${binding}(?:\.rich)?\(\s*"([^"]+)"`, "g");
-        return {
-          path: `${label}/${name}`,
-          binding,
-          namespace,
-          requested: [...source.matchAll(calls)].map((call) => call[1]!),
-        };
-      });
-    }),
+    .flatMap((name) =>
+      scanBindings(stripComments(readFileSync(fileURLToPath(new URL(name, url)), "utf8"))).map(
+        (entry) => ({ ...entry, path: `${label}/${name}` }),
+      ),
+    ),
 );
 
+describe("the consumer scan itself", () => {
+  // POSITIVE CONTROL for the scan, on fabricated source rather than on the files it measures:
+  // a green suite below means both "every key resolves" and "the scan attributed each key to
+  // the right namespace", and nothing in the output tells those apart without this.
+  const FIXTURE = [
+    'export async function generateMetadata() { const t = await getTranslations({ locale, namespace: "Tools.hub" }); return t("metaTitle"); }',
+    'export default function Page() { const t = await getTranslations("Tools.koordinat"); const tb = useTranslations("Breadcrumb"); return t("heading") + tb("home"); }',
+  ].join("\n");
+
+  it("splits two same-named bindings that open different namespaces", () => {
+    expect(scanBindings(FIXTURE)).toEqual([
+      { binding: "t", namespace: "Tools.hub", requested: ["metaTitle"] },
+      { binding: "t", namespace: "Tools.koordinat", requested: ["heading"] },
+    ]);
+  });
+
+  it("still gives a name declared once the whole file, calls above it included", () => {
+    const early = 'const read = () => t("kmShort");\nconst t = useTranslations("Tools.ui");';
+    expect(scanBindings(early)).toEqual([
+      { binding: "t", namespace: "Tools.ui", requested: ["kmShort"] },
+    ]);
+  });
+});
+
 describe("every Tools key the code asks for exists", () => {
-  it("discovers a consumer for each of the four namespaces", () => {
+  it("discovers a consumer for each of the five namespaces", () => {
     // Anti-vacuity, and the reason it is an equality: a scan that found nothing, or that lost a
     // surface to a refactor, would satisfy every per-key assertion below by having nothing to
     // check.
     expect([...new Set(bindings.map((entry) => entry.namespace))].sort()).toEqual([
       "Tools.hub",
+      "Tools.koordinat",
       "Tools.map",
       "Tools.mesafe",
       "Tools.ui",

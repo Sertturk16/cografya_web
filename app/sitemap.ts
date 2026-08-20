@@ -62,12 +62,14 @@ function staticEntries(): MetadataRoute.Sitemap {
     // `/en/tools*` is `noindex` and must NOT appear here — a `noindex` URL in a sitemap is a
     // §B6 6.8 BLOCKER, and the surface argument is what keeps it out.
     //
-    // TWO ENTRIES, NOT FOUR. `plan-web.md` §3.2 lists four because it describes the finished
-    // tier; area calculation and coordinate lookup have no page yet, and a sitemap URL that
-    // 404s is the same BLOCKER pointing the other way (→ `Owner's Inbox/cbs-p2/pr-b/
-    // TASK-CONTEXT.md` md.7). They join here in PR-C/PR-D, with their pages.
+    // THREE ENTRIES, NOT FOUR. `plan-web.md` §3.2 lists four because it describes the finished
+    // tier; area calculation has no page yet, and a sitemap URL that 404s is the same BLOCKER
+    // pointing the other way (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7). It joins
+    // here in PR-D, with its page. `lib/tools/tool-sitemap.test.ts` compares this list against
+    // the register in both directions, so neither half can move alone.
     ...sitemapEntriesFor(() => "/araclar", now, 0.7, "trNarrative"),
     ...sitemapEntriesFor(() => "/araclar/mesafe-olcme", now, 0.6, "trNarrative"),
+    ...sitemapEntriesFor(() => "/araclar/koordinat-bulma", now, 0.6, "trNarrative"),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
   ];
 }
