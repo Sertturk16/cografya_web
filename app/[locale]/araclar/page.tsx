@@ -7,7 +7,7 @@ import { routing, type Locale } from "@/i18n/routing";
 import type { ContentSurface } from "@/lib/seo/indexing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { DISTANCE_TOOL, TOOL_HUB_PATHNAME } from "@/lib/tools/tool-registry";
+import { COORDINATE_TOOL, DISTANCE_TOOL, TOOL_HUB_PATHNAME } from "@/lib/tools/tool-registry";
 import styles from "./tools.module.css";
 
 interface PageProps {
@@ -47,14 +47,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * UYARI-level item rather than a BLOCKER, and it is also the difference between a hub worth
  * indexing and a doorway.
  *
- * ## One card today, and that is a rule rather than a gap
+ * ## Two cards today, and that is a rule rather than a gap
  *
- * Area calculation and coordinate lookup are written, planned and unbuilt. A card for either
- * would be a link to a 404, and `SEO-POLICY.md` A4/3 rates a dead link a BLOCKER — outranking
- * `plan-web.md` §2.1's four-row route table, which describes the finished tier
+ * Area calculation is written, planned and unbuilt. A card for it would be a link to a 404,
+ * and `SEO-POLICY.md` A4/3 rates a dead link a BLOCKER — outranking `plan-web.md` §2.1's
+ * four-row route table, which describes the finished tier
  * (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7). No "coming soon" card either: an
  * announcement of what is missing is exactly what `CONTENT-STYLE.md` §22's eksik-vurgusu rule
  * removes.
+ *
+ * The intro moves with the card grid. PR-B narrowed NOVA's three-tool paragraph to the one
+ * tool that was live; this PR restores its second half (`md.7.1`) for the two that now are.
+ * The count in the copy tracks what ships, because a hub that announces three tools and shows
+ * two is the eksik-vurgusu rule broken from the other side.
  *
  * ## Rendering
  *
@@ -76,6 +81,11 @@ export default async function ToolsHubPage({ params }: PageProps) {
       pathname: DISTANCE_TOOL.pathname,
       name: t("mesafeName"),
       body: t("mesafeBody"),
+    },
+    {
+      pathname: COORDINATE_TOOL.pathname,
+      name: t("koordinatName"),
+      body: t("koordinatBody"),
     },
   ] as const;
 

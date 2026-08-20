@@ -23,13 +23,13 @@ type StaticPathname = Exclude<AppPathname, `${string}[${string}`>;
  * gains a page without a route (or a card without a page) fails CI rather than shipping a
  * dead hub link — `SEO-POLICY.md` A4/3 and §B8 8.8 rate that a BLOCKER.
  *
- * ## Why it holds ONE tool today
+ * ## Why it holds TWO tools today
  *
- * `plan-web.md` §1.1 describes three. Area calculation and coordinate lookup land WITH their
- * pages in PR-C and PR-D (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7): a register
- * entry is what puts a card, an `ItemList` position and a sitemap row behind a URL, and all
- * three of those are promises. The dead-link rule outranks the plan's four-row file list, and
- * that ordering is the recorded deviation rather than an oversight.
+ * `plan-web.md` §1.1 describes three. Area calculation lands WITH its page in PR-D
+ * (→ `Owner's Inbox/cbs-p2/pr-b/TASK-CONTEXT.md` md.7): a register entry is what puts a card,
+ * an `ItemList` position and a sitemap row behind a URL, and all three of those are promises.
+ * The dead-link rule outranks the plan's four-row file list, and that ordering is the recorded
+ * deviation rather than an oversight.
  *
  * ## Why the message keys are NOT in here
  *
@@ -55,14 +55,35 @@ export interface ToolRegistryEntry {
   readonly learningResourceType: string;
 }
 
-/** Distance measurement (`/araclar/mesafe-olcme` ↔ `/en/tools/distance`) — Faz-1's tool. */
+/** Distance measurement (`/araclar/mesafe-olcme` ↔ `/en/tools/distance`) — Faz-1's first tool. */
 export const DISTANCE_TOOL = {
   pathname: "/araclar/mesafe-olcme",
   learningResourceType: "Interactive tool",
 } as const satisfies ToolRegistryEntry;
 
-/** Every tool that has a published page today, in the order the hub lists them. */
-export const TOOL_REGISTRY = [DISTANCE_TOOL] as const satisfies readonly ToolRegistryEntry[];
+/**
+ * Coordinate lookup (`/araclar/koordinat-bulma` ↔ `/en/tools/coordinates`).
+ *
+ * The TR term is `GLOSSARY.md` §4.3's canonical one: "koordinat bulma", and explicitly NOT
+ * "koordinat okuma" (AK-25 md.1). The slug follows from the term rather than the other way
+ * round.
+ */
+export const COORDINATE_TOOL = {
+  pathname: "/araclar/koordinat-bulma",
+  learningResourceType: "Interactive tool",
+} as const satisfies ToolRegistryEntry;
+
+/**
+ * Every tool that has a published page today, in the order the hub lists them.
+ *
+ * The order is the hub's card order and its `ItemList` position order, so it is editorial
+ * rather than incidental: distance first because it is the tier's entry point and the one the
+ * home page links, coordinate lookup second.
+ */
+export const TOOL_REGISTRY = [
+  DISTANCE_TOOL,
+  COORDINATE_TOOL,
+] as const satisfies readonly ToolRegistryEntry[];
 
 /** The tool hub's own route — one constant, so the pages and the sitemap cannot disagree. */
 export const TOOL_HUB_PATHNAME: StaticPathname = "/araclar";

@@ -6,6 +6,7 @@ import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import type { ProvincePoint } from "@/lib/tools/province-points";
 import mapStyles from "@/components/map/map.module.css";
 import { ToolIslandLoader } from "./tool-island-loader";
+import type { ProvinceArea, ToolMode } from "./tool-island";
 import styles from "./tools.module.css";
 
 /**
@@ -17,8 +18,12 @@ const SHAPE_ID_PREFIX = "tool-map-";
 
 interface ToolMapProps {
   locale: Locale;
+  /** Which tool the island renders on this page. */
+  mode: ToolMode;
   /** The 81-province picker's options — the tool's pointer-free input path (SPEC §10.1). */
   provincePoints: readonly ProvincePoint[];
+  /** Coordinate mode only: the provinces a placed point may be reported inside (SPEC §6.2). */
+  provinceAreas?: readonly ProvinceArea[];
   /** File-name stem of the PNG this tool exports, e.g. `cografya-mesafe`. ASCII (SPEC §9.4). */
   downloadName: string;
 }
@@ -61,7 +66,13 @@ interface ToolMapProps {
  * island. Nothing inside `.mapRoot` may be an `<svg>` element except the map: that is why the
  * zoom cluster's reset mark is a CSS mask and why the scale bar and the controls are HTML.
  */
-export async function ToolMap({ locale, provincePoints, downloadName }: ToolMapProps) {
+export async function ToolMap({
+  locale,
+  mode,
+  provincePoints,
+  provinceAreas,
+  downloadName,
+}: ToolMapProps) {
   const tMap = await getTranslations("Map");
   const tToolMap = await getTranslations("Tools.map");
 
@@ -88,12 +99,20 @@ export async function ToolMap({ locale, provincePoints, downloadName }: ToolMapP
 
           {/* Classless geometry, once — a `<use>` clone takes the CSS that matched the
               REFERENCED element, and `vector-effect` is the one stroke property it cannot
-              inherit from the `<use>` (the full measurement is in `turkey-map-section.tsx`). */}
+              inherit from the `<use>` (the full measurement is in `turkey-map-section.tsx`).
+
+              `data-plate-code` is what makes these outlines READABLE by the island's
+              point-in-province lookup (SPEC §6.2) without either file knowing the other's `id`
+              prefix, and without the 64 KB artifact being shipped a second time as JavaScript.
+              It is emitted on both tool pages rather than only the coordinate one: a
+              conditional attribute would make the two pages' server HTML diverge for no
+              measurable saving — the name repeats 81 times and compresses to almost nothing. */}
           <defs>
             {PROVINCE_SHAPES.map((shape) => (
               <path
                 key={shape.plateCode}
                 id={`${SHAPE_ID_PREFIX}${shape.plateCode}`}
+                data-plate-code={shape.plateCode}
                 d={shape.d}
                 vectorEffect="non-scaling-stroke"
               />
@@ -130,7 +149,9 @@ export async function ToolMap({ locale, provincePoints, downloadName }: ToolMapP
         </svg>
 
         <ToolIslandLoader
+          mode={mode}
           provincePoints={provincePoints}
+          provinceAreas={provinceAreas}
           downloadName={downloadName}
           baseViewBox={MAP_VIEWBOX}
         />

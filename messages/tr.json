@@ -77,7 +77,7 @@
     "gameBody": "Üç mod: bölge bulma, il bulma, bölge bölge il bulma.",
     "gameCta": "Oyunu aç",
     "toolsHeading": "Haritada ölç",
-    "toolsBody": "Kuş uçuşu mesafeyi iki nokta ya da çok duraklı bir güzergâh boyunca hesapla.",
+    "toolsBody": "Kuş uçuşu mesafeyi ölç, haritadaki bir noktanın enlemini ve boylamını bul.",
     "toolsCta": "Araçları aç"
   },
   "Map": {
@@ -550,13 +550,15 @@
   },
   "Tools": {
     "hub": {
-      "metaTitle": "Türkiye Haritasında Ölçüm Araçları",
-      "metaDescription": "Türkiye'nin 81 ilini gösteren harita üzerinde kuş uçuşu mesafe ölçülür: iki nokta arası ya da çok duraklı bir güzergâh. Kayıt gerekmez.",
+      "metaTitle": "Türkiye Haritasında Ölçüm ve Konum Araçları",
+      "metaDescription": "Türkiye'nin 81 ilini gösteren harita üzerinde iki araç çalışır: kuş uçuşu mesafe ölçme ve enlem-boylam bulma. Kayıt gerekmez.",
       "heading": "Coğrafya Araçları",
-      "introP1": "Coğrafya 9, coğrafi bilgi sistemlerini anlatırken mekânsal verinin nokta, çizgi ve alansal katmanlar hâlinde sayısallaştırıldığını söyler. Buradaki araç o katmanlardan çizgiyle çalışır: iki noktayı birleştiren çizgi, aradaki kuş uçuşu uzaklığı verir.",
-      "introP2": "Ölçüm haritanın kendisinden okunur. Araç, Türkiye'nin 81 ilini gösteren harita üzerinde çalışır ve haritanın üstünde kalıcı bir çizgi ölçek durur.",
+      "introP1": "Coğrafya 9, coğrafi bilgi sistemlerini anlatırken mekânsal verinin nokta, çizgi ve alansal katmanlar hâlinde sayısallaştırıldığını söyler. Buradaki iki araç o katmanlardan ikisiyle çalışır: tek bir nokta koordinat verir, iki noktayı birleştiren çizgi mesafeyi ölçer.",
+      "introP2": "Hangisinin gerektiği ölçülecek şeye bağlıdır. Bir yerin adresi soruluyorsa koordinat bulma işe yarar. Uzaklık soruluyorsa mesafe ölçme devreye girer. İkisi de Türkiye'nin 81 ilini gösteren aynı harita üzerinde çalışır ve ikisinde de haritanın üstünde kalıcı bir çizgi ölçek durur.",
       "mesafeName": "Kuş uçuşu mesafe",
-      "mesafeBody": "İki nokta ya da çok duraklı bir güzergâh boyunca uzaklığı haritada ölç."
+      "mesafeBody": "İki nokta ya da çok duraklı bir güzergâh boyunca uzaklığı haritada ölç.",
+      "koordinatName": "Koordinat bulma",
+      "koordinatBody": "Haritadaki bir noktanın enlemini ve boylamını iki gösterimde birden oku."
     },
     "mesafe": {
       "metaTitle": "Kuş Uçuşu Mesafe Ölçme: İki Nokta ve Güzergâh",
@@ -585,6 +587,30 @@
       "sonucP3": "Güzergâh modunda toplam, ardışık noktalar arasındaki kuş uçuşu parçaların toplamıdır. Ders kitabının kâğıt şeridiyle akarsu uzunluğu ölçme örneği tam olarak bunu yapar ve yolu üç parçaya bölerek toplar. Ara noktalar seyrekleştikçe sonuç gerçek yolun altında kalır.",
       "kaynak": "Kaynak: MEB Coğrafya 9 ders kitabı, 1. Ünite."
     },
+    "koordinat": {
+      "metaTitle": "Enlem, Boylam ve Koordinat Bulma",
+      "metaDescription": "Bir derece enlem her yerde yaklaşık 111 kilometre, bir derece boylam ise yalnız Ekvator'da. Haritadaki nokta ondalık derece ve DMS biçiminde görünür.",
+      "heading": "Haritada Enlem ve Boylam",
+      "teaches": "enlem, boylam ve koordinat sistemi",
+      "lede": "Coğrafya 9 konumu tek cümleyle tanımlar: konum, bir yerin ya da varlığın dünya üzerindeki adresidir. Kitap bu adresi ikiye ayırır. Mutlak konum kesinlik taşır ve değişmez, göreceli konum ise bir yeri başka yerlere göre tarif eder.",
+      "sistemHeading": "Enlem ve boylam",
+      "sistemP1": "Mutlak konumu veren şey koordinat sistemidir. Sistem iki çizgi ailesinden kurulur: Ekvator'a paralel geçtiği varsayılan çemberler ve bir kutuptan diğerine uzanan yarım çemberler.",
+      "sistemP2": "Enlem, bir noktanın Ekvator'a olan uzaklığının yerin merkeziyle yaptığı açıdır. Boylam ise aynı noktanın başlangıç meridyenine olan açısal uzaklığıdır. Başlangıç meridyeni Londra yakınlarındaki Greenwich Kraliyet Gözlemevi'nden geçer.",
+      "sistemP3": "İki sayı ancak birlikte tek bir noktayı verir. Enlem tek başına bir paralel çemberinin tamamını, boylam tek başına bir meridyen yayının tamamını gösterir.",
+      "derecekmHeading": "Bir derece kaç kilometre",
+      "derecekmP1": "Ders kitabı iki rakam verir ve aralarındaki fark bu aracın en önemli ayrıntısıdır. Ardışık iki paralel arasındaki uzaklık her yerde eşittir ve yaklaşık 111 kilometredir. Meridyenler arasında da 111 kilometre vardır, ama yalnız Ekvator'da: bu mesafe kutuplara gidildikçe azalır.",
+      "derecekmP2": "Sonuç şudur: bir derecelik enlem farkı her yerde aynı uzunluğa karşılık gelir, bir derecelik boylam farkı ise gidilen enleme göre kısalır. Türkiye enlemlerinde iki boylam arasındaki gerçek uzaklık, aynı derece farkındaki iki paralelin arasındakinden belirgin biçimde azdır. <mesafe>Mesafe ölçme aracı</mesafe> bu yüzden derece farkını doğrudan kilometreye çevirmez, küresel formülle hesaplar.",
+      "gosterimHeading": "Ondalık derece ve DMS",
+      "gosterimP1": "Aynı nokta iki ayrı biçimde yazılabilir. Ondalık derece tek bir sayı kullanır: 39,92. Derece-dakika-saniye (DMS) aynı değeri üçe böler: 39°55'12\"K. İkisi aynı yeri gösterir, aralarındaki fark yalnızca gösterimdir.",
+      "gosterimP2": "Ders kitabının fiilen bastığı biçim bir üçüncüsüdür. Dünya şehirleri tablosunda koordinatlar tam derece ve yön harfiyle verilir: Tokyo 35° K 139° D, Los Angeles 34° K 118° B, Jakarta 6° G 106° D, Londra 51° K 0°. Aynı ünite bir yeri daha keskin tarif ederken dereceyi dakikaya böler: Ankara 39° 55' kuzey enlemi ile 32° 52' doğu boylamında gösterilir.",
+      "gosterimP3": "Araç ikisini birden gösterir, çünkü müfredat yön harfleriyle çalışırken haritanın verisi ondalık derecedir. Türkçe metinde yön harfleri K, G, D ve B'dir. Ondalık gösterimde harf yoktur, onun yerine güney enlemleri ve batı boylamları eksi işaret alır.",
+      "toolHeading": "Haritada koordinat bul",
+      "sonucHeading": "Koordinatı okurken",
+      "sonucP1": "Ondalık derece dört basamakla gösterilir. Dördüncü basamak, kitabın verdiği 111 kilometrelik derece uzunluğu üzerinden yaklaşık on bir metreye karşılık gelir. Bu bir sokağı ayırt etmeye yeter, bir binayı ayırt etmeye yetmez.",
+      "sonucP2": "Türkiye çerçevesinin dışında kalan geçerli bir koordinat da kabul edilir ve haritanın kenarına yapıştırılmaz. Nokta bir il sınırının içine düşerse ilin adı sonucun yanında görünür ve o ilin sayfasına bağlanır.",
+      "sonucP3": "Yerel saat farkı da aynı iki sayıdan çıkar. Ders kitabının örneği 33° doğu meridyenindeki <ankara>Ankara</ankara> ile 45° doğu meridyenindeki <igdir>Iğdır</igdir>'ı karşılaştırır. On iki derecelik boylam farkı, her meridyene düşen dört dakikayla çarpılınca 48 dakika verir.",
+      "kaynak": "Kaynak: MEB Coğrafya 9 ders kitabı, 1. Ünite."
+    },
     "map": {
       "zoomIn": "Yakınlaştır",
       "zoomOut": "Uzaklaştır",
@@ -610,6 +636,14 @@
       "resultOnePoint": "İkinci noktayı seç.",
       "resultTwoPoints": "İki nokta arası {distance} kilometre.",
       "resultRoute": "{count} noktalı güzergâh toplam {distance} kilometre.",
+      "coordinateControlsLabel": "Koordinat denetimleri",
+      "coordinateProvinceLabel": "İl merkezi seç",
+      "coordinateInputLabel": "Koordinat yaz",
+      "showPoint": "Göster",
+      "coordinateEmpty": "Koordinat için haritada bir nokta gerekir.",
+      "coordinateDecimal": "Nokta ondalık derece ile {lat}, {lon}.",
+      "coordinateDms": "Aynı nokta DMS ile {lat}, {lon}.",
+      "coordinateProvince": "Nokta <link>{name}</link> sınırları içinde.",
       "limitReached": "Nokta sınırı {limit}. Yeni nokta için bir noktayı sil.",
       "outsideFrame": "Bu nokta harita çerçevesinin dışında.",
       "errorNoProvince": "İl seçilmedi. Listeden bir il seç.",
