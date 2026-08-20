@@ -152,6 +152,21 @@ describe("the chart carries no reference line and no index colouring", () => {
   });
 });
 
+describe("the truncated axis shows the reader where it starts", () => {
+  it("prints EVERY axis tick, so the truncated floor is always a visible number", () => {
+    // The axis does not start at zero (→ DEC 2026-08-20c md.2 as applied 2026-08-20), and a
+    // truncated axis that hides its own floor reads as a zero-based one — the exact
+    // misreading the printed floor exists to prevent. Searched by shape, not by a name a
+    // label might carry: the tick collection must be mapped whole, with nothing dropping
+    // entries on the way to the `<text>` elements.
+    expect(chartCode).toMatch(/geometry\.ticks\.map\(/);
+    expect(chartCode).not.toMatch(/geometry\.ticks\s*\.\s*(slice|filter|shift|pop)/);
+    expect(chartCode).not.toMatch(/ticks\.slice\(/);
+    // …and the labels come from the tick VALUE, never re-derived from an index.
+    expect(chartCode).toMatch(/\{tick\(axisTick\.value\)\}/);
+  });
+});
+
 describe("accessibility contract", () => {
   it("gives the chart a text equivalent through title AND desc", () => {
     expect(chart).toMatch(/role="img"/);

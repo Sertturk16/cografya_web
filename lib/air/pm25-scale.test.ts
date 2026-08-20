@@ -19,51 +19,109 @@ const series = (values: readonly number[], startYear = 1998): Pm25SeriesPoint[] 
 /** 27 years, the shape the contract publishes today. Values are a synthetic ramp. */
 const twentySeven = series(Array.from({ length: 27 }, (_, i) => 12 + i * 0.5));
 
+/**
+ * Constructed (min, max) pairs spanning the shapes the rule has to survive: a hair-thin
+ * range, a narrow one, several ordinary ones, a very wide one, and one sitting near zero.
+ * None is a claim about a province.
+ */
+const ranges: readonly (readonly [number, number])[] = [
+  [0.1, 0.4],
+  [15.1, 19.3],
+  [12.4, 18.2],
+  [14, 23.8],
+  [20.2, 48],
+  [32.7, 47.3],
+  [9, 120],
+  [40, 480],
+];
+
 describe("pm25AxisDomain", () => {
-  it("anchors the floor at zero for every input", () => {
-    for (const max of [0.4, 9, 15.8, 22.7, 41.6, 48.1, 120]) {
-      expect(pm25AxisDomain(max).min).toBe(0);
+  it("puts the floor AT OR BELOW the series minimum — the axis never clips a low reading", () => {
+    for (const [min, max] of ranges) {
+      expect(pm25AxisDomain(min, max).min).toBeLessThanOrEqual(min);
+    }
+  });
+
+  it("does NOT anchor the floor at zero when the province sits well above it", () => {
+    // The ruled behaviour itself (→ DEC 2026-08-20c md.2 as applied 2026-08-20): the axis
+    // spans the province's own range, so a series that never goes near zero gets a floor
+    // that never goes near zero either.
+    expect(pm25AxisDomain(15.1, 19.3).min).toBe(15);
+    expect(pm25AxisDomain(32.7, 47.3).min).toBe(30);
+  });
+
+  it("moves the floor WITH the data instead of returning a fixed number", () => {
+    // Positive control on the mechanism: shift the same-width range down and the floor
+    // follows it down. A rule that had quietly frozen at one value would fail here.
+    const high = pm25AxisDomain(35.2, 39.4).min;
+    const low = pm25AxisDomain(15.2, 19.4).min;
+    expect(high).toBeGreaterThan(low);
+  });
+
+  it("still floors at zero when the series itself reaches down to it", () => {
+    // Not an exception to the rule — the same rule, on data that happens to sit there. A
+    // concentration cannot be negative, so the floor can never go below zero.
+    expect(pm25AxisDomain(0.1, 0.4).min).toBe(0);
+    for (const [min, max] of ranges) {
+      expect(pm25AxisDomain(min, max).min).toBeGreaterThanOrEqual(0);
     }
   });
 
   it("puts the ceiling AT OR ABOVE the series maximum, never below it", () => {
     // The one property that, if broken, clips a real reading out of the plot.
-    for (const max of [0.4, 9, 15.8, 20, 22.7, 25, 41.6, 48.1, 50, 120]) {
-      expect(pm25AxisDomain(max).max).toBeGreaterThanOrEqual(max);
+    for (const [min, max] of ranges) {
+      expect(pm25AxisDomain(min, max).max).toBeGreaterThanOrEqual(max);
     }
   });
 
-  it("keeps the ceiling a whole multiple of the chosen step", () => {
-    for (const max of [0.4, 9, 15.8, 22.7, 41.6, 48.1, 120]) {
-      const domain = pm25AxisDomain(max);
+  it("keeps BOTH ends a whole multiple of the chosen step", () => {
+    // Both, not just the ceiling: the floor is printed as a tick label now, and a floor off
+    // the step grid would print a number the other ticks do not agree with.
+    for (const [min, max] of ranges) {
+      const domain = pm25AxisDomain(min, max);
       expect(domain.max % domain.step).toBe(0);
+      expect(domain.min % domain.step).toBe(0);
     }
   });
 
   it("never lets the axis grow past six intervals, whatever the range", () => {
     // The reason the step is CHOSEN rather than fixed: a fixed step of 10 would give a
     // 48 µg/m³ province five gridlines and a 480 µg/m³ one forty-eight.
-    for (const max of [0.4, 9, 15.8, 22.7, 41.6, 48.1, 120, 480]) {
-      const domain = pm25AxisDomain(max);
-      expect(domain.max / domain.step).toBeLessThanOrEqual(6);
+    for (const [min, max] of ranges) {
+      const domain = pm25AxisDomain(min, max);
+      expect((domain.max - domain.min) / domain.step).toBeLessThanOrEqual(6);
     }
   });
 
-  it("gives at least three intervals across the range the contract actually publishes", () => {
-    // Three, not four: the step jumps at 25 and at 50, so a maximum just past a jump lands
-    // on three gridlines (10,1 → step 5, ceiling 15). That is the rule working, not a thin
-    // axis, and pinning four here asserted a guarantee the rule never made. The bound is a
-    // property of the RULE, not a claim about any province's numbers.
-    for (const max of [10.1, 15.8, 22.7, 25.1, 30, 41.6, 48.1]) {
-      const domain = pm25AxisDomain(max);
-      expect(domain.max / domain.step).toBeGreaterThanOrEqual(3);
+  it("gives at least three intervals once the span is three µg/m³ or wider", () => {
+    // A property of the rule, provable rather than measured: the step is the smallest
+    // candidate with span ≤ 5·step, and consecutive candidates are at most 2,5× apart, so a
+    // span of three or more can never collapse onto a two-tick axis.
+    for (const [min, max] of ranges.filter(([lo, hi]) => hi - lo >= 3)) {
+      const domain = pm25AxisDomain(min, max);
+      expect((domain.max - domain.min) / domain.step).toBeGreaterThanOrEqual(3);
     }
   });
 
-  it("never returns a zero-width domain, even for an all-zero series", () => {
-    // Degenerate input must not reach a caller as a divide-by-zero.
-    const domain = pm25AxisDomain(0);
-    expect(domain.max).toBeGreaterThan(domain.min);
+  it("pads the domain by less than two steps beyond the data's own span", () => {
+    // This is what the ruling actually bought, stated as an invariant: the axis is the
+    // province's range plus rounding, never a range chosen for some other province.
+    for (const [min, max] of ranges) {
+      const domain = pm25AxisDomain(min, max);
+      expect(domain.max - domain.min).toBeLessThan(max - min + 2 * domain.step);
+    }
+  });
+
+  it("never returns a zero-width domain, for an all-zero or a perfectly flat series", () => {
+    // Degenerate input must not reach a caller as a divide-by-zero. Both cases land on a
+    // step boundary at both ends, which is the only way the floor can meet the ceiling.
+    for (const [min, max] of [
+      [0, 0],
+      [20, 20],
+    ] as const) {
+      const domain = pm25AxisDomain(min, max);
+      expect(domain.max).toBeGreaterThan(domain.min);
+    }
   });
 });
 
@@ -163,10 +221,31 @@ describe("buildPm25ChartGeometry", () => {
     expect(geometry?.height).toBe(PM25_CHART_HEIGHT);
   });
 
-  it("starts the tick list at zero and ends it at the domain ceiling", () => {
+  it("starts the tick list AT THE DOMAIN FLOOR and ends it at the ceiling", () => {
+    // The floor is a printed tick, not an implied zero — this is the half of the ruling
+    // that keeps a truncated axis from reading as a zero-based one. `twentySeven` ramps
+    // 12 → 25, so its floor is 10 and the list must open on a number, not on zero.
     const geometry = buildPm25ChartGeometry(twentySeven);
     const ticks = geometry?.ticks ?? [];
-    expect(ticks[0]?.value).toBe(0);
+    expect(ticks[0]?.value).toBe(geometry?.domain.min);
+    expect(ticks[0]?.value).not.toBe(0);
     expect(ticks.at(-1)?.value).toBe(geometry?.domain.max);
+  });
+
+  it("puts the floor tick on the plot's bottom edge, where a reader looks for the baseline", () => {
+    const geometry = buildPm25ChartGeometry(twentySeven);
+    expect(geometry?.ticks[0]?.y).toBe(geometry?.plot.y1);
+  });
+
+  it("lets the trend fill most of the plot height for a narrow, high series", () => {
+    // What the ruling bought, as a rule property on a constructed input: this 4,2-wide
+    // range sitting between 15 and 20 occupied 21% of the plot height under a zero floor
+    // (0-20 in steps of 5) and fills 84% of it under its own. The bound asserted is loose
+    // on purpose — the claim is "most of the height", not a pinned number.
+    const narrow = buildPm25ChartGeometry(series([15.1, 17.2, 16.4, 19.3, 18.1]));
+    const ys = (narrow?.points ?? []).map((p) => p.y);
+    const plotHeight = (narrow?.plot.y1 ?? 0) - (narrow?.plot.y0 ?? 0);
+    const used = Math.max(...ys) - Math.min(...ys);
+    expect(used / plotHeight).toBeGreaterThan(0.6);
   });
 });

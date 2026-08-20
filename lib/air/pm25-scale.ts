@@ -47,7 +47,7 @@ export interface Pm25Extreme {
   value: number;
 }
 
-/** The finished y-axis domain: always anchored at zero, with a rounded ceiling. */
+/** The finished y-axis domain — the province's own range, rounded outwards to whole steps. */
 export interface Pm25Domain {
   min: number;
   max: number;
@@ -84,31 +84,49 @@ const MARGIN = { top: 26, right: 16, bottom: 34, left: 44 } as const;
 export const PM25_AXIS_UNIT_DY = 10;
 
 /**
- * ⚠ THE ONE AXIS DECISION IN THIS FILE, and the only line a ruling would move.
+ * ⚠ THE ONE AXIS DECISION IN THIS FILE, and the only rule a ruling would move.
  *
- * The y axis is anchored at ZERO for every province, per plan §4.2 — on a CONCENTRATION
- * chart a clipped baseline makes a small change look like a large one, and the reader who
- * compares two province pages is comparing shapes. This is also the premise the owner was
- * given, in writing, when ruling O-2 ("her iki durumda da çizgi sıfırdan başlar … bu
- * tartışmaya açık değil", → DEC 2026-08-20c md.2).
+ * The y axis spans THE PROVINCE'S OWN RANGE: floor and ceiling are the series minimum and
+ * maximum rounded outwards to whole tick steps. **It does not start at zero.**
  *
- * It is stated as a constant rather than an inlined `0` because there is a live,
- * surfaced question about it: DEC 2026-08-20d md.3 says the within-province trend "uses
- * the whole chart height", and under a zero floor it measurably does not (median 32% of
- * the height across the 81 provinces; 21% for Samsun, 15,1-19,3 µg/m³). The conflict is on
- * the record for Atlas; until it is ruled, the written plan governs.
+ * That is DEC 2026-08-20c md.2 — "her ilde kendi ölçeğinde", bought explicitly for
+ * IN-PROVINCE TREND READABILITY — as applied by Atlas on 2026-08-20. A per-province ceiling
+ * over a zero floor is also "its own scale" on the face of the wording, and this file
+ * shipped that reading first; the measurement is what settles it. Under a zero floor the
+ * trend occupies a median 32% of the chart height across the 81 provinces and 21% in the
+ * narrowest (Samsun, 15,1-19,3 µg/m³), with 34 of the 81 below the 29% that DEC 2026-08-20d
+ * named as the unacceptable cost — i.e. the zero floor keeps the exact harm the removal of
+ * the WHO reference line was for. Under the province's own range the same figures are a
+ * median 77% and a worst case of 54%.
+ *
+ * A truncated axis exaggerates variation, and that real cost is paid down in two places
+ * that are part of this decision rather than decoration:
+ *
+ * 1. **The floor is PRINTED**, as a tick label like every other tick, so the chart cannot
+ *    read as if it started at zero (`pm25-chart.tsx` draws one `<text>` per `ticks` entry,
+ *    and the first entry is the floor).
+ * 2. **The magnitude is carried in words and figures**, not inferred from the picture: the
+ *    always-visible value line, the `<desc>` sentence that names the min and the max with
+ *    their years, and the full 27-row table one click away (→ DEC 2026-08-20c md.3).
+ *
+ * Reversal cost, if the owner overturns this at the frame gate: `floor` below becomes `0`,
+ * the step reverts to being chosen on `maxValue`, and the four domain tests move with them.
  */
-const AXIS_FLOOR = 0;
 
 /**
- * Candidate y-axis tick steps, ascending. The chosen step is the smallest one that puts the
- * ceiling within `TARGET_INTERVALS` of zero — so the axis carries three to six labelled
- * gridlines whatever the province's range is, instead of three on a clean province and
- * twelve on a dirty one.
+ * Candidate y-axis tick steps, ascending. The chosen step is the smallest one that fits the
+ * province's SPAN within `TARGET_INTERVALS` — so the axis carries three to six intervals
+ * whatever the province's range is, instead of three on a flat province and twelve on a
+ * volatile one.
  *
- * Measured against the 81 published series (`data/acag-pm25/acag-province-pm25.json`,
- * read from api `origin/dev`): ceilings 20/25/30/40/50 on 6/24/28/16/7 provinces, i.e.
- * four to six printed ticks each. No province lands on a one- or two-tick axis.
+ * The step is chosen on the SPAN and not on the maximum, and with a floor off zero it has
+ * to be: a step sized for the maximum would put the narrowest province on a two-tick axis
+ * (Samsun's 15,13-19,33 would round to a single 15-20 interval).
+ *
+ * Measured against the 81 published series (`data/acag-pm25/acag-province-pm25.json`, read
+ * from api `origin/dev` @ `7a6f285`): steps 1/2/5/10 on 3/41/36/1 provinces, giving 3/4/5/6
+ * intervals on 21/22/27/11 of them — four to seven printed ticks each. No province lands on
+ * a one- or two-tick axis.
  */
 const AXIS_STEPS = [1, 2, 5, 10, 20, 50, 100] as const;
 const TARGET_INTERVALS = 5;
@@ -133,17 +151,24 @@ export function roundTo(value: number, decimals = 2): number {
 }
 
 /**
- * The y-axis domain for one province: zero to a rounded ceiling at or above the series
- * maximum. Per-province by ruling (→ DEC 2026-08-20c md.2) — the printed tick numbers are
- * what make two province charts comparable, not their shapes.
+ * The y-axis domain for one province: the series minimum rounded DOWN and the series
+ * maximum rounded UP to whole tick steps (→ the axis decision above). Both ends are
+ * per-province, so two provinces' chart SHAPES are not comparable — the printed tick
+ * numbers are what carry the comparison, which is why every tick is labelled.
  *
- * A non-positive maximum (every value zero, or a contract violation) still yields a
+ * The floor is never negative for a legal payload: a concentration is non-negative, and
+ * `Math.floor(x / step) * step` of a non-negative `x` is non-negative. A province whose
+ * minimum is below one step floors at zero and honestly shows a zero baseline.
+ *
+ * A flat series (minimum === maximum, both landing on a step boundary) still yields a
  * one-step domain rather than a zero-width one, so no caller can divide by zero.
  */
-export function pm25AxisDomain(maxValue: number): Pm25Domain {
-  const step = AXIS_STEPS.find((s) => maxValue <= s * TARGET_INTERVALS) ?? AXIS_STEPS.at(-1) ?? 1;
+export function pm25AxisDomain(minValue: number, maxValue: number): Pm25Domain {
+  const span = maxValue - minValue;
+  const step = AXIS_STEPS.find((s) => span <= s * TARGET_INTERVALS) ?? AXIS_STEPS.at(-1) ?? 1;
+  const floor = Math.floor(minValue / step) * step;
   const ceiling = Math.ceil(maxValue / step) * step;
-  return { min: AXIS_FLOOR, max: ceiling > AXIS_FLOOR ? ceiling : AXIS_FLOOR + step, step };
+  return { min: floor, max: ceiling > floor ? ceiling : floor + step, step };
 }
 
 /**
@@ -172,14 +197,15 @@ export function buildPm25ChartGeometry(
   // never describe different years.
   let lowest: Pm25SeriesPoint = first;
   let highest: Pm25SeriesPoint = first;
-  let maxValue = first.valueUgM3;
   for (const point of years) {
     if (point.valueUgM3 < lowest.valueUgM3) lowest = point;
     if (point.valueUgM3 > highest.valueUgM3) highest = point;
-    if (point.valueUgM3 > maxValue) maxValue = point.valueUgM3;
   }
 
-  const domain = pm25AxisDomain(maxValue);
+  // BOTH ends of the domain now come from the data, so the same single pass feeds the axis
+  // and the <desc>: the sentence a screen reader hears names the very values the axis was
+  // built from.
+  const domain = pm25AxisDomain(lowest.valueUgM3, highest.valueUgM3);
   const span = domain.max - domain.min;
   const yFor = (value: number) => roundTo(y1 - ((value - domain.min) / span) * (y1 - y0));
 

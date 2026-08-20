@@ -43,6 +43,14 @@ interface Pm25ChartProps {
  * carry real numbers and the `<desc>` states the range in words: the axis auto-scales PER
  * province (→ DEC 2026-08-20c md.2), so two provinces' chart SHAPES are not comparable and
  * the printed numbers are what carry the comparison.
+ *
+ * **The axis does not start at zero, and that is why every tick is labelled.** Its floor is
+ * the province's own minimum rounded down (`lib/air/pm25-scale.ts` carries the rule and the
+ * measurement); a truncated axis exaggerates variation, so the floor is drawn and printed
+ * exactly like every other tick — the tick loop below is what stops this chart from reading
+ * as a zero-based one, and dropping the first label would be a correctness regression, not a
+ * tidy-up. The magnitude itself is carried in words and figures: the value line, the
+ * `<desc>` sentence naming the min and the max, and the year table.
  */
 export async function Pm25Chart({ pm25, provinceName, idSuffix, displayUnit }: Pm25ChartProps) {
   const t = await getTranslations("AirPollution");
@@ -137,7 +145,9 @@ export async function Pm25Chart({ pm25, provinceName, idSuffix, displayUnit }: P
               />
             ))}
 
-          {/* Left axis: concentration tick numbers. */}
+          {/* Left axis: concentration tick numbers — EVERY tick, floor included. The floor
+              is not zero (see the header), so this is the label that tells the reader which
+              range they are looking at. */}
           {geometry.ticks.map((axisTick) => (
             <text
               key={`tl-${axisTick.value}`}
