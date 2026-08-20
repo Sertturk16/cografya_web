@@ -83,8 +83,12 @@ const MARGIN = { top: 26, right: 16, bottom: 34, left: 44 } as const;
 /** Baseline offset of the unit caption above the plot's top edge (see `MARGIN.top`). */
 export const PM25_AXIS_UNIT_DY = 10;
 
-/**
+/* -----------------------------------------------------------------------------------------
  * ⚠ THE ONE AXIS DECISION IN THIS FILE, and the only rule a ruling would move.
+ *
+ * A section note, deliberately not a doc comment on a declaration: the rule used to live in
+ * a single `AXIS_FLOOR = 0` constant and now lives in `pm25AxisDomain` below, which computes
+ * both ends from the data. There is no constant left to hang it on.
  *
  * The y axis spans THE PROVINCE'S OWN RANGE: floor and ceiling are the series minimum and
  * maximum rounded outwards to whole tick steps. **It does not start at zero.**
@@ -111,7 +115,7 @@ export const PM25_AXIS_UNIT_DY = 10;
  *
  * Reversal cost, if the owner overturns this at the frame gate: `floor` below becomes `0`,
  * the step reverts to being chosen on `maxValue`, and the four domain tests move with them.
- */
+ * ------------------------------------------------------------------------------------- */
 
 /**
  * Candidate y-axis tick steps, ascending. The chosen step is the smallest one that fits the
