@@ -133,6 +133,113 @@
   border-top: 0;
 }
 
+/* ---- THE ZOOM CLUSTER ------------------------------------------------------------------
+   Handed to `MapZoomPan` as its layer/controls classes, so the shared overlay rules in
+   `map.module.css` are untouched and every other surface renders exactly what it always has.
+   The BUTTONS still come from that file — only where the cluster sits is this page's business.
+
+   WHAT WAS WRONG. On a 320px phone the map box is 119.25px tall and the cluster is a 132px
+   column, so `.mapRoot { overflow: hidden }` cut the third button in half: 15.25px of hittable
+   height, measured two independent ways (0.25px `elementFromPoint` sweep down the button's own
+   centre axis, and the border box intersected with every clipping ancestor's padding box —
+   both returned 15.25 while the two uncut buttons above returned 40.00, which is the control
+   that says the methods can read a whole button). `DESIGN.md` §5 sets an unconditional 24px
+   floor for a touch target, and the frame shows a button sliced through the middle.
+
+   THE ARITHMETIC IS FIXED, so no amount of tightening reaches it: three 40px buttons need
+   120px even with zero top offset and zero gaps, against a 119.25px box. The cluster has to
+   leave the box, shrink, or lie down.
+
+   WHY IT LIES DOWN ABOVE THE MAP rather than shrinking or moving onto it. Measured, all five
+   candidates, at 320px, counting provinces whose own centre point has chrome on it:
+
+     current                                 11/81 covered, third button 15.25px
+     row, still floating over the map          18/81 covered, three buttons whole
+     buttons 40px -> 32px, column kept          9/81 covered, three buttons 32.75px
+     cluster outside the panel entirely          0/81, but the panel stops being one object
+     THIS: a row at the TOP of the panel         0/81, three buttons whole, 40px kept
+
+   The floating row is the one the arithmetic allows and the product forbids: this is a
+   MEASURING surface, and PR #75 already moved the licence plate off it for that exact reason
+   (`.attribution` below, and the owner rejected the frame that showed it). Putting a bigger
+   piece of chrome back where a smaller one was removed would undo that decision. Shrinking the
+   buttons buys two provinces and costs 8px of touch target on the one device that has no
+   pointer. Leaving the panel splits one instrument into three stacked bands.
+
+   THE 410px CUT POINT IS DERIVED, NOT PICKED, and this is the sentence to re-read before
+   changing it: the cluster stays an overlay only where it fits inside the box with the SAME
+   room underneath that its own 12px `top` gives it above. Top gap is a constant 13.00px (12px
+   plus the panel's 1px border); the bottom gap is whatever the map's fixed aspect ratio
+   leaves. Measured on the running build, TR and EN alike, IN A FRAME WITH AN OVERLAY
+   SCROLLBAR — a phone, or an emulated width — which is the frame this fix exists for:
+
+     398px  9.72   402px 11.44   405px 12.72   406px 13.14   409px 14.44   410px 14.86
+
+   RE-MEASURE IN THE SAME FRAME BEFORE COMPARING. A desktop window with a classic,
+   space-taking scrollbar does not disagree with this row, it measures something else: the
+   scrollbar takes its own width off the CONTAINER, so every bottom gap here drops with it
+   while the 13.00px top constant does not move. Lower figures there are the same curve, not
+   an inconsistency, and shifting the cut point to reconcile them would be shifting it for a
+   frame that has no phone in it.
+
+   406px is where the bottom gap first clears the top one; 410px is 406 plus a pixel of margin
+   so a rounding change cannot reopen the band. Below it the WCAG floor is not the whole story
+   — at 384px the button is intact but its bottom edge sits 3.70px off the panel border and
+   reads as barely squeezed in, which is why the cut point is not the 341px where 24px breaks.
+
+   `px`, not `rem`, and that is deliberate. Nothing in the geometry that produces the defect is
+   type-relative: a 40px button, a 20px container pad, a fixed-ratio `viewBox`. Expressed in
+   `rem`, 410px is 25.625rem — NOT 26rem, which is 416px and would reopen the 410-416 band this
+   derivation closes on purpose — and a reader who sets a 12px root font would push that
+   25.625rem down to 307.5px, switching the fix off exactly where it is needed. Both halves
+   matter: the conversion is not free, and even done exactly it still breaks under a smaller
+   root. The repo's other component-level breakpoints are px for the
+   same kind of reason (`climate.module.css` and `air-pollution.module.css` 700px,
+   `marine.module.css` 720px); `DESIGN.md` §4's two system numbers govern page layout and are
+   untouched by this one, which lives only in this file.
+
+   This is structurally `game-map.module.css`'s cluster rule (→ DEC 2026-08-17g md. 3). Two
+   differences, both measured: the cut point is this surface's own number rather than 64rem,
+   and the row sits ABOVE the map instead of below it, because below it the çizgi ölçek is
+   pushed out of the map area into the button band (`.scaleBar` above keeps the bottom edge to
+   itself). The game's `margin-left: auto` is NOT carried over: there the layer shares a flex
+   line with the credit and needs it, here `.mapRoot` is a block container and the row is
+   right-aligned by `justify-content` alone. */
+.zoomLayer {
+  display: flex;
+  justify-content: flex-end;
+  /* 8px clears the focus ring (a 2px outline at 2px offset) against `.mapRoot`'s
+     `overflow: hidden`; 4px at the bottom is the same ring, and the map begins right after
+     it. */
+  margin: 8px 14px 4px;
+}
+
+.zoomControls {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+/* From the cut point up this is today's layout, to the hundredth: the cluster is an overlay at
+   13px/15px from the panel's top-right corner, 40 x 132, and the occlusion count is unchanged
+   (9/81 at 410px, 1/81 at 768px, 0/81 at 1440px). The layer is sized to its own content rather
+   than spanning the map, so unlike the shared rule it needs no `inset: 0` / `pointer-events`
+   pair to let clicks reach the map — there is nothing under it but the panel's own corner, and
+   all three buttons measure a full 40px at 1440px. */
+@media (min-width: 410px) {
+  .zoomLayer {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    margin: 0;
+  }
+
+  .zoomControls {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
 /* ---- Control strip ------------------------------------------------------------------- */
 
 /* The reserved box — the `game-screen.module.css` `--game-action-row` pattern, one number and

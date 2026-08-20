@@ -82,7 +82,15 @@ export async function ToolMap({
   return (
     <>
       <div className={mapStyles.mapRoot} data-map-root>
+        {/* The cluster's PLACEMENT is this page's, its LOOK is still the shared one. Below
+            410px these two classes lay it down as a row at the top of the panel, above the
+            map, because the map box is too short to hold a 132px column and `.mapRoot`'s
+            `overflow: hidden` was cutting the third button to 15.25px. From 410px up they
+            reproduce today's overlay exactly. The whole measurement, the four rejected
+            alternatives and the derivation of 410 are in `tools.module.css`. */}
         <MapZoomPan
+          layerClassName={styles.zoomLayer}
+          controlsClassName={styles.zoomControls}
           viewBox={MAP_VIEWBOX}
           instructionsId={instructionsId}
           labels={{
@@ -184,10 +192,11 @@ export async function ToolMap({
           block spans are exactly as they were, and `attribution-separation.test.ts` guards
           this file for precisely that.
 
-          `/turkiye` and `/dunya` still take the overlay from `map.module.css` and are NOT
-          touched here: the same defect is live on both (measured — `/turkiye` 43.4% covered
-          and 36 of 81 at 360px), and it is reported to Atlas as its own PR rather than widened
-          into this one. The class therefore lives in THIS stylesheet, like the game's. */}
+          `/turkiye` still takes the plated overlay from `map.module.css` and is NOT touched
+          here: the same defect is live there (measured — 43.4% covered and 36 of 81 at 360px)
+          and is tracked as its own item (`FU-TURKIYE-ATIF-ORTUSU`) rather than widened into
+          this one. `/dunya` no longer takes it — it moved to `.attributionFlow`, in flow under
+          the panel. The class therefore lives in THIS stylesheet, like the game's. */}
       <p className={styles.attribution} data-tool-attribution>
         <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
         <span className={styles.attributionLine}>
