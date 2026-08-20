@@ -83,6 +83,15 @@ export interface ToolIslandProps {
 const MAX_POINTS = 20;
 
 /**
+ * The fewest points that make a ring (SPEC §6.3), named once.
+ *
+ * Three places need this number — the area memo's guard, the export threshold and the
+ * count-aware announcement below — and a fourth reader has to be able to see they mean the
+ * same thing.
+ */
+const AREA_MIN_POINTS = 3;
+
+/**
  * The uncertainty a point carries when it did NOT come from a click, in kilometres.
  *
  * SPEC §6.6 states the rule as "the digits shown may not exceed the uncertainty the INPUT
@@ -520,8 +529,15 @@ export function ToolIsland({
    * shape's LINEAR scale, the side of the equivalent square. That is the quantity a point's
    * uncertainty is expressed in, so no second threshold family is minted: a ring clicked at 1×
    * reads whole km² because the click is worth ~1.7 km, while a small ring typed in decimal
-   * degrees earns its tenth. The alternative — always integer km² — prints `0 km²` for a
-   * legitimately small typed polygon, which is the same untruth in the other direction.
+   * degrees earns its tenth.
+   *
+   * WHAT IT DOES NOT DO (→ PR #75 review `CODE75-M1`). An earlier version of this note claimed
+   * the rule removes the always-integer alternative's `0 km²` problem. It NARROWS it and does
+   * not remove it: `kmDecimalsFor` returns at most one decimal, so a ring under 0.05 km² still
+   * prints `0,0` on the typed path, and under 0.5 km² still prints `0` on the click path. What
+   * the rule buys is the two orders of magnitude between those floors and the alternative's,
+   * which is where a legitimately small typed polygon actually lands. The same rounding is
+   * already published by the distance tool.
    */
   const formatArea = useCallback(
     (km2: number) => {
@@ -614,7 +630,7 @@ export function ToolIsland({
    * nothing here reimplements a formula, it chooses a branch.
    */
   const area = useMemo(() => {
-    if (!isArea || points.length < 3) return null;
+    if (!isArea || points.length < AREA_MIN_POINTS) return null;
     const ring = geoPoints;
     // A self-intersecting outline has no well-defined inside, so NO number derived from it is
     // trustworthy — not the area, and not the perimeter either. `plan-web.md` §15/8 is explicit
@@ -668,7 +684,7 @@ export function ToolIsland({
   // One point is a complete picture for a coordinate lookup and an incomplete one for a
   // measurement, so the export threshold follows the mode rather than the polyline. An area
   // needs the three that make a ring — exporting two would picture a line, not a shape.
-  const minExportPoints = isCoordinate ? 1 : isArea ? 3 : 2;
+  const minExportPoints = isCoordinate ? 1 : isArea ? AREA_MIN_POINTS : 2;
 
   const download = useCallback(() => {
     if (!surface || geoPoints.length < minExportPoints) return;
@@ -717,7 +733,22 @@ export function ToolIsland({
    */
   const areaBody =
     area === null ? (
-      <p className={styles.result}>{t("areaEmpty")}</p>
+      // COUNT-AWARE BELOW THREE POINTS (→ PR #75 review `A11Y75-I1`). This branch used to print
+      // one constant string, so the single polite region was byte-identical at zero, one and two
+      // points and a screen-reader user pressing "Ekle" heard nothing — unable to tell an
+      // accepted point from a picker that never registered it. Every ring needs three points, so
+      // that silence sat on the path of EVERY use of this tool, while the other two modes
+      // announce at each step. The state a change has to carry is how many points are down and
+      // how many are still owed (WCAG 4.1.3); no second region and no focus move, because the
+      // region is already mounted and already polite.
+      <p className={styles.result}>
+        {points.length === 0
+          ? t("areaEmpty")
+          : t("areaNeedsMore", {
+              placed: points.length,
+              remaining: AREA_MIN_POINTS - points.length,
+            })}
+      </p>
     ) : area.kind === "selfIntersects" ? (
       <p className={styles.result}>{t("areaSelfIntersects")}</p>
     ) : (

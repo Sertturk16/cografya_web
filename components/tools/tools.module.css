@@ -35,10 +35,25 @@
    number, not a colour, so no hex enters and `--color-primary` stays the single source
    (`DESIGN.md` §2; §6.1/1 puts an interface-state ring on the brand side of brand-vs-data).
    The value is mirrored by `RING_FILL_OPACITY` in `tool-png.ts`, which builds its own SVG
-   string and cannot inherit this rule. */
+   string and cannot inherit this rule.
+
+   THE OPACITY IS A CONTRAST FLOOR, NOT A TASTE SETTING (→ PR #75 review `A11Y75-M2`). The ring
+   is the last child of the `<svg>`, so the wash repaints every province border it encloses, and
+   `globals.css`'s `--province-stroke` note requires that border to clear WCAG 1.4.11's 3:1
+   "against EVERY fill it borders" — a set this wash joined. Both neighbours were computed from
+   the token values and the alpha compositing, then read back from a rendered frame:
+
+     washed border vs washed province fill  #ffffff        0.18 -> 3.222:1   0.07 -> 3.610:1
+     washed border vs washed map surround   --color-surface 0.18 -> 2.733:1  0.07 -> 3.022:1
+
+   The second pair is the binding one and it FAILED at 0.18. The surround is a
+   `--color-surface -> --color-bg` gradient (`map.module.css` `.mapRoot`), so the darker end is
+   the worst case and the figure above uses it. 0.07 is the highest hundredth that clears both;
+   0.08 lands at 2.996:1 against that same end, which is why the review's suggested 0.08 is a
+   near miss rather than a target. Re-measure both pairs before changing this number. */
 .measureArea {
   fill: var(--color-primary);
-  fill-opacity: 0.18;
+  fill-opacity: 0.07;
   stroke: var(--color-primary);
   stroke-width: 3;
   stroke-linecap: round;

@@ -60,11 +60,15 @@ const MARKER_STROKE_PX = 1.5;
  *
  * Kept in step with `.measureArea`'s `fill-opacity` in `tools.module.css` BY HAND, because the
  * export builds its own SVG string from scratch rather than serialising the live DOM (the
- * class-based paint does not survive serialisation — `plan-web.md` §9.2). It is deliberately
- * low: the outline is what carries the shape and has to keep its WCAG 1.4.11 contrast against
- * the province fill, and a heavier wash would eat into exactly that.
+ * class-based paint does not survive serialisation — `plan-web.md` §9.2).
+ *
+ * The value is a MEASURED CONTRAST FLOOR rather than a taste setting, and the measurement lives
+ * next to the CSS rule (→ PR #75 review `A11Y75-M2`): the wash repaints the province borders it
+ * encloses, and at the previous 0.18 one of the two neighbours fell to 2.733:1 against WCAG
+ * 1.4.11's 3:1. Changing it here without changing it there ships a downloaded picture whose
+ * contrast differs from the screen's — silently, since no test compares them.
  */
-const RING_FILL_OPACITY = 0.18;
+const RING_FILL_OPACITY = 0.07;
 
 export interface ToolPngOptions {
   /** The live map — geometry, current view and resolved colours are all read from it. */

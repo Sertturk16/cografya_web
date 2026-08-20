@@ -244,6 +244,31 @@ describe("ringAreaKm2 — the antimeridian guard", () => {
     expect(ringAreaKm2(seamRing)).toBeNull();
   });
 
+  it("stays simple under ringSelfIntersects, which is what makes the seam branch reachable", () => {
+    // A CROSS-MODULE DEPENDENCY WITH NO OTHER GUARD (→ PR #75 review `TEST75-I1`). The area
+    // tool asks `ringSelfIntersects` FIRST and returns on `true`
+    // (`components/tools/tool-island.tsx`, the `area` memo), so the seam behaviour AK-38 md.2
+    // ruled — refuse the area, keep the perimeter — is only reachable while this predicate
+    // answers `false` for a seam ring. Nothing tied the two together: `ringSelfIntersects`
+    // works in raw lon/lat and knows nothing about the seam, so a future bounding-box or
+    // long-edge heuristic inside it would turn that branch into dead code and hand the reader
+    // "Şekil kendini kesiyor" for a perfectly valid ring — with all sixteen cases in this file
+    // and all three CI jobs still green.
+    expect(ringSelfIntersects(seamRing)).toBe(false);
+
+    // The control: the same predicate on the same axis-aligned four-point shape, tied at the
+    // waist, still fires. Without it this assertion means both "the seam ring is simple" and
+    // "the predicate stopped detecting anything".
+    expect(
+      ringSelfIntersects([
+        { lon: 179.5, lat: 39 },
+        { lon: -179.5, lat: 40 },
+        { lon: -179.5, lat: 39 },
+        { lon: 179.5, lat: 40 },
+      ]),
+    ).toBe(true);
+  });
+
   it("does not fire on a ring inside one longitude branch", () => {
     // The control: the guard must not refuse the rings the tool actually measures.
     const turkishRing: GeoPoint[] = [
