@@ -10,6 +10,10 @@ import {
   kmPerMapUnitAt,
   parseLatLon,
   polylineLengthKm,
+  ringAreaKm2,
+  ringCrossesAntimeridian,
+  ringPerimeterKm,
+  ringSelfIntersects,
   scaleBarKm,
   toDmsParts,
   unprojectMapPoint,
@@ -32,7 +36,8 @@ import { downloadToolPng } from "./tool-png";
 import styles from "./tools.module.css";
 
 /**
- * Which tool this island is being: a distance measurement, or a coordinate lookup.
+ * Which tool this island is being: a distance measurement, a coordinate lookup, or an area
+ * calculation.
  *
  * ONE island file with a mode rather than one per tool — `plan-web.md` §3.3 asks for exactly
  * that ("ilgili modun gövdesi"), and §17.3 records the condition: the modes stay together
@@ -40,9 +45,10 @@ import styles from "./tools.module.css";
  * What they genuinely share is not cosmetic — the surface lookup, the live `viewBox` read, the
  * screen-to-map matrix, the çizgi ölçek, the three input paths, the PNG pipeline and the
  * out-of-frame rule are one implementation each, and duplicating them is how two tools start
- * disagreeing about where a point is.
+ * disagreeing about where a point is. Adding the third mode moved four branches and added one
+ * memo; the splitting condition is still unmet.
  */
-export type ToolMode = "distance" | "coordinate";
+export type ToolMode = "distance" | "coordinate" | "area";
 
 /**
  * A province the coordinate tool may NAME and LINK when a point lands inside it (SPEC §6.2's
@@ -227,6 +233,7 @@ export function ToolIsland({
   const t = useTranslations("Tools.ui");
   const format = useFormatter();
   const isCoordinate = mode === "coordinate";
+  const isArea = mode === "area";
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [surface, setSurface] = useState<Surface | null>(null);
@@ -506,6 +513,27 @@ export function ToolIsland({
     [format, uncertaintyKm],
   );
 
+  /**
+   * SPEC §6.6 in its AREA form (PR-D plan §4.4, Atlas-approved).
+   *
+   * The rule stays the single one this repo already has — `kmDecimalsFor` — applied to the
+   * shape's LINEAR scale, the side of the equivalent square. That is the quantity a point's
+   * uncertainty is expressed in, so no second threshold family is minted: a ring clicked at 1×
+   * reads whole km² because the click is worth ~1.7 km, while a small ring typed in decimal
+   * degrees earns its tenth. The alternative — always integer km² — prints `0 km²` for a
+   * legitimately small typed polygon, which is the same untruth in the other direction.
+   */
+  const formatArea = useCallback(
+    (km2: number) => {
+      const decimals = kmDecimalsFor(uncertaintyKm, Math.sqrt(km2));
+      return format.number(km2, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+    },
+    [format, uncertaintyKm],
+  );
+
   const formatAxis = useCallback(
     (value: number, axis: "lat" | "lon") => {
       const letter =
@@ -562,8 +590,13 @@ export function ToolIsland({
     return provinceAreas.find((area) => area.plateCode === plateCode) ?? null;
   }, [activePoint, provinceAreas, surface]);
 
+  // THE DISTANCE TOOL'S per-leg values, and the gate is here rather than at the render
+  // (→ PR-D plan §4.1/6). Before the third mode existed this memo needed no mode test: a
+  // coordinate lookup never holds more than one point, so `points.length < 3` was accidentally
+  // enough. An area ring holds three or more, so without this the area tool would list every
+  // edge of its own perimeter beside a perimeter total that already states it (§22).
   const legs = useMemo(() => {
-    if (points.length < 3) return [];
+    if (mode !== "distance" || points.length < 3) return [];
     const values: { key: number; km: number }[] = [];
     for (let index = 1; index < points.length; index += 1) {
       const previous = points[index - 1];
@@ -572,7 +605,34 @@ export function ToolIsland({
       values.push({ key: current.key, km: haversineKm(previous.point, current.point) });
     }
     return values;
-  }, [points]);
+  }, [mode, points]);
+
+  /**
+   * What the area tool can say about the ring the reader drew — `null` until there is a ring.
+   *
+   * The three outcomes are the tool's whole contract (SPEC §6.3), and the maths is PR-A's:
+   * nothing here reimplements a formula, it chooses a branch.
+   */
+  const area = useMemo(() => {
+    if (!isArea || points.length < 3) return null;
+    const ring = geoPoints;
+    // A self-intersecting outline has no well-defined inside, so NO number derived from it is
+    // trustworthy — not the area, and not the perimeter either. `plan-web.md` §15/8 is explicit
+    // that the tool shows a sentence instead.
+    if (ringSelfIntersects(ring)) return { kind: "selfIntersects" } as const;
+    const perimeterKm = ringPerimeterKm(ring);
+    // A ring crossing the ±180° seam is the OTHER kind of refusal, and it is not the same
+    // shape. The ring is valid; only the area is unmeasurable, because the formula sums
+    // longitude differences and reads a 1° step across the seam as a 359° sweep. Its perimeter
+    // is therefore a true fact about it and is still shown (`measure.ts:149-151` records that
+    // `ringPerimeterKm` keeps working there, and `ringCrossesAntimeridian` is exported
+    // precisely so a caller can explain the refusal in words instead of showing an empty
+    // result). The predicate names the branch; the null check keeps the signature honest
+    // without letting an invented number through.
+    const km2 = ringCrossesAntimeridian(ring) ? null : ringAreaKm2(ring);
+    if (km2 === null) return { kind: "seam", perimeterKm } as const;
+    return { kind: "measured", km2, perimeterKm } as const;
+  }, [geoPoints, isArea, points.length]);
 
   const resultText =
     points.length === 0
@@ -606,8 +666,9 @@ export function ToolIsland({
   // ---- Export ----------------------------------------------------------------------------
 
   // One point is a complete picture for a coordinate lookup and an incomplete one for a
-  // measurement, so the export threshold follows the mode rather than the polyline.
-  const minExportPoints = isCoordinate ? 1 : 2;
+  // measurement, so the export threshold follows the mode rather than the polyline. An area
+  // needs the three that make a ring — exporting two would picture a line, not a shape.
+  const minExportPoints = isCoordinate ? 1 : isArea ? 3 : 2;
 
   const download = useCallback(() => {
     if (!surface || geoPoints.length < minExportPoints) return;
@@ -616,6 +677,8 @@ export function ToolIsland({
       svg: surface.svg,
       attribution: surface.attribution,
       points: geoPoints,
+      // The downloaded picture is the one on screen: a ring, not an open path.
+      closed: isArea && geoPoints.length > 2,
       scaleBar:
         bar && view
           ? {
@@ -629,7 +692,7 @@ export function ToolIsland({
       console.warn(`[tools] PNG export failed. ${String(reason)}`);
       setStatusError(t("downloadFailed"));
     });
-  }, [bar, downloadName, format, geoPoints, minExportPoints, surface, t, view]);
+  }, [bar, downloadName, format, geoPoints, isArea, minExportPoints, surface, t, view]);
 
   // ---- Render -----------------------------------------------------------------------------
 
@@ -644,7 +707,33 @@ export function ToolIsland({
    * asked for, the DMS line second because SPEC §6.2 wants both notations, and the province
    * line only when the point is genuinely inside one.
    */
-  const resultBody = !isCoordinate ? (
+  /**
+   * The area tool's readout. One polite region, two sentences when there is something to say
+   * about both quantities, one when the ring refuses a number.
+   *
+   * THE TWO REFUSALS DELIBERATELY DIFFER IN SHAPE (Atlas ruling, PR-D §4.2): a ring across the
+   * seam is a valid ring whose AREA is unmeasurable, so its perimeter still shows; a
+   * self-intersecting ring is not a valid ring at all, so nothing derived from it does.
+   */
+  const areaBody =
+    area === null ? (
+      <p className={styles.result}>{t("areaEmpty")}</p>
+    ) : area.kind === "selfIntersects" ? (
+      <p className={styles.result}>{t("areaSelfIntersects")}</p>
+    ) : (
+      <>
+        <p className={styles.result}>
+          {area.kind === "seam" ? t("areaSeam") : t("areaResult", { area: formatArea(area.km2) })}
+        </p>
+        <p className={styles.readoutLine}>
+          {t("areaPerimeter", { perimeter: formatKm(area.perimeterKm) })}
+        </p>
+      </>
+    );
+
+  const resultBody = isArea ? (
+    areaBody
+  ) : !isCoordinate ? (
     <p className={styles.result}>{resultText}</p>
   ) : activePoint === null ? (
     <p className={styles.result}>{t("coordinateEmpty")}</p>
@@ -681,12 +770,23 @@ export function ToolIsland({
 
   const overlay = (
     <>
-      {projected.length > 1 && (
-        <polyline
-          className={styles.measureLine}
-          points={projected.map((point) => `${point.x},${point.y}`).join(" ")}
-        />
-      )}
+      {/* The area tool's ring is a `<polygon>`, which is what DRAWS the closing edge SPEC §6.3
+          says the tool adds for you — with a `<polyline>` the reader would be told the shape
+          closes itself and shown one that does not. Below three points there is no ring yet,
+          so the line stays a line while the shape is being placed, and a self-intersecting
+          ring is still drawn: the reader has to see what to fix. */}
+      {projected.length > 1 &&
+        (isArea && projected.length > 2 ? (
+          <polygon
+            className={styles.measureArea}
+            points={projected.map((point) => `${point.x},${point.y}`).join(" ")}
+          />
+        ) : (
+          <polyline
+            className={styles.measureLine}
+            points={projected.map((point) => `${point.x},${point.y}`).join(" ")}
+          />
+        ))}
       {projected.map((point, index) => (
         <circle
           key={points[index]?.key ?? index}

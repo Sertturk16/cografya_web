@@ -29,6 +29,23 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* THE AREA TOOL'S CLOSED RING. Same stroke as `.measureLine` — the outline is the graphical
+   object WCAG 1.4.11 measures, and it is painted OVER the fill rather than under it — plus a
+   light wash of the same token so the enclosed surface reads as enclosed. `fill-opacity` is a
+   number, not a colour, so no hex enters and `--color-primary` stays the single source
+   (`DESIGN.md` §2; §6.1/1 puts an interface-state ring on the brand side of brand-vs-data).
+   The value is mirrored by `RING_FILL_OPACITY` in `tool-png.ts`, which builds its own SVG
+   string and cannot inherit this rule. */
+.measureArea {
+  fill: var(--color-primary);
+  fill-opacity: 0.18;
+  stroke: var(--color-primary);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
 .marker {
   fill: var(--color-primary);
   stroke: var(--color-on-primary);
@@ -240,6 +257,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .measureLine,
+  .measureArea,
   .marker {
     transition: none;
   }

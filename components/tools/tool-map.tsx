@@ -104,9 +104,9 @@ export async function ToolMap({
               `data-plate-code` is what makes these outlines READABLE by the island's
               point-in-province lookup (SPEC §6.2) without either file knowing the other's `id`
               prefix, and without the 64 KB artifact being shipped a second time as JavaScript.
-              It is emitted on both tool pages rather than only the coordinate one: a
-              conditional attribute would make the two pages' server HTML diverge for no
-              measurable saving — the name repeats 81 times and compresses to almost nothing. */}
+              It is emitted on all three tool pages rather than only the coordinate one: a
+              conditional attribute would make the pages' server HTML diverge for no measurable
+              saving — the name repeats 81 times and compresses to almost nothing. */}
           <defs>
             {PROVINCE_SHAPES.map((shape) => (
               <path
