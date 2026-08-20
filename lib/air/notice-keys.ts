@@ -42,9 +42,10 @@
  *   the extraction simply yields a shorter list and every remaining key still resolves, so
  *   the suite stays green — only removing the LAST notice key trips the extraction's
  *   non-empty assertion (→ PR #76 review CODE76R2-M1). The earlier heading said
- *   "RENAME / REMOVE — held" and this file's own standard four paragraphs up forbids that:
- *   a false safety claim is worse than the risk stated bare. Its other limit is stated in the
- *   test: it sees only what the spec's `example` carries, which today is two of the four keys.
+ *   "RENAME / REMOVE — held", which this section's own opening standard forbids: *a false
+ *   safety claim is worse than the risk stated bare, because it retires the follow-up.* Its
+ *   other limit is stated in the test: it sees only what the spec's `example` carries, which
+ *   today is two of the four keys.
  *
  * ## Where each notice goes is NOT this file's business
  *
