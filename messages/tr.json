@@ -296,7 +296,7 @@
     "tableCaption": "{name} — yıllık ortalama PM2.5 ({unit}), {start}-{end}.",
     "tableYear": "Yıl",
     "tableValue": "PM2.5 ({unit})",
-    "noticeIntro": "Veri sağlayıcının çekincesi, lisansı gereği İngilizce ve birebir yayımlanır:",
+    "noticeIntro": "Veri sağlayıcının kendi çekincesi, çeviri onu bozmasın diye İngilizce ve birebir yayımlanır:",
     "sourceLine": "Kaynak: {provider}, <source>{workTitle}</source>.",
     "licenceLine": "Lisans: <licence>{licenceName}</licence>.",
     "referenceLine": "Referans yayın: <ref>{citation}</ref>"

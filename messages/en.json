@@ -296,7 +296,7 @@
     "tableCaption": "{name} — annual mean PM2.5 ({unit}), {start}-{end}.",
     "tableYear": "Year",
     "tableValue": "PM2.5 ({unit})",
-    "noticeIntro": "The data provider's licence requires the following caveat to be published verbatim, in English:",
+    "noticeIntro": "The data provider's own caveat appears in English, verbatim, so that no translation can change what it says:",
     "sourceLine": "Source: {provider}, <source>{workTitle}</source>.",
     "licenceLine": "Licence: <licence>{licenceName}</licence>.",
     "referenceLine": "Reference publication: <ref>{citation}</ref>"
