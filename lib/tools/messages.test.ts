@@ -369,17 +369,20 @@ describe("the consumer scan itself", () => {
 });
 
 describe("every Tools key the code asks for exists", () => {
-  it("discovers a consumer for each of the five namespaces", () => {
+  it("discovers a consumer for every namespace the catalogue declares", () => {
     // Anti-vacuity, and the reason it is an equality: a scan that found nothing, or that lost a
     // surface to a refactor, would satisfy every per-key assertion below by having nothing to
     // check.
-    expect([...new Set(bindings.map((entry) => entry.namespace))].sort()).toEqual([
-      "Tools.hub",
-      "Tools.koordinat",
-      "Tools.map",
-      "Tools.mesafe",
-      "Tools.ui",
-    ]);
+    //
+    // The expected set is DERIVED from the classification above rather than written out a
+    // second time (→ PR-D). The frozen list this replaces named five namespaces and went red
+    // the moment a sixth shipped, which is a test failing on correct code — the `TA56-M4` rot
+    // direction, in the one place that had escaped it. Derivation also makes the assertion
+    // STRONGER, not weaker: it now closes both directions at once, so a declared namespace no
+    // file opens (a surface deleted but left classified) fails here too.
+    const declared = [...PROSE_NAMESPACES, ...CHROME_NAMESPACES].map((ns) => `Tools.${ns}`).sort();
+    expect(declared.length).toBeGreaterThan(0);
+    expect([...new Set(bindings.map((entry) => entry.namespace))].sort()).toEqual(declared);
   });
 
   it.each(bindings)("$path asks $namespace for keys the catalogue carries", (entry) => {
