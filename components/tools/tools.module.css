@@ -170,9 +170,17 @@
    changing it: the cluster stays an overlay only where it fits inside the box with the SAME
    room underneath that its own 12px `top` gives it above. Top gap is a constant 13.00px (12px
    plus the panel's 1px border); the bottom gap is whatever the map's fixed aspect ratio
-   leaves. Measured on the running build, TR and EN alike:
+   leaves. Measured on the running build, TR and EN alike, IN A FRAME WITH AN OVERLAY
+   SCROLLBAR — a phone, or an emulated width — which is the frame this fix exists for:
 
      398px  9.72   402px 11.44   405px 12.72   406px 13.14   409px 14.44   410px 14.86
+
+   RE-MEASURE IN THE SAME FRAME BEFORE COMPARING. A desktop window with a classic,
+   space-taking scrollbar does not disagree with this row, it measures something else: the
+   scrollbar takes its own width off the CONTAINER, so every bottom gap here drops with it
+   while the 13.00px top constant does not move. Lower figures there are the same curve, not
+   an inconsistency, and shifting the cut point to reconcile them would be shifting it for a
+   frame that has no phone in it.
 
    406px is where the bottom gap first clears the top one; 410px is 406 plus a pixel of margin
    so a rounding change cannot reopen the band. Below it the WCAG floor is not the whole story
@@ -181,8 +189,11 @@
 
    `px`, not `rem`, and that is deliberate. Nothing in the geometry that produces the defect is
    type-relative: a 40px button, a 20px container pad, a fixed-ratio `viewBox`. Expressed in
-   `rem`, a reader who sets a 12px root font would push 26rem down to 312px and switch the fix
-   off exactly where it is needed. The repo's other component-level breakpoints are px for the
+   `rem`, 410px is 25.625rem — NOT 26rem, which is 416px and would reopen the 410-416 band this
+   derivation closes on purpose — and a reader who sets a 12px root font would push that
+   25.625rem down to 307.5px, switching the fix off exactly where it is needed. Both halves
+   matter: the conversion is not free, and even done exactly it still breaks under a smaller
+   root. The repo's other component-level breakpoints are px for the
    same kind of reason (`climate.module.css` and `air-pollution.module.css` 700px,
    `marine.module.css` 720px); `DESIGN.md` §4's two system numbers govern page layout and are
    untouched by this one, which lives only in this file.

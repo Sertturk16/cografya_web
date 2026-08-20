@@ -432,8 +432,10 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
 
           The plate sat bottom-right, which is where the zoom cluster's reset button ends on a
           short stage: at 320px the button was whole geometrically but hittable only in slivers
-          — 14.50px in total, longest uninterrupted run 9.00px (9.50px in English). In flow all
-          three buttons measure a full 40px, and the panel stays at exactly the 146.83px it is
+          — 14.50px in total, longest uninterrupted run 9.00px, measured in Turkish (no English
+          figure is claimed: `/en/dunya` was not separately measured, and the plate is
+          right-anchored, so a longer string moves its left edge). In flow all three buttons
+          measure a full 40px, and the panel stays at exactly the 146.83px it is
           today, because an absolutely positioned plate never contributed to that height. What
           this does NOT do is clear the map: country shapes with chrome on their centre go
           25/240 to 20/240 at 320px, and the remainder is the zoom cluster, which stays an

@@ -192,10 +192,11 @@ export async function ToolMap({
           block spans are exactly as they were, and `attribution-separation.test.ts` guards
           this file for precisely that.
 
-          `/turkiye` and `/dunya` still take the overlay from `map.module.css` and are NOT
-          touched here: the same defect is live on both (measured — `/turkiye` 43.4% covered
-          and 36 of 81 at 360px), and it is reported to Atlas as its own PR rather than widened
-          into this one. The class therefore lives in THIS stylesheet, like the game's. */}
+          `/turkiye` still takes the plated overlay from `map.module.css` and is NOT touched
+          here: the same defect is live there (measured — 43.4% covered and 36 of 81 at 360px)
+          and is tracked as its own item (`FU-TURKIYE-ATIF-ORTUSU`) rather than widened into
+          this one. `/dunya` no longer takes it — it moved to `.attributionFlow`, in flow under
+          the panel. The class therefore lives in THIS stylesheet, like the game's. */}
       <p className={styles.attribution} data-tool-attribution>
         <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
         <span className={styles.attributionLine}>

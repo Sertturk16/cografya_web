@@ -31,8 +31,11 @@ import { describe, expect, it } from "vitest";
  *      needed 13 presses.
  *   5. The camera's cross-island DOM contract: the reveal condition, and the fact that the
  *      dispatcher and the listener resolve the SAME `<svg>` (the event does not bubble).
- *   6. `/dunya` renders what it always has — the two class fallbacks, and the CSS precondition
- *      (`height: auto`) that makes the whole aspect layer inert there.
+ *   6. `/dunya`'s map chrome: the two class fallbacks it relies on by naming none, the CSS
+ *      precondition (`height: auto`) that makes the whole aspect layer inert there, and — new
+ *      in PR #77 (→ review `TEST77-M1`) — its credit sitting in FLOW under the panel instead
+ *      of plated over the reset button. That last one is not a variation on the first two: it
+ *      is the only assertion in the suite that fails if the plate comes back.
  *
  * WHAT IT DOES NOT CLAIM: anything about what the DOM ends up doing. That is this PR's
  * measured browser run — the /dunya tween A/B and the phone frames in
@@ -65,6 +68,7 @@ const GAME_ISLAND = flatCode(sourceOf("../game/game-island.tsx"));
 const GAME_MAP = flatCode(sourceOf("../game/game-map.tsx"));
 const GAME_CSS = sourceOf("../game/game-map.module.css");
 const MAP_CSS = sourceOf("./map.module.css");
+const WORLD_MAP = flatCode(sourceOf("./world-map-section.tsx"));
 
 /** Every `zoomAtPoint(…)` call, tolerating one level of nested parentheses in its arguments. */
 const ZOOM_AT_POINT_CALLS = ISLAND.match(/zoomAtPoint\((?:[^()]|\([^()]*\))*\)/g) ?? [];
@@ -188,7 +192,7 @@ describe("the camera contract between the two islands", () => {
   });
 });
 
-describe("/dunya renders what it always has", () => {
+describe("/dunya's map chrome — the overlay it keeps, the box it fits, the credit it moved out", () => {
   it("falls back to the shared overlay classes when the caller names none", () => {
     // Dropping either default leaves the world map's control layer with `className={undefined}`
     // — the absolutely positioned overlay collapses into the flow on a page this PR does not
@@ -210,6 +214,48 @@ describe("/dunya renders what it always has", () => {
     // "auto"), which is the shape of an assertion that can never fail.
     const heights = [...rule.matchAll(/(?:^|[\s;])height:\s*([^;]+);/g)].map((m) => m[1]?.trim());
     expect(heights).toEqual(["auto"]);
+  });
+
+  it("keeps the credit OUTSIDE the map box, as a sibling of it", () => {
+    // The plate used to be the map box's last child, bottom-right — which is where the zoom
+    // cluster's reset button ends on a short stage: at 320px the button was geometrically
+    // whole and hittable only in 9px slivers. Moving the `<p>` back inside `[data-map-root]`
+    // restores that exactly, and nothing else in the repo notices (→ review `TEST77-M1`).
+    const root = WORLD_MAP.indexOf("data-map-root");
+    expect(root).toBeGreaterThan(-1);
+    // Any local module binding, never a hardcoded `styles.` — the sibling surfaces import the
+    // same sheet under two different names.
+    const credit = WORLD_MAP.search(/<p className=\{[A-Za-z_$][\w$]*\.attributionFlow\}>/);
+    expect(credit).toBeGreaterThan(root);
+
+    // Positionally, the way a source scan can honestly see it: the map's `<svg>` closes, then
+    // the box's own `</div>` closes, and only then does the credit appear. A credit put back
+    // inside the box would sit after `</svg>` with that `</div>` still open behind it.
+    const between = WORLD_MAP.slice(root, credit);
+    expect(between).toContain("</svg>");
+    expect(between.lastIndexOf("</div>")).toBeGreaterThan(between.lastIndexOf("</svg>"));
+  });
+
+  it("keeps .attributionFlow in normal flow, with no plate behind it", () => {
+    // NOT `.attribution`. The plated rule is still correct — `/turkiye` is its one remaining
+    // consumer — so the game's guard cannot be copied here verbatim: it would go red on right
+    // code, and the reflex fix is to loosen the pattern (the TA50-I1 / TA69R2-I1 failure this
+    // repo has already recorded twice). The new class is what carries the new behaviour.
+    const rule = MAP_CSS.match(/\n\.attributionFlow \{([\s\S]*?)\n\}/)?.[1];
+    expect(rule).toBeDefined();
+    // Any `position` at all: `sticky` and `fixed` lift the line back over the map just as
+    // effectively, and `--scrim-bg` was the visible half of the plate.
+    expect(rule).not.toMatch(/position:/);
+    expect(rule).not.toMatch(/background/);
+
+    // Self-check: the reader must be able to SEE a plate when one is there, or both negatives
+    // above are decorative. The control stylesheet lives HERE — never in the file measured,
+    // and never the live `.attribution` rule, which a later `/turkiye` fix is free to change.
+    const control =
+      "\n.attributionFlow {\n  position: absolute;\n  background: var(--scrim-bg);\n}\n";
+    const seen = control.match(/\n\.attributionFlow \{([\s\S]*?)\n\}/)?.[1];
+    expect(seen).toMatch(/position:/);
+    expect(seen).toMatch(/background/);
   });
 });
 
