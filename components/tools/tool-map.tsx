@@ -82,7 +82,15 @@ export async function ToolMap({
   return (
     <>
       <div className={mapStyles.mapRoot} data-map-root>
+        {/* The cluster's PLACEMENT is this page's, its LOOK is still the shared one. Below
+            410px these two classes lay it down as a row at the top of the panel, above the
+            map, because the map box is too short to hold a 132px column and `.mapRoot`'s
+            `overflow: hidden` was cutting the third button to 15.25px. From 410px up they
+            reproduce today's overlay exactly. The whole measurement, the four rejected
+            alternatives and the derivation of 410 are in `tools.module.css`. */}
         <MapZoomPan
+          layerClassName={styles.zoomLayer}
+          controlsClassName={styles.zoomControls}
           viewBox={MAP_VIEWBOX}
           instructionsId={instructionsId}
           labels={{
