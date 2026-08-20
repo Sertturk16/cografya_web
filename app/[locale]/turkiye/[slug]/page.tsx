@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { AirPollutionSection } from "@/components/air/air-pollution-section";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { CardArrow } from "@/components/card-arrow";
 import { ClimateSection } from "@/components/climate/climate-section";
@@ -25,6 +26,7 @@ import type { HydrographyFeature, ProvinceDetail, ProvinceListItem } from "@/lib
 import { isCoastalPlate, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { pm25DisplayUnit, roundPm25 } from "@/lib/air/pm25-display";
 import { climateBlockGates } from "@/lib/climate/climate-block-gates";
 import { monthName } from "@/lib/climate/month";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
@@ -154,6 +156,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   const tb = await getTranslations("Breadcrumb");
   const tRegions = await getTranslations("Regions");
   const tClimate = await getTranslations("Climate");
+  const tAir = await getTranslations("AirPollution");
   const format = await getFormatter();
 
   // `nameTr` serves both locales: province names are proper nouns and the contract
@@ -407,6 +410,15 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
     hasCurriculumNoteText: curriculumNote !== null,
   });
 
+  // Uzun dönem hava kirliliği (PM2.5 — ACAG SatPM2.5). NOT TR-gated, unlike the prose
+  // sections: the section is data plus a symmetric vocabulary, and its one long text (the
+  // provider's caveat) is published in English on both locales anyway — the Deniz Durumu
+  // precedent, not a new rule. `pm25Annual === null` means "no publishable series" → the
+  // whole section is ABSENT (never an "eksik veri" placeholder) and `sourcesPm25` is not
+  // added to the Kaynaklar line, because a source is never cited for content that is not
+  // on the page. Null for no province today; the branch is contract-legal and tested.
+  const pm25Annual = province.pm25Annual;
+
   // JSON-LD climate facts — appended to the SAME additionalProperty array (PLAN §2: no
   // new schema type). Gated on the TR-gated series so structured data never describes a
   // climate section that is not on the page (mirrors the visible gating). Values stay
@@ -429,6 +441,26 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       { name: tClimate("hottestMonth"), value: monthName(format, d.hottestMonth, "long") },
       { name: tClimate("coldestMonth"), value: monthName(format, d.coldestMonth, "long") },
     );
+  }
+
+  // PM2.5 — ONE PropertyValue, the latest year's value, and only when the section renders
+  // (SEO-POLICY §B5 5.7/5.8: structured data may not carry what the page does not show, and
+  // a null field is never filled in). The whole 27-year series does NOT go in: only the
+  // latest value is on the page as a headline figure, and the table's numbers belong to the
+  // table. The number is `roundPm25`'d — the SAME rounding the value line prints, applied
+  // once in one helper, so the two representations cannot diverge into a 5.7 argument.
+  // The NAME is the same `valueLabel` the page prints above the figure, and that string names
+  // PM2.5 explicitly for a structured-data reason: on the page the H2 supplies the subject,
+  // but a `PropertyValue` node travels without it, so "2024 yıllık ortalaması" would have
+  // described nothing to a machine. One string, self-describing in both places.
+  // `unitCode` is deliberately absent: the UN/CEFACT Rec 20 code for µg/m³ is unverified,
+  // and an invented code is exactly 5.8's forbidden move. `unitText` alone is valid.
+  if (pm25Annual !== null) {
+    additionalProperty.push({
+      name: tAir("valueLabel", { year: String(pm25Annual.latestYear) }),
+      value: roundPm25(pm25Annual.latestValueUgM3),
+      unitText: pm25DisplayUnit(pm25Annual.unit, tAir("unit")),
+    });
   }
 
   const hydrographyTypeLabels: Record<HydrographyFeature["type"], string> = {
@@ -463,6 +495,11 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // Climate normals source joins the Kaynaklar line ONLY when the chart actually renders
   // (PLAN §2 — never cite a source for content that is not on the page).
   if (climateSeries !== null) extraSources.push(t("sourcesClimate"));
+  // ACAG joins the Kaynaklar line only when the section actually renders, and the VERSION is
+  // interpolated from the payload — never written in this repo, so an annual refresh cannot
+  // leave 81 pages citing last year's dataset (plan §7.3, guarded by version-drift.test.ts).
+  if (pm25Annual !== null)
+    extraSources.push(t("sourcesPm25", { version: pm25Annual.datasetVersion }));
   if (showHydrography) extraSources.push(t("sourcesHydrography"));
   if (showEconomy) extraSources.push(t("sourcesEconomy"));
 
@@ -805,6 +842,20 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
             </div>
           )}
         </section>
+      )}
+
+      {/* Uzun Dönem Hava Kirliliği — a SIBLING <h2> of İklim, never an <h3> inside it: a
+          different fact family, a different provider and a different licence. Sits between
+          İklim and Hidrografya. The component owns its own heading, anchor and licence
+          block (`components/air/air-pollution-section.tsx`). */}
+      {pm25Annual !== null && (
+        <AirPollutionSection
+          pm25={pm25Annual}
+          provinceName={name}
+          headingName={sectionHeading("airPollution")}
+          plateCode={province.plateCode}
+          locale={locale}
+        />
       )}
 
       {/* Hidrografya — TR-gated; prose note and/or a structured feature list. An

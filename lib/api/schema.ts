@@ -323,6 +323,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/earthquakes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent earthquakes in Türkiye and its surroundings, paginated (the /deprem hub).
+         * @description Returns the shared list envelope, newest first, tie-broken so a row cannot appear on two pages. Reads the local store only and NEVER waits for AFAD. The default window is the last 7 days at magnitude 2.5 and up; the window and threshold actually applied come back in meta.filter. On a cold store the response is 200 with an empty items array, meta.dataStatus "unavailable" and Cache-Control: no-store, which ISR/SSG must not commit. These are RECORDED earthquakes: nothing here predicts, forecasts or warns.
+         */
+        get: operations["EarthquakeController_listEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/earthquakes/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Defaults, scope and data freshness for the earthquake endpoints.
+         * @description Structural values only: the default magnitude floor, the scope buffer the stored rows were classified with, the window bounds, and how fresh the store is. The labels a reader sees belong to the web repo — this endpoint carries no interface copy and no i18n key. Served from the local store and constants; never calls AFAD.
+         */
+        get: operations["EarthquakeController_getMeta"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/earthquakes/provinces/{plateCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent earthquakes bound to one province.
+         * @description The same envelope as the hub, filtered to the events bound to this province. Read bindingKind on every item before writing a sentence about it: the provider files an event under the NEAREST Turkish province, so an event across the border arrives tagged with a Turkish province and rendering it as "an earthquake in <province>" is factually wrong. A plate code that names no province is a 404; a malformed one is a 400.
+         */
+        get: operations["EarthquakeController_listProvinceEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/elevation/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Elevation profile along a line inside the Türkiye frame.
+         * @description Samples the great circle between the two endpoints at a fixed, server-chosen number of points and returns two parallel arrays: distance along the line and whole-metre elevation. The client downloads no tiles. Endpoints are rounded to 3 decimals before anything else happens and echoed back as from/to, so the caller always knows which line was measured. A cold cache on a very long line may answer a PARTIAL profile — resolvedSampleCount below sampleCount, Cache-Control: no-store — which is a warming step rather than an error: the tiles it fetched stay resident, so the next request for the same line resolves more. A provider outage is 200 with dataAvailable: false, never a 5xx. Returns 404 while the feature is disabled. Every response carries the full attribution block, including on the cold path — the licence notices attach to the section, not to whether a value resolved.
+         */
+        get: operations["ElevationController_getProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -533,6 +613,127 @@ export interface components {
             /** @description Seriden TÜRETİLMİŞ yıllık/uç/mevsimsel değerler — kaynağa atfedilemez. */
             derived: components["schemas"]["ClimateDerivedDto"];
         };
+        Pm25AnnualValueDto: {
+            /**
+             * @description Veri yılı.
+             * @example 2024
+             */
+            year: number;
+            /**
+             * @description O yılın ortalama PM2.5 değeri (µg/m³) — ham sayı, biçimlenmiş dize değil. Biçimleme web deposunun işidir.
+             * @example 22.74
+             */
+            valueUgM3: number;
+        };
+        Pm25AttributionDto: {
+            /**
+             * @description Kurum adı — kurumun kendi yazdığı hâliyle. Çevrilmez.
+             * @example Atmospheric Composition Analysis Group, Washington University in St. Louis
+             */
+            providerName: string;
+            /**
+             * @description Lisanslanan eserin adı — sağlayıcının lisans cümlesinden BİREBİR. Alt simgeler (U+2082, U+2085) alıntının parçasıdır; ASCII'ye düzleştirmek alıntıyı bozar.
+             * @example SatPM₂.₅ V6.GL.03
+             */
+            workTitle: string;
+            /**
+             * @description Veri seti sürümü.
+             * @example V6.GL.03
+             */
+            datasetVersion: string;
+            /**
+             * @description Sağlayıcının sürüm sayfası.
+             * @example https://www.satpm.org/v6-gl-03
+             */
+            datasetUrl: string;
+            /**
+             * @description Lisans adı. Çevrilmez.
+             * @example Creative Commons Attribution 4.0 International (CC BY 4.0)
+             */
+            licenceName: string;
+            /**
+             * @description Sağlayıcının lisans cümlesindeki bağlantının birebir hâli.
+             * @example https://creativecommons.org/licenses/by/4.0/?ref=chooser-v1
+             */
+            licenceUrl: string;
+            /** @description Referans yayın — sağlayıcının kendi biçiminde, BİREBİR. Çevrilmez. */
+            referenceCitation: string;
+            /** @description Referans yayının DOI bağlantısı. */
+            referenceUrl: string;
+            /** @description SAĞLAYICININ KENDİ ÇEKİNCESİ — birebir ve çevrilmeden yayımlanır. Izgara 1 km'dir ama sağlayıcı her gradyanı çözemediğini kendisi yazar; bu cümle yayımlanan her sayıya eşlik etmek zorundadır. */
+            methodNoticeText: string;
+            /**
+             * @description Editoryal uyarıların i18n ANAHTARLARI — api metin yayımlamaz, anahtar yayımlar; karşılıklarını web deposu yazar.
+             * @example [
+             *       "airPollution.notice.satelliteDerived",
+             *       "airPollution.notice.provinceCentrePoint"
+             *     ]
+             */
+            noticeKeys: string[];
+        };
+        Pm25AnnualDto: {
+            /**
+             * @description Serinin kaynak kimliği.
+             * @example acag_satpm25
+             * @enum {string}
+             */
+            source: "acag_satpm25";
+            /**
+             * @description Veri seti sürümü. ZORUNLU alan: yenileme yılda bir ve elle yapıldığı için tüketicinin verinin ne kadar eski olduğunu ikinci bir kaynağa bakmadan görebilmesi gerekir.
+             * @example V6.GL.03
+             */
+            datasetVersion: string;
+            /**
+             * @description 81 ilde aynı olan sağlayıcı sürüm sayfası.
+             * @example https://www.satpm.org/v6-gl-03
+             */
+            sourceUrl: string;
+            /**
+             * @description Izgara hücre boyutu (derece) — sağlayıcının andığı 0,01° DEĞİL, dosyanın ENLEM ekseninden ÖLÇÜLEN adım, 6 ondalığa yuvarlanmış. İki eksen bu hassasiyette birebir aynı değildir (boylam adımı manifestte ayrıca kayıtlıdır); yayımlanan tek sayı enlem adımıdır. Sağlayıcı ızgarayı 0,01° × 0,01° diye anar (künyedeki çekince metninde de öyle geçer); buradaki sayı o ızgaranın float32 eksende ölçülen gerçek adımıdır. Biri diğerinin yerine geçmez.
+             * @example 0.009998
+             */
+            gridCellSizeDeg: number;
+            /**
+             * @description Değerlerin birimi. Bu hattın SABİTİDİR — dosyanın `units` özniteliğinden okunmaz; sağlayıcının ürün sayfasında bildirdiği birimdir.
+             * @example µg/m3
+             */
+            unit: string;
+            /**
+             * @description Değerin OKUNDUĞU nokta. `province_centre` = il merkezine düşen tek hücre; bu bir il ORTALAMASI DEĞİLDİR (→ DEC 2026-08-19d md.1). Arayüz bunu ima etmemelidir.
+             * @example province_centre
+             * @enum {string}
+             */
+            readingPoint: "province_centre";
+            /**
+             * @description Okunan hücrenin merkez enlemi.
+             * @example 39.975
+             */
+            cellLatitude: number;
+            /**
+             * @description Okunan hücrenin merkez boylamı.
+             * @example 32.865
+             */
+            cellLongitude: number;
+            /**
+             * @description İl merkezi ile hücre merkezi arasındaki uzaklık (km) — künyede gösterilebilir.
+             * @example 0.279
+             */
+            cellDistanceKm: number;
+            /** @description Yıla göre ARTAN sırada, en az bir girdi. */
+            years: components["schemas"]["Pm25AnnualValueDto"][];
+            /**
+             * @description Serinin EN SON yılı — `years` dizisinin son girdisinden TÜRETİLİR, saklanmaz. Verinin bayatlığı bu alandan tek bakışta görülür.
+             * @example 2024
+             */
+            latestYear: number;
+            /**
+             * @description En son yılın değeri (µg/m³) — `years`'ten türetilir, saklanmaz.
+             * @example 22.74
+             */
+            latestValueUgM3: number;
+            /** @description Lisans/atıf bloğu. Bölüm yayımlandığında HER ZAMAN yayımlanır — bildirim bir değere değil, yayımlanan bölüme iliştirilir. */
+            attribution: components["schemas"]["Pm25AttributionDto"];
+        };
         HydrographyFeatureDto: {
             /**
              * @description Öz ad.
@@ -676,6 +877,8 @@ export interface components {
             climate: components["schemas"]["ClimateDto"] | null;
             /** @description NOVA'nın il-il yazdığı iklim yorumu (TR) — mekanizma anlatan gerçek düzyazı. `climateNoteTr` (kilitli MGM Köppen uyarısı) DEĞİL; ayrı bir alandır. İçerik dalgaları doldurana kadar null. */
             climateNarrativeTr: string | null;
+            /** @description Uzun dönem hava kirliliği — ACAG SatPM2.5 yıllık ortalama PM2.5 serisi, il merkezine düşen ~1 km hücreden okunur (il ORTALAMASI değildir). Null = yayınlanabilir seri yok → web bölümü hiç render etmez. Canlı hava kalitesi endeksiyle (`/api/air-quality/...`) KARIŞTIRILMAMALI: bu yıllık bir derişim, o saatlik bir endekstir. */
+            pm25Annual: components["schemas"]["Pm25AnnualDto"] | null;
             /** @description Öne çıkan yer şekilleri / jeoloji notu (TR). */
             landformNoteTr: string | null;
             /** @description Hidrografya — kısa düzyazı not (nehir/göl/baraj anlatısı, TR). */
@@ -2011,13 +2214,13 @@ export interface components {
             filter: components["schemas"]["EarthquakeFilterEchoDto"];
             /**
              * Format: date-time
-             * @description When our last SUCCESSFUL contact with the provider finished, UTC; null before the first one. This — not build time — is what a dateModified or a sitemap lastmod derives from. Distinct from latestEventAtUtc on purpose: a quiet hour and an outage look identical from the newest event alone.
+             * @description When our last ingest tour that actually LANDED data finished, UTC; null when no such tour has run. A tour that reached the provider but stored nothing — a renamed upstream field, say — does NOT refresh this, so a frozen value here points at our own pipeline rather than at the provider. This — not build time — is what a dateModified or a sitemap lastmod derives from. Distinct from latestEventAtUtc on purpose: a quiet hour and an outage look identical from the newest event alone.
              * @example 2026-08-11T12:30:00.000Z
              */
             dataUpdatedAtUtc: string | null;
             /**
              * Format: date-time
-             * @description Origin time of the newest event we hold, UTC; null when the store is empty. A concrete fact for the page description (SEO-POLICY Part A2), not a freshness claim.
+             * @description Origin time of the newest event this ENDPOINT holds, UTC. Scope follows the path: store-wide on the hub, and the newest event bound to that province on /api/earthquakes/provinces/{plateCode} — so null means "nothing on this path", which on a province path is a quiet province and NOT an empty store. A concrete fact for the page description (SEO-POLICY Part A2), not a freshness claim: read dataStatus for that.
              * @example 2026-08-11T11:03:34.000Z
              */
             latestEventAtUtc: string | null;
@@ -2055,6 +2258,165 @@ export interface components {
             items: components["schemas"]["EarthquakeEventDto"][];
             /** @description This endpoint's extension to the shared envelope: applied filter, data freshness and the mandatory attribution. Not part of the core five and not inherited by any other list. */
             meta: components["schemas"]["EarthquakeListMetaDto"];
+        };
+        EarthquakeMetaDto: {
+            /**
+             * @description The magnitude floor applied when a list request names none. Published so the web repo can say what the reader is looking at without hardcoding the number.
+             * @example 2.5
+             */
+            minMagnitudeDefault: number;
+            /**
+             * @description How far beyond the national outline of Türkiye, in km, an event still belongs on these pages. This is the SAME buffer the stored rows were classified with, not a second copy of it — the structural half of the scope label the web repo writes.
+             * @example 200
+             */
+            scopeBufferKm: number;
+            /**
+             * @description Width in days of the window a list request gets when it names neither end.
+             * @example 7
+             */
+            defaultWindowDays: number;
+            /**
+             * @description The widest window a single list request may ask for; wider is a 400.
+             * @example 366
+             */
+            maxWindowDays: number;
+            /**
+             * Format: date-time
+             * @description When our last ingest tour that actually LANDED data finished, UTC; null when no such tour has run. A tour that reached the provider but stored nothing does NOT refresh it, so a frozen value points at our own pipeline rather than at the provider. This — not build time — is what a dateModified or a sitemap lastmod derives from.
+             * @example 2026-08-19T11:55:00.000Z
+             */
+            dataUpdatedAtUtc: string | null;
+            /**
+             * Format: date-time
+             * @description Origin time of the newest event we hold, UTC; null when the store holds none. A concrete fact for a page description, not a freshness claim — a quiet hour and an outage look identical from this field alone, which is why dataUpdatedAtUtc exists beside it.
+             * @example 2026-08-19T10:31:07.000Z
+             */
+            latestEventAtUtc: string | null;
+            /**
+             * @description Structural freshness verdict for the store as a whole. "stale" still serves data — stale data is shown with its age, never hidden.
+             * @example ok
+             * @enum {string}
+             */
+            dataStatus: "ok" | "stale" | "unavailable";
+            /**
+             * @description The early-warning disclaimer, in Turkish, owner-ruled and VERBATIM (DEC 2026-08-19l). Render it wherever earthquake data is shown; never translate, shorten or re-word it. It is a liability note rather than interface copy, which is why the API publishes the sentence itself while every other reader-facing string on this leg is the web repo to author. Constant, so it is served on the cold path too.
+             * @example Bu sayfa, AFAD'ın yayımladığı gerçekleşmiş deprem kayıtlarını gösterir. Erken uyarı sistemi değildir; gelecek depremler hakkında bilgi vermez.
+             */
+            disclaimerTr: string;
+            /** @description Required provider attribution, populated on EVERY response including this one and including the cold path. A licence notice that blinks with provider health does not discharge the obligation. */
+            attributions: components["schemas"]["EarthquakeAttributionDto"][];
+        };
+        ElevationPointDto: {
+            /**
+             * @description Enlem (decimal degrees), 3 ondalığa yuvarlanmış hâliyle — profilin gerçekten ölçüldüğü nokta budur, istemcinin gönderdiği ham değer değil.
+             * @example 41.287
+             */
+            latitude: number;
+            /**
+             * @description Boylam (decimal degrees), aynı yuvarlama ile.
+             * @example 36.33
+             */
+            longitude: number;
+        };
+        ElevationAttributionDto: {
+            /**
+             * @description Sağlayıcı adı — AWS Open Data kaydının `ManagedBy` alanından.
+             * @example Terrain Tiles (Mapzen, a Linux Foundation project)
+             */
+            providerName: string;
+            /**
+             * @description AWS Open Data kayıt adresi.
+             * @example https://registry.opendata.aws/terrain-tiles/
+             */
+            datasetUrl: string;
+            /**
+             * @description Atıf yükümlülüğünü tanımlayan belge. Kaydın `License:` alanı bir lisans ADI değil, bu belgeye işaret eder.
+             * @example https://github.com/tilezen/joerd/blob/master/docs/attribution.md
+             */
+            licenceUrl: string;
+            /** @description Borçlu olunan atıf satırları, BİREBİR ve İngilizce. Çevrilmez, kısaltılmaz, yeniden yazılmaz, sırası değiştirilmez. Profili gösteren HER yüzeyde — PNG dışa aktarımı dahil — okunabilir biçimde görünmek zorundadır. */
+            requiredNoticesEn: string[];
+            /**
+             * @description NOAA’nın ETOPO1 için koyduğu ayrı sınır, birebir. DENİZ DERİNLİĞİ gösteren her yüzeyde yazılır; `seaDepthIncluded` bu yanıtın o sınıfa girip girmediğini söyler.
+             * @example Not to be used for navigation
+             */
+            navigationLimitEn: string;
+            /**
+             * @description Bu yanıt deniz derinliği içeriyor mu. Örnekleme zoom’u lisans gereği z12’ye sabit ve orada deniz tam 0 m okunur (ölçüldü), dolayısıyla yapısal olarak `false` — `navigationLimitEn` bu yanıt için tetiklenmez. Alan sözleşmede duruyor ki derinlik gösteren bir yüzey doğduğunda kuralı aramak zorunda kalmasın.
+             * @example false
+             */
+            seaDepthIncluded: boolean;
+            /** @description Yöntem beyanı (TR) — GMTED2010’un değiştirme-beyanı yükümlülüğü ve CLMS veri politikasının 2. koşulu. Yayımlanan türetilmiş rakımın yanında durur ve KISALTILAMAZ. */
+            methodNoteTr: string;
+            /** @description Yöntem beyanının İngilizce ikizi. */
+            methodNoteEn: string;
+            /** @description Doğruluk çekincesi (TR). Kullanım noktasında gösterilir: ızgara verisi sivri zirveleri sistematik olarak alçaltır (Erciyes’te ölçülen fark ~88 m). */
+            accuracyNoteTr: string;
+            /** @description Doğruluk çekincesinin İngilizce ikizi. */
+            accuracyNoteEn: string;
+            /** @description Kaynağı Türkçe anlatan bilgilendirme cümlesi. İngilizce bildirimlerin YERİNE GEÇMEZ, yanlarında durur. */
+            explanationTr: string;
+        };
+        ElevationProfileDto: {
+            /** @description Hattın başlangıcı — YUVARLANMIŞ hâliyle. İstemcinin gönderdiği ham koordinat değil, profilin gerçekten hesaplandığı nokta. */
+            from: components["schemas"]["ElevationPointDto"];
+            /** @description Hattın bitişi, aynı yuvarlama ile. */
+            to: components["schemas"]["ElevationPointDto"];
+            /**
+             * @description Yuvarlanmış hattın büyük daire uzunluğu (km).
+             * @example 511.4
+             */
+            lengthKm: number;
+            /**
+             * @description Hat boyunca örneklenen nokta sayısı. SUNUCU sabiti: istekte seçilemez, çünkü bir isteğin dokunabileceği ayrık karo sayısı bu sayıyı aşamaz — maliyet tavanı böylece bir ayar değil, aritmetik bir gerçektir. Yanıtta yayımlanır ki istemci varsaymak zorunda kalmasın.
+             * @example 200
+             */
+            sampleCount: number;
+            /**
+             * @description Örneklemenin yapıldığı karo yakınlaştırma düzeyi. Bir performans ayarı DEĞİL, lisans kaldıracıdır: daha düşük bir düzeyde karışıma deniz derinliği taşıyan bir kaynak girer ve atıf yükümlülüğü değişir. Kodda sabittir.
+             * @example 12
+             */
+            sampleZoom: number;
+            /**
+             * @description Hiç değilse bir örnek çözülebildi mi. `false` ise iki dizi de boştur ve yanıt `Cache-Control: no-store` taşır — ISR/SSG bu hâli kaydetmemelidir.
+             * @example true
+             */
+            dataAvailable: boolean;
+            /**
+             * @description Gerçekten çözülen örnek sayısı. `sampleCount`’tan KÜÇÜKSE profil kısmidir: yanıt bir hata değil, bir ısınma adımıdır — o istekte çekilen karolar sunucuda kaldığı için aynı hattın ikinci isteği daha çoğunu çözer. Soğuk önbellekte çok uzun hatlarda bu BEKLENEN hâldir, istisna değil; istemci yeniden deneme durumunu buna göre tasarlar. Kısmi yanıt da `no-store` taşır ve önbelleğe yazılmaz.
+             * @example 200
+             */
+            resolvedSampleCount: number;
+            /**
+             * @description Hat başlangıcından itibaren mesafeler (km), artan. Uzunluğu `sampleCount` kadardır ve `elevationsM` ile aynı indekslenir.
+             * @example [
+             *       0,
+             *       2.57,
+             *       5.14
+             *     ]
+             */
+            distancesKm: number[];
+            /**
+             * @description TAM SAYI metre rakımlar; çözülemeyen nokta `null`. Ondalık YAYIMLANMAZ: kaynak ızgaranın kendi hatası onlarca metre mertebesinde olduğu için ondalık göstermek olmayan bir hassasiyet iddia eder (SPEC §6.6).
+             * @example [
+             *       12,
+             *       34,
+             *       null
+             *     ]
+             */
+            elevationsM: (number | null)[];
+            /**
+             * @description Çözülen örneklerin en küçüğü (m). Hiç örnek çözülemediyse `null`.
+             * @example 12
+             */
+            minElevationM: number | null;
+            /**
+             * @description Çözülen örneklerin en büyüğü (m). Hiç örnek çözülemediyse `null`.
+             * @example 3061
+             */
+            maxElevationM: number | null;
+            /** @description Lisans yüzeyi. HER yanıtta doludur — `dataAvailable: false` olan yanıtlarda da — çünkü bildirim yayımlanan bölüme iliştirilir, tek tek değerlerin sağlığına değil. */
+            attribution: components["schemas"]["ElevationAttributionDto"];
         };
     };
     responses: never;
@@ -2488,6 +2850,158 @@ export interface operations {
             };
             /** @description No book matches the given slug. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EarthquakeController_listEvents: {
+        parameters: {
+            query?: {
+                /** @description Only events at or above this magnitude. Applied at display time, never at ingest — everything is stored, so lowering it returns real data rather than a hole. The applied value is echoed back in meta.filter. */
+                minMagnitude?: number;
+                /** @description Window start, inclusive. MUST carry an explicit zone (Z or ±HH:MM) — a timezone-less timestamp is rejected rather than guessed. Defaults to 7 days before the window end; the window applied is echoed back as concrete instants in meta.filter. */
+                fromUtc?: string;
+                /** @description Window end, inclusive, with the same explicit-zone rule as fromUtc. Defaults to now plus the clock-skew allowance, so an event stamped slightly ahead of our clock is still the newest row rather than an invisible one. The window may span at most 366 days. */
+                toUtc?: string;
+                /** @description Page to read, 1-based. A page past the end answers 200 with an empty items array, never 404. NOTE: hasMore is also false AT this ceiling, even when total is larger — compare page * pageSize with total to tell an exhausted result from an exhausted address space. Reachable only at very small page sizes over a very wide window. */
+                page?: number;
+                /** @description Rows per page. Read a whole window by paging until hasMore is false; this ceiling is the contract that bounds how many requests that takes. */
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarthquakeListDto"];
+                };
+            };
+            /** @description A query parameter is out of range, malformed, or not recognised — unknown parameters are rejected rather than ignored. Also returned when fromUtc is later than toUtc, when either omits its timezone, or when the window spans more than 366 days. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EarthquakeController_getMeta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarthquakeMetaDto"];
+                };
+            };
+        };
+    };
+    EarthquakeController_listProvinceEvents: {
+        parameters: {
+            query?: {
+                /** @description Only events at or above this magnitude. Applied at display time, never at ingest — everything is stored, so lowering it returns real data rather than a hole. The applied value is echoed back in meta.filter. */
+                minMagnitude?: number;
+                /** @description Window start, inclusive. MUST carry an explicit zone (Z or ±HH:MM) — a timezone-less timestamp is rejected rather than guessed. Defaults to 7 days before the window end; the window applied is echoed back as concrete instants in meta.filter. */
+                fromUtc?: string;
+                /** @description Window end, inclusive, with the same explicit-zone rule as fromUtc. Defaults to now plus the clock-skew allowance, so an event stamped slightly ahead of our clock is still the newest row rather than an invisible one. The window may span at most 366 days. */
+                toUtc?: string;
+                /** @description Page to read, 1-based. A page past the end answers 200 with an empty items array, never 404. NOTE: hasMore is also false AT this ceiling, even when total is larger — compare page * pageSize with total to tell an exhausted result from an exhausted address space. Reachable only at very small page sizes over a very wide window. */
+                page?: number;
+                /** @description Rows per page. Read a whole window by paging until hasMore is false; this ceiling is the contract that bounds how many requests that takes. */
+                pageSize?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Two-digit zero-padded province plate code. */
+                plateCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarthquakeListDto"];
+                };
+            };
+            /** @description plateCode is not exactly two digits, or a query parameter is out of range, malformed or not recognised. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No province carries this plate code. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ElevationController_getProfile: {
+        parameters: {
+            query: {
+                /** @description Hattın başlangıç enlemi (decimal degrees). Çerçeve, Türkiye sınırlarının yastıklanmış hâlidir; dışarısı 400 döner. Değer sunucuda 3 ondalığa yuvarlanır ve yanıtta `from` olarak geri verilir. */
+                fromLat: number;
+                /** @description Hattın başlangıç boylamı (decimal degrees). Aynı çerçeve ve aynı yuvarlama. */
+                fromLon: number;
+                /** @description Hattın bitiş enlemi (decimal degrees). */
+                toLat: number;
+                /** @description Hattın bitiş boylamı (decimal degrees). Yuvarlamadan sonra iki uç aynı noktaya düşerse 400 döner: sıfır uzunlukta bir hattın kesiti yoktur. */
+                toLon: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ElevationProfileDto"];
+                };
+            };
+            /** @description A coordinate is outside the Türkiye frame, missing or malformed; a query parameter is not recognised (unknown parameters are rejected, not ignored); or the two endpoints collapse to the same point once rounded. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The elevation feature is not enabled on this deployment. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The per-client rate limit for this route was exceeded. Tighter than the global limit because this route can reach an external provider. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -216,6 +216,7 @@
     "climateClassOnly": "{className}",
     "climatePlainNote": "The textbook name and the Köppen code differ for most provinces.",
     "climateNoteLabel": "MGM classification note",
+    "airPollutionHeading": "Long-term Air Pollution in {name}",
     "hydrographyHeading": "Hydrography of {name}",
     "hydrographyTypeBaraj": "Dams",
     "hydrographyTypeNehir": "Rivers",
@@ -240,6 +241,7 @@
     "sourcesHydrography": "hydrography DSİ/İSKİ",
     "sourcesEconomy": "economic indicator TÜİK regional accounts",
     "sourcesClimate": "climate normals ERA5-Land (C3S/Copernicus)",
+    "sourcesPm25": "long-term PM2.5 ACAG ({version})",
     "backToMap": "Back to the map of Türkiye",
     "marineHeading": "Sea state off {name}",
     "marineSourcesHeading": "Sea data: sources and use",
@@ -276,6 +278,27 @@
     "attribution": {
       "c3sNotice": "Generated using Copernicus Climate Change Service information 2026. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
     }
+  },
+  "AirPollution": {
+    "valueLabel": "Annual mean PM2.5 ({year})",
+    "unit": "µg/m³",
+    "notice": {
+      "annualMean": "This is an annual mean. It does not show today's air quality.",
+      "provinceCentrePoint": "The value is not a provincial average. It is read from the cell containing the province centre.",
+      "satelliteDerived": "Produced from satellite observations, a model and ground-station calibration. Not a direct station measurement.",
+      "gridResolution": "The grid is about 1 km. The provider itself states it cannot fully resolve every gradient at that resolution."
+    },
+    "whoGuideline": "WHO (2021) sets a guideline level of 5 µg/m³ for annual mean PM2.5. It is a health-based target, not a legal limit.",
+    "chartTitle": "{name} — annual mean PM2.5, {start}-{end}",
+    "chartDesc": "Annual mean PM2.5 ranges from {min} to {max} {unit}. The lowest year is {minYear} and the highest is {maxYear}. The line shows annual means from {start} to {end}.",
+    "tableSummary": "Values by year ({start}-{end})",
+    "tableCaption": "{name} — annual mean PM2.5 ({unit}), {start}-{end}.",
+    "tableYear": "Year",
+    "tableValue": "PM2.5 ({unit})",
+    "noticeIntro": "The data provider's licence requires the following caveat to be published verbatim, in English:",
+    "sourceLine": "Source: {provider}, <source>{workTitle}</source>.",
+    "licenceLine": "Licence: <licence>{licenceName}</licence>.",
+    "referenceLine": "Reference publication: <ref>{citation}</ref>"
   },
   "Regions": {
     "MARMARA": "Marmara",

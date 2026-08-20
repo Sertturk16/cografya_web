@@ -248,8 +248,10 @@ Web-specific filter boundary:
   green.
 - Do NOT grant engineers the subagent-spawn tool / attempt to self-run the reviewer fan-out
   (§8 — review independence is a design choice, not an accident).
-- Data-viz / map color code is **Faz-2** — `DESIGN.md` ships the doctrine as documentation
-  now; no scales module lands in this repo yet.
+- **Map** colour/scale code is still **Faz-2** (no map scales module lands here yet), but
+  CHART code is not: three data-viz surfaces have shipped, each carrying only the tokens its
+  own chart needs (`DESIGN.md` §6.4/§6.5/§6.6), and a general scales module remains
+  deliberately unbuilt rather than merely pending.
 
 ## Kim neyi okur — kapsam sözleşmesi
 
