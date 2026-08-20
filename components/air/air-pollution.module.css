@@ -1,0 +1,307 @@
+/* Uzun dönem hava kirliliği (PM2.5) — Terra tokens + the one dedicated data token
+   (--chart-pm25-line, DESIGN.md §6.6). No hardcoded brand hex. The chart is inline SVG
+   (server-rendered, zero client JS).
+
+   Contrast, verified with the same sRGB calculator that reproduces DESIGN.md §6.4's own
+   recorded figures: the line's --chart-pm25-line is 9.86:1 on the white plot (WCAG 1.4.11
+   asks 3:1 for a graphical object); axis and caption text is --color-slate (7.92:1 on white,
+   7.48:1 on --color-bg). --color-taupe appears nowhere (the PR#2 trap).
+
+   ONE raw colour literal, and it is the same one the sibling chart uses: the plot's white
+   background (`components/climate/climate.module.css` .chartFrame). White is not a brand
+   hue and there is no token for it; more to the point, the two charts sit on ONE page and a
+   plot that did not match the climate plot beside it would read as a rendering fault. Every
+   contrast figure in this repo's data-viz records is stated "on the white plot", so this is
+   the surface those numbers describe. */
+
+.heading {
+  /* This heading is a permanent, shareable deep-link target (#hava-kirliligi /
+     #air-pollution). Without this, a followed fragment scrolls it flush to the top and
+     under the opaque sticky header. Everything else about the h2 stays the global style. */
+  scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+
+/* ---- Value line ------------------------------------------------------------- */
+
+.valueLine {
+  margin: 0 0 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+
+.valueLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-slate);
+}
+
+.value {
+  font-family: var(--font-heading);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.valueUnit {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-slate);
+}
+
+/* ---- Editorial notices ------------------------------------------------------ */
+
+.notices {
+  margin: 0 0 18px;
+  max-width: 68ch;
+}
+
+.notice {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  color: var(--color-slate);
+  line-height: 1.5;
+  max-width: 78ch;
+}
+
+.notice:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- Chart ------------------------------------------------------------------ */
+
+.chartFigure {
+  margin: 0;
+}
+
+/* The frame reserves space by aspect ratio BEFORE the SVG paints → zero CLS.
+
+   CAPPED AT THE viewBox WIDTH, and that is a measured choice rather than a leftover. The
+   full 1080px content column was tried and rejected on rendered frames for two reasons:
+   the viewBox then scales 1.5×, so 15-unit axis text prints LARGER than the page's own
+   body copy; and every other block in this section caps at 78ch (~700px), so a 1080px
+   chart would be the only thing in it reaching the column edge. At 720 the section reads
+   as one measure, and the chart matches the width the climate chart's own flex row
+   resolves to (~690px) — two charts on one page at one size.
+
+   This is NOT the UX tour's D2 dead space: there the table stopped at 560px while the grid
+   below it filled 1080, giving one page two rhythms. Here the whole section is one width. */
+.chartFrame {
+  max-width: 720px;
+  aspect-ratio: 720 / 300;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+/* One hairline per year. The labelled years read slightly stronger so the eye can anchor
+   a reading to a printed year without counting. */
+.gridYear {
+  stroke: var(--color-border);
+  stroke-width: 0.6;
+  opacity: 0.55;
+}
+
+.gridYearStrong {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.line {
+  fill: none;
+  stroke: var(--chart-pm25-line);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.marker {
+  fill: var(--chart-pm25-line);
+}
+
+.axisLabelLeft,
+.axisUnit,
+.yearLabel {
+  font-family: var(--font-body);
+  font-size: 15px;
+  fill: var(--color-slate);
+}
+
+/* The SVG scales with its frame, so in-viewBox px are NOT CSS px: at 390px the frame is
+   ~350px wide and the 720-unit viewBox scales ~0.49×, rendering 15px axis text at ~7px.
+   The axis numbers are load-bearing under the per-province auto-scaled axis (DEC
+   2026-08-20c md.2), so they scale up on narrow viewports — the climate chart's measured
+   fix, at the same breakpoint and for the same reason. */
+@media (max-width: 700px) {
+  .axisLabelLeft,
+  .axisUnit,
+  .yearLabel {
+    font-size: 19px;
+  }
+}
+
+.axisLabelLeft {
+  text-anchor: end;
+}
+
+.axisUnit {
+  text-anchor: end;
+  font-weight: 700;
+  fill: var(--chart-pm25-line);
+}
+
+.yearLabel {
+  text-anchor: middle;
+}
+
+/* ---- WHO guideline sentence -------------------------------------------------- */
+
+/* Sits under the chart, not inside it (DEC 2026-08-20d). Given a left rule so it reads as
+   a reference point rather than as a property of this province's series. */
+.guideline {
+  margin: 14px 0 0;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--color-border);
+  font-size: 0.8rem;
+  color: var(--color-slate);
+  max-width: 78ch;
+  line-height: 1.5;
+}
+
+/* ---- Year table (collapsed) -------------------------------------------------- */
+
+.disclosure {
+  margin-top: 18px;
+  max-width: 420px;
+}
+
+/* WCAG 2.2 §2.5.8 floor is 24×24 CSS px; the row is ~37px tall at 0.85rem/1.5 plus the
+   vertical padding, so it clears it with room. */
+.summary {
+  cursor: pointer;
+  padding: 8px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.summary:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.tableCaption {
+  caption-side: top;
+  text-align: left;
+  padding: 0 0 10px;
+  font-size: 0.8rem;
+  color: var(--color-slate);
+  line-height: 1.45;
+}
+
+.thYear,
+.thValue,
+.thRow,
+.td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.thYear,
+.thValue {
+  background: var(--color-surface);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.thYear {
+  text-align: left;
+}
+
+.thValue {
+  text-align: right;
+}
+
+/* Let the metric HEADER wrap on a phone; the data cells never do — a number must not break
+   across lines. Two columns fit a 320px viewport, which is why there is no scroll region. */
+@media (max-width: 700px) {
+  .thValue {
+    white-space: normal;
+  }
+}
+
+.thRow {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.td {
+  text-align: right;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- Attribution / licence --------------------------------------------------- */
+
+.attribution {
+  margin-top: 20px;
+}
+
+.sourceLine {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: var(--color-slate);
+  max-width: 78ch;
+  line-height: 1.5;
+  /* The reference citation is one long unbroken string with a DOI in it; without this it
+     can push a narrow viewport into horizontal scroll (WCAG 1.4.10 reflow). */
+  overflow-wrap: anywhere;
+}
+
+.sourceLine a {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+/* The provider's mandatory method caveat — an UNTOUCHABLE copy class (CONTENT-STYLE §22),
+   set in a quieter indented block so a Turkish reader can see at a glance where the
+   platform's prose stops and the licensed text begins. Never hidden behind a disclosure,
+   never collapsed. Sized to match `components/climate/climate.module.css` .licenceNotice,
+   the treatment this block mirrors. */
+.licenceNotice {
+  margin: 8px 0;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--color-border);
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  max-width: 78ch;
+  line-height: 1.5;
+}

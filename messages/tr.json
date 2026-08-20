@@ -216,6 +216,7 @@
     "climateClassOnly": "{className}",
     "climatePlainNote": "Ders kitabı adı ile Köppen kodu illerin çoğunda örtüşmez.",
     "climateNoteLabel": "MGM sınıflandırma notu",
+    "airPollutionHeading": "{name} Uzun Dönem Hava Kirliliği",
     "hydrographyHeading": "{name} Hidrografyası",
     "hydrographyTypeBaraj": "Barajlar",
     "hydrographyTypeNehir": "Akarsular",
@@ -240,6 +241,7 @@
     "sourcesHydrography": "hidrografya DSİ/İSKİ",
     "sourcesEconomy": "ekonomik gösterge TÜİK bölgesel hesaplar",
     "sourcesClimate": "iklim normalleri ERA5-Land (C3S/Copernicus)",
+    "sourcesPm25": "uzun dönem PM2.5 ACAG ({version})",
     "backToMap": "Türkiye haritasına dön",
     "marineHeading": "{name} açıklarında deniz durumu",
     "marineSourcesHeading": "Deniz verisi: kaynaklar ve kullanım",
@@ -276,6 +278,28 @@
     "attribution": {
       "c3sNotice": "Generated using Copernicus Climate Change Service information 2026. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
     }
+  },
+  "AirPollution": {
+    "valueLabel": "Yıllık ortalama PM2.5 ({year})",
+    "jsonLdLabel": "Yıllık ortalama PM2.5 — il merkezi hücresi ({year})",
+    "unit": "µg/m³",
+    "notice": {
+      "annualMean": "Yıllık ortalamadır. Bugünün hava kalitesini göstermez.",
+      "provinceCentrePoint": "Değer, il ortalaması değildir. İl merkezinin düştüğü hücreden okunur.",
+      "satelliteDerived": "Uydu gözlemi, model ve yer istasyonu kalibrasyonundan üretilir. Doğrudan istasyon ölçümü değildir.",
+      "gridResolution": "Izgara yaklaşık 1 km'dir. Sağlayıcı, bu çözünürlükte her farkı ayırt edemediğini kendisi belirtir."
+    },
+    "whoGuideline": "DSÖ (2021), yıllık ortalama PM2.5 için 5 µg/m³ kılavuz değeri verir. Sağlık temelli bir hedeftir, yasal sınır değildir.",
+    "chartTitle": "{name} — yıllık ortalama PM2.5, {start}-{end}",
+    "chartDesc": "Yıllık ortalama PM2.5 {min} ile {max} {unit} arasında değişir. En düşük yıl {minYear}, en yüksek yıl {maxYear}. Çizgi {start}-{end} arası yıllık ortalamaları gösterir.",
+    "tableSummary": "Yıllara göre değerler ({start}-{end})",
+    "tableCaption": "{name} — yıllık ortalama PM2.5 ({unit}), {start}-{end}.",
+    "tableYear": "Yıl",
+    "tableValue": "PM2.5 ({unit})",
+    "noticeIntro": "Veri sağlayıcının kendi çekincesi, çeviri onu bozmasın diye İngilizce ve birebir yayımlanır:",
+    "sourceLine": "Kaynak: {provider}, <source>{workTitle}</source>.",
+    "licenceLine": "Lisans: <licence>{licenceName}</licence>.",
+    "referenceLine": "Referans yayın: <ref>{citation}</ref>"
   },
   "Regions": {
     "MARMARA": "Marmara",

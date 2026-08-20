@@ -31,7 +31,7 @@ describe("headingName — locale gate", () => {
 });
 
 describe("PROVINCE_HEADING_CASE — per-section mapping", () => {
-  it("assigns the intended genitive/locative split (4 + 3)", () => {
+  it("assigns the intended genitive/locative split (4 + 4)", () => {
     // `location` joined the §19 six with the locator mini-map: "Van'ın Konumu" is a property
     // OF the province, so genitive; the locative would read "a location inside Van".
     expect(PROVINCE_HEADING_CASE.location).toBe("genitive");
@@ -39,13 +39,16 @@ describe("PROVINCE_HEADING_CASE — per-section mapping", () => {
     expect(PROVINCE_HEADING_CASE.hydrography).toBe("genitive");
     expect(PROVINCE_HEADING_CASE.neighbors).toBe("genitive");
     expect(PROVINCE_HEADING_CASE.climate).toBe("locative");
+    // "Ankara'da Uzun Dönem Hava Kirliliği" — the genitive would read as pollution the
+    // province OWNS or emits, a different claim from a reading taken over it.
+    expect(PROVINCE_HEADING_CASE.airPollution).toBe("locative");
     expect(PROVINCE_HEADING_CASE.settlement).toBe("locative");
     expect(PROVINCE_HEADING_CASE.economy).toBe("locative");
   });
 
-  it("covers exactly the seven slots and only genitive/locative values", () => {
+  it("covers exactly the eight slots and only genitive/locative values", () => {
     const slots = Object.keys(PROVINCE_HEADING_CASE) as ProvinceHeadingSlot[];
-    expect(slots).toHaveLength(7);
+    expect(slots).toHaveLength(8);
     for (const slot of slots) {
       expect(["genitive", "locative"]).toContain(PROVINCE_HEADING_CASE[slot]);
     }

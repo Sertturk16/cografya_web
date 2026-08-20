@@ -25,7 +25,14 @@ export type HeadingCase = "genitive" | "locative";
 
 /** The content sections whose <h2> carries the province name (§19 + the locator block). */
 export type ProvinceHeadingSlot =
-  "location" | "landform" | "hydrography" | "neighbors" | "climate" | "settlement" | "economy";
+  | "location"
+  | "landform"
+  | "hydrography"
+  | "neighbors"
+  | "climate"
+  | "airPollution"
+  | "settlement"
+  | "economy";
 
 /** The content sections whose <h2> carries the country name (§19 + the locator block). */
 export type CountryHeadingSlot = "location" | "landform" | "climate" | "hydrography" | "neighbors";
@@ -35,6 +42,11 @@ export type CountryHeadingSlot = "location" | "landform" | "climate" | "hydrogra
  * "X'in Y'si" six times. Genitive drives the "X'in Y'si" headings, locative the "X'te Y"
  * ones. `neighbors` is deliberately genitive: the locative "X'te Komşu İller" would mean
  * "the neighbouring provinces located IN X" — the wrong sense (→ closing-summary §2).
+ *
+ * The split is 4 genitive / 4 locative. `airPollution` is the one that made it even, and
+ * that is a §19 property worth keeping: the rule asks the pattern itself not to flatten
+ * into one skeleton across 81 pages, so a new section takes the case its own sense wants
+ * rather than the case that happens to be in the majority.
  */
 export const PROVINCE_HEADING_CASE = {
   // "Van'ın Konumu" — the locator block asks "where is it", which is a property OF the
@@ -44,6 +56,11 @@ export const PROVINCE_HEADING_CASE = {
   hydrography: "genitive",
   neighbors: "genitive",
   climate: "locative",
+  // "Ankara'da Uzun Dönem Hava Kirliliği" — the section states what the air over the
+  // province is like, so locative; the genitive "Ankara'nın Hava Kirliliği" would read as
+  // pollution the province OWNS or emits, which is a different (and wrong) claim about a
+  // value read from one grid cell.
+  airPollution: "locative",
   settlement: "locative",
   economy: "locative",
 } as const satisfies Record<ProvinceHeadingSlot, HeadingCase>;

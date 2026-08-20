@@ -357,6 +357,47 @@ set (§6.1 rule 1) and read only by `components/game/game-map.module.css`.
   reason; the doctrine reason is the same one — colour must encode the variable under
   discussion, and in those modes that variable is not the region.
 
+### 6.6 PM2.5 line — the province air-pollution chart (HAVA-KIRLILIGI, shipped)
+
+The third data-viz surface, and the first with a **single** series: the province page's
+long-term annual-mean PM2.5 chart (`components/air/pm25-chart.tsx`) draws one polyline over
+27 years. One token, in `app/globals.css`, physically separate from the Terra chrome set
+(§6.1 rule 1) and read only by `components/air/air-pollution.module.css`.
+
+| Token               | Hex       | Encodes                                    |
+| ------------------- | --------- | ------------------------------------------ |
+| `--chart-pm25-line` | `#4a3b6b` | annual-mean PM2.5 polyline + point markers |
+
+**Why these choices are §6-compliant:**
+
+- **One series, so §6.1 rule 3 has nothing to bite on inside the figure.** "Never hue alone"
+  is a rule about telling series APART; there is no second series here. The trend is carried
+  by position, the values by printed axis numbers, and the full figures by the year table
+  below the chart — colour carries no meaning at all, which is the strongest form of
+  compliance rather than an exemption from it.
+- **No ramp, because there is no ordered variable to encode** (§6.1 rule 4). A concentration
+  over time is a single line, not a sequential, diverging or categorical scale.
+- **§6.2 applies IN REVERSE, and this is the important entry.** AQI band colours are a
+  public-safety convention we reproduce exactly _where they apply_. They do not apply here:
+  EPA AQI and EEA EAQI are computed from SHORT-TERM (hourly/daily) concentrations, and
+  neither authority publishes a band scale for an annual mean. Painting an annual mean
+  green→maroon would assert an index membership the number does not have — the same value
+  §6.2 protects, violated from the opposite direction. **No band, no traffic-light scale, no
+  "iyi/orta/kötü" badge, ever, on this surface.** Nor is there a horizontal WHO guideline
+  line in the chart (→ DEC 2026-08-20d); the value is a sentence under it.
+- **Not a brand token.** `#4a3b6b` is an indigo that appears nowhere in the Terra chrome set,
+  in the two §6.4 chart ramps, in the seven §6.5 region tints or in the `--map-*` ramp.
+- **Contrast (WCAG 1.4.11, graphical objects ≥ 3:1 on the white plot): 9.86:1.**
+- **The colour-vision simulation is why this hex and not the first one.** §6.1 rule 3 asks
+  for a simulator check before shipping; it was run (Viénot-Brettel-Mollon, all three
+  dichromacies) and it REJECTED the first candidate. `#6a4c93` simulated to ΔE 2.9 from
+  `--chart-precip-bar` under deuteranopia — the same colour as the climate chart's
+  precipitation bars two sections up the same page. That is not a correctness failure here
+  (nothing needs telling apart), but a reader who sees two charts drawn in one colour has
+  been told something false about their relationship, so the pre-registered fallback was
+  taken. The simulator's own positive control fired first: a red/green pair collapsed from
+  ΔE 119.8 to 13.3 under the same transform.
+
 ## Kim neyi okur — kapsam sözleşmesi
 
 This table is the sole owner of this document's read scope. A role definition never

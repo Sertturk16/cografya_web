@@ -39,6 +39,27 @@ export type ClimateDerived = components["schemas"]["ClimateDerivedDto"];
 /** Seasonal precipitation shares (%, sum to exactly 100) — derived. */
 export type SeasonalPrecipitation = components["schemas"]["SeasonalPrecipitationDto"];
 
+// ---- Uzun dönem hava kirliliği (PM2.5 — ACAG SatPM2.5) ----------------------
+/** One province's long-term annual-mean PM2.5 series: the ~1 km grid cell the province
+ *  CENTRE falls in, 1998-2024, plus the licence/attribution block that must travel with
+ *  every published figure. `null` on the detail DTO means "no publishable series" → the
+ *  web renders no air-pollution section at all (the `climate === null` pattern).
+ *
+ *  TWO CONTRACT FACTS THE ALIAS REPEATS, because both are misreadings waiting to happen:
+ *  · `readingPoint` is `province_centre`. The value is NOT a provincial average and the
+ *    interface may not imply one (→ DEC 2026-08-19d md.1).
+ *  · This is an ANNUAL CONCENTRATION, not the live hourly air-quality index served by
+ *    `/api/air-quality/…`. The contract's own field description forbids conflating them. */
+export type Pm25Annual = components["schemas"]["Pm25AnnualDto"];
+/** One year of the series: the year and its raw µg/m³ number (never a formatted string —
+ *  formatting is this repo's job, `lib/air/pm25-display.ts`). */
+export type Pm25AnnualValue = components["schemas"]["Pm25AnnualValueDto"];
+/** The ACAG licence block: provider, work title, version, dataset/licence/reference URLs,
+ *  the provider's own verbatim method caveat, and the i18n KEYS of the editorial notices
+ *  this repo writes the texts for. Every string here is `CONTENT-STYLE.md` §22's untouchable
+ *  class — printed as received, never translated, shortened or re-punctuated. */
+export type Pm25Attribution = components["schemas"]["Pm25AttributionDto"];
+
 /** The seven official geographic regions of Türkiye (contract enum values). */
 export type GeographicRegion = ProvinceListItem["region"];
 

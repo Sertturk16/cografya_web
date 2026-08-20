@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { AirPollutionSection } from "@/components/air/air-pollution-section";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { CardArrow } from "@/components/card-arrow";
 import { ClimateSection } from "@/components/climate/climate-section";
@@ -25,6 +26,8 @@ import type { HydrographyFeature, ProvinceDetail, ProvinceListItem } from "@/lib
 import { isCoastalPlate, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { pm25NoticeFlags } from "@/lib/air/notice-keys";
+import { pm25DisplayUnit, roundPm25 } from "@/lib/air/pm25-display";
 import { climateBlockGates } from "@/lib/climate/climate-block-gates";
 import { monthName } from "@/lib/climate/month";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
@@ -154,6 +157,7 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   const tb = await getTranslations("Breadcrumb");
   const tRegions = await getTranslations("Regions");
   const tClimate = await getTranslations("Climate");
+  const tAir = await getTranslations("AirPollution");
   const format = await getFormatter();
 
   // `nameTr` serves both locales: province names are proper nouns and the contract
@@ -407,6 +411,15 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
     hasCurriculumNoteText: curriculumNote !== null,
   });
 
+  // Uzun dönem hava kirliliği (PM2.5 — ACAG SatPM2.5). NOT TR-gated, unlike the prose
+  // sections: the section is data plus a symmetric vocabulary, and its one long text (the
+  // provider's caveat) is published in English on both locales anyway — the Deniz Durumu
+  // precedent, not a new rule. `pm25Annual === null` means "no publishable series" → the
+  // whole section is ABSENT (never an "eksik veri" placeholder) and `sourcesPm25` is not
+  // added to the Kaynaklar line, because a source is never cited for content that is not
+  // on the page. Null for no province today; the branch is contract-legal and tested.
+  const pm25Annual = province.pm25Annual;
+
   // JSON-LD climate facts — appended to the SAME additionalProperty array (PLAN §2: no
   // new schema type). Gated on the TR-gated series so structured data never describes a
   // climate section that is not on the page (mirrors the visible gating). Values stay
@@ -429,6 +442,50 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
       { name: tClimate("hottestMonth"), value: monthName(format, d.hottestMonth, "long") },
       { name: tClimate("coldestMonth"), value: monthName(format, d.coldestMonth, "long") },
     );
+  }
+
+  // PM2.5 — ONE PropertyValue, the latest year's value, and only when the notice that
+  // QUALIFIES its name renders — which is narrower than "when the section renders"
+  // (SEO-POLICY §B5 5.7/5.8: structured data may not carry what the page does not show, and
+  // a null field is never filled in). The whole 27-year series does NOT go in: only the
+  // latest value is on the page as a headline figure, and the table's numbers belong to the
+  // table. The number is `roundPm25`'d — the SAME rounding the value line prints, applied
+  // once in one helper, so the two representations cannot diverge into a 5.7 argument.
+  // THE NAME CARRIES THE READING POINT, and it is its own key rather than the visible
+  // `valueLabel` (→ PR #76 review FENER76-I1, validated). `additionalProperty` is defined by
+  // schema.org as a characteristic OF THE ENTITY, so a node named "Yıllık ortalama PM2.5
+  // (2024)" asserts, unqualified, that the PROVINCE's annual mean is that number — which the
+  // page denies one line below the same figure (`notice.provinceCentrePoint`) and the contract
+  // forbids in as many words (`Pm25AnnualDto.readingPoint`: "bu bir il ORTALAMASI DEĞİLDİR
+  // (→ DEC 2026-08-19d md.1). Arayüz bunu ima etmemelidir."). A `PropertyValue` travels
+  // decontextualised BY DESIGN — an aggregator or an answer surface restates the node without
+  // the disclaimer beneath it, on 81 provinces × 2 locales — so the qualification has to live
+  // inside the node or it does not travel at all. The earlier version of this comment saw half
+  // of the trap and qualified the label for the YEAR only; the reading point is the other half.
+  // AND THAT IS WHY THE NODE IS GATED ON THE NOTICE, not on the series (→ PR #76 review
+  // FENER76R2-I1 + CODE76R2-I1, validated). §B5 5.7 asks that every component of the phrase
+  // be ON THE PAGE, which is a claim about VISIBILITY, not about where the words came from.
+  // Measured rather than assumed: "hücre"/"cell" stands nowhere on a province page except
+  // inside `notice.provinceCentrePoint`, and that sentence renders only when the api asks for
+  // it through `noticeKeys` — a gate entirely independent of `pm25Annual !== null`. The
+  // "il merkezi" half alone IS unconditional on TR (`ProvinceDetail.sources`: "il-merkezi
+  // rakım ve koordinatları"), but EN's unconditional counterpart there is "provincial-centre",
+  // a different string from the label's "province-centre" — so neither locale carries the
+  // whole qualifier without the notice. When the notice does not render, the node DROPS: 5.8
+  // forbids inventing a field, not omitting one, and falling back to the unqualified
+  // `valueLabel` is the very thing FENER76-I1 rejected. Two guards, and they are different
+  // guards: `air-messages.test.ts` pins the label↔notice VOCABULARY pairing (catalogue to
+  // catalogue) and `air-pollution.structure.test.ts` pins THIS gate. Neither pins the other.
+  // `unitCode` is deliberately absent: the UN/CEFACT Rec 20 code for µg/m³ is unverified,
+  // and an invented code is exactly 5.8's forbidden move. `unitText` alone is valid.
+  const pm25ShowsCentreNotice =
+    pm25Annual !== null && pm25NoticeFlags(pm25Annual.attribution.noticeKeys).provinceCentrePoint;
+  if (pm25Annual !== null && pm25ShowsCentreNotice) {
+    additionalProperty.push({
+      name: tAir("jsonLdLabel", { year: String(pm25Annual.latestYear) }),
+      value: roundPm25(pm25Annual.latestValueUgM3),
+      unitText: pm25DisplayUnit(pm25Annual.unit, tAir("unit")),
+    });
   }
 
   const hydrographyTypeLabels: Record<HydrographyFeature["type"], string> = {
@@ -463,6 +520,11 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // Climate normals source joins the Kaynaklar line ONLY when the chart actually renders
   // (PLAN §2 — never cite a source for content that is not on the page).
   if (climateSeries !== null) extraSources.push(t("sourcesClimate"));
+  // ACAG joins the Kaynaklar line only when the section actually renders, and the VERSION is
+  // interpolated from the payload — never written in this repo, so an annual refresh cannot
+  // leave 81 pages citing last year's dataset (plan §7.3, guarded by version-drift.test.ts).
+  if (pm25Annual !== null)
+    extraSources.push(t("sourcesPm25", { version: pm25Annual.datasetVersion }));
   if (showHydrography) extraSources.push(t("sourcesHydrography"));
   if (showEconomy) extraSources.push(t("sourcesEconomy"));
 
@@ -805,6 +867,20 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
             </div>
           )}
         </section>
+      )}
+
+      {/* Uzun Dönem Hava Kirliliği — a SIBLING <h2> of İklim, never an <h3> inside it: a
+          different fact family, a different provider and a different licence. Sits between
+          İklim and Hidrografya. The component owns its own heading, anchor and licence
+          block (`components/air/air-pollution-section.tsx`). */}
+      {pm25Annual !== null && (
+        <AirPollutionSection
+          pm25={pm25Annual}
+          provinceName={name}
+          headingName={sectionHeading("airPollution")}
+          plateCode={province.plateCode}
+          locale={locale}
+        />
       )}
 
       {/* Hidrografya — TR-gated; prose note and/or a structured feature list. An

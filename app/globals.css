@@ -204,6 +204,20 @@
   --chart-temp-line: #c2410c; /* mean-temp polyline + markers (bold, warm) */
   --chart-precip-bar: #1b5f8a; /* precipitation columns (cool) */
 
+  /* ---- PM2.5 chart data token (uzun dönem hava kirliliği; DESIGN.md §6.6) ----
+     ONE token, because the chart carries ONE series: a single annual-mean concentration
+     line. There is nothing to tell apart inside the figure, so §6.1 rule 3's "never hue
+     alone" has no second series to bite on, and rule 4 asks for no ramp at all.
+     It is NOT an AQI band colour and must never become one (DESIGN §6.2 in reverse): an
+     annual mean has no index membership, so painting it green→maroon would claim a
+     standing the number does not have.
+     Contrast on the chart's white plot: 9.86:1 — far above WCAG 1.4.11's 3:1 floor for a
+     graphical object. Colour-vision simulation (Viénot-Brettel-Mollon) ran before ship;
+     the FIRST candidate #6a4c93 was rejected by it, not by taste — under deuteranopia it
+     landed ΔE 2.9 from --chart-precip-bar, i.e. the same colour as the climate chart's
+     bars two sections up. This value is the plan's pre-registered fallback. */
+  --chart-pm25-line: #4a3b6b; /* annual-mean PM2.5 polyline + markers */
+
   /* ---- Map-game region palette (Kâşif Mode 1; DESIGN.md §6.1 rule 4 — CATEGORICAL) ----
      Colouring the map by coğrafi bölge is a DATA encoding (an unordered categorical
      variable), not chrome — so it gets its own token set, physically separate from the
