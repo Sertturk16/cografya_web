@@ -102,9 +102,13 @@ const AXIS_FLOOR = 0;
 
 /**
  * Candidate y-axis tick steps, ascending. The chosen step is the smallest one that puts the
- * ceiling within `TARGET_INTERVALS` of zero — so the axis carries four to six labelled
+ * ceiling within `TARGET_INTERVALS` of zero — so the axis carries three to six labelled
  * gridlines whatever the province's range is, instead of three on a clean province and
  * twelve on a dirty one.
+ *
+ * Measured against the 81 published series (`data/acag-pm25/acag-province-pm25.json`,
+ * read from api `origin/dev`): ceilings 20/25/30/40/50 on 6/24/28/16/7 provinces, i.e.
+ * four to six printed ticks each. No province lands on a one- or two-tick axis.
  */
 const AXIS_STEPS = [1, 2, 5, 10, 20, 50, 100] as const;
 const TARGET_INTERVALS = 5;

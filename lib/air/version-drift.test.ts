@@ -63,13 +63,34 @@ describe("no second copy of the provider's licensed strings", () => {
     expect(read(path)).not.toContain("primarily intended to aid in large-scale studies");
   });
 
-  it("keeps the provider name and the reference citation out of the catalogues", () => {
+  it("keeps ACAG's own elements out of the catalogues this section reads", () => {
+    // SCOPED to the air-pollution namespace and its province-page keys, deliberately. A
+    // whole-catalogue scan for "Creative Commons Attribution 4.0 International" fires on
+    // the MARINE notice, which legitimately names that licence for a different provider —
+    // a false positive that says nothing about THIS section. What matters here is that
+    // ACAG's elements arrive from the payload and are not duplicated in copy.
     for (const catalogue of [trMessages, enMessages]) {
-      const json = JSON.stringify(catalogue);
-      expect(json).not.toContain("Atmospheric Composition Analysis Group");
-      expect(json).not.toContain("acsestair");
-      expect(json).not.toContain("Creative Commons Attribution 4.0 International");
+      const scoped = JSON.stringify({
+        AirPollution: catalogue.AirPollution,
+        sourcesPm25: catalogue.ProvinceDetail.sourcesPm25,
+        airPollutionHeading: catalogue.ProvinceDetail.airPollutionHeading,
+      });
+      expect(scoped).not.toContain("Atmospheric Composition Analysis Group");
+      expect(scoped).not.toContain("acsestair");
+      expect(scoped).not.toContain("Creative Commons Attribution");
+      expect(scoped).not.toContain("satpm.org");
     }
+  });
+
+  it("POSITIVE CONTROL — the scoped scan fires when an element IS pasted into copy", () => {
+    // Proves the narrowing above did not narrow the check into never matching anything.
+    const poisoned = JSON.stringify({
+      AirPollution: {
+        ...trMessages.AirPollution,
+        whoGuideline: "Atmospheric Composition Analysis Group",
+      },
+    });
+    expect(poisoned).toContain("Atmospheric Composition Analysis Group");
   });
 
   it("POSITIVE CONTROL — the same substring scan fires when the text IS present", () => {

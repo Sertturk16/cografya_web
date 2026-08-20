@@ -49,12 +49,14 @@ describe("pm25AxisDomain", () => {
     }
   });
 
-  it("gives at least four intervals across the range the contract actually publishes", () => {
-    // Bounded to maxima at or above 10 — below that a one-step axis is correct, not thin.
-    // The bound is a property of the RULE, not a claim about any province's numbers.
-    for (const max of [10.1, 15.8, 22.7, 30, 41.6, 48.1]) {
+  it("gives at least three intervals across the range the contract actually publishes", () => {
+    // Three, not four: the step jumps at 25 and at 50, so a maximum just past a jump lands
+    // on three gridlines (10,1 → step 5, ceiling 15). That is the rule working, not a thin
+    // axis, and pinning four here asserted a guarantee the rule never made. The bound is a
+    // property of the RULE, not a claim about any province's numbers.
+    for (const max of [10.1, 15.8, 22.7, 25.1, 30, 41.6, 48.1]) {
       const domain = pm25AxisDomain(max);
-      expect(domain.max / domain.step).toBeGreaterThanOrEqual(4);
+      expect(domain.max / domain.step).toBeGreaterThanOrEqual(3);
     }
   });
 
