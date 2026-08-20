@@ -606,7 +606,7 @@
       "gosterimP3": "Araç ikisini birden gösterir, çünkü müfredat yön harfleriyle çalışırken haritanın verisi ondalık derecedir. Türkçe metinde yön harfleri K, G, D ve B'dir. Ondalık gösterimde harf yoktur, onun yerine güney enlemleri ve batı boylamları eksi işaret alır.",
       "toolHeading": "Haritada koordinat bul",
       "sonucHeading": "Koordinatı okurken",
-      "sonucP1": "Ondalık derece dört basamakla gösterilir. Dördüncü basamak, kitabın verdiği 111 kilometrelik derece uzunluğu üzerinden yaklaşık on bir metreye karşılık gelir. Bu bir sokağı ayırt etmeye yeter, bir binayı ayırt etmeye yetmez.",
+      "sonucP1": "Ondalık derece dört basamakla gösterilir. Dördüncü basamak, kitabın verdiği 111 kilometrelik derece uzunluğu üzerinden yaklaşık on bir metreye karşılık gelir. Bu bir sokağı ayırt etmeye yeter, bir binayı ayırt etmeye yetmez. Tıklayarak okunan bir nokta ancak haritanın o anki yakınlaştırması kadar keskindir, dört basamak ise yazıyla girilen koordinatın ya da listeden seçilen il merkezinin çözünürlüğüdür.",
       "sonucP2": "Türkiye çerçevesinin dışında kalan geçerli bir koordinat da kabul edilir ve haritanın kenarına yapıştırılmaz. Nokta bir il sınırının içine düşerse ilin adı sonucun yanında görünür ve o ilin sayfasına bağlanır.",
       "sonucP3": "Yerel saat farkı da aynı iki sayıdan çıkar. Ders kitabının örneği 33° doğu meridyenindeki <ankara>Ankara</ankara> ile 45° doğu meridyenindeki <igdir>Iğdır</igdir>'ı karşılaştırır. On iki derecelik boylam farkı, her meridyene düşen dört dakikayla çarpılınca 48 dakika verir.",
       "kaynak": "Kaynak: MEB Coğrafya 9 ders kitabı, 1. Ünite."
