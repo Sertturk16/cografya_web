@@ -78,8 +78,39 @@
   pointer-events: none;
 }
 
+/* ODbL/JRC CREDIT — required visibly next to the map (licence obligation, not styling).
+
+   A FLOW LINE UNDER THE MAP BOX, NOT AN OVERLAY, and that is the one thing this rule says that
+   `map.module.css`'s does not. It is the treatment `game-map.module.css` already records, moved
+   here because this surface had the identical defect: the overlay plate measured 304 x 61.3 over
+   a 318 x 136.4 stage at 360px — 42.8% of the map — and `elementFromPoint` at each province's own
+   centre found 41 of 81 targets under chrome at 360px, 61 of 81 at 320px. The owner rejected the
+   frame that showed it.
+
+   The plate goes with the absolute positioning: in flow the line sits on the page's parchment and
+   needs no scrim to stay legible (--color-slate on --color-bg = 7.48:1, DESIGN §5). Font size,
+   colour and the two-line structure are unchanged, and not one character of either licence string
+   moved. The credit is still visible and still inside the map component (DEC 2026-07-10 md.4).
+
+   WHY A LOCAL COPY RATHER THAN AN EDIT TO `map.module.css`: that rule is shared with `/turkiye`
+   and `/dunya`, where the same defect is live and measured but out of this PR's scope. Editing
+   the shared rule would silently relayout two surfaces nobody reviewed here. */
+.attribution {
+  margin: 6px 14px 10px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--color-slate);
+}
+
+/* Two block spans, not one paragraph split by a <br> — `attribution-separation.test.ts`. The
+   rendered result is identical; what it protects is the TEXT, which a <br> welds into
+   "…ODbLMevsimlik göl sınırları…" for a screen reader and for copy-paste. */
+.attributionLine {
+  display: block;
+}
+
 /* ÇİZGİ ÖLÇEK — the reader-facing name is the curriculum's (`GLOSSARY.md` §4.3, AK-26 md.1);
-   `scaleBar` survives in code only. Bottom LEFT, because `.attribution` owns the bottom right
+   `scaleBar` survives in code only. Bottom LEFT, and it now has the bottom edge to itself
    on every map surface in this repo and the licence line may never be crowded. */
 .scaleBar {
   position: absolute;

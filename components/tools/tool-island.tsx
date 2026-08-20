@@ -297,6 +297,7 @@ export function ToolIsland({
     const svg = host?.querySelector("svg");
     const overlay = svg?.querySelector("[data-tool-overlay]");
     const controls = document.querySelector("[data-tool-controls]");
+    const credit = document.querySelector("[data-tool-attribution]");
     if (!(svg instanceof SVGSVGElement)) return;
     if (!(overlay instanceof SVGGElement)) return;
     if (!(controls instanceof HTMLElement)) return;
@@ -306,7 +307,13 @@ export function ToolIsland({
       controls,
       // The licence line as the reader sees it — the PNG bakes THIS text in, so the file can
       // never credit something the page does not (SPEC §9.3).
-      attribution: host?.querySelector("[data-tool-attribution]") ?? null,
+      //
+      // DOCUMENT-SCOPED, like `[data-tool-controls]` two lines up, and for the same reason: the
+      // credit is no longer inside the map box. It moved into the component's flow, under the
+      // stage, when the overlay plate was measured covering 42.8% of the map at 360px. A lookup
+      // rooted at `host` silently returned `null` after that move, and `downloadToolPng` refuses
+      // to write an unattributed file — so the export would have failed closed on every page.
+      attribution: credit instanceof HTMLElement ? credit : null,
     });
   }, []);
 

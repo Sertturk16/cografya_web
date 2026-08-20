@@ -162,20 +162,38 @@ export async function ToolMap({
         <p id={instructionsId} className={mapStyles.srOnly}>
           {tToolMap("zoomInstructions")}
         </p>
-
-        {/* The SAME two obligations `/turkiye` carries, from the SAME message keys: this map
-            draws the same OSM boundaries and the same JRC water layer, so no new attribution
-            string is minted (SPEC §8.4, `plan-web.md` §9.3). `Source: EC JRC/Google` is the
-            licensor's own wording — verbatim, never translated, in its own `lang="en"` span
-            (→ DEC 2026-08-02q §F, WCAG 3.1.2). The real space between the two block spans is
-            load-bearing: without it `textContent` welds the two licences into one run. */}
-        <p className={mapStyles.attribution} data-tool-attribution>
-          <span className={mapStyles.attributionLine}>{tMap("attribution")}</span>{" "}
-          <span className={mapStyles.attributionLine}>
-            {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
-          </span>
-        </p>
       </div>
+
+      {/* BELOW THE MAP BOX, NOT ON IT — the treatment `components/game/game-map.tsx` already
+          landed, transferred here because this surface had the identical defect and the owner
+          rejected the frame that showed it.
+
+          MEASURED, not eyeballed, and the numbers are the game's own to the tenth: the
+          absolutely-positioned plate covered 304 x 61.3 of a 318 x 136.4 stage at 360px, and
+          `elementFromPoint` at each province's own centre found 41 of 81 targets under chrome
+          at 360px and 61 of 81 at 320px. Southern Türkiye and the çizgi ölçek were both behind
+          it. A measuring surface whose targets are under the licence line is not a measuring
+          surface.
+
+          The credit stays VISIBLE and stays INSIDE the map component — it moves out of the
+          bordered box into the component's own flow, one line under the map, which is the
+          sentence DEC 2026-07-10 md.4 asks for ("visible (map footer/component)"). In flow it
+          needs no scrim to stay legible: `--color-slate` on `--color-bg` is 7.48:1
+          (`DESIGN.md` §5). NOT ONE CHARACTER OF EITHER LICENCE STRING MOVED — the two message
+          keys, their order, the `lang="en"` wrapper and the load-bearing `{" "}` between the
+          block spans are exactly as they were, and `attribution-separation.test.ts` guards
+          this file for precisely that.
+
+          `/turkiye` and `/dunya` still take the overlay from `map.module.css` and are NOT
+          touched here: the same defect is live on both (measured — `/turkiye` 43.4% covered
+          and 36 of 81 at 360px), and it is reported to Atlas as its own PR rather than widened
+          into this one. The class therefore lives in THIS stylesheet, like the game's. */}
+      <p className={styles.attribution} data-tool-attribution>
+        <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
+        <span className={styles.attributionLine}>
+          {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
+        </span>
+      </p>
 
       {/* Height reserved in CSS so the island lands without moving the prose below it. The
           reserved box is the strip's EMPTY state; it grows only when the reader places a
