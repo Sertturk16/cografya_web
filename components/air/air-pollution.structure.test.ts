@@ -119,10 +119,23 @@ describe("the section is gated on the payload, in both directions", () => {
     );
   });
 
-  it("adds the JSON-LD PropertyValue only when the section renders", () => {
+  it("adds the JSON-LD PropertyValue only when the QUALIFYING NOTICE renders", () => {
     // SEO-POLICY §B5 5.7/5.8: structured data may not carry what the page does not show,
-    // and a null field is never filled in.
-    expect(pageCode).toMatch(/if \(pm25Annual !== null\) \{\s*\n\s*additionalProperty\.push/);
+    // and a null field is never filled in. The node's name carries "il merkezi hücresi" /
+    // "province-centre cell", and those words are on a province page ONLY inside
+    // `notice.provinceCentrePoint` — a sentence the api gates through `noticeKeys`,
+    // independently of `pm25Annual !== null`. So the node is gated on that same flag and
+    // DROPS when the sentence does not render (→ PR #76 review FENER76R2-I1 + CODE76R2-I1).
+    // Whitespace-normalised rather than pattern-matched line by line: the assertion is about
+    // which expression the gate is, not about how Prettier wrapped it.
+    const flatPage = pageCode.replace(/\s+/g, " ");
+    expect(flatPage).toContain(
+      "const pm25ShowsCentreNotice = pm25Annual !== null && " +
+        "pm25NoticeFlags(pm25Annual.attribution.noticeKeys).provinceCentrePoint;",
+    );
+    expect(flatPage).toContain(
+      "if (pm25Annual !== null && pm25ShowsCentreNotice) { additionalProperty.push(",
+    );
   });
 
   it("names the node with the reading-point label, never the bare value label", () => {
@@ -130,8 +143,17 @@ describe("the section is gated on the payload, in both directions", () => {
     // `valueLabel` asserts a provincial average — the reading DEC 2026-08-19d md.1 rejected —
     // and a `PropertyValue` travels without the caveat printed beneath it. Scoped to the PM2.5
     // branch, because `valueLabel` is correct everywhere else it appears.
-    const branch = /if \(pm25Annual !== null\) \{([\s\S]*?)\n {2}\}/.exec(pageCode)?.[1];
+    // The branch is captured by its FULL gate — which stands exactly once in this file — and
+    // to its own closing brace rather than to the first `}` in it; that one belongs to a
+    // template call.
+    const branch = /if \(pm25Annual !== null && pm25ShowsCentreNotice\) \{([\s\S]*?)\n {2}\}/.exec(
+      pageCode,
+    )?.[1];
     expect(branch).toBeDefined();
+    // Bound by IDENTITY, not by position: an absence check ("no `valueLabel` here") reports
+    // clean for free if the capture read some other block, so the capture states which block
+    // it is before asserting anything about it (→ PR #76 review FENER76R2-M3).
+    expect(branch).toContain("additionalProperty.push");
     expect(branch).toContain('tAir("jsonLdLabel"');
     expect(branch).not.toContain('tAir("valueLabel"');
   });
@@ -143,9 +165,11 @@ describe("the section is gated on the payload, in both directions", () => {
 
   it("emits no unitCode — the UN/CEFACT code for µg/m³ is unverified", () => {
     // Scoped to the PM2.5 branch: `unitCode` is correct on the km²/°C/mm properties beside
-    // it, so a whole-file check would say nothing. The branch is matched to its own closing
-    // brace rather than to the first `}` in it — the first one belongs to a template call.
-    const branch = /if \(pm25Annual !== null\) \{([\s\S]*?)\n {2}\}/.exec(pageCode)?.[1];
+    // it, so a whole-file check would say nothing. Same capture as above: the full gate, to
+    // the branch's own closing brace.
+    const branch = /if \(pm25Annual !== null && pm25ShowsCentreNotice\) \{([\s\S]*?)\n {2}\}/.exec(
+      pageCode,
+    )?.[1];
     expect(branch).toBeDefined();
     expect(branch).toContain("additionalProperty.push");
     expect(branch).toContain("unitText");

@@ -19,8 +19,11 @@ import { PM25_NOTICE_SLOTS, pm25NoticeFlags } from "./notice-keys";
  *
  * ## What that does and does not close — said plainly, because overclaiming is the defect
  *
- * It closes RENAME and REMOVE **as far as the spec carries the key**: a key that changes in
- * the spec goes red on the next mirror refresh. It does NOT close ADD. `noticeKeys` is typed
+ * It closes RENAME **as far as the spec carries the key**: a key that is renamed in the spec
+ * goes red on the next mirror refresh. It does NOT close REMOVE — a key that disappears just
+ * shortens the extracted list, every remaining key still resolves, and the suite stays green
+ * (→ PR #76 review CODE76R2-M1; the twin of this sentence in `notice-keys.ts` carried the
+ * same overclaim and is corrected there too). It does NOT close ADD either. `noticeKeys` is typed
  * `string[]` with no `enum`, and the spec's `example` lists only some of the keys the api
  * emits, so an added key need not change any artifact in this repo. Closing that direction
  * needs the api to publish an `enum` (`FU-API-NOTICEKEYS-ENUM`, Deniz); until then the only
@@ -83,7 +86,30 @@ describe("pm25NoticeFlags", () => {
       "someOther.namespace.annualMean",
       "annualMean",
     ]);
-    expect(Object.keys(flags).sort()).toEqual([...PM25_NOTICE_SLOTS].sort());
+    // The expectation is built from the SPEC and the slot list, never from the function under
+    // test, so it depends on the input in BOTH directions: a `pm25NoticeFlags` that ignored
+    // its input would miss the spec's own keys, and one that matched on a suffix or accepted a
+    // bare key would turn `annualMean` on while the spec does not publish it.
+    //
+    // The single assertion that used to stand here — `Object.keys(flags)` equals the slot list
+    // — could do neither: the function builds a fixed object literal, so its key set is the
+    // same for every input, including one it mishandled. It was written as a skip guard and
+    // could not fail for that reason, and it replaced an assertion the same round DELETED
+    // (→ PR #76 review TEST76R2-I1 / FENER76R2-M4). `toEqual` compares the key set too, so
+    // nothing is lost by replacing it.
+    const expected = Object.fromEntries(
+      PM25_NOTICE_SLOTS.map((slot) => [
+        slot,
+        SPEC_NOTICE_KEYS.includes(`airPollution.notice.${slot}`),
+      ]),
+    );
+    // …and the expectation must itself be non-trivial in BOTH directions, or the comparison
+    // above would pass for a broken function: an all-false `expected` (every key gone from the
+    // spec) passes for one that never sets a flag, and an all-true one (every key present)
+    // passes for one that accepts anything.
+    expect(Object.values(expected).some(Boolean)).toBe(true);
+    expect(Object.values(expected).some((on) => !on)).toBe(true);
+    expect(flags).toEqual(expected);
   });
 
   it("does NOT set a flag the payload omitted — the positive control on the whole file", () => {

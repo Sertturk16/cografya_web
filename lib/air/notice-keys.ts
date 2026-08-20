@@ -34,12 +34,17 @@
  *   source: codegen would then emit a union, and a fifth key would break `pnpm typecheck` here
  *   the moment the spec is refreshed. Tracked as `FU-API-NOTICEKEYS-ENUM` (Deniz) — it is an
  *   api change, and a web-side gate that only pretended to close it would be worse.
- * - **RENAME / REMOVE — held, but only as far as the vendored spec carries the key.**
+ * - **RENAME — held, as far as the vendored spec carries the key. REMOVE — NOT observed.**
  *   `notice-keys.test.ts` extracts every `airPollution.notice.*` string the committed
  *   `openapi/openapi.json` actually contains and asserts each one resolves to a slot below.
  *   That list is derived from the api-owned artifact rather than restated, so a key that is
- *   renamed in the spec goes red on the next mirror refresh. Its limit is stated in the test:
- *   it sees only what the spec's `example` carries, which today is two of the four keys.
+ *   RENAMED in the spec goes red on the next mirror refresh. A key that is REMOVED does not:
+ *   the extraction simply yields a shorter list and every remaining key still resolves, so
+ *   the suite stays green — only removing the LAST notice key trips the extraction's
+ *   non-empty assertion (→ PR #76 review CODE76R2-M1). The earlier heading said
+ *   "RENAME / REMOVE — held" and this file's own standard four paragraphs up forbids that:
+ *   a false safety claim is worse than the risk stated bare. Its other limit is stated in the
+ *   test: it sees only what the spec's `example` carries, which today is two of the four keys.
  *
  * ## Where each notice goes is NOT this file's business
  *

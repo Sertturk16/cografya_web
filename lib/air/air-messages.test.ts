@@ -137,11 +137,18 @@ describe("the section's copy never claims a provincial average", () => {
  * (PR #76 review FENER76-I1). The qualification only works if it says nothing the page does
  * not already show, which is 5.7's own requirement, and 5.7 is a BLOCKER.
  *
- * That requirement is a PAIRING between two strings that live in different places and can be
- * edited independently. So it is asserted rather than trusted: the label's qualifier
- * vocabulary must also stand in the notice that renders one line under the same figure. Edit
- * either side and this goes red — which is the point, because markup that outlives the copy
- * backing it fails silently on 81 pages × 2 locales.
+ * WHAT THIS BLOCK PINS, STATED EXACTLY. It pins a CATALOGUE-TO-CATALOGUE pairing: the label's
+ * qualifier vocabulary must also stand in `notice.provinceCentrePoint`, so editing either
+ * string alone goes red. That is worth having, because the two live in different places and
+ * move independently.
+ *
+ * It does NOT pin that the notice is ever RENDERED. That sentence is gated on the api's
+ * `noticeKeys` — a third party no assertion in this file touches — and an earlier version of
+ * this docblock claimed otherwise ("edit either side and this goes red"), which is the false
+ * safety claim `PR #76` review FENER76R2-I1 + CODE76R2-I1 named. The render half is a
+ * different guard in a different file: `air-pollution.structure.test.ts` pins that the page
+ * gates the `PropertyValue` on the same flag the notice is gated on, so the node cannot
+ * outlive the sentence that qualifies it. Neither guard implies the other.
  */
 describe("the JSON-LD label says nothing the page does not show", () => {
   /**
