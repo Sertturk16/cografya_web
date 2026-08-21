@@ -420,8 +420,12 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
           footer/component)", and a line in the map's own component footer is that sentence. It is deliberately NOT a `<details>` disclosure:
           a credit that is closed by default is not visible.
 
-          The `/turkiye` and `/dunya` maps are NOT touched — there the credit still overlays
-          the map from `map.module.css`, because those surfaces are navigation, not play.
+          The `/turkiye` and `/dunya` maps followed later, each on its own measurement: `/dunya`
+          in PR #77 (`FU-DUNYA-ZOOM-ORTUSU`) and `/turkiye` right after it
+          (`FU-TURKIYE-ATIF-ORTUSU` → DEC 2026-08-21d md.2). Four surfaces have made that move —
+          this one, the CBS tool pages, `/dunya` and `/turkiye` — and `map.module.css` no longer
+          offers a plated rule. THEY ARE NOT EVERY MAP IN THE REPO: `/deniz` still plates its
+          credit from `marine.module.css`, tracked as `FU-MARINE-ATIF-PLAKASI`.
 
           IT IS RENDERED BEFORE THE ZOOM CLUSTER, and on a phone the two share one line when
           the width allows (`game-map.module.css`). Reading order and visual order agree —

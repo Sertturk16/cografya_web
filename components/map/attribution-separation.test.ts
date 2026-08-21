@@ -6,13 +6,15 @@ import { describe, expect, it } from "vitest";
  *
  * ## What broke, and why the obvious fix was not one
  *
- * The Türkiye map stacks two licence notices in one `<p>`. On that surface the `<p>` is
- * absolutely positioned over the map, so it HAS to be one element — a second `<p>` would land
- * on top of the first. (On the game surface it no longer has to be: design tour A1 moved that
- * credit out of the stage into normal flow. It stays one `<p>` there because the two notices
- * are one credit, not because the layout forces it.) Split by a `<br>`, the notices were a
- * SINGLE text run: `textContent` read "…ODbLMevsimlik göl sınırları:…", welding the OSM/ODbL
- * credit to the JRC one.
+ * The Türkiye map stacks two licence notices in one `<p>`. When this guard was written that
+ * `<p>` was absolutely positioned over the map and HAD to be one element — a second `<p>`
+ * would have landed on top of the first. No surface is forced into it any more: design tour A1
+ * moved the game's credit into normal flow, the tool pages followed, and `/turkiye` did too
+ * (`FU-TURKIYE-ATIF-ORTUSU` → DEC 2026-08-21d md.2). All three keep one `<p>` because the two
+ * notices are ONE credit for ONE water layer, not because the layout forces it — which is why
+ * this guard reads the same on all three rows and is indifferent to placement. Split by a
+ * `<br>`, the notices were a SINGLE text run: `textContent` read "…ODbLMevsimlik göl
+ * sınırları:…", welding the OSM/ODbL credit to the JRC one.
  *
  * Replacing the `<br>` with two `display: block` spans looked like the fix and was not —
  * measured on the running build, `textContent` still concatenated, because it ignores layout

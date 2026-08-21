@@ -442,11 +442,15 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
           overlay here (`map.module.css` has the measurement and the reason).
 
           NOT ONE CHARACTER OF THE STRING MOVED: the message key, its locale pair and its
-          `lang` context are untouched. `/turkiye` is NOT touched either — it keeps the plated
-          `.attribution` from `map.module.css`, its own credit-occlusion item is measured and
-          still open (`FU-TURKIYE-ATIF-ORTUSU`, 59 of 81 il centres under chrome at 320px), and
-          widening this change into it would relayout a surface nobody reviewed here. That is
-          the same boundary `tools.module.css` drew when the tool pages did this. */}
+          `lang` context are untouched. `/turkiye` was NOT touched here, deliberately — its own
+          credit-occlusion item (`FU-TURKIYE-ATIF-ORTUSU`, 59 of 81 il centres under chrome at
+          320px) was measured and left open rather than widened into this PR, which is the same
+          boundary `tools.module.css` drew when the tool pages did this. It landed in its own
+          PR straight after (owner-ruled from a rendered frame → DEC 2026-08-21d md.2), so the
+          plated `.attribution` no longer exists in `map.module.css` at all and both consumers
+          of that credit rule — this file and `turkey-map-section.tsx` — take `.attributionFlow`.
+          Two consumers of the RULE, not of the sheet: three more files import it for other
+          rules and name no credit class. */}
       <p className={styles.attributionFlow}>{tMap("attribution")}</p>
     </section>
   );

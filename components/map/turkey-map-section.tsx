@@ -248,40 +248,78 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
         </svg>
 
         <MapHoverCard />
-
-        {/* TWO obligations, one chip. OSM's ODbL covers the dams and permanent lakes; the
-            seasonal and salt lakes come from JRC Global Surface Water, whose terms require
-            both the dataset credit and, on /hakkimizda, the journal citation.
-
-            `Source: EC JRC/Google` is the licensor's own wording: VERBATIM in both locales,
-            never translated, shortened or expanded (→ DEC 2026-08-02q §F). It therefore sits
-            in its own `lang="en"` span — the `marine-attribution.tsx` pattern, for the same
-            reason (WCAG 3.1.2): a Turkish-voice screen reader must not read an English
-            licence string with Turkish phonetics. The Turkish label stands ALONGSIDE it.
-
-            ONE paragraph, TWO block spans WITH A REAL SPACE BETWEEN THEM. The chip is
-            `position: absolute; bottom: 10px`, so a second `<p>` would land on top of the
-            first; that constraint is why this has to stay one paragraph.
-
-            The two notices used to be split by a `<br>`, which left them a SINGLE text run:
-            the DOM read "…ODbLMevsimlik göl sınırları:…" with the two licences welded
-            together (UX tour B26). Block spans alone do NOT fix that — `textContent`
-            concatenates regardless of layout, MEASURED on the running build — so the
-            separating space below is load-bearing, not formatting. With it, all three text
-            APIs agree: `textContent` separates the licences, `innerText` still breaks the
-            line, and AT gets two block boxes instead of one run. The space itself never
-            renders: whitespace between two block-level boxes is collapsed away, so the chip
-            is pixel-identical to the `<br>` version.
-
-            NOT on the world map: it draws Natural Earth countries, not this water layer, and
-            crediting a source a surface does not use is a false claim, not a courtesy. */}
-        <p className={styles.attribution}>
-          <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
-          <span className={styles.attributionLine}>
-            {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
-          </span>
-        </p>
       </div>
+
+      {/* BELOW THE MAP BOX, NOT ON IT (`FU-TURKIYE-ATIF-ORTUSU`; owner-ruled from a rendered
+          frame — → DEC 2026-08-21d md.2). This surface is the fourth to make the move — the
+          game did it first, then the CBS tool pages, then `/dunya` in PR #77 — but NOT the last
+          map in the repo that needs it: `/deniz` still plates its credit from
+          `marine.module.css`, tracked as `FU-MARINE-ATIF-PLAKASI`.
+
+          WHAT IT FIXES, RE-MEASURED ON THIS BUILD RATHER THAN QUOTED. The plate was
+          `position: absolute; right: 14px; bottom: 10px` inside `[data-map-root]`, and at
+          phone widths it is not a corner chip at all — with no `left` offset it stretches
+          from the panel's inner left edge to 14px off its right, so at 320px it measures
+          264 × 79.69 over a 280 × 121.25 panel: **62.0% of the map**. Hit-testing each of the
+          81 links at its own bounding-box centre with `elementFromPoint`, **59 of 81 il
+          centres return the credit, not the map** at 320px, and 36 of 81 at 360px — identical
+          in both locales. That is a navigation defect, not a cosmetic one: `.attribution`
+          carried no `pointer-events: none`, so the plate ATE the click on those 59 shapes.
+          The same probe reads 0 of 81 with the credit in flow, at every width and in both
+          locales.
+
+          The credit stays VISIBLE and stays INSIDE the map component — it moves out of the
+          bordered box into this component's own flow, under the map, which is the sentence
+          DEC 2026-07-10 md.4 asks for ("visible (map footer/component)"). In flow it needs no
+          scrim to stay legible: `--color-slate` on `--color-bg` is 7.48:1 (`DESIGN.md` §5),
+          against a plate that only existed to survive being over the map.
+
+          THE PANEL DOES NOT MOVE. An absolutely positioned plate never contributed to
+          `.mapRoot`'s height, so the box stays at exactly the height it has today (measured:
+          121.25px at 320, 138.42 at 360, 313.45 at 768, 464.45 at 1440 — unchanged) and the
+          map inside it is not relaid out. What grows is the `<section>`, by the credit's own
+          flow height, in the first-response HTML — so nothing shifts after paint (CWV/CLS,
+          `ENGINEERING.md` §4 #9).
+
+          NOT ONE CHARACTER OF EITHER LICENCE STRING MOVED: the two message keys, their order,
+          the `lang="en"` wrapper and the `{" "}` below are exactly as they were.
+
+          TWO obligations, one credit. OSM's ODbL covers the dams and permanent lakes; the
+          seasonal and salt lakes come from JRC Global Surface Water, whose terms require
+          both the dataset credit and, on /hakkimizda, the journal citation.
+
+          `Source: EC JRC/Google` is the licensor's own wording: VERBATIM in both locales,
+          never translated, shortened or expanded (→ DEC 2026-08-02q §F). It therefore sits
+          in its own `lang="en"` span — the `marine-attribution.tsx` pattern, for the same
+          reason (WCAG 3.1.2): a Turkish-voice screen reader must not read an English
+          licence string with Turkish phonetics. The Turkish label stands ALONGSIDE it.
+
+          ONE paragraph, TWO block spans WITH A REAL SPACE BETWEEN THEM — and the reason is
+          no longer the layout. It used to be: the plate was `position: absolute; bottom:
+          10px`, so a second `<p>` would have landed on top of the first. In flow that
+          constraint is gone and two paragraphs would stack correctly. It stays one paragraph
+          because the two notices are ONE credit for ONE water layer, which is the same
+          reasoning `game-map.tsx` records for the same markup; `attribution-separation.test.ts`
+          guards the shape on all three surfaces and is indifferent to which reason holds.
+
+          The two notices used to be split by a `<br>`, which left them a SINGLE text run:
+          the DOM read "…ODbLMevsimlik göl sınırları:…" with the two licences welded
+          together (UX tour B26). Block spans alone do NOT fix that — `textContent`
+          concatenates regardless of layout, MEASURED on the running build — so the
+          separating space below is load-bearing, not formatting. With it, all three text
+          APIs agree: `textContent` separates the licences, `innerText` still breaks the
+          line, and AT gets two block boxes instead of one run. The space itself never
+          renders: whitespace between two block-level boxes is collapsed away, so the credit
+          is pixel-identical to the `<br>` version.
+
+          NOT on the world map: it draws Natural Earth countries, not this water layer, and
+          crediting a source a surface does not use is a false claim, not a courtesy. */}
+      <p className={styles.attributionFlow}>
+        <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
+        <span className={styles.attributionLine}>
+          {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
+        </span>
+      </p>
     </section>
   );
 }

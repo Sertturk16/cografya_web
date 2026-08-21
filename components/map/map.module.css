@@ -17,17 +17,20 @@
    otherwise poke out of the panel's `--radius-lg` rounding. The border and the radius stay —
    the panel keeps its identity, it just has nothing between its edge and the map.
 
-   Consequence, accepted and sampled: `.attribution` (bottom 10/14px) and `.zoomControls`
-   (top 12/14px right) used to sit in that padding band and now overlay the map itself. The
-   licence line keeps its `--scrim-bg` plate, so it stays legible and still satisfies the
-   "visible next to the map" ODbL/JRC obligation (SPEC §5.2 / DEC 2026-07-10) — its position
-   is unchanged, only what is behind it.
+   THE CONSEQUENCE THIS NOTE USED TO RECORD IS NOW HALF HISTORY. Two elements used to sit in
+   the deleted padding band and were pushed onto the map by its removal: the licence plate
+   (bottom 10/14px) and `.zoomControls` (top 12/14px right).
 
-   THAT PARAGRAPH'S TWO HALVES NOW BELONG TO DIFFERENT SURFACES, and neither is "both".
-   The plated `.attribution` is `/turkiye`'s alone: `/dunya` took `.attributionFlow` below and
-   no longer overlays its credit on the map. The shared `.zoomLayer`/`.zoomControls` overlay is
-   `/dunya`'s alone, and always was — `turkey-map-section.tsx` renders no `MapZoomPan` at all,
-   and the tool pages pass their own placement classes from `tools.module.css`.
+   THE LICENCE PLATE IS GONE FROM THIS STYLESHEET ENTIRELY. `/dunya` left it in PR #77 and
+   `/turkiye` followed, so no surface takes a plated credit from here any more — both use
+   `.attributionFlow` below, in flow under the panel, which is still the "visible next to the
+   map" ODbL/JRC obligation (SPEC §5.2 / DEC 2026-07-10 md.4: "visible (map footer/component)")
+   and no longer costs the map its own south. The measured reason each surface moved lives in
+   that rule's own note.
+
+   THE `.zoomLayer`/`.zoomControls` OVERLAY IS `/dunya`'s ALONE, and always was —
+   `turkey-map-section.tsx` renders no `MapZoomPan` at all, and the tool pages pass their own
+   placement classes from `tools.module.css`.
 
    `.mapRoot` has THREE consumers: `turkey-map-section.tsx`, `world-map-section.tsx` and
    `components/tools/tool-map.tsx`. On the third, the "no padding, so the SVG IS the panel"
@@ -277,73 +280,93 @@
   stroke-width: var(--map-hover-width);
 }
 
-/* ODbL attribution — required visibly next to the map (SPEC §5.2 / DEC 2026-07-10).
-   It owns the bottom-right corner of exactly ONE surface: the il map. It used to claim the
-   game map, and then the world map, and both claims fell to the same kind of measurement — the
-   design tour read this overlay covering 42.8% of the play stage at 360px and occluding 41 of
-   81 targets, so `game-map.module.css` renders its own credit as a flow line under the stage;
-   on `/dunya` the plate cut the zoom cluster's reset button into slivers, so `.attributionFlow`
-   below does the same there. The obligation is identical on every surface (visible, in the map
-   component, text unchanged); only the placement differs. `/turkiye` is the last one that
-   plates it, and its own occlusion item is open and measured (`FU-TURKIYE-ATIF-ORTUSU`).
-   Within this stylesheet it is still the ONLY bottom-anchored element: the one-time zoom hint that used
-   to stack one band above it was removed outright (owner ruling 2026-08-02) — it covered
-   the map's south-west corner, its `pointer-events: auto` box swallowed clicks on whatever
-   was under it, and on a short stage it crowded this licence line. If a bottom-left overlay
-   is ever reintroduced, the overlap it has to avoid is measured at 390px: a 237px box from
-   the left edge against this 207px one from the right. */
-.attribution {
-  position: absolute;
-  right: 14px;
-  bottom: 10px;
-  margin: 0;
-  font-size: 0.72rem;
-  color: var(--color-slate);
-  background: var(--scrim-bg);
-  padding: 3px 8px;
-  border-radius: 6px;
-}
+/* THE CREDIT, IN FLOW UNDER THE PANEL — the only placement this stylesheet still offers.
+   BOTH CONSUMERS OF THIS CREDIT RULE take it: `world-map-section.tsx` (PR #77,
+   `FU-DUNYA-ZOOM-ORTUSU`) and `turkey-map-section.tsx` (`FU-TURKIYE-ATIF-ORTUSU`, owner-ruled
+   from a rendered frame → DEC 2026-08-21d md.2). "Two" counts the consumers of THIS rule, not
+   of the sheet — five files import it, and `map-zoom-pan.tsx`, `map-hover-card.tsx` and
+   `tool-map.tsx` take other rules from it and never name this one.
 
-/* THE WORLD MAP'S CREDIT, IN FLOW UNDER THE PANEL (`FU-DUNYA-ZOOM-ORTUSU`).
-   `/turkiye` keeps `.attribution` above, untouched and unmeasured by this change; only
-   `world-map-section.tsx` consumes this class, and adding a class relayouts nothing that does
-   not name it.
+   The game and the CBS tool pages already carry the same treatment in their own sheets
+   (`game-map.module.css`, `tools.module.css`), so those four surfaces agree. THEY ARE NOT
+   EVERY MAP IN THE REPO, and this note must not be read as saying they are: `/deniz` still
+   plates its credit from `marine.module.css` `.mapAttribution` — declaration for declaration
+   the rule deleted here — and is tracked as `FU-MARINE-ATIF-PLAKASI`. The repo's own list of the
+   FILES that draw this water layer and owe this credit is
+   `inland-water-layer.contract.test.ts`'s `SURFACES` — four paths, which that test's own comment
+   is careful to say is NOT the surface count, since the game draws both its round shapes from one
+   file. `/deniz` is in that list while `/dunya`, which draws Natural Earth countries and no water
+   layer, is not.
 
-   WHAT IT FIXES. The plate above is absolutely positioned bottom-right, which is exactly where
-   the zoom cluster's reset button ends on a short stage: at 320px the button was NOT clipped
-   (the geometric method reads a full 40px at every width) but the plate cut it into pieces —
-   14.50px of hittable height in total and a longest UNINTERRUPTED run of 9.00px, measured on
-   `/dunya` in Turkish by stepping the button's own centre axis at 0.25px. No English figure is
-   claimed here: `/en/dunya` was not separately measured, and the plate is right-anchored
-   (`.attribution` above pins `right: 14px`), so a longer string moves its LEFT edge. A target
-   you can only hit in two 9px slivers is worse than a clipped one, and only the run number
-   shows it; the total alone reads like an ordinary crop.
+   The obligation is identical everywhere — visible, inside the map component, text
+   unchanged — and only the placement ever differed.
 
-   WHY THE CREDIT MOVES INSTEAD OF THE CLUSTER. Laying the cluster down as a row inside the
-   panel — the treatment the tool pages take, and the shared rule that would have covered both
-   — was built and measured here too: it frees the button, but it grows the panel from 146.83px
-   to 198.83px and the new band is `--map-sea`, i.e. literal ocean past the ±180° meridians.
-   That band is the defect the edge-to-edge note at the top of this file records the owner
-   rejecting on a live tour. Moving the credit frees the button and leaves the panel at exactly
-   the 146.83px it is today, because an absolutely positioned plate never contributed to that
-   height in the first place.
+   WHAT THE PLATE THIS RULE REPLACED WAS. `position: absolute; right: 14px; bottom: 10px` with
+   a `--scrim-bg` plate and no `left`, so its left edge fell at the panel's inner edge and at
+   phone widths it was not a corner chip but a band across the whole map. It is DELETED rather
+   than left standing unused: nothing in the repo named it after `/turkiye` moved, and a
+   plated class kept warm in a shared sheet is exactly how a future surface would reintroduce
+   a defect two owner rulings have now removed.
 
-   WHAT IT DOES NOT FIX, stated because the first draft of this note got it wrong. Country
-   shapes with chrome on their own centre point go 25/240 -> 20/240 at 320px, 19 -> 14 at
-   360px and 14 -> 11 at 384px: the plate's own share is 5, 5 and 3. The remainder is the zoom
-   cluster, which on this surface is still the shared overlay — deliberately, and for a reason
-   that is not taste. `world-map-section.tsx` renders it before the ~190 crawlable country
-   links so a keyboard reader reaches +/-/reset without tabbing through the map (review I3),
-   and the tool pages' row treatment cannot be lifted here without the sea band above. Whether
-   this map wants a row of its own is a separate question with its own frames.
+   WHY EACH SURFACE MOVED — two different measurements, kept apart because they are not the
+   same defect:
+
+   · `/dunya` — OCCLUSION OF ONE CONTROL. The plate sat where the zoom cluster's reset button
+     ends on a short stage: at 320px the button was NOT clipped (the geometric method reads a
+     full 40px at every width) but the plate cut it into pieces — 14.50px of hittable height in
+     total and a longest UNINTERRUPTED run of 9.00px, measured in Turkish by stepping the
+     button's own centre axis at 0.25px. No English figure is claimed: `/en/dunya` was not
+     separately measured, and the plate was right-anchored, so a longer string moved its LEFT
+     edge. A target you can only hit in two 9px slivers is worse than a clipped one, and only
+     the run number shows it; the total alone reads like an ordinary crop.
+
+   · `/turkiye` — OCCLUSION OF THE MAP ITSELF. No zoom cluster on that surface; the plate
+     simply covered the geography. Re-measured on the running build at the time of the move:
+     264 × 79.69 over a 280 × 121.25 panel at 320px, i.e. 62.0% of the map, and hit-testing all
+     81 links at their own bounding-box centres returned the credit rather than the map for
+     **59 of 81 il** at 320px and 36 of 81 at 360px, identical in both locales. Those shapes
+     are navigation links and the plate carried no `pointer-events: none`, so it ate the click
+     as well as the view. The same probe reads 0 of 81 in flow, at every width, in both
+     locales.
+
+   WHY THE CREDIT MOVED INSTEAD OF THE CLUSTER — `/dunya` ONLY; `/turkiye` has no cluster to
+   move. Laying the cluster down as a row inside the panel — the treatment the tool pages take,
+   and the shared rule that would have covered both — was built and measured there too: it
+   frees the button, but it grows the panel from 146.83px to 198.83px and the new band is
+   `--map-sea`, i.e. literal ocean past the ±180° meridians. That band is the defect the
+   edge-to-edge note at the top of this file records the owner rejecting on a live tour.
+
+   NEITHER MOVE CHANGES ITS PANEL'S HEIGHT, on either surface, because an absolutely positioned
+   plate never contributed to that height in the first place: `/dunya` stays at 146.83px at
+   320px and `/turkiye` at 121.25 / 138.42 / 313.45 / 464.45 at 320 / 360 / 768 / 1440. What
+   grows is the `<section>`, in the first-response HTML — no post-paint shift (CLS).
+
+   WHAT IT DOES NOT FIX ON `/dunya`, stated because the first draft of this note got it wrong.
+   Country shapes with chrome on their own centre point go 25/240 -> 20/240 at 320px, 19 -> 14
+   at 360px and 14 -> 11 at 384px: the plate's own share is 5, 5 and 3. The remainder is the
+   zoom cluster, which on that surface is still the shared overlay — deliberately, and for a
+   reason that is not taste. `world-map-section.tsx` renders it before the ~190 crawlable
+   country links so a keyboard reader reaches +/-/reset without tabbing through the map (review
+   I3), and the tool pages' row treatment cannot be lifted there without the sea band above.
+   Whether that map wants a row of its own is a separate question with its own frames.
+
+   ON `/turkiye` THERE IS NO SUCH REMAINDER: the plate was the only chrome over that map, so
+   the same probe goes 59/81 -> 0/81 at 320px and 36/81 -> 0/81 at 360px. A `/turkiye` figure
+   is never read across to `/dunya` or back; they are different maps with different chrome.
 
    In flow the line needs no scrim: `--color-slate` on the page's `--color-bg` is 7.48:1
    (`DESIGN.md` §5), against a plate that only existed to survive being over the map. This is
    the treatment `game-map.module.css` and `tools.module.css` already carry, for the same
    reason, and the credit stays visible and stays inside the map component (DEC 2026-07-10
-   md. 4). The STRING is untouched — Natural Earth is public domain and owes no attribution at
-   all (`provenance/datasets.md`, 2026-08-19 row), so this line is a product choice whose
-   wording is not this change's business. */
+   md. 4).
+
+   NEITHER SURFACE'S STRINGS ARE TOUCHED, and they are NOT the same obligation — this rule
+   styles a box, it does not merge two credits. `/dunya` names Natural Earth, which is public
+   domain and owes no attribution at all (`provenance/datasets.md`, 2026-08-19 row), so that
+   line is a product choice. `/turkiye` names OSM/ODbL and JRC Global Surface Water, which are
+   owed: ODbL attribution is required visibly next to the map (SPEC §5.2 / DEC 2026-07-10 md.4)
+   and `Source: EC JRC/Google` is the licensor's own wording, verbatim in both locales
+   (→ DEC 2026-08-02q §F). Moving a box is the only thing this rule may do to either. */
 .attributionFlow {
   margin: 6px 14px 10px;
   font-size: 0.72rem;
@@ -355,7 +378,12 @@
    (a block span stacks exactly where the break did); the difference is in the DOM, where the
    two licence notices are now separate text runs rather than one string that reads
    "ODbLMevsimlik" to a screen reader and to anything that copies `textContent` (UX tour B26).
-   The Türkiye map is the only surface that stacks two notices; `/dunya` renders one line. */
+   Of the two consumers of these credit rules only `turkey-map-section.tsx` stacks two notices
+   (its water layer carries two licences); `/dunya` renders one line and never names this class.
+   Again that is two consumers OF THE RULE, not of the sheet. The game and the tool pages stack
+   two as well, from their own sheets. `/deniz` stacks two too, but NOT this way: it still splits
+   them with a `<br />` (`marine-map.tsx`), so the welded "ODbLMevsimlik" run this rule exists to
+   remove is live on that surface — tracked as `FU-MARINE-ATIF-BR`. */
 .attributionLine {
   display: block;
 }

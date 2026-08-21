@@ -224,8 +224,11 @@ describe("/dunya's map chrome — the overlay it keeps, the box it fits, the cre
     const root = WORLD_MAP.indexOf("data-map-root");
     expect(root).toBeGreaterThan(-1);
     // Any local module binding, never a hardcoded `styles.` — the sibling surfaces import the
-    // same sheet under two different names.
-    const credit = WORLD_MAP.search(/<p className=\{[A-Za-z_$][\w$]*\.attributionFlow\}>/);
+    // same sheet under two different names. The tag is left OPEN after the class for the same
+    // reason: `}>` matches only a `<p>` carrying no other attribute, so a legitimate `data-…`,
+    // `id` or `lang` would turn this red on correct code and invite the loosening reflex this
+    // repo has recorded twice (TA50-I1 / TA69R2-I1). `/turkiye`'s sibling guard reads the same.
+    const credit = WORLD_MAP.search(/<p className=\{[A-Za-z_$][\w$]*\.attributionFlow\}[^>]*>/);
     expect(credit).toBeGreaterThan(root);
 
     // Positionally, the way a source scan can honestly see it: the map's `<svg>` closes, then
@@ -237,25 +240,43 @@ describe("/dunya's map chrome — the overlay it keeps, the box it fits, the cre
   });
 
   it("keeps .attributionFlow in normal flow, with no plate behind it", () => {
-    // NOT `.attribution`. The plated rule is still correct — `/turkiye` is its one remaining
-    // consumer — so the game's guard cannot be copied here verbatim: it would go red on right
-    // code, and the reflex fix is to loosen the pattern (the TA50-I1 / TA69R2-I1 failure this
-    // repo has already recorded twice). The new class is what carries the new behaviour.
-    const rule = MAP_CSS.match(/\n\.attributionFlow \{([\s\S]*?)\n\}/)?.[1];
-    expect(rule).toBeDefined();
+    // NOT `.attribution`. When this guard was written the plated rule was still live and
+    // correct for `/turkiye`, so the game's guard could not be copied verbatim — it would have
+    // gone red on right code, and the reflex fix is to loosen the pattern (the TA50-I1 /
+    // TA69R2-I1 failure this repo has already recorded twice). `/turkiye` has since moved too
+    // and the plated rule is deleted; the class asserted on is unchanged, because it was always
+    // the class that carries the behaviour rather than the absence of the old one.
+    //
+    // EVERY declaration of the class, never just the first: a line-anchored scan reads the
+    // top-level rule alone and an indented `@media` override re-plating the credit slips past
+    // it. `/turkiye`'s sibling guard reads the same sheet, so either one catching it is enough
+    // to hold CI — but a pair documented as asserting the same rule from both sides has to be
+    // equally strong on both sides, or the weaker one quietly becomes the one that is trusted.
+    const bodies = [
+      ...MAP_CSS.replace(/\/\*[\s\S]*?\*\//g, " ").matchAll(/\.attributionFlow\s*\{([^}]*)\}/g),
+    ].map((match) => match[1] ?? "");
+    expect(bodies.length).toBeGreaterThan(0);
     // Any `position` at all: `sticky` and `fixed` lift the line back over the map just as
     // effectively, and `--scrim-bg` was the visible half of the plate.
-    expect(rule).not.toMatch(/position:/);
-    expect(rule).not.toMatch(/background/);
+    for (const body of bodies) {
+      expect(body).not.toMatch(/position:/);
+      expect(body).not.toMatch(/background/);
+    }
 
-    // Self-check: the reader must be able to SEE a plate when one is there, or both negatives
-    // above are decorative. The control stylesheet lives HERE — never in the file measured,
-    // and never the live `.attribution` rule, which a later `/turkiye` fix is free to change.
+    // Self-check: the reader must be able to SEE a plate when one is there — including one
+    // inside a media query, which is the case the loop exists for. The control stylesheet lives
+    // HERE — never in the file measured. That was already the right call for a reason now
+    // realised: the live `.attribution` rule this control could have borrowed no longer exists.
     const control =
-      "\n.attributionFlow {\n  position: absolute;\n  background: var(--scrim-bg);\n}\n";
-    const seen = control.match(/\n\.attributionFlow \{([\s\S]*?)\n\}/)?.[1];
-    expect(seen).toMatch(/position:/);
-    expect(seen).toMatch(/background/);
+      ".attributionFlow {\n  margin: 6px 14px 10px;\n}\n" +
+      "@media (max-width: 480px) {\n  .attributionFlow {\n" +
+      "    position: sticky;\n    background: var(--scrim-bg);\n  }\n}\n";
+    const seen = [...control.matchAll(/\.attributionFlow\s*\{([^}]*)\}/g)].map(
+      (match) => match[1] ?? "",
+    );
+    expect(seen).toHaveLength(2);
+    expect(seen.some((body) => /position:/.test(body))).toBe(true);
+    expect(seen.some((body) => /background/.test(body))).toBe(true);
   });
 });
 
