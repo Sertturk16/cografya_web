@@ -81,9 +81,11 @@
 /* ODbL/JRC CREDIT — required visibly next to the map (licence obligation, not styling).
 
    A FLOW LINE UNDER THE MAP BOX, NOT AN OVERLAY — which is what `map.module.css`'s one
-   remaining credit rule (`.attributionFlow`) now says too, since `/dunya` and `/turkiye` both
-   moved. It is the treatment `game-map.module.css` already records, moved
-   here because this surface had the identical defect: the overlay plate measured 304 x 61.3 over
+   remaining credit PLACEMENT rule (`.attributionFlow`) now says too, since `/dunya` and
+   `/turkiye` both moved. That sheet still declares a second credit rule, `.attributionLine`,
+   which splits the lines rather than placing the box. It is the treatment
+   `game-map.module.css` already records, moved here because this surface had the identical
+   defect: the overlay plate measured 304 x 61.3 over
    a 318 x 136.4 stage at 360px — 42.8% of the map — and `elementFromPoint` at each province's own
    centre found 41 of 81 targets under chrome at 360px, 61 of 81 at 320px. The owner rejected the
    frame that showed it.

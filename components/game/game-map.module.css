@@ -787,10 +787,13 @@
 /* ODbL attribution — required visibly next to the map (licence obligation, not styling).
 
    ON THIS SURFACE IT IS A FOOTER LINE, NOT AN OVERLAY — which `map.module.css`'s one remaining
-   credit rule (`.attributionFlow`) now says too, since `/dunya` and `/turkiye` both moved. The
-   overlay version was measured covering 304 × 61.3
-   of a 318 × 136.4 stage at 360px — 42.8% of the play area — and `elementFromPoint` at each
-   province's own centre found 41 of 81 targets under chrome at 360px, 62 of 81 at 320px. The
+   credit PLACEMENT rule (`.attributionFlow`) now says too, since `/dunya` and `/turkiye` both
+   moved. That sheet still declares a second credit rule, `.attributionLine`, which splits the
+   lines rather than placing the box.
+
+   The overlay version was measured covering 304 × 61.3 of a 318 × 136.4 stage at 360px —
+   42.8% of the play area — and `elementFromPoint` at each province's own centre found 41 of 81
+   targets under chrome at 360px, 62 of 81 at 320px. The
    plate is gone with the absolute positioning: in flow the line sits on the frame's parchment
    and needs no scrim to stay legible (--color-slate on --color-bg = 7.48:1, DESIGN §5).
 

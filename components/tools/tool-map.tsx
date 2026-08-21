@@ -192,12 +192,16 @@ export async function ToolMap({
           block spans are exactly as they were, and `attribution-separation.test.ts` guards
           this file for precisely that.
 
-          Every map surface now does this, each from its own sheet: `/dunya` moved to
-          `.attributionFlow` in PR #77 and `/turkiye` right after it (`FU-TURKIYE-ATIF-ORTUSU`
-          → DEC 2026-08-21d md.2), which retired the plated `.attribution` from
-          `map.module.css` entirely. The tool pages keep their own copy in THIS stylesheet,
-          like the game's — the shared sheet styles the two navigation maps, not this
-          measuring surface, and `.attribution` here is `tools.module.css`'s own class. */}
+          Four surfaces have made that move, each from its own sheet — this one, the game,
+          `/dunya` and `/turkiye`: `/dunya` moved to `.attributionFlow` in PR #77 and
+          `/turkiye` right after it (`FU-TURKIYE-ATIF-ORTUSU` → DEC 2026-08-21d md.2), which
+          retired the plated `.attribution` from `map.module.css` entirely. THEY ARE NOT EVERY
+          MAP IN THE REPO: `/deniz` still plates its credit from `marine.module.css`, tracked
+          as `FU-MARINE-ATIF-PLAKASI`. Four is the count that MOVED, not the count that ends up
+          in flow — `locator-map.module.css` `.credit` was never plated, so it made no move.
+          The tool pages keep their own copy in THIS stylesheet, like the game's — the shared
+          sheet styles the two navigation maps, not this measuring surface, and `.attribution`
+          here is `tools.module.css`'s own class. */}
       <p className={styles.attribution} data-tool-attribution>
         <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
         <span className={styles.attributionLine}>
