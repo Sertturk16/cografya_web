@@ -192,11 +192,12 @@ export async function ToolMap({
           block spans are exactly as they were, and `attribution-separation.test.ts` guards
           this file for precisely that.
 
-          `/turkiye` still takes the plated overlay from `map.module.css` and is NOT touched
-          here: the same defect is live there (measured — 43.4% covered and 36 of 81 at 360px)
-          and is tracked as its own item (`FU-TURKIYE-ATIF-ORTUSU`) rather than widened into
-          this one. `/dunya` no longer takes it — it moved to `.attributionFlow`, in flow under
-          the panel. The class therefore lives in THIS stylesheet, like the game's. */}
+          Every map surface now does this, each from its own sheet: `/dunya` moved to
+          `.attributionFlow` in PR #77 and `/turkiye` right after it (`FU-TURKIYE-ATIF-ORTUSU`
+          → DEC 2026-08-21d md.2), which retired the plated `.attribution` from
+          `map.module.css` entirely. The tool pages keep their own copy in THIS stylesheet,
+          like the game's — the shared sheet styles the two navigation maps, not this
+          measuring surface, and `.attribution` here is `tools.module.css`'s own class. */}
       <p className={styles.attribution} data-tool-attribution>
         <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
         <span className={styles.attributionLine}>

@@ -237,10 +237,12 @@ describe("/dunya's map chrome — the overlay it keeps, the box it fits, the cre
   });
 
   it("keeps .attributionFlow in normal flow, with no plate behind it", () => {
-    // NOT `.attribution`. The plated rule is still correct — `/turkiye` is its one remaining
-    // consumer — so the game's guard cannot be copied here verbatim: it would go red on right
-    // code, and the reflex fix is to loosen the pattern (the TA50-I1 / TA69R2-I1 failure this
-    // repo has already recorded twice). The new class is what carries the new behaviour.
+    // NOT `.attribution`. When this guard was written the plated rule was still live and
+    // correct for `/turkiye`, so the game's guard could not be copied verbatim — it would have
+    // gone red on right code, and the reflex fix is to loosen the pattern (the TA50-I1 /
+    // TA69R2-I1 failure this repo has already recorded twice). `/turkiye` has since moved too
+    // and the plated rule is deleted; the assertions below are unchanged because they were
+    // always written against the class that carries the behaviour, not against its absence.
     const rule = MAP_CSS.match(/\n\.attributionFlow \{([\s\S]*?)\n\}/)?.[1];
     expect(rule).toBeDefined();
     // Any `position` at all: `sticky` and `fixed` lift the line back over the map just as
@@ -249,8 +251,9 @@ describe("/dunya's map chrome — the overlay it keeps, the box it fits, the cre
     expect(rule).not.toMatch(/background/);
 
     // Self-check: the reader must be able to SEE a plate when one is there, or both negatives
-    // above are decorative. The control stylesheet lives HERE — never in the file measured,
-    // and never the live `.attribution` rule, which a later `/turkiye` fix is free to change.
+    // above are decorative. The control stylesheet lives HERE — never in the file measured.
+    // That was already the right call for a reason now realised: the live `.attribution` rule
+    // this control could have borrowed no longer exists.
     const control =
       "\n.attributionFlow {\n  position: absolute;\n  background: var(--scrim-bg);\n}\n";
     const seen = control.match(/\n\.attributionFlow \{([\s\S]*?)\n\}/)?.[1];
