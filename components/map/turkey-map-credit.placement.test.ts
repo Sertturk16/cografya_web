@@ -55,8 +55,30 @@ function flatCode(source: string): string {
     .replace(/\s+/g, " ");
 }
 
+/** CSS with block comments removed: the docblocks quote class names and declarations. */
+function bare(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, " ");
+}
+
 const TURKEY_MAP = flatCode(sourceOf("./turkey-map-section.tsx"));
 const MAP_CSS = sourceOf("./map.module.css");
+
+/**
+ * The credit `<p>` under ANY local binding of the sheet, with the tag left OPEN after the class.
+ * Anchoring on `}>` would match only a `<p>` that carries no other attribute, so adding a
+ * legitimate `data-…`, `id` or `lang` would turn this guard red on correct code — and this repo
+ * has twice recorded what follows a false red: the pattern gets loosened (TA50-I1 / TA69R2-I1).
+ * The negative control in the second test already tolerates an extra attribute; this keeps both
+ * halves of the file saying the same thing about them.
+ */
+const CREDIT_TAG = /<p className=\{[A-Za-z_$][\w$]*\.attributionFlow\}[^>]*>/;
+
+/** Every declaration body of a class in a stylesheet — top-level AND inside any media query. */
+function bodiesOf(css: string, className: string): string[] {
+  return [...bare(css).matchAll(new RegExp(`\\.${className}\\s*\\{([^}]*)\\}`, "g"))].map(
+    (match) => match[1] ?? "",
+  );
+}
 
 describe("/turkiye's credit sits under the map box, never on it", () => {
   it("renders the credit <p> as a sibling of [data-map-root], not its child", () => {
@@ -65,39 +87,53 @@ describe("/turkiye's credit sits under the map box, never on it", () => {
 
     // Any local module binding rather than a hardcoded `styles.` — the surfaces that share
     // this sheet import it under two different names, and a pattern that assumes one of them
-    // fails on correct code (the trap `attribution-separation.test.ts` documents).
-    const credit = TURKEY_MAP.search(/<p className=\{[A-Za-z_$][\w$]*\.attributionFlow\}>/);
+    // fails on correct code (the trap `attribution-separation.test.ts` documents). Why the tag
+    // is left open after the class is on `CREDIT_TAG` itself.
+    const credit = TURKEY_MAP.search(CREDIT_TAG);
     expect(credit).toBeGreaterThan(root);
 
-    // Positionally, the way a source scan can honestly see it: the map's `<svg>` closes, then
-    // the panel's own `</div>` closes, and only then does the credit appear. A credit put back
-    // inside the panel would sit after `</svg>` with that `</div>` still open behind it.
+    // Structurally, the way a source scan can honestly see it: the map's `<svg>` closes and the
+    // panel's own `</div>` closes before the credit appears. COUNTED, not compared by position.
+    // `lastIndexOf("</div>") > lastIndexOf("</svg>")` is only right while this file holds
+    // exactly one `</div>`, and it passes again the moment a toolbar `<div>` is added after the
+    // `</svg>` and the credit is re-nested behind it — which is the very edit this guard exists
+    // to catch. `between` begins INSIDE the panel's own opening tag, so the panel is closed
+    // exactly when the closings run one ahead of the openings.
     const between = TURKEY_MAP.slice(root, credit);
     expect(between).toContain("</svg>");
-    expect(between.lastIndexOf("</div>")).toBeGreaterThan(between.lastIndexOf("</svg>"));
+    const opened = (between.match(/<div[\s>]/g) ?? []).length;
+    const closed = (between.match(/<\/div>/g) ?? []).length;
+    expect(closed).toBe(opened + 1);
   });
 
   it("names no plated credit class, because this stylesheet no longer has one", () => {
     // The retired rule was `.attribution` in `map.module.css`. It is deleted rather than left
-    // unused: a plated class kept warm in a shared sheet is how a fourth surface would
-    // reintroduce a defect two owner rulings removed. `.attributionLine` must NOT trip this —
-    // it is still consumed here and is a `display: block` rule with no plate.
-    expect(/\.attribution\b(?!Flow|Line)/.test(MAP_CSS.replace(/\/\*[\s\S]*?\*\//g, " "))).toBe(
-      false,
-    );
-    expect(/\{[A-Za-z_$][\w$]*\.attribution\}/.test(TURKEY_MAP)).toBe(false);
+    // unused: a plated class kept warm in a shared sheet is how another surface would
+    // reintroduce a defect two owner rulings removed. THIS SHEET ONLY — `/deniz` still plates
+    // its own copy from `marine.module.css` and is tracked separately (`FU-MARINE-ATIF-PLAKASI`).
+    // `.attributionLine` must NOT trip this — it is still consumed here and is a
+    // `display: block` rule with no plate.
+    //
+    // THE WORD BOUNDARY IS THE WHOLE MECHANISM. A `(?!Flow|Line)` lookahead stood here and could
+    // never fire: `\b` already fails between the "n" and the "F"/"L", so it was never reached and
+    // the pattern behaved identically with and without it — measured on both control strings
+    // below. A control that cannot distinguish the pattern from the pattern-without-it documents
+    // nothing, and a dead clause invites the "simplify it away" edit that leaves the real guard
+    // resting on something a reader believes is redundant. One pattern, named once, so the
+    // assertions and their controls cannot drift apart.
+    const PLATED_CSS_CLASS = /\.attribution\b/;
+    const PLATED_TSX_CLASS = /\{[A-Za-z_$][\w$]*\.attribution\}/;
+    expect(PLATED_CSS_CLASS.test(bare(MAP_CSS))).toBe(false);
+    expect(PLATED_TSX_CLASS.test(TURKEY_MAP)).toBe(false);
 
     // Self-check: the reader must be able to SEE the plated class when one is there, or both
     // negatives above are decorative. The controls are built HERE — never by mutating a file
     // under test, which would make the next run pass on a token this test wrote itself.
-    const cssControl = "\n.attribution {\n  position: absolute;\n}\n";
-    expect(/\.attribution\b(?!Flow|Line)/.test(cssControl)).toBe(true);
-    // …and the negative lookahead really does spare the two live classes.
-    expect(
-      /\.attribution\b(?!Flow|Line)/.test("\n.attributionFlow {}\n.attributionLine {}\n"),
-    ).toBe(false);
-    const tsxControl = "<p className={styles.attribution} data-x>";
-    expect(/\{[A-Za-z_$][\w$]*\.attribution\}/.test(tsxControl)).toBe(true);
+    expect(PLATED_CSS_CLASS.test("\n.attribution {\n  position: absolute;\n}\n")).toBe(true);
+    // …and the boundary really does spare the two live classes, which is the only reason the
+    // first negative can be trusted against a sheet that still declares both of them.
+    expect(PLATED_CSS_CLASS.test("\n.attributionFlow {}\n.attributionLine {}\n")).toBe(false);
+    expect(PLATED_TSX_CLASS.test("<p className={styles.attribution} data-x>")).toBe(true);
   });
 
   it("keeps the class it moved to in normal flow, with no plate behind it", () => {
@@ -105,17 +141,32 @@ describe("/turkiye's credit sits under the map box, never on it", () => {
     // the other side (`map-zoom-pan.contract.test.ts`). Repeated deliberately rather than
     // cross-referenced: this surface's defect is what the rule now has to hold back, and a
     // guard that depends on another surface's file staying alive is not a guard.
-    const rule = MAP_CSS.match(/\n\.attributionFlow \{([\s\S]*?)\n\}/)?.[1];
-    expect(rule).toBeDefined();
+    //
+    // EVERY declaration of the class, never just the first. A line-anchored
+    // `\n.attributionFlow {` scan reads the top-level rule alone, so an indented override —
+    // `@media (max-width: 480px) { .attributionFlow { position: sticky; background: … } }`, the
+    // shape a "make the credit stick on phones" edit takes — slips straight past it, at exactly
+    // the width where the defect measured 59 of 81.
+    const bodies = bodiesOf(MAP_CSS, "attributionFlow");
+    expect(bodies.length).toBeGreaterThan(0);
     // Any `position` at all: `sticky` and `fixed` lift the line back over the map just as
     // effectively, and a `background` was the visible half of the plate.
-    expect(rule).not.toMatch(/position:/);
-    expect(rule).not.toMatch(/background/);
+    for (const body of bodies) {
+      expect(body).not.toMatch(/position:/);
+      expect(body).not.toMatch(/background/);
+    }
 
+    // Self-check: the reader must be able to SEE a plate when one is there — INCLUDING one
+    // hidden in a media query, which is the case the loop above exists for, so the control
+    // carries both a clean top-level rule and a plated override. The control stylesheet is
+    // built HERE, never by mutating the file under test.
     const control =
-      "\n.attributionFlow {\n  position: absolute;\n  background: var(--scrim-bg);\n}\n";
-    const seen = control.match(/\n\.attributionFlow \{([\s\S]*?)\n\}/)?.[1];
-    expect(seen).toMatch(/position:/);
-    expect(seen).toMatch(/background/);
+      ".attributionFlow {\n  margin: 6px 14px 10px;\n}\n" +
+      "@media (max-width: 480px) {\n  .attributionFlow {\n" +
+      "    position: sticky;\n    background: var(--scrim-bg);\n  }\n}\n";
+    const seen = bodiesOf(control, "attributionFlow");
+    expect(seen).toHaveLength(2);
+    expect(seen.some((body) => /position:/.test(body))).toBe(true);
+    expect(seen.some((body) => /background/.test(body))).toBe(true);
   });
 });

@@ -281,11 +281,22 @@
 }
 
 /* THE CREDIT, IN FLOW UNDER THE PANEL — the only placement this stylesheet still offers.
-   BOTH consumers take it: `world-map-section.tsx` (PR #77, `FU-DUNYA-ZOOM-ORTUSU`) and
-   `turkey-map-section.tsx` (`FU-TURKIYE-ATIF-ORTUSU`, owner-ruled from a rendered frame →
-   DEC 2026-08-21d md.2). The game and the CBS tool pages already carry the same treatment in
-   their own sheets (`game-map.module.css`, `tools.module.css`), so all four map surfaces now
-   agree. The obligation is identical everywhere — visible, inside the map component, text
+   BOTH CONSUMERS OF THIS CREDIT RULE take it: `world-map-section.tsx` (PR #77,
+   `FU-DUNYA-ZOOM-ORTUSU`) and `turkey-map-section.tsx` (`FU-TURKIYE-ATIF-ORTUSU`, owner-ruled
+   from a rendered frame → DEC 2026-08-21d md.2). "Two" counts the consumers of THIS rule, not
+   of the sheet — five files import it, and `map-zoom-pan.tsx`, `map-hover-card.tsx` and
+   `tool-map.tsx` take other rules from it and never name this one.
+
+   The game and the CBS tool pages already carry the same treatment in their own sheets
+   (`game-map.module.css`, `tools.module.css`), so those four surfaces agree. THEY ARE NOT
+   EVERY MAP IN THE REPO, and this note must not be read as saying they are: `/deniz` still
+   plates its credit from `marine.module.css` `.mapAttribution` — declaration for declaration
+   the rule deleted here — and is tracked as `FU-MARINE-ATIF-PLAKASI`. The repo's own count of
+   the surfaces that draw this water layer and owe this credit is
+   `inland-water-layer.contract.test.ts`'s `SURFACES`, and `/deniz` is in it while `/dunya`,
+   which draws Natural Earth countries and no water layer, is not.
+
+   The obligation is identical everywhere — visible, inside the map component, text
    unchanged — and only the placement ever differed.
 
    WHAT THE PLATE THIS RULE REPLACED WAS. `position: absolute; right: 14px; bottom: 10px` with
@@ -365,9 +376,10 @@
    (a block span stacks exactly where the break did); the difference is in the DOM, where the
    two licence notices are now separate text runs rather than one string that reads
    "ODbLMevsimlik" to a screen reader and to anything that copies `textContent` (UX tour B26).
-   Of this stylesheet's two consumers only `turkey-map-section.tsx` stacks two notices (its
-   water layer carries two licences); `/dunya` renders one line and never names this class.
-   The game and the tool pages stack two as well, from their own sheets. */
+   Of the two consumers of these credit rules only `turkey-map-section.tsx` stacks two notices
+   (its water layer carries two licences); `/dunya` renders one line and never names this class.
+   Again that is two consumers OF THE RULE, not of the sheet. The game and the tool pages stack
+   two as well, from their own sheets, and so does `/deniz`. */
 .attributionLine {
   display: block;
 }

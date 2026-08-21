@@ -80,8 +80,9 @@
 
 /* ODbL/JRC CREDIT — required visibly next to the map (licence obligation, not styling).
 
-   A FLOW LINE UNDER THE MAP BOX, NOT AN OVERLAY, and that is the one thing this rule says that
-   `map.module.css`'s does not. It is the treatment `game-map.module.css` already records, moved
+   A FLOW LINE UNDER THE MAP BOX, NOT AN OVERLAY — which is what `map.module.css`'s one
+   remaining credit rule (`.attributionFlow`) now says too, since `/dunya` and `/turkiye` both
+   moved. It is the treatment `game-map.module.css` already records, moved
    here because this surface had the identical defect: the overlay plate measured 304 x 61.3 over
    a 318 x 136.4 stage at 360px — 42.8% of the map — and `elementFromPoint` at each province's own
    centre found 41 of 81 targets under chrome at 360px, 61 of 81 at 320px. The owner rejected the
@@ -92,9 +93,12 @@
    colour and the two-line structure are unchanged, and not one character of either licence string
    moved. The credit is still visible and still inside the map component (DEC 2026-07-10 md.4).
 
-   WHY A LOCAL COPY RATHER THAN AN EDIT TO `map.module.css`: that rule is shared with `/turkiye`
-   and `/dunya`, where the same defect is live and measured but out of this PR's scope. Editing
-   the shared rule would silently relayout two surfaces nobody reviewed here. */
+   WHY A LOCAL COPY RATHER THAN AN EDIT TO `map.module.css`: when this copy was made, that
+   sheet's plated rule was shared with `/turkiye` and `/dunya`, where the same defect was still
+   live, so editing it would have silently relaid out two surfaces nobody reviewed then. Both
+   have since moved and the plated rule is deleted, so that reason has expired — the copy stays
+   for surface independence. This page measures; it is not one of the two navigation maps that
+   sheet styles, and `.attribution` here is this file's own class, not that sheet's. */
 .attribution {
   margin: 6px 14px 10px;
   font-size: 0.72rem;

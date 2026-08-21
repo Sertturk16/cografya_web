@@ -251,8 +251,10 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
       </div>
 
       {/* BELOW THE MAP BOX, NOT ON IT (`FU-TURKIYE-ATIF-ORTUSU`; owner-ruled from a rendered
-          frame — → DEC 2026-08-21d md.2). This surface is the last of four to make the move;
-          the game did it first, then the CBS tool pages, then `/dunya` in PR #77.
+          frame — → DEC 2026-08-21d md.2). This surface is the fourth to make the move — the
+          game did it first, then the CBS tool pages, then `/dunya` in PR #77 — but NOT the last
+          map in the repo that needs it: `/deniz` still plates its credit from
+          `marine.module.css`, tracked as `FU-MARINE-ATIF-PLAKASI`.
 
           WHAT IT FIXES, RE-MEASURED ON THIS BUILD RATHER THAN QUOTED. The plate was
           `position: absolute; right: 14px; bottom: 10px` inside `[data-map-root]`, and at

@@ -448,7 +448,9 @@ export async function WorldMapSection({ locale }: WorldMapSectionProps) {
           boundary `tools.module.css` drew when the tool pages did this. It landed in its own
           PR straight after (owner-ruled from a rendered frame → DEC 2026-08-21d md.2), so the
           plated `.attribution` no longer exists in `map.module.css` at all and both consumers
-          of that sheet take `.attributionFlow`. */}
+          of that credit rule — this file and `turkey-map-section.tsx` — take `.attributionFlow`.
+          Two consumers of the RULE, not of the sheet: three more files import it for other
+          rules and name no credit class. */}
       <p className={styles.attributionFlow}>{tMap("attribution")}</p>
     </section>
   );
