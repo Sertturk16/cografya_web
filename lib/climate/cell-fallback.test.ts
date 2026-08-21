@@ -104,10 +104,25 @@ describe("cellFallbackDisplayKm", () => {
   });
 
   it.each(DECLARED_PLATE_CODES)("stays faithful to the stored value for %s", (plateCode) => {
-    // The published figure is a rounding of the stored one, never a different number.
+    // The published figure is a rounding of the stored one, never a different number: it may
+    // move by at most half a rounding step.
+    //
+    // WHY THE EPSILON, since it looks like a loosened bound and is not one. The SUBTRACTION is
+    // itself a float operation, and CI caught the first version of this line failing on Mersin
+    // with `expected 0.05000000000000071 to be less than or equal to 0.05` — a miss of
+    // 7,1e-16, which is representation noise and not a rounding error. Measured across all
+    // five entries, the true worst case is Antalya at 0.04999999999999982; nothing sits
+    // between half a step and half a step plus this epsilon, so the bound still rejects any
+    // real drift. Removing the epsilon does not make the test stricter, it makes it flaky at
+    // exactly the value it is supposed to accept — which is, fittingly, the same class of
+    // float trap `roundKmToOneDecimal` exists to keep away from the page.
+    const HALF_ROUNDING_STEP = 0.05;
+    const FLOAT_NOISE = 1e-9;
     const shown = cellFallbackDisplayKm(plateCode);
     expect(shown).not.toBeNull();
-    expect(Math.abs((shown as number) - CELL_FALLBACK_KM[plateCode]!)).toBeLessThanOrEqual(0.05);
+    expect(Math.abs((shown as number) - CELL_FALLBACK_KM[plateCode]!)).toBeLessThanOrEqual(
+      HALF_ROUNDING_STEP + FLOAT_NOISE,
+    );
   });
 
   it("never hands a two-decimal figure to the page", () => {
