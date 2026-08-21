@@ -1,6 +1,7 @@
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 import type { Climate } from "@/lib/api/types";
 import type { Locale } from "@/i18n/routing";
+import { cellFallbackDisplayKm } from "@/lib/climate/cell-fallback";
 import { ClimateChart } from "./climate-chart";
 import { ClimateTable } from "./climate-table";
 import styles from "./climate.module.css";
@@ -22,6 +23,25 @@ interface ClimateSectionProps {
 const CHART_ANCHOR: Record<Locale, string> = {
   tr: "sicaklik-ve-yagis-grafigi",
   en: "temperature-and-precipitation-chart",
+};
+
+/**
+ * Which climate sources owe the fixed model/reading-method disclosure (SPEC §9.2-1/§9.2-2).
+ *
+ * The disclosure is not rendered unconditionally, because it is not a property of this
+ * component — it is a CONSTANT OF THE SOURCE, and SPEC §9.2 says so in as many words:
+ * "çözünürlük/yöntem, kaynağın sabitleridir ve web copy'sinde `source` token'ına
+ * anahtarlanır." Keying it to the token is what stops ERA5-Land's reading method from being
+ * claimed for a series that is read some other way.
+ *
+ * A `Record` over the token type rather than an `if`, deliberately: `ClimateDto.source` is a
+ * closed enum, so the day the contract carries a second source id this object stops
+ * compiling and a human decides what that source owes. An `if` would just fall through and
+ * publish nothing, which is the quieter and worse failure. There is no dead branch here —
+ * one source exists today and it has one entry.
+ */
+const SOURCE_OWES_METHOD_DISCLOSURE: Record<Climate["source"], boolean> = {
+  era5_land_monthly: true,
 };
 
 /**
@@ -63,8 +83,19 @@ export const D2_VARIANT = "rails" as const;
  * (`province.climate !== null`) and only on the TR locale (EN detail pages are noindex and
  * have no climate caveat text — SEO-POLICY §6). The gating lives in the page.
  *
- * Composes four things, in this order: the chart (visual), the always-visible table (the
- * readable numbers), the source line, and the provider's mandatory licence notice.
+ * Composes five things, in this order: the chart (visual), the always-visible table (the
+ * readable numbers), the source line, the fixed model/reading-method disclosure, and the
+ * provider's mandatory licence notice.
+ *
+ * ## The disclosure is a RULING's condition, not a footnote
+ *
+ * SPEC §9.2-1 and §9.2-2 require the series to declare, where a reader can see it, that these
+ * are model values rather than station measurements and which point they are read at. The
+ * second half is sharper than it looks: A-1 permits five coastal provinces to be read from the
+ * nearest LAND cell instead of the cell their own administrative point falls in, and permits it
+ * only on condition that the shift is DECLARED — a condition that "ancak kullanıcı yüzeyinde
+ * görünürse sağlanır" (SPEC §9.2-2). Until this block existed, Antalya published numbers
+ * sampled 7,55 km from its administrative point and said nothing about it.
  *
  * ## The series is ERA5-Land, and the copy below is licence-bearing
  *
@@ -100,6 +131,10 @@ export async function ClimateSection({
   locale,
 }: ClimateSectionProps) {
   const t = await getTranslations("Climate");
+  const format = await getFormatter();
+  // `null` for 76 of 81 — those provinces have no declared shift, which is a fact about them
+  // and not a gap in the data (see `cell-fallback.ts`).
+  const fallbackKm = cellFallbackDisplayKm(plateCode);
 
   return (
     <div className={styles.section}>
@@ -138,6 +173,65 @@ export async function ClimateSection({
               ),
             })}
           </p>
+
+          {/* SPEC §9.2-1 / §9.2-2 — the model + reading-method disclosure, in the FIXED
+          provenance block rather than in body prose, because §9.2-1 puts it there in as many
+          words ("sabit provenance/caveat bloğunda (gövde prose'unda DEĞİL)") and §9.2-2 asks
+          for the reading-method line in that SAME block.
+
+          Two sentences, and neither is decoration. `climate.sourceUrl` is a single dataset
+          page shared by all 81 provinces and every number above is sampled from a grid cell,
+          so without these a reader has nothing on the page telling them the values are
+          neither a station reading nor a provincial average. The wording deliberately follows
+          the two blocks that already sit on this same page — `Deniz.sourceCmems` ("…istasyon
+          ölçümü değildir") and `AirPollution.notice.provinceCentrePoint` ("Değer, il
+          ortalaması değildir…") — so one page does not describe the same class of fact in
+          three different vocabularies.
+
+          The ~0,1° figure in `notice.reanalysis` comes from the provenance ledger and from
+          nowhere else. It was withheld from the first draft of this block precisely because
+          the ledger did not carry it yet and `SPEC.md` and the api README are not substitutes
+          for a ledger row; it landed as the C3S/ERA5-Land addendum in
+          `provenance/integrations.md` (NOVA, 2026-08-21, measured from the publisher's own
+          dataset page) and only then was written here.
+
+          Two things that row settles, and that a later edit must not undo:
+          1. **`~0,1°` is the regridded lat-lon product we actually consume.** The publisher
+             also states a `9 km` NATIVE Gaussian-grid resolution; that is not our grid and it
+             does not belong in this copy.
+          2. **No kilometre equivalent of 0,1° may be written here.** It varies with latitude,
+             so it would be our derived number wearing the publisher's authority.
+
+          The period is a separate fact from the resolution and is already handled correctly by
+          the source line above: 1991-2020 is OUR chosen WMO normal window, not the dataset's
+          coverage (which starts in 1950), and the copy says "referans dönemi" rather than
+          claiming a dataset period. */}
+          {SOURCE_OWES_METHOD_DISCLOSURE[climate.source] && (
+            <div className={styles.notices}>
+              <p className={styles.notice}>{t("notice.reanalysis")}</p>
+              <p className={styles.notice}>{t("notice.readingPoint")}</p>
+              {/* A-1's declared shift, on the five provinces it applies to (A-5 ruled: static
+                  web copy, `lib/climate/cell-fallback.ts`). The other 76 render nothing here —
+                  the line above already describes them correctly, and an "eksik veri"
+                  placeholder for a province that HAS no shift would be a CONTENT-STYLE §22
+                  violation as well as false.
+
+                  The distance is rounded ONCE, inside the lookup, and the formatter is asked
+                  for nothing but the locale's decimal separator. Passing the already-formatted
+                  string keeps ICU from touching the number a second time — the same reason the
+                  source line above passes its years as strings. */}
+              {fallbackKm !== null && (
+                <p className={styles.notice}>
+                  {t("notice.cellFallback", {
+                    km: format.number(fallbackKm, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    }),
+                  })}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* CC-BY-4.0's required notice for the ERA5-Land series (data-provenance.md §0b).
           Published VERBATIM, in English, in BOTH locales and marked `lang="en"` so a screen

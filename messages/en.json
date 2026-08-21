@@ -274,6 +274,11 @@
     "colTempMean": "Mean temperature (°C)",
     "colPrecip": "Total precipitation (mm)",
     "sourceLine": "Monthly normals: <source>ERA5-Land monthly averaged data (Copernicus Climate Data Store)</source>, {start}–{end} reference period. Annual mean, total and seasonal percentage figures are computed by us from this series; they are not values published by C3S.",
+    "notice": {
+      "reanalysis": "These are not station measurements. ERA5-Land is a model dataset published on a roughly 0.1-degree latitude-longitude grid.",
+      "readingPoint": "The value is not a provincial average. It is read from the grid cell the province centre falls in.",
+      "cellFallback": "In this province the centre falls in the sea; the value is read from the nearest land cell, {km} km away."
+    },
     "sourceC3sNoticeIntro": "The data provider's licence requires the following notice to be published verbatim, in English:",
     "attribution": {
       "c3sNotice": "Generated using Copernicus Climate Change Service information 2026. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."

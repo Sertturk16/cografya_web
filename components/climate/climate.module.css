@@ -312,6 +312,32 @@
   text-decoration: underline;
 }
 
+/* ---- Method / reading-point disclosure (SPEC §9.2-1, §9.2-2) ---------------
+   Sized and coloured to match `components/air/air-pollution.module.css` .notice exactly.
+   That is not a coincidence to be tidied away later: the PM2.5 block on the SAME page
+   carries the same class of statement about the same kind of value, and giving the two
+   different weights would tell a reader they are different kinds of claim.
+
+   Quieter than `.licenceNotice` on purpose. The licence text is the provider's and must be
+   prominent; these two sentences are ours, and they belong with the source line they
+   qualify. No border rule, for the same reason — the indented rule is what marks where our
+   prose stops and licensed text begins, so borrowing it here would blur that signal. */
+.notices {
+  margin-top: 12px;
+}
+
+.notice {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  color: var(--color-slate);
+  max-width: 78ch;
+  line-height: 1.5;
+}
+
+.notice:last-child {
+  margin-bottom: 0;
+}
+
 /* The mandatory C3S notice — an UNTOUCHABLE copy class (CONTENT-STYLE §22), set in a
    quieter, indented block so a Turkish reader can see at a glance where the platform's
    prose stops and the licence text begins.
