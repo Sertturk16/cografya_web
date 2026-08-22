@@ -277,7 +277,7 @@
     "notice": {
       "reanalysis": "Bu değerler istasyon ölçümü değildir. ERA5-Land, yaklaşık 0,1 derecelik bir enlem-boylam ızgarasında yayımlanan bir model veri kümesidir.",
       "readingPoint": "Değer, il ortalaması değildir. İl merkezinin düştüğü ızgara hücresinden okunur.",
-      "cellFallback": "Bu ilde il merkezi denize düşer; değer {km} km ötedeki en yakın kara hücresinden okunur."
+      "cellFallback": "Bu ilde il merkezi denize düşen bir hücrededir; değer {km} km ötedeki en yakın kara hücresinden okunur."
     },
     "sourceC3sNoticeIntro": "Veri sağlayıcının lisansı gereği aşağıdaki bildirim İngilizce ve birebir yayımlanır:",
     "attribution": {

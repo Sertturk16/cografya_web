@@ -277,7 +277,7 @@
     "notice": {
       "reanalysis": "These are not station measurements. ERA5-Land is a model dataset published on a roughly 0.1-degree latitude-longitude grid.",
       "readingPoint": "The value is not a provincial average. It is read from the grid cell the province centre falls in.",
-      "cellFallback": "In this province the centre falls in the sea; the value is read from the nearest land cell, {km} km away."
+      "cellFallback": "In this province the centre falls in a sea cell; the value is read from the nearest land cell, {km} km away."
     },
     "sourceC3sNoticeIntro": "The data provider's licence requires the following notice to be published verbatim, in English:",
     "attribution": {
