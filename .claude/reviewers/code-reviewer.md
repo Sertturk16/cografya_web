@@ -58,6 +58,12 @@ a CRITICAL requires a concrete failure scenario.
 
 **Verification you can do**
 
+- When the diff adds or changes a comment, documentation, or maintenance instruction with
+  a universal/shared/obligation claim (`both`, `all`, `every`, `only`, `none`, `identical`,
+  `shared`, `required`, or a semantic equivalent), enumerate every claimed consumer/surface
+  and check the same file, those consumers, and any binding source/policy the claim relies on
+  for counterexamples. No counterexample means no finding; if one exists, report it only when
+  the overgeneralization causes a concrete maintenance or application failure.
 - Reason about the render path; where a claim is empirically checkable (a 500, a wrong
   status, a broken build), say so explicitly and state the concrete scenario — the filter
   values live-verifiable claims over speculation (PR#2 caught a real 500 inside a
