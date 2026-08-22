@@ -274,6 +274,11 @@
     "colTempMean": "Ortalama sıcaklık (°C)",
     "colPrecip": "Toplam yağış (mm)",
     "sourceLine": "Aylık normaller: <source>ERA5-Land aylık ortalamalar (Copernicus İklim Veri Deposu)</source>, {start}–{end} referans dönemi. Yıllık ortalama, toplam ve mevsimsel yüzde değerleri bu seriden tarafımızca hesaplanmıştır; C3S tarafından yayımlanan değerler değildir.",
+    "notice": {
+      "reanalysis": "Bu değerler istasyon ölçümü değildir. ERA5-Land, yaklaşık 0,1 derecelik bir enlem-boylam ızgarasında yayımlanan bir model veri kümesidir.",
+      "readingPoint": "Değer, il ortalaması değildir. İl merkezinin düştüğü ızgara hücresinden okunur.",
+      "cellFallback": "Bu ilde il merkezi denize düşen bir hücrededir; değer {km} km ötedeki en yakın kara hücresinden okunur."
+    },
     "sourceC3sNoticeIntro": "Veri sağlayıcının lisansı gereği aşağıdaki bildirim İngilizce ve birebir yayımlanır:",
     "attribution": {
       "c3sNotice": "Generated using Copernicus Climate Change Service information 2026. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
