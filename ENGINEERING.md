@@ -2,10 +2,11 @@
 
 > **Binding on repo specifics.** This file is the authoritative engineering handbook for
 > the `cografya_web` repo. Once it exists it **overrides the Vera persona and the
-> orchestrator SOP on web-repo specifics** (per `ATLAS-OPERATIONS.md`
-> "Engineering ground truth"). It does not restate the whole persona — it pins the rules
-> a change in THIS repo must satisfy. When this file and a review finding conflict, this
-> file (and the SEO non-negotiables in `CONVENTIONS.md` §6) win.
+> orchestrator SOP on web-repo specifics** (per `ATLAS.md` "Delivery and canonical homes",
+> which names the relevant `ENGINEERING.md` as the on-demand home for repo engineering
+> gates). It does not restate the whole persona — it pins the rules a change in THIS repo
+> must satisfy. When this file and a review finding conflict, this file (and the SEO
+> non-negotiables in `CONVENTIONS.md` §6) win.
 >
 > Sibling handbook: `cografya_api/ENGINEERING.md` (Deniz). The two share one review shape
 > (severity taxonomy, Critical Architect Filter, output contract, roster) — keep them in
@@ -203,7 +204,8 @@ Web-specific filter boundary:
 - this file, `CONVENTIONS.md` §6, `SEO-POLICY.md`, and `DESIGN.md` beat a conflicting
   review suggestion;
 - route deep security/privacy findings back to Atlas;
-- hand follow-ups to Atlas; Vera never edits `TASKS.md`.
+- hand follow-ups to Atlas; the live board is `STATE.md` and it is Atlas-only — Vera never
+  writes it.
 
 ## 9. Repo-init hygiene (reproduce on every clone / new repo) — D5
 
@@ -257,17 +259,18 @@ Web-specific filter boundary:
 
 This table is the sole owner of this document's read scope. A role definition never
 restates that scope — it carries only the anchor id in the last column, and
-`Team/scripts/read-contract-lint.sh` (run by the orchestration root's `pre-commit` hook
-through `governance-lint.sh`) verifies that each id still stands in every definition file
-named beside it. The rules themselves live in §§1–10 above; this table says only who reads
-which of them, and when (→ DEC 2026-08-07a).
+`Team/scripts/read-contract-lint.sh` verifies that each id still stands in the definition
+file named beside it; `Team/scripts/tests/run.sh` binds it, and wind-down runs that suite
+fail-closed. There is still no root `pre-commit` hook, so the gate fires at wind-down and
+on demand, not on every commit. The rules themselves live in §§1–10 above; this table says
+only who reads which of them, and when (→ DEC 2026-08-07a, DEC 2026-08-25m).
 
 <!-- read-contract -->
 
-| Rol                      | Okur                                                                                                                                                                                                                                                                                  | Ne zaman                                                                                                                                                                                                                        | Tanım dosyası                                                                                                                                                                                                                          | Anchor                  |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| **Vera** (single writer) | Mandatory: **§1** authority order · **§2** stack lock · **§4** SEO checklist · **§6** gates · **§7** branch/PR flow · **§10** do-NOT list. On demand: **§3** · **§5** · **§8** · **§9**                                                                                               | The mandatory set on every PR in this repo. §3 when a route or rendering mode changes; §5 whenever shipped UI changes; §8 when Atlas returns a consolidated review report; §9 on a fresh clone and before every `gh` invocation | `.claude/agents/cografya-frontend-dev.md` `.codex/agents/cografya-frontend-dev.toml`                                                                                                                                                   | `READ-ENG-WEB`          |
-| Review legs              | **§1** ground-truth order · **§2** stack lock · **§3** rendering per page type · **§4** SEO checklist · **§5** a11y floor · **§6** gates · **§10** do-NOT list — the repo truth a finding is scored against. §8 is the author's half; a leg reads it for context and never acts on it | Every review leg on a `cografya_web` PR, before assigning a severity; §3 whenever the diff touches rendering mode or route shape                                                                                                | `.claude/agents/pr-reviewer-critical.md` `.claude/agents/pr-reviewer-routine.md` `.claude/agents/pr-validator.md` `.codex/agents/pr-reviewer-critical.toml` `.codex/agents/pr-reviewer-routine.toml` `.codex/agents/pr-validator.toml` | `READ-ENG-WEB-REVIEWER` |
+| Rol                      | Okur                                                                                                                                                                                                                                                                                  | Ne zaman                                                                                                                                                                                                                        | Tanım dosyası                                                                                | Anchor                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------- |
+| **Vera** (single writer) | Mandatory: **§1** authority order · **§2** stack lock · **§4** SEO checklist · **§6** gates · **§7** branch/PR flow · **§10** do-NOT list. On demand: **§3** · **§5** · **§8** · **§9**                                                                                               | The mandatory set on every PR in this repo. §3 when a route or rendering mode changes; §5 whenever shipped UI changes; §8 when Atlas returns a consolidated review report; §9 on a fresh clone and before every `gh` invocation | `Team/roles/vera.md`                                                                         | `READ-ENG-WEB`          |
+| Review legs              | **§1** ground-truth order · **§2** stack lock · **§3** rendering per page type · **§4** SEO checklist · **§5** a11y floor · **§6** gates · **§10** do-NOT list — the repo truth a finding is scored against. §8 is the author's half; a leg reads it for context and never acts on it | Every review leg on a `cografya_web` PR, before assigning a severity; §3 whenever the diff touches rendering mode or route shape                                                                                                | `Team/roles/reviewer-critical.md` `Team/roles/reviewer-routine.md` `Team/roles/validator.md` | `READ-ENG-WEB-REVIEWER` |
 
 <!-- /read-contract -->
 

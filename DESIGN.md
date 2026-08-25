@@ -402,17 +402,18 @@ long-term annual-mean PM2.5 chart (`components/air/pm25-chart.tsx`) draws one po
 
 This table is the sole owner of this document's read scope. A role definition never
 restates that scope — it carries only the anchor id in the last column, and
-`Team/scripts/read-contract-lint.sh` (run by the orchestration root's `pre-commit` hook
-through `governance-lint.sh`) verifies that each id still stands in every definition file
-named beside it. The doctrine itself lives in §§1–6 above; this table says only who reads
-which of them, and when (→ DEC 2026-08-07a).
+`Team/scripts/read-contract-lint.sh` verifies that each id still stands in the definition
+file named beside it; `Team/scripts/tests/run.sh` binds it, and wind-down runs that suite
+fail-closed. There is still no root `pre-commit` hook, so the gate fires at wind-down and
+on demand, not on every commit. The doctrine itself lives in §§1–6 above; this table says
+only who reads which of them, and when (→ DEC 2026-08-07a, DEC 2026-08-25m).
 
 <!-- read-contract -->
 
-| Rol      | Okur                                                                                               | Ne zaman                                                                                                                                        | Tanım dosyası                                                                          | Anchor               |
-| -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------- |
-| **Vera** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every visible UI change, before the component is written — in addition to, never instead of, the rendered-sample obligation in the header above | `.claude/agents/cografya-frontend-dev.md` `.codex/agents/cografya-frontend-dev.toml`   | `READ-DESIGN-VISUAL` |
-| **İRİS** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every design tour, in Phase 0, before opening a browser                                                                                         | `.claude/agents/cografya-design-critic.md` `.codex/agents/cografya-design-critic.toml` | `READ-DESIGN-CRITIC` |
+| Rol      | Okur                                                                                               | Ne zaman                                                                                                                                        | Tanım dosyası        | Anchor               |
+| -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | -------------------- |
+| **Vera** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every visible UI change, before the component is written — in addition to, never instead of, the rendered-sample obligation in the header above | `Team/roles/vera.md` | `READ-DESIGN-VISUAL` |
+| **İRİS** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every design tour, in Phase 0, before opening a browser                                                                                         | `Team/roles/iris.md` | `READ-DESIGN-CRITIC` |
 
 <!-- /read-contract -->
 
