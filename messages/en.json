@@ -47,7 +47,8 @@
     "note": "Published data is based on official sources (TÜİK, HGM, Ministry of Interior, MGM).",
     "copyright": "© {year} {siteName}. All rights reserved.",
     "authLabel": "Membership",
-    "login": "Log in"
+    "login": "Log in",
+    "register": "Sign up"
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Geography of Türkiye and the World",
@@ -678,21 +679,65 @@
       "submit": "Change the password",
       "done": "Your password has changed. Log in with the new one."
     },
+    "register": {
+      "metaTitle": "Sign up",
+      "metaDescription": "Sign up for Coğrafya Platformu.",
+      "heading": "Sign up",
+      "submit": "Sign up"
+    },
+    "verify": {
+      "metaTitle": "E-mail verification",
+      "metaDescription": "Enter the code to verify your account.",
+      "heading": "E-mail verification",
+      "submit": "Verify",
+      "resend": "Send the code again",
+      "resendAccepted": "Your request was received."
+    },
     "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "phone": "Phone",
+      "phonePlaceholder": "5XX XXX XX XX",
       "email": "E-mail",
       "password": "Password",
       "passwordConfirm": "Confirm password",
+      "userType": "Account type",
+      "province": "Province",
+      "district": "District",
+      "grade": "Grade",
+      "stream": "Study stream",
+      "university": "University",
+      "department": "Department",
+      "verificationCode": "Verification code",
       "resetCode": "Reset code",
       "newPassword": "New password"
     },
     "hints": {
       "newPassword": "At least 6 characters, with one lowercase letter, one uppercase letter and one digit."
     },
+    "selectPlaceholder": "Select",
+    "district": {
+      "selectProvinceFirst": "Select a province",
+      "loading": "Loading…",
+      "selectPlaceholder": "Select a district",
+      "loadError": "Districts could not be loaded",
+      "announceCount": "{count} districts listed"
+    },
+    "university": {
+      "loading": "Loading…",
+      "loadError": "Universities could not be loaded"
+    },
+    "department": {
+      "loading": "Loading…",
+      "loadError": "Departments could not be loaded"
+    },
     "fieldErrors": {
       "required": "This field is required.",
       "emailInvalid": "Enter a valid e-mail address.",
+      "phoneInvalid": "Enter a valid phone number (5XX XXX XX XX).",
       "passwordPolicy": "The password must be at least 6 characters, with one lowercase letter, one uppercase letter and one digit.",
-      "passwordMismatch": "The passwords do not match. Enter the same password in both fields."
+      "passwordMismatch": "The passwords do not match. Enter the same password in both fields.",
+      "codeShape": "Enter the 6-digit code."
     },
     "formErrors": {
       "summary": "Some fields need fixing."

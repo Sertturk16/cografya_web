@@ -24,6 +24,13 @@
 }
 
 .auth {
+  /* Two links land in this region as of PR-2 (`Giriş yap` + `Üye ol`) — `display: flex` +
+     `gap` gives them a real visible separation instead of relying on JSX whitespace
+     collapsing to a single space, the same `gap: 16px` `.actions` already uses in
+     `auth-form.module.css`. */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
   margin: 0 0 14px;
 }
 

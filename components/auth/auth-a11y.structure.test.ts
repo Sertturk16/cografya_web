@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
@@ -12,9 +12,15 @@ import { describe, expect, it } from "vitest";
  * evidence in the closing summary, never a gate. This file proves the SOURCE always wires
  * the contract, which is the half CI can actually check.
  *
- * Scoped to the THREE islands PR-1 ships (`login-form`, `password-reset-request-form`,
- * `password-reset-confirm-form`); PR-2 adds `register-form` and `verify-email-form` to
- * `ISLAND_FILES` in the same PR that creates them.
+ * `ISLAND_FILES` is DERIVED from the directory, not hand-maintained (review
+ * `TEST85-M1`/`C3`; plan header item 5,
+ * `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`) — every client island
+ * in this directory is named `*-form.tsx` (the established convention: `login-form.tsx`,
+ * `password-reset-request-form.tsx`, `password-reset-confirm-form.tsx`, PR-2's
+ * `register-form.tsx` and `verify-email-form.tsx`); `field.tsx` and every `*.test.ts` file do
+ * not match, so the filter needs no exclusion list of its own. A hand list silently stopped
+ * covering a new island the moment one shipped without a matching edit here — this can no
+ * longer happen: a new `*-form.tsx` file is picked up automatically.
  */
 
 function parse(relativePath: string): { source: string; ast: ts.SourceFile } {
@@ -131,13 +137,27 @@ describe("field.tsx wires the a11y contract once", () => {
 // The islands — every control goes through field.tsx, never a bare <input>/<select>.
 // ---------------------------------------------------------------------------------------
 
-const ISLAND_FILES = [
-  "./login-form.tsx",
-  "./password-reset-request-form.tsx",
-  "./password-reset-confirm-form.tsx",
-] as const;
+const COMPONENT_DIR = new URL("./", import.meta.url);
+
+const ISLAND_FILES = readdirSync(COMPONENT_DIR, { encoding: "utf8" })
+  .filter((name) => /-form\.tsx$/.test(name))
+  .sort()
+  .map((name) => `./${name}`);
 
 describe("every island uses TextField/SelectField, never a bare control", () => {
+  it("discovers every real island — fails closed if the naming convention silently changes", () => {
+    expect(ISLAND_FILES.length).toBeGreaterThanOrEqual(5);
+    expect(ISLAND_FILES).toEqual(
+      expect.arrayContaining([
+        "./login-form.tsx",
+        "./password-reset-request-form.tsx",
+        "./password-reset-confirm-form.tsx",
+        "./register-form.tsx",
+        "./verify-email-form.tsx",
+      ]),
+    );
+  });
+
   it.each(ISLAND_FILES)("%s", (relativePath) => {
     const { ast } = parse(relativePath);
     const textFields = jsxElements(ast, "TextField");
@@ -173,6 +193,24 @@ describe("required autoComplete values are present", () => {
     expect(values).toContain("one-time-code");
     expect(values.filter((value) => value === "new-password").length).toBeGreaterThanOrEqual(2);
   });
+
+  it("register-form: given-name, family-name, tel, email, new-password (x2), one-time-code", () => {
+    const { ast } = parse("./register-form.tsx");
+    const values = jsxElements(ast, "TextField").map((el) => attrText(el, "autoComplete"));
+    expect(values).toContain("given-name");
+    expect(values).toContain("family-name");
+    expect(values).toContain("tel");
+    expect(values).toContain("email");
+    expect(values.filter((value) => value === "new-password").length).toBeGreaterThanOrEqual(2);
+    expect(values).toContain("one-time-code");
+  });
+
+  it("verify-email-form: email and one-time-code", () => {
+    const { ast } = parse("./verify-email-form.tsx");
+    const values = jsxElements(ast, "TextField").map((el) => attrText(el, "autoComplete"));
+    expect(values).toContain("email");
+    expect(values).toContain("one-time-code");
+  });
 });
 
 describe("a code field is never type=number (G4's revert-to-red control)", () => {
@@ -187,6 +225,24 @@ describe("a code field is never type=number (G4's revert-to-red control)", () =>
       (el) => attrText(el, "id") === "reset-new-code",
     );
     if (!field) throw new Error("reset-new-code field not found");
+    expect(attrText(field, "type")).toBe("text");
+  });
+
+  it("the register screen's step-2 verification-code field is type=text — the plan's own worked example", () => {
+    const { ast } = parse("./register-form.tsx");
+    const field = jsxElements(ast, "TextField").find(
+      (el) => attrText(el, "id") === "register-code",
+    );
+    if (!field) throw new Error("register-code field not found");
+    expect(attrText(field, "type")).toBe("text");
+  });
+
+  it("the standalone verify-email screen's code field is type=text", () => {
+    const { ast } = parse("./verify-email-form.tsx");
+    const field = jsxElements(ast, "TextField").find(
+      (el) => attrText(el, "id") === "verify-email-code",
+    );
+    if (!field) throw new Error("verify-email-code field not found");
     expect(attrText(field, "type")).toBe("text");
   });
 });

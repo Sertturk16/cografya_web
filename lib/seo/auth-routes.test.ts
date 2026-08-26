@@ -20,11 +20,16 @@ function fileSource(relativePath: string): string {
   return readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
 }
 
-const AUTH_PAGE_FILES = [
-  "../../app/[locale]/giris/page.tsx",
-  "../../app/[locale]/sifre-sifirlama/page.tsx",
-  "../../app/[locale]/sifre-sifirlama/yeni/page.tsx",
-] as const;
+/**
+ * DERIVED from `AUTH_PATHNAMES`, not hand-maintained (review `TEST85-M1`/`C3`; plan header
+ * item 5, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`). This mapping
+ * is exact, not a heuristic: `i18n/routing.ts`'s own rule is "the App Router directory is
+ * the TR (key) path in every case" (plan §4.1), so `/kayit` → `app/[locale]/kayit/page.tsx`
+ * always holds. A hand list silently stopped covering a new auth route the moment one
+ * shipped without a matching edit here — this can no longer happen: an entry added to
+ * `AUTH_PATHNAMES` produces its own scan target automatically.
+ */
+const AUTH_PAGE_FILES = AUTH_PATHNAMES.map((pathname) => `../../app/[locale]${pathname}/page.tsx`);
 
 describe("AUTH_PATHNAMES", () => {
   it("is non-empty", () => {
@@ -85,6 +90,10 @@ describe("app/sitemap.ts never lists an auth pathname", () => {
 });
 
 describe("every auth page calls buildAuthMetadata, never buildMetadata directly", () => {
+  it("AUTH_PAGE_FILES has one entry per AUTH_PATHNAMES — the derivation actually ran", () => {
+    expect(AUTH_PAGE_FILES).toHaveLength(AUTH_PATHNAMES.length);
+  });
+
   it.each(AUTH_PAGE_FILES)("%s", (relativePath) => {
     const source = fileSource(relativePath);
     expect(source).toMatch(/buildAuthMetadata\(/);

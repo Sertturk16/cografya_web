@@ -9,15 +9,19 @@ import { buildMetadata } from "@/lib/seo/metadata";
  * cannot get the surface wrong by forgetting an argument. Every auth page calls
  * {@link buildAuthMetadata} and NEVER calls `buildMetadata` directly (gate G1 pins this).
  *
- * `AUTH_PATHNAMES` carries only the three routes PR-1 ships (`/giris`,
- * `/sifre-sifirlama`, `/sifre-sifirlama/yeni`); PR-2 adds `/kayit` and
- * `/e-posta-dogrulama` to `i18n/routing.ts` and to this list together, in the same PR that
- * builds their pages.
+ * `AUTH_PATHNAMES` is the SINGLE canonical list of auth routes — `lib/seo/auth-routes.test.ts`
+ * derives its own page-file scan from this array rather than hand-maintaining a second one
+ * (review `TEST85-M1`/`C3`), so adding a route HERE is the only place-of-record edit a new
+ * auth screen needs on the SEO side. PR-1 shipped `/giris` + the two `/sifre-sifirlama`
+ * screens; PR-2 added `/kayit` and `/e-posta-dogrulama` here and to `i18n/routing.ts`
+ * together, in the same PR that built their pages.
  */
 export const AUTH_PATHNAMES = [
   "/giris",
   "/sifre-sifirlama",
   "/sifre-sifirlama/yeni",
+  "/kayit",
+  "/e-posta-dogrulama",
 ] as const satisfies readonly AppPathname[];
 
 export type AuthPathname = (typeof AUTH_PATHNAMES)[number];
