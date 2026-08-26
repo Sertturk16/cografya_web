@@ -136,3 +136,33 @@
   color: var(--color-slate);
   font-size: 0.9rem;
 }
+
+/* Visually-hidden but AT-readable — the district-list `aria-live="polite"` announcement
+   (plan §8, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`; PR-2). Same
+   shape as `components/site-search/site-search.module.css`'s `.srOnly` — one clip-path
+   technique, not a second one invented here. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The register form's step-2 code field and its resend action (plan §6.2 — PR-2). */
+.codeActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.resendNote {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}

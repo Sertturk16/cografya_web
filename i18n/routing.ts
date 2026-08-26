@@ -159,16 +159,15 @@ export const routing = defineRouting({
       tr: "/araclar/alan-hesaplama",
       en: "/tools/area",
     },
-    // The auth page shell — login and password reset (UYELIK-04 PR-1,
-    // `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md` §4.1). LOCALIZED
-    // segments, on the `/hakkimizda ↔ /en/about` precedent: none of these Turkish words
-    // reads as English, unlike `/turkiye`/`/dunya`.
+    // The auth page shell — login, password reset, registration and e-mail verification
+    // (UYELIK-04, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md` §4.1;
+    // PR-1 shipped the first three, PR-2 added the last two). LOCALIZED segments, on the
+    // `/hakkimizda ↔ /en/about` precedent: none of these Turkish words reads as English,
+    // unlike `/turkiye`/`/dunya`.
     //
-    // `/giris` and `/kayit` are `GLOSSARY.md` §7's canonical routes verbatim; only `/giris`
-    // lands here — `/kayit` and `/en/register` arrive in PR-2 with the register page, the
-    // same "a segment lands with its page" rule the CBS tool tier records for itself above.
+    // `/giris` and `/kayit` are `GLOSSARY.md` §7's canonical routes verbatim.
     //
-    // ALL THREE ARE `surface: "noindex"` (`lib/auth/auth-metadata.ts`'s `AUTH_SURFACE`) —
+    // ALL FIVE ARE `surface: "noindex"` (`lib/auth/auth-metadata.ts`'s `AUTH_SURFACE`) —
     // `noindex, follow` in both locales, never `Disallow` (`ENGINEERING.md` §4 #8). A
     // `noindex` page still must resolve to exactly ONE correct URL per locale, which is why
     // the segments are declared here even though nothing links to `/en/*` twins from an
@@ -187,6 +186,21 @@ export const routing = defineRouting({
     "/sifre-sifirlama/yeni": {
       tr: "/sifre-sifirlama/yeni",
       en: "/reset-password/new",
+    },
+    // `/kayit` lands with the register page (PR-2) — the same "a segment lands with its
+    // page" rule the CBS tool tier records for itself above; the footer's `Üye ol` link
+    // (`components/site-footer.tsx`) lands in the same PR.
+    "/kayit": {
+      tr: "/kayit",
+      en: "/register",
+    },
+    // `e-posta doğrulama` folded per `GLOSSARY.md` §5 (no `ş`/`ğ`/`ı`/`ö`/`ü` to fold here;
+    // only the spaces become hyphens). The bare noun, not `…-kodu`: `SEO-POLICY.md` §B4 4.7
+    // penalises a needless segment, not a needed one — "doğrulama" alone would not say what
+    // is verified, but "kodu" adds nothing "e-posta-dogrulama" doesn't already say (plan §4.1).
+    "/e-posta-dogrulama": {
+      tr: "/e-posta-dogrulama",
+      en: "/verify-email",
     },
   },
 });

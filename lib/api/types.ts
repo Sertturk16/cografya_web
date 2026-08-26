@@ -161,3 +161,31 @@ export type AccountRole = Session["accountRole"];
  *  in `messages/*.json`. Named `ApiErrorBody`, not `ApiError`: `lib/api/client.ts` already
  *  exports a class of that name, and importing both under one name would collide. */
 export type ApiErrorBody = components["schemas"]["ApiErrorDto"];
+/** The `register` request body (UYELIK-04 PR-2). `lib/auth/form-rules.ts`'s
+ *  `buildRegisterPayload` is the ONLY place this repo constructs one — see its own docblock
+ *  for why (the global pipe's `whitelist`+`forbidNonWhitelisted` rejects an undeclared key
+ *  BY NAME, `cografya_api` `src/main.ts:43-47`). */
+export type RegisterRequest = components["schemas"]["RegisterRequestDto"];
+
+// ---- Reference data (kayıt formunun il→ilçe / üniversite / bölüm listeleri — PR-2) --------
+/** One ilçe: `id` (the value `districtId` sends) + `nameTr`. Turkish-alphabetical, one
+ *  province at a time (`GET /api/reference/districts?plateCode=…`). */
+export type District = components["schemas"]["DistrictDto"];
+/** One university the registration form offers: `nameTr` + `type`. `type` decides the
+ *  `<optgroup>` the option renders under (`GLOSSARY.md` §7.2) — never shown to the reader
+ *  itself. */
+export type University = components["schemas"]["UniversityDto"];
+/** The four institution/place axes `UniversityDto.type` carries — see
+ *  `lib/auth/profile-labels.ts` for the derived `<optgroup>` heading each maps to. */
+export type UniversityType = University["type"];
+/** One bachelor-level programme name (`DepartmentDto.nameTr`) — a flat list, no grouping. */
+export type Department = components["schemas"]["DepartmentDto"];
+/** The three `gradeLevel` / `studyStream` / `educationLevel` closed enums `RegisterRequestDto`
+ *  carries, aliased as their own names rather than read inline at every call site —
+ *  `NonNullable` because all three are optional properties on the DTO (only `STUDENT`
+ *  profiles send them at all). `GLOSSARY.md` §4.4 is the canonical TR label source for the
+ *  first two; both enums' EN correspondences are `[TEYİT GEREK]` there, which is why
+ *  `lib/auth/profile-labels.ts` carries no `en` for either. */
+export type GradeLevel = NonNullable<RegisterRequest["gradeLevel"]>;
+export type StudyStream = NonNullable<RegisterRequest["studyStream"]>;
+export type EducationLevel = NonNullable<RegisterRequest["educationLevel"]>;

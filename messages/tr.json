@@ -47,7 +47,8 @@
     "note": "Yayınlanan veriler resmi kaynaklara (TÜİK, HGM, İçişleri, MGM) dayanır.",
     "copyright": "© {year} {siteName}. Tüm hakları saklıdır.",
     "authLabel": "Üyelik",
-    "login": "Giriş yap"
+    "login": "Giriş yap",
+    "register": "Üye ol"
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Türkiye ve Dünya Coğrafyası",
@@ -747,21 +748,65 @@
       "submit": "Şifreyi değiştir",
       "done": "Şifren değişti. Yeni şifrenle giriş yap."
     },
+    "register": {
+      "metaTitle": "Üye ol",
+      "metaDescription": "Coğrafya Platformu'na üye ol.",
+      "heading": "Üye ol",
+      "submit": "Üye ol"
+    },
+    "verify": {
+      "metaTitle": "E-posta doğrulama",
+      "metaDescription": "Hesabını doğrulamak için kodu gir.",
+      "heading": "E-posta doğrulama",
+      "submit": "Doğrula",
+      "resend": "Kodu yeniden gönder",
+      "resendAccepted": "İsteğin alındı."
+    },
     "fields": {
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "phone": "Telefon",
+      "phonePlaceholder": "5XX XXX XX XX",
       "email": "E-posta",
       "password": "Şifre",
       "passwordConfirm": "Şifre tekrar",
+      "userType": "Kullanıcı tipi",
+      "province": "İl",
+      "district": "İlçe",
+      "grade": "Sınıf",
+      "stream": "Alan",
+      "university": "Üniversite",
+      "department": "Bölüm",
+      "verificationCode": "Doğrulama kodu",
       "resetCode": "Sıfırlama kodu",
       "newPassword": "Yeni şifre"
     },
     "hints": {
       "newPassword": "En az 6 karakter; bir küçük harf, bir büyük harf ve bir rakam."
     },
+    "selectPlaceholder": "Seç",
+    "district": {
+      "selectProvinceFirst": "İl seç",
+      "loading": "Yükleniyor…",
+      "selectPlaceholder": "İlçe seç",
+      "loadError": "İlçeler yüklenemedi",
+      "announceCount": "{count} ilçe listelendi"
+    },
+    "university": {
+      "loading": "Yükleniyor…",
+      "loadError": "Üniversiteler yüklenemedi"
+    },
+    "department": {
+      "loading": "Yükleniyor…",
+      "loadError": "Bölümler yüklenemedi"
+    },
     "fieldErrors": {
       "required": "Bu alanı doldurman gerekiyor.",
       "emailInvalid": "Geçerli bir e-posta adresi gir.",
+      "phoneInvalid": "Geçerli bir telefon numarası gir (5XX XXX XX XX).",
       "passwordPolicy": "Şifre en az 6 karakter olmalı; bir küçük harf, bir büyük harf ve bir rakam içermeli.",
-      "passwordMismatch": "Şifreler eşleşmiyor. Aynı şifreyi iki alana da gir."
+      "passwordMismatch": "Şifreler eşleşmiyor. Aynı şifreyi iki alana da gir.",
+      "codeShape": "Kodu 6 haneli olarak gir."
     },
     "formErrors": {
       "summary": "Bazı alanları düzeltmen gerekiyor."

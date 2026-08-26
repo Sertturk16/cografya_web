@@ -1,8 +1,12 @@
+import type { Locale } from "@/i18n/routing";
+import type { GradeLevel, RegisterRequest, StudyStream } from "@/lib/api/types";
+
 /**
- * Client-side validation constants and the password-policy check (plan §4.3.2, parts 1 and
- * 2 of four — `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`). The
- * profile matrix and `buildRegisterPayload` (parts 3-4) land in PR-2 with the register
- * screen; this file's shape is fixed here so PR-2 only ADDS to it, never restructures it.
+ * Client-side validation constants, the password-policy check, the profile matrix and
+ * `buildRegisterPayload` (plan §4.3.2, all four parts —
+ * `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`). Parts 1-2 shipped in
+ * PR-1 with the constants only (unused there); parts 3-4 below land in PR-2 with the
+ * register screen, which is the first consumer of most of this file's constants.
  *
  * Every value below either mirrors a bound the committed `openapi/openapi.json` publishes
  * (proven equal by `form-rules.contract.test.ts`, gate G2 — the "constants half"; the
@@ -86,4 +90,144 @@ export function isPasswordPolicyCompliant(value: string): boolean {
     /[A-Z]/.test(value) &&
     /[0-9]/.test(value)
   );
+}
+
+/**
+ * TR mobile phone → the api's own canonical E.164 form ({@link PHONE_E164_PATTERN}). The
+ * field itself never asks for a country code (`5XX XXX XX XX`, `DEC 2026-08-20g` md.1 #3) —
+ * this folds the bare 10-digit form AND the two written forms the api's own canonicalisation
+ * also accepts (`0532…`, `90532…`) into the SAME shape the api ultimately stores, so the
+ * browser's own check exercises the real target shape rather than a looser proxy for it.
+ * Returns `null` when nothing recognisable comes out; the caller renders that as a shape
+ * error rather than guessing at a partial correction.
+ */
+export function canonicalizePhone(input: string): string | null {
+  const digits = input.replace(/[^0-9]/g, "");
+  const bare =
+    digits.startsWith("90") && digits.length === 12
+      ? digits.slice(2)
+      : digits.startsWith("0") && digits.length === 11
+        ? digits.slice(1)
+        : digits;
+  const candidate = `+90${bare}`;
+  return PHONE_E164_PATTERN.test(candidate) ? candidate : null;
+}
+
+/**
+ * The four values `DEC 2026-08-20g` md.1 #7 names for the "Kullanıcı tipi" control, spelled
+ * as an internal identifier rather than the contract's two axes (`accountRole` +
+ * `educationLevel`) because the CONTROL is one field with four options, not two — see
+ * `buildRegisterPayload` below for the split. `lib/auth/profile-labels.ts` holds the reader
+ * label for each (plan §4.3.3's copy deviation: the ruling's four values, disambiguated with
+ * `GLOSSARY.md` §7.1's terms).
+ */
+export type UserType = "secondary" | "undergraduate" | "graduate" | "teacher";
+
+/**
+ * The whole register-screen state `buildRegisterPayload` reads (plan §4.3.2 part 3, the
+ * profile matrix). `passwordConfirm` is UI-only — `DEC 2026-08-20g` md.1 #6 ("owner: olsun"),
+ * and `errors.register.passwordMismatch` was dropped at S6 precisely because there is no api
+ * field for it — and `buildRegisterPayload` never reads it below; it is part of this type
+ * only because the caller's whole form state naturally carries it, and gate G2's own
+ * revert-to-red mutation (plan §9) is "add `passwordConfirm` to the payload", which has to
+ * compile against a real property to be a meaningful mutation. `phone` is already
+ * canonicalised (see {@link canonicalizePhone}) by the time it reaches here; this function
+ * does not re-derive it. `gradeLevel`/`studyStream` carry `""` as their empty state (a
+ * native `<select>` always has SOME string value) — the caller's own validation is what
+ * guarantees a non-empty value for the branch that needs one, exactly as `readClientBody`'s
+ * "the browser is the validator" posture already requires (§4.3.2) elsewhere in this module.
+ */
+export interface RegisterFormState {
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly phone: string;
+  readonly email: string;
+  readonly password: string;
+  readonly passwordConfirm: string;
+  readonly userType: UserType;
+  readonly provincePlateCode: string;
+  readonly districtId: string;
+  readonly gradeLevel: GradeLevel | "";
+  readonly studyStream: StudyStream | "";
+  readonly universityName: string;
+  readonly departmentName: string;
+}
+
+/**
+ * The profile matrix (plan §3.3/§4.3.3, table verbatim in BEHAVIOUR from
+ * `src/auth/dto/profile-shape.rule.ts`, which the api enforces a SECOND time as a DB
+ * `CHECK`) — which extra fields each user type requires, forbids, or leaves optional:
+ *
+ * | user type      | `accountRole` | `educationLevel` | required                        | forbidden                   |
+ * |----------------|----------------|-------------------|----------------------------------|------------------------------|
+ * | secondary      | `STUDENT`      | `SECONDARY`       | `gradeLevel` + `studyStream`     | university, department      |
+ * | undergraduate  | `STUDENT`      | `UNDERGRADUATE`   | `universityName` + `departmentName` | grade, stream            |
+ * | graduate       | `STUDENT`      | `GRADUATE`        | `universityName`; department optional | grade, stream          |
+ * | teacher        | `TEACHER`      | *absent*          | —                                | every education field       |
+ *
+ * `buildRegisterPayload` is the ONLY function in this repo that constructs the `register`
+ * request body, and it emits exactly the keys the matrix's branch above allows and nothing
+ * else — the global pipe's `whitelist`+`forbidNonWhitelisted`
+ * (`cografya_api` `src/main.ts:43-47`) rejects an undeclared field BY NAME, so an extra key
+ * here is not a warning, it is a 400 (gate G2's payload-shape half pins this). `locale` is
+ * NOT a form field (the DTO's own description: "Form alanı değil — doğrulama e-postasının
+ * dili") — the caller supplies it from the page's own locale, never from `formState`. The
+ * `TEACHER` branch carries no `educationLevel` key AT ALL, not even `undefined`
+ * (`GLOSSARY.md` §7.1: "ek eğitim alanı taşımaz") — `common` below never declares that
+ * property, so the object literal genuinely has no such key, which is what a JS `in`/
+ * `Object.keys` check (and gate G2's own subset assertion) actually observes.
+ */
+export function buildRegisterPayload(
+  formState: RegisterFormState,
+  locale: Locale,
+): RegisterRequest {
+  const common = {
+    firstName: formState.firstName,
+    lastName: formState.lastName,
+    phone: formState.phone,
+    email: formState.email,
+    password: formState.password,
+    districtId: formState.districtId,
+    provincePlateCode: formState.provincePlateCode,
+    locale,
+  };
+
+  switch (formState.userType) {
+    case "secondary":
+      return {
+        ...common,
+        accountRole: "STUDENT",
+        educationLevel: "SECONDARY",
+        gradeLevel: formState.gradeLevel as GradeLevel,
+        studyStream: formState.studyStream as StudyStream,
+      };
+    case "undergraduate":
+      return {
+        ...common,
+        accountRole: "STUDENT",
+        educationLevel: "UNDERGRADUATE",
+        universityName: formState.universityName,
+        departmentName: formState.departmentName,
+      };
+    case "graduate": {
+      const base: RegisterRequest = {
+        ...common,
+        accountRole: "STUDENT",
+        educationLevel: "GRADUATE",
+        universityName: formState.universityName,
+      };
+      // Department stays OPTIONAL for a graduate profile (`DEC 2026-08-20h` md.1 reversed
+      // `20g`'s earlier "zorunlu") — an empty selection omits the key entirely rather than
+      // sending an empty string, matching how `TEACHER` omits `educationLevel` above.
+      return formState.departmentName.trim().length > 0
+        ? { ...base, departmentName: formState.departmentName }
+        : base;
+    }
+    case "teacher":
+      return { ...common, accountRole: "TEACHER" };
+    default: {
+      const exhaustive: never = formState.userType;
+      throw new Error(`buildRegisterPayload: unreachable user type ${String(exhaustive)}`);
+    }
+  }
 }
