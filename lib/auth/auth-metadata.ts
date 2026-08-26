@@ -26,7 +26,7 @@ export type AuthPathname = (typeof AUTH_PATHNAMES)[number];
  * De-indexed in BOTH locales, `noindex,follow`, self-canonical, no hreflang cluster, no
  * sitemap entry — `roadmap.md` UYELIK-04's SEO line and `DEC 2026-08-20i` md.5 (plan §4.2).
  */
-export const AUTH_SURFACE = "localized" as const satisfies ContentSurface;
+export const AUTH_SURFACE = "noindex" as const satisfies ContentSurface;
 
 export interface BuildAuthMetadataArgs {
   readonly locale: Locale;
