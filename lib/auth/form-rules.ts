@@ -34,7 +34,7 @@ export const EMAIL_MAX = 254;
  *  screen's NEW password enforces this through {@link isPasswordPolicyCompliant} below;
  *  `/giris`'s password field does NOT — an existing account may predate this policy, and
  *  the web has no way to know, so login only checks non-empty (plan §4.3.2). */
-export const PASSWORD_MIN = 6;
+export const PASSWORD_MIN = 8;
 
 /** `RegisterRequestDto.password.maxLength` — contract-derived, gate G2. */
 export const PASSWORD_MAX = 128;
