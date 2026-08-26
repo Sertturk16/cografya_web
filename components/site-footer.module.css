@@ -23,6 +23,20 @@
   margin: 0 0 10px;
 }
 
+.auth {
+  margin: 0 0 14px;
+}
+
+.authLink {
+  display: inline-flex;
+  align-items: center;
+  /* 44px CSS touch-target floor (WCAG 2.2 §2.5.5 AAA — `DESIGN.md` §5 takes the generous
+     number wherever there is room, and a footer link has room). */
+  min-height: 44px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
 .copyright {
   /* --color-slate (6.58:1 on --color-surface) not --color-taupe (3.21:1, sub-AA).
      Persistent footer text is not placeholder UI. */

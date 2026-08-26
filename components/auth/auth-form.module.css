@@ -1,0 +1,138 @@
+/* The whole auth form design language (plan §4/§8/§11,
+   `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`; `DESIGN.md` §2-§5).
+   `var(--token)` for everything with a token. The one literal is `#fff` on `.control`, the
+   established repo pattern for a plain white surface — there is no white token
+   (`--color-surface`/`--color-bg` are both a warm parchment tone), and the same literal is
+   named the same way in `tools.module.css` and `game-ui.module.css`. `ENGINEERING.md` §10
+   forbids hardcoding BRAND hex outside the token layer; `#fff` is not a brand colour, so this
+   is not that (review `CODE85-M4`/`CODE85-N4`) — this comment previously claimed a stricter
+   rule than the module actually holds itself to, which is the defect the review round
+   closed. */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  max-width: 28rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+/* 44 CSS px floor (WCAG 2.2 §2.5.5 AAA) — `DESIGN.md` §5 takes the generous number
+   wherever there is room, and a form control always has room. */
+.control {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  background: #fff;
+  color: var(--color-ink);
+}
+
+.control:focus-visible {
+  /* Inherits the global 3px accent ring (`app/globals.css` `:focus-visible`) — no override
+     here. This rule exists only so a browser's own UA-stylesheet border never wins the
+     cascade against the focus ring on a bordered control. */
+  border-color: var(--color-accent);
+}
+
+.control[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+/* Error text: `--color-danger` measures 4.90:1 on `--color-surface` (`DESIGN.md` §5's
+   verified table) — the darkest Terra background, and the one the hard semantic-colour rule
+   requires clearing. This module's `.card`/`.errorRegion` both sit on `--color-surface`, so
+   the measured pairing applies exactly as verified, not merely on a lighter panel. */
+.fieldError {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.errorRegion {
+  border: 1.5px solid var(--color-danger);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  background: var(--color-surface);
+}
+
+.errorHeading {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: var(--color-danger);
+}
+
+/* Focus-ring opt-in (Atlas ruling, `UYELIK-04-owner-review-ledger.md` §2.4; review
+   `VAL85-R2`/`A11Y85-I1`), at (0,2,0) exactly like `game-ui.module.css:28-32`'s
+   `.question:focus-visible`. `app/globals.css`'s `:where([tabindex="-1"]):focus-visible`
+   removes the ring at (0,1,0) for PAGE-SIZED programmatic targets, where a ring would draw
+   a box around the whole viewport — its own docblock names a module ring as the intended
+   escape hatch, not a violation of the exception. This heading is the opposite case:
+   component-sized (the card is `max-width: 28rem`), and the transition that moves focus
+   here is one the user did not initiate (a session check resolving, a submit's own
+   response) — exactly where a visible indicator is most needed, not least. */
+.errorHeading:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 6px;
+  border-radius: var(--radius);
+}
+
+.errorList {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.successHeading {
+  margin: 0 0 8px;
+}
+
+/* Same opt-in as `.errorHeading:focus-visible` above, same rationale, same (0,2,0) weight —
+   this selector covers all three programmatic success/status transitions that reuse this one
+   class: "already signed in", "logged out", and the two reset-flow success screens. */
+.successHeading:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 6px;
+  border-radius: var(--radius);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.secondaryLink {
+  font-size: 0.9rem;
+}
+
+.noscript {
+  color: var(--color-slate);
+  font-size: 0.9rem;
+}

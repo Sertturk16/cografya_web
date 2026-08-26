@@ -159,6 +159,35 @@ export const routing = defineRouting({
       tr: "/araclar/alan-hesaplama",
       en: "/tools/area",
     },
+    // The auth page shell — login and password reset (UYELIK-04 PR-1,
+    // `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md` §4.1). LOCALIZED
+    // segments, on the `/hakkimizda ↔ /en/about` precedent: none of these Turkish words
+    // reads as English, unlike `/turkiye`/`/dunya`.
+    //
+    // `/giris` and `/kayit` are `GLOSSARY.md` §7's canonical routes verbatim; only `/giris`
+    // lands here — `/kayit` and `/en/register` arrive in PR-2 with the register page, the
+    // same "a segment lands with its page" rule the CBS tool tier records for itself above.
+    //
+    // ALL THREE ARE `surface: "noindex"` (`lib/auth/auth-metadata.ts`'s `AUTH_SURFACE`) —
+    // `noindex, follow` in both locales, never `Disallow` (`ENGINEERING.md` §4 #8). A
+    // `noindex` page still must resolve to exactly ONE correct URL per locale, which is why
+    // the segments are declared here even though nothing links to `/en/*` twins from an
+    // indexable page.
+    "/giris": {
+      tr: "/giris",
+      en: "/login",
+    },
+    // `sifre sıfırlama` folded per `GLOSSARY.md` §5 (`ş→s`, `ı→i`). The confirm step is
+    // `/sifre-sifirlama/yeni`, NOT `/sifre-sifirlama/onay` — `GLOSSARY.md` §7 records that
+    // *onay* carries a different, KVKK-specific meaning and must not be reused here.
+    "/sifre-sifirlama": {
+      tr: "/sifre-sifirlama",
+      en: "/reset-password",
+    },
+    "/sifre-sifirlama/yeni": {
+      tr: "/sifre-sifirlama/yeni",
+      en: "/reset-password/new",
+    },
   },
 });
 
