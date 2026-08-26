@@ -99,7 +99,7 @@
    response) — exactly where a visible indicator is most needed, not least. */
 .errorHeading:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 4px;
+  outline-offset: 6px;
   border-radius: var(--radius);
 }
 
@@ -117,7 +117,7 @@
    class: "already signed in", "logged out", and the two reset-flow success screens. */
 .successHeading:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 4px;
+  outline-offset: 6px;
   border-radius: var(--radius);
 }
 
