@@ -4,11 +4,21 @@ import { describe, expect, it } from "vitest";
 
 /**
  * G5 (plan §9, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`): no
- * source under `components/auth/**` or `lib/auth/{submit.client,form-rules,profile-labels}.ts`
- * references `localStorage`, `sessionStorage`, `indexedDB`, `document.cookie` or `caches` —
- * the mechanism behind the acceptance line "no token and no PII in browser storage" (plan
- * §12 #2). `profile-labels.ts` lands in PR-2 with the register form and is added to
- * `LIB_FILES` in that PR, not scanned here as a not-yet-existing path.
+ * source under `components/auth/**` or
+ * `lib/auth/{submit.client,form-rules,error-messages,redirect,profile-labels}.ts` references
+ * `localStorage`, `sessionStorage`, `indexedDB`, `document.cookie` or `caches` — the
+ * mechanism behind the acceptance line "no token and no PII in browser storage" (plan §12
+ * #2). `profile-labels.ts` lands in PR-2 with the register form and is added to `LIB_FILES`
+ * in that PR, not scanned here as a not-yet-existing path.
+ *
+ * `error-messages.ts` and `redirect.ts` (review `VAL85-V1`/`SEC85-M1`, and the same
+ * reasoning extended here to `redirect.ts` once `submit.client.ts` imports `safeReturnPath`
+ * from it — `VAL85-M1`): both are genuinely part of the browser bundle (no `server-only`,
+ * imported as VALUES by a `"use client"` module), so they belong in the audited surface even
+ * though `LIB_FILES` was never extended to name them when they were added. The original gap
+ * was not a live leak — both are plain, DOM-free code — but the scope this file's own
+ * `describe` title promises ("no browser storage under the auth surface") should match what
+ * it actually scans.
  *
  * Comments are stripped before matching (the `nav-disclosure.test.ts` pattern): this file's
  * own docblock and `submit.client.ts`'s own docblock both name the banned tokens in PROSE,
@@ -18,7 +28,12 @@ import { describe, expect, it } from "vitest";
 const COMPONENT_DIR = new URL("./", import.meta.url);
 const SELF = "no-browser-storage.test.ts";
 
-const LIB_FILES = ["submit.client.ts", "form-rules.ts"] as const;
+const LIB_FILES = [
+  "submit.client.ts",
+  "form-rules.ts",
+  "error-messages.ts",
+  "redirect.ts",
+] as const;
 
 function stripComments(source: string): string {
   return source

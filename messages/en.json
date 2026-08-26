@@ -661,7 +661,8 @@
       "submit": "Log in",
       "forgot": "Forgot your password?",
       "alreadySignedIn": "You are already logged in.",
-      "logout": "Log out"
+      "logout": "Log out",
+      "loggedOut": "You are logged out."
     },
     "reset": {
       "metaTitle": "Password reset",

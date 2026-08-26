@@ -730,7 +730,8 @@
       "submit": "Giriş yap",
       "forgot": "Şifreni mi unuttun?",
       "alreadySignedIn": "Zaten giriş yaptın.",
-      "logout": "Oturumu kapat"
+      "logout": "Oturumu kapat",
+      "loggedOut": "Oturumu kapattın."
     },
     "reset": {
       "metaTitle": "Şifre sıfırlama",

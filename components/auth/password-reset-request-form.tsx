@@ -3,14 +3,11 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { AUTH_ERROR_MESSAGE_KEYS } from "@/lib/auth/error-messages";
-import { EMAIL_MAX } from "@/lib/auth/form-rules";
+import { EMAIL_SHAPE, EMAIL_MAX } from "@/lib/auth/form-rules";
 import { submitAuth } from "@/lib/auth/submit.client";
 import type { AuthBffCode } from "@/lib/auth/transport.server";
 import { FormErrorRegion, TextField } from "./field";
 import styles from "./auth-form.module.css";
-
-/** Same rough client-side shape check `login-form.tsx` uses — see that file's comment. */
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface FieldErrors {
   email?: string;

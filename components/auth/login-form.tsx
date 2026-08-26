@@ -1,24 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+// Deliberately NOT `@/i18n/navigation`'s `useRouter` (review `CODE85-M5`): the value passed
+// to `router.replace()` below is the BFF's `safeReturnPath()` output, a final path with its
+// locale prefix already resolved (`/` or `/en/...`, never a bare next-intl pathname key).
+// next-intl's `useRouter` would apply a SECOND locale prefix on top of that, sending an EN
+// visitor to the wrong address — so the plain Next router is the correct one here, not an
+// oversight of the "always import from `@/i18n/navigation`" rule.
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { AUTH_ERROR_MESSAGE_KEYS } from "@/lib/auth/error-messages";
-import { EMAIL_MAX, PASSWORD_MAX } from "@/lib/auth/form-rules";
-import { submitAuth } from "@/lib/auth/submit.client";
+import { EMAIL_SHAPE, EMAIL_MAX, PASSWORD_MAX } from "@/lib/auth/form-rules";
+import { AUTH_FETCH_TIMEOUT_MS, submitAuth } from "@/lib/auth/submit.client";
 // Type-only: erased at compile time (SWC elides `import type`), so this never pulls the
 // `import "server-only"` side effect into the client bundle — the same pattern
 // `error-messages.ts` already uses for the same type.
 import type { AuthBffCode } from "@/lib/auth/transport.server";
 import { FormErrorRegion, TextField } from "./field";
 import styles from "./auth-form.module.css";
-
-/** A rough client-side shape check, deliberately NOT the api's ASCII/format rules
- *  (`EMAIL_ASCII_PATTERN` in `lib/auth/form-rules.ts`) — this only catches an obviously
- *  malformed address before a submission reaches the api, which stays the real validator. */
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * `?returnTo=` off the CURRENT url, read the way `search-combobox.tsx`'s hydration gate
@@ -54,6 +55,7 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
 
   const [sessionState, setSessionState] = useState<SessionState>("checking");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [justLoggedOut, setJustLoggedOut] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -61,23 +63,38 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
   const [submitting, setSubmitting] = useState(false);
 
   const errorHeadingRef = useRef<HTMLHeadingElement>(null);
+  const signedInHeadingRef = useRef<HTMLHeadingElement>(null);
+  const loggedOutHeadingRef = useRef<HTMLHeadingElement>(null);
 
   // Session check — read-only, never stores or renders `firstName` (plan §6.2). "Anything
   // other than a 200" (including 401 and a network failure) is treated identically to "no
   // session": the form renders. The pre-hydration render already shows the form (the static
   // shell never calls `getSession()`), so this effect only ever SWAPS to the signed-in state
-  // after mount — it can never introduce a hydration mismatch.
+  // after mount — it can never introduce a hydration mismatch. Bounded by the same
+  // `AUTH_FETCH_TIMEOUT_MS` budget `submitAuth` uses (review `VAL85-V3`/`SEC85-M3`): this was
+  // the repo's other unbounded browser `fetch`, and the abort also runs on unmount so a slow
+  // response never calls `setSessionState` after the component is gone.
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/auth/session", { method: "GET", credentials: "same-origin", cache: "no-store" })
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), AUTH_FETCH_TIMEOUT_MS);
+    fetch("/api/auth/session", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    })
       .then((res) => {
         if (!cancelled) setSessionState(res.status === 200 ? "authenticated" : "anonymous");
       })
       .catch(() => {
         if (!cancelled) setSessionState("anonymous");
-      });
+      })
+      .finally(() => clearTimeout(timeout));
     return () => {
       cancelled = true;
+      controller.abort();
+      clearTimeout(timeout);
     };
   }, []);
 
@@ -88,10 +105,30 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
   // failure while the region is already mounted does not need a second focus move to be
   // announced: `role="alert"` is an implicit assertive live region, so a text change inside
   // an already-present alert element is announced on its own (WCAG 4.1.3) without stealing
-  // focus a second time from wherever the user has since moved it.
+  // focus a second time from wherever the user has since moved it. Left UNCHANGED by
+  // `VAL85-R1`: the authenticated branch below now mounts a real `FormErrorRegion` node, so
+  // this effect (previously a no-op there — `errorHeadingRef.current` was `null`) starts
+  // working for that branch on its own, with no edit needed here.
   useEffect(() => {
     if (hasErrors) errorHeadingRef.current?.focus();
   }, [hasErrors]);
+
+  // Forward direction (review `VAL85-R2`/`A11Y85-I1`): the anonymous↔authenticated swap moves
+  // no focus and announces nothing on its own — this closes the anonymous → authenticated leg.
+  useEffect(() => {
+    if (sessionState === "authenticated") signedInHeadingRef.current?.focus();
+  }, [sessionState]);
+
+  // Reverse direction, the second half of the same class (`VAL85-R2` part (2), Atlas-ruled
+  // as option (a) in the dispatch): a successful logout also swaps the whole card's content
+  // in place, and that transition is exactly as uninitiated-by-navigation as the forward one.
+  // Rendered as a short confirmation heading ABOVE the form once it reappears, using the same
+  // `.successHeading` class (and the same focus-ring opt-in, `auth-form.module.css`) the
+  // "already signed in" heading and the two reset-flow success screens use — one selector,
+  // not a fourth bespoke one.
+  useEffect(() => {
+    if (justLoggedOut) loggedOutHeadingRef.current?.focus();
+  }, [justLoggedOut]);
 
   function validate(): FieldErrors {
     const next: FieldErrors = {};
@@ -104,6 +141,7 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setServerErrorCode(null);
+    setJustLoggedOut(false);
     const errors = validate();
     setFieldErrors(errors);
     if (errors.email !== undefined || errors.password !== undefined) return;
@@ -112,7 +150,11 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
     const result = await submitAuth(
       "login",
       { email, password },
-      { returnTo: rawReturnTo ?? fallbackHome },
+      // `||`, not `??` (review `CODE85-M2`): `?returnTo=` (present but empty) parses to `""`,
+      // not `null` — a nullish check lets the empty string through and skips the fallback,
+      // reopening the "English visitor lands on the Turkish home page" bug the plan names
+      // (§4.5). A falsy check catches both the absent and the empty-string case.
+      { returnTo: rawReturnTo || fallbackHome },
     );
     setSubmitting(false);
 
@@ -123,17 +165,37 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
     setServerErrorCode(result.code);
   }
 
+  // `VAL85-R1` (aliases `CODE85-I1`) — the original two-line remedy was measured HARMFUL: it
+  // wrote `serverErrorCode` while staying on the `authenticated` branch, which (before this
+  // fix) rendered no `FormErrorRegion` at all, so nothing appeared and the code was never
+  // cleared — a LATER successful logout would then reopen the form carrying the previous
+  // attempt's stale error box. The `setServerErrorCode(null)` below is the line that closes
+  // that stale-error state; it is not optional cleanup.
   async function handleLogout() {
+    setServerErrorCode(null);
     setLoggingOut(true);
-    await submitAuth("logout", {});
+    const result = await submitAuth("logout", {});
     setLoggingOut(false);
-    setSessionState("anonymous");
+    if (result.ok) {
+      setSessionState("anonymous");
+      setJustLoggedOut(true);
+      return;
+    }
+    setServerErrorCode(result.code);
   }
 
   if (sessionState === "authenticated") {
     return (
       <div className={styles.card}>
-        <p>{t("login.alreadySignedIn")}</p>
+        {serverErrorCode !== null ? (
+          <FormErrorRegion
+            headingRef={errorHeadingRef}
+            summary={t(AUTH_ERROR_MESSAGE_KEYS[serverErrorCode])}
+          />
+        ) : null}
+        <h2 ref={signedInHeadingRef} tabIndex={-1} className={styles.successHeading}>
+          {t("login.alreadySignedIn")}
+        </h2>
         <button
           type="button"
           className="btn btn-primary"
@@ -159,6 +221,11 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
 
   return (
     <div className={styles.card}>
+      {justLoggedOut ? (
+        <h2 ref={loggedOutHeadingRef} tabIndex={-1} className={styles.successHeading}>
+          {t("login.loggedOut")}
+        </h2>
+      ) : null}
       <form className={styles.form} onSubmit={(event) => void handleSubmit(event)} noValidate>
         {hasErrors ? (
           <FormErrorRegion

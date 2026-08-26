@@ -30,6 +30,14 @@ export const LAST_NAME_MAX = 100;
  *  screen that carries an e-mail field. */
 export const EMAIL_MAX = 254;
 
+/** A rough client-side shape check, deliberately NOT the api's ASCII/format rules
+ *  ({@link EMAIL_ASCII_PATTERN} below) — this only catches an obviously malformed address
+ *  before a submission reaches the api, which stays the real validator. No gate: it is a
+ *  UX check, not a contract-derived bound. Moved here (review `CODE85-N1`) from two
+ *  byte-identical copies in `login-form.tsx` and `password-reset-request-form.tsx`, the one
+ *  module every screen carrying an e-mail field already imports from. */
+export const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /** `RegisterRequestDto.password.minLength` — contract-derived, gate G2. The reset-confirm
  *  screen's NEW password enforces this through {@link isPasswordPolicyCompliant} below;
  *  `/giris`'s password field does NOT — an existing account may predate this policy, and

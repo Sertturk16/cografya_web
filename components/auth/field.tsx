@@ -17,6 +17,14 @@ import styles from "./auth-form.module.css";
  * Every auth island imports these two components and never writes a bare `<input>` /
  * `<select>` — the wiring exists once, and gate G4 (`auth-a11y.structure.test.ts`) pins
  * that it stays that way.
+ *
+ * The "CANNOT render" claim above is enforced at COMPILE time (review `CODE85-M1`): the
+ * prop types omit `id`, `aria-invalid`, `aria-describedby` and `className` from the spread
+ * rest, not only `id`. Omitting only `id` (PR-1's original shape) left the other three
+ * accepted by the type and silently overridden by `{...control}`, which is spread LAST — no
+ * PR-1 caller happened to pass any of them, so nothing broke yet, but nothing stopped a
+ * future one from doing so past gate G4 either (G4 only inspects this file's own source, not
+ * a caller overriding it at the JSX boundary).
  */
 
 function describedBy(hintId: string | undefined, errorId: string | undefined): string | undefined {
@@ -31,7 +39,11 @@ interface FieldChromeProps {
   readonly hint?: string;
 }
 
-type TextFieldProps = FieldChromeProps & Omit<InputHTMLAttributes<HTMLInputElement>, "id">;
+type TextFieldProps = FieldChromeProps &
+  Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    "id" | "aria-invalid" | "aria-describedby" | "className"
+  >;
 
 export function TextField({ id, label, error, hint, ...control }: TextFieldProps) {
   const hintId = hint !== undefined ? `${id}-hint` : undefined;
@@ -64,7 +76,10 @@ export function TextField({ id, label, error, hint, ...control }: TextFieldProps
 }
 
 type SelectFieldProps = FieldChromeProps &
-  Omit<SelectHTMLAttributes<HTMLSelectElement>, "id"> & {
+  Omit<
+    SelectHTMLAttributes<HTMLSelectElement>,
+    "id" | "aria-invalid" | "aria-describedby" | "className"
+  > & {
     readonly children: ReactNode;
   };
 

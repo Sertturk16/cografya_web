@@ -196,9 +196,22 @@ describe("a code field is never type=number (G4's revert-to-red control)", () =>
 // ---------------------------------------------------------------------------------------
 
 describe("auth-form.module.css never sets outline: none", () => {
+  const cssPath = fileURLToPath(new URL("./auth-form.module.css", import.meta.url));
+  const css = readFileSync(cssPath, "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+
   it("no rule disables the focus ring", () => {
-    const cssPath = fileURLToPath(new URL("./auth-form.module.css", import.meta.url));
-    const css = readFileSync(cssPath, "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
     expect(css).not.toMatch(/outline\s*:\s*none/);
+  });
+
+  // Atlas ruling, `UYELIK-04-owner-review-ledger.md` §2.4 / review `VAL85-R2` part (3): the
+  // auth forms opt back in to a visible ring on their two programmatic, tabIndex={-1}
+  // headings, at (0,2,0) — the `game-ui.module.css` `.question:focus-visible` escape hatch
+  // `app/globals.css`'s no-ring exception itself names as the intended use.
+  it("the error heading opts back into a visible focus ring", () => {
+    expect(css).toMatch(/\.errorHeading:focus-visible\s*\{[^}]*outline\s*:\s*2px solid/);
+  });
+
+  it("the success heading opts back into a visible focus ring", () => {
+    expect(css).toMatch(/\.successHeading:focus-visible\s*\{[^}]*outline\s*:\s*2px solid/);
   });
 });
