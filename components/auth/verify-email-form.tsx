@@ -194,7 +194,9 @@ export function VerifyEmailForm({ locale }: { readonly locale: Locale }) {
           </button>
         </div>
         {resendState === "sent" ? (
-          <p className={styles.resendNote}>{t("verify.resendAccepted")}</p>
+          <p role="status" className={styles.resendNote}>
+            {t("verify.resendAccepted")}
+          </p>
         ) : null}
         <noscript>
           <p className={styles.noscript}>{t("noscript")}</p>

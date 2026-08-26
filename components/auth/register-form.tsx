@@ -240,10 +240,10 @@ export function RegisterForm({
   // University/department are fetched LAZILY, the first time a user type that needs them is
   // chosen, then kept for the life of the page (plan §4.4) — the SAME render-time transition
   // plus fetch-only-effect split as the district list above.
-  if (NEEDS_UNIVERSITY_PROFILE.has(userType as UserType) && universityState === "idle") {
+  if (userType !== "" && NEEDS_UNIVERSITY_PROFILE.has(userType) && universityState === "idle") {
     setUniversityState("loading");
   }
-  if (NEEDS_UNIVERSITY_PROFILE.has(userType as UserType) && departmentState === "idle") {
+  if (userType !== "" && NEEDS_UNIVERSITY_PROFILE.has(userType) && departmentState === "idle") {
     setDepartmentState("loading");
   }
 
@@ -440,7 +440,9 @@ export function RegisterForm({
             </button>
           </div>
           {resendState === "sent" ? (
-            <p className={styles.resendNote}>{t("verify.resendAccepted")}</p>
+            <p role="status" className={styles.resendNote}>
+              {t("verify.resendAccepted")}
+            </p>
           ) : null}
         </form>
       </div>
@@ -459,6 +461,15 @@ export function RegisterForm({
       : districtState === "error"
         ? t("district.loadError")
         : "";
+  // A11Y87-M1: the university/department lists follow the SAME side-effect-of-a-still-
+  // standing-control pattern as the district list above, but had no live region at all —
+  // only the <option> text, which is unread unless the user has already tabbed to that
+  // exact <select>. Error-only (not a "loaded" announcement): unlike the district list, the
+  // count here does not depend on anything the user just chose, so there is no
+  // `announceCount`-equivalent copy to reuse — reusing the already-shipped `loadError`
+  // strings keeps this fix free of new copy / CONTENT-STYLE surface.
+  const universityAnnouncement = universityState === "error" ? t("university.loadError") : "";
+  const departmentAnnouncement = departmentState === "error" ? t("department.loadError") : "";
 
   const nonKktcUniversities = universities.filter((university) => university.type !== "KKTC");
   const kktcUniversities = universities.filter((university) => university.type === "KKTC");
@@ -670,6 +681,12 @@ export function RegisterForm({
                 </>
               )}
             </SelectField>
+            <p aria-live="polite" className={styles.srOnly}>
+              {universityAnnouncement}
+            </p>
+            <p aria-live="polite" className={styles.srOnly}>
+              {departmentAnnouncement}
+            </p>
           </>
         ) : null}
 

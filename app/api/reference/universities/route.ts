@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { CONTENT_REVALIDATE_SECONDS } from "@/lib/api/client";
+import { CONTENT_REVALIDATE_SECONDS, PUBLIC_REFERENCE_CACHE_CONTROL } from "@/lib/api/client";
 import { getUniversitiesResilient } from "@/lib/reference/reference.server";
 
 /**
@@ -18,7 +18,7 @@ export async function GET() {
     headers: {
       // Public reference data — no cookie, no PII, nothing user-specific — so a shared cache
       // is correct. Mirrors `/api/search-index/{locale}`'s own header exactly.
-      "Cache-Control": `public, max-age=300, s-maxage=${CONTENT_REVALIDATE_SECONDS}, stale-while-revalidate=86400`,
+      "Cache-Control": PUBLIC_REFERENCE_CACHE_CONTROL,
     },
   });
 }

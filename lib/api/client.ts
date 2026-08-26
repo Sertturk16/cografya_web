@@ -11,6 +11,18 @@ import { buildApiRequestHeaders, describeThrottleExemption } from "./internal-to
 export const CONTENT_REVALIDATE_SECONDS = 3600;
 
 /**
+ * CODE87-N3: the shared `Cache-Control` value every public, cookie-free content route on
+ * this window uses — a short browser `max-age` (re-navigating within it never re-fetches)
+ * plus a shared-cache `s-maxage` pinned to {@link CONTENT_REVALIDATE_SECONDS}, so the header
+ * cannot drift out of step with the ISR window it describes. Scoped to the three
+ * `/api/reference/*` routes this PR adds (`departments`, `districts/[plateCode]`,
+ * `universities`) — `/api/search-index/[locale]/route.ts` predates this constant and still
+ * carries its own byte-identical literal; folding it in too is a follow-up, deliberately
+ * left out of this fix round to avoid touching a file this PR did not otherwise change.
+ */
+export const PUBLIC_REFERENCE_CACHE_CONTROL = `public, max-age=300, s-maxage=${CONTENT_REVALIDATE_SECONDS}, stale-while-revalidate=86400`;
+
+/**
  * Wall-clock budget for ONE api request, network + body read (`AbortController`).
  *
  * WHY IT EXISTS (→ PR #61 review `SEC61-M6`). `fetch` has no default timeout: a connected
