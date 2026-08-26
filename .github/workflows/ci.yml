@@ -49,8 +49,7 @@ jobs:
       # place markers in the same coordinate space as the 81 outlines. A hand-edit there
       # silently offsets every marker and cannot be reproduced from the source GeoJSON, so
       # the regenerate-and-diff check that the code comments promise runs here. Pure node,
-      # no network, ~1s. NOTE: `codegen:check` is the repo's remaining unwired artifact
-      # gate — a separate CI-tooling change.
+      # no network, ~1s.
       - name: Map artifact drift
         run: pnpm generate:map:check
 
@@ -72,6 +71,16 @@ jobs:
       # network step, `scripts/fetch-tr-inland-water.mjs`, is deliberately NOT a pnpm script).
       - name: Inland water artifact drift
         run: pnpm generate:water:check
+
+      # `lib/api/schema.ts` is codegen output (`openapi-typescript` over the committed
+      # `openapi/openapi.json`) and is the web half of the cross-repo DTO contract
+      # (`CONVENTIONS.md` §3). Until UYELIK-03 nothing consumed it at runtime, so the drift
+      # gate could stay unwired; the auth transport consumes it, so a spec copied without a
+      # regenerate — or a hand-edit in the generated file — must fail here rather than at a
+      # runtime type that silently disagrees with the api. Pure node, no network.
+      # Verified byte-reproducible at web `dev` 608922f before wiring (plan §2 M7).
+      - name: OpenAPI codegen drift
+        run: pnpm codegen:check
 
   test:
     name: Unit Tests
