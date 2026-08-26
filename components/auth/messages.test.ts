@@ -63,10 +63,21 @@ const catalogues = { tr: trMessages.Auth, en: enMessages.Auth } as const;
  * `useTranslations("Auth")` / `getTranslations("Auth")` (client components, and the second
  * call inside every auth page's own body) and the object-argument
  * `getTranslations({ locale, namespace: "Auth" })` (every auth page's `generateMetadata`).
+ *
+ * Two regexes on purpose. `AUTH_NAMESPACE_CALL` hardcodes the literal `"Auth"` — the
+ * `site-nav/messages.test.ts` precedent (`/(?:use|get)Translations\("Nav"\)/`) — and is
+ * the ONLY one used to select which files are Auth consumers; a generic
+ * `"([^"]+)"`-capturing regex used for that same filter would match every OTHER
+ * namespace's call too (measured: it did, on first write of this file — `Breadcrumb`,
+ * `Common`, `Footer`, … all matched and then failed the "only Auth" assertion). The
+ * capturing `NAMESPACE_CALL_GLOBAL` is used ONLY afterwards, to enumerate every
+ * `Translations(...)` call inside a file THAT ALREADY PASSED the Auth-only filter, so a
+ * file mixing `Auth` with a second namespace still gets caught.
  */
-const NAMESPACE_CALL =
-  /(?:use|get)Translations\(\s*(?:"([^"]+)"|\{\s*locale,\s*namespace:\s*"([^"]+)"\s*\})\s*\)/;
-const NAMESPACE_CALL_GLOBAL = new RegExp(NAMESPACE_CALL.source, "g");
+const AUTH_NAMESPACE_CALL =
+  /(?:use|get)Translations\(\s*(?:"Auth"|\{\s*locale,\s*namespace:\s*"Auth"\s*\})\s*\)/;
+const NAMESPACE_CALL_GLOBAL =
+  /(?:use|get)Translations\(\s*(?:"([^"]+)"|\{\s*locale,\s*namespace:\s*"([^"]+)"\s*\})\s*\)/g;
 
 const ROOTS = [
   { label: "components", url: new URL("../", import.meta.url) },
@@ -86,7 +97,7 @@ const consumerSources = ROOTS.flatMap(({ label, url }) =>
         " ",
       ),
     }))
-    .filter(({ source }) => NAMESPACE_CALL.test(source)),
+    .filter(({ source }) => AUTH_NAMESPACE_CALL.test(source)),
 );
 
 describe("Auth message catalogue", () => {
