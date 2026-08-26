@@ -192,7 +192,7 @@ export function PasswordResetConfirmForm() {
         <TextField
           id="reset-new-code"
           label={t("fields.resetCode")}
-          type="text"
+          type="number"
           autoComplete="one-time-code"
           required
           value={resetToken}
