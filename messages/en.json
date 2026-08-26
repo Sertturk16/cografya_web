@@ -45,7 +45,9 @@
   "Footer": {
     "tagline": "A free, open geography education platform.",
     "note": "Published data is based on official sources (TÜİK, HGM, Ministry of Interior, MGM).",
-    "copyright": "© {year} {siteName}. All rights reserved."
+    "copyright": "© {year} {siteName}. All rights reserved.",
+    "authLabel": "Membership",
+    "login": "Log in"
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Geography of Türkiye and the World",
@@ -649,6 +651,66 @@
       "south": "S",
       "east": "E",
       "west": "W"
+    }
+  },
+  "Auth": {
+    "login": {
+      "metaTitle": "Log in",
+      "metaDescription": "Log in to your Coğrafya Platformu account.",
+      "heading": "Log in",
+      "submit": "Log in",
+      "forgot": "Forgot your password?",
+      "alreadySignedIn": "You are already logged in.",
+      "logout": "Log out"
+    },
+    "reset": {
+      "metaTitle": "Password reset",
+      "metaDescription": "Enter your e-mail address to reset your password.",
+      "heading": "Password reset",
+      "submit": "Send the link",
+      "accepted": "If the address is registered, a reset e-mail has been sent."
+    },
+    "resetNew": {
+      "metaTitle": "New password",
+      "metaDescription": "Set your new password.",
+      "heading": "New password",
+      "submit": "Change the password",
+      "done": "Your password has changed. Log in with the new one."
+    },
+    "fields": {
+      "email": "E-mail",
+      "password": "Password",
+      "passwordConfirm": "Confirm password",
+      "resetCode": "Reset code",
+      "newPassword": "New password"
+    },
+    "hints": {
+      "newPassword": "At least 6 characters, with one lowercase letter, one uppercase letter and one digit."
+    },
+    "fieldErrors": {
+      "required": "This field is required.",
+      "emailInvalid": "Enter a valid e-mail address.",
+      "passwordPolicy": "The password must be at least 6 characters, with one lowercase letter, one uppercase letter and one digit.",
+      "passwordMismatch": "The passwords do not match. Enter the same password in both fields."
+    },
+    "formErrors": {
+      "summary": "Some fields need fixing."
+    },
+    "noscript": "This screen needs JavaScript to work.",
+    "errors": {
+      "invalidCredentials": "The e-mail or password is wrong. Try again.",
+      "emailNotVerified": "This account's e-mail is not verified. Enter the code on the verification screen.",
+      "accountDisabled": "This account is unavailable. Get in touch with us.",
+      "tooManyAttempts": "Too many attempts. Try again in a little while.",
+      "rateLimited": "There are too many requests right now. Try again in a little while.",
+      "codeInvalid": "The code was not accepted. Ask for a new code, or try logging in.",
+      "resetTokenInvalid": "This reset code is invalid or has expired. Ask for a new one.",
+      "invalidRequest": "The form could not be submitted. Check the fields and try again.",
+      "forbidden": "The request was refused. Reload the page and try again.",
+      "unavailable": "We cannot connect right now. Try again in a little while.",
+      "unauthenticated": "No session was found.",
+      "sessionExpired": "Your session has expired. Log in again.",
+      "weakPassword": "The password does not meet the requirements."
     }
   },
   "NotFound": {

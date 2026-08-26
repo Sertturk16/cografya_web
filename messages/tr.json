@@ -45,7 +45,9 @@
   "Footer": {
     "tagline": "Ücretsiz, açık coğrafya eğitim platformu.",
     "note": "Yayınlanan veriler resmi kaynaklara (TÜİK, HGM, İçişleri, MGM) dayanır.",
-    "copyright": "© {year} {siteName}. Tüm hakları saklıdır."
+    "copyright": "© {year} {siteName}. Tüm hakları saklıdır.",
+    "authLabel": "Üyelik",
+    "login": "Giriş yap"
   },
   "Home": {
     "metaTitle": "Coğrafya Platformu — Türkiye ve Dünya Coğrafyası",
@@ -718,6 +720,66 @@
       "south": "G",
       "east": "D",
       "west": "B"
+    }
+  },
+  "Auth": {
+    "login": {
+      "metaTitle": "Giriş yap",
+      "metaDescription": "Coğrafya Platformu hesabına giriş yap.",
+      "heading": "Giriş yap",
+      "submit": "Giriş yap",
+      "forgot": "Şifreni mi unuttun?",
+      "alreadySignedIn": "Zaten giriş yaptın.",
+      "logout": "Oturumu kapat"
+    },
+    "reset": {
+      "metaTitle": "Şifre sıfırlama",
+      "metaDescription": "Şifreni sıfırlamak için e-posta adresini gir.",
+      "heading": "Şifre sıfırlama",
+      "submit": "Bağlantı gönder",
+      "accepted": "Adres kayıtlıysa sıfırlama e-postası gönderildi."
+    },
+    "resetNew": {
+      "metaTitle": "Yeni şifre",
+      "metaDescription": "Yeni şifreni belirle.",
+      "heading": "Yeni şifre",
+      "submit": "Şifreyi değiştir",
+      "done": "Şifren değişti. Yeni şifrenle giriş yap."
+    },
+    "fields": {
+      "email": "E-posta",
+      "password": "Şifre",
+      "passwordConfirm": "Şifre tekrar",
+      "resetCode": "Sıfırlama kodu",
+      "newPassword": "Yeni şifre"
+    },
+    "hints": {
+      "newPassword": "En az 6 karakter; bir küçük harf, bir büyük harf ve bir rakam."
+    },
+    "fieldErrors": {
+      "required": "Bu alanı doldurman gerekiyor.",
+      "emailInvalid": "Geçerli bir e-posta adresi gir.",
+      "passwordPolicy": "Şifre en az 6 karakter olmalı; bir küçük harf, bir büyük harf ve bir rakam içermeli.",
+      "passwordMismatch": "Şifreler eşleşmiyor. Aynı şifreyi iki alana da gir."
+    },
+    "formErrors": {
+      "summary": "Bazı alanları düzeltmen gerekiyor."
+    },
+    "noscript": "Bu ekranın çalışması için JavaScript gerekiyor.",
+    "errors": {
+      "invalidCredentials": "E-posta ya da şifre yanlış. Tekrar dene.",
+      "emailNotVerified": "Bu hesabın e-postası doğrulanmadı. Doğrulama ekranından kodu gir.",
+      "accountDisabled": "Bu hesap kullanılamıyor. Bize ulaş.",
+      "tooManyAttempts": "Çok fazla deneme yapıldı. Biraz sonra tekrar dene.",
+      "rateLimited": "Şu an çok fazla istek var. Biraz sonra tekrar dene.",
+      "codeInvalid": "Kod doğrulanmadı. Yeni bir kod iste ya da giriş yapmayı dene.",
+      "resetTokenInvalid": "Bu sıfırlama kodu geçersiz ya da süresi doldu. Yeni bir tane iste.",
+      "invalidRequest": "Form gönderilemedi. Alanları kontrol edip tekrar dene.",
+      "forbidden": "İstek reddedildi. Sayfayı yenileyip tekrar dene.",
+      "unavailable": "Şu an bağlanamıyoruz. Biraz sonra tekrar dene.",
+      "unauthenticated": "Oturum bulunamadı.",
+      "sessionExpired": "Oturumun süresi doldu. Tekrar giriş yap.",
+      "weakPassword": "Şifre gereksinimleri karşılanmadı."
     }
   },
   "NotFound": {

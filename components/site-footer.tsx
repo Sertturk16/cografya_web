@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { siteConfig } from "@/lib/seo/site";
 import styles from "./site-footer.module.css";
 
@@ -13,6 +14,22 @@ export async function SiteFooter() {
           {siteConfig.name} — {t("tagline")}
         </p>
         <p className={styles.note}>{t("note")}</p>
+        {/* The site's first auth entry point (UYELIK-04 PR-1,
+            `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md` §4.6). The
+            FOOTER, not the header: `DESIGN.md` §4's eight-link measurement (1051.2px in
+            Turkish against 1056px at `66rem`) leaves no headroom for a ninth item. It is
+            also where the precedent puts this class of link (`DEC 2026-08-20g` md.5): the
+            legal pair will join this same region when it exists (plan §13 Stop 1) — no
+            legal entry, no placeholder, ships here today.
+
+            `Üye ol` lands in PR-2, WITH `/kayit` — the same "a link lands with its page"
+            rule the CBS tool tier records for itself (`i18n/routing.ts`); a link to a route
+            that does not exist yet is `SEO-POLICY.md` §B8 8.8/8.9. */}
+        <nav aria-label={t("authLabel")} className={styles.auth}>
+          <Link href="/giris" className={styles.authLink}>
+            {t("login")}
+          </Link>
+        </nav>
         <p className={styles.copyright}>{t("copyright", { year, siteName: siteConfig.name })}</p>
       </div>
     </footer>

@@ -1,0 +1,107 @@
+/* The whole auth form design language (plan §4/§8/§11,
+   `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`; `DESIGN.md` §2-§5).
+   `var(--token)` only — no raw hex anywhere in this module (`ENGINEERING.md` §10 do-NOT). */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  max-width: 28rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+/* 44 CSS px floor (WCAG 2.2 §2.5.5 AAA) — `DESIGN.md` §5 takes the generous number
+   wherever there is room, and a form control always has room. */
+.control {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  background: #fff;
+  color: var(--color-ink);
+}
+
+.control:focus-visible {
+  /* Inherits the global 3px accent ring (`app/globals.css` `:focus-visible`) — no override
+     here. This rule exists only so a browser's own UA-stylesheet border never wins the
+     cascade against the focus ring on a bordered control. */
+  border-color: var(--color-accent);
+}
+
+.control[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+/* Error text: `--color-danger` measures 4.90:1 on `--color-surface` (`DESIGN.md` §5's
+   verified table) — the darkest Terra background, and the one the hard semantic-colour rule
+   requires clearing. This module's `.card`/`.errorRegion` both sit on `--color-surface`, so
+   the measured pairing applies exactly as verified, not merely on a lighter panel. */
+.fieldError {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.errorRegion {
+  border: 1.5px solid var(--color-danger);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  background: var(--color-surface);
+}
+
+.errorHeading {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: var(--color-danger);
+}
+
+.errorList {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.successHeading {
+  margin: 0 0 8px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.secondaryLink {
+  font-size: 0.9rem;
+}
+
+.noscript {
+  color: var(--color-slate);
+  font-size: 0.9rem;
+}
