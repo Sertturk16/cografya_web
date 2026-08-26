@@ -403,6 +403,246 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reference/districts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List one province's districts (ilçe) by plate code, Turkish-alphabetical.
+         * @description A plain typed array — no envelope and no pagination, the bounded-set rule `ENGINEERING.md` §2 already applies to the 81 provinces: the largest province has fewer than 40 ilçe and the whole set is 973. The order is the order to render. The province is addressed by the two-digit plate code published on every province payload; the internal uuid is never part of this contract.
+         */
+        get: operations["DistrictController_findDistricts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reference/universities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List every university the registration form offers, Turkish-alphabetical.
+         * @description A plain typed array — no envelope and no pagination, the bounded-set rule `ENGINEERING.md` §2 states for the 81 provinces. The set is fixed at build time and the order is the order to render. Names are in the reader’s writing ("Boğaziçi Üniversitesi"); KKTC institutions are marked by `type`. No logo, founding year, score, quota or university-programme pairing is published — none of it was collected.
+         */
+        get: operations["ReferenceConstantsController_findUniversities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reference/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List every bachelor-level programme name the registration form offers.
+         * @description A plain typed array, Turkish-alphabetical, on the same bounded-set rule as the university list. Lisans only — önlisans programme names are out of scope (DEC 2026-08-20p md.4). No score, quota or university pairing is published; the source list carries none.
+         */
+        get: operations["ReferenceConstantsController_findDepartments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a new account.
+         * @description Always 202, body-less — the response never reveals whether the address already existed (§6.2 anti-enumeration). An address with no account becomes a PENDING registration and receives a verification e-posta; the account itself is created only when that code is confirmed, so submitting the same address again never overwrites an earlier submission and never activates one. A known ACTIVE address gets an "account exists" notice instead; a disabled account sends nothing.
+         */
+        post: operations["AuthController_register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a 6-digit e-posta doğrulama kodu and open a session.
+         * @description The correct code CREATES the account from the pending registration that code belongs to, then answers 200 + a fresh token pair, exactly like login. Wrong, expired, attempt-exhausted and already-used codes all answer the same 400.
+         */
+        post: operations["AuthController_verifyEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/verify-email/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend the verification code.
+         * @description Always 202, body-less, whatever the address is. A fresh code is issued only for an address that has a pending registration, and only if the cooldown/daily identity-axis limits allow it. Codes already in flight stay valid — a resend ADDS one, it never cancels an earlier one.
+         */
+        post: operations["AuthController_resendVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log in with e-posta + şifre.
+         * @description Unknown address and wrong password answer the SAME 401 (a real Argon2 verify runs even for an unknown address, to normalize timing). A correct password on an UNVERIFIED or disabled account answers 403 — reachable only by someone who already knows the password, so it is not enumeration.
+         */
+        post: operations["AuthController_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate a refresh token for a fresh access + refresh pair.
+         * @description Reused, expired, unknown or account-inactive tokens all answer the SAME 401 (errors.auth.sessionExpired). A reused token revokes its ENTIRE family and bumps the user's token_version, invalidating every live access token at once.
+         */
+        post: operations["AuthController_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log out — revoke the presented refresh token’s whole family.
+         * @description Always 204, even for a token this api does not recognise (indistinguishable).
+         */
+        post: operations["AuthController_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/password-reset/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a password-reset e-posta ("forgot password").
+         * @description Always 202, body-less — a known and an unknown address are indistinguishable.
+         */
+        post: operations["AuthController_requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a password reset with the opaque token + a new password.
+         * @description Password-policy validation runs BEFORE the token is even read (the DTO decorator fires inside the global ValidationPipe, ahead of this handler), so a weak-password 400 never confirms or denies the token. Success revokes every live session and does NOT open a new one — the user logs in again.
+         */
+        post: operations["AuthController_confirmPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The current authenticated user — the minimum PII set (§7.3).
+         * @description id, firstName, accountRole ONLY. No e-posta, telefon, soyad or education fields.
+         */
+        get: operations["AuthController_session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2418,6 +2658,216 @@ export interface components {
             /** @description Lisans yüzeyi. HER yanıtta doludur — `dataAvailable: false` olan yanıtlarda da — çünkü bildirim yayımlanan bölüme iliştirilir, tek tek değerlerin sağlığına değil. */
             attribution: components["schemas"]["ElevationAttributionDto"];
         };
+        DistrictDto: {
+            /**
+             * Format: uuid
+             * @description İlçenin kimliği — kayıt formunun gönderdiği değer. Kalıcıdır, ama bir ilçe yeniden adlandırılırsa değişir (yeniden adlandırma bir silme + eklemedir).
+             * @example 6b3f6f5a-6f5a-4f5a-8f5a-6f5a6f5a6f5a
+             */
+            id: string;
+            /**
+             * @description İlçe adı (TR), okurun gördüğü yazımla — "Kadıköy", "KADIKÖY" değil (DEC 2026-08-20p md.5). Kaynak: TÜİK Coğrafi İstatistik Portalı (bkz. provenance/datasets.md, 2026-08-20 satırı).
+             * @example Kadıköy
+             */
+            nameTr: string;
+        };
+        UniversityDto: {
+            /**
+             * @description Üniversite adı (TR), okurun gördüğü yazımla — "Boğaziçi Üniversitesi", "BOĞAZİÇİ ÜNİVERSİTESİ" değil (DEC 2026-08-20m md.6). Kaynağın büyük harfli hâli bu depoda data/reference/universities.yok.json içinde bozulmadan durur. Kaynak: YÖK (bkz. provenance/datasets.md, 2026-08-20 satırı).
+             * @example Boğaziçi Üniversitesi
+             */
+            nameTr: string;
+            /**
+             * @description Kurum türü — YÖK’ün yok.gov.tr/university adresinde 2026-08-20 toplamasında yayımladığı dört liste (type=1 Devlet, type=2 Vakıf, type=3 Vakıf MYO, type=6 KKTC). KKTC kurumları bu alanla ayrılır. Okurun gördüğü TR grup başlıkları web tarafındadır ve GLOSSARY.md §7.2/§7.3 ile hükme bağlıdır (DEC 2026-08-21h): type=KKTC ise “KKTC”, değilse “Türkiye”; “Yurt dışı” kullanılmaz.
+             * @example DEVLET
+             * @enum {string}
+             */
+            type: "DEVLET" | "VAKIF" | "VAKIF_MYO" | "KKTC";
+        };
+        DepartmentDto: {
+            /**
+             * @description Bölüm/program adı (TR), kaynağın yazdığı gibi — kaynak zaten okurun gördüğü yazımı veriyor, bu yüzden bir dönüşüm uygulanmıyor (DEC 2026-08-20m md.6). Yalnız lisans programları; önlisans kapsam dışı (DEC 2026-08-20p md.4). Kaynak: YÖK Atlas program adları (bkz. provenance/datasets.md, 2026-08-21 satırı).
+             * @example Coğrafya Öğretmenliği
+             */
+            nameTr: string;
+        };
+        RegisterRequestDto: {
+            /**
+             * @description Ad — trim edilir, boş olamaz.
+             * @example Ayşe
+             */
+            firstName: string;
+            /**
+             * @description Soyad — trim edilir, boş olamaz.
+             * @example Yılmaz
+             */
+            lastName: string;
+            /**
+             * @description Türkiye cep telefonu, E.164. Yaygın yazımlar (0532…, 90532…, boşluk/tire/parantezli) kabul edilip +90 biçimine katlanır; sonuç bu biçime uymuyorsa 400.
+             * @example +905551234567
+             */
+            phone: string;
+            /**
+             * Format: email
+             * @description E-posta — trim + küçük harfe çevrilir (canonical form), ASCII-only, RFC şekli.
+             * @example reader@example.test
+             */
+            email: string;
+            /** @description En az bir küçük harf, bir büyük harf ve bir rakam içermeli (`DEC 2026-08-20g` md.1 #5). Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            password: string;
+            /**
+             * @description Beyan edilen hesap rolü — yetki değildir (`GLOSSARY.md` §7.1).
+             * @example STUDENT
+             * @enum {string}
+             */
+            accountRole: "STUDENT" | "TEACHER";
+            /**
+             * @description Yalnız accountRole=STUDENT gönderir; TEACHER bu alanı hiç göndermez (profil matrisi, §6.4).
+             * @example SECONDARY
+             * @enum {string}
+             */
+            educationLevel?: "SECONDARY" | "UNDERGRADUATE" | "GRADUATE";
+            /**
+             * @description Yalnız educationLevel=SECONDARY gönderir.
+             * @example GRADE_12
+             * @enum {string}
+             */
+            gradeLevel?: "GRADE_5" | "GRADE_6" | "GRADE_7" | "GRADE_8" | "GRADE_9" | "GRADE_10" | "GRADE_11" | "GRADE_12" | "MEZUN" | "KPSS" | "DIGER";
+            /**
+             * @description Yalnız educationLevel=SECONDARY gönderir.
+             * @example SAYISAL
+             * @enum {string}
+             */
+            studyStream?: "SAYISAL" | "SOZEL" | "ESIT_AGIRLIK" | "TYT" | "DIL" | "LGS" | "MSU" | "ARA_SINIF" | "KPSS" | "DIGER";
+            /**
+             * @description Yalnız educationLevel=UNDERGRADUATE|GRADUATE gönderir; `GET /api/reference/universities`'ün nameTr kümesinde olmak zorunda.
+             * @example Boğaziçi Üniversitesi
+             */
+            universityName?: string;
+            /**
+             * @description Yalnız educationLevel=UNDERGRADUATE gönderir (GRADUATE için opsiyonel); `GET /api/reference/departments`'ın nameTr kümesinde olmak zorunda.
+             * @example Coğrafya Öğretmenliği
+             */
+            departmentName?: string;
+            /**
+             * Format: uuid
+             * @description `GET /api/reference/districts?plateCode=…`'ün döndürdüğü id. Var olduğu ve provincePlateCode ile ait olduğu RegistrationService tarafından tek sorguyla doğrulanır (D15).
+             * @example 6b3f6f5a-6f5a-4f5a-8f5a-6f5a6f5a6f5a
+             */
+            districtId: string;
+            /**
+             * @description İlin plaka kodu, iki hane ve başı sıfırla dolgulu — districtId ile birlikte doğrulanır.
+             * @example 34
+             */
+            provincePlateCode: string;
+            /**
+             * @description Form alanı değil — doğrulama e-postasının dili. Belirtilmezse tr.
+             * @default tr
+             * @enum {string}
+             */
+            locale: "tr" | "en";
+        };
+        ApiErrorDto: {
+            /**
+             * @description HTTP status code, repeated in the body by the framework default error shape.
+             * @example 404
+             */
+            statusCode: number;
+            /**
+             * @description A single message, or one message per failed field when request validation rejects several at once.
+             * @example Not Found
+             */
+            message: string | string[];
+            /**
+             * @description The status reason phrase. Present only when the exception was raised with an explicit message; an argument-less `NotFoundException` omits this key entirely.
+             * @example Not Found
+             */
+            error?: string;
+        };
+        VerifyEmailRequestDto: {
+            /**
+             * Format: email
+             * @description E-posta — trim + küçük harfe çevrilir (canonical form).
+             * @example reader@example.test
+             */
+            email: string;
+            /** @description Tam 6 haneli doğrulama kodu (§5.3). Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            code: string;
+        };
+        AuthResultDto: {
+            /** @description Kısa ömürlü access JWT (§5.1) — `Authorization: Bearer <token>` ile sunulur. */
+            accessToken: string;
+            /**
+             * @description accessToken kaç saniye içinde geçersiz olur (ACCESS_TOKEN_TTL_SECONDS).
+             * @example 900
+             */
+            accessTokenExpiresInSeconds: number;
+            /** @description Opak refresh token (§5.2.1) — sonraki `/api/auth/refresh` çağrısının gövdesinde sunulur. */
+            refreshToken: string;
+            /**
+             * @description refreshToken kaç saniye içinde geçersiz olur (REFRESH_TOKEN_TTL_DAYS × 86400).
+             * @example 2592000
+             */
+            refreshTokenExpiresInSeconds: number;
+        };
+        ResendVerificationRequestDto: {
+            /**
+             * Format: email
+             * @description E-posta — trim + küçük harfe çevrilir (canonical form).
+             * @example reader@example.test
+             */
+            email: string;
+        };
+        LoginRequestDto: {
+            /**
+             * Format: email
+             * @description E-posta — trim + küçük harfe çevrilir (canonical form).
+             * @example reader@example.test
+             */
+            email: string;
+            /** @description Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            password: string;
+        };
+        RefreshRequestDto: {
+            /** @description Opak refresh token (§5.2.1). Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            refreshToken: string;
+        };
+        LogoutRequestDto: {
+            /** @description Opak refresh token (§5.2.1). Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            refreshToken: string;
+        };
+        PasswordResetRequestDto: {
+            /**
+             * Format: email
+             * @description E-posta — trim + küçük harfe çevrilir (canonical form).
+             * @example reader@example.test
+             */
+            email: string;
+        };
+        PasswordResetConfirmDto: {
+            /** @description Opak şifre sıfırlama jetonu (§5.4). Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            resetToken: string;
+            /** @description Yeni şifre — aynı politika register ile paylaşılır (`DEC 2026-08-20g` md.1 #5). Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            password: string;
+        };
+        SessionDto: {
+            /**
+             * Format: uuid
+             * @description users.id.
+             */
+            id: string;
+            /**
+             * @description Selamlama için — soyad, e-posta ya da telefon yok.
+             * @example Ayşe
+             */
+            firstName: string;
+            /**
+             * @description Beyan edilen hesap rolü — yetki değildir (`GLOSSARY.md` §7.1).
+             * @example STUDENT
+             * @enum {string}
+             */
+            accountRole: "STUDENT" | "TEACHER";
+        };
     };
     responses: never;
     parameters: never;
@@ -3006,6 +3456,378 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    DistrictController_findDistricts: {
+        parameters: {
+            query: {
+                /** @description İlin plaka kodu, iki hane ve başı sıfırla dolgulu ("06", "6" değil) — GET /api/provinces yanıtındaki plateCode. Zorunlu: ilçe listesi her zaman bir ile göredir. Biçimi bozuksa ya da eksikse 400; biçimi doğru ama karşılığı olmayan bir kod için boş dizi. */
+                plateCode: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DistrictDto"][];
+                };
+            };
+            /** @description plateCode is missing or is not exactly two zero-padded digits, or an unrecognised query parameter was sent — unknown parameters are rejected rather than ignored, and that includes the retired provinceId. Distinct from an empty array, which means the parameter was well-formed and matched no ilçe. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReferenceConstantsController_findUniversities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UniversityDto"][];
+                };
+            };
+        };
+    };
+    ReferenceConstantsController_findDepartments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentDto"][];
+                };
+            };
+        };
+    };
+    AuthController_register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequestDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description DTO şekli, profil matrisi, şifre veya ilçe↔il uyuşmazlığı. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.rateLimited — IP ekseni tavanı (route-level @Throttle) aşıldı. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_verifyEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyEmailRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResultDto"];
+                };
+            };
+            /** @description errors.verify.codeInvalid — yanlış, süresi geçmiş, deneme hakkı tükenmiş ya da kullanılmış kod. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_resendVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResendVerificationRequestDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResultDto"];
+                };
+            };
+            /** @description errors.auth.invalidCredentials. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.emailNotVerified ya da errors.auth.accountDisabled. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.tooManyAttempts — kimlik ekseni tavanı (adres başına, SessionService içinden); errors.auth.rateLimited — IP ekseni tavanı (route-level @Throttle + sınıf düzeyli @ThrottlerErrorMessage). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResultDto"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogoutRequestDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequestDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_confirmPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description errors.register.weakPassword (checked first) ya da errors.password.resetTokenInvalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };

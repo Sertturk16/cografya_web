@@ -139,3 +139,9 @@ export type BookVideo = components["schemas"]["BookVideoDto"];
  *  instant, duration in both forms, and `embeddable`. Reached only through the non-null branch
  *  of `BookVideo["youtube"]`; `lib/book/video-state.ts` is the single place that narrows it. */
 export type BookVideoYoutube = components["schemas"]["BookVideoYoutubeDto"];
+
+// ---- Auth (üyelik transport — UYELIK-03) ------------------------------------
+export type AuthResult = components["schemas"]["AuthResultDto"];
+export type Session = components["schemas"]["SessionDto"];
+export type AccountRole = Session["accountRole"];
+export type ApiErrorBody = components["schemas"]["ApiErrorDto"];
