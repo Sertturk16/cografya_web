@@ -702,7 +702,6 @@
       "emailNotVerified": "This account's e-mail is not verified. Enter the code on the verification screen.",
       "accountDisabled": "This account is unavailable. Get in touch with us.",
       "tooManyAttempts": "Too many attempts. Try again in a little while.",
-      "rateLimited": "There are too many requests right now. Try again in a little while.",
       "codeInvalid": "The code was not accepted. Ask for a new code, or try logging in.",
       "resetTokenInvalid": "This reset code is invalid or has expired. Ask for a new one.",
       "invalidRequest": "The form could not be submitted. Check the fields and try again.",
