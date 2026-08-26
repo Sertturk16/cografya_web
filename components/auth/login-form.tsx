@@ -109,7 +109,6 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
     if (errors.email !== undefined || errors.password !== undefined) return;
 
     setSubmitting(true);
-    localStorage.setItem("email", email);
     const result = await submitAuth(
       "login",
       { email, password },
