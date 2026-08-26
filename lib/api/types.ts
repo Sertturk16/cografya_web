@@ -141,7 +141,23 @@ export type BookVideo = components["schemas"]["BookVideoDto"];
 export type BookVideoYoutube = components["schemas"]["BookVideoYoutubeDto"];
 
 // ---- Auth (üyelik transport — UYELIK-03) ------------------------------------
+/** The api's session-issuing response shape — `login`, `verify-email` and `refresh` all
+ *  return this on success. THE ONE PLAINTEXT-TOKEN-BEARING SHAPE in this contract:
+ *  `accessToken` and `refreshToken` exist here and, downstream, ONLY as the two `HttpOnly`
+ *  cookie values `lib/auth/cookies.ts` builds from them — never in a response body, a URL,
+ *  a log line or any header but `Set-Cookie` (`lib/auth/transport.server.ts`'s §7 P1). Do
+ *  not thread a raw `AuthResult` anywhere past `lib/auth/transport.server.ts`. */
 export type AuthResult = components["schemas"]["AuthResultDto"];
+/** `GET /api/auth/session`'s response — the api's full view: `id`, `firstName`,
+ *  `accountRole`. The BFF's own body to the browser (`lib/auth/transport.server.ts`) drops
+ *  `id`; only `lib/auth/session.ts`'s server-side `getSession()` returns the full shape. */
 export type Session = components["schemas"]["SessionDto"];
+/** The two declared account roles (contract enum values) — a self-declared role, not a
+ *  permission (`GLOSSARY.md` §7.1). */
 export type AccountRole = Session["accountRole"];
+/** The api's uniform error envelope. `message` carries one of the api's ten published error
+ *  KEYS (`errors.auth.*` / `errors.register.*` / `errors.verify.*` / `errors.password.*`),
+ *  never a rendered sentence — the reader-visible string behind a key belongs to UYELIK-04,
+ *  in `messages/*.json`. Named `ApiErrorBody`, not `ApiError`: `lib/api/client.ts` already
+ *  exports a class of that name, and importing both under one name would collide. */
 export type ApiErrorBody = components["schemas"]["ApiErrorDto"];

@@ -74,10 +74,16 @@ jobs:
 
       # `lib/api/schema.ts` is codegen output (`openapi-typescript` over the committed
       # `openapi/openapi.json`) and is the web half of the cross-repo DTO contract
-      # (`CONVENTIONS.md` §3). Until UYELIK-03 nothing consumed it at runtime, so the drift
-      # gate could stay unwired; the auth transport consumes it, so a spec copied without a
-      # regenerate — or a hand-edit in the generated file — must fail here rather than at a
-      # runtime type that silently disagrees with the api. Pure node, no network.
+      # (`CONVENTIONS.md` §3). CORRECTED (PR #83 review `CODE83-M1`): it has been consumed
+      # INDIRECTLY, through `lib/api/types.ts`'s aliases, by 68 other modules since PR #5
+      # (measured: `grep -rl 'from "@/lib/api/types"' | grep -v lib/auth/ | wc -l`) — so the
+      # gate's absence until now was an open risk that a drifted schema could already break
+      # a real call site silently, not a deferred convenience for code that did not exist
+      # yet. UYELIK-03 adds the first DIRECT consumers — `lib/auth/transport.server.ts` and
+      # `lib/auth/session.ts`'s compile-time drift-agreement assertions — which is what
+      # finally wires the check here: a spec copied without a regenerate, or a hand-edit in
+      # the generated file, must fail here rather than at a runtime type that silently
+      # disagrees with the api. Pure node, no network.
       # Verified byte-reproducible at web `dev` 608922f before wiring (plan §2 M7).
       - name: OpenAPI codegen drift
         run: pnpm codegen:check
