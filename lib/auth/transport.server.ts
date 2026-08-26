@@ -31,14 +31,36 @@ import { safeReturnPath } from "./redirect";
  *        this app: as fields of the object `callAuthApi()` returns. Its only consumer is
  *        `sessionCookieMutations()` (`./cookies.ts`), which returns nothing but two cookie
  *        descriptors. Every browser-facing body is built by `bffBody()`, whose parameter
- *        type `AuthBffBody` is a closed union with no member that can hold an arbitrary api
- *        string. Gate: T1 (success paths), T4 (error paths).
+ *        type `AuthBffBody` is a closed union of three members — narrower than a type-level
+ *        guarantee, stated as such (`CODE84-M4`/`SEC84-M4`): two members carry only fixed
+ *        literals and values this module itself derives (`session.firstName`/`accountRole`
+ *        from the api's own session read, `code` from the closed `AuthBffCode` union); the
+ *        third member's `redirectTo` field is an unconstrained `string` at the type level —
+ *        the compiler does not by itself stop an api-sourced string from being assigned
+ *        there. What keeps a token out of it is that `redirectTo` is only ever populated by
+ *        `safeReturnPath()` (`./redirect.ts`), which has no access to a token value; T1/T4
+ *        pin today that no sentinel value reaches the body. Gate: T1 (success paths), T4
+ *        (error paths).
  *   P2 — auth responses are not cached. `bffHeaders()` is the only way a response's headers
  *        are produced, so no branch can omit `Cache-Control: no-store`. Gate: T2.
- *   P3 — a rotated refresh token is never lost. `refresh` is called ONLY from this module's
- *        own request path; `./session.ts` — the module server components import — contains
- *        no reference to the refresh action at all. Gate: T7 (asserted against that file's
- *        own source, from this test file, per plan §12).
+ *   P3 — `/api/auth/refresh` is called only from a context that can write the resulting
+ *        cookies in the same response (narrowed to this, plan §7 P3's own Property line,
+ *        from the broader "a rotated refresh token is never lost" — `VAL84A-I1`/`SEC84-M5`).
+ *        `refresh` is called ONLY from this module's own request path; `./session.ts` — the
+ *        module server components import — contains no reference to the refresh action at
+ *        all. Gate: T7 (asserted against that file's own source, from this test file, per
+ *        plan §12).
+ *
+ *        RESIDUAL, stated rather than hidden: this property is about WHERE refresh is
+ *        called from, not about every way a rotated token can go missing. If the api commits
+ *        the rotation and the response is then lost — a timeout, a dropped connection, or a
+ *        200 whose body fails the response guard (`handleRefresh`'s `unavailable` branch) —
+ *        the browser is left holding a `cg_refresh` cookie the api has already revoked; its
+ *        next use trips the api's reuse detection and revokes the whole session family. This
+ *        module does not close that residual — the remedy is an api-side grace window on
+ *        rotation reuse, tracked as a UYELIK-04 precondition (plan §16), not a web-side fix.
+ *        The web half is only to state the property at the size it actually holds, which is
+ *        what this paragraph does.
  */
 
 /**
@@ -204,20 +226,29 @@ function bffBody(body: AuthBffBody): AuthBffBody {
   return body;
 }
 
+/** `extraHeaders` only ADDS to `bffHeaders()`'s fixed set (plan §7 P2) — the sole caller
+ *  today is the 405 branch's `Allow` header (`CODE84-M8`), which shares no key with
+ *  `Cache-Control`/`Vary`/`X-Content-Type-Options`, so P2's "no branch can omit them"
+ *  guarantee still holds. */
 function bffResult(
   status: number,
   body: AuthBffBody,
   cookies: readonly CookieDescriptor[] = [],
+  extraHeaders: Record<string, string> = {},
 ): AuthBffResult {
-  return { status, body: bffBody(body), headers: bffHeaders(), cookies };
+  return { status, body: bffBody(body), headers: { ...bffHeaders(), ...extraHeaders }, cookies };
 }
 
 // ---------------------------------------------------------------------------------------
-// Logging (plan §14 #10) — `[auth-bff] <action> <outcome>` and NOTHING else. `action` is
-// always a literal key from `AUTH_ACTIONS` and `outcome` is always a short, closed-vocabulary
-// label ("ok", a `AuthBffCode`, or a fixed phrase below) — never the api body, the browser
-// body, or a cookie value — so this function structurally cannot be handed a token, a
-// password, a code or an e-mail address. Gate: T1 (success path), T4 (error path).
+// Logging (plan §14 #10) — `[auth-bff] <action> <outcome>` and NOTHING else. `outcome` is
+// always a short, closed-vocabulary label ("ok", a `AuthBffCode`, or a fixed phrase below) —
+// never the api body, the browser body, or a cookie value. `action` is a literal key from
+// `AUTH_ACTIONS` at every call site EXCEPT the unknown-action branch in `handleAuthRequest`,
+// where the caller fully controls the path segments (`CODE84-I3`/`SEC84-I2`, measured: Next
+// decodes each catch-all segment, so a raw `%0A` reaches this function as a real line break
+// if it is ever logged). That branch logs the fixed label `"(unknown)"` instead of the raw
+// segments for exactly that reason — never assume "action is always a literal key" without
+// checking the call site. Gate: T1 (success path), T4 (error path).
 // ---------------------------------------------------------------------------------------
 
 function logAuthOutcome(action: string, outcome: string): void {
@@ -240,7 +271,15 @@ function readCookieValue(request: Request, name: string): string | undefined {
     if (eq === -1) continue;
     const key = pair.slice(0, eq).trim();
     if (key === name) {
-      return decodeURIComponent(pair.slice(eq + 1).trim());
+      try {
+        return decodeURIComponent(pair.slice(eq + 1).trim());
+      } catch {
+        // A malformed percent-encoding (`decodeURIComponent` throws `URIError`) is an
+        // ABSENT cookie, not an unhandled exception (plan §14 — a response must always go
+        // through `bffResult()`/`bffHeaders()`). This matches Next's own cookie parser
+        // (`@edge-runtime/cookies`), which does the same on catch. Gate: T-COOKIE-DECODE.
+        return undefined;
+      }
     }
   }
   return undefined;
@@ -325,6 +364,11 @@ async function classifyResponse(res: Response): Promise<ApiCallOutcome> {
     return { kind: "ok", rawBody: await safeReadText(res) };
   }
   if (!MAPPED_ERROR_STATUSES.has(res.status)) {
+    // The body is never read on this branch, but it must still be DRAINED (`CODE84-M2`):
+    // undici does not return a connection to its pool until the response body is consumed,
+    // so a burst of unmapped statuses (a 5xx during an api outage) would otherwise hold
+    // connections open for as long as the response objects stay reachable.
+    await res.body?.cancel();
     return { kind: "unavailable" };
   }
   const rawBody = await safeReadText(res);
@@ -374,7 +418,7 @@ async function callAuthApi(apiPath: string, body: string): Promise<AuthApiTokenO
 
 type AuthApiSessionOutcome =
   | { kind: "ok"; session: { firstName: string; accountRole: AccountRole } }
-  | { kind: "mapped-error" }
+  | { kind: "mapped-error"; status: number; code: AuthBffCode }
   | { kind: "unavailable" };
 
 async function callAuthApiForSession(accessToken: string): Promise<AuthApiSessionOutcome> {
@@ -382,7 +426,12 @@ async function callAuthApiForSession(accessToken: string): Promise<AuthApiSessio
     Authorization: `Bearer ${accessToken}`,
   });
   if (outcome.kind === "unavailable") return { kind: "unavailable" };
-  if (outcome.kind === "mapped-error") return { kind: "mapped-error" };
+  // Carry the api's status and key through (item 2, `CODE84-I1`/`SEC84-I1`) — this used to
+  // be dropped here, which is what forced `handleSession` to collapse every mapped status
+  // (400/403/429, not just a genuine 401) to "unauthenticated".
+  if (outcome.kind === "mapped-error") {
+    return { kind: "mapped-error", status: outcome.status, code: outcome.code };
+  }
 
   const session = parseSession(outcome.rawBody);
   if (!session) return { kind: "unavailable" };
@@ -419,21 +468,57 @@ function refreshWithSingleFlight(refreshToken: string): Promise<AuthApiTokenOutc
 // re-serialize UNCHANGED. Gate: T13.
 // ---------------------------------------------------------------------------------------
 
+/**
+ * Reads `request.body` one chunk at a time and stops the INSTANT the accumulated byte count
+ * exceeds `MAX_REQUEST_BODY_BYTES`, instead of buffering the whole body first and measuring
+ * it afterwards (`CODE84-I4`, measured: a 400 MiB chunked body — no `Content-Length`, so the
+ * pre-parse check in `handleAuthRequest` cannot see it — took the worker from 510 MB to
+ * 2163 MB RSS before the old code's 413). `request.body` is `null` on a bodyless `Request`
+ * (measured) — that is an EMPTY body, not a stream to read; naively calling `.getReader()`
+ * on it would reopen `CODE84-I2`'s uncaught-throw class. Gate: T-BODY-STREAM.
+ */
+async function readBoundedBody(
+  request: Request,
+): Promise<{ ok: true; bytes: Uint8Array } | { ok: false }> {
+  if (request.body === null) return { ok: true, bytes: new Uint8Array(0) };
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_REQUEST_BODY_BYTES) {
+      await reader.cancel();
+      return { ok: false };
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return { ok: true, bytes };
+}
+
 async function readClientBody(
   actionKey: string,
   request: Request,
 ): Promise<{ ok: true; body: string } | { ok: false; result: AuthBffResult }> {
-  const text = await request.text();
-
-  // Re-check after reading: a chunked request carries no `Content-Length` header, so the
-  // pre-parse check in `handleAuthRequest` cannot see it (plan §10).
-  if (new TextEncoder().encode(text).length > MAX_REQUEST_BODY_BYTES) {
+  const read = await readBoundedBody(request);
+  if (!read.ok) {
     logAuthOutcome(actionKey, "invalid-request");
     return {
       ok: false,
       result: bffResult(413, { ok: false, code: "errors.transport.invalidRequest" }),
     };
   }
+  const text = new TextDecoder().decode(read.bytes);
 
   let parsed: unknown;
   try {
@@ -450,6 +535,40 @@ async function readClientBody(
   // client field (e.g. `locale`) reaches the api untouched and the api's own
   // `ValidationPipe` stays the single validator.
   return { ok: true, body: JSON.stringify(parsed) };
+}
+
+// ---------------------------------------------------------------------------------------
+// §11's precedence rule (Atlas amendment 2026-08-26, `VALR84-C1`), in ONE shared place —
+// items 1 and 2 both call this rather than each re-implementing the same table, which is
+// exactly how revision 1 of this fix round let the two branches drift apart. A row keyed to
+// a specific action AND status (`refresh` 401, `session` 401) outranks the generic
+// "unrecognised message" / status-class row: whatever the api's mapped status is, ONLY the
+// one status this action treats specially gets the fixed code and the cookie mutation: no
+// `default` branch clears a cookie, so a status this table does not special-case (429, or
+// any other mapped 4xx) can never reach a cookie write by falling through.
+// ---------------------------------------------------------------------------------------
+
+interface SpecificFailureOutcome {
+  readonly status: number;
+  readonly code: AuthBffCode;
+  readonly cookies: readonly CookieDescriptor[];
+}
+
+function resolveActionSpecificMappedError(
+  outcome: { readonly status: number; readonly code: AuthBffCode },
+  specificStatus: number,
+  specificCode: AuthBffCode,
+  specificCookies: readonly CookieDescriptor[],
+): SpecificFailureOutcome {
+  if (outcome.status === specificStatus) {
+    return { status: specificStatus, code: specificCode, cookies: specificCookies };
+  }
+  // Every other mapped status (429, or any other mapped 4xx this action does not name a
+  // specific row for) passes the api's own status and key through, untouched — the same
+  // behaviour `handleAnonymousAction`/`handleTokenIssuingAction`/`handlePasswordResetConfirm`
+  // already give every mapped error. A transient failure such as a rate limit must never
+  // look like a dead session (`CODE84-C1`/`SEC84-C1`, `CODE84-I1`/`SEC84-I1`).
+  return { status: outcome.status, code: outcome.code, cookies: [] };
 }
 
 // ---------------------------------------------------------------------------------------
@@ -511,10 +630,15 @@ async function handleTokenIssuingAction(
   return bffResult(200, { ok: true, redirectTo }, cookies);
 }
 
-/** `refresh` (plan §10/§11). No `cg_refresh` cookie is a short-circuit — 401, clear both, no
- *  api call, no quota spent. Every mapped-error outcome collapses to `sessionExpired` +
- *  clear both regardless of the api's specific cause (expired/unknown/reused/inactive): the
- *  api's only documented error status for this action is 401. */
+/** `refresh` (plan §10/§11 as amended). No `cg_refresh` cookie is a short-circuit — 401,
+ *  clear both, no api call, no quota spent (this is the module's own decision, not a read of
+ *  an api status, so §11's precedence rule does not apply to it). A genuine api 401 maps to
+ *  `sessionExpired` + clear both cookies — §11's row keyed to `refresh` AND 401 outranks the
+ *  generic unrecognised-message row. Every other mapped status (400, 403, and critically
+ *  429 — `CODE84-C1`/`SEC84-C1`) passes the api's own status and key through UNCHANGED, with
+ *  no cookie mutation: the api's site-wide `refresh` rate limit (`cografya_api/ENGINEERING.md`
+ *  §3.1) is a single shared bucket, and treating its 429 as a dead session would force every
+ *  signed-in visitor to re-authenticate the moment the bucket fills. */
 async function handleRefresh(request: Request): Promise<AuthBffResult> {
   const siteUrl = getSiteUrl();
   const refreshToken = readCookieValue(request, REFRESH_COOKIE_NAME);
@@ -531,16 +655,21 @@ async function handleRefresh(request: Request): Promise<AuthBffResult> {
   const outcome = await refreshWithSingleFlight(refreshToken);
 
   if (outcome.kind === "unavailable") {
+    // Deliberately no cookie mutation (`VAL84A-I1`): a lost response after the api has
+    // already committed the rotation must not be treated as a dead session either — see
+    // this module's P3 docblock for the residual that remains regardless.
     logAuthOutcome("refresh", "unavailable");
     return bffResult(502, { ok: false, code: "errors.transport.unavailable" });
   }
   if (outcome.kind === "mapped-error") {
-    logAuthOutcome("refresh", "errors.auth.sessionExpired");
-    return bffResult(
+    const resolved = resolveActionSpecificMappedError(
+      outcome,
       401,
-      { ok: false, code: "errors.auth.sessionExpired" },
+      "errors.auth.sessionExpired",
       clearSessionCookies(siteUrl),
     );
+    logAuthOutcome("refresh", resolved.code);
+    return bffResult(resolved.status, { ok: false, code: resolved.code }, resolved.cookies);
   }
 
   logAuthOutcome("refresh", "ok");
@@ -562,7 +691,13 @@ async function handleLogout(action: AuthAction, request: Request): Promise<AuthB
   let revokeFailed = false;
   try {
     const res = await sendApiRequest(action.apiPath, "POST", JSON.stringify({ refreshToken }));
-    if (!res.ok) revokeFailed = true;
+    if (!res.ok) {
+      revokeFailed = true;
+      // Drain the body for the same reason as `classifyResponse`'s unmapped branch
+      // (`CODE84-M2`): `logout` never reads a failed revoke's body, but undici still needs
+      // it consumed to return the connection to its pool.
+      await res.body?.cancel();
+    }
   } catch {
     revokeFailed = true;
   }
@@ -597,9 +732,16 @@ async function handlePasswordResetConfirm(
   return bffResult(200, { ok: true }, clearSessionCookies(getSiteUrl()));
 }
 
-/** `session` (plan §10) — no `cg_access` cookie is a short-circuit: 401, no api call, no
- *  cookie change. A 401 from the api clears `cg_access` only — it is provably useless,
- *  while `cg_refresh` may still be good. */
+/** `session` (plan §10/§11 as amended) — no `cg_access` cookie is a short-circuit: 401, no
+ *  api call, no cookie change (the module's own decision, not a read of an api status — §11's
+ *  precedence rule does not apply to it). A genuine api 401 clears `cg_access` only — it is
+ *  provably useless, while `cg_refresh` may still be good; §11's row keyed to `session` AND
+ *  401 outranks the generic unrecognised-message row. Every other mapped status (400, 403,
+ *  and critically 429 — `CODE84-I1`/`SEC84-I1`) passes the api's own status and key through
+ *  UNCHANGED, with no cookie mutation: `GET /api/auth/session` sits under the api's global
+ *  120/min bucket (`cografya_api/ENGINEERING.md` §3.1), and a 429 there is not a sign the
+ *  access token is invalid. On the Origin exemption this action alone carries, see the
+ *  comment at the Origin check in `handleAuthRequest` (`VAL84C-1`). */
 async function handleSession(request: Request): Promise<AuthBffResult> {
   const accessToken = readCookieValue(request, ACCESS_COOKIE_NAME);
 
@@ -615,10 +757,11 @@ async function handleSession(request: Request): Promise<AuthBffResult> {
     return bffResult(502, { ok: false, code: "errors.transport.unavailable" });
   }
   if (outcome.kind === "mapped-error") {
-    logAuthOutcome("session", "errors.auth.unauthenticated");
-    return bffResult(401, { ok: false, code: "errors.auth.unauthenticated" }, [
+    const resolved = resolveActionSpecificMappedError(outcome, 401, "errors.auth.unauthenticated", [
       clearAccessCookie(getSiteUrl()),
     ]);
+    logAuthOutcome("session", resolved.code);
+    return bffResult(resolved.status, { ok: false, code: resolved.code }, resolved.cookies);
   }
 
   logAuthOutcome("session", "ok");
@@ -640,18 +783,59 @@ export async function handleAuthRequest(
   actionSegments: readonly string[],
 ): Promise<AuthBffResult> {
   const actionKey = actionSegments.join("/");
-  const action = AUTH_ACTIONS[actionKey];
+  // `Object.hasOwn` guard (item 9, `CODE84-M1`/`SEC84-M2`): a plain `AUTH_ACTIONS[actionKey]`
+  // lookup on an object literal also resolves inherited `Object.prototype` names —
+  // `constructor`, `toString`, `valueOf`, `hasOwnProperty`, `__proto__` — as "found" even
+  // though none of them is a real entry, which used to fall through to a wrong 405 instead
+  // of the documented 404.
+  const action = Object.hasOwn(AUTH_ACTIONS, actionKey) ? AUTH_ACTIONS[actionKey] : undefined;
 
+  // Raw-path check (item 9, `VAL84B-M1`): Next hands this function the PERCENT-DECODED
+  // segments, so a closed key set alone still accepts any percent-encoded alias of a real
+  // key — measured against a live Next 16.2.10 server: `POST /api/auth/logi%6E` and
+  // `POST /api/auth/verify-email%2Fresend` (a two-segment action compressed into one via an
+  // encoded slash) both decode to a real action and would otherwise perform it in full.
+  // `request.url` preserves percent-encoding (also measured live), so comparing it against
+  // the CANONICAL literal path for the resolved action catches both: their raw path can
+  // never equal `/api/auth/<actionKey>` byte-for-byte.
+  //
+  // DOES NOT extend to a dot-segment alias (`/api/auth/./login`, `/api/auth/%2e/login`,
+  // `/api/auth/a/../login`): measured live, with `curl --path-as-is` to rule out the
+  // client normalizing the path before it is even sent — `request.url` has ALREADY had the
+  // dot segments resolved by the time this handler runs (the same URL parsing that hands us
+  // `request.url` removes them), so the raw and canonical paths are byte-identical for those
+  // three inputs too and there is no discrepancy left to detect from here. Recorded as a
+  // deviation rather than closed silently — see the Phase 2 return to Atlas.
   if (!action) {
-    logAuthOutcome(actionKey || "(root)", "not-found");
+    // `actionKey` is never logged here — it is caller-controlled. Gate: T1/T4 (log
+    // safety), T14 (this branch).
+    logAuthOutcome("(unknown)", "not-found");
+    return bffResult(404, { ok: false, code: "errors.transport.invalidRequest" });
+  }
+  if (new URL(request.url).pathname !== `/api/auth/${actionKey}`) {
+    logAuthOutcome("(unknown)", "not-found");
     return bffResult(404, { ok: false, code: "errors.transport.invalidRequest" });
   }
 
   if (request.method !== action.method) {
     logAuthOutcome(actionKey, "method-not-allowed");
-    return bffResult(405, { ok: false, code: "errors.transport.invalidRequest" });
+    // `action.method` is always a real method here, never `undefined`: the branch above
+    // already requires `action` to be a genuine `AUTH_ACTIONS` entry reached at its
+    // canonical path, so the prototype-chain path (`Allow: undefined`, `CODE84-M8`) cannot
+    // reach this line. RFC 9110 §15.5.6 requires a 405 to carry `Allow`.
+    return bffResult(405, { ok: false, code: "errors.transport.invalidRequest" }, [], {
+      Allow: action.method,
+    });
   }
 
+  // Origin is checked on every POST action. `session` (GET) is the one action with none —
+  // NOT because it is "non-state-changing" (`VAL84C-1`: it isn't — its mapped-error branch
+  // clears `cg_access`), but because a same-origin top-level GET navigation sends no
+  // `Origin` header at all, so requiring one would refuse every legitimate caller. What
+  // makes the exemption safe is item 2's own fix: `handleSession`'s mapped-error branch now
+  // clears `cg_access` ONLY on a genuine 401 (§11's precedence rule), at which point the
+  // cookie it removes is already useless — a cross-site GET trigger can therefore only ever
+  // delete an already-dead cookie, never a live one.
   if (action.method === "POST") {
     if (!isValidOrigin(request)) {
       logAuthOutcome(actionKey, "forbidden");

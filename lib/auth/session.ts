@@ -53,6 +53,11 @@ void _sessionShapeAgreesWithContract;
  * read, which is an SSG/ISR loss on an indexable route. Keep the page static and put the
  * auth-dependent part behind a client island that calls `GET /api/auth/session` instead.
  * Nothing in UYELIK-03 calls `getSession()` from a page.
+ *
+ * `null` DOES NOT DISTINGUISH "no session" from "the session could not be read" (`CODE84-M6`):
+ * a missing/invalid access cookie, a network failure, a timeout, an api 4xx/5xx and a 200
+ * whose body fails the schema all collapse to the same `null`. A caller must not read `null`
+ * as an authoritative "the user is logged out" signal.
  */
 export const getSession = cache(async (): Promise<Session | null> => {
   const cookieStore = await cookies();
@@ -68,7 +73,13 @@ export const getSession = cache(async (): Promise<Session | null> => {
       signal: controller.signal,
       headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Drain the body before returning (`CODE84-M2`, the third of the round's three
+      // unconsumed-body sites): this function never reads a failed response's body, but
+      // undici still needs it consumed to return the connection to its pool.
+      await res.body?.cancel();
+      return null;
+    }
 
     const parsed = sessionSchema.safeParse(await res.json());
     return parsed.success ? parsed.data : null;

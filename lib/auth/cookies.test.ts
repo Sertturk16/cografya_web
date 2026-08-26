@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ACCESS_COOKIE_NAME,
   REFRESH_COOKIE_NAME,
+  clearAccessCookie,
   clearSessionCookies,
   deriveSecureCookieAttribute,
   normalizeMaxAge,
@@ -82,5 +83,43 @@ describe("T-C4 — TTL guard", () => {
 
   it("floors a fractional TTL", () => {
     expect(normalizeMaxAge(900.7)).toBe(900);
+  });
+});
+
+describe("T-C5 — Secure is bound from derivation through to the real descriptor (SEC84-M3)", () => {
+  // T-C2 only ever calls the pure `deriveSecureCookieAttribute()` in isolation; nothing
+  // asserted that its result actually reaches a produced cookie descriptor's `secure`
+  // field. Today's code passes it through correctly (`buildAttributes(secure, maxAge)`),
+  // so this is the regression gate for the reverse rule (`secure: true` hardcoded, or the
+  // derived value silently dropped) — not a behaviour change.
+  const SITE_URLS = [
+    "https://cografya.example",
+    "http://cografya.example",
+    "http://localhost:3000",
+  ];
+
+  it("sessionCookieMutations' secure field matches deriveSecureCookieAttribute for the same site URL", () => {
+    for (const siteUrl of SITE_URLS) {
+      const [access, refresh] = sessionCookieMutations(TOKENS, siteUrl);
+      const expected = deriveSecureCookieAttribute(siteUrl);
+      expect(access.options.secure).toBe(expected);
+      expect(refresh.options.secure).toBe(expected);
+    }
+  });
+
+  it("clearSessionCookies' secure field matches deriveSecureCookieAttribute for the same site URL", () => {
+    for (const siteUrl of SITE_URLS) {
+      const [access, refresh] = clearSessionCookies(siteUrl);
+      const expected = deriveSecureCookieAttribute(siteUrl);
+      expect(access.options.secure).toBe(expected);
+      expect(refresh.options.secure).toBe(expected);
+    }
+  });
+
+  it("clearAccessCookie's secure field matches deriveSecureCookieAttribute for the same site URL", () => {
+    for (const siteUrl of SITE_URLS) {
+      const descriptor = clearAccessCookie(siteUrl);
+      expect(descriptor.options.secure).toBe(deriveSecureCookieAttribute(siteUrl));
+    }
   });
 });
