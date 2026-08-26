@@ -25,6 +25,7 @@ const AUTH_KEYS = [
   "login.forgot",
   "login.alreadySignedIn",
   "login.logout",
+  "login.loggedOut",
   "reset.metaTitle",
   "reset.metaDescription",
   "reset.heading",
