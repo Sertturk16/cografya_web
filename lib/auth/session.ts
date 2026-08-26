@@ -36,14 +36,21 @@ void _sessionShapeAgreesWithContract;
  * 7, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-03-plan.md`). Memoized per request
  * with React `cache()`, so one render never issues the read twice.
  *
- * PROPERTY P3 (plan §7) — a rotated refresh token is never lost. This module is READ-ONLY
- * BY CONSTRUCTION: there is no function anywhere in this file that rotates a session. It is
- * not "we remember not to" — the capability does not exist here, because this file imports
- * neither the token-issuing endpoint nor the cookie that would carry a rotated refresh
- * token. A Server Component cannot write a `Set-Cookie` header, so a "helpful" auto-rotate
- * called from here would obtain a token it has nowhere to persist; the browser's next use
- * of the now-stale refresh cookie then looks like a REUSE to the api, which revokes the
- * whole session family (`AuthResultDto`, plan §7 P3). Gate: `transport.server.test.ts` T7
+ * PROPERTY P3 (plan §7) — canonical statement, mechanism and residual: this module does NOT
+ * restate it; see `lib/auth/transport.server.ts`'s module docblock (P3), the single place it
+ * is defined. A second narrow copy is deliberately not written here — a second copy already
+ * drifted from the canonical one once (`CODE84R2-I1`: this paragraph carried the broad,
+ * since-withdrawn "a rotated refresh token is never lost" while the canonical copy had
+ * already been narrowed), and only a pointer closes that class rather than reopening it.
+ *
+ * This module's OWN contribution to the property: it is READ-ONLY BY CONSTRUCTION — there
+ * is no function anywhere in this file that rotates a session. It is not "we remember not
+ * to" — the capability does not exist here, because this file imports neither the
+ * token-issuing endpoint nor the cookie that would carry a rotated refresh token. A Server
+ * Component cannot write a `Set-Cookie` header, so a "helpful" auto-rotate called from here
+ * would obtain a token it has nowhere to persist; the browser's next use of the now-stale
+ * refresh cookie then looks like a REUSE to the api, which revokes the whole session family
+ * (`AuthResultDto`). Gate: `transport.server.test.ts` T7
  * asserts this file's own source contains neither the rotation endpoint's path nor the
  * refresh cookie's name — the same source-assertion technique `lib/env.server.test.ts`
  * already uses to keep a marker import from hiding a removed guard.

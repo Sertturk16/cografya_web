@@ -242,6 +242,39 @@ describe("T2 — P2: every branch carries Cache-Control/Vary/X-Content-Type-Opti
     expect(result.status).toBe(413);
     expectAuthHeaders(result);
   });
+
+  // Round-3 item 4 (VAL84R2-M1): the two branches round 2 added were missing from this
+  // block's coverage, which is exactly what made "every branch" false. 405 is the one
+  // branch whose headers have a SECOND source (`extraHeaders`), so it is the one branch
+  // where the item-3 spread-order fix actually matters.
+  it("405 method-not-allowed still carries the three fixed headers alongside Allow", async () => {
+    const result = await handleAuthRequest(
+      makeRequest("POST", "/api/auth/session", { origin: SITE_URL }),
+      ["session"],
+    );
+    expect(result.status).toBe(405);
+    expectAuthHeaders(result);
+  });
+
+  it("raw-path-mismatch 404 (percent-encoded alias) still carries the three fixed headers", async () => {
+    const result = await handleAuthRequest(
+      makeRequest("POST", "/api/auth/logi%6E", { origin: SITE_URL }),
+      ["login"],
+    );
+    expect(result.status).toBe(404);
+    expectAuthHeaders(result);
+  });
+
+  // Round-3 item 3 gate: `bffResult`'s spread order is what makes the fixed header set win
+  // over any caller-supplied `extraHeaders`. No caller today passes a colliding key (`Allow`
+  // shares none of the three fixed names), so the override behaviour itself cannot be
+  // exercised black-box; this pins the mechanism the same way T7 pins a property no test
+  // above can reach behaviourally — by asserting it directly against the module's own
+  // source, so a future re-flip fails loudly instead of silently regressing P2.
+  it("bffResult's header spread places bffHeaders() LAST — extraHeaders can only add, never override (source-pinned)", () => {
+    const source = readFileSync(new URL("./transport.server.ts", import.meta.url), "utf8");
+    expect(source).toContain("headers: { ...extraHeaders, ...bffHeaders() }");
+  });
 });
 
 // -----------------------------------------------------------------------------------------
@@ -694,22 +727,26 @@ describe("T7 — P3: lib/auth/session.ts never calls refresh", () => {
     // A blunt "no mention of the WORD refresh" check would also reject this file's own
     // prose explaining why it never refreshes, so the assertion targets the two concrete
     // identifiers a refresh call would actually need: the api path and the cookie that
-    // carries the refresh token. Revert-to-red: add a refresh call to `session.ts` — it
-    // cannot be written without at least one of these two strings appearing in the source.
+    // carries the refresh token. NARROW SCOPE (`TA84R2-I1`, replacing a false "cannot be
+    // written without…" absolute this comment used to carry): this assertion alone only
+    // catches a refresh call written using one of these two exact literal strings. Round 1
+    // measured four mutants (see below) that reintroduce the P3 defect without using
+    // either string; the three tests below close those four demonstrated evasions, and this
+    // one does not claim to on its own.
     expect(SESSION_SOURCE).not.toContain("/api/auth/refresh");
     expect(SESSION_SOURCE).not.toContain("REFRESH_COOKIE_NAME");
   });
 
   // TA84-1 (validated, downgraded to MINOR — REVIEW-POLICY.md §9 rule 3: a guard's
   // incompleteness is debt, not a blocker, when no production input yields a wrong output
-  // today). Five mutants each reintroduced the P3 defect and kept the check above green: a
-  // wrapper function, a sibling module, a local constant table, and a hardcoded cookie name.
+  // today). Five mutants of this module were run against the check above; FOUR reintroduced
+  // the P3 defect and kept it green — a wrapper function, a sibling module, a local constant
+  // table, and a hardcoded cookie name (`TA84R2-M1`: this comment used to say "five" here,
+  // contradicting the correct "four" two lines below). Only the most literal mutant went red.
   // The two checks below close what an import allowlist alone cannot (plan §16
   // "Recommended Actions" #1: "the allowlist misses two of the four demonstrated evasions").
   // This is item 7's owed strengthening — it does NOT claim to close the class outright, only
-  // the four demonstrated evasions; an overclaiming comment here is exactly the failure mode
-  // this round exists to fix (see the false "cannot be written without…" sentence this test
-  // used to carry, corrected above).
+  // the four demonstrated evasions.
 
   it("imports only from an allowed source list — closes the wrapper-function / sibling-module evasion", () => {
     const ALLOWED_IMPORT_SOURCES = new Set([
@@ -906,7 +943,7 @@ describe("T11 — unknown action and method mismatch", () => {
     expect(result.cookies).toEqual([]);
   });
 
-  it("GET /api/auth/login (login is POST-only) -> 405 with Allow: POST", async () => {
+  it("GET /api/auth/login (login is POST-only) -> 405 with Allow: POST, OPTIONS", async () => {
     const mock = fetchMock();
     const result = await handleAuthRequest(
       makeRequest("GET", "/api/auth/login", { origin: SITE_URL }),
@@ -915,11 +952,14 @@ describe("T11 — unknown action and method mismatch", () => {
     expect(result.status).toBe(405);
     expect(mock).not.toHaveBeenCalled();
     expect(result.cookies).toEqual([]);
-    // RFC 9110 §15.5.6 requires a 405 to carry Allow (CODE84-M8).
-    expect(result.headers.Allow).toBe("POST");
+    // RFC 9110 §15.5.6 requires a 405 to carry Allow (CODE84-M8). OPTIONS is included
+    // because Next's own auto-implemented OPTIONS on this path genuinely answers 204
+    // (CODE84R2-M3) — matching the framework's own Allow verbatim was measured harmful
+    // instead, since it would list POST on the very request this branch just refused.
+    expect(result.headers.Allow).toBe("POST, OPTIONS");
   });
 
-  it("POST /api/auth/session (session is GET-only) -> 405 with Allow: GET", async () => {
+  it("POST /api/auth/session (session is GET-only) -> 405 with Allow: GET, OPTIONS", async () => {
     const mock = fetchMock();
     const result = await handleAuthRequest(
       makeRequest("POST", "/api/auth/session", { origin: SITE_URL }),
@@ -928,7 +968,7 @@ describe("T11 — unknown action and method mismatch", () => {
     expect(result.status).toBe(405);
     expect(mock).not.toHaveBeenCalled();
     expect(result.cookies).toEqual([]);
-    expect(result.headers.Allow).toBe("GET");
+    expect(result.headers.Allow).toBe("GET, OPTIONS");
   });
 });
 

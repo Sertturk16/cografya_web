@@ -32,17 +32,24 @@ import { safeReturnPath } from "./redirect";
  *        `sessionCookieMutations()` (`./cookies.ts`), which returns nothing but two cookie
  *        descriptors. Every browser-facing body is built by `bffBody()`, whose parameter
  *        type `AuthBffBody` is a closed union of three members — narrower than a type-level
- *        guarantee, stated as such (`CODE84-M4`/`SEC84-M4`): two members carry only fixed
- *        literals and values this module itself derives (`session.firstName`/`accountRole`
- *        from the api's own session read, `code` from the closed `AuthBffCode` union); the
- *        third member's `redirectTo` field is an unconstrained `string` at the type level —
- *        the compiler does not by itself stop an api-sourced string from being assigned
- *        there. What keeps a token out of it is that `redirectTo` is only ever populated by
- *        `safeReturnPath()` (`./redirect.ts`), which has no access to a token value; T1/T4
+ *        guarantee, stated as such (`CODE84-M4`/`SEC84-M4`, corrected `CODE84R2-M1`): the
+ *        only genuinely CLOSED fields are `code` (the closed `AuthBffCode` union) and
+ *        `accountRole` (a closed enum); `session.firstName` and `redirectTo` are BOTH an
+ *        unconstrained `string` at the type level — the compiler does not by itself stop an
+ *        api-sourced string from being assigned to either. What keeps a token out of them is
+ *        not the type but the single source that populates each: `redirectTo` is only ever
+ *        populated by `safeReturnPath()` (`./redirect.ts`), which has no access to a token
+ *        value, and `firstName` only ever comes from the api's own session read, whose
+ *        response schema (`sessionSchema` below) has no token field to begin with. T1/T4
  *        pin today that no sentinel value reaches the body. Gate: T1 (success paths), T4
  *        (error paths).
- *   P2 — auth responses are not cached. `bffHeaders()` is the only way a response's headers
- *        are produced, so no branch can omit `Cache-Control: no-store`. Gate: T2.
+ *   P2 — auth responses are not cached. Every response's fixed header set comes from
+ *        `bffHeaders()`; `bffResult()`'s spread order places it LAST, so a caller-supplied
+ *        `extraHeaders` entry can only ADD a key, never override one of the three fixed
+ *        ones (corrected `SEC84R2-M1`/`CODE84R2-M2`: the previous wording called
+ *        `bffHeaders()` the "only way" a response's headers are produced, which the later
+ *        `extraHeaders` addition made false — a caller-supplied header is also a way). No
+ *        branch can omit `Cache-Control: no-store`. Gate: T2.
  *   P3 — `/api/auth/refresh` is called only from a context that can write the resulting
  *        cookies in the same response (narrowed to this, plan §7 P3's own Property line,
  *        from the broader "a rotated refresh token is never lost" — `VAL84A-I1`/`SEC84-M5`).
@@ -193,9 +200,14 @@ function isKnownApiErrorCode(value: unknown): value is (typeof API_ERROR_CODES)[
 const MAPPED_ERROR_STATUSES = new Set([400, 401, 403, 429]);
 
 /**
- * Every browser-facing body (plan §7 P1). Closed union, three members, none of which has a
- * field that can hold an arbitrary api string — adding a token requires adding a member
- * here, a change visible in the type rather than in a data flow.
+ * Every browser-facing body (plan §7 P1) — for the mechanism, and precisely which members
+ * are genuinely closed vs. an unconstrained `string` guarded only by its single populating
+ * source, see this module's own P1 docblock above, the canonical statement. (This comment
+ * used to carry a second, narrower copy of that classification, and it drifted from the
+ * canonical one — `SEC84R2-M2` — which is why it is a pointer now, not a restatement.) What
+ * this type itself guarantees: the union is closed to exactly three members, so adding a
+ * token requires adding a member here, a change visible in the type rather than in a data
+ * flow.
  */
 export type AuthBffBody =
   | { ok: true; redirectTo?: string }
@@ -226,17 +238,20 @@ function bffBody(body: AuthBffBody): AuthBffBody {
   return body;
 }
 
-/** `extraHeaders` only ADDS to `bffHeaders()`'s fixed set (plan §7 P2) — the sole caller
- *  today is the 405 branch's `Allow` header (`CODE84-M8`), which shares no key with
- *  `Cache-Control`/`Vary`/`X-Content-Type-Options`, so P2's "no branch can omit them"
- *  guarantee still holds. */
+/** `extraHeaders` can only ADD to `bffHeaders()`'s fixed set, never override a member of it
+ *  (plan §7 P2). This is a mechanism, not a list of callers to keep in sync — the previous
+ *  version of this docblock enumerated "the sole caller today" and the key it happens not
+ *  to share, which is exactly the shape plan §7 forbids (`SEC84R2-M1`/`CODE84R2-M2`). The
+ *  spread below places `bffHeaders()` LAST, so any key `extraHeaders` and `bffHeaders()`
+ *  share resolves to the fixed value regardless of what a future caller passes. Gate: the
+ *  source-pinned spread-order assertion in transport.server.test.ts (T2, round-3 item 3). */
 function bffResult(
   status: number,
   body: AuthBffBody,
   cookies: readonly CookieDescriptor[] = [],
   extraHeaders: Record<string, string> = {},
 ): AuthBffResult {
-  return { status, body: bffBody(body), headers: { ...bffHeaders(), ...extraHeaders }, cookies };
+  return { status, body: bffBody(body), headers: { ...extraHeaders, ...bffHeaders() }, cookies };
 }
 
 // ---------------------------------------------------------------------------------------
@@ -368,7 +383,19 @@ async function classifyResponse(res: Response): Promise<ApiCallOutcome> {
     // undici does not return a connection to its pool until the response body is consumed,
     // so a burst of unmapped statuses (a 5xx during an api outage) would otherwise hold
     // connections open for as long as the response objects stay reachable. Gate: T-BODY-DRAIN.
-    await res.body?.cancel();
+    // `cancel()` on an already-errored stream REJECTS (measured, `SEC84R2-M3`), so it is
+    // wrapped the same way the other two `res.body?.cancel()` sites this round added are
+    // (`handleLogout` below, in this file; `session.ts`'s is inside its own outer
+    // try/catch) — a try/catch mechanically stops a reject from escaping uncaught here, the
+    // same way it does at those two sites. NO GATE for the reject path specifically in this
+    // round: T-BODY-DRAIN below asserts `cancel()` is CALLED on this branch, not that a
+    // reject from it is swallowed — recorded rather than implied.
+    try {
+      await res.body?.cancel();
+    } catch {
+      // Ignored: draining is best-effort — a connection broken enough to make cancel()
+      // reject has nothing left to return to undici's pool either way.
+    }
     return { kind: "unavailable" };
   }
   const rawBody = await safeReadText(res);
@@ -812,6 +839,18 @@ export async function handleAuthRequest(
     logAuthOutcome("(unknown)", "not-found");
     return bffResult(404, { ok: false, code: "errors.transport.invalidRequest" });
   }
+  // The literal below (`/api/auth/${actionKey}`) is a SECOND, unlinked encoding of this
+  // route's own mount point (`app/api/auth/[...action]/route.ts`) — no shared constant,
+  // type or compile-time check ties the two together (`CODE84R2-M4`). Measured today:
+  // `next.config.ts` sets no `basePath`/`assetPrefix` and `proxy.ts`'s matcher already
+  // excludes `/api`, so the two agree today (source-derived from `next.config.ts`, not
+  // wire-measured — round-3 ruling item 5). A future `basePath` or a route-folder move
+  // would make every action here 404 with
+  // no compiler signal, and this file's own `makeRequest()` test helper builds every
+  // request URL from this same embedded prefix, so the suite would not catch it either.
+  // Left as a literal on purpose rather than a shared constant: a shared constant would
+  // make the two sides agree silently, not make a future mismatch fail loudly, which is
+  // the actual gap.
   if (new URL(request.url).pathname !== `/api/auth/${actionKey}`) {
     logAuthOutcome("(unknown)", "not-found");
     return bffResult(404, { ok: false, code: "errors.transport.invalidRequest" });
@@ -823,8 +862,19 @@ export async function handleAuthRequest(
     // already requires `action` to be a genuine `AUTH_ACTIONS` entry reached at its
     // canonical path, so the prototype-chain path (`Allow: undefined`, `CODE84-M8`) cannot
     // reach this line. RFC 9110 §15.5.6 requires a 405 to carry `Allow`.
+    //
+    // Deliberately NOT `action.method` alone (`CODE84R2-M3`): that would omit `OPTIONS`,
+    // which Next's own auto-implemented `OPTIONS` response on this same path genuinely
+    // answers (204, measured against a live Next 16.2.10 server), so a narrower `Allow`
+    // would misdescribe a method the server truly supports. Also deliberately NOT matching
+    // that framework response verbatim (round-3 ruling, measured harmful): it lists every
+    // method the catch-all route file exports (`GET, HEAD, OPTIONS, POST`), which would
+    // advertise `POST` on the very request this branch just refused with a 405. `HEAD`
+    // stays out for the same reason this branch never lists both `GET` and `POST`: a
+    // mismatched `HEAD` request 405s here exactly like any other mismatched method, so
+    // listing it as supported would be equally wrong.
     return bffResult(405, { ok: false, code: "errors.transport.invalidRequest" }, [], {
-      Allow: action.method,
+      Allow: [action.method, "OPTIONS"].join(", "),
     });
   }
 
