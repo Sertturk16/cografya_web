@@ -152,14 +152,17 @@ semantic colors (AQI / earthquake intensity / SST) stay STANDARD, never recolore
 
 ## 6. Gates & discipline (`CONVENTIONS.md` §2 — BINDING)
 
-- **NO local test execution — CI is the ONLY test gate.** Locally run ONLY
-  `npx tsc --noEmit` + `eslint` on changed files (**no `--fix`**). Verify tests by reading
-  the PR's CI, never by running them locally. (The vitest harness landed in PR #15 and CI
-  now runs three jobs — `typecheck-and-lint`, **`test` / "Unit Tests"** (`pnpm test`), and
-  `build`. Tests live at `lib/**/*.test.ts` + `components/**/*.test.{ts,tsx}` per
-  `vitest.config.ts`. The local gate is still `tsc` + `eslint` only.)
-- **CI green is the single merge gate.** Never merge while red; never weaken or skip a
-  test/SEO/a11y check to go green — diagnose and fix.
+- **Local execution is the test gate** (→ `DEC 2026-08-26u`). Run `npx tsc --noEmit` +
+  `eslint` on changed files (**no `--fix`**), then the **full** `pnpm test` suite, locally,
+  before returning. Report exact counts (`X files / Y tests passed`) and quote any failure
+  verbatim — a claimed "clean" with no numbers is not evidence. (The vitest harness landed
+  in PR #15; CI runs the same commands as its own `typecheck-and-lint`, `test` / "Unit
+  Tests", and `build` jobs and remains available as a secondary, independent record when it
+  is reachable, but is not required to block a merge decision.) Tests live at
+  `lib/**/*.test.ts` + `components/**/*.test.{ts,tsx}` per `vitest.config.ts`.
+- **A genuine green local run is the merge gate.** Never merge on a red result you have
+  seen; never weaken or skip a test/SEO/a11y check to go green — diagnose and fix. Prefer
+  CI's evidence when it is available in reasonable time; do not wait indefinitely on it.
 - Standalone `tsc --noEmit` + `lint` pass as their own CI job (`.github/workflows/ci.yml`:
   `typecheck-and-lint` + `build`). No deploy job until the hosting decision.
 - **Verify before "done":** typecheck + lint clean on changed files; then **curl-check the
