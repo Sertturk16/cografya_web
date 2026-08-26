@@ -12,12 +12,15 @@ export default function robots(): MetadataRoute.Robots {
       // with Disallow (the ferrumone pattern, CONVENTIONS §6 #8). Disallow is only
       // for api/raw paths.
       //
-      // The web app now has exactly one route of its own under this prefix:
-      // `/api/search-index/{locale}`, the header search's data file. Disallowing it is
-      // correct rather than a de-indexing trick — it is a JSON document, not a page, and
-      // it is NOT required to render anything, because the search control ships as a real
-      // `<a>` link in the server HTML with or without it. Nothing links to it either, so
-      // it is undiscoverable in the first place.
+      // The web app now has two routes of its own under this prefix:
+      // `/api/search-index/{locale}` (the header search's data file) and
+      // `/api/auth/[...action]` (the server-only auth transport, UYELIK-03). Disallowing
+      // the prefix is correct rather than a de-indexing trick for either — neither is a
+      // page, and `SEO-POLICY.md` §B6 6.6/6.7 permits `Disallow` here for exactly that
+      // reason (data endpoints, not pages; no `noindex` page is involved). The auth routes
+      // additionally answer `Cache-Control: no-store` and set/clear only `HttpOnly`
+      // cookies, so nothing under `/api/auth/**` renders content a crawler could want.
+      // Nothing links to either surface, so both are undiscoverable in the first place.
       disallow: ["/api/"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
