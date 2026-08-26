@@ -546,6 +546,54 @@ describe("T-CRITICAL-FIX — session: every mapped status OTHER than 401 passes 
 });
 
 // -----------------------------------------------------------------------------------------
+// T-BODY-DRAIN — the api response body is drained even when this module never reads it
+// (item 13, CODE84-M2). Covers the two sites inside THIS module; the third site
+// (lib/auth/session.ts:71) has no gate in this round — see the Phase 2 return to Atlas.
+// -----------------------------------------------------------------------------------------
+
+describe("T-BODY-DRAIN — an unconsumed api response body is still cancelled", () => {
+  it("classifyResponse's unmapped-status branch cancels the body instead of leaving it unread", async () => {
+    const response = new Response("upstream failure body", { status: 500 });
+    const body = response.body;
+    expect(body).not.toBeNull();
+    const cancelSpy = vi.spyOn(body as ReadableStream<Uint8Array>, "cancel");
+
+    const mock = fetchMock();
+    mock.mockResolvedValue(response);
+    const result = await handleAuthRequest(
+      makeRequest("POST", "/api/auth/login", {
+        origin: SITE_URL,
+        body: JSON.stringify({ email: "a@b.test", password: "x" }),
+      }),
+      ["login"],
+    );
+
+    expect(result.status).toBe(502);
+    expect(cancelSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("handleLogout drains the body on a failed revoke instead of leaving it unread", async () => {
+    const response = new Response("revoke failed body", { status: 500 });
+    const body = response.body;
+    expect(body).not.toBeNull();
+    const cancelSpy = vi.spyOn(body as ReadableStream<Uint8Array>, "cancel");
+
+    const mock = fetchMock();
+    mock.mockResolvedValue(response);
+    const result = await handleAuthRequest(
+      makeRequest("POST", "/api/auth/logout", {
+        origin: SITE_URL,
+        cookie: `${REFRESH_COOKIE_NAME}=abc`,
+      }),
+      ["logout"],
+    );
+
+    expect(result.status).toBe(200);
+    expect(cancelSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+// -----------------------------------------------------------------------------------------
 // T5 — anti-enumeration.
 // -----------------------------------------------------------------------------------------
 

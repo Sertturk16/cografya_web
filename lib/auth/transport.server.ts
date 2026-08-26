@@ -367,7 +367,7 @@ async function classifyResponse(res: Response): Promise<ApiCallOutcome> {
     // The body is never read on this branch, but it must still be DRAINED (`CODE84-M2`):
     // undici does not return a connection to its pool until the response body is consumed,
     // so a burst of unmapped statuses (a 5xx during an api outage) would otherwise hold
-    // connections open for as long as the response objects stay reachable.
+    // connections open for as long as the response objects stay reachable. Gate: T-BODY-DRAIN.
     await res.body?.cancel();
     return { kind: "unavailable" };
   }
@@ -695,7 +695,7 @@ async function handleLogout(action: AuthAction, request: Request): Promise<AuthB
       revokeFailed = true;
       // Drain the body for the same reason as `classifyResponse`'s unmapped branch
       // (`CODE84-M2`): `logout` never reads a failed revoke's body, but undici still needs
-      // it consumed to return the connection to its pool.
+      // it consumed to return the connection to its pool. Gate: T-BODY-DRAIN.
       await res.body?.cancel();
     }
   } catch {

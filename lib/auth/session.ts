@@ -76,7 +76,9 @@ export const getSession = cache(async (): Promise<Session | null> => {
     if (!res.ok) {
       // Drain the body before returning (`CODE84-M2`, the third of the round's three
       // unconsumed-body sites): this function never reads a failed response's body, but
-      // undici still needs it consumed to return the connection to its pool.
+      // undici still needs it consumed to return the connection to its pool. NO GATE in
+      // this round: this file has no test file today and this round adds none (plan §14
+      // prohibits a new file) — recorded rather than silently claimed as covered.
       await res.body?.cancel();
       return null;
     }
