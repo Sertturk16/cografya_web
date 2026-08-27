@@ -410,10 +410,11 @@ only who reads which of them, and when (→ DEC 2026-08-07a, DEC 2026-08-25m).
 
 <!-- read-contract -->
 
-| Rol      | Okur                                                                                               | Ne zaman                                                                                                                                        | Tanım dosyası        | Anchor               |
-| -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | -------------------- |
-| **Vera** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every visible UI change, before the component is written — in addition to, never instead of, the rendered-sample obligation in the header above | `Team/roles/vera.md` | `READ-DESIGN-VISUAL` |
-| **İRİS** | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every design tour, in Phase 0, before opening a browser                                                                                         | `Team/roles/iris.md` | `READ-DESIGN-CRITIC` |
+| Rol                          | Okur                                                                                               | Ne zaman                                                                                                                                        | Tanım dosyası                    | Anchor                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------- |
+| **Vera**                     | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every visible UI change, before the component is written — in addition to, never instead of, the rendered-sample obligation in the header above | `Team/roles/vera.md`             | `READ-DESIGN-VISUAL`            |
+| **İRİS**                     | §2 colour tokens · §3 typography · §4 spacing/components · §5 accessibility · §6 data-viz doctrine | Every design tour, in Phase 0, before opening a browser                                                                                         | `Team/roles/iris.md`             | `READ-DESIGN-CRITIC`            |
+| **design-fidelity-reviewer** | §2 colour tokens · §3 typography · §4 spacing/components · §6 data-viz doctrine                    | Every `cografya_web` PR with a rendered-output diff, before scoring a finding                                                                   | `Team/roles/reviewer-routine.md` | `READ-DESIGN-FIDELITY-REVIEWER` |
 
 <!-- /read-contract -->
 
