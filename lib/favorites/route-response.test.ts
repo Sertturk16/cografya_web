@@ -38,78 +38,77 @@ function errorResult(status: number): FavoriteBffResult {
   };
 }
 
-describe("province favorites route — DELETE (`IRIS91-C1` regression)", () => {
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
+interface FavoriteRouteCase {
+  readonly name: string;
+  /**
+   * Invokes the resource kind's own `DELETE` handler with its own URL/params baked in.
+   * Kept as one closure per case (mirroring `lib/api/marine.test.ts`'s
+   * `read: () => getMarineProvinceConditionsSafe("00")`) rather than sharing a generic
+   * `{ url, params }` shape — the two route modules take genuinely different `ctx.params`
+   * key shapes (`plateCode` vs `isoCode`), and reconciling that into one shared parameter
+   * type is exactly the false generality this collapse must not introduce.
+   */
+  readonly callDelete: () => Promise<Response>;
+}
 
-  it("a 204 from handleDeleteFavorite constructs a real 204 Response with NO body, never throws", async () => {
-    const { handleDeleteFavorite } = await import("@/lib/favorites/transport.server");
-    vi.mocked(handleDeleteFavorite).mockResolvedValue(noBodyResult(204));
-    const { DELETE } = await import("@/app/api/favorites/provinces/[plateCode]/route");
+/**
+ * Both resource kinds exercise the exact same `IRIS91-C1` regression through the exact same
+ * shape (`describe.each`, mirroring `lib/api/marine.test.ts` /
+ * `components/map/attribution-separation.test.ts`) — collapsed from two near-identical
+ * `describe` blocks per `pr-review-archive/cografya_web-91-round2.md` finding `CODE91R3-M1`.
+ */
+const FAVORITE_DELETE_ROUTE_CASES: readonly FavoriteRouteCase[] = [
+  {
+    name: "province",
+    callDelete: async () => {
+      const { DELETE } = await import("@/app/api/favorites/provinces/[plateCode]/route");
+      return DELETE(
+        new Request("http://localhost:3000/api/favorites/provinces/34", { method: "DELETE" }),
+        { params: Promise.resolve({ plateCode: "34" }) },
+      );
+    },
+  },
+  {
+    name: "country",
+    callDelete: async () => {
+      const { DELETE } = await import("@/app/api/favorites/countries/[isoCode]/route");
+      return DELETE(
+        new Request("http://localhost:3000/api/favorites/countries/TR", { method: "DELETE" }),
+        { params: Promise.resolve({ isoCode: "TR" }) },
+      );
+    },
+  },
+];
 
-    const response = await DELETE(
-      new Request("http://localhost:3000/api/favorites/provinces/34", { method: "DELETE" }),
-      { params: Promise.resolve({ plateCode: "34" }) },
-    );
-
-    expect(response.status).toBe(204);
-    expect(response.body).toBeNull();
-    expect(response.headers.get("Cache-Control")).toBe("no-store");
-  });
-
-  it("a non-204 status (e.g. 403) still returns the JSON body unchanged — the fix is scoped to 204 only", async () => {
-    const { handleDeleteFavorite } = await import("@/lib/favorites/transport.server");
-    vi.mocked(handleDeleteFavorite).mockResolvedValue(errorResult(403));
-    const { DELETE } = await import("@/app/api/favorites/provinces/[plateCode]/route");
-
-    const response = await DELETE(
-      new Request("http://localhost:3000/api/favorites/provinces/34", { method: "DELETE" }),
-      { params: Promise.resolve({ plateCode: "34" }) },
-    );
-
-    expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
-      ok: false,
-      code: "errors.transport.forbidden",
+describe.each(FAVORITE_DELETE_ROUTE_CASES)(
+  "$name favorites route — DELETE (`IRIS91-C1` regression)",
+  ({ callDelete }) => {
+    afterEach(() => {
+      vi.resetAllMocks();
     });
-  });
-});
 
-describe("country favorites route — DELETE (`IRIS91-C1` regression)", () => {
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
+    it("a 204 from handleDeleteFavorite constructs a real 204 Response with NO body, never throws", async () => {
+      const { handleDeleteFavorite } = await import("@/lib/favorites/transport.server");
+      vi.mocked(handleDeleteFavorite).mockResolvedValue(noBodyResult(204));
 
-  it("a 204 from handleDeleteFavorite constructs a real 204 Response with NO body, never throws", async () => {
-    const { handleDeleteFavorite } = await import("@/lib/favorites/transport.server");
-    vi.mocked(handleDeleteFavorite).mockResolvedValue(noBodyResult(204));
-    const { DELETE } = await import("@/app/api/favorites/countries/[isoCode]/route");
+      const response = await callDelete();
 
-    const response = await DELETE(
-      new Request("http://localhost:3000/api/favorites/countries/TR", { method: "DELETE" }),
-      { params: Promise.resolve({ isoCode: "TR" }) },
-    );
-
-    expect(response.status).toBe(204);
-    expect(response.body).toBeNull();
-    expect(response.headers.get("Cache-Control")).toBe("no-store");
-  });
-
-  it("a non-204 status (e.g. 403) still returns the JSON body unchanged — the fix is scoped to 204 only", async () => {
-    const { handleDeleteFavorite } = await import("@/lib/favorites/transport.server");
-    vi.mocked(handleDeleteFavorite).mockResolvedValue(errorResult(403));
-    const { DELETE } = await import("@/app/api/favorites/countries/[isoCode]/route");
-
-    const response = await DELETE(
-      new Request("http://localhost:3000/api/favorites/countries/TR", { method: "DELETE" }),
-      { params: Promise.resolve({ isoCode: "TR" }) },
-    );
-
-    expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
-      ok: false,
-      code: "errors.transport.forbidden",
+      expect(response.status).toBe(204);
+      expect(response.body).toBeNull();
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
     });
-  });
-});
+
+    it("a non-204 status (e.g. 403) still returns the JSON body unchanged — the fix is scoped to 204 only", async () => {
+      const { handleDeleteFavorite } = await import("@/lib/favorites/transport.server");
+      vi.mocked(handleDeleteFavorite).mockResolvedValue(errorResult(403));
+
+      const response = await callDelete();
+
+      expect(response.status).toBe(403);
+      await expect(response.json()).resolves.toEqual({
+        ok: false,
+        code: "errors.transport.forbidden",
+      });
+    });
+  },
+);
