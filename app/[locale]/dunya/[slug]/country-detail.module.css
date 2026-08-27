@@ -3,6 +3,17 @@
    (DESIGN.md §2); no hardcoded brand hex. Contrast verified against DESIGN §5:
    slate on white 7.92:1 (AAA), ink on white AAA. */
 
+/* The h1 + FavoriteButton row (UYELIK-08 plan §5.5) — mirrors
+   `province-detail.module.css`'s own `.pageHeading` exactly; a NEW class, distinct from
+   `.detailRow` below (a different semantic pairing). */
+.pageHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 8px;
+}
+
 /* INTRINSIC, NOT A BREAKPOINT (design tour A5) — the il page's rule, for the same measured
    reasons; the full argument lives in `province-detail.module.css` next to its twin. The
    country sheet is where `auto-fill` showed worst: 11 cards at 1440 laid out [5, 5, 1], a

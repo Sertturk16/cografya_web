@@ -2,6 +2,19 @@
    (DESIGN.md §2); no hardcoded brand hex. Contrast verified against DESIGN §5:
    slate on white 7.92:1 (AAA), slate on surface 6.58:1 (AA), ink on white AAA. */
 
+/* The h1 + FavoriteButton row (UYELIK-08 plan §5.5) — a NEW class, distinct from
+   `.detailRow` below (which groups the fact-sheet + locator map lower on the page, a
+   different semantic pairing; reusing that name here would conflate two unrelated
+   groupings). Wrap-not-breakpoint, the same `.detailRow`/`DESIGN.md` §4 idiom: no media
+   query, `flex-wrap` alone carries every viewport down to 320px. */
+.pageHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 8px;
+}
+
 /* INTRINSIC, NOT A BREAKPOINT (design tour A5). Two changes, both measured on the running
    build with 8 cards:
 
