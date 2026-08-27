@@ -721,7 +721,8 @@
       "loading": "Loading…",
       "selectPlaceholder": "Select a district",
       "loadError": "Districts could not be loaded",
-      "announceCount": "{count} districts listed"
+      "announceCount": "{count} districts listed",
+      "retry": "Try again"
     },
     "university": {
       "loading": "Loading…",
