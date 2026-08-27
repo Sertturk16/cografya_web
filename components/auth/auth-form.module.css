@@ -82,6 +82,22 @@
   background: var(--color-surface);
 }
 
+/* De-clutters the double-frame collision `.errorHeading:focus`'s ring below now surfaces
+   (UYELIK-04-UI-FIXES owner-review-ledger §2.1): the region's own 1.5px danger-red border
+   sits only 8-10px from the heading's 2px terracotta ring, two close warm tones reading as
+   "frame inside a frame" whenever the heading is genuinely focused (the region's only
+   focusable content). The fix steps the OUTER border back to the same neutral
+   `--color-border` every other bordered surface in this design system already uses
+   (`.card`, `.control`'s resting state) for as long as focus is inside — the ring is then
+   the one prominent frame at the moment it matters, and the danger border returns the
+   instant focus leaves, still marking the region as an error for every other moment. This
+   changes only the OUTER frame; `.errorHeading`'s ring is untouched, and the "error" meaning
+   stays carried by the always-red `.errorHeading` text + `role="alert"`, never by this
+   border alone. */
+.errorRegion:focus-within {
+  border-color: var(--color-border);
+}
+
 .errorHeading {
   margin: 0 0 8px;
   font-size: 1.05rem;
@@ -172,10 +188,22 @@
    is either a `.field`/`.actions` wrapper (own content) or a full-width `.btn-primary` submit
    — a bare `<button>` dropped straight into that column otherwise inherits the flex default
    `align-self: stretch` and renders as a full-field-width bar, exactly the "second primary
-   action" weight the sizing above was trying to avoid. */
+   action" weight the sizing above was trying to avoid.
+
+   `min-height: 44px` (UYELIK-04-UI-FIXES owner-review-ledger §2.2) — the first cut measured
+   33px, an unforced deviation from `DESIGN.md` §5's own "a control with room to be generous
+   takes AAA 44×44, not just the 24×24 AA floor" once İRİS confirmed there is no crowding
+   around this button. Reuses the SAME established mechanism `.control` above already uses
+   for the identical rule (`min-height`, not a hand-tuned padding/line-height sum that drifts
+   with font metrics); `.btn`'s own `display: inline-flex; align-items: center` (`app/globals.css`)
+   centers the text inside the taller box for free. Stays reading as the secondary action next
+   to the 44px-tall filled `.btn-primary` "Üye ol" submit: smaller `font-size` (0.85rem vs.
+   0.95rem), transparent `.btn-ghost` fill vs. solid terracotta, `align-self: flex-start` vs.
+   full-width — height parity alone does not make it read as co-equal. */
 .districtRetry {
   align-self: flex-start;
-  padding: 6px 14px;
+  min-height: 44px;
+  padding: 6px 16px;
   font-size: 0.85rem;
   color: var(--color-primary-dark);
 }
