@@ -478,11 +478,13 @@ export function RegisterForm({
               {t("verify.resend")}
             </button>
           </div>
-          {resendState === "sent" ? (
-            <p role="status" className={styles.resendNote}>
-              {t("verify.resendAccepted")}
-            </p>
-          ) : null}
+          {/* A11Y87R2-M1: permanently mounted, text-only update — the SAME reliable
+              live-region pattern this file already uses for `universityAnnouncement` /
+              `districtAnnouncement` below (empty text until the outcome is known, never a
+              node whose role AND final content both enter the DOM in the same render). */}
+          <p role="status" className={styles.resendNote}>
+            {resendState === "sent" ? t("verify.resendAccepted") : ""}
+          </p>
         </form>
       </div>
     );
@@ -494,26 +496,48 @@ export function RegisterForm({
         .map(([field]) => ({ id: `register-${field}`, label: t(FIELD_LABEL_KEYS[field]) }))
     : undefined;
 
+  // A11Y88-PE1: the "loading" transition itself now announces too (reusing the existing
+  // `district.loading` literal already shown as the <select>'s own <option> text at the
+  // exact same moment) — previously an AT user not currently focused on this field learned
+  // nothing until the fetch settled into "loaded"/"error".
   const districtAnnouncement =
-    districtState === "loaded"
-      ? t("district.announceCount", { count: districts.length })
-      : districtState === "error"
-        ? t("district.loadError")
-        : "";
+    districtState === "loading"
+      ? t("district.loading")
+      : districtState === "loaded"
+        ? t("district.announceCount", { count: districts.length })
+        : districtState === "error"
+          ? t("district.loadError")
+          : "";
   // UYELIK-04 ui-fixes plan Finding 2: the load-error message wins over the generic
   // "required" one when both are true at once (a failed submit with a still-broken list) —
   // it is the more specific, more actionable of the two.
   const districtError =
     districtState === "error" ? t("district.loadError") : fieldErrors.districtId;
-  // A11Y87-M1: the university/department lists follow the SAME side-effect-of-a-still-
-  // standing-control pattern as the district list above, but had no live region at all —
-  // only the <option> text, which is unread unless the user has already tabbed to that
-  // exact <select>. Error-only (not a "loaded" announcement): unlike the district list, the
-  // count here does not depend on anything the user just chose, so there is no
-  // `announceCount`-equivalent copy to reuse — reusing the already-shipped `loadError`
-  // strings keeps this fix free of new copy / CONTENT-STYLE surface.
-  const universityAnnouncement = universityState === "error" ? t("university.loadError") : "";
-  const departmentAnnouncement = departmentState === "error" ? t("department.loadError") : "";
+  // A11Y87-M1 / A11Y87R2-M2: the university/department lists follow the SAME side-effect-
+  // of-a-still-standing-control pattern as the district list above. A11Y87-M1 only closed
+  // the error half; A11Y87R2-M2 closes the remaining gap by mirroring district's own
+  // successful-load announcement (`announceCount`) — an AT user not focused on the
+  // `<select>` now also learns when the list becomes usable, not only when it fails.
+  // A11Y93-I1 (round 2): both are ALSO gated on `userType` needing the profile — their
+  // owning `<p>` is now permanently mounted (see below), but `universityState`/
+  // `departmentState` themselves never reset to "idle" once loaded, so without this gate a
+  // user who switches `userType` away from undergraduate/graduate would leave a stale,
+  // now-irrelevant "N universities listed" sitting in the always-mounted live region forever.
+  const needsUniversityProfile = userType !== "" && NEEDS_UNIVERSITY_PROFILE.has(userType);
+  const universityAnnouncement = !needsUniversityProfile
+    ? ""
+    : universityState === "loaded"
+      ? t("university.announceCount", { count: universities.length })
+      : universityState === "error"
+        ? t("university.loadError")
+        : "";
+  const departmentAnnouncement = !needsUniversityProfile
+    ? ""
+    : departmentState === "loaded"
+      ? t("department.announceCount", { count: departments.length })
+      : departmentState === "error"
+        ? t("department.loadError")
+        : "";
 
   const nonKktcUniversities = universities.filter((university) => university.type !== "KKTC");
   const kktcUniversities = universities.filter((university) => university.type === "KKTC");
@@ -725,14 +749,26 @@ export function RegisterForm({
                 </>
               )}
             </SelectField>
-            <p aria-live="polite" className={styles.srOnly}>
-              {universityAnnouncement}
-            </p>
-            <p aria-live="polite" className={styles.srOnly}>
-              {departmentAnnouncement}
-            </p>
           </>
         ) : null}
+        {/* A11Y93-I1 (round 2): permanently mounted, matching `districtAnnouncement`'s node
+            (below) — NEVER inside the `userType` conditional above. `universityState`/
+            `departmentState` are never reset to "idle" once a list has loaded (deliberately —
+            resetting on every `userType` switch would retrigger an unnecessary network
+            request), so a node mounted only while `userType` is undergraduate/graduate would
+            re-enter the DOM with its final text already attached the moment the user switches
+            back — the live region would then announce nothing on that second and every later
+            switch-back, exactly the defect this fix closes. Keeping the node always-mounted and
+            additionally gating `universityAnnouncement`/`departmentAnnouncement` themselves on
+            `userType` (below) avoids BOTH failure modes: the announcement still fires correctly
+            on every genuine mount-while-relevant transition, and it goes empty — rather than
+            showing a stale "N universities listed" — the moment `userType` no longer needs it. */}
+        <p aria-live="polite" className={styles.srOnly}>
+          {universityAnnouncement}
+        </p>
+        <p aria-live="polite" className={styles.srOnly}>
+          {departmentAnnouncement}
+        </p>
 
         <SelectField
           id="register-provincePlateCode"

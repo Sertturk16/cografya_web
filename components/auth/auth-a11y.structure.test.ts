@@ -339,3 +339,46 @@ describe("auth-form.module.css never sets outline: none", () => {
     expect(css).not.toMatch(/\.control:focus\s*\{/);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// A11Y93-I1 (round 2): a role=status/aria-live node must never be the ONLY thing that
+// mounts/unmounts with a conditional block — the exact shape this PR's original fix (the
+// `resendState === "sent" ? <p role="status">...</p> : null` mount-timing gap, closed at
+// register-form.tsx:485-ish / verify-email-form.tsx:200-ish) and this fix round's own Fix 1
+// (register-form.tsx's university/department announcement, previously inside the `userType`
+// conditional) both address. This needs no jsdom (`FU-WEB-JSDOM`) — it is a pure structural
+// invariant over the same AST `jsxElements`/`descendants` already scan.
+// ---------------------------------------------------------------------------------------
+
+/** `true` for a literal `null` or the `undefined` identifier — the two spellings of "this
+ *  branch renders nothing" a JSX-mount ternary uses in this codebase. */
+function isNullishBranch(node: ts.Node): boolean {
+  return (
+    node.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(node) && node.text === "undefined")
+  );
+}
+
+/** Whether ANY JSX element in this subtree (including the subtree's own root) carries
+ *  `role="status"` or an `aria-live` attribute — the two markers `field.tsx`/the islands use
+ *  for a live-region status node. */
+function containsStatusOrLiveNode(root: ts.Node): boolean {
+  return jsxElements(root).some(
+    (el) => attrText(el, "role") === "status" || hasAttr(el, "aria-live"),
+  );
+}
+
+describe("a role=status/aria-live node is never the consequent of a null-alternate conditional (A11Y93-I1 regression class)", () => {
+  it.each(ISLAND_FILES)("%s", (relativePath) => {
+    const { ast } = parse(relativePath);
+    const conditionals = descendants(ast, ts.isConditionalExpression);
+    // Positive control: every island in this file DOES use at least one `cond ? x : null`
+    // JSX-mount ternary (e.g. `hasErrors ? <FormErrorRegion .../> : null`), so this scan is
+    // exercising real matches, not vacuously passing on an empty list.
+    const nullAlternateConditionals = conditionals.filter((c) => isNullishBranch(c.whenFalse));
+    expect(nullAlternateConditionals.length).toBeGreaterThan(0);
+
+    for (const conditional of nullAlternateConditionals) {
+      expect(containsStatusOrLiveNode(conditional.whenTrue)).toBe(false);
+    }
+  });
+});

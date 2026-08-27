@@ -193,11 +193,13 @@ export function VerifyEmailForm({ locale }: { readonly locale: Locale }) {
             {t("verify.resend")}
           </button>
         </div>
-        {resendState === "sent" ? (
-          <p role="status" className={styles.resendNote}>
-            {t("verify.resendAccepted")}
-          </p>
-        ) : null}
+        {/* A11Y87R2-M1: permanently mounted, text-only update — the same reliable live-region
+            pattern `register-form.tsx` already uses for its `districtAnnouncement`/
+            `universityAnnouncement` nodes (empty text until the outcome is known, never a
+            node whose role AND final content both enter the DOM in the same render). */}
+        <p role="status" className={styles.resendNote}>
+          {resendState === "sent" ? t("verify.resendAccepted") : ""}
+        </p>
         <noscript>
           <p className={styles.noscript}>{t("noscript")}</p>
         </noscript>
