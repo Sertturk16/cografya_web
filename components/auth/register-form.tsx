@@ -518,14 +518,22 @@ export function RegisterForm({
   // the error half; A11Y87R2-M2 closes the remaining gap by mirroring district's own
   // successful-load announcement (`announceCount`) — an AT user not focused on the
   // `<select>` now also learns when the list becomes usable, not only when it fails.
-  const universityAnnouncement =
-    universityState === "loaded"
+  // A11Y93-I1 (round 2): both are ALSO gated on `userType` needing the profile — their
+  // owning `<p>` is now permanently mounted (see below), but `universityState`/
+  // `departmentState` themselves never reset to "idle" once loaded, so without this gate a
+  // user who switches `userType` away from undergraduate/graduate would leave a stale,
+  // now-irrelevant "N universities listed" sitting in the always-mounted live region forever.
+  const needsUniversityProfile = userType !== "" && NEEDS_UNIVERSITY_PROFILE.has(userType);
+  const universityAnnouncement = !needsUniversityProfile
+    ? ""
+    : universityState === "loaded"
       ? t("university.announceCount", { count: universities.length })
       : universityState === "error"
         ? t("university.loadError")
         : "";
-  const departmentAnnouncement =
-    departmentState === "loaded"
+  const departmentAnnouncement = !needsUniversityProfile
+    ? ""
+    : departmentState === "loaded"
       ? t("department.announceCount", { count: departments.length })
       : departmentState === "error"
         ? t("department.loadError")
@@ -741,14 +749,26 @@ export function RegisterForm({
                 </>
               )}
             </SelectField>
-            <p aria-live="polite" className={styles.srOnly}>
-              {universityAnnouncement}
-            </p>
-            <p aria-live="polite" className={styles.srOnly}>
-              {departmentAnnouncement}
-            </p>
           </>
         ) : null}
+        {/* A11Y93-I1 (round 2): permanently mounted, matching `districtAnnouncement`'s node
+            (below) — NEVER inside the `userType` conditional above. `universityState`/
+            `departmentState` are never reset to "idle" once a list has loaded (deliberately —
+            resetting on every `userType` switch would retrigger an unnecessary network
+            request), so a node mounted only while `userType` is undergraduate/graduate would
+            re-enter the DOM with its final text already attached the moment the user switches
+            back — the live region would then announce nothing on that second and every later
+            switch-back, exactly the defect this fix closes. Keeping the node always-mounted and
+            additionally gating `universityAnnouncement`/`departmentAnnouncement` themselves on
+            `userType` (below) avoids BOTH failure modes: the announcement still fires correctly
+            on every genuine mount-while-relevant transition, and it goes empty — rather than
+            showing a stale "N universities listed" — the moment `userType` no longer needs it. */}
+        <p aria-live="polite" className={styles.srOnly}>
+          {universityAnnouncement}
+        </p>
+        <p aria-live="polite" className={styles.srOnly}>
+          {departmentAnnouncement}
+        </p>
 
         <SelectField
           id="register-provincePlateCode"
