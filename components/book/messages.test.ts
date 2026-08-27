@@ -58,6 +58,14 @@ const BOOK_DETAIL_KEYS = [
   "examLabel",
   "sourcesLabel",
   "sourceNewTab",
+  // The login gate's CTA (§5.3.4) and its own accessible-name swap on the İzle button (§5.9).
+  "signInCta",
+  "watchAriaSignedOut",
+  // The progress controls (§5.6): the resume-position line and the watched toggle's on/off pair.
+  "resumeLine",
+  "watchedToggle",
+  "watchedToggleAriaOn",
+  "watchedToggleAriaOff",
 ] as const;
 
 const catalogues = { tr: trMessages.BookDetail, en: enMessages.BookDetail } as const;

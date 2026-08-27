@@ -1,7 +1,23 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef } from "react";
-import { openVideo, resetBench, selectVideo } from "./active-video";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+// Deliberately NOT `@/i18n/navigation`'s `useRouter` (the same review `CODE85-M5` reasoning
+// `login-form.tsx` already documents): the target this pushes is `getPathname(...)`'s output,
+// a final path with its locale prefix already resolved — a second locale-prefixing pass would
+// double it.
+import { useRouter } from "next/navigation";
+import { getPathname } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/routing";
+import { useAuthSession } from "@/lib/auth/use-session.client";
+import { resolveIzleStartSecond } from "@/lib/book/resume-second";
+import {
+  buildWatchedTogglePayload,
+  fetchVideoProgress,
+  saveVideoProgress,
+  VIDEO_PROGRESS_FETCH_TIMEOUT_MS,
+  type VideoProgressValue,
+} from "@/lib/video-progress/client";
+import { openVideo, resetBench, selectVideo, useBenchState } from "./active-video";
 import { BenchStage, type BenchVideo } from "./bench-stage";
 
 /**
@@ -78,11 +94,34 @@ function denemeNoOf(node: Element): number | null {
   return Number.isFinite(denemeNo) ? denemeNo : null;
 }
 
+/**
+ * Where a gated click sends the reader (UYELIK-06 plan §5.3.3). AK-48's own framing is
+ * "become a MEMBER", so the primary path is `/kayit` (register), not `/giris` — a first-time
+ * reader arriving from organic search on a solved-question video has no account yet.
+ * `returnTo` carries the current pathname plus the pressed control's own fragment (a question
+ * row/timeline tick's `href`, or nothing for the İzle button, which has none of its own) — an
+ * ORDINARY fragment arrival on return, exactly as any other visit to a fragment URL:
+ * `active-video.ts`'s own hash effect SELECTS the video the fragment names and never opens a
+ * player on its own, so the reader lands back on the right video, sees the (now-gone) sign-in
+ * CTA, and presses İzle once more, now unblocked. No special "resume after auth round-trip"
+ * mechanism exists or is needed.
+ */
+function redirectToSignIn(
+  router: ReturnType<typeof useRouter>,
+  locale: Locale,
+  fragment: string | null,
+): void {
+  const target = getPathname({ locale, href: "/kayit" });
+  const returnTo = `${window.location.pathname}${fragment ?? ""}`;
+  router.push(`${target}?returnTo=${encodeURIComponent(returnTo)}`);
+}
+
 export function VideoBench({
   className,
   indexClassName,
   videos,
   defaultDenemeNo,
+  locale,
   children,
 }: {
   /** Optional exactly as React types it: a CSS-module lookup is `string | undefined` under
@@ -93,12 +132,88 @@ export function VideoBench({
   indexClassName?: string;
   videos: readonly BenchVideo[];
   defaultDenemeNo: number;
+  /** The gated click's own `/kayit` redirect needs the current locale (§5.3.3) — the page
+   *  already resolves it server-side, so it is threaded down as a prop rather than re-derived
+   *  from the URL on the client. */
+  locale: Locale;
   /** The server-rendered index — 30 rows, 180 links, untouched markup. */
   children: ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   /** The second İzle should start from — 0 unless the reader arrived on a question link. */
   const hashStartSecond = useRef(0);
+  const router = useRouter();
+
+  // THE LOGIN GATE'S OWN SESSION READ (§5.3.2), called ONCE at the VideoBench level — `authState`
+  // is threaded down to `BenchStage`/`DenemeVideo`/`VideoProgressControls` as a prop, never
+  // re-derived with a second `useAuthSession()` call anywhere in this tree.
+  const [authState] = useAuthSession();
+
+  // THE PROGRESS FETCH (§5.4) — lazy, per video, on selection, never eager for all 30. Resolves
+  // the SELECTED video's `bookVideoId` the same way `BenchStage` resolves its own `video` (the
+  // `selected ?? defaultDenemeNo` formula — the store is a singleton, so both components read
+  // the same underlying value, but this one has to compute it independently because it has to
+  // be available at CLICK TIME inside `onClick` below, which `BenchStage` does not own).
+  const { selected } = useBenchState();
+  const selectedDenemeNo = selected ?? defaultDenemeNo;
+  const selectedVideo = videos.find((candidate) => candidate.denemeNo === selectedDenemeNo);
+  const bookVideoId = selectedVideo?.bookVideoId;
+
+  const [rawProgress, setRawProgress] = useState<VideoProgressValue | null | "loading">(null);
+  // Not authenticated, or no video selected yet, both fold to `undefined` — the same "nothing
+  // to fetch" key.
+  const fetchKey = authState === "authenticated" ? bookVideoId : undefined;
+  const [lastFetchKey, setLastFetchKey] = useState<string | undefined>(undefined);
+
+  // ADJUSTING STATE DURING RENDER (the same idiom `register-form.tsx`'s own district-follows-
+  // province fetch already uses, its own comment names it in as many words): the SYNCHRONOUS
+  // reset to `"loading"` (or `null` when there's nothing to fetch) happens HERE, comparing
+  // against the last key this ran for — never a bare `setState` at the top of an effect body,
+  // which `react-hooks/set-state-in-effect` correctly flags as the "derive state from props"
+  // anti-pattern it is. The effect below owns ONLY the actual fetch.
+  if (fetchKey !== lastFetchKey) {
+    setLastFetchKey(fetchKey);
+    setRawProgress(fetchKey === undefined ? null : "loading");
+  }
+
+  const progress = fetchKey === undefined ? null : rawProgress;
+
+  useEffect(() => {
+    if (rawProgress !== "loading" || bookVideoId === undefined) return;
+    const requestedBookVideoId = bookVideoId;
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), VIDEO_PROGRESS_FETCH_TIMEOUT_MS);
+    fetchVideoProgress(requestedBookVideoId, controller.signal)
+      .then((result) => {
+        if (!cancelled) setRawProgress(result);
+      })
+      .finally(() => clearTimeout(timeout));
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [rawProgress, bookVideoId]);
+
+  /** The watched-toggle's own save (§5.6) — builds the full-state-replace payload through
+   *  {@link buildWatchedTogglePayload} (the mechanical enforcement of the hazard named there),
+   *  and, on success, updates the local `progress` state so the toggle reflects the new value
+   *  immediately rather than waiting for the next selection change to re-fetch it. */
+  const saveWatched = async (nextWatched: boolean): Promise<{ readonly ok: boolean }> => {
+    if (bookVideoId === undefined) return { ok: false };
+    const current = progress !== null && progress !== "loading" ? progress : null;
+    const payload = buildWatchedTogglePayload(current, nextWatched);
+    const result = await saveVideoProgress(bookVideoId, payload);
+    if (result.ok) {
+      setRawProgress({
+        lastPositionSeconds: payload.lastPositionSeconds,
+        watched: payload.watched,
+        watchedAt: payload.watched ? new Date().toISOString() : null,
+      });
+    }
+    return result;
+  };
 
   useEffect(() => {
     const id = window.location.hash.slice(1);
@@ -165,9 +280,25 @@ export function VideoBench({
       const parsed = Number.parseInt(raw, 10);
       if (!Number.isFinite(parsed)) return;
       second = parsed;
+    } else {
+      // §5.4's resume-second priority: a plain İzle press (no explicit `data-second`) resumes
+      // from the last saved position when one exists and is further along than the explicit
+      // (fragment-armed) target — never the reverse.
+      second = resolveIzleStartSecond(
+        second,
+        progress !== null && progress !== "loading" ? progress.lastPositionSeconds : undefined,
+      );
     }
 
     event.preventDefault();
+
+    // THE LOGIN GATE (§5.3.2/§5.3.3). `checking` is treated the same as `anonymous`: a control
+    // must not open a player before the session check has resolved.
+    if (authState !== "authenticated") {
+      redirectToSignIn(router, locale, trigger.getAttribute("href"));
+      return;
+    }
+
     // The İzle button has no href of its own, so it addresses the video; a row addresses itself.
     const fragment = trigger.getAttribute("href");
     if (fragment !== null) window.history.replaceState(null, "", fragment);
@@ -176,7 +307,13 @@ export function VideoBench({
 
   return (
     <div ref={rootRef} className={className} onClick={onClick}>
-      <BenchStage videos={videos} defaultDenemeNo={defaultDenemeNo} />
+      <BenchStage
+        videos={videos}
+        defaultDenemeNo={defaultDenemeNo}
+        authState={authState}
+        progress={progress}
+        onSaveWatched={saveWatched}
+      />
       <div className={indexClassName}>{children}</div>
     </div>
   );

@@ -236,6 +236,7 @@ export default async function BookDetailPage({ params }: PageProps) {
      Measured payload (live data, 30 videos): see the closing summary's size table. */
   const benchVideos: BenchVideo[] = videoStates.map(({ video, state }) => ({
     denemeNo: video.denemeNo,
+    bookVideoId: video.bookVideoId,
     videoId: video.youtubeVideoId,
     playable: isPlayable(state),
     questions: video.questions.map((question) => ({
@@ -514,6 +515,7 @@ export default async function BookDetailPage({ params }: PageProps) {
             indexClassName={styles.index}
             videos={benchVideos}
             defaultDenemeNo={defaultDenemeNo}
+            locale={locale}
           >
             {videoStates.map(({ video, state }) => {
               /* ONE value, three consumers. `playable` is false for a video the provider refuses

@@ -578,7 +578,13 @@
     "denemeCountLabel": "Deneme sayısı",
     "examLabel": "Sınav",
     "sourcesLabel": "Kaynaklar",
-    "sourceNewTab": ", yeni sekmede açılır"
+    "sourceNewTab": ", yeni sekmede açılır",
+    "signInCta": "Bu videoyu izlemek için üye ol.",
+    "watchAriaSignedOut": "İzle — Deneme {no} video çözümü, üyelik gerekir",
+    "resumeLine": "Kaldığın yerden devam et — {time}",
+    "watchedToggle": "İzledim",
+    "watchedToggleAriaOn": "İzledim, işaretli — kaldırmak için bas",
+    "watchedToggleAriaOff": "İzledim, işaretli değil — işaretlemek için bas"
   },
   "Tools": {
     "hub": {

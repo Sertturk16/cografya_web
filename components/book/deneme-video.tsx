@@ -1,11 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { loadIframeApi, type YouTubePlayer } from "@/lib/youtube/iframe-api";
+import type { AuthSessionState } from "@/lib/auth/use-session.client";
+import { saveVideoProgress } from "@/lib/video-progress/client";
+import { loadIframeApi, YT_PLAYER_STATE, type YouTubePlayer } from "@/lib/youtube/iframe-api";
 import { playerEmbedSrc } from "@/lib/youtube/embed";
 import type { ActiveVideo } from "./active-video";
 import type { BenchVideo } from "./bench-stage";
 import styles from "./book-video.module.css";
+
+/**
+ * Periodic-save cadence while a video is playing (UYELIK-06 plan §5.5) — well inside the api's
+ * global 120/min-per-identity throttle ceiling even at the theoretical worst case of one
+ * reader alone hammering saves (confirmed against `UYELIK-05-plan.md` §5.6's stated ceiling:
+ * 60s / 20s = 3 saves/min from this trigger alone).
+ */
+const VIDEO_PROGRESS_SAVE_INTERVAL_MS = 20_000;
 
 /**
  * The swap point: the stage's cover, or the stage's player — never both, and never a player
@@ -90,9 +100,13 @@ import styles from "./book-video.module.css";
 export function DenemeVideo({
   video,
   active,
+  authState,
+  watched,
   title,
   watchLabel,
   watchAriaLabel,
+  watchAriaSignedOutLabel,
+  signInCtaText,
   watchOnYoutubeLabel,
   watchOnYoutubeAriaLabel,
   watchOnYoutubeUrl,
@@ -104,14 +118,35 @@ export function DenemeVideo({
    *  review `CODE63-I1`). The stage used to pre-filter it and pass `null` on a mismatch, which was
    *  the same gate computed twice with only this copy deciding anything (→ `SIMP70-M1`). */
   active: ActiveVideo | null;
+  /** The login gate's own read of the shared session hook (§5.3.2/§5.3.4) — never a second
+   *  `useAuthSession()` call here. */
+  authState: AuthSessionState;
+  /** The last KNOWN `watched` value (§5.4/§5.5), defaulting to `false` when no progress row has
+   *  ever been fetched. Every save trigger in this component sends this value UNCHANGED
+   *  alongside a fresh `lastPositionSeconds` — no code path here ever WRITES `watched`; only
+   *  `VideoProgressControls`' own toggle does (the mechanical enforcement of §3's deliberately
+   *  deferred "auto-mark on ENDED" boundary). */
+  watched: boolean;
   title: string;
   watchLabel: string;
   watchAriaLabel: string;
+  /** Used instead of `watchAriaLabel` while `authState !== "authenticated"` — the button's
+   *  actual behaviour differs (it redirects to `/kayit` rather than opening a player), so its
+   *  accessible name says so (§5.3.4/§8). */
+  watchAriaSignedOutLabel: string;
+  /** AK-48's own framing: visible before the play control is pressed, gone once signed in
+   *  (§5.3.4) — rendered here, in a reserved slot, never toggled in and out of a laid-out area. */
+  signInCtaText: string;
   watchOnYoutubeLabel: string;
   watchOnYoutubeAriaLabel: string;
   watchOnYoutubeUrl: string;
 }) {
   const isActive = video.playable && active !== null && active.denemeNo === video.denemeNo;
+  // Saving requires a genuinely loaded, genuinely authenticated player (§5.5). In practice
+  // `isActive` alone already implies `authState === "authenticated"`, since the click gate
+  // (`video-bench.tsx`) never calls `openVideo` for anyone else — this check is the belt the
+  // 401-mid-playback residual (plan §10) still needs, not a redundant repetition.
+  const canSave = isActive && authState === "authenticated";
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -119,16 +154,66 @@ export function DenemeVideo({
   const pendingSeek = useRef<number | null>(null);
   /** What the stage has already acted on, so a fresh load is told apart from a jump. */
   const appliedRef = useRef<{ token: number; nonce: number } | null>(null);
+  /** Mirrors the `watched` prop through a ref so the interval/visibilitychange closures below
+   *  always read the CURRENT known value without re-subscribing on every toggle press. */
+  const watchedRef = useRef(watched);
+  useEffect(() => {
+    watchedRef.current = watched;
+  }, [watched]);
+  /** Mirrors `canSave`/`video.bookVideoId` the same way, for the same reason — a ref read
+   *  inside an effect body is exempt from `react-hooks/exhaustive-deps` by construction
+   *  (`playerRef`/`pendingSeek`/`appliedRef` already rely on the same exemption in this file),
+   *  so neither has to join the player-attach effect's dependency array below, which stays
+   *  exactly `[isActive, active?.loadToken]` — the array `deneme-video.src-invariant.test.ts`
+   *  pins as appearing exactly twice in this file. */
+  const canSaveRef = useRef(canSave);
+  useEffect(() => {
+    canSaveRef.current = canSave;
+  }, [canSave]);
+  const bookVideoIdRef = useRef(video.bookVideoId);
+  useEffect(() => {
+    bookVideoIdRef.current = video.bookVideoId;
+  }, [video.bookVideoId]);
 
   // Attach the player to the iframe WE rendered, rather than letting the API replace a
   // placeholder with an iframe of its own: the DOM here is React's. The script is fetched on
   // this first call and never before — no page-load cost, and nothing on hover.
+  //
+  // THIS SAME EFFECT ALSO OWNS THE FIRST TWO PROGRESS-SAVE TRIGGERS (§5.5): the periodic save
+  // while `PLAYING`, and the immediate save on `PAUSED`/`ENDED`. Both live inside the player's
+  // own `events.onStateChange` — the natural place, since the interval needs the SAME player
+  // instance and the same lifecycle this effect already owns — rather than as a separate
+  // effect, which would otherwise duplicate this effect's own `[isActive, active?.loadToken]`
+  // dependency array (a second occurrence of that exact array is a distinct, tested invariant
+  // this file's own structural tests pin — see `deneme-video.src-invariant.test.ts`).
   useEffect(() => {
     if (!isActive) return;
     const element = iframeRef.current;
     if (element === null) return;
 
     let cancelled = false;
+    let saveInterval: ReturnType<typeof setInterval> | null = null;
+
+    const stopPeriodicSave = () => {
+      if (saveInterval !== null) {
+        clearInterval(saveInterval);
+        saveInterval = null;
+      }
+    };
+
+    /** Both required fields, every call (§5.6's hazard, applied here too): `watched` is
+     *  always the LAST KNOWN value from `watchedRef`, never derived from playback — no save
+     *  trigger in this component ever writes `watched`. */
+    const saveNow = () => {
+      if (!canSaveRef.current) return;
+      const player = playerRef.current;
+      if (player === null) return;
+      void saveVideoProgress(bookVideoIdRef.current, {
+        lastPositionSeconds: Math.floor(player.getCurrentTime()),
+        watched: watchedRef.current,
+      });
+    };
+
     loadIframeApi()
       .then((api) => {
         if (cancelled || iframeRef.current !== element) return;
@@ -140,20 +225,58 @@ export function DenemeVideo({
               pendingSeek.current = null;
               playerRef.current?.seekTo(seconds, true);
             },
+            onStateChange: (event) => {
+              if (event.data === YT_PLAYER_STATE.PLAYING) {
+                // Trigger 1 (§5.5): periodic, while playing. Restarted rather than left
+                // running across a pause/resume, so a long pause never leaves a stray timer.
+                stopPeriodicSave();
+                saveInterval = setInterval(saveNow, VIDEO_PROGRESS_SAVE_INTERVAL_MS);
+                return;
+              }
+              if (event.data === YT_PLAYER_STATE.PAUSED || event.data === YT_PLAYER_STATE.ENDED) {
+                // Trigger 2 (§5.5): on pause — bounds the worst-case loss window to the
+                // interval above even for a reader who pauses well before a tick.
+                stopPeriodicSave();
+                saveNow();
+              }
+            },
           },
         });
       })
       .catch((error: unknown) => {
-        // The player is a plain iframe and plays on its own; only jump-to-question is lost.
+        // The player is a plain iframe and plays on its own; only jump-to-question (and,
+        // now, the periodic/pause save triggers) is lost.
         console.warn("[book-video] IFrame Player API unavailable", error);
       });
 
     return () => {
       cancelled = true;
+      stopPeriodicSave();
       playerRef.current = null;
       pendingSeek.current = null;
     };
   }, [isActive, active?.loadToken]);
+
+  // Trigger 3 (§5.5): on tab hide. A separate effect — not tied to `loadToken`, so it does not
+  // duplicate the pinned `[isActive, active?.loadToken]` array above — covering the tab-close/
+  // navigate-away case the interval alone would miss. `keepalive: true` (not
+  // `navigator.sendBeacon`, rejected in the plan: POST-only, and this mutation is a PUT-shaped
+  // idempotent replace by the api's own design) survives page teardown.
+  useEffect(() => {
+    if (!canSave) return;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "hidden") return;
+      const player = playerRef.current;
+      if (player === null) return;
+      void saveVideoProgress(
+        video.bookVideoId,
+        { lastPositionSeconds: Math.floor(player.getCurrentTime()), watched: watchedRef.current },
+        { keepalive: true },
+      );
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [canSave, video.bookVideoId]);
 
   // WCAG 4.1.3: the control the reader just pressed leaves the DOM, so focus would fall to
   // `<body>` and the next Tab would restart from the skip link. It moves to the player, which
@@ -348,11 +471,19 @@ export function DenemeVideo({
           type="button"
           className={`btn btn-primary ${styles.watchButton}`}
           data-player-open=""
-          aria-label={watchAriaLabel}
+          aria-label={authState === "authenticated" ? watchAriaLabel : watchAriaSignedOutLabel}
         >
           {watchLabel}
         </button>
       </span>
+      {/* THE SIGN-IN CTA (§5.3.4) — reserved, never toggled in and out of a laid-out area.
+          Absolutely positioned inside `.thumbBox` (see `.signInCta` in the CSS module), so its
+          own presence/absence never changes `.frame`'s height in any of the three `authState`
+          values: `checking`/`anonymous` render the sentence, `authenticated` renders an empty
+          node in the same slot. `external` videos (the branch above, `!video.playable`) redirect
+          to YouTube regardless of auth state and are out of this gate's scope — this line exists
+          only in the `rich`/`typographic` branch, which is this one. */}
+      <p className={styles.signInCta}>{authState === "authenticated" ? null : signInCtaText}</p>
     </div>
   );
 }

@@ -328,6 +328,72 @@
    pressed a question, on a page whose entire premise is that pressing a question moves nothing
    but the stage. All three cover states therefore share `.frame`. */
 
+/* ── Giriş çağrısı (üyelik gerekir) — AK-48, §5.3.4 ──────────────────────────────────────── */
+
+/* `position: absolute` IS THE WHOLE OF THE CLS GUARANTEE: taken out of flow, this element's own
+   presence, absence or content never changes `.frame`'s box height in ANY of the three
+   `authState` values — `deneme-video.tsx` always renders the `<p>`, swapping only its text
+   content (the sentence, or nothing) between them. Contrast: primary-dark on surface measures
+   ~6.95:1 (computed 2026-08-27 against the WCAG relative-luminance formula, both hexes from
+   `DESIGN.md` §2) — comfortably clears the 4.5:1 floor `DESIGN.md` §5 sets, opaque over
+   whatever the cover happens to show underneath (a photo, or the bare `--color-surface` panel
+   in the `typographic` state). */
+.signInCta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  min-height: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  background: var(--color-surface);
+}
+
+/* An authenticated reader's `<p>` renders no text node at all (`deneme-video.tsx`'s own
+   `authState === "authenticated" ? null : signInCtaText`) — the box stays in the DOM at its
+   fixed size (holding the CLS guarantee above) but paints nothing, rather than showing an empty
+   parchment-coloured band across the bottom of the cover. */
+.signInCta:empty {
+  background: transparent;
+}
+
+/* ── İlerleme kontrolleri (girişli okuyucu) — §5.6 ───────────────────────────────────────── */
+
+/* Below the reserved-height stage, unlike `.stageCaption`/`.timeline`/`.signInCta` above it: a
+   height change here does not shift the 30-row index, so no reservation trick is needed —
+   `video-progress-controls.tsx`'s own docblock states the same distinction from the component
+   side. Same cap as the three boxes above it, for visual alignment only (not a CLS mechanism
+   here). */
+.progressControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 10px auto 0;
+  max-width: 560px;
+}
+
+/* Slate on the page background is 7.48:1 (AAA, `DESIGN.md` §5) — the same token/contrast pair
+   `.meta` above already uses for the same class of secondary fact line. */
+.resumeLine {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+/* WCAG 2.2 §2.5.5 (AAA) 44px, the same generosity `.watchButton` already takes — a primary
+   control on this stage, not a dense list item. */
+.watchedToggle {
+  min-height: 44px;
+}
+
 /* ── Erişilebilirlik yardımcıları ──────────────────────────────────────────────────────── */
 
 /* Visually hidden, AT-readable. Local to this module because the repo has no global utility
