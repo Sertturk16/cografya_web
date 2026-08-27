@@ -46,6 +46,27 @@ function clickHandler(): string {
   return start < 0 || end < 0 || end <= start ? "" : BENCH.slice(start, end);
 }
 
+/** Isolates `saveNow` (§5.5 trigger 1/2, the periodic-save/pause-save body) from `VIDEO`, the
+ *  same position-based slicing `clickHandler()` above already uses for `BENCH`. `loadIframeApi()`
+ *  is the next statement after the `const saveNow = () => { ... };` declaration and appears
+ *  nowhere earlier in the file (its only other mention is the bare import specifier, which has no
+ *  trailing `()`), so it is a safe, unique end marker. */
+function saveNowBody(): string {
+  const start = VIDEO.indexOf("const saveNow = () =>");
+  const end = VIDEO.indexOf("loadIframeApi()");
+  return start < 0 || end < 0 || end <= start ? "" : VIDEO.slice(start, end);
+}
+
+/** Isolates `handleVisibilityChange` (§5.5 trigger 3, the tab-hide save) from `VIDEO` the same
+ *  way. `document.addEventListener("visibilitychange"` is the next statement after the
+ *  declaration and is unique up to that point (the matching `removeEventListener` call comes
+ *  later, past this slice's end). */
+function visibilityChangeBody(): string {
+  const start = VIDEO.indexOf("const handleVisibilityChange = () =>");
+  const end = VIDEO.indexOf('document.addEventListener("visibilitychange"');
+  return start < 0 || end < 0 || end <= start ? "" : VIDEO.slice(start, end);
+}
+
 describe("the login gate (§5.3.2)", () => {
   it("checks authState before ever calling openVideo", () => {
     const handler = clickHandler();
@@ -146,5 +167,35 @@ describe("the watched toggle (§5.6)", () => {
 
   it("never shows a resume line for an exactly-zero saved position", () => {
     expect(PROGRESS_CONTROLS).toContain("known.lastPositionSeconds > 0");
+  });
+});
+
+describe("the playback-triggered saves carry watchedRef.current forward (§5.5/§5.6, PR #90 review `TEST90-I1`)", () => {
+  // The plan's own full-state-replace hazard (§5.5/§5.6, §10): `watched` may be written ONLY by
+  // the toggle in `VideoProgressControls`, never by a playback-telemetry save. `saveNow` and
+  // `handleVisibilityChange` are the two call sites `lib/video-progress/client.test.ts`'s
+  // `buildWatchedTogglePayload` coverage does not reach — that suite only guards the toggle's own
+  // call site (`video-bench.tsx`'s `saveWatched`). A regression here (`watchedRef.current` swapped
+  // for the closed-over `watched` prop, or for a literal `false`) compiles, passes lint, and every
+  // OTHER test in the 3198-strong suite stays green while every periodic/pause/tab-hide save
+  // silently resets the reader's watched flag.
+
+  it("saveNow sends watchedRef.current, never a literal false or the closed-over watched prop", () => {
+    const body = saveNowBody();
+    expect(body).not.toBe("");
+    expect(body).toContain("watched: watchedRef.current");
+    expect(body).not.toMatch(/watched:\s*false\b/);
+    // `\b` after the second `watched` rejects `watched: watched` while still matching
+    // `watched: watchedRef.current` (no word boundary between the "d" of "watched" and the "R"
+    // of "Ref").
+    expect(body).not.toMatch(/watched:\s*watched\b/);
+  });
+
+  it("handleVisibilityChange sends watchedRef.current, never a literal false or the closed-over watched prop", () => {
+    const body = visibilityChangeBody();
+    expect(body).not.toBe("");
+    expect(body).toContain("watched: watchedRef.current");
+    expect(body).not.toMatch(/watched:\s*false\b/);
+    expect(body).not.toMatch(/watched:\s*watched\b/);
   });
 });

@@ -107,6 +107,7 @@ export function DenemeVideo({
   watchAriaLabel,
   watchAriaSignedOutLabel,
   signInCtaText,
+  sessionReadyAnnounceText,
   watchOnYoutubeLabel,
   watchOnYoutubeAriaLabel,
   watchOnYoutubeUrl,
@@ -137,6 +138,15 @@ export function DenemeVideo({
   /** AK-48's own framing: visible before the play control is pressed, gone once signed in
    *  (§5.3.4) — rendered here, in a reserved slot, never toggled in and out of a laid-out area. */
   signInCtaText: string;
+  /** WCAG 4.1.3 fix (PR #90 review `A11Y90-I2`): both `signInCtaText` above and this
+   *  component's own `aria-label` swap (below) change the instant the async session check
+   *  (`useAuthSession`, initial state `"checking"`) resolves to `"authenticated"` — a change
+   *  no interaction caused, which is exactly WCAG 4.1.3's scope. Announced through the
+   *  sr-only `aria-live="polite"` paragraph below, the same shape `register-form.tsx` already
+   *  uses for its own async state announcements, never by making the visible CTA itself a
+   *  live region (an emptied region announces nothing on most AT — there has to be
+   *  replacement text for a removal to be heard at all). */
+  sessionReadyAnnounceText: string;
   watchOnYoutubeLabel: string;
   watchOnYoutubeAriaLabel: string;
   watchOnYoutubeUrl: string;
@@ -484,6 +494,17 @@ export function DenemeVideo({
           to YouTube regardless of auth state and are out of this gate's scope — this line exists
           only in the `rich`/`typographic` branch, which is this one. */}
       <p className={styles.signInCta}>{authState === "authenticated" ? null : signInCtaText}</p>
+      {/* THE ANNOUNCEMENT (WCAG 4.1.3, PR #90 review `A11Y90-I2`) — visually hidden, so it adds
+          no visible band and does not touch the CLS guarantee the box above already holds; carries
+          text ONLY on the one transition that changes what a reader was just told (`checking`/
+          `anonymous` → `authenticated`, the only direction that flips a stated fact from "sign-up
+          required" to gone). `checking` and `anonymous` share this same empty value, so the
+          `useAuthSession()` mount ("checking" both on the server and on first client paint, per
+          its own docblock) never fires the live region on first paint — only a REAL later
+          resolution does. */}
+      <p aria-live="polite" className={styles.srOnly}>
+        {authState === "authenticated" ? sessionReadyAnnounceText : ""}
+      </p>
     </div>
   );
 }

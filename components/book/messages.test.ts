@@ -61,6 +61,10 @@ const BOOK_DETAIL_KEYS = [
   // The login gate's CTA (§5.3.4) and its own accessible-name swap on the İzle button (§5.9).
   "signInCta",
   "watchAriaSignedOut",
+  // The sr-only status announcement (WCAG 4.1.3, §5.3.4 fix round PR #90): the CTA text and the
+  // İzle button's accessible name both swap silently once the async session check resolves to
+  // authenticated — this is the AT-audible signal that swap happened.
+  "sessionReadyAnnounce",
   // The progress controls (§5.6): the resume-position line and the watched toggle's on/off pair.
   "resumeLine",
   "watchedToggle",

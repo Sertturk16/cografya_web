@@ -161,6 +161,7 @@ export function BenchStage({
         watchAriaLabel={t("watchAria", { no: video.denemeNo })}
         watchAriaSignedOutLabel={t("watchAriaSignedOut", { no: video.denemeNo })}
         signInCtaText={t("signInCta")}
+        sessionReadyAnnounceText={t("sessionReadyAnnounce")}
         watchOnYoutubeLabel={t("watchOnYoutube")}
         watchOnYoutubeAriaLabel={t("watchOnYoutubeAria", { no: video.denemeNo })}
         watchOnYoutubeUrl={watchUrl(video.videoId)}

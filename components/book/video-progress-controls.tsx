@@ -44,6 +44,11 @@ export function VideoProgressControls({
   const watched = known?.watched ?? false;
 
   async function handleToggle() {
+    // The click/keyboard-activation guard `aria-disabled` cannot provide on its own (below):
+    // unlike the native `disabled` attribute, `aria-disabled` does not stop the browser from
+    // firing `click`/`Enter`/`Space` at all — the control has to refuse the second activation
+    // itself while a save is already in flight.
+    if (pending) return;
     setPending(true);
     try {
       await onToggleWatched(!watched);
@@ -69,7 +74,13 @@ export function VideoProgressControls({
         aria-checked={watched}
         className={`btn btn-ghost ${styles.watchedToggle}`}
         onClick={() => void handleToggle()}
-        disabled={pending}
+        // `aria-disabled`, NOT `disabled` (PR #90 review `A11Y90-I3`) — a truly `disabled` button
+        // is dropped from the Tab sequence and blurred by the browser the instant this attribute
+        // flips, and nothing restores focus once the save round-trip finishes: a keyboard reader
+        // pressing this button loses their place in the 180-row index on every save. Staying
+        // focusable and in tab order costs nothing here, because `handleToggle`'s own `pending`
+        // guard above already refuses a second activation while one is in flight.
+        aria-disabled={pending}
         aria-label={watched ? t("watchedToggleAriaOn") : t("watchedToggleAriaOff")}
       >
         {t("watchedToggle")}

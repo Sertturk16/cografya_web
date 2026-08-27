@@ -567,10 +567,11 @@
     "sourceNewTab": ", opens in a new tab",
     "signInCta": "Sign up to watch this video.",
     "watchAriaSignedOut": "Watch — video solution for Deneme {no}, sign-up required",
+    "sessionReadyAnnounce": "Signed in — you can watch this video.",
     "resumeLine": "Continue where you left off — {time}",
     "watchedToggle": "I watched this",
-    "watchedToggleAriaOn": "Watched — press to unmark",
-    "watchedToggleAriaOff": "Not watched yet — press to mark as watched"
+    "watchedToggleAriaOn": "I watched this, marked — press to unmark",
+    "watchedToggleAriaOff": "I watched this, not marked — press to mark as watched"
   },
   "Tools": {
     "hub": {
