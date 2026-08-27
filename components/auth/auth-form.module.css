@@ -85,16 +85,25 @@
 /* De-clutters the double-frame collision `.errorHeading:focus`'s ring below now surfaces
    (UYELIK-04-UI-FIXES owner-review-ledger §2.1): the region's own 1.5px danger-red border
    sits only 8-10px from the heading's 2px terracotta ring, two close warm tones reading as
-   "frame inside a frame" whenever the heading is genuinely focused (the region's only
-   focusable content). The fix steps the OUTER border back to the same neutral
-   `--color-border` every other bordered surface in this design system already uses
-   (`.card`, `.control`'s resting state) for as long as focus is inside — the ring is then
-   the one prominent frame at the moment it matters, and the danger border returns the
-   instant focus leaves, still marking the region as an error for every other moment. This
-   changes only the OUTER frame; `.errorHeading`'s ring is untouched, and the "error" meaning
-   stays carried by the always-red `.errorHeading` text + `role="alert"`, never by this
-   border alone. */
-.errorRegion:focus-within {
+   "frame inside a frame" whenever the heading is genuinely focused. The fix steps the OUTER
+   border back to the same neutral `--color-border` every other bordered surface in this
+   design system already uses (`.card`, `.control`'s resting state) while focus sits on the
+   HEADING specifically — the ring is then the one prominent frame at the moment it matters,
+   and the danger border returns the instant that focus leaves. This changes only the OUTER
+   frame; `.errorHeading`'s ring is untouched, and the "error" meaning stays carried by the
+   always-red `.errorHeading` text + `role="alert"`, never by this border alone.
+
+   Scoped with `:has(.errorHeading:focus)`, NOT `:focus-within` (round-3 fix, review
+   `CODE88-M1`/`TEST88-I1`). The prior round's `:focus-within` selector fired on ANY focused
+   descendant, and its own comment's claim that the heading is the region's "only focusable
+   content" was wrong: `field.tsx`'s `FormErrorRegion` also renders real `<a href="#id">`
+   links in `.errorList` whenever field-level errors exist, and those links sit in normal Tab
+   order (unlike the heading's own `tabIndex={-1}`) — so a keyboard user tabbing from the
+   heading INTO that link list, the exact moment they are reviewing which fields are wrong,
+   saw the red border vanish and never return. `:has()` is Baseline-available and this repo
+   already ships it (`game-map.module.css`, `site-search.module.css:125`), so the selector
+   names the heading specifically instead of "anything focused inside". */
+.errorRegion:has(.errorHeading:focus) {
   border-color: var(--color-border);
 }
 
@@ -206,6 +215,24 @@
   padding: 6px 16px;
   font-size: 0.85rem;
   color: var(--color-primary-dark);
+}
+
+/* A11Y88-I1 (round-3 fix): once the retry-triggered fetch settles, focus moves back to this
+   button on a repeat failure (`register-form.tsx`'s `districtRetryPendingRef` effect) — a
+   script `.focus()` call downstream of the very click that unmounted, then remounted, this
+   button. Chromium's `:focus-visible` heuristic (the same one `.errorHeading:focus`/
+   `.successHeading:focus` above already diagnose) treats that as "pointer-like" and
+   suppresses the ring even though focus genuinely, programmatically landed here — measured
+   live: `matches(':focus-visible')` returns `false` for this exact transition, `outlineStyle`
+   `'none'`. `:focus`, not `:focus-visible`, for the same reason as those two rules; this one
+   mirrors the SAME 3px solid `--color-accent` ring the global `:focus-visible` in
+   `app/globals.css` already gives every other focusable element by default (this button is
+   NOT `tabIndex={-1}`, so it never fell under that file's `:where([tabindex="-1"])`
+   suppression to begin with) — a plain Tab arrival at this button, which DOES match
+   `:focus-visible`, ends up looking identical to a post-retry programmatic arrival. */
+.districtRetry:focus {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 /* The register form's step-2 code field and its resend action (plan §6.2 — PR-2). */

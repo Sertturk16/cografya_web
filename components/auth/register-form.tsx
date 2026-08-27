@@ -158,12 +158,28 @@ export function RegisterForm({
   const [districts, setDistricts] = useState<District[]>([]);
   const [districtState, setDistrictState] = useState<ListState>("idle");
   const [lastFetchedProvince, setLastFetchedProvince] = useState(provincePlateCode);
+  // A11Y88-I1: the retry button below only renders while `districtState === "error"`, so
+  // clicking it (`setDistrictState("loading")`) unmounts the very button the click came
+  // from, dropping focus to `document.body` with no re-focus step — unlike every OTHER
+  // programmatic transition in this file, which moves focus somewhere sensible
+  // (`errorHeadingRef`/`codeHeadingRef` below). This ref lets the retry click itself be
+  // re-focused once its own fetch settles; `districtRetryPendingRef` marks that the CURRENT
+  // "loading" pass was retry-triggered, so the settle effect below only steals focus after an
+  // explicit retry click, never after the ordinary province-change fetch.
+  const districtRetryRef = useRef<HTMLButtonElement>(null);
+  const districtRetryPendingRef = useRef(false);
   // Kept in step with `provincePlateCode` through its OWN effect (never mutated during
   // render — `react-hooks/refs` forbids that) so an async `.then()` below can read the
   // CURRENT selection at the moment it resolves, not the one captured when it started.
   const provincePlateCodeRef = useRef(provincePlateCode);
   useEffect(() => {
     provincePlateCodeRef.current = provincePlateCode;
+    // A province change supersedes any retry that was still in flight for the PRIOR
+    // province — the settle effect below (keyed on `districtRetryPendingRef`) must react to
+    // what this NEW fetch does, not steal focus on behalf of a click the user has already
+    // moved on from. This runs in an effect, not the render-time block below, because a ref
+    // write during render is disallowed (`react-hooks/refs`).
+    districtRetryPendingRef.current = false;
   }, [provincePlateCode]);
 
   const [universities, setUniversities] = useState<University[]>([]);
@@ -214,6 +230,8 @@ export function RegisterForm({
     setDistricts([]);
     setDistrictId("");
     setDistrictState(provincePlateCode === "" ? "idle" : "loading");
+    // `districtRetryPendingRef` is cleared for a province change in the `provincePlateCode`
+    // effect above, not here — a ref write during render is disallowed (`react-hooks/refs`).
   }
 
   useEffect(() => {
@@ -236,6 +254,27 @@ export function RegisterForm({
         setDistrictState("error");
       });
   }, [districtState, provincePlateCode]);
+
+  // A11Y88-I1: once a retry-triggered fetch settles, move focus somewhere useful instead of
+  // leaving it on `document.body` (the retry button that had focus just unmounted). Success →
+  // the district `<select>` itself, so the user can immediately choose a value; a repeat
+  // failure → the retry button, which remounts in the same spot. Gated on
+  // `districtRetryPendingRef` so the ORDINARY province-change fetch (never retry-triggered)
+  // never has its focus stolen — this settle effect only ever fires after an explicit retry
+  // click. `document.getElementById` rather than a `field.tsx` ref (review's own "smallest
+  // remedy" framing): `SelectField` does not forward a ref to its underlying `<select>`, and
+  // widening that shared, heavily-tested a11y component's contract is a bigger change than
+  // this fix calls for — the district `<select>`'s `id` is already static and unique.
+  useEffect(() => {
+    if (!districtRetryPendingRef.current) return;
+    if (districtState === "loading") return;
+    districtRetryPendingRef.current = false;
+    if (districtState === "loaded") {
+      document.getElementById("register-districtId")?.focus();
+    } else if (districtState === "error") {
+      districtRetryRef.current?.focus();
+    }
+  }, [districtState]);
 
   // University/department are fetched LAZILY, the first time a user type that needs them is
   // chosen, then kept for the life of the page (plan §4.4) — the SAME render-time transition
@@ -742,8 +781,12 @@ export function RegisterForm({
         {districtState === "error" ? (
           <button
             type="button"
+            ref={districtRetryRef}
             className={`btn btn-ghost ${styles.districtRetry}`}
-            onClick={() => setDistrictState("loading")}
+            onClick={() => {
+              districtRetryPendingRef.current = true;
+              setDistrictState("loading");
+            }}
           >
             {t("district.retry")}
           </button>

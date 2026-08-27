@@ -273,4 +273,48 @@ describe("auth-form.module.css never sets outline: none", () => {
   it("the success heading opts back into a visible focus ring", () => {
     expect(css).toMatch(/\.successHeading:focus\s*\{[^}]*outline\s*:\s*2px solid/);
   });
+
+  // UYELIK-04-UI-FIXES review round 3 (`CODE88-M1`/`TEST88-I1`): the double-frame de-clutter
+  // above used to fire on ANY focused descendant of `.errorRegion` (`:focus-within`),
+  // including the error-list `<a>` links `field.tsx`'s `FormErrorRegion` renders when
+  // field-level errors exist — those sit in normal Tab order (unlike the heading's own
+  // `tabIndex={-1}`), so tabbing from the heading into that list made the red border vanish
+  // early, at the exact moment a keyboard user is reviewing which fields are wrong. The fix
+  // scopes the override to the HEADING specifically via `:has()` (Baseline-available,
+  // already shipped in `game-map.module.css` and `site-search.module.css`), never to "any
+  // focused descendant".
+  it("the double-frame de-clutter is scoped to the heading, not any focused descendant", () => {
+    expect(css).toMatch(
+      /\.errorRegion:has\(\.errorHeading:focus\)\s*\{[^}]*border-color\s*:\s*var\(--color-border\)/,
+    );
+  });
+
+  it("the old broad :focus-within selector is gone — it is the exact defect this fix corrects", () => {
+    expect(css).not.toMatch(/\.errorRegion:focus-within/);
+  });
+
+  // A static regex over CSS source cannot evaluate real selector matching (this repo has no
+  // jsdom — `FU-WEB-JSDOM` — so nothing here can render the DOM and ask the browser whether
+  // `:has(.errorHeading:focus)` actually excludes `.errorList a`). The closest structural
+  // proxy available at this layer: the border-color override's own selector never mentions
+  // `.errorList` (or reaches into it any other way), so nothing in THIS rule's text could
+  // widen it back to matching the link list. Real confirmation that focus on an `.errorList`
+  // link leaves the border red — the false-positive case this guards against — is the
+  // empirical half (tab from the heading into the error-link list, confirm the border does
+  // NOT go neutral), run live and recorded in the closing summary, not a gate here.
+  it("the border-color override selector never reaches into .errorList", () => {
+    const overrideRule = css.match(/\.errorRegion:has\([^)]*\)\s*\{[^}]*\}/);
+    expect(overrideRule).not.toBeNull();
+    expect(overrideRule?.[0]).not.toMatch(/errorList/);
+  });
+
+  // A11Y88-I1 (round-3 fix): `register-form.tsx` re-focuses the district retry button on a
+  // repeat failure, but a script `.focus()` downstream of the click that remounted it fails
+  // Chromium's `:focus-visible` heuristic (measured live: `matches(':focus-visible')` is
+  // `false` there) — the SAME class of gap `.errorHeading:focus`/`.successHeading:focus`
+  // above already opt back into with a bare `:focus` rule. This button is not
+  // `tabIndex={-1}`, so it needs its own equivalent opt-in.
+  it("the district retry button opts back into a visible focus ring", () => {
+    expect(css).toMatch(/\.districtRetry:focus\s*\{[^}]*outline\s*:\s*3px solid/);
+  });
 });
