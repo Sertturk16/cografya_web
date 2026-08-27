@@ -67,6 +67,16 @@ function visibilityChangeBody(): string {
   return start < 0 || end < 0 || end <= start ? "" : VIDEO.slice(start, end);
 }
 
+/** Isolates `handleToggle` (§5.6, PR #90 review `TEST90R2-I1`) from `PROGRESS_CONTROLS`, the
+ *  same position-based slicing `saveNowBody()`/`visibilityChangeBody()` above use for `VIDEO`.
+ *  `return ( <div className={styles.progressControls}>` is the next statement after the
+ *  declaration and appears nowhere earlier in the file. */
+function handleToggleBody(): string {
+  const start = PROGRESS_CONTROLS.indexOf("async function handleToggle()");
+  const end = PROGRESS_CONTROLS.indexOf("return ( <div className={styles.progressControls}>");
+  return start < 0 || end < 0 || end <= start ? "" : PROGRESS_CONTROLS.slice(start, end);
+}
+
 describe("the login gate (§5.3.2)", () => {
   it("checks authState before ever calling openVideo", () => {
     const handler = clickHandler();
@@ -167,6 +177,22 @@ describe("the watched toggle (§5.6)", () => {
 
   it("never shows a resume line for an exactly-zero saved position", () => {
     expect(PROGRESS_CONTROLS).toContain("known.lastPositionSeconds > 0");
+  });
+
+  it("uses aria-disabled={pending} on the toggle button, never a literal disabled={pending} (PR #90 review `TEST90R2-I1`)", () => {
+    // A truly `disabled` button is dropped from the Tab sequence and blurred by the browser
+    // the instant the attribute flips — exactly the WCAG focus-loss regression `A11Y90-I3`
+    // fixed. The lookbehind rejects only the bare form; it still matches the `aria-` prefix.
+    expect(PROGRESS_CONTROLS).toContain("aria-disabled={pending}");
+    expect(PROGRESS_CONTROLS).not.toMatch(/(?<!aria-)disabled=\{pending\}/);
+  });
+
+  it("handleToggle refuses a second activation while a save is already pending (PR #90 review `TEST90R2-I1`)", () => {
+    // `aria-disabled`, unlike `disabled`, does not stop the browser from firing click/Enter/
+    // Space on its own — the component has to refuse the second activation itself.
+    const body = handleToggleBody();
+    expect(body).not.toBe("");
+    expect(body).toContain("if (pending) return;");
   });
 });
 
