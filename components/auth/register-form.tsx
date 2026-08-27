@@ -461,6 +461,11 @@ export function RegisterForm({
       : districtState === "error"
         ? t("district.loadError")
         : "";
+  // UYELIK-04 ui-fixes plan Finding 2: the load-error message wins over the generic
+  // "required" one when both are true at once (a failed submit with a still-broken list) —
+  // it is the more specific, more actionable of the two.
+  const districtError =
+    districtState === "error" ? t("district.loadError") : fieldErrors.districtId;
   // A11Y87-M1: the university/department lists follow the SAME side-effect-of-a-still-
   // standing-control pattern as the district list above, but had no live region at all —
   // only the <option> text, which is unread unless the user has already tabbed to that
@@ -715,7 +720,7 @@ export function RegisterForm({
           required
           value={districtId}
           onChange={(event) => setDistrictId(event.target.value)}
-          error={fieldErrors.districtId}
+          error={districtError}
         >
           {provincePlateCode === "" ? (
             <option value="">{t("district.selectProvinceFirst")}</option>
@@ -734,6 +739,15 @@ export function RegisterForm({
             </>
           )}
         </SelectField>
+        {districtState === "error" ? (
+          <button
+            type="button"
+            className={`btn btn-ghost ${styles.districtRetry}`}
+            onClick={() => setDistrictState("loading")}
+          >
+            {t("district.retry")}
+          </button>
+        ) : null}
         <p aria-live="polite" className={styles.srOnly}>
           {districtAnnouncement}
         </p>

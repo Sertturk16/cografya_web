@@ -262,12 +262,15 @@ describe("auth-form.module.css never sets outline: none", () => {
   // Atlas ruling, `UYELIK-04-owner-review-ledger.md` §2.4 / review `VAL85-R2` part (3): the
   // auth forms opt back in to a visible ring on their two programmatic, tabIndex={-1}
   // headings, at (0,2,0) — the `game-ui.module.css` `.question:focus-visible` escape hatch
-  // `app/globals.css`'s no-ring exception itself names as the intended use.
+  // `app/globals.css`'s no-ring exception itself names as the intended use. `:focus`, not
+  // `:focus-visible` (UYELIK-04 ui-fixes plan Finding 1): every covered target is reached
+  // ONLY via a script `.focus()` call, and Chromium's `:focus-visible` heuristic fails to
+  // match a script-triggered focus downstream of any prior click on the page.
   it("the error heading opts back into a visible focus ring", () => {
-    expect(css).toMatch(/\.errorHeading:focus-visible\s*\{[^}]*outline\s*:\s*2px solid/);
+    expect(css).toMatch(/\.errorHeading:focus\s*\{[^}]*outline\s*:\s*2px solid/);
   });
 
   it("the success heading opts back into a visible focus ring", () => {
-    expect(css).toMatch(/\.successHeading:focus-visible\s*\{[^}]*outline\s*:\s*2px solid/);
+    expect(css).toMatch(/\.successHeading:focus\s*\{[^}]*outline\s*:\s*2px solid/);
   });
 });

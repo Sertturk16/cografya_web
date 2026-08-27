@@ -70,6 +70,7 @@ const AUTH_KEYS = [
   "district.selectPlaceholder",
   "district.loadError",
   "district.announceCount",
+  "district.retry",
   "university.loading",
   "university.loadError",
   "department.loading",

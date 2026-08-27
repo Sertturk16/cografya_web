@@ -90,14 +90,22 @@
 
 /* Focus-ring opt-in (Atlas ruling, `UYELIK-04-owner-review-ledger.md` §2.4; review
    `VAL85-R2`/`A11Y85-I1`), at (0,2,0) exactly like `game-ui.module.css:28-32`'s
-   `.question:focus-visible`. `app/globals.css`'s `:where([tabindex="-1"]):focus-visible`
-   removes the ring at (0,1,0) for PAGE-SIZED programmatic targets, where a ring would draw
-   a box around the whole viewport — its own docblock names a module ring as the intended
-   escape hatch, not a violation of the exception. This heading is the opposite case:
+   `.question:focus-visible`. This heading is the opposite case from
+   `app/globals.css`'s `:where([tabindex="-1"]):focus-visible` PAGE-SIZED-target exception:
    component-sized (the card is `max-width: 28rem`), and the transition that moves focus
    here is one the user did not initiate (a session check resolving, a submit's own
-   response) — exactly where a visible indicator is most needed, not least. */
-.errorHeading:focus-visible {
+   response) — exactly where a visible indicator is most needed, not least.
+
+   `:focus`, not `:focus-visible` (UYELIK-04 ui-fixes plan Finding 1 — every target this rule
+   covers is `tabIndex={-1}`, reached ONLY via a script `.focus()` call, never by mouse click
+   or Tab). Chromium's `:focus-visible` heuristic keys off "was the most recent user
+   interaction pointer-like", so a script-triggered `.focus()` downstream of ANY prior click
+   on the page fails to match it even though focus genuinely, programmatically landed here —
+   measured live: the ring silently failed to render on 2 of this module's 3 own transitions.
+   `:focus` asks the actually-relevant question ("did the code just move focus here")
+   unambiguously, and — because `app/globals.css`'s exception above only ever matches
+   `:focus-visible` — no longer interacts with that rule at all. */
+.errorHeading:focus {
   outline: 2px solid var(--color-primary);
   outline-offset: 6px;
   border-radius: var(--radius);
@@ -112,10 +120,11 @@
   margin: 0 0 8px;
 }
 
-/* Same opt-in as `.errorHeading:focus-visible` above, same rationale, same (0,2,0) weight —
-   this selector covers all three programmatic success/status transitions that reuse this one
-   class: "already signed in", "logged out", and the two reset-flow success screens. */
-.successHeading:focus-visible {
+/* Same opt-in as `.errorHeading:focus` above, same rationale, same (0,2,0) weight, same
+   `:focus`-not-`:focus-visible` fix (UYELIK-04 ui-fixes plan Finding 1) — this selector
+   covers all three programmatic success/status transitions that reuse this one class:
+   "already signed in", "logged out", and the two reset-flow success screens. */
+.successHeading:focus {
   outline: 2px solid var(--color-primary);
   outline-offset: 6px;
   border-radius: var(--radius);
@@ -153,6 +162,24 @@
   border: 0;
 }
 
+/* District retry action (UYELIK-04 ui-fixes plan Finding 2) — sized down from the default
+   `.btn-ghost` chrome (`app/globals.css`) so it sits quietly next to the small `.fieldError`
+   text above it instead of reading as a second primary action (plan §5 Finding 2 point 2's
+   "cosmetic proportion call to make from the actual render"). Buttons do not inherit the
+   global `a { color }` rule `.secondaryLink` relies on, so the colour is explicit here.
+   `align-self: flex-start` is the load-bearing property, confirmed against the actual
+   render: `.form` is `display: flex; flex-direction: column`, and every OTHER direct child
+   is either a `.field`/`.actions` wrapper (own content) or a full-width `.btn-primary` submit
+   — a bare `<button>` dropped straight into that column otherwise inherits the flex default
+   `align-self: stretch` and renders as a full-field-width bar, exactly the "second primary
+   action" weight the sizing above was trying to avoid. */
+.districtRetry {
+  align-self: flex-start;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  color: var(--color-primary-dark);
+}
+
 /* The register form's step-2 code field and its resend action (plan §6.2 — PR-2). */
 .codeActions {
   display: flex;
@@ -161,8 +188,16 @@
   flex-wrap: wrap;
 }
 
+/* Weight bump only, not the `.successHeading` treatment (UYELIK-04 ui-fixes plan Finding 3):
+   the code field, `Doğrula` submit and `Kodu yeniden gönder` all stay mounted and
+   interactive here, unlike the four `.successHeading` states which fully replace the form —
+   giving this note heading-level prominence would overstate an intermediate acknowledgment.
+   `--color-success` clears 4.5:1 AA on `--color-surface` (`DESIGN.md` §5's verified table);
+   the text itself always carries the meaning (this class never renders a sibling
+   failure/negative state), so the colour is reinforcement only, not the only signal. */
 .resendNote {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--color-slate);
+  font-weight: 600;
+  color: var(--color-success);
 }

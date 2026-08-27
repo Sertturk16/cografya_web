@@ -790,7 +790,8 @@
       "loading": "Yükleniyor…",
       "selectPlaceholder": "İlçe seç",
       "loadError": "İlçeler yüklenemedi",
-      "announceCount": "{count} ilçe listelendi"
+      "announceCount": "{count} ilçe listelendi",
+      "retry": "Tekrar dene"
     },
     "university": {
       "loading": "Yükleniyor…",
