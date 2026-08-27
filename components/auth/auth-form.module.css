@@ -235,6 +235,34 @@
   outline-offset: 2px;
 }
 
+/* A11Y88R2-I1 (round-4 fix): the district retry's SUCCESS path re-focuses the `<select>`
+   itself (`register-form.tsx`'s settle effect, `document.getElementById(
+   "register-districtId")?.focus()`) — review flagged this as the same script-`.focus()`-
+   downstream-of-a-click chain `.districtRetry:focus` above diagnoses for the retry BUTTON
+   (click "Tekrar dene" → async fetch resolves → effect calls `.focus()`), reasoning the ring
+   "almost certainly" would not render since this select's shared `.control` class (`field.tsx`)
+   carries only `.control:focus-visible`, no bare `:focus` fallback.
+
+   MEASURED LIVE, round 4 (Playwright against the real retry-success transition,
+   `select.matches(':focus-visible')` + `getComputedStyle(select).outlineStyle`): that specific
+   premise does NOT hold for a `<select>` the way it holds for a `<button>`/`<h2 tabIndex=-1>`
+   — Chromium's `:focus-visible` heuristic already matches on BOTH the script-focus-after-click
+   transition and an ordinary mouse click into the select, so the ring was already rendering via
+   the global `:focus-visible` rule (`app/globals.css`) before this block existed. This rule is
+   added anyway, deliberately: `:focus-visible` behavior for `<select>` is a heuristic, not a
+   hard spec guarantee identical across Chromium/Firefox/Safari, so an explicit id-scoped `:focus`
+   rule removes that cross-browser/heuristic dependency entirely rather than relying on it
+   holding forever — and it is the exact narrow remedy review asked for, applied only to this
+   ONE select's static `id`, deliberately NOT added to `.control` in general: `.control` is
+   shared by every field in every auth form, and a blanket `:focus` fallback there WOULD ring on
+   the ordinary case of a user directly clicking into any OTHER field type, where
+   `:focus-visible` correctly suppresses it. Same 3px solid `--color-accent` ring as
+   `.districtRetry:focus` above, for visual consistency between the two halves of the retry flow. */
+#register-districtId:focus {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 /* The register form's step-2 code field and its resend action (plan §6.2 — PR-2). */
 .codeActions {
   display: flex;

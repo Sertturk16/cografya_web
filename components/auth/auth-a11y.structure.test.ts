@@ -317,4 +317,25 @@ describe("auth-form.module.css never sets outline: none", () => {
   it("the district retry button opts back into a visible focus ring", () => {
     expect(css).toMatch(/\.districtRetry:focus\s*\{[^}]*outline\s*:\s*3px solid/);
   });
+
+  // A11Y88R2-I1 (round-4 fix): the district retry's SUCCESS path re-focuses the `<select>`
+  // itself. Review flagged this as the same script-`.focus()`-downstream-of-a-click gap the
+  // district retry BUTTON above opts back into, reasoning the ring "almost certainly" would
+  // not render (the select's shared `.control` class carries only `.control:focus-visible`,
+  // no bare `:focus` fallback). MEASURED LIVE (round 4, Playwright): that premise does not
+  // hold for a `<select>` — Chromium's `:focus-visible` already matches here even without
+  // this rule, on both the script-focus transition AND an ordinary click, unlike the button/
+  // heading cases. The id-scoped rule is kept anyway as an explicit guarantee that does not
+  // depend on that heuristic (not identical across browsers) continuing to hold.
+  it("the district select's retry-success re-focus target opts back into a visible focus ring", () => {
+    expect(css).toMatch(/#register-districtId:focus\s*\{[^}]*outline\s*:\s*3px solid/);
+  });
+
+  // The fix must stay scoped to this one select's id, never widen to the shared `.control`
+  // class every field in the form uses — a blanket `:focus` fallback there would reintroduce
+  // the ring on the ORDINARY case of a user directly clicking into any field, where
+  // `:focus-visible` is correctly suppressing it. Guards against exactly that regression.
+  it("the shared .control class gets no blanket :focus fallback", () => {
+    expect(css).not.toMatch(/\.control:focus\s*\{/);
+  });
 });
