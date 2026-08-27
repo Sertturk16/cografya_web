@@ -1,3 +1,7 @@
+> **SUPERSEDED** — canonical SEO reviewer scope now lives at `Team/roles/fener.md`. This
+> file is a retired historical pointer only; do not dispatch it and do not read it as a
+> live rubric.
+
 # Reviewer role — seo-reviewer (web) — **RETIRED: folded into FENER**
 
 > **Do not use this file as a role template.** The `seo-reviewer` role no longer exists as
