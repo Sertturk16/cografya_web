@@ -132,7 +132,8 @@ export type BookList = components["schemas"]["BookListDto"];
  *    untouchable class and are printed as received — never translated, shortened or
  *    reworded on the way to the page. */
 export type BookDetail = components["schemas"]["BookDetailDto"];
-/** One indexed deneme: its number IN THE BOOK, the video id the embed is built from, the
+/** One indexed deneme: `book_videos.id` (the identifier the video-progress endpoints below
+ *  key on — UYELIK-06), its number IN THE BOOK, the video id the embed is built from, the
  *  question index, and the nullable provider snapshot. */
 export type BookVideo = components["schemas"]["BookVideoDto"];
 /** The provider snapshot on one video — thumbnail (address AND dimensions), publication
@@ -166,6 +167,21 @@ export type ApiErrorBody = components["schemas"]["ApiErrorDto"];
  *  for why (the global pipe's `whitelist`+`forbidNonWhitelisted` rejects an undeclared key
  *  BY NAME, `cografya_api` `src/main.ts:43-47`). */
 export type RegisterRequest = components["schemas"]["RegisterRequestDto"];
+
+// ---- Video progress (per-user watch state — UYELIK-05/06) -------------------
+/** The caller's own saved progress on one video: `book_videos.id`, last playback position
+ *  (seconds), the `watched` self-declaration, when `watched:true` was last CONFIRMED
+ *  (`watchedAt`, nullable — "last confirmed instant", not "first ever watched"; `null`
+ *  whenever `watched` is `false`), and when the row was last written. Reached only through
+ *  the web's own narrow BFF proxy (`lib/video-progress/transport.server.ts`), never fetched
+ *  directly from the api by a page. */
+export type VideoProgress = components["schemas"]["VideoProgressDto"];
+/** `PUT /api/video-progress/{bookVideoId}`'s request body — an idempotent FULL-STATE REPLACE:
+ *  both fields are required on every call, and `watched` is never derived from
+ *  `lastPositionSeconds` (a caller may declare a video watched without scrubbing to its exact
+ *  end). See `lib/video-progress/client.ts`'s `buildWatchedTogglePayload` for the one place
+ *  this repo has to be careful never to send only one of the two. */
+export type UpsertVideoProgressRequest = components["schemas"]["UpsertVideoProgressRequestDto"];
 
 // ---- Reference data (kayıt formunun il→ilçe / üniversite / bölüm listeleri — PR-2) --------
 /** One ilçe: `id` (the value `districtId` sends) + `nameTr`. Turkish-alphabetical, one

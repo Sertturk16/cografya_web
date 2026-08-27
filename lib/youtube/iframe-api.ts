@@ -36,13 +36,36 @@
  * plain iframe and plays on its own.
  */
 
-/** The player handle. Only what this page calls is declared — see the file docblock. */
+/** The player handle. Only what this page calls is declared — see the file docblock.
+ *  `getCurrentTime()` was added for the video-progress save triggers (UYELIK-06 plan §5.5),
+ *  the deliberate extension the file docblock's own rule anticipates: "anything not declared
+ *  here is not something this page may quietly start using" — this is a named, planned
+ *  addition, not a quiet one. */
 export interface YouTubePlayer {
   seekTo(seconds: number, allowSeekAhead: boolean): void;
+  getCurrentTime(): number;
 }
 
+/** The subset of the provider's player-state enum this repo reacts to (UYELIK-06 plan §5.5):
+ *  `PLAYING` starts the periodic save interval; `PAUSED`/`ENDED` stop it and fire one
+ *  immediate save. Named rather than the provider's raw magic numbers at every call site —
+ *  the numeric values themselves are the provider's own, published constants. */
+export const YT_PLAYER_STATE = {
+  ENDED: 0,
+  PLAYING: 1,
+  PAUSED: 2,
+} as const;
+
 interface YouTubePlayerConstructor {
-  new (element: HTMLIFrameElement, options: { events?: { onReady?: () => void } }): YouTubePlayer;
+  new (
+    element: HTMLIFrameElement,
+    options: {
+      events?: {
+        onReady?: () => void;
+        onStateChange?: (event: { data: number }) => void;
+      };
+    },
+  ): YouTubePlayer;
 }
 
 interface YouTubeApi {
