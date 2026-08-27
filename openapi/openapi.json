@@ -1144,7 +1144,7 @@
     },
     "/api/auth/refresh": {
       "post": {
-        "description": "Reused, expired, unknown or account-inactive tokens all answer the SAME 401 (errors.auth.sessionExpired). A reused token revokes its ENTIRE family and bumps the user's token_version, invalidating every live access token at once.",
+        "description": "Reused, expired, unknown or account-inactive tokens all answer the SAME 401 (errors.auth.sessionExpired). One just-rotated token may recover exactly once within 15 seconds when its prior response was lost; every other reuse revokes its ENTIRE family and bumps the user's token_version, invalidating every live access token at once. R5 in auth-security.e2e-spec.ts pins this bounded exception.",
         "operationId": "AuthController_refresh",
         "parameters": [],
         "requestBody": {
@@ -1328,6 +1328,142 @@
         "summary": "The current authenticated user — the minimum PII set (§7.3).",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/video-progress/{bookVideoId}": {
+      "get": {
+        "description": "One undifferentiated 404 whether bookVideoId names no video at all or the caller simply has no saved progress for a valid one — a client asking \"do I have progress here\" gets the same actionable answer (no) regardless of which is true.",
+        "operationId": "VideoProgressController_getOne",
+        "parameters": [
+          {
+            "name": "bookVideoId",
+            "required": true,
+            "in": "path",
+            "description": "book_videos.id.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoProgressDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "errors.auth.unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "errors.videoProgress.notFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The caller's own saved progress on one video.",
+        "tags": [
+          "video-progress"
+        ]
+      },
+      "put": {
+        "description": "A reported position beyond the video's real duration (when known) or beyond the fallback ceiling (when the duration is currently unknown — never synced or purged past 30 days) is REJECTED, not clamped. Returns the persisted row on success, matching AuthResultDto's own write-echo precedent.",
+        "operationId": "VideoProgressController_upsert",
+        "parameters": [
+          {
+            "name": "bookVideoId",
+            "required": true,
+            "in": "path",
+            "description": "book_videos.id.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertVideoProgressRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoProgressDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "errors.videoProgress.positionExceedsDuration, or a malformed body / bookVideoId.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "errors.auth.unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "errors.videoProgress.videoNotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Upsert the caller's own progress on one video (idempotent full-state replace).",
+        "tags": [
+          "video-progress"
         ]
       }
     }
@@ -4212,6 +4348,11 @@
       "BookVideoDto": {
         "type": "object",
         "properties": {
+          "bookVideoId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "book_videos.id — the identifier both video-progress endpoints (GET/PUT /api/video-progress/{bookVideoId}) key on for this exact video."
+          },
           "denemeNo": {
             "type": "number",
             "minimum": 1,
@@ -4242,6 +4383,7 @@
           }
         },
         "required": [
+          "bookVideoId",
           "denemeNo",
           "youtubeVideoId",
           "questions",
@@ -5447,6 +5589,63 @@
           "id",
           "firstName",
           "accountRole"
+        ]
+      },
+      "VideoProgressDto": {
+        "type": "object",
+        "properties": {
+          "bookVideoId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "book_videos.id."
+          },
+          "lastPositionSeconds": {
+            "type": "number",
+            "example": 245,
+            "description": "Last playback position, in seconds."
+          },
+          "watched": {
+            "type": "boolean",
+            "description": "The user-declared \"I watched this\" signal."
+          },
+          "watchedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the caller most recently confirmed watched:true, UTC — \"last confirmed instant\", not \"first ever watched instant\". null whenever watched is false."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this row was last written."
+          }
+        },
+        "required": [
+          "bookVideoId",
+          "lastPositionSeconds",
+          "watched",
+          "watchedAt",
+          "updatedAt"
+        ]
+      },
+      "UpsertVideoProgressRequestDto": {
+        "type": "object",
+        "properties": {
+          "lastPositionSeconds": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 21600,
+            "example": 245,
+            "description": "Last playback position, in seconds."
+          },
+          "watched": {
+            "type": "boolean",
+            "description": "A user-declared \"I watched this\" signal. Not derived from lastPositionSeconds — a caller may mark watched without scrubbing to the exact end."
+          }
+        },
+        "required": [
+          "lastPositionSeconds",
+          "watched"
         ]
       }
     }
