@@ -237,11 +237,21 @@ describe("T5 — PUT/DELETE: an unshapely route param is refused before any api 
 });
 
 describe("T6 — PUT/DELETE: Origin is required and checked, before shape/cookie", () => {
+  // TA91-M1 fix (PR #91 round 2 review): both params below are genuinely UNSHAPELY
+  // ("not-a-code" / "tr" lowercase both fail their own shape predicate) — the title's own
+  // claim ("even with an unshapely param") previously used a VALID-shaped param ("34"/"TR"),
+  // so the ordering these two tests claim to prove (Origin checked BEFORE shape) was never
+  // actually exercised; a shape-first implementation would have passed the old assertions
+  // too, since a missing Origin alone already forces a 403 regardless of ordering. A
+  // deliberately malformed param makes the two orderings observably different: shape-first
+  // would 400, not 403.
   it("PUT: a missing Origin -> 403, zero outbound calls (even with an unshapely param)", async () => {
     const mock = fetchMock();
     const result = await handlePutFavorite(
-      makeRequest("PUT", "/api/favorites/provinces/34", { cookie: `${ACCESS_COOKIE_NAME}=token` }),
-      { kind: "province", plateCode: "34" },
+      makeRequest("PUT", "/api/favorites/provinces/not-a-code", {
+        cookie: `${ACCESS_COOKIE_NAME}=token`,
+      }),
+      { kind: "province", plateCode: "not-a-code" },
     );
     expect(result.status).toBe(403);
     expect(result.body).toEqual({ ok: false, code: "errors.transport.forbidden" });
@@ -261,13 +271,13 @@ describe("T6 — PUT/DELETE: Origin is required and checked, before shape/cookie
     expect(mock).not.toHaveBeenCalled();
   });
 
-  it("DELETE: a missing Origin -> 403, zero outbound calls", async () => {
+  it("DELETE: a missing Origin -> 403, zero outbound calls (even with an unshapely param)", async () => {
     const mock = fetchMock();
     const result = await handleDeleteFavorite(
-      makeRequest("DELETE", "/api/favorites/countries/TR", {
+      makeRequest("DELETE", "/api/favorites/countries/tr", {
         cookie: `${ACCESS_COOKIE_NAME}=token`,
       }),
-      { kind: "country", isoCode: "TR" },
+      { kind: "country", isoCode: "tr" },
     );
     expect(result.status).toBe(403);
     expect(mock).not.toHaveBeenCalled();
@@ -516,5 +526,30 @@ describe("T10 — Cache-Control: no-store on every branch", () => {
   ] as const)("%s", async (_label, run) => {
     const result = await run();
     expect(result.headers["Cache-Control"]).toBe("no-store");
+  });
+});
+
+describe("T11 — readCookieValue: a malformed percent-encoded cookie value never throws (TA91-M2 fix, PR #91 round 2)", () => {
+  it("GET: a malformed cg_access value is treated as absent (401), never an uncaught decode exception", async () => {
+    const mock = fetchMock();
+    const result = await handleListFavorites(
+      makeRequest("GET", "/api/favorites", { cookie: `${ACCESS_COOKIE_NAME}=%` }),
+    );
+    expect(result.status).toBe(401);
+    expect(result.body).toEqual({ ok: false, code: "errors.auth.unauthenticated" });
+    expect(mock).not.toHaveBeenCalled();
+  });
+
+  it("PUT: same malformed value, same outcome — 401, zero outbound calls, no throw", async () => {
+    const mock = fetchMock();
+    const result = await handlePutFavorite(
+      makeRequest("PUT", "/api/favorites/provinces/34", {
+        origin: SITE_URL,
+        cookie: `${ACCESS_COOKIE_NAME}=%`,
+      }),
+      { kind: "province", plateCode: "34" },
+    );
+    expect(result.status).toBe(401);
+    expect(mock).not.toHaveBeenCalled();
   });
 });

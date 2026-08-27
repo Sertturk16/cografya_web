@@ -55,6 +55,31 @@ function handleClickBody(): string {
   return start < 0 || end < 0 || end <= start ? "" : BUTTON.slice(start, end);
 }
 
+/** Isolates the fetch-effect's `.then()` callback — from the `fetchFavorites(...)` call
+ *  through the closing `.finally(() => clearTimeout(timeout));` that ends the chain, the
+ *  same "slice between two unique markers" technique `handleClickBody()` uses. */
+function fetchFavoritesThenBody(): string {
+  const start = BUTTON.indexOf("fetchFavorites(controller.signal)");
+  const end = BUTTON.indexOf(".finally(() => clearTimeout(timeout));");
+  return start < 0 || end < 0 || end <= start ? "" : BUTTON.slice(start, end);
+}
+
+/** Isolates the `authenticated`-branch `<button>` — from the ternary's `? (` through the
+ *  `) : (` that opens the guest branch (A11Y91-I1 fix, PR #91 round 2). */
+function authenticatedBranchBody(): string {
+  const start = BUTTON.indexOf('authState === "authenticated" ? (');
+  const end = BUTTON.indexOf(") : (");
+  return start < 0 || end < 0 || end <= start ? "" : BUTTON.slice(start, end);
+}
+
+/** Isolates the guest-branch `<button>` — from the ternary's `) : (` through
+ *  `{saveFailed && (`, which starts the next sibling after the closing ternary paren. */
+function guestBranchBody(): string {
+  const start = BUTTON.indexOf(") : (");
+  const end = BUTTON.indexOf("{saveFailed && (");
+  return start < 0 || end < 0 || end <= start ? "" : BUTTON.slice(start, end);
+}
+
 describe("the WAI-ARIA switch shape (§5.4)", () => {
   it('uses role="switch" rather than a bare unlabelled button', () => {
     expect(BUTTON).toContain('role="switch"');
@@ -71,6 +96,63 @@ describe("the WAI-ARIA switch shape (§5.4)", () => {
 
   it("stays a real element in every auth state — never returns null for an anonymous reader (deliberate divergence from VideoProgressControls)", () => {
     expect(BUTTON).not.toMatch(/authState\s*!==\s*"authenticated"\)\s*return\s*null/);
+  });
+});
+
+describe("A11Y91-I1 fix (PR #91 round 2): switch semantics only in the authenticated branch", () => {
+  it('the authenticated branch carries role="switch" and aria-checked bound to favorited', () => {
+    const body = authenticatedBranchBody();
+    expect(body).not.toBe("");
+    expect(body).toContain('role="switch"');
+    expect(body).toContain("aria-checked={favorited}");
+  });
+
+  it('the guest/checking branch carries NEITHER role="switch" NOR aria-checked — only a plain button', () => {
+    const body = guestBranchBody();
+    expect(body).not.toBe("");
+    expect(body).not.toContain('role="switch"');
+    expect(body).not.toContain("aria-checked");
+  });
+
+  it("the guest/checking branch still carries the sign-in aria-label, so the accessible name is not lost", () => {
+    const body = guestBranchBody();
+    expect(body).toContain('aria-label={t("signInRequiredAria")}');
+  });
+
+  it("the guest/checking branch renders the A2 lock cue (İRİS live-audit A2), aria-hidden so it never duplicates the accessible name", () => {
+    const body = guestBranchBody();
+    expect(body).toContain("<LockIcon />");
+    const iconStart = BUTTON.indexOf("function LockIcon()");
+    expect(iconStart).toBeGreaterThan(0);
+    const iconBody = BUTTON.slice(iconStart, iconStart + 400);
+    expect(iconBody).toContain('aria-hidden="true"');
+  });
+});
+
+describe("CODE91-I1 fix (PR #91 round 2): a stale fetchFavorites cannot overwrite a click", () => {
+  it("handleClick marks hasClickedRef BEFORE the auth-gate branch, so it is set on every click including a guest one", () => {
+    const body = handleClickBody();
+    const pendingGuard = body.indexOf("if (pending) return;");
+    const mark = body.indexOf("hasClickedRef.current = true;");
+    const gateCheck = body.indexOf('authState !== "authenticated"');
+    expect(pendingGuard).toBeGreaterThanOrEqual(0);
+    expect(mark).toBeGreaterThan(pendingGuard);
+    expect(gateCheck).toBeGreaterThan(mark);
+  });
+
+  it("the fetchFavorites success handler bails out once the reader has already clicked, never calling setFavorited(match)", () => {
+    const body = fetchFavoritesThenBody();
+    expect(body).not.toBe("");
+    // The bail-out condition must be checked BEFORE setFavorited(match) is ever reached.
+    const guard = body.indexOf("hasClickedRef.current");
+    const apply = body.indexOf("setFavorited(match)");
+    expect(guard).toBeGreaterThan(0);
+    expect(apply).toBeGreaterThan(guard);
+    // And the guard must actually gate the early return, not merely appear somewhere in the
+    // callback — `if (cancelled || favorites === null || hasClickedRef.current) return;`.
+    expect(body).toMatch(
+      /if\s*\(\s*cancelled\s*\|\|\s*favorites\s*===\s*null\s*\|\|\s*hasClickedRef\.current\s*\)\s*return;/,
+    );
   });
 });
 

@@ -25,6 +25,16 @@ async function handlePut(request: Request, ctx: { params: Promise<{ isoCode: str
 async function handleDelete(request: Request, ctx: { params: Promise<{ isoCode: string }> }) {
   const { isoCode } = await ctx.params;
   const result = await handleDeleteFavorite(request, { kind: "country", isoCode });
+  // IRIS91-C1 fix (PR #91 round 2, İRİS live-audit gate): the Fetch/Web `Response`
+  // constructor FORBIDS a non-null body together with a null-body status (204/205/304) and
+  // THROWS — `handleDeleteFavorite`'s own 204 success carries a truthy `{ ok: true }` body,
+  // so `NextResponse.json(result.body, { status: 204 })` crashed on every real remove, even
+  // though the api call itself had already succeeded. 204 is the ONLY null-body status this
+  // module ever produces (confirmed by exhaustive call-site enumeration, remedy-validated
+  // `pr-reviews/91-validator-IRIS91-C1.json`), so this branch is the whole fix.
+  if (result.status === 204) {
+    return new NextResponse(null, { status: 204, headers: result.headers });
+  }
   return NextResponse.json(result.body, { status: result.status, headers: result.headers });
 }
 
