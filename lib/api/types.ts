@@ -183,6 +183,13 @@ export type VideoProgress = components["schemas"]["VideoProgressDto"];
  *  this repo has to be careful never to send only one of the two. */
 export type UpsertVideoProgressRequest = components["schemas"]["UpsertVideoProgressRequestDto"];
 
+// ---- Favorites (per-user saved provinces/countries — UYELIK-07/08) ----------
+/** One favorited entity: which axis it names (`type`), the matching plate/iso code (the
+ *  other is `null`), and when the favorite was created. Reached only through the web's own
+ *  narrow BFF proxy (`lib/favorites/transport.server.ts`), never fetched directly from the
+ *  api by a page — the same posture `VideoProgress` above states for its own domain. */
+export type Favorite = components["schemas"]["FavoriteDto"];
+
 // ---- Reference data (kayıt formunun il→ilçe / üniversite / bölüm listeleri — PR-2) --------
 /** One ilçe: `id` (the value `districtId` sends) + `nameTr`. Turkish-alphabetical, one
  *  province at a time (`GET /api/reference/districts?plateCode=…`). */

@@ -667,6 +667,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The caller's own favorited provinces and countries.
+         * @description A plain, unpaginated array — bounded at at most 81 provinces + ~199 countries = 280 rows per user, ever, the same "bounded and small" shape `ENGINEERING.md` §2 already uses for the province/country lists themselves.
+         */
+        get: operations["FavoritesController_listMine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/favorites/provinces/{plateCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Idempotent add — favorite one province.
+         * @description Always 200, never 201 — the resource's final state is identical whether this call created or found the row, matching video_progress's idempotent-upsert convention. No request body: the target comes entirely from the route param and the auth context.
+         */
+        put: operations["FavoritesController_addProvince"];
+        post?: never;
+        /**
+         * Idempotent remove — unfavorite one province.
+         * @description 204 unconditionally: whether the row was favorited and removed, was never favorited, or plateCode is well-formed but names no real province at all. No 404 branch on this route at all — "remove" never needs to distinguish those cases from the caller's point of view.
+         */
+        delete: operations["FavoritesController_removeProvince"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/favorites/countries/{isoCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Idempotent add — favorite one country.
+         * @description Mirrors the province add route exactly, substituting isoCode/countryNotFound.
+         */
+        put: operations["FavoritesController_addCountry"];
+        post?: never;
+        /**
+         * Idempotent remove — unfavorite one country.
+         * @description Mirrors the province remove route exactly, substituting isoCode.
+         */
+        delete: operations["FavoritesController_removeCountry"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2930,6 +2998,28 @@ export interface components {
             /** @description A user-declared "I watched this" signal. Not derived from lastPositionSeconds — a caller may mark watched without scrubbing to the exact end. */
             watched: boolean;
         };
+        FavoriteDto: {
+            /**
+             * @description Which kind of target this favorite names.
+             * @enum {string}
+             */
+            type: "province" | "country";
+            /**
+             * @description provinces.plate_code. Set iff type === "province"; null otherwise.
+             * @example 34
+             */
+            plateCode: string | null;
+            /**
+             * @description countries.iso_code. Set iff type === "country"; null otherwise.
+             * @example TR
+             */
+            isoCode: string | null;
+            /**
+             * Format: date-time
+             * @description When this favorite was created, UTC.
+             */
+            createdAt: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -3977,6 +4067,174 @@ export interface operations {
             };
             /** @description errors.videoProgress.videoNotFound */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    FavoritesController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteDto"][];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    FavoritesController_addProvince: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Two-digit zero-padded province plate code. */
+                plateCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.favorites.provinceNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    FavoritesController_removeProvince: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Two-digit zero-padded province plate code. */
+                plateCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed, already absent, or plateCode names no province — all answer identically. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    FavoritesController_addCountry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ISO 3166-1 alpha-2 country code. */
+                isoCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.favorites.countryNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    FavoritesController_removeCountry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ISO 3166-1 alpha-2 country code. */
+                isoCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed, already absent, or isoCode names no country — all answer identically. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

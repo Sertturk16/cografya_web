@@ -5,6 +5,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { CardArrow } from "@/components/card-arrow";
 import { CountryFlag } from "@/components/country/country-flag";
 import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
+import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { LocatorMap } from "@/components/map/locator-map";
 import { ProseNote } from "@/components/prose-note";
 import {
@@ -338,7 +339,14 @@ export default async function CountryDetailPage({ params }: PageProps) {
           { label: name, href: selfHref },
         ]}
       />
-      <h1>{t("heading", { name })}</h1>
+      <div className={styles.pageHeading}>
+        <h1>{t("heading", { name })}</h1>
+        <FavoriteButton
+          key={country.isoCode}
+          locale={locale}
+          target={{ kind: "country", isoCode: country.isoCode }}
+        />
+      </div>
       {/* EN only, and only because every narrative section below is TR-gated (→ DEC
           2026-08-04i §4). Renders nothing on Turkish. */}
       <EnWorkInProgressNotice locale={locale} />

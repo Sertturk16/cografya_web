@@ -1,0 +1,83 @@
+/* Favori kontrolü — il/ülke detay sayfası başlığının yanında (UYELIK-08 plan §5.4). Terra
+   tokens only (DESIGN.md §2); no hardcoded brand hex. */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* WCAG 2.2 §2.5.5 (AAA) 44px, the same generosity `.watchedToggle` (book-video.module.css)
+   already takes for a control that is not a dense list item. */
+.toggle {
+  min-height: 44px;
+}
+
+/* NOT COLOUR ALONE (`DESIGN.md` §5's last line): the glyph itself changes shape (outline
+   star → filled star), not merely the fill, so the state still reads for a reader who
+   cannot distinguish the two fills. Decorative — the control's real accessible name already
+   carries the state via its two distinct aria-labels (`addAria`/`removeAria`), so this
+   glyph is not the only channel either way.
+
+   A DELIBERATE DIVERGENCE FROM `.watchedToggle[aria-checked]` (book-video.module.css), not
+   an equivalent copy of it (→ PR #91 round-2 review `DESIGN91-M1` — this comment previously
+   overclaimed sameness). `.watchedToggle` shows NO glyph at all in its unchecked state;
+   `.toggle` shows an outline star even before the first favorite, on purpose: it signals up
+   front that the control IS a togglable star rather than a plain button, which reads better
+   for a reader who has never interacted with it yet — but it genuinely differs from the
+   existing precedent, and is recorded as such rather than left undocumented. */
+.toggle::before {
+  content: "☆";
+  font-weight: 700;
+}
+
+/* CODE91-I1 fix's sibling, A11Y91-M1 (PR #91 round 2): a REAL visual busy cue for the
+   pending window, not only the AT-only `aria-disabled` flag a screen reader announces. An
+   inset ring rather than a background/opacity change on purpose — the pending window can
+   coincide with `aria-checked="true"` (the optimistic add-favorite path sets `favorited`
+   BEFORE `pending`), so a background swap here would fight `.toggle[aria-checked="true"]`'s
+   own terracotta fill and visually "un-favorite" a control mid-optimistic-update.
+   `--color-accent` (teal) is otherwise unused on this control, so it reads as a distinct,
+   transient state in both the checked and unchecked case, and touches neither text colour
+   nor background — no new contrast pair to audit. */
+.toggle[aria-disabled="true"] {
+  cursor: progress;
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+/* The A2-fix lock glyph (favorite-button.tsx's `LockIcon`) sits in the same flex row as the
+   label text (`.btn`'s own `gap: 8px`); `flex: none` keeps it from being squeezed if the
+   button's own min-width ever gets tight, the same guard `card-arrow.module.css`'s `.arrow`
+   already takes for its own inline icon. */
+.lockIcon {
+  flex: none;
+}
+
+/* Filled terracotta on the checked state mirrors `.btn-primary`'s own look and
+   `.watchedToggle[aria-checked="true"]`'s precedent exactly — the state is never encoded by
+   colour alone (the glyph above changes too). White on primary is 5.13:1 (AA, `DESIGN.md`
+   §5's own measured pair for this exact fill). */
+.toggle[aria-checked="true"] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+
+.toggle[aria-checked="true"]::before {
+  content: "★";
+}
+
+.toggle[aria-checked="true"]:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+/* Error text: `--color-danger` measures 4.90:1 on `--color-surface` (`DESIGN.md` §5's hard
+   rule — a semantic text colour must clear 4.5:1 on the darkest Terra background, not merely
+   on the lighter one this control actually sits on), the same measured pair
+   `auth-form.module.css`'s own error text already documents. */
+.error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}

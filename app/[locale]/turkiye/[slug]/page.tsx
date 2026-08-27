@@ -6,6 +6,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { CardArrow } from "@/components/card-arrow";
 import { ClimateSection } from "@/components/climate/climate-section";
 import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
+import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { LocatorMap } from "@/components/map/locator-map";
 import { RegionDot } from "@/components/province/region-dot";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
@@ -549,7 +550,14 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           { label: name, href: selfHref },
         ]}
       />
-      <h1>{t("heading", { name })}</h1>
+      <div className={styles.pageHeading}>
+        <h1>{t("heading", { name })}</h1>
+        <FavoriteButton
+          key={province.plateCode}
+          locale={locale}
+          target={{ kind: "province", plateCode: province.plateCode }}
+        />
+      </div>
       {/* EN only, and only because this page's substance is TR-gated below (→ DEC
           2026-08-04i §4). Renders nothing on Turkish. */}
       <EnWorkInProgressNotice locale={locale} />

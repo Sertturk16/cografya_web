@@ -401,6 +401,13 @@
     "flagAlt": "{name} bayrağı",
     "sovereigntyHeading": "Egemenlik ve Tanınma"
   },
+  "Favorites": {
+    "label": "Favori",
+    "addAria": "Favorilere ekle",
+    "removeAria": "Favorilerden çıkar",
+    "signInRequiredAria": "Favorilere eklemek için üye ol",
+    "saveError": "Kaydedilemedi. Tekrar dene."
+  },
   "Deniz": {
     "metaTitle": "Deniz Durumu: Rüzgâr, Dalga, Su Sıcaklığı",
     "metaDescription": "Karadeniz, Marmara, Ege ve Akdeniz'de 27 kıyı ilinin açığındaki 30 referans noktası: rüzgâr, dalga, deniz suyu sıcaklığı ve her büyüklüğün hangi modelden geldiği.",

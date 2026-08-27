@@ -401,6 +401,13 @@
     "flagAlt": "Flag of {name}",
     "sovereigntyHeading": "Sovereignty and Recognition"
   },
+  "Favorites": {
+    "label": "Favorite",
+    "addAria": "Add to favorites",
+    "removeAria": "Remove from favorites",
+    "signInRequiredAria": "Sign up to add to favorites",
+    "saveError": "Couldn't save. Try again."
+  },
   "Deniz": {
     "metaTitle": "Sea State: Wind, Waves, Water Temperature",
     "metaDescription": "Thirty reference points off 27 coastal provinces in four seas: wind, waves, sea surface temperature, and the forecast model each quantity comes from.",
