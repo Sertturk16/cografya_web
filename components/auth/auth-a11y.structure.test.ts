@@ -382,3 +382,118 @@ describe("a role=status/aria-live node is never the consequent of a null-alterna
     }
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// TA93R2-M1 (`pr-reviews/93-round2.md`): the block above only scans `ts.ConditionalExpression`
+// (`cond ? X : null`) — React's other, equally common way to say "render nothing while this
+// condition is false" is the short-circuit `&&` mount (`{cond && <p role="status">...}`),
+// which TypeScript parses as a `ts.BinaryExpression` (operator `&&`), not a
+// `ts.ConditionalExpression`. `&&` has no explicit false branch to compare against — with
+// `&&` the JSX right-hand side simply is absent from the DOM until the condition flips true —
+// but the underlying hazard is identical to the ternary case above: a status/live-region node
+// whose role AND first content both arrive in the SAME commit, so a screen reader gets no
+// "something changed" signal to react to. Reuses the same `containsStatusOrLiveNode` helper.
+//
+// No island in this repo writes this pattern today (confirmed: `grep -n "&&"` over all five
+// `*-form.tsx` files below finds only plain boolean guards in `if` conditions / variable
+// assignments — never a `cond && <JSX/>` mount), so a scan of the real files alone would pass
+// vacuously and a future accidental deletion of the scan body would go unnoticed. The
+// synthetic-fixture block below is the positive control: it proves the detector actually
+// fires on the shape it exists to catch, using inline source strings that are never read from
+// — and never written into — the real component tree.
+// ---------------------------------------------------------------------------------------
+
+/** `true` when `node` is a `&&` `ts.BinaryExpression` whose right-hand side contains (or is)
+ *  a JSX element carrying `role="status"` or `aria-live` — the short-circuit-mount mirror of
+ *  `isNullishBranch`'s ternary check. Unlike the ternary case there is no explicit false
+ *  branch to inspect: with `&&`, ANY status/live-region node on the right-hand side is the
+ *  same "does not exist until the condition flips true" hazard. */
+function isAndGuardedStatusMount(node: ts.Node): node is ts.BinaryExpression {
+  return (
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+    containsStatusOrLiveNode(node.right)
+  );
+}
+
+function parseSource(source: string): ts.SourceFile {
+  return ts.createSourceFile(
+    "synthetic.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+}
+
+describe("the &&-guarded-status-mount detector fires on the shape it exists to catch (positive control)", () => {
+  it('flags `cond && <p role="status">...</p>}`', () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        return <div>{cond && <p role="status">done</p>}</div>;
+      }
+    `);
+    expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(1);
+  });
+
+  it('flags `cond && <p aria-live="polite">...</p>}`', () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        return (
+          <div>{cond && <p aria-live="polite">done</p>}</div>
+        );
+      }
+    `);
+    expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(1);
+  });
+
+  it("flags a status node nested deeper inside the &&-guarded subtree, not only a direct child", () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        return (
+          <div>
+            {cond && (
+              <section>
+                <p role="status">done</p>
+              </section>
+            )}
+          </div>
+        );
+      }
+    `);
+    expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(1);
+  });
+
+  it("does not flag an ordinary &&-guarded mount with no status/live node — the false-positive control", () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        return <div>{cond && <p className="note">done</p>}</div>;
+      }
+    `);
+    expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(0);
+  });
+
+  it("does not flag a plain boolean &&-guard with no JSX on the right at all", () => {
+    const ast = parseSource(`
+      function guard(a: boolean, b: boolean) {
+        if (a && b) {
+          return true;
+        }
+        return false;
+      }
+    `);
+    expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(0);
+  });
+});
+
+describe("a role=status/aria-live node is never the right-hand side of a && short-circuit mount (TA93R2-M1 regression class)", () => {
+  it.each(ISLAND_FILES)("%s", (relativePath) => {
+    const { ast } = parse(relativePath);
+    // No positive control here on purpose: the review that opened this gap (`TA93R2-M1`)
+    // measured zero `cond && <JSX/>` mounts of ANY kind across these five files today (see
+    // the block comment above) — a `.toBeGreaterThan(0)` count assertion on the real files
+    // would itself fail right now. The synthetic-fixture block above is what proves this
+    // scan isn't vacuous instead.
+    expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(0);
+  });
+});
