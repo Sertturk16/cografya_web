@@ -554,7 +554,7 @@ export interface paths {
         put?: never;
         /**
          * Rotate a refresh token for a fresh access + refresh pair.
-         * @description Reused, expired, unknown or account-inactive tokens all answer the SAME 401 (errors.auth.sessionExpired). A reused token revokes its ENTIRE family and bumps the user's token_version, invalidating every live access token at once.
+         * @description Reused, expired, unknown or account-inactive tokens all answer the SAME 401 (errors.auth.sessionExpired). One just-rotated token may recover exactly once within 15 seconds when its prior response was lost; every other reuse revokes its ENTIRE family and bumps the user's token_version, invalidating every live access token at once. R5 in auth-security.e2e-spec.ts pins this bounded exception.
          */
         post: operations["AuthController_refresh"];
         delete?: never;
@@ -636,6 +636,30 @@ export interface paths {
          */
         get: operations["AuthController_session"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/video-progress/{bookVideoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The caller's own saved progress on one video.
+         * @description One undifferentiated 404 whether bookVideoId names no video at all or the caller simply has no saved progress for a valid one — a client asking "do I have progress here" gets the same actionable answer (no) regardless of which is true.
+         */
+        get: operations["VideoProgressController_getOne"];
+        /**
+         * Upsert the caller's own progress on one video (idempotent full-state replace).
+         * @description A reported position beyond the video's real duration (when known) or beyond the fallback ceiling (when the duration is currently unknown — never synced or purged past 30 days) is REJECTED, not clamped. Returns the persisted row on success, matching AuthResultDto's own write-echo precedent.
+         */
+        put: operations["VideoProgressController_upsert"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2186,6 +2210,11 @@ export interface components {
         };
         BookVideoDto: {
             /**
+             * Format: uuid
+             * @description book_videos.id — the identifier both video-progress endpoints (GET/PUT /api/video-progress/{bookVideoId}) key on for this exact video.
+             */
+            bookVideoId: string;
+            /**
              * @description The deneme's number IN THE BOOK — not its position in the playlist. The two diverge (+1 after 14, +2 after 21) because denemeler 14 and 22 exist in the book while their solution videos do not. The playlist position is stored nowhere and is never published.
              * @example 12
              */
@@ -2867,6 +2896,39 @@ export interface components {
              * @enum {string}
              */
             accountRole: "STUDENT" | "TEACHER";
+        };
+        VideoProgressDto: {
+            /**
+             * Format: uuid
+             * @description book_videos.id.
+             */
+            bookVideoId: string;
+            /**
+             * @description Last playback position, in seconds.
+             * @example 245
+             */
+            lastPositionSeconds: number;
+            /** @description The user-declared "I watched this" signal. */
+            watched: boolean;
+            /**
+             * Format: date-time
+             * @description When the caller most recently confirmed watched:true, UTC — "last confirmed instant", not "first ever watched instant". null whenever watched is false.
+             */
+            watchedAt: string | null;
+            /**
+             * Format: date-time
+             * @description When this row was last written.
+             */
+            updatedAt: string;
+        };
+        UpsertVideoProgressRequestDto: {
+            /**
+             * @description Last playback position, in seconds.
+             * @example 245
+             */
+            lastPositionSeconds: number;
+            /** @description A user-declared "I watched this" signal. Not derived from lastPositionSeconds — a caller may mark watched without scrubbing to the exact end. */
+            watched: boolean;
         };
     };
     responses: never;
@@ -3822,6 +3884,99 @@ export interface operations {
             };
             /** @description errors.auth.unauthenticated. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoProgressController_getOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description book_videos.id. */
+                bookVideoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoProgressDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.videoProgress.notFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoProgressController_upsert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description book_videos.id. */
+                bookVideoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertVideoProgressRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoProgressDto"];
+                };
+            };
+            /** @description errors.videoProgress.positionExceedsDuration, or a malformed body / bookVideoId. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.videoProgress.videoNotFound */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { serverEnv } from "@/lib/env.server";
+import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
 import type { AccountRole, AuthResult, Session } from "@/lib/api/types";
 import {
@@ -298,14 +299,6 @@ function readCookieValue(request: Request, name: string): string | undefined {
     }
   }
   return undefined;
-}
-
-/** Every POST action requires `Origin` exactly equal to `getSiteUrl()` (plan §10, binding).
- *  Absent is refused too: a same-origin browser `fetch` always sends `Origin` on a POST, so
- *  an absent header means a non-browser caller. Gate: T12. */
-function isValidOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  return origin !== null && origin === getSiteUrl();
 }
 
 function contentLengthExceeds(request: Request): boolean {
@@ -887,7 +880,7 @@ export async function handleAuthRequest(
   // cookie it removes is already useless — a cross-site GET trigger can therefore only ever
   // delete an already-dead cookie, never a live one.
   if (action.method === "POST") {
-    if (!isValidOrigin(request)) {
+    if (!isSameOrigin(request, getSiteUrl())) {
       logAuthOutcome(actionKey, "forbidden");
       return bffResult(403, { ok: false, code: "errors.transport.forbidden" });
     }

@@ -564,7 +564,14 @@
     "denemeCountLabel": "Deneme count",
     "examLabel": "Exam",
     "sourcesLabel": "Sources",
-    "sourceNewTab": ", opens in a new tab"
+    "sourceNewTab": ", opens in a new tab",
+    "signInCta": "Sign up to watch this video.",
+    "watchAriaSignedOut": "Watch — video solution for Deneme {no}, sign-up required",
+    "sessionReadyAnnounce": "Signed in — you can watch this video.",
+    "resumeLine": "Continue where you left off — {time}",
+    "watchedToggle": "I watched this",
+    "watchedToggleAriaOn": "I watched this, marked — press to unmark",
+    "watchedToggleAriaOff": "I watched this, not marked — press to mark as watched"
   },
   "Tools": {
     "hub": {

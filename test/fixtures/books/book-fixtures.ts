@@ -137,6 +137,7 @@ export const BOOK_DETAIL: BookDetail = {
   },
   videos: [
     {
+      bookVideoId: "11111111-2222-4333-8444-555555555551",
       denemeNo: 1,
       youtubeVideoId: "fixtureVid1",
       questions: [
@@ -156,6 +157,7 @@ export const BOOK_DETAIL: BookDetail = {
       },
     },
     {
+      bookVideoId: "11111111-2222-4333-8444-555555555553",
       denemeNo: 3,
       youtubeVideoId: "fixtureVid3",
       questions: [

@@ -1,12 +1,15 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import type { AuthSessionState } from "@/lib/auth/use-session.client";
 import { formatDuration } from "@/lib/book/duration";
 import { videoTitle } from "@/lib/book/video-identity";
+import type { VideoProgressValue } from "@/lib/video-progress/client";
 import { watchUrl } from "@/lib/youtube/embed";
 import { useBenchState } from "./active-video";
 import { BenchTimeline } from "./bench-timeline";
 import { DenemeVideo } from "./deneme-video";
+import { VideoProgressControls } from "./video-progress-controls";
 import styles from "./book-video.module.css";
 
 /**
@@ -40,6 +43,9 @@ import styles from "./book-video.module.css";
  */
 export interface BenchVideo {
   readonly denemeNo: number;
+  /** `book_videos.id` — the identifier the video-progress endpoints key on (UYELIK-06 plan
+   *  §5.2). Populated from the api's own `BookVideoDto.bookVideoId`, never derived here. */
+  readonly bookVideoId: string;
   readonly videoId: string;
   /** False for a video the provider refuses to embed — no player, an outbound link instead. */
   readonly playable: boolean;
@@ -101,9 +107,23 @@ export interface BenchVideo {
 export function BenchStage({
   videos,
   defaultDenemeNo,
+  authState,
+  progress,
+  onSaveWatched,
 }: {
   videos: readonly BenchVideo[];
   defaultDenemeNo: number;
+  /** The login gate's own read of the shared session hook (UYELIK-06 §5.3.2), threaded down
+   *  from `VideoBench` — never a second `useAuthSession()` call here, which would be a second
+   *  live session check racing the one the gate already owns. */
+  authState: AuthSessionState;
+  /** The SELECTED video's saved progress, fetched once at the `VideoBench` level (§5.4) —
+   *  `"loading"` while the request is in flight, `null` once resolved with no saved row (or
+   *  for an anonymous/checking reader). */
+  progress: VideoProgressValue | null | "loading";
+  /** Persists a watched-toggle press (§5.6); owned by `VideoBench` because it also updates the
+   *  progress state this component reads. */
+  onSaveWatched: (watched: boolean) => Promise<{ readonly ok: boolean }>;
 }) {
   const t = useTranslations("BookDetail");
   const { selected, active } = useBenchState();
@@ -116,6 +136,7 @@ export function BenchStage({
   if (video === undefined) return null;
 
   const rich = video.rich;
+  const knownWatched = progress !== null && progress !== "loading" ? progress.watched : false;
 
   return (
     /* `data-deneme` is the island's only way to know which video a press belongs to, and it is
@@ -133,9 +154,14 @@ export function BenchStage({
       <DenemeVideo
         video={video}
         active={active}
+        authState={authState}
+        watched={knownWatched}
         title={t("playerTitle", { no: video.denemeNo })}
         watchLabel={t("watch")}
         watchAriaLabel={t("watchAria", { no: video.denemeNo })}
+        watchAriaSignedOutLabel={t("watchAriaSignedOut", { no: video.denemeNo })}
+        signInCtaText={t("signInCta")}
+        sessionReadyAnnounceText={t("sessionReadyAnnounce")}
         watchOnYoutubeLabel={t("watchOnYoutube")}
         watchOnYoutubeAriaLabel={t("watchOnYoutubeAria", { no: video.denemeNo })}
         watchOnYoutubeUrl={watchUrl(video.videoId)}
@@ -179,6 +205,16 @@ export function BenchStage({
         denemeNo={video.denemeNo}
         questions={video.questions}
         durationSeconds={rich?.durationSeconds ?? null}
+      />
+
+      {/* Sits BELOW the reserved-height stage, not above it (§5.6) — unlike the CTA/caption/
+          timeline above, a height change here does not shift the index, so it does not need
+          the reserved-box treatment those three carry; it renders nothing for a reader who is
+          not authenticated. */}
+      <VideoProgressControls
+        authState={authState}
+        progress={progress}
+        onToggleWatched={onSaveWatched}
       />
     </div>
   );
