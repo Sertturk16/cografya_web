@@ -740,11 +740,13 @@
     },
     "university": {
       "loading": "Loading…",
-      "loadError": "Universities could not be loaded"
+      "loadError": "Universities could not be loaded",
+      "announceCount": "{count} universities listed"
     },
     "department": {
       "loading": "Loading…",
-      "loadError": "Departments could not be loaded"
+      "loadError": "Departments could not be loaded",
+      "announceCount": "{count} departments listed"
     },
     "fieldErrors": {
       "required": "This field is required.",

@@ -809,11 +809,13 @@
     },
     "university": {
       "loading": "Yükleniyor…",
-      "loadError": "Üniversiteler yüklenemedi"
+      "loadError": "Üniversiteler yüklenemedi",
+      "announceCount": "{count} üniversite listelendi"
     },
     "department": {
       "loading": "Yükleniyor…",
-      "loadError": "Bölümler yüklenemedi"
+      "loadError": "Bölümler yüklenemedi",
+      "announceCount": "{count} bölüm listelendi"
     },
     "fieldErrors": {
       "required": "Bu alanı doldurman gerekiyor.",
