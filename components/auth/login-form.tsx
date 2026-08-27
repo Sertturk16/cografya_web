@@ -13,11 +13,12 @@ import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { AUTH_ERROR_MESSAGE_KEYS } from "@/lib/auth/error-messages";
 import { EMAIL_SHAPE, EMAIL_MAX, PASSWORD_MAX } from "@/lib/auth/form-rules";
-import { AUTH_FETCH_TIMEOUT_MS, submitAuth } from "@/lib/auth/submit.client";
+import { submitAuth } from "@/lib/auth/submit.client";
 // Type-only: erased at compile time (SWC elides `import type`), so this never pulls the
 // `import "server-only"` side effect into the client bundle — the same pattern
 // `error-messages.ts` already uses for the same type.
 import type { AuthBffCode } from "@/lib/auth/transport.server";
+import { useAuthSession } from "@/lib/auth/use-session.client";
 import { FormErrorRegion, TextField } from "./field";
 import styles from "./auth-form.module.css";
 
@@ -40,8 +41,6 @@ function useReturnToParam(): string | null {
   return useSyncExternalStore(NEVER_CHANGES, readReturnToParam, serverReturnToSnapshot);
 }
 
-type SessionState = "checking" | "authenticated" | "anonymous";
-
 interface FieldErrors {
   email?: string;
   password?: string;
@@ -53,7 +52,7 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
   const rawReturnTo = useReturnToParam();
   const fallbackHome = getPathname({ locale, href: "/" });
 
-  const [sessionState, setSessionState] = useState<SessionState>("checking");
+  const [sessionState, setSessionState] = useAuthSession();
   const [loggingOut, setLoggingOut] = useState(false);
   const [justLoggedOut, setJustLoggedOut] = useState(false);
   const [email, setEmail] = useState("");
@@ -66,37 +65,12 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
   const signedInHeadingRef = useRef<HTMLHeadingElement>(null);
   const loggedOutHeadingRef = useRef<HTMLHeadingElement>(null);
 
-  // Session check — read-only, never stores or renders `firstName` (plan §6.2). "Anything
-  // other than a 200" (including 401 and a network failure) is treated identically to "no
-  // session": the form renders. The pre-hydration render already shows the form (the static
-  // shell never calls `getSession()`), so this effect only ever SWAPS to the signed-in state
-  // after mount — it can never introduce a hydration mismatch. Bounded by the same
-  // `AUTH_FETCH_TIMEOUT_MS` budget `submitAuth` uses (review `VAL85-V3`/`SEC85-M3`): this was
-  // the repo's other unbounded browser `fetch`, and the abort also runs on unmount so a slow
-  // response never calls `setSessionState` after the component is gone.
-  useEffect(() => {
-    let cancelled = false;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), AUTH_FETCH_TIMEOUT_MS);
-    fetch("/api/auth/session", {
-      method: "GET",
-      credentials: "same-origin",
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!cancelled) setSessionState(res.status === 200 ? "authenticated" : "anonymous");
-      })
-      .catch(() => {
-        if (!cancelled) setSessionState("anonymous");
-      })
-      .finally(() => clearTimeout(timeout));
-    return () => {
-      cancelled = true;
-      controller.abort();
-      clearTimeout(timeout);
-    };
-  }, []);
+  // The session check itself now lives in `useAuthSession()` — read-only, never stores or
+  // renders `firstName` (plan §6.2). "Anything other than a 200" (including 401 and a network
+  // failure) is treated identically to "no session": the form renders. The pre-hydration
+  // render already shows the form (the static shell never calls `getSession()`), so the hook
+  // only ever SWAPS to the signed-in state after mount — it can never introduce a hydration
+  // mismatch.
 
   const hasFieldErrors = fieldErrors.email !== undefined || fieldErrors.password !== undefined;
   const hasErrors = hasFieldErrors || serverErrorCode !== null;
