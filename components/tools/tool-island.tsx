@@ -289,8 +289,10 @@ export function ToolIsland({
    * be saved", stable across a retry of that same thing, regenerated the moment the
    * underlying geometry changes. Cleared to `null` by every point-mutating call site
    * below and by `recallMeasurement`; `ToolMeasurementSave` reads/writes it through the
-   * `getPendingSaveId`/`setPendingSaveId` prop pair rather than owning its own ref, since
-   * the geometry it must invalidate against lives here, not in that component.
+   * ref object itself, passed down as a prop (`SIMP100-M1` — the previous
+   * `getPendingSaveId`/`setPendingSaveId` closure pair was recreated on every render and had
+   * exactly one caller, no second consumer), since the geometry it must invalidate against
+   * lives here, not in that component.
    */
   const pendingSaveIdRef = useRef<string | null>(null);
 
@@ -1198,10 +1200,7 @@ export function ToolIsland({
         minPoints={minExportPoints}
         authState={authState}
         locale={locale}
-        getPendingSaveId={() => pendingSaveIdRef.current}
-        setPendingSaveId={(id) => {
-          pendingSaveIdRef.current = id;
-        }}
+        pendingSaveIdRef={pendingSaveIdRef}
         onSaved={handleMeasurementSaved}
       />
       {authState === "authenticated" && (

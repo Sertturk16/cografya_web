@@ -14,6 +14,15 @@ const MEASUREMENT = {
   updatedAt: "2026-08-28T10:00:00.000Z",
 };
 
+const MEASUREMENT_WITHOUT_TITLE = {
+  id: MEASUREMENT.id,
+  type: MEASUREMENT.type,
+  points: MEASUREMENT.points,
+  clientMeasurementId: MEASUREMENT.clientMeasurementId,
+  createdAt: MEASUREMENT.createdAt,
+  updatedAt: MEASUREMENT.updatedAt,
+};
+
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -75,6 +84,50 @@ describe("fetchMeasurements", () => {
           jsonResponse(200, {
             ok: true,
             measurements: [{ id: "x" /* missing every other field */ }],
+          }),
+        ),
+      ),
+    );
+    await expect(fetchMeasurements(new AbortController().signal)).resolves.toBeNull();
+  });
+
+  it("a title of explicit null parses to a null title, not a malformed item", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse(200, {
+            ok: true,
+            measurements: [{ ...MEASUREMENT_WITHOUT_TITLE, title: null }],
+          }),
+        ),
+      ),
+    );
+    await expect(fetchMeasurements(new AbortController().signal)).resolves.toEqual([
+      { ...MEASUREMENT_WITHOUT_TITLE, title: null },
+    ]);
+  });
+
+  it("a title field that is entirely absent parses to a null title too", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(jsonResponse(200, { ok: true, measurements: [MEASUREMENT_WITHOUT_TITLE] })),
+      ),
+    );
+    await expect(fetchMeasurements(new AbortController().signal)).resolves.toEqual([
+      { ...MEASUREMENT_WITHOUT_TITLE, title: null },
+    ]);
+  });
+
+  it("a title of an invalid type (neither string, null nor undefined) treats the whole list as malformed", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse(200, {
+            ok: true,
+            measurements: [{ ...MEASUREMENT, title: 42 }],
           }),
         ),
       ),

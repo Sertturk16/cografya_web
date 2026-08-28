@@ -26,6 +26,7 @@ const MEASUREMENTS_KEYS = [
   "signInRequiredAria",
   "saveError",
   "saveQuotaError",
+  "saveTitleMismatch",
   "titleLabel",
   "listToggleLabel",
   "listHeading",
