@@ -210,15 +210,37 @@ describe("saveFavorite", () => {
       await settled;
     });
 
-    it("clears the timeout on a normal success, leaving no dangling timer (finally-scoped clearTimeout)", async () => {
-      vi.useFakeTimers();
-      const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+    it.each([
+      ["a 200 success", () => Promise.resolve(jsonResponse(200, { ok: true, favorite: {} }))],
+      ["a non-200", () => Promise.resolve(new Response(null, { status: 401 }))],
+      ["a network failure", () => Promise.reject(new TypeError("network down"))],
+    ] as const)(
+      "leaves no pending timer after resolving — %s (finally-scoped clearTimeout, every path)",
+      async (_label, respond) => {
+        vi.useFakeTimers();
+        vi.stubGlobal("fetch", vi.fn(respond));
+        await saveFavorite({ kind: "province", plateCode: "34" });
+        expect(vi.getTimerCount()).toBe(0);
+      },
+    );
+
+    it("uses an independent AbortController per call — no shared/module-level state, so concurrent calls cannot race each other's abort", async () => {
+      const signals: (AbortSignal | undefined)[] = [];
       vi.stubGlobal(
         "fetch",
-        vi.fn(() => Promise.resolve(jsonResponse(200, { ok: true, favorite: {} }))),
+        vi.fn((_url: string, init: RequestInit) => {
+          signals.push(init.signal ?? undefined);
+          return Promise.resolve(jsonResponse(200, { ok: true, favorite: {} }));
+        }),
       );
-      await saveFavorite({ kind: "province", plateCode: "34" });
-      expect(clearSpy).toHaveBeenCalled();
+      await Promise.all([
+        saveFavorite({ kind: "province", plateCode: "34" }),
+        saveFavorite({ kind: "country", isoCode: "TR" }),
+      ]);
+      expect(signals).toHaveLength(2);
+      expect(signals[0]).toBeInstanceOf(AbortSignal);
+      expect(signals[1]).toBeInstanceOf(AbortSignal);
+      expect(signals[0]).not.toBe(signals[1]);
     });
   });
 });
