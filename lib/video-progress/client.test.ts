@@ -242,15 +242,37 @@ describe("saveVideoProgress", () => {
       await pending;
     });
 
-    it("clears the timeout on a normal success, leaving no dangling timer (finally-scoped clearTimeout)", async () => {
-      vi.useFakeTimers();
-      const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+    it.each([
+      ["a 200 success", () => Promise.resolve(new Response(null, { status: 200 }))],
+      ["a non-200", () => Promise.resolve(new Response(null, { status: 401 }))],
+      ["a network failure", () => Promise.reject(new TypeError("network down"))],
+    ] as const)(
+      "leaves no pending timer after resolving — %s (finally-scoped clearTimeout, every path)",
+      async (_label, respond) => {
+        vi.useFakeTimers();
+        vi.stubGlobal("fetch", vi.fn(respond));
+        await saveVideoProgress(BOOK_VIDEO_ID, { lastPositionSeconds: 30, watched: true });
+        expect(vi.getTimerCount()).toBe(0);
+      },
+    );
+
+    it("uses an independent AbortController per call — no shared/module-level state, so concurrent calls (e.g. the periodic and tab-hide save triggers overlapping) cannot race each other's abort", async () => {
+      const signals: (AbortSignal | undefined)[] = [];
       vi.stubGlobal(
         "fetch",
-        vi.fn(() => Promise.resolve(new Response(null, { status: 200 }))),
+        vi.fn((_url: string, init: RequestInit) => {
+          signals.push(init.signal ?? undefined);
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }),
       );
-      await saveVideoProgress(BOOK_VIDEO_ID, { lastPositionSeconds: 30, watched: true });
-      expect(clearSpy).toHaveBeenCalled();
+      await Promise.all([
+        saveVideoProgress(BOOK_VIDEO_ID, { lastPositionSeconds: 5, watched: false }),
+        saveVideoProgress(BOOK_VIDEO_ID, { lastPositionSeconds: 10, watched: true }),
+      ]);
+      expect(signals).toHaveLength(2);
+      expect(signals[0]).toBeInstanceOf(AbortSignal);
+      expect(signals[1]).toBeInstanceOf(AbortSignal);
+      expect(signals[0]).not.toBe(signals[1]);
     });
   });
 });

@@ -292,5 +292,38 @@ describe("removeFavorite", () => {
       await vi.advanceTimersByTimeAsync(FAVORITES_FETCH_TIMEOUT_MS);
       await settled;
     });
+
+    it.each([
+      ["a 204 success", () => Promise.resolve(new Response(null, { status: 204 }))],
+      ["a non-204", () => Promise.resolve(new Response(null, { status: 401 }))],
+      ["a network failure", () => Promise.reject(new TypeError("network down"))],
+    ] as const)(
+      "leaves no pending timer after resolving — %s (finally-scoped clearTimeout, every path)",
+      async (_label, respond) => {
+        vi.useFakeTimers();
+        vi.stubGlobal("fetch", vi.fn(respond));
+        await removeFavorite({ kind: "country", isoCode: "TR" });
+        expect(vi.getTimerCount()).toBe(0);
+      },
+    );
+
+    it("uses an independent AbortController per call — no shared/module-level state, so concurrent calls cannot race each other's abort", async () => {
+      const signals: (AbortSignal | undefined)[] = [];
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((_url: string, init: RequestInit) => {
+          signals.push(init.signal ?? undefined);
+          return Promise.resolve(new Response(null, { status: 204 }));
+        }),
+      );
+      await Promise.all([
+        removeFavorite({ kind: "province", plateCode: "34" }),
+        removeFavorite({ kind: "country", isoCode: "TR" }),
+      ]);
+      expect(signals).toHaveLength(2);
+      expect(signals[0]).toBeInstanceOf(AbortSignal);
+      expect(signals[1]).toBeInstanceOf(AbortSignal);
+      expect(signals[0]).not.toBe(signals[1]);
+    });
   });
 });
