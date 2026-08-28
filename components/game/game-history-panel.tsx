@@ -105,8 +105,19 @@ export function GameHistoryPanel({
       ) : (
         <ul className={styles.list}>
           {rounds.map((round) => (
-            <li key={round.clientRoundId} className={styles.row}>
+            // CODE96-M1 fix (PR #96 round-1 review): keyed on TWO fields, not
+            // `clientRoundId` alone — that field's uniqueness is an idempotency-key
+            // guarantee the DTO schema (`GameRoundRecord`) does not itself formally
+            // document, so a future api change that relaxed it could silently collapse two
+            // rows under React's reconciliation. `createdAt` is a second, independent axis
+            // that would have to ALSO collide for that failure to reach the DOM.
+            <li key={`${round.clientRoundId}-${round.createdAt}`} className={styles.row}>
               <span className={styles.mode}>{modeLabel(round.mode)}</span>
+              {/* A11Y96-M1 fix: the bare number below carries no context for a screen
+                  reader — this sr-only label names it before the value, reusing the
+                  `GameSummary` namespace's own `statScore` ("Puan") string rather than
+                  authoring a new one, since it is the same fact in the same language. */}
+              <span className={styles.srOnly}>{t("statScore")}</span>
               <span className={styles.score}>{round.score}</span>
               <time className={styles.date} dateTime={round.createdAt}>
                 {dateFormatter.format(new Date(round.createdAt))}

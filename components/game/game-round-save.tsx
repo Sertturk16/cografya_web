@@ -106,10 +106,16 @@ export function GameRoundSaveControl({
           {t("saveLabel")}
         </button>
       ) : saved ? (
-        // A genuine, permanent outcome — real `disabled`, not `aria-disabled`: unlike the
-        // transient `pending` window, there is no future click this control still needs to
-        // stay focusable for (a replay remounts a fresh instance).
-        <button type="button" className="btn btn-primary" disabled>
+        // A11Y96-I1 fix (PR #96 round-1 review): a genuine, permanent outcome — but NEVER a
+        // real `disabled` attribute here, even though there is no future click this control
+        // still needs to stay actionable for. This is the SAME DOM node the reader just
+        // clicked and is still focused; a real `disabled` yanks focus silently with no AT
+        // announcement (WCAG 4.1.3). `aria-disabled` in every non-interactive state — the
+        // same posture `favorite-button.tsx` holds throughout its own lifecycle, never
+        // switching to real `disabled` for any of its states. The label-text change itself is
+        // announced by the sr-only `role="status"` paragraph below, mirroring the mechanism
+        // the `failed` branch already uses for its own error text.
+        <button type="button" className="btn btn-primary" aria-disabled={true}>
           {t("savedLabel")}
         </button>
       ) : (
@@ -121,6 +127,18 @@ export function GameRoundSaveControl({
         >
           {t("saveLabel")}
         </button>
+      )}
+      {saved && (
+        // A11Y96-I1 fix: the visible signal for "Kaydet" → "Kaydedildi" is the button's own
+        // label text (sighted users), but that text swap alone reaches no screen reader —
+        // the changed text lives inside the SAME node, which most AT does not re-announce on
+        // a plain content change. This sr-only `role="status"` paragraph is the announcement
+        // channel, mirroring exactly the mechanism `status === "failed"` already uses below
+        // for its own (visible) error text — reusing `savedLabel` rather than a new string,
+        // since the fact being announced is the same one the button already shows.
+        <p role="status" className={styles.srOnly}>
+          {t("savedLabel")}
+        </p>
       )}
       {status === "failed" && (
         <p role="status" className={styles.error}>

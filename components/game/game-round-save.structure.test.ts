@@ -122,11 +122,28 @@ describe("the anonymous branch (§5.6)", () => {
 });
 
 describe("the saved branch — a genuine, permanent outcome", () => {
-  it("uses a real disabled attribute, not aria-disabled, and shows the savedLabel", () => {
+  it("uses aria-disabled, NEVER a real disabled attribute, and shows the savedLabel (A11Y96-I1)", () => {
     const body = savedBranchBody();
     expect(body).not.toBe("");
-    expect(body).toMatch(/<button[^>]*\bdisabled\b/);
-    expect(body).toContain('t("savedLabel")');
+    expect(body).toContain("aria-disabled={true}");
+    // A real `disabled` attribute on this branch's own button would yank focus silently
+    // (WCAG 4.1.3) — the exact regression A11Y96-I1 fixed. `disabled` still legitimately
+    // appears elsewhere in the file (e.g. as a JS keyword/substring in other branches), so
+    // this asserts none of THIS branch's own <button> tags carry it as an attribute.
+    expect(body).not.toMatch(/<button[^>]*[\s"]disabled(?:[\s>]|=\{)/);
+  });
+
+  it("announces the save-succeeded fact to assistive tech via a dedicated sr-only role=status region", () => {
+    // Mirrors the `failed` branch's own mechanism (a conditionally-rendered `role="status"`
+    // paragraph) — required because the saved-branch button's label text changes in place,
+    // which is not reliably announced by AT on its own.
+    expect(CONTROL).toContain("{saved && (");
+    const start = CONTROL.indexOf("{saved && (");
+    const end = CONTROL.indexOf('{status === "failed" &&');
+    expect(end).toBeGreaterThan(start);
+    const announcement = CONTROL.slice(start, end);
+    expect(announcement).toContain('role="status"');
+    expect(announcement).toContain('t("savedLabel")');
   });
 });
 
