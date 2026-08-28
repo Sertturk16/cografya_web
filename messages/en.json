@@ -193,6 +193,23 @@
     "historyHeading": "Your Saved Rounds",
     "historyEmpty": "No saved rounds yet."
   },
+  "Measurements": {
+    "saveLabel": "Save",
+    "savedLabel": "Saved",
+    "signInRequiredAria": "Sign up to save",
+    "saveError": "Couldn't save. Try again.",
+    "saveQuotaError": "You've reached your saved-measurement limit. Delete one from your list to save a new one.",
+    "titleLabel": "Title (optional)",
+    "listToggleLabel": "Your saved measurements",
+    "listHeading": "Your saved measurements",
+    "listEmpty": "No saved measurements yet.",
+    "listError": "Your saved measurements couldn't load.",
+    "recallLabel": "Load",
+    "recallAria": "Load {label} onto the map",
+    "deleteLabel": "Delete",
+    "deleteAria": "Delete {label}",
+    "deleteError": "Couldn't delete. Try again."
+  },
   "ProvinceDetail": {
     "metaTitle": "Geography of {name}",
     "metaTitleClimate": "{name} Climate Chart and Geography",

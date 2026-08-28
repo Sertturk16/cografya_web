@@ -203,6 +203,30 @@ export type GameRoundList = components["schemas"]["GameRoundListDto"];
  *  request-side zod schema mirroring these same bounds before an outbound call is spent. */
 export type SubmitGameRoundRequest = components["schemas"]["SubmitGameRoundRequestDto"];
 
+// ---- Measurements (per-user saved map measurements — UYELIK-11/12) --------------
+/** One saved map measurement: which kind of geometry it is, its points, an optional
+ *  title, the `clientMeasurementId` idempotency key it was created with, and the two
+ *  timestamps. Reached only through the web's own narrow BFF proxy
+ *  (`lib/measurements/transport.server.ts`), never fetched directly from the api by a
+ *  page — the same posture `Favorite`/`GameRound` above state for their own domains. */
+export type Measurement = components["schemas"]["MeasurementDto"];
+/** One point of a saved measurement's geometry — field-name-identical to
+ *  `components/tools/tool-island.tsx`'s own `GeoPoint`. */
+export type MeasurementPoint = components["schemas"]["MeasurementPointDto"];
+/** The three geometry kinds the contract's own `type` enum carries — structurally
+ *  identical to (but independent of) `components/tools/tool-island.tsx`'s own `ToolMode`;
+ *  see that file's docblock for why the two are not merged into one alias. */
+export type MeasurementType = Measurement["type"];
+/** `POST /api/measurements`'s request body — see
+ *  `lib/measurements/transport.server.ts` for the request-side zod schema mirroring
+ *  these same bounds before an outbound call is spent. */
+export type CreateMeasurementRequest = components["schemas"]["CreateMeasurementRequestDto"];
+/** Not consumed by any Phase-2 code this round (UYELIK-12 plan §3/§2.1) — added now for
+ *  contract completeness/future-proofing at zero cost, the same "friendly alias, not
+ *  necessarily wired up yet" posture every other alias in this file already takes. */
+export type UpdateMeasurementTitleRequest =
+  components["schemas"]["UpdateMeasurementTitleRequestDto"];
+
 // ---- Reference data (kayıt formunun il→ilçe / üniversite / bölüm listeleri — PR-2) --------
 /** One ilçe: `id` (the value `districtId` sends) + `nameTr`. Turkish-alphabetical, one
  *  province at a time (`GET /api/reference/districts?plateCode=…`). */
