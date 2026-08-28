@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { GameHistoryPanel } from "@/components/game/game-history-panel";
 import { LayersIcon, MapIcon, PinIcon } from "@/components/game/game-icons";
+import { getRegionLabels } from "@/components/game/region-labels";
 import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { JsonLd, learningResourceJsonLd } from "@/lib/seo/json-ld";
@@ -59,6 +61,12 @@ export default async function GamePage({ params }: PageProps) {
   const tb = await getTranslations("Breadcrumb");
   const brand = t("brandName");
   const path = getPathname({ locale, href: "/oyun" });
+  // Resolved once here, server-side, and handed to `<GameHistoryPanel>` as a plain prop —
+  // the exact pattern `game-screen.tsx` already uses for the same lookup (UYELIK-10 plan
+  // §5.7). This is the ONLY server-side read this page performs on the history feature's
+  // behalf: the panel's own data fetch stays entirely client-side, after mount (§9/§10 item
+  // 4) — this page's own source reads no `cookies()`/`headers()`.
+  const regionLabels = await getRegionLabels(locale);
 
   // An explicit tuple, not a generated key list: next-intl types message keys, and a
   // template-built key would silently opt out of that check. Each card is a REAL link to
@@ -123,6 +131,8 @@ export default async function GamePage({ params }: PageProps) {
           </li>
         ))}
       </ul>
+
+      <GameHistoryPanel locale={locale} regionLabels={regionLabels} />
     </div>
   );
 }

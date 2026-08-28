@@ -7,6 +7,7 @@ import type { GameModeId } from "@/lib/game/config";
 import { viewBoxForPaths } from "@/lib/game/map-bbox";
 import { buildGameShapes, toTargetEntries } from "@/lib/game/map-shapes";
 import { SLUG_PLACEHOLDER } from "@/lib/game/province-url";
+import { buildGameRoundModeTag } from "@/lib/game/round-mode-tag";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { GameIslandLoader } from "./game-island-loader";
 import { GameMap } from "./game-map";
@@ -76,6 +77,17 @@ export async function GameScreen({ locale, mode, modeName, region = null }: Game
    */
   const allowEarlyFinish = mode === "provinces" && region === null;
 
+  /**
+   * The game-round save payload's `mode` tag (UYELIK-10 plan §5.5) — resolved ONCE here,
+   * where `mode`/`region` are already known, and handed to the island as one more opaque
+   * string alongside `provinceUrlTemplate`/`hubUrl`. This is the file's OWN established
+   * pattern (server resolves once, client gets an opaque value) applied to a THIRD case,
+   * deliberately NOT a new `region` prop on `GameIslandProps`: that would make
+   * `game-island.early-finish.test.ts`'s stated premise ("it cannot see the region") false
+   * and invite the exact drift that test exists to catch.
+   */
+  const submitModeTag = buildGameRoundModeTag(mode, region);
+
   return (
     <div className={styles.screen}>
       <p className={styles.backRow}>
@@ -103,6 +115,8 @@ export async function GameScreen({ locale, mode, modeName, region = null }: Game
           allowEarlyFinish={allowEarlyFinish}
           provinceUrlTemplate={provinceUrlTemplate}
           hubUrl={hubUrl}
+          submitModeTag={submitModeTag}
+          locale={locale}
         />
       </div>
 

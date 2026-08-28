@@ -185,6 +185,14 @@
     "selectHintRegions": "Bir il odaktayken Enter veya boşluk tuşu o ilin bağlı olduğu bölgeyi seçer.",
     "shapeSolved": "{name}, çözüldü"
   },
+  "GameRounds": {
+    "saveLabel": "Kaydet",
+    "savedLabel": "Kaydedildi",
+    "signInRequiredAria": "Kaydetmek için üye ol",
+    "saveError": "Kaydedilemedi. Tekrar dene.",
+    "historyHeading": "Kaydettiğin Turlar",
+    "historyEmpty": "Henüz kaydedilmiş bir tur yok."
+  },
   "ProvinceDetail": {
     "metaTitle": "{name} Coğrafyası",
     "metaTitleClimate": "{name} İklim Grafiği ve Coğrafyası",

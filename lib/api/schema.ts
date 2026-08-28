@@ -735,6 +735,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/game-rounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The caller's own round history, paginated, most-recent-first.
+         * @description The shared pagination envelope, not a plain array — this is the first genuinely unbounded per-user list in this repo (a round-history row is created per played round, with no corpus ceiling).
+         */
+        get: operations["GameRoundsController_listMine"];
+        put?: never;
+        /**
+         * Idempotent submit — record the result of a completed or player-ended-early round.
+         * @description Always 200, never 201 — the resource's final state is identical whether this call created or found the row, matching this repo's established idempotent-write convention (video-progress/favorites). Resubmitting the same clientRoundId for the same caller returns the ORIGINAL recorded values, even if the resubmitted body differs.
+         */
+        post: operations["GameRoundsController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3020,6 +3044,91 @@ export interface components {
              */
             createdAt: string;
         };
+        SubmitGameRoundRequestDto: {
+            /**
+             * @description Opaque game-mode tag, echoed back unchanged. Never validated against a closed set.
+             * @example provinces
+             */
+            mode: string;
+            /**
+             * @description Opaque, client-generated per-round id. Together with the caller, this is the idempotency key: resubmitting the same value returns the row as it was first recorded.
+             * @example 018f2f3a-9c3e-7b2a-8b9d-2e6f1a7c9d40
+             */
+            clientRoundId: string;
+            /** @example 87 */
+            score: number;
+            /** @example 70 */
+            found: number;
+            /** @example 60 */
+            firstTry: number;
+            /** @example 81 */
+            total: number;
+            /** @example 81 */
+            poolTotal: number;
+            /** @example 12 */
+            totalWrongs: number;
+            /** @example false */
+            endedEarly: boolean;
+            /**
+             * @description Elapsed seconds, if the caller has one to send. The current client engine tracks no clock (`DEC 2026-07-30m/30n`) and omits this field entirely — omitted or explicit null are both accepted and stored as null.
+             * @example null
+             */
+            completionTimeSeconds?: number | null;
+        };
+        GameRoundDto: {
+            /** @example provinces */
+            mode: string;
+            /** @example 018f2f3a-9c3e-7b2a-8b9d-2e6f1a7c9d40 */
+            clientRoundId: string;
+            /** @example 87 */
+            score: number;
+            /** @example 70 */
+            found: number;
+            /** @example 60 */
+            firstTry: number;
+            /** @example 81 */
+            total: number;
+            /** @example 81 */
+            poolTotal: number;
+            /** @example 12 */
+            totalWrongs: number;
+            /** @example false */
+            endedEarly: boolean;
+            /**
+             * @description Elapsed seconds, or null when the submission carried none.
+             * @example null
+             */
+            completionTimeSeconds?: number | null;
+            /**
+             * Format: date-time
+             * @description When this round was recorded, UTC.
+             */
+            createdAt: string;
+        };
+        GameRoundListDto: {
+            /**
+             * @description Requested page, 1-based.
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Requested page size. Each endpoint documents its own ceiling.
+             * @example 50
+             */
+            pageSize: number;
+            /**
+             * @description Total rows matching the applied filter, across all pages.
+             * @example 630
+             */
+            total: number;
+            /**
+             * @description Whether a further page exists after this one.
+             * @example true
+             */
+            hasMore: boolean;
+            /** @description The page of the caller's own rounds, ordered by createdAt DESCENDING (most recent first). */
+            items: components["schemas"]["GameRoundDto"][];
+        };
     };
     responses: never;
     parameters: never;
@@ -4235,6 +4344,89 @@ export interface operations {
             };
             /** @description errors.auth.unauthenticated */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    GameRoundsController_listMine: {
+        parameters: {
+            query?: {
+                /** @description Page to read, 1-based. A page past the end answers 200 with an empty items array. */
+                page?: number;
+                /** @description Rows per page, most-recent-first. */
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameRoundListDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    GameRoundsController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitGameRoundRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameRoundDto"];
+                };
+            };
+            /** @description errors.gameRounds.invalidSummary */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.gameRounds.tooManySubmissions */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

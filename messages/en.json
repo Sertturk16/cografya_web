@@ -185,6 +185,14 @@
     "selectHintRegions": "With a province focused, Enter or Space picks the region that province belongs to.",
     "shapeSolved": "{name}, solved"
   },
+  "GameRounds": {
+    "saveLabel": "Save",
+    "savedLabel": "Saved",
+    "signInRequiredAria": "Sign up to save",
+    "saveError": "Couldn't save. Try again.",
+    "historyHeading": "Your Saved Rounds",
+    "historyEmpty": "No saved rounds yet."
+  },
   "ProvinceDetail": {
     "metaTitle": "Geography of {name}",
     "metaTitleClimate": "{name} Climate Chart and Geography",

@@ -15,6 +15,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/routing";
 import type { GameShapeTargetEntry } from "@/lib/game/map-shapes";
 import { dispatchMapCamera } from "@/lib/map/map-camera";
 import {
@@ -69,6 +70,22 @@ export interface GameIslandProps {
   provinceUrlTemplate: string;
   /** The shop window's own localized path — the end screen's way back out. */
   hubUrl: string;
+  /**
+   * The game-round save payload's `mode` tag (UYELIK-10 plan §5.5), resolved once on the
+   * server (`game-screen.tsx`) from `mode`/`region` — an opaque string, the same shape as
+   * `provinceUrlTemplate`/`hubUrl` above. Forwarded to `<GameSummary>` unchanged; this
+   * island never inspects or re-derives it.
+   */
+  submitModeTag: string;
+  /**
+   * The route's own locale (UYELIK-10 plan §5.6) — forwarded to `<GameSummary>`'s save
+   * control for the anonymous-reader redirect, the same `CODE85-M5` reasoning
+   * `login-form.tsx`/`register-form.tsx`/`FavoriteButton` already carry: `next/navigation`'s
+   * plain `useRouter` is deliberately paired with an EXPLICIT `getPathname({ locale, href })`
+   * result rather than `@/i18n/navigation`'s own locale-aware router, which would apply a
+   * SECOND locale prefix on top of one already resolved.
+   */
+  locale: Locale;
 }
 
 /**
@@ -170,6 +187,8 @@ export function GameIsland({
   allowEarlyFinish,
   provinceUrlTemplate,
   hubUrl,
+  submitModeTag,
+  locale,
 }: GameIslandProps) {
   const t = useTranslations("Game");
 
@@ -829,6 +848,9 @@ export function GameIsland({
           targets={targetSet.targets}
           provinceUrlTemplate={provinceUrlTemplate}
           hubUrl={hubUrl}
+          clientRoundId={round.clientRoundId}
+          submitModeTag={submitModeTag}
+          locale={locale}
           onClose={() => setSummaryDismissed(true)}
           onReplay={restartRound}
         />

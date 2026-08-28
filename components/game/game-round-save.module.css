@@ -1,0 +1,28 @@
+/* The round-save control — inside GameSummary's dialogBody (UYELIK-10 plan §5.6). Terra
+   tokens only (DESIGN.md §2); no hardcoded brand hex. */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 4px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--color-border);
+}
+
+/* WCAG 2.2 §2.5.5 (AAA) 44px — the same generosity `.toggle` (favorite-button.module.css)
+   already takes for a control that is not a dense list item. */
+.wrapper button {
+  min-height: 44px;
+}
+
+/* Error text: `--color-danger` measures 4.90:1 on `--color-surface` (`DESIGN.md` §5's hard
+   rule), the same measured pair `favorite-button.module.css`'s own error text already
+   documents. */
+.error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
