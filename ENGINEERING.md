@@ -214,39 +214,52 @@ Web-specific filter boundary:
 
 - **`.nvmrc` + pnpm:** `nvm use` then `corepack enable` (or install the pinned pnpm).
   `pnpm install` also wires the husky git hooks (`prepare` script).
-- **Repo-local git credential helper (covers `git push`/`pull` transport, NOT a reliable
-  identity pin — corrected 2026-08-28, prior "pins the correct GitHub identity" claim
-  measured false).** This repo commits under the `Sertturk16` account, which is **not**
-  the machine's default active `gh` account. The repo sets a **local** credential helper
-  intended to mint the right account's token regardless of the globally-active account:
+- **Repo-local git credential helper (covers `git push`/`pull` transport only — see the
+  measured-gap note below for how this snippet came to include the reset line).** This
+  repo commits under the `Sertturk16` account, which is **not** the machine's default
+  active `gh` account. The repo sets a **local** credential helper intended to mint the
+  right account's token regardless of the globally-active account — the same two-line
+  pattern `cografya_api`'s own `ENGINEERING.md` §11.1 documents:
 
   ```
-  git config --local credential.helper \
-    '!f() { echo "username=x-access-token"; echo "password=$(gh auth token --user Sertturk16)"; }; f'
+  # 1) an empty value first, to CLEAR any inherited global/system helper for this repo
+  credential.helper=
+  # 2) then the repo-local helper: mint a token for the pinned account on demand
+  credential.helper=!f() { echo "username=x-access-token"; echo "password=$(gh auth token --user Sertturk16)"; }; f
   ```
 
-  Set `user.name` / `user.email` locally too. This is standard repo init — re-run it after
-  a fresh clone (it lives in `.git/config`, which is not cloned).
+  The leading empty entry is required — without it an inherited global helper (e.g. a
+  keychain-backed one) can win and serve the wrong account's cached credential, which is
+  exactly the gap the note below measured. Set `user.name` / `user.email` locally too.
+  This is standard repo init — re-run it after a fresh clone (it lives in `.git/config`,
+  which is not cloned).
 
-  **Measured gap: this helper alone does not win over an inherited global helper.**
-  `git credential fill` against `https://github.com` in this repo returned a username
+  **Measured gap (2026-08-28), the reason this snippet now carries the reset line.**
+  `git credential fill` against `https://github.com` in this repo had returned a username
   sourced from the machine's global, URL-scoped `gh auth git-credential` helper
   (`~/.gitconfig`'s `credential.https://github.com.helper`) rather than this local
   script's own hardcoded `x-access-token` username — direct proof the global helper still
-  runs and its output can win, because this repo's local config, unlike
-  `cografya_api`'s (see its `ENGINEERING.md` §11.1), never resets the inherited helper
-  chain with a leading empty `credential.helper=` entry before adding its own. Until that
-  reset is added here too, `git push`/`pull` in this repo carry the **same** account-drift
-  exposure as the `gh` CLI gap below, not an independent pin.
+  ran and its output could win, because this repo's documented setup snippet, unlike
+  `cografya_api`'s (its `ENGINEERING.md` §11.1), did not yet reset the inherited helper
+  chain with a leading empty `credential.helper=` entry before adding its own. The snippet
+  above now mirrors that same reset; a `git config --local` run from it on a fresh clone
+  closes this gap going forward. (This entry is documentation only — it does not itself
+  re-run or re-verify any local `.git/config`.)
 
-- **Known gap (surface, don't assume): neither `git` transport nor the `gh` CLI is
-  reliably pinned to `Sertturk16` by repo config alone** — both ultimately key off the
-  machine's **globally-active** `gh` account, which other work on this machine can
-  silently switch away. So **run `gh auth switch --hostname github.com --user Sertturk16`
-  before every `gh` invocation in this repo, and before a `git push`/`pull` here too.** A
-  durable per-repo fix (adding the local config's missing leading-empty-value reset, and/or
-  a repo-scoped `GH_CONFIG_DIR` for `gh`) is still open and tracked separately — this doc
-  records current measured reality, it does not claim either gap is solved.
+- **Known gap (surface, don't assume): the `gh` CLI itself is not reliably pinned to
+  `Sertturk16` by repo config alone**, independent of the git-transport reset above — the
+  `gh` CLI keys off the machine's own **globally-active** account state, which other work
+  on this machine can silently switch away, the same gap `cografya_api`'s own
+  `ENGINEERING.md` §11.2 names for that repo. So run this before every `gh` invocation in
+  this repo (PR create, checks, etc.):
+
+  ```
+  gh auth switch --hostname github.com --user Sertturk16
+  ```
+
+  A durable per-repo fix (e.g. a repo-scoped `GH_CONFIG_DIR` for `gh`) is still open and
+  tracked separately — this doc records current measured reality, it does not claim this
+  gap is solved.
 
 - **`.env`:** copy `.env.example` → `.env.local`; public values are validated by
   `lib/env.ts`, server-only values by `lib/env.server.ts` (zod).

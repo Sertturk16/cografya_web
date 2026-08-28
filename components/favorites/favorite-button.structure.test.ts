@@ -119,13 +119,16 @@ describe("A11Y91-I1 fix (PR #91 round 2): switch semantics only in the authentic
     expect(body).toContain('aria-label={t("signInRequiredAria")}');
   });
 
-  it("the guest/checking branch renders the A2 lock cue (İRİS live-audit A2), aria-hidden so it never duplicates the accessible name", () => {
+  it("the guest/checking branch renders the shared LockIcon's compact variant (İRİS live-audit A2), wired through the same styles.lockIcon class its own former private definition used", () => {
     const body = guestBranchBody();
-    expect(body).toContain("<LockIcon />");
-    const iconStart = BUTTON.indexOf("function LockIcon()");
-    expect(iconStart).toBeGreaterThan(0);
-    const iconBody = BUTTON.slice(iconStart, iconStart + 400);
-    expect(iconBody).toContain('aria-hidden="true"');
+    expect(body).toContain('<LockIcon variant="compact" className={styles.lockIcon} />');
+    // SIMP96-M2 (`Owner's Inbox/pr-review-archive/cografya_web-96.md`): the icon's own SVG
+    // markup — and its aria-hidden/focusable="false" decorative wiring — no longer lives in
+    // this file; it moved to the one shared `components/lock-icon.tsx` definition also used by
+    // `components/game/game-icons.tsx`. That wiring is asserted directly against the shared
+    // component's own rendered output in `components/lock-icon.test.tsx`'s byte-identity
+    // regression proof, not scanned from this file's source anymore.
+    expect(BUTTON).toContain('import { LockIcon } from "@/components/lock-icon";');
   });
 });
 

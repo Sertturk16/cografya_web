@@ -13,6 +13,8 @@
  * (DESIGN.md §6.1 rule 3).
  */
 
+import { LockIcon as SharedLockIcon } from "@/components/lock-icon";
+
 interface IconProps {
   /** Rendered size in px. The glyphs are drawn on a 24 × 24 grid and scale cleanly. */
   size?: number;
@@ -90,14 +92,13 @@ export function RestartIcon(props: IconProps) {
 }
 
 /** Padlock — the anonymous branch of the round-save control's sign-in cue (UYELIK-10 plan
- *  §5.6). This domain's OWN icon module, not a cross-domain import from
- *  `components/favorites/`'s own private `LockIcon` and not a third from-scratch SVG copy —
- *  every glyph on this surface already lives here. */
+ *  §5.6). Re-exported under this domain's own icon-module name for every existing caller
+ *  (`game-round-save.tsx`'s `import { LockIcon } from "./game-icons"`), but the drawing
+ *  itself now lives in the one shared `components/lock-icon.tsx` definition (SIMP96-M2,
+ *  `Owner's Inbox/pr-review-archive/cografya_web-96.md`) — this domain no longer keeps its
+ *  own independent copy of the same silhouette `favorite-button.tsx` also draws. The
+ *  `"outline"` variant is byte-identical to what this function used to render directly (see
+ *  `components/lock-icon.test.tsx`'s regression proof); only the ownership moved. */
 export function LockIcon(props: IconProps) {
-  return (
-    <Glyph {...props}>
-      <path d="M6 10.5V7.5a6 6 0 1 1 12 0v3" />
-      <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
-    </Glyph>
-  );
+  return <SharedLockIcon variant="outline" size={props.size} />;
 }

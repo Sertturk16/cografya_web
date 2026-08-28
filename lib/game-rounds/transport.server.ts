@@ -4,7 +4,7 @@ import { ACCESS_COOKIE_NAME } from "@/lib/auth/cookies";
 import { serverEnv } from "@/lib/env.server";
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
-import type { GameRound, GameRoundList } from "@/lib/api/types";
+import type { GameRound, GameRoundList, SubmitGameRoundRequest } from "@/lib/api/types";
 
 /**
  * The web half of the game-rounds BFF proxy (UYELIK-10 plan §5.2) — a FOURTH small
@@ -128,6 +128,18 @@ const submitGameRoundRequestSchema = z.object({
   endedEarly: z.boolean(),
   completionTimeSeconds: z.number().min(0).max(21_600).nullable().optional(),
 });
+
+type SubmitGameRoundRequestShape = z.infer<typeof submitGameRoundRequestSchema>;
+// SIMP96-M3 (`Owner's Inbox/pr-review-archive/cografya_web-96.md`): the response-side schemas
+// above already carry a drift-gate tuple against the generated contract; this request-side
+// schema mirrors `SubmitGameRoundRequestDto`'s own bounds but had no equivalent gate, so a
+// contract change here produced no compile-time warning — the exact gap the response side
+// already closes. Same idiom, same "do not relax either direction" rule.
+const _submitGameRoundRequestShapeAgreesWithContract: [
+  SubmitGameRoundRequestShape,
+  SubmitGameRoundRequest,
+] = [null as unknown as SubmitGameRoundRequest, null as unknown as SubmitGameRoundRequestShape];
+void _submitGameRoundRequestShapeAgreesWithContract;
 
 export type GameRoundsBffCode =
   | "errors.auth.unauthenticated"
