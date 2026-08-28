@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchFavorites, removeFavorite, saveFavorite } from "./client";
+import { FAVORITES_FETCH_TIMEOUT_MS, fetchFavorites, removeFavorite, saveFavorite } from "./client";
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -8,7 +8,27 @@ function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
+/** A `fetch` that connects and never answers, exposing the signal it was handed — the same
+ *  shape `lib/auth/submit.client.test.ts`'s own `stubHangingFetch` uses for `submitAuth`'s
+ *  identical request budget (`CODE91-M1`). */
+function stubHangingFetch(): { signal: () => AbortSignal | undefined } {
+  let captured: AbortSignal | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((_url: string, init: RequestInit) => {
+      captured = init.signal ?? undefined;
+      return new Promise<Response>((_resolve, reject) => {
+        init.signal?.addEventListener("abort", () => {
+          reject(new DOMException("The operation was aborted.", "AbortError"));
+        });
+      });
+    }),
+  );
+  return { signal: () => captured };
+}
+
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -164,6 +184,43 @@ describe("saveFavorite", () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(init.keepalive).toBeUndefined();
   });
+
+  describe("request budget (CODE91-M1 — the write previously carried no timeout at all)", () => {
+    it("hands fetch an abort signal that is still open when the request starts", async () => {
+      vi.useFakeTimers();
+      const stub = stubHangingFetch();
+      const pending = saveFavorite({ kind: "province", plateCode: "34" });
+
+      await vi.advanceTimersByTimeAsync(FAVORITES_FETCH_TIMEOUT_MS - 1);
+      expect(stub.signal()?.aborted).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(2);
+      await pending;
+    });
+
+    it("aborts a request that never answers and resolves ok:false rather than hanging forever", async () => {
+      vi.useFakeTimers();
+      stubHangingFetch();
+
+      const settled = expect(saveFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
+        ok: false,
+      });
+
+      await vi.advanceTimersByTimeAsync(FAVORITES_FETCH_TIMEOUT_MS);
+      await settled;
+    });
+
+    it("clears the timeout on a normal success, leaving no dangling timer (finally-scoped clearTimeout)", async () => {
+      vi.useFakeTimers();
+      const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() => Promise.resolve(jsonResponse(200, { ok: true, favorite: {} }))),
+      );
+      await saveFavorite({ kind: "province", plateCode: "34" });
+      expect(clearSpy).toHaveBeenCalled();
+    });
+  });
 });
 
 describe("removeFavorite", () => {
@@ -208,6 +265,32 @@ describe("removeFavorite", () => {
     );
     await expect(removeFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
       ok: false,
+    });
+  });
+
+  describe("request budget (CODE91-M1 — the write previously carried no timeout at all)", () => {
+    it("hands fetch an abort signal that is still open when the request starts", async () => {
+      vi.useFakeTimers();
+      const stub = stubHangingFetch();
+      const pending = removeFavorite({ kind: "country", isoCode: "TR" });
+
+      await vi.advanceTimersByTimeAsync(FAVORITES_FETCH_TIMEOUT_MS - 1);
+      expect(stub.signal()?.aborted).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(2);
+      await pending;
+    });
+
+    it("aborts a request that never answers and resolves ok:false rather than hanging forever", async () => {
+      vi.useFakeTimers();
+      stubHangingFetch();
+
+      const settled = expect(removeFavorite({ kind: "country", isoCode: "TR" })).resolves.toEqual({
+        ok: false,
+      });
+
+      await vi.advanceTimersByTimeAsync(FAVORITES_FETCH_TIMEOUT_MS);
+      await settled;
     });
   });
 });

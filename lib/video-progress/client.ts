@@ -99,12 +99,27 @@ export interface SaveVideoProgressOptions {
  * `PUT` — an idempotent full-state replace. BOTH fields are sent on EVERY call: see
  * {@link buildWatchedTogglePayload} below for the one call site (the watched toggle) where
  * building that payload correctly is the whole of §5.6's named hazard.
+ *
+ * Carries its own `AbortController` bounded by `VIDEO_PROGRESS_FETCH_TIMEOUT_MS` — the same
+ * shape `submitGameRound` (`lib/game-rounds/client.ts`) uses for its write, and the same
+ * timeout VALUE this file's own `fetchVideoProgress` already uses for its read (`CODE91-M1`:
+ * this write previously carried no timeout at all, unlike the read in this same file). A
+ * fresh `controller`/`timeout` per call — every trigger (periodic, pause/ended, tab-hide)
+ * calls this one function, so there is no shared/module-level abort state and no race
+ * between concurrent calls. `clearTimeout` runs unconditionally in `finally`, covering
+ * success, non-2xx, network error and abort alike — no leaked timer on any path. The
+ * `keepalive` flag (tab-hide trigger) and the abort `signal` are independent fetch options
+ * and combine without conflict — if the tab is torn down before the timeout fires, the
+ * keepalive request survives as designed; the timeout otherwise still bounds a request that
+ * does not.
  */
 export async function saveVideoProgress(
   bookVideoId: string,
   payload: { readonly lastPositionSeconds: number; readonly watched: boolean },
   opts: SaveVideoProgressOptions = {},
 ): Promise<SaveVideoProgressResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), VIDEO_PROGRESS_FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(buildVideoProgressUrl(bookVideoId), {
       method: "PUT",
@@ -113,10 +128,13 @@ export async function saveVideoProgress(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
       keepalive: opts.keepalive ?? false,
+      signal: controller.signal,
     });
     return { ok: res.status === 200 };
   } catch {
     return { ok: false };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildWatchedTogglePayload, fetchVideoProgress, saveVideoProgress } from "./client";
+import {
+  VIDEO_PROGRESS_FETCH_TIMEOUT_MS,
+  buildWatchedTogglePayload,
+  fetchVideoProgress,
+  saveVideoProgress,
+} from "./client";
 
 const BOOK_VIDEO_ID = "11111111-2222-4333-8444-555555555555";
 
@@ -10,7 +15,27 @@ function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
+/** A `fetch` that connects and never answers, exposing the signal it was handed — the same
+ *  shape `lib/auth/submit.client.test.ts`'s own `stubHangingFetch` uses for `submitAuth`'s
+ *  identical request budget (`CODE91-M1`). */
+function stubHangingFetch(): { signal: () => AbortSignal | undefined } {
+  let captured: AbortSignal | undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((_url: string, init: RequestInit) => {
+      captured = init.signal ?? undefined;
+      return new Promise<Response>((_resolve, reject) => {
+        init.signal?.addEventListener("abort", () => {
+          reject(new DOMException("The operation was aborted.", "AbortError"));
+        });
+      });
+    }),
+  );
+  return { signal: () => captured };
+}
+
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -173,6 +198,60 @@ describe("saveVideoProgress", () => {
     await saveVideoProgress(BOOK_VIDEO_ID, { lastPositionSeconds: 5, watched: false });
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(init.keepalive).toBe(false);
+  });
+
+  describe("request budget (CODE91-M1 — the write previously carried no timeout at all)", () => {
+    it("hands fetch an abort signal that is still open when the request starts", async () => {
+      vi.useFakeTimers();
+      const stub = stubHangingFetch();
+      const pending = saveVideoProgress(BOOK_VIDEO_ID, {
+        lastPositionSeconds: 30,
+        watched: true,
+      });
+
+      await vi.advanceTimersByTimeAsync(VIDEO_PROGRESS_FETCH_TIMEOUT_MS - 1);
+      expect(stub.signal()?.aborted).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(2);
+      await pending;
+    });
+
+    it("aborts a request that never answers and resolves ok:false rather than hanging forever", async () => {
+      vi.useFakeTimers();
+      stubHangingFetch();
+
+      const settled = expect(
+        saveVideoProgress(BOOK_VIDEO_ID, { lastPositionSeconds: 30, watched: true }),
+      ).resolves.toEqual({ ok: false });
+
+      await vi.advanceTimersByTimeAsync(VIDEO_PROGRESS_FETCH_TIMEOUT_MS);
+      await settled;
+    });
+
+    it("still carries the caller's keepalive flag alongside the abort signal — the two fetch options are independent", async () => {
+      vi.useFakeTimers();
+      const stub = stubHangingFetch();
+      const pending = saveVideoProgress(
+        BOOK_VIDEO_ID,
+        { lastPositionSeconds: 5, watched: false },
+        { keepalive: true },
+      );
+      expect(stub.signal()).toBeInstanceOf(AbortSignal);
+
+      await vi.advanceTimersByTimeAsync(VIDEO_PROGRESS_FETCH_TIMEOUT_MS);
+      await pending;
+    });
+
+    it("clears the timeout on a normal success, leaving no dangling timer (finally-scoped clearTimeout)", async () => {
+      vi.useFakeTimers();
+      const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() => Promise.resolve(new Response(null, { status: 200 }))),
+      );
+      await saveVideoProgress(BOOK_VIDEO_ID, { lastPositionSeconds: 30, watched: true });
+      expect(clearSpy).toHaveBeenCalled();
+    });
   });
 });
 
