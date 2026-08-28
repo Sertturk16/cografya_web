@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormatter, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/routing";
+import { useAuthSession } from "@/lib/auth/use-session.client";
+import { fetchMeasurements, type MeasurementRecord } from "@/lib/measurements/client";
 import {
   haversineKm,
   kmDecimalsFor,
@@ -33,6 +36,8 @@ import {
 import { parseViewBox, type ViewBox } from "@/lib/map/zoom-pan";
 import { findProvincePoint, type ProvincePoint } from "@/lib/tools/province-points";
 import { downloadToolPng } from "./tool-png";
+import { ToolMeasurementList } from "./tool-measurement-list";
+import { ToolMeasurementSave } from "./tool-measurement-save";
 import styles from "./tools.module.css";
 
 /**
@@ -77,6 +82,11 @@ export interface ToolIslandProps {
   downloadName: string;
   /** The map's home frame, passed in rather than imported (see the note on the import list). */
   baseViewBox: string;
+  /** The active locale — needed by the save control's anonymous-branch redirect
+   *  (`getPathname({ locale, href: "/kayit" })`, UYELIK-12 plan §5.4 item 1). Threaded
+   *  from `tool-map.tsx`'s existing `locale` prop; `ToolMapProps` already carries it for
+   *  server-side `getTranslations` but never forwarded it past `ToolIslandLoader` until now. */
+  locale: Locale;
 }
 
 /** SPEC §6.1: past twenty points this stops being a measuring tool and becomes a drawing one. */
@@ -110,7 +120,14 @@ const PRECISE_POINT_UNCERTAINTY_KM = 0.011;
 /** Marker radius and scale-bar geometry, in CSS pixels — converted to map units per view. */
 const MARKER_RADIUS_PX = 5;
 
-type PointSource = "map" | "typed" | "province";
+/**
+ * `"recalled"` is a UYELIK-12 addition (plan §5.4 item 3): a point loaded back from a
+ * saved measurement. `MeasurementPointDto` stores only `{lon, lat}`, so a recalled
+ * point's ORIGINAL source (a map click vs. a typed coordinate) is genuinely lost
+ * server-side — see the uncertainty widening below for why it is folded into the
+ * `"map"`-class (coarse) precision tier rather than treated as `"typed"`-class (precise).
+ */
+type PointSource = "map" | "typed" | "province" | "recalled";
 
 interface PlacedPoint {
   readonly key: number;
@@ -238,6 +255,7 @@ export function ToolIsland({
   provinceAreas = [],
   downloadName,
   baseViewBox,
+  locale,
 }: ToolIslandProps) {
   const t = useTranslations("Tools.ui");
   const format = useFormatter();
@@ -250,6 +268,31 @@ export function ToolIsland({
   const [points, setPoints] = useState<readonly PlacedPoint[]>([]);
   const [draft, setDraft] = useState("");
   const [province, setProvince] = useState("");
+
+  // ---- Measurement save/recall (UYELIK-12 plan §5.4 item 2) ----------------------------
+  //
+  // Called ONCE here and passed down as a prop to both new subcomponents (§5.5/§5.6) — a
+  // deliberate divergence from `FavoriteButton`/`GameRoundSaveControl`'s own "each
+  // component owns its auth check" posture: those precedents each have exactly ONE
+  // consumer of the session state, where this task has three simultaneous ones (the gate
+  // on the measurements fetch below, the save control, the list panel) all mounted
+  // together — centralizing avoids three independent, redundant `/api/auth/session`
+  // fetches firing on every tool-page load.
+  const [authState] = useAuthSession();
+  const [measurements, setMeasurements] = useState<readonly MeasurementRecord[] | null>(null);
+  const [measurementsStatus, setMeasurementsStatus] = useState<"idle" | "pending" | "settled">(
+    "idle",
+  );
+  /**
+   * The in-flight/retriable save's idempotency key (plan §5.4 item 6, §10 item 1) — the
+   * SAME shape `clientRoundId` takes in the game precedent: generated once per "thing to
+   * be saved", stable across a retry of that same thing, regenerated the moment the
+   * underlying geometry changes. Cleared to `null` by every point-mutating call site
+   * below and by `recallMeasurement`; `ToolMeasurementSave` reads/writes it through the
+   * `getPendingSaveId`/`setPendingSaveId` prop pair rather than owning its own ref, since
+   * the geometry it must invalidate against lives here, not in that component.
+   */
+  const pendingSaveIdRef = useRef<string | null>(null);
 
   /**
    * TWO error channels, not one (→ PR #73 review `A11Y73-I2`).
@@ -287,6 +330,116 @@ export function ToolIsland({
     () => ({ north: t("north"), south: t("south"), east: t("east"), west: t("west") }),
     [t],
   );
+
+  /**
+   * The current user's saved measurements — fetched once per mount, only once `authState`
+   * resolves to `"authenticated"` (plan §5.4 item 4), mirroring `GameHistoryPanel`'s exact
+   * effect shape (abort on unmount, `cancelled` guard). `null` after settling, while
+   * authenticated, is unambiguous transport/parse failure — `authState` already rules out
+   * the only other reason `fetchMeasurements` returns `null` (an unauthenticated caller) —
+   * so `ToolMeasurementList` (§5.6) can distinguish `null` (error) from `[]` (genuinely
+   * empty) for free, satisfying Acceptance Criterion 4's "error" state without inventing a
+   * new field.
+   *
+   * Deliberately never sets `"pending"` synchronously from inside this effect body
+   * (`react-hooks/set-state-in-effect`, the ESLint rule GameHistoryPanel's own precedent
+   * already satisfies by starting its equivalent state at `"pending"` instead) — `"idle"`
+   * and `"pending"` render IDENTICALLY (both are `null`) in `ToolMeasurementList` (§5.6),
+   * so nothing downstream needs the transition observed; only the eventual `"settled"`
+   * write, made from the async `.then()` callback rather than the effect body itself,
+   * ever runs.
+   */
+  useEffect(() => {
+    if (authState !== "authenticated") return;
+    const controller = new AbortController();
+    let cancelled = false;
+    fetchMeasurements(controller.signal).then((result) => {
+      if (cancelled) return;
+      setMeasurements(result);
+      setMeasurementsStatus("settled");
+    });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [authState]);
+
+  /**
+   * The saved rows belonging to THIS tool's own mode — a client-side filter, because the
+   * api's list endpoint has no `type` query parameter (plan §2.2/§2.3). The unfiltered
+   * fetch (up to 300 rows, bounded and small) is a one-time cost per authenticated mount,
+   * not a per-tool network cost.
+   *
+   * PRESERVES `null` rather than collapsing it to `[]` (a corrected reading of plan §5.4
+   * item 5's own illustrative one-liner, which read `measurements ?? []` — that would
+   * silently make §5.6's own `measurements === null` error-state check, and Acceptance
+   * Criterion 4's "error" a11y state, unreachable dead code, since `measurementsForThisTool`
+   * could then never BE `null`. §5.4 item 4's own prose and §5.6's own bullet both state
+   * the intended behavior unambiguously — this filter carries it through instead of
+   * collapsing it a step early.
+   */
+  const measurementsForThisTool = useMemo(
+    () =>
+      measurements === null
+        ? null
+        : measurements.filter((measurement) => measurement.type === mode),
+    [measurements, mode],
+  );
+
+  /** Loads a saved measurement's geometry back into the active map (plan §5.4 item 7) —
+   *  mirrors `clear()`'s reset of the other transient fields, but sets `points` from the
+   *  recalled geometry instead of emptying it. No confirmation prompt before discarding
+   *  in-progress, unsaved points — the same no-confirm convention `clear()`/`undo()`
+   *  already establish in this exact file. */
+  const recallMeasurement = useCallback((measurement: MeasurementRecord) => {
+    focusAfterRemoval.current = "group";
+    pendingSaveIdRef.current = null;
+    setFieldError(null);
+    setStatusError(null);
+    setDraft("");
+    setProvince("");
+    setPoints(
+      measurement.points.map((p) => {
+        nextKey.current += 1;
+        return {
+          key: nextKey.current,
+          point: { lon: p.lon, lat: p.lat },
+          source: "recalled" as const,
+        };
+      }),
+    );
+  }, []);
+
+  /** A newly-saved row appears in the list immediately without a re-fetch — the create
+   *  response already IS the full row (plan §5.4 item 8). */
+  const handleMeasurementSaved = useCallback((measurement: MeasurementRecord) => {
+    setMeasurements((previous) => [measurement, ...(previous ?? [])]);
+  }, []);
+
+  /** Called optimistically by `ToolMeasurementList` before the `DELETE` call resolves
+   *  (plan §5.4 item 9). */
+  const handleMeasurementDeleted = useCallback((id: string) => {
+    setMeasurements((previous) => (previous ?? []).filter((m) => m.id !== id));
+  }, []);
+
+  /**
+   * Re-inserts a row `ToolMeasurementList` had optimistically removed, after its own
+   * `removeMeasurement` call failed (plan §5.6/§10 item 5 — named there but not
+   * separately itemized above; added here to close that gap). Re-inserts the SPECIFIC
+   * row object that was removed, never a re-fetch of the whole list — the exact
+   * optimistic-update-then-rollback shape `FavoriteButton`'s own `handleClick` already
+   * establishes, applied to a list row instead of a single toggle. Guards against
+   * resurrecting a duplicate if some other path already re-added the same row, and
+   * re-sorts by `createdAt` (most-recent-first) rather than always prepending, so a
+   * rolled-back row returns to roughly where the api's own ordering had it.
+   */
+  const handleMeasurementDeleteFailed = useCallback((measurement: MeasurementRecord) => {
+    setMeasurements((previous) => {
+      const current = previous ?? [];
+      if (current.some((m) => m.id === measurement.id)) return current;
+      return [...current, measurement].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    });
+  }, []);
 
   // ---- Wiring to the server-rendered surface -------------------------------------------
 
@@ -373,6 +526,10 @@ export function ToolIsland({
         // ("which of these is the coordinate?"), so the tool answers it structurally rather
         // than with a "clear first" instruction, and therefore never has a limit to refuse at.
         setStatusError(null);
+        // UYELIK-12 plan §5.4 item 6: any point mutation invalidates the pending save id —
+        // a genuinely different geometry always gets a fresh idempotency key on the next
+        // "Kaydet" click.
+        pendingSaveIdRef.current = null;
         nextKey.current += 1;
         setPoints([{ key: nextKey.current, point, source }]);
         return;
@@ -382,6 +539,7 @@ export function ToolIsland({
         return;
       }
       setStatusError(null);
+      pendingSaveIdRef.current = null;
       nextKey.current += 1;
       const key = nextKey.current;
       // The updater re-checks the cap and stays pure: the mirror above is read at event time,
@@ -424,6 +582,7 @@ export function ToolIsland({
     const index = current.findIndex((placed) => placed.key === key);
     const successor = index === -1 ? undefined : (current[index + 1] ?? current[index - 1]);
     focusAfterRemoval.current = successor?.key ?? "group";
+    pendingSaveIdRef.current = null;
     setPoints((previous) => previous.filter((placed) => placed.key !== key));
     setStatusError(null);
   }, []);
@@ -448,6 +607,7 @@ export function ToolIsland({
   // which takes focus precisely because a disabled button cannot.
   const undo = useCallback(() => {
     if (pointsRef.current.length <= 1) focusAfterRemoval.current = "group";
+    pendingSaveIdRef.current = null;
     setPoints((previous) => previous.slice(0, -1));
     setFieldError(null);
     setStatusError(null);
@@ -455,6 +615,7 @@ export function ToolIsland({
 
   const clear = useCallback(() => {
     focusAfterRemoval.current = "group";
+    pendingSaveIdRef.current = null;
     setPoints([]);
     setFieldError(null);
     setStatusError(null);
@@ -510,7 +671,16 @@ export function ToolIsland({
 
   // A measurement is only as sharp as its LEAST certain point: one click in the set puts the
   // whole line back on the pixel rule, which is why this is `some` and not `every`.
-  const uncertaintyKm = points.some((placed) => placed.source === "map")
+  //
+  // `"recalled"` joins `"map"` in this test (UYELIK-12 plan §5.4 item 3): a recalled
+  // point's ORIGINAL input channel is lost server-side (`MeasurementPointDto` stores only
+  // `{lon, lat}`), so it is treated as `"map"`-class (coarse, pixel-level) uncertainty — a
+  // deliberate, conservative choice that can only UNDER-state precision relative to what a
+  // `"typed"` point would show, never overstate it, matching this file's own "the digits
+  // shown may not exceed the uncertainty the INPUT carries" doctrine.
+  const uncertaintyKm = points.some(
+    (placed) => placed.source === "map" || placed.source === "recalled",
+  )
     ? (kmPerPixel ?? Number.POSITIVE_INFINITY)
     : PRECISE_POINT_UNCERTAINTY_KM;
 
@@ -1017,6 +1187,34 @@ export function ToolIsland({
           {t("download")}
         </button>
       </div>
+
+      {/* UYELIK-12 plan §5.4 item 10: both new pieces render inside the SAME component that
+          already privately owns `points`/`setPoints` — recall must mutate `ToolIsland`'s
+          own state directly, which a page-level sibling (`GameHistoryPanel`'s own
+          placement) could not do without threading a second prop/callback pair back up. */}
+      <ToolMeasurementSave
+        mode={mode}
+        points={geoPoints}
+        minPoints={minExportPoints}
+        authState={authState}
+        locale={locale}
+        getPendingSaveId={() => pendingSaveIdRef.current}
+        setPendingSaveId={(id) => {
+          pendingSaveIdRef.current = id;
+        }}
+        onSaved={handleMeasurementSaved}
+      />
+      {authState === "authenticated" && (
+        <ToolMeasurementList
+          mode={mode}
+          locale={locale}
+          measurements={measurementsForThisTool}
+          status={measurementsStatus}
+          onRecall={recallMeasurement}
+          onDeleted={handleMeasurementDeleted}
+          onDeleteFailed={handleMeasurementDeleteFailed}
+        />
+      )}
     </div>
   );
 

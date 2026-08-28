@@ -759,6 +759,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/measurements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The caller's own saved measurements.
+         * @description A plain, unpaginated array — the quota hard-caps the corpus at MEASUREMENTS_PER_USER_MAX rows per user, ever, the same "bounded and small" shape `ENGINEERING.md` §2 already uses for `favorites`. Ordered most-recently-saved first.
+         */
+        get: operations["MeasurementsController_listMine"];
+        put?: never;
+        /**
+         * Idempotent create — save a measurement, quota-gated.
+         * @description Always 200, never 201 — the resource's final state is identical whether this call created or found the row, matching this repo's established idempotent-write convention. Resubmitting the same clientMeasurementId for the same caller returns the ORIGINAL recorded values, even if the resubmitted body differs.
+         */
+        post: operations["MeasurementsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/measurements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One of the caller's own saved measurements.
+         * @description One undifferentiated 404 whether id names no row at all or the row belongs to another user — nothing about another user's row is ever observable.
+         */
+        get: operations["MeasurementsController_getOne"];
+        put?: never;
+        post?: never;
+        /**
+         * Unconditionally idempotent delete.
+         * @description 204 unconditionally: whether the row existed and was removed, never existed, or belongs to another caller — "remove" never needs to distinguish those cases, and this can never reveal another user's row's existence.
+         */
+        delete: operations["MeasurementsController_remove"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename (or clear) a saved measurement's title. Geometry is immutable.
+         * @description Only `title` is mutable — send a bounded string or explicit null; omitting `title` entirely 400s. `type`/`points`/`clientMeasurementId` are never touched by this route.
+         */
+        patch: operations["MeasurementsController_updateTitle"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3129,6 +3181,69 @@ export interface components {
             /** @description The page of the caller's own rounds, ordered by createdAt DESCENDING (most recent first). */
             items: components["schemas"]["GameRoundDto"][];
         };
+        MeasurementPointDto: {
+            /** @example 32.85 */
+            lon: number;
+            /** @example 39.92 */
+            lat: number;
+        };
+        CreateMeasurementRequestDto: {
+            /**
+             * @description Which kind of measurement this geometry represents.
+             * @example distance
+             * @enum {string}
+             */
+            type: "distance" | "area" | "coordinate";
+            /** @description The geometry, in order. The type-dependent minimum (1 for coordinate, 2 for distance, 3 for area) is enforced server-side, not by this array bound alone. */
+            points: components["schemas"]["MeasurementPointDto"][];
+            /**
+             * @description Optional label. Omit for no title.
+             * @example İstanbul - Ankara mesafesi
+             */
+            title?: string;
+            /**
+             * @description Opaque, client-generated per-measurement id. Together with the caller, this is the idempotency key: resubmitting the same value returns the row as it was first recorded.
+             * @example 018f2f3a-9c3e-7b2a-8b9d-2e6f1a7c9d40
+             */
+            clientMeasurementId: string;
+        };
+        MeasurementDto: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @example distance
+             * @enum {string}
+             */
+            type: "distance" | "area" | "coordinate";
+            points: components["schemas"]["MeasurementPointDto"][];
+            /**
+             * @description null when no title was set or the title was cleared.
+             * @example İstanbul - Ankara mesafesi
+             */
+            title?: string | null;
+            /**
+             * @description The idempotency key this measurement was created with.
+             * @example 018f2f3a-9c3e-7b2a-8b9d-2e6f1a7c9d40
+             */
+            clientMeasurementId: string;
+            /**
+             * Format: date-time
+             * @description When this measurement was first saved, UTC.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description When this row last changed (creation, or a subsequent title rename), UTC.
+             */
+            updatedAt: string;
+        };
+        UpdateMeasurementTitleRequestDto: {
+            /**
+             * @description A bounded string to rename, or explicit null to clear the title.
+             * @example İstanbul - Ankara mesafesi
+             */
+            title: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -4427,6 +4542,198 @@ export interface operations {
             };
             /** @description errors.gameRounds.tooManySubmissions */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    MeasurementsController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementDto"][];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    MeasurementsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMeasurementRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementDto"];
+                };
+            };
+            /** @description errors.measurements.invalidShape */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.measurements.quotaExceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    MeasurementsController_getOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description measurements.id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.measurements.notFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    MeasurementsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description measurements.id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted, already absent, or another caller's id — all answer identically. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    MeasurementsController_updateTitle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description measurements.id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeasurementTitleRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.measurements.notFound */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

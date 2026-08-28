@@ -162,6 +162,7 @@ export async function ToolMap({
           provinceAreas={provinceAreas}
           downloadName={downloadName}
           baseViewBox={MAP_VIEWBOX}
+          locale={locale}
         />
 
         {/* Keyboard-controls description the zoomable SVG points at via `aria-describedby`

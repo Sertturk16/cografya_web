@@ -193,6 +193,23 @@
     "historyHeading": "Kaydettiğin Turlar",
     "historyEmpty": "Henüz kaydedilmiş bir tur yok."
   },
+  "Measurements": {
+    "saveLabel": "Kaydet",
+    "savedLabel": "Kaydedildi",
+    "signInRequiredAria": "Kaydetmek için üye ol",
+    "saveError": "Kaydedilemedi. Tekrar dene.",
+    "saveQuotaError": "Kayıtlı ölçüm sınırına ulaştın. Herhangi bir aracının listesinden bir ölçüm sil.",
+    "titleLabel": "Başlık (opsiyonel)",
+    "listToggleLabel": "Kaydettiğin ölçümler",
+    "listHeading": "Kaydettiğin ölçümler",
+    "listEmpty": "Henüz kaydedilmiş bir ölçüm yok.",
+    "listError": "Kayıtlı ölçümlerin yüklenemedi.",
+    "recallLabel": "Yükle",
+    "recallAria": "{label} ölçümünü haritaya yükle",
+    "deleteLabel": "Sil",
+    "deleteAria": "{label} ölçümünü sil",
+    "deleteError": "Silinemedi. Tekrar dene."
+  },
   "ProvinceDetail": {
     "metaTitle": "{name} Coğrafyası",
     "metaTitleClimate": "{name} İklim Grafiği ve Coğrafyası",

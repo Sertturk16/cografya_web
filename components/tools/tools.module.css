@@ -412,6 +412,88 @@
   cursor: not-allowed;
 }
 
+/* ---- Measurement save/recall (UYELIK-12) ---------------------------------------------- */
+
+/* The save form's own small wrapper — the title field then the save button/status lines,
+   in the SAME column rhythm the rest of `.controls` already uses. */
+.savePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* The title input's own wrapper inside `.savePanel` — same shape as `.field` above (column
+   layout, 6px label gap, `min-width: 0`) but `flex: 1 1 auto` instead of `.field`'s `15rem`
+   basis (→ PR #100 review `DESIGN100-I1`). `.field`'s `15rem` was sized as a WIDTH basis for
+   `.inputs`'s row-direction flex context, where two fields sit side by side above ~34rem; sitting
+   inside `.savePanel` — column-direction (above) — the same basis becomes a HEIGHT basis instead
+   and inflates the single-line title input into a ~240px box. A distinct class rather than a
+   `.savePanel .field` override, so `.field`'s existing horizontal usage inside `.inputs` is
+   untouched either way. */
+.titleField {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+/* The recall/list `<details>` wrapper — a hairline rule separates it from the save panel
+   above it, the same visual seam `.actions`/`.points` already imply between the panel's
+   own sections. Closed by default (Product judgment call #4). */
+.measurementsPanel {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  margin-top: 2px;
+}
+
+/* Mirrors `.pointRow` (same 44px row height, same hairline divider) — a distinct class
+   because this row also carries a `<time>` element `.pointRow` never needed. */
+.measurementRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  color: var(--color-slate);
+}
+
+.measurementLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* The Yükle/Sil button pair — plain `.btn.btn-ghost` (already ≥44px tall by its own
+   padding/line-height, DESIGN.md §5) inside a small gap, the same shape `.actions` uses
+   for its own button row. */
+.measurementActions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
+/* Visually hidden but reachable — the exact clip recipe `map.module.css`'s own `.srOnly`
+   uses, copied verbatim (plan §5.7): the sr-only "Kaydedildi" announcement and the
+   recall/list panel's own focus-landing heading (WCAG 2.4.3) both use it. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---- Reduced motion ------------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
