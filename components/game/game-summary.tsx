@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/routing";
 import { provinceUrl } from "@/lib/game/province-url";
 import { shouldOpenReviewGroup } from "@/lib/game/review-group";
 import { MAX_STARS, STAR_THRESHOLDS, starsForScore, type RoundSummary } from "@/lib/game/round";
 import { targetsById, type GameTarget } from "@/lib/game/target";
+import { GameRoundSaveControl } from "./game-round-save";
 import { TrophyIcon } from "./game-icons";
 import styles from "./game-ui.module.css";
 
@@ -17,6 +19,14 @@ interface GameSummaryProps {
   provinceUrlTemplate: string;
   /** Localized path of `/oyun`, so the end screen can offer the way back out. */
   hubUrl: string;
+  /** This finished round's stable idempotency key (UYELIK-10 plan §5.4/§5.6) — generated
+   *  once at `createRound`, forwarded unchanged to `<GameRoundSaveControl>`. */
+  clientRoundId: string;
+  /** The save payload's `mode` tag (UYELIK-10 plan §5.1/§5.5), resolved once on the server. */
+  submitModeTag: string;
+  /** The route's own locale — the save control's anonymous-reader redirect needs it
+   *  (`CODE85-M5` reasoning, see `game-round-save.tsx`). */
+  locale: Locale;
   onClose: () => void;
   onReplay: () => void;
 }
@@ -86,6 +96,9 @@ export function GameSummary({
   targets,
   provinceUrlTemplate,
   hubUrl,
+  clientRoundId,
+  submitModeTag,
+  locale,
   onClose,
   onReplay,
 }: GameSummaryProps) {
@@ -267,6 +280,13 @@ export function GameSummary({
             <TargetList targets={review} urlTemplate={provinceUrlTemplate} />
           </details>
         ) : null}
+
+        <GameRoundSaveControl
+          summary={summary}
+          clientRoundId={clientRoundId}
+          submitModeTag={submitModeTag}
+          locale={locale}
+        />
 
         <div className={styles.dialogActions}>
           <button type="button" className={styles.primaryAction} onClick={onReplay}>

@@ -190,6 +190,19 @@ export type UpsertVideoProgressRequest = components["schemas"]["UpsertVideoProgr
  *  api by a page — the same posture `VideoProgress` above states for its own domain. */
 export type Favorite = components["schemas"]["FavoriteDto"];
 
+// ---- Game rounds (per-user saved game history — UYELIK-09/10) ---------------
+/** One recorded game round: the opaque `mode` tag, the client-generated `clientRoundId`
+ *  idempotency key, the round's own summary numbers, and `createdAt`. Reached only through
+ *  the web's own narrow BFF proxy (`lib/game-rounds/transport.server.ts`), never fetched
+ *  directly from the api by a page — the same posture `Favorite`/`VideoProgress` above state
+ *  for their own domains. */
+export type GameRound = components["schemas"]["GameRoundDto"];
+/** `GET /api/game-rounds`'s paginated envelope — the caller's own rounds, most-recent-first. */
+export type GameRoundList = components["schemas"]["GameRoundListDto"];
+/** `POST /api/game-rounds`'s request body — see `lib/game-rounds/transport.server.ts` for the
+ *  request-side zod schema mirroring these same bounds before an outbound call is spent. */
+export type SubmitGameRoundRequest = components["schemas"]["SubmitGameRoundRequestDto"];
+
 // ---- Reference data (kayıt formunun il→ilçe / üniversite / bölüm listeleri — PR-2) --------
 /** One ilçe: `id` (the value `districtId` sends) + `nameTr`. Turkish-alphabetical, one
  *  province at a time (`GET /api/reference/districts?plateCode=…`). */

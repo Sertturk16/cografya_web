@@ -88,3 +88,16 @@ export function RestartIcon(props: IconProps) {
     </Glyph>
   );
 }
+
+/** Padlock — the anonymous branch of the round-save control's sign-in cue (UYELIK-10 plan
+ *  §5.6). This domain's OWN icon module, not a cross-domain import from
+ *  `components/favorites/`'s own private `LockIcon` and not a third from-scratch SVG copy —
+ *  every glyph on this surface already lives here. */
+export function LockIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M6 10.5V7.5a6 6 0 1 1 12 0v3" />
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
+    </Glyph>
+  );
+}
