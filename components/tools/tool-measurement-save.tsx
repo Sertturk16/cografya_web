@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getPathname } from "@/i18n/navigation";
@@ -43,8 +43,7 @@ export function ToolMeasurementSave({
   minPoints,
   authState,
   locale,
-  getPendingSaveId,
-  setPendingSaveId,
+  pendingSaveIdRef,
   onSaved,
 }: {
   readonly mode: MeasurementType;
@@ -52,8 +51,7 @@ export function ToolMeasurementSave({
   readonly minPoints: number;
   readonly authState: AuthSessionState;
   readonly locale: Locale;
-  readonly getPendingSaveId: () => string | null;
-  readonly setPendingSaveId: (id: string) => void;
+  readonly pendingSaveIdRef: RefObject<string | null>;
   readonly onSaved: (measurement: MeasurementRecord) => void;
 }) {
   const t = useTranslations("Measurements");
@@ -62,6 +60,15 @@ export function ToolMeasurementSave({
   const [status, setStatus] = useState<"idle" | "pending" | "saved" | "failed" | "quota-exceeded">(
     "idle",
   );
+  /**
+   * Set alongside `status` transitioning to `"saved"` (`CODE100-M1`) — the api's own
+   * idempotency contract can replay an EARLIER attempt's title on a same-geometry retry
+   * (`UYELIK-12-plan.md` §2.2); this flag distinguishes "saved, title matches what was
+   * submitted" from "saved, title silently discarded" so the render below can show a
+   * different message rather than trusting every 200 response as a clean save of what
+   * THIS click actually submitted.
+   */
+  const [titleMismatch, setTitleMismatch] = useState(false);
 
   /**
    * NOT part of the plan's own enumerated lifecycle (§5.4 item 6 only names when the
@@ -84,7 +91,10 @@ export function ToolMeasurementSave({
   const [previousPoints, setPreviousPoints] = useState(points);
   if (points !== previousPoints) {
     setPreviousPoints(points);
-    if (status !== "pending") setStatus("idle");
+    if (status !== "pending") {
+      setStatus("idle");
+      setTitleMismatch(false);
+    }
   }
 
   const belowMinPoints = points.length < minPoints;
@@ -99,12 +109,14 @@ export function ToolMeasurementSave({
       return;
     }
     setStatus("pending");
-    let clientMeasurementId = getPendingSaveId();
+    setTitleMismatch(false);
+    let clientMeasurementId = pendingSaveIdRef.current;
     if (clientMeasurementId === null) {
       clientMeasurementId = crypto.randomUUID();
-      setPendingSaveId(clientMeasurementId);
+      pendingSaveIdRef.current = clientMeasurementId;
     }
     const trimmedTitle = title.trim();
+    const submittedTitle = trimmedTitle.length > 0 ? trimmedTitle : null;
     const result = await saveMeasurement({
       type: mode,
       points,
@@ -114,6 +126,11 @@ export function ToolMeasurementSave({
     if (result.ok) {
       onSaved(result.measurement);
       setStatus("saved");
+      // The api's idempotency contract can replay an EARLIER attempt's title on a
+      // same-geometry retry (CODE100-M1) — compare what this click actually submitted
+      // against what the api actually stored, on every successful save, rather than
+      // trusting the response blind.
+      setTitleMismatch(result.measurement.title !== submittedTitle);
       return;
     }
     // The pending-id ref is deliberately NOT cleared here (plan §5.4 item 6/§10 item 1) —
@@ -177,12 +194,21 @@ export function ToolMeasurementSave({
         </button>
       )}
 
-      {saved && (
+      {saved && !titleMismatch && (
         // The visible label change alone is not reliably announced by AT — the same
         // mechanism `GameRoundSaveControl`'s own sr-only paragraph uses for the identical
         // "Kaydet" -> "Kaydedildi" transition.
         <p role="status" className={styles.srOnly}>
           {t("savedLabel")}
+        </p>
+      )}
+      {saved && titleMismatch && (
+        // CODE100-M1: the api replayed an earlier attempt's title on this same-geometry
+        // retry (idempotency contract, plan §2.2) — a VISIBLE message, not the generic
+        // sr-only "Kaydedildi" announcement, so the reader is not silently told their
+        // edit landed when it did not.
+        <p role="status" className={styles.error}>
+          {t("saveTitleMismatch")}
         </p>
       )}
       {status === "failed" && (

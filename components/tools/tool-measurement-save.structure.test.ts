@@ -51,12 +51,12 @@ function savedBranchBody(): string {
 }
 
 describe("the save-attempt id lifecycle this control relies on (plan §10 item 1)", () => {
-  it("reads the pending save id and generates a fresh one ONLY when null", () => {
+  it("reads the pending save id via the ref prop and generates a fresh one ONLY when null", () => {
     const body = handleClickBody();
     expect(body).not.toBe("");
-    expect(body).toContain("getPendingSaveId()");
+    expect(body).toContain("pendingSaveIdRef.current");
     expect(body).toContain("crypto.randomUUID()");
-    const readIdx = body.indexOf("getPendingSaveId()");
+    const readIdx = body.indexOf("pendingSaveIdRef.current");
     const nullCheck = body.indexOf("=== null", readIdx);
     const generate = body.indexOf("crypto.randomUUID()", readIdx);
     expect(nullCheck).toBeGreaterThan(readIdx);
@@ -70,10 +70,27 @@ describe("the save-attempt id lifecycle this control relies on (plan §10 item 1
     expect(payload).toContain("clientMeasurementId,");
   });
 
-  it("never clears the pending save id on a failure branch (quota or generic)", () => {
+  it("never clears the pending save id on a failure branch (quota or generic) (SIMP100-M1: via the ref directly, no getter/setter closures)", () => {
     const body = handleClickBody();
-    expect(body).not.toMatch(/setPendingSaveId\(null\)/);
-    expect(body).not.toContain("setPendingSaveId(null)");
+    expect(body).not.toContain("pendingSaveIdRef.current = null");
+  });
+});
+
+describe("CODE100-M1: a same-geometry retry that silently replays an earlier title is detected, not trusted blind", () => {
+  it("computes submittedTitle from the SAME trimmed value handed to saveMeasurement, never the raw title state", () => {
+    const body = handleClickBody();
+    expect(body).toContain("title.trim()");
+    const idx = body.indexOf("const submittedTitle");
+    expect(idx).toBeGreaterThan(0);
+    expect(body.slice(idx, idx + 120)).toContain("trimmedTitle.length > 0 ? trimmedTitle : null");
+  });
+
+  it("compares the api's returned title against submittedTitle on every successful save, not only a suspected retry", () => {
+    const body = handleClickBody();
+    const okIdx = body.indexOf("if (result.ok)");
+    expect(okIdx).toBeGreaterThan(0);
+    const okBranch = body.slice(okIdx, body.indexOf("return;", okIdx));
+    expect(okBranch).toContain("setTitleMismatch(result.measurement.title !== submittedTitle)");
   });
 });
 
@@ -142,14 +159,25 @@ describe("the saved branch — a genuine, permanent outcome", () => {
     expect(body).not.toMatch(/<button[^>]*[\s"]disabled(?:[\s>]|=\{)/);
   });
 
-  it("announces the save-succeeded fact via a dedicated sr-only role=status region", () => {
-    expect(CONTROL).toContain("{saved && (");
-    const start = CONTROL.indexOf("{saved && (");
-    const end = CONTROL.indexOf('{status === "failed" &&');
+  it("announces the plain save-succeeded fact via a dedicated sr-only role=status region ONLY when the title matches (CODE100-M1 splits this from the mismatch case below)", () => {
+    expect(CONTROL).toContain("{saved && !titleMismatch && (");
+    const start = CONTROL.indexOf("{saved && !titleMismatch && (");
+    const end = CONTROL.indexOf("{saved && titleMismatch && (");
     expect(end).toBeGreaterThan(start);
     const announcement = CONTROL.slice(start, end);
     expect(announcement).toContain('role="status"');
     expect(announcement).toContain('t("savedLabel")');
+  });
+
+  it("surfaces a distinct, VISIBLE role=status message instead of the plain announcement when the api's returned title does not match what was submitted (CODE100-M1)", () => {
+    expect(CONTROL).toContain("{saved && titleMismatch && (");
+    const start = CONTROL.indexOf("{saved && titleMismatch && (");
+    const end = CONTROL.indexOf('{status === "failed" &&');
+    expect(end).toBeGreaterThan(start);
+    const region = CONTROL.slice(start, end);
+    expect(region).toContain('role="status"');
+    expect(region).toContain('t("saveTitleMismatch")');
+    expect(region).not.toContain("styles.srOnly");
   });
 });
 
