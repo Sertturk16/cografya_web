@@ -198,7 +198,7 @@
     "savedLabel": "Saved",
     "signInRequiredAria": "Sign up to save",
     "saveError": "Couldn't save. Try again.",
-    "saveQuotaError": "You've reached your saved-measurement limit. Delete one from your list to save a new one.",
+    "saveQuotaError": "You've reached your saved-measurement limit. Delete a measurement from any of your tools' lists.",
     "titleLabel": "Title (optional)",
     "listToggleLabel": "Your saved measurements",
     "listHeading": "Your saved measurements",

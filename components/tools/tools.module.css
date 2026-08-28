@@ -422,6 +422,23 @@
   gap: 10px;
 }
 
+/* The title input's own wrapper inside `.savePanel` — same shape as `.field` above (column
+   layout, 6px label gap, `min-width: 0`) but `flex: 1 1 auto` instead of `.field`'s `15rem`
+   basis (→ PR #100 review `DESIGN100-I1`). `.field`'s `15rem` was sized as a WIDTH basis for
+   `.inputs`'s row-direction flex context, where two fields sit side by side above ~34rem; sitting
+   inside `.savePanel` — column-direction (above) — the same basis becomes a HEIGHT basis instead
+   and inflates the single-line title input into a ~240px box. A distinct class rather than a
+   `.savePanel .field` override, so `.field`'s existing horizontal usage inside `.inputs` is
+   untouched either way. */
+.titleField {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
 /* The recall/list `<details>` wrapper — a hairline rule separates it from the save panel
    above it, the same visual seam `.actions`/`.points` already imply between the panel's
    own sections. Closed by default (Product judgment call #4). */

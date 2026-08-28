@@ -128,7 +128,7 @@ export function ToolMeasurementSave({
 
   return (
     <div className={styles.savePanel}>
-      <div className={styles.field}>
+      <div className={styles.titleField}>
         <label className={styles.label} htmlFor="tool-measurement-title">
           {t("titleLabel")}
         </label>

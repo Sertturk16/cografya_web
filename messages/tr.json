@@ -198,7 +198,7 @@
     "savedLabel": "Kaydedildi",
     "signInRequiredAria": "Kaydetmek için üye ol",
     "saveError": "Kaydedilemedi. Tekrar dene.",
-    "saveQuotaError": "Kayıtlı ölçüm sınırına ulaştın. Yeni bir ölçüm için listenden birini sil.",
+    "saveQuotaError": "Kayıtlı ölçüm sınırına ulaştın. Herhangi bir aracının listesinden bir ölçüm sil.",
     "titleLabel": "Başlık (opsiyonel)",
     "listToggleLabel": "Kaydettiğin ölçümler",
     "listHeading": "Kaydettiğin ölçümler",
