@@ -2,6 +2,14 @@ import "server-only";
 import { z } from "zod";
 import { ACCESS_COOKIE_NAME } from "@/lib/auth/cookies";
 import { serverEnv } from "@/lib/env.server";
+import {
+  bffHeaders,
+  contentLengthExceeds,
+  drainBody,
+  readBoundedBodyAsText,
+  readCookieValue,
+  safeReadText,
+} from "@/lib/http/bff-helpers.server";
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
 import type { VideoProgress } from "@/lib/api/types";
@@ -13,8 +21,9 @@ import type { VideoProgress } from "@/lib/api/types";
  * api's 200 body — WITHOUT importing it: `AuthAction` is a closed, hand-typed union of seven
  * auth-only actions (`transport.server.ts`'s own module docblock), and video-progress is a
  * different domain (per-user playback state, not credentials) that has no business joining
- * it. `lib/http/same-origin.ts` is the one piece genuinely shared, because it is a
- * security-relevant four-line check rather than a domain-specific one.
+ * it. `lib/http/same-origin.ts` and `lib/http/bff-helpers.server.ts` (SIMP90-M1/SIMP96-M1) are
+ * the pieces genuinely shared, because they are domain-agnostic HTTP/cookie/body mechanics
+ * rather than anything specific to this domain's action shape.
  *
  * ONE RESOURCE, TWO METHODS. Unlike the auth transport's nine-action table keyed by a
  * catch-all path segment, this proxies exactly one api resource
@@ -81,99 +90,16 @@ export interface VideoProgressBffResult {
   readonly headers: Record<string, string>;
 }
 
-/** Every response passes through here — `Cache-Control: no-store` UNCONDITIONALLY, the same
- *  P2 property `lib/auth/transport.server.ts` guarantees for auth responses. Restated here
- *  rather than assumed: UYELIK-05's own round-1 review caught exactly this omission on the
- *  *api* side (`SEC141-I2`) before it was fixed, so this proxy carries the discipline from
- *  the start rather than needing the same class of finding a second time. */
-function bffHeaders(): Record<string, string> {
-  return { "Cache-Control": "no-store", Vary: "Cookie", "X-Content-Type-Options": "nosniff" };
-}
+// `bffHeaders`, `readCookieValue`, `contentLengthExceeds`, `readBoundedBodyAsText`,
+// `safeReadText` and `drainBody` are imported from `lib/http/bff-helpers.server.ts`
+// (SIMP90-M1/SIMP96-M1) — this module's own private copies until the same mechanics were
+// found duplicated across four BFF-proxy modules and extracted. `Cache-Control: no-store` is
+// UNCONDITIONAL on every response, the same P2 property every BFF module guarantees
+// (UYELIK-05's own round-1 review caught exactly this omission on the *api* side,
+// `SEC141-I2`, before it was fixed).
 
 function bffResult(status: number, body: VideoProgressBffBody): VideoProgressBffResult {
   return { status, body, headers: bffHeaders() };
-}
-
-/** Minimal `Cookie`-header parse — the same shape `lib/auth/transport.server.ts`'s
- *  `readCookieValue` uses, kept as its own small copy rather than an import: this module is
- *  handed the raw `Request` by `route.ts`, and the auth module is not a dependency this
- *  domain should acquire for a five-line helper. */
-function readCookieValue(request: Request, name: string): string | undefined {
-  const header = request.headers.get("cookie");
-  if (!header) return undefined;
-  for (const pair of header.split(";")) {
-    const eq = pair.indexOf("=");
-    if (eq === -1) continue;
-    const key = pair.slice(0, eq).trim();
-    if (key === name) {
-      try {
-        return decodeURIComponent(pair.slice(eq + 1).trim());
-      } catch {
-        return undefined;
-      }
-    }
-  }
-  return undefined;
-}
-
-function contentLengthExceeds(request: Request): boolean {
-  const header = request.headers.get("content-length");
-  if (header === null) return false;
-  const value = Number(header);
-  return Number.isFinite(value) && value > MAX_REQUEST_BODY_BYTES;
-}
-
-/** Reads the request body one chunk at a time and stops the instant the accumulated byte
- *  count exceeds the bound, mirroring `lib/auth/transport.server.ts`'s `readBoundedBody`
- *  reasoning: a chunked body with no `Content-Length` would otherwise slip past
- *  `contentLengthExceeds` above and buffer unbounded. */
-async function readBoundedBody(
-  request: Request,
-): Promise<{ ok: true; text: string } | { ok: false }> {
-  if (request.body === null) return { ok: true, text: "" };
-
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_REQUEST_BODY_BYTES) {
-      await reader.cancel();
-      return { ok: false };
-    }
-    chunks.push(value);
-  }
-
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return { ok: true, text: new TextDecoder().decode(bytes) };
-}
-
-async function safeReadText(res: Response): Promise<string> {
-  try {
-    return await res.text();
-  } catch {
-    return "";
-  }
-}
-
-/** Drains an unread body so undici can return the connection to its pool (the same
- *  `CODE84-M2` reasoning `lib/auth/transport.server.ts`'s `classifyResponse` documents), with
- *  the same try/catch: `cancel()` on an already-errored stream rejects. */
-async function drainBody(res: Response): Promise<void> {
-  try {
-    await res.body?.cancel();
-  } catch {
-    // Best-effort: a connection broken enough to make cancel() reject has nothing left to
-    // return to undici's pool either way.
-  }
 }
 
 const KNOWN_ERROR_MESSAGES = new Set<VideoProgressBffCode>([
@@ -317,11 +243,11 @@ export async function handlePutVideoProgress(
   if (!accessToken) {
     return bffResult(401, { ok: false, code: "errors.auth.unauthenticated" });
   }
-  if (contentLengthExceeds(request)) {
+  if (contentLengthExceeds(request, MAX_REQUEST_BODY_BYTES)) {
     return bffResult(413, { ok: false, code: "errors.transport.invalidRequest" });
   }
 
-  const read = await readBoundedBody(request);
+  const read = await readBoundedBodyAsText(request, MAX_REQUEST_BODY_BYTES);
   if (!read.ok) {
     return bffResult(413, { ok: false, code: "errors.transport.invalidRequest" });
   }
