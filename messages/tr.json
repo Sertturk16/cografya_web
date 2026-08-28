@@ -199,7 +199,7 @@
     "signInRequiredAria": "Kaydetmek için üye ol",
     "saveError": "Kaydedilemedi. Tekrar dene.",
     "saveQuotaError": "Kayıtlı ölçüm sınırına ulaştın. Herhangi bir aracının listesinden bir ölçüm sil.",
-    "saveTitleMismatch": "Bu ölçüm ilk kaydettiğin başlıkla kayıtlı kaldı; son düzenlemen kaydedilmedi.",
+    "saveTitleMismatch": "Bu ölçüm ilk kaydettiğin başlıkla kayıtlı kaldı; son düzenlemen kaydedilmedi. Şekli hafifçe değiştirip tekrar kaydetmeyi dene.",
     "titleLabel": "Başlık (opsiyonel)",
     "listToggleLabel": "Kaydettiğin ölçümler",
     "listHeading": "Kaydettiğin ölçümler",
