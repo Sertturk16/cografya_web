@@ -2,6 +2,12 @@ import "server-only";
 import { z } from "zod";
 import { ACCESS_COOKIE_NAME } from "@/lib/auth/cookies";
 import { serverEnv } from "@/lib/env.server";
+import {
+  bffHeaders,
+  drainBody,
+  readCookieValue,
+  safeReadText,
+} from "@/lib/http/bff-helpers.server";
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
 import type { Favorite } from "@/lib/api/types";
@@ -14,9 +20,11 @@ import type { FavoriteTargetParam } from "./client";
  * the api's 200 body — WITHOUT importing it, and without importing
  * `lib/auth/transport.server.ts` either: favorites is a third, different domain (per-user
  * saved-entity state, neither credentials nor playback progress) that has no business
- * joining either closed action table. `lib/http/same-origin.ts` is reused directly — the
- * one deliberately-shared piece, a security-relevant four-line check rather than a
- * domain-specific one.
+ * joining either closed action table. `lib/http/same-origin.ts` and
+ * `lib/http/bff-helpers.server.ts` (SIMP90-M1/SIMP96-M1) are reused directly — the
+ * deliberately-shared, domain-agnostic mechanics (a security-relevant Origin check; cookie
+ * read, body drain and the fixed response-header set), never the domain-specific action table
+ * or response shape.
  *
  * NO BODY-HANDLING MACHINERY, and that is a measured omission, not an oversight: unlike
  * video-progress's `PUT` (which carries `{lastPositionSeconds, watched}`), every favorites
@@ -119,13 +127,12 @@ export interface FavoriteBffResult {
   readonly headers: Record<string, string>;
 }
 
-/** Every response passes through here — `Cache-Control: no-store` UNCONDITIONALLY, the same
- *  P2 property both existing BFF modules guarantee. Restated rather than assumed: UYELIK-05's
- *  own round-1 review caught exactly this omission on the *api* side (`SEC141-I2`) before it
- *  was fixed, so this proxy carries the discipline from the start. */
-function bffHeaders(): Record<string, string> {
-  return { "Cache-Control": "no-store", Vary: "Cookie", "X-Content-Type-Options": "nosniff" };
-}
+// `bffHeaders`, `readCookieValue`, `safeReadText` and `drainBody` are imported from
+// `lib/http/bff-helpers.server.ts` (SIMP90-M1/SIMP96-M1) — this module's own private copies
+// until the same mechanics were found duplicated across four BFF-proxy modules and extracted.
+// `Cache-Control: no-store` is UNCONDITIONAL on every response, the same P2 property every BFF
+// module guarantees (UYELIK-05's own round-1 review caught exactly this omission on the *api*
+// side, `SEC141-I2`, before it was fixed).
 
 function listResult(status: number, body: FavoritesListBffBody): FavoritesListBffResult {
   return { status, body, headers: bffHeaders() };
@@ -133,48 +140,6 @@ function listResult(status: number, body: FavoritesListBffBody): FavoritesListBf
 
 function itemResult(status: number, body: FavoriteBffBody): FavoriteBffResult {
   return { status, body, headers: bffHeaders() };
-}
-
-/** Minimal `Cookie`-header parse — the same shape both existing server modules use, kept as
- *  its own small copy rather than an import: this module is handed the raw `Request` by
- *  `route.ts`, and neither existing transport module is a dependency this domain should
- *  acquire for a five-line helper. */
-function readCookieValue(request: Request, name: string): string | undefined {
-  const header = request.headers.get("cookie");
-  if (!header) return undefined;
-  for (const pair of header.split(";")) {
-    const eq = pair.indexOf("=");
-    if (eq === -1) continue;
-    const key = pair.slice(0, eq).trim();
-    if (key === name) {
-      try {
-        return decodeURIComponent(pair.slice(eq + 1).trim());
-      } catch {
-        return undefined;
-      }
-    }
-  }
-  return undefined;
-}
-
-async function safeReadText(res: Response): Promise<string> {
-  try {
-    return await res.text();
-  } catch {
-    return "";
-  }
-}
-
-/** Drains an unread body so undici can return the connection to its pool — the same
- *  `CODE84-M2` reasoning both existing server modules document, with the same try/catch:
- *  `cancel()` on an already-errored stream rejects. */
-async function drainBody(res: Response): Promise<void> {
-  try {
-    await res.body?.cancel();
-  } catch {
-    // Best-effort: a connection broken enough to make cancel() reject has nothing left to
-    // return to undici's pool either way.
-  }
 }
 
 async function sendApiRequest(

@@ -2,6 +2,14 @@ import "server-only";
 import { z } from "zod";
 import { ACCESS_COOKIE_NAME } from "@/lib/auth/cookies";
 import { serverEnv } from "@/lib/env.server";
+import {
+  bffHeaders,
+  contentLengthExceeds,
+  drainBody,
+  readBoundedBodyAsText,
+  readCookieValue,
+  safeReadText,
+} from "@/lib/http/bff-helpers.server";
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
 import type { GameRound, GameRoundList, SubmitGameRoundRequest } from "@/lib/api/types";
@@ -13,16 +21,21 @@ import type { GameRound, GameRoundList, SubmitGameRoundRequest } from "@/lib/api
  * saved entities, the same reasoning both existing pairs already state for their own
  * independence from each other. Modelled on `lib/video-progress/transport.server.ts`'s
  * shape (the closer precedent — it has a real request body, unlike favorites' bodyless
- * `PUT`/`DELETE`) WITHOUT importing it: a cookie read, an Origin check on the
- * state-changing verb, `Cache-Control: no-store` unconditionally, a zod response guard
- * against the api's 200 body, its own timeout constant.
+ * `PUT`/`DELETE`): an Origin check on the state-changing verb, a zod response guard against
+ * the api's 200 body, its own timeout constant and its own action/schema shape stay local to
+ * this domain. The generic HTTP/cookie/body mechanics — cookie read, body-size bound and
+ * bounded read, body drain, the fixed `Cache-Control: no-store` response-header set — are
+ * imported from `lib/http/bff-helpers.server.ts` (SIMP90-M1/SIMP96-M1): this module was the
+ * THIRD independent copy of those same mechanics, crossing the "rule of three" threshold that
+ * made a shared module worth the import.
  *
  * TWO METHODS, ONE RESOURCE: `GET /api/game-rounds` (list, read-only, no Origin check) and
  * `POST /api/game-rounds` (idempotent submit, state-changing, Origin required).
  */
 
-/** The house standard (matches both existing server modules), restated locally per the
- *  established no-shared-import convention. */
+/** The house standard (matches every other BFF-proxy module) — a domain-specific value kept
+ *  local rather than folded into the shared module, which carries no opinion on any caller's
+ *  own timeout budget. */
 const GAME_ROUNDS_REQUEST_TIMEOUT_MS = 15_000;
 
 /** A submit body here is 9 short fields, well under 1 KiB even with generous JSON
@@ -176,16 +189,11 @@ export interface GameRoundBffResult {
   readonly headers: Record<string, string>;
 }
 
-/** Every response passes through here — `Cache-Control: no-store` UNCONDITIONALLY, the same
- *  P2 property both existing BFF modules guarantee. */
-function bffHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  return {
-    "Cache-Control": "no-store",
-    Vary: "Cookie",
-    "X-Content-Type-Options": "nosniff",
-    ...extra,
-  };
-}
+// `bffHeaders`, `readCookieValue`, `safeReadText`, `drainBody`, `readBoundedBodyAsText` and
+// `contentLengthExceeds` are imported from `lib/http/bff-helpers.server.ts`
+// (SIMP90-M1/SIMP96-M1) — this module's own private copies until the same mechanics were
+// found duplicated across four BFF-proxy modules and extracted. `Cache-Control: no-store` is
+// UNCONDITIONAL on every response, the same P2 property every BFF module guarantees.
 
 function listResult(
   status: number,
@@ -201,88 +209,6 @@ function itemResult(
   extraHeaders: Record<string, string> = {},
 ): GameRoundBffResult {
   return { status, body, headers: bffHeaders(extraHeaders) };
-}
-
-/** Minimal `Cookie`-header parse — the same shape every existing server module carries as
- *  its own small copy rather than an import (this module is handed the raw `Request` by
- *  `route.ts`, and neither existing domain module is a dependency this one should acquire
- *  for a five-line helper). */
-function readCookieValue(request: Request, name: string): string | undefined {
-  const header = request.headers.get("cookie");
-  if (!header) return undefined;
-  for (const pair of header.split(";")) {
-    const eq = pair.indexOf("=");
-    if (eq === -1) continue;
-    const key = pair.slice(0, eq).trim();
-    if (key === name) {
-      try {
-        return decodeURIComponent(pair.slice(eq + 1).trim());
-      } catch {
-        return undefined;
-      }
-    }
-  }
-  return undefined;
-}
-
-async function safeReadText(res: Response): Promise<string> {
-  try {
-    return await res.text();
-  } catch {
-    return "";
-  }
-}
-
-/** Drains an unread body so undici can return the connection to its pool — the same
- *  `CODE84-M2` reasoning every existing server module documents, with the same try/catch:
- *  `cancel()` on an already-errored stream rejects. */
-async function drainBody(res: Response): Promise<void> {
-  try {
-    await res.body?.cancel();
-  } catch {
-    // Best-effort: a connection broken enough to make cancel() reject has nothing left to
-    // return to undici's pool either way.
-  }
-}
-
-/** Reads the request body one chunk at a time and stops the instant the accumulated byte
- *  count exceeds the bound, mirroring `lib/video-progress/transport.server.ts`'s
- *  `readBoundedBody` reasoning: a chunked body with no `Content-Length` would otherwise
- *  buffer unbounded. */
-async function readBoundedBody(
-  request: Request,
-): Promise<{ ok: true; text: string } | { ok: false }> {
-  if (request.body === null) return { ok: true, text: "" };
-
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_REQUEST_BODY_BYTES) {
-      await reader.cancel();
-      return { ok: false };
-    }
-    chunks.push(value);
-  }
-
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return { ok: true, text: new TextDecoder().decode(bytes) };
-}
-
-function contentLengthExceeds(request: Request): boolean {
-  const header = request.headers.get("content-length");
-  if (header === null) return false;
-  const value = Number(header);
-  return Number.isFinite(value) && value > MAX_REQUEST_BODY_BYTES;
 }
 
 async function sendApiRequest(
@@ -381,11 +307,11 @@ export async function handleSubmitGameRound(request: Request): Promise<GameRound
   if (!accessToken) {
     return itemResult(401, { ok: false, code: "errors.auth.unauthenticated" });
   }
-  if (contentLengthExceeds(request)) {
+  if (contentLengthExceeds(request, MAX_REQUEST_BODY_BYTES)) {
     return itemResult(413, { ok: false, code: "errors.transport.invalidRequest" });
   }
 
-  const read = await readBoundedBody(request);
+  const read = await readBoundedBodyAsText(request, MAX_REQUEST_BODY_BYTES);
   if (!read.ok) {
     return itemResult(413, { ok: false, code: "errors.transport.invalidRequest" });
   }

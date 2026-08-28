@@ -2,6 +2,14 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { serverEnv } from "@/lib/env.server";
+import {
+  bffHeaders,
+  contentLengthExceeds,
+  drainBody,
+  readBoundedBody,
+  readCookieValue,
+  safeReadText,
+} from "@/lib/http/bff-helpers.server";
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
 import type { AccountRole, AuthResult, Session } from "@/lib/api/types";
@@ -224,14 +232,9 @@ export interface AuthBffResult {
 
 /** The ONE function every response header set passes through (plan §7 P2) — a response
  *  object cannot be constructed without these, so there is no branch that can forget them.
- *  Gate: T2. */
-function bffHeaders(): Record<string, string> {
-  return {
-    "Cache-Control": "no-store",
-    Vary: "Cookie",
-    "X-Content-Type-Options": "nosniff",
-  };
-}
+ *  Gate: T2. Imported from `lib/http/bff-helpers.server.ts` (SIMP90-M1/SIMP96-M1): this was
+ *  this module's own private copy until the same fixed three-header set was found duplicated
+ *  across four BFF-proxy modules and extracted. */
 
 /** The ONE function every response body passes through (plan §7 P1) — its parameter type is
  *  the closed `AuthBffBody` union, so the compiler is what enforces the closed set. */
@@ -272,41 +275,15 @@ function logAuthOutcome(action: string, outcome: string): void {
 }
 
 // ---------------------------------------------------------------------------------------
-// Request-side helpers: cookie read, Origin check, size bound.
+// Request-side helpers: cookie read, Origin check, size bound. `readCookieValue` and
+// `contentLengthExceeds` are imported from `lib/http/bff-helpers.server.ts`
+// (SIMP90-M1/SIMP96-M1) — this module's own private copies until the same mechanics were
+// found duplicated across four BFF-proxy modules and extracted. A malformed percent-encoding
+// in a cookie value (`decodeURIComponent` throws `URIError`) is an ABSENT cookie, not an
+// unhandled exception (plan §14 — a response must always go through
+// `bffResult()`/`bffHeaders()`), matching Next's own cookie parser (`@edge-runtime/cookies`),
+// which does the same on catch. Gate: T-COOKIE-DECODE.
 // ---------------------------------------------------------------------------------------
-
-/** Minimal `Cookie`-header parse. Deliberately NOT `next/headers`' `cookies()`: this module
- *  is handed the raw `Request` by `route.ts`, and parsing the header directly keeps every
- *  branch here testable with a plain `Request`/`Headers` object and no Next request context. */
-function readCookieValue(request: Request, name: string): string | undefined {
-  const header = request.headers.get("cookie");
-  if (!header) return undefined;
-
-  for (const pair of header.split(";")) {
-    const eq = pair.indexOf("=");
-    if (eq === -1) continue;
-    const key = pair.slice(0, eq).trim();
-    if (key === name) {
-      try {
-        return decodeURIComponent(pair.slice(eq + 1).trim());
-      } catch {
-        // A malformed percent-encoding (`decodeURIComponent` throws `URIError`) is an
-        // ABSENT cookie, not an unhandled exception (plan §14 — a response must always go
-        // through `bffResult()`/`bffHeaders()`). This matches Next's own cookie parser
-        // (`@edge-runtime/cookies`), which does the same on catch. Gate: T-COOKIE-DECODE.
-        return undefined;
-      }
-    }
-  }
-  return undefined;
-}
-
-function contentLengthExceeds(request: Request): boolean {
-  const header = request.headers.get("content-length");
-  if (header === null) return false;
-  const value = Number(header);
-  return Number.isFinite(value) && value > MAX_REQUEST_BODY_BYTES;
-}
 
 // ---------------------------------------------------------------------------------------
 // Outbound api call — the ONE fetch wrapper, no internal token, no `next` cache key.
@@ -338,13 +315,7 @@ async function sendApiRequest(
   }
 }
 
-async function safeReadText(res: Response): Promise<string> {
-  try {
-    return await res.text();
-  } catch {
-    return "";
-  }
-}
+// `safeReadText` is imported from `lib/http/bff-helpers.server.ts` (SIMP90-M1/SIMP96-M1).
 
 function extractApiErrorCode(rawBody: string): AuthBffCode | undefined {
   try {
@@ -376,19 +347,14 @@ async function classifyResponse(res: Response): Promise<ApiCallOutcome> {
     // undici does not return a connection to its pool until the response body is consumed,
     // so a burst of unmapped statuses (a 5xx during an api outage) would otherwise hold
     // connections open for as long as the response objects stay reachable. Gate: T-BODY-DRAIN.
-    // `cancel()` on an already-errored stream REJECTS (measured, `SEC84R2-M3`), so it is
-    // wrapped the same way the other two `res.body?.cancel()` sites this round added are
-    // (`handleLogout` below, in this file; `session.ts`'s is inside its own outer
-    // try/catch) — a try/catch mechanically stops a reject from escaping uncaught here, the
-    // same way it does at those two sites. NO GATE for the reject path specifically in this
-    // round: T-BODY-DRAIN below asserts `cancel()` is CALLED on this branch, not that a
+    // `cancel()` on an already-errored stream REJECTS (measured, `SEC84R2-M3`); the shared
+    // `drainBody()` (`lib/http/bff-helpers.server.ts`, SIMP90-M1/SIMP96-M1) wraps the call in
+    // its own try/catch so a reject never escapes uncaught here — the same mechanism
+    // `handleLogout` below now also uses (`session.ts`'s own separate site is outside this
+    // module's scope and keeps its own inline try/catch). NO GATE for the reject path
+    // specifically: T-BODY-DRAIN below asserts `cancel()` is CALLED on this branch, not that a
     // reject from it is swallowed — recorded rather than implied.
-    try {
-      await res.body?.cancel();
-    } catch {
-      // Ignored: draining is best-effort — a connection broken enough to make cancel()
-      // reject has nothing left to return to undici's pool either way.
-    }
+    await drainBody(res);
     return { kind: "unavailable" };
   }
   const rawBody = await safeReadText(res);
@@ -488,49 +454,21 @@ function refreshWithSingleFlight(refreshToken: string): Promise<AuthApiTokenOutc
 // re-serialize UNCHANGED. Gate: T13.
 // ---------------------------------------------------------------------------------------
 
-/**
- * Reads `request.body` one chunk at a time and stops the INSTANT the accumulated byte count
- * exceeds `MAX_REQUEST_BODY_BYTES`, instead of buffering the whole body first and measuring
- * it afterwards (`CODE84-I4`, measured: a 400 MiB chunked body — no `Content-Length`, so the
- * pre-parse check in `handleAuthRequest` cannot see it — took the worker from 510 MB to
- * 2163 MB RSS before the old code's 413). `request.body` is `null` on a bodyless `Request`
- * (measured) — that is an EMPTY body, not a stream to read; naively calling `.getReader()`
- * on it would reopen `CODE84-I2`'s uncaught-throw class. Gate: T-BODY-STREAM.
- */
-async function readBoundedBody(
-  request: Request,
-): Promise<{ ok: true; bytes: Uint8Array } | { ok: false }> {
-  if (request.body === null) return { ok: true, bytes: new Uint8Array(0) };
-
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_REQUEST_BODY_BYTES) {
-      await reader.cancel();
-      return { ok: false };
-    }
-    chunks.push(value);
-  }
-
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return { ok: true, bytes };
-}
+// `readBoundedBody` is imported from `lib/http/bff-helpers.server.ts`
+// (SIMP90-M1/SIMP96-M1) — this module's own private copy until the same chunk-accumulate
+// -then-`reader.cancel()`-on-limit algorithm (`CODE84-I4`, measured: a 400 MiB chunked body —
+// no `Content-Length`, so the pre-parse check in `handleAuthRequest` cannot see it — took the
+// worker from 510 MB to 2163 MB RSS before the old code's 413) was found duplicated across
+// four BFF-proxy modules and extracted, with `MAX_REQUEST_BODY_BYTES` now passed in explicitly
+// rather than closed over. `request.body` is `null` on a bodyless `Request` (measured) — that
+// is an EMPTY body, not a stream to read; the shared function returns raw bytes directly. Gate:
+// T-BODY-STREAM.
 
 async function readClientBody(
   actionKey: string,
   request: Request,
 ): Promise<{ ok: true; body: string } | { ok: false; result: AuthBffResult }> {
-  const read = await readBoundedBody(request);
+  const read = await readBoundedBody(request, MAX_REQUEST_BODY_BYTES);
   if (!read.ok) {
     logAuthOutcome(actionKey, "invalid-request");
     return {
@@ -715,8 +653,11 @@ async function handleLogout(action: AuthAction, request: Request): Promise<AuthB
       revokeFailed = true;
       // Drain the body for the same reason as `classifyResponse`'s unmapped branch
       // (`CODE84-M2`): `logout` never reads a failed revoke's body, but undici still needs
-      // it consumed to return the connection to its pool. Gate: T-BODY-DRAIN.
-      await res.body?.cancel();
+      // it consumed to return the connection to its pool. Gate: T-BODY-DRAIN. `drainBody()`
+      // already swallows a `cancel()` reject internally, and `revokeFailed` is already `true`
+      // on this line regardless — the outer `catch` below stays as a safety net for
+      // `sendApiRequest` itself, not for this call.
+      await drainBody(res);
     }
   } catch {
     revokeFailed = true;
@@ -884,7 +825,7 @@ export async function handleAuthRequest(
       logAuthOutcome(actionKey, "forbidden");
       return bffResult(403, { ok: false, code: "errors.transport.forbidden" });
     }
-    if (contentLengthExceeds(request)) {
+    if (contentLengthExceeds(request, MAX_REQUEST_BODY_BYTES)) {
       logAuthOutcome(actionKey, "invalid-request");
       return bffResult(413, { ok: false, code: "errors.transport.invalidRequest" });
     }
