@@ -85,3 +85,23 @@ describe("(b) GameHistoryPanel's data fetch is client-side, inside useEffect, ne
     }
   });
 });
+
+// CODE96-M2 / TEST96R2-M1 (PR #96 round-2 fix commit, `Owner's Inbox/pr-review-archive/
+// cografya_web-96-round2.md`): the row `key` moved from bare `round.clientRoundId` to the
+// composite `${round.clientRoundId}-${round.createdAt}` expression, and a sr-only
+// `t("statScore")` label was added before the score number — neither had a committed
+// regression test.
+describe("(c) each row keys on the composite clientRoundId+createdAt expression, and the score carries a sr-only label", () => {
+  it("keys the row on the composite `${round.clientRoundId}-${round.createdAt}` expression, not clientRoundId alone", () => {
+    expect(PANEL).toContain("key={`${round.clientRoundId}-${round.createdAt}`}");
+  });
+
+  it("renders a sr-only statScore label before the score value", () => {
+    const srOnlyIndex = PANEL.indexOf("className={styles.srOnly}");
+    const scoreIndex = PANEL.indexOf("className={styles.score}");
+    expect(srOnlyIndex).toBeGreaterThan(-1);
+    expect(scoreIndex).toBeGreaterThan(srOnlyIndex);
+    const label = PANEL.slice(srOnlyIndex, scoreIndex);
+    expect(label).toContain('t("statScore")');
+  });
+});

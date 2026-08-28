@@ -350,11 +350,25 @@ describe("auth-form.module.css never sets outline: none", () => {
 // invariant over the same AST `jsxElements`/`descendants` already scan.
 // ---------------------------------------------------------------------------------------
 
-/** `true` for a literal `null` or the `undefined` identifier — the two spellings of "this
- *  branch renders nothing" a JSX-mount ternary uses in this codebase. */
+/** `true` for a JSX fragment (`<>...</>`) whose only children, if any, are whitespace-only
+ *  JSX text — i.e. an empty-fragment alternate (`<></>` or `<> </>`), the third spelling of
+ *  "this branch renders nothing" a JSX-mount ternary can use alongside `null`/`undefined`
+ *  (TEST95-P1, `Owner's Inbox/pr-review-archive/cografya_web-95.md`). A fragment that
+ *  actually wraps real content (`<>fallback</>`) is NOT nullish and must not match. */
+function isEmptyJsxFragment(node: ts.Node): boolean {
+  return (
+    ts.isJsxFragment(node) &&
+    node.children.every((child) => ts.isJsxText(child) && child.text.trim() === "")
+  );
+}
+
+/** `true` for a literal `null`, the `undefined` identifier, or an empty JSX fragment — the
+ *  spellings of "this branch renders nothing" a JSX-mount ternary uses in this codebase. */
 function isNullishBranch(node: ts.Node): boolean {
   return (
-    node.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(node) && node.text === "undefined")
+    node.kind === ts.SyntaxKind.NullKeyword ||
+    (ts.isIdentifier(node) && node.text === "undefined") ||
+    isEmptyJsxFragment(node)
   );
 }
 
@@ -380,6 +394,69 @@ describe("a role=status/aria-live node is never the consequent of a null-alterna
     for (const conditional of nullAlternateConditionals) {
       expect(containsStatusOrLiveNode(conditional.whenTrue)).toBe(false);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------------------
+// TEST95-P1 (`Owner's Inbox/pr-review-archive/cografya_web-95.md`): `isNullishBranch` above
+// used to recognize only a literal `null` and the `undefined` identifier as "this branch
+// renders nothing" — an empty-fragment alternate (`cond ? <p role="status">...</p> : <></>`)
+// carries the exact same A11Y93-I1 mount-timing hazard (the status node's role and its first
+// content both arrive in the same commit) but went unrecognized, so the real-files scan above
+// would have silently skipped a violation shaped this way. No island in this repo writes this
+// pattern today, so — the same reasoning the TA93R2-M1 block below gives for its own detector —
+// this is a synthetic-fixture positive/negative control, not a real-files scan.
+// ---------------------------------------------------------------------------------------
+
+describe("isNullishBranch also recognizes an empty JSX fragment as nullish (TEST95-P1)", () => {
+  it("treats `<></>` as a nullish ternary alternate — the revert-to-red case: before the fix this returned false", () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        return <div>{cond ? <p role="status">done</p> : <></>}</div>;
+      }
+    `);
+    const [conditional] = descendants(ast, ts.isConditionalExpression);
+    if (!conditional) throw new Error("unreachable");
+    expect(isNullishBranch(conditional.whenFalse)).toBe(true);
+  });
+
+  it("treats whitespace-only `<> </>` as nullish too", () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        return <div>{cond ? <p role="status">done</p> : <> </>}</div>;
+      }
+    `);
+    const [conditional] = descendants(ast, ts.isConditionalExpression);
+    if (!conditional) throw new Error("unreachable");
+    expect(isNullishBranch(conditional.whenFalse)).toBe(true);
+  });
+
+  it("does NOT treat a fragment that wraps real content as nullish (false-positive control)", () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        return <div>{cond ? <p role="status">done</p> : <>fallback</>}</div>;
+      }
+    `);
+    const [conditional] = descendants(ast, ts.isConditionalExpression);
+    if (!conditional) throw new Error("unreachable");
+    expect(isNullishBranch(conditional.whenFalse)).toBe(false);
+  });
+
+  it("the full null-alternate scan now also flags a status node consequent to an empty-fragment alternate", () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        return <div>{cond ? <p role="status">done</p> : <></>}</div>;
+      }
+    `);
+    const conditionals = descendants(ast, ts.isConditionalExpression);
+    const nullAlternateConditionals = conditionals.filter((c) => isNullishBranch(c.whenFalse));
+    expect(nullAlternateConditionals).toHaveLength(1);
+    const [conditional] = nullAlternateConditionals;
+    if (!conditional) throw new Error("unreachable");
+    // This is the same shape A11Y93-I1 fixed for the `null` case — the assertion below is the
+    // one the production scan above would run, made explicit here as proof this fixture is
+    // exactly the regression class the detector must catch.
+    expect(containsStatusOrLiveNode(conditional.whenTrue)).toBe(true);
   });
 });
 
@@ -483,6 +560,42 @@ describe("the &&-guarded-status-mount detector fires on the shape it exists to c
       }
     `);
     expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(0);
+  });
+
+  // TEST95-M1 (`Owner's Inbox/pr-review-archive/cografya_web-95.md`): three compound
+  // short-circuit shapes the detector already catches today but that carried no committed
+  // test of their own — each is added below as its own positive control, the same pattern
+  // as the four cases above.
+
+  it('flags `cond2 && <Y role="status">` when it sits inside a ternary\'s alternate branch (`cond ? <X/> : (cond2 && <Y role="status"/>)`)', () => {
+    const ast = parseSource(`
+      function Demo({ cond, cond2 }: { cond: boolean; cond2: boolean }) {
+        return (
+          <div>
+            {cond ? <p className="note">x</p> : cond2 && <p role="status">done</p>}
+          </div>
+        );
+      }
+    `);
+    expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(1);
+  });
+
+  it('flags a chained `a && b && <Y role="status"/>`', () => {
+    const ast = parseSource(`
+      function Demo({ a, b }: { a: boolean; b: boolean }) {
+        return <div>{a && b && <p role="status">done</p>}</div>;
+      }
+    `);
+    expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(1);
+  });
+
+  it('flags `Boolean(cond) && <X role="status"/>`', () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        return <div>{Boolean(cond) && <p role="status">done</p>}</div>;
+      }
+    `);
+    expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(1);
   });
 });
 

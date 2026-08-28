@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { LockIcon } from "@/components/lock-icon";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import {
   FAVORITES_FETCH_TIMEOUT_MS,
@@ -160,7 +161,7 @@ export function FavoriteButton({
               `CardArrow`'s own docblock gives (DEC 2026-08-05e): `lib/fonts.ts` only
               self-hosts the `latin`/`latin-ext` subsets, so a glyph from outside those blocks
               would silently fall back to whatever the OS substitutes. */}
-          <LockIcon />
+          <LockIcon variant="compact" className={styles.lockIcon} />
           {t("label")}
         </button>
       )}
@@ -170,30 +171,5 @@ export function FavoriteButton({
         </p>
       )}
     </div>
-  );
-}
-
-/** Decorative sign-in cue for the guest branch of {@link FavoriteButton} (A2 fix) — the
- *  control's own `aria-label` already carries the fact, so this icon is never the only
- *  channel. */
-function LockIcon() {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      width="14"
-      height="14"
-      aria-hidden="true"
-      focusable="false"
-      className={styles.lockIcon}
-    >
-      <path
-        d="M5 7V5a3 3 0 0 1 6 0v2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-      <rect x="3.5" y="7" width="9" height="6" rx="1.2" fill="currentColor" />
-    </svg>
   );
 }
