@@ -565,14 +565,39 @@ main {
    it is pulling the second section up so the Türkiye thumbnail's top edge clears the fold at
    1440×900. The hero keeps its own scale; only the air around it shrinks. */
 .hero {
+  /* `position: relative` + an explicit `z-index` make `.hero` a real stacking context
+     (→ `Owner's Inbox/anasayfa-yenileme/plan.md` §5.10, B3): `home.module.css`'s
+     `.heroTexture` is an absolutely-positioned `z-index: 0` decorative layer, and without a
+     stacking context of its OWN to be confined to, a negative/auto z-index descendant can
+     escape to the nearest ancestor stacking context instead of staying safely behind this
+     box's own in-flow children. */
+  position: relative;
+  z-index: 0;
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 26px 32px;
 }
 
+/* The steeper clamp (B11, → plan §5.14) reaches the SAME 2.6rem ceiling `h1`'s shared global
+   rule already sets (untouched, above) sooner and holds closer to it across more of the
+   viewport range — a hero-scoped override, not a change to the shared token. Composes with the
+   `<br>` two-line split `t.rich()` renders (B2, → plan §5.9): both live in this one rule set,
+   changed together rather than as two sequential edits to the same selector.
+
+   THE FLOOR IS DELIBERATELY THE SAME 1.9rem THE SHARED GLOBAL RULE USES, not the plan's own
+   originally-proposed 2.1rem — a rendered-sample correction (plan §5.9/§11's own named
+   uncertainty). A 2.1rem floor measured as a real regression at 320/360px: combined with the
+   new explicit `<br>`, it forced a FIFTH wrapped line where the pre-existing hero (no `<br>`,
+   1.9rem floor) held to four — the exact "unwanted third [additional] wrapped line" §5.9 named
+   as the thing to verify before calling this done. Keeping the SAME floor as the shared rule
+   means the narrow-viewport size is byte-for-byte what it was before this change (both clamp
+   formulas resolve to their floor at 320px), so nothing regresses there; the coefficient below
+   is only what changed, and it is still what makes this rule reach 2.6rem at ~693px instead of
+   the shared rule's ~862px — "sooner", the plan's own stated intent, without the regression. */
 .hero h1 {
   max-width: 18ch;
+  font-size: clamp(1.9rem, 1.3rem + 3vw, 2.6rem);
 }
 
 .hero-actions {

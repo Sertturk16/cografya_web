@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { FeaturedCards, type FeaturedCardItem } from "@/components/home/featured-cards";
 import { SeaToday } from "@/components/home/sea-today";
+import { ToolCards } from "@/components/home/tool-cards";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
 import {
@@ -25,7 +26,65 @@ import {
 } from "@/lib/home/marine-summary";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { TOOL_HUB_PATHNAME } from "@/lib/tools/tool-registry";
 import styles from "@/components/home/home.module.css";
+
+/**
+ * The hero stat strip's game-modes card (finding 2, → plan §5.2) — a HARDCODED literal, not a
+ * shared export from `app/[locale]/oyun/page.tsx`, because editing that file is out of scope
+ * for this task (plan §3). It tracks the three static routes that exist today; a future 4th
+ * mode must update this literal too:
+ * `/oyun/bolge-bulma`, `/oyun/81-il`, `/oyun/bolge-bolge-il`.
+ */
+const GAME_MODE_COUNT = 3;
+
+/**
+ * The eyebrow badge glyphs (B6, → plan §5.12) — decorative, `aria-hidden`, drawn inline in the
+ * repo's established icon idiom (`components/game/game-icons.tsx`: `stroke="currentColor"`,
+ * 24×24 grid). Chosen HERE, at the call site, and passed into `FeaturedCards` as a prop — that
+ * component stays entity-agnostic by construction (its own docblock), so "which glyph means
+ * province vs. country" is this page's decision, never its.
+ */
+function ProvinceGlyph() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" />
+      <circle cx="12" cy="10" r="2.6" />
+    </svg>
+  );
+}
+
+function CountryGlyph() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <ellipse cx="12" cy="12" rx="4.2" ry="9" />
+    </svg>
+  );
+}
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;
@@ -206,30 +265,76 @@ export default async function HomePage({ params }: PageProps) {
       <JsonLd schema={[websiteJsonLd(locale), organizationJsonLd()]} />
 
       <section className="hero">
-        <h1>{t("heading")}</h1>
+        {/* Pure decoration, painted BEHIND every child below it (`.heroTexture` is
+            `z-index: 0`; the rest of the hero is unpositioned in-flow content, which always
+            paints after a `z-index: auto`/`0` positioned sibling that precedes it in the DOM —
+            `DESIGN.md` §6.1 rule 1 checked and applied, see the SVG's own docblock). */}
+        <div className={styles.heroTexture} aria-hidden="true" />
+
+        {/* `t.rich`, not string interpolation (finding 1 + B2/B11, → plan §5.1/§5.9/§5.14): the
+            accented subject noun and the two-line split are markup, not text, so they cannot be
+            expressed as a plain translated string. `<br></br>` (an empty tag pair) is the ICU
+            rich-text idiom for a void element — ICU tag syntax has no self-closing form. */}
+        <h1>
+          {t.rich("heading", {
+            accent: (chunks) => <span className={styles.heroAccent}>{chunks}</span>,
+            br: () => <br />,
+          })}
+        </h1>
         <p className="lede">{t("lede")}</p>
 
-        {/* Scope chips. Every number is COUNTED from the payload the page already fetched —
-            a hardcoded "81 il" is a geography fact on the web side and would go quietly wrong
-            the day the api's set changes. A count that came back zero prints no chip at all,
-            and the LIST ITSELF is gated too: with the api unreachable at build all three are
-            zero, and this page's rule everywhere else (FeaturedCards, SeaToday) is to render
-            nothing rather than an empty shell. */}
-        {(provinces.length > 0 || countries.length > 0 || scope.pointCount > 0) && (
-          <ul role="list" className={styles.chips}>
-            {provinces.length > 0 && (
-              <li className="chip">{t("chipProvinces", { count: provinces.length })}</li>
-            )}
-            {countries.length > 0 && (
-              <li className="chip">{t("chipCountries", { count: countries.length })}</li>
-            )}
-            {scope.pointCount > 0 && (
-              <li className="chip">
-                {t("chipMarine", { basins: scope.basinCount, points: scope.pointCount })}
+        {/* Hero stat-card strip (finding 2 + B5, → plan §5.2/§5.11). Every number is COUNTED
+            from the payload the page already fetched — a hardcoded "81 il" is a geography fact
+            on the web side and would go quietly wrong the day the api's set changes. Four of
+            the five cards keep the OLD per-card gate (a count that came back zero prints no
+            card); the game-modes card is a STATIC fact, not api-derived, so it is always true —
+            the row can therefore no longer be fully empty during a total api outage the way the
+            old three-chip row could. That is not a regression: no card states anything false in
+            that state, it is a more complete "honest partial shape" (plan §5.2), so the OUTER
+            gate that used to hide the whole `<ul>` is simplified away rather than kept as
+            effectively-dead code. */}
+        <ul role="list" className={styles.statStrip}>
+          {provinces.length > 0 && (
+            <li className={styles.statCard}>
+              <span className={styles.statNumber}>{format.number(provinces.length)}</span>
+              <span className={styles.statLabel}>
+                {t("statProvincesLabel", { count: provinces.length })}
+              </span>
+            </li>
+          )}
+          {countries.length > 0 && (
+            <li className={styles.statCard}>
+              <span className={styles.statNumber}>{format.number(countries.length)}</span>
+              <span className={styles.statLabel}>
+                {t("statCountriesLabel", { count: countries.length })}
+              </span>
+            </li>
+          )}
+          {/* Both marine cards share ONE gate (plan §5.11) — they show or hide together,
+              mirroring the single existing gate the pre-split `chipMarine` pill used. */}
+          {scope.pointCount > 0 && (
+            <>
+              <li className={styles.statCard}>
+                <span className={styles.statNumber}>{format.number(scope.basinCount)}</span>
+                <span className={styles.statLabel}>
+                  {t("statSeasLabel", { count: scope.basinCount })}
+                </span>
               </li>
-            )}
-          </ul>
-        )}
+              <li className={styles.statCard}>
+                <span className={styles.statNumber}>{format.number(scope.pointCount)}</span>
+                <span className={styles.statLabel}>
+                  {t("statPointsLabel", { count: scope.pointCount })}
+                </span>
+              </li>
+            </>
+          )}
+          <li className={styles.statCard}>
+            <span className={styles.statNumber}>{format.number(GAME_MODE_COUNT)}</span>
+            <span className={styles.statLabel}>
+              {t("statGameModesLabel", { count: GAME_MODE_COUNT })}
+            </span>
+          </li>
+        </ul>
 
         <div className="hero-actions">
           <Link className="btn btn-primary" href="/turkiye">
@@ -252,14 +357,19 @@ export default async function HomePage({ params }: PageProps) {
 
           Two sibling `<h2>`s, not an `<h2>` + `<h3>`: these are two peer destinations, and the
           heading level is the page's OUTLINE, not a type scale (`SEO-POLICY.md` §B3.7). The
-          world block is the quieter of the two — that is spacing, in
-          `.exploreBlockSecondary`, not a demoted heading.
+          world block is the quieter of the two — that is spacing, in `.sectionGroupTight`, not
+          a demoted heading. One "HARİTALAR" eyebrow sits above the group (B7, → plan §5.13),
+          not one per section — Türkiye, Dünya and `SeaToday` below all read as one group.
 
           Still inline here rather than a component, for the same reason the game band below
           is: no data, no props, no branch. `<Link>` takes the UNLOCALIZED route and the
           routing table localizes it — these are static hub paths, not slug routes, so nothing
           here needs `getPathname`. */}
       <section className="section" aria-labelledby="home-explore-heading">
+        <div className={styles.sectionEyebrow}>
+          <span>{t("eyebrowMaps")}</span>
+          <span className={styles.sectionEyebrowRule} aria-hidden="true" />
+        </div>
         <h2 id="home-explore-heading">{t("mapHeading")}</h2>
         <p className={styles.exploreBody}>{t("mapBody")}</p>
         <p className={styles.exploreLink}>
@@ -267,7 +377,7 @@ export default async function HomePage({ params }: PageProps) {
         </p>
       </section>
 
-      <section className={styles.exploreBlockSecondary} aria-labelledby="home-world-heading">
+      <section className={styles.sectionGroupTight} aria-labelledby="home-world-heading">
         <h2 id="home-world-heading">{t("worldHeading")}</h2>
         <p className={styles.exploreBody}>{t("worldBody")}</p>
         <p className={styles.exploreLink}>
@@ -280,12 +390,16 @@ export default async function HomePage({ params }: PageProps) {
       <FeaturedCards
         headingId="home-discover-provinces"
         heading={t("discoverProvinces")}
+        eyebrow={t("eyebrowProvinces")}
+        icon={<ProvinceGlyph />}
         items={provinceCards}
       />
 
       <FeaturedCards
         headingId="home-discover-countries"
         heading={t("discoverCountries")}
+        eyebrow={t("eyebrowCountries")}
+        icon={<CountryGlyph />}
         items={countryCards}
       />
 
@@ -294,6 +408,10 @@ export default async function HomePage({ params }: PageProps) {
           repeating it on the homepage would be shipping a known fault. The game's own brand
           name is the one the game page uses — this surface invents no third name for it. */}
       <section className="section" aria-labelledby="home-game-heading">
+        <div className={styles.sectionEyebrow}>
+          <span>{t("eyebrowGame")}</span>
+          <span className={styles.sectionEyebrowRule} aria-hidden="true" />
+        </div>
         <div className={styles.gameBand}>
           <div>
             <h2 id="home-game-heading" className={styles.gameHeading}>
@@ -310,16 +428,23 @@ export default async function HomePage({ params }: PageProps) {
       {/* The CBS tool hub's static internal link — `SEO-POLICY.md` §B8 8.1 asks every
           indexable page to be reachable from at least one, and the hub also sits in the header
           nav (→ DEC 2026-08-19g md.1). Two entrances rather than one is deliberate: the nav is
-          a list of names, and this band is where the tool tier gets a sentence.
-
-          The same `<section>` + `<h2>` + one-link pattern the two map bands above use, so it
-          needs no CSS of its own. `<Link>` takes the UNLOCALIZED route and the routing table
-          localizes it. */}
+          a list of names, and this band is where the tool tier gets three real cards (finding
+          7, → plan §5.5) — `ToolCards` reuses `Tools.hub`'s already-bilingual name/body strings
+          verbatim, zero new copy. `toolsCta` is KEPT, repurposed as the "see all" link under
+          the cards, pointing at the SAME shared `TOOL_HUB_PATHNAME` constant `/araclar` itself
+          uses rather than a hand-duplicated string — this is also what preserves `/araclar`'s
+          own static-internal-link reachability from the homepage (`SEO-POLICY.md` §B8.1) even
+          though PR-2 converts the header's own direct `/araclar` link into a grouped dropdown
+          trigger. */}
       <section className="section" aria-labelledby="home-tools-heading">
+        <div className={styles.sectionEyebrow}>
+          <span>{t("eyebrowTools")}</span>
+          <span className={styles.sectionEyebrowRule} aria-hidden="true" />
+        </div>
         <h2 id="home-tools-heading">{t("toolsHeading")}</h2>
-        <p className={styles.exploreBody}>{t("toolsBody")}</p>
+        <ToolCards />
         <p className={styles.exploreLink}>
-          <Link href="/araclar">{t("toolsCta")}</Link>
+          <Link href={TOOL_HUB_PATHNAME}>{t("toolsCta")}</Link>
         </p>
       </section>
 

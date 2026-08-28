@@ -24,14 +24,92 @@
       DESIGN.md §5 bans, which governs TEXT only.
    ============================================================================= */
 
-/* ---- Hero scope chips ---- */
-.chips {
-  list-style: none;
+/* ---- Section eyebrow (B7, → plan §5.13) ----
+   Shared across every in-scope section: the map-hub group (once, above the group — ties into
+   `.sectionGroupTight` below), each "Bugün keşfet" grid (with its own badge icon, passed in by
+   `FeaturedCards`' caller — see that component), the game band and the tools band. Every word
+   was checked against `CONTENT-STYLE.md` §22's banned-filler class before being chosen (plan
+   §5.13) — CSS-only, no new component. */
+.sectionEyebrow {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-slate);
+}
+
+.sectionEyebrowRule {
+  flex: 1 1 auto;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ---- Hero accent word (finding 1 + B2, → plan §5.9) ----
+   `t.rich("heading", { accent: … })` wraps only the subject noun — never a raw colour, the
+   shared token. */
+.heroAccent {
+  color: var(--color-primary);
+}
+
+/* ---- Hero decorative texture (B3, → plan §5.10) ----
+   Pure brand chrome, not a data encoding (`DESIGN.md` §6.1 rule 1, checked and applied — see
+   the SVG's own docblock). `mask-image` keeps the visible colour a `var(--token)`: the SVG
+   itself carries no fill, only alpha, so `background-color` below is the only place a colour
+   is chosen. `aria-hidden` in the markup, `pointer-events: none` here — it must never
+   intercept a click meant for the CTAs painted after it. */
+.heroTexture {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  mask-image: url("/hero-texture.svg");
+  mask-repeat: no-repeat;
+  mask-position: right center;
+  mask-size: cover;
+  -webkit-mask-image: url("/hero-texture.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: right center;
+  -webkit-mask-size: cover;
+  background-color: var(--color-border);
+  opacity: 0.5;
+}
+
+/* ---- Hero stat-card strip (finding 2 + B5, → plan §5.2/§5.11) ----
+   Replaces the former `.chips`/global `.chip` pill row for THIS row only — the global `.chip`
+   class in `app/globals.css` is untouched and still serves the `kitaplar` book cards.
+   Generalizes `SeaToday`'s own "big number over small label" idiom (`.basinRowValue`/
+   `.basinRowLabel`, below) at a slightly larger hero scale — precedent, not invention. Every
+   child sits ABOVE `.heroTexture` by DOM order (`.heroTexture` is `z-index: 0`, everything
+   below is unpositioned in-flow content, which paints after it). */
+.statStrip {
+  list-style: none;
   padding: 0;
   margin: 18px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statNumber {
+  font-family: var(--font-heading);
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem);
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  line-height: 1.1;
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: var(--color-slate);
 }
 
 /* ---- Explore band (the two map hubs) ----
@@ -69,11 +147,17 @@
   min-height: 24px;
 }
 
-/* The world block is the SECONDARY half of the split band: same heading level (two peer
-   destinations — `SEO-POLICY.md` §B3.7 keeps headings an outline, not a type scale), but it
-   opens tighter than a full `.section` so the pair reads as one band with a leading half
-   rather than as two competing heroes. `--container-max` and every type token are untouched. */
-.exploreBlockSecondary {
+/* The world block is the SECONDARY half of a THREE-member group (→ plan §5.15, B15): Türkiye,
+   Dünya and (below) `SeaToday`'s own section all share this tighter opening so the trio reads
+   as one visually grouped band under the "HARİTALAR" eyebrow, rather than as an undifferentiated
+   continuation of the stack below it — the gap İRİS's tour actually observed (only 2 of the 3
+   intended members carried it before this section was renamed and given a second call site).
+   Same heading level throughout (peer destinations — `SEO-POLICY.md` §B3.7 keeps headings an
+   outline, not a type scale). `--container-max` and every type token are untouched: this is a
+   RENAME (was `.exploreBlockSecondary`) plus one new call site, zero new spacing values — the
+   ordinary 40px `.section` gap before the first "Bugün keşfet" grid is what marks the group's
+   own boundary, deliberately larger than this 24px intra-group gap. */
+.sectionGroupTight {
   margin-top: 24px;
 }
 
@@ -149,19 +233,31 @@
 }
 
 /* ---- Featured entity cards ---- */
+/* `minmax(220px, 260px)`, NOT `1fr` (finding 4, → plan §5.6): with exactly `FEATURED_LIMIT`
+   (3) items, an unbounded `1fr` track stretches the cards to fill the whole row at any width
+   where they fit, and strands a lone 3rd card full-width in its own row at narrower widths —
+   both real, reproduced `auto-fit`/`1fr` pitfalls, not a data or React bug. Capping the track
+   at 260px (≈ a 4-column rhythm inside the 1080px content width) plus `justify-content: center`
+   centers the resulting narrower-than-container track set instead of leaving it flush-left,
+   which also fixes the isolated-3rd-card case: it is now one centered, capped-width column
+   instead of a full-width stretch. Shared by BOTH "Bugün keşfet" grids and the tools band
+   (`components/home/tool-cards.tsx`) — the same fix, the same generic 3-card layout. */
 .cardGrid {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 260px));
+  justify-content: center;
   gap: 14px;
 }
 
 /* The WHOLE card is the anchor: one target, one accessible name, nothing interactive nested
    inside it. `min-height` keeps a card whose fact row is absent the same height as its
-   neighbours. */
+   neighbours. `position: relative` is what lets `.cardArrow` (below) anchor to the card's own
+   box rather than the page. */
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -203,6 +299,32 @@
 .cardFactValue {
   font-weight: 700;
   color: var(--color-ink);
+}
+
+/* The description line on a TOOL card (`components/home/tool-cards.tsx`) — the same "one line
+   under the name" slot `.cardMeta`/`.cardFact` play on an entity card, under its own name so a
+   tool card's longer sentence is never confused with either. */
+.toolCardBody {
+  margin-top: auto;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+/* The trailing arrow (B6, → plan §5.12): small, decorative, WORDLESS — `aria-hidden` in the
+   markup. Resting taupe / hover-or-focus primary mirrors `.card:hover .cardName` directly
+   above, the SAME colour-shift pattern on a second element (header note 3: a resting state —
+   the taupe arrow — already carries the meaning; the colour only sharpens on interaction). */
+.cardArrow {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  color: var(--color-taupe);
+  display: inline-flex;
+}
+
+.card:hover .cardArrow,
+.card:focus-within .cardArrow {
+  color: var(--color-primary);
 }
 
 /* ---- Game invite band ---- */

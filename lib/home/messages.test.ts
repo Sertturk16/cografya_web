@@ -24,9 +24,15 @@ const HOME_KEYS = [
   "lede",
   "ctaMap",
   "ctaAbout",
-  "chipProvinces",
-  "chipCountries",
-  "chipMarine",
+  // The hero stat-card strip (→ `Owner's Inbox/anasayfa-yenileme/plan.md` §5.11): five
+  // label-only keys, the count rendered separately via `format.number()`. Supersedes the
+  // former `chipProvinces`/`chipCountries`/`chipMarine` combined-sentence keys — the same
+  // five facts (il, ülke, deniz, referans noktası, oyun modu), a different shape.
+  "statProvincesLabel",
+  "statCountriesLabel",
+  "statSeasLabel",
+  "statPointsLabel",
+  "statGameModesLabel",
   "mapHeading",
   "mapBody",
   "mapLinkLabel",
@@ -45,21 +51,33 @@ const HOME_KEYS = [
   "seaLink",
   "discoverProvinces",
   "discoverCountries",
+  // The eyebrow labels above each section (plan §5.13) — chrome copy, not entity names, so
+  // they carry no `GLOSSARY.md` obligation beyond what §9 of that plan already confirms.
+  "eyebrowMaps",
+  "eyebrowProvinces",
+  "eyebrowCountries",
+  "eyebrowGame",
+  "eyebrowTools",
   "gameHeading",
   "gameBody",
   "gameCta",
   // The CBS tool band (→ DEC 2026-08-19a md.3/md.4): the tool hub's static internal link from
-  // the homepage, alongside the header nav entry.
+  // the homepage, alongside the header nav entry. `toolsBody` is gone (plan §5.5) — the band is
+  // now three real cards (`components/home/tool-cards.tsx`), and `toolsCta` is repurposed as
+  // the "see all" link under them rather than deleted.
   "toolsHeading",
-  "toolsBody",
   "toolsCta",
 ] as const;
 
-/** Placeholders each templated key must carry, so a message can never drop an interpolation. */
+/**
+ * Placeholders each templated key must carry, so a message can never drop an interpolation.
+ *
+ * The five `stat*Label` keys are DELIBERATELY absent here (plan §5.11): their TR values are
+ * plain fixed words with no `{count}` token at all — Turkish needs none — so asserting a
+ * required `{count` placeholder against the TR catalogue would fail on correct code. EN's own
+ * ICU plural form satisfies pluralization without this assertion's help.
+ */
 const REQUIRED_PLACEHOLDERS: Record<string, readonly string[]> = {
-  chipProvinces: ["count"],
-  chipCountries: ["count"],
-  chipMarine: ["basins", "points"],
   seaMedian: ["count"],
   seaScope: ["basins", "points", "provinces"],
 };
