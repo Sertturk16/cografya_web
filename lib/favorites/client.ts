@@ -117,31 +117,52 @@ export interface SaveFavoriteResult {
  * `PUT` — idempotent add, no request body (plan §2/§5.1: the target is entirely the route
  * param). A single discrete click, not a periodic/teardown save — no `keepalive`, unlike
  * `saveVideoProgress`'s tab-hide trigger — nothing here needs to survive page unload.
+ *
+ * Carries its own `AbortController` bounded by `FAVORITES_FETCH_TIMEOUT_MS` — the same
+ * shape `submitGameRound` (`lib/game-rounds/client.ts`) uses for its write, and the same
+ * timeout VALUE this file's own `fetchFavorites` already uses for its read (`CODE91-M1`:
+ * this write previously carried no timeout at all, unlike the read in this same file). A
+ * fresh `controller`/`timeout` per call — no shared/module-level state, so concurrent calls
+ * never race each other's abort. `clearTimeout` runs unconditionally in `finally`, covering
+ * success, non-2xx, network error and abort alike — no leaked timer on any path.
  */
 export async function saveFavorite(target: FavoriteTargetParam): Promise<SaveFavoriteResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FAVORITES_FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(buildFavoriteUrl(target), {
       method: "PUT",
       credentials: "same-origin",
       cache: "no-store",
+      signal: controller.signal,
     });
     return { ok: res.status === 200 };
   } catch {
     return { ok: false };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
 /** `DELETE` — idempotent remove, no request body. The BFF answers 204 on every genuine
- *  success (plan §5.1's unconditional-204 design), never 200. */
+ *  success (plan §5.1's unconditional-204 design), never 200.
+ *
+ *  Same `AbortController` + `FAVORITES_FETCH_TIMEOUT_MS` treatment as `saveFavorite` above
+ *  (`CODE91-M1`) — a fresh controller per call, `clearTimeout` unconditional in `finally`. */
 export async function removeFavorite(target: FavoriteTargetParam): Promise<SaveFavoriteResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FAVORITES_FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(buildFavoriteUrl(target), {
       method: "DELETE",
       credentials: "same-origin",
       cache: "no-store",
+      signal: controller.signal,
     });
     return { ok: res.status === 204 };
   } catch {
     return { ok: false };
+  } finally {
+    clearTimeout(timeout);
   }
 }
