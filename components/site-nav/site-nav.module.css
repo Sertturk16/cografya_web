@@ -349,9 +349,17 @@
     gap: 3px;
   }
 
+  /* The `.btn-sm` size variant (`app/globals.css`, `DESIGN.md` §4, → PR #103 review
+     `DF103-I1`), applied via its own `--btn-sm-*` tokens rather than the class name itself —
+     this is the one caller that needs it scoped to ONLY this breakpoint (see the block
+     comment above `.authNav`), and a class name cannot express that on its own. Reading the
+     same tokens `.btn-sm` reads means these values and `.btn-sm`'s own declaration cannot
+     independently drift; the computed box (padding/border-width/font-size) is unchanged from
+     before this fix, so every measurement in `DESIGN.md` §4 (1072px TR / 965px EN row width,
+     56.47px row height) still holds byte-for-byte. */
   .authNav :global(.btn) {
-    padding: 5px 7px;
-    border-width: 1px;
-    font-size: 0.8rem;
+    padding: var(--btn-sm-padding);
+    border-width: var(--btn-sm-border-width);
+    font-size: var(--btn-sm-font-size);
   }
 }

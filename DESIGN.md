@@ -82,10 +82,12 @@ ramp and not the Terra brand hues.
 - **Rhythm:** page padding `40px 56px` (`.page`); section gap `40px` (`.section`); container
   `max 1120px`, inline padding `20px`. Radii: `10px` controls, `16px` cards/hero.
 - **Components (all in `app/globals.css` / CSS Modules):** `.btn` (`.btn-primary` filled
-  terracotta, `.btn-ghost` bordered), `.card`, `.hero` (surface→bg gradient), `.chip`,
-  `.province-card` grid, `.breadcrumb` (visual, pairs with `BreadcrumbList` JSON-LD),
-  `.placeholder-note` (dev-content flag, warning left-border). Component styling uses CSS
-  Modules + the global token layer — **no hardcoded brand hex outside the token layer.**
+  terracotta, `.btn-ghost` bordered; `.btn-sm` a real, reusable SIZE variant — compose as
+  `.btn .btn-primary/.btn-ghost .btn-sm`, → PR #103 review `DF103-I1`, named below), `.card`,
+  `.hero` (surface→bg gradient), `.chip`, `.province-card` grid, `.breadcrumb` (visual, pairs
+  with `BreadcrumbList` JSON-LD), `.placeholder-note` (dev-content flag, warning left-border).
+  Component styling uses CSS Modules + the global token layer — **no hardcoded brand hex
+  outside the token layer.**
 - **TWO breakpoint numbers, and they do different jobs.** The **nav-collapse** breakpoint is
   **`66rem` (1056px)**: below it the header is a single compact row (brand + icon-only search
   trigger + hamburger) with the nav in a disclosure panel; from it up the nav is inline and the
@@ -197,6 +199,23 @@ ramp and not the Terra brand hues.
      `site-nav/site-nav.module.css`, `site-search/site-search.module.css`) — all three carry the
      `70rem` value now; none of them names the number in prose either, for the same reason as
      always.
+  6. **The compaction from step 2 is now a NAMED design-system variant, not an unnamed
+     one-off (2026-08-29, fix round, PR #103 review `DF103-I1`).** The same page's hero CTAs
+     ("Türkiye Haritası" / "Platform Hakkında") render at full `.btn` size, so the header's
+     compacted auth buttons and the hero's full-size ones were two different renderings of the
+     same `.btn` family on one page with no documented variant behind the smaller one — a real,
+     measurable design-system inconsistency, independent of whether the underlying compaction
+     itself was justified (it was: step 2 above). The fix names it: `.btn-sm` (`app/globals.css`,
+     component list above), a real reusable size-only modifier any future caller can apply
+     directly (`className="btn btn-primary btn-sm"`) for a permanently smaller button, with no
+     responsive gate. The header's own application stays scoped to `@media (min-width: 70rem)`
+     only (`site-nav.module.css`) — because unlike a generic future caller, it specifically
+     needs full-size buttons below the breakpoint, where the mobile panel has no width
+     pressure — but now reads `.btn-sm`'s own `--btn-sm-padding` / `--btn-sm-border-width` /
+     `--btn-sm-font-size` tokens instead of re-typing the three numbers, so the header's rule
+     and `.btn-sm`'s own declaration cannot independently drift. The computed box is
+     BYTE-IDENTICAL to before this fix (same `5px 7px` / `1px` / `0.8rem`), so no number in
+     steps 1–5 above needed re-measurement — this is a naming fix, not a sizing fix.
 
   **The collapse widths below 1024px remain informational only, and are NOT re-measured here.**
   §4's own row 2 above (979px TR / 907px EN, seven links) predates this change and nothing in

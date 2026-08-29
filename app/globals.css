@@ -314,6 +314,16 @@
   --container-max: 1120px;
   --radius: 10px;
   --radius-lg: 16px;
+  /* `.btn-sm`'s own size values (→ PR #103 review `DF103-I1`), named as tokens rather than
+     literals inside `.btn-sm` below so a SCOPED caller — today only the header's auth links,
+     `components/site-nav/site-nav.module.css`'s `@media (min-width: 70rem)` block — can apply
+     the identical compact size without a second hardcoded copy of the same three numbers. That
+     second copy is exactly the "duplicated literal" defect class this repo has already paid
+     for twice with breakpoint numbers (`CODE62-M1`, and the reason `TA103-I1`'s own test
+     exists); this indirection means the two declarations cannot independently go stale. */
+  --btn-sm-padding: 5px 7px;
+  --btn-sm-border-width: 1px;
+  --btn-sm-font-size: 0.8rem;
   /* Sticky site-header height (padding-block 12px×2 + ~28px brand row + 1px border).
      Referenced by scroll-margin-top on deep-link anchor targets so a followed fragment
      lands below the opaque sticky header, not underneath it.
@@ -557,6 +567,24 @@ main {
 .btn-ghost:hover {
   background: var(--color-surface);
   color: var(--color-primary-dark);
+}
+
+/* `.btn-sm` — a real, named, reusable SIZE variant of `.btn` (→ DESIGN.md §4, PR #103 review
+   `DF103-I1`). It overrides ONLY size (padding, border-width, font-size, via the
+   `--btn-sm-*` tokens above) and leaves color/background/border-color untouched, so it
+   composes with `.btn-primary`/`.btn-ghost` without disturbing the filled/bordered
+   distinction either one carries — `className="btn btn-primary btn-sm"` (or `btn-ghost`) is
+   the intended, always-small usage for any future caller.
+   Its FIRST caller, the header's auth links, does not add this class name to its markup —
+   it needs the compact size ONLY above the nav-collapse breakpoint (below it the mobile panel
+   has no width pressure, so full-size buttons stay the more comfortable tap target), which a
+   class name alone cannot express. `site-nav.module.css`'s own `@media (min-width: 70rem)`
+   block applies these exact same `--btn-sm-*` tokens, scoped to `.authNav :global(.btn)`, for
+   that one responsive case — see `DESIGN.md` §4 for the measurement this satisfies. */
+.btn-sm {
+  padding: var(--btn-sm-padding);
+  border-width: var(--btn-sm-border-width);
+  font-size: var(--btn-sm-font-size);
 }
 
 /* ---- Hero (home) ---- */
