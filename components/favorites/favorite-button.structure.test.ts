@@ -55,6 +55,14 @@ function handleClickBody(): string {
   return start < 0 || end < 0 || end <= start ? "" : BUTTON.slice(start, end);
 }
 
+/** Isolates `performToggle` — the interrupted action shared by the authenticated click path
+ *  and the resume effect (uyelik-auth-redesign plan §5.6.1) — the same slicing technique. */
+function performToggleBody(): string {
+  const start = BUTTON.indexOf("const performToggle = useCallback(async () => {");
+  const end = BUTTON.indexOf("}, [favorited, target]);");
+  return start < 0 || end < 0 || end <= start ? "" : BUTTON.slice(start, end);
+}
+
 /** Isolates the fetch-effect's `.then()` callback — from the `fetchFavorites(...)` call
  *  through the closing `.finally(() => clearTimeout(timeout));` that ends the chain, the
  *  same "slice between two unique markers" technique `handleClickBody()` uses. */
@@ -174,18 +182,35 @@ describe("the click handler (§5.4)", () => {
     expect(gateCheck).toBeGreaterThan(guard);
   });
 
-  it("routes an unauthenticated click to /kayit with a returnTo, never spending a save call", () => {
+  it("opens the auth modal (requestAuth) on an unauthenticated click, never spending a save call (uyelik-auth-redesign plan §5.6.1, superseding the earlier /kayit redirect)", () => {
     const body = handleClickBody();
     const gate = body.indexOf('if (authState !== "authenticated")');
-    const target = body.indexOf('href: "/kayit"');
-    const ret = body.indexOf("return;", target);
+    const request = body.indexOf('requestAuth("favorite")');
+    const ret = body.indexOf("return;", request);
+    const toggleCall = body.indexOf("performToggle()");
     expect(gate).toBeGreaterThan(0);
-    expect(target).toBeGreaterThan(gate);
-    expect(ret).toBeGreaterThan(target);
+    expect(request).toBeGreaterThan(gate);
+    expect(ret).toBeGreaterThan(request);
+    // The gated branch's own `return;` precedes the authenticated-only save call.
+    expect(toggleCall).toBeGreaterThan(ret);
   });
 
-  it("sets the optimistic favorited value BEFORE awaiting the save/remove call, not after", () => {
+  it("no longer imports next/navigation's useRouter or i18n's getPathname — there is no page to redirect to", () => {
+    expect(BUTTON).not.toContain('from "next/navigation"');
+    expect(BUTTON).not.toContain("getPathname");
+    expect(BUTTON).not.toContain('href: "/kayit"');
+  });
+
+  it("the authenticated path calls the shared performToggle — the same function the resume effect calls", () => {
     const body = handleClickBody();
+    expect(body).toContain("await performToggle();");
+  });
+});
+
+describe("performToggle — the interrupted action shared by the click path and the resume effect (§5.6.1)", () => {
+  it("sets the optimistic favorited value BEFORE awaiting the save/remove call, not after", () => {
+    const body = performToggleBody();
+    expect(body).not.toBe("");
     const optimistic = body.indexOf("setFavorited(next)");
     const awaitCall = body.indexOf("await saveFavorite(target) : await removeFavorite(target)");
     expect(optimistic).toBeGreaterThan(0);
@@ -193,15 +218,15 @@ describe("the click handler (§5.4)", () => {
   });
 
   it("rolls back to the pre-click value inside the !result.ok branch (the Acceptance Criteria's own requirement)", () => {
-    const body = handleClickBody();
+    const body = performToggleBody();
     const failBranch = body.indexOf("if (!result.ok)");
     const rollback = body.indexOf("setFavorited(!next)", failBranch);
     expect(failBranch).toBeGreaterThan(0);
     expect(rollback).toBeGreaterThan(failBranch);
   });
 
-  it("clears any previous save-failed flag at the start of an authenticated click, never leaving a stale error visible", () => {
-    const body = handleClickBody();
+  it("clears any previous save-failed flag at the start, never leaving a stale error visible", () => {
+    const body = performToggleBody();
     const clear = body.indexOf("setSaveFailed(false)");
     const optimistic = body.indexOf("setFavorited(next)");
     expect(clear).toBeGreaterThan(0);
@@ -229,5 +254,24 @@ describe("the error message is a live region, announced to assistive tech (WCAG 
 
   it("the error paragraph is conditional on saveFailed, not always rendered", () => {
     expect(BUTTON).toContain("{saveFailed && (");
+  });
+});
+
+describe("the resume mechanism (uyelik-auth-redesign plan §5.6.1)", () => {
+  it("keeps the request id in a ref, watches the shared modal store, and consumes exactly once before resuming", () => {
+    expect(BUTTON).toContain("const authRequestId = useRef<string | null>(null);");
+    expect(BUTTON).toContain("modal.resolvedRequestId !== id");
+    expect(BUTTON).toContain("if (!consumeResolved(id)) return;");
+    expect(BUTTON).toContain("void performToggle();");
+  });
+
+  it("announces the resumed save via a dedicated sr-only role=status region, mirroring GameRoundSaveControl's own label-swap mechanism", () => {
+    expect(BUTTON).toContain("{justResumed && (");
+    const start = BUTTON.indexOf("{justResumed && (");
+    const end = BUTTON.indexOf("{saveFailed && (");
+    expect(end).toBeGreaterThan(start);
+    const announcement = BUTTON.slice(start, end);
+    expect(announcement).toContain('role="status"');
+    expect(announcement).toContain('t("savedStatus")');
   });
 });

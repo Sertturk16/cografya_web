@@ -343,7 +343,6 @@ export default async function CountryDetailPage({ params }: PageProps) {
         <h1>{t("heading", { name })}</h1>
         <FavoriteButton
           key={country.isoCode}
-          locale={locale}
           target={{ kind: "country", isoCode: country.isoCode }}
         />
       </div>

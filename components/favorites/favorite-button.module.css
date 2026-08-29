@@ -81,3 +81,18 @@
   font-size: 0.85rem;
   color: var(--color-danger);
 }
+
+/* Visually-hidden but AT-readable — the post-resume "saved" announcement
+   (uyelik-auth-redesign plan §5.6.1). Same clip-path technique this repo already uses
+   throughout (`auth-form.module.css`'s own `.srOnly`, `site-search.module.css`'s). */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

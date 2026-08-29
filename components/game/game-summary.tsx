@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
-import type { Locale } from "@/i18n/routing";
 import { provinceUrl } from "@/lib/game/province-url";
 import { shouldOpenReviewGroup } from "@/lib/game/review-group";
 import { MAX_STARS, STAR_THRESHOLDS, starsForScore, type RoundSummary } from "@/lib/game/round";
@@ -24,9 +23,6 @@ interface GameSummaryProps {
   clientRoundId: string;
   /** The save payload's `mode` tag (UYELIK-10 plan §5.1/§5.5), resolved once on the server. */
   submitModeTag: string;
-  /** The route's own locale — the save control's anonymous-reader redirect needs it
-   *  (`CODE85-M5` reasoning, see `game-round-save.tsx`). */
-  locale: Locale;
   onClose: () => void;
   onReplay: () => void;
 }
@@ -98,7 +94,6 @@ export function GameSummary({
   hubUrl,
   clientRoundId,
   submitModeTag,
-  locale,
   onClose,
   onReplay,
 }: GameSummaryProps) {
@@ -285,7 +280,6 @@ export function GameSummary({
           summary={summary}
           clientRoundId={clientRoundId}
           submitModeTag={submitModeTag}
-          locale={locale}
         />
 
         <div className={styles.dialogActions}>

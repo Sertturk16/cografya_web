@@ -1199,7 +1199,6 @@ export function ToolIsland({
         points={geoPoints}
         minPoints={minExportPoints}
         authState={authState}
-        locale={locale}
         pendingSaveIdRef={pendingSaveIdRef}
         onSaved={handleMeasurementSaved}
       />

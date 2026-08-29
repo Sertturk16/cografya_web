@@ -26,6 +26,10 @@ const FAVORITES_KEYS = [
   "removeAria",
   "signInRequiredAria",
   "saveError",
+  // uyelik-auth-redesign plan §5.6.1 — the sr-only announcement of a completed resume
+  // (favorite saved after a successful modal auth), the same mechanism
+  // `GameRoundSaveControl`'s own label-swap announcement already uses.
+  "savedStatus",
 ] as const;
 
 const catalogues = { tr: trMessages.Favorites, en: enMessages.Favorites } as const;

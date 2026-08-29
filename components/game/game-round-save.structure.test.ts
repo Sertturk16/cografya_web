@@ -82,16 +82,40 @@ describe("the pending/settled guard is the FIRST statement in handleClick", () =
     expect(anonymousCheck).toBeGreaterThan(body.indexOf(guardText));
   });
 
-  it("routes an anonymous click to /kayit with a returnTo, never spending a save call", () => {
+  it("opens the auth modal (requestAuth) on an anonymous click, never spending a save call (uyelik-auth-redesign plan §5.6.2, superseding the earlier /kayit redirect — the case §2.4 measured as genuinely impossible before)", () => {
     const body = handleClickBody();
     const gate = body.indexOf('if (authState === "anonymous")');
-    const target = body.indexOf('href: "/kayit"');
-    const ret = body.indexOf("return;", target);
-    const submit = body.indexOf("submitGameRound(");
+    const request = body.indexOf('requestAuth("gameRound")');
+    const ret = body.indexOf("return;", request);
+    const submitCall = body.indexOf("await submit();");
     expect(gate).toBeGreaterThan(0);
-    expect(target).toBeGreaterThan(gate);
-    expect(ret).toBeGreaterThan(target);
-    expect(submit).toBeGreaterThan(ret);
+    expect(request).toBeGreaterThan(gate);
+    expect(ret).toBeGreaterThan(request);
+    expect(submitCall).toBeGreaterThan(ret);
+  });
+
+  it("no longer imports next/navigation's useRouter or i18n's getPathname — there is no page to redirect to", () => {
+    expect(CONTROL).not.toContain('from "next/navigation"');
+    expect(CONTROL).not.toContain("getPathname");
+    expect(CONTROL).not.toContain('href: "/kayit"');
+  });
+});
+
+describe("the resume mechanism (uyelik-auth-redesign plan §5.6.2) — the case §2.4 shows is impossible under the old redirect design", () => {
+  it("keeps the request id in a ref, watches the shared modal store, and consumes exactly once before resuming", () => {
+    expect(CONTROL).toContain("const authRequestId = useRef<string | null>(null);");
+    expect(CONTROL).toContain("modal.resolvedRequestId !== id");
+    expect(CONTROL).toContain("if (!consumeResolved(id)) return;");
+    expect(CONTROL).toContain("void submit();");
+  });
+
+  it("the resumed submit calls the SAME submit function the authenticated click path calls — the idempotency key travels unchanged either way", () => {
+    const call = CONTROL.indexOf("const submit = useCallback(async () => {");
+    expect(call).toBeGreaterThan(0);
+    // Both the click path and the resume effect reference `submit(` — never a second,
+    // divergent submit implementation.
+    const occurrences = CONTROL.split("submit(").length - 1;
+    expect(occurrences).toBeGreaterThanOrEqual(2);
   });
 });
 

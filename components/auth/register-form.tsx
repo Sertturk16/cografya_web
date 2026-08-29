@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } fro
 // output, a final path with its locale prefix already resolved.
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { getPathname } from "@/i18n/navigation";
+import { getPathname, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { Department, District, ProvinceListItem, University } from "@/lib/api/types";
 import { AUTH_ERROR_MESSAGE_KEYS } from "@/lib/auth/error-messages";
@@ -126,14 +126,25 @@ const FIELD_LABEL_KEYS: Record<keyof FieldErrors, string> = {
 export function RegisterForm({
   locale,
   provinces,
+  onAuthenticated,
 }: {
   readonly locale: Locale;
-  readonly provinces: readonly ProvinceListItem[];
+  /**
+   * The page passes this server-side, as before. The modal cannot: shipping 81 provinces
+   * into every page's payload for a control that opens on a fraction of them is an
+   * unacceptable CWV cost (uyelik-auth-redesign plan §5.7). `undefined` here means "fetch it
+   * lazily" — the fourth instance of this file's own established `fetchReferenceList` +
+   * `ListState` pattern (districts/universities/departments already use it three times).
+   */
+  readonly provinces?: readonly ProvinceListItem[];
+  /** Same seam as `LoginForm`'s own prop (plan §5.7) — see that component's docblock. */
+  readonly onAuthenticated?: () => void;
 }) {
   const t = useTranslations("Auth");
   const router = useRouter();
   const rawReturnTo = useReturnToParam();
   const fallbackHome = getPathname({ locale, href: "/" });
+  const inModal = onAuthenticated !== undefined;
 
   const [step, setStep] = useState<"form" | "code">("form");
   const [registeredEmail, setRegisteredEmail] = useState("");
@@ -186,6 +197,31 @@ export function RegisterForm({
   const [universityState, setUniversityState] = useState<ListState>("idle");
   const [departments, setDepartments] = useState<Department[]>([]);
   const [departmentState, setDepartmentState] = useState<ListState>("idle");
+
+  // Lazy province list (modal use only — plan §5.7): when `provinces` arrives as a prop
+  // (page use), this state is never touched and stays "idle"/empty; `provinceOptions` below
+  // reads the prop directly in that case. `providedProvinces` mirrors the district/university/
+  // department kick-off shape: a render-time transition to "loading", the fetch itself owned by
+  // its own effect below.
+  const [fetchedProvinces, setFetchedProvinces] = useState<ProvinceListItem[]>([]);
+  const [provinceListState, setProvinceListState] = useState<ListState>("idle");
+  if (provinces === undefined && provinceListState === "idle") {
+    setProvinceListState("loading");
+  }
+
+  useEffect(() => {
+    if (provinces !== undefined || provinceListState !== "loading") return;
+    fetchReferenceList<ProvinceListItem[]>("/api/reference/provinces")
+      .then((data) => {
+        setFetchedProvinces(data);
+        setProvinceListState("loaded");
+      })
+      .catch(() => {
+        setProvinceListState("error");
+      });
+  }, [provinces, provinceListState]);
+
+  const provinceOptions = provinces ?? fetchedProvinces;
 
   // Step 2 fields.
   const [code, setCode] = useState("");
@@ -399,11 +435,17 @@ export function RegisterForm({
     const result = await submitAuth(
       "verify-email",
       { email: registeredEmail, code },
-      { returnTo: rawReturnTo || fallbackHome },
+      // Same modal-vs-page split as `LoginForm`'s own `handleSubmit` (plan §5.7): no
+      // `returnTo` when there is no navigation to protect.
+      inModal ? {} : { returnTo: rawReturnTo || fallbackHome },
     );
     setSubmitting(false);
 
     if (result.ok) {
+      if (onAuthenticated !== undefined) {
+        onAuthenticated();
+        return;
+      }
       router.replace(result.redirectTo ?? fallbackHome);
       return;
     }
@@ -539,6 +581,29 @@ export function RegisterForm({
         ? t("department.loadError")
         : "";
 
+  // R1 fix (plan §5.9): announces which group of fields the current `userType` just revealed.
+  const groupAnnouncement =
+    userType === "secondary"
+      ? t("fields.groupSecondaryAnnounce")
+      : userType === "undergraduate" || userType === "graduate"
+        ? t("fields.groupHigherEdAnnounce")
+        : "";
+
+  // The province list's own loading/error announcement (plan §5.7) — empty in page use, where
+  // `provinces` arrives already-loaded and there is no async transition to announce.
+  const provinceAnnouncement =
+    provinces !== undefined
+      ? ""
+      : provinceListState === "loading"
+        ? t("province.loading")
+        : provinceListState === "loaded"
+          ? t("province.announceCount", { count: provinceOptions.length })
+          : provinceListState === "error"
+            ? t("province.loadError")
+            : "";
+  const provinceError =
+    provinceListState === "error" ? t("province.loadError") : fieldErrors.provincePlateCode;
+
   const nonKktcUniversities = universities.filter((university) => university.type !== "KKTC");
   const kktcUniversities = universities.filter((university) => university.type === "KKTC");
   const turkeyGroupLabel = renderLabel(locale, UNIVERSITY_GROUP_LABELS.DEVLET);
@@ -546,6 +611,14 @@ export function RegisterForm({
 
   return (
     <div className={styles.card}>
+      {/* The page heading now lives WITH the form (plan §5.3), not orphaned above the card by
+          the page. The modal supplies its own `<h2>` dialog heading instead (§5.7), so this
+          only renders in page use. */}
+      {!inModal ? (
+        <div className={styles.formHeader}>
+          <h1>{t("register.heading")}</h1>
+        </div>
+      ) : null}
       <form className={styles.form} onSubmit={(event) => void handleSubmitStep1(event)} noValidate>
         {hasErrors ? (
           <FormErrorRegion
@@ -643,8 +716,23 @@ export function RegisterForm({
           })}
         </SelectField>
 
+        {/* R1 fix (uyelik-auth-redesign plan §5.9/§2.9): the reveal itself is announced —
+            permanently mounted, matching `universityAnnouncement`/`districtAnnouncement`'s own
+            established shape below (never mounted only WITH the group; see that comment for
+            why a live region whose node and final text arrive in the same render announces
+            nothing on the second and later transitions). */}
+        <p aria-live="polite" className={styles.srOnly}>
+          {groupAnnouncement}
+        </p>
+
+        {/* R2/R3 fix: the conditional profile fields are grouped in a real <fieldset>/<legend>
+            rather than sitting as two more anonymous rows in the flat column (plan §5.9).
+            `min-inline-size: 0` on `.groupFieldset` (see `auth-form.module.css`) works around
+            the UA `min-width: min-content` footgun that would otherwise break this flex
+            column. */}
         {userType === "secondary" ? (
-          <>
+          <fieldset className={styles.groupFieldset}>
+            <legend className={styles.groupLegend}>{t("fields.groupSecondary")}</legend>
             <SelectField
               id="register-gradeLevel"
               label={t("fields.grade")}
@@ -685,11 +773,12 @@ export function RegisterForm({
                 );
               })}
             </SelectField>
-          </>
+          </fieldset>
         ) : null}
 
         {userType === "undergraduate" || userType === "graduate" ? (
-          <>
+          <fieldset className={styles.groupFieldset}>
+            <legend className={styles.groupLegend}>{t("fields.groupHigherEd")}</legend>
             <SelectField
               id="register-universityName"
               label={t("fields.university")}
@@ -749,7 +838,7 @@ export function RegisterForm({
                 </>
               )}
             </SelectField>
-          </>
+          </fieldset>
         ) : null}
         {/* A11Y93-I1 (round 2): permanently mounted, matching `districtAnnouncement`'s node
             (below) — NEVER inside the `userType` conditional above. `universityState`/
@@ -776,15 +865,26 @@ export function RegisterForm({
           required
           value={provincePlateCode}
           onChange={(event) => setProvincePlateCode(event.target.value)}
-          error={fieldErrors.provincePlateCode}
+          error={provinceError}
         >
-          <option value="">{t("selectPlaceholder")}</option>
-          {provinces.map((province) => (
-            <option key={province.plateCode} value={province.plateCode}>
-              {province.nameTr}
-            </option>
-          ))}
+          {provinceListState === "loading" ? (
+            <option value="">{t("province.loading")}</option>
+          ) : provinceListState === "error" ? (
+            <option value="">{t("province.loadError")}</option>
+          ) : (
+            <>
+              <option value="">{t("selectPlaceholder")}</option>
+              {provinceOptions.map((province) => (
+                <option key={province.plateCode} value={province.plateCode}>
+                  {province.nameTr}
+                </option>
+              ))}
+            </>
+          )}
         </SelectField>
+        <p aria-live="polite" className={styles.srOnly}>
+          {provinceAnnouncement}
+        </p>
 
         {/* Always enabled, never `disabled` — a disabled control is skipped by Tab and
             explains nothing; a state-carrying placeholder is reachable, readable and needs
@@ -840,6 +940,13 @@ export function RegisterForm({
           <p className={styles.noscript}>{t("noscript")}</p>
         </noscript>
       </form>
+      {/* Page-mode-only cross-navigation — same reasoning as `LoginForm`'s own crossLink
+          (plan §5.3/§5.9). */}
+      {!inModal ? (
+        <p className={styles.crossLink}>
+          <Link href="/giris">{t("register.crossLink")}</Link>
+        </p>
+      ) : null}
     </div>
   );
 }

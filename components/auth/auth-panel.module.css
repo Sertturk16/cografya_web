@@ -1,0 +1,241 @@
+/* The two-panel auth surface (uyelik-auth-redesign plan §5.1/§5.2) — the layout grid shared
+   by `/kayit` and `/giris`, and the survey plate's own decorative + content styling. Every
+   colour is a Terra token (`DESIGN.md` §2); no new breakpoint is introduced — `64rem` is the
+   EXISTING content-layout boundary `DESIGN.md` §4 already documents. */
+
+/* ---- Layout grid --------------------------------------------------------------------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* Mobile-first: the form comes FIRST — nothing should sit between the reader and the first
+   field on a phone — and the plate follows as a compact band. At `64rem`+ the two panels
+   revert to plain DOM order (plate, then form), which is also the desktop READING order the
+   two-column grid places side by side. */
+.plateSlot {
+  order: 2;
+}
+
+.formSlot {
+  order: 1;
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 30rem);
+  }
+
+  .plateSlot,
+  .formSlot {
+    order: 0;
+  }
+}
+
+/* ---- The plate ------------------------------------------------------------------------ */
+
+/* Exactly `.hero`'s established shape (`app/globals.css`), including the `overflow: hidden`
+   that clips the ring cluster's own deliberate corner bleed. */
+.plate {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Every real content child is explicit `position: relative; z-index: 2` — `globals.css`'s own
+   documented reason (CSS 2.1 Appendix E: a positioned `z-index: 0` decorative sibling paints
+   AFTER unpositioned in-flow children, so DOM order alone does not protect content). */
+.plateGrid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-border) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(90deg, var(--color-border) 0 1px, transparent 1px 34px);
+  opacity: 0.4;
+}
+
+/* The ring cluster's box is DELIBERATELY smaller than the hero's own 320×320px — this box's
+   own column is narrower than the hero ever has to handle (a fraction of the content width,
+   not nearly the full viewport), so a proportionally smaller cluster starts from a safer
+   footprint. HIDDEN below the two-panel breakpoint: below `64rem` the plate is a full-width
+   "compact band" under the form, a shape the hero's own tested geometry says nothing about,
+   so no cluster is shown there rather than guessing.
+
+   RE-MEASURED FOR REAL against the plate's own box (§11.4.5 — never copying the hero's
+   numbers, which belong to a different box): real Playwright, `Range.getClientRects()` tight
+   text bbox vs each ring's `getBoundingClientRect()` circle, annulus-vs-rectangle
+   intersection, ±0.5px buffer, `document.fonts.ready` settled first, both locales.
+
+   A first-pass 160×160px cluster (proportionally scaled straight from the hero's own
+   inset ratios) FAILED this measurement — 81/84 checks intersected the plate heading across
+   nearly the entire visible band (1030–1440px), because unlike the hero's own `h1` (which
+   reserves clearance via `max-width: 18ch`), this plate's `.plateEyebrow`/`.plateHeading` had
+   no width limit and ran the full column width straight under the top-right-anchored rings.
+   The fix that actually cleared it, verified: (1) the cluster itself shrunk to 130×130px,
+   offset -18px/-18px (was 160×160px / -30px/-30px); (2) `.plateEyebrow`/`.plateHeading` both
+   gained `max-width: calc(100% - 120px)` — the SAME remedy the hero's own `h1` already uses
+   (reserve clearance in the text, not only in the decoration), applied to this box's own
+   dimensions rather than assumed from the hero's.
+
+   VERIFIED CLEAN: 84/84 (width, locale) combinations with rings visible — 1020–1440px in
+   10px steps, both `tr` and `en` — zero intersections. No further scale step is needed in
+   this band; the existing `<64rem` hide is the only other breakpoint the geometry needs. */
+.plateRings {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+  width: 130px;
+  height: 130px;
+  z-index: 0;
+  pointer-events: none;
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .plateRings {
+    display: block;
+  }
+}
+
+.plateRing1,
+.plateRing2,
+.plateRing3,
+.plateRing4,
+.plateRing5 {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.plateRing1 {
+  inset: 53px;
+  border: 1.4px solid var(--color-primary);
+  opacity: 0.5;
+}
+
+.plateRing2 {
+  inset: 38px;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.4;
+}
+
+.plateRing3 {
+  inset: 24px;
+  border: 1.4px solid var(--color-accent);
+  opacity: 0.3;
+}
+
+.plateRing4 {
+  inset: 7px;
+  border: 1.4px solid var(--color-primary);
+  opacity: 0.2;
+}
+
+.plateRing5 {
+  inset: -9px;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.14;
+}
+
+.plateRingDot {
+  position: absolute;
+  top: 75px;
+  right: 77px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+/* R2/K7 fix: the ring cluster bleeds from the top-right corner, exactly where the eyebrow +
+   heading sit at the top of the plate's flex column — the SAME collision the hero's own
+   `max-width: 18ch` on its `h1` already exists to prevent (`globals.css`), applied here to
+   the plate's shorter lines instead. This keeps every wrapped line of both clear of the
+   ring zone's own footprint, not merely the first one — measured and tightened in §11.4.5. */
+.plateEyebrow {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  max-width: calc(100% - 120px);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-dark);
+}
+
+.plateHeading {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  max-width: calc(100% - 120px);
+  font-family: var(--font-heading);
+  font-size: clamp(1.3rem, 1.1rem + 1vw, 1.6rem);
+  color: var(--color-ink);
+}
+
+.plateList {
+  position: relative;
+  z-index: 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+.plateList li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.plateList li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.plateFree {
+  position: relative;
+  z-index: 2;
+  margin: 4px 0 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--color-primary-dark);
+}
+
+/* Decorative/atmospheric, not a data claim — the same treatment `home.module.css`'s own
+   `.heroCoord` label already gives an identical device. `--color-slate`, never
+   `--color-taupe` (`DESIGN.md` §5's hard rule): slate measures 6.58:1 on `--color-surface`
+   (`DESIGN.md` §5's verified table), clearing AA at this small size; taupe would not. */
+.plateCoord {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  z-index: 0;
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--color-slate);
+  pointer-events: none;
+}

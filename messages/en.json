@@ -444,7 +444,8 @@
     "addAria": "Add to favorites",
     "removeAria": "Remove from favorites",
     "signInRequiredAria": "Sign up to add to favorites",
-    "saveError": "Couldn't save. Try again."
+    "saveError": "Couldn't save. Try again.",
+    "savedStatus": "Added to your favorites."
   },
   "Deniz": {
     "metaTitle": "Sea State: Wind, Waves, Water Temperature",
@@ -768,7 +769,8 @@
       "forgot": "Forgot your password?",
       "alreadySignedIn": "You are already logged in.",
       "logout": "Log out",
-      "loggedOut": "You are logged out."
+      "loggedOut": "You are logged out.",
+      "crossLink": "No account? Sign up"
     },
     "reset": {
       "metaTitle": "Password reset",
@@ -788,7 +790,8 @@
       "metaTitle": "Sign up",
       "metaDescription": "Sign up for Coğrafya Platformu.",
       "heading": "Sign up",
-      "submit": "Sign up"
+      "submit": "Sign up",
+      "crossLink": "Already have an account? Log in"
     },
     "verify": {
       "metaTitle": "E-mail verification",
@@ -815,7 +818,11 @@
       "department": "Department",
       "verificationCode": "Verification code",
       "resetCode": "Reset code",
-      "newPassword": "New password"
+      "newPassword": "New password",
+      "groupSecondary": "Education details",
+      "groupHigherEd": "Education details",
+      "groupSecondaryAnnounce": "Education details added: grade and stream.",
+      "groupHigherEdAnnounce": "Education details added: university and department."
     },
     "hints": {
       "newPassword": "At least 6 characters, with one lowercase letter, one uppercase letter and one digit."
@@ -865,6 +872,33 @@
       "unauthenticated": "No session was found.",
       "sessionExpired": "Your session has expired. Log in again.",
       "weakPassword": "The password does not meet the requirements."
+    },
+    "province": {
+      "loading": "Loading…",
+      "loadError": "Provinces couldn't load. Try again.",
+      "announceCount": "{count} provinces listed"
+    },
+    "plate": {
+      "eyebrow": "MEMBERSHIP",
+      "heading": "What your account does",
+      "favorites": "Save province and country pages to your favorites.",
+      "video": "Watch book video solutions and pick up where you left off.",
+      "game": "Save your game rounds and see your history.",
+      "measurement": "Save map measurements and load them back later.",
+      "free": "Membership is free.",
+      "coord": "39.0000° N · 35.0000° E"
+    },
+    "modal": {
+      "close": "Close",
+      "toLogin": "Already have an account? Log in",
+      "toRegister": "No account? Sign up",
+      "intent": {
+        "favorite": "Sign up to add to your favorites.",
+        "video": "Sign up to watch the video solution.",
+        "gameRound": "Sign up to save this round.",
+        "measurement": "Sign up to save this measurement.",
+        "generic": "Sign up to continue."
+      }
     }
   },
   "NotFound": {
