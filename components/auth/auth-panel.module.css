@@ -338,17 +338,24 @@
    `gap` (16px) minus the ring's own 14px radius = 2.0px of real clearance to `.plateList` — a
    margin, not a guarantee, exactly what the finding named. This block no longer forces that
    floor into a space too small to hold it: `display: none` by default, shown only inside the
-   `@container (min-height: 48px)` block below, so a spacer too short to hold ANY ring safely
-   renders no ring at all rather than one at its clamp floor. 48px is not an arbitrary round
-   number — it is chosen so the WORST-case clearance at that exact threshold already clears a
-   deliberate ≥24px safety floor (double the ~12px an unrelated font/translation/line-height
-   shift could plausibly cost), derived from this box's own geometry: at spacer height H below
-   the clamp's 65%-of-H crossover (~43px), ring diameter stays pinned at the 28px floor, so
-   clearance-to-list = gap(16px) + H/2 − ring-radius(14px) = 2px + H/2; solving 2 + H/2 ≥ 24
-   gives H ≥ 44px, and 48px both clears that with margin and reads as a plain number. Every
-   width where the ring renders was independently re-measured (Playwright, `/en/login` and
-   neighboring widths) to confirm the visible clearance is genuinely ≥ 24px, never merely
-   the clamp floor's old unconditional 2px — see this round's commit message for the numbers. */
+   `@container (min-height: 70px)` block below, so a spacer too short to hold ANY ring safely
+   renders no ring at all rather than one at its clamp floor.
+
+   Round-7 fix (DF105R6-I1 — corrects a wrong-regime derivation, not merely its resulting
+   number). Round 6's own comment here derived a 48px threshold from a formula that assumed the
+   ring stayed pinned at the clamp's 28px FLOOR at H=48 — but 48px already sits PAST the clamp's
+   own floor-to-percentage crossover point (28px / 0.65 ≈ 43.08px), where the ring's diameter
+   comes from `clamp(28px, 65%, 84px)`'s 65%-of-H branch instead, not the 28px floor the old
+   comment assumed. Corrected derivation, valid for any spacer height H above that crossover:
+   ring diameter = 0.65×H, ring radius = 0.325×H, so clearance-to-list = gap(16px) + H/2 −
+   0.325×H = 16 + 0.175×H. Solving 16 + 0.175×H ≥ 28 (a genuine ≥28px floor — round 6's own
+   arithmetic error had made its actual ~24.4px result read as a claimed ~26.72px, so this round
+   raises the real target rather than trusting the old number) gives H ≥ 68.57px; 70px is used
+   below — a clean round number with a small margin above that minimum. At H=70: clearance =
+   16 + 0.175×70 = 28.25px, independently re-measured (Playwright, forced spacer height,
+   `getBoundingClientRect`) both by repeating round 6's own method on a fresh page/viewport and
+   by a fine (≤2px-step) boundary sweep around 70px itself — see this round's commit message for
+   the numbers. */
 .plateSpacerRings {
   display: none;
   position: absolute;
@@ -362,7 +369,7 @@
   pointer-events: none;
 }
 
-@container (min-height: 48px) {
+@container (min-height: 70px) {
   .plateSpacerRings {
     display: block;
   }
