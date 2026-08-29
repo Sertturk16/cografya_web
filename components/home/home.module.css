@@ -116,6 +116,50 @@
   }
 }
 
+/* MID-WIDTH CLEARANCE FIX (fix round 2026-08-29 #2, → an independent claim-verifier's
+   REFUTED-claim re-measurement of the "decoration never overlaps text" guarantee above).
+   The verifier measured a real overlap at 768px in both locales, using `Range.getClientRects()`
+   on `.lede`'s own text (the tight glyph bbox, not the container box) vs. each ring's stroke —
+   and a full re-sweep here (real Playwright, same tight-bbox method, proper circle-annulus-
+   vs-rectangle distance-range intersection math, every 10px) found the true failing band is
+   much wider than the one width the verifier happened to test: UNSCALED, rings 3/4/5 cross
+   `.lede`'s text at every width from 600px (the hide-breakpoint's own cutoff) through 943px —
+   clean only from 944px on. The 320×320px box's fixed geometry (§ comment above) simply
+   doesn't leave enough clearance at these mid widths; only at ≥944px does the hero column
+   grow wide enough for `.lede`'s line(s) to sit far enough from the ring cluster's own fixed
+   corner anchor.
+
+   FIX: `transform: scale(0.55)` with `transform-origin: 100% 0%` (top-right corner, matching
+   the cluster's own anchor) shrinks the whole 320×320px box AND pins its top-right corner in
+   place — so the visual box shrinks straight toward the corner it already bleeds from, moving
+   its center simultaneously closer to the corner (away from the text) AND smaller (shorter
+   reach), rather than just shrinking in place. This is a pure CSS transform: `.heroGrid` and
+   `.heroCoord` (both unaffected, no ring geometry) and the individual `.heroRing1..5`/
+   `.heroRingDot` inset rules (unchanged below) are untouched — the scale is entirely on the
+   parent box, matching how `getBoundingClientRect()` (and every browser) already resolves
+   post-transform geometry, so no descendant rule needed to change.
+
+   BAND: `600px` (this file's own existing hide-breakpoint's upper edge) through `959px` — 16px
+   of margin past the measured 944px natural-clean boundary above, the same "round cutoff with
+   comfortable margin" philosophy the hide-breakpoint comment above already documents. Full,
+   unscaled size resumes at 960px, inside the confirmed-clean range.
+
+   VERIFIED (real Playwright, `chromium`, both locales, fresh `document.fonts.ready` + one
+   settle frame, same tight-bbox `Range.getClientRects()` method vs. each ring's own
+   `getBoundingClientRect()`-derived circle, proper annulus-vs-rectangle distance-range
+   intersection, ±0.5px anti-aliasing buffer): 170/170 checks (600–1440px, every 10px, tr+en)
+   PASS — zero intersections at every width. Boundary widths independently re-checked: 598/599
+   (hidden, unchanged) → 600/601 (visible+scaled, clear) → 957–965 (scaled→full-size transition
+   at 960px, clear on both sides, no wobble) → 944 (the unscaled natural-clean boundary, inside
+   this band's scaled range, clear). 320/340/360/400/440/480/520/560px re-confirmed still
+   cleanly hidden (unchanged behaviour, not touched by this band). */
+@media (min-width: 600px) and (max-width: 959px) {
+  .heroRings {
+    transform: scale(0.55);
+    transform-origin: 100% 0%;
+  }
+}
+
 .heroRing1,
 .heroRing2,
 .heroRing3,
