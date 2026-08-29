@@ -51,23 +51,18 @@
      form-then-plate, putting the form in the LEFT column and reversing the intended layout). */
   .plateSlot {
     order: 1;
-    /* DF105R3-I1 fix (round-4): stretching `.plateSlot` (above) grows the SLOT, not the
-       plate's own content — the plate itself stays 338px(tr)/362px(en) tall regardless, so the
-       stretched track leaves a single one-sided empty rectangle below the sticky plate
-       (measured 460-670px at common 900-1080px viewport heights, PERSISTENT at every scroll
-       position because the page never scrolls far enough for the sticky plate to detach and
-       reach the track's own bottom). `display: grid; align-items: center` centers the plate
-       vertically within the stretched slot instead — this splits the empty space into a top
-       gap and a bottom gap rather than leaving it all below, which is the round-3-recommended
-       remedy (`pr-reviews/105-round3.md` DF105R3-I1). `grid` (not `flex`) is deliberate: a
-       grid item's default `justify-items` is `stretch`, so the plate keeps its full inline
-       (horizontal) width — only the block (vertical) axis is overridden to `center` — whereas
-       `flex`'s default main-axis sizing is shrink-to-content and would have collapsed the
-       plate to its own content width. The plate's own `position: sticky` rule below is
-       UNCHANGED and still governs its scroll behaviour; centering only changes where it sits
-       inside the now-taller slot before and after it locks. */
+    /* Round-5 fix (DF105R4-I1 — round-2/3/4 each only relocated the ~800px blank area, never
+       closed it, because none of them changed the PLATE's own height, only where it sat inside
+       a track that stayed taller than it). This round closes the gap at its source instead:
+       `.plate` itself (below) now stretches to genuinely fill this slot's full row height —
+       the row height itself comes from `.layout`'s `align-items: stretch` above, unchanged.
+       `display: grid` (kept from round-4, `grid` not `flex` for the same reason recorded
+       there: a grid item's default `justify-items` is `stretch`, keeping the plate's full
+       inline width) with `align-items: stretch` (replacing round-4's `center`) is what makes
+       the plate — the sole item in this one-cell grid — stretch to the cell's full block size
+       rather than being centred within a track that stays taller than its own content. */
     display: grid;
-    align-items: center;
+    align-items: stretch;
   }
 
   .formSlot {
@@ -92,25 +87,23 @@
   gap: 16px;
 }
 
-/* A1 fix (İRİS live audit, 2026-08-29 fix round — `/kayit`'s 700.5px empty grid track beside
-   the plate). `position: sticky` only at the two-panel breakpoint, where the plate and the
-   form share a row: on a form much longer than the plate (`/kayit`'s 13 fields), the plate no
-   longer just stops and leaves the rest of its own column blank as the reader scrolls past it
-   — it stays visually paired with the form, the way the redesign's own two-panel intent
-   requires, and settles once its taller `.plateSlot` track (stretched above) runs out. A plate
-   shorter than the form is not the defect; a plate that goes blank beneath itself is.
-   Unaffected below 64rem: there the plate is a single-column compact band AFTER the form
-   (`order: 2` in the base rules), a different shape this rule does not touch.
-   `top` reuses the SAME expression `book-video.module.css:41`'s `.stage` already ships for its
-   own sticky column, for the same reason: it keeps the sticky box clear of the
-   `position: sticky` site header (`site-header.module.css`, `--header-height: 3.5rem`,
-   `globals.css:395`) plus a small breathing gap, rather than inventing a second offset. */
-@media (min-width: 64rem) {
-  .plate {
-    position: sticky;
-    top: calc(var(--header-height) + 1rem);
-  }
-}
+/* `position: sticky` REMOVED in the round-5 fix (DF105R4-I1). It was introduced in round-2 to
+   keep a short plate paired with the form as the reader scrolled past it — the plate stayed
+   fixed near the header while the much-taller form's track kept scrolling underneath, which is
+   exactly the mechanism that produced round-2/3/4's blank-space defect (a short sticky box
+   inside a taller track always leaves the track's leftover length bare somewhere). Now that
+   `.plateSlot` (above) stretches `.plate` itself to the row's full height — the plate's own box
+   is exactly as tall as the form's — there is no leftover track for a sticky offset to hold the
+   plate within: independently re-measured (Playwright, 1440px width, `/kayit` + `/en/register`,
+   viewport heights 700/900/1080px, scrollY at 0/25/50/75/100% of the scrollable distance — 30
+   combinations) confirms `topGap`/`bottomGap` stay exactly 0px at every one of them, and the
+   plate's own `top` goes negative during scroll (e.g. -117.53px, -331.53px, -760.53px) exactly
+   in lockstep with the slot rather than pinning at `calc(var(--header-height) + 1rem)` — i.e.
+   the sticky condition (`slotHeight - plateHeight - top offset > 0`) was already never
+   satisfiable once the two heights are equal, so the declaration was measured dead code, not a
+   removal that changes behaviour. The plate now simply scrolls in the normal document flow,
+   paired with the form for its entire length because they ARE the same length — the redesign's
+   original two-panel intent, achieved without any positioning trick. */
 
 /* Every real content child is explicit `position: relative; z-index: 2` — `globals.css`'s own
    documented reason (CSS 2.1 Appendix E: a positioned `z-index: 0` decorative sibling paints
@@ -282,6 +275,101 @@
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--color-primary-dark);
+}
+
+/* Round-5 content redistribution + second decorative accent (İRİS's own unverified design-tour
+   idea, elaborated here now that a taller plate is the real mechanism rather than a hypothetical
+   one). Below 64rem the plate is a compact band sized to its own content — `display: none`
+   below keeps this element out of the mobile compact band entirely (no size, no `gap`
+   contribution, same conditional pattern `.plateRings` already uses).
+
+   At 64rem+ `.plate` is stretched to the row's full height (above), so without something here
+   the eyebrow/heading/list cluster would sit at the top with the whole freed height as dead
+   space below it. `flex: 1 1 auto` makes this element consume exactly the leftover space
+   between the header cluster and the free-tier callout — a single deliberate breathing zone
+   (the SAME "tight cluster + pushed-down footer" shape `home.module.css`'s own
+   `.cardFact`/`.toolCardBody` already use for an equal-height card, here via a spacer instead
+   of `margin-top: auto` because this spacer also carries the decorative accent below) — rather
+   than evenly stretching the gap between every item, which would pull the eyebrow away from
+   the heading it belongs with. `min-height: 0` is required on a flex-growing item whose own
+   content (the absolutely-positioned rings below) does not otherwise establish an intrinsic
+   size, so it can shrink to near-zero on a short row (`/giris`) instead of being floored by the
+   default `min-height: auto`. */
+.plateSpacer {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .plateSpacer {
+    display: block;
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+
+/* The second ring cluster itself — reduced to 3 rings + a dot (vs. the corner cluster's 5 +
+   dot) and led by `--color-secondary`/`--color-accent` rather than `--color-primary`, so it
+   reads as a quieter, secondary echo of the corner motif rather than competing with it. Sized
+   from the SPACER's own box, not a fixed pixel guess against the page's total height: `height:
+   clamp(28px, 65%, 84px)` with `aspect-ratio: 1` and `width: auto` derives a square purely from
+   the spacer's block-axis size (whatever leftover space flex actually gave it on THIS page),
+   capped at 84px (smaller than the corner cluster's measured-safe 130px footprint, since this
+   sits deeper in the column where less clearance has been verified) and floored at 28px so it
+   never shrinks to an imperceptible speck on a page with very little leftover space (`/giris`).
+   This makes the cluster self-scale to whatever gap actually exists on a given page instead of
+   assuming one fixed page's geometry, the exact trap `.plateRings`' own §11.4.5 history warns
+   against. Centered via `top/left: 50%` + `translate(-50%, -50%)` within the spacer's own
+   position:relative box, so it can only ever bleed into the flex `gap` around the spacer, never
+   into the list or free-tier text — those are separate flex items the spacer's own box cannot
+   overlap by construction. */
+.plateSpacerRings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1;
+  height: clamp(28px, 65%, 84px);
+  width: auto;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.plateSpacerRing1,
+.plateSpacerRing2,
+.plateSpacerRing3 {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.plateSpacerRing1 {
+  inset: 0;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.28;
+}
+
+.plateSpacerRing2 {
+  inset: 22%;
+  border: 1.4px solid var(--color-accent);
+  opacity: 0.22;
+}
+
+.plateSpacerRing3 {
+  inset: 42%;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.16;
+}
+
+.plateSpacerRingDot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-secondary);
 }
 
 /* Decorative/atmospheric, not a data claim — the same treatment `home.module.css`'s own

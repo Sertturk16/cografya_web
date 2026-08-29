@@ -42,6 +42,20 @@ export function AuthPlate() {
         <li>{t("plate.game")}</li>
         <li>{t("plate.measurement")}</li>
       </ul>
+      {/* Round-5 fix (auth-panel.module.css's own comment carries the full rationale): a
+          flex-growing spacer that consumes exactly the leftover height once `.plate` stretches
+          to match a much-taller form column, carrying a second, smaller echo of the corner ring
+          cluster below so that leftover height reads as a composed decorative zone rather than
+          bare space. `display: none` below 64rem removes it from the mobile compact band
+          entirely — same conditional pattern as `.plateRings`. */}
+      <div className={styles.plateSpacer} aria-hidden="true">
+        <div className={styles.plateSpacerRings}>
+          <span className={styles.plateSpacerRing1} />
+          <span className={styles.plateSpacerRing2} />
+          <span className={styles.plateSpacerRing3} />
+          <span className={styles.plateSpacerRingDot} />
+        </div>
+      </div>
       <p className={styles.plateFree}>{t("plate.free")}</p>
       {/* Decorative/atmospheric, not a data claim — the same `aria-hidden` treatment
           `home.module.css`'s own `.heroCoord` label already gives an identical device. */}
