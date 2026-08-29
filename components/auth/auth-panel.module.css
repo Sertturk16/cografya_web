@@ -305,6 +305,16 @@
     position: relative;
     flex: 1 1 auto;
     min-height: 0;
+    container-type: size;
+    /* Round-6 fix (DF105R5-I1): makes the spacer's OWN resolved block size queryable by its
+       ring child below, instead of the ring only ever seeing the clamp() floor regardless of
+       how little room actually exists. `container-type: size` is safe here specifically
+       because this element's only content (`.plateSpacerRings`) is `position: absolute` — i.e.
+       already out of normal flow and contributing nothing to intrinsic size — so the implied
+       `contain: size` changes nothing about how `.plateSpacer` is sized; it is still purely
+       `flex: 1 1 auto` against `.plate`'s stretched row height, exactly as before this fix.
+       Same primitive `game-map.module.css`'s `.frame` already uses for `cqw` (inline-size
+       axis); this is the block-size axis of the same feature, not a new one. */
   }
 }
 
@@ -315,15 +325,32 @@
    clamp(28px, 65%, 84px)` with `aspect-ratio: 1` and `width: auto` derives a square purely from
    the spacer's block-axis size (whatever leftover space flex actually gave it on THIS page),
    capped at 84px (smaller than the corner cluster's measured-safe 130px footprint, since this
-   sits deeper in the column where less clearance has been verified) and floored at 28px so it
-   never shrinks to an imperceptible speck on a page with very little leftover space (`/giris`).
-   This makes the cluster self-scale to whatever gap actually exists on a given page instead of
-   assuming one fixed page's geometry, the exact trap `.plateRings`' own §11.4.5 history warns
-   against. Centered via `top/left: 50%` + `translate(-50%, -50%)` within the spacer's own
-   position:relative box, so it can only ever bleed into the flex `gap` around the spacer, never
-   into the list or free-tier text — those are separate flex items the spacer's own box cannot
-   overlap by construction. */
+   sits deeper in the column where less clearance has been verified). Centered via
+   `top/left: 50%` + `translate(-50%, -50%)` within the spacer's own position:relative box, so
+   it can only ever bleed into the flex `gap` around the spacer, never into the list or
+   free-tier text — those are separate flex items the spacer's own box cannot overlap by
+   construction.
+
+   Round-6 fix (DF105R5-I1 — closes the finding, does not merely soften it). The clamp's own
+   28px floor used to be UNCONDITIONAL: on a page whose spacer collapses toward 0 height (the
+   shortest form vs. the stretched plate — measured worst case `/en/login` @ 1024px, spacer
+   height 0px), the ring still rendered at the 28px floor regardless, leaving only the flex
+   `gap` (16px) minus the ring's own 14px radius = 2.0px of real clearance to `.plateList` — a
+   margin, not a guarantee, exactly what the finding named. This block no longer forces that
+   floor into a space too small to hold it: `display: none` by default, shown only inside the
+   `@container (min-height: 48px)` block below, so a spacer too short to hold ANY ring safely
+   renders no ring at all rather than one at its clamp floor. 48px is not an arbitrary round
+   number — it is chosen so the WORST-case clearance at that exact threshold already clears a
+   deliberate ≥24px safety floor (double the ~12px an unrelated font/translation/line-height
+   shift could plausibly cost), derived from this box's own geometry: at spacer height H below
+   the clamp's 65%-of-H crossover (~43px), ring diameter stays pinned at the 28px floor, so
+   clearance-to-list = gap(16px) + H/2 − ring-radius(14px) = 2px + H/2; solving 2 + H/2 ≥ 24
+   gives H ≥ 44px, and 48px both clears that with margin and reads as a plain number. Every
+   width where the ring renders was independently re-measured (Playwright, `/en/login` and
+   neighboring widths) to confirm the visible clearance is genuinely ≥ 24px, never merely
+   the clamp floor's old unconditional 2px — see this round's commit message for the numbers. */
 .plateSpacerRings {
+  display: none;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -333,6 +360,12 @@
   width: auto;
   z-index: 0;
   pointer-events: none;
+}
+
+@container (min-height: 48px) {
+  .plateSpacerRings {
+    display: block;
+  }
 }
 
 .plateSpacerRing1,
