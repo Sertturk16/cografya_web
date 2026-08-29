@@ -71,6 +71,12 @@ function staticEntries(): MetadataRoute.Sitemap {
     ...sitemapEntriesFor(() => "/araclar/mesafe-olcme", now, 0.6, "trNarrative"),
     ...sitemapEntriesFor(() => "/araclar/koordinat-bulma", now, 0.6, "trNarrative"),
     ...sitemapEntriesFor(() => "/araclar/alan-hesaplama", now, 0.6, "trNarrative"),
+    // The earthquake hub (PR-A, `deprem-sayfalari` plan §5.14). `"localized"` (the default
+    // surface) → ONE entry per locale (/deprem + /en/earthquakes), each carrying the full
+    // tr/en/x-default alternates set — unlike `/deniz`, this page's substance is data
+    // (events, coordinates, magnitudes, timestamps, place names), not a Turkish-only
+    // narrative, so both locales are indexable from day one.
+    ...sitemapEntriesFor(() => "/deprem", now, 0.7),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
   ];
 }

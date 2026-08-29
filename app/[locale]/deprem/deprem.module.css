@@ -1,0 +1,30 @@
+/* `/deprem` page-level layout — the meta facts strip (§5.11). Component-owned styling
+   (map, badge, list, attribution, filters) lives in
+   `components/earthquake/earthquake.module.css`; this file holds only what belongs to the
+   route shell itself. */
+
+.metaFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 32px;
+  margin: 18px 0 28px;
+  padding: 14px 18px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+
+.metaFact {
+  min-width: 160px;
+}
+
+.metaFact dt {
+  font-size: 0.78rem;
+  color: var(--color-slate);
+  margin-bottom: 2px;
+}
+
+.metaFact dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-ink);
+}

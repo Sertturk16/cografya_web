@@ -1,10 +1,12 @@
 /* `/turkiye` hub page styles. Today these are only the cross-link blocks (the map game,
-   SPEC §10.4, and the marine hub); the map itself is styled by
-   components/map/map.module.css. */
+   SPEC §10.4; the marine hub; and, since PR #104's fix round (VAL104-C2), the earthquake
+   hub); the map itself is styled by components/map/map.module.css. */
 
-/* The two cross-link cards on ONE row (design tour A9). Measured before: two cards, each 700px
-   wide inside a 1080px column, stacked at `top` 3362 and 3543.8 — two short, structurally
-   identical blocks running down the left of an otherwise empty page foot.
+/* The cross-link cards on ONE row (design tour A9), now three (VAL104-C2 added the earthquake
+   card — `flex-wrap` below already accommodates any card count, see the note there). Measured
+   before (two cards): two cards, each 700px wide inside a 1080px column, stacked at `top` 3362
+   and 3543.8 — two short, structurally identical blocks running down the left of an otherwise
+   empty page foot.
 
    NEGATIVE CONTROL, run rather than assumed: lifting `max-width` alone widened both cards to
    1080px and left them stacked (`sameRow: false`). The wrapper is what pairs them; the

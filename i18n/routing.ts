@@ -202,6 +202,18 @@ export const routing = defineRouting({
       tr: "/e-posta-dogrulama",
       en: "/verify-email",
     },
+    // The earthquake hub (AFAD, → DEC 2026-08-29a; `SEO-POLICY.md` §B4's own IA row). LOCALIZED
+    // segment, on the `/hakkimizda ↔ /en/about` / `/deniz ↔ /en/sea` precedent: "deprem" does
+    // not read as English at all. `/en/earthquakes` is plain and descriptive — no `ş`/`ğ`/`ı`/
+    // `ö`/`ü`/`ç` to fold (`GLOSSARY.md` §5). Singular-noun hub, like `/deniz` and `/oyun`, not
+    // a plural catalogue like `/kitaplar`/`/araclar`: "deprem" names the subject, not an
+    // enumerable list of separate items. `surface: "localized"` (§5.14) — fully indexable in
+    // both locales from day one, so this segment is never a permanent `noindex` twin the way
+    // `/kitaplar/[slug]` is.
+    "/deprem": {
+      tr: "/deprem",
+      en: "/earthquakes",
+    },
   },
 });
 
