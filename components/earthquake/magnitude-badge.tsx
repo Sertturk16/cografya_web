@@ -1,8 +1,14 @@
+import type { EarthquakeEvent } from "@/lib/api/types";
 import { magnitudeBucket } from "@/lib/earthquake/magnitude";
 import styles from "./earthquake.module.css";
 
 interface MagnitudeBadgeProps {
   magnitude: number;
+  /** Normalised magnitude-method token (`EarthquakeEventDto.magnitudeType`) — `GLOSSARY.md`
+   *  §4's own bold rule: "aynı deprem farklı yöntemlerle farklı sayı verir, bu yüzden büyüklük
+   *  türsüz yayımlanmaz" (review FENER104-I1). Carried in the accessible name/tooltip, never
+   *  in the always-visible label — the badge's printed text stays short on every row. */
+  magnitudeType: EarthquakeEvent["magnitudeType"];
   /** BCP-47 tag, e.g. `"tr"`/`"en"` — for locale-correct decimal formatting only. */
   locale: string;
 }
@@ -27,20 +33,23 @@ const BUCKET_CLASS: Record<1 | 2 | 3 | 4 | 5, string> = {
  * island's re-render (`components/earthquake/earthquake-filters.tsx`, `"use client"`),
  * neither of which it needs to know about.
  */
-export function MagnitudeBadge({ magnitude, locale }: MagnitudeBadgeProps) {
+export function MagnitudeBadge({ magnitude, magnitudeType, locale }: MagnitudeBadgeProps) {
   const bucket = magnitudeBucket(magnitude);
   const label = new Intl.NumberFormat(locale, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(magnitude);
+  // The visible text stays "M {label}" everywhere — the method token rides only the
+  // accessible name/tooltip (GLOSSARY.md §4, review FENER104-I1).
+  const accessibleLabel = `M ${label} (${magnitudeType})`;
 
   return (
     <span
       className={`${styles.badge} ${BUCKET_CLASS[bucket]}`}
       // The accessible name states the unit in words — a bare number is ambiguous to a
       // screen-reader user who has not seen the page's own "magnitude" heading.
-      aria-label={`M ${label}`}
-      title={`M ${label}`}
+      aria-label={accessibleLabel}
+      title={accessibleLabel}
     >
       M {label}
     </span>

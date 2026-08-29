@@ -196,6 +196,23 @@ export default async function TurkiyePage({ params }: PageProps) {
             </Link>
           </div>
         </section>
+
+        {/* Hub-and-spoke cross-link to the earthquake hub (PR #104 review VAL104-C2/FENER104-C2:
+            `/deprem` shipped with zero static internal links anywhere in the site, an orphan
+            indexable page — `SEO-POLICY.md` §B8.1 BLOCKER). This card mirrors the marine one
+            above verbatim (same precedent Atlas named, `components/home/sea-today.tsx`'s
+            `<Link href="/deniz">`) — a temporary, minimal fix until PR-B's own 81 province-page
+            links land; more universal than the marine link, since every one of the 81 provinces
+            indexed above sits inside the api's earthquake scope buffer, not only the 27 coastal
+            ones. */}
+        <section aria-labelledby="turkiye-earthquake-heading">
+          <div className={`card ${styles.ctaCard}`}>
+            <h2 id="turkiye-earthquake-heading">{t("earthquakeCtaHeading")}</h2>
+            <Link href="/deprem" className="btn btn-primary">
+              {t("earthquakeCtaLink")}
+            </Link>
+          </div>
+        </section>
       </div>
     </div>
   );

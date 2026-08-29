@@ -127,7 +127,11 @@ export default async function EarthquakePage({ params }: PageProps) {
         </div>
         <div className={styles.metaFact}>
           <dt>{t("meta.freshnessLabel")}</dt>
-          <dd>{t(`meta.freshness.${meta.dataStatus}`)}</dd>
+          {/* Derived from `list.meta.dataStatus`, the SAME source the lede above reads —
+              never the separate `meta.dataStatus` from `/api/earthquakes/meta`, whose
+              3600 s ISR window (vs. the list's 120 s) gives the two no guarantee of ever
+              agreeing (review CODE104-I1). */}
+          <dd>{t(`meta.freshness.${list.meta.dataStatus}`)}</dd>
         </div>
       </dl>
 

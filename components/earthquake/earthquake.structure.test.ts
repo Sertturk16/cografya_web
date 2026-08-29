@@ -65,7 +65,7 @@ describe("EarthquakeMap draws magnitude via the shared token set, never a raw he
   });
 
   it("gives each marker exactly one accessible <title>, with the single-em-dash shape (§17 density limit)", () => {
-    expect(mapCode).toMatch(/<title>\{marker\.accessibleName\}<\/title>/);
+    expect(mapCode).toMatch(/<title lang="tr">\{marker\.accessibleName\}<\/title>/);
     const match = /accessibleName: `([^`]*)`/.exec(map);
     expect(match).not.toBeNull();
     const emDashCount = (match?.[1]?.match(/—/g) ?? []).length;
@@ -95,6 +95,25 @@ describe("EarthquakeList's bindingKind sentence is gated, never printed for ever
     // (`air-pollution.structure.test.ts`'s own documented trap).
     expect(listCode).not.toMatch(/earthquake (occurred|happened) in/i);
     expect(listCode).not.toMatch(/'?te deprem/i);
+  });
+});
+
+describe('EarthquakeList / EarthquakeMap mark placeNameTr lang="tr" too (WCAG 3.1.2, review VAL104-M1)', () => {
+  // `event.placeNameTr` is Turkish in BOTH locales (§5.7's own docblock) and prints once per
+  // row (up to 200 per page) and once per map marker — the exact "TR-only string" class the
+  // attribution test below already names, just on a different pair of files. Previously only
+  // the two attribution strings were covered here, though the attribution test's own name
+  // claimed "every TR-only string" — this describe block closes that gap directly rather than
+  // widening the attribution test's scope.
+  it('EarthquakeList wraps the visible placeNameTr span in lang="tr"', () => {
+    expect(listCode).toMatch(/lang="tr"[\s\S]{0,40}\{event\.placeNameTr\}/);
+  });
+
+  it('EarthquakeMap marks its per-marker <title> lang="tr" (mixed-language node, whole-title fallback)', () => {
+    // SVG `<title>` is text-only (no child elements), so — unlike the list's `<span>` — the
+    // Turkish place name cannot be marked independently of the trailing magnitude/time
+    // fragment; the whole node is marked instead (see the component's own comment).
+    expect(mapCode).toMatch(/<title lang="tr">\{marker\.accessibleName\}<\/title>/);
   });
 });
 

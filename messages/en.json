@@ -131,7 +131,9 @@
     "gameCtaHeading": "Test what you have learned",
     "gameCtaLink": "Open the map game",
     "marineCtaHeading": "Seas and coastal provinces",
-    "marineCtaLink": "Open sea page"
+    "marineCtaLink": "Open sea page",
+    "earthquakeCtaHeading": "Recent earthquakes in Türkiye",
+    "earthquakeCtaLink": "Open earthquake page"
   },
   "Game": {
     "brandName": "Explorer",
@@ -572,11 +574,11 @@
   },
   "Earthquake": {
     "metaTitle": "Recent Earthquakes in Türkiye — AFAD Earthquake Map",
-    "metaDescription": "Recent earthquakes recorded by AFAD: magnitude, depth, location and origin time. Map and list, filterable.",
+    "metaDescription": "Recent earthquakes recorded by AFAD: magnitude, location and origin time. Map and list, filterable.",
     "heading": "Recent earthquakes in Türkiye",
     "lede": {
       "ok": "Recorded earthquakes from AFAD's Turkey Earthquake Data Centre System (TDVMS).",
-      "stale": "Recorded earthquakes from AFAD's Turkey Earthquake Data Centre System (TDVMS). The data has not refreshed for a while; the records below are shown as last received.",
+      "stale": "Recorded earthquakes from AFAD's TDVMS — not refreshed for a while, shown as last received.",
       "unavailable": "No earthquake records have been received from AFAD yet."
     },
     "meta": {
@@ -604,8 +606,8 @@
       "emptyState": "No earthquakes recorded in this window."
     },
     "binding": {
-      "offshoreNear": "off the coast of {province}",
-      "acrossBorder": "near the {province} border, outside Türkiye"
+      "offshoreNear": "nearest Turkish province: {province}",
+      "acrossBorder": "nearest Turkish province: {province}; outside Türkiye"
     },
     "sourcesHeading": "Sources",
     "filters": {
@@ -619,6 +621,7 @@
       "apply": "Apply",
       "loading": "Loading…",
       "loadFailed": "Earthquakes could not be loaded right now.",
+      "resultsFound": "{count, plural, one {# earthquake found} other {# earthquakes found}}",
       "loadMore": "Show more"
     }
   },

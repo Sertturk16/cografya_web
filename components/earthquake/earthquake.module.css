@@ -160,7 +160,7 @@
 }
 
 .regulationReference {
-  color: var(--color-taupe);
+  color: var(--color-slate);
 }
 
 .disclaimer {
@@ -236,6 +236,14 @@
   font-size: 0.85rem;
   color: var(--color-slate);
   margin-bottom: 8px;
+}
+
+/* Error is never the same colour as loading (DESIGN.md §6.1 rule 3; review DF104-I1) — the
+   repo-wide pattern every other error surface uses (auth-form.module.css, game-round-save
+   .module.css, favorite-button.module.css, tools.module.css `.error`). Contrast already
+   measured for this exact pair (DESIGN.md §5): --color-danger / --color-surface = 4.90:1. */
+.filterStatusError {
+  color: var(--color-danger);
 }
 
 .filterResults {

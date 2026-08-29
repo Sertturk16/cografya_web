@@ -84,10 +84,19 @@ export function EarthquakeList({
             return (
               <tr key={event.id}>
                 <td>
-                  <MagnitudeBadge magnitude={event.magnitude} locale={locale} />
+                  <MagnitudeBadge
+                    magnitude={event.magnitude}
+                    magnitudeType={event.magnitudeType}
+                    locale={locale}
+                  />
                 </td>
                 <td>
-                  <span className={styles.placeName}>{event.placeNameTr}</span>
+                  {/* `placeNameTr` is Turkish in BOTH locales (§5.7's own docblock) —
+                      `lang="tr"` so `/en/earthquakes` (`<html lang="en">`) never reads it with
+                      English phonetics (WCAG 3.1.2, review VAL104-M1). */}
+                  <span className={styles.placeName} lang="tr">
+                    {event.placeNameTr}
+                  </span>
                   {bindingNote !== null && (
                     <span className={styles.bindingNote}>{bindingNote}</span>
                   )}

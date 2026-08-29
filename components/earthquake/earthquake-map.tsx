@@ -79,8 +79,10 @@ export function EarthquakeMap({
       radius: MAGNITUDE_MARKER_RADIUS[bucket],
       bucketClass: MARKER_BUCKET_CLASS[bucket],
       // One em dash, matching `MarineMap`'s own accessible-name shape
-      // (`CONTENT-STYLE.md` §17's density limit, applied even to a data label).
-      accessibleName: `${event.placeNameTr} — M ${magnitudeLabel}, ${timeLabel}`,
+      // (`CONTENT-STYLE.md` §17's density limit, applied even to a data label). The magnitude
+      // method rides in parentheses (GLOSSARY.md §4, review FENER104-I1) — magnitude is never
+      // published without its type, because two methods give the same event two numbers.
+      accessibleName: `${event.placeNameTr} — M ${magnitudeLabel} (${event.magnitudeType}), ${timeLabel}`,
     };
   });
 
@@ -122,8 +124,17 @@ export function EarthquakeMap({
           {markers.map((marker) => (
             // `role="img"` + a `<title>` child gives the marker ONE accessible name — the
             // same "one accessible name, no drift" pattern `MarineMap`'s own markers use.
+            //
+            // `lang="tr"` on the WHOLE title (review VAL104-M1, WCAG 3.1.2): SVG `<title>`'s
+            // content model is text-only, so — unlike `earthquake-list.tsx`'s `<span>`, which
+            // can wrap `placeNameTr` alone — there is no valid way to mark only the Turkish
+            // place-name portion of this one string. `placeNameTr` is the substantial, often
+            // multi-word part of the name; the trailing "M {value} ({type}), {time}" fragment
+            // is mostly numeric and unaffected either way. Marking the dominant language of a
+            // mixed-language node this technology cannot split is the accepted WCAG 3.1.2
+            // fallback (Understanding 3.1.2).
             <g key={marker.key} role="img">
-              <title>{marker.accessibleName}</title>
+              <title lang="tr">{marker.accessibleName}</title>
               <circle
                 className={`${styles.mapMarker} ${marker.bucketClass}`}
                 cx={marker.x}

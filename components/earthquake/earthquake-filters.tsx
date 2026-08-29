@@ -192,9 +192,24 @@ export function EarthquakeFilters({
         </button>
       </form>
 
-      <div aria-live="polite" className={styles.filterStatus}>
+      <div
+        aria-live="polite"
+        className={
+          status === "error"
+            ? `${styles.filterStatus} ${styles.filterStatusError}`
+            : styles.filterStatus
+        }
+      >
         {status === "loading" && t("filters.loading")}
         {status === "error" && t("filters.loadFailed")}
+        {/* WCAG 4.1.3 (review A11Y104-I2): the region announced "loading" and "error" but
+            never a result on SUCCESS — a screen-reader user heard "Yükleniyor…" then silence.
+            `active !== null` gates this to an actual completed fetch, never the initial
+            server-rendered view (no client fetch has run yet, so nothing to announce). */}
+        {status === "idle" &&
+          active !== null &&
+          result !== null &&
+          t("filters.resultsFound", { count: result.items.length })}
       </div>
 
       {result === null ? (

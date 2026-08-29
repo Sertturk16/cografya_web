@@ -131,7 +131,9 @@
     "gameCtaHeading": "Öğrendiklerini oyunla sına",
     "gameCtaLink": "Harita oyununu aç",
     "marineCtaHeading": "Denizler ve kıyı illeri",
-    "marineCtaLink": "Deniz sayfasını aç"
+    "marineCtaLink": "Deniz sayfasını aç",
+    "earthquakeCtaHeading": "Türkiye'de son depremler",
+    "earthquakeCtaLink": "Deprem sayfasını aç"
   },
   "Game": {
     "brandName": "Kâşif",
@@ -586,11 +588,11 @@
   },
   "Earthquake": {
     "metaTitle": "Türkiye'de Son Depremler — AFAD Verileriyle Deprem Haritası",
-    "metaDescription": "AFAD'ın kaydettiği son depremler: büyüklük, derinlik, konum ve oluş zamanı. Harita ve listeyle, filtrelenebilir.",
+    "metaDescription": "AFAD'ın kaydettiği son depremler: büyüklük, konum ve oluş zamanı. Harita ve listeyle, filtrelenebilir.",
     "heading": "Türkiye'de son depremler",
     "lede": {
       "ok": "AFAD'ın Türkiye Deprem Veri Merkezi Sistemi'nden (TDVMS) gerçekleşmiş deprem kayıtları.",
-      "stale": "AFAD'ın Türkiye Deprem Veri Merkezi Sistemi'nden (TDVMS) gerçekleşmiş deprem kayıtları. Veri bir süredir tazelenemedi; aşağıdaki kayıtlar son alınan hâliyle gösteriliyor.",
+      "stale": "AFAD'ın TDVMS'inden deprem kayıtları — veri bir süredir tazelenemedi, son alınan hâliyle gösteriliyor.",
       "unavailable": "AFAD'dan henüz deprem kaydı alınmadı."
     },
     "meta": {
@@ -618,8 +620,8 @@
       "emptyState": "Bu aralıkta kayıtlı deprem yok."
     },
     "binding": {
-      "offshoreNear": "{province} açıklarında",
-      "acrossBorder": "{province} sınırına yakın, ülke dışında"
+      "offshoreNear": "en yakın Türk ili: {province}",
+      "acrossBorder": "en yakın Türk ili: {province}; ülke dışında"
     },
     "sourcesHeading": "Kaynaklar",
     "filters": {
@@ -633,6 +635,7 @@
       "apply": "Uygula",
       "loading": "Yükleniyor…",
       "loadFailed": "Depremler şu an yüklenemedi.",
+      "resultsFound": "{count, plural, other {# deprem bulundu}}",
       "loadMore": "Daha fazla göster"
     }
   },
