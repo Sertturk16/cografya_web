@@ -24,9 +24,18 @@ const HOME_KEYS = [
   "lede",
   "ctaMap",
   "ctaAbout",
-  "chipProvinces",
-  "chipCountries",
-  "chipMarine",
+  // The Kadastro hero treatment's decorative coordinate label (fix round 2026-08-29,
+  // `.heroCoord`) — aria-hidden chrome, not a data claim, so it carries no unit/citation
+  // obligation; the pair itself is Turkey's commonly-cited approximate geographic centre.
+  "heroCoordLabel",
+  // The hero stat-card strip (→ `Owner's Inbox/anasayfa-yenileme/plan.md` §5.11): label-only
+  // keys, the count rendered separately via `format.number()`. Supersedes the former
+  // `chipProvinces`/`chipCountries`/`chipMarine` combined-sentence keys. `statSeasLabel` /
+  // `statPointsLabel` (the "4 Deniz" / "30 Referans Noktası" cards) are REMOVED (owner ruling,
+  // fix round 2026-08-29) — three cards now, not five; no replacement stat was added.
+  "statProvincesLabel",
+  "statCountriesLabel",
+  "statGameModesLabel",
   "mapHeading",
   "mapBody",
   "mapLinkLabel",
@@ -45,21 +54,34 @@ const HOME_KEYS = [
   "seaLink",
   "discoverProvinces",
   "discoverCountries",
+  // The eyebrow labels above each section (plan §5.13) — chrome copy, not entity names, so
+  // they carry no `GLOSSARY.md` obligation beyond what §9 of that plan already confirms.
+  "eyebrowMaps",
+  "eyebrowProvinces",
+  "eyebrowCountries",
+  "eyebrowGame",
+  "eyebrowTools",
   "gameHeading",
   "gameBody",
   "gameCta",
   // The CBS tool band (→ DEC 2026-08-19a md.3/md.4): the tool hub's static internal link from
-  // the homepage, alongside the header nav entry.
+  // the homepage, alongside the header nav entry. `toolsBody` is gone (plan §5.5) — the band is
+  // three real cards (`components/home/tool-cards.tsx`). `toolsCta` (the trailing "Araçları aç"
+  // link under the cards) is REMOVED (owner ruling, fix round 2026-08-29) — redundant with the
+  // three cards themselves; `/araclar` stays reachable via the header nav.
   "toolsHeading",
-  "toolsBody",
-  "toolsCta",
 ] as const;
 
-/** Placeholders each templated key must carry, so a message can never drop an interpolation. */
+/**
+ * Placeholders each templated key must carry, so a message can never drop an interpolation.
+ *
+ * The three remaining `stat*Label` keys are DELIBERATELY absent here (plan §5.11; two of the
+ * original five, `statSeasLabel`/`statPointsLabel`, are gone entirely — fix round 2026-08-29):
+ * their TR values are plain fixed words with no `{count}` token at all — Turkish needs none —
+ * so asserting a required `{count` placeholder against the TR catalogue would fail on correct
+ * code. EN's own ICU plural form satisfies pluralization without this assertion's help.
+ */
 const REQUIRED_PLACEHOLDERS: Record<string, readonly string[]> = {
-  chipProvinces: ["count"],
-  chipCountries: ["count"],
-  chipMarine: ["basins", "points"],
   seaMedian: ["count"],
   seaScope: ["basins", "points", "provinces"],
 };

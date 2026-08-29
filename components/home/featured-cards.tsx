@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import styles from "./home.module.css";
 
 /** One card. Everything is already localized and formatted — this component only prints. */
@@ -21,6 +22,17 @@ interface FeaturedCardsProps {
   /** `id` of the `<h2>` this grid is labelled by — unique per page (two grids render). */
   readonly headingId: string;
   readonly heading: string;
+  /**
+   * The category-level eyebrow label above the heading ("İLLER" / "ÜLKELER" —
+   * `Owner's Inbox/anasayfa-yenileme/plan.md` §5.13). One per grid, not per card.
+   */
+  readonly eyebrow: string;
+  /**
+   * The eyebrow's decorative badge glyph (plan §5.12). Passed in by the caller, never chosen
+   * in here — this component stays entity-agnostic by construction (see the docblock below),
+   * so "which icon means province vs. country" is a page-level decision, not this one's.
+   */
+  readonly icon: ReactNode;
   readonly items: readonly FeaturedCardItem[];
 }
 
@@ -54,13 +66,26 @@ interface FeaturedCardsProps {
  *
  * Renders NOTHING when the list is empty — an "Öne çıkan iller" heading over no cards is the
  * empty-section shape `SEO-POLICY.md` §B3.6 bans, and the api being briefly unreachable is
- * exactly when it would appear.
+ * exactly when it would appear. The eyebrow/badge above the heading shares that same bail-out
+ * (plan §5.12) — a category badge over zero cards would be the identical empty-promise shape.
+ *
+ * ## The trailing arrow (`.cardArrow`, plan §5.12)
+ *
+ * A small, decorative, WORDLESS affordance — `aria-hidden`, no accompanying text. It is not a
+ * "Keşfet" label: that word is `CONTENT-STYLE.md` §22's own named example of banned marketing
+ * filler (the same reason it was removed from the hero, plan §5.1/§5.9). Only the visual cue
+ * transfers from the reference sites (plan §5.0), never the banned word.
  */
-export function FeaturedCards({ headingId, heading, items }: FeaturedCardsProps) {
+export function FeaturedCards({ headingId, heading, eyebrow, icon, items }: FeaturedCardsProps) {
   if (items.length === 0) return null;
 
   return (
     <section className="section" aria-labelledby={headingId}>
+      <div className={styles.sectionEyebrow}>
+        {icon}
+        <span>{eyebrow}</span>
+        <span className={styles.sectionEyebrowRule} aria-hidden="true" />
+      </div>
       <h2 id={headingId}>{heading}</h2>
       <ul role="list" className={styles.cardGrid}>
         {items.map((item) => (
@@ -74,10 +99,35 @@ export function FeaturedCards({ headingId, heading, items }: FeaturedCardsProps)
                   <span className={styles.cardFactValue}>{item.fact.value}</span>
                 </span>
               )}
+              <span className={styles.cardArrow} aria-hidden="true">
+                <ArrowGlyph />
+              </span>
             </a>
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+/** The `.cardArrow` glyph — a small chevron, drawn inline (the repo's established icon idiom,
+ *  `components/game/game-icons.tsx`): `stroke="currentColor"` so `.cardArrow`'s own resting/
+ *  hover colour (`home.module.css`) is the only place the colour is chosen. */
+function ArrowGlyph() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
   );
 }

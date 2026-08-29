@@ -267,6 +267,9 @@ describe("licence compliance of the shipped tool copy", () => {
 const CONSUMER_ROOTS = [
   { label: "app/[locale]/araclar", url: new URL("../../app/[locale]/araclar/", import.meta.url) },
   { label: "components/tools", url: new URL("../../components/tools/", import.meta.url) },
+  // The homepage's tools band (`components/home/tool-cards.tsx`, plan §5.5) — a second,
+  // independent consumer of `Tools.hub`'s already-bilingual name/body strings.
+  { label: "components/home", url: new URL("../../components/home/", import.meta.url) },
 ] as const;
 
 interface ToolsBinding {

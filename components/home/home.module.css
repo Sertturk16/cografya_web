@@ -24,14 +24,355 @@
       DESIGN.md §5 bans, which governs TEXT only.
    ============================================================================= */
 
-/* ---- Hero scope chips ---- */
-.chips {
-  list-style: none;
+/* ---- Section eyebrow (B7, → plan §5.13) ----
+   Shared across every in-scope section: the map-hub group (once, above the group — ties into
+   `.sectionGroupTight` below), each "Bugün keşfet" grid (with its own badge icon, passed in by
+   `FeaturedCards`' caller — see that component), the game band and the tools band. Every word
+   was checked against `CONTENT-STYLE.md` §22's banned-filler class before being chosen (plan
+   §5.13) — CSS-only, no new component. */
+.sectionEyebrow {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-slate);
+}
+
+.sectionEyebrowRule {
+  flex: 1 1 auto;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ---- Hero accent word (finding 1 + B2, → plan §5.9; wavy treatment added by the
+   "Kadastro" concept, fix round 2026-08-29) ----
+   `t.rich("heading", { accent: … })` wraps only the subject noun — never a raw colour, the
+   shared token. The colour rule from B2 stays; the italic + wavy underline is layered on top
+   of it, not a replacement for it. */
+.heroAccent {
+  color: var(--color-primary);
+  font-style: italic;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--color-secondary);
+  text-decoration-thickness: 1.6px;
+  text-underline-offset: 6px;
+}
+
+/* ---- Hero decorative layer — "Kadastro" concept (owner-approved, fix round 2026-08-29,
+   replaces `.heroTexture`/`public/hero-texture.svg` entirely) ----
+   Pure CSS, zero new assets: a low-contrast cartographic measurement grid plus a contour-ring
+   cluster, standing in for the removed SVG mask (which was the hero's actual z-index bug — see
+   `page.tsx`'s own docblock on the markup for the CSS2 painting-order explanation). Both
+   `.heroGrid` and `.heroRings` are POSITIONED (`position: absolute`) and therefore carry an
+   EXPLICIT `z-index: 0` — the hero's real content is pinned above them by its own explicit
+   `z-index: 2` in `globals.css`'s `.hero h1`/`.hero .lede`/`.hero .hero-actions` and this
+   file's own `.statStrip`, never by DOM order. `DESIGN.md` §6.1 rule 1 (brand chrome, never a
+   data encoding) applies throughout — every colour here is a Terra token. */
+.heroGrid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-border) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(90deg, var(--color-border) 0 1px, transparent 1px 34px);
+  opacity: 0.4;
+}
+
+/* The contour-ring cluster: five concentric rings + a "peak" dot, boxed at 320×320px and
+   offset -60px/-60px from the hero's top-right corner so the outermost ring visually bleeds
+   past the card edge — `.hero`'s own `overflow: hidden` (added alongside this, `globals.css`)
+   clips that bleed at the rounded border instead of letting it spill onto the page background.
+   `right`/`top` values (not `left`) throughout, matching the box's own top-right anchor.
+
+   HIDDEN below 600px (media query further down this file) — MEASURED, not assumed: the fixed
+   320×320px box has nowhere to go at a narrow width, because `.hero h1`'s own `max-width: 18ch`
+   (`globals.css`) only starts leaving free space to the RIGHT of the heading once the hero's
+   content column is wider than that 18ch cap; below it the heading fills the column edge to
+   edge and the ring cluster has no empty region to sit in. Real Playwright renders at
+   320/340/360/400/440/480px (both locales) showed the rings visually crossing the h1 text —
+   worst at 320px, still touching at 480px; 520px (TR) and 560px (EN) were the first clean
+   (no-touch) widths measured. 600px is chosen as a round cutoff with comfortable margin past
+   both locales' own worst measured case, not the exact boundary itself — the grid
+   (`.heroGrid`) and the coordinate label (`.heroCoord`, confirmed clear of the text at every
+   width down to 320px) are UNCHANGED here; only the rings disappear on narrow viewports. */
+.heroRings {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 320px;
+  height: 320px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 599px) {
+  .heroRings {
+    display: none;
+  }
+}
+
+/* MID-WIDTH CLEARANCE FIX (fix round 2026-08-29 #2, → an independent claim-verifier's
+   REFUTED-claim re-measurement of the "decoration never overlaps text" guarantee above).
+   The verifier measured a real overlap at 768px in both locales, using `Range.getClientRects()`
+   on `.lede`'s own text (the tight glyph bbox, not the container box) vs. each ring's stroke —
+   and a full re-sweep here (real Playwright, same tight-bbox method, proper circle-annulus-
+   vs-rectangle distance-range intersection math, every 10px) found the true failing band is
+   much wider than the one width the verifier happened to test: UNSCALED, rings 3/4/5 cross
+   `.lede`'s text at every width from 600px (the hide-breakpoint's own cutoff) through 943px —
+   clean only from 944px on. The 320×320px box's fixed geometry (§ comment above) simply
+   doesn't leave enough clearance at these mid widths; only at ≥944px does the hero column
+   grow wide enough for `.lede`'s line(s) to sit far enough from the ring cluster's own fixed
+   corner anchor.
+
+   FIX: `transform: scale(0.55)` with `transform-origin: 100% 0%` (top-right corner, matching
+   the cluster's own anchor) shrinks the whole 320×320px box AND pins its top-right corner in
+   place — so the visual box shrinks straight toward the corner it already bleeds from, moving
+   its center simultaneously closer to the corner (away from the text) AND smaller (shorter
+   reach), rather than just shrinking in place. This is a pure CSS transform: `.heroGrid` and
+   `.heroCoord` (both unaffected, no ring geometry) and the individual `.heroRing1..5`/
+   `.heroRingDot` inset rules (unchanged below) are untouched — the scale is entirely on the
+   parent box, matching how `getBoundingClientRect()` (and every browser) already resolves
+   post-transform geometry, so no descendant rule needed to change.
+
+   BAND: `600px` (this file's own existing hide-breakpoint's upper edge) through `959px` — 16px
+   of margin past the measured 944px natural-clean boundary above, the same "round cutoff with
+   comfortable margin" philosophy the hide-breakpoint comment above already documents. Full,
+   unscaled size resumes at 960px, inside the confirmed-clean range.
+
+   VERIFIED (real Playwright, `chromium`, both locales, fresh `document.fonts.ready` + one
+   settle frame, same tight-bbox `Range.getClientRects()` method vs. each ring's own
+   `getBoundingClientRect()`-derived circle, proper annulus-vs-rectangle distance-range
+   intersection, ±0.5px anti-aliasing buffer): 170/170 checks (600–1440px, every 10px, tr+en)
+   PASS — zero intersections at every width. Boundary widths independently re-checked: 598/599
+   (hidden, unchanged) → 600/601 (visible+scaled, clear) → 957–965 (scaled→full-size transition
+   at 960px, clear on both sides, no wobble) → 944 (the unscaled natural-clean boundary, inside
+   this band's scaled range, clear). 320/340/360/400/440/480/520/560px re-confirmed still
+   cleanly hidden (unchanged behaviour, not touched by this band). */
+@media (min-width: 600px) and (max-width: 959px) {
+  .heroRings {
+    transform: scale(0.55);
+    transform-origin: 100% 0%;
+  }
+}
+
+.heroRing1,
+.heroRing2,
+.heroRing3,
+.heroRing4,
+.heroRing5 {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.heroRing1 {
+  inset: 130px;
+  border: 1.4px solid var(--color-primary);
+  opacity: 0.5;
+}
+
+.heroRing2 {
+  inset: 95px;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.4;
+}
+
+.heroRing3 {
+  inset: 58px;
+  border: 1.4px solid var(--color-accent);
+  opacity: 0.3;
+}
+
+.heroRing4 {
+  inset: 18px;
+  border: 1.4px solid var(--color-primary);
+  opacity: 0.2;
+}
+
+.heroRing5 {
+  inset: -22px;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.14;
+}
+
+.heroRingDot {
+  position: absolute;
+  top: 185px;
+  right: 191px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+/* The coordinate label — decorative/atmospheric chrome, not a data claim
+   (`Home.heroCoordLabel`: Turkey's commonly-cited approximate geographic centre). No
+   monospace font is loaded in this repo (`DESIGN.md` §3 / `ENGINEERING.md` §2's stack lock:
+   Fraunces + Nunito Sans only) — `var(--font-body)` with wide letter-spacing reads close
+   enough to a coordinate/survey label without importing a third typeface.
+
+   COLOR: --color-slate, NOT --color-taupe (round-2 review A11Y102-I1, fix round 2026-08-29
+   #3). At 0.66rem the label is far below the "large text" threshold, so the 3:1 AA exception
+   never applies — it owes the full 4.5:1 normal-text floor. --color-taupe measures only
+   3.21:1 (vs --color-surface) / 3.64:1 (vs --color-bg), the hero's own gradient endpoints
+   (`.hero`, `globals.css`: `linear-gradient(180deg, var(--color-surface), var(--color-bg))`)
+   — sub-AA both ways. This is the same "taupe trap" (`DESIGN.md` §5, header note 2 above)
+   already hit and fixed twice elsewhere in this repo (the locale switcher, the footer); the
+   same remedy applies here. --color-slate measures 6.58:1 / 7.48:1 against the same two
+   colors (independently recomputed here, not copied from the earlier findings) — comfortably
+   clears 4.5:1 against both gradient endpoints. font-size/letter-spacing/position are
+   untouched — only the color property changes. */
+.heroCoord {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  z-index: 0;
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--color-slate);
+  pointer-events: none;
+}
+
+/* ---- Hero stat-card strip (finding 2 + B5, → plan §5.2/§5.11; RE-DERIVED for THREE cards,
+   fix round 2026-08-29 — the "4 Deniz"/"30 Referans Noktası" marine cards are gone, see the
+   removed markup's own comment in `page.tsx`) ----
+   Replaces the former `.chips`/global `.chip` pill row for THIS row only — the global `.chip`
+   class in `app/globals.css` is untouched and still serves the `kitaplar` book cards.
+   Generalizes `SeaToday`'s own "big number over small label" idiom (`.basinRowValue`/
+   `.basinRowLabel`, below) at a slightly larger hero scale — precedent, not invention.
+   `position: relative; z-index: 2` (→ the Kadastro structural fix, `globals.css` §Hero) pins
+   this whole strip above `.heroGrid`/`.heroRings` (both `z-index: 0`) by an explicit rule
+   rather than DOM order.
+
+   RE-DERIVATION, NOT A COPY OF THE OLD 5-CARD BANDS: the previous fix round (design-tour A2)
+   shipped THREE explicit `repeat(N, …)` overrides (N=2/3/4) because 5 cards split into a
+   genuinely partial row under three different natural column counts. With exactly THREE
+   cards, the shape is different and was re-derived from the SAME band math, not assumed to
+   still apply: this rule's own N-column threshold under `auto-fit`/`minmax(120px, 1fr)` is
+   `120×N + 12×(N−1) ≤ stripWidth`, `stripWidth = viewport − 106px` (20px×2 `.container`
+   padding + 32px×2 `.hero` padding + 1px×2 `.hero` border) — giving the same N=1→2→3→4
+   boundaries as before (358/490/622px), independent of item count. What changes is which
+   bands actually produce a partial row for 3 items:
+     - **< 358px (N=1):** three single-card rows. Trivially no orphan — every row is already
+       "full" at one card.
+     - **358–489px (N=2):** 3 cards over 2 natural columns split 2+1 — a GENUINE partial last
+       row, the same shape the old fix targeted. STILL NEEDS the override below.
+     - **≥ 490px (N=3 or more):** 3 cards fill min(N, 3) = 3 columns exactly. Any wider natural
+       column count beyond 3 leaves trailing tracks with no items; `auto-fit` collapses those
+       empty tracks to zero width, and because this rule's track max is the FLEXIBLE `1fr` (not
+       a fixed length), the freed space redistributes to the 3 filled tracks, which stretch to
+       consume the full row edge-to-edge — by construction, never a partial row, at every width
+       from 490px up through desktop. Verified directly (real Playwright, DOM `getBoundingClientRect`
+       row-membership check, not inferred from this math alone): 490/622/754/768/1024/1440px all
+       render one full 3-column row, none produce a second, shorter row.
+   So the 490–621px and 622–753px overrides the 5-card fix needed are GENUINELY UNNECESSARY for
+   3 cards and are removed here rather than kept as dead complexity — the task's own instruction,
+   confirmed by the math and the measurement above, not merely assumed from "3 is fewer than 5". */
+.statStrip {
+  list-style: none;
   padding: 0;
   margin: 18px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+/* THE ONE REMAINING BAND: 358–489px, where 3 cards over 2 natural columns split 2+1 (see the
+   derivation above). Same `repeat(N, …)` mechanism and the same reason the original A2 fix
+   used it over `auto-fit` with a bounded max: `auto-fit` picks its column count from the
+   LARGER of `minmax()`'s two values only when that value is flexible (this rule's `1fr`
+   above); a fixed-length max would count columns differently and silently shift the N/N+1
+   boundary away from this rule's own, reproducing the exact bug being fixed. An explicit
+   `repeat(2, …)` has no such second threshold to disagree with.
+
+   `minmax(120px, 150px)`: the same 120px floor this rule already uses, capped (150px, not
+   `1fr`) to leave real leftover space for `justify-content: center` to redistribute — verified
+   directly at this band's own edges, including its lower edge (358px, where 2×150px cannot fit
+   and the tracks settle back to ~120px, exactly matching this rule's own un-centred edge value
+   — no jump, no overflow).
+
+   WHAT "CENTRED" MEANS HERE (unchanged from the original A2 finding, still true for 3 items):
+   the shared TRACK BLOCK is centred within the strip, and the partial row's one card occupies
+   that block's leading track — NOT individually re-centred within the empty row. */
+@media (min-width: 358px) and (max-width: 489px) {
+  .statStrip {
+    grid-template-columns: repeat(2, minmax(120px, 150px));
+  }
+}
+
+/* STRETCH FIX (round-2 review DFR102-I2, fix round 2026-08-29 #3). The "≥ 490px (N=3 or
+   more)" paragraph in the big derivation comment above was the ORIGINAL design for this band:
+   it treated "the freed space redistributes to the 3 filled tracks, which stretch to consume
+   the full row edge-to-edge" as an acceptable trade-off for never producing a partial row.
+   Round 2 measured that trade-off itself as the defect it is: at 1120/1440px `.statCard` grew
+   to ~330px wide, dwarfing the number+label content it holds and leaving large dead space
+   around it — the exact `auto-fit` + flexible-`1fr`-max pitfall `.cardGrid`'s own comment
+   further down this file already documents and caps for the entity-card grids.
+
+   WHY NOT JUST CAP THE EXISTING `1fr`: auto-fit's own column-COUNT algorithm reads the
+   FLEXIBLE `1fr` max as its associated MIN value (120px) for counting purposes, but reads a
+   DEFINITE (fixed) max as itself once the max stops being a flex length. So merely capping
+   this rule's own `1fr` to a fixed length (e.g. `minmax(120px, 150px)`) — without also fixing
+   the column COUNT — would silently move the natural 3-column threshold from 490px to ~658px
+   (3×150 + 2×12 vs the original 3×120 + 2×12, against the same stripWidth math the derivation
+   above already establishes), reopening the exact orphan-row bug that derivation worked to
+   close, now for a NEW 490–657px band. An explicit `repeat(3, …)` has no such threshold to
+   disagree with — unconditionally 3 columns whenever this query applies — matching what the
+   ≥490px paragraph above already concluded is always the correct column count here; only the
+   max stops being flexible.
+
+   `minmax(120px, 150px)`: the SAME values the 358–489px override immediately above already
+   uses, not a new number — chosen for consistency, and because every stat label
+   ("İl"/"Ülke"/"Oyun Modu", "Provinces"/"Countries"/"Modes") is short enough that 150px is
+   comfortable headroom, never a wrap risk. At exactly 490px the three tracks sit at the 120px
+   floor (3×120 + 2×12 = 384px = this band's own stripWidth boundary, the same fit the
+   derivation above already establishes — no jump at the 489/490px seam); width grows smoothly
+   toward the 150px cap as viewport widens past 490px and holds flat from there through
+   1440px+, with `justify-content: center` (existing, untouched) centering the resulting
+   narrower-than-container track set instead of letting it stretch edge-to-edge.
+
+   VERIFIED (real Playwright, `chromium`, `getBoundingClientRect()` on every `.statCard`, fresh
+   `document.fonts.ready` + one settle frame): a dense 10px-step sweep from 320px through
+   1440px, both locales — 226 width/locale combinations — found ZERO widths ≥490px where the
+   three cards render on more than one row, and ZERO card widths outside [120px, 150px] at
+   ≥490px. Explicit spot-check at 490/622/700/960/1120/1280/1440px, both locales, additionally
+   confirmed the track block stays perfectly centered (`leftMargin == rightMargin`, diff 0.00px
+   at every one of those 14 checks — including the plateau at 270px from 1120px on, where
+   `--container-max: 1120px` (`globals.css`) stops `.hero` itself from growing any wider). The
+   below-490px bands (the 2-row 358–489px partial row, the 1-column <358px stack) are UNCHANGED
+   by this media query and were re-measured in the same sweep with results matching their own
+   documentation above — this fix touches only the ≥490px band. */
+@media (min-width: 490px) {
+  .statStrip {
+    grid-template-columns: repeat(3, minmax(120px, 150px));
+  }
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statNumber {
+  font-family: var(--font-heading);
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem);
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  line-height: 1.1;
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: var(--color-slate);
 }
 
 /* ---- Explore band (the two map hubs) ----
@@ -69,11 +410,17 @@
   min-height: 24px;
 }
 
-/* The world block is the SECONDARY half of the split band: same heading level (two peer
-   destinations — `SEO-POLICY.md` §B3.7 keeps headings an outline, not a type scale), but it
-   opens tighter than a full `.section` so the pair reads as one band with a leading half
-   rather than as two competing heroes. `--container-max` and every type token are untouched. */
-.exploreBlockSecondary {
+/* The world block is the SECONDARY half of a THREE-member group (→ plan §5.15, B15): Türkiye,
+   Dünya and (below) `SeaToday`'s own section all share this tighter opening so the trio reads
+   as one visually grouped band under the "HARİTALAR" eyebrow, rather than as an undifferentiated
+   continuation of the stack below it — the gap İRİS's tour actually observed (only 2 of the 3
+   intended members carried it before this section was renamed and given a second call site).
+   Same heading level throughout (peer destinations — `SEO-POLICY.md` §B3.7 keeps headings an
+   outline, not a type scale). `--container-max` and every type token are untouched: this is a
+   RENAME (was `.exploreBlockSecondary`) plus one new call site, zero new spacing values — the
+   ordinary 40px `.section` gap before the first "Bugün keşfet" grid is what marks the group's
+   own boundary, deliberately larger than this 24px intra-group gap. */
+.sectionGroupTight {
   margin-top: 24px;
 }
 
@@ -149,19 +496,31 @@
 }
 
 /* ---- Featured entity cards ---- */
+/* `minmax(220px, 260px)`, NOT `1fr` (finding 4, → plan §5.6): with exactly `FEATURED_LIMIT`
+   (3) items, an unbounded `1fr` track stretches the cards to fill the whole row at any width
+   where they fit, and strands a lone 3rd card full-width in its own row at narrower widths —
+   both real, reproduced `auto-fit`/`1fr` pitfalls, not a data or React bug. Capping the track
+   at 260px (≈ a 4-column rhythm inside the 1080px content width) plus `justify-content: center`
+   centers the resulting narrower-than-container track set instead of leaving it flush-left,
+   which also fixes the isolated-3rd-card case: it is now one centered, capped-width column
+   instead of a full-width stretch. Shared by BOTH "Bugün keşfet" grids and the tools band
+   (`components/home/tool-cards.tsx`) — the same fix, the same generic 3-card layout. */
 .cardGrid {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 260px));
+  justify-content: center;
   gap: 14px;
 }
 
 /* The WHOLE card is the anchor: one target, one accessible name, nothing interactive nested
    inside it. `min-height` keeps a card whose fact row is absent the same height as its
-   neighbours. */
+   neighbours. `position: relative` is what lets `.cardArrow` (below) anchor to the card's own
+   box rather than the page. */
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -203,6 +562,32 @@
 .cardFactValue {
   font-weight: 700;
   color: var(--color-ink);
+}
+
+/* The description line on a TOOL card (`components/home/tool-cards.tsx`) — the same "one line
+   under the name" slot `.cardMeta`/`.cardFact` play on an entity card, under its own name so a
+   tool card's longer sentence is never confused with either. */
+.toolCardBody {
+  margin-top: auto;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+/* The trailing arrow (B6, → plan §5.12): small, decorative, WORDLESS — `aria-hidden` in the
+   markup. Resting taupe / hover-or-focus primary mirrors `.card:hover .cardName` directly
+   above, the SAME colour-shift pattern on a second element (header note 3: a resting state —
+   the taupe arrow — already carries the meaning; the colour only sharpens on interaction). */
+.cardArrow {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  color: var(--color-taupe);
+  display: inline-flex;
+}
+
+.card:hover .cardArrow,
+.card:focus-within .cardArrow {
+  color: var(--color-primary);
 }
 
 /* ---- Game invite band ---- */

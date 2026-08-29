@@ -58,7 +58,10 @@ export async function SeaToday({ summary, scope }: SeaTodayProps) {
   const showValues = marineSummaryShowsValues(summary);
 
   return (
-    <section className="section" aria-labelledby={HEADING_ID}>
+    // `.sectionGroupTight`, not the plain `.section` class: this is the THIRD member of the
+    // Türkiye/Dünya/Deniz group (B15, → plan §5.15) — the tighter margin is what lets the trio
+    // read as one visually grouped band, next to `page.tsx`'s own two calls of the same class.
+    <section className={styles.sectionGroupTight} aria-labelledby={HEADING_ID}>
       <h2 id={HEADING_ID}>{showValues ? t("seaHeadingValues") : t("seaHeadingNoValues")}</h2>
 
       {showValues ? (

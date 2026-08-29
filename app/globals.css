@@ -565,14 +565,118 @@ main {
    it is pulling the second section up so the Türkiye thumbnail's top edge clears the fold at
    1440×900. The hero keeps its own scale; only the air around it shrinks. */
 .hero {
+  /* `position: relative` + an explicit `z-index` make `.hero` a real stacking context
+     (→ `Owner's Inbox/anasayfa-yenileme/plan.md` §5.10, B3), confining every decorative
+     descendant (`home.module.css`'s `.heroGrid`/`.heroRings`/`.heroCoord`) to this box rather
+     than letting it escape to the nearest ancestor stacking context.
+
+     THE STRUCTURAL Z-INDEX FIX (Kadastro concept, fix round 2026-08-29, → replaces the removed
+     `.heroTexture` mask layer). The bug `.heroTexture` carried was real: a positioned
+     (`position: absolute`) `z-index: 0` sibling paints in browser stacking order AFTER the
+     hero's own unpositioned in-flow children (CSS2.1 Appendix E — "positioned descendants,
+     stack level 0" is a LATER paint step than "in-flow, non-positioned descendants"), so a mask
+     div placed FIRST in the DOM could still paint OVER the h1/lede text, contradicting the
+     comment that used to sit here. The fix is not "reorder the DOM" — it is this rule: every
+     real content element inside `.hero` (`h1` below, `.lede`/`.hero-actions` further down this
+     file, `.statStrip` in `home.module.css`) now carries an EXPLICIT `position: relative;
+     z-index: 2`, strictly above the decorative layers' own explicit `z-index: 0`. Content is
+     pinned above decoration by a stated rule, not by where it happens to sit in the markup.
+
+     `overflow: hidden` (new): the contour-ring cluster (`.heroRings`) is deliberately offset
+     -60px/-60px past this box's own top-right corner so its outermost ring visually bleeds to
+     the card edge — this clips that bleed at the rounded border instead of letting it spill
+     onto the page background outside the card. */
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 26px 32px;
 }
 
+/* `.lede`/`.hero-actions` are GLOBAL classes reused on other pages (`.lede` in almost every
+   detail page's intro paragraph; `.hero-actions` also on `error.tsx`) — scoped here to `.hero`
+   only, so the structural z-index fix above never reaches those other, unrelated call sites. */
+.hero .lede,
+.hero .hero-actions {
+  position: relative;
+  z-index: 2;
+}
+
+/* The steeper clamp (B11, → plan §5.14) reaches the SAME 2.6rem ceiling `h1`'s shared global
+   rule already sets (untouched, above) sooner and holds closer to it across more of the
+   viewport range — a hero-scoped override, not a change to the shared token. Composes with the
+   `<br>` two-line split `t.rich()` renders (B2, → plan §5.9): both live in this one rule set,
+   changed together rather than as two sequential edits to the same selector.
+
+   THE 1.9rem FLOOR IS THE SAME 1.9rem `DESIGN.md` §3 documents for EVERY h1 on the site — never
+   lowered, not even in the narrow band below (→ round-2 review DFR102-I1). A first fix-round
+   attempt (→ design-tour 2026-08-29 finding A1) DID shrink this narrow band's floor to fix a
+   320px 5-line wrap, and that shrink was itself the defect the next review round caught: it put
+   the homepage's own h1 BELOW the one floor every other h1 on the site respects, undocumented.
+   The real fix stays entirely in the media query below — it changes the SPACE available to the
+   text, not the size of the text. THIS base rule is unchanged by that fix and still governs
+   361px and up (pre-existing narrow-window behaviour there, see the media query's own comment). */
 .hero h1 {
   max-width: 18ch;
+  font-size: clamp(1.9rem, 1.3rem + 3vw, 2.6rem);
+  /* The structural z-index fix (see `.hero`'s own comment above) — explicit, not inherited
+     from DOM order. */
+  position: relative;
+  z-index: 2;
+}
+
+/* NARROW-WIDTH WRAP FIX (→ round-2 review DFR102-I1, replaces the font-shrinking narrow-band
+   override the previous fix round shipped). That override held 320–360px to 4 wrapped lines by
+   dropping `.hero h1`'s font-size below `DESIGN.md` §3's documented 1.9rem/30.4px floor — the
+   floor "every h1 on the site must respect," per that section, with no recorded exception here
+   (unlike the nav breakpoint pair, §4, which does carry one). This rule holds the SAME 4-line
+   (or better) wrap WITHOUT touching font-size at all: `.hero h1`'s own base rule above is
+   completely untouched, so its font-size only ever grows from here, never shrinks below the
+   floor.
+
+   MECHANISM: the 320px 5-line break was never a font-size problem — it was that the h1's
+   available inline box was only 214px (320 viewport − 20px container padding × 2 − 32px hero
+   padding × 2 − 1px hero border × 2), and the `<br></br>` `t.rich()` renders (B2, → plan §5.9)
+   forces "tek platformda"/"on one platform" onto its own wrap run, which itself needs a second
+   line at that width. Two changes, together, remove the forced 5th line without shrinking the
+   text: (1) hiding the `<br>` at this width lets the WHOLE heading wrap as one continuous run,
+   so the browser's own greedy line-breaker — which is optimal for minimizing line count at a
+   fixed width — picks the best split; (2) `.hero`'s own inline padding drops from 32px to 20px
+   in this band ONLY, widening the available box by 24px (238px at 320px), which is what lets
+   "coğrafyası, tek" (TR) / "geography, on" (EN) each fit on one line instead of forcing yet
+   another break. `padding-inline` is set on `.hero` itself, not `.hero h1` alone, so every child
+   (lede, stat strip, buttons) narrows together — nothing shifts out of alignment with its
+   siblings. `messages/{tr,en}.json`'s `Home.heading` gained exactly one whitespace character
+   each (before "tek"/"on") so the two halves the hidden `<br>` used to separate don't run
+   together with no space between them when they land on the same wrapped line; this is not a
+   wording change — every word is byte-identical, `SEO-POLICY.md`/`CONTENT-STYLE.md` untouched.
+
+   MEASURED (fresh `document.fonts.ready` loads, `Range.getClientRects()` line-counting +
+   `getComputedStyle` font-size, real Playwright, both locales, → round-2 fix):
+   320px → 4 lines, 30.4px (=floor, exactly). 340px → 4 lines, 31px. 360px → 3 lines, 31.6px
+   (even better than 4; this rule's own band). 375px → 4 lines, 32.05px (ABOVE this band — the
+   base rule alone, `<br>` visible again, unchanged from before this fix, confirmed by the same
+   measurement pass). Font-size never drops below 30.4px at any measured width in either locale.
+
+   A PRE-EXISTING, OUT-OF-SCOPE ANOMALY SURFACED WHILE VERIFYING THIS (not introduced by this
+   fix, not one of the two named findings this round, left alone): at exactly 361px — one pixel
+   outside this rule's own `max-width: 360px` band — the EN string alone breaks to 5 lines
+   (`Range.getClientRects()` confirms this on the UNMODIFIED base rule via `git stash`, i.e.
+   before any change in this fix round). It is the same "1-2px intersection window" class of
+   narrow-window wrap behaviour the original (now-removed) narrow-band comment described, just
+   one pixel past where that band ended. `DESIGN.md`'s own mandatory test widths are 320/360, not
+   361, and this task's four verification widths (320/340/360/375) do not include it either — so
+   it is reported here rather than silently fixed, and rather than silently left unmentioned. */
+@media (max-width: 360px) {
+  .hero {
+    padding-inline: 20px;
+  }
+
+  .hero h1 br {
+    display: none;
+  }
 }
 
 .hero-actions {
