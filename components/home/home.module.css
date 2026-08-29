@@ -213,7 +213,19 @@
    (`Home.heroCoordLabel`: Turkey's commonly-cited approximate geographic centre). No
    monospace font is loaded in this repo (`DESIGN.md` §3 / `ENGINEERING.md` §2's stack lock:
    Fraunces + Nunito Sans only) — `var(--font-body)` with wide letter-spacing reads close
-   enough to a coordinate/survey label without importing a third typeface. */
+   enough to a coordinate/survey label without importing a third typeface.
+
+   COLOR: --color-slate, NOT --color-taupe (round-2 review A11Y102-I1, fix round 2026-08-29
+   #3). At 0.66rem the label is far below the "large text" threshold, so the 3:1 AA exception
+   never applies — it owes the full 4.5:1 normal-text floor. --color-taupe measures only
+   3.21:1 (vs --color-surface) / 3.64:1 (vs --color-bg), the hero's own gradient endpoints
+   (`.hero`, `globals.css`: `linear-gradient(180deg, var(--color-surface), var(--color-bg))`)
+   — sub-AA both ways. This is the same "taupe trap" (`DESIGN.md` §5, header note 2 above)
+   already hit and fixed twice elsewhere in this repo (the locale switcher, the footer); the
+   same remedy applies here. --color-slate measures 6.58:1 / 7.48:1 against the same two
+   colors (independently recomputed here, not copied from the earlier findings) — comfortably
+   clears 4.5:1 against both gradient endpoints. font-size/letter-spacing/position are
+   untouched — only the color property changes. */
 .heroCoord {
   position: absolute;
   right: 20px;
@@ -222,7 +234,7 @@
   font-family: var(--font-body);
   font-size: 0.66rem;
   letter-spacing: 0.04em;
-  color: var(--color-taupe);
+  color: var(--color-slate);
   pointer-events: none;
 }
 
@@ -293,6 +305,54 @@
 @media (min-width: 358px) and (max-width: 489px) {
   .statStrip {
     grid-template-columns: repeat(2, minmax(120px, 150px));
+  }
+}
+
+/* STRETCH FIX (round-2 review DFR102-I2, fix round 2026-08-29 #3). The "≥ 490px (N=3 or
+   more)" paragraph in the big derivation comment above was the ORIGINAL design for this band:
+   it treated "the freed space redistributes to the 3 filled tracks, which stretch to consume
+   the full row edge-to-edge" as an acceptable trade-off for never producing a partial row.
+   Round 2 measured that trade-off itself as the defect it is: at 1120/1440px `.statCard` grew
+   to ~330px wide, dwarfing the number+label content it holds and leaving large dead space
+   around it — the exact `auto-fit` + flexible-`1fr`-max pitfall `.cardGrid`'s own comment
+   further down this file already documents and caps for the entity-card grids.
+
+   WHY NOT JUST CAP THE EXISTING `1fr`: auto-fit's own column-COUNT algorithm reads the
+   FLEXIBLE `1fr` max as its associated MIN value (120px) for counting purposes, but reads a
+   DEFINITE (fixed) max as itself once the max stops being a flex length. So merely capping
+   this rule's own `1fr` to a fixed length (e.g. `minmax(120px, 150px)`) — without also fixing
+   the column COUNT — would silently move the natural 3-column threshold from 490px to ~658px
+   (3×150 + 2×12 vs the original 3×120 + 2×12, against the same stripWidth math the derivation
+   above already establishes), reopening the exact orphan-row bug that derivation worked to
+   close, now for a NEW 490–657px band. An explicit `repeat(3, …)` has no such threshold to
+   disagree with — unconditionally 3 columns whenever this query applies — matching what the
+   ≥490px paragraph above already concluded is always the correct column count here; only the
+   max stops being flexible.
+
+   `minmax(120px, 150px)`: the SAME values the 358–489px override immediately above already
+   uses, not a new number — chosen for consistency, and because every stat label
+   ("İl"/"Ülke"/"Oyun Modu", "Provinces"/"Countries"/"Modes") is short enough that 150px is
+   comfortable headroom, never a wrap risk. At exactly 490px the three tracks sit at the 120px
+   floor (3×120 + 2×12 = 384px = this band's own stripWidth boundary, the same fit the
+   derivation above already establishes — no jump at the 489/490px seam); width grows smoothly
+   toward the 150px cap as viewport widens past 490px and holds flat from there through
+   1440px+, with `justify-content: center` (existing, untouched) centering the resulting
+   narrower-than-container track set instead of letting it stretch edge-to-edge.
+
+   VERIFIED (real Playwright, `chromium`, `getBoundingClientRect()` on every `.statCard`, fresh
+   `document.fonts.ready` + one settle frame): a dense 10px-step sweep from 320px through
+   1440px, both locales — 226 width/locale combinations — found ZERO widths ≥490px where the
+   three cards render on more than one row, and ZERO card widths outside [120px, 150px] at
+   ≥490px. Explicit spot-check at 490/622/700/960/1120/1280/1440px, both locales, additionally
+   confirmed the track block stays perfectly centered (`leftMargin == rightMargin`, diff 0.00px
+   at every one of those 14 checks — including the plateau at 270px from 1120px on, where
+   `--container-max: 1120px` (`globals.css`) stops `.hero` itself from growing any wider). The
+   below-490px bands (the 2-row 358–489px partial row, the 1-column <358px stack) are UNCHANGED
+   by this media query and were re-measured in the same sweep with results matching their own
+   documentation above — this fix touches only the ≥490px band. */
+@media (min-width: 490px) {
+  .statStrip {
+    grid-template-columns: repeat(3, minmax(120px, 150px));
   }
 }
 
