@@ -585,19 +585,56 @@ main {
    `<br>` two-line split `t.rich()` renders (B2, → plan §5.9): both live in this one rule set,
    changed together rather than as two sequential edits to the same selector.
 
-   THE FLOOR IS DELIBERATELY THE SAME 1.9rem THE SHARED GLOBAL RULE USES, not the plan's own
-   originally-proposed 2.1rem — a rendered-sample correction (plan §5.9/§11's own named
-   uncertainty). A 2.1rem floor measured as a real regression at 320/360px: combined with the
-   new explicit `<br>`, it forced a FIFTH wrapped line where the pre-existing hero (no `<br>`,
-   1.9rem floor) held to four — the exact "unwanted third [additional] wrapped line" §5.9 named
-   as the thing to verify before calling this done. Keeping the SAME floor as the shared rule
-   means the narrow-viewport size is byte-for-byte what it was before this change (both clamp
-   formulas resolve to their floor at 320px), so nothing regresses there; the coefficient below
-   is only what changed, and it is still what makes this rule reach 2.6rem at ~693px instead of
-   the shared rule's ~862px — "sooner", the plan's own stated intent, without the regression. */
+   THE 1.9rem FLOOR BELOW WAS PREVIOUSLY CLAIMED (in this comment) TO HOLD 320/360px TO FOUR
+   WRAPPED LINES, MATCHING THE SHARED GLOBAL RULE'S OWN FLOOR SO "NOTHING REGRESSES THERE". A
+   pre-merge live audit (→ design-tour 2026-08-29, finding A1) measured that claim and found it
+   only half true: 360px genuinely holds at four lines, but 320px — one of DESIGN.md's own two
+   MANDATORY test viewports — still broke to FIVE, in both locales, because "byte-for-byte
+   identical to the pre-<br> hero" is not the same guarantee as "still four lines with the new
+   explicit <br> in the string": the two text HALVES the <br> now splits wrap independently, and
+   at 320px the post-<br> half ("tek platformda" / "on one platform") itself wraps to two lines
+   at this size, not one — the earlier claim measured the whole-string byte-identity, not the
+   post-split wrap count, which is the actual gap. See the media query below for the real fix;
+   THIS base rule is otherwise unchanged (still governs 361px and up, where it was already
+   correct — confirmed by the same audit, and re-measured before closing this out). */
 .hero h1 {
   max-width: 18ch;
   font-size: clamp(1.9rem, 1.3rem + 3vw, 2.6rem);
+}
+
+/* NARROW-BAND OVERRIDE for the exact range the comment above names as broken (→ design-tour
+   2026-08-29 finding A1, closing plan §5.9's own "must confirm... not assert" obligation for
+   real this time, measured with fresh page loads + `Range.getClientRects()` line-counting, not
+   asserted from memory). Scoped to `.hero h1` only — the shared global `h1` rule above (and
+   every other `h1` on the site) is completely untouched.
+
+   WHY A SEPARATE RULE RATHER THAN JUST LOWERING THE BASE CLAMP'S FLOOR: the base rule's
+   "1.3rem + 3vw" preferred formula already EQUALS its own 1.9rem floor at exactly 320px — the
+   floor and the formula coincide there by construction, so lowering only the floor number changes
+   nothing at 320px (the formula, not the floor, decides the value at any width ≥ its own
+   crossover point). Shrinking the size at 320/360px for real means changing the FORMULA for
+   this band, which is exactly what a distinct, narrower clamp does without touching the base
+   rule's already-correct behaviour at 361px+ (confirmed unchanged by the same measurement pass).
+
+   THIS WAS NOT A ONE-SHOT TUNE — it is the result of a font-size sweep (fresh page loads +
+   `Range.getClientRects()`, in 0.2px steps, at 320/340/360px, both locales) because the
+   post-<br> phrase and the pre-<br> phrase each carry their OWN, DIFFERENT wrap threshold,
+   and "4 lines for both locales" is only the narrow INTERSECTION of both thresholds — a
+   1.2–2px-wide window, not a broad safe range. A first attempt (~24px, chosen for a wide
+   safety margin against the 5-line regression) fixed the regression but pushed the H1 BELOW
+   `.statNumber`'s own 1.6rem/25.6px floor (the stat-card numbers a few lines below this H1,
+   → plan §5.11) — a self-inflicted hierarchy inversion (the H1 rendering smaller than a
+   stat-card number) traded in for the fixed wrap count. The coefficients below instead trace
+   the measured CENTER of the "4-for-both" window at each sampled width — 320px→26.0px
+   (window [25.4, 26.6]), 340px→28.25px (window [27.4, 29.4]), 360px→30.4px (window
+   [29.4, 31.4]) — which keeps the fifth line gone, holds every sampled width in the band to
+   4 lines for both locales, and stays clearly above the stat-card-number floor throughout
+   (never the ~24px value that inverted it). Re-verify with the same sweep method before
+   changing either number — this is a measured fit, not a formula chosen for tidy digits. */
+@media (max-width: 360px) {
+  .hero h1 {
+    font-size: clamp(1.5rem, -0.625rem + 11.25vw, 1.9rem);
+  }
 }
 
 .hero-actions {
