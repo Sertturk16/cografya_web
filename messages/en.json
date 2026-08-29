@@ -59,8 +59,6 @@
     "ctaAbout": "About the Platform",
     "statProvincesLabel": "{count, plural, one {Province} other {Provinces}}",
     "statCountriesLabel": "{count, plural, one {Country} other {Countries}}",
-    "statSeasLabel": "{count, plural, one {Sea} other {Seas}}",
-    "statPointsLabel": "{count, plural, one {Reference Point} other {Reference Points}}",
     "statGameModesLabel": "{count, plural, one {Mode} other {Modes}}",
     "mapHeading": "The provinces of Türkiye",
     "mapBody": "Population, area, climate, landforms and hydrography for every province.",
@@ -87,7 +85,7 @@
     "gameBody": "Find Türkiye's 7 regions and 81 provinces on the map.",
     "gameCta": "Play",
     "toolsHeading": "Map tools",
-    "toolsCta": "Open the tools"
+    "heroCoordLabel": "39°N 35°E"
   },
   "Map": {
     "mapTitle": "Map of the provinces of Türkiye",

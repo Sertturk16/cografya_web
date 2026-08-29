@@ -566,17 +566,42 @@ main {
    1440×900. The hero keeps its own scale; only the air around it shrinks. */
 .hero {
   /* `position: relative` + an explicit `z-index` make `.hero` a real stacking context
-     (→ `Owner's Inbox/anasayfa-yenileme/plan.md` §5.10, B3): `home.module.css`'s
-     `.heroTexture` is an absolutely-positioned `z-index: 0` decorative layer, and without a
-     stacking context of its OWN to be confined to, a negative/auto z-index descendant can
-     escape to the nearest ancestor stacking context instead of staying safely behind this
-     box's own in-flow children. */
+     (→ `Owner's Inbox/anasayfa-yenileme/plan.md` §5.10, B3), confining every decorative
+     descendant (`home.module.css`'s `.heroGrid`/`.heroRings`/`.heroCoord`) to this box rather
+     than letting it escape to the nearest ancestor stacking context.
+
+     THE STRUCTURAL Z-INDEX FIX (Kadastro concept, fix round 2026-08-29, → replaces the removed
+     `.heroTexture` mask layer). The bug `.heroTexture` carried was real: a positioned
+     (`position: absolute`) `z-index: 0` sibling paints in browser stacking order AFTER the
+     hero's own unpositioned in-flow children (CSS2.1 Appendix E — "positioned descendants,
+     stack level 0" is a LATER paint step than "in-flow, non-positioned descendants"), so a mask
+     div placed FIRST in the DOM could still paint OVER the h1/lede text, contradicting the
+     comment that used to sit here. The fix is not "reorder the DOM" — it is this rule: every
+     real content element inside `.hero` (`h1` below, `.lede`/`.hero-actions` further down this
+     file, `.statStrip` in `home.module.css`) now carries an EXPLICIT `position: relative;
+     z-index: 2`, strictly above the decorative layers' own explicit `z-index: 0`. Content is
+     pinned above decoration by a stated rule, not by where it happens to sit in the markup.
+
+     `overflow: hidden` (new): the contour-ring cluster (`.heroRings`) is deliberately offset
+     -60px/-60px past this box's own top-right corner so its outermost ring visually bleeds to
+     the card edge — this clips that bleed at the rounded border instead of letting it spill
+     onto the page background outside the card. */
   position: relative;
   z-index: 0;
+  overflow: hidden;
   background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 26px 32px;
+}
+
+/* `.lede`/`.hero-actions` are GLOBAL classes reused on other pages (`.lede` in almost every
+   detail page's intro paragraph; `.hero-actions` also on `error.tsx`) — scoped here to `.hero`
+   only, so the structural z-index fix above never reaches those other, unrelated call sites. */
+.hero .lede,
+.hero .hero-actions {
+  position: relative;
+  z-index: 2;
 }
 
 /* The steeper clamp (B11, → plan §5.14) reaches the SAME 2.6rem ceiling `h1`'s shared global
@@ -596,6 +621,10 @@ main {
 .hero h1 {
   max-width: 18ch;
   font-size: clamp(1.9rem, 1.3rem + 3vw, 2.6rem);
+  /* The structural z-index fix (see `.hero`'s own comment above) — explicit, not inherited
+     from DOM order. */
+  position: relative;
+  z-index: 2;
 }
 
 /* NARROW-WIDTH WRAP FIX (→ round-2 review DFR102-I1, replaces the font-shrinking narrow-band

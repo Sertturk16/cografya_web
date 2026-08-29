@@ -59,8 +59,6 @@
     "ctaAbout": "Platform Hakkında",
     "statProvincesLabel": "İl",
     "statCountriesLabel": "Ülke",
-    "statSeasLabel": "Deniz",
-    "statPointsLabel": "Referans Noktası",
     "statGameModesLabel": "Oyun Modu",
     "mapHeading": "Türkiye'nin illeri",
     "mapBody": "Her il için nüfus, yüzölçümü, iklim, yeryüzü şekilleri ve hidrografya.",
@@ -87,7 +85,7 @@
     "gameBody": "Türkiye'nin 7 bölgesini ve 81 ilini haritada bul.",
     "gameCta": "Oyna",
     "toolsHeading": "Harita araçları",
-    "toolsCta": "Araçları aç"
+    "heroCoordLabel": "39°K 35°D"
   },
   "Map": {
     "mapTitle": "Türkiye il haritası",

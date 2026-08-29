@@ -47,64 +47,176 @@
   border-top: 1px solid var(--color-border);
 }
 
-/* ---- Hero accent word (finding 1 + B2, → plan §5.9) ----
+/* ---- Hero accent word (finding 1 + B2, → plan §5.9; wavy treatment added by the
+   "Kadastro" concept, fix round 2026-08-29) ----
    `t.rich("heading", { accent: … })` wraps only the subject noun — never a raw colour, the
-   shared token. */
+   shared token. The colour rule from B2 stays; the italic + wavy underline is layered on top
+   of it, not a replacement for it. */
 .heroAccent {
   color: var(--color-primary);
+  font-style: italic;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--color-secondary);
+  text-decoration-thickness: 1.6px;
+  text-underline-offset: 6px;
 }
 
-/* ---- Hero decorative texture (B3, → plan §5.10) ----
-   Pure brand chrome, not a data encoding (`DESIGN.md` §6.1 rule 1, checked and applied — see
-   the SVG's own docblock). `mask-image` keeps the visible colour a `var(--token)`: the SVG
-   itself carries no fill, only alpha, so `background-color` below is the only place a colour
-   is chosen. `aria-hidden` in the markup, `pointer-events: none` here — it must never
-   intercept a click meant for the CTAs painted after it. */
-.heroTexture {
+/* ---- Hero decorative layer — "Kadastro" concept (owner-approved, fix round 2026-08-29,
+   replaces `.heroTexture`/`public/hero-texture.svg` entirely) ----
+   Pure CSS, zero new assets: a low-contrast cartographic measurement grid plus a contour-ring
+   cluster, standing in for the removed SVG mask (which was the hero's actual z-index bug — see
+   `page.tsx`'s own docblock on the markup for the CSS2 painting-order explanation). Both
+   `.heroGrid` and `.heroRings` are POSITIONED (`position: absolute`) and therefore carry an
+   EXPLICIT `z-index: 0` — the hero's real content is pinned above them by its own explicit
+   `z-index: 2` in `globals.css`'s `.hero h1`/`.hero .lede`/`.hero .hero-actions` and this
+   file's own `.statStrip`, never by DOM order. `DESIGN.md` §6.1 rule 1 (brand chrome, never a
+   data encoding) applies throughout — every colour here is a Terra token. */
+.heroGrid {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  mask-image: url("/hero-texture.svg");
-  mask-repeat: no-repeat;
-  mask-position: right center;
-  mask-size: cover;
-  -webkit-mask-image: url("/hero-texture.svg");
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: right center;
-  -webkit-mask-size: cover;
-  background-color: var(--color-border);
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-border) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(90deg, var(--color-border) 0 1px, transparent 1px 34px);
+  opacity: 0.4;
+}
+
+/* The contour-ring cluster: five concentric rings + a "peak" dot, boxed at 320×320px and
+   offset -60px/-60px from the hero's top-right corner so the outermost ring visually bleeds
+   past the card edge — `.hero`'s own `overflow: hidden` (added alongside this, `globals.css`)
+   clips that bleed at the rounded border instead of letting it spill onto the page background.
+   `right`/`top` values (not `left`) throughout, matching the box's own top-right anchor.
+
+   HIDDEN below 600px (media query further down this file) — MEASURED, not assumed: the fixed
+   320×320px box has nowhere to go at a narrow width, because `.hero h1`'s own `max-width: 18ch`
+   (`globals.css`) only starts leaving free space to the RIGHT of the heading once the hero's
+   content column is wider than that 18ch cap; below it the heading fills the column edge to
+   edge and the ring cluster has no empty region to sit in. Real Playwright renders at
+   320/340/360/400/440/480px (both locales) showed the rings visually crossing the h1 text —
+   worst at 320px, still touching at 480px; 520px (TR) and 560px (EN) were the first clean
+   (no-touch) widths measured. 600px is chosen as a round cutoff with comfortable margin past
+   both locales' own worst measured case, not the exact boundary itself — the grid
+   (`.heroGrid`) and the coordinate label (`.heroCoord`, confirmed clear of the text at every
+   width down to 320px) are UNCHANGED here; only the rings disappear on narrow viewports. */
+.heroRings {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 320px;
+  height: 320px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 599px) {
+  .heroRings {
+    display: none;
+  }
+}
+
+.heroRing1,
+.heroRing2,
+.heroRing3,
+.heroRing4,
+.heroRing5 {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.heroRing1 {
+  inset: 130px;
+  border: 1.4px solid var(--color-primary);
   opacity: 0.5;
 }
 
-/* ---- Hero stat-card strip (finding 2 + B5, → plan §5.2/§5.11) ----
+.heroRing2 {
+  inset: 95px;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.4;
+}
+
+.heroRing3 {
+  inset: 58px;
+  border: 1.4px solid var(--color-accent);
+  opacity: 0.3;
+}
+
+.heroRing4 {
+  inset: 18px;
+  border: 1.4px solid var(--color-primary);
+  opacity: 0.2;
+}
+
+.heroRing5 {
+  inset: -22px;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.14;
+}
+
+.heroRingDot {
+  position: absolute;
+  top: 185px;
+  right: 191px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+/* The coordinate label — decorative/atmospheric chrome, not a data claim
+   (`Home.heroCoordLabel`: Turkey's commonly-cited approximate geographic centre). No
+   monospace font is loaded in this repo (`DESIGN.md` §3 / `ENGINEERING.md` §2's stack lock:
+   Fraunces + Nunito Sans only) — `var(--font-body)` with wide letter-spacing reads close
+   enough to a coordinate/survey label without importing a third typeface. */
+.heroCoord {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  z-index: 0;
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--color-taupe);
+  pointer-events: none;
+}
+
+/* ---- Hero stat-card strip (finding 2 + B5, → plan §5.2/§5.11; RE-DERIVED for THREE cards,
+   fix round 2026-08-29 — the "4 Deniz"/"30 Referans Noktası" marine cards are gone, see the
+   removed markup's own comment in `page.tsx`) ----
    Replaces the former `.chips`/global `.chip` pill row for THIS row only — the global `.chip`
    class in `app/globals.css` is untouched and still serves the `kitaplar` book cards.
    Generalizes `SeaToday`'s own "big number over small label" idiom (`.basinRowValue`/
-   `.basinRowLabel`, below) at a slightly larger hero scale — precedent, not invention. Every
-   child sits ABOVE `.heroTexture` by DOM order (`.heroTexture` is `z-index: 0`, everything
-   below is unpositioned in-flow content, which paints after it).
+   `.basinRowLabel`, below) at a slightly larger hero scale — precedent, not invention.
+   `position: relative; z-index: 2` (→ the Kadastro structural fix, `globals.css` §Hero) pins
+   this whole strip above `.heroGrid`/`.heroRings` (both `z-index: 0`) by an explicit rule
+   rather than DOM order.
 
-   `justify-content: center` (→ design-tour 2026-08-29 finding A2): with 5 cards, `auto-fit`
-   wraps a partial last row at widths like 768px/500px, and that row's card(s) render flush
-   left with visible empty space to their right.
-
-   `justify-content: center` ALONE, on THIS rule, DOES NOT FIX THAT — verified by DOM
-   position measurement, not assumed from `.cardGrid`'s comment. `.cardGrid` below solves the
-   same shape with TWO changes together, not one — a BOUNDED track max (`minmax(220px,
-   260px)`, never `1fr`) *and* `justify-content: center`. The bound is what actually matters:
-   it is what leaves genuine leftover space in the grid for `justify-content` to redistribute.
-   This rule's track max is `1fr` (unbounded), so whenever N columns fit, they stretch to
-   consume exactly 100% of the row's width — there is never any leftover for
-   `justify-content` to act on here, so copying only that one line (which the original
-   finding's "same pattern, no new values" framing assumed was enough) reads correctly in the
-   diff but is empirically inert.
-
-   THE REAL FIX is the three explicit-column overrides below, not a change to this rule. This
-   rule's own `auto-fit`/`1fr` stays exactly as shipped — it still governs the single-column
-   stack below 358px (nothing to centre: every row already has exactly one full-width card)
-   and the full 5-column desktop row from 754px up (already read correctly per the same
-   audit — untouched, not merely unbounded-by-accident). */
+   RE-DERIVATION, NOT A COPY OF THE OLD 5-CARD BANDS: the previous fix round (design-tour A2)
+   shipped THREE explicit `repeat(N, …)` overrides (N=2/3/4) because 5 cards split into a
+   genuinely partial row under three different natural column counts. With exactly THREE
+   cards, the shape is different and was re-derived from the SAME band math, not assumed to
+   still apply: this rule's own N-column threshold under `auto-fit`/`minmax(120px, 1fr)` is
+   `120×N + 12×(N−1) ≤ stripWidth`, `stripWidth = viewport − 106px` (20px×2 `.container`
+   padding + 32px×2 `.hero` padding + 1px×2 `.hero` border) — giving the same N=1→2→3→4
+   boundaries as before (358/490/622px), independent of item count. What changes is which
+   bands actually produce a partial row for 3 items:
+     - **< 358px (N=1):** three single-card rows. Trivially no orphan — every row is already
+       "full" at one card.
+     - **358–489px (N=2):** 3 cards over 2 natural columns split 2+1 — a GENUINE partial last
+       row, the same shape the old fix targeted. STILL NEEDS the override below.
+     - **≥ 490px (N=3 or more):** 3 cards fill min(N, 3) = 3 columns exactly. Any wider natural
+       column count beyond 3 leaves trailing tracks with no items; `auto-fit` collapses those
+       empty tracks to zero width, and because this rule's track max is the FLEXIBLE `1fr` (not
+       a fixed length), the freed space redistributes to the 3 filled tracks, which stretch to
+       consume the full row edge-to-edge — by construction, never a partial row, at every width
+       from 490px up through desktop. Verified directly (real Playwright, DOM `getBoundingClientRect`
+       row-membership check, not inferred from this math alone): 490/622/754/768/1024/1440px all
+       render one full 3-column row, none produce a second, shorter row.
+   So the 490–621px and 622–753px overrides the 5-card fix needed are GENUINELY UNNECESSARY for
+   3 cards and are removed here rather than kept as dead complexity — the task's own instruction,
+   confirmed by the math and the measurement above, not merely assumed from "3 is fewer than 5". */
 .statStrip {
   list-style: none;
   padding: 0;
@@ -113,64 +225,30 @@
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   justify-content: center;
   gap: 12px;
+  position: relative;
+  z-index: 2;
 }
 
-/* THE A2 FIX: three EXPLICIT `repeat(N, …)` overrides, one per width band where 5 cards
-   split into a genuinely partial row (N=2 → 2/2/1, N=3 → 3/2, N=4 → 4/1) under this rule's
-   own `auto-fit` above. `repeat(N, …)` instead of `repeat(auto-fit, …)` is deliberate, not
-   stylistic: a first version of this fix tried `auto-fit` with a bounded max and hit a real
-   trap — `auto-fit` picks its column count from the LARGER of `minmax()`'s two values ONLY
-   WHEN that value is a flexible `<flex>` (this rule's `1fr` above, hence its own N is decided
-   by the 120px MIN); once a `minmax()`'s max is a fixed length instead, `auto-fit` counts
-   columns using THAT max, not 120px — silently shifting every N/N+1 boundary to a DIFFERENT
-   width than this rule's own, and reproducing the exact bug being fixed in the gap between
-   the two rules' disagreeing thresholds. An explicit `repeat(N, …)` has no such second
-   threshold to disagree with; N is stated, not computed, so it always matches this rule's
-   own column count at every width in its band, by construction rather than by coincidence.
+/* THE ONE REMAINING BAND: 358–489px, where 3 cards over 2 natural columns split 2+1 (see the
+   derivation above). Same `repeat(N, …)` mechanism and the same reason the original A2 fix
+   used it over `auto-fit` with a bounded max: `auto-fit` picks its column count from the
+   LARGER of `minmax()`'s two values only when that value is flexible (this rule's `1fr`
+   above); a fixed-length max would count columns differently and silently shift the N/N+1
+   boundary away from this rule's own, reproducing the exact bug being fixed. An explicit
+   `repeat(2, …)` has no such second threshold to disagree with.
 
-   BAND MATH, not guesswork: this rule's own N-column threshold is
-   `120×N + 12×(N−1) ≤ stripWidth`, and `stripWidth = viewport − 106px` exactly (20px×2
-   `.container` padding + 32px×2 `.hero` padding + 1px×2 `.hero` border, all fixed, no
-   responsive step between them) — confirmed against a live measurement at the N=1→2
-   boundary (358px, `stripWidth` 252px, matching the formula exactly). Solving the same
-   formula for N=3, 4 and 5 gives the three band edges below (358/490/622/754).
+   `minmax(120px, 150px)`: the same 120px floor this rule already uses, capped (150px, not
+   `1fr`) to leave real leftover space for `justify-content: center` to redistribute — verified
+   directly at this band's own edges, including its lower edge (358px, where 2×150px cannot fit
+   and the tracks settle back to ~120px, exactly matching this rule's own un-centred edge value
+   — no jump, no overflow).
 
-   `minmax(120px, 150px)` in each band: the same 120px floor this rule already uses, capped
-   (150px, not `1fr`) to leave real leftover space for `justify-content` throughout each
-   band — verified directly at every band's own edges, including the tightest (a band's own
-   lower edge, where N×150px cannot fit and the tracks settle back to ~120px, exactly
-   matching this rule's own un-centred edge value — no jump, no overflow).
-
-   HONEST TRADE-OFF, named rather than hidden: within these three bands the row is now a
-   capped, centred cluster rather than an edge-to-edge stretch at each band's WIDER end — a
-   real, visible change from the row's current in-band look at those widths, not a
-   side-effect-free one-liner. It was not possible to fix the partial-row centering without
-   changing some rendered width somewhere; this keeps that change confined to the exact three
-   bands where a partial row exists, leaves the single-column stack and the desktop 5-column
-   row untouched, and is flagged here for review rather than asserted as a free lever.
-
-   WHAT "CENTRED" MEANS HERE, checked directly against `.cardGrid`'s own live rendering, not
-   assumed from its comment: the shared TRACK BLOCK is centred within the strip, and a
-   partial row's card(s) occupy that block's leading track(s) — NOT individually re-centred
-   within the empty row. `.cardGrid`'s own lone 3rd item behaves identically (verified: it
-   sits flush against the block's own left edge, not the row's midpoint). This fix matches
-   that real behaviour, not a stricter "every card individually centred" reading the original
-   finding's wording could also have suggested. */
+   WHAT "CENTRED" MEANS HERE (unchanged from the original A2 finding, still true for 3 items):
+   the shared TRACK BLOCK is centred within the strip, and the partial row's one card occupies
+   that block's leading track — NOT individually re-centred within the empty row. */
 @media (min-width: 358px) and (max-width: 489px) {
   .statStrip {
     grid-template-columns: repeat(2, minmax(120px, 150px));
-  }
-}
-
-@media (min-width: 490px) and (max-width: 621px) {
-  .statStrip {
-    grid-template-columns: repeat(3, minmax(120px, 150px));
-  }
-}
-
-@media (min-width: 622px) and (max-width: 753px) {
-  .statStrip {
-    grid-template-columns: repeat(4, minmax(120px, 150px));
   }
 }
 

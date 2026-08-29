@@ -26,7 +26,6 @@ import {
 } from "@/lib/home/marine-summary";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { TOOL_HUB_PATHNAME } from "@/lib/tools/tool-registry";
 import styles from "@/components/home/home.module.css";
 
 /**
@@ -271,11 +270,39 @@ export default async function HomePage({ params }: PageProps) {
       <JsonLd schema={[websiteJsonLd(locale), organizationJsonLd()]} />
 
       <section className="hero">
-        {/* Pure decoration, painted BEHIND every child below it (`.heroTexture` is
-            `z-index: 0`; the rest of the hero is unpositioned in-flow content, which always
-            paints after a `z-index: auto`/`0` positioned sibling that precedes it in the DOM —
-            `DESIGN.md` §6.1 rule 1 checked and applied, see the SVG's own docblock). */}
-        <div className={styles.heroTexture} aria-hidden="true" />
+        {/* The "Kadastro" hero treatment (owner-approved concept, fix round 2026-08-29),
+            replacing `.heroTexture`'s SVG mask layer ENTIRELY — `public/hero-texture.svg` is
+            deleted. That layer was the hero's actual, structural z-index bug, not merely dated
+            visuals: the removed comment above this block asserted the mask div "always paints
+            after" the hero's unpositioned children, but that claim was backwards. Per the CSS2
+            painting order (CSS2.1 Appendix E), a POSITIONED descendant with `z-index: 0`
+            (the mask div — `position: absolute`) paints in the "positioned descendants, stack
+            level 0" step, which comes AFTER the "in-flow, non-positioned descendants" step that
+            `h1`/`.lede`/`.statStrip`/`.hero-actions` (all unpositioned) belong to — so the mask
+            div could and did paint OVER the hero text, DOM order notwithstanding. Kadastro
+            replaces it with pure CSS, zero new assets: a low-contrast measurement grid
+            (`.heroGrid`), five concentric contour rings + a center "peak" dot in the top-right
+            corner (`.heroRings`), and a small decorative coordinate label (`.heroCoord`) — all
+            `aria-hidden` + `pointer-events: none`, matching what `.heroTexture` already did.
+
+            THE STRUCTURAL FIX (not merely cosmetic) is in `globals.css`: the hero's real content
+            (`h1`/`.lede`/`.statStrip`/`.hero-actions`) now carries an EXPLICIT
+            `position: relative; z-index: 2`, and both decorative layers below carry an explicit
+            `z-index: 0`. Content is pinned above decoration by a stated STACKING RULE, not by
+            relying on DOM source order — which is exactly the assumption that let the old bug
+            through undetected. */}
+        <div className={styles.heroGrid} aria-hidden="true" />
+        <div className={styles.heroRings} aria-hidden="true">
+          <span className={styles.heroRing1} />
+          <span className={styles.heroRing2} />
+          <span className={styles.heroRing3} />
+          <span className={styles.heroRing4} />
+          <span className={styles.heroRing5} />
+          <span className={styles.heroRingDot} />
+        </div>
+        <span className={styles.heroCoord} aria-hidden="true">
+          {t("heroCoordLabel")}
+        </span>
 
         {/* `t.rich`, not string interpolation (finding 1 + B2/B11, → plan §5.1/§5.9/§5.14): the
             accented subject noun and the two-line split are markup, not text, so they cannot be
@@ -289,16 +316,21 @@ export default async function HomePage({ params }: PageProps) {
         </h1>
         <p className="lede">{t("lede")}</p>
 
-        {/* Hero stat-card strip (finding 2 + B5, → plan §5.2/§5.11). Every number is COUNTED
-            from the payload the page already fetched — a hardcoded "81 il" is a geography fact
-            on the web side and would go quietly wrong the day the api's set changes. Four of
-            the five cards keep the OLD per-card gate (a count that came back zero prints no
-            card); the game-modes card is a STATIC fact, not api-derived, so it is always true —
-            the row can therefore no longer be fully empty during a total api outage the way the
-            old three-chip row could. That is not a regression: no card states anything false in
-            that state, it is a more complete "honest partial shape" (plan §5.2), so the OUTER
-            gate that used to hide the whole `<ul>` is simplified away rather than kept as
-            effectively-dead code. */}
+        {/* Hero stat-card strip (finding 2 + B5, → plan §5.2/§5.11) — EXACTLY THREE cards
+            (owner ruling, fix round 2026-08-29): the "4 Deniz" / "30 Referans Noktası" marine
+            cards are REMOVED with no replacement stat. No new field exists in the api's data
+            model for a substitute (a "coastal region count" idea was floated and rejected —
+            there is nothing to compute one from as a proxy), so the row is exactly three cards,
+            not five padded back to five. `scope`/`marine`/`marineLayers` — the underlying
+            marine fetch and `buildMarineHomeSummary`/`marineScope` calls — are UNCHANGED
+            further down this function: `SeaToday` and `MarineAttribution` still consume them.
+            This is a hero-stat-strip-only removal, not a data-fetch removal.
+
+            Every number is COUNTED from the payload the page already fetched — a hardcoded
+            "81 il" is a geography fact on the web side and would go quietly wrong the day the
+            api's set changes. The province/country cards keep their per-card gate (a count that
+            came back zero prints no card); the game-modes card is a STATIC fact, not
+            api-derived, so it is always true. */}
         <ul role="list" className={styles.statStrip}>
           {provinces.length > 0 && (
             <li className={styles.statCard}>
@@ -315,24 +347,6 @@ export default async function HomePage({ params }: PageProps) {
                 {t("statCountriesLabel", { count: countries.length })}
               </span>
             </li>
-          )}
-          {/* Both marine cards share ONE gate (plan §5.11) — they show or hide together,
-              mirroring the single existing gate the pre-split `chipMarine` pill used. */}
-          {scope.pointCount > 0 && (
-            <>
-              <li className={styles.statCard}>
-                <span className={styles.statNumber}>{format.number(scope.basinCount)}</span>
-                <span className={styles.statLabel}>
-                  {t("statSeasLabel", { count: scope.basinCount })}
-                </span>
-              </li>
-              <li className={styles.statCard}>
-                <span className={styles.statNumber}>{format.number(scope.pointCount)}</span>
-                <span className={styles.statLabel}>
-                  {t("statPointsLabel", { count: scope.pointCount })}
-                </span>
-              </li>
-            </>
           )}
           <li className={styles.statCard}>
             <span className={styles.statNumber}>{format.number(GAME_MODE_COUNT)}</span>
@@ -433,15 +447,14 @@ export default async function HomePage({ params }: PageProps) {
 
       {/* The CBS tool hub's static internal link — `SEO-POLICY.md` §B8 8.1 asks every
           indexable page to be reachable from at least one, and the hub also sits in the header
-          nav (→ DEC 2026-08-19g md.1). Two entrances rather than one is deliberate: the nav is
-          a list of names, and this band is where the tool tier gets three real cards (finding
-          7, → plan §5.5) — `ToolCards` reuses `Tools.hub`'s already-bilingual name/body strings
-          verbatim, zero new copy. `toolsCta` is KEPT, repurposed as the "see all" link under
-          the cards, pointing at the SAME shared `TOOL_HUB_PATHNAME` constant `/araclar` itself
-          uses rather than a hand-duplicated string — this is also what preserves `/araclar`'s
-          own static-internal-link reachability from the homepage (`SEO-POLICY.md` §B8.1) even
-          though PR-2 converts the header's own direct `/araclar` link into a grouped dropdown
-          trigger. */}
+          nav (`components/site-nav/site-nav.tsx`, `<Link href="/araclar">` — → DEC
+          2026-08-19g md.1). The trailing "Araçları aç" link that used to sit below `ToolCards`
+          is REMOVED (owner ruling, fix round 2026-08-29): the three tools are already fully
+          listed as cards immediately above, so a fourth link repeating the same destination was
+          redundant. This does not orphan `/araclar` — the header nav link is a second,
+          independent entrance that stays untouched by this removal, so §B8.1 reachability
+          holds. `toolsCta` is DELETED from both locale catalogues (its only usage was this
+          link — `lib/home/messages.test.ts` HOME_KEYS updated to match). */}
       <section className="section" aria-labelledby="home-tools-heading">
         <div className={styles.sectionEyebrow}>
           <span>{t("eyebrowTools")}</span>
@@ -449,9 +462,6 @@ export default async function HomePage({ params }: PageProps) {
         </div>
         <h2 id="home-tools-heading">{t("toolsHeading")}</h2>
         <ToolCards />
-        <p className={styles.exploreLink}>
-          <Link href={TOOL_HUB_PATHNAME}>{t("toolsCta")}</Link>
-        </p>
       </section>
 
       {/* LAST on the page, and only when a derived value is actually shown above.
