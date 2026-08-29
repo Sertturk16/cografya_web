@@ -264,22 +264,23 @@ ramp and not the Terra brand hues.
   heading (`tabIndex={-1}` + `focus()`); last-resort boundaries use `role="alert"`.
 - **Contrast — verified AA/AAA table** (WCAG 2.x sRGB; foreground on the real background):
 
-  | Pair                                              | Ratio       | Verdict                       |
-  | ------------------------------------------------- | ----------- | ----------------------------- |
-  | ink `#2b2622` on bg `#fbf8f3`                     | **14.13:1** | AAA                           |
-  | ink on surface `#f1e9de`                          | 12.44:1     | AAA                           |
-  | slate `#57504a` on bg                             | 7.48:1      | AAA                           |
-  | slate on white                                    | 7.92:1      | AAA                           |
-  | slate on surface                                  | 6.58:1      | AA (AAA large)                |
-  | primary-dark `#7e3a1e` link on bg                 | 7.89:1      | AAA                           |
-  | on-primary `#fff` on primary `#b0522e` (button)   | 5.13:1      | AA                            |
-  | on-primary on primary-dark `#7e3a1e` (hover/skip) | 8.36:1      | AAA                           |
-  | chip-ink on chip-bg                               | 6.59:1      | AA (AAA large)                |
-  | success `#496f35` on surface `#f1e9de`            | 4.84:1      | AA                            |
-  | success on bg                                     | 5.49:1      | AA                            |
-  | danger `#b23b2e` on surface                       | 4.90:1      | AA                            |
-  | **taupe `#8a8078` on white**                      | **3.86:1**  | **SUB-AA — placeholder only** |
-  | **taupe on surface `#f1e9de`**                    | **3.21:1**  | **SUB-AA — placeholder only** |
+  | Pair                                               | Ratio       | Verdict                       |
+  | -------------------------------------------------- | ----------- | ----------------------------- |
+  | ink `#2b2622` on bg `#fbf8f3`                      | **14.13:1** | AAA                           |
+  | ink on surface `#f1e9de`                           | 12.44:1     | AAA                           |
+  | slate `#57504a` on bg                              | 7.48:1      | AAA                           |
+  | slate on white                                     | 7.92:1      | AAA                           |
+  | slate on surface                                   | 6.58:1      | AA (AAA large)                |
+  | primary-dark `#7e3a1e` link on bg                  | 7.89:1      | AAA                           |
+  | on-primary `#fff` on primary `#b0522e` (button)    | 5.13:1      | AA                            |
+  | on-primary on primary-dark `#7e3a1e` (hover/skip)  | 8.36:1      | AAA                           |
+  | on-primary on secondary `#4f6d30` (watched toggle) | 5.89:1      | AA                            |
+  | chip-ink on chip-bg                                | 6.59:1      | AA (AAA large)                |
+  | success `#496f35` on surface `#f1e9de`             | 4.84:1      | AA                            |
+  | success on bg                                      | 5.49:1      | AA                            |
+  | danger `#b23b2e` on surface                        | 4.90:1      | AA                            |
+  | **taupe `#8a8078` on white**                       | **3.86:1**  | **SUB-AA — placeholder only** |
+  | **taupe on surface `#f1e9de`**                     | **3.21:1**  | **SUB-AA — placeholder only** |
 
   **The semantic-colour rule (hard, → PR #27):** a semantic text colour must clear 4.5:1 on
   **`--color-surface`**, the darkest Terra background — not merely on `--color-bg`. A token

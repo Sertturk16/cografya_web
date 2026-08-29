@@ -225,6 +225,61 @@ describe("auth-form.module.css handles the fieldset's UA min-width footgun (plan
   });
 });
 
+describe("register-form.tsx relocates the login cross-link into .formHeader, not duplicated (İRİS idea B1, iris-ideas-small-fix-bundle plan §5.1)", () => {
+  const formHeaders = jsxFullElements(ast, "div").filter(
+    (el) => attrText(el.openingElement, "className") === "styles.formHeader",
+  );
+
+  it("renders exactly one .formHeader wrapper", () => {
+    // Positive control: this scan genuinely finds the wrapper, not zero matches passing every
+    // assertion below vacuously.
+    expect(formHeaders).toHaveLength(1);
+  });
+
+  it("the .formHeader wrapper contains exactly one .formSubheading paragraph linking to /giris", () => {
+    const [formHeader] = formHeaders;
+    if (!formHeader) throw new Error("unreachable");
+    const subheadings = jsxFullElements(formHeader, "p").filter(
+      (el) => attrText(el.openingElement, "className") === "styles.formSubheading",
+    );
+    expect(subheadings).toHaveLength(1);
+    const [subheading] = subheadings;
+    if (!subheading) throw new Error("unreachable");
+    const links = jsxElements(subheading, "Link");
+    expect(links).toHaveLength(1);
+    const [link] = links;
+    if (!link) throw new Error("unreachable");
+    expect(attrText(link, "href")).toBe("/giris");
+  });
+
+  it("the <h1> sits before the cross-link inside .formHeader — heading first, helper line second", () => {
+    const [formHeader] = formHeaders;
+    if (!formHeader) throw new Error("unreachable");
+    const h1s = jsxElements(formHeader, "h1");
+    const subheadings = jsxFullElements(formHeader, "p").filter(
+      (el) => attrText(el.openingElement, "className") === "styles.formSubheading",
+    );
+    expect(h1s).toHaveLength(1);
+    expect(subheadings).toHaveLength(1);
+    const [h1] = h1s;
+    const [subheading] = subheadings;
+    if (!h1 || !subheading) throw new Error("unreachable");
+    expect(h1.getStart()).toBeLessThan(subheading.getStart());
+  });
+
+  it("no .crossLink element remains in register-form.tsx — the foot-of-card copy was relocated, not duplicated (login-form.tsx keeps its own, unrelated .crossLink)", () => {
+    const crossLinkNodes = jsxElements(ast).filter(
+      (el) => attrText(el, "className") === "styles.crossLink",
+    );
+    expect(crossLinkNodes).toHaveLength(0);
+  });
+
+  it('exactly one <Link href="/giris"> exists in the whole file — a false-positive control against a silent duplicate', () => {
+    const loginLinks = jsxElements(ast, "Link").filter((el) => attrText(el, "href") === "/giris");
+    expect(loginLinks).toHaveLength(1);
+  });
+});
+
 // ---------------------------------------------------------------------------------------
 // hasSoleChildIdentifier — a tiny positive/negative control on the helper itself, so a
 // silent regression in the matcher does not make every assertion above pass vacuously.

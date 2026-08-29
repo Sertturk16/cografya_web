@@ -398,14 +398,22 @@
    communicates its state to assistive tech through the attribute, but nothing about that
    attribute is visible — a sighted reader pressing "İzledim" needs to SEE the toggle answer
    back, or the control's own reason for existing (self-declaring a state) is unmet for them.
-   Filled terracotta on the checked state mirrors `.btn-primary`'s own look (never encoding the
-   state by colour alone — the visible label and the fill both change together), so "watched"
-   reads as pressed/active rather than merely present. White on primary is 5.13:1 (AA,
-   `DESIGN.md` §5's own measured pair for this exact fill). */
+
+   OLIVE, NOT TERRACOTTA (İRİS idea B2/video-wall, iris-ideas-small-fix-bundle plan §5.2):
+   `BenchStage` renders the "İzle" overlay button (`.btn-primary`, terracotta) immediately
+   above this toggle in the same `.stage` column — both on-screen at once whenever an
+   authenticated reader has a saved `watched: true` row for the video currently on the stage
+   and has not yet pressed "İzle" in the current page load. The two controls are genuinely
+   different weight — a primary call-to-action vs. a secondary self-declaration toggle — so
+   sharing one fill made them read as equally important. `--color-secondary` (`DESIGN.md` §2,
+   "secondary brand accents" — the exact stated purpose here) still mirrors `.btn-primary`'s
+   filled look (never encoding the state by colour alone — the visible label and the fill both
+   change together), just in the token that reads as secondary rather than primary. White on
+   secondary is 5.89:1 (AA, `DESIGN.md` §5's own measured pair for this exact fill). */
 .watchedToggle[aria-checked="true"] {
-  background: var(--color-primary);
+  background: var(--color-secondary);
   color: var(--color-on-primary);
-  border-color: var(--color-primary);
+  border-color: var(--color-secondary);
 }
 
 /* NOT COLOUR ALONE (`DESIGN.md` §5's last line): a checkmark glyph pairs with the fill, so the
@@ -417,9 +425,16 @@
   font-weight: 700;
 }
 
+/* `filter: brightness(0.88)`, not a `--color-secondary-dark` token (there isn't one) and not a
+   raw hex (`ENGINEERING.md` §10 bars hardcoding brand hex outside the token layer) — a
+   computed transform of the fill already declared above, rather than a second hand-picked
+   colour. Computed (naive sRGB channel scaling, the way the CSS `brightness()` filter applies
+   it): white (`--color-on-primary`) → `(224,224,224)`, olive (`--color-secondary`) →
+   `(70,96,42)`, contrast 5.36:1 — still clears AA. Re-verified visually against the rendered
+   hover-state sample, not accepted on the computation alone (iris-ideas-small-fix-bundle plan
+   §10). */
 .watchedToggle[aria-checked="true"]:hover {
-  background: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
+  filter: brightness(0.88);
 }
 
 /* ── Erişilebilirlik yardımcıları ──────────────────────────────────────────────────────── */

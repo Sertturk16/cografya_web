@@ -227,6 +227,16 @@ describe("the watched toggle (§5.6)", () => {
     expect(body).not.toBe("");
     expect(body).toContain("if (pending) return;");
   });
+
+  it("the checked fill stays --color-secondary, not a reverted --color-primary (İRİS idea B2/video-wall, iris-ideas-small-fix-bundle plan §5.2 — the terracotta İzle overlay button sits directly above this toggle on the same stage)", () => {
+    // `declaredValues`'s outer regex prepends one literal backslash before the selector and
+    // otherwise passes it through unescaped, so an attribute-selector's own `[`/`]` must be
+    // pre-escaped here or the bracket pair is read as a regex character class instead of a
+    // literal match — verified against this file's real CSS before relying on it.
+    expect(declaredValues(String.raw`.watchedToggle\[aria-checked="true"\]`, "background")).toEqual(
+      ["var(--color-secondary)"],
+    );
+  });
 });
 
 describe("the playback-triggered saves carry watchedRef.current forward (§5.5/§5.6, PR #90 review `TEST90-I1`)", () => {
