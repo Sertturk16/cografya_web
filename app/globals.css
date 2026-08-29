@@ -585,55 +585,68 @@ main {
    `<br>` two-line split `t.rich()` renders (B2, → plan §5.9): both live in this one rule set,
    changed together rather than as two sequential edits to the same selector.
 
-   THE 1.9rem FLOOR BELOW WAS PREVIOUSLY CLAIMED (in this comment) TO HOLD 320/360px TO FOUR
-   WRAPPED LINES, MATCHING THE SHARED GLOBAL RULE'S OWN FLOOR SO "NOTHING REGRESSES THERE". A
-   pre-merge live audit (→ design-tour 2026-08-29, finding A1) measured that claim and found it
-   only half true: 360px genuinely holds at four lines, but 320px — one of DESIGN.md's own two
-   MANDATORY test viewports — still broke to FIVE, in both locales, because "byte-for-byte
-   identical to the pre-<br> hero" is not the same guarantee as "still four lines with the new
-   explicit <br> in the string": the two text HALVES the <br> now splits wrap independently, and
-   at 320px the post-<br> half ("tek platformda" / "on one platform") itself wraps to two lines
-   at this size, not one — the earlier claim measured the whole-string byte-identity, not the
-   post-split wrap count, which is the actual gap. See the media query below for the real fix;
-   THIS base rule is otherwise unchanged (still governs 361px and up, where it was already
-   correct — confirmed by the same audit, and re-measured before closing this out). */
+   THE 1.9rem FLOOR IS THE SAME 1.9rem `DESIGN.md` §3 documents for EVERY h1 on the site — never
+   lowered, not even in the narrow band below (→ round-2 review DFR102-I1). A first fix-round
+   attempt (→ design-tour 2026-08-29 finding A1) DID shrink this narrow band's floor to fix a
+   320px 5-line wrap, and that shrink was itself the defect the next review round caught: it put
+   the homepage's own h1 BELOW the one floor every other h1 on the site respects, undocumented.
+   The real fix stays entirely in the media query below — it changes the SPACE available to the
+   text, not the size of the text. THIS base rule is unchanged by that fix and still governs
+   361px and up (pre-existing narrow-window behaviour there, see the media query's own comment). */
 .hero h1 {
   max-width: 18ch;
   font-size: clamp(1.9rem, 1.3rem + 3vw, 2.6rem);
 }
 
-/* NARROW-BAND OVERRIDE for the exact range the comment above names as broken (→ design-tour
-   2026-08-29 finding A1, closing plan §5.9's own "must confirm... not assert" obligation for
-   real this time, measured with fresh page loads + `Range.getClientRects()` line-counting, not
-   asserted from memory). Scoped to `.hero h1` only — the shared global `h1` rule above (and
-   every other `h1` on the site) is completely untouched.
+/* NARROW-WIDTH WRAP FIX (→ round-2 review DFR102-I1, replaces the font-shrinking narrow-band
+   override the previous fix round shipped). That override held 320–360px to 4 wrapped lines by
+   dropping `.hero h1`'s font-size below `DESIGN.md` §3's documented 1.9rem/30.4px floor — the
+   floor "every h1 on the site must respect," per that section, with no recorded exception here
+   (unlike the nav breakpoint pair, §4, which does carry one). This rule holds the SAME 4-line
+   (or better) wrap WITHOUT touching font-size at all: `.hero h1`'s own base rule above is
+   completely untouched, so its font-size only ever grows from here, never shrinks below the
+   floor.
 
-   WHY A SEPARATE RULE RATHER THAN JUST LOWERING THE BASE CLAMP'S FLOOR: the base rule's
-   "1.3rem + 3vw" preferred formula already EQUALS its own 1.9rem floor at exactly 320px — the
-   floor and the formula coincide there by construction, so lowering only the floor number changes
-   nothing at 320px (the formula, not the floor, decides the value at any width ≥ its own
-   crossover point). Shrinking the size at 320/360px for real means changing the FORMULA for
-   this band, which is exactly what a distinct, narrower clamp does without touching the base
-   rule's already-correct behaviour at 361px+ (confirmed unchanged by the same measurement pass).
+   MECHANISM: the 320px 5-line break was never a font-size problem — it was that the h1's
+   available inline box was only 214px (320 viewport − 20px container padding × 2 − 32px hero
+   padding × 2 − 1px hero border × 2), and the `<br></br>` `t.rich()` renders (B2, → plan §5.9)
+   forces "tek platformda"/"on one platform" onto its own wrap run, which itself needs a second
+   line at that width. Two changes, together, remove the forced 5th line without shrinking the
+   text: (1) hiding the `<br>` at this width lets the WHOLE heading wrap as one continuous run,
+   so the browser's own greedy line-breaker — which is optimal for minimizing line count at a
+   fixed width — picks the best split; (2) `.hero`'s own inline padding drops from 32px to 20px
+   in this band ONLY, widening the available box by 24px (238px at 320px), which is what lets
+   "coğrafyası, tek" (TR) / "geography, on" (EN) each fit on one line instead of forcing yet
+   another break. `padding-inline` is set on `.hero` itself, not `.hero h1` alone, so every child
+   (lede, stat strip, buttons) narrows together — nothing shifts out of alignment with its
+   siblings. `messages/{tr,en}.json`'s `Home.heading` gained exactly one whitespace character
+   each (before "tek"/"on") so the two halves the hidden `<br>` used to separate don't run
+   together with no space between them when they land on the same wrapped line; this is not a
+   wording change — every word is byte-identical, `SEO-POLICY.md`/`CONTENT-STYLE.md` untouched.
 
-   THIS WAS NOT A ONE-SHOT TUNE — it is the result of a font-size sweep (fresh page loads +
-   `Range.getClientRects()`, in 0.2px steps, at 320/340/360px, both locales) because the
-   post-<br> phrase and the pre-<br> phrase each carry their OWN, DIFFERENT wrap threshold,
-   and "4 lines for both locales" is only the narrow INTERSECTION of both thresholds — a
-   1.2–2px-wide window, not a broad safe range. A first attempt (~24px, chosen for a wide
-   safety margin against the 5-line regression) fixed the regression but pushed the H1 BELOW
-   `.statNumber`'s own 1.6rem/25.6px floor (the stat-card numbers a few lines below this H1,
-   → plan §5.11) — a self-inflicted hierarchy inversion (the H1 rendering smaller than a
-   stat-card number) traded in for the fixed wrap count. The coefficients below instead trace
-   the measured CENTER of the "4-for-both" window at each sampled width — 320px→26.0px
-   (window [25.4, 26.6]), 340px→28.25px (window [27.4, 29.4]), 360px→30.4px (window
-   [29.4, 31.4]) — which keeps the fifth line gone, holds every sampled width in the band to
-   4 lines for both locales, and stays clearly above the stat-card-number floor throughout
-   (never the ~24px value that inverted it). Re-verify with the same sweep method before
-   changing either number — this is a measured fit, not a formula chosen for tidy digits. */
+   MEASURED (fresh `document.fonts.ready` loads, `Range.getClientRects()` line-counting +
+   `getComputedStyle` font-size, real Playwright, both locales, → round-2 fix):
+   320px → 4 lines, 30.4px (=floor, exactly). 340px → 4 lines, 31px. 360px → 3 lines, 31.6px
+   (even better than 4; this rule's own band). 375px → 4 lines, 32.05px (ABOVE this band — the
+   base rule alone, `<br>` visible again, unchanged from before this fix, confirmed by the same
+   measurement pass). Font-size never drops below 30.4px at any measured width in either locale.
+
+   A PRE-EXISTING, OUT-OF-SCOPE ANOMALY SURFACED WHILE VERIFYING THIS (not introduced by this
+   fix, not one of the two named findings this round, left alone): at exactly 361px — one pixel
+   outside this rule's own `max-width: 360px` band — the EN string alone breaks to 5 lines
+   (`Range.getClientRects()` confirms this on the UNMODIFIED base rule via `git stash`, i.e.
+   before any change in this fix round). It is the same "1-2px intersection window" class of
+   narrow-window wrap behaviour the original (now-removed) narrow-band comment described, just
+   one pixel past where that band ended. `DESIGN.md`'s own mandatory test widths are 320/360, not
+   361, and this task's four verification widths (320/340/360/375) do not include it either — so
+   it is reported here rather than silently fixed, and rather than silently left unmentioned. */
 @media (max-width: 360px) {
-  .hero h1 {
-    font-size: clamp(1.5rem, -0.625rem + 11.25vw, 1.9rem);
+  .hero {
+    padding-inline: 20px;
+  }
+
+  .hero h1 br {
+    display: none;
   }
 }
 

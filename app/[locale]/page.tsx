@@ -35,8 +35,14 @@ import styles from "@/components/home/home.module.css";
  * for this task (plan §3). It tracks the three static routes that exist today; a future 4th
  * mode must update this literal too:
  * `/oyun/bolge-bulma`, `/oyun/81-il`, `/oyun/bolge-bolge-il`.
+ *
+ * EXPORTED (→ round-2 review TEST102-I1) so `lib/home/game-modes.test.ts` can hold it against
+ * the real route count — a real directory scan, the `lib/tools/messages.test.ts` `CONSUMER_ROOTS`
+ * pattern, not a second hand-maintained number. The literal itself is still hand-maintained
+ * (Next needs a statically analyzable value here, same constraint `revalidate` below names); the
+ * test is what stops it from silently going stale the day a 4th mode ships.
  */
-const GAME_MODE_COUNT = 3;
+export const GAME_MODE_COUNT = 3;
 
 /**
  * The eyebrow badge glyphs (B6, → plan §5.12) — decorative, `aria-hidden`, drawn inline in the
