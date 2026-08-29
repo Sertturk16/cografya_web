@@ -50,13 +50,24 @@ import { describe, expect, it } from "vitest";
  * as `styles`; the tool map imports the shared map sheet as `mapStyles`, so a row added under a
  * `styles.`-hardcoded pattern would have failed on a correct file. The identifier is matched as
  * a local binding name, which is the part of the expression that is genuinely free.
+ *
+ * `turkey-map-section.tsx` GAINED A THIRD `.attributionLine` (turkiye-yenileme PR-B, plan
+ * §5.7 recommendation 1): the widened map now draws Natural Earth country boundaries as its
+ * geographic context, so it reuses `WorldMap.attribution`'s exact bytes as a third block span
+ * in the same credit paragraph — three notices now, still one `<p>`. Its row below carries an
+ * explicit `lineCount: 3` rather than silently inheriting the other two rows' `2`, which is
+ * why `describe.each` reads `lineCount` per row instead of a single module-level constant.
  */
 
-/** Every component that stacks the two licence notices in one `<p>`. */
+/** Every component that stacks two-or-more licence notices in one `<p>`, and how many. */
 const CASES = [
-  { name: "turkey-map-section.tsx", url: new URL("./turkey-map-section.tsx", import.meta.url) },
-  { name: "game-map.tsx", url: new URL("../game/game-map.tsx", import.meta.url) },
-  { name: "tool-map.tsx", url: new URL("../tools/tool-map.tsx", import.meta.url) },
+  {
+    name: "turkey-map-section.tsx",
+    url: new URL("./turkey-map-section.tsx", import.meta.url),
+    lineCount: 3,
+  },
+  { name: "game-map.tsx", url: new URL("../game/game-map.tsx", import.meta.url), lineCount: 2 },
+  { name: "tool-map.tsx", url: new URL("../tools/tool-map.tsx", import.meta.url), lineCount: 2 },
 ] as const;
 
 /** `{styles.attributionLine}` / `{mapStyles.attributionLine}` — any local module binding. */
@@ -82,22 +93,28 @@ function codeOnly(url: URL): string {
     .replace(/^[ \t]*\/\/.*$/gm, " ");
 }
 
-describe.each(CASES)("map attribution text-run separation — $name", ({ url }) => {
+describe.each(CASES)("map attribution text-run separation — $name", ({ url, lineCount }) => {
   const source = codeOnly(url);
 
-  it("keeps an explicit whitespace expression between the two attribution lines", () => {
-    // Matches `</span>{" "}` followed by the second `.attributionLine` span, tolerating the
-    // line breaks Prettier may introduce around it.
-    const separated = new RegExp(
+  it("keeps an explicit whitespace expression between EVERY pair of attribution lines", () => {
+    // Matches `</span>{" "}` followed by the NEXT `.attributionLine` span, tolerating the line
+    // breaks Prettier may introduce around it. Counted rather than merely `.test()`-ed, so a
+    // 3-line surface (turkey-map-section.tsx, turkiye-yenileme PR-B) proves BOTH separators —
+    // one `.test()` call would already pass on the FIRST pair alone and say nothing about
+    // whether the second line-to-line join re-welds two runs the same way the original `<br>`
+    // defect did.
+    const separatorPattern = new RegExp(
       String.raw`</span>\s*\{" "\}\s*<span className=${ATTRIBUTION_LINE_CLASS}>`,
-    ).test(source);
+      "g",
+    );
+    const separatorCount = source.match(separatorPattern)?.length ?? 0;
 
     expect(
-      separated,
-      'The `{" "}` between the two `.attributionLine` spans is load-bearing: without it ' +
-        '`textContent` re-welds the ODbL and JRC notices into "…ODbLMevsimlik…". It renders ' +
-        "nothing, so removing it is invisible on screen. See this file's docblock.",
-    ).toBe(true);
+      separatorCount,
+      'Every `{" "}` between consecutive `.attributionLine` spans is load-bearing: without it ' +
+        '`textContent` re-welds adjacent notices into one run (e.g. "…ODbLMevsimlik…"). It ' +
+        "renders nothing, so removing it is invisible on screen. See this file's docblock.",
+    ).toBe(lineCount - 1);
   });
 
   it("does not reintroduce a <br> between them", () => {
@@ -105,9 +122,9 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url }) 
     expect(/<br\s*\/?>/.test(source)).toBe(false);
   });
 
-  it("still renders both notices as separate block spans", () => {
+  it("still renders every notice as its own separate block span", () => {
     const lineSpans =
       source.match(new RegExp(String.raw`<span className=${ATTRIBUTION_LINE_CLASS}>`, "g")) ?? [];
-    expect(lineSpans).toHaveLength(2);
+    expect(lineSpans).toHaveLength(lineCount);
   });
 });

@@ -1,9 +1,11 @@
 import { getFormatter, getTranslations } from "next-intl/server";
+import { byIsoCode, getCountryMapSummary } from "@/lib/api/countries";
 import { byPlateCode, getMapSummary } from "@/lib/api/provinces";
-import type { ProvinceMapSummary } from "@/lib/api/types";
+import type { CountryMapSummary, ProvinceMapSummary } from "@/lib/api/types";
 import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
+import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
+import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { InlandWaterLayer } from "./inland-water-layer";
 import { MapHoverCard } from "./map-hover-card";
 import styles from "./map.module.css";
@@ -20,6 +22,76 @@ interface TurkeyMapSectionProps {
  * resolves against the whole document, not against its own `<svg>`.
  */
 const SHAPE_ID_PREFIX = "tr-map-";
+
+/**
+ * The geographic-context ISO join key drawn as the CASING (turkiye-yenileme PR-B, plan
+ * §5.4) rather than as a labelled neighbour — Türkiye's own Natural Earth outline, used
+ * only to close the seam between it and the 81-province union. Never labelled: the `<h1>`
+ * already says "Türkiye" (plan §5.6).
+ */
+const CONTEXT_CASING_ISO = "TR";
+
+/** Sizes in TR-frame svg units (plan §5.6) — at a 1080 px content column these are
+ *  ≈ 15.3 px (country) and ≈ 22.1 px (sea); the `<text>` `fontSize` attribute, not CSS, so
+ *  they scale with the map exactly the way `marine-map.tsx`'s own point labels do. */
+const CONTEXT_COUNTRY_LABEL_SIZE = 18;
+const CONTEXT_SEA_LABEL_SIZE = 26;
+
+/**
+ * Sea names — four hand-picked anchors (a sea has no polygon to derive a centre from),
+ * projected with `projectToFrame()` in the TR-frame coordinate space and verified to fall
+ * on open water inside `TR_CONTEXT_FRAME` (plan §5.6). Names come from `Map.sea*`
+ * (`GLOSSARY.md` §6's canonical TR/EN sea-name rows), never invented here.
+ */
+const SEA_LABELS = [
+  { key: "seaBlackSea", x: 461, y: -27 },
+  { key: "seaMarmara", x: 137, y: 102 },
+  { key: "seaAegean", x: -13, y: 258 },
+  { key: "seaMediterranean", x: 281, y: 464 },
+] as const;
+
+/**
+ * Per-ISO label anchor overrides (plan §5.6: "a country whose wrapped label cannot fit its
+ * labelRadius gets a per-ISO anchor override in the component, recorded with the
+ * measurement that forced it" — the same shape `generate-world-map-paths.mjs` uses for its
+ * own per-ISO exceptions). Each was measured against the DEFAULT rendering — the
+ * generator's own `labelPoint` at `text-anchor="middle"` — using the same conservative
+ * `charWidthRatio` `lib/map/point-labels.ts` documents (0.56 × fontSize × character count):
+ *
+ *   AZ — default (1083.5, 110.8) overflows the frame's EAST edge (x 1120) by ≈ 13.9 u.
+ *   MK — default anchor="middle" overflows the WEST edge (x -150) by ≈ 66.7 u.
+ *   RS — default overflows the WEST edge by ≈ 40.8 u AND the TOP edge (y -60) by ≈ 9.4 u.
+ *   GR — default anchor="middle" overflows the WEST edge by ≈ 18.1 u (the mainland's
+ *        pole of inaccessibility sits near the frame's own cut edge).
+ *
+ * Verified by rendering: every override keeps its label fully inside the frame and clear
+ * of every other label at 1440px, both locales (labels are locale-length-sensitive, but
+ * both TR and EN country names for these four are short enough not to reopen the
+ * overflow the override fixes).
+ */
+const LABEL_ANCHOR_OVERRIDES: Partial<
+  Record<string, { readonly x: number; readonly y: number; readonly anchor: "start" | "middle" }>
+> = {
+  AZ: { x: 1025, y: 175, anchor: "middle" },
+  MK: { x: -138, y: 33, anchor: "start" },
+  RS: { x: -142, y: -46, anchor: "start" },
+  GR: { x: -105, y: 130, anchor: "start" },
+};
+
+/**
+ * The KKTC/Cyprus paired label placement (plan §5.6). Both entities' inscribed radii
+ * (QN 11.1 u, CY 15.2 u) are far too small to hold their own names — `Kuzey Kıbrıs Türk
+ * Cumhuriyeti` alone needs ≈ 292 u — so both are named in a two-line block placed in open
+ * Mediterranean water between Türkiye's south coast and the Cyprus shapes (verified by
+ * rendering: clear of the Akdeniz sea label, the Syria/Lebanon coastline and the shapes
+ * themselves), each with a short leader line to its own shape. `CONVENTIONS.md` §5's
+ * paired-precision rule is why this is one block, not two independently placed labels: the
+ * pair is decided together (§5.6), and both leader lines get the identical treatment.
+ */
+const CY_QN_LABEL_BLOCK = {
+  qn: { x: 480, y: 386, leaderFrom: { x: 480, y: 380 } },
+  cy: { x: 480, y: 416, leaderFrom: { x: 480, y: 410 } },
+} as const;
 
 /**
  * Interactive Türkiye map (server component — SPEC / DEC 2026-07-10). Since the IA
@@ -57,9 +129,21 @@ const SHAPE_ID_PREFIX = "tr-map-";
  *   <g data-map-layer=hit>   the crawlable <a> wrappers + a <use> unpainted at rest
  *                            that carries ONLY the hover/focus line — above every fill and
  *                            every resting border on the map
- *   <InlandWaterLayer>       P6's lakes, still the LAST child (see the note at the call site):
- *                            it masks the boundary running across a lake and it swallows the
- *                            mid-lake click, and both of those ARE its paint position
+ *   <InlandWaterLayer>       P6's lakes, still the LAST PAINTED map layer (see the note at
+ *                            the call site): it masks the boundary running across a lake and
+ *                            it swallows the mid-lake click, and both of those ARE its paint
+ *                            position
+ *
+ * WIDENED, turkiye-yenileme PR-B (plan §5.4): three GEOGRAPHIC CONTEXT groups joined this
+ * stack — `context-casing` and `context-land` BEFORE `base` (so a province's own fill always
+ * wins over the backdrop, never the reverse), and `context-labels` AFTER `InlandWaterLayer`
+ * (so no fill ever covers a name). None of the three is a province: they add no `<a>`, no
+ * `tabIndex`, no `data-shape`, and all three (labels included) are `pointer-events: none` —
+ * the SAME regression class the paragraph above this one exists to prevent, re-verified for
+ * this change by the same `elementFromPoint` occlusion probe (§11 of the plan; see the PR's
+ * completion report for the actual re-run numbers). `MAP_VIEWBOX` and its nine other
+ * consumers are UNTOUCHED — this component alone widens to `TR_CONTEXT_VIEWBOX`, a second,
+ * independent frame in the same coordinate space (`scripts/lib/tr-frame.mjs`).
  *
  * So no province can eat the hover line: Konya's east and west edges are now pixel-identical.
  * (The one thing painted over it is the water, on the few borders a lake crosses — which is
@@ -97,6 +181,9 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
   const tMap = await getTranslations("Map");
   const tRegions = await getTranslations("Regions");
   const tDetail = await getTranslations("ProvinceDetail");
+  // `WorldMap.attribution` ONLY, for the third credit line below (plan §5.7 recommendation
+  // 1) — reusing `/dunya`'s exact Natural Earth courtesy-credit bytes, never a new string.
+  const tWorldMap = await getTranslations("WorldMap");
   const format = await getFormatter();
 
   // Best-effort: the map is a homepage enhancement, so a summary-fetch failure hides
@@ -113,6 +200,25 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
   // neighbour-code join.
   const byPlate = byPlateCode(summaries);
 
+  // Country names for the geographic-context labels (plan §5.6) come from the SAME
+  // `/api/countries/map-summary` endpoint `/dunya` already reads — never from
+  // `messages/*.json` (CONVENTIONS.md §5: sovereignty-sensitive status framing is
+  // represented by the api, not a frontend-maintained entity list). Best-effort, same
+  // posture as the province summary above: a failure means the context countries draw
+  // unlabelled, not that the map breaks.
+  let countrySummaries: CountryMapSummary[] = [];
+  try {
+    countrySummaries = await getCountryMapSummary();
+  } catch (error) {
+    console.warn(
+      `[map] country map-summary unavailable; context draws unlabelled. ${String(error)}`,
+    );
+  }
+  const byIso = byIsoCode(countrySummaries);
+
+  const contextCasing = CONTEXT_SHAPES.find((shape) => shape.iso === CONTEXT_CASING_ISO);
+  const contextLand = CONTEXT_SHAPES.filter((shape) => shape.iso !== CONTEXT_CASING_ISO);
+
   const titleId = "turkey-map-title";
 
   return (
@@ -124,8 +230,14 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
     // (same string as the <svg> <title>) rather than a visually-hidden heading: an
     // equivalent landmark name with no hidden text on the page.
     <section className="section" aria-label={tMap("mapTitle")}>
-      <div className={styles.mapRoot} data-map-root>
-        <svg className={styles.svg} viewBox={MAP_VIEWBOX} aria-labelledby={titleId}>
+      {/* .trContextRoot = flat sea backdrop (turkiye-yenileme PR-B, plan §5.5): the map now
+          draws real sea, so the panel background switches from the warm parchment gradient
+          `/dunya`'s own `.worldRoot` modifier already establishes the pattern for — a
+          class of its own on [data-map-root], never an edit to `.mapRoot` itself, because
+          `tool-map.tsx` shares that base rule and would otherwise gain a sea background
+          nobody asked for. */}
+      <div className={`${styles.mapRoot} ${styles.trContextRoot}`} data-map-root>
+        <svg className={styles.svg} viewBox={TR_CONTEXT_VIEWBOX} aria-labelledby={titleId}>
           <title id={titleId}>{tMap("mapTitle")}</title>
 
           {/* THE GEOMETRY, ONCE. Classless on purpose (note 1 in the component docblock);
@@ -141,6 +253,47 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
               />
             ))}
           </defs>
+
+          {/* CONTEXT LAYERS — geographic backdrop (turkiye-yenileme PR-B, plan §5.4). Drawn
+              FIRST, before the province `base`/`hit` layers, so a province's own fill and
+              hover/focus line always paint over the context — the paint-order stack this
+              file's own docblock already documents is now: casing → land → base (unchanged)
+              → hit (unchanged) → InlandWaterLayer (unchanged, still last PAINTED layer) →
+              labels (last of all, so nothing covers a name). All three context groups are
+              `pointer-events: none` WITHOUT EXCEPTION — this is the exact shape of the
+              62%-of-the-map credit-plate regression this docblock records above (an overlay
+              without it returned the credit instead of the map for 59/81 province centres at
+              320px); none of the three carries an `<a>`, a `tabIndex` or a `data-shape`, so
+              the hit layer stays the only thing on this map that scores a hit. */}
+
+          {/* Türkiye's own Natural Earth outline, filled + self-coloured-stroked UNDER
+              everything else. Its fill covers every point where NE-Türkiye's generalisation
+              reaches outside the 81-province union (measured, plan §5.0-3: p99 2.47 u, max
+              4.60 u) — closing the seam by construction, not by a tuned number. Its stroke is
+              a SCALING one (no `vectorEffect`, deliberately — plan §5.4): the halo has to stay
+              proportional to the map at every container width, unlike the province hairlines,
+              which stay a constant device-pixel width via `non-scaling-stroke`. */}
+          <g data-map-layer="context-casing" className={styles.contextCasing} aria-hidden="true">
+            {contextCasing && <path d={contextCasing.d} />}
+          </g>
+
+          {/* The 14 neighbour/near-neighbour countries whose Natural Earth outline has any
+              visible area inside the widened frame (`lib/map/tr-context.generated.ts` —
+              every survivor is drawn, no hand-kept "immediate neighbours" list, plan §5.3).
+              Each carries its own hairline coastline/border (`--map-context-line`,
+              non-scaling so it stays a hairline at every rendered size, matching every other
+              boundary line on this map) over the shared `--map-context-land` fill. */}
+          <g data-map-layer="context-land" className={styles.contextLand} aria-hidden="true">
+            {contextLand.map((contextShape) => (
+              // `contextShape`, deliberately NOT `shape`: keeping the province `<defs>` loop's
+              // `d={shape.d}` the ONLY match for that pattern is what lets
+              // `map-layers.test.ts`'s "geometry written once" guard stay a single,
+              // unambiguous regex rather than something a differently-named loop variable could
+              // satisfy by accident (plan §5.4) — the context array gets its OWN explicit
+              // "written once" assertion instead, matching this variable name.
+              <path key={contextShape.iso} d={contextShape.d} vectorEffect="non-scaling-stroke" />
+            ))}
+          </g>
 
           {/* LAYER 1 — the map as it has always looked: fill + 1px resting border, all 81
               shapes in plaka order. Decorative by construction (every accessible name lives
@@ -238,13 +391,115 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
             })}
           </g>
 
-          {/* LAST child on purpose, and it stays last now that there is a layer stack above
-              the base map: opaque water painted after every province layer is what hides the
-              boundary segments crossing a lake, and what makes a mid-lake click hit the water
-              instead of the hit layer's link (→ DEC 2026-08-02k md. 5 — a click on water does
-              nothing). Moving it under the hit layer would restore the navigation it exists to
-              swallow. See components/map/inland-water-layer.tsx. */}
+          {/* Still the LAST PAINTED map layer (turkiye-yenileme PR-B moved the true last CHILD
+              to the label group below it): opaque water painted after every province layer is
+              what hides the boundary segments crossing a lake, and what makes a mid-lake click
+              hit the water instead of the hit layer's link (→ DEC 2026-08-02k md. 5 — a click
+              on water does nothing). Moving it under the hit layer would restore the
+              navigation it exists to swallow. See components/map/inland-water-layer.tsx. */}
           <InlandWaterLayer />
+
+          {/* CONTEXT LABELS — drawn LAST of everything so no fill ever covers a name (plan
+              §5.4/§5.6). Unlike the two shape groups above, this group is NOT `aria-hidden`:
+              it is real geographic text — fourteen short country names plus four sea names,
+              not forty-three tab stops — and hiding visible words from AT to keep a group
+              tidy is the wrong trade (the `inland-water-layer.tsx` "decorative, no page, no
+              label, no action" precedent does not transfer to a name). `pointer-events: none`
+              still applies (the shared `.contextGroup` rule), same as the two shape groups:
+              a label is never a hit target. Hidden entirely below 720px
+              (`@media (max-width: 720px)` in map.module.css) — reusing `marine.module.css`'s
+              own breakpoint for the identical problem: at that width no font size or
+              placement rule makes fourteen names readable. */}
+          <g data-map-layer="context-labels" className={styles.contextLabels}>
+            {SEA_LABELS.map((sea) => (
+              <text
+                key={sea.key}
+                x={sea.x}
+                y={sea.y}
+                textAnchor="middle"
+                fontSize={CONTEXT_SEA_LABEL_SIZE}
+                className={`${styles.contextLabel} ${styles.contextSeaLabel}`}
+              >
+                {tMap(sea.key)}
+              </text>
+            ))}
+
+            {contextLand
+              .filter((shape) => shape.iso !== "QN" && shape.iso !== "CY")
+              .map((shape) => {
+                const country = byIso.get(shape.iso);
+                if (!country) return null; // R10: an ISO the api has not published draws unlabelled
+                const name = locale === "en" ? country.nameEn : country.nameTr;
+                const override = LABEL_ANCHOR_OVERRIDES[shape.iso];
+                const x = override ? override.x : shape.labelPoint.x;
+                const y = override ? override.y : shape.labelPoint.y;
+                const anchor = override ? override.anchor : "middle";
+                return (
+                  <text
+                    key={shape.iso}
+                    x={x}
+                    y={y}
+                    textAnchor={anchor}
+                    fontSize={CONTEXT_COUNTRY_LABEL_SIZE}
+                    className={styles.contextLabel}
+                  >
+                    {name}
+                  </text>
+                );
+              })}
+
+            {/* KKTC/Cyprus — labelled as a pair or not at all (plan §5.6, CONVENTIONS.md §5).
+                Both names come from the live api (never hardcoded), verified against
+                `GLOSSARY.md` §7.3's locked `Kuzey Kıbrıs Türk Cumhuriyeti` /
+                `Turkish Republic of Northern Cyprus` form before shipping — see the
+                completion report. If either is not (yet) published by the api, NEITHER is
+                labelled, so the pair is never asymmetric. */}
+            {(() => {
+              const qn = byIso.get("QN");
+              const cy = byIso.get("CY");
+              const qnShape = contextLand.find((shape) => shape.iso === "QN");
+              const cyShape = contextLand.find((shape) => shape.iso === "CY");
+              if (!qn || !cy || !qnShape || !cyShape) return null;
+              const qnName = locale === "en" ? qn.nameEn : qn.nameTr;
+              const cyName = locale === "en" ? cy.nameEn : cy.nameTr;
+              return (
+                <g>
+                  <line
+                    className={styles.contextLeader}
+                    x1={CY_QN_LABEL_BLOCK.qn.leaderFrom.x}
+                    y1={CY_QN_LABEL_BLOCK.qn.leaderFrom.y}
+                    x2={qnShape.labelPoint.x}
+                    y2={qnShape.labelPoint.y}
+                  />
+                  <line
+                    className={styles.contextLeader}
+                    x1={CY_QN_LABEL_BLOCK.cy.leaderFrom.x}
+                    y1={CY_QN_LABEL_BLOCK.cy.leaderFrom.y}
+                    x2={cyShape.labelPoint.x}
+                    y2={cyShape.labelPoint.y}
+                  />
+                  <text
+                    x={CY_QN_LABEL_BLOCK.qn.x}
+                    y={CY_QN_LABEL_BLOCK.qn.y}
+                    textAnchor="middle"
+                    fontSize={CONTEXT_COUNTRY_LABEL_SIZE}
+                    className={styles.contextLabel}
+                  >
+                    {qnName}
+                  </text>
+                  <text
+                    x={CY_QN_LABEL_BLOCK.cy.x}
+                    y={CY_QN_LABEL_BLOCK.cy.y}
+                    textAnchor="middle"
+                    fontSize={CONTEXT_COUNTRY_LABEL_SIZE}
+                    className={styles.contextLabel}
+                  >
+                    {cyName}
+                  </text>
+                </g>
+              );
+            })()}
+          </g>
         </svg>
 
         <MapHoverCard />
@@ -313,12 +568,25 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
           is pixel-identical to the `<br>` version.
 
           NOT on the world map: it draws Natural Earth countries, not this water layer, and
-          crediting a source a surface does not use is a false claim, not a courtesy. */}
+          crediting a source a surface does not use is a false claim, not a courtesy.
+
+          A THIRD `.attributionLine` joined this paragraph in turkiye-yenileme PR-B (plan
+          §5.7 recommendation 1), and the converse of the note directly above is exactly why
+          it is now correct here: this component draws Natural Earth country boundaries as
+          its geographic context (`lib/map/tr-context.generated.ts`), so `/turkiye` now
+          genuinely uses the data `/dunya`'s own credit names. `provenance/datasets.md` line
+          51 still rules `ATIF: borçlu değildir` — Natural Earth is public domain and owes no
+          attribution — so this line is the SAME product choice `/dunya` already makes, not a
+          new licence obligation. `WorldMap.attribution`'s exact TR/EN bytes are reused
+          verbatim (no new string minted), so no `CONTENT-STYLE.md`/`GLOSSARY.md` surface is
+          touched by this line. `attribution-separation.test.ts` was extended for this file's
+          case (2 → 3 `.attributionLine` spans) rather than left silently out of step. */}
       <p className={styles.attributionFlow}>
         <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
         <span className={styles.attributionLine}>
           {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
-        </span>
+        </span>{" "}
+        <span className={styles.attributionLine}>{tWorldMap("attribution")}</span>
       </p>
     </section>
   );

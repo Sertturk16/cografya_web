@@ -98,7 +98,11 @@
     "plateLabel": "Plate {code}",
     "attribution": "© OpenStreetMap contributors, ODbL",
     "attributionJrcLabel": "Seasonal lake outlines:",
-    "attributionJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
+    "attributionJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
+    "seaBlackSea": "Black Sea",
+    "seaMarmara": "Sea of Marmara",
+    "seaAegean": "Aegean Sea",
+    "seaMediterranean": "Mediterranean Sea"
   },
   "About": {
     "metaTitle": "About",

@@ -129,5 +129,19 @@ for (const { file, shapes } of SURFACES) {
       expect(layerBlock(SOURCE, "hit")).toContain("styles.hitEdge");
       expect(layerBlock(SOURCE, "base")).not.toContain("styles.hitEdge");
     });
+
+    if (file === "./turkey-map-section.tsx") {
+      it("emits the geographic-context array's path geometry exactly once (turkiye-yenileme PR-B, plan §5.4)", () => {
+        // A SEPARATE, explicit assertion for the context array — not a hope that the province
+        // guard above happens to catch it too. The context-land loop's own variable is
+        // `contextShape`, deliberately distinct from the province `<defs>` loop's `shape`, so
+        // this pattern and the province one above can never be satisfied by the same source
+        // line: "geometry written once" now covers BOTH arrays by name.
+        expect(SOURCE.match(/d=\{contextShape\.d\}/g)).toHaveLength(1);
+        // The casing path (Türkiye's own context shape) is a single, non-looped `<path>` — one
+        // more independent copy of the SAME artifact's geometry, so it gets its own count too.
+        expect(SOURCE.match(/d=\{contextCasing\.d\}/g)).toHaveLength(1);
+      });
+    }
   });
 }

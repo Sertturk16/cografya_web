@@ -20,6 +20,10 @@ lib/map/world-countries.generated.ts
 # one-line shape objects across four lines, so a single `prettier --write` (the pre-commit hook
 # runs one) turns a green CI red on a file nobody edited.
 lib/map/tr-inland-water.generated.ts
+# generate:tr-context output (turkiye-yenileme PR-B) — same reason, same PR #39 incident class:
+# `generate:tr-context:check` compares byte for byte and Prettier reflows the one-line shape
+# objects.
+lib/map/tr-context.generated.ts
 
 # Committed source-data snapshots (GeoJSON, see data/README.md) — kept as fetched/
 # filtered from upstream, so Prettier must not reformat them.

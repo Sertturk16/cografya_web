@@ -55,6 +55,16 @@
   background: var(--map-sea);
 }
 
+/* `/turkiye` ONLY (turkiye-yenileme PR-B, plan §5.5): the widened map now shows real sea
+   around Türkiye, so the panel background switches to the same flat `--map-sea` tint
+   `.worldRoot` already uses — a MODIFIER class on `[data-map-root]`, never an edit to
+   `.mapRoot` itself, because `tool-map.tsx` shares that base rule and would otherwise gain a
+   sea background nobody asked for. Two classes with the identical declaration rather than one
+   shared name on purpose: `.worldRoot` is `/dunya`'s own scope and this is `/turkiye`'s. */
+.trContextRoot {
+  background: var(--map-sea);
+}
+
 .svg {
   display: block;
   width: 100%;
@@ -109,6 +119,93 @@
   stroke: transparent;
   stroke-linejoin: round;
   pointer-events: all;
+}
+
+/* ---- GEOGRAPHIC CONTEXT — `/turkiye` ONLY (turkiye-yenileme PR-B, plan §5.4/§5.5) --------
+   Three groups, all `pointer-events: none` WITHOUT EXCEPTION — the exact shape of the
+   62%-of-the-map credit-plate regression this file's sibling component docblock records (an
+   overlay without it returned the credit instead of the map for 59/81 province centres at
+   320px). None of the three carries a link, a tab stop or a `data-shape`; the hit layer stays
+   the only thing on this map that scores a hit. */
+.contextCasing,
+.contextLand,
+.contextLabels {
+  pointer-events: none;
+}
+
+/* Türkiye's own Natural Earth outline, drawn FIRST (before every other context/province
+   layer) as the seam fix (plan §5.0-3/§5.4): its fill covers every point where NE-Türkiye's
+   generalisation reaches outside the 81-province union, and because it paints under the
+   neighbour layer and the province layers, only a soft coastal band survives visible — the
+   page's one deliberate cartographic "casing" treatment.
+
+   The stroke is DELIBERATELY a SCALING one: no `vector-effect`, unlike every other line on
+   this map. The halo has to stay proportional to the map at every container width (it is
+   geometry-based seam coverage, not a fixed-width outline) rather than becoming a fat ring on
+   a phone. Cost, stated rather than discovered later: water channels narrower than ≈ 6 u
+   (≈ 10 km) — the Bosphorus, the Dardanelles, the Gulf of İzmit — fill with casing tone; all
+   three are already at or below one device pixel at this frame, so nothing legible is lost. */
+.contextCasing path {
+  fill: var(--map-land-casing);
+  stroke: var(--map-land-casing);
+  stroke-width: 6;
+  stroke-linejoin: round;
+}
+
+/* The 14 neighbour/near-neighbour countries. A hairline coastline/border over a flat land
+   fill — the standard atlas figure/ground pair, and a CARTOGRAPHIC distinction rather than a
+   state signal, so it sits outside the owner ruling (2026-07-26) that made every landmass on
+   `/dunya` one tone (that ruling rejected colour-coding seeded vs unseeded countries — a
+   STATE; Türkiye-vs-neighbour here is a different country, not a different status). */
+.contextLand path {
+  fill: var(--map-context-land);
+  stroke: var(--map-context-line);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+/* Real geographic text — the white halo keeps a name readable wherever it crosses a
+   coastline, drawn NON-SCALING so it stays a hairline at every rendered map size. Declarations
+   copied verbatim from `marine.module.css` `.mapLabel` (plan §5.6: "reused verbatim") — Ink,
+   never taupe: this is text (`ENGINEERING.md` §5). `font-size` is set per `<text>` via the
+   `fontSize` attribute (matching `marine-map.tsx`'s own point labels), not here, so it scales
+   with the viewBox like the geometry around it. */
+.contextLabel {
+  fill: var(--color-ink);
+  font-family: var(--font-body);
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Sea names get positive tracking and stay upright — the one type gesture this page borrows
+   from printed atlas plates, and what separates a hydronym from a country name without a
+   second colour (plan §5.6). */
+.contextSeaLabel {
+  letter-spacing: 1.5px;
+}
+
+/* The KKTC/Cyprus paired label's leader lines — declarations copied verbatim from
+   `marine.module.css` `.mapLeader` (the same short-connector treatment this map already
+   ships for offshore point labels). */
+.contextLeader {
+  stroke: var(--color-accent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.75;
+}
+
+/* Below this width the map is too narrow for fourteen country names plus four sea names to
+   stay legible at any size or placement — reusing `marine.module.css`'s own breakpoint number
+   for the identical problem on the identical map frame (plan §5.6), rather than adding a
+   fourth breakpoint number to `DESIGN.md` §4's existing two. */
+@media (max-width: 720px) {
+  .contextLabels {
+    display: none;
+  }
 }
 
 .province,

@@ -20,6 +20,8 @@
     "generate:world-map:check": "pnpm run generate:world-map && git diff --exit-code -- lib/map/world-countries.generated.ts",
     "generate:water": "node scripts/generate-tr-inland-water.mjs",
     "generate:water:check": "pnpm run generate:water && git diff --exit-code -- lib/map/tr-inland-water.generated.ts",
+    "generate:tr-context": "node scripts/generate-tr-context.mjs",
+    "generate:tr-context:check": "pnpm run generate:tr-context && git diff --exit-code -- lib/map/tr-context.generated.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
