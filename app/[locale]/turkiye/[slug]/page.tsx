@@ -554,7 +554,6 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         <h1>{t("heading", { name })}</h1>
         <FavoriteButton
           key={province.plateCode}
-          locale={locale}
           target={{ kind: "province", plateCode: province.plateCode }}
         />
       </div>

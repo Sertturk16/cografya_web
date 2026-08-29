@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { AuthMount } from "@/components/auth/auth-mount";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { routing } from "@/i18n/routing";
@@ -71,6 +72,10 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             {children}
           </main>
           <SiteFooter />
+          {/* Mounted once, site-wide (uyelik-auth-redesign plan §5.7) — renders nothing until
+              a gated action first opens it; see `AuthMount`'s own docblock for the SEO/CWV
+              reasoning. */}
+          <AuthMount locale={locale} />
         </NextIntlClientProvider>
       </body>
     </html>

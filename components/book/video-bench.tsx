@@ -1,13 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-// Deliberately NOT `@/i18n/navigation`'s `useRouter` (the same review `CODE85-M5` reasoning
-// `login-form.tsx` already documents): the target this pushes is `getPathname(...)`'s output,
-// a final path with its locale prefix already resolved — a second locale-prefixing pass would
-// double it.
-import { useRouter } from "next/navigation";
-import { getPathname } from "@/i18n/navigation";
-import type { Locale } from "@/i18n/routing";
+import { consumeResolved, requestAuth, useAuthModalState } from "@/lib/auth/auth-modal.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { resolveIzleStartSecond } from "@/lib/book/resume-second";
 import {
@@ -95,25 +89,19 @@ function denemeNoOf(node: Element): number | null {
 }
 
 /**
- * Where a gated click sends the reader (UYELIK-06 plan §5.3.3). AK-48's own framing is
- * "become a MEMBER", so the primary path is `/kayit` (register), not `/giris` — a first-time
- * reader arriving from organic search on a solved-question video has no account yet.
- * `returnTo` carries the current pathname plus the pressed control's own fragment (a question
- * row/timeline tick's `href`, or nothing for the İzle button, which has none of its own) — an
- * ORDINARY fragment arrival on return, exactly as any other visit to a fragment URL:
- * `active-video.ts`'s own hash effect SELECTS the video the fragment names and never opens a
- * player on its own, so the reader lands back on the right video, sees the (now-gone) sign-in
- * CTA, and presses İzle once more, now unblocked. No special "resume after auth round-trip"
- * mechanism exists or is needed.
+ * Where a gated click's own fragment goes (uyelik-auth-redesign plan §5.6.4, superseding
+ * UYELIK-06's original full-page `/kayit` redirect): AK-48's own "become a MEMBER" framing —
+ * the auth modal opens in `"register"` mode by default (`requestAuth`'s own default), not
+ * `"login"` — a first-time reader arriving from organic search on a solved-question video has
+ * no account yet. Applied directly to the URL and to the bench's own selection, since there
+ * is no navigation to carry it through this time: the modal changes nothing in the
+ * surrounding page, so what the old redirect-and-return round trip achieved through a fresh
+ * page load is achieved here by doing the SAME two things — select the video, replace the URL
+ * — immediately, at click time, rather than deferring them to a page the reader never leaves.
  */
-function redirectToSignIn(
-  router: ReturnType<typeof useRouter>,
-  locale: Locale,
-  fragment: string | null,
-): void {
-  const target = getPathname({ locale, href: "/kayit" });
-  const returnTo = `${window.location.pathname}${fragment ?? ""}`;
-  router.push(`${target}?returnTo=${encodeURIComponent(returnTo)}`);
+function applyFragmentAndSelect(denemeNo: number, fragment: string | null): void {
+  if (fragment !== null) window.history.replaceState(null, "", fragment);
+  selectVideo(denemeNo);
 }
 
 export function VideoBench({
@@ -121,7 +109,6 @@ export function VideoBench({
   indexClassName,
   videos,
   defaultDenemeNo,
-  locale,
   children,
 }: {
   /** Optional exactly as React types it: a CSS-module lookup is `string | undefined` under
@@ -132,17 +119,18 @@ export function VideoBench({
   indexClassName?: string;
   videos: readonly BenchVideo[];
   defaultDenemeNo: number;
-  /** The gated click's own `/kayit` redirect needs the current locale (§5.3.3) — the page
-   *  already resolves it server-side, so it is threaded down as a prop rather than re-derived
-   *  from the URL on the client. */
-  locale: Locale;
   /** The server-rendered index — 30 rows, 180 links, untouched markup. */
   children: ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   /** The second İzle should start from — 0 unless the reader arrived on a question link. */
   const hashStartSecond = useRef(0);
-  const router = useRouter();
+  const modal = useAuthModalState();
+  /** The modal request currently being served, or `null` (plan §5.6.4). */
+  const authRequestId = useRef<string | null>(null);
+  /** What to resume once auth succeeds — the video only; the second is kept for the one-line
+   *  future flip named in §13, unused by the deliberate no-auto-load resume below. */
+  const authResume = useRef<{ readonly denemeNo: number; readonly second: number } | null>(null);
 
   // THE LOGIN GATE'S OWN SESSION READ (§5.3.2), called ONCE at the VideoBench level — `authState`
   // is threaded down to `BenchStage`/`DenemeVideo`/`VideoProgressControls` as a prop, never
@@ -295,7 +283,13 @@ export function VideoBench({
     // THE LOGIN GATE (§5.3.2/§5.3.3). `checking` is treated the same as `anonymous`: a control
     // must not open a player before the session check has resolved.
     if (authState !== "authenticated") {
-      redirectToSignIn(router, locale, trigger.getAttribute("href"));
+      // The İzle button has no href of its own, so it addresses the video; a row addresses
+      // itself. Applied immediately — no navigation happens this time, so the fragment/
+      // selection have to be set here rather than deferred to a page the reader never leaves
+      // (uyelik-auth-redesign plan §5.6.4).
+      applyFragmentAndSelect(denemeNo, trigger.getAttribute("href"));
+      authResume.current = { denemeNo, second };
+      authRequestId.current = requestAuth("video");
       return;
     }
 
@@ -304,6 +298,28 @@ export function VideoBench({
     if (fragment !== null) window.history.replaceState(null, "", fragment);
     openVideo(denemeNo, second);
   };
+
+  // The resume — DELIBERATELY does NOT call `openVideo()` (plan §5.6.4, §13's one genuine
+  // owner-judgment item, surfaced with a reasoned default rather than left open). The video is
+  // already selected (`applyFragmentAndSelect` ran at click time); this only closes the modal
+  // and moves focus to the now-unblocked İzle control, one deliberate keypress from playing —
+  // a standing rule in this component tree, not caution for its own sake: `denemeNoOf`'s own
+  // docblock states the ledger permits the load ONLY on a click or a key press, so a third-
+  // party (YouTube) request must never be made on the reader's behalf by an auth round trip
+  // that was not itself aimed at the player.
+  useEffect(() => {
+    const id = authRequestId.current;
+    if (id === null || modal.resolvedRequestId !== id) return;
+    if (!consumeResolved(id)) return;
+    authRequestId.current = null;
+    const resume = authResume.current;
+    authResume.current = null;
+    if (resume === null) return;
+    const target = rootRef.current?.querySelector<HTMLElement>(
+      `[data-deneme="${resume.denemeNo}"] [data-player-open]`,
+    );
+    target?.focus();
+  }, [modal.resolvedRequestId]);
 
   return (
     <div ref={rootRef} className={className} onClick={onClick}>

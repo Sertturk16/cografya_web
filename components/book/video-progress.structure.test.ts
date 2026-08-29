@@ -93,28 +93,61 @@ describe("the login gate (§5.3.2)", () => {
     expect(BENCH).toContain('if (authState !== "authenticated")');
   });
 
-  it("returns immediately after redirecting, never falling through to openVideo", () => {
-    // Position-based, like `deneme-video.src-invariant.test.ts`'s own click-gate checks — a
-    // single regex over the call would have to balance `redirectToSignIn(...)`'s own nested
-    // parentheses (it forwards `trigger.getAttribute("href")`), which a naive `[^)]*` cannot.
+  it("returns immediately after opening the auth modal, never falling through to openVideo (uyelik-auth-redesign plan §5.6.4, superseding the earlier /kayit redirect)", () => {
+    // Position-based, like `deneme-video.src-invariant.test.ts`'s own click-gate checks.
     const handler = clickHandler();
     const gate = handler.indexOf('if (authState !== "authenticated")');
-    const redirectCall = handler.indexOf("redirectToSignIn(", gate);
-    const gateReturn = handler.indexOf("return;", redirectCall);
+    const requestCall = handler.indexOf('requestAuth("video")', gate);
+    const gateReturn = handler.indexOf("return;", requestCall);
     const openCall = handler.indexOf("openVideo(denemeNo, second)");
     expect(gate).toBeGreaterThan(0);
-    expect(redirectCall).toBeGreaterThan(gate);
-    expect(gateReturn).toBeGreaterThan(redirectCall);
+    expect(requestCall).toBeGreaterThan(gate);
+    expect(gateReturn).toBeGreaterThan(requestCall);
     expect(openCall).toBeGreaterThan(gateReturn);
   });
 
-  it('redirects to /kayit — AK-48\'s own "become a member" framing, not /giris', () => {
-    expect(BENCH).toContain('href: "/kayit"');
+  it("no longer redirects to /kayit or /giris — the auth modal opens in place instead", () => {
+    expect(BENCH).not.toContain('href: "/kayit"');
     expect(BENCH).not.toContain('href: "/giris"');
+    expect(BENCH).not.toContain("redirectToSignIn");
+  });
+
+  it("applies the fragment and selects the video at GATE time (not deferred to a page the reader never leaves), before opening the modal", () => {
+    const handler = clickHandler();
+    const gate = handler.indexOf('if (authState !== "authenticated")');
+    const applyCall = handler.indexOf("applyFragmentAndSelect(denemeNo,", gate);
+    const requestCall = handler.indexOf('requestAuth("video")', gate);
+    expect(gate).toBeGreaterThan(0);
+    expect(applyCall).toBeGreaterThan(gate);
+    expect(requestCall).toBeGreaterThan(applyCall);
   });
 
   it("reads authState from the shared hook exactly once, at the VideoBench level", () => {
     expect(BENCH.match(/useAuthSession\(\)/g)).toHaveLength(1);
+  });
+});
+
+describe("the resume — deliberately does NOT auto-load the player (plan §5.6.4/§13's one genuine owner-judgment item)", () => {
+  it("keeps the request id and the resume target in refs, watches the shared modal store, and consumes exactly once", () => {
+    expect(BENCH).toContain("const authRequestId = useRef<string | null>(null);");
+    expect(BENCH).toContain("modal.resolvedRequestId !== id");
+    expect(BENCH).toContain("if (!consumeResolved(id)) return;");
+  });
+
+  it("the resume effect never calls openVideo — only focuses the İzle control", () => {
+    // The resume effect is the ONE that follows the click handler's own closing `};` — found
+    // by searching forward from the request call inside `onClick`, past that handler's own
+    // closing brace, for the next `useEffect(`.
+    const requestCall = BENCH.indexOf('requestAuth("video")');
+    expect(requestCall).toBeGreaterThan(0);
+    const start = BENCH.indexOf("useEffect(() => {", requestCall);
+    const end = BENCH.indexOf("[modal.resolvedRequestId]);", start);
+    expect(start).toBeGreaterThan(requestCall);
+    expect(end).toBeGreaterThan(start);
+    const body = BENCH.slice(start, end);
+    expect(body).not.toContain("openVideo(");
+    expect(body).toContain("data-player-open");
+    expect(body).toContain("target?.focus();");
   });
 });
 

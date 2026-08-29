@@ -515,7 +515,6 @@ export default async function BookDetailPage({ params }: PageProps) {
             indexClassName={styles.index}
             videos={benchVideos}
             defaultDenemeNo={defaultDenemeNo}
-            locale={locale}
           >
             {videoStates.map(({ video, state }) => {
               /* ONE value, three consumers. `playable` is false for a video the provider refuses

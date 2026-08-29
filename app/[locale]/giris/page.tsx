@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { AuthPlate } from "@/components/auth/auth-plate";
+import panelStyles from "@/components/auth/auth-panel.module.css";
 import { LoginForm } from "@/components/auth/login-form";
 import type { Locale } from "@/i18n/routing";
 import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
@@ -21,21 +23,36 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
- * `/giris` · `/en/login` (plan §4.1/§6.2,
- * `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`). A Server Component
- * shell — no `cookies()`, no `getSession()` — that mounts one `"use client"` island
- * (`LoginForm`), which reads the session and the `?returnTo=` query string itself. The page
- * therefore stays statically rendered (`lib/auth/session.ts`'s R4 prohibition).
+ * `/giris` · `/en/login` (uyelik-auth-redesign plan §5.1/§5.3, superseding the earlier
+ * single-column shell `UYELIK-04-web-plan.md` originally shipped). A Server Component shell —
+ * no `cookies()`, no `getSession()` — that lays out the two-panel auth surface: the survey
+ * plate (`AuthPlate`, pure presentation) and the form column, which mounts one `"use client"`
+ * island (`LoginForm`), which reads the session and the `?returnTo=` query string itself. The
+ * page no longer renders its own `<h1>` — `LoginForm` now renders it itself, inside its own
+ * card (`.formHeader`), so the SAME component serves the page and the modal without a second
+ * heading implementation. The page therefore stays statically rendered
+ * (`lib/auth/session.ts`'s R4 prohibition).
+ *
+ * A11Y105-I1 fix: `formSlot` (carrying `LoginForm`'s `<h1>`) is rendered BEFORE `plateSlot`
+ * (carrying `AuthPlate`'s decorative `<h2>`) — DOM/reading order is viewport-independent, so
+ * this keeps the page's real `<h1>` ahead of the plate's `<h2>` for a screen-reader user at
+ * every breakpoint. The two-panel VISUAL arrangement (plate left, form right at `64rem`+) is
+ * produced entirely by `auth-panel.module.css`'s explicit `order` values, not by source order.
  */
 export default async function LoginPage({ params }: PageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("Auth");
 
   return (
     <div className="container page">
-      <h1>{t("login.heading")}</h1>
-      <LoginForm locale={locale} />
+      <div className={panelStyles.layout}>
+        <div className={panelStyles.formSlot}>
+          <LoginForm locale={locale} />
+        </div>
+        <div className={panelStyles.plateSlot}>
+          <AuthPlate />
+        </div>
+      </div>
     </div>
   );
 }

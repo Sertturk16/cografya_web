@@ -119,20 +119,22 @@ describe("measurementsForThisTool preserves null rather than collapsing it (corr
   });
 });
 
-describe("locale is threaded through ToolIslandProps and into the save/list subcomponents (plan §5.4 item 1)", () => {
+describe("locale is threaded through ToolIslandProps and into ToolMeasurementList (plan §5.4 item 1)", () => {
   it("ToolIslandProps declares a locale: Locale field", () => {
     expect(ISLAND).toMatch(/locale: Locale;/);
   });
 
-  it("both new subcomponents receive locale as a prop", () => {
-    expect(ISLAND).toContain("<ToolMeasurementSave");
-    const saveStart = ISLAND.indexOf("<ToolMeasurementSave");
-    const saveEnd = ISLAND.indexOf("/>", saveStart);
-    expect(ISLAND.slice(saveStart, saveEnd)).toContain("locale={locale}");
-
+  it("ToolMeasurementList receives locale as a prop", () => {
     const listStart = ISLAND.indexOf("<ToolMeasurementList");
     const listEnd = ISLAND.indexOf("/>", listStart);
     expect(ISLAND.slice(listStart, listEnd)).toContain("locale={locale}");
+  });
+
+  it("ToolMeasurementSave no longer receives a locale prop — it opens the shared auth modal instead of redirecting to /kayit (uyelik-auth-redesign plan §5.6.3)", () => {
+    expect(ISLAND).toContain("<ToolMeasurementSave");
+    const saveStart = ISLAND.indexOf("<ToolMeasurementSave");
+    const saveEnd = ISLAND.indexOf("/>", saveStart);
+    expect(ISLAND.slice(saveStart, saveEnd)).not.toContain("locale=");
   });
 });
 

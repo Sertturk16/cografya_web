@@ -9,12 +9,34 @@
    rule than the module actually holds itself to, which is the defect the review round
    closed. */
 
+/* uyelik-auth-redesign plan §5.1/§5.3: the form card now sits in the two-panel grid's own
+   sized track (`auth-panel.module.css`) rather than floating alone in the 1120px `.container`
+   — the mechanical cause of the "sparse" defect this redesign fixes. `max-width` widened
+   28rem → 30rem to match the grid track; `padding` becomes proportional so the card still
+   breathes at its own narrower widths (the modal's `min(34rem, 100vw - 24px)` dialog box).
+   `box-shadow` + `#fff` make the card read as the raised TASK surface against the plate's own
+   `--color-surface` tone — today card and plate would be the same flat colour. `#fff` is the
+   established repo pattern for a plain white surface (there is no white token — see this
+   file's own header comment, `globals.css` `.card`, `tools.module.css`, `game-ui.module.css`);
+   `ENGINEERING.md` §10 bars a brand hex outside the token layer, and this is not one. */
 .card {
-  background: var(--color-surface);
+  background: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 24px 28px;
-  max-width: 28rem;
+  box-shadow: var(--shadow-card);
+  padding: clamp(20px, 4vw, 32px);
+  max-width: 30rem;
+  /* A2 fix (İRİS live audit, 2026-08-29 fix round): at the single-column width band
+     (≥30rem-ish content width, <64rem — e.g. 768px) `.formSlot`'s own track is the FULL
+     container width, which is wider than this 30rem cap, and a plain block `<div>` with no
+     margin rule left-aligns rather than centering — measured 233px of stray space beside the
+     card at 768px that does not exist at 390px (the container itself is already narrower than
+     30rem there, so the cap never binds) or at 1440px (the two-panel grid's own
+     `minmax(360px, 30rem)` track is already sized to this same cap, so there is no slack to
+     center within). `margin-inline: auto` reads any such leftover width as intentional margin
+     rather than a stray gap, and is a no-op wherever there is no leftover width to begin
+     with. */
+  margin-inline: auto;
 }
 
 .form {
@@ -35,6 +57,9 @@
   color: var(--color-ink);
 }
 
+/* Re-verified on the new `.card` background (K11, §11.3): `--color-slate` measures 7.92:1 on
+   `#fff` — `DESIGN.md` §5's own verified table (up from 6.58:1 on `--color-surface`, AA-large
+   only). Both clear AA; this is the wider margin. */
 .hint {
   margin: 0;
   font-size: 0.85rem;
@@ -65,10 +90,15 @@
   border-color: var(--color-danger);
 }
 
-/* Error text: `--color-danger` measures 4.90:1 on `--color-surface` (`DESIGN.md` §5's
-   verified table) — the darkest Terra background, and the one the hard semantic-colour rule
-   requires clearing. This module's `.card`/`.errorRegion` both sit on `--color-surface`, so
-   the measured pairing applies exactly as verified, not merely on a lighter panel. */
+/* Error text — RE-VERIFIED after `.card` moved `--color-surface` → `#fff` (uyelik-auth-redesign
+   plan §5.3/§11.3, K11): `.fieldError` sits directly on `.card`'s own background via `.field`,
+   so it is this rule — not `.errorRegion`'s, which keeps its own separate `--color-surface`
+   background below and is UNAFFECTED — that actually changed background. Recomputed (WCAG
+   relative-luminance formula, sRGB): `--color-danger` `#b23b2e` measures **5.90:1 on `#fff`**,
+   up from 4.90:1 on `--color-surface` (`DESIGN.md` §5's verified table) — white is the
+   LIGHTER background, so the ratio improves, confirmed rather than assumed. Both clear the
+   hard semantic-colour rule's 4.5:1-on-`--color-surface` floor; this is now a wider margin,
+   never a narrower one. */
 .fieldError {
   margin: 0;
   font-size: 0.85rem;
@@ -275,12 +305,78 @@
    the code field, `Doğrula` submit and `Kodu yeniden gönder` all stay mounted and
    interactive here, unlike the four `.successHeading` states which fully replace the form —
    giving this note heading-level prominence would overstate an intermediate acknowledgment.
-   `--color-success` clears 4.5:1 AA on `--color-surface` (`DESIGN.md` §5's verified table);
-   the text itself always carries the meaning (this class never renders a sibling
-   failure/negative state), so the colour is reinforcement only, not the only signal. */
+   `--color-success` clears 4.5:1 AA on `--color-surface` (`DESIGN.md` §5's verified table) and,
+   re-verified after `.card` moved to `#fff` (K11, §11.3), measures 5.82:1 there — still AA,
+   wider margin than before. The text itself always carries the meaning (this class never
+   renders a sibling failure/negative state), so the colour is reinforcement only, not the
+   only signal. */
 .resendNote {
   margin: 0;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-success);
+}
+
+/* uyelik-auth-redesign plan §5.3: the heading lives WITH the form rather than orphaned above
+   the card — the two pages used to render a bare `<h1>` outside `.card` entirely; now the
+   pages render it through this wrapper, inside the card. The modal's own `<h2>` heading
+   (`auth-dialog.module.css`) is a separate element for a separate reason (WCAG 4.1.3's manual
+   focus move needs its own ref) and does not use this class. */
+.formHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.formHeader h1 {
+  margin: 0;
+}
+
+/* No helper-line class here: `CONTENT-STYLE.md` §22 bans a lede that restates the H1, and
+   this redesign deliberately writes none (plan §5.9) — `.formHeader` stays a one-element
+   wrapper today, ready for a genuinely necessary helper line without a structural change if
+   one is ever authored. */
+
+/* Register↔login cross navigation at the card foot (plan §5.3/§5.9) — page-mode only; the
+   modal offers its own in-place mode toggle instead (`auth-dialog-body.tsx`). Reuses the
+   global `a { color }` rule rather than a bespoke colour, matching `.secondaryLink` above. */
+.crossLink {
+  margin: 20px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Touch-target floor fix (§11.4.7 — measured live: the bare link's own text-line box was
+   20px tall, under the 24×24 CSS px floor). `display: inline-block` + vertical padding
+   grows the link's own clickable box without changing its visual line height. */
+.crossLink a {
+  display: inline-block;
+  padding: 4px 2px;
+}
+
+/* R2/R3 fix (plan §5.9/§2.9): groups the conditional profile fields the register form reveals
+   once `userType` is chosen, instead of letting them sit as two more anonymous rows in the
+   flat 20px-gap column. `display:flex; flex-direction:column; gap:20px` preserves that same
+   rhythm inside the group. `min-inline-size: 0` works around `<fieldset>`'s UA-stylesheet
+   `min-width: min-content`, a known footgun that otherwise breaks a flex/grid child. */
+.groupFieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.groupLegend {
+  padding-inline: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--color-primary-dark);
 }

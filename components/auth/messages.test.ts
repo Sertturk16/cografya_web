@@ -85,6 +85,33 @@ const AUTH_KEYS = [
   "fieldErrors.codeShape",
   "formErrors.summary",
   "noscript",
+  // uyelik-auth-redesign plan §5.9 — the survey plate, the modal chrome, the R1/R2/R3
+  // conditional-reveal fixes, the lazy province list and the page-mode cross-links.
+  "plate.eyebrow",
+  "plate.heading",
+  "plate.favorites",
+  "plate.video",
+  "plate.game",
+  "plate.measurement",
+  "plate.free",
+  "plate.coord",
+  "modal.close",
+  "modal.toLogin",
+  "modal.toRegister",
+  "modal.intent.favorite",
+  "modal.intent.video",
+  "modal.intent.gameRound",
+  "modal.intent.measurement",
+  "modal.intent.generic",
+  "fields.groupSecondary",
+  "fields.groupHigherEd",
+  "fields.groupSecondaryAnnounce",
+  "fields.groupHigherEdAnnounce",
+  "province.loading",
+  "province.loadError",
+  "province.announceCount",
+  "register.crossLink",
+  "login.crossLink",
 ] as const;
 
 function resolve(catalogue: Record<string, unknown>, dottedKey: string): unknown {

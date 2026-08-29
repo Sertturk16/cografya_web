@@ -116,7 +116,6 @@ export async function GameScreen({ locale, mode, modeName, region = null }: Game
           provinceUrlTemplate={provinceUrlTemplate}
           hubUrl={hubUrl}
           submitModeTag={submitModeTag}
-          locale={locale}
         />
       </div>
 

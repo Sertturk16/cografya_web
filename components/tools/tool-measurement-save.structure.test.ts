@@ -32,6 +32,14 @@ function handleClickBody(): string {
   return start < 0 || end < 0 || end <= start ? "" : CONTROL.slice(start, end);
 }
 
+/** Isolates `resume()` — the interrupted action shared by the authenticated click path and
+ *  the resume effect (uyelik-auth-redesign plan §5.6.3) — the same slicing technique. */
+function resumeBody(): string {
+  const start = CONTROL.indexOf("const resume = useCallback(async () => {");
+  const end = CONTROL.indexOf("[belowMinPoints, mode, onSaved, pendingSaveIdRef, points, title]");
+  return start < 0 || end < 0 || end <= start ? "" : CONTROL.slice(start, end);
+}
+
 function checkingBranchBody(): string {
   const start = CONTROL.indexOf('authState === "checking" ? (');
   const end = CONTROL.indexOf(') : authState === "anonymous"');
@@ -52,7 +60,7 @@ function savedBranchBody(): string {
 
 describe("the save-attempt id lifecycle this control relies on (plan §10 item 1)", () => {
   it("reads the pending save id via the ref prop and generates a fresh one ONLY when null", () => {
-    const body = handleClickBody();
+    const body = resumeBody();
     expect(body).not.toBe("");
     expect(body).toContain("pendingSaveIdRef.current");
     expect(body).toContain("crypto.randomUUID()");
@@ -64,21 +72,21 @@ describe("the save-attempt id lifecycle this control relies on (plan §10 item 1
   });
 
   it("passes the SAME id (not a freshly-generated one unconditionally) into saveMeasurement", () => {
-    const body = handleClickBody();
+    const body = resumeBody();
     const call = body.indexOf("saveMeasurement({");
     const payload = body.slice(call, body.indexOf("});", call));
     expect(payload).toContain("clientMeasurementId,");
   });
 
   it("never clears the pending save id on a failure branch (quota or generic) (SIMP100-M1: via the ref directly, no getter/setter closures)", () => {
-    const body = handleClickBody();
+    const body = resumeBody();
     expect(body).not.toContain("pendingSaveIdRef.current = null");
   });
 });
 
 describe("CODE100-M1: a same-geometry retry that silently replays an earlier title is detected, not trusted blind", () => {
   it("computes submittedTitle from the SAME trimmed value handed to saveMeasurement, never the raw title state", () => {
-    const body = handleClickBody();
+    const body = resumeBody();
     expect(body).toContain("title.trim()");
     const idx = body.indexOf("const submittedTitle");
     expect(idx).toBeGreaterThan(0);
@@ -86,7 +94,7 @@ describe("CODE100-M1: a same-geometry retry that silently replays an earlier tit
   });
 
   it("compares the api's returned title against submittedTitle on every successful save, not only a suspected retry", () => {
-    const body = handleClickBody();
+    const body = resumeBody();
     const okIdx = body.indexOf("if (result.ok)");
     expect(okIdx).toBeGreaterThan(0);
     const okBranch = body.slice(okIdx, body.indexOf("return;", okIdx));
@@ -96,7 +104,7 @@ describe("CODE100-M1: a same-geometry retry that silently replays an earlier tit
 
 describe("the title is trimmed and never sent empty or null on create", () => {
   it("omits title when the trimmed value is empty, never sends an empty string or null", () => {
-    const body = handleClickBody();
+    const body = resumeBody();
     expect(body).toContain("title.trim()");
     expect(body).toMatch(/trimmedTitle\.length > 0 \? trimmedTitle : undefined/);
   });
@@ -116,16 +124,41 @@ describe("the pending/settled/checking guard is the FIRST statement in handleCli
     expect(anonymousCheck).toBeGreaterThan(guardIdx);
   });
 
-  it("routes an anonymous click to /kayit with a returnTo, never spending a save call", () => {
+  it("opens the auth modal (requestAuth) on an anonymous click, never spending a save call (uyelik-auth-redesign plan §5.6.3, superseding the earlier /kayit redirect — the case §2.4 measured as genuinely impossible before)", () => {
     const body = handleClickBody();
     const gate = body.indexOf('if (authState === "anonymous")');
-    const target = body.indexOf('href: "/kayit"');
-    const ret = body.indexOf("return;", target);
-    const submit = body.indexOf("saveMeasurement(");
+    const request = body.indexOf('requestAuth("measurement")');
+    const ret = body.indexOf("return;", request);
+    const resumeCall = body.indexOf("await resume();");
     expect(gate).toBeGreaterThan(0);
-    expect(target).toBeGreaterThan(gate);
-    expect(ret).toBeGreaterThan(target);
-    expect(submit).toBeGreaterThan(ret);
+    expect(request).toBeGreaterThan(gate);
+    expect(ret).toBeGreaterThan(request);
+    expect(resumeCall).toBeGreaterThan(ret);
+  });
+
+  it("no longer imports next/navigation's useRouter or i18n's getPathname — there is no page to redirect to", () => {
+    expect(CONTROL).not.toContain('from "next/navigation"');
+    expect(CONTROL).not.toContain("getPathname");
+    expect(CONTROL).not.toContain('href: "/kayit"');
+  });
+});
+
+describe("the resume mechanism (uyelik-auth-redesign plan §5.6.3) — the case §2.4 shows is impossible under the old redirect design", () => {
+  it("keeps the request id in a ref, watches the shared modal store, and consumes exactly once before resuming", () => {
+    expect(CONTROL).toContain("const authRequestId = useRef<string | null>(null);");
+    expect(CONTROL).toContain("modal.resolvedRequestId !== id");
+    expect(CONTROL).toContain("if (!consumeResolved(id)) return;");
+    expect(CONTROL).toContain("void resume();");
+  });
+
+  it("resume() re-reads points/belowMinPoints at CALL TIME rather than a ref-captured snapshot — closes over the render's own points, never hoisted out of the component body", () => {
+    const start = CONTROL.indexOf("const resume = useCallback(async () => {");
+    expect(start).toBeGreaterThan(0);
+    const end = CONTROL.indexOf("[belowMinPoints, mode, onSaved, pendingSaveIdRef, points, title]");
+    expect(end).toBeGreaterThan(start);
+    const body = CONTROL.slice(start, end);
+    expect(body).toContain("if (belowMinPoints) return;");
+    expect(body).toContain("points,");
   });
 });
 

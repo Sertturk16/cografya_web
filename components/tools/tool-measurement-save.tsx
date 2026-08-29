@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, type RefObject } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useTranslations } from "next-intl";
-import { getPathname } from "@/i18n/navigation";
-import type { Locale } from "@/i18n/routing";
+import { consumeResolved, requestAuth, useAuthModalState } from "@/lib/auth/auth-modal.client";
 import type { MeasurementType } from "@/lib/api/types";
 import type { AuthSessionState } from "@/lib/auth/use-session.client";
 import { saveMeasurement, type MeasurementRecord } from "@/lib/measurements/client";
@@ -18,9 +16,7 @@ import styles from "./tools.module.css";
  * `aria-disabled` throughout — never real `disabled`, for the same A11Y96-I1 reason: this
  * is one persistent node whose meaning changes over time without unmounting; a sr-only
  * `role="status"` announcement mirroring the visible label change; the shared
- * `components/lock-icon.tsx` `compact` variant + `aria-label` in the anonymous branch;
- * `getPathname({ locale, href: "/kayit" })` + `next/navigation`'s own `useRouter`, not
- * `@/i18n/navigation`'s — the `CODE85-M5` reasoning every sibling already carries).
+ * `components/lock-icon.tsx` `compact` variant + `aria-label` in the anonymous branch).
  *
  * `mode` is typed {@link MeasurementType}, not `tool-island.tsx`'s own `ToolMode` (plan
  * §5.1's deliberate choice, restated here): the two are structurally identical three-
@@ -36,13 +32,21 @@ import styles from "./tools.module.css";
  * SAME single boolean the pending/saved reasons already compute, rather than adopting
  * `tool-island.tsx`'s sibling undo/clear/download buttons' real-`disabled` convention
  * (those buttons never carry an in-flight async status the way this one does).
+ *
+ * RESUME (uyelik-auth-redesign plan §5.6.3, superseding an earlier full-page `/kayit`
+ * redirect) — the other case §2.4 measured as genuinely IMPOSSIBLE before: a page redirect
+ * destroyed the drawn geometry with no way back. `points`, `title` and `pendingSaveIdRef`
+ * all stay mounted across the modal round-trip, so the resume is exact — and `resume()`
+ * closes over the CURRENT render's `points` rather than a ref-captured snapshot, so a
+ * reader who adjusts the map WHILE the modal is open saves the geometry they see when they
+ * finish, not a stale one captured when the modal opened. `belowMinPoints` is re-checked
+ * inside `resume()` for the same reason — the reader may have cleared the map.
  */
 export function ToolMeasurementSave({
   mode,
   points,
   minPoints,
   authState,
-  locale,
   pendingSaveIdRef,
   onSaved,
 }: {
@@ -50,12 +54,11 @@ export function ToolMeasurementSave({
   readonly points: readonly GeoPoint[];
   readonly minPoints: number;
   readonly authState: AuthSessionState;
-  readonly locale: Locale;
   readonly pendingSaveIdRef: RefObject<string | null>;
   readonly onSaved: (measurement: MeasurementRecord) => void;
 }) {
   const t = useTranslations("Measurements");
-  const router = useRouter();
+  const modal = useAuthModalState();
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<"idle" | "pending" | "saved" | "failed" | "quota-exceeded">(
     "idle",
@@ -69,6 +72,7 @@ export function ToolMeasurementSave({
    * THIS click actually submitted.
    */
   const [titleMismatch, setTitleMismatch] = useState(false);
+  const authRequestId = useRef<string | null>(null);
 
   /**
    * NOT part of the plan's own enumerated lifecycle (§5.4 item 6 only names when the
@@ -99,15 +103,13 @@ export function ToolMeasurementSave({
 
   const belowMinPoints = points.length < minPoints;
 
-  async function handleClick() {
-    if (authState === "checking" || status === "pending" || status === "saved" || belowMinPoints) {
-      return;
-    }
-    if (authState === "anonymous") {
-      const dest = getPathname({ locale, href: "/kayit" });
-      router.push(`${dest}?returnTo=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
+  /** The interrupted action itself — shared by the authenticated click path and the resume
+   *  effect below. Closes over the CURRENT render's `points`/`title`/`belowMinPoints`
+   *  naturally (it is defined inside the component body, not hoisted or ref-captured), so a
+   *  reader who edits the map while the modal is open saves what they see when they finish,
+   *  never a stale snapshot from when the modal opened. */
+  const resume = useCallback(async () => {
+    if (belowMinPoints) return;
     setStatus("pending");
     setTitleMismatch(false);
     let clientMeasurementId = pendingSaveIdRef.current;
@@ -138,7 +140,28 @@ export function ToolMeasurementSave({
     // mutation handlers in `tool-island.tsx`; the SAME points stay retriable with the SAME
     // idempotency key once the reader frees quota elsewhere or the transport recovers.
     setStatus(result.code === "quota-exceeded" ? "quota-exceeded" : "failed");
+  }, [belowMinPoints, mode, onSaved, pendingSaveIdRef, points, title]);
+
+  async function handleClick() {
+    if (authState === "checking" || status === "pending" || status === "saved" || belowMinPoints) {
+      return;
+    }
+    if (authState === "anonymous") {
+      authRequestId.current = requestAuth("measurement");
+      return;
+    }
+    await resume();
   }
+
+  // The resume: signed out → modal → login/register → the measurement that was impossible to
+  // save before this redesign now completes, reading the CURRENT geometry at resume time.
+  useEffect(() => {
+    const id = authRequestId.current;
+    if (id === null || modal.resolvedRequestId !== id) return;
+    if (!consumeResolved(id)) return;
+    authRequestId.current = null;
+    void resume();
+  }, [modal.resolvedRequestId, resume]);
 
   const pending = status === "pending";
   const saved = status === "saved";

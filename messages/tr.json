@@ -444,7 +444,8 @@
     "addAria": "Favorilere ekle",
     "removeAria": "Favorilerden çıkar",
     "signInRequiredAria": "Favorilere eklemek için üye ol",
-    "saveError": "Kaydedilemedi. Tekrar dene."
+    "saveError": "Kaydedilemedi. Tekrar dene.",
+    "savedStatus": "Favorilere eklendi."
   },
   "Deniz": {
     "metaTitle": "Deniz Durumu: Rüzgâr, Dalga, Su Sıcaklığı",
@@ -837,7 +838,8 @@
       "forgot": "Şifreni mi unuttun?",
       "alreadySignedIn": "Zaten giriş yaptın.",
       "logout": "Oturumu kapat",
-      "loggedOut": "Oturumu kapattın."
+      "loggedOut": "Oturumu kapattın.",
+      "crossLink": "Hesabın yok mu? Üye ol"
     },
     "reset": {
       "metaTitle": "Şifre sıfırlama",
@@ -857,7 +859,8 @@
       "metaTitle": "Üye ol",
       "metaDescription": "Coğrafya Platformu'na üye ol.",
       "heading": "Üye ol",
-      "submit": "Üye ol"
+      "submit": "Üye ol",
+      "crossLink": "Hesabın var mı? Giriş yap"
     },
     "verify": {
       "metaTitle": "E-posta doğrulama",
@@ -884,7 +887,11 @@
       "department": "Bölüm",
       "verificationCode": "Doğrulama kodu",
       "resetCode": "Sıfırlama kodu",
-      "newPassword": "Yeni şifre"
+      "newPassword": "Yeni şifre",
+      "groupSecondary": "Eğitim bilgileri",
+      "groupHigherEd": "Eğitim bilgileri",
+      "groupSecondaryAnnounce": "Eğitim bilgileri eklendi: sınıf ve alan.",
+      "groupHigherEdAnnounce": "Eğitim bilgileri eklendi: üniversite ve bölüm."
     },
     "hints": {
       "newPassword": "En az 6 karakter; bir küçük harf, bir büyük harf ve bir rakam."
@@ -934,6 +941,33 @@
       "unauthenticated": "Oturum bulunamadı.",
       "sessionExpired": "Oturumun süresi doldu. Tekrar giriş yap.",
       "weakPassword": "Şifre gereksinimleri karşılanmadı."
+    },
+    "province": {
+      "loading": "Yükleniyor…",
+      "loadError": "İller yüklenemedi. Tekrar dene.",
+      "announceCount": "{count} il listelendi"
+    },
+    "plate": {
+      "eyebrow": "ÜYELİK",
+      "heading": "Hesabınla neler yapabilirsin",
+      "favorites": "İl ve ülke sayfalarını favorilerine ekle.",
+      "video": "Kitap video çözümlerini izle, kaldığın yerden devam et.",
+      "game": "Oyun turlarını kaydet, geçmişini gör.",
+      "measurement": "Harita ölçümlerini kaydet, sonra geri yükle.",
+      "free": "Üyelik ücretsiz.",
+      "coord": "39.0000° K · 35.0000° D"
+    },
+    "modal": {
+      "close": "Kapat",
+      "toLogin": "Hesabın var mı? Giriş yap",
+      "toRegister": "Hesabın yok mu? Üye ol",
+      "intent": {
+        "favorite": "Favorilere eklemek için hesabın gerekiyor.",
+        "video": "Video çözümünü izlemek için hesabın gerekiyor.",
+        "gameRound": "Bu turu kaydetmek için hesabın gerekiyor.",
+        "measurement": "Bu ölçümü kaydetmek için hesabın gerekiyor.",
+        "generic": "Devam etmek için hesabın gerekiyor."
+      }
     }
   },
   "NotFound": {

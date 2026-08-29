@@ -1,0 +1,429 @@
+/* The two-panel auth surface (uyelik-auth-redesign plan §5.1/§5.2) — the layout grid shared
+   by `/kayit` and `/giris`, and the survey plate's own decorative + content styling. Every
+   colour is a Terra token (`DESIGN.md` §2); no new breakpoint is introduced — `64rem` is the
+   EXISTING content-layout boundary `DESIGN.md` §4 already documents. */
+
+/* ---- Layout grid --------------------------------------------------------------------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* A11Y105-I1 fix: the JSX DOM order is fixed at form-then-plate on BOTH pages — the page's
+   own `<h1>` (inside `.formSlot`) always precedes the plate's decorative `<h2>` (`.plateSlot`)
+   in reading/AT order, at every viewport, because `order` changes paint position only and
+   never DOM/reading order. The two-panel VISUAL arrangement is therefore produced entirely by
+   explicit `order` values on BOTH slots at BOTH breakpoints — never by falling back to source
+   order via `order: 0` — so DOM order can stay `<h1>`-first while the visual layout still
+   differs correctly per breakpoint.
+
+   Mobile-first: the form comes FIRST — nothing should sit between the reader and the first
+   field on a phone — and the plate follows as a compact band below it. */
+.formSlot {
+  order: 1;
+}
+
+.plateSlot {
+  order: 2;
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 30rem);
+    /* A1 fix (İRİS live audit, 2026-08-29 fix round): `align-items: start` (the base rule
+       above) sizes EVERY grid item to its own content height, so `.plateSlot` used to be
+       exactly as tall as the plate itself — leaving whatever remained of the row (up to
+       700.5px measured on `/kayit`'s 13-field form) as bare track with nothing in it.
+       `stretch` makes `.plateSlot` (and `.formSlot`, already the taller of the two so this
+       is a no-op for it) fill the row's full height, which is what makes the sticky rule
+       below on `.plate` have room to move within. This does NOT change the plate's own
+       rendered size or its initial (unscrolled) position — only what happens as the reader
+       scrolls past it. */
+    align-items: stretch;
+  }
+
+  /* Desktop two-column grid: the plate visually leads (left column), the form follows (right
+     column) — the SAME visual arrangement as before this fix, achieved by swapping the order
+     values rather than resetting both to `order: 0` (which would fall back to DOM order, i.e.
+     form-then-plate, putting the form in the LEFT column and reversing the intended layout). */
+  .plateSlot {
+    order: 1;
+    /* Round-5 fix (DF105R4-I1 — round-2/3/4 each only relocated the ~800px blank area, never
+       closed it, because none of them changed the PLATE's own height, only where it sat inside
+       a track that stayed taller than it). This round closes the gap at its source instead:
+       `.plate` itself (below) now stretches to genuinely fill this slot's full row height —
+       the row height itself comes from `.layout`'s `align-items: stretch` above, unchanged.
+       `display: grid` (kept from round-4, `grid` not `flex` for the same reason recorded
+       there: a grid item's default `justify-items` is `stretch`, keeping the plate's full
+       inline width) with `align-items: stretch` (replacing round-4's `center`) is what makes
+       the plate — the sole item in this one-cell grid — stretch to the cell's full block size
+       rather than being centred within a track that stays taller than its own content. */
+    display: grid;
+    align-items: stretch;
+  }
+
+  .formSlot {
+    order: 2;
+  }
+}
+
+/* ---- The plate ------------------------------------------------------------------------ */
+
+/* Exactly `.hero`'s established shape (`app/globals.css`), including the `overflow: hidden`
+   that clips the ring cluster's own deliberate corner bleed. */
+.plate {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* `position: sticky` REMOVED in the round-5 fix (DF105R4-I1). It was introduced in round-2 to
+   keep a short plate paired with the form as the reader scrolled past it — the plate stayed
+   fixed near the header while the much-taller form's track kept scrolling underneath, which is
+   exactly the mechanism that produced round-2/3/4's blank-space defect (a short sticky box
+   inside a taller track always leaves the track's leftover length bare somewhere). Now that
+   `.plateSlot` (above) stretches `.plate` itself to the row's full height — the plate's own box
+   is exactly as tall as the form's — there is no leftover track for a sticky offset to hold the
+   plate within: independently re-measured (Playwright, 1440px width, `/kayit` + `/en/register`,
+   viewport heights 700/900/1080px, scrollY at 0/25/50/75/100% of the scrollable distance — 30
+   combinations) confirms `topGap`/`bottomGap` stay exactly 0px at every one of them, and the
+   plate's own `top` goes negative during scroll (e.g. -117.53px, -331.53px, -760.53px) exactly
+   in lockstep with the slot rather than pinning at `calc(var(--header-height) + 1rem)` — i.e.
+   the sticky condition (`slotHeight - plateHeight - top offset > 0`) was already never
+   satisfiable once the two heights are equal, so the declaration was measured dead code, not a
+   removal that changes behaviour. The plate now simply scrolls in the normal document flow,
+   paired with the form for its entire length because they ARE the same length — the redesign's
+   original two-panel intent, achieved without any positioning trick. */
+
+/* Every real content child is explicit `position: relative; z-index: 2` — `globals.css`'s own
+   documented reason (CSS 2.1 Appendix E: a positioned `z-index: 0` decorative sibling paints
+   AFTER unpositioned in-flow children, so DOM order alone does not protect content). */
+.plateGrid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-border) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(90deg, var(--color-border) 0 1px, transparent 1px 34px);
+  opacity: 0.4;
+}
+
+/* The ring cluster's box is DELIBERATELY smaller than the hero's own 320×320px — this box's
+   own column is narrower than the hero ever has to handle (a fraction of the content width,
+   not nearly the full viewport), so a proportionally smaller cluster starts from a safer
+   footprint. HIDDEN below the two-panel breakpoint: below `64rem` the plate is a full-width
+   "compact band" under the form, a shape the hero's own tested geometry says nothing about,
+   so no cluster is shown there rather than guessing.
+
+   RE-MEASURED FOR REAL against the plate's own box (§11.4.5 — never copying the hero's
+   numbers, which belong to a different box): real Playwright, `Range.getClientRects()` tight
+   text bbox vs each ring's `getBoundingClientRect()` circle, annulus-vs-rectangle
+   intersection, ±0.5px buffer, `document.fonts.ready` settled first, both locales.
+
+   A first-pass 160×160px cluster (proportionally scaled straight from the hero's own
+   inset ratios) FAILED this measurement — 81/84 checks intersected the plate heading across
+   nearly the entire visible band (1030–1440px), because unlike the hero's own `h1` (which
+   reserves clearance via `max-width: 18ch`), this plate's `.plateEyebrow`/`.plateHeading` had
+   no width limit and ran the full column width straight under the top-right-anchored rings.
+   The fix that actually cleared it, verified: (1) the cluster itself shrunk to 130×130px,
+   offset -18px/-18px (was 160×160px / -30px/-30px); (2) `.plateEyebrow`/`.plateHeading` both
+   gained `max-width: calc(100% - 120px)` — the SAME remedy the hero's own `h1` already uses
+   (reserve clearance in the text, not only in the decoration), applied to this box's own
+   dimensions rather than assumed from the hero's.
+
+   VERIFIED CLEAN: 84/84 (width, locale) combinations with rings visible — 1020–1440px in
+   10px steps, both `tr` and `en` — zero intersections. No further scale step is needed in
+   this band; the existing `<64rem` hide is the only other breakpoint the geometry needs. */
+.plateRings {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+  width: 130px;
+  height: 130px;
+  z-index: 0;
+  pointer-events: none;
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .plateRings {
+    display: block;
+  }
+}
+
+.plateRing1,
+.plateRing2,
+.plateRing3,
+.plateRing4,
+.plateRing5 {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.plateRing1 {
+  inset: 53px;
+  border: 1.4px solid var(--color-primary);
+  opacity: 0.5;
+}
+
+.plateRing2 {
+  inset: 38px;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.4;
+}
+
+.plateRing3 {
+  inset: 24px;
+  border: 1.4px solid var(--color-accent);
+  opacity: 0.3;
+}
+
+.plateRing4 {
+  inset: 7px;
+  border: 1.4px solid var(--color-primary);
+  opacity: 0.2;
+}
+
+.plateRing5 {
+  inset: -9px;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.14;
+}
+
+.plateRingDot {
+  position: absolute;
+  top: 75px;
+  right: 77px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+/* R2/K7 fix: the ring cluster bleeds from the top-right corner, exactly where the eyebrow +
+   heading sit at the top of the plate's flex column — the SAME collision the hero's own
+   `max-width: 18ch` on its `h1` already exists to prevent (`globals.css`), applied here to
+   the plate's shorter lines instead. This keeps every wrapped line of both clear of the
+   ring zone's own footprint, not merely the first one — measured and tightened in §11.4.5. */
+.plateEyebrow {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  max-width: calc(100% - 120px);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-dark);
+}
+
+.plateHeading {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  max-width: calc(100% - 120px);
+  font-family: var(--font-heading);
+  font-size: clamp(1.3rem, 1.1rem + 1vw, 1.6rem);
+  color: var(--color-ink);
+}
+
+.plateList {
+  position: relative;
+  z-index: 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+.plateList li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.plateList li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.plateFree {
+  position: relative;
+  z-index: 2;
+  margin: 4px 0 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--color-primary-dark);
+}
+
+/* Round-5 content redistribution + second decorative accent (İRİS's own unverified design-tour
+   idea, elaborated here now that a taller plate is the real mechanism rather than a hypothetical
+   one). Below 64rem the plate is a compact band sized to its own content — `display: none`
+   below keeps this element out of the mobile compact band entirely (no size, no `gap`
+   contribution, same conditional pattern `.plateRings` already uses).
+
+   At 64rem+ `.plate` is stretched to the row's full height (above), so without something here
+   the eyebrow/heading/list cluster would sit at the top with the whole freed height as dead
+   space below it. `flex: 1 1 auto` makes this element consume exactly the leftover space
+   between the header cluster and the free-tier callout — a single deliberate breathing zone
+   (the SAME "tight cluster + pushed-down footer" shape `home.module.css`'s own
+   `.cardFact`/`.toolCardBody` already use for an equal-height card, here via a spacer instead
+   of `margin-top: auto` because this spacer also carries the decorative accent below) — rather
+   than evenly stretching the gap between every item, which would pull the eyebrow away from
+   the heading it belongs with. `min-height: 0` is required on a flex-growing item whose own
+   content (the absolutely-positioned rings below) does not otherwise establish an intrinsic
+   size, so it can shrink to near-zero on a short row (`/giris`) instead of being floored by the
+   default `min-height: auto`. */
+.plateSpacer {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .plateSpacer {
+    display: block;
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    container-type: size;
+    /* Round-6 fix (DF105R5-I1): makes the spacer's OWN resolved block size queryable by its
+       ring child below, instead of the ring only ever seeing the clamp() floor regardless of
+       how little room actually exists. `container-type: size` is safe here specifically
+       because this element's only content (`.plateSpacerRings`) is `position: absolute` — i.e.
+       already out of normal flow and contributing nothing to intrinsic size — so the implied
+       `contain: size` changes nothing about how `.plateSpacer` is sized; it is still purely
+       `flex: 1 1 auto` against `.plate`'s stretched row height, exactly as before this fix.
+       Same primitive `game-map.module.css`'s `.frame` already uses for `cqw` (inline-size
+       axis); this is the block-size axis of the same feature, not a new one. */
+  }
+}
+
+/* The second ring cluster itself — reduced to 3 rings + a dot (vs. the corner cluster's 5 +
+   dot) and led by `--color-secondary`/`--color-accent` rather than `--color-primary`, so it
+   reads as a quieter, secondary echo of the corner motif rather than competing with it. Sized
+   from the SPACER's own box, not a fixed pixel guess against the page's total height: `height:
+   clamp(28px, 65%, 84px)` with `aspect-ratio: 1` and `width: auto` derives a square purely from
+   the spacer's block-axis size (whatever leftover space flex actually gave it on THIS page),
+   capped at 84px (smaller than the corner cluster's measured-safe 130px footprint, since this
+   sits deeper in the column where less clearance has been verified). Centered via
+   `top/left: 50%` + `translate(-50%, -50%)` within the spacer's own position:relative box, so
+   it can only ever bleed into the flex `gap` around the spacer, never into the list or
+   free-tier text — those are separate flex items the spacer's own box cannot overlap by
+   construction.
+
+   Round-6 fix (DF105R5-I1 — closes the finding, does not merely soften it). The clamp's own
+   28px floor used to be UNCONDITIONAL: on a page whose spacer collapses toward 0 height (the
+   shortest form vs. the stretched plate — measured worst case `/en/login` @ 1024px, spacer
+   height 0px), the ring still rendered at the 28px floor regardless, leaving only the flex
+   `gap` (16px) minus the ring's own 14px radius = 2.0px of real clearance to `.plateList` — a
+   margin, not a guarantee, exactly what the finding named. This block no longer forces that
+   floor into a space too small to hold it: `display: none` by default, shown only inside the
+   `@container (min-height: 70px)` block below, so a spacer too short to hold ANY ring safely
+   renders no ring at all rather than one at its clamp floor.
+
+   Round-7 fix (DF105R6-I1 — corrects a wrong-regime derivation, not merely its resulting
+   number). Round 6's own comment here derived a 48px threshold from a formula that assumed the
+   ring stayed pinned at the clamp's 28px FLOOR at H=48 — but 48px already sits PAST the clamp's
+   own floor-to-percentage crossover point (28px / 0.65 ≈ 43.08px), where the ring's diameter
+   comes from `clamp(28px, 65%, 84px)`'s 65%-of-H branch instead, not the 28px floor the old
+   comment assumed. Corrected derivation, valid for any spacer height H above that crossover:
+   ring diameter = 0.65×H, ring radius = 0.325×H, so clearance-to-list = gap(16px) + H/2 −
+   0.325×H = 16 + 0.175×H. Solving 16 + 0.175×H ≥ 28 (a genuine ≥28px floor — round 6's own
+   arithmetic error had made its actual ~24.4px result read as a claimed ~26.72px, so this round
+   raises the real target rather than trusting the old number) gives H ≥ 68.57px; 70px is used
+   below — a clean round number with a small margin above that minimum. At H=70: clearance =
+   16 + 0.175×70 = 28.25px, independently re-measured (Playwright, forced spacer height,
+   `getBoundingClientRect`) both by repeating round 6's own method on a fresh page/viewport and
+   by a fine (≤2px-step) boundary sweep around 70px itself — see this round's commit message for
+   the numbers. */
+.plateSpacerRings {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1;
+  height: clamp(28px, 65%, 84px);
+  width: auto;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@container (min-height: 70px) {
+  .plateSpacerRings {
+    display: block;
+  }
+}
+
+.plateSpacerRing1,
+.plateSpacerRing2,
+.plateSpacerRing3 {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.plateSpacerRing1 {
+  inset: 0;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.28;
+}
+
+.plateSpacerRing2 {
+  inset: 22%;
+  border: 1.4px solid var(--color-accent);
+  opacity: 0.22;
+}
+
+.plateSpacerRing3 {
+  inset: 42%;
+  border: 1.4px solid var(--color-secondary);
+  opacity: 0.16;
+}
+
+.plateSpacerRingDot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+}
+
+/* Decorative/atmospheric, not a data claim — the same treatment `home.module.css`'s own
+   `.heroCoord` label already gives an identical device. `--color-slate`, never
+   `--color-taupe` (`DESIGN.md` §5's hard rule): slate measures 6.58:1 on `--color-surface`
+   (`DESIGN.md` §5's verified table), clearing AA at this small size; taupe would not. */
+.plateCoord {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  z-index: 0;
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--color-slate);
+  pointer-events: none;
+}

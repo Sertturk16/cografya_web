@@ -3,12 +3,17 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
- * TEST96-M1 fix (PR #96 round-1 review) — the `clientRoundId`/`submitModeTag`/`locale` prop
- * chain from `game-island.tsx`'s `<GameSummary>` call through to `game-summary.tsx`'s own
+ * TEST96-M1 fix (PR #96 round-1 review) — the `clientRoundId`/`submitModeTag` prop chain from
+ * `game-island.tsx`'s `<GameSummary>` call through to `game-summary.tsx`'s own
  * `<GameRoundSaveControl>` call had no test asserting the actual VALUES wired through each
  * hop, only that the types line up (TypeScript's structural typing does not catch a value
- * swap between two same-typed props — e.g. `locale={submitModeTag}` would still typecheck if
- * both happened to be `string`).
+ * swap between two same-typed props — e.g. `submitModeTag={clientRoundId}` would still
+ * typecheck if both happened to be `string`).
+ *
+ * `locale` DROPPED from this chain (uyelik-auth-redesign plan §5.6.2): the save control no
+ * longer redirects to `/kayit` on its own — it opens the shared auth modal instead, which
+ * resolves its own locale from the root layout, so the prop this scan used to assert threads
+ * through no longer exists at any of the three hops.
  *
  * SOURCE-SCAN, the `game-round-save.structure.test.ts`/`game-history-panel.structure.test.ts`
  * pattern in this same folder — this repo's vitest environment is a bare `node` environment
@@ -51,8 +56,8 @@ describe("game-island.tsx forwards the finished round's own identity to <GameSum
     expect(call).toContain("submitModeTag={submitModeTag}");
   });
 
-  it("passes locale={locale} — the route's own locale, never a hardcoded or swapped value", () => {
-    expect(call).toContain("locale={locale}");
+  it("no longer passes a locale prop — the save control opens the shared auth modal instead of redirecting (plan §5.6.2)", () => {
+    expect(call).not.toContain("locale=");
   });
 });
 
@@ -67,7 +72,7 @@ describe("game-summary.tsx forwards the same three props to <GameRoundSaveContro
     expect(call).toContain("submitModeTag={submitModeTag}");
   });
 
-  it("passes locale={locale} straight through, not a re-derived local", () => {
-    expect(call).toContain("locale={locale}");
+  it("no longer passes a locale prop", () => {
+    expect(call).not.toContain("locale=");
   });
 });

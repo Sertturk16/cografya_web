@@ -46,11 +46,27 @@ interface FieldErrors {
   password?: string;
 }
 
-export function LoginForm({ locale }: { readonly locale: Locale }) {
+export function LoginForm({
+  locale,
+  onAuthenticated,
+}: {
+  readonly locale: Locale;
+  /**
+   * uyelik-auth-redesign plan §5.7 — the single seam that lets the SAME component serve the
+   * page and the modal. Absent (page use): behaviour is exactly as before —
+   * `router.replace(result.redirectTo ?? fallbackHome)`. Present (modal use): call this
+   * instead of navigating, and no `returnTo` is sent with the request (there is no navigation
+   * to protect). Also gates the form's own page-only cross-link row (§5.3/§5.9): the modal
+   * offers its own in-place mode toggle outside this component, so this component's real
+   * `<Link>` cross-navigation stays a page-mode-only affordance.
+   */
+  readonly onAuthenticated?: () => void;
+}) {
   const t = useTranslations("Auth");
   const router = useRouter();
   const rawReturnTo = useReturnToParam();
   const fallbackHome = getPathname({ locale, href: "/" });
+  const inModal = onAuthenticated !== undefined;
 
   const [sessionState, setSessionState] = useAuthSession();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -124,15 +140,21 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
     const result = await submitAuth(
       "login",
       { email, password },
-      // `||`, not `??` (review `CODE85-M2`): `?returnTo=` (present but empty) parses to `""`,
-      // not `null` — a nullish check lets the empty string through and skips the fallback,
-      // reopening the "English visitor lands on the Turkish home page" bug the plan names
-      // (§4.5). A falsy check catches both the absent and the empty-string case.
-      { returnTo: rawReturnTo || fallbackHome },
+      // In modal use there is no navigation to protect, so no `returnTo` is sent at all
+      // (uyelik-auth-redesign plan §5.7). Otherwise: `||`, not `??` (review `CODE85-M2`):
+      // `?returnTo=` (present but empty) parses to `""`, not `null` — a nullish check lets the
+      // empty string through and skips the fallback, reopening the "English visitor lands on
+      // the Turkish home page" bug the plan names (§4.5). A falsy check catches both the
+      // absent and the empty-string case.
+      inModal ? {} : { returnTo: rawReturnTo || fallbackHome },
     );
     setSubmitting(false);
 
     if (result.ok) {
+      if (onAuthenticated !== undefined) {
+        onAuthenticated();
+        return;
+      }
       router.replace(result.redirectTo ?? fallbackHome);
       return;
     }
@@ -161,6 +183,14 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
   if (sessionState === "authenticated") {
     return (
       <div className={styles.card}>
+        {/* The page heading now lives WITH the form (plan §5.3), not orphaned above the card
+            by the page. The modal supplies its own `<h2>` dialog heading instead (§5.7), so
+            this only renders in page use. */}
+        {!inModal ? (
+          <div className={styles.formHeader}>
+            <h1>{t("login.heading")}</h1>
+          </div>
+        ) : null}
         {serverErrorCode !== null ? (
           <FormErrorRegion
             headingRef={errorHeadingRef}
@@ -195,6 +225,11 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
 
   return (
     <div className={styles.card}>
+      {!inModal ? (
+        <div className={styles.formHeader}>
+          <h1>{t("login.heading")}</h1>
+        </div>
+      ) : null}
       {justLoggedOut ? (
         <h2 ref={loggedOutHeadingRef} tabIndex={-1} className={styles.successHeading}>
           {t("login.loggedOut")}
@@ -246,6 +281,15 @@ export function LoginForm({ locale }: { readonly locale: Locale }) {
           <p className={styles.noscript}>{t("noscript")}</p>
         </noscript>
       </form>
+      {/* Page-mode-only cross-navigation (uyelik-auth-redesign plan §5.3/§5.9): the modal
+          offers its own in-place mode toggle outside this component (`auth-dialog-body.tsx`),
+          so this real `<Link>` — which leaves the page — only renders when this form is not
+          hosted inside the modal. */}
+      {!inModal ? (
+        <p className={styles.crossLink}>
+          <Link href="/kayit">{t("login.crossLink")}</Link>
+        </p>
+      ) : null}
     </div>
   );
 }
