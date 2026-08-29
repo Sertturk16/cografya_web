@@ -25,7 +25,14 @@
    is the wrong trade at this width. */
 @media (max-width: 30rem) {
   .dialog {
+    /* A3 fix (İRİS live audit, 2026-08-29 fix round): `width: 100vw` alone does not win here —
+       the native `<dialog>` UA stylesheet also sets its own `max-width: calc(100% - 38px)`
+       (confirmed measured), and `.dialog`'s base rule above never resets `max-width` for this
+       breakpoint, so that UA default kept outscoring `width` and the dialog rendered at 337px
+       on a 390px viewport instead of true full-bleed. Setting `max-width` explicitly here —
+       to the same `100vw` the width rule already uses — is the actual fix. */
     width: 100vw;
+    max-width: 100vw;
     max-height: 100dvh;
     border-radius: 0;
   }

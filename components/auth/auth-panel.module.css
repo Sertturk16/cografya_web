@@ -33,6 +33,16 @@
 @media (min-width: 64rem) {
   .layout {
     grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 30rem);
+    /* A1 fix (İRİS live audit, 2026-08-29 fix round): `align-items: start` (the base rule
+       above) sizes EVERY grid item to its own content height, so `.plateSlot` used to be
+       exactly as tall as the plate itself — leaving whatever remained of the row (up to
+       700.5px measured on `/kayit`'s 13-field form) as bare track with nothing in it.
+       `stretch` makes `.plateSlot` (and `.formSlot`, already the taller of the two so this
+       is a no-op for it) fill the row's full height, which is what makes the sticky rule
+       below on `.plate` have room to move within. This does NOT change the plate's own
+       rendered size or its initial (unscrolled) position — only what happens as the reader
+       scrolls past it. */
+    align-items: stretch;
   }
 
   /* Desktop two-column grid: the plate visually leads (left column), the form follows (right
@@ -63,6 +73,26 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* A1 fix (İRİS live audit, 2026-08-29 fix round — `/kayit`'s 700.5px empty grid track beside
+   the plate). `position: sticky` only at the two-panel breakpoint, where the plate and the
+   form share a row: on a form much longer than the plate (`/kayit`'s 13 fields), the plate no
+   longer just stops and leaves the rest of its own column blank as the reader scrolls past it
+   — it stays visually paired with the form, the way the redesign's own two-panel intent
+   requires, and settles once its taller `.plateSlot` track (stretched above) runs out. A plate
+   shorter than the form is not the defect; a plate that goes blank beneath itself is.
+   Unaffected below 64rem: there the plate is a single-column compact band AFTER the form
+   (`order: 2` in the base rules), a different shape this rule does not touch.
+   `top` reuses the SAME expression `book-video.module.css:41`'s `.stage` already ships for its
+   own sticky column, for the same reason: it keeps the sticky box clear of the
+   `position: sticky` site header (`site-header.module.css`, `--header-height: 3.5rem`,
+   `globals.css:395`) plus a small breathing gap, rather than inventing a second offset. */
+@media (min-width: 64rem) {
+  .plate {
+    position: sticky;
+    top: calc(var(--header-height) + 1rem);
+  }
 }
 
 /* Every real content child is explicit `position: relative; z-index: 2` — `globals.css`'s own

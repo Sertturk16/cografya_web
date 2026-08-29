@@ -893,11 +893,11 @@
       "toLogin": "Already have an account? Log in",
       "toRegister": "No account? Sign up",
       "intent": {
-        "favorite": "Sign up to add to your favorites.",
-        "video": "Sign up to watch the video solution.",
-        "gameRound": "Sign up to save this round.",
-        "measurement": "Sign up to save this measurement.",
-        "generic": "Sign up to continue."
+        "favorite": "You need an account to add to your favorites.",
+        "video": "You need an account to watch the video solution.",
+        "gameRound": "You need an account to save this round.",
+        "measurement": "You need an account to save this measurement.",
+        "generic": "You need an account to continue."
       }
     }
   },

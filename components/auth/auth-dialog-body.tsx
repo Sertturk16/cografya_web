@@ -19,7 +19,16 @@ import styles from "./auth-dialog.module.css";
  *  — keeps every call statically visible to `messages.test.ts`'s own per-file key scan
  *  (a dynamic key would be invisible to that scan the same way `AUTH_ERROR_MESSAGE_KEYS[code]`
  *  already is, deliberately, for the error-code map — this file just does not need that
- *  exemption when a switch costs nothing). */
+ *  exemption when a switch costs nothing).
+ *
+ *  A4 fix (İRİS live audit, 2026-08-29 fix round): this switch is keyed on `intent` only, never
+ *  on `mode` — deliberately, not the bug the audit found. The bug was in the COPY: every
+ *  `Auth.modal.intent.*` string used to read "…üye ol"/"…Sign up to…", which is wrong when the
+ *  dialog is showing in `"login"` mode. The fix is the mode-agnostic phrasing now shipped in
+ *  `messages/{tr,en}.json` ("…hesap gerekli." / "You need an account to…") — text that reads
+ *  correctly in EITHER mode — rather than doubling every key into a `.register`/`.login` pair.
+ *  Smaller diff, and `GLOSSARY.md` §7's "hesap"/"account" already names the neutral term this
+ *  needed. */
 function intentLine(t: ReturnType<typeof useTranslations>, intent: AuthIntent): string {
   switch (intent) {
     case "favorite":
