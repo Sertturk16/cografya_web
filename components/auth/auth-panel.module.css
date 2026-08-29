@@ -12,16 +12,22 @@
   align-items: start;
 }
 
-/* Mobile-first: the form comes FIRST — nothing should sit between the reader and the first
-   field on a phone — and the plate follows as a compact band. At `64rem`+ the two panels
-   revert to plain DOM order (plate, then form), which is also the desktop READING order the
-   two-column grid places side by side. */
-.plateSlot {
-  order: 2;
-}
+/* A11Y105-I1 fix: the JSX DOM order is fixed at form-then-plate on BOTH pages — the page's
+   own `<h1>` (inside `.formSlot`) always precedes the plate's decorative `<h2>` (`.plateSlot`)
+   in reading/AT order, at every viewport, because `order` changes paint position only and
+   never DOM/reading order. The two-panel VISUAL arrangement is therefore produced entirely by
+   explicit `order` values on BOTH slots at BOTH breakpoints — never by falling back to source
+   order via `order: 0` — so DOM order can stay `<h1>`-first while the visual layout still
+   differs correctly per breakpoint.
 
+   Mobile-first: the form comes FIRST — nothing should sit between the reader and the first
+   field on a phone — and the plate follows as a compact band below it. */
 .formSlot {
   order: 1;
+}
+
+.plateSlot {
+  order: 2;
 }
 
 @media (min-width: 64rem) {
@@ -29,9 +35,16 @@
     grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 30rem);
   }
 
-  .plateSlot,
+  /* Desktop two-column grid: the plate visually leads (left column), the form follows (right
+     column) — the SAME visual arrangement as before this fix, achieved by swapping the order
+     values rather than resetting both to `order: 0` (which would fall back to DOM order, i.e.
+     form-then-plate, putting the form in the LEFT column and reversing the intended layout). */
+  .plateSlot {
+    order: 1;
+  }
+
   .formSlot {
-    order: 0;
+    order: 2;
   }
 }
 

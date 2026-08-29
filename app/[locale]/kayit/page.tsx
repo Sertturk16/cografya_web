@@ -34,6 +34,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * (`.formHeader`), so the SAME component serves the page and the modal without a second
  * heading implementation. The page therefore stays statically rendered
  * (`lib/auth/session.ts`'s R4 prohibition).
+ *
+ * A11Y105-I1 fix: `formSlot` (carrying `RegisterForm`'s `<h1>`) is rendered BEFORE `plateSlot`
+ * (carrying `AuthPlate`'s decorative `<h2>`) — DOM/reading order is viewport-independent, so
+ * this keeps the page's real `<h1>` ahead of the plate's `<h2>` for a screen-reader user at
+ * every breakpoint. The two-panel VISUAL arrangement (plate left, form right at `64rem`+) is
+ * produced entirely by `auth-panel.module.css`'s explicit `order` values, not by source order.
  */
 export default async function RegisterPage({ params }: PageProps) {
   const { locale } = await params;
@@ -43,11 +49,11 @@ export default async function RegisterPage({ params }: PageProps) {
   return (
     <div className="container page">
       <div className={panelStyles.layout}>
-        <div className={panelStyles.plateSlot}>
-          <AuthPlate />
-        </div>
         <div className={panelStyles.formSlot}>
           <RegisterForm locale={locale} provinces={provinces} />
+        </div>
+        <div className={panelStyles.plateSlot}>
+          <AuthPlate />
         </div>
       </div>
     </div>
