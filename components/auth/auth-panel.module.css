@@ -51,6 +51,23 @@
      form-then-plate, putting the form in the LEFT column and reversing the intended layout). */
   .plateSlot {
     order: 1;
+    /* DF105R3-I1 fix (round-4): stretching `.plateSlot` (above) grows the SLOT, not the
+       plate's own content — the plate itself stays 338px(tr)/362px(en) tall regardless, so the
+       stretched track leaves a single one-sided empty rectangle below the sticky plate
+       (measured 460-670px at common 900-1080px viewport heights, PERSISTENT at every scroll
+       position because the page never scrolls far enough for the sticky plate to detach and
+       reach the track's own bottom). `display: grid; align-items: center` centers the plate
+       vertically within the stretched slot instead — this splits the empty space into a top
+       gap and a bottom gap rather than leaving it all below, which is the round-3-recommended
+       remedy (`pr-reviews/105-round3.md` DF105R3-I1). `grid` (not `flex`) is deliberate: a
+       grid item's default `justify-items` is `stretch`, so the plate keeps its full inline
+       (horizontal) width — only the block (vertical) axis is overridden to `center` — whereas
+       `flex`'s default main-axis sizing is shrink-to-content and would have collapsed the
+       plate to its own content width. The plate's own `position: sticky` rule below is
+       UNCHANGED and still governs its scroll behaviour; centering only changes where it sits
+       inside the now-taller slot before and after it locks. */
+    display: grid;
+    align-items: center;
   }
 
   .formSlot {

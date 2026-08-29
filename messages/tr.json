@@ -962,11 +962,11 @@
       "toLogin": "Hesabın var mı? Giriş yap",
       "toRegister": "Hesabın yok mu? Üye ol",
       "intent": {
-        "favorite": "Favorilere eklemek için hesap gerekli.",
-        "video": "Video çözümü izlemek için hesap gerekli.",
-        "gameRound": "Bu turu kaydetmek için hesap gerekli.",
-        "measurement": "Bu ölçümü kaydetmek için hesap gerekli.",
-        "generic": "Devam etmek için hesap gerekli."
+        "favorite": "Favorilere eklemek için hesabın gerekiyor.",
+        "video": "Video çözümünü izlemek için hesabın gerekiyor.",
+        "gameRound": "Bu turu kaydetmek için hesabın gerekiyor.",
+        "measurement": "Bu ölçümü kaydetmek için hesabın gerekiyor.",
+        "generic": "Devam etmek için hesabın gerekiyor."
       }
     }
   },
