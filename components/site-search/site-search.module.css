@@ -9,6 +9,20 @@
      Deliberately NOT positioned here — see `.panel`. */
   display: flex;
   align-items: center;
+  /* Below the nav-collapse breakpoint `.inner`'s three flex children are exactly `.brand`,
+     this slot and `NavDisclosure`'s hamburger `.trigger` (its `.panel` is out of flow, so it
+     contributes no layout) — and none of the three carried `margin-left: auto`, so nothing
+     pushed the search+hamburger pair to the header's right edge. At any width comfortably
+     above the 351.5px single-row floor and below the collapse breakpoint the pair sat
+     left-aligned right after the brand, with dead space on the right (owner live-tour finding
+     8a, `Owner's Inbox/anasayfa-yenileme/plan.md` §5.7 — measured, not guessed: the desktop
+     `.nav`'s own `margin-left: auto` in `site-nav.module.css` only fires inside its
+     `@media (min-width: 70rem)` block, so nothing filled that role below it). An auto margin
+     on the FIRST item of the trailing group pushes that whole group — this slot and every
+     sibling after it — to the right edge, the standard CSS flexbox behavior for this layout
+     shape. Neutralized above the nav-collapse breakpoint below, where `.nav`'s own auto
+     margin already does this job and the desktop layout must stay byte-for-byte unchanged. */
+  margin-left: auto;
 }
 
 .trigger {
@@ -273,7 +287,7 @@
    second row, i.e. it sat one pixel from a 60px height jump, and the margin differs by 77px
    between the Turkish and English nav. Sizing to content leaves ~119px of slack in the
    tighter locale instead of −1px. */
-@media (min-width: 66rem) {
+@media (min-width: 70rem) {
   .trigger {
     justify-content: flex-start;
   }
@@ -283,9 +297,13 @@
   }
 
   /* The slot becomes the panel's containing block only here, so the dropdown hangs from the
-     trigger rather than from the header. */
+     trigger rather than from the header. `margin-left: 0` neutralizes the mobile fix above:
+     from here up `.nav`'s own `margin-left: auto` (site-nav.module.css) already pushes the
+     nav block to the right edge, so this slot must go back to sitting in normal flow right
+     after the brand — the desktop layout is unchanged by 8a's fix. */
   .slot {
     position: relative;
+    margin-left: 0;
   }
 
   .panel {

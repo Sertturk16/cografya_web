@@ -146,7 +146,88 @@
   background: var(--color-chip-bg);
 }
 
-@media (min-width: 66rem) {
+/* Per-group dropdown ("Haritalar", "Araçlar" — finding 8, `nav-group-disclosure.tsx`, plan
+   §5.7b). Mobile-first, MIRRORING (inverted) the top-level trigger/panel split above: below
+   the nav-collapse breakpoint the trigger hides and the panel is FORCED open so the group
+   reads as a plain heading plus its indented links, flowing inline in this same scrollable
+   mobile list; at/above the breakpoint (see the existing `@media (min-width: 70rem)` block
+   below) the trigger becomes a real button and the panel becomes a real dropdown. A `.group`
+   is a flex item of `.nav` exactly like a plain `<a>` sibling, so it inherits the same
+   full-width stretch and vertical rhythm without any extra rule here. */
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.groupHeading {
+  /* Non-interactive — `SEO-POLICY.md` §B3.7 bars an `<h*>` tag used purely for visual
+     grouping, so this is a `<p>` (`nav-group-disclosure.tsx`), styled to sit like a sibling
+     link's row without being tappable. Hidden entirely from the nav-collapse breakpoint up,
+     where the identically-worded trigger button takes over as the accessible name. */
+  margin: 0;
+  padding: 10px 12px 2px;
+  color: var(--color-ink);
+}
+
+.groupTrigger {
+  /* Hidden below the nav-collapse breakpoint — the group is a forced-open heading + links
+     there instead (`.groupHeading` / `.groupPanel` below). */
+  display: none;
+}
+
+.groupCaret {
+  flex: none;
+  color: var(--color-slate);
+}
+
+.groupPanel {
+  /* FORCED OPEN below the breakpoint: `display: contents` generates no box of its own, so its
+     children (the group's real `<a href>` links) become direct flex items of `.group` above —
+     stacked in the same column, never gated behind `data-open` at this width
+     (`SEO-POLICY.md` §B8.1/8.2: every link stays a real, unconditional link at every
+     viewport). */
+  display: contents;
+}
+
+.groupPanel .groupLink {
+  display: block;
+  /* 26px left padding (vs. the plain `.nav a` row's 12px) signals the nesting under
+     `.groupHeading` without a second visual language — same row height/hover pairing as
+     every other panel link. Self-contained rather than relying on the `.nav a` cascade: the
+     compound `.groupPanel .groupLink` selector already outranks `.nav a`'s specificity, but a
+     link is easier to reason about fully declared here, once. */
+  padding: 10px 12px 10px 26px;
+  border-radius: var(--radius);
+  color: var(--color-slate);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.groupPanel .groupLink:hover {
+  /* Same verified pairing `.nav a:hover` above already uses (PR #56 review A11Y-2). */
+  color: var(--color-chip-ink);
+  background: var(--color-chip-bg);
+}
+
+.groupPanel .groupLinkAll {
+  /* The see-all row ("Tüm araçlar") reads as one step apart from the group's named links, not
+     a fourth peer of the same kind. */
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* The header's auth entry points (finding 8c, → plan §5.7c/§5.8). A `<nav>` landmark, mirroring
+   `site-footer.tsx`'s own identical pattern, carrying the two existing `.btn`/`.btn-primary`/
+   `.btn-ghost` global classes verbatim (`app/globals.css`) — no new button CSS, per plan §5.8.
+   This rule is the group's OWN layout only (a small flex row), not a button restyle. */
+.authNav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (min-width: 70rem) {
   .trigger {
     display: none;
   }
@@ -191,5 +272,86 @@
        (5.13:1) — the desktop hover is unchanged by A11Y-2. */
     color: var(--color-primary);
     background: none;
+  }
+
+  /* The group switches from "forced-open heading + links" to a real, JS-toggled dropdown —
+     the other half of the inverted split documented above `.group`. */
+  .group {
+    position: relative;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .groupHeading {
+    display: none;
+  }
+
+  .groupTrigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    /* Inherits `.nav`'s desktop 0.95rem from its parent flex row, exactly like a plain
+       sibling `<a>` — no separate font rule needed. */
+    font: inherit;
+    color: var(--color-slate);
+    cursor: pointer;
+  }
+
+  .groupTrigger:hover {
+    /* Same verified primary-on-white pairing (5.13:1) as `.nav a:hover` just above. */
+    color: var(--color-primary);
+  }
+
+  .groupPanel {
+    /* No longer forced open: a real floating dropdown, hidden until `data-open="true"` — the
+       same idiom `site-search.module.css`'s own desktop panel already uses for its dropdown. */
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 200px;
+    padding: 8px;
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-lg);
+    background: #fff;
+    box-shadow: 0 12px 28px rgb(43 38 34 / 14%);
+    z-index: 50;
+  }
+
+  .groupPanel[data-open="true"] {
+    display: flex;
+  }
+
+  .groupPanel .groupLink {
+    /* Tighter than the mobile row: a floating card, not a full-width scrollable list. */
+    padding: 8px 10px;
+  }
+
+  /* Contingency (2) from plan §5.7d, applied — measured, not pre-emptive (→ plan §5.8's own
+     cost note: the auth buttons are heavier than plain text links). At the container's own
+     `max-width: 1120px` cap the full five-item row (brand, search, primary nav, auth nav,
+     locale switcher) measured 1137px against 1080px of available content width — a real 57px
+     overflow that persists at ANY viewport once the container hits its cap, so raising the
+     breakpoint number alone (contingency 1) cannot close it: no viewport width helps once the
+     container stops growing. Compacted the same way the locale switcher already is (smaller
+     text, tighter padding), keeping the ghost/filled visual distinction §5.8 asks for —
+     `.btn-ghost`/`.btn-primary`'s background/border/color rules are untouched, only the SIZE
+     is overridden, and only here (desktop): the mobile panel has no width pressure, so the
+     full-size buttons stay the more comfortable tap target there. */
+  .authNav {
+    gap: 3px;
+  }
+
+  .authNav :global(.btn) {
+    padding: 5px 7px;
+    border-width: 1px;
+    font-size: 0.8rem;
   }
 }

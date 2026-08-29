@@ -148,6 +148,63 @@ ramp and not the Terra brand hues.
   and ~72px gap to the recorded numbers predates this change. Reporting the difference as if
   it were the seventh link's cost would have been wrong in both directions.
 
+  **The breakpoint moved again, 66rem → 70rem (2026-08-29, PR-2 of `anasayfa-yenileme`,
+  method below, both locales, live build, `document.fonts.ready`-gated).** Finding 8
+  (`Owner's Inbox/anasayfa-yenileme/plan.md` §5.7) grouped three of the eight flat top-level
+  links under a "Haritalar" dropdown and three more (plus a see-all row) under an "Araçlar"
+  dropdown, and added two new auth links ("Giriş yap"/"Üye ol") styled as the existing
+  `.btn`/`.btn-ghost`/`.btn-primary` global button pair. This is **not** simply "two links
+  added" — it changed the row's own hard ceiling, not just its needed width, which is why the
+  fix could not be the breakpoint number alone.
+
+  1. **The hard ceiling, discovered first.** `.container`'s own `max-width` is `1120px`
+     (`--container-max`, `app/globals.css`) with `padding-inline: 20px` — so the row NEVER gets
+     more than `1120 − 40 = 1080px` of content width, at any viewport, once the container
+     reaches that cap (empirically, any viewport ≥ ~1120px). This ceiling is independent of the
+     nav-collapse breakpoint entirely.
+  2. **The unmeasured assumption from plan §5.7d turned out false, then was resolved inside the
+     same task per its own named contingency chain (§5.7d/§10), not escalated:** with the two
+     auth links styled as plain, unmodified `.btn`/`.btn-ghost`/`.btn-primary` the row measured
+     **1137px in Turkish** at the container's own maximum width — 57px OVER the 1080px hard
+     ceiling, at every viewport, so contingency (1) ("raise the breakpoint number") could not
+     have closed this gap by itself: no viewport width hands the row more than 1080px once the
+     container is maxed. Contingency (2) ("visually compact the two new auth links") was
+     applied instead — a desktop-only override, `.authNav :global(.btn)` in
+     `site-nav.module.css`, scoped to those two links only (padding, border-width, font-size;
+     the `.btn-ghost`/`.btn-primary` background/border/color rules are untouched, so the
+     ghost-vs-filled distinction §5.8 asks for is preserved) — bringing the row to **1072px in
+     Turkish**, 965px in English, both comfortably under the 1080px ceiling (8px / 115px of
+     margin respectively; the 8px TR margin is deliberately not padded further, matching this
+     section's own precedent of accepting a single-digit-pixel margin — the original 66rem
+     value cleared its own 1051.2px measurement by 4.8px).
+  3. **With the row's real content width fixed, the breakpoint was set to 70rem (1120px) —
+     exactly where `.container` reaches its own 1080px-content maximum**, not a value between
+     1056 and 1120. This is a deliberate choice, not an approximation: at any breakpoint below
+     1120px the container has not yet reached its cap, so the row would have LESS than 1080px
+     to work with right at the threshold (e.g. at the old 1056px breakpoint, content width is
+     only `1056 − 40 = 1016px` — far short of 1072px) and would still wrap immediately above the
+     threshold. Picking 1120px means the row always has the full, constant 1080px the moment it
+     is shown, at every wider viewport too — a single number that cannot itself go stale the way
+     the six→seven→eight-link sequence did (nothing about it depends on the CURRENT link count,
+     only on the container's own already-fixed maximum).
+  4. **Verified on the real build, both locales, real viewports (not the container-cap
+     injection technique — that technique remains this file's method for the sub-breakpoint
+     informational numbers below, but this specific claim is checked directly):** at 1119px the
+     header is in hamburger mode in both locales; at 1120px the trigger hides and the inline nav
+     appears, single row, **56.47px tall in BOTH locales**, and stays exactly that height at
+     every width checked above it (1121 / 1200 / 1440 / 1920px) — no wrap at any point.
+  5. **The three header files still move together** (`site-header.module.css`,
+     `site-nav/site-nav.module.css`, `site-search/site-search.module.css`) — all three carry the
+     `70rem` value now; none of them names the number in prose either, for the same reason as
+     always.
+
+  **The collapse widths below 1024px remain informational only, and are NOT re-measured here.**
+  §4's own row 2 above (979px TR / 907px EN, seven links) predates this change and nothing in
+  this task touches `64rem`'s own content-layout boundary; the nav-collapse breakpoint moving to
+  70rem widens — not narrows — the band where the hamburger shows instead of a row that would
+  technically still fit, which is the same accepted, named cost this section has recorded since
+  the very first split (→ `DEC 2026-08-19g` md.3).
+
 - **The single-row header is ENFORCED, and the wordmark is what gives way.** `.inner` is
   `flex-wrap: nowrap` below 64rem; the brand link is the one item allowed to shrink
   (`min-width: 0`) and its wordmark scales with `clamp(0.95rem, 4.5vw, 1.2rem)` before it

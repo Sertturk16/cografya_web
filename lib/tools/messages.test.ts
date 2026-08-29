@@ -270,6 +270,10 @@ const CONSUMER_ROOTS = [
   // The homepage's tools band (`components/home/tool-cards.tsx`, plan §5.5) — a second,
   // independent consumer of `Tools.hub`'s already-bilingual name/body strings.
   { label: "components/home", url: new URL("../../components/home/", import.meta.url) },
+  // The header nav's "Araçlar" dropdown group (`components/site-nav/tools-nav-group.tsx`,
+  // plan §5.7b, PR-2) — a THIRD independent consumer of the same three tool names, kept in a
+  // namespace-pure file of its own for the reason that file's own docblock gives.
+  { label: "components/site-nav", url: new URL("../../components/site-nav/", import.meta.url) },
 ] as const;
 
 interface ToolsBinding {

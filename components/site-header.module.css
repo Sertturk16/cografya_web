@@ -32,7 +32,7 @@
   flex-wrap: nowrap;
 }
 
-@media (min-width: 66rem) {
+@media (min-width: 70rem) {
   .inner {
     /* The desktop header is restored byte-for-byte: `wrap` back on (the inline nav does its
        own item-level wrapping inside it) and the original gap. */

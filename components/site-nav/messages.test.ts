@@ -43,6 +43,20 @@ const NAV_KEYS = [
   // The disclosure button's accessible name, one per state.
   "openMenu",
   "closeMenu",
+  // Finding 8's grouped nav (→ plan §5.7b): the "Haritalar" group's own trigger label — a
+  // single, unchanging accessible name, unlike the two above (`nav-group-disclosure.tsx`'s own
+  // docblock explains why a per-group trigger does not need a second, state-dependent name).
+  "haritalar",
+  // The "Araçlar" group's see-all row, pointing back at `/araclar` — reused directly by
+  // `tools-nav-group.tsx`, which itself asks only the `Tools.hub` namespace for the three tool
+  // names (a namespace-purity split this list's own consumer scan below depends on).
+  "allTools",
+  // The header's auth links (finding 8c, → plan §5.7c) — the SAME strings already shipped in
+  // `Footer.authLabel`/`login`/`register`, reaching a second surface rather than being
+  // retranslated.
+  "authLabel",
+  "login",
+  "register",
 ] as const;
 
 const catalogues = { tr: trMessages.Nav, en: enMessages.Nav } as const;

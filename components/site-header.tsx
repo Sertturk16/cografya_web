@@ -30,10 +30,10 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
             trigger stayed exactly where it was, sharing the header's first row with the
             brand and the menu button. */}
         <SiteSearch locale={locale} />
-        {/* Renders the hub links as server-side `<a href>` at every viewport; below
-            64rem a client disclosure hides or reveals that subtree. Order matters here:
-            the menu button is the last control on the first row, after the search
-            trigger. */}
+        {/* Renders the hub links as server-side `<a href>` at every viewport; below the
+            nav-collapse breakpoint (`DESIGN.md` §4 owns the number) a client disclosure hides
+            or reveals that subtree. Order matters here: the menu button is the last control on
+            the first row, after the search trigger. */}
         <SiteNav />
       </div>
     </header>
