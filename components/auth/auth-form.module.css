@@ -333,14 +333,34 @@
   margin: 0;
 }
 
-/* No helper-line class here: `CONTENT-STYLE.md` §22 bans a lede that restates the H1, and
-   this redesign deliberately writes none (plan §5.9) — `.formHeader` stays a one-element
-   wrapper today, ready for a genuinely necessary helper line without a structural change if
-   one is ever authored. */
+/* This helper line is the "genuinely necessary" occasion this wrapper used to wait for (İRİS
+   idea B1, iris-ideas-small-fix-bundle plan §5.1): `register-form.tsx`'s own login cross-link,
+   relocated here from the card foot so it renders above every form field, visible at first
+   paint at every viewport including 390px. No top border/padding-top — a hairline immediately
+   under an `<h1>` would read as a stray divider, not a lede — just enough margin/size to read
+   as the same KIND of line `.crossLink` below is, in its own different position.
+   `CONTENT-STYLE.md` §22's ban on a lede restating the H1 does not apply: this sentence does
+   not paraphrase the heading, it is a distinct navigational offer addressed at the reader
+   currently filling in this exact form. */
+.formSubheading {
+  margin: 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Same touch-target floor fix as `.crossLink a` below (§11.4.7) — the bare link's own
+   text-line box is under the 24×24 CSS px floor without it. */
+.formSubheading a {
+  display: inline-block;
+  padding: 4px 2px;
+}
 
 /* Register↔login cross navigation at the card foot (plan §5.3/§5.9) — page-mode only; the
    modal offers its own in-place mode toggle instead (`auth-dialog-body.tsx`). Reuses the
-   global `a { color }` rule rather than a bespoke colour, matching `.secondaryLink` above. */
+   global `a { color }` rule rather than a bespoke colour, matching `.secondaryLink` above.
+   `login-form.tsx`'s own foot-of-card crossLink is this class's only consumer today —
+   `register-form.tsx`'s equivalent moved into `.formSubheading` above instead (İRİS idea B1,
+   iris-ideas-small-fix-bundle plan §5.1), so this rule no longer serves two components. */
 .crossLink {
   margin: 20px 0 0;
   padding-top: 20px;

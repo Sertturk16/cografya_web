@@ -614,9 +614,20 @@ export function RegisterForm({
       {/* The page heading now lives WITH the form (plan §5.3), not orphaned above the card by
           the page. The modal supplies its own `<h2>` dialog heading instead (§5.7), so this
           only renders in page use. */}
+      {/* Page-mode-only cross-navigation, relocated here from the card foot (İRİS idea B1,
+          iris-ideas-small-fix-bundle plan §5.1): a reader who lands directly on /kayit now sees
+          the login escape hatch at first paint, above every form field, with zero taps and zero
+          scrolling — the header nav entry (one tap at 390px) and the footer both still exist,
+          this is a third, more-visible route on the page itself. Reuses the same
+          `register.crossLink` string and `/giris` target `LoginForm`'s own foot-of-card
+          crossLink still uses — relocated, not duplicated, so the page carries exactly one copy
+          of this sentence, not two. */}
       {!inModal ? (
         <div className={styles.formHeader}>
           <h1>{t("register.heading")}</h1>
+          <p className={styles.formSubheading}>
+            <Link href="/giris">{t("register.crossLink")}</Link>
+          </p>
         </div>
       ) : null}
       <form className={styles.form} onSubmit={(event) => void handleSubmitStep1(event)} noValidate>
@@ -940,13 +951,6 @@ export function RegisterForm({
           <p className={styles.noscript}>{t("noscript")}</p>
         </noscript>
       </form>
-      {/* Page-mode-only cross-navigation — same reasoning as `LoginForm`'s own crossLink
-          (plan §5.3/§5.9). */}
-      {!inModal ? (
-        <p className={styles.crossLink}>
-          <Link href="/giris">{t("register.crossLink")}</Link>
-        </p>
-      ) : null}
     </div>
   );
 }
