@@ -1,0 +1,270 @@
+/* `/deprem` hub components (PR-A). The magnitude ramp is a DATA token set
+   (`--eq-mag-1`…`--eq-mag-5`, `app/globals.css`), never a raw hex here — DESIGN.md §6.1
+   rule 1, "brand ≠ data". Body/secondary text uses --color-slate, never --color-taupe
+   (ENGINEERING §5). */
+
+/* ---- Map (§5.13) ------------------------------------------------------------ */
+
+.mapFigure {
+  margin: 0 0 22px;
+}
+
+.mapRoot {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 10px clamp(8px, 2vw, 18px);
+}
+
+.mapSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+.mapLand {
+  fill: var(--province-fill);
+  stroke: var(--province-stroke);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.mapMarker {
+  stroke: #fff;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.markerBucket1 {
+  fill: var(--eq-mag-1);
+}
+
+.markerBucket2 {
+  fill: var(--eq-mag-2);
+}
+
+.markerBucket3 {
+  fill: var(--eq-mag-3);
+}
+
+.markerBucket4 {
+  fill: var(--eq-mag-4);
+}
+
+.markerBucket5 {
+  fill: var(--eq-mag-5);
+}
+
+/* ---- Magnitude badge --------------------------------------------------------- */
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.bucket1 {
+  background: var(--eq-mag-1);
+}
+
+.bucket2 {
+  background: var(--eq-mag-2);
+}
+
+.bucket3 {
+  background: var(--eq-mag-3);
+}
+
+.bucket4 {
+  background: var(--eq-mag-4);
+}
+
+.bucket5 {
+  background: var(--eq-mag-5);
+}
+
+/* ---- Event list (§5.11) ------------------------------------------------------ */
+
+.tableScroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.tableScroll:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tableCaption {
+  caption-side: top;
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--color-slate);
+}
+
+.table th,
+.table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  background: var(--color-surface);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.placeName {
+  display: block;
+  color: var(--color-ink);
+}
+
+.bindingNote {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--color-slate);
+}
+
+.emptyState {
+  color: var(--color-slate);
+  padding: 16px 0;
+}
+
+/* ---- Attribution / disclaimer (§5.8) ----------------------------------------- */
+
+.sources {
+  max-width: 70ch;
+}
+
+.sources p {
+  color: var(--color-slate);
+}
+
+.regulationReference {
+  color: var(--color-taupe);
+}
+
+.disclaimer {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* ---- Filter island (§5.5) ----------------------------------------------------- */
+
+.filters {
+  margin-top: 24px;
+}
+
+.filterForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.filterField select {
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--color-ink);
+}
+
+.filterField select:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.filterApply {
+  min-height: 40px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filterApply:hover {
+  background: var(--color-primary-dark);
+}
+
+.filterApply:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.filterApply:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.filterStatus {
+  min-height: 1.2em;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  margin-bottom: 8px;
+}
+
+.filterResults {
+  margin-top: 8px;
+}
+
+.loadMore {
+  display: block;
+  margin: 16px auto 0;
+  min-height: 40px;
+  padding: 8px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loadMore:hover {
+  background: var(--color-surface);
+}
+
+.loadMore:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.loadMore:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

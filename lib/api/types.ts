@@ -108,6 +108,30 @@ export type MarineConditions = components["schemas"]["MarineConditionsDto"];
  *  disagree), and the attribution rows. Consumed by the province pages in W2b. */
 export type MarineProvinceConditions = components["schemas"]["MarineProvinceConditionsDto"];
 
+// ---- Earthquake (AFAD son depremler — /deprem hub'ı, PR-A) ------------------
+/** One earthquake event: origin time (UTC, always `Z`-suffixed), magnitude + type, depth
+ *  (can be negative — never clamp), coordinates, the reader-facing `placeNameTr`, and
+ *  `bindingKind` — mandatory, and the field the web layer must never misread as a location
+ *  claim for `offshore_near`/`across_border` events (`lib/earthquake/binding-sentence.ts`). */
+export type EarthquakeEvent = components["schemas"]["EarthquakeEventDto"];
+/** The `/api/earthquakes` and `/api/earthquakes/provinces/{plateCode}` response envelope:
+ *  the shared five-field pagination core plus this endpoint's own `meta`. */
+export type EarthquakeList = components["schemas"]["EarthquakeListDto"];
+/** `EarthquakeListDto.meta` — the applied filter echo, data freshness and mandatory
+ *  attribution, populated on every response including the cold path. */
+export type EarthquakeListMeta = components["schemas"]["EarthquakeListMetaDto"];
+/** The filter actually applied (defaults resolved to concrete instants), echoed back so a
+ *  reader/crawler never has to infer what "the last 7 days" resolved to. */
+export type EarthquakeFilterEcho = components["schemas"]["EarthquakeFilterEchoDto"];
+/** One required-attribution row. `providerName`/`requiredNoticeTr`/`regulationReference` are
+ *  verbatim from `provenance/integrations.md`'s AFAD row — rendered as received, never
+ *  re-authored (§5.8). */
+export type EarthquakeAttribution = components["schemas"]["EarthquakeAttributionDto"];
+/** `GET /api/earthquakes/meta` — defaults/scope/freshness/disclaimer/attribution, one read
+ *  per page render. `disclaimerTr` is the owner-ruled, Turkish-only liability sentence
+ *  (`DEC 2026-08-19l`) — never translated, never re-worded. */
+export type EarthquakeMeta = components["schemas"]["EarthquakeMetaDto"];
+
 // ---- Book (kitap video çözümleri — /kitaplar, W0) ---------------------------
 /** One book on the `/kitaplar` hub card: identity, the two localized slugs, and the two
  *  coverage numbers the card shows. `coverImagePath` is a path inside THIS repo's own

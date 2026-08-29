@@ -45,7 +45,8 @@
     "game": "Game",
     "deniz": "Sea",
     "kitaplar": "Books",
-    "araclar": "Tools"
+    "araclar": "Tools",
+    "deprem": "Earthquakes"
   },
   "Footer": {
     "tagline": "A free, open geography education platform.",
@@ -568,6 +569,58 @@
     },
     "hubLinkPoint": "See the {label} row in the four-seas table",
     "hubLinkAll": "Sea state along the whole coast of Türkiye"
+  },
+  "Earthquake": {
+    "metaTitle": "Recent Earthquakes in Türkiye — AFAD Earthquake Map",
+    "metaDescription": "Recent earthquakes recorded by AFAD: magnitude, depth, location and origin time. Map and list, filterable.",
+    "heading": "Recent earthquakes in Türkiye",
+    "lede": {
+      "ok": "Recorded earthquakes from AFAD's Turkey Earthquake Data Centre System (TDVMS).",
+      "stale": "Recorded earthquakes from AFAD's Turkey Earthquake Data Centre System (TDVMS). The data has not refreshed for a while; the records below are shown as last received.",
+      "unavailable": "No earthquake records have been received from AFAD yet."
+    },
+    "meta": {
+      "magnitudeFloorLabel": "Magnitude floor",
+      "magnitudeFloorValue": "{value} and up",
+      "scopeBufferLabel": "Coverage",
+      "scopeBufferValue": "Up to {km} km beyond Türkiye's border",
+      "freshnessLabel": "Freshness",
+      "freshness": {
+        "ok": "Up to date",
+        "stale": "Not refreshed for a while",
+        "unavailable": "No data yet"
+      }
+    },
+    "map": {
+      "title": "Earthquake locations on the map",
+      "description": "{count} earthquakes marked on this map."
+    },
+    "list": {
+      "tableSummary": "Earthquakes, newest first.",
+      "scrollRegionLabel": "Earthquake list table",
+      "colMagnitude": "Magnitude",
+      "colPlace": "Place",
+      "colTime": "Time",
+      "emptyState": "No earthquakes recorded in this window."
+    },
+    "binding": {
+      "offshoreNear": "off the coast of {province}",
+      "acrossBorder": "near the {province} border, outside Türkiye"
+    },
+    "sourcesHeading": "Sources",
+    "filters": {
+      "magnitudeLabel": "Magnitude floor",
+      "magnitudeOption": "{value}+ magnitude",
+      "windowLabel": "Time window",
+      "window1": "Last 24 hours",
+      "window7": "Last 7 days",
+      "window30": "Last 30 days",
+      "window90": "Last 90 days",
+      "apply": "Apply",
+      "loading": "Loading…",
+      "loadFailed": "Earthquakes could not be loaded right now.",
+      "loadMore": "Show more"
+    }
   },
   "Kitaplar": {
     "metaTitle": "Video Solutions for Geography Books",

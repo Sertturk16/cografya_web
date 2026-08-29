@@ -218,6 +218,36 @@
      bars two sections up. This value is the plan's pre-registered fallback. */
   --chart-pm25-line: #4a3b6b; /* annual-mean PM2.5 polyline + markers */
 
+  /* ---- Earthquake magnitude ramp (`/deprem` hub, deprem-sayfalari plan §5.6) ----
+     A NEW sequential ramp — DELIBERATELY NOT `DESIGN.md` §6.2's "Earthquake intensity"
+     public-safety scale (USGS MMI/ShakeMap). This leg publishes MAGNITUDE, a single
+     place-independent number per event; the contract carries no intensity field at all
+     (`EarthquakeEventDto`'s own docblock: "No intensity — AFAD does not publish it on this
+     endpoint"). `GLOSSARY.md` §4 states in bold that magnitude and intensity "asla
+     birbirinin yerine kullanılamaz" and that conflating them misinforms the reader
+     factually — so this is a physically separate token set, and its hue family (violet/
+     plum) is chosen to read as visibly DIFFERENT from any red-orange-yellow-green
+     hazard/AQI/MMI convention a reader might otherwise mistake it for.
+     Sequential, single-hue, monotonic-lightness (`DESIGN.md` §6.1 rule 4), bucketed at the
+     round magnitude breakpoints §5.6 names: <3, 3–3.9, 4–4.9, 5–5.9, 6+
+     (`lib/earthquake/magnitude.ts`). Shape reinforces colour too (§6.1 rule 3): the map
+     marker radius grows with the bucket, so the encoding survives with colour removed.
+     Colour-vision simulation (Viénot-Brettel-Mollon-style protanopia/deuteranopia/
+     tritanopia matrices) ran before ship; every adjacent-bucket pair stayed clearly
+     separated under all three (RGB-Euclidean distance 42-58, versus the rejected
+     §6.6 candidate's measured ΔE 2.9 — the two are different metrics, but the ratio is
+     the same order of magnitude the rejection was measured against).
+     Contrast (WCAG 1.4.11, 3:1 graphical-object floor) against every backdrop a marker can
+     sit on: bucket 1 (the lightest, and the most numerous marker on the map by a wide
+     margin) clears 3.71:1 against --map-sea and 4.69:1 against white land; every darker
+     bucket clears more. White badge text (components/earthquake/earthquake.module.css)
+     clears 4.5:1 text contrast against every bucket, bucket 1 included. */
+  --eq-mag-1: #aa4cbd; /* magnitude < 3 */
+  --eq-mag-2: #9236a1; /* 3–3.9 */
+  --eq-mag-3: #772281; /* 4–4.9 */
+  --eq-mag-4: #521457; /* 5–5.9 */
+  --eq-mag-5: #2e0e2f; /* 6 and up */
+
   /* ---- Map-game region palette (Kâşif Mode 1; DESIGN.md §6.1 rule 4 — CATEGORICAL) ----
      Colouring the map by coğrafi bölge is a DATA encoding (an unordered categorical
      variable), not chrome — so it gets its own token set, physically separate from the
