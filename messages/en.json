@@ -16,7 +16,12 @@
     "araclar": "Tools",
     "about": "About",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "haritalar": "Maps",
+    "allTools": "All tools",
+    "authLabel": "Membership",
+    "login": "Log in",
+    "register": "Sign up"
   },
   "Search": {
     "label": "Search a province or country",

@@ -29,7 +29,9 @@ import styles from "./site-nav.module.css";
  * deliberately NOT counted or listed again here (→ PR #62 review `CODE62-M1`: this comment
  * said "six" and enumerated five routes while `/kitaplar` was being added in the same commit).
  *
- * Above 64rem the panel is `display: contents` and the button is `display: none`, so this
+ * Above the nav-collapse breakpoint (`DESIGN.md` §4 owns the number, for the same reason
+ * `site-nav.module.css` names no number for it: the day it changed and both copies had to be
+ * found) the panel is `display: contents` and the button is `display: none`, so this
  * component's state stops having any visual meaning and the desktop nav renders inline
  * exactly as it did before.
  *
@@ -49,21 +51,22 @@ import styles from "./site-nav.module.css";
  *
  * ## No-JS reality, stated rather than implied
  *
- * Below 64rem the panel's closed state is CSS, so a reader with no JavaScript sees the compact
- * header and cannot open the menu. The alternative — rendering the menu open and collapsing it
- * on hydration — trades that for a ~120px layout shift on every page load, which is the defect
- * this whole change exists to remove. The links remain in the document for machines, and for a
- * human the brand link in the first row reaches the homepage, which carries a body link to
- * every one of the five hubs.
+ * Below the nav-collapse breakpoint the panel's closed state is CSS, so a reader with no
+ * JavaScript sees the compact header and cannot open the menu. The alternative — rendering the
+ * menu open and collapsing it on hydration — trades that for a ~120px layout shift on every
+ * page load, which is the defect this whole change exists to remove. The links remain in the
+ * document for machines, and for a human the brand link in the first row reaches the homepage,
+ * which carries a body link to every one of the five hubs.
  *
  * A THIRD option exists and was evaluated rather than missed (review CR56-M4): native
  * `<details>`/`<summary>`, which is a real zero-JS disclosure and would close the gap above at
- * mobile. It cannot express the desktop half. At 64rem and up the nav must be inline and
- * permanently revealed with no summary, but a CLOSED `<details>` hides its non-summary children
- * through a UA rule that three engines implement differently (`content-visibility` on the
- * details content in current Chromium, historically `display` on the slot), so "always open
- * above 64rem" needs either `open` toggled by JavaScript — the thing it was adopted to remove —
- * or an author override betting on interop, which is exactly what `site-nav.module.css` refuses
+ * mobile. It cannot express the desktop half. At the nav-collapse breakpoint and up the nav
+ * must be inline and permanently revealed with no summary, but a CLOSED `<details>` hides its
+ * non-summary children through a UA rule that three engines implement differently
+ * (`content-visibility` on the details content in current Chromium, historically `display` on
+ * the slot), so "always open above the breakpoint" needs either `open` toggled by JavaScript —
+ * the thing it was adopted to remove — or an author override betting on interop, which is
+ * exactly what `site-nav.module.css` refuses
  * to do for `position: static`. Rendering a second, desktop-only nav instead would duplicate
  * every hub link in every page's HTML. The trade-off above is therefore kept deliberately.
  */
@@ -142,17 +145,23 @@ export function NavDisclosure({ children }: { children: ReactNode }) {
    * fires, and the click reaches the link. This is the same remedy the search × already
    * carries for the sibling half of the same engine bug (`search-combobox.tsx:395-401`),
    * applied to the element that needs it here. The alternative — `tabIndex` on the links —
-   * was rejected: `-1` removes all eight links from the tab order (WCAG 2.1.1) and `0` pushes
+   * was rejected: `-1` removes every link from the tab order (WCAG 2.1.1) and `0` pushes
    * an engine workaround into server-rendered markup on every page at every viewport,
    * including desktop, where no defect exists.
    *
-   * SCOPED TO THE OPEN STATE. Normally that means the floating sheet below 64rem; `open` can
-   * survive a viewport crossing, though, so the guard may briefly remain active after this
-   * element becomes the inline desktop nav. In that stale state it also suppresses mouse
-   * focus and drag-to-select until focus leaves this root and `onBlur` closes the panel.
+   * SCOPED TO THE OPEN STATE. Normally that means the floating sheet below the nav-collapse
+   * breakpoint; `open` can survive a viewport crossing, though, so the guard may briefly
+   * remain active after this element becomes the inline desktop nav. In that stale state it
+   * also suppresses mouse focus and drag-to-select until focus leaves this root and `onBlur`
+   * closes the panel.
    *
-   * The panel therefore carries anchors only. If a mouse-focusable control such as an input
-   * or select is added, narrow this guard to anchor targets; otherwise that control would be
+   * The panel's DIRECT interactive descendants are anchors, plus — since finding 8b
+   * (`nav-group-disclosure.tsx`) — each group's own trigger `<button>`. That button is
+   * `display: none` at this width (the group renders as a forced-open heading + links here
+   * instead, see that component's own docblock), so it is never a mouse-focusable target this
+   * guard needs to account for; the invariant this guard protects still holds against anchors
+   * only. If a VISIBLE mouse-focusable control other than an anchor is ever added at this
+   * width, narrow this guard to anchor targets explicitly; otherwise that control would be
    * keyboard-focusable but not mouse-focusable.
    */
   const onPanelMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {

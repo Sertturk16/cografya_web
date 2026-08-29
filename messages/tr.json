@@ -16,7 +16,12 @@
     "araclar": "Araçlar",
     "about": "Hakkımızda",
     "openMenu": "Menüyü aç",
-    "closeMenu": "Menüyü kapat"
+    "closeMenu": "Menüyü kapat",
+    "haritalar": "Haritalar",
+    "allTools": "Tüm araçlar",
+    "authLabel": "Üyelik",
+    "login": "Giriş yap",
+    "register": "Üye ol"
   },
   "Search": {
     "label": "İl veya ülke ara",
