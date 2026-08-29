@@ -503,10 +503,14 @@ re-projects the same committed bytes into the pinned TR context frame
 above, and emits `lib/map/tr-context.generated.ts` — the geographic backdrop `/turkiye`'s
 widened map draws around Türkiye (neighbours, both Cyprus entities, sea names). No new
 geographic dataset enters the repo: same file, same licence row, same `provenance/datasets.md`
-line 51 (only its second consumer is new, recorded there too). `world-countries.generated.ts`
-itself is untouched by this addition — the two generators are independent readers of one
-source, exactly as `generate-map-paths.mjs` and `generate-tr-inland-water.mjs` are two
-independent readers of `data/tr-il-boundaries.geojson`.
+line 51. **Correction (PR #108 review, FEN108-I4):** this second consumer is NOT YET recorded
+in `provenance/datasets.md` line 51's own `KULLANIM:` field — that field still names only the
+original api consumer (`cografya_api` PR #118 / `feature/deprem-e2`). Updating the ledger
+itself is NOVA/Atlas's job, not this repo's; recorded here as open follow-up rather than
+claimed as already done. `world-countries.generated.ts` itself is untouched by this addition —
+the two generators are independent readers of one source, exactly as `generate-map-paths.mjs`
+and `generate-tr-inland-water.mjs` are two independent readers of
+`data/tr-il-boundaries.geojson`.
 
 Regenerate with `pnpm generate:tr-context`; `pnpm generate:tr-context:check` is the drift
 gate, wired the same way as this file's other two `:check` scripts.

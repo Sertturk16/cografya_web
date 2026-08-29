@@ -185,12 +185,17 @@
      clear WCAG 1.4.11's 3:1 graphical-object floor (re-measured here; plan §5.5 recorded
      ≈3.42/≈4.43, this file's own re-run rounds the second figure up half a point). */
   --map-context-line: #6f6659;
-  /* The Türkiye "casing" band that closes the NE↔OSM seam (plan §5.0-3/§5.4) — deliberately
-     QUIET: vs --map-context-land 1.15:1 and vs --map-sea 1.14:1 (near-invisible against both,
-     which is the point — it reads as a soft coastal shelf, not a third land colour). vs
-     --province-fill 1.44:1 is the separation that actually matters: it is what keeps Türkiye's
-     own white fill legible as the map's subject against the band hugging its coast. */
-  --map-land-casing: #ded6ca;
+  /* The Türkiye "casing" band that closes the NE↔OSM seam (plan §5.0-3/§5.4) reused
+     `--color-border` directly (FIX ROUND, PR #108 review DF108-I1) instead of the
+     `--map-land-casing: #ded6ca` token this line originally defined: measured against
+     `--color-border` (#ddd5cc), that hex was 1.008:1 contrast — a near-duplicate nobody could
+     tell apart by eye, and a second token that could silently drift from the first if either
+     were retuned alone (`DESIGN.md` §2 single-token-per-colour discipline). `--color-border`
+     already carries the contrast notes this band needs: vs `--map-context-land` ≈ 1.15:1 and
+     vs `--map-sea` ≈ 1.14:1 (near-invisible against both, which is the point — it reads as a
+     soft coastal shelf, not a third land colour); vs `--province-fill` ≈ 1.44:1 is the
+     separation that actually matters, keeping Türkiye's own white fill legible as the map's
+     subject against the band hugging its coast. */
   --province-hover: rgba(176, 82, 46, 0.16); /* terracotta wash of --color-primary */
   /* NAVIGATION-MAP hover/focus border weight (/turkiye + /dunya). One number, because it
      is the tunable the owner rules on from rendered samples; the colour is

@@ -102,7 +102,8 @@
     "seaBlackSea": "Black Sea",
     "seaMarmara": "Sea of Marmara",
     "seaAegean": "Aegean Sea",
-    "seaMediterranean": "Mediterranean Sea"
+    "seaMediterranean": "Mediterranean Sea",
+    "attributionContextLabel": "Neighbouring-country boundaries: Natural Earth (public domain)"
   },
   "About": {
     "metaTitle": "About",

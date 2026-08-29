@@ -1,7 +1,7 @@
 import { getFormatter, getTranslations } from "next-intl/server";
-import { byIsoCode, getCountryMapSummary } from "@/lib/api/countries";
+import { byIsoCode, getCountryMapSummaryResilient } from "@/lib/api/countries";
 import { byPlateCode, getMapSummary } from "@/lib/api/provinces";
-import type { CountryMapSummary, ProvinceMapSummary } from "@/lib/api/types";
+import type { ProvinceMapSummary } from "@/lib/api/types";
 import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
@@ -45,52 +45,163 @@ const CONTEXT_SEA_LABEL_SIZE = 26;
  */
 const SEA_LABELS = [
   { key: "seaBlackSea", x: 461, y: -27 },
-  { key: "seaMarmara", x: 137, y: 102 },
+  // FIX ROUND (PR #108 review, FEN108-M1): the original anchor (137, 102) put only 46% of
+  // the label's ink on water (33% Türkiye province fill, 15% Greek Thrace) — measured with
+  // Chromium `isPointInFill()` against the REAL 81-province geometry plus the 15-shape
+  // context layer (not just the coarse Natural Earth casing outline, which does not resolve
+  // a strait this narrow). A full systematic search (both locales, fontSize 26 down to 16,
+  // the whole Marmara/Thrace neighbourhood) found NO position with 0% land: "Marmara
+  // Denizi"/"Sea of Marmara" at any legible size is wider than the water body's own clear
+  // rectangular extent in this generalisation, at every font size tried. (75, 114) is a
+  // near-MINIMUM-land position from that search (measured: 24.79% TR / 24.61% EN land) — a
+  // large reduction from the original 54% land, not the 0% the finding's own text hoped for;
+  // recorded honestly rather than silently accepted. See the PR's fix-round completion
+  // report for the full search.
+  { key: "seaMarmara", x: 75, y: 114 },
   { key: "seaAegean", x: -13, y: 258 },
-  { key: "seaMediterranean", x: 281, y: 464 },
+  // FIX ROUND (VAL108-SOV6): the original anchor (281, 464) put the EN-only "Mediterranean
+  // Sea" label's east end over the Cyprus/KKTC island shapes (16% of its ink, 32/201 sampled
+  // columns) — TR "Akdeniz" was already 100% water and is unaffected by this move. New anchor
+  // re-measured 0% foreign-shape ink for BOTH locales (Chromium `isPointInFill()`, 1449-point
+  // 161×9 grid) and does not collide with the relocated KKTC/Cyprus label block (VAL108-SOV1)
+  // south of it.
+  { key: "seaMediterranean", x: 228, y: 480 },
 ] as const;
 
 /**
  * Per-ISO label anchor overrides (plan §5.6: "a country whose wrapped label cannot fit its
  * labelRadius gets a per-ISO anchor override in the component, recorded with the
  * measurement that forced it" — the same shape `generate-world-map-paths.mjs` uses for its
- * own per-ISO exceptions). Each was measured against the DEFAULT rendering — the
- * generator's own `labelPoint` at `text-anchor="middle"` — using the same conservative
- * `charWidthRatio` `lib/map/point-labels.ts` documents (0.56 × fontSize × character count):
+ * own per-ISO exceptions).
  *
- *   AZ — default (1083.5, 110.8) overflows the frame's EAST edge (x 1120) by ≈ 13.9 u.
- *   MK — default anchor="middle" overflows the WEST edge (x -150) by ≈ 66.7 u.
- *   RS — default overflows the WEST edge by ≈ 40.8 u AND the TOP edge (y -60) by ≈ 9.4 u.
- *   GR — default anchor="middle" overflows the WEST edge by ≈ 18.1 u (the mainland's
- *        pole of inaccessibility sits near the frame's own cut edge).
+ *   GR — default anchor="middle" overflows the WEST edge by ≈ 18.1 u (the mainland's pole
+ *        of inaccessibility sits near the frame's own cut edge). Unchanged since the
+ *        original PR; not part of this fix round.
+ *
+ * AZ — REPLACED in the PR #108 fix round (VAL108-SOV2). The original override (1025, 175,
+ * anchor="middle") put ~50% of the label's ink over Armenia (measured: TR 51%/EN 55% inside
+ * AM) — the "keeps it inside the frame" reasoning the original override was chosen for never
+ * checked which COUNTRY the ink fell on, only the frame edge. Replaced with the validator's
+ * own independently re-measured remedy: `anchor="end"` flush to the frame's own east edge
+ * (`x: 1120`, `TR_CONTEXT_FRAME.minX + width`, `scripts/lib/tr-frame.mjs`), which pins the
+ * label to Azerbaijan's own eastern lobe instead of straddling the AM/AZ border.
+ *
+ * The validator's own tested remedy used `y: 110.8` (the default `labelPoint.y`, i.e. the
+ * SAME row as Armenia's own default label at (982, 106.1)) — reproduced here first, and it
+ * measures exactly what the review reported: EN "Azerbaijan" 100% inside AZ, TR "Azerbaycan"
+ * 96.5% inside AZ / 3.5% inside AM. But at that shared row the two labels' ink boxes
+ * horizontally OVERLAP by several units (TR "Ermenistan" box up to x≈1028; TR "Azerbaycan"
+ * box at y=110.8 starts at x≈1022) and visually collide — a NEW defect this fix round's own
+ * AZ change would otherwise introduce, caught by rendering the fix rather than trusting the
+ * ink-box numbers alone. A joint search over both labels' y (AZ y 104–124 × AM y 80–100,
+ * requiring ≥ 6 u of vertical clearance between their ink bands) found `AZ y: 116` / `AM
+ * y: 92` as the best pair against the neighbour-country shapes: AZ 2.13% TR / 0% EN foreign
+ * ink, AM 1.18% TR / 0% EN foreign ink, 7.8 u of clear vertical gap between the two ink bands.
+ * AM therefore gains an override here too (x unchanged at its own default 982, only y moves)
+ * — not requested by the review, but required by this fix round's own AZ change to avoid
+ * shipping a new collision.
+ *
+ * SEPARATE AXIS, checked against the REAL rendered page rather than only the generated
+ * context-shape geometry (the same QN/CY lesson applied here): Armenia's label — AT ITS
+ * ORIGINAL, UNTOUCHED DEFAULT POSITION (982, 106.1), never flagged by this review and not
+ * part of its scope — already put 5.19% of the TR ink box over Kars province (0% EN); this
+ * is pre-existing and predates this fix round. The repositioned AM (982, 92) measures BETTER
+ * on this axis (2.0% TR / 0% EN over Kars), not worse. Pushing AM further east to reach 0%
+ * on the Kars axis was tried and rejected: every position tested that clears Kars (x ≳ 984 at
+ * this row) costs 5–15% AM-side ink to Azerbaijan instead, which is the wrong trade — AZ is
+ * this round's actual CRITICAL finding, Armenia's own small pre-existing Kars overlap is not
+ * a finding in this review at all. Recorded honestly as a residual, not silently improved
+ * away or silently ignored.
+ *
+ * A systematic sweep of the whole east-edge/y neighbourhood (edgeX 950–1120 × y 40–220, both
+ * locales) found NO anchor/position combination clearing AZ's ink to 0% in BOTH locales:
+ * Azerbaijan's own visible sliver here is narrower than the longer TR string, so a few
+ * percent is the measured floor, not an unexamined shortfall.
+ *
+ * MK, RS — REMOVED in the same fix round (VAL108-SOV3) rather than repositioned: see
+ * `CONTEXT_LABEL_OMITTED_ISOS` below for why.
  *
  * Verified by rendering: every override keeps its label fully inside the frame and clear
- * of every other label at 1440px, both locales (labels are locale-length-sensitive, but
- * both TR and EN country names for these four are short enough not to reopen the
- * overflow the override fixes).
+ * of every other label at 1440px, both locales.
  */
 const LABEL_ANCHOR_OVERRIDES: Partial<
-  Record<string, { readonly x: number; readonly y: number; readonly anchor: "start" | "middle" }>
+  Record<
+    string,
+    { readonly x: number; readonly y: number; readonly anchor: "start" | "middle" | "end" }
+  >
 > = {
-  AZ: { x: 1025, y: 175, anchor: "middle" },
-  MK: { x: -138, y: 33, anchor: "start" },
-  RS: { x: -142, y: -46, anchor: "start" },
+  AM: { x: 982, y: 92, anchor: "middle" },
+  AZ: { x: 1120, y: 116, anchor: "end" },
   GR: { x: -105, y: 130, anchor: "start" },
 };
 
 /**
+ * ISOs deliberately left UNLABELLED even though the api resolves their name (PR #108 fix
+ * round, VAL108-SOV3) — their own visible area inside `TR_CONTEXT_FRAME` is too small a
+ * sliver to hold their own name without printing it over a wrong neighbour, and none of the
+ * three is a sovereignty-sensitive pair (`CONVENTIONS.md` §5 does not apply), so the smallest
+ * correct fix is the validator's own recommendation: leave the shape drawn as backdrop and
+ * skip the label, the same "unlabelled shape" outcome R10 already gives an ISO the api does
+ * not resolve.
+ *
+ * Measured (Chromium `isPointInFill()`, same 847-point grid, real Nunito Sans 600):
+ *   RS — visible area 135 u² (0.5% of Serbia's own territory). Default label: TR 97% / EN 96%
+ *        of the ink lands inside Bulgaria, not Serbia.
+ *   MK — visible area 756 u² (8.1%). Default label: TR/EN 97% inside Bulgaria.
+ *   LB — visible area 542 u² (16.3%). Default label (shape.labelPoint, no override existed):
+ *        TR 37% Syria / 32% sea / 30% Lebanon; EN 39% Syria / 35% sea / 26% Lebanon.
+ * No position/anchor combination clears any of the three to 0% foreign ink — their own
+ * visible slivers are smaller than even the shortest legible rendering of their name.
+ */
+const CONTEXT_LABEL_OMITTED_ISOS = new Set(["MK", "RS", "LB"]);
+
+/**
  * The KKTC/Cyprus paired label placement (plan §5.6). Both entities' inscribed radii
  * (QN 11.1 u, CY 15.2 u) are far too small to hold their own names — `Kuzey Kıbrıs Türk
- * Cumhuriyeti` alone needs ≈ 292 u — so both are named in a two-line block placed in open
- * Mediterranean water between Türkiye's south coast and the Cyprus shapes (verified by
- * rendering: clear of the Akdeniz sea label, the Syria/Lebanon coastline and the shapes
- * themselves), each with a short leader line to its own shape. `CONVENTIONS.md` §5's
- * paired-precision rule is why this is one block, not two independently placed labels: the
- * pair is decided together (§5.6), and both leader lines get the identical treatment.
+ * Cumhuriyeti` alone needs ≈ 246 u (≈ 305 u in English) — so both are named in a two-line
+ * block placed in open Mediterranean water, each with a short leader line to its own shape.
+ * `CONVENTIONS.md` §5's paired-precision rule is why this is one block, not two
+ * independently placed labels: the pair is decided together (§5.6), and both leader lines
+ * get the identical treatment.
+ *
+ * FIX ROUND (PR #108 review, VAL108-SOV1/VAL108-SOV4). The original block (both rows at
+ * x=480) sat directly north of the island, over Türkiye and Syria: measured TR "Kuzey Kıbrıs
+ * Türk Cumhuriyeti" 48% Türkiye / 15% Syria / 38% sea; EN 45%/21%/34%. The docblock at the
+ * time claimed "verified by rendering: clear of the Akdeniz sea label, the Syria/Lebanon
+ * coastline and the shapes themselves" — that claim was never actually measured and was
+ * false; this paragraph replaces it with what IS measured, below. The original leader lines
+ * also crossed each other in open water (437.96, 438.18) and the Cyprus line cut across
+ * 16.9% of Northern Cyprus's own territory.
+ *
+ * Both rows moved WEST into open water clear of Türkiye and Syria, and the two rows were
+ * given DIFFERENT x centres (rather than one shared x) so neither row's leader line has to
+ * cross the other row's text on its way to its own shape. Re-measured in this fix round
+ * (Chromium `isPointInFill()`, 121×7 = 847-point ink-box grid per label, real shipped
+ * Nunito Sans 600, both locales) — TWO PASSES, because the first pass measured against the
+ * `lib/map/tr-context.generated.ts` CONTEXT_SHAPES geometry only and the second, on the
+ * actually-rendered page, additionally checked the real 81-`PROVINCE_SHAPES` union (a finer
+ * coastline than the coarse Natural-Earth "TR" casing shape): the QN row's first candidate
+ * y (422) put 2/847 (TR) and 1/847 (EN) sample points on Mersin's own coastline at the very
+ * top of the ink band (y ≈ 409, the cap-height row) — small, but not the claimed 0%, so it
+ * was pushed one step further (y 422 → 426; a y ∈ [424, 428] sweep on the real page was
+ * clean at every step tried, 426 sits in the middle of it) rather than left at a
+ * near-miss:
+ *   QN row (x 340, y 426) — TR "Kuzey Kıbrıs Türk Cumhuriyeti" and EN "Turkish Republic of
+ *     Northern Cyprus": 0% of either ink box falls inside ANY context shape OR any of the 81
+ *     real province polygons (i.e. 100% open water) — verified against the live rendered
+ *     page, not only the generated-artifact geometry.
+ *   CY row (x 260, y 448) — TR "Kıbrıs Cumhuriyeti" and EN "Republic of Cyprus": same, 0%
+ *     foreign-shape ink in both locales, verified against the live rendered page.
+ *   Leader lines (from 8 u below each row's baseline, clear of its own ink band, to the
+ *     shape's own `labelPoint`): the two segments do not cross (checked algebraically);
+ *     neither line's own text-clear starting point sits inside the OTHER row's ink box in
+ *     either locale; each line's sampled path (201 points) is 100% either open sea or its
+ *     OWN target shape — 0% crosses into the other entity's territory or into TR/SY.
+ * See the PR's fix-round completion report for the full search and the exact sample counts.
  */
 const CY_QN_LABEL_BLOCK = {
-  qn: { x: 480, y: 386, leaderFrom: { x: 480, y: 380 } },
-  cy: { x: 480, y: 416, leaderFrom: { x: 480, y: 410 } },
+  qn: { x: 340, y: 426, leaderFrom: { x: 340, y: 434 } },
+  cy: { x: 260, y: 448, leaderFrom: { x: 260, y: 456 } },
 } as const;
 
 /**
@@ -181,9 +292,6 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
   const tMap = await getTranslations("Map");
   const tRegions = await getTranslations("Regions");
   const tDetail = await getTranslations("ProvinceDetail");
-  // `WorldMap.attribution` ONLY, for the third credit line below (plan §5.7 recommendation
-  // 1) — reusing `/dunya`'s exact Natural Earth courtesy-credit bytes, never a new string.
-  const tWorldMap = await getTranslations("WorldMap");
   const format = await getFormatter();
 
   // Best-effort: the map is a homepage enhancement, so a summary-fetch failure hides
@@ -203,17 +311,19 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
   // Country names for the geographic-context labels (plan §5.6) come from the SAME
   // `/api/countries/map-summary` endpoint `/dunya` already reads — never from
   // `messages/*.json` (CONVENTIONS.md §5: sovereignty-sensitive status framing is
-  // represented by the api, not a frontend-maintained entity list). Best-effort, same
-  // posture as the province summary above: a failure means the context countries draw
-  // unlabelled, not that the map breaks.
-  let countrySummaries: CountryMapSummary[] = [];
-  try {
-    countrySummaries = await getCountryMapSummary();
-  } catch (error) {
-    console.warn(
-      `[map] country map-summary unavailable; context draws unlabelled. ${String(error)}`,
-    );
-  }
+  // represented by the api, not a frontend-maintained entity list).
+  //
+  // FIX ROUND (PR #108 review, FEN108-M2): this used to call `getCountryMapSummary()`
+  // wrapped in a local best-effort `try/catch` that swallowed EVERY failure — including a
+  // transient RUNTIME outage, which would let ISR cache a `/turkiye` render missing all 18
+  // context-label `<text>` nodes (14 countries + the KKTC/Cyprus pair) as if that were the
+  // correct steady state. `getCountryMapSummaryResilient()` (`lib/api/countries.ts`) already
+  // draws exactly the distinction this surface needs: `[]` at BUILD (so web CI, which has no
+  // api service, still builds) and RE-THROW at RUNTIME (so a transient blip leaves the last
+  // good static page in place instead of caching one that silently lost its country data) —
+  // the same posture the plan's own §10 R10 already assumes for an unresolved ISO, but now
+  // actually enforced instead of unconditionally swallowed.
+  const countrySummaries = await getCountryMapSummaryResilient();
   const byIso = byIsoCode(countrySummaries);
 
   const contextCasing = CONTEXT_SHAPES.find((shape) => shape.iso === CONTEXT_CASING_ISO);
@@ -425,7 +535,14 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
             ))}
 
             {contextLand
-              .filter((shape) => shape.iso !== "QN" && shape.iso !== "CY")
+              // QN/CY get the dedicated paired block below; MK/RS/LB are deliberately
+              // unlabelled backdrop (VAL108-SOV3 fix round — see CONTEXT_LABEL_OMITTED_ISOS).
+              .filter(
+                (shape) =>
+                  shape.iso !== "QN" &&
+                  shape.iso !== "CY" &&
+                  !CONTEXT_LABEL_OMITTED_ISOS.has(shape.iso),
+              )
               .map((shape) => {
                 const country = byIso.get(shape.iso);
                 if (!country) return null; // R10: an ISO the api has not published draws unlabelled
@@ -574,19 +691,35 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
           §5.7 recommendation 1), and the converse of the note directly above is exactly why
           it is now correct here: this component draws Natural Earth country boundaries as
           its geographic context (`lib/map/tr-context.generated.ts`), so `/turkiye` now
-          genuinely uses the data `/dunya`'s own credit names. `provenance/datasets.md` line
-          51 still rules `ATIF: borçlu değildir` — Natural Earth is public domain and owes no
-          attribution — so this line is the SAME product choice `/dunya` already makes, not a
-          new licence obligation. `WorldMap.attribution`'s exact TR/EN bytes are reused
-          verbatim (no new string minted), so no `CONTENT-STYLE.md`/`GLOSSARY.md` surface is
-          touched by this line. `attribution-separation.test.ts` was extended for this file's
-          case (2 → 3 `.attributionLine` spans) rather than left silently out of step. */}
+          genuinely uses that data. `provenance/datasets.md` line 51 still rules
+          `ATIF: borçlu değildir` — Natural Earth is public domain and owes no attribution —
+          so this line is a product choice, not a new licence obligation.
+          `attribution-separation.test.ts` was extended for this file's case (2 → 3
+          `.attributionLine` spans) rather than left silently out of step.
+
+          FIX ROUND (PR #108 review, FEN108-I3): this line originally reused
+          `WorldMap.attribution` verbatim ("Sınır verisi: Natural Earth (kamu malı)" /
+          "Boundaries: Natural Earth (public domain)") — correct bytes, WRONG scope on this
+          page. `/dunya`'s own line has no scope problem because there EVERY boundary on the
+          map is Natural Earth. Here it is not: the map's actual subject, the 81 il
+          boundaries, is `data/tr-il-boundaries.geojson`, licensed ODbL, credited by the
+          FIRST attribution span above (`tMap("attribution")`) — Natural Earth supplies only
+          the NEIGHBOUR/context layer this PR added. A scope-free "Boundaries: Natural Earth"
+          line sitting next to a scope-free "© OpenStreetMap … ODbL" line left it genuinely
+          ambiguous which licence covers the il polygons, which is exactly the ambiguity a
+          licence credit exists to prevent. Its own dedicated key, `Map.attributionContextLabel`
+          ("Komşu ülke sınırları: Natural Earth (kamu malı)" / "Neighbouring-country
+          boundaries: Natural Earth (public domain)"), states its scope explicitly — mirroring
+          how the JRC line above it is already scoped ("Mevsimlik göl sınırları:"). A new
+          string, so `CONTENT-STYLE.md` §22's licence-attribution class applies (shortest
+          faithful form; no verb, no instruction) rather than the "reused verbatim, no new
+          surface" claim the original comment made. */}
       <p className={styles.attributionFlow}>
         <span className={styles.attributionLine}>{tMap("attribution")}</span>{" "}
         <span className={styles.attributionLine}>
           {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
         </span>{" "}
-        <span className={styles.attributionLine}>{tWorldMap("attribution")}</span>
+        <span className={styles.attributionLine}>{tMap("attributionContextLabel")}</span>
       </p>
     </section>
   );

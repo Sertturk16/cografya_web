@@ -145,9 +145,15 @@
    a phone. Cost, stated rather than discovered later: water channels narrower than ≈ 6 u
    (≈ 10 km) — the Bosphorus, the Dardanelles, the Gulf of İzmit — fill with casing tone; all
    three are already at or below one device pixel at this frame, so nothing legible is lost. */
+/* FIX ROUND (PR #108 review, DF108-I1): this used to reference a dedicated
+   `--map-land-casing` token (`#ded6ca`). Measured against the existing `--color-border`
+   (`#ddd5cc`): 1.008:1 contrast — a near-duplicate hex nobody could tell apart by eye, and a
+   second token that could silently drift from the first if either were ever retuned alone.
+   Reused `--color-border` directly instead of minting a second literal for the same value
+   (`DESIGN.md` §2 single-token-per-colour discipline). */
 .contextCasing path {
-  fill: var(--map-land-casing);
-  stroke: var(--map-land-casing);
+  fill: var(--color-border);
+  stroke: var(--color-border);
   stroke-width: 6;
   stroke-linejoin: round;
 }
@@ -183,19 +189,35 @@
 
 /* Sea names get positive tracking and stay upright — the one type gesture this page borrows
    from printed atlas plates, and what separates a hydronym from a country name without a
-   second colour (plan §5.6). */
+   second colour (plan §5.6).
+   FIX ROUND (PR #108 review, DF108-I2): shipped at 1.5px (≈ 6% of the 26 u font size), this
+   applied the SAME extra gap to the space character as to every letter gap, so multi-word
+   names ("Marmara Denizi", "Sea of Marmara", "Mediterranean Sea") rendered with a
+   disproportionately wide word-gap that read as broken/double-spaced text — visible on every
+   multi-word sea label in both locales, not just an edge case. Reduced to 0.4px: still a
+   perceptible atlas-style tracking on single-word names ("Karadeniz", "Akdeniz"), small
+   enough on a multi-word name's word-gap not to read as broken. */
 .contextSeaLabel {
-  letter-spacing: 1.5px;
+  letter-spacing: 0.4px;
 }
 
 /* The KKTC/Cyprus paired label's leader lines — declarations copied verbatim from
    `marine.module.css` `.mapLeader` (the same short-connector treatment this map already
-   ships for offshore point labels). */
+   ships for offshore point labels).
+   FIX ROUND (PR #108 review, A11Y108-I1): `opacity: 0.75` dropped. Measured (WCAG 2.x sRGB
+   relative luminance, alpha-composited over each backdrop this line crosses):
+   `--color-accent` (#276b70) at the shipped 0.75 opacity was 3.07:1 against `--map-sea`
+   (barely over WCAG 1.4.11's 3:1 floor) and 2.60:1 against `--map-context-land` — under the
+   floor. At full opacity the SAME colour measures 4.85:1 against `--map-sea` and 3.71:1
+   against `--map-context-land`, clearing 3:1 against every backdrop the line crosses without
+   changing hue. These two leader lines are the only thing that disambiguates which of the
+   two stacked KKTC/Cyprus names belongs to which shape (component docblock), so they are a
+   "graphical object required to understand content" under 1.4.11, not decoration — the
+   opacity was the only thing between this line and the floor, not the colour choice. */
 .contextLeader {
   stroke: var(--color-accent);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
-  opacity: 0.75;
 }
 
 /* Below this width the map is too narrow for fourteen country names plus four sea names to
