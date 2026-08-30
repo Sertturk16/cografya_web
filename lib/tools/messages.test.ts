@@ -100,12 +100,6 @@ const TR_ONLY_KEYS = [
   "mesafe.karayoluP2",
   "mesafe.olcekHeading",
   "mesafe.olcekP1",
-  "mesafe.olcekP2",
-  "mesafe.olcekP3",
-  "mesafe.buyukdaireHeading",
-  "mesafe.buyukdaireP1",
-  "mesafe.buyukdaireP2",
-  "mesafe.buyukdaireP3",
   "mesafe.sonucHeading",
   "mesafe.sonucP1",
   "mesafe.sonucP2",
@@ -115,7 +109,6 @@ const TR_ONLY_KEYS = [
   "koordinat.sistemHeading",
   "koordinat.sistemP1",
   "koordinat.sistemP2",
-  "koordinat.sistemP3",
   "koordinat.derecekmHeading",
   "koordinat.derecekmP1",
   "koordinat.derecekmP2",
@@ -142,7 +135,6 @@ const TR_ONLY_KEYS = [
   "alan.sonucHeading",
   "alan.sonucP1",
   "alan.sonucP2",
-  "alan.sonucP3",
   "alan.kaynak",
 ] as const;
 

@@ -67,6 +67,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * `2026-08-19 · KGM`). The visible source line names MEB only, because crediting a source a
  * page does not use is the mirror of failing to credit one it does.
  *
+ * ## The 2026-08-30 editorial rewrite and the "Büyük daire" heading that disappeared
+ *
+ * `Owner's Inbox/araclar-editoryal-yenileme/plan.md` §5.2 is the source of the current prose:
+ * an owner-flagged pass that cut AI-sounding padding and repeated ideas. The "Büyük daire" H2
+ * (three paragraphs) was removed as a standalone section — its one load-bearing sentence, the
+ * AK-30 honesty note that the drawn line is straight while the tool measures over the sphere,
+ * now lives in `sonucP2` below, where it reads as "how to read the result" rather than a
+ * geodesy lecture (AK-30 itself asks for "a short method note", not three paragraphs). The
+ * "Harita ölçeği ve çizgi ölçek" section shrank from three paragraphs to one for the same
+ * reason: the concept (a çizgi ölçek exists and recalculates on zoom) stays, the precision
+ * mechanism behind it (the specific %4.3/%4.7 figures `lib/map/measure.ts` computes) does not
+ * — that is implementation detail about how the tool's own scale bar works, not something a
+ * reader needs to use the tool or understand kuş uçuşu mesafe.
+ *
  * ## Rendering and the api read
  *
  * SSG with one api read — the province list, which supplies the picker's il-merkezi points
@@ -153,13 +167,6 @@ export default async function DistanceToolPage({ params }: PageProps) {
 
           <h2>{t("olcekHeading")}</h2>
           <p>{t("olcekP1")}</p>
-          <p>{t("olcekP2")}</p>
-          <p>{t("olcekP3")}</p>
-
-          <h2>{t("buyukdaireHeading")}</h2>
-          <p>{t("buyukdaireP1")}</p>
-          <p>{t("buyukdaireP2")}</p>
-          <p>{t("buyukdaireP3")}</p>
         </div>
       )}
 
