@@ -58,8 +58,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * The repo already has an owner-ruled precedent for exactly this shape: `/oyun` is a heading,
  * one subtitle sentence and three cards, and its own docblock records the trade in the
  * owner's name (→ DEC 2026-07-30p/30q/30r) — "this is now a thin page by word count… an
- * owner-ruled trade." This hub is the same genre in the same system, now that the taxonomy
- * paragraph that used to sit here is gone: it enumerated the same three tools the cards
+ * owner-ruled trade." This hub is the same genre in the same system, now that the old
+ * two-paragraph intro is down to one — and the two paragraphs did NOT both meet the same fate
+ * (fix round, PR #111 review CODE111-M1, precise per `SPEC.md` §5.1's own key table): `introP1`
+ * was REWRITTEN — same message key, wholly new content (the shared-map / no-registration /
+ * PNG-export fact below) — while `introP2` was REMOVED outright, its key deleted from
+ * `messages/tr.json` and from `TR_ONLY_KEYS`, nothing put in its place. What `introP2` carried
+ * was the taxonomy lesson (point/line/area): it enumerated the same three tools the cards
  * already enumerate, in prose, directly above them, and nothing real was lost by cutting it
  * (`Owner's Inbox/araclar-production-ready/SPEC.md` §5.1).
  *

@@ -52,8 +52,21 @@
    "you are here" has to move with it. This reproduces the global `:focus-visible` treatment
    (`app/globals.css`) at the card level instead of the link level, and is the STATED
    compliant replacement `DESIGN.md` §5 requires before a focus ring is removed anywhere
-   (removed below, on the inner anchor, for exactly this reason). */
-.toolCard:focus-within {
+   (removed below, on the inner anchor, for exactly this reason).
+
+   Scoped with `:has(.toolName a:focus-visible)`, NOT `:focus-within` (fix round, PR #111
+   review A11Y111-M1). `.toolCard` has only one focusable child today (`.toolBadge` is an
+   `aria-hidden` `<p>`, the body is a plain `<p>`), so `:focus-within` is not a live bug here —
+   but this repo already hit this exact defect class once, on a different component
+   (`components/auth/auth-form.module.css`, `.errorRegion:has(.errorHeading:focus)`, round-3
+   fix `CODE88-M1`/`TEST88-I1`): a card-level `:focus-within` ring fires on ANY focused
+   descendant, not just the intended link, and silently starts ringing the wrong element the
+   moment a second focusable element (e.g. a future favorite/save button) is added to the
+   card. `:has()` is Baseline-available and this repo already ships it combined with
+   `:focus-visible` (`components/game/game-map.module.css`'s seven region-focus rules) and
+   plain `:focus` (`auth-form.module.css`, `components/site-search/site-search.module.css`), so
+   the same idiom is used here rather than copied without checking. */
+.toolCard:has(.toolName a:focus-visible) {
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
 }
@@ -80,18 +93,35 @@
    second, repeated "Aç" affordance is introduced. The pseudo-element is empty and absolutely
    positioned; its containing block is `.toolCard` (`position: relative` above, the nearest
    positioned ancestor), which is what stretches it to the card's own box rather than the
-   link's. Same `position: relative` parent + absolutely-positioned child idiom
-   `home.module.css`'s `.card`/`.cardArrow` already ships, applied here to a click target
-   instead of a decoration. */
+   link's.
+
+   DELIBERATE DEPARTURE from the repo's usual card pattern, not a reuse of one (fix round, PR
+   #111 review DF111-I1 — the prior wording here wrongly claimed this reproduces
+   `home.module.css`'s `.card`/`.cardArrow`; it does not). That pattern's `.card` IS the click
+   target: `components/home/tool-cards.tsx` wraps the WHOLE card in `<Link className={styles.
+   card}>`, and `.cardArrow` is only a decorative corner glyph that never expands anything. The
+   repo's one actual, existing precedent for "the whole card is clickable" is wrapping the
+   entire box in a single `<Link>` — see also `.province-card`
+   (`app/[locale]/turkiye/[slug]/page.tsx`, `app/[locale]/dunya/[slug]/page.tsx`) — and there is
+   no other stretched-anchor (`position: absolute; inset: 0` expanding a link's click target)
+   anywhere in this repo; every other `inset: 0` use (hero texture, map overlay, auth panel
+   rings) is a decorative layer, not a click target.
+
+   That whole-box-`<Link>` pattern is not usable here: wrapping the card in one `<Link>` would
+   make its accessible name and SEO anchor text the entire card body, not just the tool name,
+   which §B8 8.3 asks to keep narrow and specific. The stretched pseudo-element below keeps
+   `<h2><Link>{name}</Link></h2>` as the ONLY anchor and its text as the sole accessible
+   name/anchor text, while still making the whole `.toolCard` box clickable — a genuinely new,
+   one-off technique chosen for that reason, not an application of an existing one. */
 .toolName a::after {
   content: "";
   position: absolute;
   inset: 0;
 }
 
-/* Suppressed ONLY because `.toolCard:focus-within` above is its stated replacement: a ring
-   around this ~16-character text run would be misleading once the whole 348px card is the
-   real target, not merely narrow. */
+/* Suppressed ONLY because `.toolCard:has(.toolName a:focus-visible)` above is its stated
+   replacement: a ring around this ~16-character text run would be misleading once the whole
+   348px card is the real target, not merely narrow. */
 .toolName a:focus-visible {
   outline: none;
 }
