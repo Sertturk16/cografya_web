@@ -292,6 +292,10 @@
     "backToMap": "Türkiye haritasına dön",
     "marineHeading": "{name} açıklarında deniz durumu",
     "marineSourcesHeading": "Deniz verisi: kaynaklar ve kullanım",
+    "earthquakeHeading": "{name} yakınında son depremler",
+    "earthquakeEmptyState": "{name} yakınında son 7 günde kaydedilmiş deprem yok.",
+    "earthquakeSourcesHeading": "Deprem verisi: kaynaklar ve kullanım",
+    "earthquakeHubLink": "Türkiye genelinde son depremler",
     "locationHeading": "{name} Konumu",
     "locationAlt": "{name} ilinin Türkiye haritası üzerindeki konumu"
   },

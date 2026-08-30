@@ -149,6 +149,30 @@
   padding: 16px 0;
 }
 
+/* ---- Province section (§5.12, PR-B) ------------------------------------------- */
+
+/* Same shape as `.provinceHubLink` in `components/marine/marine.module.css` — the unconditional
+   link back to `/deprem`, present regardless of this province's own event count. */
+.provinceHubLink {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+}
+
+/* Magnitude-floor note (PR #114 fix round, FENER114-I1) — same size/colour pair as
+   `province-detail.module.css` `.sources`/`.sourcesLabel` (0.85rem body, bold ink label), the
+   established "small-print label: sentence" pattern already used for the page's own Kaynaklar
+   line, reused here rather than inventing a second treatment. */
+.magnitudeFloorNote {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+}
+
+.magnitudeFloorLabel {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
 /* ---- Attribution / disclaimer (§5.8) ----------------------------------------- */
 
 .sources {

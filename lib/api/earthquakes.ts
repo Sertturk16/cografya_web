@@ -1,4 +1,5 @@
 import "server-only";
+import { createWarnLimiter } from "@/lib/marine/warn-limiter";
 import { buildEarthquakeQuery, type EarthquakeFilter } from "@/lib/earthquake/query";
 import { apiGet } from "./client";
 import { isProductionBuild } from "./provinces";
@@ -18,10 +19,13 @@ import type { EarthquakeList, EarthquakeMeta } from "./types";
  * (`s-maxage=3600`) — `earthquake.controller.ts`'s own `LIST_CACHE_CONTROL`/`META_CACHE_CONTROL`
  * constants.
  *
- * ONE resilience shape here — `…Resilient` (build-safe, runtime-re-throwing) — because the hub
- * page's default-view reads are the page itself (§5.3): the list and the map ARE `/deprem`, the
- * same reasoning `getMarinePointsResilient` states for `/deniz`'s points. The province section's
- * `…Safe` (never-throw) wrappers are PR-B's own addition (plan §7), not built here.
+ * TWO resilience shapes here, mirroring `lib/api/marine.ts`'s own split precisely (plan §5.3).
+ * `…Resilient` (build-safe, runtime-re-throwing) is for the hub page's default-view reads: the
+ * list and the map ARE `/deprem`, the same reasoning `getMarinePointsResilient` states for
+ * `/deniz`'s points. `getProvinceEarthquakesSafe` (never-throw, either phase) is PR-B's own
+ * addition — the province section is an enhancement bolted onto a page about the province, not
+ * about earthquakes, so a provider/DB hiccup must degrade the section, never the page, exactly
+ * `getMarineProvinceConditionsSafe`'s own contract.
  */
 
 /** Mirrors `earthquake.controller.ts`'s `LIST_CACHE_CONTROL` (`s-maxage=120`). */
@@ -81,6 +85,110 @@ export async function getEarthquakeMetaResilient(): Promise<EarthquakeMeta> {
       return COLD_EARTHQUAKE_META;
     }
     throw error;
+  }
+}
+
+/**
+ * One province's earthquake events (PR-B, `deprem-sayfalari` plan §5.12) — same envelope as
+ * the hub, filtered server-side to the events bound to this `plateCode`
+ * (`earthquake.controller.ts`'s own doc comment: "the same envelope as the hub, filtered to
+ * the events bound to this province"). Every item this returns therefore carries
+ * `bindingPlateCode === plateCode`, which is what lets the province section resolve the
+ * `bindingKind` sentence's `{province}` placeholder from the page's own already-known province
+ * name — no second province-list fetch needed (unlike the hub, which does not know in advance
+ * which provinces its mixed event set will bind to).
+ *
+ * The plaka is path-encoded even though the api's own codes are two ASCII digits — the same
+ * defensive discipline `getMarineProvinceConditions` already applies to the identical shape of
+ * input, regardless of how well-behaved today's data is.
+ *
+ * Same ISR window as the hub list (120 s): `earthquake.controller.ts`'s own docblock groups
+ * "list/province routes" under one `Cache-Control` (`s-maxage=120`), so mirroring it here is
+ * the SAME number, not a second choice.
+ */
+export async function getProvinceEarthquakes(
+  plateCode: string,
+  filter: EarthquakeFilter = {},
+): Promise<EarthquakeList> {
+  return apiGet<EarthquakeList>(
+    `/api/earthquakes/provinces/${encodeURIComponent(plateCode)}${buildEarthquakeQuery(filter)}`,
+    { revalidate: EARTHQUAKE_LIST_REVALIDATE_SECONDS },
+  );
+}
+
+/**
+ * One limiter for this failure class, module-scoped so the 81 province pages × 2 locales share
+ * one tally instead of each warning on its own — the identical M9 decision
+ * `provinceConditionsWarnLimiter` (`lib/api/marine.ts`) already applies, reused via
+ * `createWarnLimiter` rather than re-implemented (plan §5.3).
+ */
+const provinceEarthquakesWarnLimiter = createWarnLimiter();
+
+/**
+ * FAIL-SOFT province earthquake read — `null` means "no earthquake section this render",
+ * never "this province has no earthquakes nearby". Same contract as
+ * `getMarineProvinceConditionsSafe`: fail-soft in BOTH phases, because the section it powers is
+ * an enhancement on a page about a province, not about earthquakes, and an external provider
+ * chain may never turn a province page into a 500.
+ *
+ * A SUCCESSFUL read with `items: []` is a genuinely different case from a failed one — it is
+ * the honest "no events matched the default window" answer, and the section renders it as
+ * such (§5.12's empty-state copy), never as though the read had failed.
+ */
+export async function getProvinceEarthquakesSafe(
+  plateCode: string,
+): Promise<EarthquakeList | null> {
+  try {
+    const list = await getProvinceEarthquakes(plateCode);
+    provinceEarthquakesWarnLimiter.reset();
+    return list;
+  } catch (error) {
+    const line = provinceEarthquakesWarnLimiter(
+      `[earthquake] province events fetch failed for plaka ${plateCode}; ` +
+        `the earthquake section is not rendered this pass. ${String(error)}`,
+    );
+    if (line !== null) console.warn(line);
+    return null;
+  }
+}
+
+/**
+ * One limiter for this failure class, same reasoning as {@link provinceEarthquakesWarnLimiter}
+ * one paragraph up — 81 provinces × 2 locales share one tally rather than each warning alone.
+ */
+const earthquakeMetaWarnLimiter = createWarnLimiter();
+
+/**
+ * FAIL-SOFT meta read (PR #114 fix round, FENER114-C1/CODE114-C1, validated) — mirrors
+ * {@link getProvinceEarthquakesSafe}'s own contract exactly: `null` means "the meta read failed
+ * this render", never "no disclaimer applies" (`disclaimerTr` is a REQUIRED field on every
+ * successful `EarthquakeMetaDto`, per its own docblock: "Render it wherever earthquake data is
+ * shown"). Wraps the base {@link getEarthquakeMeta} — not `…Resilient` — so it catches in BOTH
+ * phases uniformly, the same choice `getProvinceEarthquakesSafe` already makes over
+ * `getProvinceEarthquakes` for the identical reason: this read powers an ENHANCEMENT (the
+ * province page's mandatory disclaimer alongside its earthquake section), not the page itself,
+ * so neither a build-time api outage nor a runtime hiccup may turn a province page into a
+ * build failure or a 500 — it must degrade the same way the events read already does.
+ *
+ * COST (validator-measured at PR #114 review time): this hits the SAME url as
+ * `getEarthquakeMetaResilient()` already reads for `/deprem`, ISR-cached for
+ * {@link EARTHQUAKE_META_REVALIDATE_SECONDS} (3600 s) and deduped by Next's fetch cache per
+ * unique URL — calling it from all 81 province pages × 2 locales is a cache read, not a
+ * dedicated per-page fetch, which is what makes it cheaper than the omission this PR shipped
+ * with originally assumed.
+ */
+export async function getEarthquakeMetaSafe(): Promise<EarthquakeMeta | null> {
+  try {
+    const meta = await getEarthquakeMeta();
+    earthquakeMetaWarnLimiter.reset();
+    return meta;
+  } catch (error) {
+    const line = earthquakeMetaWarnLimiter(
+      `[earthquake] meta fetch failed; the province earthquake section's mandatory disclaimer ` +
+        `is not available this pass, so the section is not rendered either. ${String(error)}`,
+    );
+    if (line !== null) console.warn(line);
+    return null;
   }
 }
 

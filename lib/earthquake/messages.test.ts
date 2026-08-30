@@ -72,6 +72,39 @@ describe("Breadcrumb.deprem resolves in both locales", () => {
   });
 });
 
+describe("resolves the ProvinceDetail keys the earthquake section renders (PR-B)", () => {
+  // The same reasoning `lib/marine/messages.test.ts`'s own "resolves the two ProvinceDetail
+  // keys the marine section renders" test states: the province section's `<h2>`, its
+  // empty-state line, its licence block's heading and its hub-link live in the PAGE's own
+  // `ProvinceDetail` namespace, not in `Earthquake.*` — because both are about the province
+  // page, not about the earthquake vocabulary — so they fall outside every guard above and
+  // need their own.
+  const trProvince = flatten((trMessages as Catalogue).ProvinceDetail);
+  const enProvince = flatten((enMessages as Catalogue).ProvinceDetail);
+
+  for (const key of [
+    "earthquakeHeading",
+    "earthquakeEmptyState",
+    "earthquakeSourcesHeading",
+    "earthquakeHubLink",
+  ]) {
+    it(`ProvinceDetail.${key} is a non-empty string in tr and en`, () => {
+      expectNonEmptyString(trProvince, key);
+      expectNonEmptyString(enProvince, key);
+    });
+  }
+
+  it("earthquakeHeading and earthquakeEmptyState both carry a {name} placeholder", () => {
+    // Both are rendered with the province's own name (`t("earthquakeHeading", { name })`);
+    // a copy edit that dropped the interpolation would ship a page that never names its own
+    // province, which is exactly the class of defect a resolves-only check cannot see.
+    for (const key of ["earthquakeHeading", "earthquakeEmptyState"]) {
+      expect(trProvince.get(key) as string).toContain("{name}");
+      expect(enProvince.get(key) as string).toContain("{name}");
+    }
+  });
+});
+
 describe("dataStatus-driven copy — every state the contract can emit (§5.11)", () => {
   // `EarthquakeMetaDto.dataStatus`/`EarthquakeListMetaDto.dataStatus`'s own three-valued enum
   // (`cografya_api/src/earthquake/earthquake.types.ts`). No runtime array exists on the web
