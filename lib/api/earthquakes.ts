@@ -153,6 +153,46 @@ export async function getProvinceEarthquakesSafe(
 }
 
 /**
+ * One limiter for this failure class, same reasoning as {@link provinceEarthquakesWarnLimiter}
+ * one paragraph up — 81 provinces × 2 locales share one tally rather than each warning alone.
+ */
+const earthquakeMetaWarnLimiter = createWarnLimiter();
+
+/**
+ * FAIL-SOFT meta read (PR #114 fix round, FENER114-C1/CODE114-C1, validated) — mirrors
+ * {@link getProvinceEarthquakesSafe}'s own contract exactly: `null` means "the meta read failed
+ * this render", never "no disclaimer applies" (`disclaimerTr` is a REQUIRED field on every
+ * successful `EarthquakeMetaDto`, per its own docblock: "Render it wherever earthquake data is
+ * shown"). Wraps the base {@link getEarthquakeMeta} — not `…Resilient` — so it catches in BOTH
+ * phases uniformly, the same choice `getProvinceEarthquakesSafe` already makes over
+ * `getProvinceEarthquakes` for the identical reason: this read powers an ENHANCEMENT (the
+ * province page's mandatory disclaimer alongside its earthquake section), not the page itself,
+ * so neither a build-time api outage nor a runtime hiccup may turn a province page into a
+ * build failure or a 500 — it must degrade the same way the events read already does.
+ *
+ * COST (validator-measured at PR #114 review time): this hits the SAME url as
+ * `getEarthquakeMetaResilient()` already reads for `/deprem`, ISR-cached for
+ * {@link EARTHQUAKE_META_REVALIDATE_SECONDS} (3600 s) and deduped by Next's fetch cache per
+ * unique URL — calling it from all 81 province pages × 2 locales is a cache read, not a
+ * dedicated per-page fetch, which is what makes it cheaper than the omission this PR shipped
+ * with originally assumed.
+ */
+export async function getEarthquakeMetaSafe(): Promise<EarthquakeMeta | null> {
+  try {
+    const meta = await getEarthquakeMeta();
+    earthquakeMetaWarnLimiter.reset();
+    return meta;
+  } catch (error) {
+    const line = earthquakeMetaWarnLimiter(
+      `[earthquake] meta fetch failed; the province earthquake section's mandatory disclaimer ` +
+        `is not available this pass, so the section is not rendered either. ${String(error)}`,
+    );
+    if (line !== null) console.warn(line);
+    return null;
+  }
+}
+
+/**
  * The honest cold shape a real `dataStatus: "unavailable"` response carries — reused as the
  * BUILD-TIME fallback rather than an empty array, because `/deprem`'s cold state (§5.11) is a
  * real, specified render (empty map, empty list, an honest lede) and not a generic "fetch

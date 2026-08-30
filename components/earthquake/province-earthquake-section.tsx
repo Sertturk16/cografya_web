@@ -80,9 +80,31 @@ export async function ProvinceEarthquakeSection({
     bindingAcrossBorder: (province: string) => te("binding.acrossBorder", { province }),
   };
 
+  // PR #114 fix round (FENER114-I1, not independently validated but well-evidenced): the
+  // empty-state sentence above ("no earthquakes near {name} in the last 7 days") reads as an
+  // absolute "no seismic activity" claim unless the reader also knows it is filtered to
+  // `minMagnitude`+ — the SAME gap `/deprem`'s own `meta.magnitudeFloorLabel`/`Value` block
+  // exists to close (`app/[locale]/deprem/page.tsx`). No new copy is authored: this reuses that
+  // EXACT established i18n pair verbatim (CONTENT-STYLE.md §22's own instruction against
+  // inventing new wording for a fact already phrased once), formatted the same way the three
+  // other magnitude displays on this feature already do (`magnitude-badge.tsx`,
+  // `earthquake-map.tsx`, `earthquake-filters.tsx`) — one decimal, locale-formatted. The value
+  // itself is `list.meta.filter.minMagnitude`, already on the page as a prop; no new fetch.
+  // Rendered UNCONDITIONALLY (populated or empty), directly under the heading: it is equally
+  // true, and equally missing without this line, whether the table has rows or not.
+  const minMagnitudeLabel = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(list.meta.filter.minMagnitude);
+
   return (
     <section className="section" aria-labelledby={headingId}>
       <h2 id={headingId}>{t("earthquakeHeading", { name: provinceName })}</h2>
+
+      <p className={styles.magnitudeFloorNote}>
+        <span className={styles.magnitudeFloorLabel}>{te("meta.magnitudeFloorLabel")}:</span>{" "}
+        {te("meta.magnitudeFloorValue", { value: minMagnitudeLabel })}
+      </p>
 
       <EarthquakeListTable
         locale={locale}

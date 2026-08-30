@@ -6,16 +6,27 @@ interface EarthquakeAttributionProps {
   attributions: readonly EarthquakeAttributionRow[];
   /**
    * The early-warning liability sentence (`EarthquakeMetaDto.disclaimerTr`) — owner-ruled
-   * verbatim (`DEC 2026-08-19l`), Turkish-only, no `disclaimerEn` field exists in the
-   * contract. OPTIONAL (PR-B): `disclaimerTr` lives only on `GET /api/earthquakes/meta`, not on
-   * `EarthquakeListDto.meta` (the shape `getProvinceEarthquakesSafe` returns), so the province
-   * section — which renders the mandatory `attributions` that travel with every AFAD-derived
-   * value it shows, the same "attribution may not go missing where a derived value appears"
-   * rule `MarineAttribution` already applies — omits it rather than paying a second, dedicated
-   * `/meta` fetch on all 81 province pages for a sentence the hub already carries and this
-   * section's own unconditional hub-link (`ProvinceEarthquakeSection`) makes one click away.
+   * verbatim (`DEC 2026-08-19l`), Turkish-only, no `disclaimerEn` field exists in the contract.
+   * The api's own docblock for this field: "Render it wherever earthquake data is shown; never
+   * translate, shorten or re-word it."
+   *
+   * REQUIRED (PR #114 fix round, FENER114-C1/CODE114-C1, validated). `disclaimerTr` used to be
+   * optional here because it lives only on `GET /api/earthquakes/meta`, not on
+   * `EarthquakeListDto.meta` (the shape the province route returns) — and PR-B's province call
+   * site omitted the prop rather than pay a second fetch, reasoning the hub already carries the
+   * sentence one click away via the section's own unconditional hub-link. That left every one
+   * of 81 provinces × 2 locales showing real AFAD earthquake data with the mandatory
+   * non-early-warning disclaimer nowhere on the page itself — the exact liability gap
+   * DEC 2026-08-19l's "wherever earthquake data is shown" wording exists to close, and "one
+   * click away" does not satisfy it (CONTENT-STYLE.md §22's litmus: the reader does not know
+   * this boundary AT THE POINT they see the data). The province page now sources the value from
+   * the already-existing, ISR-cached `getEarthquakeMetaSafe()` (`lib/api/earthquakes.ts`) —
+   * validator-measured as a cache hit, not a new per-page fetch — and BOTH call sites
+   * (`/deprem` and the province route) supply it, so the prop is required rather than optional:
+   * a future caller that forgets it now fails to compile instead of silently shipping the same
+   * gap again.
    */
-  disclaimerTr?: string;
+  disclaimerTr: string;
   /** `id` of this block's `<h2>` — unique per page. */
   headingId?: string;
   /**
@@ -76,11 +87,9 @@ export async function EarthquakeAttribution({
             )}
           </p>
         ))}
-        {disclaimerTr !== undefined && (
-          <p className={styles.disclaimer} lang="tr">
-            {disclaimerTr}
-          </p>
-        )}
+        <p className={styles.disclaimer} lang="tr">
+          {disclaimerTr}
+        </p>
       </div>
     </section>
   );

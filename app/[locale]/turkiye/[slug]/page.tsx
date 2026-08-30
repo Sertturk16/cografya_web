@@ -14,7 +14,7 @@ import { RegionDot } from "@/components/province/region-dot";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { ProvinceMarineSection } from "@/components/marine/province-marine-section";
 import { ProseNote } from "@/components/prose-note";
-import { getProvinceEarthquakesSafe } from "@/lib/api/earthquakes";
+import { getEarthquakeMetaSafe, getProvinceEarthquakesSafe } from "@/lib/api/earthquakes";
 import {
   getMarineLayersSafe,
   getMarinePointsSafe,
@@ -162,6 +162,16 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // point list above; `getProvinceEarthquakesSafe` never rejects, so floating it is safe.
   const provinceEarthquakesPromise = getProvinceEarthquakesSafe(province.plateCode);
 
+  // PR #114 fix round (FENER114-C1/CODE114-C1, validated): the mandatory early-warning
+  // disclaimer (`EarthquakeMetaDto.disclaimerTr`, owner-locked DEC 2026-08-19l — "render it
+  // wherever earthquake data is shown") lives only on `GET /api/earthquakes/meta`, not on the
+  // province-scoped envelope above, so it is read separately here. Started alongside the events
+  // read for the same overlap reason; `getEarthquakeMetaSafe` never rejects either. The read is
+  // NOT a new dedicated per-page fetch — the validator that closed FENER114-C1 measured it as a
+  // cache hit against the SAME url `/deprem` already reads, ISR-cached at 3600 s
+  // (`EARTHQUAKE_META_REVALIDATE_SECONDS`) and deduped by Next's fetch cache per unique URL.
+  const earthquakeMetaPromise = getEarthquakeMetaSafe();
+
   const t = await getTranslations("ProvinceDetail");
   const tb = await getTranslations("Breadcrumb");
   const tRegions = await getTranslations("Regions");
@@ -254,14 +264,36 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   const marineBlocks = provinceMarineBlocks(marineConditions);
   const showMarine = provinceShowsMarine(marineConditions);
 
-  // ── Depremler (PR-B) ───────────────────────────────────────────────────────────────────
+  // ── Depremler (PR-B; fix round PR #114 extends the gate — see below) ──────────────────────
   // The SAME "attribution travels with the value, both ways" discipline as marine's own O1
-  // fix, one paragraph up: the JSX below gates both the section's content AND the licence
-  // block at the bottom of the page on this ONE variable being non-null, so the two cannot
-  // come apart. `null` here means the read genuinely failed (`getProvinceEarthquakesSafe`'s
-  // own contract) — an empty `items` array is a real, successful "no events matched" answer
-  // and still renders.
-  const provinceEarthquakes = await provinceEarthquakesPromise;
+  // fix, one paragraph up: the JSX below gates the section's content, its licence block AND
+  // its mandatory disclaimer on BOTH of these being non-null, so none of the three can come
+  // apart. `provinceEarthquakes === null` means the events read genuinely failed
+  // (`getProvinceEarthquakesSafe`'s own contract) — an empty `items` array is a real,
+  // successful "no events matched" answer and still renders. `earthquakeMeta === null` means
+  // the SEPARATE meta read that carries `disclaimerTr` failed (`getEarthquakeMetaSafe`'s own
+  // contract).
+  //
+  // WHY THE WHOLE SECTION, NOT JUST THE DISCLAIMER PARAGRAPH, IS GATED ON BOTH (the fail-soft
+  // decision this fix round had to make explicitly, not silently): the alternative — render the
+  // events whenever `provinceEarthquakes` alone succeeds, and simply omit the disclaimer
+  // paragraph on the rare divergent failure where only the meta read fails — would reopen a
+  // narrower, INTERMITTENT version of the exact liability gap FENER114-C1 reported: real AFAD
+  // earthquake data on the page with no early-warning disclaimer anywhere on it. A disclaimer
+  // that silently disappears on transient failure is a worse defect than one that never shipped
+  // at all, because it is invisible in ordinary testing (both reads usually succeed together —
+  // they hit the SAME backend — so the gap would only surface during the ONE failure mode this
+  // choice is meant to guard against). Coupling the two mirrors the "value + attribution travel
+  // together" rule already established for marine one section up, extended to the mandatory
+  // disclaimer this DTO's own docblock calls a liability note, not ordinary interface copy. The
+  // accepted cost is symmetrical with every other live-data read on this page: a genuine
+  // divergent hiccup hides the section for one ISR pass, never the page, and self-heals on the
+  // next revalidation — the same "provider chain may remove the section, never the page" trade
+  // already stated for marine and for the events read itself.
+  const [provinceEarthquakes, earthquakeMeta] = await Promise.all([
+    provinceEarthquakesPromise,
+    earthquakeMetaPromise,
+  ]);
 
   // schema.org PropertyValue facts — only the values the api actually has (null
   // fields are skipped, never invented). Labels come from i18n so JSON-LD and the
@@ -719,11 +751,12 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           reasoning; Marine's existing position is intentionally left untouched).
 
           UNGATED, unlike Marine's coastal restriction — any of the 81 provinces can have a
-          nearby seismic event, so this renders whenever the read itself succeeds, honest empty
-          state and all; it is absent only on a genuine fetch failure (`showEarthquake`, same
-          fail-soft contract as `showMarine` above), never because this province "doesn't
-          qualify". */}
-      {provinceEarthquakes !== null && (
+          nearby seismic event, so this renders whenever both reads succeed, honest empty state
+          and all; it is absent only on a genuine fetch failure of either the events read or the
+          meta read that carries the mandatory disclaimer (see the comment above
+          `provinceEarthquakes`/`earthquakeMeta` for why the section is gated on BOTH, PR #114
+          fix round), never because this province "doesn't qualify". */}
+      {provinceEarthquakes !== null && earthquakeMeta !== null && (
         <ProvinceEarthquakeSection
           locale={locale}
           provinceName={name}
@@ -1056,16 +1089,22 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         />
       )}
 
-      {/* AFAD attribution — the mandatory notice that travels with this province's earthquake
-          section, gated on the SAME `provinceEarthquakes !== null` signal as the section itself
-          (mirrors the Marine block immediately above). No `disclaimerTr`: that liability
-          sentence lives only on `GET /api/earthquakes/meta`, not on this province-scoped
-          envelope, and the section's own unconditional hub-link already puts the hub — where
-          the disclaimer renders — one click away (`components/earthquake/earthquake-
-          attribution.tsx`'s own docblock states the reasoning in full). */}
-      {provinceEarthquakes !== null && (
+      {/* AFAD attribution + the mandatory early-warning disclaimer — travels with this
+          province's earthquake section, gated on the SAME `provinceEarthquakes !== null &&
+          earthquakeMeta !== null` signal as the section itself (mirrors the Marine block
+          immediately above; PR #114 fix round — see the comment above
+          `provinceEarthquakes`/`earthquakeMeta` for the full reasoning). `disclaimerTr` now
+          comes from the separate `earthquakeMeta` read (`getEarthquakeMetaSafe`,
+          `lib/api/earthquakes.ts`): that liability sentence lives only on
+          `GET /api/earthquakes/meta`, not on this province-scoped envelope, so it cannot be
+          read off `provinceEarthquakes` itself — but "one click away" via the section's own
+          hub-link is not the same as ON THIS PAGE, which is what DEC 2026-08-19l requires
+          (`components/earthquake/earthquake-attribution.tsx`'s own docblock states the full
+          reasoning). */}
+      {provinceEarthquakes !== null && earthquakeMeta !== null && (
         <EarthquakeAttribution
           attributions={provinceEarthquakes.meta.attributions}
+          disclaimerTr={earthquakeMeta.disclaimerTr}
           headingId="province-earthquake-sources"
           heading={t("earthquakeSourcesHeading")}
         />
