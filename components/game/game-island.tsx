@@ -602,7 +602,7 @@ export function GameIsland({
    * A shown answer used to advance itself after 2400 ms, and that is the defect the owner
    * ranked first. The mechanism was never broken: measured on the running build, the
    * revealed province carries `data-state="reveal"` on both twins (fill `rgb(63 58 54)`,
-   * 3px dashed line) and the sentence "▸ Bolu burası." is on screen from t+150 ms to
+   * 3px dashed line) and the sentence "▸ Burası Bolu." is on screen from t+150 ms to
    * t+2400 ms. What was broken is the PRODUCT: the player asks for the answer, their eyes
    * are on the button they just pressed — under the map — and by the time they look up the
    * map has moved on. The one moment the whole mode exists to create ("Niğde neredeymiş?")

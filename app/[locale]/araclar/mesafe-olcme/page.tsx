@@ -82,6 +82,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * the page (`ENGINEERING.md` §4 #10, `SEO-POLICY.md` §B8 8.5): before this pass the breadcrumb
  * was the only way off the page.
  *
+ * A third, narrower owner cut (2026-08-30) removed `sonucP1` outright — its zoom-rounding note
+ * was the tool's own internal behaviour, not a geography fact — leaving `sonucP2`/`sonucP3` as
+ * the section's opening paragraphs.
+ *
  * ## Rendering and the api read
  *
  * SSG with one api read — the province list, which supplies the picker's il-merkezi points
@@ -158,7 +162,6 @@ export default async function DistanceToolPage({ params }: PageProps) {
       {rendersProse && (
         <div className={`${styles.prose} ${styles.proseAfterTool}`}>
           <h2>{t("sonucHeading")}</h2>
-          <p>{t("sonucP1")}</p>
           <p>{t("sonucP2")}</p>
           <p>{t("sonucP3")}</p>
 
