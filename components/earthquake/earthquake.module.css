@@ -92,8 +92,20 @@
 
 /* ---- Event list (§5.11) ------------------------------------------------------ */
 
+/* Bug fix (owner-verified, `cografya-editor-notlari/deprem-notlar.txt` madde 3): the box
+   carried `overflow-x: auto` but no `max-height`, so `overflow-y` computed to `auto` per the
+   CSS overflow spec (an axis left unset when the other is non-`visible` computes to `auto`,
+   never `visible`) yet never actually triggered — with no height ceiling the box just grew
+   with content (~2300px at 50 rows) and dragged the whole page down with it. `max-height`
+   matching this repo's own `min(vh, px)` scrollable-list convention
+   (`components/site-search/site-search.module.css` `.results`) gives `overflow-y` real
+   overflow to act on; `overflow-x` stays for the `min-width: 520px` table on narrow
+   viewports. Sized taller than the search dropdown's `min(50vh, 360px)` on purpose — this is
+   the page's primary content list (up to 50 rows), not a small transient popover. */
 .tableScroll {
+  max-height: min(60vh, 600px);
   overflow-x: auto;
+  overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
 }
