@@ -85,6 +85,7 @@ const BOTH_LOCALE_KEYS = [
   "alan.toolHeading",
   "hub.alanName",
   "hub.alanBody",
+  "hub.otherToolsHeading",
 ] as const;
 
 /** Keys inside a prose namespace that exist in Turkish ONLY (§B14, the `/deniz` precedent). */
@@ -97,8 +98,6 @@ const TR_ONLY_KEYS = [
   "mesafe.karayoluHeading",
   "mesafe.karayoluP1",
   "mesafe.karayoluP2",
-  "mesafe.olcekHeading",
-  "mesafe.olcekP1",
   "mesafe.sonucHeading",
   "mesafe.sonucP1",
   "mesafe.sonucP2",
@@ -123,9 +122,6 @@ const TR_ONLY_KEYS = [
   "alan.lede",
   "alan.sinirHeading",
   "alan.sinirP1",
-  "alan.sinirP2",
-  "alan.kureHeading",
-  "alan.kureP1",
   "alan.kureP2",
   "alan.yuzolcumuHeading",
   "alan.yuzolcumuP1",

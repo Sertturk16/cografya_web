@@ -152,8 +152,30 @@
   margin-top: 32px;
 }
 
+/* The post-tool `.prose` block sat directly under the control strip with only its own
+   heading's 28px top margin (`.prose h2`), so its first H2 read as a continuation of the
+   save panel rather than a new section. Same value as `.toolSection` above, so a tool page
+   reads as three sections (concept / tool / interpretation), not two with a stray heading
+   (`Owner's Inbox/araclar-production-ready/SPEC.md` §6 V7). */
+.proseAfterTool {
+  margin-top: 32px;
+}
+
 .sourceLine {
   margin-top: 24px;
   font-size: 0.85rem;
   color: var(--color-slate);
+}
+
+/* "Diğer araçlar" — the one net content addition in this task (SPEC §6 V8). Every tool page
+   was a dead end: the breadcrumb was the only way out, with no link to the sibling tools.
+   `.section` (`app/globals.css`) supplies the vertical rhythm; this rule only lays the three
+   links out. Anchor colour/hover/focus come from the global `a` rule — no override needed. */
+.relatedList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
 }

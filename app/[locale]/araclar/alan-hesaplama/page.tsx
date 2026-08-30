@@ -12,7 +12,12 @@ import type { ContentSurface } from "@/lib/seo/indexing";
 import { JsonLd, learningResourceJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { buildProvincePoints } from "@/lib/tools/province-points";
-import { AREA_TOOL, TOOL_HUB_PATHNAME } from "@/lib/tools/tool-registry";
+import {
+  AREA_TOOL,
+  COORDINATE_TOOL,
+  DISTANCE_TOOL,
+  TOOL_HUB_PATHNAME,
+} from "@/lib/tools/tool-registry";
 import styles from "../tools.module.css";
 
 interface PageProps {
@@ -52,19 +57,40 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *
  * ## The order is the doorway defence, and it is a BLOCKER-level requirement
  *
- * SPEC §4.3 fixes it: heading → explanatory text → tool → how to read the result → cross
- * links. A reader who arrives from a search and never touches the tool must still leave with
- * the answer to "why is a drawn area not a province's yüzölçümü, and why is it computed on a
- * sphere" (`SEO-POLICY.md` §B12.2.a/.b). That is why the text is server-rendered prose rather
- * than something the island prints.
+ * `SEO-POLICY.md` §B12.2.a/.b (doorway abuse) is the live rule this order defends against: a
+ * reader who arrives from a search and never touches the tool must still leave with the answer
+ * to "why is a drawn area not a province's yüzölçümü, and why is it computed on a sphere" ON
+ * THIS PAGE — both answers are still fully present, in the first server-rendered HTML response,
+ * below the tool. An earlier version of this note cited a `cbs-p2/SPEC.md` §4.3 that no longer
+ * exists on disk (`Owner's Inbox/araclar-production-ready/SPEC.md` §9 item 3 records the same
+ * finding for all three tool pages and is why this citation moved). That is why the text is
+ * server-rendered prose rather than something the island prints.
  *
  * ## Where the text comes from
  *
- * `Owner's Inbox/cbs-p2/prose/arac-prose-draft.md` §4 (NOVA), through an independent
- * fact-check (§B13 13.1) and transcribed byte-identically. The HGM paragraph carries the
- * source's OWN methodology caveat — 2014, 1:1.000.000, "resmî nitelik taşımaz" — because this
- * page's subject is precisely where an area figure comes from; `provenance/datasets.md` (→
- * legacy §1.2) is where that wording and its vintage are recorded, and neither is paraphrased.
+ * The prose was drafted by NOVA and independently fact-checked (`SEO-POLICY.md` §B13 13.1). The
+ * HGM paragraph carries the source's OWN methodology caveat — 2014, 1:1.000.000, "resmî nitelik
+ * taşımaz" — because this page's subject is precisely where an area figure comes from;
+ * `provenance/datasets.md` (→ legacy §1.2) is where that wording and its vintage are recorded,
+ * and it is transcribed byte-identically, never paraphrased.
+ *
+ * ## The projection-theory cut, and why the HGM block moved below the tool
+ *
+ * `Owner's Inbox/araclar-production-ready/SPEC.md` §5.4: measured at 1789 characters / 7
+ * paragraphs before the tool, this was the second-worst page in the section, and it carried the
+ * one thing the owner's brief names by name as a cut candidate — unnecessary projection theory.
+ * `sinirP2` (the textbook's paper-plan exercise) and the whole `kureHeading`/`kureP1` section
+ * (projection theory: which map property survives the projection) are REMOVED outright, not
+ * trimmed — a lise student does not need Coğrafya 9's projection unit to trust a square-kilometre
+ * number. `kureP2`'s point (the tool measures on the sphere, not in pixels) is still needed to
+ * TRUST the number, so it moved below the tool, right where the number appears, with its
+ * "Araç bu yüzden…" opener rebuilt because it referred to the now-deleted `kureP1`. The
+ * `yuzolcumu*` block (the HGM comparison, byte-identical) moved with it: "why isn't my number
+ * the province's official area" is a post-result question. `teaches` was edited to match — it no
+ * longer names projection area-preservation, because the prose no longer teaches it
+ * (`SEO-POLICY.md` §B5's teaches-names-the-prose row). A "Diğer araçlar" related-links row was
+ * added at the end of the page (`ENGINEERING.md` §4 #10, `SEO-POLICY.md` §B8 8.5): before this
+ * pass the breadcrumb was the only way off the page.
  *
  * ## Rendering and the api read
  *
@@ -141,21 +167,6 @@ export default async function AreaToolPage({ params }: PageProps) {
 
           <h2>{t("sinirHeading")}</h2>
           <p>{t("sinirP1")}</p>
-          <p>{t("sinirP2")}</p>
-
-          <h2>{t("kureHeading")}</h2>
-          <p>{t("kureP1")}</p>
-          <p>{t("kureP2")}</p>
-
-          <h2>{t("yuzolcumuHeading")}</h2>
-          <p>
-            {t.rich("yuzolcumuP1", {
-              istanbul: (chunks) => provinceLink(ISTANBUL_PLATE, chunks),
-              ankara: (chunks) => provinceLink(ANKARA_PLATE, chunks),
-            })}
-          </p>
-          <p>{t("yuzolcumuP2")}</p>
-          <p>{t("yuzolcumuP3")}</p>
         </div>
       )}
 
@@ -170,14 +181,44 @@ export default async function AreaToolPage({ params }: PageProps) {
       </section>
 
       {rendersProse && (
-        <div className={styles.prose}>
+        <div className={`${styles.prose} ${styles.proseAfterTool}`}>
           <h2>{t("sonucHeading")}</h2>
+          <p>{t("kureP2")}</p>
           <p>{t("sonucP1")}</p>
           <p>{t("sonucP2")}</p>
+
+          <h2>{t("yuzolcumuHeading")}</h2>
+          <p>
+            {t.rich("yuzolcumuP1", {
+              istanbul: (chunks) => provinceLink(ISTANBUL_PLATE, chunks),
+              ankara: (chunks) => provinceLink(ANKARA_PLATE, chunks),
+            })}
+          </p>
+          <p>{t("yuzolcumuP2")}</p>
+          <p>{t("yuzolcumuP3")}</p>
 
           <p className={styles.sourceLine}>{t("kaynak")}</p>
         </div>
       )}
+
+      {/* "Diğer araçlar" — closes the exit this page was missing (`ENGINEERING.md` §4 #10,
+          `SEO-POLICY.md` §B8 8.5). Renders on both locales: the labels are already bilingual
+          (`Tools.hub.*Name`, `Breadcrumb.araclar`), and the EN tool page was as much a dead end
+          as the TR one. */}
+      <section className="section">
+        <h2>{tHub("otherToolsHeading")}</h2>
+        <ul role="list" className={styles.relatedList}>
+          <li>
+            <Link href={DISTANCE_TOOL.pathname}>{tHub("mesafeName")}</Link>
+          </li>
+          <li>
+            <Link href={COORDINATE_TOOL.pathname}>{tHub("koordinatName")}</Link>
+          </li>
+          <li>
+            <Link href={TOOL_HUB_PATHNAME}>{tb("araclar")}</Link>
+          </li>
+        </ul>
+      </section>
     </div>
   );
 }

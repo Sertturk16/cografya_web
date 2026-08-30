@@ -688,7 +688,8 @@
       "koordinatName": "Coordinate lookup",
       "koordinatBody": "Read a point's latitude and longitude in two notations at once.",
       "alanName": "Area calculation",
-      "alanBody": "Measure the area and perimeter of a polygon you close on the map."
+      "alanBody": "Measure the area and perimeter of a polygon you close on the map.",
+      "otherToolsHeading": "Other tools"
     },
     "mesafe": {
       "metaTitle": "Distance Measurement Tool: Two Points or a Route",
@@ -708,7 +709,7 @@
       "metaTitle": "Polygon Area and Perimeter Calculator",
       "metaDescription": "Close a polygon of at least three points on the map of Türkiye and read its area in square kilometres and its perimeter in kilometres.",
       "heading": "Area and Perimeter on the Map of Türkiye",
-      "teaches": "calculating the area and perimeter of a polygon drawn on the map of Türkiye",
+      "teaches": "how a drawn boundary sets the area, and why it differs from a province's official surface area",
       "toolHeading": "Calculate an area on the map"
     },
     "map": {
