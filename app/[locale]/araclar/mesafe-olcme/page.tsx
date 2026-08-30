@@ -12,7 +12,12 @@ import type { ContentSurface } from "@/lib/seo/indexing";
 import { JsonLd, learningResourceJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { buildProvincePoints } from "@/lib/tools/province-points";
-import { DISTANCE_TOOL, TOOL_HUB_PATHNAME } from "@/lib/tools/tool-registry";
+import {
+  AREA_TOOL,
+  COORDINATE_TOOL,
+  DISTANCE_TOOL,
+  TOOL_HUB_PATHNAME,
+} from "@/lib/tools/tool-registry";
 import styles from "../tools.module.css";
 
 interface PageProps {
@@ -51,35 +56,44 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *
  * ## The order is the doorway defence, and it is a BLOCKER-level requirement
  *
- * SPEC §4.3 fixes it: heading → explanatory text → tool → how to read the result → cross
- * links. A reader who arrives from a search and never touches the tool must still leave with
- * the answer to "what is kuş uçuşu mesafe and how does it differ from a road distance"
- * (`SEO-POLICY.md` §B12.2.a/.b). That is why the text is server-rendered prose rather than
- * something the island prints.
+ * `SEO-POLICY.md` §B12.2.a/.b (doorway abuse) is the live rule this order defends against: a
+ * reader who arrives from a search and never touches the tool must still leave with the answer
+ * to "what is kuş uçuşu mesafe and how does it differ from a road distance" ON THIS PAGE. The
+ * shape — heading → explanatory text → tool → how to read the result → cross links — is fixed
+ * by that rule, not by a plan file; an earlier version of this note cited a `cbs-p2/SPEC.md`
+ * §4.3 that no longer exists on disk (`Owner's Inbox/araclar-production-ready/SPEC.md` §9 item 3
+ * records the same finding for all three tool pages and is why this citation moved). That is
+ * why the text is server-rendered prose rather than something the island prints.
  *
  * ## Where the text comes from, and the one block that is NOT here
  *
- * `Owner's Inbox/cbs-p2/prose/arac-prose-draft.md` Rev.3 (NOVA), through an independent
- * fact-check (§B13 13.1). The road-distance block is the Rev.3 rewrite: it names the
- * DIRECTION of the difference and carries no kilometre figure, because the source that would
- * have supplied one is barred by `CONVENTIONS.md` §7 — KGM's own site terms read "Ticari
- * amaçla kullanılamaz." (→ Atlas ruling AK-32; the measurement is in `provenance/datasets.md`,
- * `2026-08-19 · KGM`). The visible source line names MEB only, because crediting a source a
- * page does not use is the mirror of failing to credit one it does.
+ * The prose was drafted by NOVA and independently fact-checked (`SEO-POLICY.md` §B13 13.1); the
+ * road-distance block names the DIRECTION of the difference and carries no kilometre figure,
+ * because the source that would have supplied one is barred by `CONVENTIONS.md` §7 — KGM's own
+ * site terms read "Ticari amaçla kullanılamaz." (→ Atlas ruling AK-32; the measurement is in
+ * `provenance/datasets.md`, `2026-08-19 · KGM`). The visible source line names MEB only, because
+ * crediting a source a page does not use is the mirror of failing to credit one it does.
  *
- * ## The 2026-08-30 editorial rewrite and the "Büyük daire" heading that disappeared
+ * ## Two editorial passes, and what each one did
  *
- * `Owner's Inbox/araclar-editoryal-yenileme/plan.md` §5.2 is the source of the current prose:
- * an owner-flagged pass that cut AI-sounding padding and repeated ideas. The "Büyük daire" H2
- * (three paragraphs) was removed as a standalone section — its one load-bearing sentence, the
- * AK-30 honesty note that the drawn line is straight while the tool measures over the sphere,
- * now lives in `sonucP2` below, where it reads as "how to read the result" rather than a
- * geodesy lecture (AK-30 itself asks for "a short method note", not three paragraphs). The
- * "Harita ölçeği ve çizgi ölçek" section shrank from three paragraphs to one for the same
- * reason: the concept (a çizgi ölçek exists and recalculates on zoom) stays, the precision
- * mechanism behind it (the specific %4.3/%4.7 figures `lib/map/measure.ts` computes) does not
- * — that is implementation detail about how the tool's own scale bar works, not something a
- * reader needs to use the tool or understand kuş uçuşu mesafe.
+ * The first pass (`Owner's Inbox/araclar-editoryal-yenileme/plan.md` §5.2) cut AI-sounding
+ * padding and repeated ideas: the "Büyük daire" H2 (three paragraphs) was removed as a
+ * standalone section — its one load-bearing sentence, the AK-30 honesty note that the drawn
+ * line is straight while the tool measures over the sphere, moved into `sonucP2` below, where
+ * it reads as "how to read the result" rather than a geodesy lecture. The "Harita ölçeği ve
+ * çizgi ölçek" section shrank from three paragraphs to one in that pass.
+ *
+ * The second pass (`Owner's Inbox/araclar-production-ready/SPEC.md` §5.2, this one) went
+ * further: measured against `phase0-research.md`'s Tier 1 depth test ("does this sentence help
+ * the student use the tool or read its output"), the harita-ölçeği section failed it outright —
+ * a çizgi ölçek exists and recalculates on zoom (`Tools.ui.scaleBar` says so on the map itself),
+ * but kesir-ölçek-vs-çizgi-ölçek is Tier 2 curriculum content, not a Tier 1 prerequisite. The
+ * whole `olcekHeading`/`olcekP1` section is now REMOVED, not shrunk, and `teaches` was edited to
+ * match (`SEO-POLICY.md` §B5's teaches-names-the-prose row). `lede`, the road-distance block and
+ * `sonucP1`/`sonucP3` were rewritten for register — natural voice over textbook framing, same
+ * facts, no new claim (SPEC §8 P1). A "Diğer araçlar" related-links row was added at the end of
+ * the page (`ENGINEERING.md` §4 #10, `SEO-POLICY.md` §B8 8.5): before this pass the breadcrumb
+ * was the only way off the page.
  *
  * ## Rendering and the api read
  *
@@ -164,9 +178,6 @@ export default async function DistanceToolPage({ params }: PageProps) {
             })}
           </p>
           <p>{t("karayoluP2")}</p>
-
-          <h2>{t("olcekHeading")}</h2>
-          <p>{t("olcekP1")}</p>
         </div>
       )}
 
@@ -181,7 +192,7 @@ export default async function DistanceToolPage({ params }: PageProps) {
       </section>
 
       {rendersProse && (
-        <div className={styles.prose}>
+        <div className={`${styles.prose} ${styles.proseAfterTool}`}>
           <h2>{t("sonucHeading")}</h2>
           <p>{t("sonucP1")}</p>
           <p>{t("sonucP2")}</p>
@@ -190,6 +201,25 @@ export default async function DistanceToolPage({ params }: PageProps) {
           <p className={styles.sourceLine}>{t("kaynak")}</p>
         </div>
       )}
+
+      {/* "Diğer araçlar" — closes the exit this page was missing (`ENGINEERING.md` §4 #10,
+          `SEO-POLICY.md` §B8 8.5). Renders on both locales: the labels are already bilingual
+          (`Tools.hub.*Name`, `Breadcrumb.araclar`), and the EN tool page was as much a dead end
+          as the TR one. */}
+      <section className="section">
+        <h2>{tHub("otherToolsHeading")}</h2>
+        <ul role="list" className={styles.relatedList}>
+          <li>
+            <Link href={COORDINATE_TOOL.pathname}>{tHub("koordinatName")}</Link>
+          </li>
+          <li>
+            <Link href={AREA_TOOL.pathname}>{tHub("alanName")}</Link>
+          </li>
+          <li>
+            <Link href={TOOL_HUB_PATHNAME}>{tb("araclar")}</Link>
+          </li>
+        </ul>
+      </section>
     </div>
   );
 }

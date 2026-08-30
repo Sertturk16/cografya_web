@@ -13,7 +13,12 @@ import type { ContentSurface } from "@/lib/seo/indexing";
 import { JsonLd, learningResourceJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { buildProvincePoints } from "@/lib/tools/province-points";
-import { COORDINATE_TOOL, DISTANCE_TOOL, TOOL_HUB_PATHNAME } from "@/lib/tools/tool-registry";
+import {
+  AREA_TOOL,
+  COORDINATE_TOOL,
+  DISTANCE_TOOL,
+  TOOL_HUB_PATHNAME,
+} from "@/lib/tools/tool-registry";
 import styles from "../tools.module.css";
 
 interface PageProps {
@@ -53,19 +58,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *
  * ## The order is the doorway defence, and it is a BLOCKER-level requirement
  *
- * SPEC §4.3 fixes it: heading → explanatory text → tool → how to read the result → cross
- * links. A reader who arrives from a search and never touches the tool must still leave with
- * the answer to "what are enlem and boylam, and why are there two ways of writing them"
- * (`SEO-POLICY.md` §B12.2.a/.b). That is why the text is server-rendered prose rather than
- * something the island prints.
+ * `SEO-POLICY.md` §B12.2.a/.b (doorway abuse) is the live rule this order defends against: a
+ * reader who arrives from a search and never touches the tool must still leave with the answer
+ * to "what are enlem and boylam, and why are there two ways of writing them" ON THIS PAGE. An
+ * earlier version of this note cited a `cbs-p2/SPEC.md` §4.3 that no longer exists on disk
+ * (`Owner's Inbox/araclar-production-ready/SPEC.md` §9 item 3 records the same finding for all
+ * three tool pages and is why this citation moved). That is why the text is server-rendered
+ * prose rather than something the island prints.
  *
  * ## Where the text comes from
  *
- * `Owner's Inbox/cbs-p2/prose/arac-prose-draft.md` §3, Rev.3 (NOVA), through an independent
- * fact-check (§B13 13.1). The DMS block is the corrected one: the earlier claim that the
- * curriculum never divides a degree into minutes was disproved on the very page it cited, so
- * the paragraph now states what the book actually prints and no reader-facing sentence awards
- * DMS a curriculum status it does not have (→ AK-28, `GLOSSARY.md` §4.3).
+ * The prose was drafted by NOVA and independently fact-checked (`SEO-POLICY.md` §B13 13.1). The
+ * DMS block states what MEB Coğrafya 9 actually prints — an earlier claim that the curriculum
+ * never divides a degree into minutes was disproved on the very page it cited, so no
+ * reader-facing sentence awards DMS a curriculum status it does not have (→ AK-28,
+ * `GLOSSARY.md` §4.3).
+ *
+ * ## Why "bir derece kaç kilometre" moved below the tool
+ *
+ * `Owner's Inbox/araclar-production-ready/SPEC.md` §5.3, following `phase0-research.md` §2 Tier
+ * 1's deferral rule (already applied once, correctly, to the AK-30 note on the mesafe page):
+ * this section is genuinely valuable but not a prerequisite — it answers a question a student
+ * has AFTER reading a coordinate ("what does one degree mean in kilometres"), not one they need
+ * answered before using the tool. Measured at 2029 characters / 8 paragraphs before the tool,
+ * this page was the worst in the section, and the fix is reordering more than cutting: no fact
+ * moved out of the page, `derecekmP1`/`derecekmP2` are unchanged/trimmed for register only, and
+ * the `<mesafe>` cross-link (`SEO-POLICY.md` §B8 8.6) is preserved verbatim. A "Diğer araçlar"
+ * related-links row was added at the end of the page (`ENGINEERING.md` §4 #10, `SEO-POLICY.md`
+ * §B8 8.5): before this pass the breadcrumb was the only way off the page.
  *
  * ## Rendering and the api read
  *
@@ -151,14 +171,6 @@ export default async function CoordinateToolPage({ params }: PageProps) {
           <p>{t("sistemP1")}</p>
           <p>{t("sistemP2")}</p>
 
-          <h2>{t("derecekmHeading")}</h2>
-          <p>{t("derecekmP1")}</p>
-          <p>
-            {t.rich("derecekmP2", {
-              mesafe: (chunks) => <Link href={DISTANCE_TOOL.pathname}>{chunks}</Link>,
-            })}
-          </p>
-
           <h2>{t("gosterimHeading")}</h2>
           <p>{t("gosterimP1")}</p>
           <p>{t("gosterimP2")}</p>
@@ -178,7 +190,7 @@ export default async function CoordinateToolPage({ params }: PageProps) {
       </section>
 
       {rendersProse && (
-        <div className={styles.prose}>
+        <div className={`${styles.prose} ${styles.proseAfterTool}`}>
           <h2>{t("sonucHeading")}</h2>
           <p>{t("sonucP1")}</p>
           <p>{t("sonucP2")}</p>
@@ -189,9 +201,36 @@ export default async function CoordinateToolPage({ params }: PageProps) {
             })}
           </p>
 
+          <h2>{t("derecekmHeading")}</h2>
+          <p>{t("derecekmP1")}</p>
+          <p>
+            {t.rich("derecekmP2", {
+              mesafe: (chunks) => <Link href={DISTANCE_TOOL.pathname}>{chunks}</Link>,
+            })}
+          </p>
+
           <p className={styles.sourceLine}>{t("kaynak")}</p>
         </div>
       )}
+
+      {/* "Diğer araçlar" — closes the exit this page was missing (`ENGINEERING.md` §4 #10,
+          `SEO-POLICY.md` §B8 8.5). Renders on both locales: the labels are already bilingual
+          (`Tools.hub.*Name`, `Breadcrumb.araclar`), and the EN tool page was as much a dead end
+          as the TR one. */}
+      <section className="section">
+        <h2>{tHub("otherToolsHeading")}</h2>
+        <ul role="list" className={styles.relatedList}>
+          <li>
+            <Link href={DISTANCE_TOOL.pathname}>{tHub("mesafeName")}</Link>
+          </li>
+          <li>
+            <Link href={AREA_TOOL.pathname}>{tHub("alanName")}</Link>
+          </li>
+          <li>
+            <Link href={TOOL_HUB_PATHNAME}>{tb("araclar")}</Link>
+          </li>
+        </ul>
+      </section>
     </div>
   );
 }
