@@ -160,12 +160,24 @@ export default async function TurkiyePage({ params }: PageProps) {
           section already sets its own `scroll-margin-top` for the sticky header
           (`entity-index.module.css` `.index`). The count is interpolated, matching
           `indexDescription` immediately below it, never hardcoded (§SEO A2.2: never claim a
-          number the page cannot back). */}
-      <p className={styles.indexBridge}>
-        <a href={`#${PROVINCE_INDEX_SECTION_ID}`}>
-          {t("indexBridgeLink", { count: items.length })}
-        </a>
-      </p>
+          number the page cannot back).
+
+          GATED ON `items.length > 0` (review A11Y109-M1 fix). `EntityIndex` itself renders
+          `null` when `buckets.length === 0` — the resilient-degrade path `loadProvinceIndex`'s
+          own docblock names (a transient api failure yields an empty list rather than
+          breaking the page) — and `items` here IS `flattenBuckets(buckets)`
+          (`loadProvinceIndex` above), so `items.length === 0` and `buckets.length === 0` are
+          exactly the same condition, not an approximation of it. Without this guard the bridge
+          kept pointing at a `#iller` anchor that would not exist on the page AND claiming "0
+          il" / "All 0 provinces" — a number the page cannot back (§SEO A2.2) on a dead link,
+          in the one case the rest of this page already degrades gracefully for. */}
+      {items.length > 0 && (
+        <p className={styles.indexBridge}>
+          <a href={`#${PROVINCE_INDEX_SECTION_ID}`}>
+            {t("indexBridgeLink", { count: items.length })}
+          </a>
+        </p>
+      )}
 
       {/* The alphabetical index (→ DEC 2026-08-04i §2). It sits directly under the map
           because it is the SECOND way into the same 81 pages, not a footnote: the UX review
