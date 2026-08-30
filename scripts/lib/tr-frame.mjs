@@ -56,6 +56,64 @@ export const TR_FRAME = Object.freeze({
 export const TR_VIEWBOX = `0 0 ${TR_FRAME.viewWidth} ${TR_FRAME.viewHeight}`;
 
 /**
+ * The WIDER static context frame (`turkiye-yenileme` PR-B, plan §5.2) — pinned, in the same
+ * svg-unit coordinate space `projectToFrame()` already produces, so a context shape and a
+ * province shape are co-registered STRUCTURALLY rather than by a second assertion. `TR_FRAME`
+ * itself is NOT touched: this is a second, independent frame that a context-only generator
+ * reads, never a replacement for the frame every existing consumer (nine `MAP_VIEWBOX`
+ * readers, → plan §2) still uses unchanged.
+ *
+ * The four numbers are measured, not chosen by eye — plan §5.2's own table records what each
+ * edge had to clear: all 81 provinces, the whole of Cyprus and Northern Cyprus, the whole of
+ * Armenia (incl. the Nakhchivan exclave), and the Greek mainland's east coast. Phase 2 may
+ * adjust them only if a rendered frame shows the balance is wrong, on two conditions: every
+ * row of that table still holds, and the new numbers are recorded here with the measurement
+ * that produced them (plan §5.2's own instruction).
+ */
+export const TR_CONTEXT_FRAME = Object.freeze({
+  minX: -150,
+  minY: -60,
+  width: 1270,
+  height: 580,
+});
+
+/** The `viewBox` string the context artifact and `TurkeyMapSection`'s widened `<svg>` share. */
+export const TR_CONTEXT_VIEWBOX = `${TR_CONTEXT_FRAME.minX} ${TR_CONTEXT_FRAME.minY} ${TR_CONTEXT_FRAME.width} ${TR_CONTEXT_FRAME.height}`;
+
+/**
+ * Throw if a projected point falls outside the pinned CONTEXT frame — the same inverted
+ * safety net `assertInsideFrame()` gives `TR_FRAME`, mirrored for the wider frame (plan
+ * §5.3 step 5). Unlike `TR_FRAME`, whose box starts at the origin, `TR_CONTEXT_FRAME` has a
+ * negative `minX`/`minY`, so the bound check reads off the frame's own fields rather than
+ * against a `[0, viewWidth]` literal.
+ *
+ * @param {[number, number][]} points Projected points, in svg units.
+ * @param {{ label: string, tolerance?: number }} options
+ * @returns {{ maxOvershoot: number }} Largest distance any point sat outside the box.
+ */
+export function assertInsideContextFrame(points, { label, tolerance = 0 }) {
+  const minX = TR_CONTEXT_FRAME.minX;
+  const minY = TR_CONTEXT_FRAME.minY;
+  const maxX = TR_CONTEXT_FRAME.minX + TR_CONTEXT_FRAME.width;
+  const maxY = TR_CONTEXT_FRAME.minY + TR_CONTEXT_FRAME.height;
+  let maxOvershoot = 0;
+  for (const point of points) {
+    const [x, y] = point;
+    const overshoot = Math.max(0, minX - x, x - maxX, minY - y, y - maxY);
+    if (overshoot > maxOvershoot) maxOvershoot = overshoot;
+  }
+  if (maxOvershoot > tolerance) {
+    throw new Error(
+      `${label}: geometry leaves the pinned TR CONTEXT frame by ${maxOvershoot.toFixed(2)} svg ` +
+        `units (tolerance ${tolerance}). TR_CONTEXT_FRAME in scripts/lib/tr-frame.mjs is PINNED — ` +
+        `either the frame needs widening (plan §5.2, record the measurement that forced it) or ` +
+        `this shape should have been clipped before reaching this assertion.`,
+    );
+  }
+  return { maxOvershoot };
+}
+
+/**
  * `[lon, lat]` → `[x, y]` in the pinned frame (north up).
  * @param {[number, number] | number[]} lonLat
  * @returns {[number, number]}
@@ -89,13 +147,7 @@ export function assertInsideFrame(points, { label, tolerance = 0 }) {
   let maxOvershoot = 0;
   for (const point of points) {
     const [x, y] = point;
-    const overshoot = Math.max(
-      0,
-      -x,
-      x - TR_FRAME.viewWidth,
-      -y,
-      y - TR_FRAME.viewHeight,
-    );
+    const overshoot = Math.max(0, -x, x - TR_FRAME.viewWidth, -y, y - TR_FRAME.viewHeight);
     if (overshoot > maxOvershoot) maxOvershoot = overshoot;
   }
   if (maxOvershoot > tolerance) {

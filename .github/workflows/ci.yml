@@ -72,6 +72,15 @@ jobs:
       - name: Inland water artifact drift
         run: pnpm generate:water:check
 
+      # `lib/map/tr-context.generated.ts` is the fourth AUTO-GENERATED map artifact
+      # (turkiye-yenileme PR-B) and was missing this step for one fix round (PR #108 review,
+      # CODE108-I1/TEST108-I1): the script existed in package.json but nothing called it, so a
+      # hand-edit or an un-regenerated source change would pass typecheck/lint/test/build
+      # untouched — exactly the drift the three siblings above exist to catch. Same contract,
+      # same pattern: regenerate and diff. Pure node, no network.
+      - name: TR context artifact drift
+        run: pnpm generate:tr-context:check
+
       # `lib/api/schema.ts` is codegen output (`openapi-typescript` over the committed
       # `openapi/openapi.json`) and is the web half of the cross-repo DTO contract
       # (`CONVENTIONS.md` §3). CORRECTED (PR #83 review `CODE83-M1`): it has been consumed

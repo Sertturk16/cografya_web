@@ -98,7 +98,12 @@
     "plateLabel": "Plaka {code}",
     "attribution": "© OpenStreetMap katkıcıları, ODbL",
     "attributionJrcLabel": "Mevsimlik göl sınırları:",
-    "attributionJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google"
+    "attributionJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
+    "seaBlackSea": "Karadeniz",
+    "seaMarmara": "Marmara Denizi",
+    "seaAegean": "Ege Denizi",
+    "seaMediterranean": "Akdeniz",
+    "attributionContextLabel": "Komşu ülke sınırları: Natural Earth (kamu malı)"
   },
   "About": {
     "metaTitle": "Hakkımızda",
