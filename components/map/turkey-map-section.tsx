@@ -42,6 +42,9 @@ const CONTEXT_SEA_LABEL_SIZE = 26;
  * projected with `projectToFrame()` in the TR-frame coordinate space and verified to fall
  * on open water inside `TR_CONTEXT_FRAME` (plan §5.6). Names come from `Map.sea*`
  * (`GLOSSARY.md` §6's canonical TR/EN sea-name rows), never invented here.
+ *
+ * `fontSize` is OPTIONAL per label (falls back to `CONTEXT_SEA_LABEL_SIZE`), the same
+ * per-label-override shape `LABEL_ANCHOR_OVERRIDES.AZ.fontSize` already establishes below.
  */
 const SEA_LABELS = [
   { key: "seaBlackSea", x: 461, y: -27 },
@@ -53,11 +56,28 @@ const SEA_LABELS = [
   // the whole Marmara/Thrace neighbourhood) found NO position with 0% land: "Marmara
   // Denizi"/"Sea of Marmara" at any legible size is wider than the water body's own clear
   // rectangular extent in this generalisation, at every font size tried. (75, 114) is a
-  // near-MINIMUM-land position from that search (measured: 24.79% TR / 24.61% EN land) — a
-  // large reduction from the original 54% land, not the 0% the finding's own text hoped for;
-  // recorded honestly rather than silently accepted. See the PR's fix-round completion
-  // report for the full search.
-  { key: "seaMarmara", x: 75, y: 114 },
+  // near-MINIMUM-land position from that search (measured: 24.79% TR / 24.61% EN land at the
+  // then-shipped 26px) — a large reduction from the original 54% land, not the 0% the
+  // finding's own text hoped for; recorded honestly rather than silently accepted. See the
+  // PR's fix-round completion report for the full search.
+  //
+  // FONT-SIZE OVERRIDE (owner report, turkiye-editor-notlari md.5): 26px reads as the same
+  // large, heavy weight as the other three sea names, but this label alone sits over the
+  // small, crowded İstanbul–Bursa–Kocaeli–Yalova–Tekirdağ cluster, where the visual weight
+  // reads as clutter rather than a sea name. `CONTEXT_COUNTRY_LABEL_SIZE` (18) is the
+  // smaller/lighter size already used for the neighbouring-country and KKTC/Cyprus labels on
+  // this same map, matching the owner's own suggested target rather than a new invented
+  // number. The anchor (x, y) is UNCHANGED, and unlike a position move this cannot introduce
+  // a new land collision: an SVG `<text>` shrunk around the SAME baseline/anchor point is a
+  // strict geometric SUBSET of its own larger ink box (`textAnchor="middle"` keeps the box
+  // centred on `x`; a smaller `fontSize` scales ascent/descent down from the same baseline
+  // `y`), so its land-overlap area can only shrink, never grow, relative to the 26px figure
+  // measured above — verified empirically, not just asserted: real `getBBox()` (live page,
+  // both locales, same anchor) is 139.92×23.56 (TR) / 142.28×23.56 (EN) svg units at 18px
+  // versus 197.65×35.34 / 196.47×35.34 at 26px — every dimension smaller and centred on the
+  // same `(x, y)`, i.e. genuinely nested inside the box the 24.79%/24.61% figure was measured
+  // against.
+  { key: "seaMarmara", x: 75, y: 114, fontSize: CONTEXT_COUNTRY_LABEL_SIZE },
   { key: "seaAegean", x: -13, y: 258 },
   // FIX ROUND (VAL108-SOV6): the original anchor (281, 464) put the EN-only "Mediterranean
   // Sea" label's east end over the Cyprus/KKTC island shapes (16% of its ink, 32/201 sampled
@@ -670,7 +690,7 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
                 x={sea.x}
                 y={sea.y}
                 textAnchor="middle"
-                fontSize={CONTEXT_SEA_LABEL_SIZE}
+                fontSize={"fontSize" in sea ? sea.fontSize : CONTEXT_SEA_LABEL_SIZE}
                 className={`${styles.contextLabel} ${styles.contextSeaLabel}`}
               >
                 {tMap(sea.key)}
