@@ -202,3 +202,52 @@ describe("lib/map/tr-context.generated.ts artifact", () => {
     }
   });
 });
+
+/**
+ * PR #108 FIX ROUND 2 — the source-invariant half of the two placement fixes (same honest
+ * shape the file's top docblock names: this cannot re-derive the `isPointInFill()` geometric
+ * result on its own no-jsdom `node` environment, but it DOES fail the moment either fixed
+ * value is hand-reverted or drifts, which is the exact edit class that shipped round 1's own
+ * regression — a docblock claiming a measurement the shipped constant no longer matched. The
+ * empirical half (0% ink in both locales, both labels) is the PR's own re-run
+ * `isPointInFill()`/`getBBox()` grid against the live rendered page, reported in the PR.
+ */
+describe("PR #108 fix round 2 — AZ label size exception and QN row position", () => {
+  it("keeps AZ's fontSize-16 exception at the re-measured 0%-overlap position (x:1120/y:106/anchor:end)", () => {
+    const azMatch = SOURCE.match(/AZ:\s*\{([^}]*)\}/);
+    expect(azMatch, "AZ entry not found in LABEL_ANCHOR_OVERRIDES").not.toBeNull();
+    const az = azMatch?.[1] ?? "";
+    expect(az).toMatch(/x:\s*1120\b/);
+    expect(az).toMatch(/y:\s*106\b/);
+    expect(az).toMatch(/anchor:\s*"end"/);
+    expect(az).toMatch(/fontSize:\s*16\b/);
+
+    // AM stays untouched by this round — the size reduction did not require moving it.
+    const amMatch = SOURCE.match(/AM:\s*\{([^}]*)\}/);
+    expect(amMatch, "AM entry not found in LABEL_ANCHOR_OVERRIDES").not.toBeNull();
+    const am = amMatch?.[1] ?? "";
+    expect(am).toMatch(/x:\s*982\b/);
+    expect(am).toMatch(/y:\s*92\b/);
+  });
+
+  it("consumes an override's own fontSize, falling back to CONTEXT_COUNTRY_LABEL_SIZE when absent", () => {
+    expect(SOURCE).toContain("override?.fontSize ?? CONTEXT_COUNTRY_LABEL_SIZE");
+    expect(SOURCE).toMatch(/fontSize=\{fontSize\}/);
+  });
+
+  it("keeps the QN row (and its leader line) at the re-measured 0%-overlap y:428/leaderFrom.y:436", () => {
+    const qnMatch = SOURCE.match(/qn:\s*\{([^}]*leaderFrom:\s*\{[^}]*\}[^}]*)\}/);
+    expect(qnMatch, "qn entry not found in CY_QN_LABEL_BLOCK").not.toBeNull();
+    const qn = qnMatch?.[1] ?? "";
+    expect(qn).toMatch(/x:\s*340\b/);
+    expect(qn).toMatch(/y:\s*428\b/);
+    expect(qn).toMatch(/leaderFrom:\s*\{\s*x:\s*340,\s*y:\s*436\s*\}/);
+
+    // The CY row is unaffected by this round.
+    const cyMatch = SOURCE.match(/cy:\s*\{([^}]*leaderFrom:\s*\{[^}]*\}[^}]*)\}/);
+    expect(cyMatch, "cy entry not found in CY_QN_LABEL_BLOCK").not.toBeNull();
+    const cy = cyMatch?.[1] ?? "";
+    expect(cy).toMatch(/x:\s*260\b/);
+    expect(cy).toMatch(/y:\s*448\b/);
+  });
+});
