@@ -750,9 +750,9 @@
     },
     "alan": {
       "metaTitle": "Çokgen Çizerek Alan Hesaplama",
-      "metaDescription": "Haritada en az üç nokta ile kapatılan şeklin alanı küre yüzeyinde hesaplanır. Karşılaştırma için: İstanbul'un yüzölçümü 5.461 kilometrekaredir.",
+      "metaDescription": "Haritada en az üç nokta ile kapatılan şeklin alanı küre yüzeyinde hesaplanır. Sınırı ne kadar ayrıntılı çizerseniz, sonuç o kadar değişir.",
       "heading": "Haritada Alan ve Çevre Hesaplama",
-      "teaches": "çizilen sınırın alanı ve resmî yüzölçümünden farkı",
+      "teaches": "çizilen sınırın ayrıntısının alanı nasıl değiştirdiği ve alanın Dünya'nın küresel yüzeyinde nasıl hesaplandığı",
       "lede": "Bir bölgenin alanını ölçmek için önce harita üzerinde sınırını çizmeniz gerekir. Araç en az üç noktayla çalışır; son noktayı ilk noktaya bağlayarak şekli tamamlar ve içeride kalan alanı hesaplar.",
       "sinirHeading": "Ne kadar ayrıntılı çizerseniz, sonuç o kadar değişir",
       "sinirP1": "Haritada çizdiğiniz sınır, ölçümün sonucunu doğrudan etkiler. Özellikle kıyı gibi girintili çıkıntılı bir sınırı yalnızca birkaç noktayla çizerseniz, gerçek şekli tam olarak yansıtamazsınız. Daha fazla nokta ekledikçe çizdiğiniz sınır gerçek kıyıya daha çok yaklaşır ve hesaplanan alan değişebilir.",
