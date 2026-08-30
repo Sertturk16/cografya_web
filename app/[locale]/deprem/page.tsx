@@ -109,18 +109,22 @@ export default async function EarthquakePage({ params }: PageProps) {
       <h1>{t("heading")}</h1>
       <p className="lede">{t(`lede.${list.meta.dataStatus}`)}</p>
 
+      {/* Bug fix (owner-verified, `cografya-editor-notlari/deprem-notlar.txt` madde 2): the
+          magnitude-floor fact used to live HERE, sourced from `meta.minMagnitudeDefault` — a
+          server-fetched structural default that can never reflect the reader's own applied
+          filter, because this `<dl>` is a server-rendered sibling of the client
+          `EarthquakeFilters` island below, not a descendant of it. Reader changes the select,
+          clicks "Uygula", the map/list genuinely re-filter — but this fact, being a different
+          data source entirely, stayed frozen at page load. Moved into `EarthquakeFilters`
+          itself (single source of truth: the SAME `active` state the filter island already
+          applies). Fix round (review DF116-I1): `EarthquakeFilters` renders it in the
+          `.magnitudeFloorCard` variant, styled to match THIS `<dl>`'s own `.metaFacts`/
+          `dt`/`dd` card language (`earthquake.module.css`) — not the plain
+          `.magnitudeFloorNote` pattern `ProvinceEarthquakeSection` uses for the identical
+          fact, which has no sibling `.metaFacts` card of its own. Scope buffer / freshness
+          stay here — neither one is filter-derived, so neither one can go stale the same
+          way. */}
       <dl className={styles.metaFacts}>
-        <div className={styles.metaFact}>
-          <dt>{t("meta.magnitudeFloorLabel")}</dt>
-          <dd>
-            {t("meta.magnitudeFloorValue", {
-              value: new Intl.NumberFormat(locale, {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              }).format(meta.minMagnitudeDefault),
-            })}
-          </dd>
-        </div>
         <div className={styles.metaFact}>
           <dt>{t("meta.scopeBufferLabel")}</dt>
           <dd>{t("meta.scopeBufferValue", { km: meta.scopeBufferKm })}</dd>

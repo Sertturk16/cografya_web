@@ -151,8 +151,34 @@ export function EarthquakeFilters({
   const magnitudeId = `${baseId}-magnitude`;
   const windowId = `${baseId}-window`;
 
+  // The APPLIED magnitude floor — `active` only updates inside `runFetch`'s success path, so
+  // this is the same live state the map/list below already render from, never the merely
+  // in-progress `minMagnitude` select value (which changes on every `onChange`, before
+  // "Uygula" is even clicked). Before the first apply `active` is `null`, so this reads the
+  // api's own initial default — exactly what the server-rendered `children` view already
+  // shows, so the note is never wrong even pre-hydration/no-JS.
+  const appliedMinMagnitudeLabel = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(active?.minMagnitude ?? defaultMinMagnitude);
+
   return (
     <div className={styles.filters}>
+      {/* Owner-verified bug fix (`cografya-editor-notlari/deprem-notlar.txt` madde 2): this
+          fact used to be a server-rendered sibling in `page.tsx`'s own `<dl>`, sourced from a
+          separate, page-load-only value — it never moved after "Uygula". Rendered here
+          instead, because this is the one place that owns the live applied filter (single
+          source of truth: the SAME `active` state the map/list below already render from).
+          Fix round (review DF116-I1): styled as a one-item `<dl>` in the `.magnitudeFloorCard`
+          variant, not the plain `.magnitudeFloorNote` pattern `ProvinceEarthquakeSection`
+          uses for the identical fact — this note sits right below `page.tsx`'s own
+          `.metaFacts` card ("Kapsam"/"Tazelik") and needs the same card/dt-dd visual family
+          to read as a sibling fact rather than a lesser one; `ProvinceEarthquakeSection` has
+          no such sibling card next to it, so its plain treatment is unaffected. */}
+      <dl className={styles.magnitudeFloorCard}>
+        <dt>{t("meta.magnitudeFloorLabel")}</dt>
+        <dd>{t("meta.magnitudeFloorValue", { value: appliedMinMagnitudeLabel })}</dd>
+      </dl>
       <form className={styles.filterForm} onSubmit={onApply}>
         <div className={styles.filterField}>
           <label htmlFor={magnitudeId}>{t("filters.magnitudeLabel")}</label>

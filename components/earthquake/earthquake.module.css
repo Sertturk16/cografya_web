@@ -92,8 +92,20 @@
 
 /* ---- Event list (§5.11) ------------------------------------------------------ */
 
+/* Bug fix (owner-verified, `cografya-editor-notlari/deprem-notlar.txt` madde 3): the box
+   carried `overflow-x: auto` but no `max-height`, so `overflow-y` computed to `auto` per the
+   CSS overflow spec (an axis left unset when the other is non-`visible` computes to `auto`,
+   never `visible`) yet never actually triggered — with no height ceiling the box just grew
+   with content (~2300px at 50 rows) and dragged the whole page down with it. `max-height`
+   matching this repo's own `min(vh, px)` scrollable-list convention
+   (`components/site-search/site-search.module.css` `.results`) gives `overflow-y` real
+   overflow to act on; `overflow-x` stays for the `min-width: 520px` table on narrow
+   viewports. Sized taller than the search dropdown's `min(50vh, 360px)` on purpose — this is
+   the page's primary content list (up to 50 rows), not a small transient popover. */
 .tableScroll {
+  max-height: min(60vh, 600px);
   overflow-x: auto;
+  overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
 }
@@ -170,6 +182,35 @@
 
 .magnitudeFloorLabel {
   font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* Magnitude-floor note — CARD variant (fix round, review DF116-I1). `.magnitudeFloorNote`
+   above stays exactly as-is for `province-earthquake-section.tsx`, which has no sibling
+   `.metaFacts` card next to it and correctly keeps the plain small-print treatment. This
+   variant is for `earthquake-filters.tsx`'s use on `/deprem` ONLY, where the note sits right
+   below `app/[locale]/deprem/page.tsx`'s own `.metaFacts` card ("Kapsam"/"Tazelik") and read
+   as a different-tier fact once the plain-text treatment landed next to it. Values are
+   COPIED from `deprem.module.css`'s `.metaFacts`/`.metaFact dt`/`.metaFact dd` (not
+   imported — that file is route-shell-only per its own header) so the three sibling facts
+   read as one visual family again, even though this one lives in a different DOM parent (it
+   owns the live `active` filter state that `.metaFacts`'s server-only `<dl>` cannot). */
+.magnitudeFloorCard {
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+
+.magnitudeFloorCard dt {
+  font-size: 0.78rem;
+  color: var(--color-slate);
+  margin-bottom: 2px;
+}
+
+.magnitudeFloorCard dd {
+  margin: 0;
+  font-weight: 600;
   color: var(--color-ink);
 }
 
