@@ -201,7 +201,8 @@
     "zoomInstructions": "Harita odaktayken + veya = ile yakınlaştır, − ile uzaklaştır. Ok tuşlarıyla kaydır, 0 veya Home ile haritanın tamamını gör. {selectHint} Fareyle tekerlekle yakınlaştırıp sürükleyerek kaydırabilir, dokunmatik ekranda iki parmakla yakınlaştırıp tek parmakla kaydırabilirsin.",
     "selectHintProvinces": "Bir il odaktayken Enter veya boşluk, o ili seçer.",
     "selectHintRegions": "Bir il odaktayken Enter veya boşluk, o ilin bağlı olduğu bölgeyi seçer.",
-    "shapeSolved": "{name}, çözüldü"
+    "shapeSolved": "{name}, çözüldü",
+    "shapeShown": "{name}, cevap gösterildi"
   },
   "GameRounds": {
     "saveLabel": "Kaydet",

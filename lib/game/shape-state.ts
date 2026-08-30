@@ -16,8 +16,8 @@
  * what makes the invariant testable at all.
  */
 
-/** The three marks a shape can carry. Mirrors the `[data-state]` values in the CSS. */
-export type ShapeState = "correct" | "wrong" | "reveal";
+/** The four marks a shape can carry. Mirrors the `[data-state]` values in the CSS. */
+export type ShapeState = "correct" | "wrong" | "shown" | "reveal";
 
 export interface ShapeStateInput {
   /**
@@ -28,6 +28,18 @@ export interface ShapeStateInput {
   readonly targetId: string | undefined;
   /** Targets already answered correctly (score > 0) at some point in this round. */
   readonly solvedTargetIds: ReadonlySet<string>;
+  /**
+   * Targets already GIVEN UP ON this round — every target `revealRound` scored 0 for
+   * (`lib/game/round.ts`), which is the only way a `QuestionResult` ever scores 0. The map's
+   * OTHER permanent mark (→ owner report, oyun-notlar.txt md. 1): "Cevabı göster" shows the
+   * answer only for the CURRENT question (`revealedTargetId` below), and that flag is cleared
+   * the moment "Devam" fires — so without this set, the distinction the player was just shown
+   * vanished from the map one click later, even though the round's own "Bilemediklerin" list
+   * (built from this exact same score-is-0 filter, `summarizeRound`'s `missedTargetIds`) kept
+   * it correctly the whole time. This is what lets the map agree with that list for the rest
+   * of the round instead of just for the one question it was asked about.
+   */
+  readonly shownTargetIds: ReadonlySet<string>;
   /** The target currently being shown by "Cevabı göster", if any. */
   readonly revealedTargetId: string | null;
   /** The target of the most recent wrong click, during its brief flash. */
@@ -39,14 +51,22 @@ export interface ShapeStateInput {
  * version of this note ("solved beats wrong; revealed beats solved; wrong beats revealed")
  * read like a cycle because it left out the condition:
  *
- * - on a SOLVED target, the wrong mark never applies at all, and revealed still wins over
- *   the earned `correct`;
- * - on an UNSOLVED target, wrong wins over revealed.
+ * - on a SOLVED or SHOWN target (i.e. one that already has a `QuestionResult` — found or
+ *   given up on), the wrong mark never applies at all, and revealed still wins over either
+ *   permanent mark;
+ * - on a target with neither mark yet, wrong wins over revealed.
  *
- * Only the solved↔wrong half changed here. The solved↔revealed pair is carried over
+ * SHOWN JOINS SOLVED IN THAT FIRST BULLET for the same reason solved was already there: a
+ * shown target's question is over — `revealRound` moved the round past it — so a stray
+ * click that happens to name it (bölge mode again: `wrongTargetId` is keyed on what the
+ * clicked shape names, not on the open question, `game-island.tsx`) is a wrong answer to a
+ * DIFFERENT, still-open question. It must not borrow that click to repaint an already-closed
+ * one, the same way an earned `correct` must not be repainted lost.
+ *
+ * Only the solved/shown↔wrong half changed here. The solved↔revealed pair is carried over
  * untouched from the inline version this function replaced (and is not reachable in play
  * anyway: a target is asked once per round, so the target being revealed is by construction
- * one that has not been solved).
+ * one that has not been solved or shown before now).
  *
  * WHY SOLVED WINS OVER WRONG (→ PR #38 review I1). `answerRound` returns `retry` for ANY
  * pick that is not the open question's target — including a target the player already
@@ -70,13 +90,15 @@ export interface ShapeStateInput {
 export function deriveShapeState({
   targetId,
   solvedTargetIds,
+  shownTargetIds,
   revealedTargetId,
   wrongTargetId,
 }: ShapeStateInput): ShapeState | null {
   if (targetId === undefined) return null;
   const solved = solvedTargetIds.has(targetId);
-  let state: ShapeState | null = solved ? "correct" : null;
+  const shown = shownTargetIds.has(targetId);
+  let state: ShapeState | null = solved ? "correct" : shown ? "shown" : null;
   if (revealedTargetId !== null && targetId === revealedTargetId) state = "reveal";
-  if (!solved && wrongTargetId !== null && targetId === wrongTargetId) state = "wrong";
+  if (!solved && !shown && wrongTargetId !== null && targetId === wrongTargetId) state = "wrong";
   return state;
 }
