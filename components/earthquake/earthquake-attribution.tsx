@@ -4,12 +4,28 @@ import styles from "./earthquake.module.css";
 
 interface EarthquakeAttributionProps {
   attributions: readonly EarthquakeAttributionRow[];
-  /** The early-warning liability sentence (`EarthquakeMetaDto.disclaimerTr`) — owner-ruled
-   *  verbatim (`DEC 2026-08-19l`), Turkish-only, no `disclaimerEn` field exists in the
-   *  contract. */
-  disclaimerTr: string;
+  /**
+   * The early-warning liability sentence (`EarthquakeMetaDto.disclaimerTr`) — owner-ruled
+   * verbatim (`DEC 2026-08-19l`), Turkish-only, no `disclaimerEn` field exists in the
+   * contract. OPTIONAL (PR-B): `disclaimerTr` lives only on `GET /api/earthquakes/meta`, not on
+   * `EarthquakeListDto.meta` (the shape `getProvinceEarthquakesSafe` returns), so the province
+   * section — which renders the mandatory `attributions` that travel with every AFAD-derived
+   * value it shows, the same "attribution may not go missing where a derived value appears"
+   * rule `MarineAttribution` already applies — omits it rather than paying a second, dedicated
+   * `/meta` fetch on all 81 province pages for a sentence the hub already carries and this
+   * section's own unconditional hub-link (`ProvinceEarthquakeSection`) makes one click away.
+   */
+  disclaimerTr?: string;
   /** `id` of this block's `<h2>` — unique per page. */
   headingId?: string;
+  /**
+   * The block's heading. Defaults to `Earthquake.sourcesHeading` ("Kaynaklar") for the hub; the
+   * province page passes its own (`ProvinceDetail.earthquakeSourcesHeading`), because that page
+   * already carries a Kaynaklar line for its own facts — the identical reuse-with-its-own-
+   * heading pattern `MarineAttribution` already establishes for its own two render sites. ONLY
+   * the heading is overridable; every licence string below is single-sourced and verbatim.
+   */
+  heading?: string;
 }
 
 /**
@@ -32,18 +48,23 @@ interface EarthquakeAttributionProps {
  * disclaimer never change with the client filter island's re-fetch (§5.5 filters only the
  * event window, never the source), so this block stays outside that island and keeps its
  * server-only `getTranslations` call.
+ *
+ * SECOND CONSUMER (PR-B): the province pages (`app/[locale]/turkiye/[slug]/page.tsx`) render
+ * this same component for the mandatory AFAD attribution that travels with the province
+ * section's own events — `heading`/`disclaimerTr` above are what changed to support that.
  */
 export async function EarthquakeAttribution({
   attributions,
   disclaimerTr,
   headingId = "deprem-sources",
+  heading,
 }: EarthquakeAttributionProps) {
   const t = await getTranslations("Earthquake");
 
   return (
     <section className="section" aria-labelledby={headingId}>
       <div className={styles.sources}>
-        <h2 id={headingId}>{t("sourcesHeading")}</h2>
+        <h2 id={headingId}>{heading ?? t("sourcesHeading")}</h2>
         {attributions.map((attribution) => (
           <p key={attribution.providerId} lang="tr">
             {attribution.requiredNoticeTr}
@@ -55,9 +76,11 @@ export async function EarthquakeAttribution({
             )}
           </p>
         ))}
-        <p className={styles.disclaimer} lang="tr">
-          {disclaimerTr}
-        </p>
+        {disclaimerTr !== undefined && (
+          <p className={styles.disclaimer} lang="tr">
+            {disclaimerTr}
+          </p>
+        )}
       </div>
     </section>
   );

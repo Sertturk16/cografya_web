@@ -149,6 +149,15 @@
   padding: 16px 0;
 }
 
+/* ---- Province section (§5.12, PR-B) ------------------------------------------- */
+
+/* Same shape as `.provinceHubLink` in `components/marine/marine.module.css` — the unconditional
+   link back to `/deprem`, present regardless of this province's own event count. */
+.provinceHubLink {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+}
+
 /* ---- Attribution / disclaimer (§5.8) ----------------------------------------- */
 
 .sources {

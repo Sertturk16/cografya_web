@@ -292,6 +292,10 @@
     "backToMap": "Back to the map of Türkiye",
     "marineHeading": "Sea state off {name}",
     "marineSourcesHeading": "Sea data: sources and use",
+    "earthquakeHeading": "Recent earthquakes near {name}",
+    "earthquakeEmptyState": "No earthquakes recorded near {name} in the last 7 days.",
+    "earthquakeSourcesHeading": "Earthquake data: sources and use",
+    "earthquakeHubLink": "Recent earthquakes across Türkiye",
     "locationHeading": "Location of {name}",
     "locationAlt": "Location of {name} on the map of Türkiye"
   },

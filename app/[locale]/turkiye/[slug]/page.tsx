@@ -6,12 +6,15 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { CardArrow } from "@/components/card-arrow";
 import { ClimateSection } from "@/components/climate/climate-section";
 import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
+import { EarthquakeAttribution } from "@/components/earthquake/earthquake-attribution";
+import { ProvinceEarthquakeSection } from "@/components/earthquake/province-earthquake-section";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { LocatorMap } from "@/components/map/locator-map";
 import { RegionDot } from "@/components/province/region-dot";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { ProvinceMarineSection } from "@/components/marine/province-marine-section";
 import { ProseNote } from "@/components/prose-note";
+import { getProvinceEarthquakesSafe } from "@/lib/api/earthquakes";
 import {
   getMarineLayersSafe,
   getMarinePointsSafe,
@@ -154,6 +157,11 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // It is started AFTER the province resolves, so an unknown slug still costs no marine call.
   const marinePointsPromise = getMarinePointsSafe();
 
+  // The earthquake section (PR-B, plan §5.12) is UNGATED, unlike marine's coastal gate — every
+  // one of the 81 provinces reads this. Started here for the same overlap reason as the marine
+  // point list above; `getProvinceEarthquakesSafe` never rejects, so floating it is safe.
+  const provinceEarthquakesPromise = getProvinceEarthquakesSafe(province.plateCode);
+
   const t = await getTranslations("ProvinceDetail");
   const tb = await getTranslations("Breadcrumb");
   const tRegions = await getTranslations("Regions");
@@ -218,14 +226,19 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // points and the catalogue ARE the page. Here the whole marine section is an enhancement on
   // a page about a province, and a chain of external providers we do not operate may remove
   // the section — never the page, never its 200, never its facts or its links.
-  // THE GATE IS ALSO AN ISR GATE, and the ordering below is load-bearing. Next takes a
-  // route's revalidate window from the SHORTEST fetch in the render, so reading the layer
-  // catalogue (1800 s) unconditionally would drag all 54 INLAND province pages from a 1 h
-  // window down to 30 min — for a payload they never use. Only the point list (86 400 s,
-  // longer than the province window and therefore invisible to it) is read before the gate;
-  // the catalogue and the values are read only where a section will actually render, which
-  // is where the 900 s window is the intended cost. Verified in the build output: coastal
-  // provinces revalidate at 15 m, inland ones stay at 1 h.
+  // THE GATE IS ALSO AN ISR GATE — Next takes a route's revalidate window from the SHORTEST
+  // fetch in the render, so reading the layer catalogue (1800 s) unconditionally would drag
+  // every INLAND province page down for a payload they never use. Only the point list
+  // (86 400 s, longer than any other fetch on this page and therefore invisible to it) is read
+  // before the gate; the catalogue and the values are read only where a section will actually
+  // render.
+  //
+  // THIS ORDERING NO LONGER SETS THE PAGE'S OWN EFFECTIVE WINDOW (PR-B). The earthquake section
+  // below is UNGATED (§5.12 — every province, not a coastal subset), and its read is 120 s
+  // (`EARTHQUAKE_LIST_REVALIDATE_SECONDS`, mirroring the api's own `s-maxage` exactly, §5.3) —
+  // the shortest fetch on EVERY one of the 81 province pages now, coastal or not. So every
+  // province page's own ISR window is 120 s regardless of the marine gate above; the plan names
+  // this explicitly as an accepted, deliberate cost (§10), not an oversight of this comment.
   const marinePoints = await marinePointsPromise;
   const [marineLayers, marineConditions] = isCoastalPlate(marinePoints, province.plateCode)
     ? await Promise.all([
@@ -240,6 +253,15 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
   // those halves — the O1 finding from the PR #36 review, fixed here before it can happen.
   const marineBlocks = provinceMarineBlocks(marineConditions);
   const showMarine = provinceShowsMarine(marineConditions);
+
+  // ── Depremler (PR-B) ───────────────────────────────────────────────────────────────────
+  // The SAME "attribution travels with the value, both ways" discipline as marine's own O1
+  // fix, one paragraph up: the JSX below gates both the section's content AND the licence
+  // block at the bottom of the page on this ONE variable being non-null, so the two cannot
+  // come apart. `null` here means the read genuinely failed (`getProvinceEarthquakesSafe`'s
+  // own contract) — an empty `items` array is a real, successful "no events matched" answer
+  // and still renders.
+  const provinceEarthquakes = await provinceEarthquakesPromise;
 
   // schema.org PropertyValue facts — only the values the api actually has (null
   // fields are skipped, never invented). Labels come from i18n so JSON-LD and the
@@ -691,6 +713,26 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
         />
       )}
 
+      {/* Depremler (PR-B, `deprem-sayfalari` plan §5.12) — directly after Deniz Durumu, before
+          the prose sections: the page's two genuinely time-sensitive/live sections stay
+          contiguous at the top, ahead of the static landform essay (§5.12's own placement
+          reasoning; Marine's existing position is intentionally left untouched).
+
+          UNGATED, unlike Marine's coastal restriction — any of the 81 provinces can have a
+          nearby seismic event, so this renders whenever the read itself succeeds, honest empty
+          state and all; it is absent only on a genuine fetch failure (`showEarthquake`, same
+          fail-soft contract as `showMarine` above), never because this province "doesn't
+          qualify". */}
+      {provinceEarthquakes !== null && (
+        <ProvinceEarthquakeSection
+          locale={locale}
+          provinceName={name}
+          plateCode={province.plateCode}
+          list={provinceEarthquakes}
+          headingId="province-earthquake"
+        />
+      )}
+
       {/* Yeryüzü Şekilleri — TR-gated prose; absent until landformNoteTr is filled. */}
       {showLandform && (
         <section className="section">
@@ -1011,6 +1053,21 @@ export default async function ProvinceDetailPage({ params }: PageProps) {
           layers={marineLayers}
           headingId="province-marine-sources"
           heading={t("marineSourcesHeading")}
+        />
+      )}
+
+      {/* AFAD attribution — the mandatory notice that travels with this province's earthquake
+          section, gated on the SAME `provinceEarthquakes !== null` signal as the section itself
+          (mirrors the Marine block immediately above). No `disclaimerTr`: that liability
+          sentence lives only on `GET /api/earthquakes/meta`, not on this province-scoped
+          envelope, and the section's own unconditional hub-link already puts the hub — where
+          the disclaimer renders — one click away (`components/earthquake/earthquake-
+          attribution.tsx`'s own docblock states the reasoning in full). */}
+      {provinceEarthquakes !== null && (
+        <EarthquakeAttribution
+          attributions={provinceEarthquakes.meta.attributions}
+          headingId="province-earthquake-sources"
+          heading={t("earthquakeSourcesHeading")}
         />
       )}
 
