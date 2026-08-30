@@ -1,11 +1,9 @@
-import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
 import { ToolMap } from "@/components/tools/tool-map";
 import { getProvincesResilient } from "@/lib/api/provinces";
-import type { ProvinceListItem } from "@/lib/api/types";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import type { ContentSurface } from "@/lib/seo/indexing";
@@ -26,17 +24,6 @@ interface PageProps {
 
 /** Same surface as the rest of the tier: TR indexable, `/en/tools/area` `noindex, follow`. */
 const TOOLS_SURFACE: ContentSurface = "trNarrative";
-
-/**
- * The two provinces the prose names, by plaka kodu.
- *
- * The CODE is hardcoded and the SLUG is not, for the reason the sibling tool pages state at
- * length: `SEO-POLICY.md` §B4 4.5 bans deriving a locale's slug by hand, while a plaka kodu is
- * a stable identifier rather than a URL. İstanbul and Ankara are the two areas the corpus
- * publishes in the paragraph — 5.461 and 25.632 km², both from HGM's il ve ilçe alanları file.
- */
-const ISTANBUL_PLATE = "34";
-const ANKARA_PLATE = "06";
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -68,34 +55,36 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *
  * ## Where the text comes from
  *
- * The prose was drafted by NOVA and independently fact-checked (`SEO-POLICY.md` §B13 13.1). The
- * HGM paragraph carries the source's OWN methodology caveat — 2014, 1:1.000.000, "resmî nitelik
- * taşımaz" — because this page's subject is precisely where an area figure comes from;
- * `provenance/datasets.md` (→ legacy §1.2) is where that wording and its vintage are recorded,
- * and it is transcribed byte-identically, never paraphrased.
+ * The prose was drafted by NOVA and independently fact-checked (`SEO-POLICY.md` §B13 13.1).
+ * The HGM source's OWN methodology caveat — 2014, 1:1.000.000, "resmî nitelik taşımaz" — is
+ * `provenance/datasets.md`'s (→ legacy §1.2) wording; it now lives in the `kaynak` source line
+ * only (owner content edit, 2026-08-30, dropped the dedicated caveat paragraph the prose used
+ * to carry) and is transcribed byte-identically there, never paraphrased.
  *
  * ## The projection-theory cut, and why the HGM block moved below the tool
  *
  * `Owner's Inbox/araclar-production-ready/SPEC.md` §5.4: measured at 1789 characters / 7
  * paragraphs before the tool, this was the second-worst page in the section, and it carried the
  * one thing the owner's brief names by name as a cut candidate — unnecessary projection theory.
- * `sinirP2` (the textbook's paper-plan exercise) and the whole `kureHeading`/`kureP1` section
- * (projection theory: which map property survives the projection) are REMOVED outright, not
- * trimmed — a lise student does not need Coğrafya 9's projection unit to trust a square-kilometre
- * number. `kureP2`'s point (the tool measures on the sphere, not in pixels) is still needed to
- * TRUST the number, so it moved below the tool, right where the number appears, with its
- * "Araç bu yüzden…" opener rebuilt because it referred to the now-deleted `kureP1`. The
- * `yuzolcumu*` block (the HGM comparison, byte-identical) moved with it: "why isn't my number
- * the province's official area" is a post-result question. `teaches` was edited to match — it no
- * longer names projection area-preservation, because the prose no longer teaches it
+ * The whole `kureHeading`/`kureP1` section (projection theory: which map property survives the
+ * projection) was REMOVED outright, not trimmed — a lise student does not need Coğrafya 9's
+ * projection unit to trust a square-kilometre number. `kureP2`'s point (the tool measures on the
+ * sphere, not in pixels) is still needed to TRUST the number, so it moved below the tool, right
+ * where the number appears, with its "Araç bu yüzden…" opener rebuilt because it referred to the
+ * now-deleted `kureP1`. The `yuzolcumu*` block (the HGM comparison) moved with it: "why isn't my
+ * number the province's official area" is a post-result question. `teaches` was edited to match
+ * — it no longer names projection area-preservation, because the prose no longer teaches it
  * (`SEO-POLICY.md` §B5's teaches-names-the-prose row). A "Diğer araçlar" related-links row was
  * added at the end of the page (`ENGINEERING.md` §4 #10, `SEO-POLICY.md` §B8 8.5): before this
- * pass the breadcrumb was the only way off the page.
+ * pass the breadcrumb was the only way off the page. **`sinirP2` was reintroduced 2026-08-30**
+ * with unrelated content (a bay/coastline worked example) — the key name is reused, not the
+ * paper-plan paragraph this note used to describe.
  *
  * ## Rendering and the api read
  *
  * SSG with one api read — the province list, which supplies the picker's il-merkezi points
- * (AK-27 md.2) and the two cross-link slugs in the prose. This page does NOT ask for
+ * (AK-27 md.2). The prose no longer names İstanbul/Ankara as province cross-links (owner content
+ * edit, 2026-08-30) — `provinceLink` was removed with them. This page does NOT ask for
  * `provinceAreas`: naming which province a point fell inside is the coordinate tool's answer
  * to its own question, and a ring of three points is not inside one province anyway.
  * `getProvincesResilient` degrades to `[]` at BUILD (web CI has no api) and re-throws at
@@ -113,25 +102,6 @@ export default async function AreaToolPage({ params }: PageProps) {
 
   const provinces = await getProvincesResilient();
   const provincePoints = buildProvincePoints(provinces);
-
-  // A4/3: a province the api does not publish gets NO link — the name stays plain text rather
-  // than pointing at a page that may not exist.
-  const provinceLink = (plateCode: string, chunks: ReactNode): ReactNode => {
-    const province: ProvinceListItem | undefined = provinces.find(
-      (candidate) => candidate.plateCode === plateCode,
-    );
-    if (province === undefined) return <>{chunks}</>;
-    return (
-      <Link
-        href={{
-          pathname: "/turkiye/[slug]",
-          params: { slug: locale === "en" ? province.slugEn : province.slugTr },
-        }}
-      >
-        {chunks}
-      </Link>
-    );
-  };
 
   // The explanatory text exists in Turkish only (§B14): on `/en` the page is the tool plus its
   // chrome, and `EnWorkInProgressNotice` says so in the reader's own language.
@@ -167,6 +137,7 @@ export default async function AreaToolPage({ params }: PageProps) {
 
           <h2>{t("sinirHeading")}</h2>
           <p>{t("sinirP1")}</p>
+          <p>{t("sinirP2")}</p>
         </div>
       )}
 
@@ -188,12 +159,7 @@ export default async function AreaToolPage({ params }: PageProps) {
           <p>{t("sonucP2")}</p>
 
           <h2>{t("yuzolcumuHeading")}</h2>
-          <p>
-            {t.rich("yuzolcumuP1", {
-              istanbul: (chunks) => provinceLink(ISTANBUL_PLATE, chunks),
-              ankara: (chunks) => provinceLink(ANKARA_PLATE, chunks),
-            })}
-          </p>
+          <p>{t("yuzolcumuP1")}</p>
           <p>{t("yuzolcumuP2")}</p>
           <p>{t("yuzolcumuP3")}</p>
 

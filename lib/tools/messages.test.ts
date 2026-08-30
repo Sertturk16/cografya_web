@@ -107,6 +107,7 @@ const TR_ONLY_KEYS = [
   "koordinat.sistemHeading",
   "koordinat.sistemP1",
   "koordinat.sistemP2",
+  "koordinat.sistemP3",
   "koordinat.derecekmHeading",
   "koordinat.derecekmP1",
   "koordinat.derecekmP2",
@@ -122,6 +123,7 @@ const TR_ONLY_KEYS = [
   "alan.lede",
   "alan.sinirHeading",
   "alan.sinirP1",
+  "alan.sinirP2",
   "alan.kureP2",
   "alan.yuzolcumuHeading",
   "alan.yuzolcumuP1",
@@ -312,8 +314,8 @@ function scanBindings(source: string): Omit<ToolsBinding, "path">[] {
     const window = repeated
       ? source.slice(first ? 0 : match.index, next?.index ?? source.length)
       : source;
-    // `(?<![\w$.])` keeps `t(` from matching `format.t(` or `next(`; `.rich` is how the pages
-    // pass province links into `karayoluP1`, `derecekmP2` and `sonucP3`.
+    // `(?<![\w$.])` keeps `t(` from matching `format.t(` or `next(`; `.rich` is how the
+    // koordinat page passes the mesafe-tool cross-link into `derecekmP2`.
     const calls = new RegExp(String.raw`(?<![\w$.])${binding}(?:\.rich)?\(\s*"([^"]+)"`, "g");
     return {
       binding,

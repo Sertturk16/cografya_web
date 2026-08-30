@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -6,7 +5,6 @@ import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice"
 import type { ProvinceArea } from "@/components/tools/tool-island";
 import { ToolMap } from "@/components/tools/tool-map";
 import { getProvincesResilient } from "@/lib/api/provinces";
-import type { ProvinceListItem } from "@/lib/api/types";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import type { ContentSurface } from "@/lib/seo/indexing";
@@ -27,17 +25,6 @@ interface PageProps {
 
 /** Same surface as the hub: TR indexable, `/en/tools/coordinates` `noindex, follow`. */
 const TOOLS_SURFACE: ContentSurface = "trNarrative";
-
-/**
- * The two provinces the prose names, by plaka kodu.
- *
- * The CODE is hardcoded and the SLUG is not, for the reason the distance page states at
- * length: `SEO-POLICY.md` §B4 4.5 bans deriving a locale's slug by hand, while a plaka kodu is
- * a stable identifier rather than a URL. Ankara and Iğdır are the textbook's own local-time
- * worked example (printed p.45).
- */
-const ANKARA_PLATE = "06";
-const IGDIR_PLATE = "76";
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -89,9 +76,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *
  * ## Rendering and the api read
  *
- * SSG with one api read — the province list, which supplies three things: the picker's
- * il-merkezi points (AK-27 md.2), the two cross-link slugs in the prose, and the names and
- * slugs the island needs to report which province a placed point fell inside (SPEC §6.2).
+ * SSG with one api read — the province list, which supplies the picker's il-merkezi points
+ * (AK-27 md.2) and the names/slugs the island needs to report which province a placed point
+ * fell inside (SPEC §6.2). The prose no longer names Ankara/Iğdır as province cross-links
+ * (owner content edit, 2026-08-30) — `provinceLink` was removed with them.
  * `getProvincesResilient` degrades to `[]` at BUILD (web CI has no api) and re-throws at
  * RUNTIME, so a transient blip leaves the last good static page in place instead of caching
  * one with no picker. Everything indexable is in the first response either way: the prose, the
@@ -115,25 +103,6 @@ export default async function CoordinateToolPage({ params }: PageProps) {
     name: province.nameTr,
     slug: locale === "en" ? province.slugEn : province.slugTr,
   }));
-
-  // A4/3: a province the api does not publish gets NO link — the name stays plain text rather
-  // than pointing at a page that may not exist.
-  const provinceLink = (plateCode: string, chunks: ReactNode): ReactNode => {
-    const province: ProvinceListItem | undefined = provinces.find(
-      (candidate) => candidate.plateCode === plateCode,
-    );
-    if (province === undefined) return <>{chunks}</>;
-    return (
-      <Link
-        href={{
-          pathname: "/turkiye/[slug]",
-          params: { slug: locale === "en" ? province.slugEn : province.slugTr },
-        }}
-      >
-        {chunks}
-      </Link>
-    );
-  };
 
   // The explanatory text exists in Turkish only (§B14): on `/en` the page is the tool plus its
   // chrome, and `EnWorkInProgressNotice` says so in the reader's own language.
@@ -170,6 +139,7 @@ export default async function CoordinateToolPage({ params }: PageProps) {
           <h2>{t("sistemHeading")}</h2>
           <p>{t("sistemP1")}</p>
           <p>{t("sistemP2")}</p>
+          <p>{t("sistemP3")}</p>
 
           <h2>{t("gosterimHeading")}</h2>
           <p>{t("gosterimP1")}</p>
@@ -194,12 +164,7 @@ export default async function CoordinateToolPage({ params }: PageProps) {
           <h2>{t("sonucHeading")}</h2>
           <p>{t("sonucP1")}</p>
           <p>{t("sonucP2")}</p>
-          <p>
-            {t.rich("sonucP3", {
-              ankara: (chunks) => provinceLink(ANKARA_PLATE, chunks),
-              igdir: (chunks) => provinceLink(IGDIR_PLATE, chunks),
-            })}
-          </p>
+          <p>{t("sonucP3")}</p>
 
           <h2>{t("derecekmHeading")}</h2>
           <p>{t("derecekmP1")}</p>

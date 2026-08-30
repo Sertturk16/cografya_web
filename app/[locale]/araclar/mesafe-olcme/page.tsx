@@ -1,11 +1,9 @@
-import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
 import { ToolMap } from "@/components/tools/tool-map";
 import { getProvincesResilient } from "@/lib/api/provinces";
-import type { ProvinceListItem } from "@/lib/api/types";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import type { ContentSurface } from "@/lib/seo/indexing";
@@ -26,17 +24,6 @@ interface PageProps {
 
 /** Same surface as the hub: TR indexable, `/en/tools/distance` `noindex, follow`. */
 const TOOLS_SURFACE: ContentSurface = "trNarrative";
-
-/**
- * The two provinces the prose names, by plaka kodu.
- *
- * The CODE is hardcoded and the SLUG is not, and the split is the point: `SEO-POLICY.md` §B4
- * 4.5 bans deriving a locale's slug by hand, so the URL is built from the api's own
- * `slugTr`/`slugEn`. A plaka kodu is a stable identifier, not a URL, and joining on it is the
- * pattern the neighbour blocks and the map already use.
- */
-const ANKARA_PLATE = "06";
-const KAYSERI_PLATE = "38";
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -98,11 +85,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * ## Rendering and the api read
  *
  * SSG with one api read — the province list, which supplies the picker's il-merkezi points
- * (AK-27 md.2) and the two cross-link slugs. `getProvincesResilient` degrades to `[]` at
- * BUILD (web CI has no api) and re-throws at RUNTIME, so a transient blip leaves the last
- * good static page in place instead of caching a page with no picker. Everything indexable is
- * in the first response either way: the prose, the map and the attribution do not depend on
- * the api at all.
+ * (AK-27 md.2). The prose no longer names Ankara/Kayseri as province cross-links (owner
+ * content edit, 2026-08-30) — `provinceLink` was removed with them. `getProvincesResilient`
+ * degrades to `[]` at BUILD (web CI has no api) and re-throws at RUNTIME, so a transient blip
+ * leaves the last good static page in place instead of caching a page with no picker.
+ * Everything indexable is in the first response either way: the prose, the map and the
+ * attribution do not depend on the api at all.
  */
 export default async function DistanceToolPage({ params }: PageProps) {
   const { locale } = await params;
@@ -114,25 +102,6 @@ export default async function DistanceToolPage({ params }: PageProps) {
 
   const provinces = await getProvincesResilient();
   const provincePoints = buildProvincePoints(provinces);
-
-  // A4/3: a province the api does not publish gets NO link — the name stays plain text rather
-  // than pointing at a page that may not exist.
-  const provinceLink = (plateCode: string, chunks: ReactNode): ReactNode => {
-    const province: ProvinceListItem | undefined = provinces.find(
-      (candidate) => candidate.plateCode === plateCode,
-    );
-    if (province === undefined) return <>{chunks}</>;
-    return (
-      <Link
-        href={{
-          pathname: "/turkiye/[slug]",
-          params: { slug: locale === "en" ? province.slugEn : province.slugTr },
-        }}
-      >
-        {chunks}
-      </Link>
-    );
-  };
 
   // The explanatory text exists in Turkish only (§B14): on `/en` the page is the tool plus its
   // chrome, and `EnWorkInProgressNotice` says so in the reader's own language.
@@ -171,12 +140,7 @@ export default async function DistanceToolPage({ params }: PageProps) {
           <p>{t("nedirP2")}</p>
 
           <h2>{t("karayoluHeading")}</h2>
-          <p>
-            {t.rich("karayoluP1", {
-              ankara: (chunks) => provinceLink(ANKARA_PLATE, chunks),
-              kayseri: (chunks) => provinceLink(KAYSERI_PLATE, chunks),
-            })}
-          </p>
+          <p>{t("karayoluP1")}</p>
           <p>{t("karayoluP2")}</p>
         </div>
       )}
