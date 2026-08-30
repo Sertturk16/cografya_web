@@ -126,7 +126,7 @@ export default async function ToolsHubPage({ params }: PageProps) {
   const rendersIntro = locale === routing.defaultLocale;
 
   return (
-    <div className="container page">
+    <div className={`container page ${styles.hub}`}>
       <JsonLd
         schema={[
           collectionPageJsonLd({

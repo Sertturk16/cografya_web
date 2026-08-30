@@ -56,6 +56,12 @@ const PAGE_SOURCES = [
   "page.tsx",
   ...readdirSync(fileURLToPath(TOOLS_DIR), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
+    // `[...rest]` is the tier's 404 BOUNDARY (fix round, İRİS finding A1 —
+    // `app/[locale]/araclar/[...rest]/page.tsx`'s own docblock), never a tool, and carries no
+    // `TOOLS_SURFACE` declaration to compare — excluded the same way
+    // `tool-registry.test.ts` excludes it, by dynamic-segment name rather than a hand-listed
+    // one.
+    .filter((entry) => !entry.name.startsWith("["))
     .map((entry) => `${entry.name}/page.tsx`)
     .filter((relative) => existsSync(fileURLToPath(new URL(relative, TOOLS_DIR))))
     .sort(),
