@@ -90,7 +90,6 @@ const BOTH_LOCALE_KEYS = [
 /** Keys inside a prose namespace that exist in Turkish ONLY (§B14, the `/deniz` precedent). */
 const TR_ONLY_KEYS = [
   "hub.introP1",
-  "hub.introP2",
   "mesafe.lede",
   "mesafe.nedirHeading",
   "mesafe.nedirP1",
