@@ -3,8 +3,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { MarineLayer, MarineOverviewPoint, ProvinceListItem } from "@/lib/api/types";
 import { marinePointAnchorId } from "@/lib/marine/anchors";
-import { MODEL_INSTANT_FORMAT } from "@/lib/marine/model-run";
-import { marineBlockValues, maxGridDistanceKm, oldestValidAt } from "@/lib/marine/vintage";
+import { marineBlockValues, maxGridDistanceKm } from "@/lib/marine/vintage";
 import { ValueCell } from "./value-cell";
 import styles from "./marine.module.css";
 
@@ -18,6 +17,15 @@ interface BasinValuesTableProps {
   layerById: Map<MarineLayer["id"], MarineLayer>;
   /** Published provinces by plaka, for the row-header link. */
   provincesByPlate: Map<string, ProvinceListItem>;
+  /**
+   * The `id` of this basin's own `<h3>` (`reference-points.tsx`) — the table's accessible
+   * name via `aria-labelledby`, replacing the `<caption>` this table used to carry (deniz-yeni.txt,
+   * "Bölüm başlığı zaten deniz adını ve nokta sayısını veriyor"). Pointing at the SAME heading
+   * that already names the basin is a real a11y-neutral simplification, not a loss: a reader
+   * still gets a table-level accessible name, just without a second, longer copy of the same
+   * fact repeated once per sea.
+   */
+  headingId: string;
 }
 
 /**
@@ -28,8 +36,10 @@ interface BasinValuesTableProps {
  * row now holds five, and five facts per entity across thirty entities is the definition of
  * tabular data — a `<dl>` or nested `<ul>` would force a screen-reader user to hold the
  * column meaning in their head down the whole basin. The proven pattern from the measurement
- * catalogue is reused wholesale: `<caption>`, `<th scope="col">`, a `<th scope="row">` row
- * header, and a named, keyboard-reachable horizontal scroll region.
+ * catalogue is reused wholesale: `<th scope="col">`, a `<th scope="row">` row header, and a
+ * named, keyboard-reachable horizontal scroll region. The table's own accessible name comes
+ * from `aria-labelledby={headingId}` (the basin's own `<h3>`) rather than a `<caption>` —
+ * see the prop doc above.
  *
  * NO INTERNAL LINK IS LOST IN THE CONVERSION. The point's province link moves into the row
  * header, so the hub still emits its thirty descriptive anchors into twenty-seven province
@@ -39,6 +49,15 @@ interface BasinValuesTableProps {
  * EVERY THRESHOLD AND CONVENTION IS READ FROM `layerById`. There is no calm value, no
  * direction meaning and no grid resolution written down in this component: all three are
  * provider product decisions the api publishes and can change without us.
+ *
+ * THE FIFTH COLUMN NO LONGER STATES A SHARED INSTANT (deniz-notlar.txt madde 2 /
+ * deniz-yeni.txt). Every one of the 30 rows across all 4 tables used to repeat the exact same
+ * "Geçerlilik anı" instant — always the wind/wave (ECMWF) one, never sea temperature's own,
+ * different instant — which was both a 30-way repetition and a small clarity gap in one cell.
+ * That shared instant now lives ONCE, as a real sentence naming both quantities and both
+ * instants, next to "Bu sayılar ne zamana ait?" (`reference-points.tsx`). What stays in this
+ * column, per row, is the one thing that DOES vary row to row: how far this point's own value
+ * sits from the centre of the model grid cell it was sampled from.
  */
 export async function BasinValuesTable({
   locale,
@@ -46,6 +65,7 @@ export async function BasinValuesTable({
   blocks,
   layerById,
   provincesByPlate,
+  headingId,
 }: BasinValuesTableProps) {
   const tm = await getTranslations("Marine");
   const format = await getFormatter();
@@ -63,8 +83,7 @@ export async function BasinValuesTable({
       aria-label={tm("values.scrollRegionLabel", { basin: basinLabel })}
       tabIndex={0}
     >
-      <table className={styles.valuesTable}>
-        <caption className={styles.caption}>{tm("values.caption", { basin: basinLabel })}</caption>
+      <table className={styles.valuesTable} aria-labelledby={headingId}>
         <thead>
           <tr>
             <th scope="col" className={styles.th}>
@@ -80,7 +99,7 @@ export async function BasinValuesTable({
               {tm("values.colSeaTemperature")}
             </th>
             <th scope="col" className={styles.th}>
-              {tm("values.colVintage")}
+              {tm("values.colSampleDistance")}
             </th>
           </tr>
         </thead>
@@ -90,7 +109,6 @@ export async function BasinValuesTable({
             const name = locale === "en" ? point.nameEn : point.nameTr;
             const province = provincesByPlate.get(point.plateCode);
             const rowValues = marineBlockValues(block);
-            const validAt = oldestValidAt(rowValues);
             const gridDistance = maxGridDistanceKm(rowValues);
 
             // The row id is what the 27 province marine sections link INTO (W2b), so it is
@@ -143,13 +161,6 @@ export async function BasinValuesTable({
                   />
                 </td>
                 <td className={styles.tdVintage}>
-                  {validAt !== null && (
-                    <span className={styles.vintageInstant}>
-                      {tm("values.validAt", {
-                        value: format.dateTime(validAt, MODEL_INSTANT_FORMAT),
-                      })}
-                    </span>
-                  )}
                   {/* The O3 follow-up: the offset to the model grid centre, now readable
                       from the payload. Stated as a BOUND and only when the api reports one —
                       the contract is explicit that this is an in-cell offset, so it must not
