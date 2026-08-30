@@ -1,6 +1,50 @@
-/* `/turkiye` hub page styles. Today these are only the cross-link blocks (the map game,
-   SPEC §10.4; the marine hub; and, since PR #104's fix round (VAL104-C2), the earthquake
-   hub); the map itself is styled by components/map/map.module.css. */
+/* `/turkiye` hub page styles. The cross-link blocks (the map game, SPEC §10.4; the marine
+   hub; and, since PR #104's fix round (VAL104-C2), the earthquake hub); the page's own
+   deliberate rhythm (turkiye-yenileme PR-C, plan §5.9) — the map→index bridge line and the
+   asymmetric spacing that replaces the flat `.section` 40px between the three page blocks;
+   the map itself is styled by components/map/map.module.css. */
+
+/* DELIBERATE RHYTHM (turkiye-yenileme PR-C, plan §5.9). Every block on this page used to
+   carry the SAME flat `.section` 40px top margin, which reads as one uniform stack rather
+   than a page with a hierarchy: map → index → CTA row are three transitions of different
+   IMPORTANCE, not three identical gaps.
+
+   `.hub` (below) carries no declaration of its own — it is a page-scoped selector anchor
+   only, so this compound selector reaches `TurkeyMapSection`'s and `EntityIndex`'s own
+   `<section className="section">` root (neither file is edited here, plan §3 out of scope)
+   WITHOUT leaking the override onto any other page built on the same global `.section`
+   rhythm — the compound is only ever satisfied inside an element carrying this file's own
+   hashed `.hub` class (`page.tsx`'s outer `<div>`).
+
+   MAP → INDEX earns MORE air: it is a MODE change (explore the map → look a name up in a
+   list), the single biggest transition on the page. 56px, not a new number — it is
+   `.page`'s own existing block-end rhythm value (DESIGN.md §4 "page padding 40px 56px"),
+   reused here rather than inventing a fifth spacing constant.
+
+   `~` (general sibling), not `+` (adjacent sibling): the new `.indexBridge` paragraph below
+   now sits BETWEEN the two `.section` elements in the DOM, so the two are siblings but no
+   longer immediately adjacent. `~` still matches EntityIndex's `.section` because it only
+   requires an EARLIER `.section` sibling under the same parent, not zero elements between
+   them — the bridge paragraph's own presence does not disqualify the match. */
+.hub :global(.section) ~ :global(.section) {
+  margin-top: 56px;
+}
+
+/* The bridge line itself (plan §5.9: "a short line under the map pointing at #iller ... a
+   genuine internal link, not a script"). `font-size: 0.95rem` is not a new number either —
+   it reuses `entity-index.module.css` `.link`'s own size, the destination this line points
+   at, so the bridge and the list it bridges to read as one typographic family. No margin
+   rule of its own: the map section's last content (`map.module.css` `.attributionFlow`,
+   `margin: 6px 14px 10px`) and this paragraph's own top margin (0, the site-wide `p { margin:
+   0 0 1rem }` reset in globals.css) collapse to a small, deliberately tight gap — the bridge
+   reads as a quiet continuation of the map block, not a fourth section of its own. Colour is
+   untouched (inherited `--color-ink`); the `<a>` inside carries the global `a { color:
+   var(--color-primary-dark) }` rule already (7.89:1 AAA on `--color-bg`, DESIGN.md §5),
+   which a class on this ancestor `<p>` cannot override — a rule that targets an element
+   directly always wins over one inherited from an ancestor, regardless of specificity. */
+.indexBridge {
+  font-size: 0.95rem;
+}
 
 /* The cross-link cards on ONE row (design tour A9), now three (VAL104-C2 added the earthquake
    card — `flex-wrap` below already accommodates any card count, see the note there). Measured
@@ -18,15 +62,20 @@
    are peers here, so both take the same `flex: 1 1 360px` — below ~744px of column the row
    breaks by itself and the page goes back to today's stack.
 
-   The row carries the 40px rhythm the global `.section` class used to put on each block; on a
-   flex item that margin would not collapse, so keeping it there and adding a `gap` would make
-   the wrapped spacing 64px instead of 40px. */
+   INDEX → CTA earns LESS air (turkiye-yenileme PR-C, plan §5.9): a descent in importance —
+   the row is three cross-links, not content, and the real call to action on this page is the
+   map above it. `margin-top` moves from 40px to 24px, reusing THIS SAME RULE's own
+   `column-gap` value two lines below rather than inventing a sixth number; the row still
+   needs an explicit `margin-top` rather than each child taking the global `.section` class,
+   because on a flex item that margin would not collapse — keeping it here and adding a `gap`
+   as well would make the wrapped row-to-row spacing 48px (24 + 24) instead of the 24px this
+   transition is meant to read as. */
 .ctaRow {
   display: flex;
   flex-wrap: wrap;
   column-gap: 24px;
   row-gap: 40px;
-  margin-top: 40px;
+  margin-top: 24px;
 }
 
 /* `display: grid` is what makes the two CARDS the same height, and it is not cosmetic at every

@@ -123,7 +123,12 @@ export default async function TurkiyePage({ params }: PageProps) {
   );
 
   return (
-    <div className="container page">
+    // `styles.hub` carries no declaration of its own visible here — it exists only as a
+    // page-scoped selector anchor (turkiye.module.css) so the deliberate-rhythm rule can
+    // reach `TurkeyMapSection`'s and `EntityIndex`'s own shared global `.section` class
+    // (neither file is edited here — plan §3) without leaking that override onto any OTHER
+    // page built on the same `.page`/`.section` global rhythm.
+    <div className={`container page ${styles.hub}`}>
       <JsonLd
         schema={[
           collectionPageJsonLd({
@@ -146,6 +151,21 @@ export default async function TurkiyePage({ params }: PageProps) {
       <p className="lede">{t("intro")}</p>
 
       <TurkeyMapSection locale={locale} />
+
+      {/* THE MAP→INDEX BRIDGE (turkiye-yenileme PR-C, plan §5.9). The comment below already
+          frames the index as "the SECOND way into the same 81 pages, not a footnote" — this
+          makes that true in the markup as well, with a genuine internal `<a href="#iller">`
+          (`SEO-POLICY.md` §B8.1/§B8.2: a real anchor, zero client JS, not a script-driven
+          scroll). It does not touch `EntityIndex` itself (out of scope, plan §3) — the target
+          section already sets its own `scroll-margin-top` for the sticky header
+          (`entity-index.module.css` `.index`). The count is interpolated, matching
+          `indexDescription` immediately below it, never hardcoded (§SEO A2.2: never claim a
+          number the page cannot back). */}
+      <p className={styles.indexBridge}>
+        <a href={`#${PROVINCE_INDEX_SECTION_ID}`}>
+          {t("indexBridgeLink", { count: items.length })}
+        </a>
+      </p>
 
       {/* The alphabetical index (→ DEC 2026-08-04i §2). It sits directly under the map
           because it is the SECOND way into the same 81 pages, not a footnote: the UX review
@@ -177,7 +197,7 @@ export default async function TurkiyePage({ params }: PageProps) {
             {/* The descriptive paragraph under this heading is gone (→ DEC 2026-07-30t/u,
                 CONTENT-STYLE §22): it narrated the game's mechanic ("ekranda çıkan ili …
                 işaretlersiniz"), which the heading and the button already imply. */}
-            <Link href="/oyun" className="btn btn-primary">
+            <Link href="/oyun" className="btn btn-ghost">
               {t("gameCtaLink")}
             </Link>
           </div>
@@ -191,7 +211,7 @@ export default async function TurkiyePage({ params }: PageProps) {
         <section aria-labelledby="turkiye-marine-heading">
           <div className={`card ${styles.ctaCard}`}>
             <h2 id="turkiye-marine-heading">{t("marineCtaHeading")}</h2>
-            <Link href="/deniz" className="btn btn-primary">
+            <Link href="/deniz" className="btn btn-ghost">
               {t("marineCtaLink")}
             </Link>
           </div>
@@ -208,7 +228,7 @@ export default async function TurkiyePage({ params }: PageProps) {
         <section aria-labelledby="turkiye-earthquake-heading">
           <div className={`card ${styles.ctaCard}`}>
             <h2 id="turkiye-earthquake-heading">{t("earthquakeCtaHeading")}</h2>
-            <Link href="/deprem" className="btn btn-primary">
+            <Link href="/deprem" className="btn btn-ghost">
               {t("earthquakeCtaLink")}
             </Link>
           </div>
