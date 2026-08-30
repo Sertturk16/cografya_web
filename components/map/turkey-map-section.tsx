@@ -268,10 +268,83 @@ const CONTEXT_LABEL_OMITTED_ISOS = new Set(["MK", "RS", "LB"]);
  * target shape in both locales — no foreign-territory or TR/SY crossing reintroduced. The
  * CY row is UNTOUCHED (unaffected — the claim-verifier's re-measurement found it clean at
  * 0% in both locales at the finer grid too).
+ *
+ * FIX ROUND 3 (PR #108, third fix round; SOV108R2-I1 / SOV108R2-I2). Two small IMPORTANT
+ * findings against round 2's own shipped state, both re-measured live (Chromium
+ * `isPointInFill()` / `getBBox()` / exact segment-vs-rectangle intersection — the same
+ * rigor as rounds 1–2 — against the actually-rendered page, both locales, 768px AND
+ * 1440px; round 2's own check only ran at 1440px, which is why neither surfaced there).
+ *
+ * SOV108R2-I1 — the QN row's `leaderFrom` used the SAME "8 u below baseline" formula the CY
+ * row uses, and because the two rows' baselines sit only 20 u apart while each row's own ink
+ * band is ≈ 23.56 u tall, that shared offset put the QN leader's start point just
+ * 0.40–1.66 svg u from the CY row's own ink box (measured `distanceToCyBox`, all four
+ * width/locale combinations) — optically indistinguishable from "inside it", which is why
+ * the KKTC line read as emanating from the Cyprus line at 768px. Root cause: a formula
+ * copied from the OTHER row, not derived from this row's own geometry — exactly what the
+ * finding named. Fix: `leaderFrom.x` moves from 340 (the label's own centre) to 380 — still
+ * comfortably under the QN row's own (much wider) ink box, x ∈ [185, 495] in EN — which
+ * alone puts the whole point out of the CY row's ink-box x-range (CY's own right edge sits
+ * at x ≈ 338–340 in both locales), independent of `leaderFrom.y`; `leaderFrom.y` stays a
+ * short, real offset below the QN row's own ink-box bottom edge (433.89), not a copy of the
+ * CY row's constant. Re-measured: `distanceToCyBox` 40.40–41.66 svg u in all four
+ * combinations (≈ 25–47 px at typical render widths) — a two-order-of-magnitude increase —
+ * and the leader-line SEGMENT itself (not just its start point) never intersects the CY
+ * row's ink box (exact Liang–Barsky segment-vs-rectangle test, not a sampled approximation).
+ *
+ * SOV108R2-I2 — the CY row's leader is a single straight segment from `leaderFrom` (8 u
+ * below the CY baseline, same formula as above) to `cyShape.labelPoint`. That segment
+ * passed straight through `SEA_LABELS.seaMediterranean`'s ink box: measured 79.5–85.1% of
+ * the EN segment's own length sat inside the sea label's box (`t0`/`t1` on the exact
+ * intersection test), and — not previously checked, because round 1/2 only validated the
+ * LABEL text against shapes, never a LEADER LINE against another label's ink box — even the
+ * narrower TR "Akdeniz" box was entered for 16.7–17.6% of the segment's length. This is also
+ * *why* the round's own A11Y108-I1 contrast fix (`--color-accent` at full opacity) still
+ * measured 2.44:1 where reported: `--color-accent` (#276b70) against `--color-ink`
+ * (#2b2622, the label text's own fill) is 2.44:1 regardless of opacity — reproduced
+ * independently here — so the only real fix is to stop the line crossing the label at all,
+ * not to recolour it.
+ *
+ * ROOT GEOMETRIC CONSTRAINT, recorded honestly rather than papered over: the CY row's own
+ * ink-box BOTTOM edge (453.89) and `seaMediterranean`'s ink-box TOP edge (454.08) are only
+ * 0.19 svg u apart — there is no straight line from anywhere near the CY row's (short) text
+ * to `cyShape.labelPoint` that both starts close to the text and never crosses the sea
+ * label's box; every straight-line candidate tried traded one for the other. The CY leader
+ * therefore becomes a two-segment `<polyline>` (`leaderFrom` → `leaderElbow` →
+ * `cyShape.labelPoint`) rather than a `<line>` — a bent leader, not a straight one, the
+ * option the finding itself named ("adjust... the Cyprus leader line's path"). Each leg is
+ * safe by a DIFFERENT, structurally-guaranteed axis rather than a single tuned diagonal: leg
+ * 1 (`leaderFrom` → `leaderElbow`, both at y = 448, the CY row's own baseline) stays entirely
+ * ABOVE the sea label's ink-box top edge (454.08) regardless of x, clearing it by 454.08 −
+ * 448 = 6.08 svg u; leg 2 (`leaderElbow` → target, x moving from 360 to `cyShape.labelPoint.x`
+ * = 369.3) stays entirely to the RIGHT of the sea label's ink-box right edge — 346.86 (EN) /
+ * 278.30 (TR) — regardless of y, clearing it by 13.14 u (EN) / far more (TR). Both legs
+ * independently pass the exact segment-vs-rectangle test at every width/locale combination
+ * (`intersects: false`); the live-sampled minimum distance from either leg to the sea box is
+ * 5.76–14.24 svg u in EN (the binding locale — its sea-label box is the widest) and
+ * 51.06–81.93 svg u in TR. `leaderFrom` sits at x = 330, inside the CY row's own ink box
+ * (x ∈ [180, 340]) at its own baseline height, so the line still visibly starts at the row's
+ * own text rather than floating free of it.
+ *
+ * RE-VERIFIED, both rows, all four width/locale combinations, after the change (not assumed
+ * unaffected because the edit is "just leader lines"): the QN segment and the CY row's two
+ * segments never cross each other (exact segment-vs-segment test, all pairs); every
+ * sampled point (201 per segment) along all three segments classifies as "water" or the
+ * segment's OWN target shape (QN or CY) — zero points land on Türkiye (casing or any of the
+ * 81 provinces), Syria, Armenia, or Azerbaijan, in either locale, at either width — so the
+ * CRITICAL sovereignty placement two earlier rounds closed stays closed. `seaMediterranean`
+ * itself is UNTOUCHED (neither its anchor nor `SEA_LABELS` changed this round): re-confirmed
+ * at the same 161×9 = 1,449-point grid VAL108-SOV6 used, 0/1,449 points fall inside the QN or
+ * CY shapes in either locale — the invariant that fix established is still intact.
  */
 const CY_QN_LABEL_BLOCK = {
-  qn: { x: 340, y: 428, leaderFrom: { x: 340, y: 436 } },
-  cy: { x: 260, y: 448, leaderFrom: { x: 260, y: 456 } },
+  qn: { x: 340, y: 428, leaderFrom: { x: 380, y: 438 } },
+  cy: {
+    x: 260,
+    y: 448,
+    leaderFrom: { x: 330, y: 448 },
+    leaderElbow: { x: 360, y: 448 },
+  },
 } as const;
 
 /**
@@ -662,12 +735,19 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
                     x2={qnShape.labelPoint.x}
                     y2={qnShape.labelPoint.y}
                   />
-                  <line
+                  {/* ELBOWED, unlike the QN line above (fix round 3, SOV108R2-I2): a single
+                      straight segment from anywhere near Cyprus's own (short) text to its
+                      shape's labelPoint provably re-crosses the Mediterranean Sea label's ink
+                      box — the two boxes are only 0.19 u apart vertically, so no straight line
+                      threading that gap clears the sea label. The elbow's first leg stays
+                      ABOVE the sea label's ink-box top edge the whole way (y stays below its
+                      454.08 top, regardless of x); the second leg stays to the RIGHT of its
+                      346.86(EN)/278.30(TR) right edge the whole way (x stays past it,
+                      regardless of y) — two independently safe legs, not a tuned diagonal. */}
+                  <polyline
                     className={styles.contextLeader}
-                    x1={CY_QN_LABEL_BLOCK.cy.leaderFrom.x}
-                    y1={CY_QN_LABEL_BLOCK.cy.leaderFrom.y}
-                    x2={cyShape.labelPoint.x}
-                    y2={cyShape.labelPoint.y}
+                    fill="none"
+                    points={`${CY_QN_LABEL_BLOCK.cy.leaderFrom.x},${CY_QN_LABEL_BLOCK.cy.leaderFrom.y} ${CY_QN_LABEL_BLOCK.cy.leaderElbow.x},${CY_QN_LABEL_BLOCK.cy.leaderElbow.y} ${cyShape.labelPoint.x},${cyShape.labelPoint.y}`}
                   />
                   <text
                     x={CY_QN_LABEL_BLOCK.qn.x}

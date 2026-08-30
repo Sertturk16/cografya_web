@@ -204,15 +204,17 @@ describe("lib/map/tr-context.generated.ts artifact", () => {
 });
 
 /**
- * PR #108 FIX ROUND 2 — the source-invariant half of the two placement fixes (same honest
+ * PR #108 FIX ROUNDS 2–3 — the source-invariant half of the placement fixes (same honest
  * shape the file's top docblock names: this cannot re-derive the `isPointInFill()` geometric
- * result on its own no-jsdom `node` environment, but it DOES fail the moment either fixed
- * value is hand-reverted or drifts, which is the exact edit class that shipped round 1's own
+ * result on its own no-jsdom `node` environment, but it DOES fail the moment a fixed value is
+ * hand-reverted or drifts, which is the exact edit class that shipped round 1's own
  * regression — a docblock claiming a measurement the shipped constant no longer matched. The
- * empirical half (0% ink in both locales, both labels) is the PR's own re-run
- * `isPointInFill()`/`getBBox()` grid against the live rendered page, reported in the PR.
+ * empirical half (0% ink in both locales, both labels; exact segment-vs-rectangle clearance
+ * from the CY row's ink box and from `seaMediterranean`'s ink box) is the PR's own re-run
+ * `isPointInFill()`/`getBBox()`/segment-intersection pass against the live rendered page, at
+ * both 768px and 1440px, reported in the PR.
  */
-describe("PR #108 fix round 2 — AZ label size exception and QN row position", () => {
+describe("PR #108 fix round 2 — AZ label size exception", () => {
   it("keeps AZ's fontSize-16 exception at the re-measured 0%-overlap position (x:1120/y:106/anchor:end)", () => {
     const azMatch = SOURCE.match(/AZ:\s*\{([^}]*)\}/);
     expect(azMatch, "AZ entry not found in LABEL_ANCHOR_OVERRIDES").not.toBeNull();
@@ -234,20 +236,45 @@ describe("PR #108 fix round 2 — AZ label size exception and QN row position", 
     expect(SOURCE).toContain("override?.fontSize ?? CONTEXT_COUNTRY_LABEL_SIZE");
     expect(SOURCE).toMatch(/fontSize=\{fontSize\}/);
   });
+});
 
-  it("keeps the QN row (and its leader line) at the re-measured 0%-overlap y:428/leaderFrom.y:436", () => {
+describe("PR #108 fix round 3 — QN/CY leader-line geometry (SOV108R2-I1 / SOV108R2-I2)", () => {
+  it("keeps the QN row's own text at y:428 and its leader starting under its OWN ink box, clear of the CY row's", () => {
     const qnMatch = SOURCE.match(/qn:\s*\{([^}]*leaderFrom:\s*\{[^}]*\}[^}]*)\}/);
     expect(qnMatch, "qn entry not found in CY_QN_LABEL_BLOCK").not.toBeNull();
     const qn = qnMatch?.[1] ?? "";
     expect(qn).toMatch(/x:\s*340\b/);
     expect(qn).toMatch(/y:\s*428\b/);
-    expect(qn).toMatch(/leaderFrom:\s*\{\s*x:\s*340,\s*y:\s*436\s*\}/);
+    // leaderFrom.x must NOT equal the row's own centre (340) any more — that shared-centre
+    // offset is exactly what SOV108R2-I1 measured landing inside the CY row's own ink box.
+    expect(qn).toMatch(/leaderFrom:\s*\{\s*x:\s*380,\s*y:\s*438\s*\}/);
+  });
 
-    // The CY row is unaffected by this round.
-    const cyMatch = SOURCE.match(/cy:\s*\{([^}]*leaderFrom:\s*\{[^}]*\}[^}]*)\}/);
-    expect(cyMatch, "cy entry not found in CY_QN_LABEL_BLOCK").not.toBeNull();
+  it("keeps the CY row's own text at x:260/y:448 and its leader as a two-leg polyline clear of seaMediterranean", () => {
+    const cyMatch = SOURCE.match(
+      /cy:\s*\{([^}]*leaderFrom:\s*\{[^}]*\}[^}]*leaderElbow:\s*\{[^}]*\}[^}]*)\}/,
+    );
+    expect(cyMatch, "cy entry (with leaderElbow) not found in CY_QN_LABEL_BLOCK").not.toBeNull();
     const cy = cyMatch?.[1] ?? "";
     expect(cy).toMatch(/x:\s*260\b/);
     expect(cy).toMatch(/y:\s*448\b/);
+    expect(cy).toMatch(/leaderFrom:\s*\{\s*x:\s*330,\s*y:\s*448\s*\}/);
+    // The elbow sits on the SAME y as leaderFrom (the row's own baseline) — leg 1 is safe by
+    // staying entirely above seaMediterranean's ink-box top edge regardless of x; leg 2 (elbow
+    // to target) is safe by staying entirely right of its ink-box right edge regardless of y.
+    expect(cy).toMatch(/leaderElbow:\s*\{\s*x:\s*360,\s*y:\s*448\s*\}/);
+  });
+
+  it("renders the CY leader as a fill:none <polyline> through leaderFrom → leaderElbow → the shape's labelPoint, not a straight <line>", () => {
+    const labelsBlock = layerBlock(SOURCE, "context-labels");
+    expect(labelsBlock).toMatch(/<polyline[^>]*fill="none"[^>]*points=\{/);
+    expect(labelsBlock).toMatch(/CY_QN_LABEL_BLOCK\.cy\.leaderFrom\.x/);
+    expect(labelsBlock).toMatch(/CY_QN_LABEL_BLOCK\.cy\.leaderElbow\.x/);
+    expect(labelsBlock).toMatch(/cyShape\.labelPoint\.x/);
+  });
+
+  it("still gives the QN row a plain <line> (only the CY row needed the bend)", () => {
+    const labelsBlock = layerBlock(SOURCE, "context-labels");
+    expect(labelsBlock).toMatch(/<line[^>]*x1=\{CY_QN_LABEL_BLOCK\.qn\.leaderFrom\.x\}/);
   });
 });
