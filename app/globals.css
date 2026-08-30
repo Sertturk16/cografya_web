@@ -190,12 +190,21 @@
      `--map-land-casing: #ded6ca` token this line originally defined: measured against
      `--color-border` (#ddd5cc), that hex was 1.008:1 contrast — a near-duplicate nobody could
      tell apart by eye, and a second token that could silently drift from the first if either
-     were retuned alone (`DESIGN.md` §2 single-token-per-colour discipline). `--color-border`
-     already carries the contrast notes this band needs: vs `--map-context-land` ≈ 1.15:1 and
-     vs `--map-sea` ≈ 1.14:1 (near-invisible against both, which is the point — it reads as a
-     soft coastal shelf, not a third land colour); vs `--province-fill` ≈ 1.44:1 is the
-     separation that actually matters, keeping Türkiye's own white fill legible as the map's
-     subject against the band hugging its coast. */
+     were retuned alone (`DESIGN.md` §2 single-token-per-colour discipline).
+
+     BORDER-OVERLAP FIX (`turkiye-border-overlap`, owner-verified at Hakkari's Iraq-facing tip):
+     `--color-border` was tuned to be quiet against a GENERIC backdrop (sea OR land), which is
+     exactly what left it visible as its OWN distinct, oddly-angular region at the union's
+     largest disagreements with the NE-shared frontier (plan §5.0-3: max 4.60 u, concentrated
+     at sharp corners — reproduces at Hakkari/Iraq, Iğdır–Kars/Armenia and Hatay/Syria) — read
+     as a second, competing border line with a gap, not a soft shelf. `.contextCasing path`
+     (`map.module.css`) now reuses `--map-context-land` instead (still an EXISTING token, no
+     new literal): casing-vs-context-land goes 1.138:1 → 1.0:1 (identical, invisible against
+     the neighbour it is drawn beneath), at the cost of casing-vs-sea rising 1.148:1 → 1.307:1
+     (still far below any legibility floor — a decorative fill, never text). The underlying
+     NE↔OSM source disagreement itself is UNCHANGED by this — see `map.module.css` for why an
+     epsilon retune was tried and measured not to help, and why a true geometric snap is a
+     bigger fix than this task's scope. */
   --province-hover: rgba(176, 82, 46, 0.16); /* terracotta wash of --color-primary */
   /* NAVIGATION-MAP hover/focus border weight (/turkiye + /dunya). One number, because it
      is the tunable the owner rules on from rendered samples; the colour is
