@@ -12,15 +12,23 @@
   margin: 0 0 14px;
 }
 
-/* `auto-FILL`, not the `/oyun` hub's `auto-fit`, and the difference is the whole reason this
-   rule is written out rather than copied. `auto-fit` collapses the empty tracks and lets the
-   surviving items stretch, so with ONE tool the card spanned the full 1120px container and
-   read as a stray banner (measured on the first sample pass). `auto-fill` keeps the empty
-   tracks, so today's single card sits at a readable card width and the second and third land
-   beside it in PR-C/PR-D with nothing here reopened. */
+/* `auto-fit`, not `auto-fill` any more. `auto-fill` was chosen when this grid held ONE card
+   and the goal was to stop it spanning the full 1120px container: with a single item,
+   `auto-fit` collapses the empty tracks and lets the survivor stretch to the container's
+   width, which read as a stray banner (measured on the first sample pass). That reasoning
+   does not generalize to three cards — measured instead of assumed
+   (`Owner's Inbox/araclar-production-ready/SPEC.md` §1 M2): at 1120px container width
+   (1080px content, 18px gap, 230px min card) `auto-fill` lays FOUR tracks for THREE cards,
+   so the fourth track stays permanently empty and each card is squeezed to 256.5px,
+   left-weighted in the grid rather than filling it. `tool-registry.test.ts` now pins the
+   tier at exactly three tools — its own scan asserts the registry equals the discovered
+   `araclar` tool-page subdirectories, not merely contains them — so the one-tool world this
+   rule was written for is gone and cannot silently reopen. `auto-fit` removes the
+   dead track: three cards get `(1080 − 36) / 3 = 348px` each, filling the container the way
+   a complete tier should read. */
 .toolGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 18px;
   margin: 24px 0 0;
   padding: 0;
@@ -28,14 +36,94 @@
 }
 
 .toolCard {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+/* Mirrors `.province-card:hover` (`app/globals.css`) exactly — same token, same property. */
+.toolCard:hover {
+  border-color: var(--color-primary);
+}
+
+/* The stretched anchor below (`.toolName a::after`) moves the card's click target off the
+   16-character link text and onto the whole card, so the ring that shows a keyboard user
+   "you are here" has to move with it. This reproduces the global `:focus-visible` treatment
+   (`app/globals.css`) at the card level instead of the link level, and is the STATED
+   compliant replacement `DESIGN.md` §5 requires before a focus ring is removed anywhere
+   (removed below, on the inner anchor, for exactly this reason).
+
+   Scoped with `:has(.toolName a:focus-visible)`, NOT `:focus-within` (fix round, PR #111
+   review A11Y111-M1). `.toolCard` has only one focusable child today (`.toolBadge` is an
+   `aria-hidden` `<p>`, the body is a plain `<p>`), so `:focus-within` is not a live bug here —
+   but this repo already hit this exact defect class once, on a different component
+   (`components/auth/auth-form.module.css`, `.errorRegion:has(.errorHeading:focus)`, round-3
+   fix `CODE88-M1`/`TEST88-I1`): a card-level `:focus-within` ring fires on ANY focused
+   descendant, not just the intended link, and silently starts ringing the wrong element the
+   moment a second focusable element (e.g. a future favorite/save button) is added to the
+   card. `:has()` is Baseline-available and this repo already ships it combined with
+   `:focus-visible` (`components/game/game-map.module.css`'s seven region-focus rules) and
+   plain `:focus` (`auth-form.module.css`, `components/site-search/site-search.module.css`), so
+   the same idiom is used here rather than copied without checking. */
+.toolCard:has(.toolName a:focus-visible) {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.toolBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--color-chip-bg);
+  color: var(--color-primary-dark);
+}
+
 .toolName {
   margin: 0;
   font-size: 1.25rem;
+}
+
+/* Stretched anchor: the whole card becomes the click target while `<h2><Link>` stays exactly
+   as it was — same accessible name, same SEO anchor text (`SEO-POLICY.md` §B8 8.3) — so no
+   second, repeated "Aç" affordance is introduced. The pseudo-element is empty and absolutely
+   positioned; its containing block is `.toolCard` (`position: relative` above, the nearest
+   positioned ancestor), which is what stretches it to the card's own box rather than the
+   link's.
+
+   DELIBERATE DEPARTURE from the repo's usual card pattern, not a reuse of one (fix round, PR
+   #111 review DF111-I1 — the prior wording here wrongly claimed this reproduces
+   `home.module.css`'s `.card`/`.cardArrow`; it does not). That pattern's `.card` IS the click
+   target: `components/home/tool-cards.tsx` wraps the WHOLE card in `<Link className={styles.
+   card}>`, and `.cardArrow` is only a decorative corner glyph that never expands anything. The
+   repo's one actual, existing precedent for "the whole card is clickable" is wrapping the
+   entire box in a single `<Link>` — see also `.province-card`
+   (`app/[locale]/turkiye/[slug]/page.tsx`, `app/[locale]/dunya/[slug]/page.tsx`) — and there is
+   no other stretched-anchor (`position: absolute; inset: 0` expanding a link's click target)
+   anywhere in this repo; every other `inset: 0` use (hero texture, map overlay, auth panel
+   rings) is a decorative layer, not a click target.
+
+   That whole-box-`<Link>` pattern is not usable here: wrapping the card in one `<Link>` would
+   make its accessible name and SEO anchor text the entire card body, not just the tool name,
+   which §B8 8.3 asks to keep narrow and specific. The stretched pseudo-element below keeps
+   `<h2><Link>{name}</Link></h2>` as the ONLY anchor and its text as the sole accessible
+   name/anchor text, while still making the whole `.toolCard` box clickable — a genuinely new,
+   one-off technique chosen for that reason, not an application of an existing one. */
+.toolName a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/* Suppressed ONLY because `.toolCard:has(.toolName a:focus-visible)` above is its stated
+   replacement: a ring around this ~16-character text run would be misleading once the whole
+   348px card is the real target, not merely narrow. */
+.toolName a:focus-visible {
+  outline: none;
 }
 
 .toolBody {

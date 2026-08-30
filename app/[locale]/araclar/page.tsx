@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { EnWorkInProgressNotice } from "@/components/en-work-in-progress-notice";
+import { AreaIcon, CoordinateIcon, DistanceIcon } from "@/components/tools/tool-icons";
 import { getPathname, Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import type { ContentSurface } from "@/lib/seo/indexing";
@@ -47,10 +48,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *
  * ## Not a link list (§B12.2.d)
  *
- * The intro answers "which tool, and when" from the curriculum's own division of spatial data
- * into point, line and area layers, so the hub carries an idea a card grid cannot. It is a
- * UYARI-level item rather than a BLOCKER, and it is also the difference between a hub worth
- * indexing and a doorway.
+ * `SEO-POLICY.md` §B12.2.d ("Hub sayfası kendi başına değer taşıyor mu, yoksa sadece link
+ * listesi mi?") is UYARI-level, not BLOCKER — and the BLOCKER rows above it are both already
+ * satisfied: 12.2.a (does the searcher find what they came for here) and 12.2.b (does the
+ * page exist only to make you click elsewhere). The hub names three tools, says what each
+ * does, is a real IA node with a header-nav entry and a homepage band, and is not a generated
+ * funnel.
+ *
+ * The repo already has an owner-ruled precedent for exactly this shape: `/oyun` is a heading,
+ * one subtitle sentence and three cards, and its own docblock records the trade in the
+ * owner's name (→ DEC 2026-07-30p/30q/30r) — "this is now a thin page by word count… an
+ * owner-ruled trade." This hub is the same genre in the same system, now that the old
+ * two-paragraph intro is down to one — and the two paragraphs did NOT both meet the same fate
+ * (fix round, PR #111 review CODE111-M1, precise per `SPEC.md` §5.1's own key table): `introP1`
+ * was REWRITTEN — same message key, wholly new content (the shared-map / no-registration /
+ * PNG-export fact below) — while `introP2` was REMOVED outright, its key deleted from
+ * `messages/tr.json` and from `TR_ONLY_KEYS`, nothing put in its place. What `introP2` carried
+ * was the taxonomy lesson (point/line/area): it enumerated the same three tools the cards
+ * already enumerate, in prose, directly above them, and nothing real was lost by cutting it
+ * (`Owner's Inbox/araclar-production-ready/SPEC.md` §5.1).
+ *
+ * What the hub still carries that a bare link list does not: the shared-map /
+ * no-registration / PNG-export fact in `introP1` — true of all three tools at once, which is
+ * exactly what no single card can say — the three tool icons, and its own H1 + metadata.
  *
  * ## Three cards, and the count in the copy was never a description of the plan
  *
@@ -87,16 +107,19 @@ export default async function ToolsHubPage({ params }: PageProps) {
       pathname: DISTANCE_TOOL.pathname,
       name: t("mesafeName"),
       body: t("mesafeBody"),
+      Icon: DistanceIcon,
     },
     {
       pathname: COORDINATE_TOOL.pathname,
       name: t("koordinatName"),
       body: t("koordinatBody"),
+      Icon: CoordinateIcon,
     },
     {
       pathname: AREA_TOOL.pathname,
       name: t("alanName"),
       body: t("alanBody"),
+      Icon: AreaIcon,
     },
   ] as const;
 
@@ -137,7 +160,6 @@ export default async function ToolsHubPage({ params }: PageProps) {
       {rendersIntro && (
         <div className={styles.intro}>
           <p className="lede">{t("introP1")}</p>
-          <p>{t("introP2")}</p>
         </div>
       )}
 
@@ -146,8 +168,16 @@ export default async function ToolsHubPage({ params }: PageProps) {
       <ul className={styles.toolGrid} role="list">
         {tools.map((tool) => (
           <li key={tool.pathname} className={`card ${styles.toolCard}`}>
+            {/* Decorative: the point/line/area distinction it shows at a glance is also said
+                in words by the card's own name and body below, so nothing here is information
+                carried by a symbol alone (`DESIGN.md` §6.1). */}
+            <p className={styles.toolBadge} aria-hidden="true">
+              <tool.Icon size={24} />
+            </p>
             {/* The card's own name is the link: the anchor text names the destination, which
-                is what §B8 8.3 asks for and what a repeated "Aç" button cannot give. */}
+                is what §B8 8.3 asks for and what a repeated "Aç" button cannot give. The
+                whole card is the click target (`tools.module.css` `.toolName a::after`); this
+                text stays the accessible name and the SEO anchor text either way. */}
             <h2 className={styles.toolName}>
               <Link href={tool.pathname}>{tool.name}</Link>
             </h2>

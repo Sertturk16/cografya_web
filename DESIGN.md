@@ -88,6 +88,19 @@ ramp and not the Terra brand hues.
   with `BreadcrumbList` JSON-LD), `.placeholder-note` (dev-content flag, warning left-border).
   Component styling uses CSS Modules + the global token layer — **no hardcoded brand hex
   outside the token layer.**
+  **Two click-target techniques for a fully-clickable card, and when each applies (→ PR #111
+  review DF111-I1, named after the first PR shipped it with a comment that wrongly claimed
+  the second one already existed).** Default: wrap the WHOLE card in one `<Link>` (`.card` /
+  `.province-card` above) — one target, one accessible name, the card's full text becomes the
+  anchor text. Use this unless a real reason forbids it. The other technique — a
+  `position: relative` card + a `::after` on an INNER anchor, `position: absolute; inset: 0`,
+  stretching just that anchor's click target to the whole card while the anchor itself keeps a
+  short, specific accessible name/anchor text — exists in exactly one place, the `/araclar` hub
+  cards (`app/[locale]/araclar/tools.module.css` `.toolCard` / `.toolName a::after`), and is
+  the one to reach for only when the default would make the accessible name/SEO anchor text too
+  broad (§B8 8.3) — e.g. a card whose body text says something the anchor text should not
+  swallow. Do not add a third variant of "make this card clickable" without checking this pair
+  first.
 - **TWO breakpoint numbers, and they do different jobs.** The **nav-collapse** breakpoint is
   **`66rem` (1056px)**: below it the header is a single compact row (brand + icon-only search
   trigger + hamburger) with the nav in a disclosure panel; from it up the nav is inline and the
