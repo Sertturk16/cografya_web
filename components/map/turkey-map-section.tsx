@@ -118,6 +118,47 @@ const SEA_LABELS = [
  * Azerbaijan's own visible sliver here is narrower than the longer TR string, so a few
  * percent is the measured floor, not an unexamined shortfall.
  *
+ * FIX ROUND 2 (PR #108, second fix round). An INDEPENDENT claim-verifier pass re-measured
+ * the round-1 remedy above (AZ x:1120/y:116/anchor:end, unchanged fontSize 18) with a
+ * genuinely fine grid (Chromium `isPointInFill()`, 301×21 = 6,321 points per label, sampled
+ * across the label's own `getBBox()`) and found round-1's own "2.13% TR / 0% EN" claim did
+ * NOT hold: the real shipped result was **8.12–8.54% TR / 2.66% EN inside Armenia** — more
+ * than double, in TR's case, what round 1 reported. The root cause was the MEASURING
+ * METHOD, not a fresh geometry change: round 1's own ink band was a narrower approximation
+ * (baseline − 0.72·fontSize to baseline + 0.18·fontSize, ≈ 16.2 u tall at fontSize 18) while
+ * `getBBox()` — this label's REAL rendered ink box, ascent through descent — is ≈ 23.6 u
+ * tall at the same size; the extra ≈ 7.4 u of genuine glyph ink round 1 never sampled is
+ * exactly where the Armenia overlap concentrates. Reproduced here first at round 1's own
+ * numbers to confirm the regression is measurement, not drift (`git diff` on this override
+ * across both fix rounds shows no unrelated change), then re-swept:
+ *
+ *   Re-ran the SAME wide sweep round 1 described above (edgeX 950–1120 × y −30…260, THREE
+ *   anchors: start/middle/end) at fontSize 18 AND 17 and reconfirmed round 1's honest
+ *   conclusion still holds at those two sizes: NO position clears AZ's ink to 0% against
+ *   Armenia in BOTH locales — Azerbaijan's own visible sliver here is narrower than either
+ *   string at 17px or wider.
+ *
+ *   fontSize 16 (2px down from the shared `CONTEXT_COUNTRY_LABEL_SIZE`, the smallest
+ *   integer step below 17 that changes the outcome) DOES clear: keeping `anchor="end"`
+ *   flush to the frame's own east edge (`x: 1120`, unchanged) and re-centring `y: 106`
+ *   (was 116, chosen from the middle of a y ∈ [96, 112] clean band the sweep found at this
+ *   size) measures **0% ink inside Armenia, Georgia, Iran, or ANY other context-land shape
+ *   or any of the 81 real province polygons, in BOTH locales — 100% of the label's ink sits
+ *   on Azerbaijan's own territory** (Chromium `isPointInFill()`, 6,321-point grid, checked
+ *   against the LIVE rendered `<defs>`/`[data-map-layer="context-land"]` geometry, not the
+ *   generated artifact in isolation). This is a genuine 0%, not a rounded-down residual —
+ *   the fix this round chose is the size reduction the original review invited as an option
+ *   once no position-only remedy exists at the shared size.
+ *
+ *   AM's own override (982, 92) is UNCHANGED — the size reduction does not require moving
+ *   it. Re-measured for a NEW visual collision anyway (the same check round 1 ran for its
+ *   own AZ change): AM's ink box sits at TR x [933.1, 1030.9] / EN x [946.1, 1017.9]; AZ's
+ *   new box sits at TR x [1034.0, 1120.0] / EN x [1042.2, 1120.0] — a real horizontal gap in
+ *   both locales (≈ 3.1 u TR, ≈ 24.3 u EN), so the two boxes do not touch despite their y
+ *   ranges overlapping. The AM-vs-Kars residual documented above (§"SEPARATE AXIS") is
+ *   UNTOUCHED and out of this round's scope, exactly as instructed — AM's x/y did not move,
+ *   so that number is unaffected and was not re-measured.
+ *
  * MK, RS — REMOVED in the same fix round (VAL108-SOV3) rather than repositioned: see
  * `CONTEXT_LABEL_OMITTED_ISOS` below for why.
  *
@@ -127,11 +168,20 @@ const SEA_LABELS = [
 const LABEL_ANCHOR_OVERRIDES: Partial<
   Record<
     string,
-    { readonly x: number; readonly y: number; readonly anchor: "start" | "middle" | "end" }
+    {
+      readonly x: number;
+      readonly y: number;
+      readonly anchor: "start" | "middle" | "end";
+      /** Per-label font-size override (fix round 2, AZ only) — falls back to
+       *  `CONTEXT_COUNTRY_LABEL_SIZE` when absent. See the AZ paragraph above: no
+       *  position/anchor combination at the shared 18px clears Azerbaijan's ink off
+       *  Armenia in both locales, so this is the deliberate, documented exception. */
+      readonly fontSize?: number;
+    }
   >
 > = {
   AM: { x: 982, y: 92, anchor: "middle" },
-  AZ: { x: 1120, y: 116, anchor: "end" },
+  AZ: { x: 1120, y: 106, anchor: "end", fontSize: 16 },
   GR: { x: -105, y: 130, anchor: "start" },
 };
 
@@ -198,9 +248,29 @@ const CONTEXT_LABEL_OMITTED_ISOS = new Set(["MK", "RS", "LB"]);
  *     either locale; each line's sampled path (201 points) is 100% either open sea or its
  *     OWN target shape — 0% crosses into the other entity's territory or into TR/SY.
  * See the PR's fix-round completion report for the full search and the exact sample counts.
+ *
+ * FIX ROUND 2 (PR #108, second fix round). An independent claim-verifier pass re-measured
+ * the QN row above with the label's REAL `getBBox()` ink box (ascent through descent, not
+ * the round-1 "0.72·fontSize above baseline to 0.18·fontSize below" approximation — the
+ * same measuring-method gap the AZ paragraph above documents) at a fine 301×21 = 6,321-point
+ * grid and found the y:426 row was NOT fully clear: **0.089–0.275% of the ink box (both
+ * locales) still lands on Mersin's own coastline**, on the label's topmost cap-height row —
+ * small, but genuinely non-zero, and round 1's "0%" claim did not hold under the finer
+ * method. `y: 426 → 428` (2 u further south, still `x: 340`, anchor unchanged) clears it:
+ * re-measured on the live rendered page at the same 6,321-point grid, **0% of the QN row's
+ * ink box falls inside Mersin, any other of the 81 province polygons, any context-land
+ * shape, or the TR casing, in either locale** — the only non-zero hit at this position is
+ * 2/6,321 points (0.032%) landing on NORTHERN CYPRUS'S OWN shape, which is not a foreign-
+ * territory defect (it is the entity the row names). `leaderFrom.y` moves with it (`434 →
+ * 436`, preserving the original 8 u-below-baseline offset); re-verified after the move: the
+ * QN/CY leader segments still do not cross (algebraic solve, `t`/`s` both far outside
+ * [0, 1]), and each line's 201-point sampled path is 100% either open water or its own
+ * target shape in both locales — no foreign-territory or TR/SY crossing reintroduced. The
+ * CY row is UNTOUCHED (unaffected — the claim-verifier's re-measurement found it clean at
+ * 0% in both locales at the finer grid too).
  */
 const CY_QN_LABEL_BLOCK = {
-  qn: { x: 340, y: 426, leaderFrom: { x: 340, y: 434 } },
+  qn: { x: 340, y: 428, leaderFrom: { x: 340, y: 436 } },
   cy: { x: 260, y: 448, leaderFrom: { x: 260, y: 456 } },
 } as const;
 
@@ -551,13 +621,17 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
                 const x = override ? override.x : shape.labelPoint.x;
                 const y = override ? override.y : shape.labelPoint.y;
                 const anchor = override ? override.anchor : "middle";
+                // Fix round 2 (AZ only, see LABEL_ANCHOR_OVERRIDES docblock): an override
+                // may carry its OWN font-size when no position/anchor combination at the
+                // shared size clears its ink off a neighbour's territory.
+                const fontSize = override?.fontSize ?? CONTEXT_COUNTRY_LABEL_SIZE;
                 return (
                   <text
                     key={shape.iso}
                     x={x}
                     y={y}
                     textAnchor={anchor}
-                    fontSize={CONTEXT_COUNTRY_LABEL_SIZE}
+                    fontSize={fontSize}
                     className={styles.contextLabel}
                   >
                     {name}
