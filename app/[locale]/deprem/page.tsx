@@ -117,10 +117,13 @@ export default async function EarthquakePage({ params }: PageProps) {
           clicks "Uygula", the map/list genuinely re-filter — but this fact, being a different
           data source entirely, stayed frozen at page load. Moved into `EarthquakeFilters`
           itself (single source of truth: the SAME `active` state the filter island already
-          applies), reusing the exact `.magnitudeFloorNote`/`.magnitudeFloorLabel` pattern
-          `ProvinceEarthquakeSection` already established for this identical fact
-          (`province-earthquake-section.tsx`). Scope buffer / freshness stay here — neither one
-          is filter-derived, so neither one can go stale the same way. */}
+          applies). Fix round (review DF116-I1): `EarthquakeFilters` renders it in the
+          `.magnitudeFloorCard` variant, styled to match THIS `<dl>`'s own `.metaFacts`/
+          `dt`/`dd` card language (`earthquake.module.css`) — not the plain
+          `.magnitudeFloorNote` pattern `ProvinceEarthquakeSection` uses for the identical
+          fact, which has no sibling `.metaFacts` card of its own. Scope buffer / freshness
+          stay here — neither one is filter-derived, so neither one can go stale the same
+          way. */}
       <dl className={styles.metaFacts}>
         <div className={styles.metaFact}>
           <dt>{t("meta.scopeBufferLabel")}</dt>

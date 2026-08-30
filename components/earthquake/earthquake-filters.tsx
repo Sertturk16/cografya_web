@@ -167,14 +167,18 @@ export function EarthquakeFilters({
       {/* Owner-verified bug fix (`cografya-editor-notlari/deprem-notlar.txt` madde 2): this
           fact used to be a server-rendered sibling in `page.tsx`'s own `<dl>`, sourced from a
           separate, page-load-only value — it never moved after "Uygula". Rendered here
-          instead, reusing the exact `.magnitudeFloorNote`/`.magnitudeFloorLabel` pattern
-          `ProvinceEarthquakeSection` already established for the identical fact
-          (`province-earthquake-section.tsx`), because this is the one place that owns the
-          live applied filter. */}
-      <p className={styles.magnitudeFloorNote}>
-        <span className={styles.magnitudeFloorLabel}>{t("meta.magnitudeFloorLabel")}:</span>{" "}
-        {t("meta.magnitudeFloorValue", { value: appliedMinMagnitudeLabel })}
-      </p>
+          instead, because this is the one place that owns the live applied filter (single
+          source of truth: the SAME `active` state the map/list below already render from).
+          Fix round (review DF116-I1): styled as a one-item `<dl>` in the `.magnitudeFloorCard`
+          variant, not the plain `.magnitudeFloorNote` pattern `ProvinceEarthquakeSection`
+          uses for the identical fact — this note sits right below `page.tsx`'s own
+          `.metaFacts` card ("Kapsam"/"Tazelik") and needs the same card/dt-dd visual family
+          to read as a sibling fact rather than a lesser one; `ProvinceEarthquakeSection` has
+          no such sibling card next to it, so its plain treatment is unaffected. */}
+      <dl className={styles.magnitudeFloorCard}>
+        <dt>{t("meta.magnitudeFloorLabel")}</dt>
+        <dd>{t("meta.magnitudeFloorValue", { value: appliedMinMagnitudeLabel })}</dd>
+      </dl>
       <form className={styles.filterForm} onSubmit={onApply}>
         <div className={styles.filterField}>
           <label htmlFor={magnitudeId}>{t("filters.magnitudeLabel")}</label>

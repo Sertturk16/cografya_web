@@ -185,6 +185,35 @@
   color: var(--color-ink);
 }
 
+/* Magnitude-floor note — CARD variant (fix round, review DF116-I1). `.magnitudeFloorNote`
+   above stays exactly as-is for `province-earthquake-section.tsx`, which has no sibling
+   `.metaFacts` card next to it and correctly keeps the plain small-print treatment. This
+   variant is for `earthquake-filters.tsx`'s use on `/deprem` ONLY, where the note sits right
+   below `app/[locale]/deprem/page.tsx`'s own `.metaFacts` card ("Kapsam"/"Tazelik") and read
+   as a different-tier fact once the plain-text treatment landed next to it. Values are
+   COPIED from `deprem.module.css`'s `.metaFacts`/`.metaFact dt`/`.metaFact dd` (not
+   imported — that file is route-shell-only per its own header) so the three sibling facts
+   read as one visual family again, even though this one lives in a different DOM parent (it
+   owns the live `active` filter state that `.metaFacts`'s server-only `<dl>` cannot). */
+.magnitudeFloorCard {
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+
+.magnitudeFloorCard dt {
+  font-size: 0.78rem;
+  color: var(--color-slate);
+  margin-bottom: 2px;
+}
+
+.magnitudeFloorCard dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
 /* ---- Attribution / disclaimer (§5.8) ----------------------------------------- */
 
 .sources {
