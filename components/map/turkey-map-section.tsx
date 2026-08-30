@@ -240,8 +240,15 @@ const CONTEXT_LABEL_OMITTED_ISOS = new Set(["MK", "RS", "LB"]);
  *     Northern Cyprus": 0% of either ink box falls inside ANY context shape OR any of the 81
  *     real province polygons (i.e. 100% open water) — verified against the live rendered
  *     page, not only the generated-artifact geometry.
- *   CY row (x 260, y 448) — TR "Kıbrıs Cumhuriyeti" and EN "Republic of Cyprus": same, 0%
- *     foreign-shape ink in both locales, verified against the live rendered page.
+ *   CY row (x 260, y 448) — measured at the time against TR "Kıbrıs Cumhuriyeti" and EN
+ *     "Republic of Cyprus": same, 0% foreign-shape ink in both locales, verified against the
+ *     live rendered page. **NOT re-measured since the rename** (`DEC 2026-08-30b`/
+ *     `DEC 2026-08-31a`, `cografya_api` PR #154): the live TR text this anchor now renders is
+ *     "Güney Kıbrıs Rum Yönetimi" — ~39% longer (25 vs. 18 characters) than the string this
+ *     ink-box claim was measured against — while `nameEn` is unchanged. This specific 0%
+ *     claim is therefore UNCONFIRMED for the TR locale's current live text; flagged as an
+ *     open follow-up (a fresh ink-box re-measurement, the same method as rounds 1–3 above),
+ *     not silently assumed to still hold and not re-derived here.
  *   Leader lines (from 8 u below each row's baseline, clear of its own ink band, to the
  *     shape's own `labelPoint`): the two segments do not cross (checked algebraically);
  *     neither line's own text-clear starting point sits inside the OTHER row's ink box in

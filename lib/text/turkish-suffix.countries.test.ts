@@ -226,7 +226,7 @@ const COUNTRY_SUFFIX_TABLE: ReadonlyArray<
   ["Samoa", "Samoa'nın", "Samoa'da"],
   ["Tonga", "Tonga'nın", "Tonga'da"],
   ["Tuvalu", "Tuvalu'nun", "Tuvalu'da"],
-  ["Kıbrıs Cumhuriyeti", "Kıbrıs Cumhuriyeti'nin", "Kıbrıs Cumhuriyeti'nde"],
+  ["Güney Kıbrıs Rum Yönetimi", "Güney Kıbrıs Rum Yönetimi'nin", "Güney Kıbrıs Rum Yönetimi'nde"],
   [
     "Kuzey Kıbrıs Türk Cumhuriyeti",
     "Kuzey Kıbrıs Türk Cumhuriyeti'nin",
@@ -278,6 +278,11 @@ describe("country-name exception classes (documented subset of the table)", () =
     expect(turkishLocative("Solomon Adaları")).toBe("Solomon Adaları'nda"); // back harmony
     expect(turkishLocative("Ekvator Ginesi")).toBe("Ekvator Ginesi'nde");
     expect(turkishLocative("Fildişi Sahili")).toBe("Fildişi Sahili'nde");
+    // Same izafet-head class, added with the CY rename (→ DEC 2026-08-30b): before "Yönetimi"
+    // joined PRONOMINAL_BUFFER_HEADS this computed "Güney Kıbrıs Rum Yönetimi'de" — the exact
+    // "Kongo Cumhuriyeti'de" bug this describe block documents, reproduced on a name the
+    // corpus did not carry when that fix originally landed.
+    expect(turkishLocative("Güney Kıbrıs Rum Yönetimi")).toBe("Güney Kıbrıs Rum Yönetimi'nde");
   });
 
   it("plural -lar/-ler names do NOT take the buffer (the class the rule must not over-reach into)", () => {

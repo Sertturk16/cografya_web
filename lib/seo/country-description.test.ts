@@ -96,7 +96,7 @@ describe("selectCountryMetaDescription — fallback chain", () => {
 
   it("a ZERO neighbour count is NOT treated as a fact and falls through", () => {
     // Load-bearing: "0 neighbours" would have to be rendered as a border claim, which is not
-    // acceptable copy on the sovereignty rows (Kıbrıs Cumhuriyeti / KKTC both carry 0).
+    // acceptable copy on the sovereignty rows (Güney Kıbrıs Rum Yönetimi / KKTC both carry 0).
     const sel = selectCountryMetaDescription({
       ...base,
       population: null,
