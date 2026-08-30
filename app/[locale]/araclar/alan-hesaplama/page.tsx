@@ -174,7 +174,6 @@ export default async function AreaToolPage({ params }: PageProps) {
           <h2>{t("sonucHeading")}</h2>
           <p>{t("sonucP1")}</p>
           <p>{t("sonucP2")}</p>
-          <p>{t("sonucP3")}</p>
 
           <p className={styles.sourceLine}>{t("kaynak")}</p>
         </div>

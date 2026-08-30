@@ -150,7 +150,6 @@ export default async function CoordinateToolPage({ params }: PageProps) {
           <h2>{t("sistemHeading")}</h2>
           <p>{t("sistemP1")}</p>
           <p>{t("sistemP2")}</p>
-          <p>{t("sistemP3")}</p>
 
           <h2>{t("derecekmHeading")}</h2>
           <p>{t("derecekmP1")}</p>
