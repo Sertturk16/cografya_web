@@ -49,6 +49,33 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* ---- Geographic context (deniz-notlar.txt madde 1) ---------------------------
+   Same two rule sets as `components/map/map.module.css`'s `.contextCasing`/`.contextLand`
+   (turkiye-yenileme PR-B), reused byte-for-byte rather than re-derived — this is a second CSS
+   Module, so the class names cannot be shared, but the declarations must not drift from the
+   surface they were measured on. Neither group carries a link, a tab stop or a `data-shape`;
+   the map has no hit layer at all on this page (no province link exists here), so
+   `pointer-events: none` is belt-and-braces rather than load-bearing the way it is on
+   `/turkiye`. */
+.contextCasing,
+.contextLand {
+  pointer-events: none;
+}
+
+.contextCasing path {
+  fill: var(--color-border);
+  stroke: var(--color-border);
+  stroke-width: 6;
+  stroke-linejoin: round;
+}
+
+.contextLand path {
+  fill: var(--map-context-land);
+  stroke: var(--map-context-line);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
 /* The dot itself. Its white ring scales WITH the map (no non-scaling-stroke): pinned at a
    constant pixel width it swallowed the fill on a phone, where the map draws at about a
    third of its desktop size, and thirty markers turned into thirty pale specks. */
@@ -63,7 +90,13 @@
   stroke: var(--color-accent);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
-  opacity: 0.75;
+  /* FULL opacity, not the 0.75 this line shipped with (fix round, deniz-notlar.txt madde 1
+     follow-on): now that `.contextLand` can sit behind a leader line near a border point, the
+     SAME colour/opacity pair already measured on `/turkiye`'s own `.contextLeader`
+     (map.module.css) applies here too — `--color-accent` at 0.75 opacity is 2.60:1 against
+     `--map-context-land`, under WCAG 1.4.11's 3:1 floor, while full opacity clears 3.71:1
+     against it (and 4.85:1 against `--map-sea`, unchanged from before). Reusing an
+     already-measured fact rather than re-measuring it. */
 }
 
 /* Map lettering. The white halo (paint-order: stroke) is what keeps a label readable
@@ -452,12 +485,10 @@
   font-size: 0.85rem;
 }
 
-.vintageInstant,
+/* `.vintageInstant` (the per-row "Geçerlilik anı" instant) is gone — the shared instant it
+   repeated 30 times now lives once as `.vintageCombined` below (deniz-notlar.txt madde 2). */
 .vintageGrid {
   display: block;
-}
-
-.vintageGrid {
   margin-top: 3px;
 }
 
@@ -483,6 +514,16 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  line-height: 1.5;
+}
+
+/* The combined künye sentence (deniz-notlar.txt madde 2 / deniz-yeni.txt) — same typographic
+   voice as `.vintageList` beside it (the general fallback it replaces in the common case), so
+   swapping between the two on a given render never reads as two different components. */
+.vintageCombined {
+  margin: 0;
   font-size: 0.85rem;
   color: var(--color-slate);
   line-height: 1.5;
@@ -579,26 +620,68 @@
   font-size: 0.85rem;
 }
 
-/* ---- Explainers ------------------------------------------------------------- */
+/* ---- Explainers (closed-by-default accordion, deniz-notlar.txt madde 8) ----------------- */
 
 /* Demoted to H3 under one wrapper H2 in W2a: the page's subject is the sea state and these
-   explain it (see marine-explainers.tsx). The blocks keep their own spacing so the demotion
-   does not squash them into a list. */
+   explain it (see marine-explainers.tsx). Each block is now a native `<details>` — bordered
+   like a row in a card list, not a bare paragraph, so the closed state reads as a row of
+   questions rather than a wall of blank space. */
 .explainer {
-  margin: 0 0 22px;
+  margin: 0 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
 }
 
 .explainer:last-child {
   margin-bottom: 0;
 }
 
+/* The whole summary row is the toggle (WCAG 2.2 §2.5.8: comfortably over the 24×24 floor at
+   any viewport). `list-style: none` removes Firefox's own marker; `::-webkit-details-marker`
+   removes Chromium/Safari's — both replaced by the chevron below, which is decorative (the
+   open/closed STATE is already carried by the native `open` attribute and `aria-expanded`,
+   which the browser keeps in sync with `<summary>`'s own toggle role — nothing here needs to
+   restate it to AT). */
+.explainerSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.explainerSummary::-webkit-details-marker {
+  display: none;
+}
+
 .explainerHeading {
   font-size: 1.05rem;
-  margin: 0 0 10px;
+  margin: 0;
+}
+
+/* The chevron. Rotates on `[open]` — the transition is dropped globally under
+   `prefers-reduced-motion: reduce` (app/globals.css `* { transition: none !important }`), so
+   nothing extra is needed here for that. */
+.explainerSummary::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--color-accent);
+  border-bottom: 2px solid var(--color-accent);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.explainer[open] > .explainerSummary::after {
+  transform: rotate(-135deg);
 }
 
 .explainerBody {
   margin: 0;
+  padding: 0 16px 16px;
   max-width: 70ch;
 }
 

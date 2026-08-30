@@ -71,6 +71,21 @@ export function formatViewBox(rect: MapRect): string {
 }
 
 /**
+ * The smallest rectangle containing both inputs — used to widen a computed frame so it also
+ * covers a second, independently-sized frame in the SAME coordinate space (e.g.
+ * `marine-map.tsx` unioning its own label-driven frame with `TR_CONTEXT_VIEWBOX` so neither
+ * the offshore points/labels nor the neighbouring-country backdrop is ever clipped).
+ */
+export function unionMapRect(a: MapRect, b: MapRect): MapRect {
+  return {
+    minX: Math.min(a.minX, b.minX),
+    minY: Math.min(a.minY, b.minY),
+    maxX: Math.max(a.maxX, b.maxX),
+    maxY: Math.max(a.maxY, b.maxY),
+  };
+}
+
+/**
  * Projects a [longitude, latitude] pair (decimal degrees) into `MAP_VIEWBOX` units.
  *
  * North is up, so latitude is inverted: a HIGHER latitude yields a LOWER `y`.

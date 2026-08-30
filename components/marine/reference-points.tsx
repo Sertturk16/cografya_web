@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type {
@@ -15,9 +15,10 @@ import {
   marinePointAnchorId,
 } from "@/lib/marine/anchors";
 import { basinLabel, groupPointsByBasin } from "@/lib/marine/basins";
+import { MODEL_INSTANT_FORMAT } from "@/lib/marine/model-run";
 import { marinePublishableBlocks } from "@/lib/marine/overview";
 import { MARINE_VALUE_STATUS_KEY } from "@/lib/marine/value-state";
-import { marineBlockValues } from "@/lib/marine/vintage";
+import { marineBlockValues, oldestValidAt } from "@/lib/marine/vintage";
 import { BasinValuesTable } from "./basin-values-table";
 import { MarineMap } from "./marine-map";
 import { VintageLine } from "./vintage-line";
@@ -82,6 +83,14 @@ const HEADING_ID = MARINE_POINTS_SECTION_ID;
  * for that window, which is the correct outcome for a retired point. The value-less render
  * below takes the opposite path and lists all thirty, because there it is the only list
  * there is.
+ *
+ * ONE INTRO SENTENCE INSTEAD OF FOUR REPEATS (deniz-notlar.txt madde 3 / deniz-yeni.txt). Each
+ * basin table used to carry its own `<caption>` — "{Deniz} açıkları: referans noktalarında
+ * yayımlanan son değerler." — four times, word for word except the sea name, directly under a
+ * basin heading that already states the sea name and the point count. `t("valuesIntro")`
+ * replaces all four with the owner's own approved sentence, said once, right under THIS
+ * section's own `<h2>`; `BasinValuesTable` no longer renders a `<caption>` at all (see its own
+ * docblock for what replaced it).
  */
 export async function ReferencePoints({
   locale,
@@ -92,6 +101,7 @@ export async function ReferencePoints({
 }: ReferencePointsProps) {
   const t = await getTranslations("Deniz");
   const tm = await getTranslations("Marine");
+  const format = await getFormatter();
 
   const groups = groupPointsByBasin(points);
   const provincesByPlate = byPlateCode(provinces);
@@ -119,9 +129,27 @@ export async function ReferencePoints({
     layers.map((layer) => [layer.id, layer]),
   );
 
+  // The one sentence that replaces the four repeated table captions (see the docblock above).
+  // Gated on `showValues`: it names "the tables below", which do not exist in the value-less
+  // render.
+  const windWaveValidAt = showValues
+    ? oldestValidAt(
+        blocks.flatMap((block) => [
+          block.windSpeed10m,
+          block.windDirection10m,
+          block.waveHeight,
+          block.waveDirection,
+        ]),
+      )
+    : null;
+  const seaTemperatureValidAt = showValues
+    ? oldestValidAt(blocks.map((block) => block.seaSurfaceTemperature))
+    : null;
+
   return (
     <section className="section" aria-labelledby={HEADING_ID}>
       <h2 id={HEADING_ID}>{showValues ? t("valuesHeading") : t("pointsHeading")}</h2>
+      {showValues && <p className={styles.hint}>{t("valuesIntro")}</p>}
       <p className={styles.hint}>{tm("point.referencePointHint")}</p>
 
       {/* The map is a VIEW of what follows it, not a separate topic, so the two share this
@@ -163,6 +191,7 @@ export async function ReferencePoints({
                     blocks={groupBlocks}
                     layerById={layerById}
                     provincesByPlate={provincesByPlate}
+                    headingId={headingId}
                   />
                 </section>
               );
@@ -193,7 +222,31 @@ export async function ReferencePoints({
 
           <div className={styles.vintage}>
             <h3 className={styles.subHeading}>{tm("vintage.heading")}</h3>
-            <VintageLine values={blocks.flatMap(marineBlockValues)} />
+            {/* THE COMBINED SENTENCE (deniz-notlar.txt madde 2 / deniz-yeni.txt), replacing
+                the 30-times-repeated per-row instant. Wind+wave and sea temperature genuinely
+                carry two different instants (different providers, different publication
+                cadence — see `Deniz.q5`/the new `Deniz.a8`), so ONE sentence names both,
+                computed live from the same data the per-row cells used to read — never the
+                owner's own hand-written example dates, which are already stale the day after
+                they were written. `oldestValidAt` is the SAME "never overstate freshness" rule
+                the per-row cell used, applied to the wind/wave family and the sea-temperature
+                family SEPARATELY rather than to all five fields at once.
+
+                Falls back to the general per-provider list (`VintageLine`, unchanged, still
+                used as-is on the 27 province pages) whenever either family has no visible
+                instant at all — a genuine but rare case (e.g. every wind/wave value on screen
+                is `no_data`/`unavailable`) where naming a family with nothing to date would be
+                inventing an instant instead of reporting one. */}
+            {windWaveValidAt !== null && seaTemperatureValidAt !== null ? (
+              <p className={styles.vintageCombined}>
+                {tm("vintage.combined", {
+                  windWave: format.dateTime(windWaveValidAt, MODEL_INSTANT_FORMAT),
+                  seaTemperature: format.dateTime(seaTemperatureValidAt, MODEL_INSTANT_FORMAT),
+                })}
+              </p>
+            ) : (
+              <VintageLine values={blocks.flatMap(marineBlockValues)} />
+            )}
           </div>
         </>
       ) : (

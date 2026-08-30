@@ -10,11 +10,12 @@ interface DirectionArrowProps {
  * flow is going.
  *
  * IT CARRIES NO INFORMATION. `aria-hidden` is not an oversight — every fact the arrow hints
- * at is already written out beside it in words ("Geldiği yön: kuzeybatı (315°)"), because a
- * rotated glyph is unreadable to a screen reader, invisible to a crawler, and ambiguous to
- * anyone who has not been told which end is the model's convention. The arrow is a
- * reinforcement for sighted scanning and nothing else, which is also why removing it would
- * cost the page no meaning at all.
+ * at is already written out beside it in words ("Kuzeybatı (315°)" — the reading key beneath
+ * the table states once, for the whole page, that this text names the direction the wind or
+ * swell comes FROM), because a rotated glyph is unreadable to a screen reader, invisible to a
+ * crawler, and ambiguous to anyone who has not been told which end is the model's convention.
+ * The arrow is a reinforcement for sighted scanning and nothing else, which is also why
+ * removing it would cost the page no meaning at all.
  *
  * The rotation is computed server-side and baked into the HTML, so there is no client JS, no
  * layout shift and no animation to respect `prefers-reduced-motion` for. Fixed pixel box:

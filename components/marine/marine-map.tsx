@@ -8,7 +8,8 @@ import {
   placePointLabels,
   type LabelledPointInput,
 } from "@/lib/map/point-labels";
-import { formatViewBox, parseViewBox, projectToMapPoint } from "@/lib/map/projection";
+import { formatViewBox, parseViewBox, projectToMapPoint, unionMapRect } from "@/lib/map/projection";
+import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { InlandWaterLayer } from "@/components/map/inland-water-layer";
 import styles from "./marine.module.css";
@@ -22,6 +23,13 @@ interface MarineMapProps {
 
 const TITLE_ID = "deniz-map-title";
 const DESC_ID = "deniz-map-desc";
+
+/**
+ * The geographic-context ISO join key drawn as the CASING (same convention
+ * `turkey-map-section.tsx` uses) — Türkiye's own Natural Earth outline, closing the seam
+ * between it and the 81-province union. Never labelled.
+ */
+const CONTEXT_CASING_ISO = "TR";
 
 /**
  * The 30 offshore reference points, drawn on the Türkiye map (W1b).
@@ -48,6 +56,26 @@ const DESC_ID = "deniz-map-desc";
  * out still. `frameForLabelledPoints` widens the viewBox to contain everything, so nothing
  * is ever clipped at the panel edge. The extra margin reads as open water, which is what
  * it is.
+ *
+ * GEOGRAPHIC CONTEXT (owner finding, deniz-notlar.txt madde 1). Until this fix the map drew
+ * only the 81 province outlines over a flat sea, which reads as Türkiye floating alone —
+ * `/turkiye`'s own map solved exactly this with a `context-casing` (Türkiye's own Natural
+ * Earth outline, filled, closing the generalisation seam) and `context-land` (the 14
+ * neighbouring/near-neighbouring countries with any visible area in the widened frame) layer
+ * pair, generated once (`lib/map/tr-context.generated.ts`, turkiye-yenileme PR-B) and REUSED
+ * here verbatim — no new geographic dataset, no new country-name fetch (this map draws the
+ * neighbour SHAPES only, never their names, so it needs none of `/turkiye`'s
+ * `getCountryMapSummaryResilient()` machinery). Same paint order as `/turkiye`
+ * (casing → land → this map's own land layer, so a province's own white fill still wins over
+ * the backdrop), and the final viewBox is the UNION of the label-driven frame below and
+ * `TR_CONTEXT_VIEWBOX` — never a replacement of it — so the existing 30 points/labels keep
+ * the exact positions `frameForLabelledPoints`/`placePointLabels` already computed against
+ * the narrow `MAP_VIEWBOX` (the `frame` argument passed to `placePointLabels` is deliberately
+ * UNCHANGED: widening it would also shift which edge each label pushes toward, a behaviour
+ * change this fix does not ask for). No country/sea TEXT is added — the Marmara pocket alone
+ * already crowds six point labels into a tight box (`point-labels.ts` docblock), and text
+ * would need the same collision system to know about the new shapes; the shapes' own white
+ * label-halo (`.mapLabel`) keeps existing labels legible over the new backdrop regardless.
  *
  * LABEL TEXT. Each marker is labelled with its PROVINCE name, not the point's full name.
  * "Kocaeli" is legible at map scale; "Kocaeli Açıkları" repeated thirty times is not a map,
@@ -84,6 +112,11 @@ export async function MarineMap({ locale, points, provinces }: MarineMapProps) {
 
   if (base === null || inputs.length === 0) return null;
 
+  // Deliberately fed the NARROW `base` (`MAP_VIEWBOX`), not the context frame below: this is
+  // the same frame `placePointLabels`'s `nearestEdge` rule already used before the context
+  // layers existed, so all 30 labels keep the exact push direction/position they had —
+  // widening this argument too would let a far-away context edge change which way a label is
+  // pushed, a behaviour change this fix does not ask for.
   const placed = placePointLabels(inputs, base);
   // A single non-finite coordinate would poison the whole union frame (`Math.min`/`Math.max`
   // propagate NaN) and emit a `viewBox` the browser rejects — which collapses the ENTIRE map
@@ -91,8 +124,18 @@ export async function MarineMap({ locale, points, provinces }: MarineMapProps) {
   // (`latitude`/`longitude` are non-nullable numbers), but the api response is trusted by
   // TYPE, not validated at runtime (`lib/api/client.ts` casts), so the frame falls back to
   // the base viewBox rather than taking the map down with it.
-  const computed = formatViewBox(frameForLabelledPoints(base, placed));
+  const labelFrame = frameForLabelledPoints(base, placed);
+  // Widened to also contain the geographic-context frame — a UNION, never a replacement, so
+  // neither the offshore points/labels nor the neighbouring-country backdrop is ever clipped
+  // regardless of which one happens to be larger in a given direction.
+  const contextFrame = parseViewBox(TR_CONTEXT_VIEWBOX);
+  const computed = formatViewBox(
+    contextFrame === null ? labelFrame : unionMapRect(labelFrame, contextFrame),
+  );
   const frame = parseViewBox(computed) === null ? MAP_VIEWBOX : computed;
+
+  const contextCasing = CONTEXT_SHAPES.find((shape) => shape.iso === CONTEXT_CASING_ISO);
+  const contextLand = CONTEXT_SHAPES.filter((shape) => shape.iso !== CONTEXT_CASING_ISO);
 
   return (
     <figure className={styles.mapFigure}>
@@ -105,6 +148,22 @@ export async function MarineMap({ locale, points, provinces }: MarineMapProps) {
         >
           <title id={TITLE_ID}>{t("map.title")}</title>
           <desc id={DESC_ID}>{t("map.description", { count: points.length })}</desc>
+
+          {/* CONTEXT LAYERS (deniz-notlar.txt madde 1) — drawn FIRST, before the province land
+              layer, so the province fill always wins over the backdrop. Same shapes, same
+              paint order (casing → land → this map's own land) as `/turkiye`'s
+              `turkey-map-section.tsx` — see this component's own docblock above. Both groups
+              are `pointer-events: none` (`.contextCasing`/`.contextLand`, marine.module.css) —
+              neither carries an `<a>`, a `tabIndex` or a `data-shape`, so they cannot eat a
+              pointer event the way an unstyled overlay once did on the sibling map. */}
+          <g data-map-layer="context-casing" className={styles.contextCasing} aria-hidden="true">
+            {contextCasing && <path d={contextCasing.d} />}
+          </g>
+          <g data-map-layer="context-land" className={styles.contextLand} aria-hidden="true">
+            {contextLand.map((shape) => (
+              <path key={shape.iso} d={shape.d} vectorEffect="non-scaling-stroke" />
+            ))}
+          </g>
 
           {/* Geographic backdrop only. The province outlines carry no link and no card on
               this page — the map's subject is the points, and 81 extra tab stops would
