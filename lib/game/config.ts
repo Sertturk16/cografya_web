@@ -64,7 +64,7 @@ export const MAX_STARS = GAME_CONFIG.starThresholds.length;
  * The star thresholds, for the end screen to STATE them.
  *
  * Published rather than re-typed into a translation string: the sentence that explains the
- * grade ("85 puan ve üzeri 3 yıldız…") is built from these very numbers, so tuning the
+ * grade ("3 yıldız: 85+ puan · …") is built from these very numbers, so tuning the
  * ladder can never leave the explanation describing the old one.
  */
 export const STAR_THRESHOLDS = GAME_CONFIG.starThresholds;

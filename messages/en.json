@@ -179,7 +179,7 @@
     "summaryHeadingPartial": "Half a round over",
     "summaryStars": "{count}/{max} stars",
     "summaryPartial": "You played {answered} of {poolTotal} questions.",
-    "summaryStarsRule": "{three} points or more earns 3 stars, {two} or more 2 stars, {one} or more 1 star.",
+    "summaryStarsRule": "3 stars: {three}+ points · 2 stars: {two}+ points · 1 star: {one}+ points",
     "summaryFirstTry": "{count}/{total} on the first try",
     "statScore": "Score",
     "statFound": "Found",
@@ -198,7 +198,7 @@
     "zoomOut": "Zoom out",
     "zoomReset": "Show whole map",
     "zoomControls": "Zoom controls",
-    "zoomInstructions": "With the map focused, press + or = to zoom in and − to zoom out; use the arrow keys to pan and 0 or Home to show the whole map. {selectHint} With a mouse you can zoom with the wheel and pan by dragging; on a touch screen, pinch to zoom and drag with one finger to pan.",
+    "zoomInstructions": "With the map focused, press + or = to zoom in and − to zoom out. Use the arrow keys to pan and 0 or Home to show the whole map. {selectHint} With a mouse you can zoom with the wheel and pan by dragging; on a touch screen, pinch to zoom and drag with one finger to pan.",
     "selectHintProvinces": "With a province focused, Enter or Space selects that province.",
     "selectHintRegions": "With a province focused, Enter or Space picks the region that province belongs to.",
     "shapeSolved": "{name}, solved"
@@ -713,7 +713,7 @@
       "metaTitle": "Polygon Area and Perimeter Calculator",
       "metaDescription": "Close a polygon of at least three points on the map of Türkiye and read its area in square kilometres and its perimeter in kilometres.",
       "heading": "Area and Perimeter on the Map of Türkiye",
-      "teaches": "how a drawn boundary sets the area, and why it differs from a province's official surface area",
+      "teaches": "calculating the area and perimeter of a polygon drawn on the map of Türkiye",
       "toolHeading": "Calculate an area on the map"
     },
     "map": {

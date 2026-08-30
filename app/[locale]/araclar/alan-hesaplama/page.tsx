@@ -80,6 +80,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * with unrelated content (a bay/coastline worked example) — the key name is reused, not the
  * paper-plan paragraph this note used to describe.
  *
+ * A further owner cut (2026-08-30, same day): `kureP2`'s "Araç, ekranda çizdiğiniz şeklin piksel
+ * alanını ölçmez" opener was itself removed — another tool-internal-behaviour sentence, not a
+ * geography fact — leaving the paragraph's küresel-hesap sentence to open it instead. The whole
+ * `yuzolcumuHeading`/`yuzolcumuP1`–`P3` subsection (the İl-yüzölçümü comparison, including the
+ * İstanbul/Ankara figures) was cut outright: `sinirHeading`'s point-count paragraph already makes
+ * the same point more naturally, so this was a repeat. The `kaynak` source line stayed.
+ *
  * ## Rendering and the api read
  *
  * SSG with one api read — the province list, which supplies the picker's il-merkezi points
@@ -157,11 +164,6 @@ export default async function AreaToolPage({ params }: PageProps) {
           <p>{t("kureP2")}</p>
           <p>{t("sonucP1")}</p>
           <p>{t("sonucP2")}</p>
-
-          <h2>{t("yuzolcumuHeading")}</h2>
-          <p>{t("yuzolcumuP1")}</p>
-          <p>{t("yuzolcumuP2")}</p>
-          <p>{t("yuzolcumuP3")}</p>
 
           <p className={styles.sourceLine}>{t("kaynak")}</p>
         </div>
