@@ -34,6 +34,13 @@ const TOOLS_DIR = new URL("../../app/[locale]/araclar/", import.meta.url);
 const pageSegments = readdirSync(fileURLToPath(TOOLS_DIR), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
+  // `[...rest]` is the tier's 404 BOUNDARY (fix round, İRİS finding A1 —
+  // `app/[locale]/araclar/[...rest]/page.tsx`'s own docblock), never a tool: a real tool
+  // segment is always `[a-z0-9-]+` (the transliteration guard below), so any directory name
+  // that is itself a Next.js dynamic-segment token (`[…]`) is excluded on sight rather than
+  // by a hand-maintained name, which is what keeps this filter correct if a second boundary
+  // segment is ever added.
+  .filter((name) => !name.startsWith("["))
   .filter((name) => existsSync(fileURLToPath(new URL(`${name}/page.tsx`, TOOLS_DIR))))
   .sort();
 
@@ -67,6 +74,10 @@ describe("tool registry", () => {
     // cannot point at a route that has no page (`SEO-POLICY.md` A4/3, §B8 8.8).
     const declared = Object.keys(routing.pathnames)
       .filter((pathname) => pathname.startsWith(`${TOOL_HUB_PATHNAME}/`))
+      // `/araclar/[...rest]` is the tier's 404 boundary, declared in `routing.ts` on purpose
+      // (fix round, İRİS finding A1) so the EN alias reverse-maps correctly — it is not a
+      // tool route and carries no register entry, page-on-disk, or sitemap row by design.
+      .filter((pathname) => !pathname.includes("["))
       .sort();
     expect(declared).toEqual(TOOL_REGISTRY.map((tool) => tool.pathname).sort());
   });

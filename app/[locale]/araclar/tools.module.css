@@ -4,6 +4,41 @@
 
 /* ---- Hub ------------------------------------------------------------------------------ */
 
+/* Vertically centers the hub's content INSIDE the shared sticky-footer box, without touching
+   the shared mechanism itself (İRİS post-merge live-audit finding A2, → fix round). The
+   site-wide pattern is `app/globals.css`: `body { display: flex; flex-direction: column;
+   min-height: 100dvh }` + `main { flex: 1 0 auto }` — a classic sticky footer, where `main`
+   grows to fill whatever space the page's own content does not use. PR-1 shortened this hub
+   on purpose (that redesign's whole point), and once its content got short enough the SAME
+   shared pattern started stretching `main` well past the content's real height, leaving a big
+   dead zone between the card grid and the footer — measured by İRİS at 1440×900: card grid
+   bottom 472px, footer top 696px, a 223.7px gap.
+
+   `main:has(.hub)` — not a change to `main {}` itself in `app/globals.css` — is what keeps
+   this scoped to only this page: the rule fires only when `main`'s content contains an
+   element carrying THIS module's own `.hub` class, so every other page's `main` (province,
+   country, game, book, …) is completely untouched, both selector and computed box. `main`'s
+   own HEIGHT is still exactly what the global rule already gives it (unchanged); only how its
+   one child is POSITIONED inside that box changes — from flush-top-with-empty-space-below to
+   vertically centered, which is the reason the footer's own position and the rest of the
+   sticky-footer behavior for THIS page are untouched too. Verified at 768px, 1440px (İRİS's
+   two flagged viewports) and 390px (confirmed unaffected, per İRİS) with a real Playwright
+   render — `:has()` is Baseline-available and already used the same way in this exact file
+   (`.toolCard:has(.toolName a:focus-visible)` below). */
+main:has(.hub) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* The hub page's own root wrapper — the marker `main:has()` above looks for, and (since
+   `main` becomes a flex container only on this page) what needs `width: 100%` so it keeps
+   filling the row instead of shrinking to its content's intrinsic width the way a flex item
+   otherwise would. */
+.hub {
+  width: 100%;
+}
+
 .intro {
   max-width: 62ch;
 }

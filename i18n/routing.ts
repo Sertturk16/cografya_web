@@ -159,6 +159,17 @@ export const routing = defineRouting({
       tr: "/araclar/alan-hesaplama",
       en: "/tools/area",
     },
+    // The tool tier's 404 BOUNDARY, not a fourth tool (fix round, İRİS post-merge live-audit
+    // finding A1 — `app/[locale]/araclar/[...rest]/page.tsx`'s own docblock has the full
+    // diagnosis). Declared here, symmetric in both locales, so next-intl's middleware can
+    // reverse-map an unknown EN path (`/en/tools/anything`) back to this canonical
+    // `/araclar/…` segment before Next's router matches it — without this entry the EN alias
+    // alone (undeclared) would stay untranslated and never reach the catch-all page at all,
+    // verified empirically (curl) both ways during this fix.
+    "/araclar/[...rest]": {
+      tr: "/araclar/[...rest]",
+      en: "/tools/[...rest]",
+    },
     // The auth page shell — login, password reset, registration and e-mail verification
     // (UYELIK-04, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md` §4.1;
     // PR-1 shipped the first three, PR-2 added the last two). LOCALIZED segments, on the
