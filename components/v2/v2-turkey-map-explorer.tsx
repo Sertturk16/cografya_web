@@ -6,7 +6,7 @@ import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import type { GeographicRegion } from "@/lib/api/types";
-import { REGION_KEYS, regionSlug } from "@/lib/game/region-slug";
+import { REGION_KEYS } from "@/lib/game/region-slug";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,26 +19,19 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import {
-  Map as MapIcon,
-  Compass,
   Waves,
-  Sparkles,
   ArrowRight,
-  MapPin,
   Search,
-  LayoutGrid,
   List,
   AlignLeft,
   X,
-  Users,
-  Building2,
+  Layers,
   ZoomIn,
   ZoomOut,
   RotateCcw,
   Palette,
   Info,
   ChevronRight,
-  Layers,
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 
@@ -164,8 +157,34 @@ const SEA_LABELS = [
 ];
 
 const ALPHABET_TURKISH = [
-  "A", "B", "C", "Ç", "D", "E", "F", "G", "H", "I", "İ", "J", "K", "L", "M",
-  "N", "O", "Ö", "P", "R", "S", "Ş", "T", "U", "Ü", "V", "Y", "Z"
+  "A",
+  "B",
+  "C",
+  "Ç",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "İ",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "Ö",
+  "P",
+  "R",
+  "S",
+  "Ş",
+  "T",
+  "U",
+  "Ü",
+  "V",
+  "Y",
+  "Z",
 ];
 
 interface V2TurkeyMapExplorerProps {
@@ -184,7 +203,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   const [viewMode, setViewMode] = React.useState<"region" | "table" | "fihrist">("region");
   const [sortBy, setSortBy] = React.useState<"plate" | "name" | "pop-desc" | "area-desc">("plate");
   const [showRegionColors, setShowRegionColors] = React.useState<boolean>(false);
-  
+
   // Interactive Map Zoom & Pan State
   const [zoomLevel, setZoomLevel] = React.useState<number>(1);
   const [panOffset, setPanOffset] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -281,7 +300,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
         (p) =>
           foldForSearch(p.name).includes(folded) ||
           p.plateCode.includes(folded) ||
-          foldForSearch(p.regionName).includes(folded)
+          foldForSearch(p.regionName).includes(folded),
       );
     }
 
@@ -303,15 +322,17 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   const isSearchRestrictedByRegion = React.useMemo(() => {
     if (!searchQuery.trim() || selectedRegion === "all") return false;
     const folded = foldForSearch(searchQuery.trim());
-    const matchInAll = provinces.some((p) => foldForSearch(p.name).includes(folded) || p.plateCode.includes(folded));
+    const matchInAll = provinces.some(
+      (p) => foldForSearch(p.name).includes(folded) || p.plateCode.includes(folded),
+    );
     return matchInAll && filteredProvinces.length === 0;
   }, [searchQuery, selectedRegion, provinces, filteredProvinces.length]);
 
   const activeProvince = selectedPlate
     ? provinceMap.get(selectedPlate)
     : hoveredPlate
-    ? provinceMap.get(hoveredPlate)
-    : null;
+      ? provinceMap.get(hoveredPlate)
+      : null;
 
   const activeRegionMeta = activeProvince ? REGION_DATA[activeProvince.region] : null;
 
@@ -354,7 +375,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   const fihristGroups = React.useMemo(() => {
     const groups: Record<string, ProvinceItem[]> = {};
     for (const letter of ALPHABET_TURKISH) {
-      const matching = filteredProvinces.filter((p) => p.name.toLocaleUpperCase("tr-TR").startsWith(letter));
+      const matching = filteredProvinces.filter((p) =>
+        p.name.toLocaleUpperCase("tr-TR").startsWith(letter),
+      );
       if (matching.length > 0) {
         groups[letter] = matching;
       }
@@ -387,9 +410,15 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
           <div className="flex items-center gap-1.5 overflow-x-auto p-1 rounded-2xl bg-muted border border-border text-xs scrollbar-none max-w-full">
             <button
               type="button"
-              onClick={() => { setSelectedRegion("all"); setOnlyCoastal(false); setSelectedLetter(null); }}
+              onClick={() => {
+                setSelectedRegion("all");
+                setOnlyCoastal(false);
+                setSelectedLetter(null);
+              }}
               className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer shrink-0 ${
-                selectedRegion === "all" && !onlyCoastal ? "bg-card text-primary font-bold shadow-xs border border-primary/20" : "text-muted-foreground hover:text-foreground"
+                selectedRegion === "all" && !onlyCoastal
+                  ? "bg-card text-primary font-bold shadow-xs border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Tüm İller (81)
@@ -401,9 +430,15 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 <button
                   key={reg.id}
                   type="button"
-                  onClick={() => { setSelectedRegion(reg.id); setOnlyCoastal(false); setSelectedLetter(null); }}
+                  onClick={() => {
+                    setSelectedRegion(reg.id);
+                    setOnlyCoastal(false);
+                    setSelectedLetter(null);
+                  }}
                   className={`px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer shrink-0 ${
-                    isSelected ? `bg-card ${reg.textClass} font-bold shadow-xs border ${reg.borderClass}` : "text-muted-foreground hover:text-foreground"
+                    isSelected
+                      ? `bg-card ${reg.textClass} font-bold shadow-xs border ${reg.borderClass}`
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {reg.name.split(" ")[0]} ({reg.count})
@@ -412,9 +447,15 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             })}
             <button
               type="button"
-              onClick={() => { setOnlyCoastal(!onlyCoastal); setSelectedRegion("all"); setSelectedLetter(null); }}
+              onClick={() => {
+                setOnlyCoastal(!onlyCoastal);
+                setSelectedRegion("all");
+                setSelectedLetter(null);
+              }}
               className={`px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
-                onlyCoastal ? "bg-accent text-accent-foreground font-bold shadow-xs" : "text-muted-foreground hover:text-foreground"
+                onlyCoastal
+                  ? "bg-accent text-accent-foreground font-bold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Waves className="size-3" />
@@ -500,12 +541,24 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   </Badge>
                 </div>
                 <div className="text-[11px] text-muted-foreground flex items-center gap-2 font-mono">
-                  {activeProvince.population && <span>{activeProvince.population.toLocaleString("tr-TR")} kişi</span>}
-                  {activeProvince.areaKm2 && <span>· {activeProvince.areaKm2.toLocaleString("tr-TR")} km²</span>}
+                  {activeProvince.population && (
+                    <span>{activeProvince.population.toLocaleString("tr-TR")} kişi</span>
+                  )}
+                  {activeProvince.areaKm2 && (
+                    <span>· {activeProvince.areaKm2.toLocaleString("tr-TR")} km²</span>
+                  )}
                 </div>
               </div>
-              <Link href={activeProvince.path as any} className="ml-auto shrink-0">
-                <Button variant="primary" size="sm" className="h-8 text-xs font-semibold px-2.5" rightIcon={<ArrowRight className="size-3.5" />}>
+              <Link
+                href={activeProvince.path as unknown as React.ComponentProps<typeof Link>["href"]}
+                className="ml-auto shrink-0"
+              >
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="h-8 text-xs font-semibold px-2.5"
+                  rightIcon={<ArrowRight className="size-3.5" />}
+                >
                   İncele
                 </Button>
               </Link>
@@ -534,7 +587,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               aria-label="Türkiye 81 İl ve Komşular İnteraktif Haritası"
             >
               {/* 1. Surrounding Foreign Countries */}
-              <g onMouseEnter={() => setHoveredPlate(null)} className="fill-[#f1ece3] dark:fill-[#2d2822] stroke-[#b8aea0] dark:stroke-[#50473e] stroke-[1] stroke-linejoin-round pointer-events-none">
+              <g
+                onMouseEnter={() => setHoveredPlate(null)}
+                className="fill-[#f1ece3] dark:fill-[#2d2822] stroke-[#b8aea0] dark:stroke-[#50473e] stroke-[1] stroke-linejoin-round pointer-events-none"
+              >
                 {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
                   <path key={country.iso} d={country.d} />
                 ))}
@@ -555,7 +611,8 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   const isSelected = shape.plateCode === selectedPlate;
                   const provItem = provinceMap.get(shape.plateCode);
                   const regMeta = provItem ? REGION_DATA[provItem.region] : REGION_DATA.MARMARA;
-                  const matchesRegion = selectedRegion === "all" || provItem?.regionId === selectedRegion;
+                  const matchesRegion =
+                    selectedRegion === "all" || provItem?.regionId === selectedRegion;
                   const matchesCoastal = !onlyCoastal || provItem?.coastal;
                   const isHighlighted = matchesRegion && matchesCoastal;
 
@@ -564,11 +621,14 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   if (showRegionColors) {
                     fillColor = `${regMeta.color} opacity-85 hover:opacity-100`;
                   } else if (selectedRegion !== "all" || onlyCoastal) {
-                    fillColor = isHighlighted ? `${regMeta.color} opacity-90 hover:opacity-100` : "fill-card/30 opacity-30";
+                    fillColor = isHighlighted
+                      ? `${regMeta.color} opacity-90 hover:opacity-100`
+                      : "fill-card/30 opacity-30";
                   }
 
                   if (isHovered || isSelected) {
-                    fillColor = "fill-[var(--color-primary,#b0522e)] filter drop-shadow-md opacity-100";
+                    fillColor =
+                      "fill-[var(--color-primary,#b0522e)] filter drop-shadow-md opacity-100";
                   }
 
                   return (
@@ -612,7 +672,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
               {/* 6. Neighbor Country Name Labels */}
               <g className="fill-[#635a4e] dark:fill-[#a89e92] font-sans font-bold text-[12px] pointer-events-none select-none">
-                {CONTEXT_SHAPES.filter((c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso)).map((country) => {
+                {CONTEXT_SHAPES.filter(
+                  (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
+                ).map((country) => {
                   const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
                   return (
                     <text
@@ -758,7 +820,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 type="button"
                 onClick={() => setSortBy("plate")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "plate" ? "bg-card text-foreground font-bold shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                  sortBy === "plate"
+                    ? "bg-card text-foreground font-bold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Plaka
@@ -767,7 +831,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 type="button"
                 onClick={() => setSortBy("name")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "name" ? "bg-card text-foreground font-bold shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                  sortBy === "name"
+                    ? "bg-card text-foreground font-bold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 A-Z İsim
@@ -776,7 +842,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 type="button"
                 onClick={() => setSortBy("pop-desc")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "pop-desc" ? "bg-card text-foreground font-bold shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                  sortBy === "pop-desc"
+                    ? "bg-card text-foreground font-bold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Nüfus
@@ -785,7 +853,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 type="button"
                 onClick={() => setSortBy("area-desc")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "area-desc" ? "bg-card text-foreground font-bold shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                  sortBy === "area-desc"
+                    ? "bg-card text-foreground font-bold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Yüzölçümü
@@ -798,7 +868,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 type="button"
                 onClick={() => setViewMode("region")}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold px-2.5 ${
-                  viewMode === "region" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  viewMode === "region"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Bölge Gruplu Görünüm"
               >
@@ -809,7 +881,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 type="button"
                 onClick={() => setViewMode("table")}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === "table" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  viewMode === "table"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Detaylı Tablo (Table)"
               >
@@ -819,7 +893,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 type="button"
                 onClick={() => setViewMode("fihrist")}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === "fihrist" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  viewMode === "fihrist"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Alfabetik Fihrist (A-Z Bloklar)"
               >
@@ -835,7 +911,13 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             <div className="flex items-center gap-2">
               <Info className="size-4 shrink-0 text-amber-600" />
               <span>
-                <strong>{provinces.find(p => p.regionId === selectedRegion)?.region ? REGION_DATA[provinces.find(p => p.regionId === selectedRegion)!.region]?.name : "Seçili Bölge"}</strong> filtresi etkinken &quot;{searchQuery}&quot; bulunamadı.
+                <strong>
+                  {provinces.find((p) => p.regionId === selectedRegion)?.region
+                    ? REGION_DATA[provinces.find((p) => p.regionId === selectedRegion)!.region]
+                        ?.name
+                    : "Seçili Bölge"}
+                </strong>{" "}
+                filtresi etkinken &quot;{searchQuery}&quot; bulunamadı.
               </span>
             </div>
             <Button
@@ -863,7 +945,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             Tümü
           </button>
           {ALPHABET_TURKISH.map((letter) => {
-            const hasProvinces = provinces.some((p) => p.name.toLocaleUpperCase("tr-TR").startsWith(letter));
+            const hasProvinces = provinces.some((p) =>
+              p.name.toLocaleUpperCase("tr-TR").startsWith(letter),
+            );
             const isSelected = selectedLetter === letter;
             return (
               <button
@@ -875,8 +959,8 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   isSelected
                     ? "bg-primary text-primary-foreground font-bold shadow-2xs"
                     : hasProvinces
-                    ? "bg-card hover:bg-muted text-foreground border border-border/80"
-                    : "opacity-30 text-muted-foreground cursor-not-allowed"
+                      ? "bg-card hover:bg-muted text-foreground border border-border/80"
+                      : "opacity-30 text-muted-foreground cursor-not-allowed"
                 }`}
               >
                 {letter}
@@ -888,7 +972,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
         {/* Results Info and Reset Filters */}
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            Toplam <strong className="text-foreground font-semibold">{filteredProvinces.length}</strong> il listeleniyor.
+            Toplam{" "}
+            <strong className="text-foreground font-semibold">{filteredProvinces.length}</strong> il
+            listeleniyor.
           </span>
           {(searchQuery || selectedLetter || selectedRegion !== "all" || onlyCoastal) && (
             <button
@@ -915,7 +1001,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 className={`rounded-3xl border ${group.borderClass} bg-card overflow-hidden shadow-sm transition-all`}
               >
                 {/* Region Section Header Banner */}
-                <div className={`p-4 sm:p-5 bg-gradient-to-r ${group.headerClass} text-white flex flex-wrap items-center justify-between gap-3`}>
+                <div
+                  className={`p-4 sm:p-5 bg-gradient-to-r ${group.headerClass} text-white flex flex-wrap items-center justify-between gap-3`}
+                >
                   <div className="flex items-center gap-3">
                     <div className="size-9 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-xs font-bold text-sm">
                       {group.items.length}
@@ -925,7 +1013,14 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                         {group.name}
                       </h4>
                       <span className="text-[11px] text-white/80 font-mono">
-                        {group.items.length} İl · {group.totalPopulation > 0 ? `${group.totalPopulation.toLocaleString("tr-TR")} Nüfus` : ""} · {group.totalArea > 0 ? `${group.totalArea.toLocaleString("tr-TR")} km²` : ""}
+                        {group.items.length} İl ·{" "}
+                        {group.totalPopulation > 0
+                          ? `${group.totalPopulation.toLocaleString("tr-TR")} Nüfus`
+                          : ""}{" "}
+                        ·{" "}
+                        {group.totalArea > 0
+                          ? `${group.totalArea.toLocaleString("tr-TR")} km²`
+                          : ""}
                       </span>
                     </div>
                   </div>
@@ -940,7 +1035,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   {group.items.map((province) => (
                     <Link
                       key={province.plateCode}
-                      href={province.path as any}
+                      href={province.path as unknown as React.ComponentProps<typeof Link>["href"]}
                       className="p-3 rounded-2xl border border-border/80 bg-muted/20 hover:bg-card hover:border-primary/60 hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -948,7 +1043,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                           {province.plateCode}
                         </span>
                         {province.coastal && (
-                          <span title="Kıyı İli (Deniz Telemetrisi Var)" className="size-5 rounded-md bg-accent/10 text-accent flex items-center justify-center">
+                          <span
+                            title="Kıyı İli (Deniz Telemetrisi Var)"
+                            className="size-5 rounded-md bg-accent/10 text-accent flex items-center justify-center"
+                          >
                             <Waves className="size-3" />
                           </span>
                         )}
@@ -959,12 +1057,18 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                           {province.name}
                         </span>
                         <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-2 mt-0.5">
-                          {province.population && <span>{province.population.toLocaleString("tr-TR")} kişi</span>}
+                          {province.population && (
+                            <span>{province.population.toLocaleString("tr-TR")} kişi</span>
+                          )}
                         </div>
                       </div>
 
                       <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground group-hover:text-primary font-medium">
-                        <span>{province.areaKm2 ? `${province.areaKm2.toLocaleString("tr-TR")} km²` : "Detay"}</span>
+                        <span>
+                          {province.areaKm2
+                            ? `${province.areaKm2.toLocaleString("tr-TR")} km²`
+                            : "Detay"}
+                        </span>
                         <ChevronRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
                       </div>
                     </Link>
@@ -1001,7 +1105,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                       {province.plateCode}
                     </TableCell>
                     <TableCell className="font-bold text-foreground">
-                      <Link href={province.path as any} className="hover:text-primary hover:underline transition-colors">
+                      <Link
+                        href={province.path as unknown as React.ComponentProps<typeof Link>["href"]}
+                        className="hover:text-primary hover:underline transition-colors"
+                      >
                         {province.name}
                       </Link>
                     </TableCell>
@@ -1029,8 +1136,14 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                       {province.districtCount ?? "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link href={province.path as any}>
-                        <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-3.5" />}>
+                      <Link
+                        href={province.path as unknown as React.ComponentProps<typeof Link>["href"]}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          rightIcon={<ArrowRight className="size-3.5" />}
+                        >
                           İncele
                         </Button>
                       </Link>
@@ -1059,12 +1172,16 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   {groupList.map((p) => (
                     <Link
                       key={p.plateCode}
-                      href={p.path as any}
+                      href={p.path as unknown as React.ComponentProps<typeof Link>["href"]}
                       className="p-2.5 rounded-xl border border-border/70 hover:border-primary hover:bg-muted/50 transition-all flex items-center justify-between text-xs group"
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <span className="font-mono text-[10px] text-muted-foreground font-bold">{p.plateCode}</span>
-                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">{p.name}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground font-bold">
+                          {p.plateCode}
+                        </span>
+                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                          {p.name}
+                        </span>
                       </div>
                       <ChevronRight className="size-3 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                     </Link>

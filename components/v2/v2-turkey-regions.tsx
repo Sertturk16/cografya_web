@@ -3,20 +3,8 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import {
-  Map,
-  Compass,
-  Waves,
-  Mountain,
-  Sun,
-  CloudRain,
-  Trees,
-  Factory,
-  ArrowRight,
-  Sparkles,
-} from "lucide-react";
+import { Card, CardHeader, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Mountain } from "lucide-react";
 
 export interface RegionInfo {
   id: string;
@@ -43,7 +31,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     populationShare: "%31 (En Kalabalık)",
     climate: "Geçiş İklimi (Akdeniz - Karadeniz - Karasal)",
     highestPeak: "Uludağ (2.543 m)",
-    description: "İki kıtayı birbirine bağlayan boğazları, sanayi, ticaret ve finans merkezleriyle Türkiye ekonomisinin kalbi.",
+    description:
+      "İki kıtayı birbirine bağlayan boğazları, sanayi, ticaret ve finans merkezleriyle Türkiye ekonomisinin kalbi.",
     highlightProvinces: [
       { name: "İstanbul", slug: "istanbul", plate: "34" },
       { name: "Bursa", slug: "bursa", plate: "16" },
@@ -62,7 +51,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     populationShare: "%13",
     climate: "Tipik Akdeniz İklimi",
     highestPeak: "Honaz Dağı (2.571 m)",
-    description: "Denize dik uzanan kırıklı dağ sıraları (horst-graben), verimli graben ovaları, zeytinlikler ve girintili kıyı şeridi.",
+    description:
+      "Denize dik uzanan kırıklı dağ sıraları (horst-graben), verimli graben ovaları, zeytinlikler ve girintili kıyı şeridi.",
     highlightProvinces: [
       { name: "İzmir", slug: "izmir", plate: "35" },
       { name: "Manisa", slug: "manisa", plate: "45" },
@@ -81,7 +71,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     populationShare: "%13",
     climate: "Sıcak & Kurak Yazlar, Ilık Kışlar",
     highestPeak: "Kızlar Sivrisi (3.070 m) / Medetsiz (3.524 m)",
-    description: "Toros sıradağları, karstik plato ve kanyonlar, seracılık, turunçgil üretimi ve turizm kıyıları.",
+    description:
+      "Toros sıradağları, karstik plato ve kanyonlar, seracılık, turunçgil üretimi ve turizm kıyıları.",
     highlightProvinces: [
       { name: "Antalya", slug: "antalya", plate: "07" },
       { name: "Adana", slug: "adana", plate: "01" },
@@ -100,7 +91,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     populationShare: "%15",
     climate: "Step (Karasal) İklimi",
     highestPeak: "Erciyes Dağı (3.917 m)",
-    description: "Geniş platolar, Tuz Gölü kapalı havzası, volkanik dağlar, tahıl ambarı ovalar ve başkent Ankara.",
+    description:
+      "Geniş platolar, Tuz Gölü kapalı havzası, volkanik dağlar, tahıl ambarı ovalar ve başkent Ankara.",
     highlightProvinces: [
       { name: "Ankara", slug: "ankara", plate: "06" },
       { name: "Konya", slug: "konya", plate: "42" },
@@ -119,7 +111,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     populationShare: "%9",
     climate: "Her Mevsim Yağışlı Ilıman İklim",
     highestPeak: "Kaçkar Dağı (3.937 m)",
-    description: "Kıyıya paralel Kuzey Anadolu Dağları, zengin orman kuşağı, fındık ve çay tarımı, yaylacılık kültürü.",
+    description:
+      "Kıyıya paralel Kuzey Anadolu Dağları, zengin orman kuşağı, fındık ve çay tarımı, yaylacılık kültürü.",
     highlightProvinces: [
       { name: "Trabzon", slug: "trabzon", plate: "61" },
       { name: "Samsun", slug: "samsun", plate: "55" },
@@ -138,7 +131,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     populationShare: "%7",
     climate: "Sert Karasal & Uzun Kışlar",
     highestPeak: "Ağrı Dağı (5.137 m - TR Zirvesi)",
-    description: "Türkiye'nin en yüksek ve en engebeli bölgesi, volkanik koniler, Van Gölü havzası ve Fırat-Dicle nehirlerinin kaynağı.",
+    description:
+      "Türkiye'nin en yüksek ve en engebeli bölgesi, volkanik koniler, Van Gölü havzası ve Fırat-Dicle nehirlerinin kaynağı.",
     highlightProvinces: [
       { name: "Erzurum", slug: "erzurum", plate: "25" },
       { name: "Van", slug: "van", plate: "65" },
@@ -157,7 +151,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     populationShare: "%11",
     climate: "Şiddetli Yaz Kuraklığı & Karasal",
     highestPeak: "Karacadağ (1.957 m)",
-    description: "Geniş düzlükler, plato alanları, GAP sulama projeleri, verimli Harran Ovası ve antik Mezopotamya yerleşimleri.",
+    description:
+      "Geniş düzlükler, plato alanları, GAP sulama projeleri, verimli Harran Ovası ve antik Mezopotamya yerleşimleri.",
     highlightProvinces: [
       { name: "Gaziantep", slug: "gaziantep", plate: "27" },
       { name: "Diyarbakır", slug: "diyarbakir", plate: "21" },
@@ -192,7 +187,9 @@ export function V2TurkeyRegions() {
             className="flex flex-col justify-between hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-card overflow-hidden group"
           >
             {/* Header Banner */}
-            <div className={`p-4 bg-gradient-to-r ${region.color} text-white flex items-center justify-between`}>
+            <div
+              className={`p-4 bg-gradient-to-r ${region.color} text-white flex items-center justify-between`}
+            >
               <div>
                 <span className="text-[10px] text-white/80 font-mono block">Bölge Profili</span>
                 <h3 className="font-heading font-bold text-lg text-white leading-tight">
@@ -235,10 +232,17 @@ export function V2TurkeyRegions() {
                   {region.highlightProvinces.map((prov) => (
                     <Link
                       key={prov.slug}
-                      href={`/v2/turkiye/${prov.slug}` as any}
+                      href={
+                        `/v2/turkiye/${prov.slug}` as unknown as React.ComponentProps<
+                          typeof Link
+                        >["href"]
+                      }
                       className="text-xs px-2 py-0.5 rounded-md bg-muted hover:bg-primary/20 hover:text-primary transition-colors border border-border/80 font-medium"
                     >
-                      {prov.name} <span className="text-[10px] text-muted-foreground font-mono">({prov.plate})</span>
+                      {prov.name}{" "}
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        ({prov.plate})
+                      </span>
                     </Link>
                   ))}
                 </div>

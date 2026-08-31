@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, FlaskConical, Info } from "lucide-react";
+import { Sparkles, FlaskConical } from "lucide-react";
 
 interface V2MockBadgeProps {
   label?: string;

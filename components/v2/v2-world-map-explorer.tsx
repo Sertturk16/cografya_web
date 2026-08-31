@@ -15,23 +15,15 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import {
-  Globe,
-  Compass,
-  Sparkles,
   ArrowRight,
   Search,
-  LayoutGrid,
   List,
   AlignLeft,
   X,
-  Users,
   Layers,
-  MapPin,
-  ExternalLink,
   ZoomIn,
   ZoomOut,
   RotateCcw,
-  Maximize2,
   ChevronRight,
   Info,
 } from "lucide-react";
@@ -161,13 +153,63 @@ export const CONTINENT_META: Record<
 const CONTINENT_KEYS = Object.keys(CONTINENT_META);
 
 const ALPHABET_TR = [
-  "A", "B", "C", "Ç", "D", "E", "F", "G", "H", "I", "İ", "J", "K", "L", "M",
-  "N", "O", "Ö", "P", "R", "S", "Ş", "T", "U", "Ü", "V", "Y", "Z"
+  "A",
+  "B",
+  "C",
+  "Ç",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "İ",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "Ö",
+  "P",
+  "R",
+  "S",
+  "Ş",
+  "T",
+  "U",
+  "Ü",
+  "V",
+  "Y",
+  "Z",
 ];
 
 const ALPHABET_EN = [
-  "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-  "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
 ];
 
 interface V2WorldMapExplorerProps {
@@ -176,7 +218,11 @@ interface V2WorldMapExplorerProps {
   middleSections?: React.ReactNode;
 }
 
-export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }: V2WorldMapExplorerProps) {
+export function V2WorldMapExplorer({
+  countries,
+  locale = "tr",
+  middleSections,
+}: V2WorldMapExplorerProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const [selectedContinent, setSelectedContinent] = React.useState<string>("ALL");
@@ -187,6 +233,27 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
   const [hoveredIso, setHoveredIso] = React.useState<string | null>(null);
   const [selectedIso, setSelectedIso] = React.useState<string | null>(null);
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [containerDim, setContainerDim] = React.useState<{ width: number; height: number }>({
+    width: 1000,
+    height: 520,
+  });
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+          setContainerDim({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height,
+          });
+        }
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Zoom & Pan states
   const [zoom, setZoom] = React.useState<number>(1);
@@ -205,23 +272,26 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
     return map;
   }, [countries]);
 
-  const handleMouseMove = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (isPanning) {
-      setPan({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
-      });
-      return;
-    }
+  const handleMouseMove = React.useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (isPanning) {
+        setPan({
+          x: e.clientX - dragStart.x,
+          y: e.clientY - dragStart.y,
+        });
+        return;
+      }
 
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setMousePos({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
-    }
-  }, [isPanning, dragStart]);
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setMousePos({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      }
+    },
+    [isPanning, dragStart],
+  );
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (zoom > 1) {
@@ -256,36 +326,43 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
 
   // Filter countries based on continent, search, and letter
   const filteredCountries = React.useMemo(() => {
-    return countries.filter((c) => {
-      // Continent filter
-      if (selectedContinent !== "ALL" && c.continent !== selectedContinent) {
-        return false;
-      }
-      // Letter filter with locale awareness
-      const displayName = isEn ? c.nameEn : c.nameTr;
-      if (selectedLetter && !displayName.toLocaleUpperCase(isEn ? "en-US" : "tr-TR").startsWith(selectedLetter)) {
-        return false;
-      }
-      // Search query filter
-      if (searchQuery.trim()) {
-        const foldedQ = foldForSearch(searchQuery);
-        const foldedTr = foldForSearch(c.nameTr);
-        const foldedEn = foldForSearch(c.nameEn);
-        const foldedIso = foldForSearch(c.isoCode);
-        return foldedTr.includes(foldedQ) || foldedEn.includes(foldedQ) || foldedIso.includes(foldedQ);
-      }
-      return true;
-    }).sort((a, b) => {
-      if (sortBy === "pop-desc") {
-        return (b.population ?? 0) - (a.population ?? 0);
-      }
-      if (sortBy === "area-desc") {
-        return (b.areaKm2 ?? 0) - (a.areaKm2 ?? 0);
-      }
-      const nameA = isEn ? a.nameEn : a.nameTr;
-      const nameB = isEn ? b.nameEn : b.nameTr;
-      return nameA.localeCompare(nameB, isEn ? "en-US" : "tr-TR");
-    });
+    return countries
+      .filter((c) => {
+        // Continent filter
+        if (selectedContinent !== "ALL" && c.continent !== selectedContinent) {
+          return false;
+        }
+        // Letter filter with locale awareness
+        const displayName = isEn ? c.nameEn : c.nameTr;
+        if (
+          selectedLetter &&
+          !displayName.toLocaleUpperCase(isEn ? "en-US" : "tr-TR").startsWith(selectedLetter)
+        ) {
+          return false;
+        }
+        // Search query filter
+        if (searchQuery.trim()) {
+          const foldedQ = foldForSearch(searchQuery);
+          const foldedTr = foldForSearch(c.nameTr);
+          const foldedEn = foldForSearch(c.nameEn);
+          const foldedIso = foldForSearch(c.isoCode);
+          return (
+            foldedTr.includes(foldedQ) || foldedEn.includes(foldedQ) || foldedIso.includes(foldedQ)
+          );
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "pop-desc") {
+          return (b.population ?? 0) - (a.population ?? 0);
+        }
+        if (sortBy === "area-desc") {
+          return (b.areaKm2 ?? 0) - (a.areaKm2 ?? 0);
+        }
+        const nameA = isEn ? a.nameEn : a.nameTr;
+        const nameB = isEn ? b.nameEn : b.nameTr;
+        return nameA.localeCompare(nameB, isEn ? "en-US" : "tr-TR");
+      });
   }, [countries, selectedContinent, selectedLetter, searchQuery, sortBy, isEn]);
 
   // Check if search has 0 results due to active continent filter
@@ -296,7 +373,7 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
       (c) =>
         foldForSearch(c.nameTr).includes(folded) ||
         foldForSearch(c.nameEn).includes(folded) ||
-        foldForSearch(c.isoCode).includes(folded)
+        foldForSearch(c.isoCode).includes(folded),
     );
     return matchInAll && filteredCountries.length === 0;
   }, [searchQuery, selectedContinent, countries, filteredCountries.length]);
@@ -304,10 +381,8 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
   const activeCountry = selectedIso
     ? countryMap.get(selectedIso)
     : hoveredIso
-    ? countryMap.get(hoveredIso)
-    : null;
-
-  const activeContinentMeta = activeCountry ? CONTINENT_META[activeCountry.continent] : null;
+      ? countryMap.get(hoveredIso)
+      : null;
 
   // Grouping for Continent Grouped Mode (Default & Elegant)
   const continentGroups = React.useMemo(() => {
@@ -362,18 +437,16 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
 
   // Dynamic tooltip positioning with boundary guard
   const getTooltipStyle = () => {
-    const containerWidth = containerRef.current?.clientWidth || 1000;
-    const containerHeight = containerRef.current?.clientHeight || 520;
     const tooltipWidth = 240;
     const tooltipHeight = 180;
 
     let left = mousePos.x + 15;
     let top = mousePos.y + 15;
 
-    if (left + tooltipWidth > containerWidth - 10) {
+    if (left + tooltipWidth > containerDim.width - 10) {
       left = mousePos.x - tooltipWidth - 15;
     }
-    if (top + tooltipHeight > containerHeight - 10) {
+    if (top + tooltipHeight > containerDim.height - 10) {
       top = mousePos.y - tooltipHeight - 15;
     }
 
@@ -398,7 +471,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
               </span>
             </div>
             <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
-              {isEn ? "Interactive World Map & Country Explorer" : "İnteraktif Dünya Haritası & Ülkeler Kataloğu"}
+              {isEn
+                ? "Interactive World Map & Country Explorer"
+                : "İnteraktif Dünya Haritası & Ülkeler Kataloğu"}
             </h3>
           </div>
 
@@ -406,7 +481,10 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
           <div className="flex items-center gap-1.5 overflow-x-auto p-1 rounded-2xl bg-muted border border-border text-xs scrollbar-none max-w-full">
             <button
               type="button"
-              onClick={() => { setSelectedContinent("ALL"); setSelectedLetter(null); }}
+              onClick={() => {
+                setSelectedContinent("ALL");
+                setSelectedLetter(null);
+              }}
               className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer shrink-0 ${
                 selectedContinent === "ALL"
                   ? "bg-card text-primary font-bold shadow-xs border border-primary/20"
@@ -423,7 +501,10 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 <button
                   key={key}
                   type="button"
-                  onClick={() => { setSelectedContinent(key); setSelectedLetter(null); }}
+                  onClick={() => {
+                    setSelectedContinent(key);
+                    setSelectedLetter(null);
+                  }}
                   className={`px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer shrink-0 ${
                     isSelected
                       ? `bg-card ${meta.textClass} font-bold shadow-xs border ${meta.borderClass}`
@@ -503,15 +584,27 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 </div>
                 <div className="text-[11px] text-muted-foreground flex items-center gap-2 font-mono">
                   {activeCountry.population && (
-                    <span>{activeCountry.population.toLocaleString(isEn ? "en-US" : "tr-TR")} kişi</span>
+                    <span>
+                      {activeCountry.population.toLocaleString(isEn ? "en-US" : "tr-TR")} kişi
+                    </span>
                   )}
                   {activeCountry.areaKm2 && (
-                    <span>· {activeCountry.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²</span>
+                    <span>
+                      · {activeCountry.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²
+                    </span>
                   )}
                 </div>
               </div>
-              <Link href={activeCountry.path as any} className="ml-auto shrink-0">
-                <Button variant="primary" size="sm" className="h-8 text-xs font-semibold px-2.5" rightIcon={<ArrowRight className="size-3.5" />}>
+              <Link
+                href={activeCountry.path as unknown as React.ComponentProps<typeof Link>["href"]}
+                className="ml-auto shrink-0"
+              >
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="h-8 text-xs font-semibold px-2.5"
+                  rightIcon={<ArrowRight className="size-3.5" />}
+                >
                   {isEn ? "Explore" : "İncele"}
                 </Button>
               </Link>
@@ -541,7 +634,13 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
             >
               <defs>
                 <filter id="country-glow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#f59e0b" floodOpacity="0.8" />
+                  <feDropShadow
+                    dx="0"
+                    dy="0"
+                    stdDeviation="3"
+                    floodColor="#f59e0b"
+                    floodOpacity="0.8"
+                  />
                 </filter>
                 <linearGradient id="ocean-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="#0b192c" />
@@ -555,18 +654,38 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
 
               {/* Graticules / Latitude-Longitude Grid */}
               <g className="stroke-sky-500/15 stroke-[0.5] stroke-dasharray-[2,4] pointer-events-none">
-                <line x1="0" y1="260" x2="1008" y2="260" className="stroke-sky-400/40 stroke-[0.8]" />
+                <line
+                  x1="0"
+                  y1="260"
+                  x2="1008"
+                  y2="260"
+                  className="stroke-sky-400/40 stroke-[0.8]"
+                />
                 <line x1="0" y1="195" x2="1008" y2="195" />
                 <line x1="0" y1="325" x2="1008" y2="325" />
-                <line x1="504" y1="0" x2="504" y2="520" className="stroke-sky-400/30 stroke-[0.8]" />
+                <line
+                  x1="504"
+                  y1="0"
+                  x2="504"
+                  y2="520"
+                  className="stroke-sky-400/30 stroke-[0.8]"
+                />
               </g>
 
               {/* Graticule Text Labels */}
               <g className="fill-sky-400/50 text-[7.5px] font-mono select-none pointer-events-none">
-                <text x="8" y="257">EKVATOR (0°)</text>
-                <text x="8" y="192">YENGEÇ DÖNENCESİ (23.5°K)</text>
-                <text x="8" y="322">OĞLAK DÖNENCESİ (23.5°G)</text>
-                <text x="508" y="14">0° MERİDYENİ</text>
+                <text x="8" y="257">
+                  EKVATOR (0°)
+                </text>
+                <text x="8" y="192">
+                  YENGEÇ DÖNENCESİ (23.5°K)
+                </text>
+                <text x="8" y="322">
+                  OĞLAK DÖNENCESİ (23.5°G)
+                </text>
+                <text x="508" y="14">
+                  0° MERİDYENİ
+                </text>
               </g>
 
               {/* Country Polygons */}
@@ -576,7 +695,8 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                   const continentMeta = item ? CONTINENT_META[item.continent] : null;
                   const isHovered = hoveredIso === shape.iso;
                   const isSelected = selectedIso === shape.iso;
-                  const isMatchingContinent = selectedContinent === "ALL" || item?.continent === selectedContinent;
+                  const isMatchingContinent =
+                    selectedContinent === "ALL" || item?.continent === selectedContinent;
 
                   let fillClass = "fill-slate-600/40 dark:fill-slate-700/40 stroke-slate-500/30";
 
@@ -649,7 +769,11 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                       <div className="flex items-center justify-between text-muted-foreground">
                         <span>{isEn ? "Continent:" : "Kıta:"}</span>
                         <span className="font-medium text-foreground">
-                          {continentMeta ? (isEn ? continentMeta.nameEn : continentMeta.name) : item.continent}
+                          {continentMeta
+                            ? isEn
+                              ? continentMeta.nameEn
+                              : continentMeta.name
+                            : item.continent}
                         </span>
                       </div>
                       {item.population !== null && item.population !== undefined && (
@@ -698,7 +822,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
               </span>
             </div>
             <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
-              {isEn ? "World Countries & Geography Registry" : "Dünya Ülkeleri Kataloğu & Coğrafi Detaylar"}
+              {isEn
+                ? "World Countries & Geography Registry"
+                : "Dünya Ülkeleri Kataloğu & Coğrafi Detaylar"}
             </h3>
           </div>
 
@@ -708,7 +834,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder={isEn ? "Search country or ISO code..." : "Ülke adı veya ISO kodu ara..."}
+                placeholder={
+                  isEn ? "Search country or ISO code..." : "Ülke adı veya ISO kodu ara..."
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 pr-8 py-1.5 text-xs bg-card"
@@ -730,7 +858,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 type="button"
                 onClick={() => setSortBy("name")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "name" ? "bg-card text-foreground font-bold shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                  sortBy === "name"
+                    ? "bg-card text-foreground font-bold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 A-Z İsim
@@ -739,7 +869,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 type="button"
                 onClick={() => setSortBy("pop-desc")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "pop-desc" ? "bg-card text-foreground font-bold shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                  sortBy === "pop-desc"
+                    ? "bg-card text-foreground font-bold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Nüfus
@@ -748,7 +880,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 type="button"
                 onClick={() => setSortBy("area-desc")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "area-desc" ? "bg-card text-foreground font-bold shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                  sortBy === "area-desc"
+                    ? "bg-card text-foreground font-bold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Yüzölçümü
@@ -761,7 +895,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 type="button"
                 onClick={() => setViewMode("continent")}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold px-2.5 ${
-                  viewMode === "continent" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  viewMode === "continent"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Kıta Gruplu Görünüm"
               >
@@ -772,7 +908,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 type="button"
                 onClick={() => setViewMode("table")}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === "table" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  viewMode === "table"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Detaylı Tablo (Table)"
               >
@@ -782,7 +920,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 type="button"
                 onClick={() => setViewMode("fihrist")}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === "fihrist" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  viewMode === "fihrist"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Alfabetik Fihrist (A-Z Bloklar)"
               >
@@ -798,7 +938,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
             <div className="flex items-center gap-2">
               <Info className="size-4 shrink-0 text-amber-600" />
               <span>
-                <strong>{CONTINENT_META[selectedContinent]?.name ?? selectedContinent}</strong> {isEn ? "filter is active, but no results found for" : "filtresi etkinken"} &quot;{searchQuery}&quot; {isEn ? "" : "bulunamadı."}
+                <strong>{CONTINENT_META[selectedContinent]?.name ?? selectedContinent}</strong>{" "}
+                {isEn ? "filter is active, but no results found for" : "filtresi etkinken"} &quot;
+                {searchQuery}&quot; {isEn ? "" : "bulunamadı."}
               </span>
             </div>
             <Button
@@ -841,8 +983,8 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                   isSelected
                     ? "bg-primary text-primary-foreground font-bold shadow-2xs"
                     : hasCountries
-                    ? "bg-card hover:bg-muted text-foreground border border-border/80"
-                    : "opacity-30 text-muted-foreground cursor-not-allowed"
+                      ? "bg-card hover:bg-muted text-foreground border border-border/80"
+                      : "opacity-30 text-muted-foreground cursor-not-allowed"
                 }`}
               >
                 {letter}
@@ -855,7 +997,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>
             {isEn ? "Total " : "Toplam "}
-            <strong className="text-foreground font-semibold">{filteredCountries.length}</strong>{" "}
+            <strong className="text-foreground font-semibold">
+              {filteredCountries.length}
+            </strong>{" "}
             {isEn ? "countries listed." : "ülke listeleniyor."}
           </span>
           {(searchQuery || selectedLetter || selectedContinent !== "ALL") && (
@@ -882,7 +1026,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 className={`rounded-3xl border ${group.borderClass} bg-card overflow-hidden shadow-sm transition-all`}
               >
                 {/* Continent Section Header Banner */}
-                <div className={`p-4 sm:p-5 bg-gradient-to-r ${group.headerClass} text-white flex flex-wrap items-center justify-between gap-3`}>
+                <div
+                  className={`p-4 sm:p-5 bg-gradient-to-r ${group.headerClass} text-white flex flex-wrap items-center justify-between gap-3`}
+                >
                   <div className="flex items-center gap-3">
                     <div className="size-9 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-xs font-bold text-sm">
                       {group.items.length}
@@ -892,7 +1038,14 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                         {group.name}
                       </h4>
                       <span className="text-[11px] text-white/80 font-mono">
-                        {group.items.length} {isEn ? "Countries" : "Ülke"} · {group.totalPopulation > 0 ? `${group.totalPopulation.toLocaleString(isEn ? "en-US" : "tr-TR")} ${isEn ? "Population" : "Nüfus"}` : ""} · {group.totalArea > 0 ? `${group.totalArea.toLocaleString(isEn ? "en-US" : "tr-TR")} km²` : ""}
+                        {group.items.length} {isEn ? "Countries" : "Ülke"} ·{" "}
+                        {group.totalPopulation > 0
+                          ? `${group.totalPopulation.toLocaleString(isEn ? "en-US" : "tr-TR")} ${isEn ? "Population" : "Nüfus"}`
+                          : ""}{" "}
+                        ·{" "}
+                        {group.totalArea > 0
+                          ? `${group.totalArea.toLocaleString(isEn ? "en-US" : "tr-TR")} km²`
+                          : ""}
                       </span>
                     </div>
                   </div>
@@ -905,11 +1058,13 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                 {/* Compact Mini-Card Grid */}
                 <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
                   {group.items.map((country) => {
-                    const v2Path = country.path.startsWith("/v2") ? country.path : `/v2${country.path}`;
+                    const v2Path = country.path.startsWith("/v2")
+                      ? country.path
+                      : `/v2${country.path}`;
                     return (
                       <Link
                         key={country.isoCode}
-                        href={v2Path as any}
+                        href={v2Path as unknown as React.ComponentProps<typeof Link>["href"]}
                         className="p-3 rounded-2xl border border-border/80 bg-muted/20 hover:bg-card hover:border-primary/60 hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -935,7 +1090,9 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                           </span>
                           <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-2 mt-0.5">
                             {country.population && (
-                              <span>{country.population.toLocaleString(isEn ? "en-US" : "tr-TR")} kişi</span>
+                              <span>
+                                {country.population.toLocaleString(isEn ? "en-US" : "tr-TR")} kişi
+                              </span>
                             )}
                           </div>
                         </div>
@@ -945,8 +1102,8 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                             {country.areaKm2
                               ? `${country.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²`
                               : isEn
-                              ? "Explore"
-                              : "Detay"}
+                                ? "Explore"
+                                : "Detay"}
                           </span>
                           <ChevronRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
                         </div>
@@ -970,19 +1127,20 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                   <TableHead>{isEn ? "Country Name" : "Ülke Adı"}</TableHead>
                   <TableHead>{isEn ? "Continent" : "Kıta"}</TableHead>
                   <TableHead className="text-right">{isEn ? "Population" : "Nüfus"}</TableHead>
-                  <TableHead className="text-right">{isEn ? "Area (km²)" : "Yüzölçümü (km²)"}</TableHead>
+                  <TableHead className="text-right">
+                    {isEn ? "Area (km²)" : "Yüzölçümü (km²)"}
+                  </TableHead>
                   <TableHead className="text-right w-24">{isEn ? "Action" : "İşlem"}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCountries.map((country) => {
                   const continentMeta = CONTINENT_META[country.continent];
-                  const v2Path = country.path.startsWith("/v2") ? country.path : `/v2${country.path}`;
+                  const v2Path = country.path.startsWith("/v2")
+                    ? country.path
+                    : `/v2${country.path}`;
                   return (
-                    <TableRow
-                      key={country.isoCode}
-                      className="hover:bg-muted/50 transition-colors"
-                    >
+                    <TableRow key={country.isoCode} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
                         {clientHasFlag(country.isoCode) ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
@@ -1000,24 +1158,39 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                         {country.isoCode}
                       </TableCell>
                       <TableCell className="font-bold text-foreground">
-                        <Link href={v2Path as any} className="hover:text-primary hover:underline transition-colors">
+                        <Link
+                          href={v2Path as unknown as React.ComponentProps<typeof Link>["href"]}
+                          className="hover:text-primary hover:underline transition-colors"
+                        >
                           {isEn ? country.nameEn : country.nameTr}
                         </Link>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" size="sm" className={continentMeta?.badgeClass}>
-                          {continentMeta ? (isEn ? continentMeta.nameEn : continentMeta.name) : country.continent}
+                          {continentMeta
+                            ? isEn
+                              ? continentMeta.nameEn
+                              : continentMeta.name
+                            : country.continent}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono font-bold text-primary">
-                        {country.population ? country.population.toLocaleString(isEn ? "en-US" : "tr-TR") : "—"}
+                        {country.population
+                          ? country.population.toLocaleString(isEn ? "en-US" : "tr-TR")
+                          : "—"}
                       </TableCell>
                       <TableCell className="text-right font-mono text-foreground">
-                        {country.areaKm2 ? `${country.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²` : "—"}
+                        {country.areaKm2
+                          ? `${country.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²`
+                          : "—"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link href={v2Path as any}>
-                          <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-3.5" />}>
+                        <Link href={v2Path as unknown as React.ComponentProps<typeof Link>["href"]}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            rightIcon={<ArrowRight className="size-3.5" />}
+                          >
                             {isEn ? "Explore" : "İncele"}
                           </Button>
                         </Link>
@@ -1049,7 +1222,7 @@ export function V2WorldMapExplorer({ countries, locale = "tr", middleSections }:
                     return (
                       <Link
                         key={c.isoCode}
-                        href={v2Path as any}
+                        href={v2Path as unknown as React.ComponentProps<typeof Link>["href"]}
                         className="p-2.5 rounded-xl border border-border/70 hover:border-primary hover:bg-muted/50 transition-all flex items-center justify-between text-xs group"
                       >
                         <div className="flex items-center gap-2 truncate">

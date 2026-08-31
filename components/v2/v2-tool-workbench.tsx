@@ -7,7 +7,6 @@ import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { projectToMapPoint } from "@/lib/map/projection";
 import {
   unprojectMapPoint,
-  haversineKm,
   polylineLengthKm,
   ringPerimeterKm,
   ringAreaKm2,
@@ -30,16 +29,13 @@ import {
   Compass,
   MapPin,
   Layers,
-  Sparkles,
   RotateCcw,
   Copy,
   Check,
-  ArrowRight,
   Plane,
   Car,
   ZoomIn,
   ZoomOut,
-  Maximize2,
   Trash2,
   Undo2,
   Download,
@@ -48,9 +44,7 @@ import {
   AlertTriangle,
   RefreshCw,
   Navigation,
-  Globe,
   Plus,
-  HelpCircle,
 } from "lucide-react";
 
 export type ToolMode = "distance" | "coordinates" | "area";
@@ -99,12 +93,16 @@ export function V2ToolWorkbench({
 }: V2ToolWorkbenchProps) {
   const [activeTool, setActiveTool] = React.useState<ToolMode>(initialMode);
   const [points, setPoints] = React.useState<PointWithSvg[]>([]);
-  const [hoveredPos, setHoveredPos] = React.useState<{ x: number; y: number; geo: GeoPoint } | null>(null);
+  const [hoveredPos, setHoveredPos] = React.useState<{
+    x: number;
+    y: number;
+    geo: GeoPoint;
+  } | null>(null);
   const [copied, setCopied] = React.useState<boolean>(false);
   const [selectedProvinceCode, setSelectedProvinceCode] = React.useState<string>("");
   const [manualCoordText, setManualCoordText] = React.useState<string>("");
   const [manualCoordError, setManualCoordError] = React.useState<string | null>(null);
-  
+
   // Save measurements
   const [saveTitle, setSaveTitle] = React.useState<string>("");
   const [savedList, setSavedList] = React.useState<SavedMeasurement[]>([]);
@@ -135,12 +133,32 @@ export function V2ToolWorkbench({
     });
   }, []);
 
+  // Container width tracking for responsive scale bar calculation
+  const [containerWidth, setContainerWidth] = React.useState(1000);
+
+  React.useEffect(() => {
+    const el = mapContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          setContainerWidth(entry.contentRect.width);
+        }
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // Load saved measurements from localStorage on mount
   React.useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setSavedList(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        queueMicrotask(() => {
+          setSavedList(parsed);
+        });
       }
     } catch {
       // safe fallback
@@ -181,7 +199,7 @@ export function V2ToolWorkbench({
       const transformed = pt.matrixTransform(ctm.inverse());
       return { x: transformed.x, y: transformed.y };
     },
-    []
+    [],
   );
 
   // Zoom handlers
@@ -277,7 +295,8 @@ export function V2ToolWorkbench({
   // Add province center from 81-il dropdown
   const handleAddProvince = () => {
     if (!selectedProvinceCode) return;
-    const prov = provincePoints.find((p) => p.plateCode === selectedProvinceCode) ||
+    const prov =
+      provincePoints.find((p) => p.plateCode === selectedProvinceCode) ||
       PROVINCE_SHAPES.find((p) => p.plateCode === selectedProvinceCode);
 
     if (!prov) return;
@@ -298,7 +317,10 @@ export function V2ToolWorkbench({
     if (activeTool === "coordinates") {
       setPoints([{ svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "dropdown" }]);
     } else {
-      setPoints((prev) => [...prev, { svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "dropdown" }]);
+      setPoints((prev) => [
+        ...prev,
+        { svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "dropdown" },
+      ]);
     }
     setSelectedProvinceCode("");
   };
@@ -316,7 +338,9 @@ export function V2ToolWorkbench({
       } else if (parsed.reason === "longitudeOutOfRange") {
         setManualCoordError("Boylam değeri geçerli aralıkta (-180° ile +180°) değil.");
       } else {
-        setManualCoordError("Koordinat anlaşılamadı. Örnek: '39.92, 32.85' veya '39°55\\'12\"K 32°52\\'D'");
+        setManualCoordError(
+          "Koordinat anlaşılamadı. Örnek: '39.92, 32.85' veya '39°55\\'12\"K 32°52\\'D'",
+        );
       }
       return;
     }
@@ -328,7 +352,10 @@ export function V2ToolWorkbench({
     if (activeTool === "coordinates") {
       setPoints([{ svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "manual" }]);
     } else {
-      setPoints((prev) => [...prev, { svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "manual" }]);
+      setPoints((prev) => [
+        ...prev,
+        { svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "manual" },
+      ]);
     }
     setManualCoordText("");
   };
@@ -353,7 +380,7 @@ export function V2ToolWorkbench({
       sorted.map((p, idx) => ({
         ...p,
         label: `Sınır ${idx + 1}`,
-      }))
+      })),
     );
   };
 
@@ -391,7 +418,7 @@ export function V2ToolWorkbench({
         poly.map((p, idx) => {
           const pt = projectToMapPoint(p.lon, p.lat);
           return { svgX: pt.x, svgY: pt.y, geo: p, label: `Sınır ${idx + 1}`, source: "preset" };
-        })
+        }),
       );
     } else if (type === "van-golu") {
       setActiveTool("area");
@@ -406,7 +433,7 @@ export function V2ToolWorkbench({
         poly.map((p, idx) => {
           const pt = projectToMapPoint(p.lon, p.lat);
           return { svgX: pt.x, svgY: pt.y, geo: p, label: `Sınır ${idx + 1}`, source: "preset" };
-        })
+        }),
       );
     } else if (type === "merkez") {
       setActiveTool("coordinates");
@@ -456,7 +483,7 @@ export function V2ToolWorkbench({
   }, [activeTool, geoPoints]);
 
   // Point-in-province detection (Reverse Geocoding)
-  const detectedProvince = React.useMemo(() => {
+  const detectedProvince = (() => {
     if (activeTool !== "coordinates" || points.length === 0) return null;
     const pt = points[0];
     if (!pt) return null;
@@ -474,7 +501,7 @@ export function V2ToolWorkbench({
       }
     }
     return null;
-  }, [activeTool, points, provinceShapePolys, provinceAreas]);
+  })();
 
   // 81 Provinces select options for CustomSelect
   const provinceOptions = React.useMemo(() => {
@@ -490,16 +517,19 @@ export function V2ToolWorkbench({
     const parts = currentViewBox.split(" ").map(Number);
     const viewWidthUnits = parts[2] || 1270;
     const centerLat = 39.0;
-    const containerWidth = mapContainerRef.current?.clientWidth || 1000;
     return scaleBarKm(viewWidthUnits, containerWidth, centerLat, 0.22);
-  }, [currentViewBox, zoomLevel]);
+  }, [currentViewBox, containerWidth]);
 
   // Convert decimal to DMS (Degrees Minutes Seconds)
   const toDms = (val: number, isLat: boolean) => {
     const parts = toDmsParts(val, isLat ? "lat" : "lon", 1);
     const dir = isLat
-      ? parts.cardinal === "north" ? "K" : "G"
-      : parts.cardinal === "east" ? "D" : "B";
+      ? parts.cardinal === "north"
+        ? "K"
+        : "G"
+      : parts.cardinal === "east"
+        ? "D"
+        : "B";
     return `${parts.degrees}° ${parts.minutes}' ${parts.seconds}" ${dir}`;
   };
 
@@ -539,18 +569,25 @@ export function V2ToolWorkbench({
   // Save measurement to localStorage
   const handleSaveMeasurement = () => {
     if (points.length === 0) return;
-    const title = saveTitle.trim() || `${activeTool === "distance" ? "Mesafe" : activeTool === "area" ? "Alan" : "Koordinat"} Ölçümü #${savedList.length + 1}`;
-    
+    const title =
+      saveTitle.trim() ||
+      `${activeTool === "distance" ? "Mesafe" : activeTool === "area" ? "Alan" : "Koordinat"} Ölçümü #${savedList.length + 1}`;
+
     let resultText = "";
     if (activeTool === "distance") resultText = `${distanceKm.toFixed(1)} km`;
     else if (activeTool === "area") resultText = `${areaKm2.toFixed(1)} km²`;
-    else if (activeTool === "coordinates" && points[0]) resultText = `${points[0].geo.lat.toFixed(3)}°K, ${points[0].geo.lon.toFixed(3)}°D`;
+    else if (activeTool === "coordinates" && points[0])
+      resultText = `${points[0].geo.lat.toFixed(3)}°K, ${points[0].geo.lon.toFixed(3)}°D`;
 
     const newRecord: SavedMeasurement = {
       id: Date.now().toString(),
       title,
       mode: activeTool,
-      date: new Date().toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" }),
+      date: new Date().toLocaleDateString("tr-TR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
       points: points.map((p) => ({ geo: p.geo, label: p.label })),
       resultText,
     };
@@ -617,7 +654,11 @@ export function V2ToolWorkbench({
       // Attribution watermarking
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.font = "14px sans-serif";
-      ctx.fillText("Coğrafya Platformu v2 · WGS84 / MEB & MTA Tabanlı Ölçüm", 20, canvas.height - 20);
+      ctx.fillText(
+        "Coğrafya Platformu v2 · WGS84 / MEB & MTA Tabanlı Ölçüm",
+        20,
+        canvas.height - 20,
+      );
 
       const link = document.createElement("a");
       link.download = `${downloadName}-${Date.now()}.png`;
@@ -639,7 +680,9 @@ export function V2ToolWorkbench({
                 <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
                   CBS Coğrafi Ölçüm Laboratuvarı v2
                 </Badge>
-                <span className="text-xs text-muted-foreground font-medium">Jeodezik Büyük Daire &amp; Küresel Alan Hesabı</span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Jeodezik Büyük Daire &amp; Küresel Alan Hesabı
+                </span>
               </div>
               <h2 className="font-heading text-xl sm:text-2xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
                 Coğrafi Bilgi Sistemleri (CBS) Ölçüm Araçları
@@ -670,7 +713,13 @@ export function V2ToolWorkbench({
                 size="sm"
                 onClick={handleCopy}
                 disabled={points.length === 0}
-                leftIcon={copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                leftIcon={
+                  copied ? (
+                    <Check className="size-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="size-3.5" />
+                  )
+                }
               >
                 {copied ? "Kopyalandı!" : "Özeti Kopyala"}
               </Button>
@@ -700,9 +749,12 @@ export function V2ToolWorkbench({
                 </Badge>
               </div>
               <div>
-                <h3 className="font-heading font-bold text-base text-foreground">Mesafe Ölçme Aracı</h3>
+                <h3 className="font-heading font-bold text-base text-foreground">
+                  Mesafe Ölçme Aracı
+                </h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Haritada noktalar seçerek büyük daire yay mesafesini ve yolculuk sürelerini hesaplayın.
+                  Haritada noktalar seçerek büyük daire yay mesafesini ve yolculuk sürelerini
+                  hesaplayın.
                 </p>
               </div>
             </button>
@@ -728,7 +780,9 @@ export function V2ToolWorkbench({
                 </Badge>
               </div>
               <div>
-                <h3 className="font-heading font-bold text-base text-foreground">Koordinat &amp; Konum Bulucu</h3>
+                <h3 className="font-heading font-bold text-base text-foreground">
+                  Koordinat &amp; Konum Bulucu
+                </h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   Herhangi bir noktaya tıklayarak WGS84, DMS ve UTM coğrafi koordinatlarını öğrenin.
                 </p>
@@ -756,7 +810,9 @@ export function V2ToolWorkbench({
                 </Badge>
               </div>
               <div>
-                <h3 className="font-heading font-bold text-base text-foreground">Alan Hesaplama Aracı</h3>
+                <h3 className="font-heading font-bold text-base text-foreground">
+                  Alan Hesaplama Aracı
+                </h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   Köşe noktaları belirleyerek km², Hektar ve Dönüm cinsinden gerçek yüzölçümü ölçün.
                 </p>
@@ -777,9 +833,12 @@ export function V2ToolWorkbench({
               {activeTool === "area" && "Küresel Çokgen Yüzölçümü Tuvali"}
             </Badge>
             <span className="text-xs text-muted-foreground hidden md:inline">
-              {activeTool === "distance" && "Noktaları bağlamak için haritada istediğiniz yerlere tıklayın"}
-              {activeTool === "coordinates" && "Koordinatını ve ilini öğrenmek istediğiniz noktaya tıklayın"}
-              {activeTool === "area" && "Kapalı çokgen oluşturmak için en az 3 köşe noktası ekleyin"}
+              {activeTool === "distance" &&
+                "Noktaları bağlamak için haritada istediğiniz yerlere tıklayın"}
+              {activeTool === "coordinates" &&
+                "Koordinatını ve ilini öğrenmek istediğiniz noktaya tıklayın"}
+              {activeTool === "area" &&
+                "Kapalı çokgen oluşturmak için en az 3 köşe noktası ekleyin"}
             </span>
           </div>
 
@@ -940,7 +999,9 @@ export function V2ToolWorkbench({
               </div>
               <div
                 className="h-1.5 border-x-2 border-b-2 border-foreground"
-                style={{ width: `${Math.max(36, Math.min(Math.round(dynamicScaleBar.px), 240))}px` }}
+                style={{
+                  width: `${Math.max(36, Math.min(Math.round(dynamicScaleBar.px), 240))}px`,
+                }}
               />
             </div>
           )}
@@ -1056,16 +1117,22 @@ export function V2ToolWorkbench({
                 <span className="p-1.5 rounded-xl bg-primary/10 text-primary">
                   <Plus className="size-4" />
                 </span>
-                <h4 className="font-heading font-bold text-base text-foreground">Nokta Ekleme &amp; Giriş</h4>
+                <h4 className="font-heading font-bold text-base text-foreground">
+                  Nokta Ekleme &amp; Giriş
+                </h4>
               </div>
-              <span className="text-xs text-muted-foreground font-mono">{points.length} Nokta Eklendi</span>
+              <span className="text-xs text-muted-foreground font-mono">
+                {points.length} Nokta Eklendi
+              </span>
             </div>
 
             {/* 81 Province Dropdown Selector */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                 <span>1. 81 İl Merkezinden Seçerek Ekle:</span>
-                <span className="text-[11px] text-muted-foreground font-normal">MGM Resmî Koordinatı</span>
+                <span className="text-[11px] text-muted-foreground font-normal">
+                  MGM Resmî Koordinatı
+                </span>
               </label>
               <div className="flex items-center gap-2">
                 <div className="flex-1">
@@ -1094,7 +1161,9 @@ export function V2ToolWorkbench({
             <div className="space-y-2 pt-2 border-t border-border/70">
               <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                 <span>2. Doğrudan Koordinat Yazarak Ekle:</span>
-                <span className="text-[11px] text-muted-foreground font-normal">DD veya DMS Formatı</span>
+                <span className="text-[11px] text-muted-foreground font-normal">
+                  DD veya DMS Formatı
+                </span>
               </label>
               <form onSubmit={handleAddManualCoord} className="flex items-center gap-2">
                 <Input
@@ -1122,7 +1191,9 @@ export function V2ToolWorkbench({
             <div className="space-y-2 pt-2 border-t border-border/70">
               <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                 <span>3. Bu Ölçümü Kaydet:</span>
-                <span className="text-[11px] text-muted-foreground font-normal">Yerel Hafızaya Sakla</span>
+                <span className="text-[11px] text-muted-foreground font-normal">
+                  Yerel Hafızaya Sakla
+                </span>
               </label>
               <div className="flex items-center gap-2">
                 <Input
@@ -1137,7 +1208,13 @@ export function V2ToolWorkbench({
                   className="h-10 px-4 text-xs font-bold text-white shrink-0 shadow-xs"
                   onClick={handleSaveMeasurement}
                   disabled={points.length === 0}
-                  leftIcon={saveSuccess ? <BookmarkCheck className="size-4 text-white" /> : <Bookmark className="size-4 text-white" />}
+                  leftIcon={
+                    saveSuccess ? (
+                      <BookmarkCheck className="size-4 text-white" />
+                    ) : (
+                      <Bookmark className="size-4 text-white" />
+                    )
+                  }
                 >
                   {saveSuccess ? "Kaydedildi!" : "Kaydet"}
                 </Button>
@@ -1165,7 +1242,8 @@ export function V2ToolWorkbench({
                     <div>
                       <span className="font-semibold text-foreground block">{item.title}</span>
                       <span className="text-[10px] text-muted-foreground">
-                        {item.date} &bull; {item.points.length} Nokta &bull; <strong>{item.resultText}</strong>
+                        {item.date} &bull; {item.points.length} Nokta &bull;{" "}
+                        <strong>{item.resultText}</strong>
                       </span>
                     </div>
                     <button
@@ -1197,7 +1275,13 @@ export function V2ToolWorkbench({
                   size="sm"
                   onClick={handleCopy}
                   disabled={points.length === 0}
-                  leftIcon={copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                  leftIcon={
+                    copied ? (
+                      <Check className="size-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="size-3.5" />
+                    )
+                  }
                 >
                   {copied ? "Kopyalandı!" : "Özeti Kopyala"}
                 </Button>
@@ -1208,7 +1292,9 @@ export function V2ToolWorkbench({
             {activeTool === "distance" && (
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground font-medium">Toplam Kuş Uçuşu Mesafe</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Toplam Kuş Uçuşu Mesafe
+                  </span>
                   <div className="flex items-baseline gap-2">
                     <span className="font-heading text-4xl font-extrabold text-primary font-mono">
                       {distanceKm.toFixed(1)}
@@ -1216,7 +1302,8 @@ export function V2ToolWorkbench({
                     <span className="text-lg font-bold text-foreground">km</span>
                   </div>
                   <span className="text-xs text-muted-foreground block font-mono">
-                    ≈ {(distanceKm * 1000).toLocaleString("tr-TR")} metre / {(distanceKm / 1.852).toFixed(1)} Deniz Mili (NM)
+                    ≈ {(distanceKm * 1000).toLocaleString("tr-TR")} metre /{" "}
+                    {(distanceKm / 1.852).toFixed(1)} Deniz Mili (NM)
                   </span>
                 </div>
 
@@ -1240,7 +1327,9 @@ export function V2ToolWorkbench({
                     <span className="font-heading font-bold text-sm text-foreground">
                       ~{(distanceKm * 1.28).toFixed(0)} km
                     </span>
-                    <span className="text-[10px] text-muted-foreground block">%28 topoğrafya farkı</span>
+                    <span className="text-[10px] text-muted-foreground block">
+                      %28 topoğrafya farkı
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1252,14 +1341,18 @@ export function V2ToolWorkbench({
                 {points[0] ? (
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground font-medium">Ondalık Derece (DD - WGS84)</span>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Ondalık Derece (DD - WGS84)
+                      </span>
                       <div className="p-3 rounded-xl bg-card border border-border font-mono font-bold text-sm text-foreground">
                         {points[0].geo.lat.toFixed(6)}° K, {points[0].geo.lon.toFixed(6)}° D
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground font-medium">Derece - Dakika - Saniye (DMS)</span>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Derece - Dakika - Saniye (DMS)
+                      </span>
                       <div className="p-3 rounded-xl bg-card border border-border font-mono text-xs text-foreground">
                         {toDms(points[0].geo.lat, true)} &bull; {toDms(points[0].geo.lon, false)}
                       </div>
@@ -1268,9 +1361,13 @@ export function V2ToolWorkbench({
                     {/* Detected Province Link (Reverse Geocoding) */}
                     <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs flex items-center justify-between">
                       <div>
-                        <span className="text-muted-foreground block text-[11px]">Noktanın Düştüğü İl:</span>
+                        <span className="text-muted-foreground block text-[11px]">
+                          Noktanın Düştüğü İl:
+                        </span>
                         <span className="font-heading font-bold text-sm text-primary">
-                          {detectedProvince ? `${detectedProvince.name} İli Sınırları İçinde` : "Türkiye Sınırları Dışında / Açık Deniz"}
+                          {detectedProvince
+                            ? `${detectedProvince.name} İli Sınırları İçinde`
+                            : "Türkiye Sınırları Dışında / Açık Deniz"}
                         </span>
                       </div>
                       {detectedProvince && (
@@ -1292,7 +1389,9 @@ export function V2ToolWorkbench({
                     </div>
 
                     <div className="p-3 rounded-xl bg-muted/40 border border-border text-xs space-y-1">
-                      <span className="text-muted-foreground block font-medium">UTM Projeksiyon Zonu:</span>
+                      <span className="text-muted-foreground block font-medium">
+                        UTM Projeksiyon Zonu:
+                      </span>
                       <span className="font-mono font-bold text-foreground">
                         Zone {Math.floor((points[0].geo.lon + 180) / 6) + 1}N (WGS 84 / UTM)
                       </span>
@@ -1310,7 +1409,9 @@ export function V2ToolWorkbench({
             {activeTool === "area" && (
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground font-medium">Hesaplanan Küresel Yüzölçümü</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Hesaplanan Küresel Yüzölçümü
+                  </span>
                   <div className="flex items-baseline gap-2">
                     <span className="font-heading text-4xl font-extrabold text-accent font-mono">
                       {areaKm2.toFixed(1)}
@@ -1323,7 +1424,9 @@ export function V2ToolWorkbench({
                   <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-2 text-xs text-amber-900 dark:text-amber-200">
                     <div className="flex items-center gap-1.5 overflow-hidden">
                       <AlertTriangle className="size-4 text-amber-600 shrink-0" />
-                      <span className="text-[11px]">Kesişen çokgen: Çapraz kenarları düzeltmek için sıralayın.</span>
+                      <span className="text-[11px]">
+                        Kesişen çokgen: Çapraz kenarları düzeltmek için sıralayın.
+                      </span>
                     </div>
                     <Button
                       variant="outline"
@@ -1351,7 +1454,9 @@ export function V2ToolWorkbench({
                     </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-card border border-border col-span-2">
-                    <span className="text-muted-foreground block text-[11px]">Çevre Uzunluğu (Perimeter)</span>
+                    <span className="text-muted-foreground block text-[11px]">
+                      Çevre Uzunluğu (Perimeter)
+                    </span>
                     <span className="font-heading font-bold text-sm text-foreground font-mono">
                       {perimeterKm.toFixed(1)} km
                     </span>
@@ -1378,12 +1483,17 @@ export function V2ToolWorkbench({
               </div>
               <div className="space-y-1.5 text-xs max-h-52 overflow-y-auto pr-1">
                 {points.map((p, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-muted/30 border border-border/80">
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2 rounded-xl bg-muted/30 border border-border/80"
+                  >
                     <div className="flex items-center gap-2">
                       <span className="size-5 rounded-full bg-primary/10 text-primary font-bold text-[10px] flex items-center justify-center">
                         {idx + 1}
                       </span>
-                      <span className="font-semibold text-foreground">{p.label || `Nokta ${idx + 1}`}</span>
+                      <span className="font-semibold text-foreground">
+                        {p.label || `Nokta ${idx + 1}`}
+                      </span>
                     </div>
                     <span className="font-mono text-[11px] text-muted-foreground">
                       {p.geo.lat.toFixed(3)}°K, {p.geo.lon.toFixed(3)}°D

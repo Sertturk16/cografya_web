@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
-import { Compass, Map, Globe, Waves, Flame, Gamepad2, Layers, BookOpen, ExternalLink } from "lucide-react";
+import { Compass, Map, Layers, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export function V2Footer() {
@@ -29,7 +29,9 @@ export function V2Footer() {
             </Link>
 
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-sm">
-              Türkiye'nin 81 ili, 199 dünya ülkesi, saatlik güncellenen Copernicus deniz telemetrisi, AFAD deprem verileri ve interaktif CBS harita araçlarıyla açık coğrafya platformu.
+              Türkiye&apos;nin 81 ili, 199 dünya ülkesi, saatlik güncellenen Copernicus deniz
+              telemetrisi, AFAD deprem verileri ve interaktif CBS harita araçlarıyla açık coğrafya
+              platformu.
             </p>
 
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -91,17 +93,26 @@ export function V2Footer() {
                 </Link>
               </li>
               <li>
-                <Link href={"/v2/araclar/mesafe-olcme" as any} className="hover:text-secondary transition-colors block">
+                <Link
+                  href="/v2/araclar/mesafe-olcme"
+                  className="hover:text-secondary transition-colors block"
+                >
                   Kuş Uçuşu Mesafe Ölçme
                 </Link>
               </li>
               <li>
-                <Link href={"/v2/araclar/koordinat-bulma" as any} className="hover:text-secondary transition-colors block">
+                <Link
+                  href="/v2/araclar/koordinat-bulma"
+                  className="hover:text-secondary transition-colors block"
+                >
                   Koordinat Bulma &amp; Dönüştürme
                 </Link>
               </li>
               <li>
-                <Link href={"/v2/araclar/alan-hesaplama" as any} className="hover:text-secondary transition-colors block">
+                <Link
+                  href="/v2/araclar/alan-hesaplama"
+                  className="hover:text-secondary transition-colors block"
+                >
                   Poligon Alan Hesaplama
                 </Link>
               </li>

@@ -2,15 +2,7 @@
 
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  GraduationCap,
-  Sparkles,
-  BookOpen,
-  MapPin,
-  Compass,
-  CheckCircle,
-  TrendingUp,
-} from "lucide-react";
+import { GraduationCap } from "lucide-react";
 
 export function V2StudyStrategyGuide() {
   const topics = [
@@ -48,7 +40,9 @@ export function V2StudyStrategyGuide() {
             <Badge variant="primary" size="sm" icon={<GraduationCap className="size-3.5" />}>
               Sınav Hazırlık Stratejisi
             </Badge>
-            <span className="text-xs text-muted-foreground">YKS &amp; KPSS Coğrafya Yol Haritası</span>
+            <span className="text-xs text-muted-foreground">
+              YKS &amp; KPSS Coğrafya Yol Haritası
+            </span>
           </div>
           <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
             AYT &amp; TYT Coğrafya Soru Dağılımı ve Başarı Taktikleri
@@ -68,9 +62,7 @@ export function V2StudyStrategyGuide() {
                 {t.weight}
               </Badge>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              {t.desc}
-            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{t.desc}</p>
           </div>
         ))}
       </div>

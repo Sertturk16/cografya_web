@@ -122,7 +122,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
       name: province.name,
       meta: tRegions(province.region),
       fact: populationFact(province.population, province.populationYear),
-    })
+    }),
   );
 
   const countryCards: FeaturedCardItem[] = pickDailyCountries(countries, locale, now).map(
@@ -132,7 +132,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
       name: country.name,
       meta: tContinents(country.continent),
       fact: populationFact(country.population, country.populationYear),
-    })
+    }),
   );
 
   return (
@@ -146,18 +146,20 @@ export default async function V2HomePage({ params }: V2PageProps) {
         {/* Live Telemetry Ticker Bar */}
         <V2LiveTicker />
 
-        <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-16">
+        <main
+          id="main-content"
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-16"
+        >
           {/* HERO SECTION */}
-          <V2Hero
-            provinceCount={totalProvinces}
-            countryCount={totalCountries}
-          />
+          <V2Hero provinceCount={totalProvinces} countryCount={totalCountries} />
 
           {/* SECTION 1: ATLAS SPOTLIGHT & COĞRAFİ MERKEZLER */}
           <section className="space-y-6">
             <div className="border-b border-border pb-3 flex items-center justify-between">
               <div>
-                <Badge variant="outline" size="sm" className="mb-1">Atlas &amp; Harita Merkezleri</Badge>
+                <Badge variant="outline" size="sm" className="mb-1">
+                  Atlas &amp; Harita Merkezleri
+                </Badge>
                 <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
                   Coğrafi Bölgeler &amp; Harita Keşifleri
                 </h2>
@@ -169,31 +171,47 @@ export default async function V2HomePage({ params }: V2PageProps) {
               <Card className="overflow-hidden hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between group">
                 <CardHeader className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Badge variant="primary" size="sm">Türkiye Haritası</Badge>
-                    <span className="text-xs font-mono text-muted-foreground">{totalProvinces} İl · 7 Coğrafi Bölge</span>
+                    <Badge variant="primary" size="sm">
+                      Türkiye Haritası
+                    </Badge>
+                    <span className="text-xs font-mono text-muted-foreground">
+                      {totalProvinces} İl · 7 Coğrafi Bölge
+                    </span>
                   </div>
                   <CardTitle className="text-2xl">{t("mapHeading")}</CardTitle>
-                  <CardDescription className="text-sm leading-relaxed">{t("mapBody")}</CardDescription>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {t("mapBody")}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
                     <div className="p-3 rounded-xl bg-muted/40 border border-border">
                       <span className="text-muted-foreground block text-[11px]">Bölgeler</span>
-                      <span className="font-heading font-bold text-base text-foreground">7 Bölge</span>
+                      <span className="font-heading font-bold text-base text-foreground">
+                        7 Bölge
+                      </span>
                     </div>
                     <div className="p-3 rounded-xl bg-muted/40 border border-border">
                       <span className="text-muted-foreground block text-[11px]">İller</span>
-                      <span className="font-heading font-bold text-base text-foreground">{totalProvinces} İl</span>
+                      <span className="font-heading font-bold text-base text-foreground">
+                        {totalProvinces} İl
+                      </span>
                     </div>
                     <div className="p-3 rounded-xl bg-muted/40 border border-border">
                       <span className="text-muted-foreground block text-[11px]">Nüfus</span>
-                      <span className="font-heading font-bold text-base text-foreground">85+ Milyon</span>
+                      <span className="font-heading font-bold text-base text-foreground">
+                        85+ Milyon
+                      </span>
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter className="border-t border-border bg-muted/20">
                   <Link href="/v2/turkiye" className="w-full">
-                    <Button variant="primary" className="w-full group-hover:scale-[1.01] transition-transform" rightIcon={<ArrowRight className="size-4" />}>
+                    <Button
+                      variant="primary"
+                      className="w-full group-hover:scale-[1.01] transition-transform"
+                      rightIcon={<ArrowRight className="size-4" />}
+                    >
                       {t("mapLinkLabel")}
                     </Button>
                   </Link>
@@ -204,31 +222,47 @@ export default async function V2HomePage({ params }: V2PageProps) {
               <Card className="overflow-hidden hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between group">
                 <CardHeader className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary" size="sm">Dünya Atlası</Badge>
-                    <span className="text-xs font-mono text-muted-foreground">{totalCountries} Ülke · 6 Kıta</span>
+                    <Badge variant="secondary" size="sm">
+                      Dünya Atlası
+                    </Badge>
+                    <span className="text-xs font-mono text-muted-foreground">
+                      {totalCountries} Ülke · 6 Kıta
+                    </span>
                   </div>
                   <CardTitle className="text-2xl">{t("worldHeading")}</CardTitle>
-                  <CardDescription className="text-sm leading-relaxed">{t("worldBody")}</CardDescription>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {t("worldBody")}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
                     <div className="p-3 rounded-xl bg-muted/40 border border-border">
                       <span className="text-muted-foreground block text-[11px]">Kıtalar</span>
-                      <span className="font-heading font-bold text-base text-foreground">6 Kıta</span>
+                      <span className="font-heading font-bold text-base text-foreground">
+                        6 Kıta
+                      </span>
                     </div>
                     <div className="p-3 rounded-xl bg-muted/40 border border-border">
                       <span className="text-muted-foreground block text-[11px]">Başkentler</span>
-                      <span className="font-heading font-bold text-base text-foreground">190+ Başkent</span>
+                      <span className="font-heading font-bold text-base text-foreground">
+                        190+ Başkent
+                      </span>
                     </div>
                     <div className="p-3 rounded-xl bg-muted/40 border border-border">
                       <span className="text-muted-foreground block text-[11px]">Bayraklar</span>
-                      <span className="font-heading font-bold text-base text-foreground">SVG Vektör</span>
+                      <span className="font-heading font-bold text-base text-foreground">
+                        SVG Vektör
+                      </span>
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter className="border-t border-border bg-muted/20">
                   <Link href="/v2/dunya" className="w-full">
-                    <Button variant="secondary" className="w-full group-hover:scale-[1.01] transition-transform" rightIcon={<ArrowRight className="size-4" />}>
+                    <Button
+                      variant="secondary"
+                      className="w-full group-hover:scale-[1.01] transition-transform"
+                      rightIcon={<ArrowRight className="size-4" />}
+                    >
                       {t("worldLinkLabel")}
                     </Button>
                   </Link>
@@ -251,7 +285,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
                   <Badge variant="secondary" size="sm" icon={<Waves className="size-3.5" />}>
                     Canlı Deniz &amp; Kıyı Gözlemi
                   </Badge>
-                  <span className="text-xs text-muted-foreground">Copernicus Marine Service &amp; ECMWF</span>
+                  <span className="text-xs text-muted-foreground">
+                    Copernicus Marine Service &amp; ECMWF
+                  </span>
                 </div>
                 <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
                   Bugün Denizler ve Canlı Sıcaklık / Dalga Modelleri
@@ -304,7 +340,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
 
                           {basin.waveHeight ? (
                             <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border">
-                              <span className="text-xs text-muted-foreground">Dalga Yüksekliği</span>
+                              <span className="text-xs text-muted-foreground">
+                                Dalga Yüksekliği
+                              </span>
                               <span className="font-heading font-bold text-base text-foreground">
                                 {format.number(basin.waveHeight.median, {
                                   minimumFractionDigits: waveDigits,
@@ -321,8 +359,13 @@ export default async function V2HomePage({ params }: V2PageProps) {
                           )}
                         </CardContent>
                         <CardFooter className="pt-0 text-[11px] text-muted-foreground justify-between border-t border-border/50 bg-muted/10">
-                          <span>{basin.seaSurfaceTemperature?.pointCount || 0} noktanın ortancası</span>
-                          <Link href="/v2/deniz" className="text-accent hover:underline font-medium inline-flex items-center gap-0.5">
+                          <span>
+                            {basin.seaSurfaceTemperature?.pointCount || 0} noktanın ortancası
+                          </span>
+                          <Link
+                            href="/v2/deniz"
+                            className="text-accent hover:underline font-medium inline-flex items-center gap-0.5"
+                          >
                             Kıyı Detayı <ArrowRight className="size-3" />
                           </Link>
                         </CardFooter>
@@ -334,7 +377,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
                 {/* Vintage Künye */}
                 <div className="p-3.5 rounded-2xl border border-border bg-card/60 text-xs text-muted-foreground flex items-center justify-between flex-wrap gap-2 shadow-2xs">
                   <VintageLine values={marine.values} />
-                  <span className="text-[11px] font-mono">Veri Kaynağı: ECMWF / Copernicus Marine</span>
+                  <span className="text-[11px] font-mono">
+                    Veri Kaynağı: ECMWF / Copernicus Marine
+                  </span>
                 </div>
               </div>
             ) : (
@@ -360,7 +405,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <div>
-                    <Badge variant="primary" size="sm" className="mb-1">{t("eyebrowProvinces")}</Badge>
+                    <Badge variant="primary" size="sm" className="mb-1">
+                      {t("eyebrowProvinces")}
+                    </Badge>
                     <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
                       {t("discoverProvinces")}
                     </h3>
@@ -380,7 +427,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
                       className="group block p-6 rounded-2xl border border-border bg-card hover:border-primary/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" size="sm" className="font-medium">{card.meta}</Badge>
+                        <Badge variant="outline" size="sm" className="font-medium">
+                          {card.meta}
+                        </Badge>
                         <span className="size-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-colors">
                           <ArrowRight className="size-4" />
                         </span>
@@ -391,7 +440,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
                       {card.fact && (
                         <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">{card.fact.label}</span>
-                          <span className="font-bold text-foreground font-mono">{card.fact.value}</span>
+                          <span className="font-bold text-foreground font-mono">
+                            {card.fact.value}
+                          </span>
                         </div>
                       )}
                     </a>
@@ -405,7 +456,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
               <div className="space-y-4 pt-4">
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <div>
-                    <Badge variant="outline" size="sm" className="mb-1">{t("eyebrowCountries")}</Badge>
+                    <Badge variant="outline" size="sm" className="mb-1">
+                      {t("eyebrowCountries")}
+                    </Badge>
                     <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
                       {t("discoverCountries")}
                     </h3>
@@ -425,7 +478,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
                       className="group block p-6 rounded-2xl border border-border bg-card hover:border-secondary/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <Badge variant="secondary" size="sm">{card.meta}</Badge>
+                        <Badge variant="secondary" size="sm">
+                          {card.meta}
+                        </Badge>
                         <span className="size-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:text-secondary group-hover:text-white transition-colors">
                           <ArrowRight className="size-4" />
                         </span>
@@ -436,7 +491,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
                       {card.fact && (
                         <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">{card.fact.label}</span>
-                          <span className="font-bold text-foreground font-mono">{card.fact.value}</span>
+                          <span className="font-bold text-foreground font-mono">
+                            {card.fact.value}
+                          </span>
                         </div>
                       )}
                     </a>
@@ -459,13 +516,19 @@ export default async function V2HomePage({ params }: V2PageProps) {
                 {t("gameHeading")}
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Dilsiz haritada Türkiye illerini ve dünya ülkelerini tahmin edin, zamana karşı yarışın ve harita hafızanızı geliştirin.
+                Dilsiz haritada Türkiye illerini ve dünya ülkelerini tahmin edin, zamana karşı
+                yarışın ve harita hafızanızı geliştirin.
               </p>
             </div>
 
             <div className="shrink-0 w-full md:w-auto">
               <Link href="/v2/oyun">
-                <Button variant="primary" size="lg" className="w-full md:w-auto shadow-lg text-base h-12 px-6" rightIcon={<ArrowRight className="size-4" />}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full md:w-auto shadow-lg text-base h-12 px-6"
+                  rightIcon={<ArrowRight className="size-4" />}
+                >
                   {t("gameCta")}
                 </Button>
               </Link>
@@ -476,7 +539,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
           <section className="space-y-6">
             <div className="border-b border-border pb-3 flex items-center justify-between">
               <div>
-                <Badge variant="outline" size="sm" className="mb-1">{t("eyebrowTools")}</Badge>
+                <Badge variant="outline" size="sm" className="mb-1">
+                  {t("eyebrowTools")}
+                </Badge>
                 <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
                   {t("toolsHeading")}
                 </h2>
@@ -489,38 +554,44 @@ export default async function V2HomePage({ params }: V2PageProps) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Link href={"/v2/araclar/mesafe-olcme" as any} className="group block">
+              <Link href="/v2/araclar/mesafe-olcme" className="group block">
                 <Card className="h-full hover:border-primary/60 transition-all duration-300 hover:shadow-lg group-hover:-translate-y-1">
                   <CardHeader>
                     <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-white transition-colors">
                       <Compass className="size-6" />
                     </div>
                     <CardTitle className="text-xl">{tTools("mesafeName")}</CardTitle>
-                    <CardDescription className="text-xs leading-relaxed">{tTools("mesafeBody")}</CardDescription>
+                    <CardDescription className="text-xs leading-relaxed">
+                      {tTools("mesafeBody")}
+                    </CardDescription>
                   </CardHeader>
                 </Card>
               </Link>
 
-              <Link href={"/v2/araclar/koordinat-bulma" as any} className="group block">
+              <Link href="/v2/araclar/koordinat-bulma" className="group block">
                 <Card className="h-full hover:border-primary/60 transition-all duration-300 hover:shadow-lg group-hover:-translate-y-1">
                   <CardHeader>
                     <div className="size-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center mb-3 group-hover:bg-secondary group-hover:text-white transition-colors">
                       <MapPin className="size-6" />
                     </div>
                     <CardTitle className="text-xl">{tTools("koordinatName")}</CardTitle>
-                    <CardDescription className="text-xs leading-relaxed">{tTools("koordinatBody")}</CardDescription>
+                    <CardDescription className="text-xs leading-relaxed">
+                      {tTools("koordinatBody")}
+                    </CardDescription>
                   </CardHeader>
                 </Card>
               </Link>
 
-              <Link href={"/v2/araclar/alan-hesaplama" as any} className="group block">
+              <Link href="/v2/araclar/alan-hesaplama" className="group block">
                 <Card className="h-full hover:border-primary/60 transition-all duration-300 hover:shadow-lg group-hover:-translate-y-1">
                   <CardHeader>
                     <div className="size-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-3 group-hover:bg-accent group-hover:text-white transition-colors">
                       <Layers className="size-6" />
                     </div>
                     <CardTitle className="text-xl">{tTools("alanName")}</CardTitle>
-                    <CardDescription className="text-xs leading-relaxed">{tTools("alanBody")}</CardDescription>
+                    <CardDescription className="text-xs leading-relaxed">
+                      {tTools("alanBody")}
+                    </CardDescription>
                   </CardHeader>
                 </Card>
               </Link>

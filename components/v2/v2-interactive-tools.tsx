@@ -5,23 +5,22 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import {
-  Compass,
-  ArrowRight,
-  Sparkles,
-  MapPin,
-  Navigation,
-  Layers,
-  Map,
-} from "lucide-react";
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Compass, ArrowRight, Sparkles, MapPin, Navigation, Layers } from "lucide-react";
 
 // Coordinates for sample major cities in Turkey & World
 const CITIES: Record<string, { lat: number; lng: number; name: string }> = {
   istanbul: { lat: 41.0082, lng: 28.9784, name: "İstanbul" },
   ankara: { lat: 39.9334, lng: 32.8597, name: "Ankara" },
   izmir: { lat: 38.4237, lng: 27.1428, name: "İzmir" },
-  bursa: { lat: 40.1885, lng: 29.0610, name: "Bursa" },
+  bursa: { lat: 40.1885, lng: 29.061, name: "Bursa" },
   antalya: { lat: 36.8969, lng: 30.7133, name: "Antalya" },
   trabzon: { lat: 41.0027, lng: 39.7168, name: "Trabzon" },
   diyarbakir: { lat: 37.9144, lng: 40.2306, name: "Diyarbakır" },
@@ -86,7 +85,8 @@ export function V2InteractiveTools() {
             </div>
             <CardTitle className="text-xl">Kuş Uçuşu Jeodezik Mesafe</CardTitle>
             <CardDescription className="text-xs leading-relaxed">
-              İki coğrafi koordinat arasındaki küresel en kısa mesafeyi (Büyük Daire / Haversine) matematiksel olarak anında hesaplayın.
+              İki coğrafi koordinat arasındaki küresel en kısa mesafeyi (Büyük Daire / Haversine)
+              matematiksel olarak anında hesaplayın.
             </CardDescription>
           </CardHeader>
 
@@ -124,21 +124,30 @@ export function V2InteractiveTools() {
             {/* Results Display Board */}
             <div className="p-4 rounded-2xl bg-card border border-border shadow-inner flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-center sm:text-left">
-                <span className="text-[11px] text-muted-foreground block font-medium">Büyük Daire Jeodezik Mesafe</span>
+                <span className="text-[11px] text-muted-foreground block font-medium">
+                  Büyük Daire Jeodezik Mesafe
+                </span>
                 <span className="font-heading text-3xl font-bold text-primary">
-                  {distanceKm.toLocaleString("tr-TR")} <span className="text-base font-normal text-foreground">km</span>
+                  {distanceKm.toLocaleString("tr-TR")}{" "}
+                  <span className="text-base font-normal text-foreground">km</span>
                 </span>
               </div>
               <div className="text-right text-xs text-muted-foreground font-mono space-y-0.5">
-                <div>{cityObjA.name}: {cityObjA.lat.toFixed(2)}°K, {cityObjA.lng.toFixed(2)}°D</div>
-                <div>{cityObjB.name}: {cityObjB.lat.toFixed(2)}°K, {cityObjB.lng.toFixed(2)}°D</div>
+                <div>
+                  {cityObjA.name}: {cityObjA.lat.toFixed(2)}°K, {cityObjA.lng.toFixed(2)}°D
+                </div>
+                <div>
+                  {cityObjB.name}: {cityObjB.lat.toFixed(2)}°K, {cityObjB.lng.toFixed(2)}°D
+                </div>
               </div>
             </div>
           </CardContent>
 
           <CardFooter className="border-t border-border bg-muted/20 justify-between">
-            <span className="text-xs text-muted-foreground">Harita üzerinde serbest ölçüm için:</span>
-            <Link href={"/v2/araclar/mesafe-olcme" as any}>
+            <span className="text-xs text-muted-foreground">
+              Harita üzerinde serbest ölçüm için:
+            </span>
+            <Link href="/v2/araclar/mesafe-olcme">
               <Button variant="primary" size="sm" rightIcon={<ArrowRight className="size-3.5" />}>
                 Haritada Ölç
               </Button>
@@ -148,7 +157,7 @@ export function V2InteractiveTools() {
 
         {/* WIDGET 2: Direct Navigation Cards to CBS Tools Suite */}
         <div className="lg:col-span-5 flex flex-col justify-between gap-3">
-          <Link href={"/v2/araclar/mesafe-olcme" as any} className="group flex-1">
+          <Link href="/v2/araclar/mesafe-olcme" className="group flex-1">
             <div className="h-full p-4 rounded-2xl border border-border bg-card hover:border-primary/60 hover:bg-muted/40 transition-all flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -167,7 +176,7 @@ export function V2InteractiveTools() {
             </div>
           </Link>
 
-          <Link href={"/v2/araclar/koordinat-bulma" as any} className="group flex-1">
+          <Link href="/v2/araclar/koordinat-bulma" className="group flex-1">
             <div className="h-full p-4 rounded-2xl border border-border bg-card hover:border-secondary/60 hover:bg-muted/40 transition-all flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -186,7 +195,7 @@ export function V2InteractiveTools() {
             </div>
           </Link>
 
-          <Link href={"/v2/araclar/alan-hesaplama" as any} className="group flex-1">
+          <Link href="/v2/araclar/alan-hesaplama" className="group flex-1">
             <div className="h-full p-4 rounded-2xl border border-border bg-card hover:border-accent/60 hover:bg-muted/40 transition-all flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center group-hover:scale-105 transition-transform">

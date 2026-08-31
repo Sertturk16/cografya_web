@@ -5,14 +5,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetClose,
-} from "@/components/ui/sheet";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Compass,
   Map,
@@ -28,10 +21,6 @@ import {
   UserPlus,
   ChevronDown,
   Menu,
-  ArrowRight,
-  ShieldCheck,
-  Search,
-  ExternalLink,
 } from "lucide-react";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth, setAuthModalMode } from "@/lib/auth/auth-modal.client";
@@ -42,13 +31,16 @@ export function V2Header() {
   const pathStr = (pathname as string) || "";
   const [authState] = useAuthSession();
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [activeDropdown, setActiveDropdown] = React.useState<"atlas" | "telemetry" | "interactive" | null>(null);
+  const [activeDropdown, setActiveDropdown] = React.useState<
+    "atlas" | "telemetry" | "interactive" | null
+  >(null);
   const navContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // Close dropdown on route change
-  React.useEffect(() => {
+  const [prevPath, setPrevPath] = React.useState(pathStr);
+  if (prevPath !== pathStr) {
+    setPrevPath(pathStr);
     setActiveDropdown(null);
-  }, [pathStr]);
+  }
 
   // Close dropdown on outside click or Escape key
   React.useEffect(() => {
@@ -86,8 +78,7 @@ export function V2Header() {
     pathStr.startsWith("/oyun") ||
     pathStr.startsWith("/v2/araclar") ||
     pathStr.startsWith("/araclar");
-  const isKitaplarActive =
-    pathStr.startsWith("/v2/kitaplar") || pathStr.startsWith("/kitaplar");
+  const isKitaplarActive = pathStr.startsWith("/v2/kitaplar") || pathStr.startsWith("/kitaplar");
 
   const toggleDropdown = (name: "atlas" | "telemetry" | "interactive") => {
     setActiveDropdown((prev) => (prev === name ? null : name));
@@ -145,13 +136,15 @@ export function V2Header() {
                 isAtlasActive && !isHome
                   ? "bg-primary/10 text-primary font-bold border border-primary/20"
                   : activeDropdown === "atlas"
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
               <Map className="size-3.5 text-primary" />
               <span>Atlas & Harita</span>
-              <ChevronDown className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "atlas" ? "rotate-180" : ""}`} />
+              <ChevronDown
+                className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "atlas" ? "rotate-180" : ""}`}
+              />
             </button>
 
             {activeDropdown === "atlas" && (
@@ -207,13 +200,15 @@ export function V2Header() {
                 isTelemetryActive
                   ? "bg-accent/10 text-accent font-bold border border-accent/20"
                   : activeDropdown === "telemetry"
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
               <Waves className="size-3.5 text-accent" />
               <span>Canlı Telemetri</span>
-              <ChevronDown className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "telemetry" ? "rotate-180" : ""}`} />
+              <ChevronDown
+                className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "telemetry" ? "rotate-180" : ""}`}
+              />
             </button>
 
             {activeDropdown === "telemetry" && (
@@ -269,13 +264,15 @@ export function V2Header() {
                 isInteractiveActive
                   ? "bg-secondary/10 text-secondary font-bold border border-secondary/20"
                   : activeDropdown === "interactive"
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
               <Gamepad2 className="size-3.5 text-secondary" />
               <span>Etkileşim & Araçlar</span>
-              <ChevronDown className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "interactive" ? "rotate-180" : ""}`} />
+              <ChevronDown
+                className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "interactive" ? "rotate-180" : ""}`}
+              />
             </button>
 
             {activeDropdown === "interactive" && (
@@ -332,7 +329,10 @@ export function V2Header() {
           >
             <BookOpen className="size-3.5 text-amber-600 dark:text-amber-400" />
             <span>Kitaplar</span>
-            <Badge variant="outline" className="text-[9px] py-0 px-1 font-bold bg-amber-500/10 text-amber-600 border-amber-500/20">
+            <Badge
+              variant="outline"
+              className="text-[9px] py-0 px-1 font-bold bg-amber-500/10 text-amber-600 border-amber-500/20"
+            >
               Video Çözümlü
             </Badge>
           </Link>
@@ -384,7 +384,10 @@ export function V2Header() {
               >
                 <Menu className="size-4" />
               </SheetTrigger>
-              <SheetContent side="right" className="w-[85vw] sm:w-96 p-0 flex flex-col justify-between">
+              <SheetContent
+                side="right"
+                className="w-[85vw] sm:w-96 p-0 flex flex-col justify-between"
+              >
                 <SheetHeader className="p-5 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -412,7 +415,9 @@ export function V2Header() {
                       >
                         <div className="flex items-center gap-2.5">
                           <Map className="size-4 text-primary" />
-                          <span className="text-sm font-semibold text-foreground">Türkiye İlleri</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            Türkiye İlleri
+                          </span>
                         </div>
                         <span className="text-xs text-muted-foreground">81 İl</span>
                       </Link>
@@ -423,7 +428,9 @@ export function V2Header() {
                       >
                         <div className="flex items-center gap-2.5">
                           <Globe className="size-4 text-secondary" />
-                          <span className="text-sm font-semibold text-foreground">Dünya Atlası</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            Dünya Atlası
+                          </span>
                         </div>
                         <span className="text-xs text-muted-foreground">199 Ülke</span>
                       </Link>
@@ -443,7 +450,9 @@ export function V2Header() {
                       >
                         <div className="flex items-center gap-2.5">
                           <Waves className="size-4 text-accent" />
-                          <span className="text-sm font-semibold text-foreground">Deniz Telemetrisi</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            Deniz Telemetrisi
+                          </span>
                         </div>
                         <span className="text-xs text-muted-foreground">Canlı Dalga/Isı</span>
                       </Link>
@@ -454,7 +463,9 @@ export function V2Header() {
                       >
                         <div className="flex items-center gap-2.5">
                           <Flame className="size-4 text-destructive" />
-                          <span className="text-sm font-semibold text-foreground">Canlı Deprem</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            Canlı Deprem
+                          </span>
                         </div>
                         <span className="text-xs text-muted-foreground">AFAD TDVMS</span>
                       </Link>
@@ -474,7 +485,9 @@ export function V2Header() {
                       >
                         <div className="flex items-center gap-2.5">
                           <Gamepad2 className="size-4 text-secondary" />
-                          <span className="text-sm font-semibold text-foreground">Harita Oyunu</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            Harita Oyunu
+                          </span>
                         </div>
                         <span className="text-xs text-muted-foreground">İl Bulma</span>
                       </Link>
@@ -485,7 +498,9 @@ export function V2Header() {
                       >
                         <div className="flex items-center gap-2.5">
                           <Layers className="size-4 text-primary" />
-                          <span className="text-sm font-semibold text-foreground">CBS Araçları</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            CBS Araçları
+                          </span>
                         </div>
                         <span className="text-xs text-muted-foreground">Mesafe/Alan</span>
                       </Link>
@@ -498,7 +513,9 @@ export function V2Header() {
                           <BookOpen className="size-4 text-amber-600" />
                           <span className="text-sm">Video Çözümlü Kitaplar</span>
                         </div>
-                        <Badge variant="primary" size="sm">20 Deneme</Badge>
+                        <Badge variant="primary" size="sm">
+                          20 Deneme
+                        </Badge>
                       </Link>
                     </div>
                   </div>
@@ -537,7 +554,11 @@ export function V2Header() {
                         <User className="size-4 text-primary" />
                         <span className="text-xs font-bold text-foreground">Oturum Açık</span>
                       </div>
-                      <Badge variant="outline" size="sm" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+                      <Badge
+                        variant="outline"
+                        size="sm"
+                        className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                      >
                         Aktif
                       </Badge>
                     </div>

@@ -101,7 +101,13 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage, AvatarBadge, AvatarGroup } from "@/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  AvatarBadge,
+  AvatarGroup,
+} from "@/components/ui/avatar";
 import { toast } from "sonner";
 
 interface SampleEarthquake {
@@ -182,7 +188,7 @@ export default function DesignSystemPage() {
 
   const toggleSelect = (id: string) => {
     setSelectedEarthquakes((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -295,7 +301,8 @@ export default function DesignSystemPage() {
                 1. Modal / Dialog & Drawer / Sheet
               </h2>
               <p className="text-sm text-muted-foreground">
-                Backdrop blur efektli, erişilebilir odak tuzaklı diyaloglar ve çok yönlü kayar çekmeceler.
+                Backdrop blur efektli, erişilebilir odak tuzaklı diyaloglar ve çok yönlü kayar
+                çekmeceler.
               </p>
             </div>
             <Badge variant="outline">Katmanlı UI</Badge>
@@ -352,7 +359,9 @@ export default function DesignSystemPage() {
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                       <div className="space-y-1.5">
-                        <Label htmlFor="dlg-title" required>Nokta Adı</Label>
+                        <Label htmlFor="dlg-title" required>
+                          Nokta Adı
+                        </Label>
                         <Input id="dlg-title" placeholder="Örn: Uludağ Zirve İstasyonu" />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
@@ -411,7 +420,9 @@ export default function DesignSystemPage() {
                           <h4 className="font-semibold text-sm">Yıllık Ortalama Sıcaklık</h4>
                           <p className="text-xs text-muted-foreground">Marmara Havzası Verisi</p>
                         </div>
-                        <span className="font-heading text-2xl font-bold text-primary">15.4 °C</span>
+                        <span className="font-heading text-2xl font-bold text-primary">
+                          15.4 °C
+                        </span>
                       </div>
                       <div className="grid grid-cols-3 gap-3">
                         <div className="p-3 rounded-lg border border-border bg-card text-center">
@@ -454,7 +465,11 @@ export default function DesignSystemPage() {
               <CardContent className="flex flex-wrap gap-3">
                 {/* Right Sheet */}
                 <Sheet>
-                  <SheetTrigger render={<Button variant="outline" leftIcon={<PanelRight className="size-4" />} />}>
+                  <SheetTrigger
+                    render={
+                      <Button variant="outline" leftIcon={<PanelRight className="size-4" />} />
+                    }
+                  >
                     Sağdan Panel (Filtreler)
                   </SheetTrigger>
                   <SheetContent side="right">
@@ -469,9 +484,23 @@ export default function DesignSystemPage() {
                         <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                           Temel Katmanlar
                         </h4>
-                        <Switch id="sh-1" label="Fay Hatları (MTA)" description="Ana kırık hatlarını çizer." defaultChecked />
-                        <Switch id="sh-2" label="Göl ve Nehirler" description="İç su kaynakları geometrisi." defaultChecked />
-                        <Switch id="sh-3" label="Topografik Rölyef" description="Yükselti gölgelendirmesi." />
+                        <Switch
+                          id="sh-1"
+                          label="Fay Hatları (MTA)"
+                          description="Ana kırık hatlarını çizer."
+                          defaultChecked
+                        />
+                        <Switch
+                          id="sh-2"
+                          label="Göl ve Nehirler"
+                          description="İç su kaynakları geometrisi."
+                          defaultChecked
+                        />
+                        <Switch
+                          id="sh-3"
+                          label="Topografik Rölyef"
+                          description="Yükselti gölgelendirmesi."
+                        />
                       </div>
 
                       <div className="space-y-3 border-t border-border pt-4">
@@ -503,7 +532,11 @@ export default function DesignSystemPage() {
 
                 {/* Left Sheet */}
                 <Sheet>
-                  <SheetTrigger render={<Button variant="outline" leftIcon={<PanelLeft className="size-4" />} />}>
+                  <SheetTrigger
+                    render={
+                      <Button variant="outline" leftIcon={<PanelLeft className="size-4" />} />
+                    }
+                  >
                     Soldan Menü
                   </SheetTrigger>
                   <SheetContent side="left">
@@ -512,31 +545,52 @@ export default function DesignSystemPage() {
                       <SheetDescription>Hızlı erişim ve coğrafya modülleri.</SheetDescription>
                     </SheetHeader>
                     <div className="p-5 space-y-2 flex-1">
-                      <a href="#table-section" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm">
+                      <a
+                        href="#table-section"
+                        className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm"
+                      >
                         <Map className="size-4 text-primary" /> Türkiye İller Kataloğu
                       </a>
-                      <a href="#table-section" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm">
+                      <a
+                        href="#table-section"
+                        className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm"
+                      >
                         <Globe className="size-4 text-primary" /> Dünya Ülkeleri Atlası
                       </a>
-                      <a href="#table-section" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm">
+                      <a
+                        href="#table-section"
+                        className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm"
+                      >
                         <Flame className="size-4 text-primary" /> Canlı Deprem Portalı
                       </a>
-                      <a href="#table-section" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm">
+                      <a
+                        href="#table-section"
+                        className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm"
+                      >
                         <Waves className="size-4 text-primary" /> Deniz Durumu & Dalga
                       </a>
-                      <a href="#table-section" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm">
+                      <a
+                        href="#table-section"
+                        className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted font-medium text-sm"
+                      >
                         <BookOpen className="size-4 text-primary" /> Kitap & Video Çözüm
                       </a>
                     </div>
                     <SheetFooter>
-                      <p className="text-xs text-muted-foreground text-center">Coğrafya Platformu v3.0</p>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Coğrafya Platformu v3.0
+                      </p>
                     </SheetFooter>
                   </SheetContent>
                 </Sheet>
 
                 {/* Bottom Sheet */}
                 <Sheet>
-                  <SheetTrigger render={<Button variant="ghost" leftIcon={<PanelBottom className="size-4" />} />}>
+                  <SheetTrigger
+                    render={
+                      <Button variant="ghost" leftIcon={<PanelBottom className="size-4" />} />
+                    }
+                  >
                     Alttan Çekmece
                   </SheetTrigger>
                   <SheetContent side="bottom">
@@ -578,7 +632,8 @@ export default function DesignSystemPage() {
                 2. Table & Data List (Veri Tablosu)
               </h2>
               <p className="text-sm text-muted-foreground">
-                Hover efektli satırlar, durum badge'leri, satır bazlı aksiyon menüsü, skeleton loading ve empty state.
+                Hover efektli satırlar, durum badge&apos;leri, satır bazlı aksiyon menüsü, skeleton
+                loading ve empty state.
               </p>
             </div>
 
@@ -682,7 +737,7 @@ export default function DesignSystemPage() {
                         <TableCell>
                           <span
                             className={`inline-flex items-center justify-center font-bold px-2.5 py-1 rounded-md text-xs shadow-2xs ${getMagnitudeBadgeColor(
-                              eq.magnitude
+                              eq.magnitude,
                             )}`}
                           >
                             M {eq.magnitude.toFixed(1)}
@@ -700,7 +755,12 @@ export default function DesignSystemPage() {
                               Çözümlendi
                             </Badge>
                           ) : eq.status === "critical" ? (
-                            <Badge variant="destructive" size="sm" dot icon={<Flame className="size-3" />}>
+                            <Badge
+                              variant="destructive"
+                              size="sm"
+                              dot
+                              icon={<Flame className="size-3" />}
+                            >
                               Kritik
                             </Badge>
                           ) : (
@@ -726,16 +786,12 @@ export default function DesignSystemPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
                               <DropdownMenuItem
-                                onClick={() =>
-                                  toast.info(`${eq.location} haritada açılıyor...`)
-                                }
+                                onClick={() => toast.info(`${eq.location} haritada açılıyor...`)}
                               >
                                 <Compass className="size-4 mr-2" /> Haritada Odakla
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() =>
-                                  toast.success(`${eq.location} favorilere eklendi.`)
-                                }
+                                onClick={() => toast.success(`${eq.location} favorilere eklendi.`)}
                               >
                                 <Heart className="size-4 mr-2" /> Takibe Al
                               </DropdownMenuItem>
@@ -751,9 +807,7 @@ export default function DesignSystemPage() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 variant="destructive"
-                                onClick={() =>
-                                  toast.error(`${eq.id} listeden gizlendi.`)
-                                }
+                                onClick={() => toast.error(`${eq.id} listeden gizlendi.`)}
                               >
                                 <Trash2 className="size-4 mr-2" /> Listeden Gizle
                               </DropdownMenuItem>
@@ -778,7 +832,8 @@ export default function DesignSystemPage() {
                 3. Cards & Surface Grid (Kart Sistemleri)
               </h2>
               <p className="text-sm text-muted-foreground">
-                Header, title, description, content ve footer bileşenleriyle yapılandırılmış temiz kart hiyerarşisi.
+                Header, title, description, content ve footer bileşenleriyle yapılandırılmış temiz
+                kart hiyerarşisi.
               </p>
             </div>
             <Badge variant="secondary">3 Farklı Tip</Badge>
@@ -789,7 +844,9 @@ export default function DesignSystemPage() {
             <Card className="hover:border-primary/50 transition-all duration-200 hover:shadow-md">
               <CardHeader>
                 <div className="flex items-center justify-between mb-1">
-                  <Badge variant="secondary" size="sm">Marmara Bölgesi</Badge>
+                  <Badge variant="secondary" size="sm">
+                    Marmara Bölgesi
+                  </Badge>
                   <span className="text-xs font-bold text-muted-foreground font-mono">TR-16</span>
                 </div>
                 <CardTitle className="text-xl">Bursa</CardTitle>
@@ -807,7 +864,8 @@ export default function DesignSystemPage() {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Uludağ kış turizmi ve otomotiv sanayisi ile Marmara havzasının önde gelen merkezlerinden biri.
+                  Uludağ kış turizmi ve otomotiv sanayisi ile Marmara havzasının önde gelen
+                  merkezlerinden biri.
                 </p>
               </CardContent>
               <CardFooter className="justify-between">
@@ -829,7 +887,9 @@ export default function DesignSystemPage() {
             <Card className="hover:border-primary/50 transition-all duration-200 hover:shadow-md">
               <CardHeader>
                 <div className="flex items-center justify-between mb-1">
-                  <Badge variant="outline" size="sm">Güney Avrupa</Badge>
+                  <Badge variant="outline" size="sm">
+                    Güney Avrupa
+                  </Badge>
                   <span className="text-xs font-bold text-muted-foreground font-mono">ISO: IT</span>
                 </div>
                 <CardTitle className="text-xl">İtalya</CardTitle>
@@ -869,7 +929,9 @@ export default function DesignSystemPage() {
             <Card className="border-primary/30 bg-card hover:shadow-md transition-all duration-200">
               <CardHeader>
                 <div className="flex items-center justify-between mb-1">
-                  <Badge variant="success" size="sm" dot>Canlı İstasyon</Badge>
+                  <Badge variant="success" size="sm" dot>
+                    Canlı İstasyon
+                  </Badge>
                   <span className="text-xs text-muted-foreground">08:45 Güncel</span>
                 </div>
                 <CardTitle className="text-xl">Çanakkale Boğazı</CardTitle>
@@ -933,7 +995,7 @@ export default function DesignSystemPage() {
               <CardHeader>
                 <CardTitle>Sonner Toast Tetikleyicileri</CardTitle>
                 <CardDescription>
-                  Farklı bildirim türleri ve zengin eylem destekli toast'lar.
+                  Farklı bildirim türleri ve zengin eylem destekli toast&apos;lar.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -985,17 +1047,18 @@ export default function DesignSystemPage() {
                     variant="outline"
                     className="w-full"
                     onClick={() => {
-                      const promise = new Promise((resolve) =>
-                        setTimeout(() => resolve({ name: "Türkiye Haritası" }), 2000)
+                      const promise = new Promise<{ name: string }>((resolve) =>
+                        setTimeout(() => resolve({ name: "Türkiye Haritası" }), 2000),
                       );
                       toast.promise(promise, {
                         loading: "Vektör harita yolları derleniyor...",
-                        success: (data: any) => `${data.name} başarıyla render edildi!`,
+                        success: (data: { name: string }) =>
+                          `${data.name} başarıyla render edildi!`,
                         error: "Harita yüklenemedi.",
                       });
                     }}
                   >
-                    Promise / Async Yükleme Toast'ı
+                    Promise / Async Yükleme Toast&apos;ı
                   </Button>
                 </div>
               </CardContent>
@@ -1020,7 +1083,8 @@ export default function DesignSystemPage() {
                   >
                     <AlertTitle>Canlı Veri Gecikmesi</AlertTitle>
                     <AlertDescription>
-                      Copernicus uydu geçişinde yaşanan gecikme nedeniyle hava kalitesi verileri 15 dakika rötarlıdır.
+                      Copernicus uydu geçişinde yaşanan gecikme nedeniyle hava kalitesi verileri 15
+                      dakika rötarlıdır.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1052,7 +1116,8 @@ export default function DesignSystemPage() {
                 5. Tabs & Avatar (Sekmeler ve Profil)
               </h2>
               <p className="text-sm text-muted-foreground">
-                Radix tabanlı erişilebilir sekmeler ve çevrimiçi durum göstergeli avatar koleksiyonu.
+                Radix tabanlı erişilebilir sekmeler ve çevrimiçi durum göstergeli avatar
+                koleksiyonu.
               </p>
             </div>
             <Badge variant="outline">Gezinti & Kullanıcı</Badge>
@@ -1064,7 +1129,9 @@ export default function DesignSystemPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Etkileşimli Sekme Yapısı (Tabs)</CardTitle>
-                  <CardDescription>Bölge ve içerik detayları için modüler sekmeler.</CardDescription>
+                  <CardDescription>
+                    Bölge ve içerik detayları için modüler sekmeler.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="overview">
@@ -1074,28 +1141,45 @@ export default function DesignSystemPage() {
                       <TabsTrigger value="climate">İklim & Bitki</TabsTrigger>
                       <TabsTrigger value="economy">Ekonomi & Sanayi</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="overview" className="p-4 rounded-xl bg-muted/20 border border-border mt-3 space-y-2">
+                    <TabsContent
+                      value="overview"
+                      className="p-4 rounded-xl bg-muted/20 border border-border mt-3 space-y-2"
+                    >
                       <h4 className="font-heading font-semibold text-base">İç Anadolu Bölgesi</h4>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Türkiye'nin merkezinde yer alan bölge, yüksek platolar ve etrafını çevreleyen sıradağlar ile karasal iklimin en belirgin yaşandığı coğrafi alandır.
+                        Türkiye&apos;nin merkezinde yer alan bölge, yüksek platolar ve etrafını
+                        çevreleyen sıradağlar ile karasal iklimin en belirgin yaşandığı coğrafi
+                        alandır.
                       </p>
                     </TabsContent>
-                    <TabsContent value="geo" className="p-4 rounded-xl bg-muted/20 border border-border mt-3 space-y-2">
+                    <TabsContent
+                      value="geo"
+                      className="p-4 rounded-xl bg-muted/20 border border-border mt-3 space-y-2"
+                    >
                       <h4 className="font-heading font-semibold text-base">Yeryüzü Şekilleri</h4>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Tuz Gölü havzası, Erciyes ve Hasan Dağı volkanik kütleleri ve Kızılırmak yay çizerek Karadeniz'e dökülür.
+                        Tuz Gölü havzası, Erciyes ve Hasan Dağı volkanik kütleleri ve Kızılırmak yay
+                        çizerek Karadeniz&apos;e dökülür.
                       </p>
                     </TabsContent>
-                    <TabsContent value="climate" className="p-4 rounded-xl bg-muted/20 border border-border mt-3 space-y-2">
+                    <TabsContent
+                      value="climate"
+                      className="p-4 rounded-xl bg-muted/20 border border-border mt-3 space-y-2"
+                    >
                       <h4 className="font-heading font-semibold text-base">Bozkır İklimi (Step)</h4>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Yazları sıcak ve kurak, kışları soğuk ve kar yağışlıdır. En fazla yağış ilkbaharda konveksiyonel (kırkikindi) olarak düşer.
+                        Yazları sıcak ve kurak, kışları soğuk ve kar yağışlıdır. En fazla yağış
+                        ilkbaharda konveksiyonel (kırkikindi) olarak düşer.
                       </p>
                     </TabsContent>
-                    <TabsContent value="economy" className="p-4 rounded-xl bg-muted/20 border border-border mt-3 space-y-2">
+                    <TabsContent
+                      value="economy"
+                      className="p-4 rounded-xl bg-muted/20 border border-border mt-3 space-y-2"
+                    >
                       <h4 className="font-heading font-semibold text-base">Tahıl Ambarı</h4>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Konya Ovası buğday ve şeker pancarı üretiminde Türkiye'nin öncüsüdür. Savunma sanayisi ve havacılık Ankara'da yoğunlaşmıştır.
+                        Konya Ovası buğday ve şeker pancarı üretiminde Türkiye&apos;nin öncüsüdür.
+                        Savunma sanayisi ve havacılık Ankara&apos;da yoğunlaşmıştır.
                       </p>
                     </TabsContent>
                   </Tabs>
@@ -1135,10 +1219,14 @@ export default function DesignSystemPage() {
                         <AvatarFallback>SM</AvatarFallback>
                       </Avatar>
                       <Avatar size="default">
-                        <AvatarFallback className="bg-secondary text-secondary-foreground">MD</AvatarFallback>
+                        <AvatarFallback className="bg-secondary text-secondary-foreground">
+                          MD
+                        </AvatarFallback>
                       </Avatar>
                       <Avatar size="lg">
-                        <AvatarFallback className="bg-[var(--color-primary-dark,#7e3a1e)] text-white">LG</AvatarFallback>
+                        <AvatarFallback className="bg-[var(--color-primary-dark,#7e3a1e)] text-white">
+                          LG
+                        </AvatarFallback>
                       </Avatar>
                       <AvatarGroup>
                         <Avatar size="sm">

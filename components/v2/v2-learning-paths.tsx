@@ -4,19 +4,8 @@ import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import {
-  BookOpen,
-  Map,
-  Layers,
-  Gamepad2,
-  ArrowRight,
-  Sparkles,
-  CheckCircle2,
-  PlayCircle,
-  Video,
-  FileText,
-} from "lucide-react";
+import { Card, CardHeader, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { BookOpen, ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
 
 export function V2LearningPaths() {
   const publications = [
@@ -26,9 +15,14 @@ export function V2LearningPaths() {
       badge: "Video Çözümlü",
       badgeVariant: "primary" as const,
       color: "from-amber-600 to-amber-800",
-      description: "20 Adet fasikül branş denemesi, her sorunun karekodlu ayrıntılı video analizi ve ÖSYM tarzı yeni nesil sorular.",
+      description:
+        "20 Adet fasikül branş denemesi, her sorunun karekodlu ayrıntılı video analizi ve ÖSYM tarzı yeni nesil sorular.",
       details: { items: "20 Deneme", solutions: "120 Soru", format: "ÖSYM Formatı" },
-      features: ["Tüm Soruların Adım Adım Video Çözümü", "Konu Özeti ve Kritik Harita Notları", "Akıllı Tahta ve Dijital Entegrasyon"],
+      features: [
+        "Tüm Soruların Adım Adım Video Çözümü",
+        "Konu Özeti ve Kritik Harita Notları",
+        "Akıllı Tahta ve Dijital Entegrasyon",
+      ],
       href: "/v2/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri",
       cta: "Kitabı İncele",
     },
@@ -38,9 +32,14 @@ export function V2LearningPaths() {
       badge: "İnteraktif",
       badgeVariant: "secondary" as const,
       color: "from-emerald-700 to-emerald-900",
-      description: "81 ilin konumu, dağ sıraları, tektonik fay hatları, boğazlar ve göllerin dilsiz harita üzerinden uygulamalı tekrarı.",
+      description:
+        "81 ilin konumu, dağ sıraları, tektonik fay hatları, boğazlar ve göllerin dilsiz harita üzerinden uygulamalı tekrarı.",
       details: { items: "81 İl", solutions: "3 Oyun Modu", format: "SVG Vektör" },
-      features: ["Dilsiz Harita Üzerinde Konum Bulma", "Zamana Karşı Hızlı Sınav Simülatörü", "Bölgesel ve Küresel Harita Dağılımı"],
+      features: [
+        "Dilsiz Harita Üzerinde Konum Bulma",
+        "Zamana Karşı Hızlı Sınav Simülatörü",
+        "Bölgesel ve Küresel Harita Dağılımı",
+      ],
       href: "/v2/oyun",
       cta: "Harita Oyunu",
     },
@@ -50,9 +49,14 @@ export function V2LearningPaths() {
       badge: "Bilimsel Model",
       badgeVariant: "outline" as const,
       color: "from-blue-700 to-indigo-900",
-      description: "WGS84 jeodezik mesafe ölçümü, WGS84 enlem/boylam koordinat dönüşümleri ve poligon jeodezik alan hesaplamaları.",
+      description:
+        "WGS84 jeodezik mesafe ölçümü, WGS84 enlem/boylam koordinat dönüşümleri ve poligon jeodezik alan hesaplamaları.",
       details: { items: "3 CBS Aracı", solutions: "WGS84", format: "Jeodezik" },
-      features: ["Büyük Daire Jeodezik Mesafe Formülü", "Enlem / Boylam Format Dönüştürücü", "Çokgen Poligon Yüzölçümü Aracı"],
+      features: [
+        "Büyük Daire Jeodezik Mesafe Formülü",
+        "Enlem / Boylam Format Dönüştürücü",
+        "Çokgen Poligon Yüzölçümü Aracı",
+      ],
       href: "/v2/araclar",
       cta: "Araçları Aç",
     },
@@ -66,7 +70,9 @@ export function V2LearningPaths() {
             <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
               Yayınlar &amp; Dijital Modüller
             </Badge>
-            <span className="text-xs text-muted-foreground">Video Çözümlü Denemeler ve İnteraktif Araçlar</span>
+            <span className="text-xs text-muted-foreground">
+              Video Çözümlü Denemeler ve İnteraktif Araçlar
+            </span>
           </div>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
             Coğrafya Yayınları &amp; Öğrenme Modülleri
@@ -86,7 +92,9 @@ export function V2LearningPaths() {
             className="flex flex-col justify-between hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 bg-card overflow-hidden group"
           >
             {/* Header Banner */}
-            <div className={`h-36 bg-gradient-to-br ${item.color} p-4 text-white relative overflow-hidden flex flex-col justify-between`}>
+            <div
+              className={`h-36 bg-gradient-to-br ${item.color} p-4 text-white relative overflow-hidden flex flex-col justify-between`}
+            >
               <div className="flex items-center justify-between relative z-10">
                 <Badge className="bg-white/20 text-white backdrop-blur-xs border-white/30 text-[10px]">
                   {item.badge}
@@ -108,7 +116,9 @@ export function V2LearningPaths() {
             </div>
 
             <CardHeader className="space-y-2 pb-2 pt-4">
-              <CardDescription className="text-xs leading-relaxed">{item.description}</CardDescription>
+              <CardDescription className="text-xs leading-relaxed">
+                {item.description}
+              </CardDescription>
 
               {/* Key Specs */}
               <div className="grid grid-cols-3 gap-1 py-1.5 border-y border-border text-center text-[10px]">
@@ -139,7 +149,10 @@ export function V2LearningPaths() {
             </CardContent>
 
             <CardFooter className="pt-4 border-t border-border bg-muted/10">
-              <Link href={item.href as any} className="w-full">
+              <Link
+                href={item.href as React.ComponentProps<typeof Link>["href"]}
+                className="w-full"
+              >
                 <Button
                   variant="primary"
                   className="w-full text-xs font-semibold shadow-xs"

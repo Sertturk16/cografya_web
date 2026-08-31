@@ -14,11 +14,7 @@ import {
   CheckCircle2,
   GraduationCap,
   Users,
-  Compass as CompassIcon,
   BookOpen,
-  Award,
-  Download,
-  ShieldCheck,
 } from "lucide-react";
 
 export function V2ToolsHub() {
@@ -32,7 +28,8 @@ export function V2ToolsHub() {
               Özel CBS &amp; Harita Ölçüm Modülleri
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              İhtiyacınıza uygun müstakil ölçüm aracını seçerek tam ekran odaklı çalışma tuvali üzerinde ölçüm yapın.
+              İhtiyacınıza uygun müstakil ölçüm aracını seçerek tam ekran odaklı çalışma tuvali
+              üzerinde ölçüm yapın.
             </p>
           </div>
         </div>
@@ -55,7 +52,8 @@ export function V2ToolsHub() {
                   Kuş Uçuşu Mesafe Ölçer
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
-                  İki veya çok duraklı güzergâhlar boyunca büyük daire yay mesafesini, tahmini uçuş süresini ve karayolu farkını hesaplayın.
+                  İki veya çok duraklı güzergâhlar boyunca büyük daire yay mesafesini, tahmini uçuş
+                  süresini ve karayolu farkını hesaplayın.
                 </p>
               </div>
 
@@ -81,7 +79,9 @@ export function V2ToolsHub() {
                 <Button
                   variant="primary"
                   className="w-full text-white font-bold h-11 text-xs gap-2"
-                  rightIcon={<ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />}
+                  rightIcon={
+                    <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                  }
                 >
                   Mesafe Aracını Başlat
                 </Button>
@@ -96,7 +96,11 @@ export function V2ToolsHub() {
                 <span className="p-3 rounded-2xl bg-emerald-600/15 text-emerald-600 group-hover:scale-110 transition-transform">
                   <MapPin className="size-6" />
                 </span>
-                <Badge variant="outline" size="sm" className="border-emerald-600/30 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10">
+                <Badge
+                  variant="outline"
+                  size="sm"
+                  className="border-emerald-600/30 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10"
+                >
                   WGS84, DMS &amp; UTM
                 </Badge>
               </div>
@@ -106,7 +110,8 @@ export function V2ToolsHub() {
                   Koordinat &amp; Konum Bulucu
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
-                  Haritada dilediğiniz noktaya tıklayarak enlem/boylam, DMS, UTM projeksiyon zonunu ve noktanın hangi il sınırında olduğunu öğrenin.
+                  Haritada dilediğiniz noktaya tıklayarak enlem/boylam, DMS, UTM projeksiyon zonunu
+                  ve noktanın hangi il sınırında olduğunu öğrenin.
                 </p>
               </div>
 
@@ -132,7 +137,9 @@ export function V2ToolsHub() {
                 <Button
                   variant="emerald"
                   className="w-full text-white font-bold h-11 text-xs gap-2"
-                  rightIcon={<ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />}
+                  rightIcon={
+                    <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                  }
                 >
                   Koordinat Aracını Başlat
                 </Button>
@@ -147,7 +154,11 @@ export function V2ToolsHub() {
                 <span className="p-3 rounded-2xl bg-sky-600/15 text-sky-600 group-hover:scale-110 transition-transform">
                   <Layers className="size-6" />
                 </span>
-                <Badge variant="outline" size="sm" className="border-sky-600/30 text-sky-700 dark:text-sky-300 bg-sky-500/10">
+                <Badge
+                  variant="outline"
+                  size="sm"
+                  className="border-sky-600/30 text-sky-700 dark:text-sky-300 bg-sky-500/10"
+                >
                   Küresel Çokgen Yüzölçümü
                 </Badge>
               </div>
@@ -157,7 +168,8 @@ export function V2ToolsHub() {
                   Çokgen Yüzölçümü &amp; Alan Hesabı
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
-                  Haritada belirlediğiniz köşe noktalarıyla çokgenler oluşturarak km², hektar, dönüm ve çevre uzunluğunu L&apos;Huilier hassasiyetiyle ölçün.
+                  Haritada belirlediğiniz köşe noktalarıyla çokgenler oluşturarak km², hektar, dönüm
+                  ve çevre uzunluğunu L&apos;Huilier hassasiyetiyle ölçün.
                 </p>
               </div>
 
@@ -183,7 +195,9 @@ export function V2ToolsHub() {
                 <Button
                   variant="sky"
                   className="w-full text-white font-bold h-11 text-xs gap-2"
-                  rightIcon={<ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />}
+                  rightIcon={
+                    <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                  }
                 >
                   Alan Aracını Başlat
                 </Button>
@@ -200,13 +214,16 @@ export function V2ToolsHub() {
             <Badge variant="primary" size="sm" icon={<Users className="size-3.5" />}>
               Hedef Kitle &amp; Kullanım Alanları
             </Badge>
-            <span className="text-xs text-muted-foreground font-medium">Kimin İçin Tasarlandı?</span>
+            <span className="text-xs text-muted-foreground font-medium">
+              Kimin İçin Tasarlandı?
+            </span>
           </div>
           <h3 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
             Eğitimden Akademik Araştırmaya Çok Yönlü CBS Deneyimi
           </h3>
           <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed max-w-3xl">
-            Platformumuz, lise ve üniversite sınavlarına hazırlanan öğrencilerden ders anlatan öğretmenlere ve harita/CBS profesyonellerine kadar geniş bir hedef kitleye hitap eder.
+            Platformumuz, lise ve üniversite sınavlarına hazırlanan öğrencilerden ders anlatan
+            öğretmenlere ve harita/CBS profesyonellerine kadar geniş bir hedef kitleye hitap eder.
           </p>
         </div>
 
@@ -217,13 +234,22 @@ export function V2ToolsHub() {
               <GraduationCap className="size-5" />
             </div>
             <div>
-              <h4 className="font-heading font-bold text-base text-foreground">Öğrenciler &amp; Sınav Adayları</h4>
-              <span className="text-[11px] text-muted-foreground font-medium">MEB 9, YKS (TYT/AYT) ve KPSS Coğrafya</span>
+              <h4 className="font-heading font-bold text-base text-foreground">
+                Öğrenciler &amp; Sınav Adayları
+              </h4>
+              <span className="text-[11px] text-muted-foreground font-medium">
+                MEB 9, YKS (TYT/AYT) ve KPSS Coğrafya
+              </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              &bull; <strong>111 km Kuralı:</strong> İki paralel arası değişmeyen mesafe mantığını haritada somutlaştırın.<br />
-              &bull; <strong>4 Dakika Yerel Saat:</strong> Boylamlar arası zaman farkını (örn: Ankara-Iğdır arası 48 dk) doğrudan hesaplayın.<br />
-              &bull; <strong>İzdüşüm vs Gerçek Alan:</strong> Engebenin yüzölçümüne etkisini kavrayın.
+              &bull; <strong>111 km Kuralı:</strong> İki paralel arası değişmeyen mesafe mantığını
+              haritada somutlaştırın.
+              <br />
+              &bull; <strong>4 Dakika Yerel Saat:</strong> Boylamlar arası zaman farkını (örn:
+              Ankara-Iğdır arası 48 dk) doğrudan hesaplayın.
+              <br />
+              &bull; <strong>İzdüşüm vs Gerçek Alan:</strong> Engebenin yüzölçümüne etkisini
+              kavrayın.
             </p>
           </div>
 
@@ -233,29 +259,47 @@ export function V2ToolsHub() {
               <BookOpen className="size-5" />
             </div>
             <div>
-              <h4 className="font-heading font-bold text-base text-foreground">Öğretmenler &amp; Eğitmenler</h4>
-              <span className="text-[11px] text-muted-foreground font-medium">Akıllı Tahta &amp; Ders Materyali Hazırlığı</span>
+              <h4 className="font-heading font-bold text-base text-foreground">
+                Öğretmenler &amp; Eğitmenler
+              </h4>
+              <span className="text-[11px] text-muted-foreground font-medium">
+                Akıllı Tahta &amp; Ders Materyali Hazırlığı
+              </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              &bull; <strong>Akıllı Tahta Uyumu:</strong> Sınıfta projeksiyon ve dokunmatik ekranda canlı interaktif ölçüm yapın.<br />
-              &bull; <strong>81 İl Hızlı Seçici:</strong> Öğrencilere soru sorarken il merkezlerini anında bağlayın.<br />
-              &bull; <strong>PNG Dışa Aktarım:</strong> Telifli ve ölçekli harita görsellerini sınav ve slaytlarınıza ekleyin.
+              &bull; <strong>Akıllı Tahta Uyumu:</strong> Sınıfta projeksiyon ve dokunmatik ekranda
+              canlı interaktif ölçüm yapın.
+              <br />
+              &bull; <strong>81 İl Hızlı Seçici:</strong> Öğrencilere soru sorarken il merkezlerini
+              anında bağlayın.
+              <br />
+              &bull; <strong>PNG Dışa Aktarım:</strong> Telifli ve ölçekli harita görsellerini sınav
+              ve slaytlarınıza ekleyin.
             </p>
           </div>
 
           {/* Audience 3: CBS & Harita Araştırmacıları / Gezginler */}
           <div className="p-6 rounded-2xl bg-card border border-border space-y-4 shadow-xs">
             <div className="size-10 rounded-xl bg-sky-600/15 text-sky-600 flex items-center justify-center">
-              <CompassIcon className="size-5" />
+              <Compass className="size-5" />
             </div>
             <div>
-              <h4 className="font-heading font-bold text-base text-foreground">CBS Meraklıları &amp; Doğa Gezginleri</h4>
-              <span className="text-[11px] text-muted-foreground font-medium">Arazi, Rota ve Alan Planlaması</span>
+              <h4 className="font-heading font-bold text-base text-foreground">
+                CBS Meraklıları &amp; Doğa Gezginleri
+              </h4>
+              <span className="text-[11px] text-muted-foreground font-medium">
+                Arazi, Rota ve Alan Planlaması
+              </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              &bull; <strong>WGS84 &amp; UTM Zonları:</strong> EPSG:4326 ve Gauss-Krüger dilim koordinatlarını karşılaştırın.<br />
-              &bull; <strong>Küresel Yüzölçümü:</strong> L&apos;Huilier formülüyle göl, orman ve havza alanlarını Hektar/Dönüm olarak ölçün.<br />
-              &bull; <strong>Rota Süre Simülasyonu:</strong> Kuş uçuşu ile %28 topoğrafik karayolu sapmasını analiz edin.
+              &bull; <strong>WGS84 &amp; UTM Zonları:</strong> EPSG:4326 ve Gauss-Krüger dilim
+              koordinatlarını karşılaştırın.
+              <br />
+              &bull; <strong>Küresel Yüzölçümü:</strong> L&apos;Huilier formülüyle göl, orman ve
+              havza alanlarını Hektar/Dönüm olarak ölçün.
+              <br />
+              &bull; <strong>Rota Süre Simülasyonu:</strong> Kuş uçuşu ile %28 topoğrafik karayolu
+              sapmasını analiz edin.
             </p>
           </div>
         </div>
@@ -272,7 +316,9 @@ export function V2ToolsHub() {
               Araç Yetenekleri ve Bilimsel Standartlar
             </h3>
           </div>
-          <span className="text-xs text-muted-foreground font-medium">3 Ölçüm Modülü Karşılaştırması</span>
+          <span className="text-xs text-muted-foreground font-medium">
+            3 Ölçüm Modülü Karşılaştırması
+          </span>
         </div>
 
         <div className="overflow-x-auto">
@@ -287,43 +333,69 @@ export function V2ToolsHub() {
             </thead>
             <tbody className="divide-y divide-border/50 text-foreground">
               <tr className="hover:bg-muted/30">
-                <td className="py-3 pr-4 font-semibold text-muted-foreground">Matematiksel Model</td>
+                <td className="py-3 pr-4 font-semibold text-muted-foreground">
+                  Matematiksel Model
+                </td>
                 <td className="py-3 px-4 font-mono">Haversine Great-Circle</td>
                 <td className="py-3 px-4 font-mono">WGS84 + Gauss-Krüger</td>
                 <td className="py-3 pl-4 font-mono">L&apos;Huilier Spherical Excess</td>
               </tr>
               <tr className="hover:bg-muted/30">
-                <td className="py-3 pr-4 font-semibold text-muted-foreground">Temel Çıktı Birimleri</td>
+                <td className="py-3 pr-4 font-semibold text-muted-foreground">
+                  Temel Çıktı Birimleri
+                </td>
                 <td className="py-3 px-4">km, Metre, Deniz Mili (NM)</td>
                 <td className="py-3 px-4">DD (Ondalık), DMS, UTM Zone</td>
                 <td className="py-3 pl-4">km², Hektar (ha), Dönüm, Çevre</td>
               </tr>
               <tr className="hover:bg-muted/30">
-                <td className="py-3 pr-4 font-semibold text-muted-foreground">81 İl Seçici Desteği</td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (MGM Koordinatları)</td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (İl Merkez Noktası)</td>
-                <td className="py-3 pl-4 text-emerald-600 font-semibold">✓ Var (Köşe Noktası Olarak)</td>
+                <td className="py-3 pr-4 font-semibold text-muted-foreground">
+                  81 İl Seçici Desteği
+                </td>
+                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                  ✓ Var (MGM Koordinatları)
+                </td>
+                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                  ✓ Var (İl Merkez Noktası)
+                </td>
+                <td className="py-3 pl-4 text-emerald-600 font-semibold">
+                  ✓ Var (Köşe Noktası Olarak)
+                </td>
               </tr>
               <tr className="hover:bg-muted/30">
-                <td className="py-3 pr-4 font-semibold text-muted-foreground">Doğrudan Koordinat Girişi</td>
+                <td className="py-3 pr-4 font-semibold text-muted-foreground">
+                  Doğrudan Koordinat Girişi
+                </td>
                 <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (DD &amp; DMS)</td>
                 <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (DD &amp; DMS)</td>
                 <td className="py-3 pl-4 text-emerald-600 font-semibold">✓ Var (DD &amp; DMS)</td>
               </tr>
               <tr className="hover:bg-muted/30">
-                <td className="py-3 pr-4 font-semibold text-muted-foreground">Yerel Ölçüm Kaydetme</td>
+                <td className="py-3 pr-4 font-semibold text-muted-foreground">
+                  Yerel Ölçüm Kaydetme
+                </td>
                 <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (localStorage)</td>
                 <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (localStorage)</td>
                 <td className="py-3 pl-4 text-emerald-600 font-semibold">✓ Var (localStorage)</td>
               </tr>
               <tr className="hover:bg-muted/30">
-                <td className="py-3 pr-4 font-semibold text-muted-foreground">PNG Olarak İndirme</td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (Yüksek Çözünürlük)</td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (Yüksek Çözünürlük)</td>
-                <td className="py-3 pl-4 text-emerald-600 font-semibold">✓ Var (Yüksek Çözünürlük)</td>
+                <td className="py-3 pr-4 font-semibold text-muted-foreground">
+                  PNG Olarak İndirme
+                </td>
+                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                  ✓ Var (Yüksek Çözünürlük)
+                </td>
+                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                  ✓ Var (Yüksek Çözünürlük)
+                </td>
+                <td className="py-3 pl-4 text-emerald-600 font-semibold">
+                  ✓ Var (Yüksek Çözünürlük)
+                </td>
               </tr>
               <tr className="hover:bg-muted/30">
-                <td className="py-3 pr-4 font-semibold text-muted-foreground">Özel Ekstra Özellik</td>
+                <td className="py-3 pr-4 font-semibold text-muted-foreground">
+                  Özel Ekstra Özellik
+                </td>
                 <td className="py-3 px-4">Uçuş süresi &amp; %28 Karayolu tahmini</td>
                 <td className="py-3 px-4">Noktadan İl Tespiti (Reverse Geocode)</td>
                 <td className="py-3 pl-4">Kesişen Çokgen Uyarısı &amp; Dış Hat Sıralama</td>

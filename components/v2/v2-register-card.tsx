@@ -20,14 +20,11 @@ import {
   UserPlus,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
   MapPin,
   GraduationCap,
   Briefcase,
   BookOpen,
   Compass,
-  ArrowRight,
-  ShieldCheck,
   Check,
 } from "lucide-react";
 
@@ -47,7 +44,7 @@ const USER_ROLES = [
 ];
 
 export function V2RegisterCard({
-  locale = "tr",
+  locale: _locale = "tr",
   provinces = [],
   inModal = false,
   onAuthenticated,
@@ -109,14 +106,21 @@ export function V2RegisterCard({
 
       if (result.ok) {
         setStep("verify");
-        setSuccessMsg("Kayıt oluşturuldu! E-posta adresinize gönderilen 6 haneli doğrulama kodunu giriniz.");
+        setSuccessMsg(
+          "Kayıt oluşturuldu! E-posta adresinize gönderilen 6 haneli doğrulama kodunu giriniz.",
+        );
       } else {
-        if (result.code === "errors.auth.rateLimited" || result.code === "errors.auth.tooManyAttempts") {
+        if (
+          result.code === "errors.auth.rateLimited" ||
+          result.code === "errors.auth.tooManyAttempts"
+        ) {
           setErrorMsg("Çok fazla deneme yapıldı. Lütfen biraz sonra tekrar deneyiniz.");
         } else if (result.code === "errors.transport.invalidRequest") {
           setErrorMsg("Kayıt bilgileri geçersiz veya bu e-posta adresi zaten kullanılıyor.");
         } else {
-          setErrorMsg("Kayıt oluşturulurken bir sorun oluştu. Lütfen bilgilerinizi kontrol ediniz.");
+          setErrorMsg(
+            "Kayıt oluşturulurken bir sorun oluştu. Lütfen bilgilerinizi kontrol ediniz.",
+          );
         }
       }
     } catch {
@@ -173,7 +177,8 @@ export function V2RegisterCard({
             E-posta Doğrulama Kodu
           </h2>
           <p className="text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">{email}</span> adresine bir aktivasyon kodu gönderdik.
+            <span className="font-semibold text-foreground">{email}</span> adresine bir aktivasyon
+            kodu gönderdik.
           </p>
         </div>
 
@@ -370,13 +375,20 @@ export function V2RegisterCard({
 
         {/* Dynamic Password Strength Indicators */}
         <div className="flex items-center gap-3 pt-1 text-[11px] text-muted-foreground">
-          <span className={`inline-flex items-center gap-1 ${hasMinLength ? "text-emerald-600 font-bold" : ""}`}>
-            <Check className={`size-3 ${hasMinLength ? "opacity-100" : "opacity-30"}`} /> 8+ karakter
+          <span
+            className={`inline-flex items-center gap-1 ${hasMinLength ? "text-emerald-600 font-bold" : ""}`}
+          >
+            <Check className={`size-3 ${hasMinLength ? "opacity-100" : "opacity-30"}`} /> 8+
+            karakter
           </span>
-          <span className={`inline-flex items-center gap-1 ${hasLetter ? "text-emerald-600 font-bold" : ""}`}>
+          <span
+            className={`inline-flex items-center gap-1 ${hasLetter ? "text-emerald-600 font-bold" : ""}`}
+          >
             <Check className={`size-3 ${hasLetter ? "opacity-100" : "opacity-30"}`} /> Harf
           </span>
-          <span className={`inline-flex items-center gap-1 ${hasNumber ? "text-emerald-600 font-bold" : ""}`}>
+          <span
+            className={`inline-flex items-center gap-1 ${hasNumber ? "text-emerald-600 font-bold" : ""}`}
+          >
             <Check className={`size-3 ${hasNumber ? "opacity-100" : "opacity-30"}`} /> Rakam
           </span>
         </div>

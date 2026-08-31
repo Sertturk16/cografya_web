@@ -1,14 +1,5 @@
 import * as React from "react";
-import { Badge } from "@/components/ui/badge";
-import {
-  Users,
-  Award,
-  Star,
-  BookCheck,
-  ShieldCheck,
-  CheckCircle,
-  GraduationCap,
-} from "lucide-react";
+import { Users, Star, BookCheck, ShieldCheck } from "lucide-react";
 
 export function V2SocialProof() {
   return (

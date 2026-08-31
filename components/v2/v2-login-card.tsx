@@ -19,10 +19,8 @@ import {
   LogIn,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
-  User,
   LogOut,
 } from "lucide-react";
 
@@ -34,7 +32,7 @@ export interface V2LoginCardProps {
 }
 
 export function V2LoginCard({
-  locale = "tr",
+  locale: _locale = "tr",
   inModal = false,
   onAuthenticated,
   onSwitchToRegister,
@@ -82,7 +80,7 @@ export function V2LoginCard({
       const result = await submitAuth(
         "login",
         { email: cleanEmail, password },
-        inModal ? {} : { returnTo: "/v2" }
+        inModal ? {} : { returnTo: "/v2" },
       );
 
       if (result.ok) {
@@ -100,8 +98,13 @@ export function V2LoginCard({
           setErrorMsg("E-posta adresi veya şifre hatalı. Lütfen kontrol ediniz.");
         } else if (result.code === "errors.auth.emailNotVerified") {
           setErrorMsg("E-posta adresiniz henüz doğrulanmamış. Lütfen e-postanızı kontrol ediniz.");
-        } else if (result.code === "errors.auth.rateLimited" || result.code === "errors.auth.tooManyAttempts") {
-          setErrorMsg("Çok fazla başarısız deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyiniz.");
+        } else if (
+          result.code === "errors.auth.rateLimited" ||
+          result.code === "errors.auth.tooManyAttempts"
+        ) {
+          setErrorMsg(
+            "Çok fazla başarısız deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyiniz.",
+          );
         } else {
           setErrorMsg("Giriş yapılırken bir sorun oluştu. Lütfen tekrar deneyiniz.");
         }
@@ -127,7 +130,12 @@ export function V2LoginCard({
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
           <Link href="/v2" className="w-full sm:w-auto">
-            <Button variant="primary" size="md" className="w-full sm:w-auto shadow-xs" rightIcon={<ArrowRight className="size-4" />}>
+            <Button
+              variant="primary"
+              size="md"
+              className="w-full sm:w-auto shadow-xs"
+              rightIcon={<ArrowRight className="size-4" />}
+            >
               Atlasa Devam Et
             </Button>
           </Link>
@@ -155,7 +163,9 @@ export function V2LoginCard({
             <Badge variant="primary" size="sm" icon={<LogIn className="size-3.5" />}>
               Giriş Portalı v2
             </Badge>
-            <span className="text-xs text-muted-foreground font-medium">Kişiselleştirilmiş Atlas</span>
+            <span className="text-xs text-muted-foreground font-medium">
+              Kişiselleştirilmiş Atlas
+            </span>
           </div>
           <h2 className="font-heading text-2xl font-bold text-[var(--color-primary-dark,#7e3a1e)] tracking-tight">
             Hesabınıza Giriş Yapın

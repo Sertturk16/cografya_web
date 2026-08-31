@@ -2,15 +2,7 @@
 
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Globe,
-  Compass,
-  Layers,
-  MapPin,
-  Sparkles,
-  BookOpen,
-  Calculator,
-} from "lucide-react";
+import { Globe, Compass, Layers, BookOpen, Calculator } from "lucide-react";
 
 export function V2GisMethodologyGuide() {
   const concepts = [
@@ -44,7 +36,9 @@ export function V2GisMethodologyGuide() {
             <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
               CBS Bilimsel Metodoloji
             </Badge>
-            <span className="text-xs text-muted-foreground">Jeodezi &amp; Kartografya Esasları</span>
+            <span className="text-xs text-muted-foreground">
+              Jeodezi &amp; Kartografya Esasları
+            </span>
           </div>
           <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
             Coğrafi Bilgi Sistemleri &amp; Jeodezik Ölçüm Esasları
@@ -59,9 +53,7 @@ export function V2GisMethodologyGuide() {
             className="p-5 rounded-2xl border border-border bg-card/70 hover:border-primary/40 transition-all duration-300 space-y-2.5 shadow-2xs"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-muted/60 border border-border">
-                {c.icon}
-              </div>
+              <div className="p-2.5 rounded-xl bg-muted/60 border border-border">{c.icon}</div>
               <h4 className="font-heading font-bold text-base text-foreground">{c.title}</h4>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-1">

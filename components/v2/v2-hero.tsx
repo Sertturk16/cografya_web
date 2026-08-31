@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Map,
   Globe,
   Waves,
   Gamepad2,
@@ -17,7 +16,6 @@ import {
   Compass,
   MapPin,
   Flame,
-  Layers,
   X,
   BookOpen,
 } from "lucide-react";
@@ -39,15 +37,69 @@ interface SearchEntry {
 
 // Built-in module shortcuts in addition to API search index
 const STATIC_SHORTCUTS: SearchEntry[] = [
-  { name: "Türkiye İller Haritası", path: "/v2/turkiye", kind: "module", subtitle: "81 İl ve 7 Coğrafi Bölge", folded: "turkiye iller haritasi" },
-  { name: "Dünya Ülkeleri Atlası", path: "/v2/dunya", kind: "module", subtitle: "199 Ülke ve Kıtalar", folded: "dunya ulkeleri atlasi" },
-  { name: "Canlı Deniz Telemetrisi", path: "/v2/deniz", kind: "module", subtitle: "Copernicus & ECMWF 4 Deniz", folded: "canli deniz telemetrisi" },
-  { name: "Harita Oyunu (81 İl & Dünya)", path: "/v2/oyun", kind: "module", subtitle: "3 İnteraktif Oyun Modu", folded: "harita oyunu 81 il dunya" },
-  { name: "Canlı Deprem Takip Portalı", path: "/v2/deprem", kind: "module", subtitle: "AFAD TDVMS Son Sarsıntılar", folded: "canli deprem takip portali" },
-  { name: "Kuş Uçuşu Mesafe Ölçme", path: "/v2/araclar/mesafe-olcme", kind: "tool", subtitle: "CBS Jeodezik Mesafe Aracı", folded: "kus ucusu mesafe olcme" },
-  { name: "Koordinat Bulma & Dönüştürme", path: "/v2/araclar/koordinat-bulma", kind: "tool", subtitle: "WGS84 Enlem / Boylam Aracı", folded: "koordinat bulma donusturme" },
-  { name: "Alan & Yüzölçümü Hesaplama", path: "/v2/araclar/alan-hesaplama", kind: "tool", subtitle: "Poligon Jeodezik Alan Aracı", folded: "alan yuzolcumu hesaplama" },
-  { name: "Coğrafya Kitapları & Denemeler", path: "/v2/kitaplar", kind: "module", subtitle: "Soru Bankası & Video Çözümler", folded: "cografya kitaplari denemeler" },
+  {
+    name: "Türkiye İller Haritası",
+    path: "/v2/turkiye",
+    kind: "module",
+    subtitle: "81 İl ve 7 Coğrafi Bölge",
+    folded: "turkiye iller haritasi",
+  },
+  {
+    name: "Dünya Ülkeleri Atlası",
+    path: "/v2/dunya",
+    kind: "module",
+    subtitle: "199 Ülke ve Kıtalar",
+    folded: "dunya ulkeleri atlasi",
+  },
+  {
+    name: "Canlı Deniz Telemetrisi",
+    path: "/v2/deniz",
+    kind: "module",
+    subtitle: "Copernicus & ECMWF 4 Deniz",
+    folded: "canli deniz telemetrisi",
+  },
+  {
+    name: "Harita Oyunu (81 İl & Dünya)",
+    path: "/v2/oyun",
+    kind: "module",
+    subtitle: "3 İnteraktif Oyun Modu",
+    folded: "harita oyunu 81 il dunya",
+  },
+  {
+    name: "Canlı Deprem Takip Portalı",
+    path: "/v2/deprem",
+    kind: "module",
+    subtitle: "AFAD TDVMS Son Sarsıntılar",
+    folded: "canli deprem takip portali",
+  },
+  {
+    name: "Kuş Uçuşu Mesafe Ölçme",
+    path: "/v2/araclar/mesafe-olcme",
+    kind: "tool",
+    subtitle: "CBS Jeodezik Mesafe Aracı",
+    folded: "kus ucusu mesafe olcme",
+  },
+  {
+    name: "Koordinat Bulma & Dönüştürme",
+    path: "/v2/araclar/koordinat-bulma",
+    kind: "tool",
+    subtitle: "WGS84 Enlem / Boylam Aracı",
+    folded: "koordinat bulma donusturme",
+  },
+  {
+    name: "Alan & Yüzölçümü Hesaplama",
+    path: "/v2/araclar/alan-hesaplama",
+    kind: "tool",
+    subtitle: "Poligon Jeodezik Alan Aracı",
+    folded: "alan yuzolcumu hesaplama",
+  },
+  {
+    name: "Coğrafya Kitapları & Denemeler",
+    path: "/v2/kitaplar",
+    kind: "module",
+    subtitle: "Soru Bankası & Video Çözümler",
+    folded: "cografya kitaplari denemeler",
+  },
 ];
 
 export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
@@ -70,13 +122,15 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
         if (!res.ok) return;
         const data = await res.json();
         if (data && Array.isArray(data.entries) && isMounted) {
-          const apiEntries: SearchEntry[] = data.entries.map((item: [string, string, "p" | "c"]) => ({
-            name: item[0],
-            path: `/v2${item[1]}`,
-            kind: item[2],
-            subtitle: item[2] === "p" ? "Türkiye İli" : "Dünya Ülkesi",
-            folded: foldForSearch(item[0]),
-          }));
+          const apiEntries: SearchEntry[] = data.entries.map(
+            (item: [string, string, "p" | "c"]) => ({
+              name: item[0],
+              path: `/v2${item[1]}`,
+              kind: item[2],
+              subtitle: item[2] === "p" ? "Türkiye İli" : "Dünya Ülkesi",
+              folded: foldForSearch(item[0]),
+            }),
+          );
           setAllEntries([...STATIC_SHORTCUTS, ...apiEntries]);
         }
       } catch {
@@ -96,7 +150,10 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
     const foldedQuery = foldForSearch(trimmed);
 
     return allEntries
-      .filter((entry) => entry.folded.includes(foldedQuery) || foldForSearch(entry.name).includes(foldedQuery))
+      .filter(
+        (entry) =>
+          entry.folded.includes(foldedQuery) || foldForSearch(entry.name).includes(foldedQuery),
+      )
       .slice(0, 6);
   }, [query, allEntries]);
 
@@ -161,13 +218,29 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
   const getKindBadge = (kind: SearchEntry["kind"]) => {
     switch (kind) {
       case "p":
-        return <Badge variant="primary" size="sm">İl</Badge>;
+        return (
+          <Badge variant="primary" size="sm">
+            İl
+          </Badge>
+        );
       case "c":
-        return <Badge variant="secondary" size="sm">Ülke</Badge>;
+        return (
+          <Badge variant="secondary" size="sm">
+            Ülke
+          </Badge>
+        );
       case "tool":
-        return <Badge variant="outline" size="sm">CBS</Badge>;
+        return (
+          <Badge variant="outline" size="sm">
+            CBS
+          </Badge>
+        );
       case "module":
-        return <Badge variant="info" size="sm">Modül</Badge>;
+        return (
+          <Badge variant="info" size="sm">
+            Modül
+          </Badge>
+        );
     }
   };
 
@@ -221,8 +294,8 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
               </span>
             </h1>
             <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl">
-              Türkiye'nin 81 ili, {totalCountries} dünya ülkesi, saatlik güncellenen Copernicus deniz telemetrisi
-              ve interaktif harita araçları tek ekranda.
+              Türkiye&apos;nin 81 ili, {totalCountries} dünya ülkesi, saatlik güncellenen Copernicus
+              deniz telemetrisi ve interaktif harita araçları tek ekranda.
             </p>
           </div>
 
@@ -284,7 +357,9 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
                       onClick={() => handleNavigate(entry.path, entry.name)}
                       onMouseEnter={() => setActiveIndex(index)}
                       className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
-                        activeIndex === index ? "bg-primary/10 text-primary font-bold" : "hover:bg-muted text-foreground"
+                        activeIndex === index
+                          ? "bg-primary/10 text-primary font-bold"
+                          : "hover:bg-muted text-foreground"
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -294,7 +369,9 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
                         <div>
                           <div className="font-bold text-xs">{entry.name}</div>
                           {entry.subtitle && (
-                            <div className="text-[10px] text-muted-foreground font-normal">{entry.subtitle}</div>
+                            <div className="text-[10px] text-muted-foreground font-normal">
+                              {entry.subtitle}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -306,7 +383,7 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
                   ))
                 ) : (
                   <div className="p-4 text-center text-xs text-muted-foreground">
-                    <span>"{query}" ile eşleşen il, ülke veya araç bulunamadı.</span>
+                    <span>&ldquo;{query}&rdquo; ile eşleşen il, ülke veya araç bulunamadı.</span>
                   </div>
                 )}
               </div>
@@ -316,7 +393,10 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
             <div className="flex items-center gap-2 flex-wrap pt-1 text-xs">
               <span className="text-muted-foreground text-[11px] font-medium">Hızlı Erişim:</span>
               {QUICK_TAGS.map((tag) => (
-                <Link key={tag.path} href={tag.path as any}>
+                <Link
+                  key={tag.path}
+                  href={tag.path as unknown as React.ComponentProps<typeof Link>["href"]}
+                >
                   <Badge
                     variant="outline"
                     size="sm"
@@ -374,7 +454,9 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
                   Canlı Coğrafya Telemetrisi
                 </h3>
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground">ECMWF / AFAD / MTA</span>
+              <span className="text-[10px] font-mono text-muted-foreground">
+                ECMWF / AFAD / MTA
+              </span>
             </div>
 
             {/* Quick Metrics Grid */}
@@ -385,8 +467,12 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
                     <MapPin className="size-3.5 text-primary" />
                     <span>Türkiye İlleri</span>
                   </div>
-                  <div className="font-heading font-bold text-2xl text-primary">{totalProvinces} İl</div>
-                  <span className="text-[11px] text-muted-foreground block mt-0.5">81 İlçe ve Bölge</span>
+                  <div className="font-heading font-bold text-2xl text-primary">
+                    {totalProvinces} İl
+                  </div>
+                  <span className="text-[11px] text-muted-foreground block mt-0.5">
+                    81 İlçe ve Bölge
+                  </span>
                 </div>
               </Link>
 
@@ -396,8 +482,12 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
                     <Globe className="size-3.5 text-secondary" />
                     <span>Dünya Ülkeleri</span>
                   </div>
-                  <div className="font-heading font-bold text-2xl text-secondary">{totalCountries} Ülke</div>
-                  <span className="text-[11px] text-muted-foreground block mt-0.5">6 Kıta ve Başkent</span>
+                  <div className="font-heading font-bold text-2xl text-secondary">
+                    {totalCountries} Ülke
+                  </div>
+                  <span className="text-[11px] text-muted-foreground block mt-0.5">
+                    6 Kıta ve Başkent
+                  </span>
                 </div>
               </Link>
 
@@ -408,7 +498,9 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
                     <span>Deniz Havzaları</span>
                   </div>
                   <div className="font-heading font-bold text-2xl text-foreground">4 Havza</div>
-                  <span className="text-[11px] text-muted-foreground block mt-0.5">30 Kıyı İstasyonu</span>
+                  <span className="text-[11px] text-muted-foreground block mt-0.5">
+                    30 Kıyı İstasyonu
+                  </span>
                 </div>
               </Link>
 
@@ -419,7 +511,9 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
                     <span>Sismik İzleme</span>
                   </div>
                   <div className="font-heading font-bold text-2xl text-destructive">7/24 Aktif</div>
-                  <span className="text-[11px] text-muted-foreground block mt-0.5">AFAD Entegrasyonu</span>
+                  <span className="text-[11px] text-muted-foreground block mt-0.5">
+                    AFAD Entegrasyonu
+                  </span>
                 </div>
               </Link>
             </div>
@@ -430,11 +524,18 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
                 <BookOpen className="size-4 text-amber-600 dark:text-amber-400" />
                 <div>
                   <span className="font-bold text-foreground block">Video Çözümlü Denemeler</span>
-                  <span className="text-[10px] text-muted-foreground">ÖSYM Tarzı Coğrafya Yayınları</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    ÖSYM Tarzı Coğrafya Yayınları
+                  </span>
                 </div>
               </div>
               <Link href="/v2/kitaplar">
-                <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-amber-700 dark:text-amber-300" rightIcon={<ArrowRight className="size-3" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs font-semibold text-amber-700 dark:text-amber-300"
+                  rightIcon={<ArrowRight className="size-3" />}
+                >
                   İncele
                 </Button>
               </Link>
