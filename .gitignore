@@ -53,3 +53,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# verification screenshots
+/*_shots/
+/*_verified/
+/marine_shots/
+inspect_deprem.js

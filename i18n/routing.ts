@@ -225,6 +225,90 @@ export const routing = defineRouting({
       tr: "/deprem",
       en: "/earthquakes",
     },
+        "/v2": {
+      tr: "/v2",
+      en: "/v2",
+    },
+    "/v2/turkiye": {
+      tr: "/v2/turkiye",
+      en: "/v2/turkey",
+    },
+    "/v2/turkiye/[slug]": {
+      tr: "/v2/turkiye/[slug]",
+      en: "/v2/turkey/[slug]",
+    },
+    "/v2/dunya": {
+      tr: "/v2/dunya",
+      en: "/v2/world",
+    },
+    "/v2/dunya/[slug]": {
+      tr: "/v2/dunya/[slug]",
+      en: "/v2/world/[slug]",
+    },
+    "/v2/deniz": {
+      tr: "/v2/deniz",
+      en: "/v2/sea",
+    },
+    "/v2/oyun": {
+      tr: "/v2/oyun",
+      en: "/v2/game",
+    },
+    "/v2/oyun/bolge-bulma": {
+      tr: "/v2/oyun/bolge-bulma",
+      en: "/v2/game/find-the-region",
+    },
+    "/v2/oyun/81-il": {
+      tr: "/v2/oyun/81-il",
+      en: "/v2/game/81-provinces",
+    },
+    "/v2/oyun/bolge-bolge-il": {
+      tr: "/v2/oyun/bolge-bolge-il",
+      en: "/v2/game/provinces-by-region",
+    },
+    "/v2/oyun/bolge-bolge-il/[bolge]": {
+      tr: "/v2/oyun/bolge-bolge-il/[bolge]",
+      en: "/v2/game/provinces-by-region/[bolge]",
+    },
+    "/v2/deprem": {
+      tr: "/v2/deprem",
+      en: "/v2/earthquakes",
+    },
+    "/v2/araclar": {
+      tr: "/v2/araclar",
+      en: "/v2/tools",
+    },
+    "/v2/araclar/mesafe-olcme": {
+      tr: "/v2/araclar/mesafe-olcme",
+      en: "/v2/tools/distance",
+    },
+    "/v2/araclar/koordinat-bulma": {
+      tr: "/v2/araclar/koordinat-bulma",
+      en: "/v2/tools/coordinates",
+    },
+    "/v2/araclar/alan-hesaplama": {
+      tr: "/v2/araclar/alan-hesaplama",
+      en: "/v2/tools/area",
+    },
+    "/v2/kitaplar": {
+      tr: "/v2/kitaplar",
+      en: "/v2/books",
+    },
+    "/v2/kitaplar/[slug]": {
+      tr: "/v2/kitaplar/[slug]",
+      en: "/v2/books/[slug]",
+    },
+    "/v2/giris": {
+      tr: "/v2/giris",
+      en: "/v2/login",
+    },
+    "/v2/kayit": {
+      tr: "/v2/kayit",
+      en: "/v2/register",
+    },
+    "/design-system": {
+      tr: "/design-system",
+      en: "/design-system",
+    },
   },
 });
 
