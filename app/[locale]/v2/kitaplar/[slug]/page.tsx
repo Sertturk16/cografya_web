@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { Fragment } from "react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
@@ -12,7 +13,7 @@ import { VideoBench } from "@/components/book/video-bench";
 import { ProseNote } from "@/components/prose-note";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getPathname, Link } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getBookBySlug, getBooksResilient } from "@/lib/api/books";
 import { formatDuration } from "@/lib/book/duration";
@@ -26,17 +27,13 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import {
   BookOpen,
   Video,
-  GraduationCap,
   Home,
   ChevronRight,
   ExternalLink,
   ShoppingBag,
-  Sparkles,
   PlayCircle,
-  HelpCircle,
-  FileText,
-  User,
-  Building,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import styles from "../../../kitaplar/[slug]/book-detail.module.css";
 
@@ -126,6 +123,10 @@ export default async function V2BookDetailPage({ params }: PageProps) {
 
   const defaultDenemeNo = benchVideos[0]?.denemeNo ?? null;
 
+  const attributionRows = book.attribution.filter(
+    (row) => row.providerId !== "youtube" || book.videos.length > 0,
+  );
+
   const videoSchemas = videoStates.flatMap(({ video, state }) => {
     if (state.kind !== "rich") return [];
     const schema = videoObjectJsonLd({
@@ -139,7 +140,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
   });
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 pb-20">
       <JsonLd
         schema={bookJsonLd({
           name: title,
@@ -158,24 +159,30 @@ export default async function V2BookDetailPage({ params }: PageProps) {
       <V2LiveTicker />
 
       {/* HERO BANNER SECTION */}
-      <section className="relative border-b border-border bg-gradient-to-b from-amber-500/10 via-background to-background pt-8 pb-12 overflow-hidden">
+      <section className="relative border-b border-border bg-gradient-to-b from-primary/5 via-background to-background pt-6 sm:pt-10 pb-10 overflow-hidden">
         <div className="container mx-auto px-4 max-w-7xl relative z-10 space-y-6">
-          {/* Breadcrumb Bar */}
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-            <Link href="/v2" className="hover:text-foreground transition-colors flex items-center gap-1">
+          {/* Breadcrumb Navigation */}
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
+          >
+            <Link
+              href="/v2"
+              className="hover:text-foreground transition-colors flex items-center gap-1"
+            >
               <Home className="size-3.5" />
               <span>Ana Sayfa</span>
             </Link>
             <ChevronRight className="size-3 text-muted-foreground/60" />
             <Link href="/v2/kitaplar" className="hover:text-foreground transition-colors">
-              Kitaplar &amp; Denemeler
+              Video Çözümlü Kitaplar
             </Link>
             <ChevronRight className="size-3 text-muted-foreground/60" />
             <span className="text-foreground font-semibold truncate max-w-xs">{title}</span>
           </nav>
 
           {/* Book Hero Card */}
-          <div className="flex flex-col md:flex-row gap-8 items-start bg-card/85 backdrop-blur-md border border-border p-6 sm:p-8 rounded-3xl shadow-lg">
+          <div className="flex flex-col md:flex-row gap-8 items-start bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-lg">
             {/* Book Cover Image */}
             {book.coverImagePath && (
               <div className="relative w-36 sm:w-48 aspect-[3/4] rounded-2xl overflow-hidden shadow-xl border border-border/80 shrink-0 bg-muted">
@@ -197,21 +204,21 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                   {book.examTrack || "AYT / TYT"}
                 </Badge>
                 <Badge variant="secondary" size="sm">
-                  {book.coverage.videoCount} Video Çözüm
+                  {book.coverage.videoCount} Video Çözümlü Deneme
                 </Badge>
                 <Badge variant="outline" size="sm" className="font-mono">
-                  {book.coverage.questionCount} Soru
+                  {book.coverage.questionCount} Soru Çözümü
                 </Badge>
               </div>
 
-              <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+              <h1 className="font-heading text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight">
                 {title}
               </h1>
 
               {introText && (
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-                  {introText}
-                </p>
+                <div className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
+                  <ProseNote text={introText} className="space-y-2" />
+                </div>
               )}
 
               {/* Action Buttons */}
@@ -223,7 +230,12 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                     rel="noopener noreferrer"
                     className="inline-flex"
                   >
-                    <Button variant="primary" size="sm" leftIcon={<ShoppingBag className="size-4" />} rightIcon={<ExternalLink className="size-3.5 opacity-60" />}>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<ShoppingBag className="size-4" />}
+                      rightIcon={<ExternalLink className="size-3.5 opacity-70" />}
+                    >
                       Kitabı Satın Al
                     </Button>
                   </a>
@@ -240,26 +252,26 @@ export default async function V2BookDetailPage({ params }: PageProps) {
           {/* Book Metadata Facts Sheet */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="text-[11px] text-muted-foreground block">Yazar</span>
-              <span className="font-heading font-bold text-sm text-foreground block truncate">
-                {book.authorNames.join(", ") || "Murat Şenocak"}
+              <span className="text-[11px] text-muted-foreground font-medium block">Yazarlar</span>
+              <span className="font-heading font-bold text-sm text-foreground block truncate mt-0.5">
+                {book.authorNames.join(", ") || "Murat Karagöz, Murat Çakır"}
               </span>
             </div>
             <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="text-[11px] text-muted-foreground block">Yayınevi</span>
-              <span className="font-heading font-bold text-sm text-foreground block truncate">
+              <span className="text-[11px] text-muted-foreground font-medium block">Yayınevi</span>
+              <span className="font-heading font-bold text-sm text-foreground block truncate mt-0.5">
                 {book.publisherName}
               </span>
             </div>
             <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="text-[11px] text-muted-foreground block">Deneme / Sayfa</span>
-              <span className="font-heading font-bold text-sm text-foreground block">
+              <span className="text-[11px] text-muted-foreground font-medium block">Kapsam</span>
+              <span className="font-heading font-bold text-sm text-foreground block mt-0.5">
                 {book.denemeCount} Deneme &bull; {book.pageCount} Sayfa
               </span>
             </div>
             <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="text-[11px] text-muted-foreground block">ISBN-13</span>
-              <span className="font-mono font-bold text-xs text-primary block truncate">
+              <span className="text-[11px] text-muted-foreground font-medium block">ISBN-13</span>
+              <span className="font-mono font-bold text-xs text-primary block truncate mt-0.5">
                 {book.isbn13}
               </span>
             </div>
@@ -274,9 +286,11 @@ export default async function V2BookDetailPage({ params }: PageProps) {
             <div>
               <div className="flex items-center gap-2">
                 <Badge variant="primary" size="sm" icon={<Video className="size-3.5" />}>
-                  İnteraktif Çözüm Tezgahı
+                  İnteraktif Video Çözüm Tezgâhı
                 </Badge>
-                <span className="text-xs text-muted-foreground font-mono">1–40 Deneme Soru Havuzu</span>
+                <span className="text-xs text-muted-foreground font-mono">
+                  1–{book.coverage.denemeCount} Deneme Soru Havuzu
+                </span>
               </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-1">
                 Soru Bazlı Video Çözüm &amp; Zaman Çizelgesi
@@ -311,7 +325,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
             </ul>
           </nav>
 
-          {/* Video Bench Player and Question Matrix */}
+          {/* Video Bench Player and Question Matrix (With Auth Gating) */}
           {defaultDenemeNo !== null && (
             <VideoBench
               className={styles.workbench}
@@ -377,7 +391,40 @@ export default async function V2BookDetailPage({ params }: PageProps) {
           )}
         </section>
 
-        {/* DATA SOURCES & CITATIONS (KAYNAKÇA) */}
+        {/* OFFICIAL ATTRIBUTION AND PARTNER NOTICES */}
+        {attributionRows.length > 0 && (
+          <div className="p-4 rounded-2xl bg-card border border-border/80 text-xs text-muted-foreground flex flex-wrap items-center gap-3">
+            <span className="font-semibold text-foreground">{t("sourcesLabel")}:</span>
+            {attributionRows.map((row, index) => (
+              <Fragment key={row.providerId}>
+                {index > 0 && <span aria-hidden="true"> &bull; </span>}
+                {row.providerId === "youtube" && row.channelUrl !== null ? (
+                  <a
+                    className="inline-flex items-center gap-1.5 text-foreground hover:text-primary transition-colors"
+                    href={row.channelUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Image
+                      src="/marka/yt_icon_red_digital.png"
+                      alt=""
+                      width={1255}
+                      height={1075}
+                      sizes="24px"
+                      className="w-4 h-auto inline-block"
+                    />
+                    <span lang="tr">{row.requiredNoticeTr}</span>
+                    <ExternalLink className="size-3 opacity-60 ml-0.5" />
+                  </a>
+                ) : (
+                  <span lang="tr">{row.requiredNoticeTr}</span>
+                )}
+              </Fragment>
+            ))}
+          </div>
+        )}
+
+        {/* SCIENTIFIC DATA SOURCES & CITATIONS (KAYNAKÇA) */}
         <V2SourcesSection scope="kitaplar" />
       </main>
 
