@@ -20,15 +20,7 @@ import styles from "./auth-dialog.module.css";
  *  (a dynamic key would be invisible to that scan the same way `AUTH_ERROR_MESSAGE_KEYS[code]`
  *  already is, deliberately, for the error-code map — this file just does not need that
  *  exemption when a switch costs nothing).
- *
- *  A4 fix (İRİS live audit, 2026-08-29 fix round): this switch is keyed on `intent` only, never
- *  on `mode` — deliberately, not the bug the audit found. The bug was in the COPY: every
- *  `Auth.modal.intent.*` string used to read "…üye ol"/"…Sign up to…", which is wrong when the
- *  dialog is showing in `"login"` mode. The fix is the mode-agnostic phrasing now shipped in
- *  `messages/{tr,en}.json` ("…hesap gerekli." / "You need an account to…") — text that reads
- *  correctly in EITHER mode — rather than doubling every key into a `.register`/`.login` pair.
- *  Smaller diff, and `GLOSSARY.md` §7's "hesap"/"account" already names the neutral term this
- *  needed. */
+ */
 function intentLine(t: ReturnType<typeof useTranslations>, intent: AuthIntent): string {
   switch (intent) {
     case "favorite":
@@ -65,6 +57,7 @@ export function AuthDialogBody({
 
   return (
     <div className={styles.dialogBody}>
+      {/* Accessible Close Button */}
       <button
         type="button"
         className={styles.close}
@@ -73,18 +66,61 @@ export function AuthDialogBody({
       >
         <CloseIcon />
       </button>
-      <h2 id="auth-dialog-heading" ref={headingRef} tabIndex={-1} className={styles.heading}>
-        {t(mode === "login" ? "login.heading" : "register.heading")}
-      </h2>
-      <p className={styles.intentLine}>{intentLine(t, intent)}</p>
+
+      {/* Header with Compass Brand Badge */}
+      <div className={styles.headerRow}>
+        <div className={styles.brandBadge} aria-hidden="true">
+          <svg
+            className={styles.brandIcon}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+          </svg>
+        </div>
+        <div className={styles.headerText}>
+          <h2 id="auth-dialog-heading" ref={headingRef} tabIndex={-1} className={styles.heading}>
+            {t(mode === "login" ? "login.heading" : "register.heading")}
+          </h2>
+          <p className={styles.intentLine}>{intentLine(t, intent)}</p>
+        </div>
+      </div>
+
+      {/* Segmented Tab Switcher */}
+      <div className={styles.tabSwitch} role="tablist" aria-label="Giriş / Üye Olma Seçimi">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "login"}
+          className={`${styles.tabBtn} ${mode === "login" ? styles.tabBtnActive : ""}`}
+          onClick={() => setAuthModalMode("login")}
+        >
+          {t("login.heading")}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "register"}
+          className={`${styles.tabBtn} ${mode === "register" ? styles.tabBtnActive : ""}`}
+          onClick={() => setAuthModalMode("register")}
+        >
+          {t("register.heading")}
+        </button>
+      </div>
+
+      {/* Form Content */}
       {mode === "login" ? (
         <LoginForm locale={locale} onAuthenticated={onAuthenticated} />
       ) : (
-        // No `provinces` prop: the modal fetches it lazily (`RegisterForm`'s own
-        // `/api/reference/provinces` fallback path, plan §5.7) rather than shipping 81
-        // provinces into every page's payload for a control most pages never open.
         <RegisterForm locale={locale} onAuthenticated={onAuthenticated} />
       )}
+
+      {/* Bottom Mode Toggle Link */}
       <button
         type="button"
         className={styles.modeToggle}
@@ -92,6 +128,17 @@ export function AuthDialogBody({
       >
         {t(mode === "login" ? "modal.toRegister" : "modal.toLogin")}
       </button>
+
+      {/* Modern V2 Benefits & Feature Strip */}
+      <div className={styles.benefitsStrip} aria-hidden="true">
+        <span className={styles.benefitItem}>🌟 Favoriler</span>
+        <span>&bull;</span>
+        <span className={styles.benefitItem}>🏆 Skorlar</span>
+        <span>&bull;</span>
+        <span className={styles.benefitItem}>📐 CBS Ölçümleri</span>
+        <span>&bull;</span>
+        <span className={styles.benefitItem}>🛡️ Güvenli</span>
+      </div>
     </div>
   );
 }

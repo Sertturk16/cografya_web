@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { usePathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { useAuthModalState } from "@/lib/auth/auth-modal.client";
 
@@ -27,11 +28,21 @@ const AuthDialog = dynamic(() => import("./auth-dialog").then((mod) => mod.AuthD
  * render" transition, the same idiom this repo's own auth/register/tool components already use.
  */
 export function AuthMount({ locale }: { readonly locale: Locale }) {
+  const pathname = usePathname();
+
   const modal = useAuthModalState();
   const [hasOpened, setHasOpened] = useState(false);
+
+  // On V2 routes, V2AuthDialog handles the auth modal; avoid double-dialog collision.
+  const pathStr = (pathname as string) || "";
+  if (pathStr.startsWith("/v2") || pathStr.includes("/v2")) {
+    return null;
+  }
+
   if (modal.open && !hasOpened) {
     setHasOpened(true);
   }
   if (!hasOpened) return null;
   return <AuthDialog locale={locale} />;
 }
+

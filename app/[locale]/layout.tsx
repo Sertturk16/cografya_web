@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/site-header";
 import { routing } from "@/i18n/routing";
 import { fraunces, nunitoSans } from "@/lib/fonts";
 import { getSiteUrl, siteConfig } from "@/lib/seo/site";
+import { Toaster } from "@/components/ui/sonner";
 import "../globals.css";
 
 interface LocaleLayoutProps {
@@ -76,6 +77,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
               a gated action first opens it; see `AuthMount`'s own docblock for the SEO/CWV
               reasoning. */}
           <AuthMount locale={locale} />
+          <Toaster />
         </NextIntlClientProvider>
       </body>
     </html>

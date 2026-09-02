@@ -22,27 +22,17 @@
 .card {
   background: #fff;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: clamp(20px, 4vw, 32px);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  padding: clamp(24px, 5vw, 36px);
   max-width: 30rem;
-  /* A2 fix (İRİS live audit, 2026-08-29 fix round): at the single-column width band
-     (≥30rem-ish content width, <64rem — e.g. 768px) `.formSlot`'s own track is the FULL
-     container width, which is wider than this 30rem cap, and a plain block `<div>` with no
-     margin rule left-aligns rather than centering — measured 233px of stray space beside the
-     card at 768px that does not exist at 390px (the container itself is already narrower than
-     30rem there, so the cap never binds) or at 1440px (the two-panel grid's own
-     `minmax(360px, 30rem)` track is already sized to this same cap, so there is no slack to
-     center within). `margin-inline: auto` reads any such leftover width as intentional margin
-     rather than a stray gap, and is a no-op wherever there is no leftover width to begin
-     with. */
   margin-inline: auto;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .field {
@@ -53,7 +43,8 @@
 
 .label {
   font-family: var(--font-body);
-  font-weight: 600;
+  font-weight: 650;
+  font-size: 0.875rem;
   color: var(--color-ink);
 }
 
@@ -62,77 +53,50 @@
    only). Both clear AA; this is the wider margin. */
 .hint {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.825rem;
   color: var(--color-slate);
 }
 
-/* 44 CSS px floor (WCAG 2.2 §2.5.5 AAA) — `DESIGN.md` §5 takes the generous number
-   wherever there is room, and a form control always has room. */
+/* 44 CSS px floor (WCAG 2.2 §2.5.5 AAA) — Modern Luxury Control */
 .control {
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 14px;
   border: 1.5px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: 0.75rem;
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: 0.95rem;
   background: #fff;
   color: var(--color-ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .control:focus-visible {
-  /* Inherits the global 3px accent ring (`app/globals.css` `:focus-visible`) — no override
-     here. This rule exists only so a browser's own UA-stylesheet border never wins the
-     cascade against the focus ring on a bordered control. */
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3.5px rgba(176, 82, 46, 0.16);
 }
 
 .control[aria-invalid="true"] {
   border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(178, 59, 46, 0.12);
 }
 
-/* Error text — RE-VERIFIED after `.card` moved `--color-surface` → `#fff` (uyelik-auth-redesign
-   plan §5.3/§11.3, K11): `.fieldError` sits directly on `.card`'s own background via `.field`,
-   so it is this rule — not `.errorRegion`'s, which keeps its own separate `--color-surface`
-   background below and is UNAFFECTED — that actually changed background. Recomputed (WCAG
-   relative-luminance formula, sRGB): `--color-danger` `#b23b2e` measures **5.90:1 on `#fff`**,
-   up from 4.90:1 on `--color-surface` (`DESIGN.md` §5's verified table) — white is the
-   LIGHTER background, so the ratio improves, confirmed rather than assumed. Both clear the
-   hard semantic-colour rule's 4.5:1-on-`--color-surface` floor; this is now a wider margin,
-   never a narrower one. */
+/* Error text — RE-VERIFIED after `.card` moved `--color-surface` → `#fff` */
 .fieldError {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.825rem;
+  font-weight: 600;
   color: var(--color-danger);
 }
 
 .errorRegion {
   border: 1.5px solid var(--color-danger);
-  border-radius: var(--radius);
+  border-radius: 1rem;
   padding: 16px 18px;
-  background: var(--color-surface);
+  background: rgba(178, 59, 46, 0.05);
+  box-shadow: 0 2px 8px rgba(178, 59, 46, 0.06);
 }
 
-/* De-clutters the double-frame collision `.errorHeading:focus`'s ring below now surfaces
-   (UYELIK-04-UI-FIXES owner-review-ledger §2.1): the region's own 1.5px danger-red border
-   sits only 8-10px from the heading's 2px terracotta ring, two close warm tones reading as
-   "frame inside a frame" whenever the heading is genuinely focused. The fix steps the OUTER
-   border back to the same neutral `--color-border` every other bordered surface in this
-   design system already uses (`.card`, `.control`'s resting state) while focus sits on the
-   HEADING specifically — the ring is then the one prominent frame at the moment it matters,
-   and the danger border returns the instant that focus leaves. This changes only the OUTER
-   frame; `.errorHeading`'s ring is untouched, and the "error" meaning stays carried by the
-   always-red `.errorHeading` text + `role="alert"`, never by this border alone.
-
-   Scoped with `:has(.errorHeading:focus)`, NOT `:focus-within` (round-3 fix, review
-   `CODE88-M1`/`TEST88-I1`). The prior round's `:focus-within` selector fired on ANY focused
-   descendant, and its own comment's claim that the heading is the region's "only focusable
-   content" was wrong: `field.tsx`'s `FormErrorRegion` also renders real `<a href="#id">`
-   links in `.errorList` whenever field-level errors exist, and those links sit in normal Tab
-   order (unlike the heading's own `tabIndex={-1}`) — so a keyboard user tabbing from the
-   heading INTO that link list, the exact moment they are reviewing which fields are wrong,
-   saw the red border vanish and never return. `:has()` is Baseline-available and this repo
-   already ships it (`game-map.module.css`, `site-search.module.css:125`), so the selector
-   names the heading specifically instead of "anything focused inside". */
 .errorRegion:has(.errorHeading:focus) {
   border-color: var(--color-border);
 }
@@ -140,6 +104,7 @@
 .errorHeading {
   margin: 0 0 8px;
   font-size: 1.05rem;
+  font-weight: 700;
   color: var(--color-danger);
 }
 

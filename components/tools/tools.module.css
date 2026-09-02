@@ -314,6 +314,14 @@
   font-family: var(--font-body);
   font-size: 1rem;
   color: var(--color-ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.select:focus-visible,
+.input:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3.5px rgba(176, 82, 46, 0.16);
 }
 
 .addButton {
