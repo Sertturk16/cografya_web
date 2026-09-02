@@ -2,21 +2,10 @@
 
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Database,
-  ShieldCheck,
-} from "lucide-react";
+import { Database, ShieldCheck } from "lucide-react";
 
 export type V2PageScope =
-  | "home"
-  | "turkiye"
-  | "dunya"
-  | "deniz"
-  | "oyun"
-  | "deprem"
-  | "araclar"
-  | "kitaplar"
-  | "general";
+  "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar" | "general";
 
 interface SourceItem {
   id: string;
@@ -46,7 +35,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🌍",
       title: "Natural Earth Data 1:50m",
       license: "Kamu Malı (Public Domain)",
-      description: "199 dünya ülkesi sınır geometrileri, başkent koordinatları ve kıta jeomorfolojisi.",
+      description:
+        "199 dünya ülkesi sınır geometrileri, başkent koordinatları ve kıta jeomorfolojisi.",
       legalQuote: "Natural Earth Vector & Raster Map Data 2026",
       sourceUrl: "naturalearthdata.com",
     },
@@ -55,7 +45,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🌊",
       title: "Copernicus Marine Service (CMEMS)",
       license: "E.U. Copernicus",
-      description: "30 kıyı istasyonunda saatlik deniz suyu sıcaklığı (SST), dalga boyu ve akıntı telemetrisi.",
+      description:
+        "30 kıyı istasyonunda saatlik deniz suyu sıcaklığı (SST), dalga boyu ve akıntı telemetrisi.",
       legalQuote: "Generated using E.U. Copernicus Marine Service Information 2026",
       sourceUrl: "marine.copernicus.eu",
     },
@@ -64,7 +55,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🌡️",
       title: "Copernicus ERA5-Land (ECMWF)",
       license: "CC-BY-4.0",
-      description: "1991–2020 dönemi 12 aylık sıcaklık ve yağış normalleri reanaliz iklim modelleri.",
+      description:
+        "1991–2020 dönemi 12 aylık sıcaklık ve yağış normalleri reanaliz iklim modelleri.",
       legalQuote: "Generated using Copernicus Climate Change Service information 2026",
       sourceUrl: "cds.climate.copernicus.eu",
       doi: "10.24381/cds.68d2bb30",
@@ -74,7 +66,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "⚡",
       title: "AFAD Deprem Dairesi Başkanlığı",
       license: "T.C. Resmî",
-      description: "Türkiye ve çevre havzadaki eşzamanlı deprem sarsıntıları ve merkez üssü derinlik verileri.",
+      description:
+        "Türkiye ve çevre havzadaki eşzamanlı deprem sarsıntıları ve merkez üssü derinlik verileri.",
       sourceUrl: "deprem.afad.gov.tr",
     },
     {
@@ -82,7 +75,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "💨",
       title: "Copernicus CAMS & ACAG SatPM2.5",
       license: "Açık Veri",
-      description: "Uydu tabanlı yıllık ortalama yüzey PM2.5 hava kirliliği konsantrasyonu ve hava kalitesi.",
+      description:
+        "Uydu tabanlı yıllık ortalama yüzey PM2.5 hava kirliliği konsantrasyonu ve hava kalitesi.",
       legalQuote: "Contains modified Copernicus Atmosphere Monitoring Service information 2026",
       sourceUrl: "ads.atmosphere.copernicus.eu",
     },
@@ -110,7 +104,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🌦️",
       title: "Meteoroloji Genel Müdürlüğü (MGM)",
       license: "T.C. Resmî",
-      description: "İl merkezi rakımları, Köppen iklim sınıflandırması ve coğrafi koordinat katalogları.",
+      description:
+        "İl merkezi rakımları, Köppen iklim sınıflandırması ve coğrafi koordinat katalogları.",
       sourceUrl: "mgm.gov.tr",
     },
     {
@@ -118,7 +113,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🧭",
       title: "Harita Genel Müdürlüğü (HGM)",
       license: "Ulusal Kartografya",
-      description: "Türkiye fiziki coğrafyası, dağ zirveleri, akarsu havzaları ve göl yüzölçümleri.",
+      description:
+        "Türkiye fiziki coğrafyası, dağ zirveleri, akarsu havzaları ve göl yüzölçümleri.",
       sourceUrl: "harita.gov.tr",
     },
     {
@@ -142,7 +138,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "⛰️",
       title: "I. Türk Coğrafya Kongresi (1941)",
       license: "Resmî Coğrafi Tasnif",
-      description: "Türkiye'nin 7 Coğrafi Bölgesi ve 21 Coğrafi Bölümü resmî sınır ve morfolojik taksonomisi.",
+      description:
+        "Türkiye'nin 7 Coğrafi Bölgesi ve 21 Coğrafi Bölümü resmî sınır ve morfolojik taksonomisi.",
       sourceUrl: "cografya.org.tr • Türk Coğrafya Kurumu",
     },
   ],
@@ -176,7 +173,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🛰️",
       title: "USGS & NASA Earth Observatory",
       license: "Kamu Malı (US Gov)",
-      description: "Küresel kara alanı (148.9M km²), kıta jeomorfolojisi ve yeryüzü topografyası ekstremleri.",
+      description:
+        "Küresel kara alanı (148.9M km²), kıta jeomorfolojisi ve yeryüzü topografyası ekstremleri.",
       sourceUrl: "earthobservatory.nasa.gov • usgs.gov",
     },
     {
@@ -194,7 +192,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🌊",
       title: "Copernicus Marine Service (CMEMS)",
       license: "E.U. Copernicus (CC BY 4.0)",
-      description: "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı noktasında saatlik yüzey deniz suyu sıcaklığı (SST) ve dalga boyu modelleri.",
+      description:
+        "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı noktasında saatlik yüzey deniz suyu sıcaklığı (SST) ve dalga boyu modelleri.",
       legalQuote: "Generated using E.U. Copernicus Marine Service Information 2026",
       sourceUrl: "marine.copernicus.eu",
     },
@@ -203,7 +202,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🌀",
       title: "ECMWF Open Data Oşinografi & Rüzgâr",
       license: "CC BY 4.0",
-      description: "10 metre deniz yüzeyi rüzgâr hız vektörleri, rüzgâr dalgası ve açık deniz dalga yön simülasyonları.",
+      description:
+        "10 metre deniz yüzeyi rüzgâr hız vektörleri, rüzgâr dalgası ve açık deniz dalga yön simülasyonları.",
       legalQuote: "Generated using ECMWF Open Data information 2026",
       sourceUrl: "ecmwf.int",
     },
@@ -212,7 +212,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🗺️",
       title: "Harita Genel Müdürlüğü (HGM) & TÜİK",
       license: "Ulusal Kartografya",
-      description: "Türkiye toplam 8.333 km kıyı uzunluğu (Karadeniz: 1.701 km, Marmara: 1.441 km, Ege: 3.484 km, Akdeniz: 1.707 km) ve ada sınırları.",
+      description:
+        "Türkiye toplam 8.333 km kıyı uzunluğu (Karadeniz: 1.701 km, Marmara: 1.441 km, Ege: 3.484 km, Akdeniz: 1.707 km) ve ada sınırları.",
       sourceUrl: "harita.gov.tr • tuik.gov.tr",
     },
     {
@@ -220,7 +221,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "⚓",
       title: "Seyir, Hidrografi ve Oşinografi Dairesi (SHOD)",
       license: "T.C. Deniz Kuvvetleri",
-      description: "Türkiye denizleri derinlik batimetrisi, İstanbul ve Çanakkale Boğazları çift tabakalı akıntı rejimleri ve seyir güvenliği.",
+      description:
+        "Türkiye denizleri derinlik batimetrisi, İstanbul ve Çanakkale Boğazları çift tabakalı akıntı rejimleri ve seyir güvenliği.",
       sourceUrl: "shodb.gov.tr",
     },
     {
@@ -228,7 +230,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🏛️",
       title: "ODTÜ Deniz Bilimleri Enstitüsü (IMS-METU)",
       license: "Akademik Araştırma",
-      description: "Marmara ve Akdeniz su kütlesi tabakalaşması, biyojeokimyasal parametreler, oksijen ve tuzluluk profilleri.",
+      description:
+        "Marmara ve Akdeniz su kütlesi tabakalaşması, biyojeokimyasal parametreler, oksijen ve tuzluluk profilleri.",
       sourceUrl: "ims.metu.edu.tr",
     },
     {
@@ -236,7 +239,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🧭",
       title: "MEB Coğrafya & Sırrı Erinç Jeomorfolojisi",
       license: "Akademik Kaynakça",
-      description: "Türkiye kıyı tipleri (Boyuna, Enine, Ria, Dalmaçya, Limanlı, Kalanklı), falezler, lagünler ve kıyı dinamikleri.",
+      description:
+        "Türkiye kıyı tipleri (Boyuna, Enine, Ria, Dalmaçya, Limanlı, Kalanklı), falezler, lagünler ve kıyı dinamikleri.",
       sourceUrl: "mufredat.meb.gov.tr",
     },
   ],
@@ -246,7 +250,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🎓",
       title: "MEB Coğrafya Dersi Öğretim Programı",
       license: "MEB / TTKB",
-      description: "9-12. sınıf coğrafya kazanımları, harita becerileri ve mekânsal algılama standartları.",
+      description:
+        "9-12. sınıf coğrafya kazanımları, harita becerileri ve mekânsal algılama standartları.",
       sourceUrl: "mufredat.meb.gov.tr",
     },
     {
@@ -272,7 +277,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "⚡",
       title: "T.C. İçişleri Bakanlığı AFAD (TDVMS)",
       license: "T.C. Resmî Açık Veri",
-      description: "Türkiye Deprem Veri Merkezi Sistemi (TDVMS) üzerinden anlık deprem merkez üssü, odak derinliği ve büyüklük (ML/Mw) kayıtları.",
+      description:
+        "Türkiye Deprem Veri Merkezi Sistemi (TDVMS) üzerinden anlık deprem merkez üssü, odak derinliği ve büyüklük (ML/Mw) kayıtları.",
       legalQuote: "AFAD TDVMS Yönetmeliği, RG 28.08.2015/29459, m.9/4",
       sourceUrl: "deprem.afad.gov.tr",
     },
@@ -281,7 +287,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🌋",
       title: "MTA Türkiye Diri Fay Haritası",
       license: "MTA Resmî Kartografya",
-      description: "1:1.250.000 Ölçekli Türkiye Diri Fay Haritası (Emre et al., 2013). Kuzey Anadolu (KAFZ), Doğu Anadolu (DAFZ) ve Batı Anadolu (BAFS) diri fay hatları jeodezik koordinatları.",
+      description:
+        "1:1.250.000 Ölçekli Türkiye Diri Fay Haritası (Emre et al., 2013). Kuzey Anadolu (KAFZ), Doğu Anadolu (DAFZ) ve Batı Anadolu (BAFS) diri fay hatları jeodezik koordinatları.",
       sourceUrl: "mta.gov.tr",
     },
     {
@@ -289,7 +296,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🛡️",
       title: "Resmî Sismik Uyarı & Yasal Bildirim",
       license: "AFAD Yasal Bildirim",
-      description: "Bu sayfada sunulan veriler AFAD'ın yayımladığı gerçekleşmiş deprem kayıtlarıdır. Erken uyarı sistemi değildir ve gelecek depremler hakkında bilgi vermez.",
+      description:
+        "Bu sayfada sunulan veriler AFAD'ın yayımladığı gerçekleşmiş deprem kayıtlarıdır. Erken uyarı sistemi değildir ve gelecek depremler hakkında bilgi vermez.",
       sourceUrl: "afad.gov.tr",
     },
   ],
@@ -307,7 +315,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "📐",
       title: "Jeodezik Büyük Daire & L'Huilier Algoritması",
       license: "Açık Matematik",
-      description: "Küresel yüzeyde en kısa mesafe ve küresel açı fazlalığı (Spherical Excess) ile alan hesaplama.",
+      description:
+        "Küresel yüzeyde en kısa mesafe ve küresel açı fazlalığı (Spherical Excess) ile alan hesaplama.",
       sourceUrl: "cografya.app/v2/araclar",
     },
     {
@@ -321,28 +330,34 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
   ],
   kitaplar: [
     {
-      id: "osym-soru",
+      id: "cografya-gurmesi",
       icon: "📖",
-      title: "ÖSYM YKS Coğrafya Soru Havuzu Analitiği",
-      license: "ÖSYM Formatı",
-      description: "AYT ve TYT Coğrafya sınavlarında çıkmış soruların kazanım ve konu dağılım standartları.",
-      sourceUrl: "osym.gov.tr",
-    },
-    {
-      id: "meb-kitap",
-      icon: "📚",
-      title: "MEB Ortaöğretim Coğrafya 9-12 Ders Kitapları",
-      license: "MEB Yayınları",
-      description: "Milli Eğitim Bakanlığı onaylı müfredat kazanımları ve kavram haritaları.",
-      sourceUrl: "eba.gov.tr",
-    },
-    {
-      id: "murat-senocak",
-      icon: "✍️",
-      title: "Coğrafya Platformu Yayınları & Murat Şenocak",
+      title: "Coğrafya Gurmesi Yayınları",
       license: "Telif Hakları Saklıdır",
-      description: "AYT Coğrafya Konu Özetli Branş Denemeleri soru yazımı ve video çözüm telifleri.",
-      sourceUrl: "cografya.app/v2/kitaplar",
+      description:
+        "AYT Coğrafya Konu Özetli Branş Denemeleri (Murat Karagöz, Murat Çakır). Soru metinleri ve video çözümleri yayıncı kuruluşa aittir.",
+      legalQuote:
+        "Video çözümler Coğrafya Gurmesi kanalına, kitap Coğrafya Gurmesi Yayınları'na aittir.",
+      sourceUrl: "cografyagurmesi.com • youtube.com/@cografyagurmesi",
+    },
+    {
+      id: "youtube-api",
+      icon: "▶️",
+      title: "YouTube Player API & Google Developers",
+      license: "YouTube Terms of Service",
+      description:
+        "Video çözümler YouTube IFrame Player API üzerinden oynatılmaktadır. YouTube ve YouTube logosu Google LLC tescilli markasıdır.",
+      legalQuote: "YouTube API Services Developer Policies (III.E.4 Branding Guidelines)",
+      sourceUrl: "developers.google.com/youtube",
+    },
+    {
+      id: "meb-mufredat",
+      icon: "🎓",
+      title: "MEB & ÖSYM Coğrafya Müfredatı",
+      license: "Resmî Eğitim Standardı",
+      description:
+        "Milli Eğitim Bakanlığı 9-12. sınıf Coğrafya dersi öğretim programı ve ÖSYM AYT/TYT Coğrafya kazanım havuzu.",
+      sourceUrl: "mufredat.meb.gov.tr • osym.gov.tr",
     },
   ],
   general: [
@@ -378,10 +393,7 @@ interface V2SourcesSectionProps {
   className?: string;
 }
 
-export function V2SourcesSection({
-  scope = "home",
-  className = "",
-}: V2SourcesSectionProps) {
+export function V2SourcesSection({ scope = "home", className = "" }: V2SourcesSectionProps) {
   const sources = SOURCES_BY_PAGE[scope] || SOURCES_BY_PAGE.home;
 
   return (
@@ -404,7 +416,8 @@ export function V2SourcesSection({
             Bu Sayfada Kullanılan Resmî Veri Setleri &amp; Bilimsel Künye
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Bu sayfada sunulan tüm coğrafi, meteorolojik, sismik, oşinografik ve demografik veriler uluslararası ve ulusal resmî sağlayıcılar tarafından lisanslanmıştır.
+            Bu sayfada sunulan tüm coğrafi, meteorolojik, sismik, oşinografik ve demografik veriler
+            uluslararası ve ulusal resmî sağlayıcılar tarafından lisanslanmıştır.
           </p>
         </div>
         <Badge
@@ -432,9 +445,7 @@ export function V2SourcesSection({
                   {src.license}
                 </Badge>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                {src.description}
-              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">{src.description}</p>
               {src.legalQuote && (
                 <div className="p-2 rounded-xl bg-card border border-border/40 text-[10px] text-muted-foreground font-mono leading-tight">
                   &ldquo;{src.legalQuote}&rdquo;

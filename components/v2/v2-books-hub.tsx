@@ -2,331 +2,170 @@
 
 import * as React from "react";
 import Image from "next/image";
+import { Link } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/routing";
+import type { BookListItem } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   BookOpen,
-  Play,
-  CheckCircle2,
-  Bookmark,
-  Sparkles,
-  Award,
   Video,
-  Clock,
+  ArrowRight,
+  Sparkles,
   HelpCircle,
-  FileText,
-  GraduationCap,
-  ChevronRight,
-  Share2,
-  Star,
   Layers,
-  Check,
+  Search,
+  Building,
+  GraduationCap,
 } from "lucide-react";
 
-interface QuestionData {
-  number: number;
-  topic: string;
-  duration: string;
-  youtubeId: string;
-  solved: boolean;
-  notes?: string;
+interface V2BooksHubProps {
+  books: BookListItem[];
+  locale: Locale;
 }
 
-interface DenemeData {
-  id: number;
-  title: string;
-  questionCount: number;
-  totalDuration: string;
-  questions: QuestionData[];
+function slugForLocale(book: BookListItem, locale: Locale): string {
+  return locale === "en" ? book.slugEn : book.slugTr;
 }
 
-const SAMPLE_DENEMELER: DenemeData[] = Array.from({ length: 20 }, (_, i) => {
-  const dNum = i + 1;
-  return {
-    id: dNum,
-    title: `${dNum}. AYT Branş Denemesi`,
-    questionCount: 6,
-    totalDuration: "14 dk 30 sn",
-    questions: [
-      { number: 1, topic: "Doğal Sistemler & İklim Tipleri", duration: "2:15", youtubeId: "dQw4w9WgXcQ", solved: i === 0 },
-      { number: 2, topic: "Türkiye'nin Yerşekilleri ve Jeomorfoloji", duration: "2:40", youtubeId: "dQw4w9WgXcQ", solved: i === 0 },
-      { number: 3, topic: "Beşeri Sistemler: Nüfus & Göç Politikaları", duration: "1:55", youtubeId: "dQw4w9WgXcQ", solved: false },
-      { number: 4, topic: "Ekonomik Faaliyetler & Türkiye'de Tarım", duration: "2:30", youtubeId: "dQw4w9WgXcQ", solved: false },
-      { number: 5, topic: "Bölgeler ve Ülkeler: Küresel Ticaret Ağları", duration: "2:50", youtubeId: "dQw4w9WgXcQ", solved: false },
-      { number: 6, topic: "Çevre ve Toplum: Doğal Afetler & Sürdürülebilirlik", duration: "2:20", youtubeId: "dQw4w9WgXcQ", solved: false },
-    ],
-  };
-});
+export function V2BooksHub({ books, locale }: V2BooksHubProps) {
+  const [searchQuery, setSearchQuery] = React.useState("");
 
-export function V2BooksHub() {
-  const [selectedDenemeId, setSelectedDenemeId] = React.useState<number>(1);
-  const [selectedQuestionNumber, setSelectedQuestionNumber] = React.useState<number>(1);
-  const [bookmarkedQuestions, setBookmarkedQuestions] = React.useState<Set<string>>(new Set());
-  const [solvedQuestions, setSolvedQuestions] = React.useState<Set<string>>(new Set(["1-1", "1-2"]));
-  const [showNoteInput, setShowNoteInput] = React.useState<boolean>(false);
-  const [userNote, setUserNote] = React.useState<string>("");
-
-  const currentDeneme = SAMPLE_DENEMELER.find((d) => d.id === selectedDenemeId) || SAMPLE_DENEMELER[0];
-  const currentQuestion =
-    currentDeneme?.questions.find((q) => q.number === selectedQuestionNumber) || currentDeneme?.questions[0];
-
-  const qKey = `${selectedDenemeId}-${selectedQuestionNumber}`;
-  const isBookmarked = bookmarkedQuestions.has(qKey);
-  const isSolved = solvedQuestions.has(qKey);
-
-  const toggleSolved = () => {
-    setSolvedQuestions((prev) => {
-      const next = new Set(prev);
-      if (next.has(qKey)) next.delete(qKey);
-      else next.add(qKey);
-      return next;
-    });
-  };
-
-  const toggleBookmark = () => {
-    setBookmarkedQuestions((prev) => {
-      const next = new Set(prev);
-      if (next.has(qKey)) next.delete(qKey);
-      else next.add(qKey);
-      return next;
-    });
-  };
+  const filteredBooks = React.useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return books;
+    return books.filter(
+      (b) =>
+        b.titleTr.toLowerCase().includes(q) ||
+        b.publisherName.toLowerCase().includes(q) ||
+        (b.examTrack && b.examTrack.toLowerCase().includes(q)),
+    );
+  }, [books, searchQuery]);
 
   return (
-    <div className="space-y-8">
-      {/* 1. FEATURED BOOK HERO SHOWCASE */}
-      <div className="rounded-3xl border border-primary/30 bg-gradient-to-b from-card via-card to-muted/40 p-6 sm:p-10 shadow-xl space-y-8">
-        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-          {/* 3D Book Cover Visual */}
-          <div className="shrink-0 relative group">
-            <div className="w-52 sm:w-64 aspect-[3/4] rounded-2xl overflow-hidden border border-border/80 shadow-2xl bg-gradient-to-br from-[#1e293b] via-[#0f172a] to-[#1e1b4b] p-6 flex flex-col justify-between text-white relative transition-transform duration-300 group-hover:scale-105 group-hover:shadow-primary/20">
-              <div className="space-y-1">
-                <Badge variant="primary" size="sm" className="bg-primary/90 text-white font-mono text-[10px]">
-                  ÖSYM / YKS 2026
-                </Badge>
-                <h3 className="font-heading font-extrabold text-2xl tracking-tight text-white mt-2">
-                  AYT Coğrafya
-                </h3>
-                <p className="text-xs text-slate-300 font-medium">Konu Özetli Branş Denemeleri</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-xs border border-white/10 text-[11px] space-y-1">
-                  <span className="text-amber-300 font-bold block">20 Branş Denemesi</span>
-                  <span className="text-slate-200">120 Video Çözümlü Soru</span>
-                </div>
-                <div className="text-[10px] text-slate-400 font-mono">
-                  Yazar: Murat Şenocak
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Book Information & Metadata */}
-          <div className="space-y-5 max-w-2xl text-center lg:text-left">
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
-              <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
-                Resmi Yayın &amp; Video Çözüm
-              </Badge>
-              <Badge variant="secondary" size="sm">
-                MEB Coğrafya 9-12 Müfredatı
-              </Badge>
-              <Badge variant="outline" size="sm" className="font-mono text-xs">
-                ISBN 978-605-0000-00
-              </Badge>
-            </div>
-
-            <div>
-              <h2 className="font-heading text-3xl sm:text-4xl font-extrabold text-[var(--color-primary-dark,#7e3a1e)] tracking-tight">
-                AYT Coğrafya Konu Özetli Branş Denemeleri
-              </h2>
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mt-2">
-                Her denemede ÖSYM soru kalıplarına tam uyumlu 6 soru ve her sorunun alanında uzman yazar tarafından yapılmış ayrıntılı video analizi.
-              </p>
-            </div>
-
-            {/* Quick Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-              <div className="p-3 rounded-2xl bg-card border border-border">
-                <span className="font-heading text-xl font-bold text-primary block">20</span>
-                <span className="text-[11px] text-muted-foreground font-medium">Toplam Deneme</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-card border border-border">
-                <span className="font-heading text-xl font-bold text-secondary block">120</span>
-                <span className="text-[11px] text-muted-foreground font-medium">Özgün Soru</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-card border border-border">
-                <span className="font-heading text-xl font-bold text-accent block">5+ Saat</span>
-                <span className="text-[11px] text-muted-foreground font-medium">Video Anlatım</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-card border border-border">
-                <span className="font-heading text-xl font-bold text-purple-600 block">%100</span>
-                <span className="text-[11px] text-muted-foreground font-medium">Video Çözümlü</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. INTERACTIVE VIDEO SOLUTION BENCH & PLAYER */}
-      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm" icon={<Video className="size-3.5" />}>
-                Video Çözüm Tezgahı v2
-              </Badge>
-              <span className="text-xs text-muted-foreground">Soru Bazlı İnteraktif Oynatıcı</span>
-            </div>
-            <h3 className="font-heading text-2xl font-bold text-foreground mt-1">
-              {currentDeneme?.title} &bull; {selectedQuestionNumber}. Soru Çözümü
-            </h3>
-          </div>
-
+    <section aria-labelledby="v2-books-catalogue-heading" className="space-y-6">
+      {/* SECTION HEADER WITH SEARCH */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+        <div>
           <div className="flex items-center gap-2">
-            <Button
-              variant={isSolved ? "secondary" : "outline"}
-              size="sm"
-              onClick={toggleSolved}
-              leftIcon={<CheckCircle2 className={`size-3.5 ${isSolved ? "text-emerald-600" : ""}`} />}
-            >
-              {isSolved ? "Çözüldü Olarak İşaretlendi" : "Çözüldü İşaretle"}
-            </Button>
-            <Button
-              variant={isBookmarked ? "primary" : "outline"}
-              size="sm"
-              onClick={toggleBookmark}
-              leftIcon={<Bookmark className={`size-3.5 ${isBookmarked ? "fill-current" : ""}`} />}
-            >
-              {isBookmarked ? "Favorilerde" : "Favoriye Ekle"}
-            </Button>
+            <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
+              Resmî Yayın Kataloğu
+            </Badge>
+            <span className="text-xs text-muted-foreground font-mono">
+              {books.length} Kayıtlı Yayın
+            </span>
           </div>
+          <h2
+            id="v2-books-catalogue-heading"
+            className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-1"
+          >
+            Video Çözümlü Coğrafya Deneme Kitapları
+          </h2>
         </div>
 
-        {/* Deneme Selector Strip */}
-        <div className="space-y-2">
-          <span className="text-xs font-semibold text-muted-foreground block">Deneme Seçimi (1 - 20):</span>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
-            {SAMPLE_DENEMELER.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => {
-                  setSelectedDenemeId(d.id);
-                  setSelectedQuestionNumber(1);
-                }}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  selectedDenemeId === d.id
-                    ? "bg-primary text-white shadow-md shadow-primary/20 ring-1 ring-primary/40 scale-105"
-                    : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                {d.id}. Deneme
-              </button>
-            ))}
+        {/* Filter / Search Bar */}
+        {books.length > 1 && (
+          <div className="relative w-full sm:w-72">
+            <Search className="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Kitap veya yayınevi ara..."
+              className="w-full h-10 pl-10 pr-4 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all"
+            />
           </div>
-        </div>
-
-        {/* Video Player + Questions List Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
-          {/* Video Player Frame */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="w-full aspect-video rounded-2xl overflow-hidden border border-border bg-black shadow-lg relative flex items-center justify-center">
-              {/* Responsive Video Placeholder / Embed Interface */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-between p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <Badge variant="primary" size="sm" className="bg-red-600 text-white font-mono text-[10px]">
-                    YouTube HD
-                  </Badge>
-                  <span className="text-xs font-mono bg-black/60 px-2.5 py-1 rounded-lg">
-                    Süre: {currentQuestion?.duration}
-                  </span>
-                </div>
-
-                <div className="flex flex-col items-center justify-center space-y-3">
-                  <div className="size-16 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl hover:scale-110 hover:bg-red-600 transition-all cursor-pointer">
-                    <Play className="size-8 fill-current ml-1" />
-                  </div>
-                  <span className="text-xs font-medium text-slate-200">Video Çözümü Başlat</span>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-xs text-red-400 font-semibold uppercase tracking-wider block">
-                    {currentQuestion?.topic}
-                  </span>
-                  <h4 className="font-heading font-bold text-lg text-white">
-                    {currentDeneme?.title} - {selectedQuestionNumber}. Soru Ayrıntılı Çözümü
-                  </h4>
-                </div>
-              </div>
-            </div>
-
-            {/* Question Topic & Acquisition Badge */}
-            <div className="p-4 rounded-2xl border border-border bg-card flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" size="sm">
-                  Kazanım Konusu
-                </Badge>
-                <span className="font-semibold text-foreground">{currentQuestion?.topic}</span>
-              </div>
-              <span className="text-muted-foreground font-mono">ÖSYM Çıkmış Soru Paraleli</span>
-            </div>
-          </div>
-
-          {/* Question List in Selected Deneme */}
-          <div className="space-y-3">
-            <h4 className="font-heading font-bold text-sm text-foreground flex items-center justify-between">
-              <span>Deneme Soruları (6 Soru)</span>
-              <span className="text-xs text-muted-foreground font-normal">Tıkla &amp; İzle</span>
-            </h4>
-
-            <div className="space-y-2">
-              {currentDeneme?.questions.map((q) => {
-                const isActive = q.number === selectedQuestionNumber;
-                const itemKey = `${selectedDenemeId}-${q.number}`;
-                const itemSolved = solvedQuestions.has(itemKey);
-
-                return (
-                  <button
-                    key={q.number}
-                    type="button"
-                    onClick={() => setSelectedQuestionNumber(q.number)}
-                    className={`w-full p-3 rounded-2xl border text-left transition-all duration-200 flex items-center justify-between ${
-                      isActive
-                        ? "border-primary bg-primary/10 shadow-xs ring-1 ring-primary/40"
-                        : "border-border/80 bg-card/60 hover:bg-muted/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`size-8 rounded-xl flex items-center justify-center font-heading font-bold text-xs ${
-                          isActive
-                            ? "bg-primary text-white"
-                            : itemSolved
-                            ? "bg-emerald-500/20 text-emerald-600"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {itemSolved ? <Check className="size-4" /> : q.number}
-                      </span>
-                      <div className="truncate max-w-[170px] sm:max-w-[200px]">
-                        <span className="font-semibold text-xs text-foreground block truncate">
-                          {q.number}. Soru: {q.topic}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Clock className="size-3" /> {q.duration}
-                        </span>
-                      </div>
-                    </div>
-
-                    <ChevronRight className={`size-4 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
-    </div>
+
+      {/* BOOKS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {filteredBooks.map((book) => {
+          return (
+            <Link
+              key={book.slugTr}
+              href={{
+                pathname: "/v2/kitaplar/[slug]",
+                params: { slug: slugForLocale(book, locale) },
+              }}
+              className="group relative flex flex-col sm:flex-row gap-6 p-6 rounded-3xl border border-border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5"
+            >
+              {/* Book Cover Image */}
+              <div className="relative w-32 sm:w-36 aspect-[3/4] rounded-2xl overflow-hidden shadow-md border border-border/80 shrink-0 bg-muted group-hover:shadow-primary/20 transition-shadow">
+                {book.coverImagePath ? (
+                  <Image
+                    src={book.coverImagePath}
+                    alt={`${book.titleTr} kapak görseli`}
+                    fill
+                    sizes="(max-width: 40rem) 128px, 144px"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-gradient-to-br from-primary/10 via-card to-muted">
+                    <BookOpen className="size-8 text-primary mb-2" />
+                    <span className="text-[10px] font-bold text-foreground line-clamp-3">
+                      {book.titleTr}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Book Details */}
+              <div className="flex-1 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="primary" size="sm">
+                      {book.examTrack || "AYT / TYT"}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                      <Building className="size-3 text-muted-foreground/70" />
+                      {book.publisherName}
+                    </span>
+                  </div>
+
+                  <h3 className="font-heading text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
+                    {book.titleTr}
+                  </h3>
+                </div>
+
+                {/* Badges & Action Link */}
+                <div className="space-y-4 pt-2 border-t border-border/60">
+                  <div className="flex items-center gap-2 flex-wrap text-xs">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-semibold">
+                      <Video className="size-3.5" />
+                      {book.videoCount} Video Çözüm
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary/10 text-secondary font-semibold font-mono">
+                      <HelpCircle className="size-3.5" />
+                      {book.questionCount} Soru
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs font-semibold text-primary group-hover:translate-x-1 transition-transform">
+                    <span>Video Çözüm Tezgâhına Git</span>
+                    <ArrowRight className="size-4 ml-1" />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {filteredBooks.length === 0 && (
+        <div className="p-12 text-center rounded-3xl border border-dashed border-border bg-card/50 space-y-3">
+          <BookOpen className="size-10 text-muted-foreground mx-auto" />
+          <h4 className="font-heading font-bold text-base text-foreground">
+            Aramanızla eşleşen kitap bulunamadı
+          </h4>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            Farklı bir arama terimi deneyebilir veya arama filtresini temizleyebilirsiniz.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => setSearchQuery("")}>
+            Aramayı Temizle
+          </Button>
+        </div>
+      )}
+    </section>
   );
 }

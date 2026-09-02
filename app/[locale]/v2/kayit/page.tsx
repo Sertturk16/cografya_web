@@ -7,6 +7,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2RegisterCard } from "@/components/v2/v2-register-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { V2Footer } from "@/components/v2/v2-footer";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import { Badge } from "@/components/ui/badge";
 import { Home, ChevronRight, UserPlus, Sparkles, ShieldCheck } from "lucide-react";
@@ -26,6 +27,10 @@ export async function generateMetadata({ params }: V2RegisterPageProps): Promise
     alternates: {
       canonical: "/v2/kayit",
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 
@@ -35,42 +40,56 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
   const provinces = await getProvincesResilient();
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-24">
-      {/* V2 Header */}
-      <V2Header />
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+      <div>
+        {/* V2 Header */}
+        <V2Header />
 
-      {/* Live Telemetry Ticker */}
-      <V2LiveTicker />
+        {/* Live Telemetry Ticker */}
+        <V2LiveTicker />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-14">
-        {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Link href="/v2" className="flex items-center gap-1 hover:text-foreground transition-colors">
-            <Home className="size-3.5" />
-            <span>Ana Sayfa</span>
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">Üye Ol v2</span>
-        </nav>
+        <main
+          id="main-content"
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14"
+        >
+          {/* Breadcrumb Navigation */}
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Link
+              href="/v2"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <span className="text-foreground font-semibold">Üye Ol v2</span>
+          </nav>
 
-        {/* 2-Column Auth Workbench: Form on Left/Center, Benefits Showcase on Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Register Form Container */}
-          <div className="lg:col-span-6 xl:col-span-5 w-full">
-            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl">
-              <V2RegisterCard locale={locale} provinces={provinces} />
+          {/* 2-Column Auth Workbench: Form on Left/Center, Benefits Showcase on Right */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Register Form Container */}
+            <div className="lg:col-span-6 xl:col-span-5 w-full">
+              <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl">
+                <V2RegisterCard locale={locale} provinces={provinces} />
+              </div>
+            </div>
+
+            {/* Value Proposition & Feature Showcase */}
+            <div className="lg:col-span-6 xl:col-span-7 h-full">
+              <V2AuthBenefitsPlate mode="register" />
             </div>
           </div>
 
-          {/* Value Proposition & Feature Showcase */}
-          <div className="lg:col-span-6 xl:col-span-7 h-full">
-            <V2AuthBenefitsPlate mode="register" />
-          </div>
-        </div>
+          {/* SECTION: ACADEMIC & SCIENTIFIC DATA SOURCES (KAYNAKÇA) */}
+          <V2SourcesSection scope="general" />
+        </main>
+      </div>
 
-        {/* SECTION: ACADEMIC & SCIENTIFIC DATA SOURCES (KAYNAKÇA) */}
-        <V2SourcesSection scope="general" />
-      </main>
+      {/* Modern V2 Footer */}
+      <V2Footer />
     </div>
   );
 }
