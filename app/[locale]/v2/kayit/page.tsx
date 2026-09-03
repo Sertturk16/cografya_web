@@ -9,8 +9,7 @@ import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
 import { getProvincesResilient } from "@/lib/api/provinces";
-import { Badge } from "@/components/ui/badge";
-import { Home, ChevronRight, UserPlus, Sparkles, ShieldCheck } from "lucide-react";
+import { Home, ChevronRight } from "lucide-react";
 
 export const revalidate = 86400;
 

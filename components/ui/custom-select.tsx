@@ -42,7 +42,7 @@ export function CustomSelect({
 
   const selectedOption = React.useMemo(
     () => options.find((opt) => opt.value === value),
-    [options, value]
+    [options, value],
   );
 
   const filteredOptions = React.useMemo(() => {
@@ -52,17 +52,14 @@ export function CustomSelect({
       (opt) =>
         opt.label.toLowerCase().includes(query) ||
         (opt.description && opt.description.toLowerCase().includes(query)) ||
-        opt.value.toLowerCase().includes(query)
+        opt.value.toLowerCase().includes(query),
     );
   }, [options, searchQuery, searchable]);
 
   // Outside click listener
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
@@ -88,6 +85,8 @@ export function CustomSelect({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+
   const handleSelect = (val: string) => {
     onChange(val);
     setIsOpen(false);
@@ -98,6 +97,7 @@ export function CustomSelect({
     <div ref={containerRef} className={cn("relative w-full", className)}>
       {/* Trigger Button */}
       <button
+        ref={triggerRef}
         id={id}
         type="button"
         aria-haspopup="listbox"
@@ -110,13 +110,13 @@ export function CustomSelect({
           isOpen
             ? "border-primary ring-3 ring-primary/20"
             : "border-border hover:border-primary/50 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
-          disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+          disabled && "opacity-50 cursor-not-allowed pointer-events-none",
         )}
       >
         <span
           className={cn(
             "truncate",
-            selectedOption ? "text-foreground font-medium" : "text-muted-foreground"
+            selectedOption ? "text-foreground font-medium" : "text-muted-foreground",
           )}
         >
           {selectedOption ? selectedOption.label : placeholder}
@@ -124,14 +124,22 @@ export function CustomSelect({
         <ChevronDown
           className={cn(
             "size-4 text-muted-foreground shrink-0 transition-transform duration-200",
-            isOpen && "rotate-180 text-primary"
+            isOpen && "rotate-180 text-primary",
           )}
         />
       </button>
 
       {/* Dropdown Popup Menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 w-full z-50 rounded-2xl border border-border bg-white dark:bg-card text-foreground shadow-2xl overflow-hidden py-1">
+        <div
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setIsOpen(false);
+              triggerRef.current?.focus();
+            }
+          }}
+          className="absolute top-full left-0 mt-1.5 w-full z-50 rounded-2xl border border-border bg-white dark:bg-card text-foreground shadow-2xl overflow-hidden py-1"
+        >
           {searchable && (
             <div className="p-2 border-b border-border/80">
               <div className="relative flex items-center">
@@ -142,16 +150,14 @@ export function CustomSelect({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={searchPlaceholder}
+                  aria-label={searchPlaceholder || "Seçeneklerde ara"}
                   className="w-full h-8 pl-8 pr-3 rounded-lg bg-muted/60 border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-150"
                 />
               </div>
             </div>
           )}
 
-          <div
-            role="listbox"
-            className="max-h-56 overflow-y-auto p-1 space-y-0.5 scrollbar-thin"
-          >
+          <div role="listbox" className="max-h-56 overflow-y-auto p-1 space-y-0.5 scrollbar-thin">
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">
                 Sonuç bulunamadı.
@@ -163,19 +169,24 @@ export function CustomSelect({
                   <div
                     key={opt.value}
                     role="option"
+                    tabIndex={0}
                     aria-selected={isSelected}
                     onClick={() => handleSelect(opt.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleSelect(opt.value);
+                      }
+                    }}
                     className={cn(
-                      "px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors duration-100 font-medium select-none",
+                      "px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors duration-100 font-medium select-none outline-none focus-visible:bg-primary/15 focus-visible:text-primary",
                       isSelected
                         ? "bg-primary/15 text-primary font-bold"
-                        : "text-foreground hover:bg-primary/10 hover:text-primary"
+                        : "text-foreground hover:bg-primary/10 hover:text-primary",
                     )}
                   >
                     <span className="truncate">{opt.label}</span>
-                    {isSelected && (
-                      <Check className="size-3.5 text-primary shrink-0 ml-2" />
-                    )}
+                    {isSelected && <Check className="size-3.5 text-primary shrink-0 ml-2" />}
                   </div>
                 );
               })

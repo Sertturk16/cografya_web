@@ -15,21 +15,16 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm hover:shadow",
         emerald:
-          "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow",
-        sky:
-          "bg-sky-600 text-white hover:bg-sky-700 shadow-sm hover:shadow",
-        teal:
-          "bg-teal-600 text-white hover:bg-teal-700 shadow-sm hover:shadow",
+          "bg-[var(--color-secondary,#4f6d30)] text-white hover:bg-[var(--color-secondary,#4f6d30)]/90 shadow-sm hover:shadow",
+        sky: "bg-[var(--color-info,#276b70)] text-white hover:bg-[var(--color-info,#276b70)]/90 shadow-sm hover:shadow",
+        teal: "bg-[var(--color-accent,#276b70)] text-white hover:bg-[var(--color-accent,#276b70)]/90 shadow-sm hover:shadow",
         amber:
-          "bg-amber-600 text-white hover:bg-amber-700 shadow-sm hover:shadow",
+          "bg-[var(--color-warning,#c9860f)] text-white hover:bg-[var(--color-warning,#c9860f)]/90 shadow-sm hover:shadow",
         outline:
           "border border-border bg-card text-foreground hover:bg-muted hover:border-primary/50 shadow-xs",
-        ghost:
-          "text-foreground hover:bg-muted hover:text-foreground",
-        destructive:
-          "bg-destructive text-white hover:bg-destructive/90 shadow-sm",
-        link:
-          "text-primary underline-offset-4 hover:underline p-0 h-auto font-medium shadow-none active:scale-100",
+        ghost: "text-foreground hover:bg-muted hover:text-foreground",
+        destructive: "bg-destructive text-white hover:bg-destructive/90 shadow-sm",
+        link: "text-primary underline-offset-4 hover:underline p-0 h-auto font-medium shadow-none active:scale-100",
       },
       size: {
         sm: "h-8 px-3 text-xs gap-1.5 rounded-md",
@@ -45,12 +40,11 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
+  },
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -69,7 +63,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <button
@@ -87,7 +81,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {!isLoading && rightIcon}
       </button>
     );
-  }
+  },
 );
 Button.displayName = "Button";
 

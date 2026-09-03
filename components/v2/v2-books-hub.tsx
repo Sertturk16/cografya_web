@@ -7,17 +7,7 @@ import type { Locale } from "@/i18n/routing";
 import type { BookListItem } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  BookOpen,
-  Video,
-  ArrowRight,
-  Sparkles,
-  HelpCircle,
-  Layers,
-  Search,
-  Building,
-  GraduationCap,
-} from "lucide-react";
+import { BookOpen, Video, ArrowRight, HelpCircle, Search, Building } from "lucide-react";
 
 interface V2BooksHubProps {
   books: BookListItem[];

@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  ShieldCheck,
-  Building2,
-  PhoneCall,
-  Radio,
-} from "lucide-react";
+import { ShieldCheck, Building2, PhoneCall, Radio } from "lucide-react";
 
 export function V2EarthquakePreparedness() {
   return (
@@ -18,7 +13,9 @@ export function V2EarthquakePreparedness() {
             <Badge variant="primary" size="sm" icon={<ShieldCheck className="size-3.5" />}>
               Afet Bilinci &amp; Güvenlik
             </Badge>
-            <span className="text-xs text-muted-foreground">AFAD Temel Afet Bilinci Standartları</span>
+            <span className="text-xs text-muted-foreground">
+              AFAD Temel Afet Bilinci Standartları
+            </span>
           </div>
           <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
             Deprem Öncesi, Sırası ve Sonrası Rehberi
@@ -33,7 +30,8 @@ export function V2EarthquakePreparedness() {
             <span>Deprem Öncesi Hazırlık</span>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Evinizdeki ağır eşyaları sabitleyin, deprem çantası hazırlayın ve aile acil durum toplanma alanınızı e-Devlet üzerinden önceden öğrenin.
+            Evindeki ağır eşyaları sabitle, deprem çantası hazırla ve aile acil durum toplanma
+            alanını e-Devlet üzerinden önceden öğren.
           </p>
         </div>
 
@@ -43,7 +41,8 @@ export function V2EarthquakePreparedness() {
             <span>Deprem Anında: Çök - Kapan - Tutun</span>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Pencere, balkon ve merdivenlerden uzak durun. Sağlam bir eşyanın yanında hayat üçgeni pozisyonu alarak sarsıntı geçene kadar bekleyin.
+            Pencere, balkon ve merdivenlerden uzak dur. Sağlam bir eşyanın yanında hayat üçgeni
+            pozisyonu alarak sarsıntı geçene kadar bekle.
           </p>
         </div>
 
@@ -53,7 +52,8 @@ export function V2EarthquakePreparedness() {
             <span>Deprem Sonrası İletişim</span>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Telefon hatlarını meşgul etmeyin, SMS veya internet tabanlı haberleşme kanallarını kullanın. Resmi AFAD anonslarını takip edin.
+            Telefon hatlarını meşgul etme, SMS veya internet tabanlı haberleşme kanallarını kullan.
+            Resmî AFAD anonslarını takip et.
           </p>
         </div>
       </div>
@@ -63,7 +63,8 @@ export function V2EarthquakePreparedness() {
         <div className="flex items-center gap-2">
           <Radio className="size-4 text-primary" />
           <span>
-            Veri Kaynağı: <strong>T.C. İçişleri Bakanlığı AFAD Deprem Dairesi Başkanlığı (TDVMS)</strong>
+            Veri Kaynağı:{" "}
+            <strong>T.C. İçişleri Bakanlığı AFAD Deprem Dairesi Başkanlığı (TDVMS)</strong>
           </span>
         </div>
         <span className="text-[11px] font-mono">Güncelleme: 120 sn Otomatik Canlı Akış</span>

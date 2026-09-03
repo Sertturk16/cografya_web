@@ -27,14 +27,20 @@ export function V2GameHub() {
               <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
                 Harita Oyun Stüdyosu v2
               </Badge>
-              <span className="text-xs text-muted-foreground font-medium">İnteraktif Sınav &amp; Hafıza Motoru</span>
+              <span className="text-xs text-muted-foreground font-medium">
+                İnteraktif Sınav &amp; Hafıza Motoru
+              </span>
             </div>
             <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
               Coğrafya Kâşifi — Türkiye Harita Oyunları
             </h2>
           </div>
 
-          <Badge variant="secondary" size="sm" icon={<Sparkles className="size-3 text-amber-500" />}>
+          <Badge
+            variant="secondary"
+            size="sm"
+            icon={<Sparkles className="size-3 text-amber-500" />}
+          >
             3 Özel Sınav Modu
           </Badge>
         </div>
@@ -57,7 +63,8 @@ export function V2GameHub() {
                   81 İl Bulma Sınavı
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  Rastgele sorulan Türkiye illerini dilsiz haritada tıklayarak bulun. Seri çarpanı ve akıllı ipucu desteğiyle hafızanızı sınayın.
+                  Rastgele sorulan Türkiye illerini dilsiz haritada tıklayarak bulun. Seri çarpanı
+                  ve akıllı ipucu desteğiyle hafızanızı sınayın.
                 </p>
               </div>
 
@@ -75,7 +82,12 @@ export function V2GameHub() {
 
             <div className="pt-6">
               <Link href="/v2/oyun/81-il">
-                <Button variant="primary" size="default" className="w-full" rightIcon={<ArrowRight className="size-4" />}>
+                <Button
+                  variant="primary"
+                  size="default"
+                  className="w-full"
+                  rightIcon={<ArrowRight className="size-4" />}
+                >
                   Sınava Başla
                 </Button>
               </Link>
@@ -98,7 +110,8 @@ export function V2GameHub() {
                   7 Bölge Tanıma
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  Türkiye&apos;nin 7 coğrafi bölgesinin sınırlarını ve mekânsal konumlarını renkli vektör poligonlar üzerinde test edin.
+                  Türkiye&apos;nin 7 coğrafi bölgesinin sınırlarını ve mekânsal konumlarını renkli
+                  vektör poligonlar üzerinde test et.
                 </p>
               </div>
 
@@ -116,7 +129,12 @@ export function V2GameHub() {
 
             <div className="pt-6">
               <Link href="/v2/oyun/bolge-bulma">
-                <Button variant="secondary" size="default" className="w-full" rightIcon={<ArrowRight className="size-4" />}>
+                <Button
+                  variant="secondary"
+                  size="default"
+                  className="w-full"
+                  rightIcon={<ArrowRight className="size-4" />}
+                >
                   Bölgeleri Keşfet
                 </Button>
               </Link>
@@ -139,7 +157,8 @@ export function V2GameHub() {
                   Bölge Bölge İl Quiz&apos;i
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  Marmara, Ege, Karadeniz gibi dilediğiniz bölgeyi seçin; harita otomatik olarak o bölgeye yakınlaşsın ve illeri tek tek tamamlayın.
+                  Marmara, Ege, Karadeniz gibi dilediğin bölgeyi seç; harita otomatik olarak o
+                  bölgeye yakınlaşsın ve illeri tek tek tamamla.
                 </p>
               </div>
 
@@ -157,7 +176,12 @@ export function V2GameHub() {
 
             <div className="pt-6">
               <Link href="/v2/oyun/bolge-bolge-il">
-                <Button variant="outline" size="default" className="w-full hover:bg-accent/10 hover:text-accent" rightIcon={<ArrowRight className="size-4" />}>
+                <Button
+                  variant="outline"
+                  size="default"
+                  className="w-full hover:bg-accent/10 hover:text-accent"
+                  rightIcon={<ArrowRight className="size-4" />}
+                >
                   Bölge Seçimine Git
                 </Button>
               </Link>
@@ -170,11 +194,15 @@ export function V2GameHub() {
           <div className="flex items-center gap-2">
             <Zap className="size-4 text-primary" />
             <span className="font-semibold text-foreground">Yeni Oyun Özellikleri:</span>
-            <span className="text-muted-foreground">Canlı Web Audio ses efektleri, Zoom/Pan desteği, akıllı ipuçları ve detaylı inceleme.</span>
+            <span className="text-muted-foreground">
+              Canlı Web Audio ses efektleri, Zoom/Pan desteği, akıllı ipuçları ve detaylı inceleme.
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Brain className="size-4 text-purple-600" />
-            <span className="text-muted-foreground">Aktif Geri Çağırma (Active Recall) uyumlu MEB müfredatı.</span>
+            <span className="text-muted-foreground">
+              Aktif Geri Çağırma (Active Recall) uyumlu MEB müfredatı.
+            </span>
           </div>
         </div>
       </div>

@@ -59,7 +59,10 @@ interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
-const REGION_THEMES: Record<string, { nameTr: string; badgeClass: string; gradient: string; accentColor: string }> = {
+const REGION_THEMES: Record<
+  string,
+  { nameTr: string; badgeClass: string; gradient: string; accentColor: string }
+> = {
   MARMARA: {
     nameTr: "Marmara Bölgesi",
     badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
@@ -147,8 +150,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     title: `${title} | V2 Atlas`,
     description,
+    surface: "noindex",
     hrefForLocale: (l) => ({
-      pathname: "/v2/turkiye/[slug]",
+      pathname: "/turkiye/[slug]",
       params: { slug: slugForLocale(province, l) },
     }),
   });
@@ -260,7 +264,9 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
   const landformNote = isTr ? province.landformNoteTr : null;
   const hydrographyFeatures = province.hydrographyFeatures;
   const showHydrography =
-    isTr && (province.hydrographyNoteTr !== null || (hydrographyFeatures !== null && hydrographyFeatures.length > 0));
+    isTr &&
+    (province.hydrographyNoteTr !== null ||
+      (hydrographyFeatures !== null && hydrographyFeatures.length > 0));
   const showLandform = isTr && (landformNote !== null || showHydrography);
   const showSettlement =
     isTr &&
@@ -292,14 +298,22 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
       <V2LiveTicker />
 
       {/* HERO BANNER SECTION */}
-      <section className={`relative border-b border-border bg-gradient-to-b ${regionTheme.gradient} pt-8 pb-12 overflow-hidden`}>
+      <section
+        className={`relative border-b border-border bg-gradient-to-b ${regionTheme.gradient} pt-8 pb-12 overflow-hidden`}
+      >
         {/* Glow backdrop */}
         <div className="absolute top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="container mx-auto px-4 max-w-7xl relative z-10 space-y-6">
           {/* Breadcrumb Bar */}
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-            <Link href="/v2" className="hover:text-foreground transition-colors flex items-center gap-1">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
+          >
+            <Link
+              href="/v2"
+              className="hover:text-foreground transition-colors flex items-center gap-1"
+            >
               <Home className="size-3.5" />
               <span>Ana Sayfa</span>
             </Link>
@@ -325,7 +339,10 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                   TR-{province.plateCode}
                 </Badge>
                 {isCoastal ? (
-                  <Badge variant="outline" className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1">
+                  <Badge
+                    variant="outline"
+                    className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+                  >
                     <Waves className="size-3" /> Kıyı İli
                   </Badge>
                 ) : (
@@ -335,7 +352,8 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                 )}
                 {province.climateClassTr && (
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                    <CloudSun className="size-3 mr-1" /> {province.climateCurriculumNameTr || province.climateClassTr}
+                    <CloudSun className="size-3 mr-1" />{" "}
+                    {province.climateCurriculumNameTr || province.climateClassTr}
                   </Badge>
                 )}
               </div>
@@ -420,13 +438,12 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                 <MapPin className="size-4 text-rose-600" />
               </div>
               <div className="font-mono font-bold text-sm sm:text-base text-foreground pt-1">
-                {province.latitude ? `${province.latitude.toFixed(2)}°K` : "—"}, {province.longitude ? `${province.longitude.toFixed(2)}°D` : "—"}
+                {province.latitude ? `${province.latitude.toFixed(2)}°K` : "—"},{" "}
+                {province.longitude ? `${province.longitude.toFixed(2)}°D` : "—"}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
                 <span>Plaka Kodu:</span>
-                <span className="font-mono font-bold text-foreground">
-                  TR-{province.plateCode}
-                </span>
+                <span className="font-mono font-bold text-foreground">TR-{province.plateCode}</span>
               </div>
             </div>
           </div>
@@ -451,9 +468,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                   {sectionHeading("landform")} Fiziki Coğrafyası ve Arazi Özellikleri
                 </h2>
                 {landformNote && (
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {landformNote}
-                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{landformNote}</p>
                 )}
 
                 {/* Hydrography & Water Bodies */}
@@ -478,7 +493,11 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                         </span>
                         <div className="flex flex-wrap gap-2">
                           {hydrographyFeatures.map((feat, idx) => (
-                            <Badge key={idx} variant="outline" className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20 text-xs py-1">
+                            <Badge
+                              key={idx}
+                              variant="outline"
+                              className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20 text-xs py-1"
+                            >
                               <Droplets className="size-3 mr-1" />
                               <span>{feat.name}</span>
                               <span className="opacity-70 text-[10px] ml-1">({feat.type})</span>
@@ -496,7 +515,11 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             {(showSettlement || showEconomy) && (
               <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-5">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" size="sm" className="bg-primary/10 text-primary border-primary/30">
+                  <Badge
+                    variant="outline"
+                    size="sm"
+                    className="bg-primary/10 text-primary border-primary/30"
+                  >
                     Sosyo-Ekonomik Göstergeler
                   </Badge>
                 </div>
@@ -540,7 +563,9 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                       <span className="font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                         <Activity className="size-3.5" /> {economyIndicator.label}
                       </span>
-                      <span className="font-mono text-[11px] text-muted-foreground">{economyIndicator.year}</span>
+                      <span className="font-mono text-[11px] text-muted-foreground">
+                        {economyIndicator.year}
+                      </span>
                     </div>
                     <div className="font-heading font-extrabold text-2xl text-amber-900 dark:text-amber-200">
                       {economyIndicator.value}
@@ -571,10 +596,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               </div>
 
               {/* Ultra-crisp Clean V2 Province Locator Map */}
-              <V2ProvinceLocatorMap
-                plateCode={province.plateCode}
-                provinceName={name}
-              />
+              <V2ProvinceLocatorMap plateCode={province.plateCode} provinceName={name} />
 
               {/* Neighboring Provinces Chips */}
               {neighbors.length > 0 && (
@@ -586,7 +608,10 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                     {neighbors.map((nb) => (
                       <Link
                         key={nb.plateCode}
-                        href={{ pathname: "/v2/turkiye/[slug]", params: { slug: slugForLocale(nb, locale) } }}
+                        href={{
+                          pathname: "/v2/turkiye/[slug]",
+                          params: { slug: slugForLocale(nb, locale) },
+                        }}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-primary/15 hover:text-primary border border-border transition-colors group cursor-pointer"
                       >
                         <span className="font-mono text-[10px] opacity-70">#{nb.plateCode}</span>
@@ -605,7 +630,10 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                     <span className="text-xs font-semibold text-muted-foreground block">
                       Benzer İklimli İller ({province.climateKoppen || "Köppen"}):
                     </span>
-                    <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] bg-primary/10 text-primary border-primary/20"
+                    >
                       {province.climateKoppen}
                     </Badge>
                   </div>
@@ -613,14 +641,22 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                     {similarClimate.map((sc) => (
                       <Link
                         key={sc.plateCode}
-                        href={{ pathname: "/v2/turkiye/[slug]", params: { slug: slugForLocale(sc, locale) } }}
+                        href={{
+                          pathname: "/v2/turkiye/[slug]",
+                          params: { slug: slugForLocale(sc, locale) },
+                        }}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-teal-500/15 hover:text-teal-700 dark:hover:text-teal-300 border border-border transition-colors group cursor-pointer"
                       >
                         <span className="font-mono text-[10px] opacity-70">#{sc.plateCode}</span>
                         <span>{sc.nameTr}</span>
                         {sc.climateAnnualMeanTempC !== null && (
                           <span className="font-mono text-[10px] font-semibold text-teal-700 dark:text-teal-300">
-                            · {format.number(sc.climateAnnualMeanTempC, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} °C
+                            ·{" "}
+                            {format.number(sc.climateAnnualMeanTempC, {
+                              minimumFractionDigits: 1,
+                              maximumFractionDigits: 1,
+                            })}{" "}
+                            °C
                           </span>
                         )}
                         <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -768,5 +804,3 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
     </div>
   );
 }
-
-

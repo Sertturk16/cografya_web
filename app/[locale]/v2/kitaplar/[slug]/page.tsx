@@ -32,8 +32,6 @@ import {
   ExternalLink,
   ShoppingBag,
   PlayCircle,
-  Clock,
-  Sparkles,
 } from "lucide-react";
 import styles from "../../../kitaplar/[slug]/book-detail.module.css";
 
@@ -64,13 +62,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return buildMetadata({
     locale,
     hrefForLocale: (l) => ({
-      pathname: "/v2/kitaplar/[slug]",
+      pathname: "/kitaplar/[slug]",
       params: { slug: slugForLocale(book, l) },
     }),
     title: `${book.metaTitleTr} | V2 Kitaplar`,
     description: book.metaDescriptionTr,
     openGraphType: "article",
-    surface: "trOnly",
+    surface: "noindex",
   });
 }
 

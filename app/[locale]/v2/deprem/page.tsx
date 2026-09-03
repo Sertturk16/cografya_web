@@ -14,11 +14,7 @@ import { V2FaultLinesGuide } from "@/components/v2/v2-fault-lines-guide";
 import { V2EarthquakePreparedness } from "@/components/v2/v2-earthquake-preparedness";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
-import {
-  Flame,
-  Home,
-  ChevronRight,
-} from "lucide-react";
+import { Flame, Home, ChevronRight } from "lucide-react";
 
 export const revalidate = 120;
 
@@ -29,9 +25,14 @@ interface V2DepremPageProps {
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Canlı Deprem Takip & Sismik Fay Monitörü v2 — AFAD TDVMS Verileri",
-    description: "Türkiye ve çevre coğrafyadaki son depremler, merkez üsleri, MTA diri fay hatları ve odak derinlikleri canlı harita üzerinde.",
+    description:
+      "Türkiye ve çevre coğrafyadaki son depremler, merkez üsleri, MTA diri fay hatları ve odak derinlikleri canlı harita üzerinde.",
     alternates: {
       canonical: "/v2/deprem",
+    },
+    robots: {
+      index: false,
+      follow: true,
     },
   };
 }
@@ -66,7 +67,8 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
         schema={[
           collectionPageJsonLd({
             name: "Canlı Deprem Takip & Sismik Fay Monitörü v2",
-            description: "Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita üzerinde merkez üssü, odak derinliği ve fay hatlarıyla anlık takip edin.",
+            description:
+              "Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita üzerinde merkez üssü, odak derinliği ve fay hatlarıyla anlık takip edin.",
             path: "/v2/deprem",
             locale,
           }),
@@ -82,8 +84,14 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-14">
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Link href="/v2" className="flex items-center gap-1 hover:text-foreground transition-colors">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Link
+              href="/v2"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
               <Home className="size-3.5" />
               <span>Ana Sayfa</span>
             </Link>
@@ -107,27 +115,45 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
               </h1>
 
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita üzerinde merkez üssü, odak derinliği, büyüklük kademesi ve aktif fay zonlarıyla anlık inceleyin.
+                Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita
+                üzerinde merkez üssü, odak derinliği, büyüklük kademesi ve aktif fay zonlarıyla
+                anlık inceleyin.
               </p>
             </div>
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-destructive block">120 sn</span>
-                <span className="text-xs text-muted-foreground font-medium">Veri Yenileme Aralığı</span>
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-destructive block">
+                  120 sn
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Veri Yenileme Aralığı
+                </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">3 Fay Zonu</span>
-                <span className="text-xs text-muted-foreground font-medium">KAF, DAF &amp; BAFS (MTA)</span>
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  3 Fay Zonu
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  KAF, DAF &amp; BAFS (MTA)
+                </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">M 1.0 - 7.0+</span>
-                <span className="text-xs text-muted-foreground font-medium">Hassas Büyüklük Skalası</span>
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
+                  M 1.0 - 7.0+
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Hassas Büyüklük Skalası
+                </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">81 İl</span>
-                <span className="text-xs text-muted-foreground font-medium">İl Bazlı Yakınlık Analizi</span>
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">
+                  81 İl
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  İl Bazlı Yakınlık Analizi
+                </span>
               </div>
             </div>
           </div>

@@ -25,6 +25,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { Link } from "@/i18n/navigation";
+import { useAuthSession } from "@/lib/auth/use-session.client";
+import { requestAuth } from "@/lib/auth/auth-modal.client";
+import {
+  fetchMeasurements,
+  saveMeasurement,
+  removeMeasurement,
+  type MeasurementRecord,
+} from "@/lib/measurements/client";
 import {
   Compass,
   MapPin,
@@ -56,17 +64,6 @@ export interface PointWithSvg {
   label?: string;
   source?: "map" | "dropdown" | "manual" | "preset";
 }
-
-interface SavedMeasurement {
-  id: string;
-  title: string;
-  mode: ToolMode;
-  date: string;
-  points: { geo: GeoPoint; label?: string }[];
-  resultText: string;
-}
-
-const STORAGE_KEY = "cografya_v2_measurements";
 
 const TURKISH_CARDINALS: CardinalLetters = {
   north: "K",
@@ -103,9 +100,10 @@ export function V2ToolWorkbench({
   const [manualCoordText, setManualCoordText] = React.useState<string>("");
   const [manualCoordError, setManualCoordError] = React.useState<string | null>(null);
 
-  // Save measurements
+  // Save measurements (Cloud-persisted via /api/measurements)
+  const [authState] = useAuthSession();
   const [saveTitle, setSaveTitle] = React.useState<string>("");
-  const [savedList, setSavedList] = React.useState<SavedMeasurement[]>([]);
+  const [savedList, setSavedList] = React.useState<readonly MeasurementRecord[]>([]);
   const [saveSuccess, setSaveSuccess] = React.useState<boolean>(false);
 
   // Zoom & Pan state
@@ -150,20 +148,23 @@ export function V2ToolWorkbench({
     return () => observer.disconnect();
   }, []);
 
-  // Load saved measurements from localStorage on mount
+  // Load saved measurements from /api/measurements on authenticated mount
   React.useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        queueMicrotask(() => {
-          setSavedList(parsed);
-        });
+    if (authState !== "authenticated") return;
+    let active = true;
+    const controller = new AbortController();
+    fetchMeasurements(controller.signal).then((records) => {
+      if (active && records) {
+        setSavedList(records);
       }
-    } catch {
-      // safe fallback
-    }
-  }, []);
+    });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [authState]);
+
+  const activeSavedList = authState === "authenticated" ? savedList : [];
 
   // Calculate live viewBox string based on zoom and pan
   const currentViewBox = React.useMemo(() => {
@@ -566,53 +567,48 @@ export function V2ToolWorkbench({
     }
   };
 
-  // Save measurement to localStorage
-  const handleSaveMeasurement = () => {
+  // Save measurement to cloud archive (/api/measurements)
+  const handleSaveMeasurement = async () => {
     if (points.length === 0) return;
+
+    if (authState !== "authenticated") {
+      requestAuth("measurement");
+      return;
+    }
+
     const title =
       saveTitle.trim() ||
-      `${activeTool === "distance" ? "Mesafe" : activeTool === "area" ? "Alan" : "Koordinat"} Ölçümü #${savedList.length + 1}`;
+      `${activeTool === "distance" ? "Mesafe" : activeTool === "area" ? "Alan" : "Koordinat"} Ölçümü`;
 
-    let resultText = "";
-    if (activeTool === "distance") resultText = `${distanceKm.toFixed(1)} km`;
-    else if (activeTool === "area") resultText = `${areaKm2.toFixed(1)} km²`;
-    else if (activeTool === "coordinates" && points[0])
-      resultText = `${points[0].geo.lat.toFixed(3)}°K, ${points[0].geo.lon.toFixed(3)}°D`;
+    const measurementType =
+      activeTool === "distance" ? "distance" : activeTool === "area" ? "area" : "coordinate";
 
-    const newRecord: SavedMeasurement = {
-      id: Date.now().toString(),
+    const payload = {
+      type: measurementType as "distance" | "area" | "coordinate",
+      points: points.map((p) => ({ lon: p.geo.lon, lat: p.geo.lat })),
       title,
-      mode: activeTool,
-      date: new Date().toLocaleDateString("tr-TR", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }),
-      points: points.map((p) => ({ geo: p.geo, label: p.label })),
-      resultText,
+      clientMeasurementId: crypto.randomUUID(),
     };
 
-    const updated = [newRecord, ...savedList.slice(0, 19)];
-    setSavedList(updated);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch {}
-
-    setSaveTitle("");
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 2500);
+    const res = await saveMeasurement(payload);
+    if (res.ok) {
+      setSavedList((prev) => [res.measurement, ...prev.slice(0, 19)]);
+      setSaveTitle("");
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    }
   };
 
   // Restore saved measurement
-  const handleLoadSaved = (record: SavedMeasurement) => {
-    setActiveTool(record.mode);
+  const handleLoadSaved = (record: MeasurementRecord) => {
+    setActiveTool(record.type === "coordinate" ? "coordinates" : record.type);
     const restored = record.points.map((p) => {
-      const pt = projectToMapPoint(p.geo.lon, p.geo.lat);
+      const pt = projectToMapPoint(p.lon, p.lat);
       return {
         svgX: pt.x,
         svgY: pt.y,
-        geo: p.geo,
-        label: p.label,
+        geo: { lon: p.lon, lat: p.lat },
+        label: `${p.lat.toFixed(2)}°K, ${p.lon.toFixed(2)}°D`,
         source: "preset" as const,
       };
     });
@@ -620,13 +616,12 @@ export function V2ToolWorkbench({
   };
 
   // Delete saved measurement
-  const handleDeleteSaved = (id: string, e: React.MouseEvent) => {
+  const handleDeleteSaved = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = savedList.filter((item) => item.id !== id);
-    setSavedList(updated);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch {}
+    const res = await removeMeasurement(id);
+    if (res.ok) {
+      setSavedList((prev) => prev.filter((item) => item.id !== id));
+    }
   };
 
   // PNG Export Handler
@@ -784,7 +779,7 @@ export function V2ToolWorkbench({
                   Koordinat &amp; Konum Bulucu
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Herhangi bir noktaya tıklayarak WGS84, DMS ve UTM coğrafi koordinatlarını öğrenin.
+                  Herhangi bir noktaya tıklayarak WGS84, DMS ve UTM coğrafi koordinatlarını öğren.
                 </p>
               </div>
             </button>
@@ -834,11 +829,10 @@ export function V2ToolWorkbench({
             </Badge>
             <span className="text-xs text-muted-foreground hidden md:inline">
               {activeTool === "distance" &&
-                "Noktaları bağlamak için haritada istediğiniz yerlere tıklayın"}
+                "Noktaları bağlamak için haritada istediğin yerlere tıkla"}
               {activeTool === "coordinates" &&
-                "Koordinatını ve ilini öğrenmek istediğiniz noktaya tıklayın"}
-              {activeTool === "area" &&
-                "Kapalı çokgen oluşturmak için en az 3 köşe noktası ekleyin"}
+                "Koordinatını ve ilini öğrenmek istediğin noktaya tıkla"}
+              {activeTool === "area" && "Kapalı çokgen oluşturmak için en az 3 köşe noktası ekle"}
             </span>
           </div>
 
@@ -935,7 +929,10 @@ export function V2ToolWorkbench({
         >
           {/* Absolute Floating Self-Intersection Warning Banner (Zero Layout Shift) */}
           {isSelfIntersecting && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-amber-950/90 backdrop-blur-md text-amber-200 px-3.5 py-1.5 rounded-2xl border border-amber-500/50 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95">
+            <div
+              role="alert"
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-amber-950/90 backdrop-blur-md text-amber-200 px-3.5 py-1.5 rounded-2xl border border-amber-500/50 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95"
+            >
               <div className="flex items-center gap-1.5 overflow-hidden">
                 <AlertTriangle className="size-3.5 text-amber-400 shrink-0" />
                 <span className="text-[11px] truncate">
@@ -1140,7 +1137,7 @@ export function V2ToolWorkbench({
                     options={provinceOptions}
                     value={selectedProvinceCode}
                     onChange={setSelectedProvinceCode}
-                    placeholder="İl Seçiniz (81 İl Listesi)..."
+                    placeholder="İl Seç (81 İl Listesi)..."
                     searchable={true}
                     searchPlaceholder="İl ara (örn: Ankara, 06)..."
                     aria-label="81 İl Merkezinden Seçerek Ekle"
@@ -1171,6 +1168,7 @@ export function V2ToolWorkbench({
                   value={manualCoordText}
                   onChange={(e) => setManualCoordText(e.target.value)}
                   placeholder="Örn: 39.92, 32.85 veya 41°00'K 28°58'D"
+                  aria-describedby={manualCoordError ? "manual-coord-error" : undefined}
                   className="h-10 text-xs font-mono rounded-xl"
                 />
                 <Button
@@ -1183,7 +1181,13 @@ export function V2ToolWorkbench({
                 </Button>
               </form>
               {manualCoordError && (
-                <p className="text-[11px] text-destructive font-medium">{manualCoordError}</p>
+                <p
+                  id="manual-coord-error"
+                  role="alert"
+                  className="text-[11px] text-destructive font-medium"
+                >
+                  {manualCoordError}
+                </p>
               )}
             </div>
 
@@ -1219,31 +1223,48 @@ export function V2ToolWorkbench({
                   {saveSuccess ? "Kaydedildi!" : "Kaydet"}
                 </Button>
               </div>
+              {authState !== "authenticated" && (
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  Ölçümlerini bulut arşivine kaydetmek için giriş yapmalısın.
+                </p>
+              )}
             </div>
           </div>
 
           {/* B. Saved Measurements History List */}
-          {savedList.length > 0 && (
+          {activeSavedList.length > 0 && (
             <div className="p-4 sm:p-5 rounded-3xl border border-border bg-card shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <h5 className="font-heading font-bold text-xs text-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Bookmark className="size-3.5 text-primary" />
-                  <span>Kayıtlı Ölçümlerim ({savedList.length})</span>
+                  <span>Kayıtlı Ölçümlerim ({activeSavedList.length})</span>
                 </h5>
                 <span className="text-[10px] text-muted-foreground">Tıklayarak Yükleyin</span>
               </div>
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                {savedList.map((item) => (
+                {activeSavedList.map((item) => (
                   <div
                     key={item.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleLoadSaved(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") handleLoadSaved(item);
+                    }}
+                    aria-label={`${item.title || "Ölçüm"} haritaya yükle`}
                     className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 border border-border hover:bg-muted/60 transition-colors cursor-pointer text-xs"
                   >
                     <div>
-                      <span className="font-semibold text-foreground block">{item.title}</span>
+                      <span className="font-semibold text-foreground block">
+                        {item.title || "İsimsiz Ölçüm"}
+                      </span>
                       <span className="text-[10px] text-muted-foreground">
-                        {item.date} &bull; {item.points.length} Nokta &bull;{" "}
-                        <strong>{item.resultText}</strong>
+                        {new Date(item.createdAt).toLocaleDateString("tr-TR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}{" "}
+                        &bull; {item.points.length} Nokta
                       </span>
                     </div>
                     <button
@@ -1251,6 +1272,7 @@ export function V2ToolWorkbench({
                       onClick={(e) => handleDeleteSaved(item.id, e)}
                       className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                       title="Sil"
+                      aria-label="Ölçümü sil"
                     >
                       <Trash2 className="size-3.5" />
                     </button>

@@ -12,7 +12,7 @@ import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-co
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
 import { Badge } from "@/components/ui/badge";
-import { Compass, Layers, Home, ChevronRight, Sparkles, Maximize2 } from "lucide-react";
+import { Home, ChevronRight, Maximize2 } from "lucide-react";
 
 export const revalidate = 86400;
 
@@ -20,14 +20,17 @@ interface V2AreaPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata({ params }: V2AreaPageProps): Promise<Metadata> {
-  const { locale } = await params;
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Haritada Alan & Yüzölçümü Hesaplama v2 — Çokgen (Polygon) Ölçümü",
     description:
       "İnteraktif harita üzerinde çokgen çizerek WGS84 küresel elipsoid jeodezik modeliyle km², hektar, dönüm ve metrekare cinsinden gerçek yüzölçümü ve çevre uzunluğu hesaplama.",
     alternates: {
       canonical: "/v2/araclar/alan-hesaplama",
+    },
+    robots: {
+      index: false,
+      follow: true,
     },
   };
 }

@@ -8,8 +8,7 @@ import { V2LoginCard } from "@/components/v2/v2-login-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
-import { Badge } from "@/components/ui/badge";
-import { Home, ChevronRight, LogIn, Sparkles, ShieldCheck } from "lucide-react";
+import { Home, ChevronRight } from "lucide-react";
 
 export const revalidate = 86400;
 

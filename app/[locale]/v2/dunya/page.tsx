@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { getCountriesResilient, getCountryMapSummaryResilient } from "@/lib/api/countries";
-import type { CountryListItem, CountryMapSummary, Continent } from "@/lib/api/types";
+import { hasFlag } from "@/lib/geo/flag-set";
+import type { CountryMapSummary, Continent } from "@/lib/api/types";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
@@ -14,18 +15,7 @@ import { V2WorldStatsSpotlight } from "@/components/v2/v2-world-stats-spotlight"
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Globe,
-  Compass,
-  Gamepad2,
-  ArrowRight,
-  Sparkles,
-  Home,
-  ChevronRight,
-  Layers,
-  MapPin,
-  Users,
-} from "lucide-react";
+import { Globe, Gamepad2, ArrowRight, Home, ChevronRight } from "lucide-react";
 
 export const revalidate = 86400;
 
@@ -37,13 +27,19 @@ function slugForLocale(country: { slugTr: string; slugEn: string }, locale: Loca
   return locale === "en" ? country.slugEn : country.slugTr;
 }
 
-export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Metadata> {
-  const { locale } = await params;
+const SPECIAL_STATUS_ISO_CODES = new Set(["QN", "CY", "IL", "PS", "TW", "XK"]);
+
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Dünya Ülkeleri & Kıtalar Atlası v2 — İnteraktif Dünya Haritası",
-    description: "Dünyanın 199+ bağımsız ülkesi, 7 kıtası, bayrakları, nüfus verileri, yüzölçümleri ve coğrafi ekstremleri tek ekranda.",
+    description:
+      "Dünyanın 199 ülke ve bölgesi, 7 kıtası, bayrakları, nüfus verileri, yüzölçümleri ve coğrafi ekstremleri tek ekranda.",
     alternates: {
       canonical: "/v2/dunya",
+    },
+    robots: {
+      index: false,
+      follow: true,
     },
   };
 }
@@ -67,6 +63,10 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
   const countries: WorldCountryItem[] = rawCountries.map((c) => {
     const sum = summaryMap.get(c.isoCode);
     const slug = slugForLocale(c, locale);
+    const isSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(c.isoCode.toUpperCase());
+    const hasFlagAsset = hasFlag(c.isoCode);
+    const flagVisible = hasFlagAsset && (!isSpecialStatus || locale === "tr");
+
     return {
       isoCode: c.isoCode,
       nameTr: c.nameTr,
@@ -79,6 +79,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
       population: sum?.population ?? null,
       areaKm2: sum?.areaKm2 ?? null,
       neighborCount: sum?.neighborCount ?? 0,
+      hasFlag: flagVisible,
     };
   });
 
@@ -86,7 +87,8 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
 
   const continentCounts: Partial<Record<Continent, number>> = {};
   for (const c of countries) {
-    continentCounts[c.continent as Continent] = (continentCounts[c.continent as Continent] || 0) + 1;
+    continentCounts[c.continent as Continent] =
+      (continentCounts[c.continent as Continent] || 0) + 1;
   }
 
   return (
@@ -96,7 +98,8 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
         schema={[
           collectionPageJsonLd({
             name: "Dünya Ülkeleri & Kıtalar Atlası v2",
-            description: "Dünyanın 199+ bağımsız ülkesi, 7 kıtası, bayrakları, nüfus verileri, yüzölçümleri ve coğrafi ekstremleri.",
+            description:
+              "Dünyanın 199 ülke ve bölgesi, 7 kıtası, bayrakları, nüfus verileri, yüzölçümleri ve coğrafi ekstremleri.",
             path: "/v2/dunya",
             locale,
           }),
@@ -119,8 +122,14 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-14 flex-1 w-full pb-16">
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Link href="/v2" className="flex items-center gap-1 hover:text-foreground transition-colors">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Link
+              href="/v2"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
               <Home className="size-3.5" />
               <span>Ana Sayfa</span>
             </Link>
@@ -144,27 +153,42 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
               </h1>
 
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Gezegenimizin 7 kıtası, {totalCountries} bağımsız devleti, ulusal bayrakları, demografik dağılımı, yeryüzü şekilleri ve coğrafi ekstremleri tek ekranda.
+                Gezegenimizin 7 kıtası, {totalCountries} ülke ve bölgesi, bayrakları, demografik
+                dağılımı, yeryüzü şekilleri ve coğrafi ekstremleri tek ekranda.
               </p>
             </div>
 
             {/* Verified Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">{totalCountries} Ülke</span>
-                <span className="text-xs text-muted-foreground font-medium">Bağımsız Ülke &amp; Bölge</span>
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  {totalCountries} Ülke
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">Ülke &amp; Bölge</span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">7 Kıta</span>
-                <span className="text-xs text-muted-foreground font-medium">Coğrafi Kara Kütlesi</span>
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
+                  7 Kıta
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Coğrafi Kara Kütlesi
+                </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">~8.1 Milyar</span>
-                <span className="text-xs text-muted-foreground font-medium">Dünya Nüfusu (BM WPP)</span>
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
+                  ~8.1 Milyar
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Dünya Nüfusu (BM WPP)
+                </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">148.9M km²</span>
-                <span className="text-xs text-muted-foreground font-medium">Karasal Alan (USGS/NASA)</span>
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">
+                  148.9M km²
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Karasal Alan (USGS/NASA)
+                </span>
               </div>
             </div>
           </div>
@@ -198,13 +222,19 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
               Dünya Coğrafyasını ve Ülkeleri Ne Kadar İyi Tanıyorsun?
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Dilsiz dünya haritası üzerinde ülkeleri bulun, kıta testlerinde hızınızı sınayın ve puan toplayarak lider tablosunda yükselin.
+              Dilsiz dünya haritası üzerinde ülkeleri bulun, kıta testlerinde hızınızı sınayın ve
+              puan toplayarak lider tablosunda yükselin.
             </p>
           </div>
 
           <div className="shrink-0 w-full md:w-auto">
             <Link href="/v2/oyun">
-              <Button variant="primary" size="lg" className="w-full md:w-auto shadow-md" rightIcon={<ArrowRight className="size-4" />}>
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full md:w-auto shadow-md"
+                rightIcon={<ArrowRight className="size-4" />}
+              >
                 Harita Oyununu Başlat
               </Button>
             </Link>

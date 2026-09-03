@@ -63,15 +63,15 @@ export function V2LoginCard({
 
     const cleanEmail = email.trim();
     if (!cleanEmail) {
-      setErrorMsg("Lütfen e-posta adresinizi giriniz.");
+      setErrorMsg("Lütfen e-posta adresini gir.");
       return;
     }
     if (!EMAIL_SHAPE.test(cleanEmail)) {
-      setErrorMsg("Lütfen geçerli bir e-posta adresi yazınız (örn: isim@domain.com).");
+      setErrorMsg("Lütfen geçerli bir e-posta adresi yaz (örn: isim@domain.com).");
       return;
     }
     if (!password) {
-      setErrorMsg("Lütfen şifrenizi giriniz.");
+      setErrorMsg("Lütfen şifreni gir.");
       return;
     }
 
@@ -85,7 +85,7 @@ export function V2LoginCard({
 
       if (result.ok) {
         setSessionState("authenticated");
-        setSuccessMsg("Giriş başarılı! Yönlendiriliyorsunuz...");
+        setSuccessMsg("Giriş başarılı! Yönlendiriliyorsun...");
         if (onAuthenticated) {
           onAuthenticated();
         } else if (result.redirectTo) {
@@ -95,22 +95,22 @@ export function V2LoginCard({
         }
       } else {
         if (result.code === "errors.auth.invalidCredentials") {
-          setErrorMsg("E-posta adresi veya şifre hatalı. Lütfen kontrol ediniz.");
+          setErrorMsg("E-posta adresi veya şifre hatalı. Lütfen kontrol et.");
         } else if (result.code === "errors.auth.emailNotVerified") {
-          setErrorMsg("E-posta adresiniz henüz doğrulanmamış. Lütfen e-postanızı kontrol ediniz.");
+          setErrorMsg("E-posta adresin henüz doğrulanmamış. Lütfen e-postanı kontrol et.");
         } else if (
           result.code === "errors.auth.rateLimited" ||
           result.code === "errors.auth.tooManyAttempts"
         ) {
           setErrorMsg(
-            "Çok fazla başarısız deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyiniz.",
+            "Çok fazla başarısız deneme yapıldı. Lütfen birkaç dakika sonra tekrar dene.",
           );
         } else {
-          setErrorMsg("Giriş yapılırken bir sorun oluştu. Lütfen tekrar deneyiniz.");
+          setErrorMsg("Giriş yapılırken bir sorun oluştu. Lütfen tekrar dene.");
         }
       }
     } catch {
-      setErrorMsg("Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol ediniz.");
+      setErrorMsg("Sunucuya bağlanılamadı. Lütfen internet bağlantını kontrol et.");
     } finally {
       setLoading(false);
     }
@@ -178,7 +178,12 @@ export function V2LoginCard({
 
       {/* Error Alert */}
       {errorMsg && (
-        <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200">
+        <div
+          id="v2-login-error"
+          role="alert"
+          aria-live="polite"
+          className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200"
+        >
           <AlertCircle className="size-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed font-medium">{errorMsg}</span>
         </div>
@@ -207,6 +212,8 @@ export function V2LoginCard({
           leftIcon={<Mail className="size-4 text-muted-foreground" />}
           className="h-11 text-xs"
           disabled={loading}
+          aria-invalid={Boolean(errorMsg)}
+          aria-describedby={errorMsg ? "v2-login-error" : undefined}
         />
       </div>
 
@@ -235,12 +242,15 @@ export function V2LoginCard({
             leftIcon={<Lock className="size-4 text-muted-foreground" />}
             className="h-11 pr-10 text-xs"
             disabled={loading}
+            aria-invalid={Boolean(errorMsg)}
+            aria-describedby={errorMsg ? "v2-login-error" : undefined}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
             aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
+            aria-pressed={showPassword}
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>

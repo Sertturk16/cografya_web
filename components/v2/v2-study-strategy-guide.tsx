@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap } from "lucide-react";

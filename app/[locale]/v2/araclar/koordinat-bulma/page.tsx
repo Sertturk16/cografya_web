@@ -13,7 +13,7 @@ import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-co
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
 import { Badge } from "@/components/ui/badge";
-import { Compass, MapPin, Home, ChevronRight, Globe, Layers, Sparkles } from "lucide-react";
+import { MapPin, Home, ChevronRight } from "lucide-react";
 
 export const revalidate = 86400;
 
@@ -21,14 +21,17 @@ interface V2CoordinatesPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata({ params }: V2CoordinatesPageProps): Promise<Metadata> {
-  const { locale } = await params;
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Haritada Koordinat Bulma & Dönüştürme v2 — Enlem, Boylam ve WGS84 GPS",
     description:
       "İnteraktif harita üzerinde tıklayarak veya arama yaparak Ondalık Derece (DD), Derece-Dakika-Saniye (DMS) ve UTM koordinatlarını WGS84 standardında tespit edin.",
     alternates: {
       canonical: "/v2/araclar/koordinat-bulma",
+    },
+    robots: {
+      index: false,
+      follow: true,
     },
   };
 }

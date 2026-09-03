@@ -80,7 +80,10 @@ const REGION_COLOR_CLASSES: Record<GeographicRegion, { fill: string; border: str
   IC_ANADOLU: { fill: "fill-yellow-500/80 hover:fill-yellow-400", border: "border-yellow-500" },
   KARADENIZ: { fill: "fill-cyan-600/80 hover:fill-cyan-500", border: "border-cyan-500" },
   DOGU_ANADOLU: { fill: "fill-stone-500/80 hover:fill-stone-400", border: "border-stone-500" },
-  GUNEYDOGU_ANADOLU: { fill: "fill-orange-600/80 hover:fill-orange-500", border: "border-orange-500" },
+  GUNEYDOGU_ANADOLU: {
+    fill: "fill-orange-600/80 hover:fill-orange-500",
+    border: "border-orange-500",
+  },
 };
 
 export function V2GameScreen({
@@ -133,20 +136,37 @@ export function V2GameScreen({
   const [correctRegions, setCorrectRegions] = React.useState<Set<string>>(new Set());
   const [flashingWrongPlate, setFlashingWrongPlate] = React.useState<string | null>(null);
   const [revealedPlate, setRevealedPlate] = React.useState<string | null>(null);
-  const [missedItems, setMissedItems] = React.useState<Array<{ name: string; slug: string | null }>>([]);
-  const [lastFeedback, setLastFeedback] = React.useState<{ type: "correct" | "wrong" | "revealed"; message: string } | null>(null);
+  const [missedItems, setMissedItems] = React.useState<
+    Array<{ name: string; slug: string | null }>
+  >([]);
+  const [lastFeedback, setLastFeedback] = React.useState<{
+    type: "correct" | "wrong" | "revealed";
+    message: string;
+  } | null>(null);
   const [showHint, setShowHint] = React.useState<boolean>(false);
   const [questionWrongs, setQuestionWrongs] = React.useState<number>(0);
 
   // Save Round State
-  const [saveStatus, setSaveStatus] = React.useState<"idle" | "pending" | "saved" | "failed">("idle");
+  const [saveStatus, setSaveStatus] = React.useState<"idle" | "pending" | "saved" | "failed">(
+    "idle",
+  );
+
+  const resultHeadingRef = React.useRef<HTMLHeadingElement>(null);
+  React.useEffect(() => {
+    if (isFinished) {
+      resultHeadingRef.current?.focus();
+    }
+  }, [isFinished]);
 
   // Finish round handler
-  const handleFinishRound = React.useCallback((early: boolean = false) => {
-    setIsFinished(true);
-    setEndedEarly(early);
-    if (soundEnabled) playVictorySound(true);
-  }, [soundEnabled]);
+  const handleFinishRound = React.useCallback(
+    (early: boolean = false) => {
+      setIsFinished(true);
+      setEndedEarly(early);
+      if (soundEnabled) playVictorySound(true);
+    },
+    [soundEnabled],
+  );
 
   // Neighbor lands outline
   const trCasing = React.useMemo(() => CONTEXT_SHAPES.find((c) => c.iso === "TR"), []);
@@ -215,11 +235,13 @@ export function V2GameScreen({
       if (isCorrect) {
         // Correct Click!
         playSuccessSound(soundEnabled);
-        
+
         // Halving score calculation (100 -> 50 -> 25 -> 12 -> 6 -> 3 -> 1)
         const baseQuestionPoints = Math.max(1, Math.round(100 / Math.pow(2, questionWrongs)));
-        const finalQuestionPoints = showHint ? Math.round(baseQuestionPoints * 0.5) : baseQuestionPoints;
-        
+        const finalQuestionPoints = showHint
+          ? Math.round(baseQuestionPoints * 0.5)
+          : baseQuestionPoints;
+
         // XP bonus with streak multiplier
         const earnedXP = finalQuestionPoints + streak * 20;
         const newScore = score + earnedXP;
@@ -231,7 +253,10 @@ export function V2GameScreen({
         if (newStreak > bestStreak) setBestStreak(newStreak);
         setCorrectPlates((prev) => new Set(prev).add(plate));
         setRevealedPlate(null);
-        setLastFeedback({ type: "correct", message: `Harika! ${currentTarget.label} doğru bulundu. (+${earnedXP} XP)` });
+        setLastFeedback({
+          type: "correct",
+          message: `Harika! ${currentTarget.label} doğru bulundu. (+${earnedXP} XP)`,
+        });
         setShowHint(false);
         setQuestionWrongs(0);
 
@@ -247,14 +272,17 @@ export function V2GameScreen({
         setStreak(0);
         setWrongCount((prev) => prev + 1);
         setQuestionWrongs((prev) => prev + 1);
-        
+
         // Flash wrong plate for 900ms then reset (no permanent red mess)
         setFlashingWrongPlate(plate);
         setTimeout(() => setFlashingWrongPlate(null), 900);
 
         // Record missed item for review
         if (!missedItems.some((m) => m.name === currentTarget.label)) {
-          setMissedItems((prev) => [...prev, { name: currentTarget.label, slug: currentTarget.slug }]);
+          setMissedItems((prev) => [
+            ...prev,
+            { name: currentTarget.label, slug: currentTarget.slug },
+          ]);
         }
 
         setLastFeedback({
@@ -278,7 +306,10 @@ export function V2GameScreen({
         setStreak(newStreak);
         if (newStreak > bestStreak) setBestStreak(newStreak);
         setCorrectRegions((prev) => new Set(prev).add(currentTarget.id));
-        setLastFeedback({ type: "correct", message: `Tebrikler! ${currentTarget.label} doğru tespit edildi.` });
+        setLastFeedback({
+          type: "correct",
+          message: `Tebrikler! ${currentTarget.label} doğru tespit edildi.`,
+        });
         setShowHint(false);
         setQuestionWrongs(0);
 
@@ -314,7 +345,7 @@ export function V2GameScreen({
     setRevealedPlate(currentTarget.id);
     setQuestionScores((prev) => [...prev, 0]); // 0 points for revealed question
     setStreak(0);
-    
+
     // Add to missed list for review
     if (!missedItems.some((m) => m.name === currentTarget.label)) {
       setMissedItems((prev) => [...prev, { name: currentTarget.label, slug: currentTarget.slug }]);
@@ -344,7 +375,7 @@ export function V2GameScreen({
     if (mode === "regions") {
       return `İpucu: Bu coğrafi bölgenin doğru sınırlarını bulmak için kıyı şeritleri ve komşu havzaları referans alın.`;
     }
-    
+
     const shapeEntry = targetEntries.find((s) => s.plateCode === currentTarget.id);
     const regionName = shapeEntry?.target?.region ? regionLabels[shapeEntry.target.region] : "";
     return `İpucu: Bu il ${regionName} bölgesindedir. Plaka Kodu: ${currentTarget.id}`;
@@ -353,16 +384,17 @@ export function V2GameScreen({
   // Submit round to API
   const handleSaveRound = React.useCallback(async () => {
     if (authState === "checking" || saveStatus === "pending" || saveStatus === "saved") return;
-    
+
     if (authState !== "authenticated") {
       authRequestId.current = requestAuth("gameRound");
       return;
     }
 
     setSaveStatus("pending");
-    const normalizedScore = questionScores.length > 0
-      ? Math.round(questionScores.reduce((a, b) => a + b, 0) / questionScores.length)
-      : 0;
+    const normalizedScore =
+      questionScores.length > 0
+        ? Math.round(questionScores.reduce((a, b) => a + b, 0) / questionScores.length)
+        : 0;
 
     const res = await submitGameRound({
       mode: submitModeTag,
@@ -377,7 +409,18 @@ export function V2GameScreen({
     });
 
     setSaveStatus(res.ok ? "saved" : "failed");
-  }, [authState, saveStatus, questionScores, submitModeTag, clientRoundId, correctPlates.size, correctRegions.size, questions.length, wrongCount, endedEarly]);
+  }, [
+    authState,
+    saveStatus,
+    questionScores,
+    submitModeTag,
+    clientRoundId,
+    correctPlates.size,
+    correctRegions.size,
+    questions.length,
+    wrongCount,
+    endedEarly,
+  ]);
 
   // Resume after authentication
   React.useEffect(() => {
@@ -396,7 +439,14 @@ export function V2GameScreen({
   }, [questionScores]);
 
   // Calculate Stars (1-3 stars)
-  const starCount = normalizedAcademicScore >= 85 ? 3 : normalizedAcademicScore >= 60 ? 2 : normalizedAcademicScore >= 40 ? 1 : 0;
+  const starCount =
+    normalizedAcademicScore >= 85
+      ? 3
+      : normalizedAcademicScore >= 60
+        ? 2
+        : normalizedAcademicScore >= 40
+          ? 1
+          : 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-24">
@@ -409,8 +459,14 @@ export function V2GameScreen({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
         {/* Top Navigation & Breadcrumbs */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Link href="/v2" className="flex items-center gap-1 hover:text-foreground transition-colors">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Link
+              href="/v2"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
               <Home className="size-3.5" />
               <span>Ana Sayfa</span>
             </Link>
@@ -432,7 +488,13 @@ export function V2GameScreen({
               variant="outline"
               size="sm"
               onClick={() => setSoundEnabled(!soundEnabled)}
-              leftIcon={soundEnabled ? <Volume2 className="size-3.5 text-primary" /> : <VolumeX className="size-3.5 text-muted-foreground" />}
+              leftIcon={
+                soundEnabled ? (
+                  <Volume2 className="size-3.5 text-primary" />
+                ) : (
+                  <VolumeX className="size-3.5 text-muted-foreground" />
+                )
+              }
             >
               {soundEnabled ? "Ses Açık" : "Sessiz"}
             </Button>
@@ -448,7 +510,11 @@ export function V2GameScreen({
                   {modeName}
                 </Badge>
                 <span className="text-xs text-muted-foreground font-medium">
-                  {mode === "provinces" && !region ? "81 İl Sınavı" : mode === "regions" ? "7 Coğrafi Bölge" : `${modeName} İlleri`}
+                  {mode === "provinces" && !region
+                    ? "81 İl Sınavı"
+                    : mode === "regions"
+                      ? "7 Coğrafi Bölge"
+                      : `${modeName} İlleri`}
                 </span>
               </div>
             </div>
@@ -489,8 +555,12 @@ export function V2GameScreen({
                   <Trophy className="size-4" />
                 </div>
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">Kâşif XP</span>
-                  <span className="font-heading text-lg font-bold text-primary font-mono">{score}</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                    Kâşif XP
+                  </span>
+                  <span className="font-heading text-lg font-bold text-primary font-mono">
+                    {score}
+                  </span>
                 </div>
               </div>
 
@@ -499,7 +569,9 @@ export function V2GameScreen({
                   <Target className="size-4" />
                 </div>
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">İlerleme</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                    İlerleme
+                  </span>
                   <span className="font-heading text-lg font-bold text-foreground font-mono">
                     {currentIndex + 1} / {questions.length}
                   </span>
@@ -511,8 +583,12 @@ export function V2GameScreen({
                   <Flame className="size-4" />
                 </div>
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">Seri (Streak)</span>
-                  <span className="font-heading text-lg font-bold text-orange-600 font-mono">{streak} 🔥</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                    Seri (Streak)
+                  </span>
+                  <span className="font-heading text-lg font-bold text-orange-600 font-mono">
+                    {streak} 🔥
+                  </span>
                 </div>
               </div>
 
@@ -522,8 +598,12 @@ export function V2GameScreen({
                     <Clock className="size-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">Kalan Süre</span>
-                    <span className="font-heading text-lg font-bold text-destructive font-mono">{timer}s</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                      Kalan Süre
+                    </span>
+                    <span className="font-heading text-lg font-bold text-destructive font-mono">
+                      {timer}s
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -532,7 +612,9 @@ export function V2GameScreen({
                     <XCircle className="size-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">Hata</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                      Hata
+                    </span>
                     <span className="font-heading text-lg font-bold text-destructive font-mono">
                       {wrongCount} {difficulty === "klasik" ? "/ 3" : ""}
                     </span>
@@ -610,7 +692,10 @@ export function V2GameScreen({
                 <div className="w-full p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2 animate-in fade-in duration-200">
                   <Sparkles className="size-4 text-amber-600 shrink-0" />
                   <span>
-                    {getSmartHint()} <em className="opacity-80">(İpucu kullanıldığı için bu sorunun maksimum puanı %50&apos;ye düşürüldü)</em>
+                    {getSmartHint()}{" "}
+                    <em className="opacity-80">
+                      (İpucu kullanıldığı için bu sorunun maksimum puanı %50&apos;ye düşürüldü)
+                    </em>
                   </span>
                 </div>
               )}
@@ -620,12 +705,14 @@ export function V2GameScreen({
           {/* Feedback Alert Bar */}
           {lastFeedback && !isFinished && (
             <div
+              role="status"
+              aria-live="polite"
               className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 transition-all animate-in fade-in-50 duration-200 ${
                 lastFeedback.type === "correct"
                   ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
                   : lastFeedback.type === "revealed"
-                  ? "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300"
-                  : "bg-destructive/15 border-destructive/30 text-destructive"
+                    ? "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300"
+                    : "bg-destructive/15 border-destructive/30 text-destructive"
               }`}
             >
               {lastFeedback.type === "correct" ? (
@@ -725,7 +812,9 @@ export function V2GameScreen({
 
                 if (mode === "regions") {
                   // In region finding mode, show beautiful regional colors
-                  const regColor = prov.target?.region ? REGION_COLOR_CLASSES[prov.target.region] : null;
+                  const regColor = prov.target?.region
+                    ? REGION_COLOR_CLASSES[prov.target.region]
+                    : null;
                   if (isCorrectRegion) {
                     fillClass = "fill-emerald-500/80 animate-in fade-in";
                     strokeClass = "stroke-emerald-700 stroke-[1.5]";
@@ -784,10 +873,16 @@ export function V2GameScreen({
                     {modeName} Başlamaya Hazır
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    Seçtiğiniz zorluk seviyesine göre harita üzerinde doğru konumları en yüksek başarı yüzdesiyle işaretleyin.
+                    Seçtiğiniz zorluk seviyesine göre harita üzerinde doğru konumları en yüksek
+                    başarı yüzdesiyle işaretleyin.
                   </p>
                 </div>
-                <Button variant="primary" size="lg" onClick={startRound} leftIcon={<Zap className="size-4" />}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={startRound}
+                  leftIcon={<Zap className="size-4" />}
+                >
                   Sınavı Başlat
                 </Button>
               </div>
@@ -807,41 +902,70 @@ export function V2GameScreen({
                 </div>
 
                 <div className="space-y-1 max-w-md">
-                  <Badge variant={endedEarly ? "secondary" : wrongCount >= 3 && difficulty === "klasik" ? "destructive" : "primary"} size="sm">
-                    {endedEarly ? "Yarım Tur Tamamlandı" : wrongCount >= 3 && difficulty === "klasik" ? "3 Hata Limiti Doldu" : "Tur Tamamlandı"}
+                  <Badge
+                    variant={
+                      endedEarly
+                        ? "secondary"
+                        : wrongCount >= 3 && difficulty === "klasik"
+                          ? "destructive"
+                          : "primary"
+                    }
+                    size="sm"
+                  >
+                    {endedEarly
+                      ? "Yarım Tur Tamamlandı"
+                      : wrongCount >= 3 && difficulty === "klasik"
+                        ? "3 Hata Limiti Doldu"
+                        : "Tur Tamamlandı"}
                   </Badge>
-                  <h3 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-2">
+                  <h3
+                    ref={resultHeadingRef}
+                    tabIndex={-1}
+                    className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+                  >
                     {endedEarly
                       ? "Yarım Tur Sonuçları"
                       : wrongCount >= 3 && difficulty === "klasik"
-                      ? "Tur Tamamlanamadı — Tekrar Dene!"
-                      : "Tebrikler, Harita Turunu Tamamladın!"}
+                        ? "Tur Tamamlanamadı — Tekrar Dene!"
+                        : "Tebrikler, Harita Turunu Tamamladın!"}
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground">
                     {endedEarly
-                      ? `${questions.length} sorunun ${questionScores.length} tanesini oynadınız.`
-                      : "Mekânsal hafıza sınavını bitirdiniz. İşte performans raporunuz:"}
+                      ? `${questions.length} sorunun ${questionScores.length} tanesini oynadın.`
+                      : "Mekânsal hafıza sınavını bitirdin. İşte performans raporun:"}
                   </p>
                 </div>
 
                 {/* Score & Metric Strip */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg w-full">
                   <div className="p-3 rounded-2xl bg-card border border-border">
-                    <span className="text-[10px] text-muted-foreground block font-bold">Başarı Skoru</span>
+                    <span className="text-[10px] text-muted-foreground block font-bold">
+                      Başarı Skoru
+                    </span>
                     <span className="font-heading text-2xl font-bold text-primary font-mono">
                       %{normalizedAcademicScore}
                     </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-card border border-border">
-                    <span className="text-[10px] text-muted-foreground block font-bold">Toplam XP</span>
-                    <span className="font-heading text-2xl font-bold text-foreground font-mono">{score}</span>
+                    <span className="text-[10px] text-muted-foreground block font-bold">
+                      Toplam XP
+                    </span>
+                    <span className="font-heading text-2xl font-bold text-foreground font-mono">
+                      {score}
+                    </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-card border border-border">
-                    <span className="text-[10px] text-muted-foreground block font-bold">En İyi Seri</span>
-                    <span className="font-heading text-2xl font-bold text-orange-600 font-mono">{bestStreak} 🔥</span>
+                    <span className="text-[10px] text-muted-foreground block font-bold">
+                      En İyi Seri
+                    </span>
+                    <span className="font-heading text-2xl font-bold text-orange-600 font-mono">
+                      {bestStreak} 🔥
+                    </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-card border border-border">
-                    <span className="text-[10px] text-muted-foreground block font-bold">Derece</span>
+                    <span className="text-[10px] text-muted-foreground block font-bold">
+                      Derece
+                    </span>
                     <div className="flex items-center justify-center gap-0.5 mt-1">
                       {Array.from({ length: 3 }).map((_, i) => (
                         <Star
@@ -864,7 +988,11 @@ export function V2GameScreen({
                       {missedItems.map((item) => (
                         <a
                           key={item.name}
-                          href={item.slug ? provinceUrlTemplate.replace(SLUG_PLACEHOLDER, item.slug) : "/v2/oyun"}
+                          href={
+                            item.slug
+                              ? provinceUrlTemplate.replace(SLUG_PLACEHOLDER, item.slug)
+                              : "/v2/oyun"
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-2.5 py-1 rounded-lg bg-muted text-[11px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors inline-flex items-center gap-1"
@@ -899,16 +1027,21 @@ export function V2GameScreen({
                     {saveStatus === "saved"
                       ? "Skor Profilinize Kaydedildi"
                       : saveStatus === "pending"
-                      ? "Kaydediliyor..."
-                      : authState !== "authenticated"
-                      ? "Skoru Kaydet (Giriş Yap)"
-                      : "Skoru Profilime Kaydet"}
+                        ? "Kaydediliyor..."
+                        : authState !== "authenticated"
+                          ? "Skoru Kaydet (Giriş Yap)"
+                          : "Skoru Profilime Kaydet"}
                   </Button>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-3 pt-2">
-                  <Button variant="primary" size="lg" onClick={startRound} leftIcon={<RotateCcw className="size-4" />}>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={startRound}
+                    leftIcon={<RotateCcw className="size-4" />}
+                  >
                     Tekrar Oyna
                   </Button>
                   <Link href={region ? "/v2/oyun/bolge-bolge-il" : "/v2/oyun"}>

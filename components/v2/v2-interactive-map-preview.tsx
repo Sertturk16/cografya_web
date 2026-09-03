@@ -6,11 +6,7 @@ import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { Badge } from "@/components/ui/badge";
-import {
-  Compass,
-  Waves,
-  ArrowRight,
-} from "lucide-react";
+import { Compass, Waves, ArrowRight } from "lucide-react";
 
 // Exact geographic context labels aligned with Natural Earth shape centers
 const COUNTRY_NAMES_TR: Record<string, string> = {
@@ -35,9 +31,34 @@ const SEA_LABELS = [
 ];
 
 const COASTAL_PLATES = new Set([
-  "01", "07", "08", "09", "10", "17", "22", "28", "31", "33",
-  "34", "35", "37", "39", "41", "48", "52", "53", "54", "55",
-  "57", "59", "61", "67", "74", "77", "80", "81",
+  "01",
+  "07",
+  "08",
+  "09",
+  "10",
+  "17",
+  "22",
+  "28",
+  "31",
+  "33",
+  "34",
+  "35",
+  "37",
+  "39",
+  "41",
+  "48",
+  "52",
+  "53",
+  "54",
+  "55",
+  "57",
+  "59",
+  "61",
+  "67",
+  "74",
+  "77",
+  "80",
+  "81",
 ]);
 
 const REGION_STYLES: Record<string, string> = {
@@ -189,7 +210,9 @@ export function V2InteractiveMapPreview() {
             type="button"
             onClick={() => setMode("provinces")}
             className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
-              mode === "provinces" ? "bg-card text-primary font-bold shadow-xs" : "text-muted-foreground hover:text-foreground"
+              mode === "provinces"
+                ? "bg-card text-primary font-bold shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Siyasi (81 İl)
@@ -198,7 +221,9 @@ export function V2InteractiveMapPreview() {
             type="button"
             onClick={() => setMode("marine")}
             className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
-              mode === "marine" ? "bg-card text-accent font-bold shadow-xs" : "text-muted-foreground hover:text-foreground"
+              mode === "marine"
+                ? "bg-card text-accent font-bold shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Deniz & Kıyılar (28 İl)
@@ -207,7 +232,9 @@ export function V2InteractiveMapPreview() {
             type="button"
             onClick={() => setMode("regions")}
             className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
-              mode === "regions" ? "bg-card text-secondary font-bold shadow-xs" : "text-muted-foreground hover:text-foreground"
+              mode === "regions"
+                ? "bg-card text-secondary font-bold shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             7 Coğrafi Bölge
@@ -219,13 +246,27 @@ export function V2InteractiveMapPreview() {
       {mode === "regions" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 p-2 rounded-xl border border-border flex-wrap">
           <span className="font-semibold text-foreground">Bölge Renkleri:</span>
-          <span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-full bg-amber-600" /> Marmara</span>
-          <span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-full bg-teal-600" /> Ege</span>
-          <span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-full bg-emerald-600" /> Akdeniz</span>
-          <span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-full bg-yellow-600" /> İç Anadolu</span>
-          <span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-full bg-cyan-700" /> Karadeniz</span>
-          <span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-full bg-stone-600" /> Doğu Anadolu</span>
-          <span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-full bg-orange-600" /> Güneydoğu</span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2.5 rounded-full bg-amber-600" /> Marmara
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2.5 rounded-full bg-teal-600" /> Ege
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2.5 rounded-full bg-emerald-600" /> Akdeniz
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2.5 rounded-full bg-yellow-600" /> İç Anadolu
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2.5 rounded-full bg-cyan-700" /> Karadeniz
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2.5 rounded-full bg-stone-600" /> Doğu Anadolu
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2.5 rounded-full bg-orange-600" /> Güneydoğu
+          </span>
         </div>
       )}
 
@@ -252,10 +293,7 @@ export function V2InteractiveMapPreview() {
 
           {/* 2. Türkiye Casing Base Land */}
           {trCasing && (
-            <path
-              d={trCasing.d}
-              className="fill-card dark:fill-[#201c18] pointer-events-none"
-            />
+            <path d={trCasing.d} className="fill-card dark:fill-[#201c18] pointer-events-none" />
           )}
 
           {/* 3. Türkiye 81 Provinces Layer */}
@@ -270,7 +308,9 @@ export function V2InteractiveMapPreview() {
               if (mode === "regions") {
                 fillColor = `${REGION_STYLES[meta?.regionId || "marmara"]} text-white`;
               } else if (mode === "marine") {
-                fillColor = isCoastal ? "fill-accent/70 hover:fill-accent" : "fill-card/40 opacity-40";
+                fillColor = isCoastal
+                  ? "fill-accent/70 hover:fill-accent"
+                  : "fill-card/40 opacity-40";
               }
 
               if (isHovered) {
@@ -281,10 +321,19 @@ export function V2InteractiveMapPreview() {
                 <path
                   key={shape.plateCode}
                   d={shape.d}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${shape.geoName} ili`}
                   onMouseEnter={() => setHoveredPlate(shape.plateCode)}
                   onMouseLeave={() => setHoveredPlate(null)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      router.push(`/v2/turkiye/${getSlug(shape.geoName)}`);
+                    }
+                  }}
                   onClick={() => router.push(`/v2/turkiye/${getSlug(shape.geoName)}`)}
-                  className={`${fillColor} transition-all duration-150 cursor-pointer outline-none hover:stroke-foreground/60`}
+                  className={`${fillColor} transition-all duration-150 cursor-pointer outline-none hover:stroke-foreground/60 focus-visible:stroke-primary focus-visible:stroke-[2]`}
                 />
               );
             })}
@@ -315,7 +364,9 @@ export function V2InteractiveMapPreview() {
 
           {/* 6. Neighbor Country Name Labels (Placed at exact land centroids) */}
           <g className="fill-[#635a4e] dark:fill-[#a89e92] font-sans font-bold text-[12px] pointer-events-none select-none">
-            {CONTEXT_SHAPES.filter((c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso)).map((country) => {
+            {CONTEXT_SHAPES.filter(
+              (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
+            ).map((country) => {
               const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
               return (
                 <text

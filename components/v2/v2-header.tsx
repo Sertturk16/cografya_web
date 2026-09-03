@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth, setAuthModalMode } from "@/lib/auth/auth-modal.client";
-import { V2AuthDialog } from "./v2-auth-dialog";
 
 export function V2Header() {
   const pathname = usePathname();
@@ -34,7 +33,11 @@ export function V2Header() {
   const [activeDropdown, setActiveDropdown] = React.useState<
     "atlas" | "telemetry" | "interactive" | null
   >(null);
+
   const navContainerRef = React.useRef<HTMLDivElement>(null);
+  const atlasBtnRef = React.useRef<HTMLButtonElement>(null);
+  const telemetryBtnRef = React.useRef<HTMLButtonElement>(null);
+  const interactiveBtnRef = React.useRef<HTMLButtonElement>(null);
 
   const [prevPath, setPrevPath] = React.useState(pathStr);
   if (prevPath !== pathStr) {
@@ -51,6 +54,13 @@ export function V2Header() {
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
+        if (activeDropdown === "atlas") {
+          atlasBtnRef.current?.focus();
+        } else if (activeDropdown === "telemetry") {
+          telemetryBtnRef.current?.focus();
+        } else if (activeDropdown === "interactive") {
+          interactiveBtnRef.current?.focus();
+        }
         setActiveDropdown(null);
       }
     }
@@ -60,7 +70,7 @@ export function V2Header() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [activeDropdown]);
 
   const isHome = pathStr === "/v2";
   const isAtlasActive =
@@ -129,10 +139,11 @@ export function V2Header() {
           {/* Atlas & Haritalar Dropdown */}
           <div className="relative">
             <button
+              ref={atlasBtnRef}
               type="button"
               onClick={() => toggleDropdown("atlas")}
               aria-expanded={activeDropdown === "atlas"}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
                 isAtlasActive && !isHome
                   ? "bg-primary/10 text-primary font-bold border border-primary/20"
                   : activeDropdown === "atlas"
@@ -193,10 +204,11 @@ export function V2Header() {
           {/* Canlı Telemetri Dropdown */}
           <div className="relative">
             <button
+              ref={telemetryBtnRef}
               type="button"
               onClick={() => toggleDropdown("telemetry")}
               aria-expanded={activeDropdown === "telemetry"}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
                 isTelemetryActive
                   ? "bg-accent/10 text-accent font-bold border border-accent/20"
                   : activeDropdown === "telemetry"
@@ -257,10 +269,11 @@ export function V2Header() {
           {/* Etkileşim & Araçlar Dropdown */}
           <div className="relative">
             <button
+              ref={interactiveBtnRef}
               type="button"
               onClick={() => toggleDropdown("interactive")}
               aria-expanded={activeDropdown === "interactive"}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
                 isInteractiveActive
                   ? "bg-secondary/10 text-secondary font-bold border border-secondary/20"
                   : activeDropdown === "interactive"
@@ -569,9 +582,6 @@ export function V2Header() {
           </div>
         </div>
       </div>
-
-      {/* V2 Integrated Auth Modal */}
-      <V2AuthDialog />
     </nav>
   );
 }
