@@ -19,7 +19,7 @@ const COUNTRY_NAMES_TR: Record<string, string> = {
   IQ: "Irak",
   SY: "Suriye",
   RU: "Rusya",
-  CY: "Kıbrıs",
+  CY: "Güney Kıbrıs Rum Yönetimi",
   LB: "Lübnan",
 };
 

@@ -149,7 +149,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🌍",
       title: "Natural Earth Vector Data (1:50m)",
       license: "Kamu Malı (Public Domain)",
-      description: "199 egemen ülke ve özerk bölgenin sınır vektörleri ve başkent konumları.",
+      description: "199 ülke ve özerk bölgenin sınır vektörleri ve başkent konumları.",
       sourceUrl: "naturalearthdata.com",
     },
     {
@@ -157,7 +157,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🏛️",
       title: "Birleşmiş Milletler (UN) & Dünya Bankası",
       license: "Açık Veri",
-      description: "Ülke nüfusları, kıta kodlamaları, resmi diller ve egemenlik statüleri.",
+      description: "Ülke nüfusları, kıta kodlamaları ve resmî diller.",
       sourceUrl: "un.org • data.worldbank.org",
     },
     {

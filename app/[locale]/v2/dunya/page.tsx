@@ -63,7 +63,8 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
     const slug = slugForLocale(c, locale);
     const isSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(c.isoCode.toUpperCase());
     const hasFlagAsset = hasFlag(c.isoCode);
-    const flagVisible = hasFlagAsset && (!isSpecialStatus || locale === "tr");
+    // User Decision 2-B: Flags are displayed in both TR and EN, with special status badging
+    const flagVisible = hasFlagAsset;
 
     return {
       isoCode: c.isoCode,
@@ -78,6 +79,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
       areaKm2: sum?.areaKm2 ?? null,
       neighborCount: sum?.neighborCount ?? 0,
       hasFlag: flagVisible,
+      isSpecialStatus,
     };
   });
 

@@ -74,7 +74,7 @@ const COUNTRY_NAMES_TR: Record<string, string> = {
   IQ: "Irak",
   SY: "Suriye",
   RU: "Rusya",
-  CY: "Kıbrıs",
+  CY: "Güney Kıbrıs Rum Yönetimi",
   LB: "Lübnan",
 };
 
@@ -112,7 +112,7 @@ export function V2EarthquakeExplorer({
   const [windowDays, setWindowDays] = React.useState<number>(defaultWindowDays);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [selectedEventId, setSelectedEventId] = React.useState<string | null>(
-    () => initialEvents[0]?.id || null
+    () => initialEvents[0]?.id || null,
   );
   const [hoveredEventId, setHoveredEventId] = React.useState<string | null>(null);
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number } | null>(null);
@@ -138,7 +138,7 @@ export function V2EarthquakeExplorer({
         provinceSlug: prov?.slug ?? null,
         source: "AFAD",
       };
-    })
+    }),
   );
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
@@ -196,7 +196,7 @@ export function V2EarthquakeExplorer({
         setIsLoading(false);
       }
     },
-    [provinceMap]
+    [provinceMap],
   );
 
   // Trigger client fetch on filter change (skip first mount as initialEvents is already rendered)
@@ -263,17 +263,43 @@ export function V2EarthquakeExplorer({
   // Date/Time formatting helper
   const formatTime = (utcString: string) => {
     const d = new Date(utcString);
-    return `${d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} ${d.toLocaleTimeString("tr-TR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`;
+    return `${d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} ${d.toLocaleTimeString(
+      "tr-TR",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+    )}`;
   };
 
   const getMagnitudeStyle = (mag: number) => {
-    if (mag >= 5.0) return { bg: "bg-red-600", text: "text-white", border: "border-red-700", ring: "ring-red-500/50" };
-    if (mag >= 4.0) return { bg: "bg-orange-500", text: "text-white", border: "border-orange-600", ring: "ring-orange-500/50" };
-    if (mag >= 3.0) return { bg: "bg-amber-500", text: "text-amber-950", border: "border-amber-600", ring: "ring-amber-500/50" };
-    return { bg: "bg-emerald-600", text: "text-white", border: "border-emerald-700", ring: "ring-emerald-500/50" };
+    if (mag >= 5.0)
+      return {
+        bg: "bg-red-600",
+        text: "text-white",
+        border: "border-red-700",
+        ring: "ring-red-500/50",
+      };
+    if (mag >= 4.0)
+      return {
+        bg: "bg-orange-500",
+        text: "text-white",
+        border: "border-orange-600",
+        ring: "ring-orange-500/50",
+      };
+    if (mag >= 3.0)
+      return {
+        bg: "bg-amber-500",
+        text: "text-amber-950",
+        border: "border-amber-600",
+        ring: "ring-amber-500/50",
+      };
+    return {
+      bg: "bg-emerald-600",
+      text: "text-white",
+      border: "border-emerald-700",
+      ring: "ring-emerald-500/50",
+    };
   };
 
   const getIntensityLabel = (mag: number) => {
@@ -288,10 +314,14 @@ export function V2EarthquakeExplorer({
     if (!item.bindingKind || item.bindingKind === "inside") return null;
     const sentenceKey = bindingSentenceKey(item.bindingKind);
     if (sentenceKey === "offshoreNear") {
-      return item.provinceName ? `${item.provinceName} açıkları (Açık deniz)` : "Açık deniz sarsıntısı";
+      return item.provinceName
+        ? `${item.provinceName} açıkları (Açık deniz)`
+        : "Açık deniz sarsıntısı";
     }
     if (sentenceKey === "acrossBorder") {
-      return item.provinceName ? `Sınır ötesi (En yakın il: ${item.provinceName})` : "Sınır ötesi sarsıntı";
+      return item.provinceName
+        ? `Sınır ötesi (En yakın il: ${item.provinceName})`
+        : "Sınır ötesi sarsıntı";
     }
     return null;
   };
@@ -314,7 +344,9 @@ export function V2EarthquakeExplorer({
               <Badge variant="destructive" size="sm" dot>
                 Canlı AFAD Sismik Ağı
               </Badge>
-              <span className="text-xs text-muted-foreground font-medium">Türkiye Deprem Veri Merkezi (TDVMS)</span>
+              <span className="text-xs text-muted-foreground font-medium">
+                Türkiye Deprem Veri Merkezi (TDVMS)
+              </span>
             </div>
             <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
               Türkiye Canlı Sismik Aktivite Monitörü
@@ -324,7 +356,9 @@ export function V2EarthquakeExplorer({
           {/* Quick Metrics & Refresh Button */}
           <div className="flex items-center gap-2.5 flex-wrap">
             <div className="px-3.5 py-1.5 rounded-xl bg-card border border-border flex items-center gap-2 shadow-2xs">
-              <span className={`size-2 rounded-full ${isLoading ? "bg-amber-500 animate-spin" : "bg-emerald-500"}`} />
+              <span
+                className={`size-2 rounded-full ${isLoading ? "bg-amber-500 animate-spin" : "bg-emerald-500"}`}
+              />
               <span className="text-xs font-semibold text-foreground">
                 {isLoading ? "Güncelleniyor..." : `${filteredEvents.length} Sarsıntı Kayıtlı`}
               </span>
@@ -333,7 +367,8 @@ export function V2EarthquakeExplorer({
               <div className="px-3.5 py-1.5 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2">
                 <Flame className="size-3.5 text-destructive" />
                 <span className="text-xs font-bold text-destructive">
-                  En Büyük: M {maxMagnitudeEvent.magnitude.toFixed(1)} ({maxMagnitudeEvent.placeNameTr})
+                  En Büyük: M {maxMagnitudeEvent.magnitude.toFixed(1)} (
+                  {maxMagnitudeEvent.placeNameTr})
                 </span>
               </div>
             )}
@@ -445,10 +480,18 @@ export function V2EarthquakeExplorer({
           <div className="flex items-center gap-3 flex-wrap">
             {/* Magnitude Legend */}
             <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-emerald-600" /> M &lt; 3.0</span>
-              <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-amber-500" /> M 3.0–3.9</span>
-              <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-orange-500" /> M 4.0–4.9</span>
-              <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-red-600" /> M &ge; 5.0</span>
+              <span className="inline-flex items-center gap-1">
+                <span className="size-2 rounded-full bg-emerald-600" /> M &lt; 3.0
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="size-2 rounded-full bg-amber-500" /> M 3.0–3.9
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="size-2 rounded-full bg-orange-500" /> M 4.0–4.9
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="size-2 rounded-full bg-red-600" /> M &ge; 5.0
+              </span>
             </div>
 
             {/* Direct Fault Lines Toggle Button on Map Header */}
@@ -488,7 +531,7 @@ export function V2EarthquakeExplorer({
             {/* Neighbor Country Name Labels */}
             <g className="fill-[#635a4e] dark:fill-[#a89e92] font-sans font-bold text-[11px] pointer-events-none select-none">
               {CONTEXT_SHAPES.filter(
-                (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso)
+                (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
               ).map((country) => {
                 const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
                 return (
@@ -612,10 +655,10 @@ export function V2EarthquakeExplorer({
                         isSelected
                           ? "#f59e0b"
                           : eq.magnitude >= 5.0
-                          ? "#dc2626"
-                          : eq.magnitude >= 4.0
-                          ? "#ea580c"
-                          : "#059669"
+                            ? "#dc2626"
+                            : eq.magnitude >= 4.0
+                              ? "#ea580c"
+                              : "#059669"
                       }
                       strokeWidth={isSelected ? "2" : "1.2"}
                     >
@@ -644,8 +687,8 @@ export function V2EarthquakeExplorer({
                         isSelected
                           ? "stroke-amber-400 dark:stroke-amber-300 stroke-[2.5]"
                           : eq.magnitude >= 4.0
-                          ? "stroke-destructive/70"
-                          : "stroke-primary/50"
+                            ? "stroke-destructive/70"
+                            : "stroke-primary/50"
                       }`}
                       pointerEvents="none"
                     />
@@ -696,7 +739,9 @@ export function V2EarthquakeExplorer({
                   {hoveredEvent.depthKm.toFixed(1)} km
                 </Badge>
               </div>
-              <div className="font-semibold text-foreground text-xs">{hoveredEvent.placeNameTr}</div>
+              <div className="font-semibold text-foreground text-xs">
+                {hoveredEvent.placeNameTr}
+              </div>
               <div className="text-[10px] text-muted-foreground flex items-center justify-between pt-1 border-t border-border/60">
                 <span>{formatTime(hoveredEvent.occurredAtUtc)}</span>
                 <span className="font-mono">AFAD</span>
@@ -709,7 +754,9 @@ export function V2EarthquakeExplorer({
         {showFaultLines && (
           <div className="p-3 rounded-2xl bg-card border border-border flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-4 flex-wrap text-[11px]">
-              <span className="font-semibold text-foreground">Diri Fay Zonları (MTA Haritası):</span>
+              <span className="font-semibold text-foreground">
+                Diri Fay Zonları (MTA Haritası):
+              </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3.5 h-0.5 bg-[#dc2626] rounded-full" /> Kuzey Anadolu Fayı (KAFZ)
               </span>
@@ -717,7 +764,8 @@ export function V2EarthquakeExplorer({
                 <span className="w-3.5 h-0.5 bg-[#2563eb] rounded-full" /> Doğu Anadolu Fayı (DAFZ)
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-3.5 h-0.5 bg-[#059669] rounded-full" /> Batı Anadolu Grabenleri (BAFS)
+                <span className="w-3.5 h-0.5 bg-[#059669] rounded-full" /> Batı Anadolu Grabenleri
+                (BAFS)
               </span>
             </div>
           </div>
@@ -736,7 +784,11 @@ export function V2EarthquakeExplorer({
                   <Badge variant="primary" size="sm" icon={<Activity className="size-3.5" />}>
                     Seçili Sarsıntı Detayı
                   </Badge>
-                  <Badge variant="outline" size="sm" className="text-[10px] py-0 px-2 font-semibold">
+                  <Badge
+                    variant="outline"
+                    size="sm"
+                    className="text-[10px] py-0 px-2 font-semibold"
+                  >
                     {getIntensityLabel(selectedEvent.magnitude)}
                   </Badge>
                 </div>
@@ -788,7 +840,9 @@ export function V2EarthquakeExplorer({
                 <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-0.5">
                   <span className="text-[10px] text-muted-foreground block">Büyüklük Skalası</span>
                   <span className="font-mono font-bold text-foreground sm:text-sm">
-                    {selectedEvent.magnitudeType === "Mw" ? "Moment Büyüklüğü (Mw)" : "Yerel Büyüklük (ML)"}
+                    {selectedEvent.magnitudeType === "Mw"
+                      ? "Moment Büyüklüğü (Mw)"
+                      : "Yerel Büyüklük (ML)"}
                   </span>
                   <span className="text-[9px] text-muted-foreground block">Richter Ölçeği</span>
                 </div>
@@ -824,7 +878,10 @@ export function V2EarthquakeExplorer({
               </Button>
               {selectedEvent.provinceSlug && (
                 <Link
-                  href={{ pathname: "/v2/turkiye/[slug]", params: { slug: selectedEvent.provinceSlug } }}
+                  href={{
+                    pathname: "/v2/turkiye/[slug]",
+                    params: { slug: selectedEvent.provinceSlug },
+                  }}
                   className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-9 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs"
                 >
                   <span className="text-white">İl Detayı</span>
@@ -836,7 +893,9 @@ export function V2EarthquakeExplorer({
         ) : (
           <div className="p-8 rounded-3xl border border-border bg-card text-center space-y-2 flex flex-col items-center justify-center">
             <Info className="size-8 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Filtrelere uygun deprem kaydı bulunamadı.</p>
+            <p className="text-xs text-muted-foreground">
+              Filtrelere uygun deprem kaydı bulunamadı.
+            </p>
           </div>
         )}
 
@@ -941,7 +1000,9 @@ export function V2EarthquakeExplorer({
                       id={`eq-row-${eq.id}`}
                       onClick={() => setSelectedEventId(eq.id)}
                       className={`cursor-pointer transition-colors ${
-                        isSelected ? "bg-primary/10 hover:bg-primary/15 font-medium" : "hover:bg-muted/50"
+                        isSelected
+                          ? "bg-primary/10 hover:bg-primary/15 font-medium"
+                          : "hover:bg-muted/50"
                       }`}
                     >
                       <TableCell>
@@ -957,7 +1018,9 @@ export function V2EarthquakeExplorer({
                             {eq.placeNameTr}
                           </div>
                           {bindingDesc && (
-                            <div className="text-[11px] text-primary font-medium">{bindingDesc}</div>
+                            <div className="text-[11px] text-primary font-medium">
+                              {bindingDesc}
+                            </div>
                           )}
                         </div>
                       </TableCell>
@@ -971,7 +1034,11 @@ export function V2EarthquakeExplorer({
                         {formatTime(eq.occurredAtUtc)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge variant="outline" size="sm" className="font-mono text-[10px] text-muted-foreground">
+                        <Badge
+                          variant="outline"
+                          size="sm"
+                          className="font-mono text-[10px] text-muted-foreground"
+                        >
                           AFAD
                         </Badge>
                       </TableCell>
