@@ -8,6 +8,7 @@ import type { ProvinceListItem, ProvinceMapSummary } from "@/lib/api/types";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2TurkeyMapExplorer, type ProvinceItem } from "@/components/v2/v2-turkey-map-explorer";
@@ -36,19 +37,16 @@ function slugForLocale(province: ProvinceListItem, locale: Locale): string {
   return locale === "en" ? province.slugEn : province.slugTr;
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
+export async function generateMetadata({ params }: V2TurkiyePageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/turkiye",
     title: "Türkiye İller Atlası v2 — 81 İl İnteraktif Haritası ve Coğrafyası",
     description:
       "Türkiye'nin 81 ili, 7 coğrafi bölgesi, fiziki haritaları, demografisi, iklim normalleri ve canlı deniz/deprem telemetrisi.",
-    alternates: {
-      canonical: "/v2/turkiye",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {

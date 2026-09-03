@@ -10,9 +10,12 @@ import {
   EMAIL_SHAPE,
   canonicalizePhone,
   buildRegisterPayload,
+  isPasswordPolicyCompliant,
   type RegisterFormState,
   type UserType,
 } from "@/lib/auth/form-rules";
+import type { GradeLevel, StudyStream, University, Department } from "@/lib/api/types";
+import { GRADE_LEVEL_LABELS, STUDY_STREAM_LABELS } from "@/lib/auth/profile-labels";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +36,7 @@ import {
   Compass,
   Check,
   Phone,
+  School,
 } from "lucide-react";
 
 export interface V2RegisterCardProps {
@@ -43,12 +47,29 @@ export interface V2RegisterCardProps {
   onSwitchToLogin?: () => void;
 }
 
-const USER_ROLES = [
-  { id: "STUDENT", label: "Öğrenci (YKS / KPSS)", icon: <GraduationCap className="size-3.5" /> },
-  { id: "TEACHER", label: "Öğretmen / Eğitmen", icon: <Briefcase className="size-3.5" /> },
-  { id: "ACADEMIC", label: "Akademisyen / Araştırmacı", icon: <BookOpen className="size-3.5" /> },
-  { id: "GENERAL", label: "Genel Coğrafya Meraklısı", icon: <Compass className="size-3.5" /> },
+const USER_ROLES: Array<{
+  id: UserType;
+  label: string;
+  icon: React.ReactNode;
+}> = [
+  { id: "secondary", label: "Ortaöğretim / Lise", icon: <GraduationCap className="size-3.5" /> },
+  { id: "undergraduate", label: "Lisans Öğrencisi", icon: <BookOpen className="size-3.5" /> },
+  { id: "graduate", label: "Lisansüstü", icon: <Compass className="size-3.5" /> },
+  { id: "teacher", label: "Öğretmen / Eğitmen", icon: <Briefcase className="size-3.5" /> },
 ];
+
+type FieldKey =
+  | "firstName"
+  | "lastName"
+  | "phone"
+  | "email"
+  | "provincePlateCode"
+  | "districtId"
+  | "password"
+  | "gradeLevel"
+  | "studyStream"
+  | "universityName"
+  | "departmentName";
 
 export function V2RegisterCard({
   locale: _locale = "tr",
@@ -68,17 +89,26 @@ export function V2RegisterCard({
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
-  const [selectedRole, setSelectedRole] = React.useState("STUDENT");
+  const [selectedRole, setSelectedRole] = React.useState<UserType>("secondary");
   const [selectedPlate, setSelectedPlate] = React.useState("");
   const [districts, setDistricts] = React.useState<Array<{ id: string; nameTr: string }>>([]);
   const [selectedDistrictId, setSelectedDistrictId] = React.useState("");
   const [fetchedProvinces, setFetchedProvinces] = React.useState<
     Array<{ plateCode: string; nameTr: string }>
   >([]);
-  const [verificationCode, setVerificationCode] = React.useState("");
 
+  // Conditional profile fields
+  const [selectedGradeLevel, setSelectedGradeLevel] = React.useState<GradeLevel | "">("GRADE_12");
+  const [selectedStudyStream, setSelectedStudyStream] = React.useState<StudyStream | "">("TYT");
+  const [selectedUniversityName, setSelectedUniversityName] = React.useState("");
+  const [selectedDepartmentName, setSelectedDepartmentName] = React.useState("");
+  const [universities, setUniversities] = React.useState<University[]>([]);
+  const [departments, setDepartments] = React.useState<Department[]>([]);
+
+  const [verificationCode, setVerificationCode] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+  const [generalError, setGeneralError] = React.useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = React.useState<Partial<Record<FieldKey, string>>>({});
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
 
   // Fetch provinces if not passed as prop
@@ -119,80 +149,119 @@ export function V2RegisterCard({
     };
   }, [selectedPlate]);
 
+  // Fetch universities and departments for higher education roles
+  React.useEffect(() => {
+    if (selectedRole === "undergraduate" || selectedRole === "graduate") {
+      if (universities.length === 0) {
+        fetch("/api/reference/universities")
+          .then((res) => res.json())
+          .then((data) => {
+            if (Array.isArray(data)) setUniversities(data);
+          })
+          .catch(() => {});
+      }
+      if (departments.length === 0) {
+        fetch("/api/reference/departments")
+          .then((res) => res.json())
+          .then((data) => {
+            if (Array.isArray(data)) setDepartments(data);
+          })
+          .catch(() => {});
+      }
+    }
+  }, [selectedRole, universities.length, departments.length]);
+
   // Password requirements calculation
   const hasMinLength = password.length >= 8;
-  const hasNumber = /\d/.test(password);
-  const hasLetter = /[a-zA-ZğüşıöçĞÜŞİÖÇ]/.test(password);
-
-  function roleToUserType(roleId: string): UserType {
-    switch (roleId) {
-      case "TEACHER":
-        return "teacher";
-      case "ACADEMIC":
-        return "undergraduate";
-      case "STUDENT":
-      case "GENERAL":
-      default:
-        return "secondary";
-    }
-  }
+  const hasLower = /[a-zğüşıöç]/.test(password);
+  const hasUpper = /[A-ZĞÜŞİÖÇ]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
+    setGeneralError(null);
+    setFieldErrors({});
     setSuccessMsg(null);
 
     const cleanFirst = firstName.trim();
     const cleanLast = lastName.trim();
     const cleanEmail = email.trim();
+    const errors: Partial<Record<FieldKey, string>> = {};
 
     if (!cleanFirst) {
-      setErrorMsg("Lütfen adını gir.");
-      return;
+      errors.firstName = "Lütfen adını gir.";
     }
     if (!cleanLast) {
-      setErrorMsg("Lütfen soyadını gir.");
-      return;
+      errors.lastName = "Lütfen soyadını gir.";
     }
     const cleanPhone = canonicalizePhone(phone);
     if (!cleanPhone) {
-      setErrorMsg("Lütfen geçerli bir telefon numarası gir (örn: 05xx xxx xx xx).");
-      return;
+      errors.phone = "Lütfen geçerli bir cep telefonu numarası gir (örn: 05xx xxx xx xx).";
     }
     if (!cleanEmail || !EMAIL_SHAPE.test(cleanEmail)) {
-      setErrorMsg("Lütfen geçerli bir e-posta adresi yaz.");
-      return;
+      errors.email = "Lütfen geçerli bir e-posta adresi yaz.";
     }
     if (!selectedPlate) {
-      setErrorMsg("Lütfen bulunduğun ili seç.");
-      return;
+      errors.provincePlateCode = "Lütfen bulunduğun ili seç.";
     }
     if (!selectedDistrictId) {
-      setErrorMsg("Lütfen ilçeni seç.");
-      return;
+      errors.districtId = "Lütfen ilçeni seç.";
     }
-    if (!hasMinLength || !hasNumber || !hasLetter) {
-      setErrorMsg("Şifren en az 8 karakter, en az bir harf ve bir rakam içermelidir.");
+
+    // Role-specific field validation
+    if (selectedRole === "secondary") {
+      if (!selectedGradeLevel) {
+        errors.gradeLevel = "Lütfen sınıf seviyeni seç.";
+      }
+      if (!selectedStudyStream) {
+        errors.studyStream = "Lütfen alanını seç.";
+      }
+    } else if (selectedRole === "undergraduate") {
+      if (!selectedUniversityName.trim()) {
+        errors.universityName = "Lütfen üniversiteni belirt.";
+      }
+      if (!selectedDepartmentName.trim()) {
+        errors.departmentName = "Lütfen bölümünü belirt.";
+      }
+    } else if (selectedRole === "graduate") {
+      if (!selectedUniversityName.trim()) {
+        errors.universityName = "Lütfen üniversiteni belirt.";
+      }
+    }
+
+    // Canonical password policy validation
+    if (!isPasswordPolicyCompliant(password)) {
+      errors.password =
+        "Şifren en az 6-128 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
     setLoading(true);
     try {
-      const uType = roleToUserType(selectedRole);
       const formState: RegisterFormState = {
         firstName: cleanFirst,
         lastName: cleanLast,
-        phone: cleanPhone,
+        phone: cleanPhone!,
         email: cleanEmail,
         password,
         passwordConfirm: password,
-        userType: uType,
+        userType: selectedRole,
         provincePlateCode: selectedPlate,
         districtId: selectedDistrictId,
-        gradeLevel: uType === "secondary" ? "KPSS" : "",
-        studyStream: uType === "secondary" ? "TYT" : "",
-        universityName: uType === "undergraduate" ? "Diğer" : "",
-        departmentName: uType === "undergraduate" ? "Coğrafya" : "",
+        gradeLevel: selectedRole === "secondary" ? (selectedGradeLevel as GradeLevel) : "",
+        studyStream: selectedRole === "secondary" ? (selectedStudyStream as StudyStream) : "",
+        universityName:
+          selectedRole === "undergraduate" || selectedRole === "graduate"
+            ? selectedUniversityName.trim()
+            : "",
+        departmentName:
+          selectedRole === "undergraduate" || selectedRole === "graduate"
+            ? selectedDepartmentName.trim()
+            : "",
       };
 
       const payload = buildRegisterPayload(formState, _locale);
@@ -208,15 +277,15 @@ export function V2RegisterCard({
           result.code === "errors.auth.rateLimited" ||
           result.code === "errors.auth.tooManyAttempts"
         ) {
-          setErrorMsg("Çok fazla deneme yapıldı. Lütfen biraz sonra tekrar dene.");
+          setGeneralError("Çok fazla deneme yapıldı. Lütfen biraz sonra tekrar dene.");
         } else if (result.code === "errors.transport.invalidRequest") {
-          setErrorMsg("Kayıt bilgileri geçersiz veya bu e-posta adresi zaten kullanılıyor.");
+          setGeneralError("Kayıt bilgileri geçersiz veya bu e-posta adresi zaten kullanılıyor.");
         } else {
-          setErrorMsg("Kayıt oluşturulurken bir sorun oluştu. Lütfen bilgilerini kontrol et.");
+          setGeneralError("Kayıt oluşturulurken bir sorun oluştu. Lütfen bilgilerini kontrol et.");
         }
       }
     } catch {
-      setErrorMsg("Sunucuya bağlanılamadı. Lütfen internet bağlantını kontrol et.");
+      setGeneralError("Sunucuya bağlanılamadı. Lütfen internet bağlantını kontrol et.");
     } finally {
       setLoading(false);
     }
@@ -224,12 +293,12 @@ export function V2RegisterCard({
 
   const handleVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
+    setGeneralError(null);
     setSuccessMsg(null);
 
     const cleanCode = verificationCode.trim();
     if (!cleanCode || cleanCode.length < 4) {
-      setErrorMsg("Lütfen geçerli doğrulama kodunu gir.");
+      setGeneralError("Lütfen geçerli doğrulama kodunu gir.");
       return;
     }
 
@@ -249,10 +318,10 @@ export function V2RegisterCard({
           router.replace("/v2");
         }
       } else {
-        setErrorMsg("Doğrulama kodu hatalı veya süresi dolmuş. Lütfen tekrar kontrol et.");
+        setGeneralError("Doğrulama kodu hatalı veya süresi dolmuş. Lütfen tekrar kontrol et.");
       }
     } catch {
-      setErrorMsg("Doğrulama işlemi sırasında hata oluştu.");
+      setGeneralError("Doğrulama işlemi sırasında hata oluştu.");
     } finally {
       setLoading(false);
     }
@@ -274,7 +343,7 @@ export function V2RegisterCard({
           </p>
         </div>
 
-        {errorMsg && (
+        {generalError && (
           <div
             id="v2-verify-error"
             role="alert"
@@ -282,7 +351,7 @@ export function V2RegisterCard({
             className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive"
           >
             <AlertCircle className="size-4 shrink-0 mt-0.5" />
-            <span className="font-medium">{errorMsg}</span>
+            <span className="font-medium">{generalError}</span>
           </div>
         )}
 
@@ -306,8 +375,8 @@ export function V2RegisterCard({
             onChange={(e) => setVerificationCode(e.target.value)}
             className="h-11 rounded-xl bg-card border-border text-center font-mono text-base tracking-widest"
             disabled={loading}
-            aria-invalid={Boolean(errorMsg)}
-            aria-describedby={errorMsg ? "v2-verify-error" : undefined}
+            aria-invalid={Boolean(generalError)}
+            aria-describedby={generalError ? "v2-verify-error" : undefined}
           />
         </div>
 
@@ -354,8 +423,8 @@ export function V2RegisterCard({
         </div>
       )}
 
-      {/* Error Alert */}
-      {errorMsg && (
+      {/* General Error Alert */}
+      {generalError && (
         <div
           id="v2-register-error"
           role="alert"
@@ -363,7 +432,7 @@ export function V2RegisterCard({
           className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200"
         >
           <AlertCircle className="size-4 shrink-0 mt-0.5" />
-          <span className="leading-relaxed font-medium">{errorMsg}</span>
+          <span className="leading-relaxed font-medium">{generalError}</span>
         </div>
       )}
 
@@ -383,9 +452,14 @@ export function V2RegisterCard({
             leftIcon={<User className="size-4 text-muted-foreground" />}
             className="h-10 text-xs"
             disabled={loading}
-            aria-invalid={Boolean(errorMsg)}
-            aria-describedby={errorMsg ? "v2-register-error" : undefined}
+            aria-invalid={Boolean(fieldErrors.firstName)}
+            aria-describedby={fieldErrors.firstName ? "v2-error-firstname" : undefined}
           />
+          {fieldErrors.firstName && (
+            <p id="v2-error-firstname" className="text-[11px] text-destructive font-medium">
+              {fieldErrors.firstName}
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="v2-register-lastname" className="text-xs font-bold text-foreground">
@@ -400,9 +474,14 @@ export function V2RegisterCard({
             onChange={(e) => setLastName(e.target.value)}
             className="h-10 text-xs"
             disabled={loading}
-            aria-invalid={Boolean(errorMsg)}
-            aria-describedby={errorMsg ? "v2-register-error" : undefined}
+            aria-invalid={Boolean(fieldErrors.lastName)}
+            aria-describedby={fieldErrors.lastName ? "v2-error-lastname" : undefined}
           />
+          {fieldErrors.lastName && (
+            <p id="v2-error-lastname" className="text-[11px] text-destructive font-medium">
+              {fieldErrors.lastName}
+            </p>
+          )}
         </div>
       </div>
 
@@ -421,9 +500,14 @@ export function V2RegisterCard({
           leftIcon={<Phone className="size-4 text-muted-foreground" />}
           className="h-10 text-xs"
           disabled={loading}
-          aria-invalid={Boolean(errorMsg)}
-          aria-describedby={errorMsg ? "v2-register-error" : undefined}
+          aria-invalid={Boolean(fieldErrors.phone)}
+          aria-describedby={fieldErrors.phone ? "v2-error-phone" : undefined}
         />
+        {fieldErrors.phone && (
+          <p id="v2-error-phone" className="text-[11px] text-destructive font-medium">
+            {fieldErrors.phone}
+          </p>
+        )}
       </div>
 
       {/* Email Field */}
@@ -441,9 +525,14 @@ export function V2RegisterCard({
           leftIcon={<Mail className="size-4 text-muted-foreground" />}
           className="h-10 text-xs"
           disabled={loading}
-          aria-invalid={Boolean(errorMsg)}
-          aria-describedby={errorMsg ? "v2-register-error" : undefined}
+          aria-invalid={Boolean(fieldErrors.email)}
+          aria-describedby={fieldErrors.email ? "v2-error-email" : undefined}
         />
+        {fieldErrors.email && (
+          <p id="v2-error-email" className="text-[11px] text-destructive font-medium">
+            {fieldErrors.email}
+          </p>
+        )}
       </div>
 
       {/* User Role Selector */}
@@ -474,6 +563,126 @@ export function V2RegisterCard({
         </div>
       </div>
 
+      {/* Conditional: Secondary School (Grade & Stream) */}
+      {selectedRole === "secondary" && (
+        <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/30 border border-border/80 animate-in fade-in-50 duration-200">
+          <div className="space-y-1.5">
+            <Label htmlFor="v2-register-grade" className="text-xs font-bold text-foreground">
+              Sınıf Seviyesi
+            </Label>
+            <select
+              id="v2-register-grade"
+              value={selectedGradeLevel}
+              onChange={(e) => setSelectedGradeLevel(e.target.value as GradeLevel)}
+              aria-invalid={Boolean(fieldErrors.gradeLevel)}
+              aria-describedby={fieldErrors.gradeLevel ? "v2-error-grade" : undefined}
+              className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150"
+            >
+              {Object.entries(GRADE_LEVEL_LABELS).map(([code, label]) => (
+                <option key={code} value={code}>
+                  {label.tr}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.gradeLevel && (
+              <p id="v2-error-grade" className="text-[11px] text-destructive font-medium">
+                {fieldErrors.gradeLevel}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="v2-register-stream" className="text-xs font-bold text-foreground">
+              Sınav / Alan
+            </Label>
+            <select
+              id="v2-register-stream"
+              value={selectedStudyStream}
+              onChange={(e) => setSelectedStudyStream(e.target.value as StudyStream)}
+              aria-invalid={Boolean(fieldErrors.studyStream)}
+              aria-describedby={fieldErrors.studyStream ? "v2-error-stream" : undefined}
+              className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150"
+            >
+              {Object.entries(STUDY_STREAM_LABELS).map(([code, label]) => (
+                <option key={code} value={code}>
+                  {label.tr}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.studyStream && (
+              <p id="v2-error-stream" className="text-[11px] text-destructive font-medium">
+                {fieldErrors.studyStream}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Conditional: Higher Education (University & Department) */}
+      {(selectedRole === "undergraduate" || selectedRole === "graduate") && (
+        <div className="space-y-2.5 p-3 rounded-xl bg-muted/30 border border-border/80 animate-in fade-in-50 duration-200">
+          <div className="space-y-1.5">
+            <Label htmlFor="v2-register-university" className="text-xs font-bold text-foreground">
+              Üniversite
+            </Label>
+            <div className="relative">
+              <input
+                id="v2-register-university"
+                list="v2-universities-list"
+                placeholder="Üniversite ara veya yaz..."
+                value={selectedUniversityName}
+                onChange={(e) => setSelectedUniversityName(e.target.value)}
+                aria-invalid={Boolean(fieldErrors.universityName)}
+                aria-describedby={fieldErrors.universityName ? "v2-error-university" : undefined}
+                className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150"
+              />
+              <datalist id="v2-universities-list">
+                {universities.map((u) => (
+                  <option key={u.nameTr} value={u.nameTr}>
+                    {u.nameTr}
+                  </option>
+                ))}
+              </datalist>
+              <School className="size-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+            {fieldErrors.universityName && (
+              <p id="v2-error-university" className="text-[11px] text-destructive font-medium">
+                {fieldErrors.universityName}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="v2-register-department" className="text-xs font-bold text-foreground">
+              Bölüm {selectedRole === "graduate" && "(Opsiyonel)"}
+            </Label>
+            <div className="relative">
+              <input
+                id="v2-register-department"
+                list="v2-departments-list"
+                placeholder="Bölüm ara veya yaz..."
+                value={selectedDepartmentName}
+                onChange={(e) => setSelectedDepartmentName(e.target.value)}
+                aria-invalid={Boolean(fieldErrors.departmentName)}
+                aria-describedby={fieldErrors.departmentName ? "v2-error-department" : undefined}
+                className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150"
+              />
+              <datalist id="v2-departments-list">
+                {departments.map((d) => (
+                  <option key={d.nameTr} value={d.nameTr}>
+                    {d.nameTr}
+                  </option>
+                ))}
+              </datalist>
+            </div>
+            {fieldErrors.departmentName && (
+              <p id="v2-error-department" className="text-[11px] text-destructive font-medium">
+                {fieldErrors.departmentName}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* İl ve İlçe Seçimi */}
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1.5">
@@ -490,8 +699,8 @@ export function V2RegisterCard({
                 setSelectedDistrictId("");
                 if (!next) setDistricts([]);
               }}
-              aria-invalid={Boolean(errorMsg)}
-              aria-describedby={errorMsg ? "v2-register-error" : undefined}
+              aria-invalid={Boolean(fieldErrors.provincePlateCode)}
+              aria-describedby={fieldErrors.provincePlateCode ? "v2-error-province" : undefined}
               className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150"
             >
               <option value="">İl Seç...</option>
@@ -503,6 +712,11 @@ export function V2RegisterCard({
             </select>
             <MapPin className="size-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
+          {fieldErrors.provincePlateCode && (
+            <p id="v2-error-province" className="text-[11px] text-destructive font-medium">
+              {fieldErrors.provincePlateCode}
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="v2-register-district" className="text-xs font-bold text-foreground">
@@ -514,8 +728,8 @@ export function V2RegisterCard({
               value={selectedDistrictId}
               onChange={(e) => setSelectedDistrictId(e.target.value)}
               disabled={districts.length === 0}
-              aria-invalid={Boolean(errorMsg)}
-              aria-describedby={errorMsg ? "v2-register-error" : undefined}
+              aria-invalid={Boolean(fieldErrors.districtId)}
+              aria-describedby={fieldErrors.districtId ? "v2-error-district" : undefined}
               className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150 disabled:opacity-50"
             >
               {districts.length === 0 ? (
@@ -530,6 +744,11 @@ export function V2RegisterCard({
             </select>
             <MapPin className="size-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
+          {fieldErrors.districtId && (
+            <p id="v2-error-district" className="text-[11px] text-destructive font-medium">
+              {fieldErrors.districtId}
+            </p>
+          )}
         </div>
       </div>
 
@@ -549,8 +768,8 @@ export function V2RegisterCard({
             leftIcon={<Lock className="size-4 text-muted-foreground" />}
             className="h-10 pr-10 text-xs"
             disabled={loading}
-            aria-invalid={Boolean(errorMsg)}
-            aria-describedby={errorMsg ? "v2-register-error" : undefined}
+            aria-invalid={Boolean(fieldErrors.password)}
+            aria-describedby={fieldErrors.password ? "v2-error-password" : undefined}
           />
           <button
             type="button"
@@ -562,22 +781,32 @@ export function V2RegisterCard({
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
+        {fieldErrors.password && (
+          <p id="v2-error-password" className="text-[11px] text-destructive font-medium">
+            {fieldErrors.password}
+          </p>
+        )}
 
         {/* Dynamic Password Strength Indicators */}
-        <div className="flex items-center gap-3 pt-1 text-[11px] text-muted-foreground">
+        <div className="grid grid-cols-4 gap-1 pt-1 text-[11px] text-muted-foreground">
           <span
-            className={`inline-flex items-center gap-1 ${hasMinLength ? "text-emerald-600 font-bold" : ""}`}
+            className={`inline-flex items-center gap-0.5 ${hasMinLength ? "text-emerald-600 font-bold" : ""}`}
           >
             <Check className={`size-3 ${hasMinLength ? "opacity-100" : "opacity-30"}`} /> 8+
             karakter
           </span>
           <span
-            className={`inline-flex items-center gap-1 ${hasLetter ? "text-emerald-600 font-bold" : ""}`}
+            className={`inline-flex items-center gap-0.5 ${hasUpper ? "text-emerald-600 font-bold" : ""}`}
           >
-            <Check className={`size-3 ${hasLetter ? "opacity-100" : "opacity-30"}`} /> Harf
+            <Check className={`size-3 ${hasUpper ? "opacity-100" : "opacity-30"}`} /> Büyük harf
           </span>
           <span
-            className={`inline-flex items-center gap-1 ${hasNumber ? "text-emerald-600 font-bold" : ""}`}
+            className={`inline-flex items-center gap-0.5 ${hasLower ? "text-emerald-600 font-bold" : ""}`}
+          >
+            <Check className={`size-3 ${hasLower ? "opacity-100" : "opacity-30"}`} /> Küçük harf
+          </span>
+          <span
+            className={`inline-flex items-center gap-0.5 ${hasNumber ? "text-emerald-600 font-bold" : ""}`}
           >
             <Check className={`size-3 ${hasNumber ? "opacity-100" : "opacity-30"}`} /> Rakam
           </span>

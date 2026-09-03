@@ -6,6 +6,7 @@ import type { CountryMapSummary, Continent } from "@/lib/api/types";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2Footer } from "@/components/v2/v2-footer";
@@ -29,19 +30,16 @@ function slugForLocale(country: { slugTr: string; slugEn: string }, locale: Loca
 
 const SPECIAL_STATUS_ISO_CODES = new Set(["QN", "CY", "IL", "PS", "TW", "XK"]);
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
+export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/dunya",
     title: "Dünya Ülkeleri & Kıtalar Atlası v2 — İnteraktif Dünya Haritası",
     description:
       "Dünyanın 199 ülke ve bölgesi, 7 kıtası, bayrakları, nüfus verileri, yüzölçümleri ve coğrafi ekstremleri tek ekranda.",
-    alternates: {
-      canonical: "/v2/dunya",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
@@ -65,7 +63,8 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
     const slug = slugForLocale(c, locale);
     const isSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(c.isoCode.toUpperCase());
     const hasFlagAsset = hasFlag(c.isoCode);
-    const flagVisible = hasFlagAsset && (!isSpecialStatus || locale === "tr");
+    // User Decision 2-B: Flags are displayed in both TR and EN, with special status badging
+    const flagVisible = hasFlagAsset;
 
     return {
       isoCode: c.isoCode,
@@ -80,6 +79,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
       areaKm2: sum?.areaKm2 ?? null,
       neighborCount: sum?.neighborCount ?? 0,
       hasFlag: flagVisible,
+      isSpecialStatus,
     };
   });
 

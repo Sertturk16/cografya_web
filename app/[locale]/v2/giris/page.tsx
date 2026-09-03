@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2LoginCard } from "@/components/v2/v2-login-card";
@@ -19,17 +20,13 @@ interface V2LoginPageProps {
 export async function generateMetadata({ params }: V2LoginPageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Auth" });
-  return {
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/giris",
     title: `${t("login.heading")} v2 — Coğrafya Platformu`,
     description: t("login.metaDescription"),
-    alternates: {
-      canonical: "/v2/giris",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2LoginPage({ params }: V2LoginPageProps) {

@@ -6,6 +6,7 @@ import { getProvincesResilient } from "@/lib/api/provinces";
 import { buildProvincePoints } from "@/lib/tools/province-points";
 import type { ProvinceArea } from "@/components/tools/tool-island";
 import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ToolWorkbench } from "@/components/v2/v2-tool-workbench";
@@ -21,19 +22,16 @@ interface V2CoordinatesPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
+export async function generateMetadata({ params }: V2CoordinatesPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/araclar/koordinat-bulma",
     title: "Haritada Koordinat Bulma & Dönüştürme v2 — Enlem, Boylam ve WGS84 GPS",
     description:
       "İnteraktif harita üzerinde tıklayarak veya arama yaparak Ondalık Derece (DD), Derece-Dakika-Saniye (DMS) ve UTM koordinatlarını WGS84 standardında tespit edin.",
-    alternates: {
-      canonical: "/v2/araclar/koordinat-bulma",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPageProps) {

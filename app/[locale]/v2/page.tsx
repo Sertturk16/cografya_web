@@ -23,6 +23,7 @@ import {
 import { MARINE_VALUE_FRACTION_DIGITS } from "@/lib/marine/units";
 import { VintageLine } from "@/components/marine/vintage-line";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,17 +53,13 @@ export const revalidate: typeof MARINE_VALUES_REVALIDATE_SECONDS = 900;
 export async function generateMetadata({ params }: V2PageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Home" });
-  return {
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2",
     title: `${t("metaTitle")} | Coğrafya v2`,
     description: t("metaDescription"),
-    alternates: {
-      canonical: locale === "tr" ? "/v2" : `/${locale}/v2`,
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2HomePage({ params }: V2PageProps) {

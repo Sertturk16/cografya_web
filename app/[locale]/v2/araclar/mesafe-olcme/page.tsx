@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import { buildProvincePoints } from "@/lib/tools/province-points";
 import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ToolWorkbench } from "@/components/v2/v2-tool-workbench";
@@ -20,19 +21,16 @@ interface V2DistancePageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
+export async function generateMetadata({ params }: V2DistancePageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/araclar/mesafe-olcme",
     title: "Haritada Kuş Uçuşu Mesafe Ölçme v2 — Büyük Daire Jeodezik Hesaplama",
     description:
       "İki veya çok duraklı noktalar arasında WGS84 küresel elipsoid modeli ve Haversine formülü ile kuş uçuşu mesafe, uçuş süresi ve karayolu tahmini hesaplama.",
-    alternates: {
-      canonical: "/v2/araclar/mesafe-olcme",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2DistanceToolPage({ params }: V2DistancePageProps) {

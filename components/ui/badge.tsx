@@ -14,8 +14,7 @@ const badgeVariants = cva(
           "bg-secondary/15 text-secondary border border-secondary/25 hover:bg-secondary/25",
         success:
           "bg-[var(--color-success,#496f35)]/15 text-[var(--color-success,#496f35)] border border-[var(--color-success,#496f35)]/30",
-        warning:
-          "bg-[var(--color-warning,#c9860f)]/15 text-[var(--color-warning,#c9860f)] border border-[var(--color-warning,#c9860f)]/30",
+        warning: "bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/30",
         destructive:
           "bg-[var(--color-danger,#b23b2e)]/15 text-[var(--color-danger,#b23b2e)] border border-[var(--color-danger,#b23b2e)]/30",
         outline: "border border-border bg-card text-foreground",

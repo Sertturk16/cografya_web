@@ -371,12 +371,16 @@ export function V2ToolsHub() {
                 <td className="py-3 pl-4 text-emerald-600 font-semibold">✓ Var (DD &amp; DMS)</td>
               </tr>
               <tr className="hover:bg-muted/30">
-                <td className="py-3 pr-4 font-semibold text-muted-foreground">
-                  Yerel Ölçüm Kaydetme
+                <td className="py-3 pr-4 font-semibold text-muted-foreground">Ölçüm Kaydetme</td>
+                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                  ✓ Var (Hesaba Bağlı Bulut Arşivi)
                 </td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (localStorage)</td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (localStorage)</td>
-                <td className="py-3 pl-4 text-emerald-600 font-semibold">✓ Var (localStorage)</td>
+                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                  ✓ Var (Hesaba Bağlı Bulut Arşivi)
+                </td>
+                <td className="py-3 pl-4 text-emerald-600 font-semibold">
+                  ✓ Var (Hesaba Bağlı Bulut Arşivi)
+                </td>
               </tr>
               <tr className="hover:bg-muted/30">
                 <td className="py-3 pr-4 font-semibold text-muted-foreground">

@@ -6,6 +6,7 @@ import type { EarthquakeEvent } from "@/lib/api/types";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2Footer } from "@/components/v2/v2-footer";
@@ -22,19 +23,16 @@ interface V2DepremPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
+export async function generateMetadata({ params }: V2DepremPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/deprem",
     title: "Canlı Deprem Takip & Sismik Fay Monitörü v2 — AFAD TDVMS Verileri",
     description:
-      "Türkiye ve çevre coğrafyadaki son depremler, merkez üsleri, MTA diri fay hatları ve odak derinlikleri canlı harita üzerinde.",
-    alternates: {
-      canonical: "/v2/deprem",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+      "Türkiye ve çevre coğrafyadaki son depremler, merkez üsleri ve odak derinlikleri canlı harita üzerinde.",
+  });
 }
 
 export default async function V2DepremPage({ params }: V2DepremPageProps) {
@@ -116,8 +114,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
 
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                 Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita
-                üzerinde merkez üssü, odak derinliği, büyüklük kademesi ve aktif fay zonlarıyla
-                anlık inceleyin.
+                üzerinde merkez üssü, odak derinliği ve büyüklük kademesiyle anlık inceleyin.
               </p>
             </div>
 
@@ -133,11 +130,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
                 <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  3 Fay Zonu
+                  Canlı AFAD
                 </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  KAF, DAF &amp; BAFS (MTA)
-                </span>
+                <span className="text-xs text-muted-foreground font-medium">TDVMS Veri Tabanı</span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
                 <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">

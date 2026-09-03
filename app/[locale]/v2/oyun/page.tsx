@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2GameHub } from "@/components/v2/v2-game-hub";
@@ -19,19 +20,16 @@ interface V2OyunPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
+export async function generateMetadata({ params }: V2OyunPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/oyun",
     title: "Harita Oyunları & Sınavlar v2 — 81 İl ve Bölge Bulma",
     description:
       "Dilsiz harita üzerinde Türkiye illerini ve coğrafi bölgelerini bularak harita hafızanızı geliştirin.",
-    alternates: {
-      canonical: "/v2/oyun",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2OyunPage({ params }: V2OyunPageProps) {

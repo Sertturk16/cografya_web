@@ -434,12 +434,12 @@
      which is the same shape that retired `--header-height-wrapped`. The measurement it carried
      (6rem, both locales, 2026-08-17) is preserved in the PR that removes it; if a sticky row
      ever returns to that page the number has to be re-measured against the new row anyway. */
-  --background: #fbf8f3;
-  --foreground: #2b2622;
+  --background: var(--color-bg);
+  --foreground: var(--color-ink);
   --card: #ffffff;
-  --card-foreground: #2b2622;
+  --card-foreground: var(--color-ink);
   --popover: #ffffff;
-  --popover-foreground: #2b2622;
+  --popover-foreground: var(--color-ink);
   --primary: #b0522e;
   --primary-foreground: #ffffff;
   --secondary: #4f6d30;
@@ -449,8 +449,8 @@
   --accent: #276b70;
   --accent-foreground: #ffffff;
   --destructive: #b23b2e;
-  --border: #ddd5cc;
-  --input: #ddd5cc;
+  --border: var(--color-border);
+  --input: var(--color-border);
   --ring: #276b70;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -920,7 +920,6 @@ main {
 }
 
 /* Suppress V1 root chrome on isolated V2 surfaces without runtime JS wrappers (CODE122123C-I3) */
-body:has(.v2-app) > .skip-link,
 body:has(.v2-app) > header,
 body:has(.v2-app) > footer {
   display: none !important;

@@ -42,6 +42,7 @@ export interface WorldCountryItem {
   areaKm2?: number | null;
   neighborCount?: number;
   hasFlag?: boolean;
+  isSpecialStatus?: boolean;
 }
 
 export const CONTINENT_META: Record<
@@ -569,13 +570,22 @@ export function V2WorldMapExplorer({
                 />
               )}
               <div className="space-y-0.5 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-heading font-bold text-foreground text-sm truncate">
                     {isEn ? activeCountry.nameEn : activeCountry.nameTr}
                   </span>
                   <Badge variant="outline" size="sm" className="text-[9px] py-0 px-1 font-mono">
                     {activeCountry.isoCode}
                   </Badge>
+                  {activeCountry.isSpecialStatus && (
+                    <Badge
+                      variant="secondary"
+                      size="sm"
+                      className="text-[9px] py-0 px-1.5 font-medium bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30"
+                    >
+                      {isEn ? "Special Status Entity" : "Özel Statülü Varlık"}
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-[11px] text-muted-foreground flex items-center gap-2 font-mono">
                   {activeCountry.population && (
@@ -759,9 +769,16 @@ export function V2WorldMapExplorer({
                           />
                         )}
                         <div>
-                          <span className="font-heading font-bold text-foreground text-sm block leading-tight">
-                            {isEn ? item.nameEn : item.nameTr}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-heading font-bold text-foreground text-sm block leading-tight">
+                              {isEn ? item.nameEn : item.nameTr}
+                            </span>
+                            {item.isSpecialStatus && (
+                              <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-medium">
+                                {isEn ? "Special Status" : "Özel Statü"}
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[10px] text-muted-foreground block">
                             {isEn ? item.nameTr : item.nameEn}
                           </span>
@@ -1092,9 +1109,20 @@ export function V2WorldMapExplorer({
                         </div>
 
                         <div className="mb-2">
-                          <span className="font-heading font-bold text-sm text-foreground group-hover:text-primary transition-colors block">
-                            {isEn ? country.nameEn : country.nameTr}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-heading font-bold text-sm text-foreground group-hover:text-primary transition-colors block">
+                              {isEn ? country.nameEn : country.nameTr}
+                            </span>
+                            {country.isSpecialStatus && (
+                              <Badge
+                                variant="secondary"
+                                size="sm"
+                                className="text-[9px] py-0 px-1 font-medium bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30"
+                              >
+                                {isEn ? "Special Status Entity" : "Özel Statülü Varlık"}
+                              </Badge>
+                            )}
+                          </div>
                           <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-2 mt-0.5">
                             {country.population && (
                               <span>
@@ -1165,12 +1193,23 @@ export function V2WorldMapExplorer({
                         {country.isoCode}
                       </TableCell>
                       <TableCell className="font-bold text-foreground">
-                        <Link
-                          href={v2Path as unknown as React.ComponentProps<typeof Link>["href"]}
-                          className="hover:text-primary hover:underline transition-colors"
-                        >
-                          {isEn ? country.nameEn : country.nameTr}
-                        </Link>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Link
+                            href={v2Path as unknown as React.ComponentProps<typeof Link>["href"]}
+                            className="hover:text-primary hover:underline transition-colors"
+                          >
+                            {isEn ? country.nameEn : country.nameTr}
+                          </Link>
+                          {country.isSpecialStatus && (
+                            <Badge
+                              variant="secondary"
+                              size="sm"
+                              className="text-[9px] py-0 px-1 font-medium bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30"
+                            >
+                              {isEn ? "Special Status Entity" : "Özel Statülü Varlık"}
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" size="sm" className={continentMeta?.badgeClass}>
@@ -1245,6 +1284,11 @@ export function V2WorldMapExplorer({
                           <span className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                             {isEn ? c.nameEn : c.nameTr}
                           </span>
+                          {c.isSpecialStatus && (
+                            <span className="text-[8px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 shrink-0 font-medium">
+                              {isEn ? "Special" : "Özel"}
+                            </span>
+                          )}
                         </div>
                         <ChevronRight className="size-3 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                       </Link>

@@ -20,6 +20,7 @@ import {
 import { parseSubpaths, pointInPolygon, type ShapePoint } from "@/lib/map/shape-geometry";
 import type { ProvincePoint } from "@/lib/tools/province-points";
 import type { ProvinceArea } from "@/components/tools/tool-island";
+import type { MeasurementType } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -580,11 +581,11 @@ export function V2ToolWorkbench({
       saveTitle.trim() ||
       `${activeTool === "distance" ? "Mesafe" : activeTool === "area" ? "Alan" : "Koordinat"} Ölçümü`;
 
-    const measurementType =
+    const measurementType: MeasurementType =
       activeTool === "distance" ? "distance" : activeTool === "area" ? "area" : "coordinate";
 
     const payload = {
-      type: measurementType as "distance" | "area" | "coordinate",
+      type: measurementType,
       points: points.map((p) => ({ lon: p.geo.lon, lat: p.geo.lat })),
       title,
       clientMeasurementId: crypto.randomUUID(),
@@ -616,7 +617,7 @@ export function V2ToolWorkbench({
   };
 
   // Delete saved measurement
-  const handleDeleteSaved = async (id: string, e: React.MouseEvent) => {
+  const handleDeleteSaved = async (id: string, e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     const res = await removeMeasurement(id);
     if (res.ok) {
@@ -1247,9 +1248,21 @@ export function V2ToolWorkbench({
                     key={item.id}
                     role="button"
                     tabIndex={0}
-                    onClick={() => handleLoadSaved(item)}
+                    onClick={(e) => {
+                      if (
+                        e.target !== e.currentTarget &&
+                        (e.target as HTMLElement).closest("button")
+                      ) {
+                        return;
+                      }
+                      handleLoadSaved(item);
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") handleLoadSaved(item);
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleLoadSaved(item);
+                      }
                     }}
                     aria-label={`${item.title || "Ölçüm"} haritaya yükle`}
                     className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 border border-border hover:bg-muted/60 transition-colors cursor-pointer text-xs"
@@ -1270,6 +1283,9 @@ export function V2ToolWorkbench({
                     <button
                       type="button"
                       onClick={(e) => handleDeleteSaved(item.id, e)}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                      }}
                       className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                       title="Sil"
                       aria-label="Ölçümü sil"

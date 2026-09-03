@@ -93,15 +93,21 @@ export function CustomSelect({
     setSearchQuery("");
   };
 
+  const reactId = React.useId();
+  const selectId = id || reactId;
+  const listboxId = `${selectId}-listbox`;
+
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
       {/* Trigger Button */}
       <button
         ref={triggerRef}
-        id={id}
+        id={selectId}
         type="button"
+        role="combobox"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
         aria-label={ariaLabel || placeholder}
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
@@ -157,7 +163,12 @@ export function CustomSelect({
             </div>
           )}
 
-          <div role="listbox" className="max-h-56 overflow-y-auto p-1 space-y-0.5 scrollbar-thin">
+          <div
+            id={listboxId}
+            role="listbox"
+            aria-label={ariaLabel || placeholder}
+            className="max-h-56 overflow-y-auto p-1 space-y-0.5 scrollbar-thin"
+          >
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">
                 Sonuç bulunamadı.
@@ -168,6 +179,7 @@ export function CustomSelect({
                 return (
                   <div
                     key={opt.value}
+                    id={`${selectId}-opt-${opt.value}`}
                     role="option"
                     tabIndex={0}
                     aria-selected={isSelected}

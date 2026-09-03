@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ToolsHub } from "@/components/v2/v2-tools-hub";
@@ -18,19 +19,16 @@ interface V2AraclarPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
+export async function generateMetadata({ params }: V2AraclarPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/araclar",
     title: "CBS & Coğrafi Ölçüm Araçları v2 — Mesafe, Koordinat ve Alan Hesaplama",
     description:
       "İnteraktif harita üzerinde kuş uçuşu jeodezik mesafe ölçümü, enlem/boylam koordinat tespiti ve çokgen alan hesabı.",
-    alternates: {
-      canonical: "/v2/araclar",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
