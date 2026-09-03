@@ -151,9 +151,41 @@
    second token that could silently drift from the first if either were ever retuned alone.
    Reused `--color-border` directly instead of minting a second literal for the same value
    (`DESIGN.md` §2 single-token-per-colour discipline). */
+/* BORDER-OVERLAP FIX (owner editorial pass, `turkiye-border-overlap`, → verified at Hakkari's
+   Iraq-facing tip via SVG geometry inspection). Root cause, measured (not re-derived here):
+   the union's largest disagreements with the NE-shared frontier (plan §5.0-3: p99 2.47 u, max
+   4.60 u) concentrate at sharp/angular corners — Hakkari/Iraq, Iğdır–Kars/Armenia, Hatay/Syria
+   all reproduce it. Reducing `SIMPLIFY_EPSILON` on both generators was tried and MEASURED to
+   NOT help (Hakkari's max divergence was byte-for-byte unchanged at 0.15 vs the shipped 0.45/
+   0.4, and it started keeping degenerate sub-unit source noise as spurious extra subpaths) —
+   proof this is a genuine SOURCE-to-SOURCE disagreement (OSM's Hakkari trace vs Natural
+   Earth's TR/Iraq trace), not a simplification artifact, so no epsilon retune closes it. A
+   true geometric snap needs a boolean-geometry dependency this repo does not have — the same
+   tradeoff plan §5.4's own "Rejected alternatives" already weighed and declined for the
+   original seam. This fix stays a rendering-layer mitigation, not a data fix: the underlying
+   mismatch is UNCHANGED and still ≈4.6 u at its worst point.
+
+   What was actually wrong: `--color-border` was tuned to be quiet against a GENERIC backdrop
+   (sea OR land), not specifically against `--map-context-land` — so exactly where the
+   province union falls short of the NE-shared frontier by several units, the casing's own
+   fill+stroke rendered as a THIRD, distinctly-toned, oddly-angular region wedged between a
+   province's real edge and the neighbour's own edge. Two independent, legitimate hairlines
+   (the province's own border, the neighbour's own coastline/border) sitting a few svg units
+   apart is ordinary cross-source softness; a differently-coloured wedge visibly occupying the
+   space between them is what read as "two competing border lines with a gap" — the owner's
+   own description.
+
+   Retinting the casing to `var(--map-context-land)` (still an EXISTING token — no new literal,
+   no new custom property) makes it merge into the neighbour tone it is already drawn beneath,
+   instead of standing out as its own landmass. Measured: casing-vs-context-land contrast drops
+   from 1.138:1 to 1.0:1 (identical — invisible against it), at the cost of casing-vs-sea rising
+   from 1.148:1 to 1.307:1 (still far below any legibility floor; this is a decorative fill,
+   never text, so WCAG 1.4.11's 3:1 UI-component floor does not even apply). Net: quieter
+   exactly where the reported defect was visible; marginally less quiet in the sea-only case
+   (Bosphorus/Dardanelles/Gulf of İzmit) the owner did not flag and this fix does not touch. */
 .contextCasing path {
-  fill: var(--color-border);
-  stroke: var(--color-border);
+  fill: var(--map-context-land);
+  stroke: var(--map-context-land);
   stroke-width: 6;
   stroke-linejoin: round;
 }
