@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Compass, Map, Layers, BookOpen } from "lucide-react";
