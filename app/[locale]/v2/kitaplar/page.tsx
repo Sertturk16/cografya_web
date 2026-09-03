@@ -11,6 +11,7 @@ import {
   JsonLd,
   type ItemListEntry,
 } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2BooksHub } from "@/components/v2/v2-books-hub";
@@ -30,12 +31,7 @@ function slugForLocale(book: BookListItem, locale: Locale): string {
   return locale === "en" ? book.slugEn : book.slugTr;
 }
 
-async function loadBooks(locale: Locale): Promise<{
-  books: BookListItem[];
-  items: ItemListEntry[];
-  videoCount: number;
-  questionCount: number;
-}> {
+async function loadBooks(locale: Locale) {
   const books = await getBooksResilient();
   return {
     books,
@@ -53,17 +49,13 @@ export async function generateMetadata({ params }: V2KitaplarPageProps): Promise
   const { books, videoCount, questionCount } = await loadBooks(locale);
   if (books.length === 0) return {};
 
-  return {
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/kitaplar",
     title: "Video Çözümlü Coğrafya Kitapları v2 — AYT & TYT Branş Denemeleri",
     description: `Coğrafya kitaplarının soru bazlı ayrıntılı video çözümleri, ${videoCount} video ve ${questionCount} soru çözümü, konu kazanım analizleri ve sınav hazırlık rehberi.`,
-    alternates: {
-      canonical: "/v2/kitaplar",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {

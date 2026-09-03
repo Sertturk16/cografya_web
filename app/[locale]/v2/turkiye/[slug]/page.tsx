@@ -152,7 +152,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     surface: "noindex",
     hrefForLocale: (l) => ({
-      pathname: "/turkiye/[slug]",
+      pathname: "/v2/turkiye/[slug]",
       params: { slug: slugForLocale(province, l) },
     }),
   });

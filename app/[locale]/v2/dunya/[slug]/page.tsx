@@ -98,7 +98,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     surface: "noindex",
     hrefForLocale: (l) => ({
-      pathname: "/dunya/[slug]",
+      pathname: "/v2/dunya/[slug]",
       params: { slug: slugForLocale(country, l) },
     }),
     title: `${t("metaTitle", { name })} | V2 Dünya Atlası`,

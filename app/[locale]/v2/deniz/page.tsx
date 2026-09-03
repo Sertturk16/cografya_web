@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { MarineOverviewPoint } from "@/lib/api/types";
 import { collectionPageJsonLd, learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2Footer } from "@/components/v2/v2-footer";
@@ -25,19 +26,16 @@ interface V2DenizPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
+export async function generateMetadata({ params }: V2DenizPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/deniz",
     title: "Denizler & Kıyılar Atlası v2 — Canlı Deniz Telemetrisi ve Su Sıcaklıkları",
     description:
       "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı istasyonundan saatlik su sıcaklığı, dalga boyu, rüzgâr vektörleri ve oşinografi modelleri.",
-    alternates: {
-      canonical: "/v2/deniz",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2DenizPage({ params }: V2DenizPageProps) {

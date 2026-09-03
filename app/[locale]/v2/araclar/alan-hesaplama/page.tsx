@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import { buildProvincePoints } from "@/lib/tools/province-points";
 import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ToolWorkbench } from "@/components/v2/v2-tool-workbench";
@@ -20,19 +21,16 @@ interface V2AreaPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
+export async function generateMetadata({ params }: V2AreaPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/araclar/alan-hesaplama",
     title: "Haritada Alan & Yüzölçümü Hesaplama v2 — Çokgen (Polygon) Ölçümü",
     description:
       "İnteraktif harita üzerinde çokgen çizerek WGS84 küresel elipsoid jeodezik modeliyle km², hektar, dönüm ve metrekare cinsinden gerçek yüzölçümü ve çevre uzunluğu hesaplama.",
-    alternates: {
-      canonical: "/v2/araclar/alan-hesaplama",
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function V2AreaToolPage({ params }: V2AreaPageProps) {

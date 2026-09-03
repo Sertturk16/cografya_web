@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return buildMetadata({
     locale,
     hrefForLocale: (l) => ({
-      pathname: "/kitaplar/[slug]",
+      pathname: "/v2/kitaplar/[slug]",
       params: { slug: slugForLocale(book, l) },
     }),
     title: `${book.metaTitleTr} | V2 Kitaplar`,
