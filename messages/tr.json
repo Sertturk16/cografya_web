@@ -485,7 +485,10 @@
     "a6": "Bölgesel dalga modeli Marmara'da hiç sayısal değer üretmiyor: modelin kapsama kutusu Marmara Denizi'ni içine alır, ama kara/deniz maskesi bu alanı deniz olarak işaretlemez. Kutunun içinde olmak, o noktanın modellendiği anlamına gelmiyor: dalga modeli için Marmara boş bir alandır. Bu bir arıza değil, ürünün kapsama sınırının sonucudur. Ölçüm kataloğu bu yüzden dalga katmanları için ayrı bir yedek kaynak kaydeder ve Marmara'daki bir dalga değeri diğer üç denizde kullanılan modelden değil, daha kaba çözünürlüklü bir küresel modelden gelir. Katalogdaki kaynak sütunu bu ayrımı gösterir.",
     "q7": "Bu sayılar gideceğin plaj için mi geçerli?",
     "a7": "Doğrudan o plaj ya da liman için değil: bu sayfa elle seçilmiş sabit açık deniz noktaları için ölçüm yayımlar — \"Antalya Açıkları\", \"Sinop Açıkları\" gibi. Sebebi haritada tıklama kolaylığı değil, dürüstlük. Bölgesel modellerin ızgara kareleri birkaç kilometre genişliğinde olduğu için tek bir plajın hemen önündeki dalga ve sıcaklık koşullarını temsil edemezler. Sonuç, tek bir kıyı şeridi için değil, o kıyının açığındaki geniş bir su kütlesi için temsili bir tahmindir. Bir plajın gerçek dalga ve akıntı koşulları, dip yapısına ve yerel rüzgâra bağlı olarak buradan belirgin biçimde farklı olabilir.",
+    "q8": "Bu veriler neden anlık değil, \"geçerlilik anı\" neden var?",
+    "a8": "Bu sayfa her açıldığında en son yayımlanmış model çıktısını gösterir, ama kaynağın kendisi saatte bir değil, günde birkaç kez yeni bir tahmin üretir: rüzgâr ve dalga verisi günde dört kez (00, 06, 12, 18 UTC), deniz suyu sıcaklığı ise günde bir kez yenilenir. İki yayım arasındaki saatlerde sayfayı ne kadar sık açarsan aç aynı rakamı görürsün — bu bir gecikme ya da bayat veri değil, kaynağın kendi üretim takvimidir. Geçerlilik anı, gördüğün sayının hangi yayına ait olduğunu gösterir; daha sık kontrol etmek bu sayıyı değiştirmez, sadece kaynağın bir sonraki yayını değiştirir.",
     "valuesHeading": "Şu an dört denizin açığındaki değerler",
+    "valuesIntro": "Aşağıdaki tablolar, her denizin referans noktalarında yayımlanan en son değerleri gösterir.",
     "faqHeading": "Sık sorulan sorular"
   },
   "Marine": {
@@ -554,29 +557,27 @@
       "label": "Sakin"
     },
     "compass": {
-      "n": "kuzey",
-      "ne": "kuzeydoğu",
-      "e": "doğu",
-      "se": "güneydoğu",
-      "s": "güney",
-      "sw": "güneybatı",
-      "w": "batı",
-      "nw": "kuzeybatı"
+      "n": "Kuzey",
+      "ne": "Kuzeydoğu",
+      "e": "Doğu",
+      "se": "Güneydoğu",
+      "s": "Güney",
+      "sw": "Güneybatı",
+      "w": "Batı",
+      "nw": "Kuzeybatı"
     },
     "values": {
-      "caption": "{basin}: referans noktalarında yayımlanan son değerler.",
       "scrollRegionLabel": "{basin} değer tablosu",
       "colPoint": "Nokta",
       "colWind": "Rüzgâr",
       "colWave": "Dalga",
       "colSeaTemperature": "Deniz suyu",
-      "colVintage": "Geçerlilik anı",
+      "colSampleDistance": "Örnekleme mesafesi",
       "kmh": "({value} km/h)",
-      "direction": "{label}: {compass} ({degrees}°)",
+      "direction": "{compass} ({degrees}°)",
       "bearingOnly": "Yön: {degrees}°",
       "directionStatus": "Yön: {status}",
-      "validAt": "{value} UTC",
-      "gridDistance": "Model karesinin merkezi en çok {km} km ötede.",
+      "gridDistance": "Bu noktanın değeri, en yakın model verisinden {km} km uzaklıktan örneklenmiştir.",
       "readingKeyHeading": "Tabloyu okuma anahtarı",
       "readingKeyArrow": "Ok, rüzgârın ve dalganın gittiği yönü gösterir; yanındaki yazı geldiği yönü söyler.",
       "readingKeyCalm": "{term}: değer, ölçüm kataloğundaki sakin eşiğinin altında kaldı; yön oku yerine bu yazı çıkar. Hücredeki sayı en yakın onda bire yuvarlandığı için eşiğin kendisi gibi görünebilir.",
@@ -587,6 +588,7 @@
     },
     "vintage": {
       "heading": "Bu sayılar ne zamana ait?",
+      "combined": "Rüzgâr ve dalga değerleri {windWave} UTC anına, deniz suyu sıcaklığı {seaTemperature} UTC anına aittir.",
       "validAtAndRun": "{source}: {validAt} UTC anına ait, {modelRun} UTC koşusundan.",
       "validAt": "{source}: {validAt} UTC anına ait.",
       "runOnly": "{source}: {modelRun} UTC koşusundan."

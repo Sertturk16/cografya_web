@@ -472,6 +472,7 @@
     "sourceCmemsNoticeIntro": "The English sentence below is the attribution the Copernicus Marine Service licence requires to be published verbatim.",
     "teaches": "Wind, waves and sea surface temperature in the seas around Türkiye, and the limits of the forecast models these numbers rest on",
     "valuesHeading": "Current values offshore in the four seas",
+    "valuesIntro": "The tables below show the latest values published at each sea's reference points.",
     "faqHeading": "Frequently asked questions"
   },
   "Marine": {
@@ -540,29 +541,27 @@
       "label": "Calm"
     },
     "compass": {
-      "n": "north",
-      "ne": "northeast",
-      "e": "east",
-      "se": "southeast",
-      "s": "south",
-      "sw": "southwest",
-      "w": "west",
-      "nw": "northwest"
+      "n": "North",
+      "ne": "Northeast",
+      "e": "East",
+      "se": "Southeast",
+      "s": "South",
+      "sw": "Southwest",
+      "w": "West",
+      "nw": "Northwest"
     },
     "values": {
-      "caption": "{basin}: the latest values published at the reference points.",
       "scrollRegionLabel": "{basin} value table",
       "colPoint": "Point",
       "colWind": "Wind",
       "colWave": "Waves",
       "colSeaTemperature": "Sea water",
-      "colVintage": "Valid at",
+      "colSampleDistance": "Sample distance",
       "kmh": "({value} km/h)",
-      "direction": "{label}: {compass} ({degrees}°)",
+      "direction": "{compass} ({degrees}°)",
       "bearingOnly": "Bearing: {degrees}°",
       "directionStatus": "Direction: {status}",
-      "validAt": "{value} UTC",
-      "gridDistance": "The model cell centre is at most {km} km away.",
+      "gridDistance": "This point's value is sampled from the nearest model data, {km} km away.",
       "readingKeyHeading": "How to read the table",
       "readingKeyArrow": "The arrow shows where the wind or the swell is heading; the text beside it states where it comes from.",
       "readingKeyCalm": "{term}: the value is below the calm threshold in the measurement catalogue, so this word replaces the direction arrow. The number in the cell is rounded to one decimal, so it can read as the threshold itself.",
@@ -573,6 +572,7 @@
     },
     "vintage": {
       "heading": "When are these numbers from?",
+      "combined": "Wind and wave values are as of {windWave} UTC; sea surface temperature is as of {seaTemperature} UTC.",
       "validAtAndRun": "{source}: valid at {validAt} UTC, from the {modelRun} UTC run.",
       "validAt": "{source}: valid at {validAt} UTC.",
       "runOnly": "{source}: from the {modelRun} UTC run."
