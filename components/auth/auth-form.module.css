@@ -23,7 +23,9 @@
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: 1.5rem;
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 40px -15px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
   padding: clamp(24px, 5vw, 36px);
   max-width: 30rem;
   margin-inline: auto;
@@ -68,17 +70,20 @@
   background: #fff;
   color: var(--color-ink);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .control:focus-visible {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3.5px rgba(176, 82, 46, 0.16);
+  /* Inherits the global 3px accent ring (`app/globals.css` `:focus-visible`) — no override
+     here. This rule exists only so a browser's own UA-stylesheet border never wins the
+     cascade against the focus ring on a bordered control. */
+  border-color: var(--color-accent);
 }
 
 .control[aria-invalid="true"] {
   border-color: var(--color-danger);
-  box-shadow: 0 0 0 3px rgba(178, 59, 46, 0.12);
 }
 
 /* Error text — RE-VERIFIED after `.card` moved `--color-surface` → `#fff` */
