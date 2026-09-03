@@ -133,10 +133,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
         {/* Live Telemetry Ticker Bar */}
         <V2LiveTicker />
 
-        <main
-          id="main-content"
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-16"
-        >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-16">
           {/* HERO SECTION */}
           <V2Hero provinceCount={totalProvinces} countryCount={totalCountries} />
 
@@ -587,7 +584,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
 
           {/* SECTION 8: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
           <V2SourcesSection scope="home" />
-        </main>
+        </div>
       </div>
 
       {/* Modern V2 Footer */}

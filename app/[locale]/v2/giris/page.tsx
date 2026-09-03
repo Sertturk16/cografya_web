@@ -42,10 +42,7 @@ export default async function V2LoginPage({ params }: V2LoginPageProps) {
         {/* Live Telemetry Ticker */}
         <V2LiveTicker />
 
-        <main
-          id="main-content"
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14"
-        >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14">
           {/* Breadcrumb Navigation */}
           <nav
             aria-label="Breadcrumb"
@@ -79,7 +76,7 @@ export default async function V2LoginPage({ params }: V2LoginPageProps) {
 
           {/* SECTION: ACADEMIC & SCIENTIFIC DATA SOURCES (KAYNAKÇA) */}
           <V2SourcesSection scope="general" />
-        </main>
+        </div>
       </div>
 
       {/* Modern V2 Footer */}

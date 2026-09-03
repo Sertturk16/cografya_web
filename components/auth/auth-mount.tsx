@@ -32,13 +32,9 @@ export function AuthMount({ locale }: { readonly locale: Locale }) {
   const modal = useAuthModalState();
   const [hasOpened, setHasOpened] = useState(false);
 
-  // On V2 routes, V2AuthDialog handles the auth modal; avoid double-dialog collision.
+  // On V2 routes, V2AuthDialog handles the auth modal; avoid double-dialog collision (SEC125-M2).
   const pathStr = (pathname as string) || "";
-  if (
-    pathStr.startsWith("/v2") ||
-    pathStr.includes("/v2") ||
-    (typeof document !== "undefined" && Boolean(document.querySelector(".v2-app")))
-  ) {
+  if (pathStr === "/v2" || pathStr.startsWith("/v2/")) {
     return null;
   }
 
