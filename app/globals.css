@@ -916,6 +916,13 @@ main {
   }
 }
 
+/* Suppress V1 root chrome on isolated V2 surfaces without runtime JS wrappers (CODE122123C-I3) */
+body:has(.v2-app) > .skip-link,
+body:has(.v2-app) > header,
+body:has(.v2-app) > footer {
+  display: none !important;
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);

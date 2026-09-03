@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth, setAuthModalMode } from "@/lib/auth/auth-modal.client";
-import { V2AuthDialog } from "./v2-auth-dialog";
 
 export function V2Header() {
   const pathname = usePathname();
@@ -569,9 +568,6 @@ export function V2Header() {
           </div>
         </div>
       </div>
-
-      {/* V2 Integrated Auth Modal */}
-      <V2AuthDialog />
     </nav>
   );
 }
