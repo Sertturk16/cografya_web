@@ -28,6 +28,9 @@ function slugForLocale(country: { slugTr: string; slugEn: string }, locale: Loca
   return locale === "en" ? country.slugEn : country.slugTr;
 }
 
+// Canonical special-status entities matching lib/geo/sovereignty.ts and API seed.
+// Hand-maintained in the client until CountryMapSummaryDto exposes a dedicated sovereignty flag.
+// Sync invariant verified in components/v2/v2-world-sovereignty.test.ts.
 const SPECIAL_STATUS_ISO_CODES = new Set(["QN", "CY", "IL", "PS", "TW", "XK"]);
 
 export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Metadata> {
@@ -63,8 +66,10 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
     const slug = slugForLocale(c, locale);
     const isSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(c.isoCode.toUpperCase());
     const hasFlagAsset = hasFlag(c.isoCode);
-    // User Decision 2-B: Flags are displayed in both TR and EN, with special status badging
-    const flagVisible = hasFlagAsset;
+    // User Decision 1-A & DEC 2026-09-03a md.2: Special-status flags display in Turkish (/v2/dunya)
+    // with special-status badging. In English (/en/v2/world), flags are suppressed per DEC 2026-08-08h
+    // and DEC 2026-08-08l B2 until English sovereignty notes (FU-SOVNOTE-EN) land.
+    const flagVisible = hasFlagAsset && (!isSpecialStatus || locale === "tr");
 
     return {
       isoCode: c.isoCode,
