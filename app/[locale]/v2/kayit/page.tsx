@@ -65,9 +65,7 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Register Form Container */}
             <div className="lg:col-span-6 xl:col-span-5 w-full">
-              <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl">
-                <V2RegisterCard locale={locale} provinces={provinces} />
-              </div>
+              <V2RegisterCard locale={locale} provinces={provinces} />
             </div>
 
             {/* Value Proposition & Feature Showcase */}

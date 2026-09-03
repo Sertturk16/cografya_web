@@ -1257,19 +1257,21 @@ export function V2WorldMapExplorer({
                         href={v2Path as unknown as React.ComponentProps<typeof Link>["href"]}
                         className="p-2.5 rounded-xl border border-border/70 hover:border-primary hover:bg-muted/50 transition-all flex items-center justify-between text-xs group"
                       >
-                        <div className="flex items-center gap-2 truncate">
-                          {c.hasFlag && (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={`/flags/${c.isoCode.toUpperCase()}.svg`}
-                              alt={`${c.nameTr} bayrağı`}
-                              className="w-4 h-3 object-cover rounded-2xs shrink-0"
-                              loading="lazy"
-                            />
-                          )}
-                          <span className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                            {isEn ? c.nameEn : c.nameTr}
-                          </span>
+                        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {c.hasFlag && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={`/flags/${c.isoCode.toUpperCase()}.svg`}
+                                alt={`${c.nameTr} bayrağı`}
+                                className="w-4 h-3 object-cover rounded-2xs shrink-0"
+                                loading="lazy"
+                              />
+                            )}
+                            <span className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                              {isEn ? c.nameEn : c.nameTr}
+                            </span>
+                          </div>
                           {c.isSpecialStatus && (
                             <SpecialStatusBadge isEn={isEn} className="text-[8px] px-1 py-0" />
                           )}

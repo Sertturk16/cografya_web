@@ -216,7 +216,10 @@ export function CustomSelect({
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setHighlightedIndex(null);
+                  }}
                   onKeyDown={handleKeyDown}
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder || "Seçeneklerde ara"}

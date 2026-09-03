@@ -716,6 +716,12 @@ export function V2EarthquakeExplorer({
         </div>
       </div>
 
+      {/* Accessible Live Region for Selected Earthquake Announcement (WCAG 4.1.3, A11Y126-I4) */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {selectedEvent &&
+          `Seçilen deprem: Büyüklük ${selectedEvent.magnitude.toFixed(1)}, ${selectedEvent.placeNameTr}, derinlik ${selectedEvent.depthKm} km.`}
+      </div>
+
       {/* 3. TWO-COLUMN DASHBOARD: SPOTLIGHT INSPECTOR & RECENT EARTHQUAKES */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Left Col: Selected Earthquake Spotlight Card (Enriched with Sismik Context) */}
@@ -944,6 +950,7 @@ export function V2EarthquakeExplorer({
                       id={`eq-row-${eq.id}`}
                       tabIndex={0}
                       aria-selected={isSelected}
+                      aria-label={`M ${eq.magnitude.toFixed(1)} - ${eq.placeNameTr} depremini seç`}
                       onClick={() => setSelectedEventId(eq.id)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {

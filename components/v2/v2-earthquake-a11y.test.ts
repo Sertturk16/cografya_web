@@ -11,13 +11,22 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
     const url = new URL("./v2-earthquake-explorer.tsx", import.meta.url);
     const content = readFileSync(url, "utf8");
 
-    // SVG epicenter must have tabIndex={0} and keydown handler
+    // SVG epicenter must have tabIndex={0} and keydown handler with Enter/Space
     expect(content).toMatch(/<g[^>]*tabIndex=\{0\}[^>]*role="button"/);
-    expect(content).toContain("onKeyDown={(e) => {");
+    expect(content).toMatch(
+      /onKeyDown=\{\(e\) => \{\s*if \(e\.key === "Enter" \|\| e\.key === " "\)/,
+    );
     expect(content).toContain("focus-visible:scale-125");
 
-    // TableRow must have tabIndex={0} and aria-selected
+    // TableRow must have tabIndex={0}, aria-selected, onKeyDown with Enter/Space, and accessible name
     expect(content).toMatch(/<TableRow[^>]*tabIndex=\{0\}[^>]*aria-selected=\{isSelected\}/);
+    expect(content).toMatch(
+      /aria-label=\{`M \$\{eq\.magnitude\.toFixed\(1\)\} - \$\{eq\.placeNameTr\} depremini seç`\}/,
+    );
+
+    // Live region for selection announcement (WCAG 4.1.3, A11Y126-I4)
+    expect(content).toContain('role="status" aria-live="polite" className="sr-only"');
+    expect(content).toContain("Seçilen deprem: Büyüklük");
   });
 
   it("cleanses fault lines claims from toolbar label, page title, H1, and JSON-LD (FEN125-I1, FEN125-I2)", () => {

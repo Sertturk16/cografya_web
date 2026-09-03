@@ -149,6 +149,10 @@ describe("buildRegisterPayload key sets agree with the committed contract", () =
       universityName: "",
       departmentName: "",
     },
+    "minimal student (education fields omitted)": {
+      ...COMMON,
+      userType: "secondary",
+    },
   };
 
   it("positive control — the schema's own required array is non-empty", () => {

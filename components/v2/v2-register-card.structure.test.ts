@@ -85,9 +85,18 @@ describe("V2RegisterCard structural contract", () => {
     expect(source).not.toContain("/[a-zğüşıöç]/");
   });
 
-  it("announces field errors to screen readers and focuses first invalid field (A11Y125-I2)", () => {
+  it("announces field errors to screen readers and focuses first invalid field via explicit mapping (A11Y125-I2, A11Y126-I2)", () => {
     expect(source).toContain('role="status" aria-live="polite" className="sr-only"');
+    expect(source).toContain("FIELD_ELEMENT_IDS");
+    expect(source).toContain('provincePlateCode: "v2-register-province"');
+    expect(source).toContain('districtId: "v2-register-district"');
     expect(source).toContain("el.focus()");
+  });
+
+  it("enforces 60-second cooldown on resend verification code (SEC126-I1)", () => {
+    expect(source).toContain("resendCooldown");
+    expect(source).toContain("setResendCooldown(60)");
+    expect(source).toContain("disabled={loading || resendCooldown > 0}");
   });
 
   it("wires field-specific errors and error association", () => {

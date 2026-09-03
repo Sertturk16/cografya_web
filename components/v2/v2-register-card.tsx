@@ -75,6 +75,16 @@ const USER_ROLES: Array<{
 type FieldKey =
   "firstName" | "lastName" | "phone" | "email" | "provincePlateCode" | "districtId" | "password";
 
+const FIELD_ELEMENT_IDS: Record<FieldKey, string> = {
+  firstName: "v2-register-firstname",
+  lastName: "v2-register-lastname",
+  phone: "v2-register-phone",
+  email: "v2-register-email",
+  password: "v2-register-password",
+  provincePlateCode: "v2-register-province",
+  districtId: "v2-register-district",
+};
+
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
@@ -118,6 +128,17 @@ export function V2RegisterCard({
   const [generalError, setGeneralError] = React.useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = React.useState<Partial<Record<FieldKey, string>>>({});
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
+  const [registeredEmail, setRegisteredEmail] = React.useState("");
+  const [resendCooldown, setResendCooldown] = React.useState(0);
+
+  // Resend code countdown timer (SEC126-I1)
+  React.useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // Fetch provinces if not passed as prop
   React.useEffect(() => {
@@ -203,7 +224,8 @@ export function V2RegisterCard({
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       const firstErrorKey = Object.keys(errors)[0] as FieldKey;
-      const el = document.getElementById(`v2-register-${firstErrorKey.toLowerCase()}`);
+      const targetId = FIELD_ELEMENT_IDS[firstErrorKey];
+      const el = document.getElementById(targetId);
       if (el) el.focus();
       return;
     }
@@ -226,6 +248,7 @@ export function V2RegisterCard({
       const result = await submitAuth("register", payload);
 
       if (result.ok) {
+        setRegisteredEmail(cleanEmail);
         setStep("verify");
         setSuccessMsg(
           "Kayıt oluşturuldu! E-posta adresine gönderilen 6 haneli doğrulama kodunu gir.",
@@ -295,18 +318,23 @@ export function V2RegisterCard({
   };
 
   const handleResendCode = async () => {
-    if (loading) return;
+    if (loading || resendCooldown > 0) return;
     setGeneralError(null);
     setSuccessMsg(null);
+    setLoading(true);
     try {
-      const res = await submitAuth("verify-email/resend", { email: email.trim() });
+      const targetEmail = registeredEmail || email.trim();
+      const res = await submitAuth("verify-email/resend", { email: targetEmail });
       if (res.ok) {
         setSuccessMsg("Yeni doğrulama kodu e-posta adresine gönderildi.");
+        setResendCooldown(60);
       } else {
         setGeneralError("Doğrulama kodu yeniden gönderilemedi. Lütfen biraz bekle.");
       }
     } catch {
       setGeneralError("Bağlantı hatası oluştu.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -357,7 +385,7 @@ export function V2RegisterCard({
           {/* Accessible Status Announcement for Client Validation Errors */}
           <div role="status" aria-live="polite" className="sr-only">
             {Object.keys(fieldErrors).length > 0 &&
-              `Kayıt formunda ${Object.keys(fieldErrors).length} adet düzeltilmesi gereken hata var.`}
+              `Kayıt formunda ${Object.keys(fieldErrors).length} adet düzeltilmesi gereken hata var. İlk hata: ${Object.values(fieldErrors)[0]}`}
           </div>
 
           {/* General Error Banner */}
@@ -688,10 +716,12 @@ export function V2RegisterCard({
             <button
               type="button"
               onClick={handleResendCode}
-              disabled={loading}
-              className="text-primary font-semibold hover:underline"
+              disabled={loading || resendCooldown > 0}
+              className="text-primary font-semibold hover:underline disabled:opacity-50 disabled:no-underline"
             >
-              Kodu Tekrar Gönder
+              {resendCooldown > 0
+                ? `Kodu Tekrar Gönder (${resendCooldown}s)`
+                : "Kodu Tekrar Gönder"}
             </button>
           </div>
         </form>

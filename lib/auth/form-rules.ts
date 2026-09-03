@@ -132,10 +132,10 @@ export type UserType = "secondary" | "undergraduate" | "graduate" | "teacher";
  * revert-to-red mutation (plan §9) is "add `passwordConfirm` to the payload", which has to
  * compile against a real property to be a meaningful mutation. `phone` is already
  * canonicalised (see {@link canonicalizePhone}) by the time it reaches here; this function
- * does not re-derive it. `gradeLevel`/`studyStream` carry `""` as their empty state (a
- * native `<select>` always has SOME string value) — the caller's own validation is what
- * guarantees a non-empty value for the branch that needs one, exactly as `readClientBody`'s
- * "the browser is the validator" posture already requires (§4.3.2) elsewhere in this module.
+ * does not re-derive it. `gradeLevel`, `studyStream`, `universityName` and `departmentName`
+ * are optional on the form state: minimal V2 registration (Decision 2-B, `DEC 2026-09-03a` md.1)
+ * omits them at initial registration and defers education details to a post-registration profile
+ * onboarding step; callers providing them (e.g. V1 registration) continue to emit full-profile payloads.
  */
 export interface RegisterFormState {
   readonly firstName: string;
@@ -156,15 +156,20 @@ export interface RegisterFormState {
 /**
  * The profile matrix (plan §3.3/§4.3.3, table verbatim in BEHAVIOUR from
  * `src/auth/dto/profile-shape.rule.ts`, which the api enforces a SECOND time as a DB
- * `CHECK`) — which extra fields each user type requires, forbids, or leaves optional:
+ * `CHECK` — updated by `cografya_api` PR #155 `AllowStudentMinimalRegistrationProfileShape1788100000000`)
+ * — which extra fields each user type requires, forbids, or leaves optional:
  *
  * | user type      | `accountRole` | `educationLevel` | required                        | forbidden                   |
  * |----------------|----------------|-------------------|----------------------------------|------------------------------|
+ * | student (min)  | `STUDENT`      | *absent*          | —                                | every education field       |
  * | secondary      | `STUDENT`      | `SECONDARY`       | `gradeLevel` + `studyStream`     | university, department      |
  * | undergraduate  | `STUDENT`      | `UNDERGRADUATE`   | `universityName` + `departmentName` | grade, stream            |
  * | graduate       | `STUDENT`      | `GRADUATE`        | `universityName`; department optional | grade, stream          |
  * | teacher        | `TEACHER`      | *absent*          | —                                | every education field       |
  *
+ * Minimal V2 student registration omits education fields entirely (Decision 2-B, `DEC 2026-09-03a` md.1).
+ * In that case, `buildRegisterPayload` returns `{ ...common, accountRole: "STUDENT" }` without
+ * `educationLevel` or any education key, matching `cografya_api`'s minimal student contract.
  * `buildRegisterPayload` is the ONLY function in this repo that constructs the `register`
  * request body, and it emits exactly the keys the matrix's branch above allows and nothing
  * else — the global pipe's `whitelist`+`forbidNonWhitelisted`
@@ -172,10 +177,10 @@ export interface RegisterFormState {
  * here is not a warning, it is a 400 (gate G2's payload-shape half pins this). `locale` is
  * NOT a form field (the DTO's own description: "Form alanı değil — doğrulama e-postasının
  * dili") — the caller supplies it from the page's own locale, never from `formState`. The
- * `TEACHER` branch carries no `educationLevel` key AT ALL, not even `undefined`
- * (`GLOSSARY.md` §7.1: "ek eğitim alanı taşımaz") — `common` below never declares that
- * property, so the object literal genuinely has no such key, which is what a JS `in`/
- * `Object.keys` check (and gate G2's own subset assertion) actually observes.
+ * `TEACHER` branch and minimal `STUDENT` branch carry no `educationLevel` key AT ALL, not even
+ * `undefined` (`GLOSSARY.md` §7.1) — `common` below never declares that property, so the object
+ * literal genuinely has no such key, which is what a JS `in`/`Object.keys` check (and gate G2's
+ * own subset assertion) actually observes.
  */
 export function buildRegisterPayload(
   formState: RegisterFormState,
