@@ -147,10 +147,10 @@ export interface RegisterFormState {
   readonly userType: UserType;
   readonly provincePlateCode: string;
   readonly districtId: string;
-  readonly gradeLevel: GradeLevel | "";
-  readonly studyStream: StudyStream | "";
-  readonly universityName: string;
-  readonly departmentName: string;
+  readonly gradeLevel?: GradeLevel | "";
+  readonly studyStream?: StudyStream | "";
+  readonly universityName?: string;
+  readonly departmentName?: string;
 }
 
 /**
@@ -197,29 +197,38 @@ export function buildRegisterPayload(
       return {
         ...common,
         accountRole: "STUDENT",
-        educationLevel: "SECONDARY",
-        gradeLevel: formState.gradeLevel as GradeLevel,
-        studyStream: formState.studyStream as StudyStream,
+        ...(formState.gradeLevel
+          ? {
+              educationLevel: "SECONDARY",
+              gradeLevel: formState.gradeLevel as GradeLevel,
+              studyStream: formState.studyStream as StudyStream,
+            }
+          : {}),
       };
     case "undergraduate":
       return {
         ...common,
         accountRole: "STUDENT",
-        educationLevel: "UNDERGRADUATE",
-        universityName: formState.universityName,
-        departmentName: formState.departmentName,
+        ...(formState.universityName
+          ? {
+              educationLevel: "UNDERGRADUATE",
+              universityName: formState.universityName,
+              departmentName: formState.departmentName,
+            }
+          : {}),
       };
     case "graduate": {
       const base: RegisterRequest = {
         ...common,
         accountRole: "STUDENT",
-        educationLevel: "GRADUATE",
-        universityName: formState.universityName,
+        ...(formState.universityName
+          ? {
+              educationLevel: "GRADUATE",
+              universityName: formState.universityName,
+            }
+          : {}),
       };
-      // Department stays OPTIONAL for a graduate profile (`DEC 2026-08-20h` md.1 reversed
-      // `20g`'s earlier "zorunlu") — an empty selection omits the key entirely rather than
-      // sending an empty string, matching how `TEACHER` omits `educationLevel` above.
-      return formState.departmentName.trim().length > 0
+      return formState.departmentName && formState.departmentName.trim().length > 0
         ? { ...base, departmentName: formState.departmentName }
         : base;
     }
