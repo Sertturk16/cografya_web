@@ -24,7 +24,6 @@ import {
   Activity,
   Flame,
   Search,
-  Layers,
   Clock,
   ArrowRight,
   List,
@@ -463,7 +462,7 @@ export function V2EarthquakeExplorer({
               Sismik Projeksiyon Haritası
             </Badge>
             <span className="text-xs text-muted-foreground font-medium hidden sm:inline">
-              Eşzamanlı Merkez Üsleri &amp; Aktif Fay Hatları
+              Eşzamanlı Merkez Üsleri &amp; Odak Derinlikleri
             </span>
           </div>
 
@@ -584,7 +583,8 @@ export function V2EarthquakeExplorer({
               return (
                 <g
                   key={eq.id}
-                  className="cursor-pointer outline-none focus:outline-none select-none"
+                  tabIndex={0}
+                  className="cursor-pointer outline-none select-none transition-transform duration-150 focus-visible:scale-125"
                   role="button"
                   aria-label={`Deprem M ${eq.magnitude.toFixed(1)} - ${eq.placeNameTr}`}
                   onMouseEnter={() => setHoveredEventId(eq.id)}
@@ -592,6 +592,12 @@ export function V2EarthquakeExplorer({
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedEventId(eq.id);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedEventId(eq.id);
+                    }
                   }}
                 >
                   {/* Fixed invisible hit circle to prevent DOM detach/flickering */}
@@ -936,8 +942,16 @@ export function V2EarthquakeExplorer({
                     <TableRow
                       key={eq.id}
                       id={`eq-row-${eq.id}`}
+                      tabIndex={0}
+                      aria-selected={isSelected}
                       onClick={() => setSelectedEventId(eq.id)}
-                      className={`cursor-pointer transition-colors ${
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelectedEventId(eq.id);
+                        }
+                      }}
+                      className={`cursor-pointer transition-colors outline-none focus-visible:bg-primary/15 ${
                         isSelected
                           ? "bg-primary/10 hover:bg-primary/15 font-medium"
                           : "hover:bg-muted/50"

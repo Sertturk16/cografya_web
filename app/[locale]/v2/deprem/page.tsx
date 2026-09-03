@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: V2DepremPageProps): Promise<M
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/deprem",
-    title: "Canlı Deprem Takip & Sismik Fay Monitörü v2 — AFAD TDVMS Verileri",
+    title: "Canlı Deprem Takip & Sismik Monitör v2 — AFAD TDVMS Verileri",
     description:
       "Türkiye ve çevre coğrafyadaki son depremler, merkez üsleri ve odak derinlikleri canlı harita üzerinde.",
   });
@@ -64,9 +64,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Canlı Deprem Takip & Sismik Fay Monitörü v2",
+            name: "Canlı Deprem Takip & Sismik Monitör v2",
             description:
-              "Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita üzerinde merkez üssü, odak derinliği ve fay hatlarıyla anlık takip edin.",
+              "Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita üzerinde merkez üssü ve odak derinliğiyle anlık takip edin.",
             path: "/v2/deprem",
             locale,
           }),
@@ -109,7 +109,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
               </div>
 
               <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
-                Canlı Deprem Takip &amp; Sismik Fay Monitörü
+                Canlı Deprem Takip &amp; Sismik Monitör
               </h1>
 
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">

@@ -35,7 +35,7 @@ describe("Batch 6 a11y and token polish invariants", () => {
     expect(badgeContent).toContain("dark:text-amber-200");
   });
 
-  it("V2EarthquakeExplorer does not render unverified schematic fault lines (CODE124-C4)", () => {
+  it("V2EarthquakeExplorer does not render unverified schematic fault lines (VAL124SEO-I1)", () => {
     const url = new URL("./v2-earthquake-explorer.tsx", import.meta.url);
     const content = readFileSync(url, "utf8");
 

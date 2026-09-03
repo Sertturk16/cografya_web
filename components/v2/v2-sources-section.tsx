@@ -288,15 +288,6 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       sourceUrl: "deprem.afad.gov.tr",
     },
     {
-      id: "mta-fay",
-      icon: "🌋",
-      title: "MTA Türkiye Diri Fay Haritası",
-      license: "MTA Resmî Kartografya",
-      description:
-        "1:1.250.000 Ölçekli Türkiye Diri Fay Haritası (Emre et al., 2013). Kuzey Anadolu (KAFZ), Doğu Anadolu (DAFZ) ve Batı Anadolu (BAFS) diri fay hatları jeodezik koordinatları.",
-      sourceUrl: "mta.gov.tr",
-    },
-    {
       id: "afad-disclaimer",
       icon: "🛡️",
       title: "Resmî Sismik Uyarı & Yasal Bildirim",
