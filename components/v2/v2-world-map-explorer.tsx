@@ -709,14 +709,26 @@ export function V2WorldMapExplorer({
                     fillClass = "stroke-yellow-400 stroke-[1.8] fill-yellow-500/90 opacity-100";
                   }
 
+                  const cItem = countryMap.get(shape.iso);
+                  const countryName = cItem ? (isEn ? cItem.nameEn : cItem.nameTr) : shape.iso;
+
                   return (
                     <path
                       key={shape.iso}
                       d={shape.d}
                       data-iso={shape.iso}
-                      className={`transition-colors duration-150 cursor-pointer ${fillClass}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={countryName}
+                      className={`transition-colors duration-150 cursor-pointer outline-none focus-visible:stroke-primary focus-visible:stroke-[2] ${fillClass}`}
                       style={isHovered ? { filter: "url(#country-glow)" } : undefined}
                       onMouseEnter={() => setHoveredIso(shape.iso)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelectedIso(shape.iso);
+                        }
+                      }}
                       onClick={() => setSelectedIso(shape.iso)}
                     />
                   );

@@ -151,6 +151,13 @@ export function V2GameScreen({
     "idle",
   );
 
+  const resultHeadingRef = React.useRef<HTMLHeadingElement>(null);
+  React.useEffect(() => {
+    if (isFinished) {
+      resultHeadingRef.current?.focus();
+    }
+  }, [isFinished]);
+
   // Finish round handler
   const handleFinishRound = React.useCallback(
     (early: boolean = false) => {
@@ -698,6 +705,8 @@ export function V2GameScreen({
           {/* Feedback Alert Bar */}
           {lastFeedback && !isFinished && (
             <div
+              role="status"
+              aria-live="polite"
               className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 transition-all animate-in fade-in-50 duration-200 ${
                 lastFeedback.type === "correct"
                   ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
@@ -909,7 +918,11 @@ export function V2GameScreen({
                         ? "3 Hata Limiti Doldu"
                         : "Tur Tamamlandı"}
                   </Badge>
-                  <h3 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-2">
+                  <h3
+                    ref={resultHeadingRef}
+                    tabIndex={-1}
+                    className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+                  >
                     {endedEarly
                       ? "Yarım Tur Sonuçları"
                       : wrongCount >= 3 && difficulty === "klasik"

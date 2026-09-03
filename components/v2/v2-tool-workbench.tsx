@@ -929,7 +929,10 @@ export function V2ToolWorkbench({
         >
           {/* Absolute Floating Self-Intersection Warning Banner (Zero Layout Shift) */}
           {isSelfIntersecting && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-amber-950/90 backdrop-blur-md text-amber-200 px-3.5 py-1.5 rounded-2xl border border-amber-500/50 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95">
+            <div
+              role="alert"
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-amber-950/90 backdrop-blur-md text-amber-200 px-3.5 py-1.5 rounded-2xl border border-amber-500/50 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95"
+            >
               <div className="flex items-center gap-1.5 overflow-hidden">
                 <AlertTriangle className="size-3.5 text-amber-400 shrink-0" />
                 <span className="text-[11px] truncate">
@@ -1165,6 +1168,7 @@ export function V2ToolWorkbench({
                   value={manualCoordText}
                   onChange={(e) => setManualCoordText(e.target.value)}
                   placeholder="Örn: 39.92, 32.85 veya 41°00'K 28°58'D"
+                  aria-describedby={manualCoordError ? "manual-coord-error" : undefined}
                   className="h-10 text-xs font-mono rounded-xl"
                 />
                 <Button
@@ -1177,7 +1181,13 @@ export function V2ToolWorkbench({
                 </Button>
               </form>
               {manualCoordError && (
-                <p className="text-[11px] text-destructive font-medium">{manualCoordError}</p>
+                <p
+                  id="manual-coord-error"
+                  role="alert"
+                  className="text-[11px] text-destructive font-medium"
+                >
+                  {manualCoordError}
+                </p>
               )}
             </div>
 

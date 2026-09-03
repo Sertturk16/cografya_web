@@ -137,7 +137,13 @@ function getDirectionLabel(deg: number | null | undefined): string {
   return "Kuzeybatı (KB)";
 }
 
-function DirectionArrow({ deg, className = "size-3.5" }: { deg: number | null | undefined; className?: string }) {
+function DirectionArrow({
+  deg,
+  className = "size-3.5",
+}: {
+  deg: number | null | undefined;
+  className?: string;
+}) {
   if (deg === null || deg === undefined) return null;
   return (
     <svg
@@ -146,10 +152,7 @@ function DirectionArrow({ deg, className = "size-3.5" }: { deg: number | null | 
       style={{ transform: `rotate(${deg}deg)` }}
       aria-hidden="true"
     >
-      <path
-        d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"
-        fill="currentColor"
-      />
+      <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" fill="currentColor" />
     </svg>
   );
 }
@@ -164,7 +167,9 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
     "all" | "black_sea" | "marmara" | "aegean" | "mediterranean"
   >("all");
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [sortBy, setSortBy] = React.useState<"order" | "temp-desc" | "wave-desc" | "wind-desc">("order");
+  const [sortBy, setSortBy] = React.useState<"order" | "temp-desc" | "wave-desc" | "wind-desc">(
+    "order",
+  );
   const [hoveredSlug, setHoveredSlug] = React.useState<string | null>(null);
   const [selectedSlug, setSelectedSlug] = React.useState<string | null>(null);
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number } | null>(null);
@@ -277,7 +282,8 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           Türkiye Kıyıları &amp; Deniz Suyu Sıcaklık Atlası
         </h2>
         <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
-          Copernicus Marine ve ECMWF saatlik telemetri istasyonları, su sıcaklığı, dalga boyu ve 10m rüzgâr vektörleri.
+          Copernicus Marine ve ECMWF saatlik telemetri istasyonları, su sıcaklığı, dalga boyu ve 10m
+          rüzgâr vektörleri.
         </p>
       </div>
 
@@ -294,7 +300,9 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               key={key}
               type="button"
               onClick={() => {
-                setSelectedBasin(key as "all" | "black_sea" | "marmara" | "aegean" | "mediterranean");
+                setSelectedBasin(
+                  key as "all" | "black_sea" | "marmara" | "aegean" | "mediterranean",
+                );
                 setHoveredSlug(null);
               }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -352,10 +360,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
 
           {/* 2. Türkiye Casing Base Land */}
           {trCasing && (
-            <path
-              d={trCasing.d}
-              className="fill-card dark:fill-[#201c18] pointer-events-none"
-            />
+            <path d={trCasing.d} className="fill-card dark:fill-[#201c18] pointer-events-none" />
           )}
 
           {/* 3. Türkiye 81 Provinces */}
@@ -391,7 +396,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           {/* 6. Neighbor Country Name Labels */}
           <g className="fill-[#635a4e] dark:fill-[#a89e92] font-sans font-bold text-[12px] pointer-events-none select-none">
             {CONTEXT_SHAPES.filter(
-              (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso)
+              (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
             ).map((country) => {
               const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
               return (
@@ -540,7 +545,9 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               <div className="flex items-start gap-2 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs">
                 <ShieldAlert className="size-4 text-amber-600 shrink-0 mt-0.5" />
                 <p className="leading-tight text-[11px]">
-                  <strong>Boğaz &amp; Dar Su Yolu:</strong> Açık deniz modellerinin kaba grid çözünürlüğü ve iki tabakalı akıntı rejimi nedeniyle kıyı bandında yerel sapmalar olabilir.
+                  <strong>Boğaz &amp; Dar Su Yolu:</strong> Açık deniz modellerinin kaba grid
+                  çözünürlüğü ve iki tabakalı akıntı rejimi nedeniyle kıyı bandında yerel sapmalar
+                  olabilir.
                 </p>
               </div>
             )}
@@ -561,9 +568,14 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   <Waves className="size-3.5 text-cyan-600" /> Dalga Boyu
                 </span>
                 <div className="font-mono font-bold text-base text-foreground flex items-center gap-1.5">
-                  <span>{selectedPoint.waveHeight ? `${selectedPoint.waveHeight.toFixed(2)} m` : "—"}</span>
+                  <span>
+                    {selectedPoint.waveHeight ? `${selectedPoint.waveHeight.toFixed(2)} m` : "—"}
+                  </span>
                   {selectedPoint.waveDirection && (
-                    <DirectionArrow deg={selectedPoint.waveDirection} className="size-3.5 text-cyan-600" />
+                    <DirectionArrow
+                      deg={selectedPoint.waveDirection}
+                      className="size-3.5 text-cyan-600"
+                    />
                   )}
                 </div>
               </div>
@@ -574,15 +586,21 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                 </span>
                 <div className="font-mono font-bold text-xs text-foreground flex items-center gap-1">
                   <span>
-                    {selectedPoint.windSpeed10m ? `${selectedPoint.windSpeed10m.toFixed(1)} m/s` : "—"}
+                    {selectedPoint.windSpeed10m
+                      ? `${selectedPoint.windSpeed10m.toFixed(1)} m/s`
+                      : "—"}
                   </span>
                   {selectedPoint.windDirection10m && (
-                    <DirectionArrow deg={selectedPoint.windDirection10m} className="size-3.5 text-teal-600" />
+                    <DirectionArrow
+                      deg={selectedPoint.windDirection10m}
+                      className="size-3.5 text-teal-600"
+                    />
                   )}
                 </div>
                 {selectedPoint.windSpeedKmh && (
                   <span className="text-[10px] text-muted-foreground block">
-                    ~{selectedPoint.windSpeedKmh.toFixed(0)} km/h • {getDirectionLabel(selectedPoint.windDirection10m)}
+                    ~{selectedPoint.windSpeedKmh.toFixed(0)} km/h •{" "}
+                    {getDirectionLabel(selectedPoint.windDirection10m)}
                   </span>
                 )}
               </div>
@@ -614,7 +632,10 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               </Button>
               {selectedPoint.provinceSlug && (
                 <Link
-                  href={{ pathname: "/v2/turkiye/[slug]", params: { slug: selectedPoint.provinceSlug } }}
+                  href={{
+                    pathname: "/v2/turkiye/[slug]",
+                    params: { slug: selectedPoint.provinceSlug },
+                  }}
                   className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-8 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs"
                 >
                   <span className="text-white">İl Detayına Git</span>
@@ -668,7 +689,10 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   <span className="font-mono font-medium text-foreground flex items-center gap-1">
                     {hoveredPoint.waveHeight.toFixed(2)} m
                     {hoveredPoint.waveDirection && (
-                      <DirectionArrow deg={hoveredPoint.waveDirection} className="size-3 text-cyan-600" />
+                      <DirectionArrow
+                        deg={hoveredPoint.waveDirection}
+                        className="size-3 text-cyan-600"
+                      />
                     )}
                   </span>
                 </div>
@@ -682,7 +706,10 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   <span className="font-mono font-medium text-foreground flex items-center gap-1">
                     {hoveredPoint.windSpeed10m.toFixed(1)} m/s
                     {hoveredPoint.windDirection10m && (
-                      <DirectionArrow deg={hoveredPoint.windDirection10m} className="size-3 text-teal-600" />
+                      <DirectionArrow
+                        deg={hoveredPoint.windDirection10m}
+                        className="size-3 text-teal-600"
+                      />
                     )}
                   </span>
                 </div>
@@ -791,7 +818,8 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
       {/* FILTER RESULTS COUNTER */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          Toplam <strong className="text-foreground font-semibold">{filteredPoints.length}</strong> telemetri istasyonu listeleniyor.
+          Toplam <strong className="text-foreground font-semibold">{filteredPoints.length}</strong>{" "}
+          telemetri istasyonu listeleniyor.
         </span>
         {(searchQuery || selectedBasin !== "all") && (
           <button
@@ -860,11 +888,18 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                     <TableRow
                       key={point.slugTr}
                       id={`station-row-${point.slugTr}`}
-                      className={`cursor-pointer transition-colors ${
-                        isSelected
-                          ? "bg-primary/10 hover:bg-primary/15"
-                          : "hover:bg-muted/40"
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`${point.nameTr} istasyonunu seç`}
+                      className={`cursor-pointer transition-colors outline-none focus-visible:bg-primary/15 ${
+                        isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/40"
                       }`}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSelectPoint(point.slugTr);
+                        }
+                      }}
                       onClick={() => handleSelectPoint(point.slugTr)}
                       onMouseEnter={() => setHoveredSlug(point.slugTr)}
                       onMouseLeave={() => setHoveredSlug(null)}
@@ -895,16 +930,17 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       <TableCell>
                         {point.provinceSlug ? (
                           <Link
-                            href={{ pathname: "/v2/turkiye/[slug]", params: { slug: point.provinceSlug } }}
+                            href={{
+                              pathname: "/v2/turkiye/[slug]",
+                              params: { slug: point.provinceSlug },
+                            }}
                             className="font-medium text-foreground hover:text-primary hover:underline transition-colors"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {point.provinceName}
                           </Link>
                         ) : (
-                          <span className="font-medium text-foreground">
-                            {point.provinceName}
-                          </span>
+                          <span className="font-medium text-foreground">{point.provinceName}</span>
                         )}
                         <span className="text-xs font-mono text-muted-foreground ml-1.5">
                           (TR-{point.plateCode})
@@ -929,7 +965,10 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                             <span>{point.waveHeight.toFixed(2)} m</span>
                             {point.waveDirection !== undefined && point.waveDirection !== null && (
                               <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                                <DirectionArrow deg={point.waveDirection} className="size-3 text-cyan-600" />
+                                <DirectionArrow
+                                  deg={point.waveDirection}
+                                  className="size-3 text-cyan-600"
+                                />
                                 <span>{Math.round(point.waveDirection)}°</span>
                               </span>
                             )}
@@ -943,12 +982,16 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                           <div className="inline-flex items-center gap-1.5 justify-end">
                             <Wind className="size-3.5 text-teal-600" />
                             <span>{point.windSpeed10m.toFixed(1)} m/s</span>
-                            {point.windDirection10m !== undefined && point.windDirection10m !== null && (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                                <DirectionArrow deg={point.windDirection10m} className="size-3 text-teal-600" />
-                                <span>{Math.round(point.windDirection10m)}°</span>
-                              </span>
-                            )}
+                            {point.windDirection10m !== undefined &&
+                              point.windDirection10m !== null && (
+                                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                                  <DirectionArrow
+                                    deg={point.windDirection10m}
+                                    className="size-3 text-teal-600"
+                                  />
+                                  <span>{Math.round(point.windDirection10m)}°</span>
+                                </span>
+                              )}
                           </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>

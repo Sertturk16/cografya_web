@@ -636,12 +636,21 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                       key={shape.plateCode}
                       d={shape.d}
                       data-plate={shape.plateCode}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${provItem?.name || shape.plateCode} ili`}
                       onMouseEnter={() => setHoveredPlate(shape.plateCode)}
                       onMouseLeave={() => setHoveredPlate(null)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelectedPlate(shape.plateCode);
+                        }
+                      }}
                       onClick={() => {
                         setSelectedPlate(shape.plateCode);
                       }}
-                      className={`${fillColor} transition-all duration-150 cursor-pointer outline-none hover:stroke-foreground/80 hover:stroke-[1.2]`}
+                      className={`${fillColor} transition-all duration-150 cursor-pointer outline-none hover:stroke-foreground/80 hover:stroke-[1.2] focus-visible:stroke-primary focus-visible:stroke-[2]`}
                     />
                   );
                 })}

@@ -2,8 +2,10 @@ import * as React from "react";
 import { Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface CheckboxProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type" | "size"> {
+export interface CheckboxProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "type" | "size"
+> {
   label?: React.ReactNode;
   description?: React.ReactNode;
   error?: string;
@@ -27,19 +29,26 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
       onChange,
       ...props
     },
-    ref
+    ref,
   ) => {
     const generatedId = React.useId();
     const inputId = id || generatedId;
-    const [isChecked, setIsChecked] = React.useState<boolean>(
-      Boolean(defaultChecked || checked)
-    );
+    const innerRef = React.useRef<HTMLInputElement>(null);
+    React.useImperativeHandle(ref, () => innerRef.current as HTMLInputElement);
+
+    const [isChecked, setIsChecked] = React.useState<boolean>(Boolean(defaultChecked || checked));
 
     React.useEffect(() => {
       if (checked !== undefined) {
         setIsChecked(Boolean(checked));
       }
     }, [checked]);
+
+    React.useEffect(() => {
+      if (innerRef.current) {
+        innerRef.current.indeterminate = Boolean(indeterminate && !isChecked);
+      }
+    }, [indeterminate, isChecked]);
 
     const sizeClasses = {
       sm: "size-4 rounded",
@@ -62,12 +71,17 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     };
 
     return (
-      <div className={cn("flex items-start gap-2.5 select-none", disabled && "opacity-50 cursor-not-allowed")}>
+      <div
+        className={cn(
+          "flex items-start gap-2.5 select-none",
+          disabled && "opacity-50 cursor-not-allowed",
+        )}
+      >
         <div className="relative flex items-center justify-center mt-0.5">
           <input
             type="checkbox"
             id={inputId}
-            ref={ref}
+            ref={innerRef}
             disabled={disabled}
             checked={checked}
             defaultChecked={defaultChecked}
@@ -86,7 +100,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
               error && "border-destructive",
               "peer-focus-visible:outline-none peer-focus-visible:border-primary peer-focus-visible:ring-3 peer-focus-visible:ring-primary/25",
               disabled && "cursor-not-allowed",
-              className
+              className,
             )}
           >
             {indeterminate ? (
@@ -103,7 +117,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
                 htmlFor={inputId}
                 className={cn(
                   "text-sm font-medium text-foreground cursor-pointer leading-tight",
-                  disabled && "cursor-not-allowed"
+                  disabled && "cursor-not-allowed",
                 )}
               >
                 {label}
@@ -117,7 +131,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         )}
       </div>
     );
-  }
+  },
 );
 Checkbox.displayName = "Checkbox";
 
