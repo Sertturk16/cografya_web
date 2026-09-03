@@ -32,8 +32,6 @@ import {
   ExternalLink,
   ShoppingBag,
   PlayCircle,
-  Clock,
-  Sparkles,
 } from "lucide-react";
 import styles from "../../../kitaplar/[slug]/book-detail.module.css";
 

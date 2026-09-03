@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
 import {
-  getMarineLayersSafe,
   getMarineOverviewSafe,
   getMarinePointsSafe,
   MARINE_VALUES_REVALIDATE_SECONDS,
@@ -35,19 +34,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import {
-  Map,
-  Globe,
-  Waves,
-  Gamepad2,
-  Compass,
-  ArrowRight,
-  Sparkles,
-  MapPin,
-  Flame,
-  Layers,
-  BookOpen,
-} from "lucide-react";
+import { Waves, Gamepad2, Compass, ArrowRight, MapPin, Layers } from "lucide-react";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2Hero } from "@/components/v2/v2-hero";
@@ -89,13 +76,12 @@ export default async function V2HomePage({ params }: V2PageProps) {
   const tTools = await getTranslations("Tools.hub");
   const format = await getFormatter();
 
-  // Five parallel reads matching resilient architecture
-  const [provinces, countries, marinePoints, marineOverview, marineLayers] = await Promise.all([
+  // Four parallel reads matching resilient architecture
+  const [provinces, countries, marinePoints, marineOverview] = await Promise.all([
     getMapSummaryResilient(),
     getCountryMapSummaryResilient(),
     getMarinePointsSafe(),
     getMarineOverviewSafe(),
-    getMarineLayersSafe(),
   ]);
 
   const totalProvinces = provinces.length || 81;

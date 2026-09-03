@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { getCountriesResilient, getCountryMapSummaryResilient } from "@/lib/api/countries";
 import { hasFlag } from "@/lib/geo/flag-set";
-import type { CountryListItem, CountryMapSummary, Continent } from "@/lib/api/types";
+import type { CountryMapSummary, Continent } from "@/lib/api/types";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
@@ -15,18 +15,7 @@ import { V2WorldStatsSpotlight } from "@/components/v2/v2-world-stats-spotlight"
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Globe,
-  Compass,
-  Gamepad2,
-  ArrowRight,
-  Sparkles,
-  Home,
-  ChevronRight,
-  Layers,
-  MapPin,
-  Users,
-} from "lucide-react";
+import { Globe, Gamepad2, ArrowRight, Home, ChevronRight } from "lucide-react";
 
 export const revalidate = 86400;
 
@@ -40,8 +29,7 @@ function slugForLocale(country: { slugTr: string; slugEn: string }, locale: Loca
 
 const SPECIAL_STATUS_ISO_CODES = new Set(["QN", "CY", "IL", "PS", "TW", "XK"]);
 
-export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Metadata> {
-  const { locale } = await params;
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Dünya Ülkeleri & Kıtalar Atlası v2 — İnteraktif Dünya Haritası",
     description:

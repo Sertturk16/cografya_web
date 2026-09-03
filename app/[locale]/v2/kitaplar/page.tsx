@@ -18,15 +18,7 @@ import { V2StudyStrategyGuide } from "@/components/v2/v2-study-strategy-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
 import { Badge } from "@/components/ui/badge";
-import {
-  BookOpen,
-  Video,
-  GraduationCap,
-  Home,
-  ChevronRight,
-  HelpCircle,
-  Sparkles,
-} from "lucide-react";
+import { BookOpen, Home, ChevronRight } from "lucide-react";
 
 export const revalidate = 86400;
 

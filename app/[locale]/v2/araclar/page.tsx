@@ -10,17 +10,7 @@ import { V2GisMethodologyGuide } from "@/components/v2/v2-gis-methodology-guide"
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Compass,
-  Layers,
-  MapPin,
-  Home,
-  ChevronRight,
-  ArrowRight,
-  Globe,
-  Sparkles,
-} from "lucide-react";
+import { Compass, Home, ChevronRight } from "lucide-react";
 
 export const revalidate = 86400;
 
@@ -28,8 +18,7 @@ interface V2AraclarPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export async function generateMetadata({ params }: V2AraclarPageProps): Promise<Metadata> {
-  const { locale } = await params;
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "CBS & Coğrafi Ölçüm Araçları v2 — Mesafe, Koordinat ve Alan Hesaplama",
     description:

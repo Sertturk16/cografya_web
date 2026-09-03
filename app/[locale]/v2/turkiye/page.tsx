@@ -15,7 +15,6 @@ import { V2TurkeyRegions } from "@/components/v2/v2-turkey-regions";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Map as MapIcon,
@@ -37,8 +36,7 @@ function slugForLocale(province: ProvinceListItem, locale: Locale): string {
   return locale === "en" ? province.slugEn : province.slugTr;
 }
 
-export async function generateMetadata({ params }: V2TurkiyePageProps): Promise<Metadata> {
-  const { locale } = await params;
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Türkiye İller Atlası v2 — 81 İl İnteraktif Haritası ve Coğrafyası",
     description:

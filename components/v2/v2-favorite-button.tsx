@@ -11,7 +11,7 @@ import {
   type FavoriteTargetParam,
 } from "@/lib/favorites/client";
 import { Button } from "@/components/ui/button";
-import { Heart, Star, Loader2, Sparkles, Check, Lock } from "lucide-react";
+import { Heart, Loader2, Sparkles, Lock } from "lucide-react";
 
 interface V2FavoriteButtonProps {
   readonly target: FavoriteTargetParam;

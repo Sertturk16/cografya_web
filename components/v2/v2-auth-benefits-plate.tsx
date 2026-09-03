@@ -2,18 +2,7 @@
 
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Compass,
-  Star,
-  Trophy,
-  Layers,
-  Video,
-  ShieldCheck,
-  Sparkles,
-  MapPin,
-  CheckCircle2,
-  Users,
-} from "lucide-react";
+import { Star, Trophy, Layers, Video, ShieldCheck, Sparkles } from "lucide-react";
 
 interface V2AuthBenefitsPlateProps {
   mode?: "login" | "register";
