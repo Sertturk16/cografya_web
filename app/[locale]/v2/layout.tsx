@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { V2AuthDialog } from "@/components/v2/v2-auth-dialog";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 export default function V2Layout({ children }: { children: ReactNode }) {
   return (

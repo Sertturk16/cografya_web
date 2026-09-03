@@ -67,6 +67,10 @@ export async function generateMetadata({ params }: V2KitaplarPageProps): Promise
     alternates: {
       canonical: "/v2/kitaplar",
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

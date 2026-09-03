@@ -96,8 +96,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return buildMetadata({
     locale,
+    surface: "noindex",
     hrefForLocale: (l) => ({
-      pathname: "/v2/dunya/[slug]",
+      pathname: "/dunya/[slug]",
       params: { slug: slugForLocale(country, l) },
     }),
     title: `${t("metaTitle", { name })} | V2 Dünya Atlası`,
@@ -178,10 +179,10 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
     isTr && country.introTr !== null
       ? country.introTr
       : country.population !== null
-      ? t("introFallbackPopulation", { name, continent, population: country.population })
-      : country.areaKm2 !== null
-      ? t("introFallbackArea", { name, continent, area: country.areaKm2 })
-      : t("introFallbackContinent", { name, continent });
+        ? t("introFallbackPopulation", { name, continent, population: country.population })
+        : country.areaKm2 !== null
+          ? t("introFallbackArea", { name, continent, area: country.areaKm2 })
+          : t("introFallbackContinent", { name, continent });
 
   const landformNote = isTr ? country.landformNoteTr : null;
   const climateNote = isTr ? country.climateNoteTr : null;
@@ -226,8 +227,14 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
         <div className="container mx-auto px-4 max-w-7xl relative z-10 space-y-6">
           {/* Breadcrumb Bar */}
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-            <Link href="/v2" className="hover:text-foreground transition-colors flex items-center gap-1">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
+          >
+            <Link
+              href="/v2"
+              className="hover:text-foreground transition-colors flex items-center gap-1"
+            >
               <Home className="size-3.5" />
               <span>Ana Sayfa</span>
             </Link>
@@ -303,7 +310,9 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
               <div className="text-[11px] text-muted-foreground">
                 <span>Kaynak: </span>
                 <span className="font-semibold text-foreground">
-                  {locale === "en" ? country.populationSourceNameEn || "World Bank" : country.populationSourceNameTr || "Dünya Bankası"}
+                  {locale === "en"
+                    ? country.populationSourceNameEn || "World Bank"
+                    : country.populationSourceNameTr || "Dünya Bankası"}
                 </span>
               </div>
             </div>
@@ -319,7 +328,9 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
               </div>
               <div className="text-[11px] text-muted-foreground">
                 <span>Komşu Sayısı: </span>
-                <span className="font-mono font-semibold text-foreground">{country.neighborCount}</span>
+                <span className="font-mono font-semibold text-foreground">
+                  {country.neighborCount}
+                </span>
               </div>
             </div>
 
@@ -334,7 +345,9 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
               </div>
               <div className="text-[11px] text-muted-foreground">
                 <span>Para Birimi: </span>
-                <span className="font-semibold text-foreground">{country.currencyNameTr || country.currencyCode || "—"}</span>
+                <span className="font-semibold text-foreground">
+                  {country.currencyNameTr || country.currencyCode || "—"}
+                </span>
               </div>
             </div>
 
@@ -350,7 +363,9 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
               <div className="text-[11px] text-muted-foreground pt-0.5">
                 <span>Resmi Dil: </span>
                 <span className="font-semibold text-foreground">
-                  {officialLanguages && officialLanguages.length > 0 ? officialLanguages.join(", ") : "—"}
+                  {officialLanguages && officialLanguages.length > 0
+                    ? officialLanguages.join(", ")
+                    : "—"}
                 </span>
               </div>
             </div>
@@ -376,9 +391,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   {`${sectionHeading("landform")} ve Coğrafi Konumu`}
                 </h2>
                 {landformNote && (
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {landformNote}
-                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{landformNote}</p>
                 )}
 
                 {/* Historical Independence / National Day Highlight */}
@@ -407,7 +420,10 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 <h3 className="font-heading text-xl font-bold text-foreground">
                   {sectionHeading("climate")}
                 </h3>
-                <ProseNote text={climateNote} className="text-sm text-muted-foreground leading-relaxed" />
+                <ProseNote
+                  text={climateNote}
+                  className="text-sm text-muted-foreground leading-relaxed"
+                />
               </div>
             )}
 
@@ -415,14 +431,21 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             {hydrographyNote && (
               <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" size="sm" className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20">
+                  <Badge
+                    variant="outline"
+                    size="sm"
+                    className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20"
+                  >
                     Hidrografya
                   </Badge>
                 </div>
                 <h3 className="font-heading text-xl font-bold text-foreground">
                   {sectionHeading("hydrography")}
                 </h3>
-                <ProseNote text={hydrographyNote} className="text-sm text-muted-foreground leading-relaxed" />
+                <ProseNote
+                  text={hydrographyNote}
+                  className="text-sm text-muted-foreground leading-relaxed"
+                />
               </div>
             )}
 
@@ -430,14 +453,21 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             {sovereigntyNote && (
               <div className="rounded-3xl border border-amber-500/30 bg-amber-500/5 p-6 sm:p-8 shadow-sm space-y-3">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" size="sm" className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30">
+                  <Badge
+                    variant="outline"
+                    size="sm"
+                    className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                  >
                     Egemenlik ve Tanınma Durumu
                   </Badge>
                 </div>
                 <h3 className="font-heading text-xl font-bold text-foreground">
                   {t("sovereigntyHeading")}
                 </h3>
-                <ProseNote text={sovereigntyNote} className="text-sm text-muted-foreground leading-relaxed" />
+                <ProseNote
+                  text={sovereigntyNote}
+                  className="text-sm text-muted-foreground leading-relaxed"
+                />
               </div>
             )}
           </div>
@@ -481,7 +511,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {neighbors.map((nb) => (
+                  {neighbors.map((nb) =>
                     nb.kind === "link" ? (
                       <Link
                         key={nb.iso}
@@ -500,8 +530,8 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                         <span className="font-mono text-[10px] opacity-70">#{nb.iso}</span>
                         <span>{nb.label}</span>
                       </span>
-                    )
-                  ))}
+                    ),
+                  )}
                 </div>
               </div>
             )}

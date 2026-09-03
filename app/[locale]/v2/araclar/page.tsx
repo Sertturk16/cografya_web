@@ -37,6 +37,10 @@ export async function generateMetadata({ params }: V2AraclarPageProps): Promise<
     alternates: {
       canonical: "/v2/araclar",
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

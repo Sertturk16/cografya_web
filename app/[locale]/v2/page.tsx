@@ -71,6 +71,10 @@ export async function generateMetadata({ params }: V2PageProps): Promise<Metadat
     alternates: {
       canonical: locale === "tr" ? "/v2" : `/${locale}/v2`,
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

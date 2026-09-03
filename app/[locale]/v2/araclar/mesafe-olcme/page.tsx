@@ -30,6 +30,10 @@ export async function generateMetadata({ params }: V2DistancePageProps): Promise
     alternates: {
       canonical: "/v2/araclar/mesafe-olcme",
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

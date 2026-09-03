@@ -30,6 +30,10 @@ export async function generateMetadata({ params }: V2CoordinatesPageProps): Prom
     alternates: {
       canonical: "/v2/araclar/koordinat-bulma",
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

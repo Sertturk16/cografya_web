@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import { getFormatter, setRequestLocale } from "next-intl/server";
-import {
-  getMarinePointsSafe,
-  getMarineOverviewSafe,
-  getMarineLayersSafe,
-} from "@/lib/api/marine";
+import { getMarinePointsSafe, getMarineOverviewSafe, getMarineLayersSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -20,11 +16,7 @@ import { V2MarineLayerCatalogue } from "@/components/v2/v2-marine-layer-catalogu
 import { V2MarineFaqAccordion } from "@/components/v2/v2-marine-faq-accordion";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
-import {
-  Waves,
-  Home,
-  ChevronRight,
-} from "lucide-react";
+import { Waves, Home, ChevronRight } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
 
 export const revalidate = 900;
@@ -40,6 +32,10 @@ export async function generateMetadata(): Promise<Metadata> {
       "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı istasyonundan saatlik su sıcaklığı, dalga boyu, rüzgâr vektörleri ve oşinografi modelleri.",
     alternates: {
       canonical: "/v2/deniz",
+    },
+    robots: {
+      index: false,
+      follow: true,
     },
   };
 }
@@ -85,13 +81,14 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
       const rowValues = marineBlockValues(live);
       const oldest = oldestValidAt(rowValues);
       if (oldest) {
-        validAtFormatted = format.dateTime(oldest, {
-          day: "numeric",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: "UTC",
-        }) + " UTC";
+        validAtFormatted =
+          format.dateTime(oldest, {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "UTC",
+          }) + " UTC";
       }
       gridDist = maxGridDistanceKm(rowValues);
     }
@@ -189,7 +186,9 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
               </h1>
 
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Karadeniz, Marmara, Ege ve Akdeniz havzalarının saatlik deniz suyu sıcaklıkları, dalga boyları, tuzluluk oranları, akıntı rejimleri ve 28 kıyı ilinin oşinografik yapısı.
+                Karadeniz, Marmara, Ege ve Akdeniz havzalarının saatlik deniz suyu sıcaklıkları,
+                dalga boyları, tuzluluk oranları, akıntı rejimleri ve 28 kıyı ilinin oşinografik
+                yapısı.
               </p>
             </div>
 

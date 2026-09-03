@@ -27,6 +27,10 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: "/v2/oyun",
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

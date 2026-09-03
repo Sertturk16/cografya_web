@@ -41,9 +41,14 @@ export async function generateMetadata({ params }: V2TurkiyePageProps): Promise<
   const { locale } = await params;
   return {
     title: "Türkiye İller Atlası v2 — 81 İl İnteraktif Haritası ve Coğrafyası",
-    description: "Türkiye'nin 81 ili, 7 coğrafi bölgesi, fiziki haritaları, demografisi, iklim normalleri ve canlı deniz/deprem telemetrisi.",
+    description:
+      "Türkiye'nin 81 ili, 7 coğrafi bölgesi, fiziki haritaları, demografisi, iklim normalleri ve canlı deniz/deprem telemetrisi.",
     alternates: {
       canonical: "/v2/turkiye",
+    },
+    robots: {
+      index: false,
+      follow: true,
     },
   };
 }
@@ -95,7 +100,8 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
         schema={[
           collectionPageJsonLd({
             name: "Türkiye İlleri Atlası v2",
-            description: "Türkiye'nin 81 ili, 7 coğrafi bölgesi, fiziki haritaları, demografisi ve canlı telemetrisi.",
+            description:
+              "Türkiye'nin 81 ili, 7 coğrafi bölgesi, fiziki haritaları, demografisi ve canlı telemetrisi.",
             path: "/v2/turkiye",
             locale,
           }),
@@ -116,11 +122,20 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
         {/* Live Telemetry Ticker */}
         <V2LiveTicker />
 
-        <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14">
+        <main
+          id="main-content"
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14"
+        >
           {/* Breadcrumb & Header Hero */}
           <div className="space-y-4">
-            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Link href="/v2" className="flex items-center gap-1 hover:text-foreground transition-colors">
+            <nav
+              aria-label="Breadcrumb"
+              className="flex items-center gap-2 text-xs text-muted-foreground"
+            >
+              <Link
+                href="/v2"
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+              >
                 <Home className="size-3.5" />
                 <span>Ana Sayfa</span>
               </Link>
@@ -144,43 +159,59 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                 </h1>
 
                 <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                  81 ilin jeomorfolojik yapısı, demografik dağılımı, iklim normalleri, canlı deniz suyu sıcaklıkları ve aktif fay hatları tek ekranda.
+                  81 ilin jeomorfolojik yapısı, demografik dağılımı, iklim normalleri, canlı deniz
+                  suyu sıcaklıkları ve aktif fay hatları tek ekranda.
                 </p>
               </div>
 
               {/* Verified Metric Strip */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
                 <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">{totalProvinces} İl</span>
-                  <span className="text-xs text-muted-foreground font-medium">Mülki İdare Birimi</span>
+                  <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                    {totalProvinces} İl
+                  </span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Mülki İdare Birimi
+                  </span>
                 </div>
                 <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">7 Bölge</span>
-                  <span className="text-xs text-muted-foreground font-medium">Coğrafi Bölüm &amp; Havza</span>
+                  <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
+                    7 Bölge
+                  </span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Coğrafi Bölüm &amp; Havza
+                  </span>
                 </div>
                 <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">{totalDistricts}</span>
-                  <span className="text-xs text-muted-foreground font-medium">Toplam İlçe Sayısı</span>
+                  <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
+                    {totalDistricts}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Toplam İlçe Sayısı
+                  </span>
                 </div>
                 <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">783.562 km²</span>
-                  <span className="text-xs text-muted-foreground font-medium">Resmî Yüzölçümü (HGM)</span>
+                  <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">
+                    783.562 km²
+                  </span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Resmî Yüzölçümü (HGM)
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* SECTION 1: INTERACTIVE REALISTIC VECTOR MAP EXPLORER & 7 REGIONS GUIDE */}
-          <V2TurkeyMapExplorer
-            provinces={provinces}
-            regionsSection={<V2TurkeyRegions />}
-          />
+          <V2TurkeyMapExplorer provinces={provinces} regionsSection={<V2TurkeyRegions />} />
 
           {/* SECTION 3: 3-HUB CROSS-LINK CARDS */}
           <section className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-primary tracking-wider uppercase">İlişkili Modüller</span>
+                <span className="text-xs font-bold text-primary tracking-wider uppercase">
+                  İlişkili Modüller
+                </span>
                 <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground">
                   Türkiye Atlası Ekosistem Araçları
                 </h2>
@@ -197,7 +228,8 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                     </div>
                     <CardTitle className="text-xl">Harita Sınavı &amp; İl Bulma</CardTitle>
                     <CardDescription className="text-xs leading-relaxed">
-                      Dilsiz harita üzerinde 81 ili en kısa sürede bulup puan toplayın, bölge testlerinde hızınızı sınayın.
+                      Dilsiz harita üzerinde 81 ili en kısa sürede bulup puan toplayın, bölge
+                      testlerinde hızınızı sınayın.
                     </CardDescription>
                     <div className="pt-3 flex items-center text-xs font-semibold text-secondary group-hover:translate-x-1 transition-transform">
                       <span>Oyunu Başlat</span>
@@ -216,7 +248,8 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                     </div>
                     <CardTitle className="text-xl">Canlı Deniz Telemetrisi</CardTitle>
                     <CardDescription className="text-xs leading-relaxed">
-                      27 kıyı ilimizin çevre denizlerindeki Copernicus SST deniz suyu sıcaklıkları, dalga boyu ve rüzgar vektörleri.
+                      27 kıyı ilimizin çevre denizlerindeki Copernicus SST deniz suyu sıcaklıkları,
+                      dalga boyu ve rüzgar vektörleri.
                     </CardDescription>
                     <div className="pt-3 flex items-center text-xs font-semibold text-accent group-hover:translate-x-1 transition-transform">
                       <span>Denizleri İncele</span>
@@ -235,7 +268,8 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                     </div>
                     <CardTitle className="text-xl">Canlı Deprem Radarı</CardTitle>
                     <CardDescription className="text-xs leading-relaxed">
-                      81 ilimizi etkileyen Kuzey, Doğu ve Batı Anadolu aktif fay hatları ve AFAD/Kandilli son sarsıntılar.
+                      81 ilimizi etkileyen Kuzey, Doğu ve Batı Anadolu aktif fay hatları ve
+                      AFAD/Kandilli son sarsıntılar.
                     </CardDescription>
                     <div className="pt-3 flex items-center text-xs font-semibold text-destructive group-hover:translate-x-1 transition-transform">
                       <span>Radarı Aç</span>

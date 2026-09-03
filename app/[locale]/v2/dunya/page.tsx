@@ -49,6 +49,10 @@ export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Me
     alternates: {
       canonical: "/v2/dunya",
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

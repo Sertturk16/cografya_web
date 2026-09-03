@@ -29,6 +29,10 @@ export async function generateMetadata({ params }: V2AreaPageProps): Promise<Met
     alternates: {
       canonical: "/v2/araclar/alan-hesaplama",
     },
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 
