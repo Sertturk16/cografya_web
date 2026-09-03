@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useAuthModalState, dismissAuth, resolveAuth, setAuthModalMode, type AuthIntent } from "@/lib/auth/auth-modal.client";
+import {
+  useAuthModalState,
+  dismissAuth,
+  resolveAuth,
+  setAuthModalMode,
+  type AuthIntent,
+} from "@/lib/auth/auth-modal.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { V2LoginCard } from "./v2-login-card";
@@ -13,7 +19,6 @@ import {
   Trophy,
   Video,
   Layers,
-  Sparkles,
   ShieldCheck,
   X,
   LogIn,
@@ -63,7 +68,9 @@ const INTENT_CONFIGS: Record<AuthIntent, IntentConfig> = {
 export function V2AuthDialog() {
   const modal = useAuthModalState();
   const [, setAuthState] = useAuthSession();
-  const [provinces, setProvinces] = React.useState<Array<{ plateCode: string; nameTr: string }>>([]);
+  const [provinces, setProvinces] = React.useState<Array<{ plateCode: string; nameTr: string }>>(
+    [],
+  );
 
   // Fetch province list lazily when modal opens in register mode
   React.useEffect(() => {
@@ -87,14 +94,19 @@ export function V2AuthDialog() {
   const intentInfo = INTENT_CONFIGS[modal.intent] || INTENT_CONFIGS.generic;
 
   return (
-    <Dialog open={modal.open} onOpenChange={(open) => { if (!open) dismissAuth(); }}>
+    <Dialog
+      open={modal.open}
+      onOpenChange={(open) => {
+        if (!open) dismissAuth();
+      }}
+    >
       <DialogContent
         size="md"
         showCloseButton={false}
         className="p-0 overflow-hidden sm:max-w-[480px] max-h-[min(90vh,680px)] flex flex-col rounded-3xl border border-border/80 shadow-2xl bg-card"
       >
-        {/* Custom Header Bar with Gradient & Close Button (shrink-0) */}
-        <div className="relative p-5 sm:p-6 bg-gradient-to-br from-card via-card to-muted/40 border-b border-border/80 space-y-3.5 shrink-0">
+        {/* Custom Header Bar with Clean Terra Styling & Close Button (shrink-0) */}
+        <div className="relative p-5 sm:p-6 bg-card border-b border-border/80 space-y-3.5 shrink-0">
           <button
             type="button"
             onClick={dismissAuth}
@@ -106,18 +118,18 @@ export function V2AuthDialog() {
 
           {/* Brand & Intent Badge */}
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-gradient-to-br from-[var(--color-primary,#b0522e)] to-[var(--color-primary-dark,#7e3a1e)] flex items-center justify-center text-white shadow-xs">
-              <Compass className="size-4.5" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-heading font-bold text-sm text-[var(--color-primary-dark,#7e3a1e)]">
-                Coğrafya<span className="text-primary font-normal">.v2</span>
-              </span>
-              <span className="text-muted-foreground">&bull;</span>
-              <Badge variant="secondary" size="sm" icon={intentInfo.icon} className="text-[11px] py-0">
-                {intentInfo.badgeText}
-              </Badge>
-            </div>
+            <span className="font-heading font-bold text-sm text-[var(--color-primary-dark,#7e3a1e)]">
+              Coğrafya<span className="text-primary font-normal">.v2</span>
+            </span>
+            <span className="text-muted-foreground">&bull;</span>
+            <Badge
+              variant="secondary"
+              size="sm"
+              icon={intentInfo.icon}
+              className="text-[11px] py-0"
+            >
+              {intentInfo.badgeText}
+            </Badge>
           </div>
 
           {/* Heading and Intent Message */}
@@ -131,9 +143,17 @@ export function V2AuthDialog() {
           </div>
 
           {/* Segmented Tab Switcher (Giriş Yap <-> Üye Ol) */}
-          <div className="grid grid-cols-2 p-1 rounded-xl bg-muted/70 border border-border text-xs font-semibold gap-1">
+          <div
+            className="grid grid-cols-2 p-1 rounded-xl bg-muted/70 border border-border text-xs font-semibold gap-1"
+            role="tablist"
+            aria-label="Kimlik Doğrulama Seçenekleri"
+          >
             <button
+              id="v2-auth-tab-login"
               type="button"
+              role="tab"
+              aria-selected={modal.mode === "login"}
+              aria-controls="v2-auth-tabpanel-login"
               onClick={() => setAuthModalMode("login")}
               className={`py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 modal.mode === "login"
@@ -145,7 +165,11 @@ export function V2AuthDialog() {
               <span>Giriş Yap</span>
             </button>
             <button
+              id="v2-auth-tab-register"
               type="button"
+              role="tab"
+              aria-selected={modal.mode === "register"}
+              aria-controls="v2-auth-tabpanel-register"
               onClick={() => setAuthModalMode("register")}
               className={`py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 modal.mode === "register"
@@ -160,7 +184,13 @@ export function V2AuthDialog() {
         </div>
 
         {/* Form Body Area with Perfect Scroll (flex-1 min-h-0 overflow-y-auto) */}
-        <div className="p-5 sm:p-6 bg-card flex-1 min-h-0 overflow-y-auto">
+        <div
+          id={`v2-auth-tabpanel-${modal.mode}`}
+          role="tabpanel"
+          aria-labelledby={`v2-auth-tab-${modal.mode}`}
+          tabIndex={0}
+          className="p-5 sm:p-6 bg-card flex-1 min-h-0 overflow-y-auto"
+        >
           {modal.mode === "login" ? (
             <V2LoginCard
               inModal={true}
