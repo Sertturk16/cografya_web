@@ -9,6 +9,33 @@ const nextConfig: NextConfig = {
   // canonical/hreflang/sitemap URLs are stable and never depend on an implicit default.
   trailingSlash: false,
 
+  // The CY sovereignty entity's canonical Turkish name changed, owner-ruled
+  // (`DEC 2026-08-30b`, `DEC 2026-08-31a`) — `nameTr`/`slugTr` moved from
+  // "Kıbrıs Cumhuriyeti"/`kibris-cumhuriyeti` to "Güney Kıbrıs Rum Yönetimi"/
+  // `guney-kibris-rum-yonetimi` in `cografya_api` (`dev`@`a23948c`, PR #154, already
+  // merged). This is the FIRST entry `redirects()` has ever needed in this repo (measured:
+  // zero prior entries, zero git-history precedent) — a genuine content-identity change,
+  // not a routine slug tidy-up, so `permanent: true` (308, method-preserving — see the
+  // Next.js docs cited in this PR's completion report) is the correct, standard choice
+  // rather than an interim 307. Only the TR path moves: `/dunya/[slug]` is ONE unlocalized
+  // route segment for both locales (`i18n/routing.ts`), and the dynamic slug VALUE differs
+  // per locale (`slugTr`/`slugEn`, `app/[locale]/dunya/[slug]/page.tsx`); `nameEn`/`slugEn`
+  // stayed unchanged ("Republic of Cyprus"/`republic-of-cyprus`, `DEC 2026-08-31a`), so the
+  // EN URL `/en/dunya/republic-of-cyprus` never pointed at the old TR slug and needs no
+  // redirect of its own. Without this entry the already-indexed old URL would 404 the
+  // moment a reseed lands (CONVENTIONS §6 #6 / this repo's own §4 item 6 — unknown slug →
+  // real 404, never a soft-200), which is exactly the already-indexed-URL breakage this
+  // entry exists to prevent.
+  async redirects() {
+    return [
+      {
+        source: "/dunya/kibris-cumhuriyeti",
+        destination: "/dunya/guney-kibris-rum-yonetimi",
+        permanent: true,
+      },
+    ];
+  },
+
   // The flag route reads `flag-icons`' manifest/SVGs and local overrides from disk during
   // prerendering and first on-demand generation (`lib/geo/flag-set.ts`). Declaring all three
   // inputs here makes that server-only dependency explicit for output tracing instead of

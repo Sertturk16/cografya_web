@@ -16,9 +16,9 @@
  *   the apostrophe ("Sinop'un", "Zonguldak'ın" — never "Sinob…"/"Zonguldağ…"). This is
  *   exactly why the apostrophe rule also simplifies the code: we never mutate the stem.
  * - **3rd-person-possessive compounds** (Kocaeli/Kırklareli/Tunceli; "… Cumhuriyeti",
- *   "… Adaları", "Ekvator Ginesi", "Fildişi Sahili") take the pronominal buffer -n- in the
- *   LOCATIVE ("Kocaeli'nde", "Kongo Cumhuriyeti'nde"); the genitive buffer already handles
- *   them via the generic vowel-final rule. See `PRONOMINAL_BUFFER_HEADS`.
+ *   "… Adaları", "Ekvator Ginesi", "Fildişi Sahili", "… Yönetimi") take the pronominal
+ *   buffer -n- in the LOCATIVE ("Kocaeli'nde", "Kongo Cumhuriyeti'nde"); the genitive buffer
+ *   already handles them via the generic vowel-final rule. See `PRONOMINAL_BUFFER_HEADS`.
  * - **Palatal ("ince") final l** in loanwords (Nepal, Senegal): written with a back vowel
  *   but suffixed with the FRONT forms in standard Turkish. See `PALATAL_L_WORDS`.
  *
@@ -59,12 +59,14 @@ const VOICELESS = "çÇfFhHkKpPsSşŞtT";
  * token is the parenthesised "(Tayvan)", which governs the suffix.
  */
 const PRONOMINAL_BUFFER_HEADS = new Set([
-  "Cumhuriyeti", // Orta Afrika / Kongo / Kongo Demokratik / Dominik / Kıbrıs / KKTC
+  "Cumhuriyeti", // Orta Afrika / Kongo / Kongo Demokratik / Dominik / KKTC
   "Devletleri", // Amerika Birleşik Devletleri, Mikronezya Federe Devletleri
   "Emirlikleri", // Birleşik Arap Emirlikleri
   "Adaları", // Solomon Adaları, Marşal Adaları
   "Ginesi", // Ekvator Ginesi
   "Sahili", // Fildişi Sahili
+  "Yönetimi", // Güney Kıbrıs Rum Yönetimi (→ DEC 2026-08-30b rename); same izafet-head class
+  // as "Cumhuriyeti" above — the buffer is unaffected by which head noun a ruling picks.
 ]);
 
 /**

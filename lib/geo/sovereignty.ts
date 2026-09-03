@@ -8,9 +8,9 @@ import type { Locale } from "@/i18n/routing";
  * The api marks exactly these rows with a non-null `sovereigntyNoteTr`; the contract's own
  * field description is the definition: *"Yalnızca tanınma statüsü tartışmalı/standart-dışı
  * ülkeler için doldurulur; sıradan ülkelerde null"* (`CountryDetailDto`). Six rows carry it
- * today (Kıbrıs Cumhuriyeti, KKTC, İsrail, Filistin, Çin Cumhuriyeti (Tayvan), Kosova →
- * DEC 2026-07-13). Reading the marker rather than hard-coding ISO codes means a future
- * seeded row is covered the day it lands.
+ * today (Güney Kıbrıs Rum Yönetimi, KKTC, İsrail, Filistin, Çin Cumhuriyeti (Tayvan), Kosova →
+ * DEC 2026-07-13; name → DEC 2026-08-30b). Reading the marker rather than hard-coding ISO
+ * codes means a future seeded row is covered the day it lands.
  *
  * What the marker changes on the page, and why:
  *
