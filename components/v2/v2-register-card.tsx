@@ -31,8 +31,6 @@ import {
   MapPin,
   GraduationCap,
   Briefcase,
-  BookOpen,
-  Compass,
   Check,
   Phone,
 } from "lucide-react";
@@ -51,19 +49,9 @@ const USER_ROLES: Array<{
   icon: React.ReactNode;
 }> = [
   {
-    id: "secondary",
-    label: USER_TYPE_LABELS.secondary.tr,
+    id: "student",
+    label: USER_TYPE_LABELS.student.tr,
     icon: <GraduationCap className="size-3.5" />,
-  },
-  {
-    id: "undergraduate",
-    label: USER_TYPE_LABELS.undergraduate.tr,
-    icon: <BookOpen className="size-3.5" />,
-  },
-  {
-    id: "graduate",
-    label: USER_TYPE_LABELS.graduate.tr,
-    icon: <Compass className="size-3.5" />,
   },
   {
     id: "teacher",
@@ -115,7 +103,7 @@ export function V2RegisterCard({
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
-  const [selectedRole, setSelectedRole] = React.useState<UserType>("secondary");
+  const [selectedRole, setSelectedRole] = React.useState<UserType>("student");
   const [selectedPlate, setSelectedPlate] = React.useState("");
   const [districts, setDistricts] = React.useState<Array<{ id: string; nameTr: string }>>([]);
   const [selectedDistrictId, setSelectedDistrictId] = React.useState("");
@@ -130,6 +118,10 @@ export function V2RegisterCard({
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
   const [registeredEmail, setRegisteredEmail] = React.useState("");
   const [resendCooldown, setResendCooldown] = React.useState(0);
+  // Resend has its OWN in-flight flag (VAL126R2SEC-I1): sharing `loading` with the verify
+  // submit disabled the code input and the "Kodu Doğrula ve Başla" button while a resend was
+  // in flight, which is a different control's state leaking into the primary action.
+  const [resendLoading, setResendLoading] = React.useState(false);
 
   // Resend code countdown timer (SEC126-I1)
   React.useEffect(() => {
@@ -288,7 +280,10 @@ export function V2RegisterCard({
       const result = await submitAuth(
         "verify-email",
         {
-          email: email.trim(),
+          // `registeredEmail` is the address the register round-trip actually accepted;
+          // `email` is only a fallback (VAL126R2SEC-I1, defence in depth — the step-1 e-mail
+          // input is unmounted while `step === "verify"`, so the two cannot diverge today).
+          email: registeredEmail || email.trim(),
           code: cleanCode,
         },
         inModal ? {} : { returnTo: "/v2" },
@@ -318,10 +313,10 @@ export function V2RegisterCard({
   };
 
   const handleResendCode = async () => {
-    if (loading || resendCooldown > 0) return;
+    if (resendLoading || resendCooldown > 0) return;
     setGeneralError(null);
     setSuccessMsg(null);
-    setLoading(true);
+    setResendLoading(true);
     try {
       const targetEmail = registeredEmail || email.trim();
       const res = await submitAuth("verify-email/resend", { email: targetEmail });
@@ -334,7 +329,7 @@ export function V2RegisterCard({
     } catch {
       setGeneralError("Bağlantı hatası oluştu.");
     } finally {
-      setLoading(false);
+      setResendLoading(false);
     }
   };
 
@@ -485,12 +480,8 @@ export function V2RegisterCard({
 
           {/* User Role Selector */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-foreground">Profil Türü / Hedefin</Label>
-            <div
-              className="grid grid-cols-2 gap-1.5"
-              role="radiogroup"
-              aria-label="Profil Türü / Hedefin"
-            >
+            <Label className="text-xs font-bold text-foreground">Kullanıcı tipi</Label>
+            <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Kullanıcı tipi">
               {USER_ROLES.map((role) => (
                 <button
                   key={role.id}
@@ -716,7 +707,7 @@ export function V2RegisterCard({
             <button
               type="button"
               onClick={handleResendCode}
-              disabled={loading || resendCooldown > 0}
+              disabled={resendLoading || resendCooldown > 0}
               className="text-primary font-semibold hover:underline disabled:opacity-50 disabled:no-underline"
             >
               {resendCooldown > 0

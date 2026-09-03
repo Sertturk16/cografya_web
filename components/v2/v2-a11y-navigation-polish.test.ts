@@ -27,6 +27,17 @@ describe("V2 A11y and navigation invariants", () => {
     expect(content).toContain("aria-activedescendant={activeDescendantId}");
   });
 
+  it("binds CustomSelect's keydown handler exactly twice — trigger + search input, never the popup wrapper (FU126A11Y-I2)", () => {
+    const url = new URL("../ui/custom-select.tsx", import.meta.url);
+    const content = readFileSync(url, "utf8");
+    // Positive control: the probe can find a binding at all.
+    expect(content).toContain("onKeyDown={handleKeyDown}");
+    // Exactly two: the trigger <button> and the searchable <input>. A third binding on the
+    // popup <div> makes the input's keydown bubble into the same handler twice, which moved
+    // the arrow-key highlight two options per press (FU126A11Y-I2).
+    expect(content.match(/onKeyDown=\{handleKeyDown\}/g)?.length).toBe(2);
+  });
+
   it("restores accessible name to selectable marine station table rows (A11Y125-I3)", () => {
     const url = new URL("./v2-marine-map-explorer.tsx", import.meta.url);
     const content = readFileSync(url, "utf8");

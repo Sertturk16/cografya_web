@@ -57,11 +57,14 @@ describe("V2RegisterCard structural contract", () => {
     expect(hasUserTypeLabels).toBe(true);
   });
 
-  it("derives role labels from canonical USER_TYPE_LABELS (CODE125-I3)", () => {
-    expect(source).toContain("USER_TYPE_LABELS.secondary.tr");
-    expect(source).toContain("USER_TYPE_LABELS.undergraduate.tr");
-    expect(source).toContain("USER_TYPE_LABELS.graduate.tr");
+  it("derives role labels from canonical USER_TYPE_LABELS (CODE125-I3, VAL126R2SEC-I3)", () => {
+    expect(source).toContain("USER_TYPE_LABELS.student.tr");
     expect(source).toContain("USER_TYPE_LABELS.teacher.tr");
+    // DEC 2026-09-03a md.1 / VAL126R2SEC-I3: V2 registration collects accountRole only; the three
+    // education-level options moved to the post-registration profile step.
+    expect(source).not.toContain("USER_TYPE_LABELS.secondary.tr");
+    expect(source).not.toContain("USER_TYPE_LABELS.undergraduate.tr");
+    expect(source).not.toContain("USER_TYPE_LABELS.graduate.tr");
   });
 
   it("keeps registration minimal without university/department/grade inputs (DEC 2026-09-03a md.1, FU125SEC-I1)", () => {
@@ -93,10 +96,29 @@ describe("V2RegisterCard structural contract", () => {
     expect(source).toContain("el.focus()");
   });
 
+  it("every FIELD_ELEMENT_IDS value matches a real element id in the component (TA126R2-I1)", () => {
+    const block = source.match(
+      /const FIELD_ELEMENT_IDS: Record<FieldKey, string> = \{([\s\S]*?)\};/,
+    );
+    expect(block).not.toBeNull();
+    const ids = [...(block?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1] ?? "");
+    // Positive control: all seven FieldKeys are present, so a shrunken regex cannot make the
+    // loop below vacuous.
+    expect(ids).toHaveLength(7);
+    for (const id of ids) {
+      expect(
+        source,
+        `FIELD_ELEMENT_IDS carries "${id}" but no element renders id="${id}"`,
+      ).toContain(`id="${id}"`);
+    }
+  });
+
   it("enforces 60-second cooldown on resend verification code (SEC126-I1)", () => {
     expect(source).toContain("resendCooldown");
     expect(source).toContain("setResendCooldown(60)");
-    expect(source).toContain("disabled={loading || resendCooldown > 0}");
+    // VAL126R2SEC-I1: the resend control has its own in-flight flag, so a resend no longer
+    // disables the verify code input and the primary "Kodu Doğrula ve Başla" button.
+    expect(source).toContain("disabled={resendLoading || resendCooldown > 0}");
   });
 
   it("wires field-specific errors and error association", () => {

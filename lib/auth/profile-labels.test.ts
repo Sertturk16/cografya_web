@@ -24,14 +24,16 @@ function nonEmptyTr(table: Record<string, { readonly tr: string }>): void {
 }
 
 describe("USER_TYPE_LABELS", () => {
-  it("carries all four options with a non-empty tr", () => {
+  it("carries all five options with a non-empty tr", () => {
+    // `student` is V2's minimal-registration value on the accountRole axis alone
+    // (DEC 2026-09-03a md.1, VAL126R2SEC-I3); the other four stay V1's education-level options.
     expect(Object.keys(USER_TYPE_LABELS).sort()).toEqual(
-      ["graduate", "secondary", "teacher", "undergraduate"].sort(),
+      ["graduate", "secondary", "student", "teacher", "undergraduate"].sort(),
     );
     nonEmptyTr(USER_TYPE_LABELS);
   });
 
-  it("also carries en for all four (plan §4.3.4 — this axis is exercised in both modes)", () => {
+  it("also carries en for all five (plan §4.3.4 — this axis is exercised in both modes)", () => {
     for (const [key, label] of Object.entries(USER_TYPE_LABELS)) {
       expect(label.en, `${key}.en is missing`).toBeTruthy();
     }

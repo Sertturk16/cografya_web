@@ -11,11 +11,15 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
     const url = new URL("./v2-earthquake-explorer.tsx", import.meta.url);
     const content = readFileSync(url, "utf8");
 
-    // SVG epicenter must have tabIndex={0} and keydown handler with Enter/Space
-    expect(content).toMatch(/<g[^>]*tabIndex=\{0\}[^>]*role="button"/);
+    // SVG epicenters are a ROVING tabindex group (A11Y126-I5): exactly one marker — the
+    // selected one — is in the tab order, the rest are programmatically focusable only.
+    expect(content).toMatch(/<g[^>]*tabIndex=\{isTabStop \? 0 : -1\}[^>]*role="button"/);
     expect(content).toMatch(
       /onKeyDown=\{\(e\) => \{\s*if \(e\.key === "Enter" \|\| e\.key === " "\)/,
     );
+    // …and the arrow/Home/End branch that moves that single tab stop is what makes the group
+    // navigable once entered; without it the roving tabindex would strip navigation instead.
+    expect(content).toContain("document.getElementById(`eq-marker-${next.id}`)?.focus()");
     expect(content).toContain("focus-visible:scale-125");
 
     // TableRow must have tabIndex={0}, aria-selected, onKeyDown with Enter/Space, and accessible name

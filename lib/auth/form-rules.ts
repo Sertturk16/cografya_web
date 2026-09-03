@@ -114,14 +114,25 @@ export function canonicalizePhone(input: string): string | null {
 }
 
 /**
- * The four values `DEC 2026-08-20g` md.1 #7 names for the "Kullanıcı tipi" control, spelled
- * as an internal identifier rather than the contract's two axes (`accountRole` +
- * `educationLevel`) because the CONTROL is one field with four options, not two — see
- * `buildRegisterPayload` below for the split. `lib/auth/profile-labels.ts` holds the reader
- * label for each (plan §4.3.3's copy deviation: the ruling's four values, disambiguated with
- * `GLOSSARY.md` §7.1's terms).
+ * The register screens' one internal user-type identifier, spelled as a single union rather
+ * than the contract's two axes (`accountRole` + `educationLevel`) because the CONTROL is one
+ * field — see `buildRegisterPayload` below for the split. `lib/auth/profile-labels.ts` holds
+ * the reader label for each.
+ *
+ * `secondary` / `undergraduate` / `graduate` / `teacher` remain V1's four education-level
+ * options for the full-profile "Kullanıcı tipi" control `DEC 2026-08-20g` md.1 #7 names
+ * (`components/auth/register-form.tsx`, plan §4.3.3's copy deviation: the ruling's four
+ * values, disambiguated with `GLOSSARY.md` §7.1's terms).
+ *
+ * `student` is V2's minimal-registration value (`DEC 2026-09-03a` md.1, `VAL126R2SEC-I3`). It
+ * lives on the `accountRole` axis ALONE — `GLOSSARY.md` §7.1's two-row `accountRole` table
+ * (Öğrenci → `STUDENT`) — and carries NO education level at all: no `educationLevel`,
+ * `gradeLevel`, `studyStream`, `universityName` or `departmentName` key reaches the payload.
+ * It is deliberately NOT a reuse of `secondary`: that branch stamps
+ * `educationLevel: "SECONDARY"` the moment a `gradeLevel` appears, so reusing it would make a
+ * V2 student's stored intent a lie the first time education collection is added.
  */
-export type UserType = "secondary" | "undergraduate" | "graduate" | "teacher";
+export type UserType = "student" | "secondary" | "undergraduate" | "graduate" | "teacher";
 
 /**
  * The whole register-screen state `buildRegisterPayload` reads (plan §4.3.2 part 3, the
@@ -159,17 +170,23 @@ export interface RegisterFormState {
  * `CHECK` — updated by `cografya_api` PR #155 `AllowStudentMinimalRegistrationProfileShape1788100000000`)
  * — which extra fields each user type requires, forbids, or leaves optional:
  *
+ * The left column is the {@link UserType} union and nothing else — every member has exactly
+ * one row, and every row is a member:
+ *
  * | user type      | `accountRole` | `educationLevel` | required                        | forbidden                   |
  * |----------------|----------------|-------------------|----------------------------------|------------------------------|
- * | student (min)  | `STUDENT`      | *absent*          | —                                | every education field       |
+ * | student        | `STUDENT`      | *absent*          | —                                | every education field       |
  * | secondary      | `STUDENT`      | `SECONDARY`       | `gradeLevel` + `studyStream`     | university, department      |
  * | undergraduate  | `STUDENT`      | `UNDERGRADUATE`   | `universityName` + `departmentName` | grade, stream            |
  * | graduate       | `STUDENT`      | `GRADUATE`        | `universityName`; department optional | grade, stream          |
  * | teacher        | `TEACHER`      | *absent*          | —                                | every education field       |
  *
- * Minimal V2 student registration omits education fields entirely (Decision 2-B, `DEC 2026-09-03a` md.1).
- * In that case, `buildRegisterPayload` returns `{ ...common, accountRole: "STUDENT" }` without
- * `educationLevel` or any education key, matching `cografya_api`'s minimal student contract.
+ * `student` is minimal V2 registration (Decision 2-B, `DEC 2026-09-03a` md.1): it omits the
+ * education fields entirely, so `buildRegisterPayload` returns
+ * `{ ...common, accountRole: "STUDENT" }` without `educationLevel` or any education key,
+ * matching `cografya_api`'s minimal student contract. The three education-level branches keep
+ * their own defensive collapse to the same shape when their education field is empty — a
+ * still-live path for a V1 caller that has not filled the profile in yet.
  * `buildRegisterPayload` is the ONLY function in this repo that constructs the `register`
  * request body, and it emits exactly the keys the matrix's branch above allows and nothing
  * else — the global pipe's `whitelist`+`forbidNonWhitelisted`
@@ -237,6 +254,8 @@ export function buildRegisterPayload(
         ? { ...base, departmentName: formState.departmentName }
         : base;
     }
+    case "student":
+      return { ...common, accountRole: "STUDENT" };
     case "teacher":
       return { ...common, accountRole: "TEACHER" };
     default: {
