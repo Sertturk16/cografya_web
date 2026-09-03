@@ -6,7 +6,13 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { submitAuth } from "@/lib/auth/submit.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
-import { EMAIL_SHAPE } from "@/lib/auth/form-rules";
+import {
+  EMAIL_SHAPE,
+  canonicalizePhone,
+  buildRegisterPayload,
+  type RegisterFormState,
+  type UserType,
+} from "@/lib/auth/form-rules";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +32,7 @@ import {
   BookOpen,
   Compass,
   Check,
+  Phone,
 } from "lucide-react";
 
 export interface V2RegisterCardProps {
@@ -55,37 +62,113 @@ export function V2RegisterCard({
 
   // Step 1: Registration Form, Step 2: Verification Code
   const [step, setStep] = React.useState<"form" | "verify">("form");
-  const [fullName, setFullName] = React.useState("");
+  const [firstName, setFirstName] = React.useState("");
+  const [lastName, setLastName] = React.useState("");
+  const [phone, setPhone] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [selectedRole, setSelectedRole] = React.useState("STUDENT");
   const [selectedPlate, setSelectedPlate] = React.useState("");
+  const [districts, setDistricts] = React.useState<Array<{ id: string; nameTr: string }>>([]);
+  const [selectedDistrictId, setSelectedDistrictId] = React.useState("");
+  const [fetchedProvinces, setFetchedProvinces] = React.useState<
+    Array<{ plateCode: string; nameTr: string }>
+  >([]);
   const [verificationCode, setVerificationCode] = React.useState("");
 
   const [loading, setLoading] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
 
+  // Fetch provinces if not passed as prop
+  React.useEffect(() => {
+    if (provinces.length === 0) {
+      let active = true;
+      fetch("/api/reference/provinces")
+        .then((res) => res.json())
+        .then((data) => {
+          if (active && Array.isArray(data)) setFetchedProvinces(data);
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }
+  }, [provinces.length]);
+
+  const activeProvinces = provinces.length > 0 ? provinces : fetchedProvinces;
+
+  // Load districts when province selection changes
+  React.useEffect(() => {
+    if (!selectedPlate) return;
+    let active = true;
+    fetch(`/api/reference/districts/${encodeURIComponent(selectedPlate)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (active && Array.isArray(data)) {
+          setDistricts(data);
+          if (data.length > 0) {
+            setSelectedDistrictId(data[0].id);
+          }
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [selectedPlate]);
+
   // Password requirements calculation
   const hasMinLength = password.length >= 8;
   const hasNumber = /\d/.test(password);
   const hasLetter = /[a-zA-ZğüşıöçĞÜŞİÖÇ]/.test(password);
+
+  function roleToUserType(roleId: string): UserType {
+    switch (roleId) {
+      case "TEACHER":
+        return "teacher";
+      case "ACADEMIC":
+        return "undergraduate";
+      case "STUDENT":
+      case "GENERAL":
+      default:
+        return "secondary";
+    }
+  }
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const cleanName = fullName.trim();
+    const cleanFirst = firstName.trim();
+    const cleanLast = lastName.trim();
     const cleanEmail = email.trim();
 
-    if (!cleanName) {
-      setErrorMsg("Lütfen adınızı ve soyadınızı giriniz.");
+    if (!cleanFirst) {
+      setErrorMsg("Lütfen adınızı giriniz.");
+      return;
+    }
+    if (!cleanLast) {
+      setErrorMsg("Lütfen soyadınızı giriniz.");
+      return;
+    }
+    const cleanPhone = canonicalizePhone(phone);
+    if (!cleanPhone) {
+      setErrorMsg("Lütfen geçerli bir telefon numarası giriniz (örn: 05xx xxx xx xx).");
       return;
     }
     if (!cleanEmail || !EMAIL_SHAPE.test(cleanEmail)) {
       setErrorMsg("Lütfen geçerli bir e-posta adresi yazınız.");
+      return;
+    }
+    if (!selectedPlate) {
+      setErrorMsg("Lütfen bulunduğunuz ili seçiniz.");
+      return;
+    }
+    if (!selectedDistrictId) {
+      setErrorMsg("Lütfen ilçenizi seçiniz.");
       return;
     }
     if (!hasMinLength || !hasNumber || !hasLetter) {
@@ -95,14 +178,25 @@ export function V2RegisterCard({
 
     setLoading(true);
     try {
-      const result = await submitAuth("register", {
+      const uType = roleToUserType(selectedRole);
+      const formState: RegisterFormState = {
+        firstName: cleanFirst,
+        lastName: cleanLast,
+        phone: cleanPhone,
         email: cleanEmail,
         password,
-        firstName: cleanName.split(" ")[0] || cleanName,
-        lastName: cleanName.split(" ").slice(1).join(" ") || "",
-        userType: selectedRole,
-        provincePlate: selectedPlate || undefined,
-      });
+        passwordConfirm: password,
+        userType: uType,
+        provincePlateCode: selectedPlate,
+        districtId: selectedDistrictId,
+        gradeLevel: uType === "secondary" ? "KPSS" : "",
+        studyStream: uType === "secondary" ? "TYT" : "",
+        universityName: uType === "undergraduate" ? "Diğer" : "",
+        departmentName: uType === "undergraduate" ? "Coğrafya" : "",
+      };
+
+      const payload = buildRegisterPayload(formState, _locale);
+      const result = await submitAuth("register", payload);
 
       if (result.ok) {
         setStep("verify");
@@ -275,19 +369,58 @@ export function V2RegisterCard({
         </div>
       )}
 
-      {/* Full Name */}
+      {/* Ad ve Soyad */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="v2-register-firstname" className="text-xs font-bold text-foreground">
+            Ad
+          </Label>
+          <Input
+            id="v2-register-firstname"
+            type="text"
+            autoComplete="given-name"
+            placeholder="Ahmet"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            leftIcon={<User className="size-4 text-muted-foreground" />}
+            className="h-10 text-xs"
+            disabled={loading}
+            aria-invalid={Boolean(errorMsg)}
+            aria-describedby={errorMsg ? "v2-register-error" : undefined}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="v2-register-lastname" className="text-xs font-bold text-foreground">
+            Soyad
+          </Label>
+          <Input
+            id="v2-register-lastname"
+            type="text"
+            autoComplete="family-name"
+            placeholder="Yılmaz"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className="h-10 text-xs"
+            disabled={loading}
+            aria-invalid={Boolean(errorMsg)}
+            aria-describedby={errorMsg ? "v2-register-error" : undefined}
+          />
+        </div>
+      </div>
+
+      {/* Telefon Numarası */}
       <div className="space-y-1.5">
-        <Label htmlFor="v2-register-name" className="text-xs font-bold text-foreground">
-          Adınız ve Soyadınız
+        <Label htmlFor="v2-register-phone" className="text-xs font-bold text-foreground">
+          Telefon Numarası
         </Label>
         <Input
-          id="v2-register-name"
-          type="text"
-          autoComplete="name"
-          placeholder="Örn: Ahmet Yılmaz"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          leftIcon={<User className="size-4 text-muted-foreground" />}
+          id="v2-register-phone"
+          type="tel"
+          autoComplete="tel"
+          placeholder="05xx xxx xx xx"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          leftIcon={<Phone className="size-4 text-muted-foreground" />}
           className="h-10 text-xs"
           disabled={loading}
           aria-invalid={Boolean(errorMsg)}
@@ -343,32 +476,64 @@ export function V2RegisterCard({
         </div>
       </div>
 
-      {/* Province Selector */}
-      {provinces.length > 0 && (
+      {/* İl ve İlçe Seçimi */}
+      <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1.5">
           <Label htmlFor="v2-register-province" className="text-xs font-bold text-foreground">
-            Bulunduğunuz İl (İsteğe Bağlı)
+            İl
           </Label>
           <div className="relative">
             <select
               id="v2-register-province"
               value={selectedPlate}
-              onChange={(e) => setSelectedPlate(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setSelectedPlate(next);
+                setSelectedDistrictId("");
+                if (!next) setDistricts([]);
+              }}
               aria-invalid={Boolean(errorMsg)}
               aria-describedby={errorMsg ? "v2-register-error" : undefined}
               className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150"
             >
-              <option value="">İl Seçiniz...</option>
-              {provinces.map((p) => (
+              <option value="">İl Seç...</option>
+              {activeProvinces.map((p) => (
                 <option key={p.plateCode} value={p.plateCode}>
                   {p.plateCode} - {p.nameTr}
                 </option>
               ))}
             </select>
-            <MapPin className="size-4 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <MapPin className="size-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
-      )}
+        <div className="space-y-1.5">
+          <Label htmlFor="v2-register-district" className="text-xs font-bold text-foreground">
+            İlçe
+          </Label>
+          <div className="relative">
+            <select
+              id="v2-register-district"
+              value={selectedDistrictId}
+              onChange={(e) => setSelectedDistrictId(e.target.value)}
+              disabled={districts.length === 0}
+              aria-invalid={Boolean(errorMsg)}
+              aria-describedby={errorMsg ? "v2-register-error" : undefined}
+              className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150 disabled:opacity-50"
+            >
+              {districts.length === 0 ? (
+                <option value="">Önce il seçin</option>
+              ) : (
+                districts.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.nameTr}
+                  </option>
+                ))
+              )}
+            </select>
+            <MapPin className="size-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+      </div>
 
       {/* Password Field */}
       <div className="space-y-1.5">
