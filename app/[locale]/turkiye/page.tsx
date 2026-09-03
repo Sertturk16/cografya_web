@@ -152,43 +152,29 @@ export default async function TurkiyePage({ params }: PageProps) {
 
       <TurkeyMapSection locale={locale} />
 
-      {/* THE MAP→INDEX BRIDGE (turkiye-yenileme PR-C, plan §5.9). The comment below already
-          frames the index as "the SECOND way into the same 81 pages, not a footnote" — this
-          makes that true in the markup as well, with a genuine internal `<a href="#iller">`
-          (`SEO-POLICY.md` §B8.1/§B8.2: a real anchor, zero client JS, not a script-driven
-          scroll). It does not touch `EntityIndex` itself (out of scope, plan §3) — the target
-          section already sets its own `scroll-margin-top` for the sticky header
-          (`entity-index.module.css` `.index`). The count is interpolated, matching
-          `indexDescription` immediately below it, never hardcoded (§SEO A2.2: never claim a
-          number the page cannot back).
-
-          GATED ON `items.length > 0` (review A11Y109-M1 fix). `EntityIndex` itself renders
-          `null` when `buckets.length === 0` — the resilient-degrade path `loadProvinceIndex`'s
-          own docblock names (a transient api failure yields an empty list rather than
-          breaking the page) — and `items` here IS `flattenBuckets(buckets)`
-          (`loadProvinceIndex` above), so `items.length === 0` and `buckets.length === 0` are
-          exactly the same condition, not an approximation of it. Without this guard the bridge
-          kept pointing at a `#iller` anchor that would not exist on the page AND claiming "0
-          il" / "All 0 provinces" — a number the page cannot back (§SEO A2.2) on a dead link,
-          in the one case the rest of this page already degrades gracefully for. */}
-      {items.length > 0 && (
-        <p className={styles.indexBridge}>
-          <a href={`#${PROVINCE_INDEX_SECTION_ID}`}>
-            {t("indexBridgeLink", { count: items.length })}
-          </a>
-        </p>
-      )}
+      {/* THE MAP→INDEX BRIDGE PARAGRAPH IS GONE (owner report, turkiye-editor-notlari md.4).
+          It used to sit here as a genuine internal `<a href="#iller">` restating "{count} il"
+          for a third time on the page (after the meta description and the index's own
+          description below it) immediately above a section whose own "Alfabetik İl Listesi"
+          heading already says what it links to — a same-page anchor to content that is the
+          very next element in the DOM, not a jump across a distance. `PROVINCE_INDEX_SECTION_ID`
+          stays imported: `EntityIndex` below still anchors `#iller` as a fragment target (its
+          own `scroll-margin-top`, unrelated to this removed bridge), and `SEO-POLICY.md` §B8.1
+          ("no orphan page") is unaffected — `#iller` was never a separate indexable page, only
+          a fragment on this same one. */}
 
       {/* The alphabetical index (→ DEC 2026-08-04i §2). It sits directly under the map
           because it is the SECOND way into the same 81 pages, not a footnote: the UX review
           found the map was the only entry point and called that the site's single most
           critical gap. Deliberately above the two CTA cards, which are cross-links, not
-          content. */}
+          content. No `description` (→ owner report md.4): "{count} il, Türk alfabesi
+          sırasıyla." repeated a number the meta description already gave and restated
+          "alfabetik" the heading right above already says — `EntityIndex` renders no
+          paragraph when the prop is omitted. */}
       <EntityIndex
         sectionId={PROVINCE_INDEX_SECTION_ID}
         headingId="turkiye-index-heading"
         heading={t("indexHeading")}
-        description={t("indexDescription", { count: items.length })}
         letterNavLabel={t("indexLetterNavLabel")}
         buckets={buckets}
       />

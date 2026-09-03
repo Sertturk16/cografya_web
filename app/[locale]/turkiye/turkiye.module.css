@@ -1,8 +1,10 @@
 /* `/turkiye` hub page styles. The cross-link blocks (the map game, SPEC §10.4; the marine
    hub; and, since PR #104's fix round (VAL104-C2), the earthquake hub); the page's own
-   deliberate rhythm (turkiye-yenileme PR-C, plan §5.9) — the map→index bridge line and the
-   asymmetric spacing that replaces the flat `.section` 40px between the three page blocks;
-   the map itself is styled by components/map/map.module.css. */
+   deliberate rhythm (turkiye-yenileme PR-C, plan §5.9) — the asymmetric spacing that
+   replaces the flat `.section` 40px between the page's blocks (the map→index bridge line
+   that used to sit between the first two was removed, owner report turkiye-editor-notlari
+   md.4 — see the sibling-combinator note below); the map itself is styled by
+   components/map/map.module.css. */
 
 /* DELIBERATE RHYTHM (turkiye-yenileme PR-C, plan §5.9). Every block on this page used to
    carry the SAME flat `.section` 40px top margin, which reads as one uniform stack rather
@@ -21,52 +23,16 @@
    `.page`'s own existing block-end rhythm value (DESIGN.md §4 "page padding 40px 56px"),
    reused here rather than inventing a fifth spacing constant.
 
-   `~` (general sibling), not `+` (adjacent sibling): the new `.indexBridge` paragraph below
-   now sits BETWEEN the two `.section` elements in the DOM, so the two are siblings but no
-   longer immediately adjacent. `~` still matches EntityIndex's `.section` because it only
-   requires an EARLIER `.section` sibling under the same parent, not zero elements between
-   them — the bridge paragraph's own presence does not disqualify the match. */
+   `~` (general sibling) rather than `+` (adjacent sibling) is now BELT-AND-BRACES rather
+   than load-bearing: it was written when a `.indexBridge` paragraph sat between the two
+   `.section` elements (removed, owner report turkiye-editor-notlari md.4 — see the page's
+   own docblock), which made `~` the only combinator that could still reach across it. With
+   the bridge gone the two `.section` elements ARE directly adjacent, so `+` would match today
+   too; `~` is left as-is because it degrades gracefully if another element is ever inserted
+   between them again, and changing a selector that still produces the same match is a
+   no-op worth skipping. */
 .hub :global(.section) ~ :global(.section) {
   margin-top: 56px;
-}
-
-/* The bridge line itself (plan §5.9: "a short line under the map pointing at #iller ... a
-   genuine internal link, not a script"). `font-size: 0.95rem` is not a new number either —
-   it reuses `entity-index.module.css` `.link`'s own size, the destination this line points
-   at, so the bridge and the list it bridges to read as one typographic family. Colour is
-   untouched (inherited `--color-ink`); the `<a>` inside carries the global `a { color:
-   var(--color-primary-dark) }` rule already (7.89:1 AAA on `--color-bg`, DESIGN.md §5),
-   which a class on this ancestor `<p>` cannot override — a rule that targets an element
-   directly always wins over one inherited from an ancestor, regardless of specificity.
-
-   MARGIN FIX (independent claim-verifier pass, post-ship). The PR-C ship claimed the total
-   map→index gap would be 56px "by construction" (reusing `.page`'s own block-end value, the
-   rule two blocks up) — this was never actually measured against the live page and did not
-   hold: with no margin rule of its own, this paragraph took the site-wide `p { margin: 0 0
-   1rem }` reset, and the real rendered chain was the map's own trailing `.attributionFlow`
-   margin (`map.module.css`, 10px) + this paragraph's OWN line-height (0.95rem × the inherited
-   1.6 body line-height ≈ 24.31px) + the 56px rule below — 90.31px measured
-   (`getBoundingClientRect()`, 1440px, both locales; locale-independent, since it is driven by
-   CSS, not either translation's string length), not 56px. The 56px rule itself was never the
-   problem: `gapBridgeToIndex` measured exactly 56px both before AND after this fix — sibling
-   margin collapsing already let it win over this paragraph's own (non-negative) bottom margin
-   regardless of that margin's value, so `margin-bottom: 0` below changes nothing measured; it
-   is kept only so the rule reads honestly (nothing here competes with the 56px rule) rather
-   than leaving an unused inherited 1rem to reason about.
-   `margin-top: -10px` is the one change that moved the number: it exactly cancels
-   `.attributionFlow`'s own 10px bottom margin (the same number, negated — not a new one), so
-   the map's last attribution line and this paragraph's own text now collapse to 0px apart
-   (measured) instead of 10px. Re-measured after: 0px (map→bridge) + 24.31px (this paragraph's
-   own line-height — the one thing this fix cannot remove without shrinking the text, out of
-   scope) + 56px (bridge→index, untouched) = 80.31px total, both locales — the closest the
-   56px rhythm target can get while the bridge still reads as visible text on its own line,
-   not the 56px the ship-time claim assumed. Verified by rendering (both locales, 1440px):
-   the bridge sits flush under the map's attribution block with no overlap and no dead zone,
-   and reads as a quiet continuation of the map block, not a fourth section of its own. */
-.indexBridge {
-  font-size: 0.95rem;
-  margin-top: -10px;
-  margin-bottom: 0;
 }
 
 /* The cross-link cards on ONE row (design tour A9), now three (VAL104-C2 added the earthquake

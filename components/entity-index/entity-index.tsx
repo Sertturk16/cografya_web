@@ -8,7 +8,14 @@ interface EntityIndexProps {
   /** Id of the section's `<h2>`, referenced by `aria-labelledby`. */
   readonly headingId: string;
   readonly heading: string;
-  readonly description: string;
+  /**
+   * OPTIONAL (→ owner report, turkiye-editor-notlari md.4 — `/turkiye` dropped its own count
+   * restatement here as a third repeat of a number the meta description and the map→index
+   * bridge already stated, with the "Alfabetik" heading already carrying the "alphabetical"
+   * fact). `/dunya` still passes one (`Dunya.indexDescription`, unaffected) — this component
+   * stays shared, the caller decides whether it has anything non-redundant to say.
+   */
+  readonly description?: string;
   /** Accessible name of the letter-jump `<nav>` (two navs on a page need distinct names). */
   readonly letterNavLabel: string;
   readonly buckets: readonly AlphabetBucket<ItemListEntry>[];
@@ -69,7 +76,7 @@ export function EntityIndex({
       aria-labelledby={headingId}
     >
       <h2 id={headingId}>{heading}</h2>
-      <p className={styles.intro}>{description}</p>
+      {description && <p className={styles.intro}>{description}</p>}
 
       <nav aria-label={letterNavLabel} className={styles.letterNav}>
         {buckets.map((bucket) => (
