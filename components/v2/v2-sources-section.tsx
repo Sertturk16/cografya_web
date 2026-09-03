@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Database, ShieldCheck } from "lucide-react";
+import { Database, ShieldCheck, BookOpen, ExternalLink } from "lucide-react";
 
 export type V2PageScope =
   "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar" | "general";
@@ -13,6 +13,7 @@ interface SourceItem {
   title: string;
   license: string;
   badgeType?: "primary" | "secondary" | "outline";
+  category?: "official" | "academic";
   description: string;
   legalQuote?: string;
   sourceUrl: string;
@@ -138,6 +139,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "⛰️",
       title: "I. Türk Coğrafya Kongresi (1941)",
       license: "Resmî Coğrafi Tasnif",
+      category: "academic",
       description:
         "Türkiye'nin 7 Coğrafi Bölgesi ve 21 Coğrafi Bölümü resmî sınır ve morfolojik taksonomisi.",
       sourceUrl: "cografya.org.tr • Türk Coğrafya Kurumu",
@@ -221,6 +223,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "⚓",
       title: "Seyir, Hidrografi ve Oşinografi Dairesi (SHOD)",
       license: "T.C. Deniz Kuvvetleri",
+      category: "academic",
       description:
         "Türkiye denizleri derinlik batimetrisi, İstanbul ve Çanakkale Boğazları çift tabakalı akıntı rejimleri ve seyir güvenliği.",
       sourceUrl: "shodb.gov.tr",
@@ -230,6 +233,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🏛️",
       title: "ODTÜ Deniz Bilimleri Enstitüsü (IMS-METU)",
       license: "Akademik Araştırma",
+      category: "academic",
       description:
         "Marmara ve Akdeniz su kütlesi tabakalaşması, biyojeokimyasal parametreler, oksijen ve tuzluluk profilleri.",
       sourceUrl: "ims.metu.edu.tr",
@@ -239,6 +243,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🧭",
       title: "MEB Coğrafya & Sırrı Erinç Jeomorfolojisi",
       license: "Akademik Kaynakça",
+      category: "academic",
       description:
         "Türkiye kıyı tipleri (Boyuna, Enine, Ria, Dalmaçya, Limanlı, Kalanklı), falezler, lagünler ve kıyı dinamikleri.",
       sourceUrl: "mufredat.meb.gov.tr",
@@ -250,6 +255,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🎓",
       title: "MEB Coğrafya Dersi Öğretim Programı",
       license: "MEB / TTKB",
+      category: "academic",
       description:
         "9-12. sınıf coğrafya kazanımları, harita becerileri ve mekânsal algılama standartları.",
       sourceUrl: "mufredat.meb.gov.tr",
@@ -267,6 +273,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🏆",
       title: "Coğrafya Platformu Soru ve Sınav Motoru",
       license: "Telif Hakkı Saklıdır",
+      category: "academic",
       description: "Özgün soru algoritmaları, zorluk derecelendirmesi ve seri takip sistemi.",
       sourceUrl: "cografya.app/v2/oyun",
     },
@@ -315,6 +322,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "📐",
       title: "Jeodezik Büyük Daire & L'Huilier Algoritması",
       license: "Açık Matematik",
+      category: "academic",
       description:
         "Küresel yüzeyde en kısa mesafe ve küresel açı fazlalığı (Spherical Excess) ile alan hesaplama.",
       sourceUrl: "cografya.app/v2/araclar",
@@ -334,6 +342,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "📖",
       title: "Coğrafya Gurmesi Yayınları",
       license: "Telif Hakları Saklıdır",
+      category: "academic",
       description:
         "AYT Coğrafya Konu Özetli Branş Denemeleri (Murat Karagöz, Murat Çakır). Soru metinleri ve video çözümleri yayıncı kuruluşa aittir.",
       legalQuote:
@@ -355,6 +364,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "🎓",
       title: "MEB & ÖSYM Coğrafya Müfredatı",
       license: "Resmî Eğitim Standardı",
+      category: "academic",
       description:
         "Milli Eğitim Bakanlığı 9-12. sınıf Coğrafya dersi öğretim programı ve ÖSYM AYT/TYT Coğrafya kazanım havuzu.",
       sourceUrl: "mufredat.meb.gov.tr • osym.gov.tr",
@@ -394,72 +404,125 @@ interface V2SourcesSectionProps {
 }
 
 export function V2SourcesSection({ scope = "home", className = "" }: V2SourcesSectionProps) {
-  const sources = SOURCES_BY_PAGE[scope] || SOURCES_BY_PAGE.home;
+  const allSources = SOURCES_BY_PAGE[scope] || SOURCES_BY_PAGE.home;
+  const officialSources = allSources.filter((s) => s.category !== "academic");
+  const academicSources = allSources.filter((s) => s.category === "academic");
+
+  const renderCard = (src: SourceItem) => {
+    const isExternal =
+      src.sourceUrl.includes(".gov.tr") ||
+      src.sourceUrl.includes(".edu.tr") ||
+      src.sourceUrl.includes(".org") ||
+      src.sourceUrl.includes(".com") ||
+      src.sourceUrl.includes(".eu");
+
+    return (
+      <div
+        key={src.id}
+        className="p-4 rounded-2xl bg-muted/40 border border-border/70 space-y-2 flex flex-col justify-between hover:border-primary/40 transition-colors shadow-2xs"
+      >
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-bold text-foreground flex items-center gap-1.5 truncate">
+              <span>{src.icon}</span>
+              <span className="truncate">{src.title}</span>
+            </span>
+            <Badge variant="outline" className="text-[10px] py-0 font-mono shrink-0">
+              {src.license}
+            </Badge>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">{src.description}</p>
+          {src.legalQuote && (
+            <div className="p-2 rounded-xl bg-card border border-border/40 text-[10px] text-muted-foreground font-mono leading-tight">
+              &ldquo;{src.legalQuote}&rdquo;
+            </div>
+          )}
+        </div>
+
+        <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
+          <span className="truncate flex items-center gap-1">
+            <span>Kaynak:</span>
+            {isExternal ? (
+              <span className="font-mono text-foreground/80 flex items-center gap-0.5">
+                {src.sourceUrl}
+                <ExternalLink className="size-2.5 text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">(Harici referans kaynağı)</span>
+              </span>
+            ) : (
+              <span className="font-mono text-foreground/80">{src.sourceUrl}</span>
+            )}
+          </span>
+          {src.doi && <span className="font-mono text-primary shrink-0">DOI: {src.doi}</span>}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <section
       aria-labelledby="v2-sources-heading"
-      className={`rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-lg space-y-6 ${className}`}
+      className={`rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-lg space-y-8 ${className}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-        <div className="space-y-1 max-w-2xl">
+      <div className="space-y-1 border-b border-border pb-4">
+        <div className="flex items-center gap-2">
+          <Database className="size-4 text-primary" />
+          <span className="text-xs font-bold text-primary uppercase tracking-wider">
+            Akademik &amp; Bilimsel Veri Kaynakçası
+          </span>
+        </div>
+        <h3
+          id="v2-sources-heading"
+          className="font-heading text-xl sm:text-2xl font-bold text-foreground"
+        >
+          Bu Sayfada Kullanılan Veri Setleri &amp; Bilimsel Künye
+        </h3>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Bu sayfada kullanılan resmî kamu verileri, uluslararası bilimsel reanaliz modelleri ve
+          pedagojik öğretim kaynakları bağımsız kategoriler halinde sunulmuştur.
+        </p>
+      </div>
+
+      {/* Official Data Section */}
+      {officialSources.length > 0 && (
+        <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <Database className="size-4 text-primary" />
-            <span className="text-xs font-bold text-primary uppercase tracking-wider">
-              Akademik &amp; Bilimsel Veri Kaynakçası
+            <Badge
+              variant="outline"
+              size="sm"
+              className="bg-primary/10 text-primary border-primary/30 shrink-0 flex items-center gap-1 font-semibold"
+            >
+              <ShieldCheck className="size-3.5" /> Doğrulanmış Resmî Veri
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              Resmî kurumlar ve doğrulanmış açık veri sağlayıcıları
             </span>
           </div>
-          <h3
-            id="v2-sources-heading"
-            className="font-heading text-xl sm:text-2xl font-bold text-foreground"
-          >
-            Bu Sayfada Kullanılan Resmî Veri Setleri &amp; Bilimsel Künye
-          </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Bu sayfada sunulan tüm coğrafi, meteorolojik, sismik, oşinografik ve demografik veriler
-            uluslararası ve ulusal resmî sağlayıcılar tarafından lisanslanmıştır.
-          </p>
-        </div>
-        <Badge
-          variant="outline"
-          size="sm"
-          className="bg-primary/10 text-primary border-primary/30 shrink-0 flex items-center gap-1 font-semibold"
-        >
-          <ShieldCheck className="size-3.5" /> Doğrulanmış Resmî Veri
-        </Badge>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-        {sources.map((src) => (
-          <div
-            key={src.id}
-            className="p-4 rounded-2xl bg-muted/40 border border-border/70 space-y-2 flex flex-col justify-between hover:border-primary/40 transition-colors shadow-2xs"
-          >
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-foreground flex items-center gap-1.5 truncate">
-                  <span>{src.icon}</span>
-                  <span className="truncate">{src.title}</span>
-                </span>
-                <Badge variant="outline" className="text-[10px] py-0 font-mono shrink-0">
-                  {src.license}
-                </Badge>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">{src.description}</p>
-              {src.legalQuote && (
-                <div className="p-2 rounded-xl bg-card border border-border/40 text-[10px] text-muted-foreground font-mono leading-tight">
-                  &ldquo;{src.legalQuote}&rdquo;
-                </div>
-              )}
-            </div>
-
-            <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
-              <span className="truncate">Kaynak: {src.sourceUrl}</span>
-              {src.doi && <span className="font-mono text-primary shrink-0">DOI: {src.doi}</span>}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+            {officialSources.map((src) => renderCard(src))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Academic / Pedagogical Section */}
+      {academicSources.length > 0 && (
+        <div className="space-y-4 pt-4 border-t border-border/60">
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              size="sm"
+              className="bg-secondary/15 text-secondary border-secondary/30 shrink-0 flex items-center gap-1 font-semibold"
+            >
+              <BookOpen className="size-3.5" /> Pedagojik ve Akademik Referanslar
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              Müfredat, akademik literatür ve eğitim kaynakları
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+            {academicSources.map((src) => renderCard(src))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
