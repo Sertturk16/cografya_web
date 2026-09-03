@@ -5,15 +5,82 @@ import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Flame, Waves, MapPin, Clock, Layers } from "lucide-react";
 
-interface EarthquakeTickerData {
+export interface EarthquakeTickerData {
   readonly magnitude: number;
   readonly location: string;
   readonly timeAgo: string;
 }
 
-interface MarineTickerData {
+export interface MarineTickerData {
   readonly sst: number;
   readonly wave: number;
+}
+
+export function extractEarthquakeTickerData(
+  item:
+    | {
+        magnitude?: number;
+        placeNameTr?: string;
+        location?: string;
+        occurredAtUtc?: string;
+      }
+    | null
+    | undefined,
+  now = Date.now(),
+): EarthquakeTickerData | null {
+  if (!item || typeof item.magnitude !== "number" || !item.occurredAtUtc) return null;
+  const diffMinutes = Math.max(
+    1,
+    Math.round((now - new Date(item.occurredAtUtc).getTime()) / 60000),
+  );
+  const timeAgo =
+    diffMinutes < 60 ? `${diffMinutes} dk önce` : `${Math.round(diffMinutes / 60)} sa önce`;
+  return {
+    magnitude: item.magnitude,
+    location: item.placeNameTr ?? item.location ?? "Türkiye",
+    timeAgo,
+  };
+}
+
+export function extractMarineTickerData(
+  points:
+    | Array<{
+        point?: { basin?: string; seaBasin?: string; nameTr?: string };
+        seaSurfaceTemperature?: { value?: number };
+        waveHeight?: { value?: number };
+      }>
+    | null
+    | undefined,
+): { marmara: MarineTickerData | null; akdeniz: MarineTickerData | null } {
+  if (!Array.isArray(points)) return { marmara: null, akdeniz: null };
+
+  let marmara: MarineTickerData | null = null;
+  let akdeniz: MarineTickerData | null = null;
+
+  const marmaraPt = points.find(
+    (p) => p.point?.seaBasin === "marmara" || p.point?.basin === "marmara",
+  );
+  if (marmaraPt && typeof marmaraPt.seaSurfaceTemperature?.value === "number") {
+    marmara = {
+      sst: Number(marmaraPt.seaSurfaceTemperature.value.toFixed(1)),
+      wave: Number((marmaraPt.waveHeight?.value ?? 0).toFixed(1)),
+    };
+  }
+
+  const akdenizPt = points.find(
+    (p) =>
+      p.point?.seaBasin === "mediterranean" ||
+      p.point?.seaBasin === "akdeniz" ||
+      p.point?.basin === "akdeniz",
+  );
+  if (akdenizPt && typeof akdenizPt.seaSurfaceTemperature?.value === "number") {
+    akdeniz = {
+      sst: Number(akdenizPt.seaSurfaceTemperature.value.toFixed(1)),
+      wave: Number((akdenizPt.waveHeight?.value ?? 0).toFixed(1)),
+    };
+  }
+
+  return { marmara, akdeniz };
 }
 
 export function V2LiveTicker() {
@@ -40,42 +107,14 @@ export function V2LiveTicker() {
         if (!active) return;
 
         if (eqResult.status === "fulfilled" && eqResult.value?.items?.[0]) {
-          const item = eqResult.value.items[0];
-          const diffMinutes = Math.max(
-            1,
-            Math.round((Date.now() - new Date(item.occurredAtUtc).getTime()) / 60000),
-          );
-          const timeAgo =
-            diffMinutes < 60 ? `${diffMinutes} dk önce` : `${Math.round(diffMinutes / 60)} sa önce`;
-          setEarthquake({
-            magnitude: item.magnitude,
-            location: item.location,
-            timeAgo,
-          });
+          const eqData = extractEarthquakeTickerData(eqResult.value.items[0]);
+          if (eqData) setEarthquake(eqData);
         }
 
         if (marineResult.status === "fulfilled" && Array.isArray(marineResult.value?.points)) {
-          const points: Array<{
-            point?: { basin?: string; nameTr?: string };
-            seaSurfaceTemperature?: { value?: number };
-            waveHeight?: { value?: number };
-          }> = marineResult.value.points;
-
-          const marmaraPt = points.find((p) => p.point?.basin === "marmara");
-          if (marmaraPt && typeof marmaraPt.seaSurfaceTemperature?.value === "number") {
-            setMarmara({
-              sst: Number(marmaraPt.seaSurfaceTemperature.value.toFixed(1)),
-              wave: Number((marmaraPt.waveHeight?.value ?? 0).toFixed(1)),
-            });
-          }
-
-          const akdenizPt = points.find((p) => p.point?.basin === "akdeniz");
-          if (akdenizPt && typeof akdenizPt.seaSurfaceTemperature?.value === "number") {
-            setAkdeniz({
-              sst: Number(akdenizPt.seaSurfaceTemperature.value.toFixed(1)),
-              wave: Number((akdenizPt.waveHeight?.value ?? 0).toFixed(1)),
-            });
-          }
+          const marineData = extractMarineTickerData(marineResult.value.points);
+          if (marineData.marmara) setMarmara(marineData.marmara);
+          if (marineData.akdeniz) setAkdeniz(marineData.akdeniz);
         }
       } catch {
         // Safe degrade
