@@ -114,8 +114,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
 
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                 Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita
-                üzerinde merkez üssü, odak derinliği, büyüklük kademesi ve aktif fay zonlarıyla
-                anlık inceleyin.
+                üzerinde merkez üssü, odak derinliği ve büyüklük kademesiyle anlık inceleyin.
               </p>
             </div>
 
@@ -131,11 +130,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
                 <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  3 Fay Zonu
+                  Canlı AFAD
                 </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  KAF, DAF &amp; BAFS (MTA)
-                </span>
+                <span className="text-xs text-muted-foreground font-medium">TDVMS Veri Tabanı</span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
                 <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">

@@ -458,7 +458,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   }}
                   onMouseEnter={() => setHoveredSlug(point.slugTr)}
                   onMouseLeave={() => setHoveredSlug(null)}
-                  className="transition-transform duration-200 group/pin cursor-pointer focus:outline-hidden"
+                  className="transition-transform duration-200 group/pin cursor-pointer outline-none focus-visible:scale-125"
                 >
                   {/* Radar Pulse Effect */}
                   <circle
@@ -889,8 +889,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       key={point.slugTr}
                       id={`station-row-${point.slugTr}`}
                       tabIndex={0}
-                      role="button"
-                      aria-label={`${point.nameTr} istasyonunu seç`}
+                      aria-selected={isSelected}
                       className={`cursor-pointer transition-colors outline-none focus-visible:bg-primary/15 ${
                         isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/40"
                       }`}

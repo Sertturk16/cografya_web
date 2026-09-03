@@ -6,7 +6,6 @@ import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { projectToMapPoint } from "@/lib/map/projection";
-import { FAULT_LINE_SEGMENTS, buildFaultLinePath } from "@/lib/map/fault-lines";
 import type { EarthquakeEvent, EarthquakeList } from "@/lib/api/types";
 import { buildEarthquakeQuery } from "@/lib/earthquake/query";
 import { bindingSentenceKey } from "@/lib/earthquake/binding-sentence";
@@ -116,7 +115,6 @@ export function V2EarthquakeExplorer({
   );
   const [hoveredEventId, setHoveredEventId] = React.useState<string | null>(null);
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number } | null>(null);
-  const [showFaultLines, setShowFaultLines] = React.useState<boolean>(true);
   const [displayCount, setDisplayCount] = React.useState<number>(50);
 
   // Live client-side fetch state
@@ -243,14 +241,6 @@ export function V2EarthquakeExplorer({
 
   // Context Turkey Casing Outline
   const trCasing = React.useMemo(() => CONTEXT_SHAPES.find((c) => c.iso === "TR"), []);
-
-  // Pre-project MTA fault lines paths
-  const projectedFaultLines = React.useMemo(() => {
-    return FAULT_LINE_SEGMENTS.map((seg) => ({
-      ...seg,
-      pathData: buildFaultLinePath(seg.waypoints),
-    }));
-  }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -493,17 +483,6 @@ export function V2EarthquakeExplorer({
                 <span className="size-2 rounded-full bg-red-600" /> M &ge; 5.0
               </span>
             </div>
-
-            {/* Direct Fault Lines Toggle Button on Map Header */}
-            <Button
-              variant={showFaultLines ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setShowFaultLines(!showFaultLines)}
-              leftIcon={<Layers className="size-3.5" />}
-              className="text-xs rounded-xl h-8"
-            >
-              {showFaultLines ? "MTA Diri Fayları Açık" : "Fay Hatları Gizli"}
-            </Button>
           </div>
         </div>
 
@@ -592,26 +571,6 @@ export function V2EarthquakeExplorer({
                 </path>
               ))}
             </g>
-
-            {/* MTA Real Geographically Projected Diri Fay Hatları Overlay */}
-            {showFaultLines && (
-              <g className="fault-lines opacity-80 pointer-events-none">
-                {projectedFaultLines.map((seg) => (
-                  <path
-                    key={seg.id}
-                    d={seg.pathData}
-                    fill="none"
-                    stroke={seg.color}
-                    strokeWidth={seg.strokeWidth}
-                    strokeDasharray={seg.strokeDasharray}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <title>{seg.name}</title>
-                  </path>
-                ))}
-              </g>
-            )}
 
             {/* Seismic Earthquake Epicenters (Stable Hit Targets - Zero Flickering) */}
             {filteredEvents.map((eq) => {
@@ -749,27 +708,6 @@ export function V2EarthquakeExplorer({
             </div>
           )}
         </div>
-
-        {/* Fault Line Legend Strip */}
-        {showFaultLines && (
-          <div className="p-3 rounded-2xl bg-card border border-border flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-4 flex-wrap text-[11px]">
-              <span className="font-semibold text-foreground">
-                Diri Fay Zonları (MTA Haritası):
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3.5 h-0.5 bg-[#dc2626] rounded-full" /> Kuzey Anadolu Fayı (KAFZ)
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3.5 h-0.5 bg-[#2563eb] rounded-full" /> Doğu Anadolu Fayı (DAFZ)
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3.5 h-0.5 bg-[#059669] rounded-full" /> Batı Anadolu Grabenleri
-                (BAFS)
-              </span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 3. TWO-COLUMN DASHBOARD: SPOTLIGHT INSPECTOR & RECENT EARTHQUAKES */}
