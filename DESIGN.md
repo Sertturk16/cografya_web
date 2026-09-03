@@ -438,9 +438,21 @@ set (§6.1 rule 1) and read only by `components/game/game-map.module.css`.
   chrome (`--province-fill`, `--province-stroke`) is untouched, so a region fill can never be
   confused with a UI state.
 - **Colour is not the only signal** (§6.1 rule 3). Province BOUNDARIES stay drawn inside a
-  region, so the groups are readable as shapes; and the three answer states that sit on top
-  of the tint each carry a distinct **stroke treatment** — solid / dotted / dashed — plus a
-  ✓ / ✕ / ▸ glyph and the same statement in words in the live region above the map.
+  region, so the groups are readable as shapes; and the FOUR answer states that sit on top of
+  the tint each carry a distinct **stroke treatment** — solid / dotted / dashed / a fourth own
+  dash for "shown" — plus a ✓ / ✕ / ▸ glyph (the two transient ones) and the same statement in
+  words in the live region above the map. `correct` (found) and `shown` (given up on, via
+  "Cevabı göster") are the two PERMANENT marks and are the two that persist for the rest of
+  the round; both keep the region tint underneath and are told apart by a HATCH PATTERN drawn
+  into the province's own hit twin — a single diagonal for `correct`, a cross-hatch for
+  `shown` — both in the same already-measured ink (`--color-ink-dark`) rather than by a second
+  colour that would need its own contrast table against all seven tints.
+- **The region's OUTER boundary only, never the internal ones, bolds for a permanent mark**
+  (→ owner report, oyun-notlar.txt md. 2). `correct`/`shown` reuse the same filter-drawn
+  silhouette ring the hover/focus states already draw around a region's union
+  (`game-map.tsx` §BÖLGE), instead of stroking every member province's own full perimeter —
+  which would also bold the borders BETWEEN members, the exact "eleven outlined provinces"
+  look the owner rejected for hover in the first place.
 - **Never a public-safety scale** (§6.2) — regions carry no standardized-colour obligation.
 - **Where it is NOT used:** the 81-province mode and the per-region rounds draw one neutral
   fill. Tinting by region there would hand the player the answer, which is the product

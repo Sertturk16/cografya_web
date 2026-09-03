@@ -59,6 +59,36 @@ const REGION_OUTLINE_RADIUS = 1.4;
 /** `id` of the diagonal pattern a solved shape is filled with. */
 const SOLVED_HATCH_ID = "game-solved-hatch";
 
+/**
+ * ---- I2 · HOW A SHOWN-BUT-NOT-FOUND TARGET IS MARKED --------------------------------------
+ *
+ * THE DEFECT IT FIXES (owner report, oyun-notlar.txt md. 1). "Cevabı göster" painted the
+ * revealed target with the transient `reveal` state (charcoal fill, white dashed line,
+ * camera pan) for exactly as long as that question stayed on screen. The moment "Devam"
+ * moved on, `game-island.tsx` cleared the feedback that state was keyed on and the shape fell
+ * back to whatever `correct`/`null` said — nothing, for a target that was never found. The
+ * map lost the one thing the player had just been shown, even though the round's own
+ * "Bilemediklerin" list kept it correctly the whole time.
+ *
+ * THE FIX IS A SECOND PERMANENT MARK, `shown`, alongside I1's `correct` — not a restyled
+ * `reveal`, and not `correct` repainted: a target that was given up on is neither. Same
+ * mechanics as I1 for the same reason (`lib/game/shape-state.ts`'s `shownTargetIds`): the
+ * region tint SURVIVES (bölge mode's tint rule was never told to exclude it, `game-map.module
+ * .css`), so a shown region stays tellable from its neighbours, and "shown" is carried by a
+ * second, independent signal painted into the SAME hit twin I1 already uses.
+ *
+ * THE SIGNAL DELIBERATELY REUSES I1'S INK rather than inventing a second colour to draw over
+ * the seven region tints. `--color-ink-dark` is the one value already measured at ≥3:1 against
+ * every fill this map can put under it (see I1's own note and `globals.css`); a second colour
+ * chosen for "looks different enough" without that same measurement would be a guess dressed
+ * as a design. Distinguishable from I1's hatch by GEOMETRY instead — a cross-hatch instead of
+ * a single diagonal — and by its own stroke-dasharray on the outline (`game-map.module.css`),
+ * which is what DESIGN.md §6.1 rule 3 asks for anyway ("never rely on hue alone").
+ */
+
+/** `id` of the cross-hatch pattern a shown-but-not-found shape is filled with (§I2). */
+const SHOWN_HATCH_ID = "game-shown-hatch";
+
 interface GameMapProps {
   /** The shapes to DRAW — already narrowed to the round's map (§ region mode). */
   shapes: readonly GameShapeEntry[];
@@ -119,8 +149,9 @@ interface GameMapProps {
  *   <g data-map-layer=region>  §BÖLGE — seven silhouette groups, one per coğrafi bölge
  *   <g data-map-layer=hit>     one <use> per ANSWERABLE shape, unpainted at rest: the
  *                              tab stop, the click target, the only place a hover, focus or
- *                              answer-state LINE is drawn — and, once solved, the only place
- *                              I1's hatch is painted (see §I1 above)
+ *                              answer-state LINE is drawn — and, once solved or shown-but-
+ *                              not-found, the only place I1's / I2's hatch is painted (see
+ *                              §I1 and §I2 above)
  *   <InlandWaterLayer>         P6's lakes, still the LAST child (see the note at the call
  *                              site): water above the hit twin is what makes a mid-lake click
  *                              score nothing, so its paint position IS the ruling
@@ -151,6 +182,24 @@ interface GameMapProps {
  * hairlines. At 1× they are sub-pixel and hide under the base layer's own 1px borders; they
  * become visible only at high zoom. A radius floor does NOT fix it (tested) — it is source
  * geometry, and sealing it belongs to the P2 boundary work.
+ *
+ * ---- §BÖLGE-2 · the same silhouette, reused for a PERMANENT mark (owner report, oyun-notlar
+ * .txt md. 2) ---------------------------------------------------------------------------------
+ * THE DEFECT. `.hitEdge[data-state="correct"]`'s outline is drawn per PROVINCE, same as every
+ * other answer state — fine for `wrong`/`reveal`, which mark one province or flash for a
+ * second, but wrong for `correct` in bölge mode: every member of a solved region got its own
+ * full-perimeter line, which bolds the shared borders BETWEEN members exactly as the pre-I1
+ * hover rule once did, and for the identical reason the owner rejected then (§BÖLGE above) —
+ * it reads as N outlined provinces, not one solved region.
+ *
+ * THE FIX REUSES THIS FILE'S OWN SILHOUETTE GROUP rather than inventing a second ring
+ * mechanism: `game-map.module.css` now shows `.regionOutline` for `[data-state="correct"]` and
+ * `[data-state="shown"]` too (a third and fourth set of the same seven `:has()` rules the
+ * hover/focus blocks already use), fills it with each state's own edge colour instead of the
+ * hover token, and turns the per-province stroke OFF for both states in region mode only — il
+ * mode keeps it, because a single-province target has no "internal boundary" to over-bold in
+ * the first place. The hatch fill (§I1/§I2) is untouched either way: it was never the culprit,
+ * only the per-province LINE was.
  */
 
 /**
@@ -303,6 +352,26 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
               patternTransform="rotate(45)"
             >
               <line x1="0" y1="0" x2="0" y2="6" stroke="var(--color-ink-dark)" strokeWidth="1.6" />
+            </pattern>
+
+            {/* I2 · "shown" variant (§I2 above) — the cross-hatch a target's hit twin is
+                filled with once it was given up on rather than found. Same coordinate space
+                and the same reasoning as I1's pattern immediately above (continuous across a
+                region's provinces, narrows with zoom); the SECOND line is the only difference,
+                and it is what reads as a denser lattice next to I1's single diagonal instead of
+                a second colour the reader has to learn. Same ink as I1 for the same reason: it
+                is the one value already measured at ≥3:1 against every fill either pattern can
+                be drawn over (see I1's own note), so this pattern needs no colour of its own to
+                justify. */}
+            <pattern
+              id={SHOWN_HATCH_ID}
+              patternUnits="userSpaceOnUse"
+              width="6"
+              height="6"
+              patternTransform="rotate(45)"
+            >
+              <line x1="0" y1="0" x2="0" y2="6" stroke="var(--color-ink-dark)" strokeWidth="1.6" />
+              <line x1="0" y1="0" x2="6" y2="0" stroke="var(--color-ink-dark)" strokeWidth="1.6" />
             </pattern>
           </defs>
 

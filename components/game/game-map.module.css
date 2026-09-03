@@ -447,6 +447,34 @@
   }
 }
 
+/* ---- §I2 SHOWN MARK — THE CROSS-HATCH (game-map.tsx §I2) ---------------------------------
+   The map's SECOND permanent mark, next to I1's `correct` above: a target `revealRound`
+   scored 0 for (`lib/game/shape-state.ts`'s `shownTargetIds`) stays showing this, not `reveal`
+   and not nothing, for the rest of the round (→ owner report, oyun-notlar.txt md. 1). Deliberately
+   NO `.province[data-state="shown"]` rule: unlike `correct`/`wrong`/`reveal`, this state never
+   overrides the base twin's fill. In bölge mode that leaves the region tint exactly as I1
+   already does; in the il modes it leaves the resting white `--province-fill`, and the hit
+   twin's cross-hatch alone is the whole signal — a plain fill needs no measuring, only a line
+   or a pattern drawn OVER one does (WCAG 1.4.11).
+
+   THE LINE IS `--game-hover-edge` (an alias of `--color-ink-dark`), the SAME already-measured
+   ink I1's hatch uses and for the same reason: it is proven ≥3:1 against every fill this map
+   can put under it, so reusing it costs nothing new to verify. NO forced-colours override is
+   needed here the way I1 needed one (`@media (forced-colors: active)` above): I1's problem was
+   that its NORMAL stroke is `none` (solid), which collapses onto hover/focus/resting solid
+   lines the moment its paint-server fill is gone. This state's own dasharray is never `none`,
+   so it stays self-distinguishing with or without the pattern fill — the same reason `wrong`
+   and `reveal` below never needed one either. */
+.hitEdge[data-state="shown"] {
+  stroke: var(--game-hover-edge);
+  stroke-width: 2.5;
+  /* Its own rhythm, not I1's `none`, not wrong's `1 3`, not reveal's `6 4` — a distinct dash
+     is the redundant, non-colour signal DESIGN.md §6.1 rule 3 asks every categorical mark to
+     carry, independent of the pattern fill below. */
+  stroke-dasharray: 4 2;
+  fill: url(#game-shown-hatch);
+}
+
 .province[data-state="wrong"] {
   fill: var(--game-wrong);
 }
@@ -681,6 +709,79 @@
   .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"]:focus-visible:not([data-state]))
   .regionOutline[data-region="GUNEYDOGU_ANADOLU"] {
   display: block;
+}
+
+/* ---- §BÖLGE-2 — THE SOLVED/SHOWN RING (owner report, oyun-notlar.txt md. 2; game-map.tsx
+   §BÖLGE-2) --------------------------------------------------------------------------------
+   NOT gated on `[data-game-active]`, unlike the hover/focus blocks above: `correct`/`shown`
+   are permanent (I1/I2), so the ring has to keep showing after the round ends, exactly like
+   the fill/hatch it sits next to already does.
+
+   THE DEFECT THIS REPLACES. `.hitEdge[data-state="correct"]` used to draw a full-perimeter
+   line on EVERY member of a solved region — right for a single il, wrong for a region, because
+   the borders BETWEEN members bolded too (the pre-I1 hover defect, all over again, for a
+   permanent state this time). The override below turns that per-province line OFF in region
+   mode only: il mode keeps it, because there a target is exactly one shape and there is no
+   internal boundary to over-bold. */
+.stage[data-game-mode="regions"] .hitEdge[data-state="correct"],
+.stage[data-game-mode="regions"] .hitEdge[data-state="shown"] {
+  stroke: none;
+}
+
+/* THE REPLACEMENT is the region's own silhouette (§BÖLGE) — the SAME group the hover/focus
+   rules above already draw, a third and fourth time over, keyed on the permanent states
+   instead of a transient pointer/keyboard one. `fill` is overridden per state (not the hover
+   token) so a solved region reads in `--game-correct-edge` and a shown one in
+   `--game-hover-edge` — two colours already in play elsewhere on this exact map, not two new
+   ones invented for this rule. */
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="MARMARA"][data-state="correct"])
+  .regionOutline[data-region="MARMARA"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="EGE"][data-state="correct"])
+  .regionOutline[data-region="EGE"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="AKDENIZ"][data-state="correct"])
+  .regionOutline[data-region="AKDENIZ"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="IC_ANADOLU"][data-state="correct"])
+  .regionOutline[data-region="IC_ANADOLU"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="KARADENIZ"][data-state="correct"])
+  .regionOutline[data-region="KARADENIZ"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="DOGU_ANADOLU"][data-state="correct"])
+  .regionOutline[data-region="DOGU_ANADOLU"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"][data-state="correct"])
+  .regionOutline[data-region="GUNEYDOGU_ANADOLU"] {
+  display: block;
+  fill: var(--game-correct-edge);
+}
+
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="MARMARA"][data-state="shown"])
+  .regionOutline[data-region="MARMARA"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="EGE"][data-state="shown"])
+  .regionOutline[data-region="EGE"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="AKDENIZ"][data-state="shown"])
+  .regionOutline[data-region="AKDENIZ"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="IC_ANADOLU"][data-state="shown"])
+  .regionOutline[data-region="IC_ANADOLU"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="KARADENIZ"][data-state="shown"])
+  .regionOutline[data-region="KARADENIZ"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="DOGU_ANADOLU"][data-state="shown"])
+  .regionOutline[data-region="DOGU_ANADOLU"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"][data-state="shown"])
+  .regionOutline[data-region="GUNEYDOGU_ANADOLU"] {
+  display: block;
+  fill: var(--game-hover-edge);
 }
 
 /* ---- THE ZOOM CLUSTER (→ DEC 2026-08-17g md. 3; markup note in `game-map.tsx`) -----------
