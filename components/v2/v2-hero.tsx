@@ -194,7 +194,7 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
           handleNavigate(target.path, target.name);
         }
       } else if (query.trim()) {
-        toast.info(`"${query}" için sonuç bulunamadı. Lütfen bir il, ülke veya araç adı deneyin.`);
+        toast.info(`"${query}" için sonuç bulunamadı. Lütfen bir il, ülke veya araç adı dene.`);
       }
     } else if (e.key === "Escape") {
       setIsOpen(false);
@@ -209,9 +209,9 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
         handleNavigate(target.path, target.name);
       }
     } else if (query.trim()) {
-      toast.info(`"${query}" için sonuç bulunamadı. Listeden bir il veya ülke seçebilirsiniz.`);
+      toast.info(`"${query}" için sonuç bulunamadı. Listeden bir il veya ülke seçebilirsin.`);
     } else {
-      toast.info("Lütfen aramak istediğiniz ili veya ülkeyi yazın.");
+      toast.info("Lütfen aramak istediğin ili veya ülkeyi yaz.");
     }
   };
 

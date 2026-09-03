@@ -63,15 +63,15 @@ export function V2LoginCard({
 
     const cleanEmail = email.trim();
     if (!cleanEmail) {
-      setErrorMsg("Lütfen e-posta adresinizi giriniz.");
+      setErrorMsg("Lütfen e-posta adresini gir.");
       return;
     }
     if (!EMAIL_SHAPE.test(cleanEmail)) {
-      setErrorMsg("Lütfen geçerli bir e-posta adresi yazınız (örn: isim@domain.com).");
+      setErrorMsg("Lütfen geçerli bir e-posta adresi yaz (örn: isim@domain.com).");
       return;
     }
     if (!password) {
-      setErrorMsg("Lütfen şifrenizi giriniz.");
+      setErrorMsg("Lütfen şifreni gir.");
       return;
     }
 
@@ -85,7 +85,7 @@ export function V2LoginCard({
 
       if (result.ok) {
         setSessionState("authenticated");
-        setSuccessMsg("Giriş başarılı! Yönlendiriliyorsunuz...");
+        setSuccessMsg("Giriş başarılı! Yönlendiriliyorsun...");
         if (onAuthenticated) {
           onAuthenticated();
         } else if (result.redirectTo) {
@@ -95,22 +95,22 @@ export function V2LoginCard({
         }
       } else {
         if (result.code === "errors.auth.invalidCredentials") {
-          setErrorMsg("E-posta adresi veya şifre hatalı. Lütfen kontrol ediniz.");
+          setErrorMsg("E-posta adresi veya şifre hatalı. Lütfen kontrol et.");
         } else if (result.code === "errors.auth.emailNotVerified") {
-          setErrorMsg("E-posta adresiniz henüz doğrulanmamış. Lütfen e-postanızı kontrol ediniz.");
+          setErrorMsg("E-posta adresin henüz doğrulanmamış. Lütfen e-postanı kontrol et.");
         } else if (
           result.code === "errors.auth.rateLimited" ||
           result.code === "errors.auth.tooManyAttempts"
         ) {
           setErrorMsg(
-            "Çok fazla başarısız deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyiniz.",
+            "Çok fazla başarısız deneme yapıldı. Lütfen birkaç dakika sonra tekrar dene.",
           );
         } else {
-          setErrorMsg("Giriş yapılırken bir sorun oluştu. Lütfen tekrar deneyiniz.");
+          setErrorMsg("Giriş yapılırken bir sorun oluştu. Lütfen tekrar dene.");
         }
       }
     } catch {
-      setErrorMsg("Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol ediniz.");
+      setErrorMsg("Sunucuya bağlanılamadı. Lütfen internet bağlantını kontrol et.");
     } finally {
       setLoading(false);
     }

@@ -3,23 +3,20 @@
 import * as React from "react";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth } from "@/lib/auth/auth-modal.client";
-import { fetchGameRounds, type GameRoundRecord, GAME_ROUNDS_FETCH_TIMEOUT_MS } from "@/lib/game-rounds/client";
+import {
+  fetchGameRounds,
+  type GameRoundRecord,
+  GAME_ROUNDS_FETCH_TIMEOUT_MS,
+} from "@/lib/game-rounds/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Trophy,
-  Award,
-  Flame,
-  Zap,
-  ShieldCheck,
-  Lock,
-  Loader2,
-  Calendar,
-} from "lucide-react";
+import { Trophy, Award, Flame, Zap, ShieldCheck, Lock, Loader2, Calendar } from "lucide-react";
 
 export function V2GameHistoryStats() {
   const [authState] = useAuthSession();
-  const [fetchedRecords, setFetchedRecords] = React.useState<readonly GameRoundRecord[] | null>(null);
+  const [fetchedRecords, setFetchedRecords] = React.useState<readonly GameRoundRecord[] | null>(
+    null,
+  );
   const [status, setStatus] = React.useState<"pending" | "settled">("pending");
 
   React.useEffect(() => {
@@ -111,7 +108,11 @@ export function V2GameHistoryStats() {
         </div>
 
         {authState === "authenticated" ? (
-          <Badge variant="outline" size="sm" className="bg-primary/5 text-primary border-primary/20">
+          <Badge
+            variant="outline"
+            size="sm"
+            className="bg-primary/5 text-primary border-primary/20"
+          >
             {unlockedCount} / {achievements.length} Rozet Açık
           </Badge>
         ) : (
@@ -130,10 +131,11 @@ export function V2GameHistoryStats() {
             </div>
             <div>
               <h4 className="font-heading font-bold text-sm text-foreground">
-                Skorlarınızı ve Rozetlerinizi Profilinize Kaydedin
+                Skorlarını ve Rozetlerini Profiline Kaydet
               </h4>
               <p className="text-xs text-muted-foreground">
-                Oturum açarak bitirdiğiniz tüm sınav turlarını geçmişinize kaydedebilir ve başarı rozetlerini açabilirsiniz.
+                Oturum açarak bitirdiğin tüm sınav turlarını geçmişine kaydedebilir ve başarı
+                rozetlerini açabilirsin.
               </p>
             </div>
           </div>
@@ -158,7 +160,11 @@ export function V2GameHistoryStats() {
               <div className="size-10 rounded-xl bg-background/80 flex items-center justify-center shadow-xs">
                 {item.icon}
               </div>
-              <Badge variant={item.unlocked ? "primary" : "outline"} size="sm" className="text-[10px]">
+              <Badge
+                variant={item.unlocked ? "primary" : "outline"}
+                size="sm"
+                className="text-[10px]"
+              >
                 {item.unlocked ? "Kazanıldı" : "Kilitli"}
               </Badge>
             </div>
@@ -184,28 +190,41 @@ export function V2GameHistoryStats() {
           ) : records && records.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {records.slice(0, 6).map((rec) => (
-                <div key={rec.clientRoundId} className="p-3.5 rounded-2xl bg-card border border-border space-y-1.5">
+                <div
+                  key={rec.clientRoundId}
+                  className="p-3.5 rounded-2xl bg-card border border-border space-y-1.5"
+                >
                   <div className="flex items-center justify-between">
                     <Badge variant="outline" size="sm" className="text-[10px]">
-                      {rec.mode === "81-il" ? "81 İl" : rec.mode === "bolge-bulma" ? "7 Bölge" : rec.mode}
+                      {rec.mode === "81-il"
+                        ? "81 İl"
+                        : rec.mode === "bolge-bulma"
+                          ? "7 Bölge"
+                          : rec.mode}
                     </Badge>
                     <span className="font-heading font-bold text-base text-primary">
                       %{rec.score}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Doğru: {rec.found} / {rec.total}</span>
+                    <span>
+                      Doğru: {rec.found} / {rec.total}
+                    </span>
                     <span>Hata: {rec.totalWrongs}</span>
                   </div>
                   <div className="text-[10px] text-muted-foreground">
-                    {new Date(rec.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                    {new Date(rec.createdAt).toLocaleDateString("tr-TR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="p-6 text-center text-xs text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border">
-              Henüz kayıtlı sınav turunuz bulunmuyor. Bir sınav başlatıp bitirerek ilk skorunuzu kaydedin!
+              Henüz kayıtlı sınav turun bulunmuyor. Bir sınav başlatıp bitirerek ilk skorunu kaydet!
             </div>
           )}
         </div>

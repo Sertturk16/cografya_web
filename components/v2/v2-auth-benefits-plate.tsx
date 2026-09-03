@@ -24,25 +24,25 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
     {
       icon: <Star className="size-4 text-amber-500" />,
       title: "Kişisel Favoriler & Hızlı Erişim",
-      desc: "İlgi duyduğunuz 81 il ve 248 ülkeyi favorilerinize ekleyin, güncel hava, iklim ve deniz telemetrilerini anında takip edin.",
+      desc: "İlgi duyduğun 81 il ve 248 ülkeyi favorilerine ekle, güncel hava, iklim ve deniz telemetrilerini anında takip et.",
       badge: "Özelleştirilmiş",
     },
     {
       icon: <Trophy className="size-4 text-emerald-500" />,
       title: "Harita Oyunları & Başarı Rozetleri",
-      desc: "81 İl ve Bölge bulma sınavlarında skorlarınızı kaydedin, '81 İl Fatihi' rozetini kazanın ve lider tablosuna adınızı yazdırın.",
+      desc: "81 İl ve Bölge bulma sınavlarında skorlarını kaydet, '81 İl Fatihi' rozetini kazan ve lider tablosuna adını yazdır.",
       badge: "Oyunlaştırma",
     },
     {
       icon: <Layers className="size-4 text-primary" />,
       title: "Bulut Tabanlı CBS Ölçüm Arşivi",
-      desc: "Harita üzerinde yaptığınız Haversine mesafe ve küresel çokgen alan ölçümlerini hesabınıza kaydedip dilediğiniz zaman inceleyin.",
+      desc: "Harita üzerinde yaptığın Haversine mesafe ve küresel çokgen alan ölçümlerini hesabına kaydedip dilediğin zaman incele.",
       badge: "CBS Arşivi",
     },
     {
       icon: <Video className="size-4 text-rose-500" />,
       title: "Video Çözüm İlerleme Takibi",
-      desc: "AYT Coğrafya branş denemelerinde hangi soruları çözüp izlediğinizi soru soru işaretleyin, eksik konularınızı tespit edin.",
+      desc: "AYT Coğrafya branş denemelerinde hangi soruları çözüp izlediğini soru soru işaretle, eksik konularını tespit et.",
       badge: "Soru Analitiği",
     },
   ];
@@ -61,12 +61,13 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
 
           <h3 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] leading-snug">
             {mode === "register"
-              ? "Yeni Nesil Coğrafya Dünyasına Adım Atın"
-              : "Kişisel Coğrafya Merkezinize Hoş Geldiniz"}
+              ? "Yeni Nesil Coğrafya Dünyasına Adım At"
+              : "Kişisel Coğrafya Merkezine Hoş Geldin"}
           </h3>
 
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Coğrafya.v2 hesabı ile tüm interaktif atlas araçlarına, canlı telemetri kayıtlarına ve sınav takip modüllerine tek noktadan erişin.
+            Coğrafya platformu hesabınla tüm atlas araçlarına, canlı telemetri kayıtlarına ve sınav
+            takip modüllerine tek noktadan eriş.
           </p>
         </div>
 
@@ -82,14 +83,14 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
               </div>
               <div className="space-y-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="font-heading font-bold text-sm text-foreground truncate">{b.title}</h4>
+                  <h4 className="font-heading font-bold text-sm text-foreground truncate">
+                    {b.title}
+                  </h4>
                   <Badge variant="outline" className="text-[10px] py-0 font-mono shrink-0">
                     {b.badge}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {b.desc}
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{b.desc}</p>
               </div>
             </div>
           ))}

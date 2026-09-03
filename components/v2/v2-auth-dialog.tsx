@@ -36,32 +36,32 @@ const INTENT_CONFIGS: Record<AuthIntent, IntentConfig> = {
   favorite: {
     icon: <Star className="size-4 text-amber-500" />,
     badgeText: "Favorilere Ekleme",
-    title: "Bu Sayfayı Favorilerinize Kaydedin",
-    desc: "İl ve ülke verilerini hızlı erişim listenize eklemek ve güncel telemetrileri takip etmek için giriş yapın.",
+    title: "Bu Sayfayı Favorilerine Kaydet",
+    desc: "İl ve ülke verilerini hızlı erişim listene eklemek ve güncel telemetrileri takip etmek için giriş yap.",
   },
   video: {
     icon: <Video className="size-4 text-rose-500" />,
     badgeText: "Soru Çözüm Takibi",
-    title: "Video İlerlemenizi Kaydedin",
-    desc: "Hangi deneme sorularını çözdüğünüzü ve izlediğinizi soru soru takip etmek için giriş yapın.",
+    title: "Video İlerlemeni Kaydet",
+    desc: "Hangi deneme sorularını çözdüğünü ve izlediğini soru soru takip etmek için giriş yap.",
   },
   gameRound: {
     icon: <Trophy className="size-4 text-emerald-500" />,
     badgeText: "Lider Tablosu & Skor",
-    title: "Harita Sınavı Skorunuzu Kaydedin",
-    desc: "Kazandığınız puanları profilinize işlemek ve başarı rozetlerini açmak için hesabınıza giriş yapın.",
+    title: "Harita Sınavı Skorunu Kaydet",
+    desc: "Kazandığın puanları profiline işlemek ve başarı rozetlerini açmak için hesabına giriş yap.",
   },
   measurement: {
     icon: <Layers className="size-4 text-primary" />,
     badgeText: "CBS Ölçüm Arşivi",
-    title: "CBS Harita Ölçümünü Kaydedin",
-    desc: "Haversine mesafe ve küresel alan ölçümlerinizi bulut arşivinize kaydetmek için giriş yapın.",
+    title: "CBS Harita Ölçümünü Kaydet",
+    desc: "Haversine mesafe ve küresel alan ölçümlerini bulut arşivine kaydetmek için giriş yap.",
   },
   generic: {
     icon: <Compass className="size-4 text-primary" />,
     badgeText: "Coğrafya Platformu v2",
-    title: "Coğrafya Hesabınıza Erişin",
-    desc: "Tüm interaktif harita testleri, video çözümleri ve CBS araçlarına sınırsız erişim sağlayın.",
+    title: "Coğrafya Hesabına Eriş",
+    desc: "Tüm harita testleri, video çözümleri ve CBS araçlarına sınırsız erişim sağla.",
   },
 };
 

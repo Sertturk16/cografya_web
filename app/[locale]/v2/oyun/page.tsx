@@ -41,8 +41,7 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
         schema={[
           learningResourceJsonLd({
             name: "Harita Oyunları & Coğrafya Sınavları v2",
-            description:
-              "Dilsiz Türkiye haritası üzerinde illeri ve coğrafi bölgeleri interaktif olarak keşfedin.",
+            description: "Dilsiz Türkiye haritası üzerinde illeri ve coğrafi bölgeleri keşfet.",
             path: "/v2/oyun",
             locale,
             learningResourceType: "Game",

@@ -147,32 +147,32 @@ export function V2RegisterCard({
     const cleanEmail = email.trim();
 
     if (!cleanFirst) {
-      setErrorMsg("Lütfen adınızı giriniz.");
+      setErrorMsg("Lütfen adını gir.");
       return;
     }
     if (!cleanLast) {
-      setErrorMsg("Lütfen soyadınızı giriniz.");
+      setErrorMsg("Lütfen soyadını gir.");
       return;
     }
     const cleanPhone = canonicalizePhone(phone);
     if (!cleanPhone) {
-      setErrorMsg("Lütfen geçerli bir telefon numarası giriniz (örn: 05xx xxx xx xx).");
+      setErrorMsg("Lütfen geçerli bir telefon numarası gir (örn: 05xx xxx xx xx).");
       return;
     }
     if (!cleanEmail || !EMAIL_SHAPE.test(cleanEmail)) {
-      setErrorMsg("Lütfen geçerli bir e-posta adresi yazınız.");
+      setErrorMsg("Lütfen geçerli bir e-posta adresi yaz.");
       return;
     }
     if (!selectedPlate) {
-      setErrorMsg("Lütfen bulunduğunuz ili seçiniz.");
+      setErrorMsg("Lütfen bulunduğun ili seç.");
       return;
     }
     if (!selectedDistrictId) {
-      setErrorMsg("Lütfen ilçenizi seçiniz.");
+      setErrorMsg("Lütfen ilçeni seç.");
       return;
     }
     if (!hasMinLength || !hasNumber || !hasLetter) {
-      setErrorMsg("Şifreniz en az 8 karakter, en az bir harf ve bir rakam içermelidir.");
+      setErrorMsg("Şifren en az 8 karakter, en az bir harf ve bir rakam içermelidir.");
       return;
     }
 
@@ -201,24 +201,22 @@ export function V2RegisterCard({
       if (result.ok) {
         setStep("verify");
         setSuccessMsg(
-          "Kayıt oluşturuldu! E-posta adresinize gönderilen 6 haneli doğrulama kodunu giriniz.",
+          "Kayıt oluşturuldu! E-posta adresine gönderilen 6 haneli doğrulama kodunu gir.",
         );
       } else {
         if (
           result.code === "errors.auth.rateLimited" ||
           result.code === "errors.auth.tooManyAttempts"
         ) {
-          setErrorMsg("Çok fazla deneme yapıldı. Lütfen biraz sonra tekrar deneyiniz.");
+          setErrorMsg("Çok fazla deneme yapıldı. Lütfen biraz sonra tekrar dene.");
         } else if (result.code === "errors.transport.invalidRequest") {
           setErrorMsg("Kayıt bilgileri geçersiz veya bu e-posta adresi zaten kullanılıyor.");
         } else {
-          setErrorMsg(
-            "Kayıt oluşturulurken bir sorun oluştu. Lütfen bilgilerinizi kontrol ediniz.",
-          );
+          setErrorMsg("Kayıt oluşturulurken bir sorun oluştu. Lütfen bilgilerini kontrol et.");
         }
       }
     } catch {
-      setErrorMsg("Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol ediniz.");
+      setErrorMsg("Sunucuya bağlanılamadı. Lütfen internet bağlantını kontrol et.");
     } finally {
       setLoading(false);
     }
@@ -231,7 +229,7 @@ export function V2RegisterCard({
 
     const cleanCode = verificationCode.trim();
     if (!cleanCode || cleanCode.length < 4) {
-      setErrorMsg("Lütfen geçerli doğrulama kodunu giriniz.");
+      setErrorMsg("Lütfen geçerli doğrulama kodunu gir.");
       return;
     }
 
@@ -244,14 +242,14 @@ export function V2RegisterCard({
 
       if (result.ok) {
         setSessionState("authenticated");
-        setSuccessMsg("Hesabınız başarıyla doğrulandı ve oturum açıldı! Hoş geldiniz.");
+        setSuccessMsg("Hesabın başarıyla doğrulandı ve oturum açıldı! Hoş geldin.");
         if (onAuthenticated) {
           onAuthenticated();
         } else {
           router.replace("/v2");
         }
       } else {
-        setErrorMsg("Doğrulama kodu hatalı veya süresi dolmuş. Lütfen tekrar kontrol ediniz.");
+        setErrorMsg("Doğrulama kodu hatalı veya süresi dolmuş. Lütfen tekrar kontrol et.");
       }
     } catch {
       setErrorMsg("Doğrulama işlemi sırasında hata oluştu.");
@@ -450,11 +448,11 @@ export function V2RegisterCard({
 
       {/* User Role Selector */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-bold text-foreground">Profil Türü / Hedefiniz</Label>
+        <Label className="text-xs font-bold text-foreground">Profil Türü / Hedefin</Label>
         <div
           className="grid grid-cols-2 gap-1.5"
           role="radiogroup"
-          aria-label="Profil Türü / Hedefiniz"
+          aria-label="Profil Türü / Hedefin"
         >
           {USER_ROLES.map((role) => (
             <button
@@ -521,7 +519,7 @@ export function V2RegisterCard({
               className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150 disabled:opacity-50"
             >
               {districts.length === 0 ? (
-                <option value="">Önce il seçin</option>
+                <option value="">Önce il seç</option>
               ) : (
                 districts.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -538,7 +536,7 @@ export function V2RegisterCard({
       {/* Password Field */}
       <div className="space-y-1.5">
         <Label htmlFor="v2-register-password" className="text-xs font-bold text-foreground">
-          Güçlü Şifre Oluşturun
+          Güçlü Şifre Oluştur
         </Label>
         <div className="relative">
           <Input
@@ -601,18 +599,18 @@ export function V2RegisterCard({
       {/* Switch to Login footer */}
       <div className="text-center pt-2 border-t border-border/80">
         <p className="text-xs text-muted-foreground">
-          Zaten bir hesabınız var mı?{" "}
+          Zaten bir hesabın var mı?{" "}
           {onSwitchToLogin ? (
             <button
               type="button"
               onClick={onSwitchToLogin}
               className="font-bold text-primary hover:underline ml-1"
             >
-              Giriş Yapın
+              Giriş Yap
             </button>
           ) : (
             <Link href="/v2/giris" className="font-bold text-primary hover:underline ml-1">
-              Giriş Yapın
+              Giriş Yap
             </Link>
           )}
         </p>

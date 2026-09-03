@@ -53,7 +53,7 @@ export function V2ToolsHub() {
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
                   İki veya çok duraklı güzergâhlar boyunca büyük daire yay mesafesini, tahmini uçuş
-                  süresini ve karayolu farkını hesaplayın.
+                  süresini ve karayolu farkını hesapla.
                 </p>
               </div>
 
@@ -110,8 +110,8 @@ export function V2ToolsHub() {
                   Koordinat &amp; Konum Bulucu
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
-                  Haritada dilediğiniz noktaya tıklayarak enlem/boylam, DMS, UTM projeksiyon zonunu
-                  ve noktanın hangi il sınırında olduğunu öğrenin.
+                  Haritada dilediğin noktaya tıklayarak enlem/boylam, DMS, UTM projeksiyon zonunu ve
+                  noktanın hangi il sınırında olduğunu öğren.
                 </p>
               </div>
 
@@ -168,8 +168,8 @@ export function V2ToolsHub() {
                   Çokgen Yüzölçümü &amp; Alan Hesabı
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
-                  Haritada belirlediğiniz köşe noktalarıyla çokgenler oluşturarak km², hektar, dönüm
-                  ve çevre uzunluğunu L&apos;Huilier hassasiyetiyle ölçün.
+                  Haritada belirlediğin köşe noktalarıyla çokgenler oluşturarak km², hektar, dönüm
+                  ve çevre uzunluğunu L&apos;Huilier hassasiyetiyle ölç.
                 </p>
               </div>
 
@@ -293,13 +293,13 @@ export function V2ToolsHub() {
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
               &bull; <strong>WGS84 &amp; UTM Zonları:</strong> EPSG:4326 ve Gauss-Krüger dilim
-              koordinatlarını karşılaştırın.
+              koordinatlarını karşılaştır.
               <br />
               &bull; <strong>Küresel Yüzölçümü:</strong> L&apos;Huilier formülüyle göl, orman ve
-              havza alanlarını Hektar/Dönüm olarak ölçün.
+              havza alanlarını Hektar/Dönüm olarak ölç.
               <br />
               &bull; <strong>Rota Süre Simülasyonu:</strong> Kuş uçuşu ile %28 topoğrafik karayolu
-              sapmasını analiz edin.
+              sapmasını analiz et.
             </p>
           </div>
         </div>

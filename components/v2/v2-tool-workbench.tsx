@@ -779,7 +779,7 @@ export function V2ToolWorkbench({
                   Koordinat &amp; Konum Bulucu
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Herhangi bir noktaya tıklayarak WGS84, DMS ve UTM coğrafi koordinatlarını öğrenin.
+                  Herhangi bir noktaya tıklayarak WGS84, DMS ve UTM coğrafi koordinatlarını öğren.
                 </p>
               </div>
             </button>
@@ -829,11 +829,10 @@ export function V2ToolWorkbench({
             </Badge>
             <span className="text-xs text-muted-foreground hidden md:inline">
               {activeTool === "distance" &&
-                "Noktaları bağlamak için haritada istediğiniz yerlere tıklayın"}
+                "Noktaları bağlamak için haritada istediğin yerlere tıkla"}
               {activeTool === "coordinates" &&
-                "Koordinatını ve ilini öğrenmek istediğiniz noktaya tıklayın"}
-              {activeTool === "area" &&
-                "Kapalı çokgen oluşturmak için en az 3 köşe noktası ekleyin"}
+                "Koordinatını ve ilini öğrenmek istediğin noktaya tıkla"}
+              {activeTool === "area" && "Kapalı çokgen oluşturmak için en az 3 köşe noktası ekle"}
             </span>
           </div>
 
@@ -1135,7 +1134,7 @@ export function V2ToolWorkbench({
                     options={provinceOptions}
                     value={selectedProvinceCode}
                     onChange={setSelectedProvinceCode}
-                    placeholder="İl Seçiniz (81 İl Listesi)..."
+                    placeholder="İl Seç (81 İl Listesi)..."
                     searchable={true}
                     searchPlaceholder="İl ara (örn: Ankara, 06)..."
                     aria-label="81 İl Merkezinden Seçerek Ekle"
@@ -1216,7 +1215,7 @@ export function V2ToolWorkbench({
               </div>
               {authState !== "authenticated" && (
                 <p className="text-[11px] text-muted-foreground mt-1.5">
-                  Ölçümlerinizi bulut arşivinize kaydetmek için giriş yapmalısınız.
+                  Ölçümlerini bulut arşivine kaydetmek için giriş yapmalısın.
                 </p>
               )}
             </div>

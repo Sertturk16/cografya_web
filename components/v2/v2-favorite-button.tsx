@@ -49,7 +49,7 @@ export function V2FavoriteButton({
         const match = favorites.some((favorite) =>
           currentTarget.kind === "province"
             ? favorite.type === "province" && favorite.plateCode === currentTarget.plateCode
-            : favorite.type === "country" && favorite.isoCode === currentTarget.isoCode
+            : favorite.type === "country" && favorite.isoCode === currentTarget.isoCode,
         );
         setFavorited(match);
       })
@@ -115,8 +115,8 @@ export function V2FavoriteButton({
           favorited
             ? "Favorilerden çıkar"
             : authState === "authenticated"
-            ? "Favorilere ekle"
-            : "Favorilere eklemek için giriş yapın"
+              ? "Favorilere ekle"
+              : "Favorilere eklemek için giriş yapın"
         }
         disabled={pending}
         onClick={() => void handleClick()}
@@ -151,8 +151,8 @@ export function V2FavoriteButton({
           favorited
             ? "Favorilerden çıkar"
             : authState === "authenticated"
-            ? "Favorilere ekle"
-            : "Favorilere eklemek için giriş yapın"
+              ? "Favorilere ekle"
+              : "Favorilere eklemek için giriş yapın"
         }
         disabled={pending}
         onClick={() => void handleClick()}
@@ -176,7 +176,11 @@ export function V2FavoriteButton({
         )}
 
         <span>
-          {favorited ? "Favorilerde" : authState === "authenticated" ? "Favoriye Ekle" : "Favoriye Kaydet"}
+          {favorited
+            ? "Favorilerde"
+            : authState === "authenticated"
+              ? "Favoriye Ekle"
+              : "Favoriye Kaydet"}
         </span>
 
         {justToggled && favorited && (
@@ -186,7 +190,7 @@ export function V2FavoriteButton({
 
       {saveFailed && (
         <span className="absolute -bottom-5 left-0 text-[10px] text-destructive whitespace-nowrap">
-          Kaydedilemedi, tekrar deneyin.
+          Kaydedilemedi, tekrar dene.
         </span>
       )}
     </div>
