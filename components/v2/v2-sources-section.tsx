@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Database, ShieldCheck, BookOpen, ExternalLink } from "lucide-react";

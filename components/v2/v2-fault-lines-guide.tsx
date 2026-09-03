@@ -1,11 +1,6 @@
-"use client";
-
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Layers,
-  AlertTriangle,
-} from "lucide-react";
+import { Layers, AlertTriangle } from "lucide-react";
 
 export function V2FaultLinesGuide() {
   const faultSystems = [
@@ -43,7 +38,9 @@ export function V2FaultLinesGuide() {
             <Badge variant="destructive" size="sm" icon={<Layers className="size-3.5" />}>
               Sismotektonik Yapı
             </Badge>
-            <span className="text-xs text-muted-foreground">Levha Tektoniği &amp; Ana Kırıklar</span>
+            <span className="text-xs text-muted-foreground">
+              Levha Tektoniği &amp; Ana Kırıklar
+            </span>
           </div>
           <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
             Türkiye&apos;nin Ana Fay Hatları &amp; Levha Dinamiği
@@ -58,7 +55,9 @@ export function V2FaultLinesGuide() {
             className={`p-5 rounded-2xl border ${fault.color} space-y-3 shadow-2xs hover:-translate-y-0.5 transition-transform`}
           >
             <div className="flex items-center justify-between">
-              <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border ${fault.badgeColor}`}>
+              <span
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border ${fault.badgeColor}`}
+              >
                 {fault.tag}
               </span>
               <span className="text-xs font-semibold text-destructive flex items-center gap-1">
@@ -70,9 +69,7 @@ export function V2FaultLinesGuide() {
               {fault.name}
             </h4>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {fault.desc}
-            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed">{fault.desc}</p>
           </div>
         ))}
       </div>
