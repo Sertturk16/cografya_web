@@ -28,6 +28,12 @@ function slugForLocale(country: { slugTr: string; slugEn: string }, locale: Loca
   return locale === "en" ? country.slugEn : country.slugTr;
 }
 
+// Special-status entities, HAND-MAINTAINED. There is no api-side flag to read from: the
+// committed contract publishes `sovereigntyNoteTr` on CountryDetailDto only, not on the
+// CountryListItemDto / CountryMapSummaryDto this page consumes — so no test in this repo can
+// compare this set to the api seed. `components/v2/v2-world-sovereignty.test.ts` only FREEZES
+// this set's current contents; it does NOT verify a sync invariant. When the api seed gains a
+// new `sovereigntyNoteTr` row, this set must be updated by hand (and that test with it).
 const SPECIAL_STATUS_ISO_CODES = new Set(["QN", "CY", "IL", "PS", "TW", "XK"]);
 
 export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Metadata> {
@@ -63,8 +69,10 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
     const slug = slugForLocale(c, locale);
     const isSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(c.isoCode.toUpperCase());
     const hasFlagAsset = hasFlag(c.isoCode);
-    // User Decision 2-B: Flags are displayed in both TR and EN, with special status badging
-    const flagVisible = hasFlagAsset;
+    // User Decision 1-A & DEC 2026-09-03a md.2: Special-status flags display in Turkish (/v2/dunya)
+    // with special-status badging. In English (/en/v2/world), flags are suppressed per DEC 2026-08-08h
+    // and DEC 2026-08-08l B2 until English sovereignty notes (FU-SOVNOTE-EN) land.
+    const flagVisible = hasFlagAsset && (!isSpecialStatus || locale === "tr");
 
     return {
       isoCode: c.isoCode,

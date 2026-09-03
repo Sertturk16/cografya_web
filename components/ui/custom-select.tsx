@@ -37,8 +37,14 @@ export function CustomSelect({
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [highlightedIndex, setHighlightedIndex] = React.useState<number | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+
+  const reactId = React.useId();
+  const selectId = id || reactId;
+  const listboxId = `${selectId}-listbox`;
 
   const selectedOption = React.useMemo(
     () => options.find((opt) => opt.value === value),
@@ -56,11 +62,28 @@ export function CustomSelect({
     );
   }, [options, searchQuery, searchable]);
 
+  // Derived highlighted index without setState in effect
+  const activeIndex =
+    highlightedIndex !== null
+      ? highlightedIndex
+      : filteredOptions.findIndex((opt) => opt.value === value);
+  const resolvedIndex = activeIndex >= 0 ? activeIndex : filteredOptions.length > 0 ? 0 : -1;
+
+  // Scroll active option into view
+  React.useEffect(() => {
+    if (isOpen && resolvedIndex >= 0 && filteredOptions[resolvedIndex]) {
+      const optId = `${selectId}-opt-${filteredOptions[resolvedIndex].value}`;
+      const el = document.getElementById(optId);
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  }, [isOpen, resolvedIndex, filteredOptions, selectId]);
+
   // Outside click listener
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setHighlightedIndex(null);
       }
     }
     if (isOpen) {
@@ -74,28 +97,70 @@ export function CustomSelect({
     };
   }, [isOpen, searchable]);
 
-  // Keyboard navigation
-  React.useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && isOpen) {
-        setIsOpen(false);
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
-
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
-
+  // Selection handler with focus restoration (FU125A11Y-I2, WCAG 2.4.3)
   const handleSelect = (val: string) => {
     onChange(val);
     setIsOpen(false);
     setSearchQuery("");
+    setHighlightedIndex(null);
+    triggerRef.current?.focus();
   };
 
-  const reactId = React.useId();
-  const selectId = id || reactId;
-  const listboxId = `${selectId}-listbox`;
+  // Keyboard navigation for WAI-ARIA APG Combobox pattern (FU125A11Y-I1)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+
+    if (!isOpen) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+      return;
+    }
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setIsOpen(false);
+      setHighlightedIndex(null);
+      triggerRef.current?.focus();
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => {
+        const current = prev !== null ? prev : resolvedIndex;
+        if (filteredOptions.length === 0) return 0;
+        return current < filteredOptions.length - 1 ? current + 1 : 0;
+      });
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => {
+        const current = prev !== null ? prev : resolvedIndex;
+        if (filteredOptions.length === 0) return 0;
+        return current > 0 ? current - 1 : filteredOptions.length - 1;
+      });
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      if (filteredOptions.length > 0) setHighlightedIndex(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      if (filteredOptions.length > 0) setHighlightedIndex(filteredOptions.length - 1);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (resolvedIndex >= 0 && resolvedIndex < filteredOptions.length) {
+        const option = filteredOptions[resolvedIndex];
+        if (option) {
+          handleSelect(option.value);
+        }
+      }
+    }
+  };
+
+  const activeDescendantId =
+    isOpen && resolvedIndex >= 0 && filteredOptions[resolvedIndex]
+      ? `${selectId}-opt-${filteredOptions[resolvedIndex].value}`
+      : undefined;
 
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
@@ -108,9 +173,11 @@ export function CustomSelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? listboxId : undefined}
+        aria-activedescendant={activeDescendantId}
         aria-label={ariaLabel || placeholder}
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
+        onKeyDown={handleKeyDown}
         className={cn(
           "w-full h-10 px-3.5 rounded-xl border bg-card text-xs text-left transition-all duration-150 flex items-center justify-between gap-2 select-none shadow-2xs cursor-pointer focus-visible:outline-none",
           isOpen
@@ -135,17 +202,13 @@ export function CustomSelect({
         />
       </button>
 
-      {/* Dropdown Popup Menu */}
+      {/* Dropdown Popup Menu — deliberately carries NO onKeyDown (FU126A11Y-I2). The search
+          <input> below is a DOM descendant of this wrapper, so a listener here made every
+          keypress run handleKeyDown twice (once on the input, once on the bubble), moving the
+          arrow-key highlight two options per press. The only two focusable elements in this
+          component — the trigger <button> and that <input> — carry the handler themselves. */}
       {isOpen && (
-        <div
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              setIsOpen(false);
-              triggerRef.current?.focus();
-            }
-          }}
-          className="absolute top-full left-0 mt-1.5 w-full z-50 rounded-2xl border border-border bg-white dark:bg-card text-foreground shadow-2xl overflow-hidden py-1"
-        >
+        <div className="absolute top-full left-0 mt-1.5 w-full z-50 rounded-2xl border border-border bg-white dark:bg-card text-foreground shadow-2xl overflow-hidden py-1">
           {searchable && (
             <div className="p-2 border-b border-border/80">
               <div className="relative flex items-center">
@@ -154,9 +217,15 @@ export function CustomSelect({
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setHighlightedIndex(null);
+                  }}
+                  onKeyDown={handleKeyDown}
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder || "Seçeneklerde ara"}
+                  aria-controls={listboxId}
+                  aria-activedescendant={activeDescendantId}
                   className="w-full h-8 pl-8 pr-3 rounded-lg bg-muted/60 border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-150"
                 />
               </div>
@@ -174,27 +243,26 @@ export function CustomSelect({
                 Sonuç bulunamadı.
               </div>
             ) : (
-              filteredOptions.map((opt) => {
+              filteredOptions.map((opt, index) => {
                 const isSelected = opt.value === value;
+                const isHighlighted = index === resolvedIndex;
                 return (
                   <div
                     key={opt.value}
                     id={`${selectId}-opt-${opt.value}`}
                     role="option"
-                    tabIndex={0}
+                    tabIndex={-1}
                     aria-selected={isSelected}
+                    data-highlighted={isHighlighted}
                     onClick={() => handleSelect(opt.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleSelect(opt.value);
-                      }
-                    }}
+                    onMouseEnter={() => setHighlightedIndex(index)}
                     className={cn(
-                      "px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors duration-100 font-medium select-none outline-none focus-visible:bg-primary/15 focus-visible:text-primary",
+                      "px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors duration-100 font-medium select-none outline-none",
                       isSelected
                         ? "bg-primary/15 text-primary font-bold"
-                        : "text-foreground hover:bg-primary/10 hover:text-primary",
+                        : isHighlighted
+                          ? "bg-primary/10 text-primary"
+                          : "text-foreground hover:bg-primary/5 hover:text-primary",
                     )}
                   >
                     <span className="truncate">{opt.label}</span>

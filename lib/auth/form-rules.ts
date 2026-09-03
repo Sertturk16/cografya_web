@@ -114,14 +114,25 @@ export function canonicalizePhone(input: string): string | null {
 }
 
 /**
- * The four values `DEC 2026-08-20g` md.1 #7 names for the "Kullanıcı tipi" control, spelled
- * as an internal identifier rather than the contract's two axes (`accountRole` +
- * `educationLevel`) because the CONTROL is one field with four options, not two — see
- * `buildRegisterPayload` below for the split. `lib/auth/profile-labels.ts` holds the reader
- * label for each (plan §4.3.3's copy deviation: the ruling's four values, disambiguated with
- * `GLOSSARY.md` §7.1's terms).
+ * The register screens' one internal user-type identifier, spelled as a single union rather
+ * than the contract's two axes (`accountRole` + `educationLevel`) because the CONTROL is one
+ * field — see `buildRegisterPayload` below for the split. `lib/auth/profile-labels.ts` holds
+ * the reader label for each.
+ *
+ * `secondary` / `undergraduate` / `graduate` / `teacher` remain V1's four education-level
+ * options for the full-profile "Kullanıcı tipi" control `DEC 2026-08-20g` md.1 #7 names
+ * (`components/auth/register-form.tsx`, plan §4.3.3's copy deviation: the ruling's four
+ * values, disambiguated with `GLOSSARY.md` §7.1's terms).
+ *
+ * `student` is V2's minimal-registration value (`DEC 2026-09-03a` md.1, `VAL126R2SEC-I3`). It
+ * lives on the `accountRole` axis ALONE — `GLOSSARY.md` §7.1's two-row `accountRole` table
+ * (Öğrenci → `STUDENT`) — and carries NO education level at all: no `educationLevel`,
+ * `gradeLevel`, `studyStream`, `universityName` or `departmentName` key reaches the payload.
+ * It is deliberately NOT a reuse of `secondary`: that branch stamps
+ * `educationLevel: "SECONDARY"` the moment a `gradeLevel` appears, so reusing it would make a
+ * V2 student's stored intent a lie the first time education collection is added.
  */
-export type UserType = "secondary" | "undergraduate" | "graduate" | "teacher";
+export type UserType = "student" | "secondary" | "undergraduate" | "graduate" | "teacher";
 
 /**
  * The whole register-screen state `buildRegisterPayload` reads (plan §4.3.2 part 3, the
@@ -132,10 +143,10 @@ export type UserType = "secondary" | "undergraduate" | "graduate" | "teacher";
  * revert-to-red mutation (plan §9) is "add `passwordConfirm` to the payload", which has to
  * compile against a real property to be a meaningful mutation. `phone` is already
  * canonicalised (see {@link canonicalizePhone}) by the time it reaches here; this function
- * does not re-derive it. `gradeLevel`/`studyStream` carry `""` as their empty state (a
- * native `<select>` always has SOME string value) — the caller's own validation is what
- * guarantees a non-empty value for the branch that needs one, exactly as `readClientBody`'s
- * "the browser is the validator" posture already requires (§4.3.2) elsewhere in this module.
+ * does not re-derive it. `gradeLevel`, `studyStream`, `universityName` and `departmentName`
+ * are optional on the form state: minimal V2 registration (Decision 2-B, `DEC 2026-09-03a` md.1)
+ * omits them at initial registration and defers education details to a post-registration profile
+ * onboarding step; callers providing them (e.g. V1 registration) continue to emit full-profile payloads.
  */
 export interface RegisterFormState {
   readonly firstName: string;
@@ -147,24 +158,35 @@ export interface RegisterFormState {
   readonly userType: UserType;
   readonly provincePlateCode: string;
   readonly districtId: string;
-  readonly gradeLevel: GradeLevel | "";
-  readonly studyStream: StudyStream | "";
-  readonly universityName: string;
-  readonly departmentName: string;
+  readonly gradeLevel?: GradeLevel | "";
+  readonly studyStream?: StudyStream | "";
+  readonly universityName?: string;
+  readonly departmentName?: string;
 }
 
 /**
  * The profile matrix (plan §3.3/§4.3.3, table verbatim in BEHAVIOUR from
  * `src/auth/dto/profile-shape.rule.ts`, which the api enforces a SECOND time as a DB
- * `CHECK`) — which extra fields each user type requires, forbids, or leaves optional:
+ * `CHECK` — updated by `cografya_api` PR #155 `AllowStudentMinimalRegistrationProfileShape1788100000000`)
+ * — which extra fields each user type requires, forbids, or leaves optional:
+ *
+ * The left column is the {@link UserType} union and nothing else — every member has exactly
+ * one row, and every row is a member:
  *
  * | user type      | `accountRole` | `educationLevel` | required                        | forbidden                   |
  * |----------------|----------------|-------------------|----------------------------------|------------------------------|
+ * | student        | `STUDENT`      | *absent*          | —                                | every education field       |
  * | secondary      | `STUDENT`      | `SECONDARY`       | `gradeLevel` + `studyStream`     | university, department      |
  * | undergraduate  | `STUDENT`      | `UNDERGRADUATE`   | `universityName` + `departmentName` | grade, stream            |
  * | graduate       | `STUDENT`      | `GRADUATE`        | `universityName`; department optional | grade, stream          |
  * | teacher        | `TEACHER`      | *absent*          | —                                | every education field       |
  *
+ * `student` is minimal V2 registration (Decision 2-B, `DEC 2026-09-03a` md.1): it omits the
+ * education fields entirely, so `buildRegisterPayload` returns
+ * `{ ...common, accountRole: "STUDENT" }` without `educationLevel` or any education key,
+ * matching `cografya_api`'s minimal student contract. The three education-level branches keep
+ * their own defensive collapse to the same shape when their education field is empty — a
+ * still-live path for a V1 caller that has not filled the profile in yet.
  * `buildRegisterPayload` is the ONLY function in this repo that constructs the `register`
  * request body, and it emits exactly the keys the matrix's branch above allows and nothing
  * else — the global pipe's `whitelist`+`forbidNonWhitelisted`
@@ -172,10 +194,10 @@ export interface RegisterFormState {
  * here is not a warning, it is a 400 (gate G2's payload-shape half pins this). `locale` is
  * NOT a form field (the DTO's own description: "Form alanı değil — doğrulama e-postasının
  * dili") — the caller supplies it from the page's own locale, never from `formState`. The
- * `TEACHER` branch carries no `educationLevel` key AT ALL, not even `undefined`
- * (`GLOSSARY.md` §7.1: "ek eğitim alanı taşımaz") — `common` below never declares that
- * property, so the object literal genuinely has no such key, which is what a JS `in`/
- * `Object.keys` check (and gate G2's own subset assertion) actually observes.
+ * `TEACHER` branch and minimal `STUDENT` branch carry no `educationLevel` key AT ALL, not even
+ * `undefined` (`GLOSSARY.md` §7.1) — `common` below never declares that property, so the object
+ * literal genuinely has no such key, which is what a JS `in`/`Object.keys` check (and gate G2's
+ * own subset assertion) actually observes.
  */
 export function buildRegisterPayload(
   formState: RegisterFormState,
@@ -197,32 +219,43 @@ export function buildRegisterPayload(
       return {
         ...common,
         accountRole: "STUDENT",
-        educationLevel: "SECONDARY",
-        gradeLevel: formState.gradeLevel as GradeLevel,
-        studyStream: formState.studyStream as StudyStream,
+        ...(formState.gradeLevel
+          ? {
+              educationLevel: "SECONDARY",
+              gradeLevel: formState.gradeLevel as GradeLevel,
+              studyStream: formState.studyStream as StudyStream,
+            }
+          : {}),
       };
     case "undergraduate":
       return {
         ...common,
         accountRole: "STUDENT",
-        educationLevel: "UNDERGRADUATE",
-        universityName: formState.universityName,
-        departmentName: formState.departmentName,
+        ...(formState.universityName
+          ? {
+              educationLevel: "UNDERGRADUATE",
+              universityName: formState.universityName,
+              departmentName: formState.departmentName,
+            }
+          : {}),
       };
     case "graduate": {
       const base: RegisterRequest = {
         ...common,
         accountRole: "STUDENT",
-        educationLevel: "GRADUATE",
-        universityName: formState.universityName,
+        ...(formState.universityName
+          ? {
+              educationLevel: "GRADUATE",
+              universityName: formState.universityName,
+            }
+          : {}),
       };
-      // Department stays OPTIONAL for a graduate profile (`DEC 2026-08-20h` md.1 reversed
-      // `20g`'s earlier "zorunlu") — an empty selection omits the key entirely rather than
-      // sending an empty string, matching how `TEACHER` omits `educationLevel` above.
-      return formState.departmentName.trim().length > 0
+      return formState.departmentName && formState.departmentName.trim().length > 0
         ? { ...base, departmentName: formState.departmentName }
         : base;
     }
+    case "student":
+      return { ...common, accountRole: "STUDENT" };
     case "teacher":
       return { ...common, accountRole: "TEACHER" };
     default: {

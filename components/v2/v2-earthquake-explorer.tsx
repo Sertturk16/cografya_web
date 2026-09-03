@@ -24,7 +24,6 @@ import {
   Activity,
   Flame,
   Search,
-  Layers,
   Clock,
   ArrowRight,
   List,
@@ -463,7 +462,7 @@ export function V2EarthquakeExplorer({
               Sismik Projeksiyon Haritası
             </Badge>
             <span className="text-xs text-muted-foreground font-medium hidden sm:inline">
-              Eşzamanlı Merkez Üsleri &amp; Aktif Fay Hatları
+              Eşzamanlı Merkez Üsleri &amp; Odak Derinlikleri
             </span>
           </div>
 
@@ -573,10 +572,18 @@ export function V2EarthquakeExplorer({
             </g>
 
             {/* Seismic Earthquake Epicenters (Stable Hit Targets - Zero Flickering) */}
-            {filteredEvents.map((eq) => {
+            {filteredEvents.map((eq, index) => {
               const pt = projectToMapPoint(eq.longitude, eq.latitude);
               const isSelected = selectedEventId === eq.id;
               const isHovered = hoveredEventId === eq.id;
+              // Roving tabindex (A11Y126-I5, WAI-ARIA composite-widget pattern): the whole
+              // marker group is ONE tab stop instead of one per event (up to `pageSize: 150`).
+              // `selectedEvent` is a useMemo that falls back to `filteredEvents[0]`, so it is
+              // never null while any marker renders and always names a member of the list —
+              // exactly one marker therefore carries `tabIndex={0}` at all times. Binding this
+              // to the raw `selectedEventId` instead would leave nothing focusable when it is
+              // null.
+              const isTabStop = selectedEvent?.id === eq.id;
               const baseRadius = Math.max(3.5, Math.min(14, (eq.magnitude - 1.2) * 3.2));
               const radius = isSelected ? baseRadius * 1.35 : baseRadius;
               const style = getMagnitudeStyle(eq.magnitude);
@@ -584,7 +591,9 @@ export function V2EarthquakeExplorer({
               return (
                 <g
                   key={eq.id}
-                  className="cursor-pointer outline-none focus:outline-none select-none"
+                  id={`eq-marker-${eq.id}`}
+                  tabIndex={isTabStop ? 0 : -1}
+                  className="cursor-pointer outline-none select-none transition-transform duration-150 focus-visible:scale-125"
                   role="button"
                   aria-label={`Deprem M ${eq.magnitude.toFixed(1)} - ${eq.placeNameTr}`}
                   onMouseEnter={() => setHoveredEventId(eq.id)}
@@ -592,6 +601,43 @@ export function V2EarthquakeExplorer({
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedEventId(eq.id);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedEventId(eq.id);
+                    } else if (
+                      e.key === "ArrowRight" ||
+                      e.key === "ArrowDown" ||
+                      e.key === "ArrowLeft" ||
+                      e.key === "ArrowUp" ||
+                      e.key === "Home" ||
+                      e.key === "End"
+                    ) {
+                      // Arrow/Home/End move the single tab stop within the group. Order is
+                      // `filteredEvents` order (the api's recency order, the same order the
+                      // table renders), not geographic adjacency; both ends wrap.
+                      e.preventDefault();
+                      const last = filteredEvents.length - 1;
+                      const nextIndex =
+                        e.key === "Home"
+                          ? 0
+                          : e.key === "End"
+                            ? last
+                            : e.key === "ArrowRight" || e.key === "ArrowDown"
+                              ? index === last
+                                ? 0
+                                : index + 1
+                              : index === 0
+                                ? last
+                                : index - 1;
+                      // `noUncheckedIndexedAccess`: this really can be undefined.
+                      const next = filteredEvents[nextIndex];
+                      if (next) {
+                        setSelectedEventId(next.id);
+                        document.getElementById(`eq-marker-${next.id}`)?.focus();
+                      }
+                    }
                   }}
                 >
                   {/* Fixed invisible hit circle to prevent DOM detach/flickering */}
@@ -708,6 +754,12 @@ export function V2EarthquakeExplorer({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Accessible Live Region for Selected Earthquake Announcement (WCAG 4.1.3, A11Y126-I4) */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {selectedEvent &&
+          `Seçilen deprem: Büyüklük ${selectedEvent.magnitude.toFixed(1)}, ${selectedEvent.placeNameTr}, derinlik ${selectedEvent.depthKm} km.`}
       </div>
 
       {/* 3. TWO-COLUMN DASHBOARD: SPOTLIGHT INSPECTOR & RECENT EARTHQUAKES */}
@@ -936,8 +988,17 @@ export function V2EarthquakeExplorer({
                     <TableRow
                       key={eq.id}
                       id={`eq-row-${eq.id}`}
+                      tabIndex={0}
+                      aria-selected={isSelected}
+                      aria-label={`M ${eq.magnitude.toFixed(1)} - ${eq.placeNameTr} depremini seç`}
                       onClick={() => setSelectedEventId(eq.id)}
-                      className={`cursor-pointer transition-colors ${
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelectedEventId(eq.id);
+                        }
+                      }}
+                      className={`cursor-pointer transition-colors outline-none focus-visible:bg-primary/15 ${
                         isSelected
                           ? "bg-primary/10 hover:bg-primary/15 font-medium"
                           : "hover:bg-muted/50"

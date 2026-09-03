@@ -59,10 +59,7 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
         {/* Live Telemetry Ticker */}
         <V2LiveTicker />
 
-        <main
-          id="main-content"
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14"
-        >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14">
           {/* Breadcrumb & Header Hero */}
           <div className="space-y-4">
             <nav
@@ -150,7 +147,7 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
 
           {/* SECTION 4: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
           <V2SourcesSection scope="oyun" />
-        </main>
+        </div>
       </div>
 
       {/* Modern V2 Footer */}

@@ -35,16 +35,23 @@ export function renderLabel(locale: Locale, label: ProfileLabel): RenderedLabel 
 }
 
 /**
- * The "Kullanıcı tipi" control's four options (`DEC 2026-08-20g` md.1 #7, four values, in
- * this order) — carrying `en` on purpose, unlike the two tables below: `GLOSSARY.md` §7.1
- * fixes both `accountRole` (öğrenci/öğretmen → student/teacher) and `educationLevel`
- * (ortaöğretim/lisans/lisansüstü → secondary/undergraduate/graduate) with EN forms that are
- * NOT under the §4.4 `[TEYİT GEREK]` umbrella (§7.1's own text: "Ürün terimi oldukları için
- * §4'ün kurum-yayını şartı burada uygulanmıyor; bu bir hüküm, bir eksiklik değil"). The TR
- * label disambiguates the ruling's original "Öğrenci" (plan §4.3.3's copy deviation): three
- * of the four options describe a student, so each names its own education level instead.
+ * The "Kullanıcı tipi" control's five options — carrying `en` on purpose, unlike the two
+ * tables below: `GLOSSARY.md` §7.1 fixes both `accountRole` (öğrenci/öğretmen →
+ * student/teacher) and `educationLevel` (ortaöğretim/lisans/lisansüstü →
+ * secondary/undergraduate/graduate) with EN forms that are NOT under the §4.4 `[TEYİT GEREK]`
+ * umbrella (§7.1's own text: "Ürün terimi oldukları için §4'ün kurum-yayını şartı burada
+ * uygulanmıyor; bu bir hüküm, bir eksiklik değil").
+ *
+ * `student` / `teacher` are V2's minimal registration pair — §7.1's `accountRole` table
+ * verbatim (`Öğrenci` → `STUDENT`, `Öğretmen` → `TEACHER`), `DEC 2026-09-03a` md.1.
+ *
+ * `secondary` / `undergraduate` / `graduate` are V1's education-level options
+ * (`DEC 2026-08-20g` md.1 #7, four values with `teacher`). Their TR labels disambiguate the
+ * ruling's original "Öğrenci" (plan §4.3.3's copy deviation): three of V1's four options
+ * describe a student, so each names its own education level instead.
  */
 export const USER_TYPE_LABELS: Record<UserType, ProfileLabel> = {
+  student: { tr: "Öğrenci", en: "Student" },
   secondary: { tr: "Ortaöğretim öğrencisi", en: "Secondary-school student" },
   undergraduate: { tr: "Lisans öğrencisi", en: "Undergraduate student" },
   graduate: { tr: "Lisansüstü öğrencisi", en: "Graduate student" },

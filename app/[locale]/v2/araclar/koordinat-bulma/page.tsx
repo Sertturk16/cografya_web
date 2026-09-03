@@ -69,10 +69,7 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
         {/* Live Telemetry Ticker */}
         <V2LiveTicker />
 
-        <main
-          id="main-content"
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-12"
-        >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-12">
           {/* Breadcrumb & Header Hero */}
           <div className="space-y-4">
             <nav
@@ -168,7 +165,7 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
 
           {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES */}
           <V2SourcesSection scope="araclar" />
-        </main>
+        </div>
       </div>
 
       {/* Modern V2 Footer */}

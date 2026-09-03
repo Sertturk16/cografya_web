@@ -82,7 +82,7 @@ describe("form-rules constants agree with the committed contract", () => {
 });
 
 /**
- * G2's PAYLOAD-SHAPE half (plan §9, PR-2): for each of the four user types,
+ * G2's PAYLOAD-SHAPE half (plan §9, PR-2): for each of the five user types,
  * `buildRegisterPayload`'s key set is a SUBSET of `RegisterRequestDto.properties` — the
  * `forbidNonWhitelisted` guard, and what makes it impossible to ship `passwordConfirm` in
  * the body — and a SUPERSET of the DTO's `required` array. Both sides are read out of the
@@ -149,6 +149,16 @@ describe("buildRegisterPayload key sets agree with the committed contract", () =
       universityName: "",
       departmentName: "",
     },
+    "student (minimal V2 registration)": {
+      ...COMMON,
+      userType: "student",
+    },
+    // Kept alongside the branch above on purpose: this one pins the DEFENSIVE collapse of the
+    // `secondary` branch when its education fields are absent — a different, still-live path.
+    "minimal student (education fields omitted)": {
+      ...COMMON,
+      userType: "secondary",
+    },
   };
 
   it("positive control — the schema's own required array is non-empty", () => {
@@ -197,5 +207,32 @@ describe("buildRegisterPayload key sets agree with the committed contract", () =
   it("secondary carries gradeLevel and studyStream", () => {
     const payload = buildRegisterPayload(FIXTURES.secondary as RegisterFormState, locale);
     expect(payload).toMatchObject({ gradeLevel: "GRADE_12", studyStream: "SAYISAL" });
+  });
+
+  const EDUCATION_KEYS = [
+    "educationLevel",
+    "gradeLevel",
+    "studyStream",
+    "universityName",
+    "departmentName",
+  ] as const;
+
+  it("no minimal-registration payload carries any of the five education keys (CROSS126-I2)", () => {
+    // Positive control: the same probe returns true on a fixture that genuinely declares a
+    // level, so a `false` below is a real absence, not a blind check.
+    const secondaryPayload = buildRegisterPayload(FIXTURES.secondary as RegisterFormState, locale);
+    expect(Object.hasOwn(secondaryPayload, "educationLevel")).toBe(true);
+
+    for (const name of [
+      "student (minimal V2 registration)",
+      "minimal student (education fields omitted)",
+    ]) {
+      const payload = buildRegisterPayload(FIXTURES[name] as RegisterFormState, locale);
+      for (const key of EDUCATION_KEYS) {
+        expect(Object.hasOwn(payload, key), `${name}: unexpected education key "${key}"`).toBe(
+          false,
+        );
+      }
+    }
   });
 });

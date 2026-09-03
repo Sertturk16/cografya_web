@@ -7,7 +7,7 @@ export function V2FaultLinesGuide() {
     {
       name: "Kuzey Anadolu Fay Hattı (KAF)",
       tag: "Doğrultu Atımlı (Sağ Yanal)",
-      desc: "Saros Körfezi'nden başlayıp Marmara Denizi, Bolu, Tokat, Erzincan üzerinden Karlıova'ya kadar uzanan yaklaşık 1.500 km uzunluğunda dünyanın en aktif fay zonlarından biridir.",
+      desc: "Saros Körfezi'nden başlayıp Marmara Denizi, Bolu, Tokat ve Erzincan üzerinden Karlıova birleşimine kadar uzanan, dünyanın sismik açıdan en aktif sağ yanal doğrultu atımlı fay zonlarından biridir.",
       riskLevel: "Çok Yüksek",
       color: "border-red-500/40 bg-red-500/5",
       badgeColor: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30",
@@ -15,7 +15,7 @@ export function V2FaultLinesGuide() {
     {
       name: "Doğu Anadolu Fay Hattı (DAF)",
       tag: "Sol Yanal Doğrultu Atımlı",
-      desc: "Hatay Maraş üçgeninden başlayarak Adıyaman, Malatya, Elazığ ve Bingöl üzerinden Karlıova birleşim noktasına ulaşan yaklaşık 550 km uzunluğundaki ana sismotektonik hat.",
+      desc: "Hatay-Kahramanmaraş üçgeninden başlayarak Adıyaman, Malatya, Elazığ ve Bingöl üzerinden Karlıova birleşim noktasına ulaşan ana sismotektonik hat.",
       riskLevel: "Çok Yüksek",
       color: "border-blue-500/40 bg-blue-500/5",
       badgeColor: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",

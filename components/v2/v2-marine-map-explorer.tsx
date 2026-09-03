@@ -890,6 +890,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       id={`station-row-${point.slugTr}`}
                       tabIndex={0}
                       aria-selected={isSelected}
+                      aria-label={`${point.nameTr} istasyonunu seç`}
                       className={`cursor-pointer transition-colors outline-none focus-visible:bg-primary/15 ${
                         isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/40"
                       }`}
