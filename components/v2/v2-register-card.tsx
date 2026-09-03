@@ -183,7 +183,12 @@ export function V2RegisterCard({
         </div>
 
         {errorMsg && (
-          <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive">
+          <div
+            id="v2-verify-error"
+            role="alert"
+            aria-live="polite"
+            className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive"
+          >
             <AlertCircle className="size-4 shrink-0 mt-0.5" />
             <span className="font-medium">{errorMsg}</span>
           </div>
@@ -209,6 +214,8 @@ export function V2RegisterCard({
             onChange={(e) => setVerificationCode(e.target.value)}
             className="h-11 rounded-xl bg-card border-border text-center font-mono text-base tracking-widest"
             disabled={loading}
+            aria-invalid={Boolean(errorMsg)}
+            aria-describedby={errorMsg ? "v2-verify-error" : undefined}
           />
         </div>
 
@@ -257,7 +264,12 @@ export function V2RegisterCard({
 
       {/* Error Alert */}
       {errorMsg && (
-        <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200">
+        <div
+          id="v2-register-error"
+          role="alert"
+          aria-live="polite"
+          className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200"
+        >
           <AlertCircle className="size-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed font-medium">{errorMsg}</span>
         </div>
@@ -278,6 +290,8 @@ export function V2RegisterCard({
           leftIcon={<User className="size-4 text-muted-foreground" />}
           className="h-10 text-xs"
           disabled={loading}
+          aria-invalid={Boolean(errorMsg)}
+          aria-describedby={errorMsg ? "v2-register-error" : undefined}
         />
       </div>
 
@@ -296,17 +310,25 @@ export function V2RegisterCard({
           leftIcon={<Mail className="size-4 text-muted-foreground" />}
           className="h-10 text-xs"
           disabled={loading}
+          aria-invalid={Boolean(errorMsg)}
+          aria-describedby={errorMsg ? "v2-register-error" : undefined}
         />
       </div>
 
       {/* User Role Selector */}
       <div className="space-y-1.5">
         <Label className="text-xs font-bold text-foreground">Profil Türü / Hedefiniz</Label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div
+          className="grid grid-cols-2 gap-1.5"
+          role="radiogroup"
+          aria-label="Profil Türü / Hedefiniz"
+        >
           {USER_ROLES.map((role) => (
             <button
               key={role.id}
               type="button"
+              role="radio"
+              aria-checked={selectedRole === role.id}
               onClick={() => setSelectedRole(role.id)}
               className={`p-2 rounded-xl border text-xs font-medium flex items-center gap-2 transition-all ${
                 selectedRole === role.id
@@ -332,6 +354,8 @@ export function V2RegisterCard({
               id="v2-register-province"
               value={selectedPlate}
               onChange={(e) => setSelectedPlate(e.target.value)}
+              aria-invalid={Boolean(errorMsg)}
+              aria-describedby={errorMsg ? "v2-register-error" : undefined}
               className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150"
             >
               <option value="">İl Seçiniz...</option>
@@ -362,12 +386,15 @@ export function V2RegisterCard({
             leftIcon={<Lock className="size-4 text-muted-foreground" />}
             className="h-10 pr-10 text-xs"
             disabled={loading}
+            aria-invalid={Boolean(errorMsg)}
+            aria-describedby={errorMsg ? "v2-register-error" : undefined}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
             aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
+            aria-pressed={showPassword}
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
