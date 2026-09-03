@@ -137,9 +137,8 @@
    `.input:focus` rather than `:focus-visible` keeps today's behaviour exactly: a text input
    matches `:focus-visible` on pointer focus too, so the box is ringed when clicked into. */
 .inputRow:has(.input:focus) {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3.5px rgba(176, 82, 46, 0.16);
-  outline: none;
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .input {
