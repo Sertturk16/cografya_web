@@ -4,13 +4,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import {
-  Waves,
-  Thermometer,
-  ArrowRight,
-  Sparkles,
-  Droplets,
-} from "lucide-react";
+import { Waves, Thermometer, ArrowRight, Sparkles, Droplets } from "lucide-react";
 
 export interface SeaBasinInfo {
   id: "black_sea" | "marmara" | "aegean" | "mediterranean";
@@ -50,7 +44,8 @@ export const BASIN_DATA: SeaBasinInfo[] = [
       "Tuna, Dinyester, Dinyeper ve Kızılırmak gibi dev nehirlerle beslenir; bol tatlı su girdisi vardır.",
       "Bol plankton ve oksijen zenginliği sayesinde Türkiye balıkçılığının %70'inden fazlasını karşılar.",
     ],
-    currentSystem: "Saat yönünün tersine dönen siklonik genel akıntı halkası (Rim Current) hâkimdir.",
+    currentSystem:
+      "Saat yönünün tersine dönen siklonik genel akıntı halkası (Rim Current) hâkimdir.",
   },
   {
     id: "marmara",
@@ -71,11 +66,12 @@ export const BASIN_DATA: SeaBasinInfo[] = [
       "İstanbul ve Çanakkale Boğazları ile iki farklı su kütlesini birbirine bağlar.",
       "Kuzey Anadolu Fay Hattı deniz tabanından geçer; 3 büyük derin tektonik çukurluk bulunur.",
     ],
-    currentSystem: "İki tabakalı akıntı: Yüzeyde Karadeniz'den Ege'ye, dipte Akdeniz'den Karadeniz'e yoğun alt akıntı.",
+    currentSystem:
+      "İki tabakalı akıntı: Yüzeyde Karadeniz'den Ege'ye, dipte Akdeniz'den Karadeniz'e yoğun alt akıntı.",
   },
   {
     id: "aegean",
-    nameTr: "Ege Denizi (Adalar Denizi)",
+    nameTr: "Ege Denizi",
     nameEn: "Aegean Sea",
     badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
     borderClass: "hover:border-teal-500/50",
@@ -92,7 +88,8 @@ export const BASIN_DATA: SeaBasinInfo[] = [
       "Yüzlerce ada, koy, körfez ve doğal liman ile zengin deniz turizmi potansiyeli barındırır.",
       "Kıta sahanlığı geniştir; dağlar denize dik uzanır ve deniz etkisi iç kesimlere sokulur.",
     ],
-    currentSystem: "Boğazlardan gelen az tuzlu su batı kıyısından güneye, Akdeniz suyu doğu kıyısından kuzeye akar.",
+    currentSystem:
+      "Boğazlardan gelen az tuzlu su batı kıyısından güneye, Akdeniz suyu doğu kıyısından kuzeye akar.",
   },
   {
     id: "mediterranean",
@@ -113,7 +110,8 @@ export const BASIN_DATA: SeaBasinInfo[] = [
       "Boyuna kıyı tipi hâkimdir; Toros Dağları kıyıya paralel uzandığı için falezler yaygındır.",
       "Kızıldeniz'den Süveyş Kanalı üzerinden gelen 'Lessepsiyen' tropikal göçmen türlere ev sahipliği yapar.",
     ],
-    currentSystem: "Doğu Akdeniz'de saat yönünün tersine dönen sıcak kıyı akıntısı sistemi etkindir.",
+    currentSystem:
+      "Doğu Akdeniz'de saat yönünün tersine dönen sıcak kıyı akıntısı sistemi etkindir.",
   },
 ];
 
@@ -130,13 +128,19 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
             <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
               Oşinografi Atlası
             </Badge>
-            <span className="text-xs font-semibold text-muted-foreground">4 Deniz Havzası Analizi</span>
+            <span className="text-xs font-semibold text-muted-foreground">
+              4 Deniz Havzası Analizi
+            </span>
           </div>
-          <h2 id="v2-marine-basins-heading" className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)]">
+          <h2
+            id="v2-marine-basins-heading"
+            className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)]"
+          >
             Türkiye&apos;yi Çevreleyen 4 Denizin Hidrografik Yapısı
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Karadeniz, Marmara, Ege ve Akdeniz&apos;in tuzluluk, sıcaklık, derinlik ve akıntı karakteristikleri.
+            Karadeniz, Marmara, Ege ve Akdeniz&apos;in tuzluluk, sıcaklık, derinlik ve akıntı
+            karakteristikleri.
           </p>
         </div>
       </div>
@@ -190,7 +194,10 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
               {/* Characteristic Bullets */}
               <div className="space-y-1.5">
                 {basin.keyCharacteristics.map((feat, idx) => (
-                  <div key={idx} className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-snug">
+                  <div
+                    key={idx}
+                    className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-snug"
+                  >
                     <Sparkles className="size-3 text-primary shrink-0 mt-0.5" />
                     <span>{feat}</span>
                   </div>

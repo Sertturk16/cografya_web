@@ -29,12 +29,6 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 
-function clientHasFlag(isoCode: string): boolean {
-  if (!isoCode) return false;
-  const upper = isoCode.trim().toUpperCase();
-  return upper !== "AQ" && upper !== "ATA";
-}
-
 export interface WorldCountryItem {
   isoCode: string;
   nameTr: string;
@@ -47,6 +41,7 @@ export interface WorldCountryItem {
   population?: number | null;
   areaKm2?: number | null;
   neighborCount?: number;
+  hasFlag?: boolean;
 }
 
 export const CONTINENT_META: Record<
@@ -467,7 +462,7 @@ export function V2WorldMapExplorer({
                 {isEn ? "World Vector Canvas" : "Genişletilmiş Dünya Vektör Tuvali"}
               </Badge>
               <span className="text-xs text-muted-foreground">
-                {isEn ? "199 Sovereign Entities + 7 Continents" : "199 Bağımsız Ülke + 7 Kıta"}
+                {isEn ? "199 Countries & Territories + 7 Continents" : "199 Ülke ve Bölge + 7 Kıta"}
               </span>
             </div>
             <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
@@ -565,7 +560,7 @@ export function V2WorldMapExplorer({
           {/* Active Selected Country Card */}
           {selectedIso && activeCountry && (
             <div className="absolute bottom-3 left-3 z-30 flex items-center gap-3 bg-card/95 backdrop-blur-md p-3 rounded-2xl border border-primary/40 shadow-xl max-w-sm animate-in fade-in-50 duration-200">
-              {clientHasFlag(activeCountry.isoCode) && (
+              {activeCountry.hasFlag && (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={`/flags/${activeCountry.isoCode.toUpperCase()}.svg`}
@@ -743,7 +738,7 @@ export function V2WorldMapExplorer({
                   <>
                     <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
                       <div className="flex items-center gap-2">
-                        {clientHasFlag(item.isoCode) && (
+                        {item.hasFlag && (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={`/flags/${item.isoCode.toUpperCase()}.svg`}
@@ -1069,7 +1064,7 @@ export function V2WorldMapExplorer({
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            {clientHasFlag(country.isoCode) && (
+                            {country.hasFlag && (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img
                                 src={`/flags/${country.isoCode.toUpperCase()}.svg`}
@@ -1142,7 +1137,7 @@ export function V2WorldMapExplorer({
                   return (
                     <TableRow key={country.isoCode} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
-                        {clientHasFlag(country.isoCode) ? (
+                        {country.hasFlag ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={`/flags/${country.isoCode.toUpperCase()}.svg`}
@@ -1226,7 +1221,7 @@ export function V2WorldMapExplorer({
                         className="p-2.5 rounded-xl border border-border/70 hover:border-primary hover:bg-muted/50 transition-all flex items-center justify-between text-xs group"
                       >
                         <div className="flex items-center gap-2 truncate">
-                          {clientHasFlag(c.isoCode) && (
+                          {c.hasFlag && (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={`/flags/${c.isoCode.toUpperCase()}.svg`}
