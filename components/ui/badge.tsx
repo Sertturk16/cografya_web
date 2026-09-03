@@ -8,23 +8,19 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary/12 text-primary-dark border border-primary/25 hover:bg-primary/20",
-        primary:
-          "bg-primary text-primary-foreground shadow-xs",
+          "bg-primary/12 text-[var(--color-primary-dark,#7e3a1e)] border border-primary/25 hover:bg-primary/20",
+        primary: "bg-primary text-primary-foreground shadow-xs",
         secondary:
           "bg-secondary/15 text-secondary border border-secondary/25 hover:bg-secondary/25",
         success:
-          "bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800",
+          "bg-[var(--color-success,#496f35)]/15 text-[var(--color-success,#496f35)] border border-[var(--color-success,#496f35)]/30",
         warning:
-          "bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800",
+          "bg-[var(--color-warning,#c9860f)]/15 text-[var(--color-warning,#c9860f)] border border-[var(--color-warning,#c9860f)]/30",
         destructive:
-          "bg-red-100 text-red-900 border border-red-300 dark:bg-red-950/70 dark:text-red-300 dark:border-red-800",
-        outline:
-          "border border-border bg-card text-foreground",
-        info:
-          "bg-cyan-100 text-cyan-900 border border-cyan-300 dark:bg-cyan-950/70 dark:text-cyan-300 dark:border-cyan-800",
-        chip:
-          "bg-[var(--color-chip-bg,#ede3d5)] text-[var(--color-chip-ink,#7e3a1e)] rounded-full",
+          "bg-[var(--color-danger,#b23b2e)]/15 text-[var(--color-danger,#b23b2e)] border border-[var(--color-danger,#b23b2e)]/30",
+        outline: "border border-border bg-card text-foreground",
+        info: "bg-[var(--color-info,#276b70)]/15 text-[var(--color-info,#276b70)] border border-[var(--color-info,#276b70)]/30",
+        chip: "bg-[var(--color-chip-bg,#ede3d5)] text-[var(--color-chip-ink,#7e3a1e)] rounded-full",
       },
       size: {
         sm: "px-2 py-0.5 text-[11px] gap-1 rounded-md",
@@ -36,25 +32,16 @@ const badgeVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
+  },
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof badgeVariants> {
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {
   dot?: boolean;
   icon?: React.ReactNode;
 }
 
-function Badge({
-  className,
-  variant,
-  size,
-  dot = false,
-  icon,
-  children,
-  ...props
-}: BadgeProps) {
+function Badge({ className, variant, size, dot = false, icon, children, ...props }: BadgeProps) {
   return (
     <span className={cn(badgeVariants({ variant, size, className }))} {...props}>
       {dot && (
