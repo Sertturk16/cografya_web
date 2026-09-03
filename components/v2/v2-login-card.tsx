@@ -178,7 +178,12 @@ export function V2LoginCard({
 
       {/* Error Alert */}
       {errorMsg && (
-        <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200">
+        <div
+          id="v2-login-error"
+          role="alert"
+          aria-live="polite"
+          className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200"
+        >
           <AlertCircle className="size-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed font-medium">{errorMsg}</span>
         </div>
@@ -207,6 +212,8 @@ export function V2LoginCard({
           leftIcon={<Mail className="size-4 text-muted-foreground" />}
           className="h-11 text-xs"
           disabled={loading}
+          aria-invalid={Boolean(errorMsg)}
+          aria-describedby={errorMsg ? "v2-login-error" : undefined}
         />
       </div>
 
@@ -235,12 +242,15 @@ export function V2LoginCard({
             leftIcon={<Lock className="size-4 text-muted-foreground" />}
             className="h-11 pr-10 text-xs"
             disabled={loading}
+            aria-invalid={Boolean(errorMsg)}
+            aria-describedby={errorMsg ? "v2-login-error" : undefined}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
             aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
+            aria-pressed={showPassword}
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
