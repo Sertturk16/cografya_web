@@ -94,7 +94,7 @@ export default async function V2ProfilePage({ params }: V2ProfilePageProps) {
                       <GraduationCap className="size-5" />
                     </div>
                     <h1 className="text-xl font-bold tracking-tight text-foreground">
-                      {t("profile.heading")}
+                      {t("profile.teacherHeading")}
                     </h1>
                   </div>
                   <Badge variant="success" size="default" dot>
@@ -102,7 +102,7 @@ export default async function V2ProfilePage({ params }: V2ProfilePageProps) {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  {t("profile.complete")}
+                  {t("profile.teacherDescription")}
                 </p>
               </div>
             )}

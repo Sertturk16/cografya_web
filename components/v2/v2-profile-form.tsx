@@ -235,10 +235,10 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
         <div
           role="status"
           aria-live="polite"
-          className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center gap-2.5"
+          className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-300 animate-in fade-in-50 duration-200"
         >
-          <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
-          <span>{t("profile.saved")}</span>
+          <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-emerald-600" />
+          <span className="leading-relaxed font-medium">{t("profile.saved")}</span>
         </div>
       )}
 
@@ -246,10 +246,12 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
       {submitError && (
         <div
           role="alert"
-          className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium flex items-center gap-2.5"
+          className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200"
         >
-          <AlertCircle className="size-4 shrink-0" />
-          <span>{t(PROFILE_ERROR_MESSAGE_KEYS[submitError])}</span>
+          <AlertCircle className="size-4 shrink-0 mt-0.5" />
+          <span className="leading-relaxed font-medium">
+            {t(PROFILE_ERROR_MESSAGE_KEYS[submitError])}
+          </span>
         </div>
       )}
 
@@ -257,10 +259,10 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
       {Object.values(fieldErrors).some(Boolean) && !submitError && (
         <div
           role="alert"
-          className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium flex items-center gap-2.5"
+          className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200"
         >
-          <AlertCircle className="size-4 shrink-0" />
-          <span>{t("formErrors.summary")}</span>
+          <AlertCircle className="size-4 shrink-0 mt-0.5" />
+          <span className="leading-relaxed font-medium">{t("formErrors.summary")}</span>
         </div>
       )}
 
