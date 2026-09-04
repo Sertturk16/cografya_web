@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+  EDUCATION_LEVEL_LABELS,
   GRADE_LEVEL_LABELS,
   renderLabel,
   STUDY_STREAM_LABELS,
@@ -10,7 +11,7 @@ import {
 } from "./profile-labels";
 
 /**
- * G8 (plan §9, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`): the four
+ * G8 (plan §9, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`): the five
  * label tables are exhaustive over their generated enums (compile time — a missing member
  * fails `tsc`, not this file) and every `tr` value is non-empty; university grouping puts
  * `type:"KKTC"` under `KKTC` and every other type under `Türkiye`; `Yurt dışı` appears
@@ -105,5 +106,17 @@ describe('renderLabel — the lang="tr" fallback (WCAG 3.1.2)', () => {
   it('en locale with NO en value falls back to tr, wrapped lang="tr"', () => {
     expect(renderLabel("en", GRADE_LEVEL_LABELS.GRADE_5)).toEqual({ text: "5. Sınıf", lang: "tr" });
     expect(renderLabel("en", UNIVERSITY_GROUP_LABELS.KKTC)).toEqual({ text: "KKTC", lang: "tr" });
+  });
+});
+
+describe("EDUCATION_LEVEL_LABELS", () => {
+  it("carries all three options with a non-empty tr and en", () => {
+    expect(Object.keys(EDUCATION_LEVEL_LABELS).sort()).toEqual(
+      ["GRADUATE", "SECONDARY", "UNDERGRADUATE"].sort(),
+    );
+    nonEmptyTr(EDUCATION_LEVEL_LABELS);
+    for (const [key, label] of Object.entries(EDUCATION_LEVEL_LABELS)) {
+      expect(label.en, `${key}.en is missing`).toBeTruthy();
+    }
   });
 });

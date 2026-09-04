@@ -813,9 +813,11 @@
       "resendAccepted": "Your request was received."
     },
     "profile": {
-      "metaTitle": "Complete your profile",
-      "metaDescription": "Add your education details to your profile.",
+      "metaTitle": "Profile",
+      "metaDescription": "View and manage your profile details.",
       "heading": "Complete your profile",
+      "teacherHeading": "Your profile",
+      "teacherDescription": "No additional profile fields are required for your teacher account.",
       "breadcrumbHome": "Home",
       "breadcrumbCurrent": "Profile",
       "submit": "Save",

@@ -1,6 +1,11 @@
 "use client";
 
 import type { Profile, UpdateProfileRequest } from "@/lib/api/types";
+import {
+  EDUCATION_LEVEL_LABELS,
+  GRADE_LEVEL_LABELS,
+  STUDY_STREAM_LABELS,
+} from "@/lib/auth/profile-labels";
 import type { ProfileBffBody, ProfileBffCode } from "./transport.server";
 
 export const PROFILE_FETCH_TIMEOUT_MS = 8000;
@@ -16,17 +21,31 @@ export type SubmitProfileResult =
   | { readonly ok: true; readonly profile: Profile }
   | { readonly ok: false; readonly code: ProfileBffCode };
 
-function isProfileLike(value: unknown): value is Profile {
+export function isProfileLike(value: unknown): value is Profile {
   if (!value || typeof value !== "object") return false;
   const p = value as Record<string, unknown>;
+
+  const isValidRole = p.accountRole === "STUDENT" || p.accountRole === "TEACHER";
+  const isValidEducationLevel =
+    p.educationLevel === null ||
+    (typeof p.educationLevel === "string" && p.educationLevel in EDUCATION_LEVEL_LABELS);
+  const isValidGradeLevel =
+    p.gradeLevel === null ||
+    (typeof p.gradeLevel === "string" && p.gradeLevel in GRADE_LEVEL_LABELS);
+  const isValidStudyStream =
+    p.studyStream === null ||
+    (typeof p.studyStream === "string" && p.studyStream in STUDY_STREAM_LABELS);
+  const isValidUniversityName = p.universityName === null || typeof p.universityName === "string";
+  const isValidDepartmentName = p.departmentName === null || typeof p.departmentName === "string";
+
   return (
-    (p.accountRole === "STUDENT" || p.accountRole === "TEACHER") &&
+    isValidRole &&
     typeof p.isComplete === "boolean" &&
-    "educationLevel" in p &&
-    "gradeLevel" in p &&
-    "studyStream" in p &&
-    "universityName" in p &&
-    "departmentName" in p
+    isValidEducationLevel &&
+    isValidGradeLevel &&
+    isValidStudyStream &&
+    isValidUniversityName &&
+    isValidDepartmentName
   );
 }
 

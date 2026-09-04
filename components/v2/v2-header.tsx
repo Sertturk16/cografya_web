@@ -342,6 +342,7 @@ export function V2Header() {
           {authState === "authenticated" ? (
             <Link
               href="/v2/profil"
+              aria-label="Profilim"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold shadow-2xs hover:bg-muted/50 transition-colors"
             >
               <span className="size-2 rounded-full bg-emerald-500" />

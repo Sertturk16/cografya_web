@@ -865,9 +865,11 @@
       "resendAccepted": "İsteğin alındı."
     },
     "profile": {
-      "metaTitle": "Profilini tamamla",
-      "metaDescription": "Eğitim bilgilerini profiline ekle.",
+      "metaTitle": "Profil",
+      "metaDescription": "Profil bilgilerinizi görüntüleyin ve yönetin.",
       "heading": "Profilini tamamla",
+      "teacherHeading": "Profilin",
+      "teacherDescription": "Öğretmen hesabın için ek bir profil alanı bulunmuyor.",
       "breadcrumbHome": "Ana sayfa",
       "breadcrumbCurrent": "Profil",
       "submit": "Kaydet",

@@ -116,6 +116,8 @@ const AUTH_KEYS = [
   "profile.metaTitle",
   "profile.metaDescription",
   "profile.heading",
+  "profile.teacherHeading",
+  "profile.teacherDescription",
   "profile.breadcrumbHome",
   "profile.breadcrumbCurrent",
   "profile.submit",
