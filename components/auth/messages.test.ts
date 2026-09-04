@@ -112,6 +112,18 @@ const AUTH_KEYS = [
   "province.announceCount",
   "register.crossLink",
   "login.crossLink",
+  // Post-registration profile completion (DEC 2026-09-03a md.1 / plan-web §5.6)
+  "profile.metaTitle",
+  "profile.metaDescription",
+  "profile.heading",
+  "profile.breadcrumbHome",
+  "profile.breadcrumbCurrent",
+  "profile.submit",
+  "profile.saved",
+  "profile.complete",
+  "profile.loadError",
+  "profile.retry",
+  "fields.educationLevel",
 ] as const;
 
 function resolve(catalogue: Record<string, unknown>, dottedKey: string): unknown {
