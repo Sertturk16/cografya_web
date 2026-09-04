@@ -207,7 +207,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
           countries={countries}
           locale={locale}
           middleSections={
-            <div className="space-y-12 my-6">
+            <div key="v2-world-middle-sections" className="space-y-12 my-6">
               {/* SECTION 2: 7 CONTINENTS COMPREHENSIVE GUIDE */}
               <V2WorldContinents countryCounts={continentCounts} />
 

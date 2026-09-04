@@ -64,7 +64,7 @@ const measurementPointSchema = z.object({
 const createMeasurementRequestSchema = z.object({
   type: z.enum(["distance", "area", "coordinate"]),
   points: z.array(measurementPointSchema).min(1).max(20),
-  title: z.string().max(200).optional(),
+  title: z.string().max(200).nullable().optional(),
   clientMeasurementId: z
     .string()
     .min(1)

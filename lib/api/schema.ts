@@ -123,6 +123,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all seven geographic regions (lean payload for hub and comparative views). */
+        get: operations["RegionController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/regions/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one geographic region by its canonical URL slug (full 15-section detail). */
+        get: operations["RegionController_findBySlug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/marine/points": {
         parameters: {
             query?: never;
@@ -1604,6 +1638,329 @@ export interface components {
              * Format: date-time
              * @description Son güncelleme zamanı (SEO dateModified / sitemap lastmod).
              */
+            updatedAt: string;
+        };
+        RegionListItemDto: {
+            /**
+             * @description URL identifier slug.
+             * @example marmara
+             */
+            slug: string;
+            /**
+             * @description Tam bölge adı.
+             * @example Marmara Bölgesi
+             */
+            nameTr: string;
+            /**
+             * @description Kısa başlık adı.
+             * @example Marmara
+             */
+            headingName: string;
+            /**
+             * @description Coğrafi bölge enum anahtarı.
+             * @enum {string}
+             */
+            region: "MARMARA" | "EGE" | "AKDENIZ" | "IC_ANADOLU" | "KARADENIZ" | "DOGU_ANADOLU" | "GUNEYDOGU_ANADOLU";
+            /**
+             * @description Bölgedeki il sayısı.
+             * @example 11
+             */
+            provinceCount: number;
+            /**
+             * @description Bölgedeki toplam ilçe sayısı.
+             * @example 158
+             */
+            districtCount: number;
+            /**
+             * @description Bölgenin toplam nüfusu.
+             * @example 26711525
+             */
+            population: number;
+            /**
+             * @description Türkiye nüfusu içindeki payı (%).
+             * @example 31.03
+             */
+            populationSharePercent: number;
+            /**
+             * @description Bölgenin toplam yüzölçümü (km²).
+             * @example 72666
+             */
+            areaKm2: number;
+            /**
+             * @description Türkiye yüzölçümü içindeki payı (%).
+             * @example 9.32
+             */
+            areaSharePercent: number;
+            /**
+             * @description Aritmetik nüfus yoğunluğu (kişi/km²).
+             * @example 368
+             */
+            populationDensity: number;
+            /**
+             * @description Bölgenin yaklaşık GSYH payı (%).
+             * @example 43
+             */
+            gdpShareApproxPercent: number | null;
+        };
+        RegionProvinceItemDto: {
+            /**
+             * @description Plaka kodu.
+             * @example 34
+             */
+            plateCode: string;
+            /**
+             * @description İl adı.
+             * @example İstanbul
+             */
+            nameTr: string;
+            /**
+             * @description İl URL slugı.
+             * @example istanbul
+             */
+            slugTr: string;
+            /**
+             * @description İl nüfusu.
+             * @example 15754053
+             */
+            population: number | null;
+            /**
+             * @description İl yüzölçümü (km²).
+             * @example 5461
+             */
+            areaKm2: number | null;
+            /**
+             * @description Müfredat iklim adı.
+             * @example Marmara geçiş iklimi
+             */
+            climateNameTr: string | null;
+            /**
+             * @description Köppen iklim kodu.
+             * @example Csa
+             */
+            climateKoppen: string | null;
+        };
+        RegionComparisonItemDto: {
+            /**
+             * @description Bölge adı.
+             * @example Marmara
+             */
+            nameTr: string;
+            /**
+             * @description Bölge slugı.
+             * @example marmara
+             */
+            slug: string;
+            /**
+             * @description İl sayısı.
+             * @example 11
+             */
+            provinceCount: number;
+            /**
+             * @description Nüfus.
+             * @example 26711525
+             */
+            population: number;
+            /**
+             * @description Nüfus payı (%).
+             * @example 31.03
+             */
+            populationSharePercent: number;
+            /**
+             * @description Yüzölçümü (km²).
+             * @example 72666
+             */
+            areaKm2: number;
+            /**
+             * @description Nüfus yoğunluğu (kişi/km²).
+             * @example 368
+             */
+            populationDensity: number;
+        };
+        RegionFaqDto: {
+            /**
+             * @description Soru metni.
+             * @example Marmara Bölgesi'nde kaç il var?
+             */
+            question: string;
+            /**
+             * @description Cevap metni.
+             * @example Marmara Bölgesi'nde 11 il bulunur...
+             */
+            answer: string;
+        };
+        RegionDetailDto: {
+            /**
+             * @description URL identifier slug.
+             * @example marmara
+             */
+            slug: string;
+            /**
+             * @description Tam bölge adı.
+             * @example Marmara Bölgesi
+             */
+            nameTr: string;
+            /**
+             * @description Kısa başlık adı.
+             * @example Marmara
+             */
+            headingName: string;
+            /**
+             * @description Coğrafi bölge enum anahtarı.
+             * @enum {string}
+             */
+            region: "MARMARA" | "EGE" | "AKDENIZ" | "IC_ANADOLU" | "KARADENIZ" | "DOGU_ANADOLU" | "GUNEYDOGU_ANADOLU";
+            /**
+             * @description Bölüm 1 SEO başlığı.
+             * @example Marmara Bölgesi: 11 İl, İklim ve Ekonomik Ağırlık
+             */
+            metaTitle: string;
+            /**
+             * @description Bölüm 1 meta açıklama.
+             * @example Marmara Bölgesi'nin 11 ilinde 26,7 milyon kişi yaşar...
+             */
+            metaDescription: string;
+            /**
+             * @description H1 başlığı.
+             * @example Marmara Bölgesi
+             */
+            h1: string;
+            /**
+             * @description Bölüm 2 H1 altı giriş paragrafı.
+             * @example Marmara Bölgesi, adını ortasındaki denizden alır...
+             */
+            introTr: string;
+            /**
+             * @description Bölgedeki il sayısı.
+             * @example 11
+             */
+            provinceCount: number;
+            /**
+             * @description Bölgedeki toplam ilçe sayısı.
+             * @example 158
+             */
+            districtCount: number;
+            /**
+             * @description Bölgenin toplam nüfusu.
+             * @example 26711525
+             */
+            population: number;
+            /**
+             * @description Türkiye nüfusu içindeki payı (%).
+             * @example 31.03
+             */
+            populationSharePercent: number;
+            /**
+             * @description Bölgenin toplam yüzölçümü (km²).
+             * @example 72666
+             */
+            areaKm2: number;
+            /**
+             * @description Türkiye yüzölçümü içindeki payı (%).
+             * @example 9.32
+             */
+            areaSharePercent: number;
+            /**
+             * @description Aritmetik nüfus yoğunluğu (kişi/km²).
+             * @example 368
+             */
+            populationDensity: number;
+            /**
+             * @description Bölgenin yaklaşık GSYH payı (%).
+             * @example 43
+             */
+            gdpShareApproxPercent: number | null;
+            /**
+             * @description Bölgenin en yüksek noktasının adı.
+             * @example Uludağ
+             */
+            highestPointName: string | null;
+            /**
+             * @description Bölgenin en yüksek noktasının rakımı (metre).
+             * @example 2543
+             */
+            highestPointElevationM: number | null;
+            /**
+             * @description En yüksek noktanın bulunduğu il.
+             * @example Bursa
+             */
+            highestPointProvince: string | null;
+            /**
+             * @description Kıyısı olan denizler.
+             * @example [
+             *       "Karadeniz",
+             *       "Marmara Denizi",
+             *       "Ege Denizi"
+             *     ]
+             */
+            coastalSeas: string[];
+            /**
+             * @description Komşu coğrafi bölgeler.
+             * @example [
+             *       "Ege",
+             *       "Karadeniz",
+             *       "İç Anadolu"
+             *     ]
+             */
+            neighborRegions: string[];
+            /**
+             * @description Komşu ülkeler.
+             * @example [
+             *       "Bulgaristan",
+             *       "Yunanistan"
+             *     ]
+             */
+            neighborCountries: string[];
+            /**
+             * @description Bölgeye ait coğrafi bölüm sayısı.
+             * @example 4
+             */
+            subregionCount: number;
+            /**
+             * @description 1941 Coğrafya Kongresi bölümleri listesi.
+             * @example [
+             *       "Yıldız Dağları Bölümü",
+             *       "Ergene Bölümü",
+             *       "Çatalca-Kocaeli Bölümü",
+             *       "Güney Marmara Bölümü"
+             *     ]
+             */
+            subregions: string[];
+            /**
+             * @description Künye altındaki metodolojik şerhler ve dipnotlar.
+             * @example [
+             *       "Şerh: TÜİK İBBS Düzey-1 sınıflandırması..."
+             *     ]
+             */
+            footnotes: string[];
+            /** @description Bölüm 4: Konum ve Sınırlar gövde metni. */
+            locationAndBordersTr: string;
+            /** @description Bölüm 5: Yeryüzü Şekilleri gövde metni. */
+            landformsTr: string;
+            /** @description Bölüm 6: İklim ve Bitki Örtüsü gövde metni. */
+            climateAndVegetationTr: string;
+            /** @description Bölüm 7: Hidrografya gövde metni. */
+            hydrographyTr: string;
+            /** @description Bölüm 8: Nüfus ve Yerleşme gövde metni. */
+            settlementAndPopulationTr: string;
+            /** @description Bölüm 9: Ekonomik Ağırlık gövde metni. */
+            economyTr: string;
+            /** @description Bölüm 10: Coğrafi Bölümleri gövde metni. */
+            subregionsTr: string;
+            /** @description Bölüm 11: Bölgedeki illerin canlı veri tablosu. */
+            provinces: components["schemas"]["RegionProvinceItemDto"][];
+            /** @description Bölüm 12: Deprem ve Afet Riski gövde metni. */
+            disasterAndEarthquakeTr: string;
+            /** @description Bölüm 13: Karşılaştırma tanıtım metni. */
+            comparisonTr: string;
+            /** @description Bölüm 13: 7 bölgenin karşılaştırma tablosu. */
+            comparisonTable: components["schemas"]["RegionComparisonItemDto"][];
+            /** @description Bölüm 14: SSS listesi (FAQPage JSON-LD taşıyıcısı). */
+            faqs: components["schemas"]["RegionFaqDto"][];
+            /** @description Bölüm 15: Kaynakça notu. */
+            sourcesNoteTr: string;
+            /** @example 2026-09-04T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-09-04T12:00:00.000Z */
             updatedAt: string;
         };
         MarineValueDto: {
@@ -3197,10 +3554,10 @@ export interface components {
             /** @description The geometry, in order. The type-dependent minimum (1 for coordinate, 2 for distance, 3 for area) is enforced server-side, not by this array bound alone. */
             points: components["schemas"]["MeasurementPointDto"][];
             /**
-             * @description Optional label. Omit for no title.
+             * @description Optional label. Omit for no title, or send null.
              * @example İstanbul - Ankara mesafesi
              */
-            title?: string;
+            title?: string | null;
             /**
              * @description Opaque, client-generated per-measurement id. Together with the caller, this is the idempotency key: resubmitting the same value returns the row as it was first recorded.
              * @example 018f2f3a-9c3e-7b2a-8b9d-2e6f1a7c9d40
@@ -3398,6 +3755,54 @@ export interface operations {
                 };
             };
             /** @description No country matches the given slug. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RegionController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegionListItemDto"][];
+                };
+            };
+        };
+    };
+    RegionController_findBySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description URL slug of the region (e.g. marmara, ege, akdeniz). */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegionDetailDto"];
+                };
+            };
+            /** @description No region matches the given slug. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4721,6 +5126,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeasurementDto"];
+                };
+            };
+            /** @description A missing or over-length title, or a malformed request body / id. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
             /** @description errors.auth.unauthenticated */

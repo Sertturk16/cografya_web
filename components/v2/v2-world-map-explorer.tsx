@@ -908,7 +908,7 @@ export function V2WorldMapExplorer({
       </div>
 
       {/* MIDDLE SECTIONS: 7 CONTINENTS GUIDE & GEOGRAPHIC EXTREMES SPOTLIGHT */}
-      {middleSections}
+      {middleSections && <div key="middle-sections-container">{middleSections}</div>}
 
       {/* 2. WORLD COUNTRIES CATALOGUE & CONTROLS */}
       <section className="space-y-6">
