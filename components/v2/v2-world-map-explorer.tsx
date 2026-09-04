@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 import { cn } from "@/lib/utils";
+import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
 
 export interface WorldCountryItem {
   isoCode: string;
@@ -282,13 +283,42 @@ export function V2WorldMapExplorer({
     return map;
   }, [countries]);
 
+  // Global release listener for pointerup and pointercancel
+  React.useEffect(() => {
+    if (!isPanning) return;
+    const handleGlobalPointerUp = () => {
+      setIsPanning(false);
+    };
+    window.addEventListener("pointerup", handleGlobalPointerUp);
+    window.addEventListener("pointercancel", handleGlobalPointerUp);
+    return () => {
+      window.removeEventListener("pointerup", handleGlobalPointerUp);
+      window.removeEventListener("pointercancel", handleGlobalPointerUp);
+    };
+  }, [isPanning]);
+
   const handleMouseMove = React.useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (isPanning) {
-        setPan({
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y,
-        });
+        if (e.buttons === 0) {
+          setIsPanning(false);
+          return;
+        }
+        const rawX = e.clientX - dragStart.x;
+        const rawY = e.clientY - dragStart.y;
+        const container = containerRef.current;
+        if (container) {
+          setPan(
+            clampPanOffset(
+              { x: rawX, y: rawY },
+              zoom,
+              container.clientWidth,
+              container.clientHeight,
+            ),
+          );
+        } else {
+          setPan({ x: rawX, y: rawY });
+        }
         return;
       }
 
@@ -300,11 +330,32 @@ export function V2WorldMapExplorer({
         });
       }
     },
-    [isPanning, dragStart],
+    [isPanning, dragStart, zoom],
   );
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button, a, input")) {
+      return;
+    }
     if (zoom > 1) {
+      setIsPanning(true);
+      setDragStart({
+        x: e.clientX - pan.x,
+        y: e.clientY - pan.y,
+      });
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button, a, input")) {
+      return;
+    }
+    if (zoom > 1) {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // Ignored in non-DOM or unsupported environments
+      }
       setIsPanning(true);
       setDragStart({
         x: e.clientX - pan.x,
@@ -324,7 +375,12 @@ export function V2WorldMapExplorer({
   const handleZoomOut = () => {
     setZoom((z) => {
       const next = Math.max(z - 0.4, 1);
-      if (next === 1) setPan({ x: 0, y: 0 });
+      if (next === 1) {
+        setPan({ x: 0, y: 0 });
+      } else if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current;
+        setPan((cur) => clampPanOffset(cur, next, clientWidth, clientHeight));
+      }
       return next;
     });
   };
@@ -533,7 +589,10 @@ export function V2WorldMapExplorer({
           ref={containerRef}
           onMouseMove={handleMouseMove}
           onMouseDown={handleMouseDown}
+          onPointerDown={handlePointerDown}
           onMouseUp={handleMouseUp}
+          onPointerUp={handleMouseUp}
+          onPointerCancel={handleMouseUp}
           onMouseLeave={() => {
             if (!isPanning) {
               setHoveredIso(null);
@@ -542,7 +601,11 @@ export function V2WorldMapExplorer({
           className="relative rounded-2xl bg-[#0d1b2a] dark:bg-[#070e17] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full cursor-crosshair select-none"
         >
           {/* Map Controls Floating Bar */}
-          <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
+          <div
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg"
+          >
             <button
               type="button"
               onClick={handleZoomIn}
@@ -574,7 +637,11 @@ export function V2WorldMapExplorer({
 
           {/* Active Selected Country Card */}
           {selectedIso && activeCountry && (
-            <div className="absolute bottom-3 left-3 z-30 flex items-center gap-3 bg-card/95 backdrop-blur-md p-3 rounded-2xl border border-primary/40 shadow-xl max-w-sm animate-in fade-in-50 duration-200">
+            <div
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="absolute bottom-3 left-3 z-30 flex items-center gap-3 bg-card/95 backdrop-blur-md p-3 rounded-2xl border border-primary/40 shadow-xl max-w-sm animate-in fade-in-50 duration-200"
+            >
               {activeCountry.hasFlag && (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -661,7 +728,12 @@ export function V2WorldMapExplorer({
               </defs>
 
               {/* Background Ocean Layer */}
-              <rect width="1008" height="520" fill="url(#ocean-gradient)" />
+              <rect
+                width="1008"
+                height="520"
+                fill="url(#ocean-gradient)"
+                onMouseEnter={() => setHoveredIso(null)}
+              />
 
               {/* Graticules / Latitude-Longitude Grid */}
               <g className="stroke-sky-500/15 stroke-[0.5] stroke-dasharray-[2,4] pointer-events-none">
@@ -709,7 +781,8 @@ export function V2WorldMapExplorer({
                   const isMatchingContinent =
                     selectedContinent === "ALL" || item?.continent === selectedContinent;
 
-                  let fillClass = "fill-slate-600/40 dark:fill-slate-700/40 stroke-slate-500/30";
+                  let fillClass =
+                    "fill-slate-600/65 dark:fill-slate-700/70 stroke-slate-400/45 dark:stroke-slate-500/40 stroke-[0.5]";
 
                   if (item && continentMeta) {
                     if (selectedContinent === "ALL") {
@@ -717,7 +790,8 @@ export function V2WorldMapExplorer({
                     } else if (isMatchingContinent) {
                       fillClass = `${continentMeta.color} ${continentMeta.hoverColor} stroke-white/80 stroke-[0.8] shadow-lg`;
                     } else {
-                      fillClass = "fill-slate-700/20 stroke-slate-600/10 opacity-30";
+                      fillClass =
+                        "fill-slate-600/65 dark:fill-slate-700/70 hover:fill-slate-500/75 stroke-slate-400/45 dark:stroke-slate-500/40 stroke-[0.5] transition-colors";
                     }
                   }
 
@@ -739,6 +813,7 @@ export function V2WorldMapExplorer({
                       className={`transition-colors duration-150 cursor-pointer outline-none focus-visible:stroke-primary focus-visible:stroke-[2] ${fillClass}`}
                       style={isHovered ? { filter: "url(#country-glow)" } : undefined}
                       onMouseEnter={() => setHoveredIso(shape.iso)}
+                      onMouseLeave={() => setHoveredIso(null)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();

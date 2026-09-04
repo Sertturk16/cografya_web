@@ -650,11 +650,7 @@ export function V2ToolWorkbench({
       // Attribution watermarking
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.font = "14px sans-serif";
-      ctx.fillText(
-        "Coğrafya Platformu v2 · WGS84 / MEB & MTA Tabanlı Ölçüm",
-        20,
-        canvas.height - 20,
-      );
+      ctx.fillText("Coğrafya Gurmesi · WGS84 / MEB & MTA Tabanlı Ölçüm", 20, canvas.height - 20);
 
       const link = document.createElement("a");
       link.download = `${downloadName}-${Date.now()}.png`;

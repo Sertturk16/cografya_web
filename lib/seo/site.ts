@@ -12,7 +12,7 @@ import { env } from "@/lib/env";
  * revisit it by hand rather than by token interpolation.
  */
 export const siteConfig = {
-  name: "Coğrafya Platformu",
+  name: "Coğrafya Gurmesi",
 } as const;
 
 /** Absolute site origin, no trailing slash (for metadataBase + sitemap URLs). */

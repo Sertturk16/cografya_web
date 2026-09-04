@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: V2LoginPageProps): Promise<Me
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/giris",
-    title: `${t("login.heading")} v2 — Coğrafya Platformu`,
+    title: `${t("login.heading")} — Coğrafya Gurmesi`,
     description: t("login.metaDescription"),
   });
 }

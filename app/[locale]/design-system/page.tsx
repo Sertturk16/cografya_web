@@ -219,8 +219,8 @@ export default function DesignSystemPage() {
                 Coğrafya Tasarım & Bileşen Sistemi
               </h1>
               <p className="text-muted-foreground text-base sm:text-lg max-w-3xl mt-2">
-                Coğrafya platformunun tüm atomik, moleküler ve organizma seviyesindeki arayüz
-                bileşenlerinin interaktif gösterim ve test vitrini.
+                Coğrafya Gurmesi platformunun tüm atomik, moleküler ve organizma seviyesindeki
+                arayüz bileşenlerinin interaktif gösterim ve test vitrini.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -577,9 +577,7 @@ export default function DesignSystemPage() {
                       </a>
                     </div>
                     <SheetFooter>
-                      <p className="text-xs text-muted-foreground text-center">
-                        Coğrafya Platformu v3.0
-                      </p>
+                      <p className="text-xs text-muted-foreground text-center">Coğrafya Gurmesi</p>
                     </SheetFooter>
                   </SheetContent>
                 </Sheet>

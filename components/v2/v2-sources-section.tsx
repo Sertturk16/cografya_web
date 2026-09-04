@@ -119,10 +119,27 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
     {
       id: "era5",
       icon: "🌡️",
-      title: "Copernicus ERA5-Land Reanalizi",
+      title: "Copernicus ERA5-Land Reanalizi (ECMWF)",
       license: "CC-BY-4.0",
-      description: "30 yıllık sıcaklık ve yağış eğilimleri ile Walter-Lieth iklim grafikleri.",
+      description:
+        "1991–2020 referans dönemi aylık sıcaklık ve yağış normalleri. Yaklaşık 0,1° enlem-boylam ızgarası reanaliz modelinden il merkezi hücresi verileri.",
+      legalQuote:
+        "Generated using Copernicus Climate Change Service information 2026. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.",
       sourceUrl: "cds.climate.copernicus.eu",
+      doi: "10.24381/cds.68d2bb30",
+    },
+    {
+      id: "acag-pm25",
+      icon: "💨",
+      title: "ACAG SatPM2.5 (Washington University in St. Louis)",
+      license: "CC-BY-4.0",
+      category: "academic",
+      description:
+        "1998–2024 dönemi ~1 km (0,01°) çözünürlüklü uydu tabanlı yıllık yüzey PM2.5 hava kirliliği konsantrasyonu serisi.",
+      legalQuote:
+        "Note that these estimates are primarily intended to aid in large-scale studies. Annual and coarse-resolution averages correspond to a simple mean of within-grid values. Gridded datasets are provided to allow users to agglomerate data as best meets their particular needs. High-resolution (0.01° × 0.01°) datasets are gridded at the finest resolution of the information sources that were incorporated, but are unlikely to fully resolve PM2.5 gradients at the gridded resolution due to the influence of information sources at coarser resolution.",
+      sourceUrl: "sites.wustl.edu/acag/datasets/surface-pm2-5",
+      doi: "10.1021/acsestair.3c00054",
     },
     {
       id: "jrc",
@@ -269,7 +286,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
     {
       id: "cografya-game",
       icon: "🏆",
-      title: "Coğrafya Platformu Soru ve Sınav Motoru",
+      title: "Coğrafya Gurmesi Soru ve Sınav Motoru",
       license: "Telif Hakkı Saklıdır",
       category: "academic",
       description: "Özgün soru algoritmaları, zorluk derecelendirmesi ve seri takip sistemi.",

@@ -57,7 +57,7 @@
     "register": "Üye ol"
   },
   "Home": {
-    "metaTitle": "Coğrafya Platformu — Türkiye ve Dünya Coğrafyası",
+    "metaTitle": "Coğrafya Gurmesi — Türkiye ve Dünya Coğrafyası",
     "metaDescription": "Türkiye'nin 81 ili ve dünya ülkeleri için ücretsiz, kaynaklı coğrafya sayfaları ve haritalar. Öğrendiklerini harita oyunuyla sına.",
     "heading": "Türkiye ve dünya <accent>coğrafyası</accent>,<br></br> tek platformda",
     "lede": "Türkiye'nin 81 ili ve dünya ülkeleri için ücretsiz, kaynaklı coğrafya sayfaları.",
@@ -107,9 +107,9 @@
   },
   "About": {
     "metaTitle": "Hakkımızda",
-    "metaDescription": "Coğrafya Platformu; Türkiye ve dünya coğrafyasını ücretsiz, kaynaklı ve erişilebilir içeriklerle anlatmayı amaçlayan bir eğitim projesidir.",
+    "metaDescription": "Coğrafya Gurmesi; Türkiye ve dünya coğrafyasını ücretsiz, kaynaklı ve erişilebilir içeriklerle anlatmayı amaçlayan bir eğitim projesidir.",
     "heading": "Hakkımızda",
-    "body1": "Coğrafya Platformu, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir.",
+    "body1": "Coğrafya Gurmesi, coğrafyayı ücretsiz ve herkes için erişilebilir kılmayı amaçlayan bir eğitim projesidir.",
     "sourcing": "İçerikler otoriter kaynaklara dayanır ve yayın öncesi bağımsız bir doğrulama sürecinden geçer.",
     "dataHeading": "Harita ve bayrak kaynakları",
     "dataIntro": "Sitedeki haritalar ve bayraklar dış kaynaklardan gelir.",
@@ -586,10 +586,10 @@
       "readingKeyUnavailable": "{term}: veri kaynağına şu anda ulaşamıyoruz."
     },
     "vintage": {
-      "heading": "Bu sayılar ne zamana ait?",
-      "validAtAndRun": "{source}: {validAt} UTC anına ait, {modelRun} UTC koşusundan.",
-      "validAt": "{source}: {validAt} UTC anına ait.",
-      "runOnly": "{source}: {modelRun} UTC koşusundan."
+      "heading": "Bu veriler ne zamana ait?",
+      "validAtAndRun": "{source}: {validAt} UTC verisi (Model güncellemesi: {modelRun} UTC).",
+      "validAt": "{source}: {validAt} UTC verisi.",
+      "runOnly": "{source}: Model güncellemesi {modelRun} UTC."
     },
     "straits": {
       "lowConfidence": "Bu sayılar açıktaki referans noktası içindir; boğazlarda, dar körfezlerde ve kıyıya çok yakın sularda koşullar belirgin biçimde farklı olabilir."
@@ -826,7 +826,7 @@
   "Auth": {
     "login": {
       "metaTitle": "Giriş yap",
-      "metaDescription": "Coğrafya Platformu hesabına giriş yap.",
+      "metaDescription": "Coğrafya Gurmesi hesabına giriş yap.",
       "heading": "Giriş yap",
       "submit": "Giriş yap",
       "forgot": "Şifreni mi unuttun?",
@@ -851,7 +851,7 @@
     },
     "register": {
       "metaTitle": "Üye ol",
-      "metaDescription": "Coğrafya Platformu'na üye ol.",
+      "metaDescription": "Coğrafya Gurmesi'ne üye ol.",
       "heading": "Üye ol",
       "submit": "Üye ol",
       "crossLink": "Hesabın var mı? Giriş yap"

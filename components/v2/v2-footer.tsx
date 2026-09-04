@@ -1,6 +1,7 @@
 import * as React from "react";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
-import { Compass, Map, Layers, BookOpen } from "lucide-react";
+import { Map, Layers, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export function V2Footer() {
@@ -13,15 +14,21 @@ export function V2Footer() {
           {/* Col 1 & 2: Brand and Mission */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/v2" className="flex items-center gap-2.5 group inline-flex">
-              <div className="size-9 rounded-xl bg-gradient-to-br from-[var(--color-primary,#b0522e)] to-[var(--color-primary-dark,#7e3a1e)] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-                <Compass className="size-5" />
+              <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Image
+                  src="/brand/logo.png"
+                  alt="Coğrafya Gurmesi"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="font-heading text-lg font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-none">
-                  Coğrafya<span className="text-primary font-normal">.v2</span>
+                  Coğrafya <span className="text-primary">Gurmesi</span>
                 </span>
                 <span className="text-[10px] text-muted-foreground font-medium">
-                  Yeni Nesil Coğrafya Portalı
+                  Atlas &amp; Eğitim Portalı
                 </span>
               </div>
             </Link>
@@ -150,7 +157,7 @@ export function V2Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {currentYear} Coğrafya Platformu. Açık, bilimsel ve kaynaklı coğrafya eğitimi.</p>
+          <p>© {currentYear} Coğrafya Gurmesi. Açık, bilimsel ve kaynaklı coğrafya eğitimi.</p>
           <div className="flex items-center gap-4 text-[11px]">
             <Link href="/v2/turkiye" className="hover:underline">
               81 İl Atlası
