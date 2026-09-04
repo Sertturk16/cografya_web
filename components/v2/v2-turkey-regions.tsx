@@ -4,7 +4,17 @@ import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Mountain } from "lucide-react";
+import { Mountain, ArrowRight } from "lucide-react";
+
+export const CANONICAL_REGION_SLUGS: Record<string, string> = {
+  marmara: "marmara",
+  ege: "ege",
+  akdeniz: "akdeniz",
+  icanadolu: "ic-anadolu",
+  karadeniz: "karadeniz",
+  doguanadolu: "dogu-anadolu",
+  guneydogu: "guneydogu-anadolu",
+};
 
 export interface RegionInfo {
   id: string;
@@ -193,7 +203,16 @@ export function V2TurkeyRegions() {
               <div>
                 <span className="text-[10px] text-white/80 font-mono block">Bölge Profili</span>
                 <h3 className="font-heading font-bold text-lg text-white leading-tight">
-                  {region.name}
+                  <Link
+                    href={
+                      `/v2/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
+                        typeof Link
+                      >["href"]
+                    }
+                    className="hover:underline inline-flex items-center gap-1 text-white"
+                  >
+                    {region.name}
+                  </Link>
                 </h3>
               </div>
               <Badge className="bg-white/20 text-white backdrop-blur-xs border-white/30 text-xs">
@@ -249,9 +268,23 @@ export function V2TurkeyRegions() {
               </div>
             </CardContent>
 
-            <CardFooter className="pt-3 border-t border-border bg-muted/20 justify-between">
-              <span className="text-[11px] text-muted-foreground">Yüzölçümü: {region.areaKm2}</span>
-              <span className="text-[11px] font-bold text-primary">{region.populationShare}</span>
+            <CardFooter className="pt-3 border-t border-border bg-muted/20 items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[11px] text-muted-foreground">
+                  Yüzölçümü: {region.areaKm2}
+                </span>
+                <span className="text-[11px] font-bold text-primary">{region.populationShare}</span>
+              </div>
+              <Link
+                href={
+                  `/v2/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
+                    typeof Link
+                  >["href"]
+                }
+                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 py-1 px-2.5 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
+              >
+                Bölge Rehberi <ArrowRight className="size-3" />
+              </Link>
             </CardFooter>
           </Card>
         ))}

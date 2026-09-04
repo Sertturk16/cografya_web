@@ -273,3 +273,15 @@ export type Department = components["schemas"]["DepartmentDto"];
 export type GradeLevel = NonNullable<RegisterRequest["gradeLevel"]>;
 export type StudyStream = NonNullable<RegisterRequest["studyStream"]>;
 export type EducationLevel = NonNullable<RegisterRequest["educationLevel"]>;
+
+// ---- Geographic Regions (Yedi coğrafi bölge sayfaları — /v2/turkiye/bolge/[slug]) ----
+/** Summary item for region listing: identity + aggregated figures (nüfus, alan, il sayısı). */
+export type RegionListItem = components["schemas"]["RegionListItemDto"];
+/** Full 15-section detail for a geographic region. */
+export type RegionDetail = components["schemas"]["RegionDetailDto"];
+/** Province item listed in region detail (ordered by population descending). */
+export type RegionProvinceItem = components["schemas"]["RegionProvinceItemDto"];
+/** 7-region comparison table row on the detail page. */
+export type RegionComparisonItem = components["schemas"]["RegionComparisonItemDto"];
+/** FAQ item for FAQPage structured data and accordion display. */
+export type RegionFaq = components["schemas"]["RegionFaqDto"];

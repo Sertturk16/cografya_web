@@ -225,7 +225,7 @@ export const routing = defineRouting({
       tr: "/deprem",
       en: "/earthquakes",
     },
-        "/v2": {
+    "/v2": {
       tr: "/v2",
       en: "/v2",
     },
@@ -236,6 +236,10 @@ export const routing = defineRouting({
     "/v2/turkiye/[slug]": {
       tr: "/v2/turkiye/[slug]",
       en: "/v2/turkey/[slug]",
+    },
+    "/v2/turkiye/bolge/[slug]": {
+      tr: "/v2/turkiye/bolge/[slug]",
+      en: "/v2/turkey/region/[slug]",
     },
     "/v2/dunya": {
       tr: "/v2/dunya",
