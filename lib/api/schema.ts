@@ -643,6 +643,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the declared education profile of the authenticated caller.
+         * @description Returns the caller’s declared education profile fields and isComplete derivation (`plan-api.md` §5.3.1, §5.3.2).
+         */
+        get: operations["AuthController_getProfile"];
+        /**
+         * Replace the declared education profile of the authenticated caller (full replacement).
+         * @description Replaces the caller’s entire declared education profile (`plan-api.md` §5.3.1, §5.3.3). All five keys are required; explicit null clears a field. Idempotent.
+         */
+        put: operations["AuthController_replaceProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/video-progress/{bookVideoId}": {
         parameters: {
             query?: never;
@@ -3041,6 +3065,68 @@ export interface components {
              */
             accountRole: "STUDENT" | "TEACHER";
         };
+        ProfileDto: {
+            /**
+             * @description Beyan edilen hesap rolü — yetki değildir (`GLOSSARY.md` §7.1).
+             * @example STUDENT
+             * @enum {string}
+             */
+            accountRole: "STUDENT" | "TEACHER";
+            /**
+             * @description Eğitim düzeyi — null: henüz beyan edilmedi veya öğretmen hesabı.
+             * @example SECONDARY
+             * @enum {string|null}
+             */
+            educationLevel: "SECONDARY" | "UNDERGRADUATE" | "GRADUATE" | null;
+            /**
+             * @description Sınıf seviyesi — yalnızca educationLevel = SECONDARY iken geçerlidir.
+             * @example GRADE_12
+             * @enum {string|null}
+             */
+            gradeLevel: "GRADE_5" | "GRADE_6" | "GRADE_7" | "GRADE_8" | "GRADE_9" | "GRADE_10" | "GRADE_11" | "GRADE_12" | "MEZUN" | "KPSS" | "DIGER" | null;
+            /**
+             * @description Öğrenim alanı / kolu — yalnızca educationLevel = SECONDARY iken geçerlidir.
+             * @example SAYISAL
+             * @enum {string|null}
+             */
+            studyStream: "SAYISAL" | "SOZEL" | "ESIT_AGIRLIK" | "TYT" | "DIL" | "LGS" | "MSU" | "ARA_SINIF" | "KPSS" | "DIGER" | null;
+            /**
+             * @description Üniversite adı — yalnızca UNDERGRADUATE / GRADUATE iken geçerlidir.
+             * @example Boğaziçi Üniversitesi
+             */
+            universityName: string | null;
+            /**
+             * @description Bölüm / program adı — UNDERGRADUATE için zorunlu, GRADUATE için isteğe bağlıdır.
+             * @example Coğrafya Öğretmenliği
+             */
+            departmentName: string | null;
+            /**
+             * @description Profilin tamamlanma durumu — TEACHER için true, STUDENT için educationLevel !== null.
+             * @example true
+             */
+            isComplete: boolean;
+        };
+        UpdateProfileRequestDto: {
+            /**
+             * @description Eğitim düzeyi. null değeri alanı temizlemek için kullanılır.
+             * @enum {string|null}
+             */
+            educationLevel: "SECONDARY" | "UNDERGRADUATE" | "GRADUATE" | null;
+            /**
+             * @description Sınıf seviyesi (SECONDARY için). null değeri alanı temizlemek için kullanılır.
+             * @enum {string|null}
+             */
+            gradeLevel: "GRADE_5" | "GRADE_6" | "GRADE_7" | "GRADE_8" | "GRADE_9" | "GRADE_10" | "GRADE_11" | "GRADE_12" | "MEZUN" | "KPSS" | "DIGER" | null;
+            /**
+             * @description Öğrenim alanı (SECONDARY için). null değeri alanı temizlemek için kullanılır.
+             * @enum {string|null}
+             */
+            studyStream: "SAYISAL" | "SOZEL" | "ESIT_AGIRLIK" | "TYT" | "DIL" | "LGS" | "MSU" | "ARA_SINIF" | "KPSS" | "DIGER" | null;
+            /** @description Üniversite adı (UNDERGRADUATE / GRADUATE için). null değeri alanı temizlemek için kullanılır. */
+            universityName: string | null;
+            /** @description Bölüm adı (UNDERGRADUATE / GRADUATE için). null değeri alanı temizlemek için kullanılır. */
+            departmentName: string | null;
+        };
         VideoProgressDto: {
             /**
              * Format: uuid
@@ -3197,10 +3283,10 @@ export interface components {
             /** @description The geometry, in order. The type-dependent minimum (1 for coordinate, 2 for distance, 3 for area) is enforced server-side, not by this array bound alone. */
             points: components["schemas"]["MeasurementPointDto"][];
             /**
-             * @description Optional label. Omit for no title.
+             * @description Optional label. Omit for no title, or send null.
              * @example İstanbul - Ankara mesafesi
              */
-            title?: string;
+            title?: string | null;
             /**
              * @description Opaque, client-generated per-measurement id. Together with the caller, this is the idempotency key: resubmitting the same value returns the row as it was first recorded.
              * @example 018f2f3a-9c3e-7b2a-8b9d-2e6f1a7c9d40
@@ -4207,6 +4293,75 @@ export interface operations {
             };
         };
     };
+    AuthController_getProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_replaceProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileDto"];
+                };
+            };
+            /** @description Missing required key, unknown property, or profile matrix violation. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     VideoProgressController_getOne: {
         parameters: {
             query?: never;
@@ -4721,6 +4876,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeasurementDto"];
+                };
+            };
+            /** @description A missing or over-length title, or a malformed request body / id. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
             /** @description errors.auth.unauthenticated */

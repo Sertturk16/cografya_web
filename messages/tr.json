@@ -864,7 +864,22 @@
       "resend": "Kodu yeniden gönder",
       "resendAccepted": "İsteğin alındı."
     },
+    "profile": {
+      "metaTitle": "Profil",
+      "metaDescription": "Profil bilgilerinizi görüntüleyin ve yönetin.",
+      "heading": "Profilini tamamla",
+      "teacherHeading": "Profilin",
+      "teacherDescription": "Öğretmen hesabın için ek bir profil alanı bulunmuyor.",
+      "breadcrumbHome": "Ana sayfa",
+      "breadcrumbCurrent": "Profil",
+      "submit": "Kaydet",
+      "saved": "Bilgilerin kaydedildi.",
+      "complete": "Profilin tamam.",
+      "loadError": "Bilgilerin yüklenemedi.",
+      "retry": "Tekrar dene"
+    },
     "fields": {
+      "educationLevel": "Eğitim düzeyi",
       "firstName": "Ad",
       "lastName": "Soyad",
       "phone": "Telefon",
