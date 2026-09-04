@@ -717,6 +717,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               provinceName={name}
               plateCode={province.plateCode}
               climate={climateSeries}
+              hideAttribution
             />
           </section>
         )}
@@ -731,6 +732,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                 headingName={sectionHeading("airPollution")}
                 plateCode={province.plateCode}
                 pm25={pm25Annual}
+                hideAttribution
               />
             </div>
             <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
@@ -751,6 +753,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               headingName={sectionHeading("airPollution")}
               plateCode={province.plateCode}
               pm25={pm25Annual}
+              hideAttribution
             />
           </section>
         ) : showMarine ? (

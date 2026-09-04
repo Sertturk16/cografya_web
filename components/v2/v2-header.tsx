@@ -1,20 +1,19 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
-  Compass,
   Map,
   Globe,
   Waves,
   Gamepad2,
   Flame,
   Layers,
-  Sparkles,
   BookOpen,
   User,
   LogIn,
@@ -100,42 +99,29 @@ export function V2Header() {
         {/* Brand / Logo */}
         <div className="flex items-center gap-3 shrink-0">
           <Link href="/v2" className="flex items-center gap-2.5 group">
-            <div className="size-9 rounded-xl bg-gradient-to-br from-[var(--color-primary,#b0522e)] to-[var(--color-primary-dark,#7e3a1e)] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <Compass className="size-5" />
+            <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Image
+                src="/brand/logo.png"
+                alt="Coğrafya Gurmesi"
+                width={40}
+                height={40}
+                className="object-contain"
+                priority
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-heading text-lg font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-none">
-                Coğrafya<span className="text-primary font-normal">.v2</span>
+                Coğrafya <span className="text-primary">Gurmesi</span>
               </span>
               <span className="text-[10px] text-muted-foreground font-medium">
-                Yeni Nesil Coğrafya Portalı
+                Atlas &amp; Eğitim Portalı
               </span>
             </div>
           </Link>
-          <Badge
-            variant="outline"
-            size="sm"
-            className="hidden xl:inline-flex text-[10px] font-mono border-primary/30 text-primary"
-          >
-            v2.0 Beta
-          </Badge>
         </div>
 
         {/* Desktop Grouped Navigation Menu */}
         <div ref={navContainerRef} className="hidden lg:flex items-center gap-1.5 relative">
-          {/* Ana Sayfa */}
-          <Link
-            href="/v2"
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              isHome
-                ? "bg-[var(--color-primary,#b0522e)] text-white shadow-xs font-bold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-            }`}
-          >
-            <Sparkles className="size-3.5" />
-            <span>Ana Sayfa</span>
-          </Link>
-
           {/* Atlas & Haritalar Dropdown */}
           <div className="relative">
             <button
@@ -403,12 +389,16 @@ export function V2Header() {
               >
                 <SheetHeader className="p-5 border-b border-border">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="size-8 rounded-xl bg-primary flex items-center justify-center text-white">
-                        <Compass className="size-4.5" />
-                      </div>
+                    <div className="flex items-center gap-2.5">
+                      <Image
+                        src="/brand/logo.png"
+                        alt="Coğrafya Gurmesi"
+                        width={32}
+                        height={32}
+                        className="object-contain"
+                      />
                       <SheetTitle className="text-base font-bold text-foreground">
-                        Coğrafya<span className="text-primary font-normal">.v2</span>
+                        Coğrafya <span className="text-primary">Gurmesi</span>
                       </SheetTitle>
                     </div>
                   </div>

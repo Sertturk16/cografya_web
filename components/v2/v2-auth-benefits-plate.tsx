@@ -43,7 +43,7 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Badge variant="primary" size="sm" icon={<Sparkles className="size-3.5" />}>
-              Coğrafya Platformu v2 Üyeliği
+              Coğrafya Gurmesi Üyeliği
             </Badge>
             <span className="text-xs text-muted-foreground font-medium">Tamamen Ücretsiz</span>
           </div>
@@ -55,7 +55,7 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
           </h3>
 
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Coğrafya platformu hesabınla tüm atlas araçlarına, canlı telemetri kayıtlarına ve sınav
+            Coğrafya Gurmesi hesabınla tüm atlas araçlarına, canlı telemetri kayıtlarına ve sınav
             takip modüllerine tek noktadan eriş.
           </p>
         </div>

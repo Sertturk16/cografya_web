@@ -35,7 +35,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Waves, Gamepad2, Compass, ArrowRight, MapPin, Layers } from "lucide-react";
+import { Waves, Gamepad2, ArrowRight, Clock } from "lucide-react";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2Hero } from "@/components/v2/v2-hero";
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: V2PageProps): Promise<Metadat
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2",
-    title: `${t("metaTitle")} | Coğrafya v2`,
+    title: `${t("metaTitle")}`,
     description: t("metaDescription"),
   });
 }
@@ -70,7 +70,6 @@ export default async function V2HomePage({ params }: V2PageProps) {
   const tRegions = await getTranslations("Regions");
   const tContinents = await getTranslations("Continents");
   const tDetail = await getTranslations("ProvinceDetail");
-  const tTools = await getTranslations("Tools.hub");
   const format = await getFormatter();
 
   // Four parallel reads matching resilient architecture
@@ -358,12 +357,10 @@ export default async function V2HomePage({ params }: V2PageProps) {
                   })}
                 </div>
 
-                {/* Vintage Künye */}
-                <div className="p-3.5 rounded-2xl border border-border bg-card/60 text-xs text-muted-foreground flex items-center justify-between flex-wrap gap-2 shadow-2xs">
+                {/* Model Zaman Bilgisi */}
+                <div className="p-3.5 rounded-2xl border border-border/80 bg-card/60 text-xs text-muted-foreground flex items-center gap-2.5 shadow-2xs">
+                  <Clock className="size-4 text-muted-foreground/80 shrink-0" />
                   <VintageLine values={marine.values} />
-                  <span className="text-[11px] font-mono">
-                    Veri Kaynağı: ECMWF / Copernicus Marine
-                  </span>
                 </div>
               </div>
             ) : (
@@ -519,70 +516,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
             </div>
           </section>
 
-          {/* SECTION 7: GIS / CBS TOOLS SUITE */}
-          <section className="space-y-6">
-            <div className="border-b border-border pb-3 flex items-center justify-between">
-              <div>
-                <Badge variant="outline" size="sm" className="mb-1">
-                  {t("eyebrowTools")}
-                </Badge>
-                <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
-                  {t("toolsHeading")}
-                </h2>
-              </div>
-              <Link href="/v2/araclar">
-                <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
-                  Tüm CBS Araçları
-                </Button>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Link href="/v2/araclar/mesafe-olcme" className="group block">
-                <Card className="h-full hover:border-primary/60 transition-all duration-300 hover:shadow-lg group-hover:-translate-y-1">
-                  <CardHeader>
-                    <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-white transition-colors">
-                      <Compass className="size-6" />
-                    </div>
-                    <CardTitle className="text-xl">{tTools("mesafeName")}</CardTitle>
-                    <CardDescription className="text-xs leading-relaxed">
-                      {tTools("mesafeBody")}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              </Link>
-
-              <Link href="/v2/araclar/koordinat-bulma" className="group block">
-                <Card className="h-full hover:border-primary/60 transition-all duration-300 hover:shadow-lg group-hover:-translate-y-1">
-                  <CardHeader>
-                    <div className="size-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center mb-3 group-hover:bg-secondary group-hover:text-white transition-colors">
-                      <MapPin className="size-6" />
-                    </div>
-                    <CardTitle className="text-xl">{tTools("koordinatName")}</CardTitle>
-                    <CardDescription className="text-xs leading-relaxed">
-                      {tTools("koordinatBody")}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              </Link>
-
-              <Link href="/v2/araclar/alan-hesaplama" className="group block">
-                <Card className="h-full hover:border-primary/60 transition-all duration-300 hover:shadow-lg group-hover:-translate-y-1">
-                  <CardHeader>
-                    <div className="size-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-3 group-hover:bg-accent group-hover:text-white transition-colors">
-                      <Layers className="size-6" />
-                    </div>
-                    <CardTitle className="text-xl">{tTools("alanName")}</CardTitle>
-                    <CardDescription className="text-xs leading-relaxed">
-                      {tTools("alanBody")}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              </Link>
-            </div>
-          </section>
-
-          {/* SECTION 8: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
+          {/* SECTION 7: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
           <V2SourcesSection scope="home" />
         </div>
       </div>

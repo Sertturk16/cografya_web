@@ -34,6 +34,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
+import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
 
 export interface ProvinceItem {
   id: string;
@@ -224,12 +225,41 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
     return CONTEXT_SHAPES.find((c) => c.iso === "TR");
   }, []);
 
+  // Global release listener for pointerup and pointercancel
+  React.useEffect(() => {
+    if (!isDragging) return;
+    const handleGlobalPointerUp = () => {
+      setIsDragging(false);
+    };
+    window.addEventListener("pointerup", handleGlobalPointerUp);
+    window.addEventListener("pointercancel", handleGlobalPointerUp);
+    return () => {
+      window.removeEventListener("pointerup", handleGlobalPointerUp);
+      window.removeEventListener("pointercancel", handleGlobalPointerUp);
+    };
+  }, [isDragging]);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging) {
-      setPanOffset({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
-      });
+      if (e.buttons === 0) {
+        setIsDragging(false);
+        return;
+      }
+      const rawX = e.clientX - dragStart.x;
+      const rawY = e.clientY - dragStart.y;
+      const container = mapContainerRef.current;
+      if (container) {
+        setPanOffset(
+          clampPanOffset(
+            { x: rawX, y: rawY },
+            zoomLevel,
+            container.clientWidth,
+            container.clientHeight,
+          ),
+        );
+      } else {
+        setPanOffset({ x: rawX, y: rawY });
+      }
       return;
     }
     const rect = e.currentTarget.getBoundingClientRect();
@@ -240,7 +270,28 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button, a, input")) {
+      return;
+    }
     if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - panOffset.x,
+        y: e.clientY - panOffset.y,
+      });
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button, a, input")) {
+      return;
+    }
+    if (zoomLevel > 1) {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // Ignored in non-DOM or unsupported test environments
+      }
       setIsDragging(true);
       setDragStart({
         x: e.clientX - panOffset.x,
@@ -260,7 +311,12 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   const handleZoomOut = () => {
     setZoomLevel((prev) => {
       const next = Math.max(prev - 0.4, 1);
-      if (next === 1) setPanOffset({ x: 0, y: 0 });
+      if (next === 1) {
+        setPanOffset({ x: 0, y: 0 });
+      } else if (mapContainerRef.current) {
+        const { clientWidth, clientHeight } = mapContainerRef.current;
+        setPanOffset((cur) => clampPanOffset(cur, next, clientWidth, clientHeight));
+      }
       return next;
     });
   };
@@ -469,7 +525,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
           ref={mapContainerRef}
           onMouseMove={handleMouseMove}
           onMouseDown={handleMouseDown}
+          onPointerDown={handlePointerDown}
           onMouseUp={handleMouseUp}
+          onPointerUp={handleMouseUp}
+          onPointerCancel={handleMouseUp}
           onMouseLeave={() => {
             if (!isDragging) {
               setHoveredPlate(null);
@@ -479,7 +538,11 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
           className="relative rounded-2xl bg-[var(--map-sea,#dbe7e8)] dark:bg-[#1a2529] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full cursor-crosshair select-none"
         >
           {/* Map Controls Floating Bar */}
-          <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
+          <div
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg"
+          >
             <button
               type="button"
               onClick={() => setShowRegionColors(!showRegionColors)}
@@ -527,7 +590,11 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
           {/* Active Selection / Quick Info Bar */}
           {selectedPlate && activeProvince && (
-            <div className="absolute bottom-3 left-3 z-30 flex items-center gap-3 bg-card/95 backdrop-blur-md p-3 rounded-2xl border border-primary/40 shadow-xl max-w-sm animate-in fade-in-50 duration-200">
+            <div
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="absolute bottom-3 left-3 z-30 flex items-center gap-3 bg-card/95 backdrop-blur-md p-3 rounded-2xl border border-primary/40 shadow-xl max-w-sm animate-in fade-in-50 duration-200"
+            >
               <div className="size-9 rounded-xl bg-primary/10 text-primary font-bold text-sm flex items-center justify-center font-mono shrink-0">
                 {activeProvince.plateCode}
               </div>
@@ -782,7 +849,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
       </div>
 
       {/* OPTIONAL REGIONS SECTION (7 COĞRAFİ BÖLGE REHBERİ) */}
-      {regionsSection}
+      {regionsSection && <div key="v2-regions-section">{regionsSection}</div>}
 
       {/* 2. PROVINCES CATALOGUE & CONTROLS */}
       <section className="space-y-6">

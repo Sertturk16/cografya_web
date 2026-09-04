@@ -125,7 +125,7 @@ export function V2LoginCard({
         <div className="space-y-1.5">
           <h3 className="font-heading text-xl font-bold text-foreground">Oturumunuz Açık</h3>
           <p className="text-xs text-muted-foreground">
-            Şu anda Coğrafya Platformu v2 hesabınızla aktif olarak giriş yapmış durumdasınız.
+            Şu anda Coğrafya Gurmesi hesabınızla aktif olarak giriş yapmış durumdasınız.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">

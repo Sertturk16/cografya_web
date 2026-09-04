@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: V2RegisterPageProps): Promise
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/kayit",
-    title: `${t("register.heading")} v2 — Coğrafya Platformu`,
+    title: `${t("register.heading")} — Coğrafya Gurmesi`,
     description: t("register.metaDescription"),
   });
 }

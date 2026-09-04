@@ -59,7 +59,7 @@ const INTENT_CONFIGS: Record<AuthIntent, IntentConfig> = {
   },
   generic: {
     icon: <Compass className="size-4 text-primary" />,
-    badgeText: "Coğrafya Platformu v2",
+    badgeText: "Coğrafya Gurmesi",
     title: "Coğrafya Hesabına Eriş",
     desc: "Tüm harita testleri, video çözümleri ve CBS araçlarına sınırsız erişim sağla.",
   },
@@ -213,7 +213,7 @@ export function V2AuthDialog() {
             <ShieldCheck className="size-3.5 text-emerald-600" />
             <span>256-Bit SSL Güvenli Bağlantı</span>
           </div>
-          <span className="font-mono text-[10px]">Coğrafya Platformu v2.0</span>
+          <span className="font-mono text-[10px]">Coğrafya Gurmesi</span>
         </div>
       </DialogContent>
     </Dialog>

@@ -57,7 +57,7 @@
     "register": "Sign up"
   },
   "Home": {
-    "metaTitle": "Coğrafya Platformu — Geography of Türkiye and the World",
+    "metaTitle": "Coğrafya Gurmesi — Geography of Türkiye and the World",
     "metaDescription": "Free, sourced geography pages and maps for the 81 provinces of Türkiye and the countries of the world. Test yourself with the free map game.",
     "heading": "Türkiye and <accent>world geography</accent>,<br></br> on one platform",
     "lede": "Free, sourced geography pages for the 81 provinces of Türkiye and the countries of the world.",
@@ -107,9 +107,9 @@
   },
   "About": {
     "metaTitle": "About",
-    "metaDescription": "Coğrafya Platformu is an education project that presents the geography of Türkiye and the world through free, sourced and accessible content.",
+    "metaDescription": "Coğrafya Gurmesi is an education project that presents the geography of Türkiye and the world through free, sourced and accessible content.",
     "heading": "About",
-    "body1": "Coğrafya Platformu is an education project that aims to make geography free and accessible to everyone.",
+    "body1": "Coğrafya Gurmesi is an education project that aims to make geography free and accessible to everyone.",
     "sourcing": "Content is grounded in authoritative sources and passes an independent verification step before publication.",
     "dataHeading": "Map and flag sources",
     "dataIntro": "The maps and flags on this site come from external sources.",
@@ -573,9 +573,9 @@
     },
     "vintage": {
       "heading": "When are these numbers from?",
-      "validAtAndRun": "{source}: valid at {validAt} UTC, from the {modelRun} UTC run.",
-      "validAt": "{source}: valid at {validAt} UTC.",
-      "runOnly": "{source}: from the {modelRun} UTC run."
+      "validAtAndRun": "{source}: {validAt} UTC data (Model update: {modelRun} UTC).",
+      "validAt": "{source}: {validAt} UTC data.",
+      "runOnly": "{source}: Model update {modelRun} UTC."
     },
     "straits": {
       "lowConfidence": "These numbers describe a reference point in open water; conditions in the straits, in narrow gulfs and very close to the shore can differ markedly."
@@ -774,7 +774,7 @@
   "Auth": {
     "login": {
       "metaTitle": "Log in",
-      "metaDescription": "Log in to your Coğrafya Platformu account.",
+      "metaDescription": "Log in to your Coğrafya Gurmesi account.",
       "heading": "Log in",
       "submit": "Log in",
       "forgot": "Forgot your password?",
@@ -799,7 +799,7 @@
     },
     "register": {
       "metaTitle": "Sign up",
-      "metaDescription": "Sign up for Coğrafya Platformu.",
+      "metaDescription": "Sign up for Coğrafya Gurmesi.",
       "heading": "Sign up",
       "submit": "Sign up",
       "crossLink": "Already have an account? Log in"
