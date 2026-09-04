@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, setRequestLocale } from "next-intl/server";
 import { V2Header } from "@/components/v2/v2-header";
+import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
+import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionBySlug, getRegionsResilient } from "@/lib/api/regions";
@@ -123,15 +126,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-function renderProse(text: string) {
-  if (!text) return null;
-  return text.split("\n\n").map((para, i) => (
-    <p key={i} className="text-muted-foreground leading-relaxed text-sm sm:text-base">
-      {para}
-    </p>
-  ));
-}
-
 export default async function V2RegionDetailPage({ params }: PageProps) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
@@ -150,426 +144,576 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
     borderAccent: "border-primary/30",
   };
 
-  const breadcrumbs = [
-    { name: "Anasayfa", path: "/v2" },
-    { name: "Türkiye Coğrafyası", path: "/v2/turkiye" },
-    { name: region.nameTr, path: `/v2/turkiye/bolge/${region.slug}` },
-  ];
+  const isCoastal = region.coastalSeas.length > 0;
+  const canonicalPath = `/v2/turkiye/bolge/${region.slug}`;
 
-  const quickNav = [
-    { id: "kunye", label: "Temel Bilgiler" },
-    { id: "konum", label: "Konum & Sınırlar" },
-    { id: "yeryuzu", label: "Yeryüzü Şekilleri" },
-    { id: "iklim", label: "İklim & Bitki" },
-    { id: "hidrografya", label: "Hidrografya" },
-    { id: "nufus", label: "Nüfus & Yerleşme" },
-    { id: "ekonomi", label: "Ekonomik Ağırlık" },
-    { id: "bolumler", label: "Bölümler" },
-    { id: "iller", label: "Bölgedeki İller" },
-    { id: "afet", label: "Deprem & Afet Riski" },
-    { id: "karsilastirma", label: "7 Bölge Karşılaştırma" },
-    { id: "sss", label: "SSS" },
-  ];
+  // Strip Markdown table from comparison intro prose if present
+  const comparisonIntroText = region.comparisonTr
+    ? (region.comparisonTr.split("\n\n|")[0] ?? "").trim()
+    : "";
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <JsonLd schema={breadcrumbJsonLd(breadcrumbs)} />
-      {region.faqs?.length > 0 && <JsonLd schema={faqPageJsonLd(region.faqs)} />}
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
+      <JsonLd
+        schema={breadcrumbJsonLd([
+          { name: "Ana Sayfa", path: "/v2" },
+          { name: "Türkiye Atlası", path: "/v2/turkiye" },
+          { name: region.nameTr, path: canonicalPath },
+        ])}
+      />
+      {region.faqs?.length > 0 && (
+        <JsonLd
+          schema={faqPageJsonLd(
+            region.faqs.map((faq) => ({
+              question: faq.question,
+              answer: faq.answer,
+            })),
+          )}
+        />
+      )}
 
       <V2Header />
+      <V2LiveTicker />
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section
-          className={`relative border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-12 px-4 sm:px-6 lg:px-8`}
-        >
-          <div className="max-w-6xl mx-auto space-y-6">
-            {/* Breadcrumb */}
-            <nav
-              aria-label="Breadcrumb"
-              className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap"
+      {/* HERO BANNER SECTION */}
+      <section
+        className={`relative border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-12 overflow-hidden`}
+      >
+        {/* Glow backdrop */}
+        <div className="absolute top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="container mx-auto px-4 max-w-7xl relative z-10 space-y-6">
+          {/* Breadcrumb Bar */}
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
+          >
+            <Link
+              href="/v2"
+              className="hover:text-foreground transition-colors flex items-center gap-1"
             >
-              <Link
-                href={"/v2" as unknown as React.ComponentProps<typeof Link>["href"]}
-                className="hover:text-foreground transition-colors flex items-center gap-1"
-              >
-                <Home className="size-3.5" />
-                <span>Anasayfa</span>
-              </Link>
-              <ChevronRight className="size-3" />
-              <Link
-                href={"/v2/turkiye" as unknown as React.ComponentProps<typeof Link>["href"]}
-                className="hover:text-foreground transition-colors"
-              >
-                Türkiye Coğrafyası
-              </Link>
-              <ChevronRight className="size-3" />
-              <span className="text-foreground font-semibold">{region.nameTr}</span>
-            </nav>
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
+            <Link href="/v2/turkiye" className="hover:text-foreground transition-colors">
+              Türkiye Atlası
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
+            <span className="text-foreground font-semibold flex items-center gap-1">
+              <span>{region.nameTr}</span>
+            </span>
+          </nav>
 
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <Badge
-                  variant="outline"
-                  className={`${theme.badgeClass} px-3 py-1 font-semibold text-xs tracking-wide`}
-                >
-                  <Mountain className="size-3.5 mr-1" /> Coğrafi Bölge
+          {/* Main Title & Action Row */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className={theme.badgeClass}>
+                  {theme.nameTr}
                 </Badge>
-                <Badge variant="outline" className="bg-background/80 backdrop-blur-xs text-xs">
-                  {region.provinceCount} İl · {region.subregionCount} Bölüm
+                <Badge variant="secondary" className="font-mono font-medium tracking-wide">
+                  1941 Coğrafya Kongresi
                 </Badge>
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  <Building2 className="size-3 mr-1" /> {region.provinceCount} İl
+                </Badge>
+                <Badge variant="outline" className="bg-muted text-muted-foreground">
+                  <Boxes className="size-3 mr-1" /> {region.subregionCount} Bölüm
+                </Badge>
+                {isCoastal ? (
+                  <Badge
+                    variant="outline"
+                    className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+                  >
+                    <Waves className="size-3" /> {region.coastalSeas.length} Denize Kıyı
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-muted text-muted-foreground">
+                    🌾 İç Bölge
+                  </Badge>
+                )}
               </div>
 
-              <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground">
-                {region.h1}
+              <h1 className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
+                {region.nameTr}
               </h1>
 
-              <div className="max-w-4xl text-base sm:text-lg text-muted-foreground leading-relaxed border-l-2 pl-4 border-primary/40">
+              <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
                 {region.introTr}
+              </p>
+            </div>
+
+            {/* Top Quick Actions */}
+            <div className="flex items-center gap-3 shrink-0">
+              <Link href="/v2/turkiye">
+                <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
+                  Tüm Bölgeler &amp; İller
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* 4 BIG KEY STATS CARDS */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+            {/* 1. Nüfus */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Toplam Nüfus</span>
+                <Users className="size-4 text-primary" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {format.number(region.population)}
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Türkiye Payı:</span>
+                <span className="font-mono font-semibold text-foreground">
+                  %{region.populationSharePercent}
+                </span>
               </div>
             </div>
 
-            {/* Quick-Jump Section Navigator */}
-            <div className="pt-4 border-t border-border/60">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
-                Bölüm İndeksi:
-              </span>
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin text-xs">
-                {quickNav.map((item) => (
-                  <a
-                    key={item.id}
-                    href={`#${item.id}`}
-                    className="px-2.5 py-1 rounded-full bg-muted/60 hover:bg-primary/20 hover:text-primary transition-colors whitespace-nowrap border border-border/80 text-[11px] font-medium"
-                  >
-                    {item.label}
-                  </a>
-                ))}
+            {/* 2. Yüzölçümü */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Yüzölçümü</span>
+                <Maximize2 className="size-4 text-teal-600" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {format.number(region.areaKm2)} km²
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Alan Payı:</span>
+                <span className="font-mono font-semibold text-foreground">
+                  %{region.areaSharePercent}
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Nüfus Yoğunluğu */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Nüfus Yoğunluğu</span>
+                <Mountain className="size-4 text-amber-600" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {region.populationDensity} kişi/km²
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>TR Ortalaması:</span>
+                <span className="font-mono font-semibold text-foreground">110 kişi/km²</span>
+              </div>
+            </div>
+
+            {/* 4. GSYH Ağırlığı */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">GSYH Ağırlığı (2024)</span>
+                <TrendingUp className="size-4 text-rose-600" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {region.gdpShareApproxPercent !== null ? `~%${region.gdpShareApproxPercent}` : "—"}
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Kaynak:</span>
+                <span className="font-semibold text-foreground">TÜİK İl GSYH</span>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
-          {/* Section 3: Temel Bilgiler (Künye) */}
-          <section id="kunye" className="space-y-4 scroll-mt-20">
-            <div className="flex items-center gap-2 border-b border-border pb-2">
-              <Info className={`size-5 ${theme.accentColor}`} />
-              <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                Temel Bilgiler (Bölge Künyesi)
-              </h2>
+      {/* QUICKNAV / JUMP NAVIGATION BAR */}
+      <nav
+        aria-label="Bölüm İndeksi"
+        className="sticky top-14 z-30 bg-background/90 backdrop-blur-md border-b border-border py-2.5 overflow-x-auto scrollbar-none"
+      >
+        <div className="container mx-auto px-4 max-w-7xl flex items-center gap-2 text-xs whitespace-nowrap">
+          <span className="text-muted-foreground font-semibold flex items-center gap-1 shrink-0 mr-1">
+            <Layers className="size-3.5" /> Bölümler:
+          </span>
+          <a
+            href="#kunye"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Künye
+          </a>
+          <a
+            href="#konum"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Konum &amp; Sınırlar
+          </a>
+          <a
+            href="#yeryuzu"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Yeryüzü Şekilleri
+          </a>
+          <a
+            href="#iklim"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            İklim &amp; Bitki
+          </a>
+          <a
+            href="#hidrografya"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Hidrografya
+          </a>
+          <a
+            href="#yerlesme"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Nüfus
+          </a>
+          <a
+            href="#ekonomi"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Ekonomi
+          </a>
+          <a
+            href="#bolumler"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Kongre Bölümleri
+          </a>
+          <a
+            href="#iller"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Bölgedeki İller
+          </a>
+          <a
+            href="#afet"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Deprem &amp; Afet
+          </a>
+          <a
+            href="#kiyaslama"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            7 Bölge Kıyaslama
+          </a>
+          <a
+            href="#sss"
+            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            SSS
+          </a>
+        </div>
+      </nav>
+
+      {/* BODY CONTENT CONTAINER */}
+      <main className="container mx-auto px-4 max-w-7xl py-10 space-y-12">
+        {/* SECTION 3: KÜNYE & TEMEL BİLGİLER */}
+        <section id="kunye" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex items-center gap-2">
+              <Badge variant="primary" size="sm">
+                Temel Bilgiler
+              </Badge>
             </div>
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground">
+              {region.nameTr} Coğrafi Künyesi
+            </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
-              <div className="p-3.5 rounded-xl bg-card border border-border shadow-xs">
-                <span className="text-muted-foreground text-[11px] flex items-center gap-1">
-                  <Building2 className="size-3.5" /> İl Sayısı
-                </span>
-                <span className="font-heading font-bold text-lg text-foreground block mt-1">
-                  {region.provinceCount} İl
-                </span>
-                <span className="text-[10px] text-muted-foreground">81 il bünyesinde</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-card border border-border shadow-xs">
-                <span className="text-muted-foreground text-[11px] flex items-center gap-1">
-                  <MapPin className="size-3.5" /> İlçe Sayısı
-                </span>
-                <span className="font-heading font-bold text-lg text-foreground block mt-1">
-                  {region.districtCount} İlçe
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  İçişleri Bakanlığı toplamı
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-card border border-border shadow-xs">
-                <span className="text-muted-foreground text-[11px] flex items-center gap-1">
-                  <Users className="size-3.5" /> Nüfus (ADNKS 2025)
-                </span>
-                <span className="font-heading font-bold text-lg text-foreground block mt-1">
-                  {format.number(region.population)}
-                </span>
-                <span className="text-[10px] text-muted-foreground">İl toplamları</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-card border border-border shadow-xs">
-                <span className="text-muted-foreground text-[11px] flex items-center gap-1">
-                  <Maximize2 className="size-3.5" /> Yüzölçümü
-                </span>
-                <span className="font-heading font-bold text-lg text-foreground block mt-1">
-                  {format.number(region.areaKm2)} km²
-                </span>
-                <span className="text-[10px] text-muted-foreground">HGM il toplamları</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-card border border-border shadow-xs">
-                <span className="text-muted-foreground text-[11px] flex items-center gap-1">
-                  <Users className="size-3.5" /> Nüfus Yoğunluğu
-                </span>
-                <span className="font-heading font-bold text-lg text-foreground block mt-1">
-                  {region.populationDensity} kişi/km²
-                </span>
-                <span className="text-[10px] text-muted-foreground">TR ort: 110 kişi/km²</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-card border border-border shadow-xs">
-                <span className="text-muted-foreground text-[11px] flex items-center gap-1">
-                  <TrendingUp className="size-3.5" /> GSYH Payı (2024)
-                </span>
-                <span className="font-heading font-bold text-lg text-foreground block mt-1">
-                  {region.gdpShareApproxPercent !== null
-                    ? `yaklaşık %${region.gdpShareApproxPercent}`
-                    : "—"}
-                </span>
-                <span className="text-[10px] text-muted-foreground">TÜİK İl Bazında GSYH</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-card border border-border shadow-xs col-span-2 sm:col-span-1">
-                <span className="text-muted-foreground text-[11px] flex items-center gap-1">
-                  <Mountain className="size-3.5" /> En Yüksek Noktası
-                </span>
-                <span className="font-heading font-bold text-sm sm:text-base text-foreground block mt-1">
+            {/* Geographical Attributes Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* En Yüksek Nokta */}
+              <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <Mountain className="size-4 text-amber-600" />
+                  <span>En Yüksek Noktası</span>
+                </div>
+                <div className="font-heading font-extrabold text-base text-foreground">
                   {region.highestPointName ?? "—"}
-                </span>
-                <span className="text-[11px] text-muted-foreground font-mono">
+                </div>
+                <p className="text-xs text-muted-foreground font-mono">
                   {region.highestPointElevationM
-                    ? `${format.number(region.highestPointElevationM)} m`
+                    ? `${format.number(region.highestPointElevationM)} metre`
                     : ""}
                   {region.highestPointProvince ? ` (${region.highestPointProvince})` : ""}
-                </span>
+                </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-card border border-border shadow-xs col-span-2 sm:col-span-1">
-                <span className="text-muted-foreground text-[11px] flex items-center gap-1">
-                  <Boxes className="size-3.5" /> Coğrafi Bölüm
-                </span>
-                <span className="font-heading font-bold text-lg text-foreground block mt-1">
-                  {region.subregionCount} Bölüm
-                </span>
-                <span className="text-[10px] text-muted-foreground">1941 Coğrafya Kongresi</span>
-              </div>
-            </div>
-
-            {/* Additional coastal, neighbor and border metadata */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              <div className="p-3 rounded-lg bg-muted/40 border border-border">
-                <span className="text-muted-foreground font-semibold block mb-1 flex items-center gap-1">
-                  <Waves className="size-3.5 text-blue-500" /> Kıyısı Olan Denizler:
-                </span>
-                <span className="font-medium text-foreground">
+              {/* Deniz Kıyıları */}
+              <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <Waves className="size-4 text-cyan-600" />
+                  <span>Kıyısı Olan Denizler</span>
+                </div>
+                <p className="text-sm font-semibold text-foreground pt-0.5">
                   {region.coastalSeas.length > 0
                     ? region.coastalSeas.join(", ")
                     : "Kıyısı bulunmamaktadır (İç Bölge)"}
-                </span>
+                </p>
+                <p className="text-xs text-muted-foreground">Kıyı şeridi ve havzalar</p>
               </div>
 
-              <div className="p-3 rounded-lg bg-muted/40 border border-border">
-                <span className="text-muted-foreground font-semibold block mb-1 flex items-center gap-1">
-                  <Compass className="size-3.5 text-amber-500" /> Komşu Bölgeler:
-                </span>
-                <span className="font-medium text-foreground">
+              {/* Komşu Bölgeler */}
+              <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <Compass className="size-4 text-teal-600" />
+                  <span>Komşu Bölgeler</span>
+                </div>
+                <p className="text-sm font-semibold text-foreground pt-0.5">
                   {region.neighborRegions.length > 0 ? region.neighborRegions.join(", ") : "—"}
-                </span>
+                </p>
+                <p className="text-xs text-muted-foreground">Kara sınırları</p>
               </div>
 
-              <div className="p-3 rounded-lg bg-muted/40 border border-border">
-                <span className="text-muted-foreground font-semibold block mb-1 flex items-center gap-1">
-                  <MapPin className="size-3.5 text-emerald-500" /> Komşu Ülkeler:
-                </span>
-                <span className="font-medium text-foreground">
+              {/* Komşu Ülkeler */}
+              <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <MapPin className="size-4 text-rose-600" />
+                  <span>Komşu Ülkeler</span>
+                </div>
+                <p className="text-sm font-semibold text-foreground pt-0.5">
                   {region.neighborCountries?.length
                     ? region.neighborCountries.join(", ")
-                    : "Kara sınırı bulunmamaktadır"}
-                </span>
+                    : "Uluslararası kara sınırı yoktur"}
+                </p>
+                <p className="text-xs text-muted-foreground">Sınır kapıları ve hatlar</p>
+              </div>
+
+              {/* 1941 Coğrafi Bölümleri */}
+              <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 space-y-1.5 md:col-span-2 lg:col-span-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <Boxes className="size-4 text-primary" />
+                  <span>1941 Coğrafya Kongresi Bölümleri ({region.subregionCount} Bölüm)</span>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {region.subregions.map((sub, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="bg-card text-foreground border-border text-xs px-2.5 py-1"
+                    >
+                      {sub}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Footnotes / İBBS Şerhleri */}
+            {/* İBBS / Metodoloji Şerhleri */}
             {region.footnotes?.length > 0 && (
-              <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/25 space-y-1.5">
-                <span className="text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                  <Info className="size-3.5" /> Künye Şerhleri &amp; İBBS Notu:
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 space-y-2">
+                <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                  <Info className="size-4" /> Künye Şerhleri &amp; İBBS Metodoloji Notu:
                 </span>
-                {region.footnotes.map((fn, idx) => (
-                  <p
-                    key={idx}
-                    className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed pl-4 border-l border-amber-500/40"
-                  >
-                    {fn}
-                  </p>
-                ))}
+                <div className="space-y-1.5 pl-4 border-l-2 border-amber-500/40">
+                  {region.footnotes.map((fn, idx) => (
+                    <p
+                      key={idx}
+                      className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed"
+                    >
+                      {fn}
+                    </p>
+                  ))}
+                </div>
               </div>
             )}
-          </section>
+          </div>
+        </section>
 
-          {/* Section 4: Konum ve Sınırlar */}
-          <section id="konum" className="space-y-3 scroll-mt-20">
-            <div className="flex items-center gap-2 border-b border-border pb-2">
-              <Compass className={`size-5 ${theme.accentColor}`} />
-              <h2 className="font-heading text-xl sm:text-2xl font-bold">Konum ve Sınırlar</h2>
+        {/* SECTION 4: KONUM VE SINIRLAR */}
+        <section id="konum" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" size="sm">
+                Coğrafi Konum
+              </Badge>
             </div>
-            <div className="space-y-3 bg-card p-5 rounded-xl border border-border shadow-xs">
-              {renderProse(region.locationAndBordersTr)}
-            </div>
-          </section>
+            <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+              <Compass className={`size-6 ${theme.accentColor}`} />
+              Konum ve Sınırlar
+            </h2>
+            <V2RichProse text={region.locationAndBordersTr} />
+          </div>
+        </section>
 
-          {/* Section 5: Yeryüzü Şekilleri */}
-          <section id="yeryuzu" className="space-y-3 scroll-mt-20">
-            <div className="flex items-center gap-2 border-b border-border pb-2">
-              <Mountain className={`size-5 ${theme.accentColor}`} />
-              <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                Yeryüzü Şekilleri ve Jeomorfoloji
-              </h2>
+        {/* SECTION 5: YERYÜZÜ ŞEKİLLERİ */}
+        <section id="yeryuzu" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="primary" size="sm">
+                Fiziki Coğrafya
+              </Badge>
             </div>
-            <div className="space-y-3 bg-card p-5 rounded-xl border border-border shadow-xs">
-              {renderProse(region.landformsTr)}
-            </div>
-          </section>
+            <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+              <Mountain className={`size-6 ${theme.accentColor}`} />
+              Yeryüzü Şekilleri ve Jeomorfoloji
+            </h2>
+            <V2RichProse text={region.landformsTr} />
+          </div>
+        </section>
 
-          {/* Section 6: İklim ve Bitki Örtüsü */}
-          <section id="iklim" className="space-y-3 scroll-mt-20">
-            <div className="flex items-center gap-2 border-b border-border pb-2">
-              <CloudSun className={`size-5 ${theme.accentColor}`} />
-              <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                İklim Tipleri ve Doğal Bitki Örtüsü
-              </h2>
+        {/* SECTION 6: İKLİM VE BİTKİ ÖRTÜSÜ */}
+        <section id="iklim" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" size="sm">
+                İklim &amp; Vejetasyon
+              </Badge>
             </div>
-            <div className="space-y-3 bg-card p-5 rounded-xl border border-border shadow-xs">
-              {renderProse(region.climateAndVegetationTr)}
-            </div>
-          </section>
+            <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+              <CloudSun className={`size-6 ${theme.accentColor}`} />
+              İklim Tipleri ve Doğal Bitki Örtüsü
+            </h2>
+            <V2RichProse text={region.climateAndVegetationTr} />
+          </div>
+        </section>
 
-          {/* Section 7: Hidrografya */}
-          <section id="hidrografya" className="space-y-3 scroll-mt-20">
-            <div className="flex items-center gap-2 border-b border-border pb-2">
-              <Waves className={`size-5 ${theme.accentColor}`} />
-              <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                Hidrografya: Akarsular, Göller ve Yeraltı Suları
-              </h2>
+        {/* SECTION 7: HİDROGRAFYA */}
+        <section id="hidrografya" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                size="sm"
+                className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20"
+              >
+                Hidrografya
+              </Badge>
             </div>
-            <div className="space-y-3 bg-card p-5 rounded-xl border border-border shadow-xs">
-              {renderProse(region.hydrographyTr)}
-            </div>
-          </section>
+            <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+              <Waves className={`size-6 ${theme.accentColor}`} />
+              Hidrografya: Akarsular, Göller ve Su Varlığı
+            </h2>
+            <V2RichProse text={region.hydrographyTr} />
+          </div>
+        </section>
 
-          {/* Section 8: Nüfus ve Yerleşme */}
-          <section id="nufus" className="space-y-3 scroll-mt-20">
-            <div className="flex items-center gap-2 border-b border-border pb-2">
-              <Users className={`size-5 ${theme.accentColor}`} />
-              <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                Nüfus, Göç ve Yerleşme Düzeni
-              </h2>
+        {/* SECTION 8: YERLEŞME VE NÜFUS */}
+        <section id="yerlesme" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="primary" size="sm">
+                Demografi
+              </Badge>
             </div>
-            <div className="space-y-3 bg-card p-5 rounded-xl border border-border shadow-xs">
-              {renderProse(region.settlementAndPopulationTr)}
-            </div>
-          </section>
+            <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+              <Users className={`size-6 ${theme.accentColor}`} />
+              Yerleşme Dokusu ve Nüfus Dağılımı
+            </h2>
+            <V2RichProse text={region.settlementAndPopulationTr} />
+          </div>
+        </section>
 
-          {/* Section 9: Ekonomik Ağırlık */}
-          <section id="ekonomi" className="space-y-3 scroll-mt-20">
-            <div className="flex items-center gap-2 border-b border-border pb-2">
-              <TrendingUp className={`size-5 ${theme.accentColor}`} />
-              <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                Ekonomik Ağırlık: Sanayi, Tarım ve Hizmetler
-              </h2>
+        {/* SECTION 9: EKONOMİ */}
+        <section id="ekonomi" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" size="sm">
+                Ekonomik Coğrafya
+              </Badge>
             </div>
-            <div className="space-y-3 bg-card p-5 rounded-xl border border-border shadow-xs">
-              {renderProse(region.economyTr)}
-            </div>
-          </section>
+            <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+              <TrendingUp className={`size-6 ${theme.accentColor}`} />
+              Ekonomik Yapı, Sanayi ve Tarımsal Üretim
+            </h2>
+            <V2RichProse text={region.economyTr} />
+          </div>
+        </section>
 
-          {/* Section 10: Coğrafi Bölümler */}
-          <section id="bolumler" className="space-y-4 scroll-mt-20">
-            <div className="flex items-center gap-2 border-b border-border pb-2">
-              <Boxes className={`size-5 ${theme.accentColor}`} />
-              <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                Coğrafi Bölümler (1941 Kongresi)
-              </h2>
+        {/* SECTION 10: COĞRAFİ BÖLÜMLER */}
+        <section id="bolumler" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" size="sm">
+                1941 Coğrafya Kongresi
+              </Badge>
             </div>
+            <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+              <Boxes className={`size-6 ${theme.accentColor}`} />
+              Coğrafi Bölümleri ve Morfolojik Sınırlar
+            </h2>
+            <V2RichProse text={region.subregionsTr} />
+          </div>
+        </section>
 
-            <div className="flex flex-wrap gap-2">
-              {region.subregions.map((sub, idx) => (
-                <Badge
-                  key={idx}
-                  variant="outline"
-                  className="px-3 py-1 bg-muted/80 border-border text-xs font-semibold"
-                >
-                  <Layers className="size-3.5 mr-1.5 text-primary" />
-                  {sub}
+        {/* SECTION 11: BÖLGEDEKİ İLLER */}
+        <section id="iller" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <Badge variant="primary" size="sm" className="mb-2">
+                  İdari Yapı
                 </Badge>
-              ))}
-            </div>
-
-            <div className="space-y-3 bg-card p-5 rounded-xl border border-border shadow-xs">
-              {renderProse(region.subregionsTr)}
-            </div>
-          </section>
-
-          {/* Section 11: Bölgedeki İller */}
-          <section id="iller" className="space-y-4 scroll-mt-20">
-            <div className="flex items-center justify-between border-b border-border pb-2 flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <Building2 className={`size-5 ${theme.accentColor}`} />
-                <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                  Bölgedeki İller ({region.provinceCount} İl)
+                <h2 className="font-heading text-2xl font-bold text-foreground">
+                  {region.nameTr} İlleri ({region.provinces.length} İl)
                 </h2>
               </div>
-              <span className="text-xs text-muted-foreground">
-                Nüfusa göre azalan sırada listelenmiştir
-              </span>
+              <span className="text-xs text-muted-foreground">TÜİK ADNKS 2025 Verileriyle</span>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-xs">
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-muted/60 text-muted-foreground border-b border-border font-medium text-[11px] sm:text-xs">
+            <div className="overflow-x-auto rounded-2xl border border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-xs font-semibold text-muted-foreground border-b border-border">
                   <tr>
-                    <th className="py-3 px-3.5">Plaka</th>
-                    <th className="py-3 px-3.5">İl</th>
-                    <th className="py-3 px-3.5 text-right">Nüfus (2025)</th>
-                    <th className="py-3 px-3.5 text-right">Yüzölçümü</th>
-                    <th className="py-3 px-3.5 text-left hidden sm:table-cell">İklim Tipi</th>
-                    <th className="py-3 px-3.5 text-right">İncele</th>
+                    <th scope="col" className="px-4 py-3">
+                      Plaka
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      İl Adı
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Nüfus (2025)
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Yüzölçümü
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      İklim Sınıfı
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Detay
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {region.provinces.map((prov: RegionProvinceItem) => (
-                    <tr key={prov.plateCode} className="hover:bg-muted/40 transition-colors">
-                      <td className="py-3 px-3.5 font-mono font-semibold text-muted-foreground">
-                        <span className="px-1.5 py-0.5 rounded bg-muted border border-border">
+                    <tr key={prov.plateCode} className="hover:bg-muted/30 transition-colors group">
+                      <td className="px-4 py-3 font-mono font-bold text-xs text-primary">
+                        <Badge variant="secondary" className="font-mono text-xs">
                           {prov.plateCode}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="py-3 px-3.5 font-semibold text-foreground">
+                      <td className="px-4 py-3 font-semibold text-foreground">
                         <Link
-                          href={
-                            `/v2/turkiye/${prov.slugTr}` as unknown as React.ComponentProps<
-                              typeof Link
-                            >["href"]
-                          }
-                          className="hover:text-primary transition-colors inline-flex items-center gap-1"
+                          href={{ pathname: "/v2/turkiye/[slug]", params: { slug: prov.slugTr } }}
+                          className="hover:text-primary transition-colors flex items-center gap-1"
                         >
-                          {prov.nameTr}
+                          <span>{prov.nameTr}</span>
                         </Link>
                       </td>
-                      <td className="py-3 px-3.5 text-right font-medium">
+                      <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
                         {prov.population ? format.number(prov.population) : "—"}
                       </td>
-                      <td className="py-3 px-3.5 text-right text-muted-foreground font-mono">
+                      <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
                         {prov.areaKm2 ? `${format.number(prov.areaKm2)} km²` : "—"}
                       </td>
-                      <td className="py-3 px-3.5 text-left text-muted-foreground hidden sm:table-cell">
-                        {prov.climateNameTr ?? "—"}
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          {prov.climateNameTr ?? "—"}
+                          {prov.climateKoppen && (
+                            <span className="font-mono text-[10px] text-primary/80 bg-primary/10 px-1 py-0.5 rounded">
+                              {prov.climateKoppen}
+                            </span>
+                          )}
+                        </span>
                       </td>
-                      <td className="py-3 px-3.5 text-right">
+                      <td className="px-4 py-3 text-right">
                         <Link
-                          href={
-                            `/v2/turkiye/${prov.slugTr}` as unknown as React.ComponentProps<
-                              typeof Link
-                            >["href"]
-                          }
-                          className="text-xs text-primary hover:underline inline-flex items-center gap-0.5 font-semibold"
+                          href={{ pathname: "/v2/turkiye/[slug]", params: { slug: prov.slugTr } }}
+                          className="text-xs text-muted-foreground group-hover:text-primary transition-colors inline-flex items-center gap-0.5"
                         >
-                          Detay <ArrowUpRight className="size-3.5" />
+                          İncele <ArrowUpRight className="size-3.5" />
                         </Link>
                       </td>
                     </tr>
@@ -577,146 +721,182 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 </tbody>
               </table>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* Section 12: Deprem ve Afet Riski */}
-          <section id="afet" className="space-y-3 scroll-mt-20">
-            <div className="flex items-center gap-2 border-b border-border pb-2">
-              <ShieldAlert className={`size-5 ${theme.accentColor}`} />
-              <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                Deprem ve Doğal Afet Riski
-              </h2>
+        {/* SECTION 12: DEPREM VE AFET RİSKİ */}
+        <section id="afet" className="scroll-mt-28">
+          <div className="rounded-3xl border border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/10 p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                size="sm"
+                className="bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30"
+              >
+                Doğal Afet &amp; Depremsellik
+              </Badge>
             </div>
-            <div className="space-y-3 bg-card p-5 rounded-xl border border-border shadow-xs">
-              {renderProse(region.disasterAndEarthquakeTr)}
-            </div>
-          </section>
+            <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+              <ShieldAlert className="size-6 text-rose-600" />
+              Deprem Kuşakları ve Bölgesel Afet Riski
+            </h2>
+            <V2RichProse text={region.disasterAndEarthquakeTr} />
+          </div>
+        </section>
 
-          {/* Section 13: 7 Bölge Karşılaştırma */}
-          {region.comparisonTable?.length > 0 && (
-            <section id="karsilastirma" className="space-y-4 scroll-mt-20">
-              <div className="flex items-center justify-between border-b border-border pb-2 flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <Table className={`size-5 ${theme.accentColor}`} />
-                  <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                    Türkiye&apos;nin 7 Coğrafi Bölgesi Karşılaştırması
-                  </h2>
-                </div>
-                <span className="text-xs text-muted-foreground">Aktif bölge vurgulanmıştır</span>
-              </div>
-
-              {region.comparisonTr && (
-                <div className="bg-card p-4 rounded-xl border border-border text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  {renderProse(region.comparisonTr)}
-                </div>
-              )}
-
-              <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-xs">
-                <table className="w-full text-left text-xs sm:text-sm">
-                  <thead className="bg-muted/60 text-muted-foreground border-b border-border font-medium text-[11px] sm:text-xs">
-                    <tr>
-                      <th className="py-3 px-3.5">Bölge</th>
-                      <th className="py-3 px-3.5 text-right">İl Sayısı</th>
-                      <th className="py-3 px-3.5 text-right">Nüfus (2025)</th>
-                      <th className="py-3 px-3.5 text-right">Nüfus Payı</th>
-                      <th className="py-3 px-3.5 text-right">Yüzölçümü</th>
-                      <th className="py-3 px-3.5 text-right hidden sm:table-cell">Yoğunluk</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {region.comparisonTable.map((row) => {
-                      const isActive = row.slug === region.slug;
-                      return (
-                        <tr
-                          key={row.slug}
-                          className={`transition-colors ${
-                            isActive
-                              ? "bg-primary/10 font-semibold text-primary dark:text-primary"
-                              : "hover:bg-muted/40"
-                          }`}
-                        >
-                          <td className="py-3 px-3.5">
-                            {isActive ? (
-                              <span className="inline-flex items-center gap-1.5">
-                                <span className="size-2 rounded-full bg-primary" />
-                                {row.nameTr}
-                              </span>
-                            ) : (
-                              <Link
-                                href={
-                                  `/v2/turkiye/bolge/${row.slug}` as unknown as React.ComponentProps<
-                                    typeof Link
-                                  >["href"]
-                                }
-                                className="hover:text-primary transition-colors inline-flex items-center gap-1 text-foreground"
-                              >
-                                {row.nameTr}
-                              </Link>
-                            )}
-                          </td>
-                          <td className="py-3 px-3.5 text-right">{row.provinceCount}</td>
-                          <td className="py-3 px-3.5 text-right">
-                            {format.number(row.population)}
-                          </td>
-                          <td className="py-3 px-3.5 text-right font-mono">
-                            %{row.populationSharePercent.toFixed(1)}
-                          </td>
-                          <td className="py-3 px-3.5 text-right font-mono">
-                            {format.number(row.areaKm2)} km²
-                          </td>
-                          <td className="py-3 px-3.5 text-right font-mono hidden sm:table-cell">
-                            {row.populationDensity} k/km²
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-
-          {/* Section 14: SSS */}
-          {region.faqs?.length > 0 && (
-            <section id="sss" className="space-y-4 scroll-mt-20">
-              <div className="flex items-center gap-2 border-b border-border pb-2">
-                <HelpCircle className={`size-5 ${theme.accentColor}`} />
-                <h2 className="font-heading text-xl sm:text-2xl font-bold">
-                  Sıkça Sorulan Sorular
+        {/* SECTION 13: 7 BÖLGE KARŞILAŞTIRMASI */}
+        <section id="kiyaslama" className="scroll-mt-28">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <Badge variant="primary" size="sm" className="mb-2">
+                  Atlas Kıyaslaması
+                </Badge>
+                <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+                  <Table className="size-6 text-primary" />
+                  Türkiye&apos;nin Yedi Coğrafi Bölgesi Karşılaştırması
                 </h2>
               </div>
-              <div className="space-y-3">
-                {region.faqs.map((faq, idx) => (
-                  <details
-                    key={idx}
-                    className="group bg-card rounded-xl border border-border p-4 [&_summary::-webkit-details-marker]:hidden transition-all duration-200"
+              <span className="text-xs text-muted-foreground">31 Aralık 2025 ADNKS Tabanı</span>
+            </div>
+
+            {comparisonIntroText && <V2RichProse text={comparisonIntroText} />}
+
+            <div className="overflow-x-auto rounded-2xl border border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-xs font-semibold text-muted-foreground border-b border-border">
+                  <tr>
+                    <th scope="col" className="px-4 py-3">
+                      Bölge
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      İl
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Nüfus (2025)
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Nüfus Payı
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Yüzölçümü (km²)
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Yoğunluk
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {region.comparisonTable.map((item) => {
+                    const isCurrent = item.slug === region.slug;
+                    return (
+                      <tr
+                        key={item.slug}
+                        className={
+                          isCurrent
+                            ? "bg-primary/10 font-semibold text-foreground border-l-4 border-l-primary"
+                            : "hover:bg-muted/30 transition-colors text-muted-foreground"
+                        }
+                      >
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {isCurrent ? (
+                            <span className="flex items-center gap-1.5">
+                              <span>{item.nameTr}</span>
+                              <Badge variant="primary" className="text-[10px] py-0 px-1.5 h-4">
+                                Aktif Bölge
+                              </Badge>
+                            </span>
+                          ) : (
+                            <Link
+                              href={{
+                                pathname: "/v2/turkiye/bolge/[slug]",
+                                params: { slug: item.slug },
+                              }}
+                              className="text-primary hover:underline transition-colors inline-flex items-center gap-1"
+                            >
+                              {item.nameTr}
+                            </Link>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-xs">
+                          {item.provinceCount}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-xs">
+                          {format.number(item.population)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-xs">
+                          %{item.populationSharePercent.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-xs">
+                          {format.number(item.areaKm2)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-xs">
+                          {item.populationDensity} kişi/km²
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted-foreground/80 italic">
+              * Nüfus verileri TÜİK ADNKS 31 Aralık 2025; yüzölçümü Harita Genel Müdürlüğü (HGM) il
+              toplamlarıdır. Paylar 86.092.168 kişilik ülke nüfusu ve 780.040 km²&apos;lik 81 il
+              yüzölçümü tabanından hesaplanmıştır.
+            </p>
+          </div>
+        </section>
+
+        {/* SECTION 14: SIKÇA SORULAN SORULAR */}
+        {region.faqs?.length > 0 && (
+          <section id="sss" className="scroll-mt-28">
+            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" size="sm">
+                  Rehber &amp; Soru-Cevap
+                </Badge>
+              </div>
+              <h2 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+                <HelpCircle className="size-6 text-primary" />
+                {region.nameTr} Hakkında Sıkça Sorulan Sorular
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {region.faqs.map((faq, i) => (
+                  <div
+                    key={i}
+                    className="p-5 rounded-2xl bg-muted/30 border border-border/80 space-y-2"
                   >
-                    <summary className="flex cursor-pointer items-center justify-between gap-1.5 font-semibold text-foreground text-sm sm:text-base">
+                    <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
+                      <span className="text-primary font-bold text-sm">S:</span>
                       <span>{faq.question}</span>
-                      <span className="shrink-0 rounded-full bg-muted p-1.5 text-muted-foreground group-open:rotate-180 transition-transform duration-200">
-                        <ChevronRight className="size-4" />
-                      </span>
-                    </summary>
-                    <p className="mt-3 text-sm text-muted-foreground leading-relaxed pt-3 border-t border-border/60">
+                    </h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-5">
                       {faq.answer}
                     </p>
-                  </details>
+                  </div>
                 ))}
               </div>
-            </section>
-          )}
-
-          {/* Section 15: Kaynakça Notu */}
-          {region.sourcesNoteTr && (
-            <div className="p-4 rounded-xl bg-muted/40 border border-border text-xs text-muted-foreground leading-relaxed">
-              <span className="font-semibold block text-foreground mb-1">Kaynak Notu:</span>
-              <p>{region.sourcesNoteTr}</p>
             </div>
-          )}
+          </section>
+        )}
 
-          {/* Scientific Sources Section */}
+        {/* SECTION 15: BİLİMSEL KAYNAKÇA */}
+        <section id="kaynakca" className="scroll-mt-28 space-y-6">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" size="sm">
+                Metodoloji &amp; Kaynakça
+              </Badge>
+            </div>
+            <h2 className="font-heading text-xl font-bold text-foreground">
+              Bölgesel Veri Metodolojisi ve Atıflar
+            </h2>
+            <V2RichProse text={region.sourcesNoteTr} />
+          </div>
+
           <V2SourcesSection scope="turkiye" />
-        </div>
+        </section>
       </main>
 
       <V2Footer />
