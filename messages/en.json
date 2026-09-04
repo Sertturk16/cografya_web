@@ -812,7 +812,20 @@
       "resend": "Send the code again",
       "resendAccepted": "Your request was received."
     },
+    "profile": {
+      "metaTitle": "Complete your profile",
+      "metaDescription": "Add your education details to your profile.",
+      "heading": "Complete your profile",
+      "breadcrumbHome": "Home",
+      "breadcrumbCurrent": "Profile",
+      "submit": "Save",
+      "saved": "Your details are saved.",
+      "complete": "Your profile is complete.",
+      "loadError": "Your details couldn't load.",
+      "retry": "Try again"
+    },
     "fields": {
+      "educationLevel": "Education level",
       "firstName": "First name",
       "lastName": "Last name",
       "phone": "Phone",

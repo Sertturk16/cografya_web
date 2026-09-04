@@ -22,6 +22,12 @@ export const AUTH_PATHNAMES = [
   "/sifre-sifirlama/yeni",
   "/kayit",
   "/e-posta-dogrulama",
+  // The v2 post-registration profile-completion route (DEC 2026-09-03a md.1).
+  // Joined to AUTH_PATHNAMES so the personal-data route receives audited
+  // noindex/canonical/hreflang test coverage in lib/seo/auth-routes.test.ts.
+  // Note: /v2/giris and /v2/kayit remain outside AUTH_PATHNAMES today (D-4)
+  // because their v2 shells were introduced before this centralization.
+  "/v2/profil",
 ] as const satisfies readonly AppPathname[];
 
 export type AuthPathname = (typeof AUTH_PATHNAMES)[number];

@@ -864,7 +864,20 @@
       "resend": "Kodu yeniden gönder",
       "resendAccepted": "İsteğin alındı."
     },
+    "profile": {
+      "metaTitle": "Profilini tamamla",
+      "metaDescription": "Eğitim bilgilerini profiline ekle.",
+      "heading": "Profilini tamamla",
+      "breadcrumbHome": "Ana sayfa",
+      "breadcrumbCurrent": "Profil",
+      "submit": "Kaydet",
+      "saved": "Bilgilerin kaydedildi.",
+      "complete": "Profilin tamam.",
+      "loadError": "Bilgilerin yüklenemedi.",
+      "retry": "Tekrar dene"
+    },
     "fields": {
+      "educationLevel": "Eğitim düzeyi",
       "firstName": "Ad",
       "lastName": "Soyad",
       "phone": "Telefon",

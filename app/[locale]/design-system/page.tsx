@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { magnitudeBucket, magnitudeBucketToken } from "@/lib/earthquake/magnitude";
 import {
   Search,
   Mail,
@@ -192,13 +193,27 @@ export default function DesignSystemPage() {
     );
   };
 
-  const getMagnitudeBadgeColor = (mag: number) => {
-    if (mag >= 5.0) return "bg-[var(--eq-mag-5,#d73027)] text-white";
-    if (mag >= 4.0) return "bg-[var(--eq-mag-4,#f46d43)] text-white";
-    if (mag >= 3.0) return "bg-[var(--eq-mag-3,#fdae61)] text-ink-dark";
-    if (mag >= 2.0) return "bg-[var(--eq-mag-2,#74add1)] text-white";
-    return "bg-[var(--eq-mag-1,#4575b4)] text-white";
-  };
+  /**
+   * The magnitude ramp is a DATA token set, and both halves of it are owned elsewhere:
+   * `magnitudeBucket()` owns the boundaries (<3 · 3–3.9 · 4–4.9 · 5–5.9 · 6+) and
+   * `magnitudeBucketToken()` owns the custom-property name, both in
+   * `lib/earthquake/magnitude.ts`; the five values live once, in `app/globals.css`'s `:root`.
+   * This helper derives from them and holds no copy of either.
+   *
+   * It replaces a hand-written ladder that duplicated the boundaries WRONGLY (it bucketed on
+   * `>= 2/3/4/5`, a full bucket off across the whole range, so all five mock rows below
+   * rendered a different colour from the shipped `MagnitudeBadge` on `/deprem`) and carried a
+   * ColorBrewer RdYlBu *diverging* fallback hex set — the exact red-orange-yellow hazard
+   * convention the ramp's own token block says this sequential ramp must not be mistaken for
+   * (`DESIGN.md` §6.1 rule 4, §6.2; `ENGINEERING.md` §10).
+   *
+   * White text unconditionally, matching `components/earthquake/earthquake.module.css`'s
+   * `.badge`: the `globals.css` token block records that white clears 4.5:1 against every
+   * bucket, bucket 1 included.
+   */
+  const magnitudeBadgeStyle = (mag: number): React.CSSProperties => ({
+    backgroundColor: `var(${magnitudeBucketToken(magnitudeBucket(mag))})`,
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground py-10 px-4 sm:px-6 lg:px-8">
@@ -734,9 +749,8 @@ export default function DesignSystemPage() {
                         </TableCell>
                         <TableCell>
                           <span
-                            className={`inline-flex items-center justify-center font-bold px-2.5 py-1 rounded-md text-xs shadow-2xs ${getMagnitudeBadgeColor(
-                              eq.magnitude,
-                            )}`}
+                            className="inline-flex items-center justify-center font-bold px-2.5 py-1 rounded-md text-xs shadow-2xs text-white"
+                            style={magnitudeBadgeStyle(eq.magnitude)}
                           >
                             M {eq.magnitude.toFixed(1)}
                           </span>

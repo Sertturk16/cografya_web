@@ -1,5 +1,5 @@
 import type { Locale } from "@/i18n/routing";
-import type { GradeLevel, StudyStream, UniversityType } from "@/lib/api/types";
+import type { EducationLevel, GradeLevel, StudyStream, UniversityType } from "@/lib/api/types";
 import type { UserType } from "./form-rules";
 
 /**
@@ -107,4 +107,23 @@ export const UNIVERSITY_GROUP_LABELS: Record<UniversityType, ProfileLabel> = {
   VAKIF: { tr: "Türkiye" },
   VAKIF_MYO: { tr: "Türkiye" },
   KKTC: { tr: "KKTC" },
+};
+
+/**
+ * `educationLevel` — the three values `GLOSSARY.md` §7.1's own table fixes
+ * (Ortaöğretim → SECONDARY, Lisans → UNDERGRADUATE, Lisansüstü → GRADUATE). CARRIES `en`,
+ * for the same reason `USER_TYPE_LABELS` above does and unlike `GRADE_LEVEL_LABELS` /
+ * `STUDY_STREAM_LABELS`: §7.1's own text rules these EN forms usable — "Ürün terimi
+ * oldukları için §4'ün kurum-yayını şartı burada uygulanmıyor; bu bir hüküm, bir eksiklik
+ * değil" — so they are NOT under §4.4's `[TEYİT GEREK]` umbrella.
+ *
+ * DELIBERATELY NOT a reuse of `USER_TYPE_LABELS`' `secondary`/`undergraduate`/`graduate`
+ * rows: those are USER-TYPE labels ("Ortaöğretim öğrencisi") answering "who are you", and
+ * this control answers "what is your education level" of a reader who has already declared
+ * Öğrenci. Two questions, two label sets.
+ */
+export const EDUCATION_LEVEL_LABELS: Record<EducationLevel, ProfileLabel> = {
+  SECONDARY: { tr: "Ortaöğretim", en: "Secondary" },
+  UNDERGRADUATE: { tr: "Lisans", en: "Undergraduate" },
+  GRADUATE: { tr: "Lisansüstü", en: "Graduate" },
 };

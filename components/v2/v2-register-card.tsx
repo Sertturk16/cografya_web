@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Link } from "@/i18n/navigation";
+import { Link, getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { submitAuth } from "@/lib/auth/submit.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
@@ -86,7 +86,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 export function V2RegisterCard({
-  locale: _locale = "tr",
+  locale = "tr",
   provinces = [],
   inModal = false,
   onAuthenticated,
@@ -236,7 +236,7 @@ export function V2RegisterCard({
         districtId: selectedDistrictId,
       };
 
-      const payload = buildRegisterPayload(formState, _locale);
+      const payload = buildRegisterPayload(formState, locale);
       const result = await submitAuth("register", payload);
 
       if (result.ok) {
@@ -277,6 +277,7 @@ export function V2RegisterCard({
 
     setLoading(true);
     try {
+      const profilePath = getPathname({ locale, href: "/v2/profil" });
       const result = await submitAuth(
         "verify-email",
         {
@@ -286,7 +287,7 @@ export function V2RegisterCard({
           email: registeredEmail || email.trim(),
           code: cleanCode,
         },
-        inModal ? {} : { returnTo: "/v2" },
+        inModal ? {} : { returnTo: profilePath },
       );
 
       if (result.ok) {
@@ -299,7 +300,7 @@ export function V2RegisterCard({
           router.replace(result.redirectTo);
         } else {
           setTimeout(() => {
-            router.push("/v2");
+            router.push(profilePath);
           }, 1000);
         }
       } else {

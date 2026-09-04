@@ -1,5 +1,11 @@
 import type { Locale } from "@/i18n/routing";
-import type { GradeLevel, RegisterRequest, StudyStream } from "@/lib/api/types";
+import type {
+  EducationLevel,
+  GradeLevel,
+  RegisterRequest,
+  StudyStream,
+  UpdateProfileRequest,
+} from "@/lib/api/types";
 
 /**
  * Client-side validation constants, the password-policy check, the profile matrix and
@@ -261,6 +267,74 @@ export function buildRegisterPayload(
     default: {
       const exhaustive: never = formState.userType;
       throw new Error(`buildRegisterPayload: unreachable user type ${String(exhaustive)}`);
+    }
+  }
+}
+
+/**
+ * The education axis a post-registration profile replacement writes. `accountRole` is NOT
+ * part of it: `PUT /api/auth/profile` reads the caller's role from the persisted row, and
+ * `accountRole` is not a declared property of `UpdateProfileRequestDto` — sending it is a
+ * 400 by name (`plan-api.md` §5.3.3/§5.3.4).
+ */
+export interface ProfileAxisFormState {
+  readonly educationLevel: EducationLevel | "";
+  readonly gradeLevel: GradeLevel | "";
+  readonly studyStream: StudyStream | "";
+  readonly universityName: string;
+  readonly departmentName: string;
+}
+
+/**
+ * Builds the COMPLETE five-field axis for a REPLACE. Always returns all five properties;
+ * a field the selected branch does not use is an explicit `null`, never an omission.
+ */
+export function buildProfileReplacementPayload(
+  formState: ProfileAxisFormState,
+): UpdateProfileRequest {
+  if (!formState.educationLevel) {
+    return {
+      educationLevel: null,
+      gradeLevel: null,
+      studyStream: null,
+      universityName: null,
+      departmentName: null,
+    };
+  }
+
+  switch (formState.educationLevel) {
+    case "SECONDARY":
+      return {
+        educationLevel: "SECONDARY",
+        gradeLevel: formState.gradeLevel ? (formState.gradeLevel as GradeLevel) : null,
+        studyStream: formState.studyStream ? (formState.studyStream as StudyStream) : null,
+        universityName: null,
+        departmentName: null,
+      };
+    case "UNDERGRADUATE":
+      return {
+        educationLevel: "UNDERGRADUATE",
+        gradeLevel: null,
+        studyStream: null,
+        universityName: formState.universityName ? formState.universityName : null,
+        departmentName: formState.departmentName ? formState.departmentName : null,
+      };
+    case "GRADUATE":
+      return {
+        educationLevel: "GRADUATE",
+        gradeLevel: null,
+        studyStream: null,
+        universityName: formState.universityName ? formState.universityName : null,
+        departmentName:
+          formState.departmentName && formState.departmentName.trim().length > 0
+            ? formState.departmentName
+            : null,
+      };
+    default: {
+      const exhaustive: never = formState.educationLevel;
+      throw new Error(
+        `buildProfileReplacementPayload: unreachable education level ${String(exhaustive)}`,
+      );
     }
   }
 }

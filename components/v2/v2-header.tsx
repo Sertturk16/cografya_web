@@ -340,11 +340,14 @@ export function V2Header() {
         {/* Right Side Actions & Mobile Trigger */}
         <div className="flex items-center gap-2">
           {authState === "authenticated" ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold shadow-2xs">
+            <Link
+              href="/v2/profil"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold shadow-2xs hover:bg-muted/50 transition-colors"
+            >
               <span className="size-2 rounded-full bg-emerald-500" />
               <User className="size-3.5 text-primary" />
-              <span className="hidden sm:inline">Hesabım</span>
-            </div>
+              <span className="hidden sm:inline">Profilim</span>
+            </Link>
           ) : (
             <div className="flex items-center gap-1.5">
               <Button
@@ -552,10 +555,14 @@ export function V2Header() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border">
+                    <Link
+                      href="/v2/profil"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center justify-between p-3 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors"
+                    >
                       <div className="flex items-center gap-2">
                         <User className="size-4 text-primary" />
-                        <span className="text-xs font-bold text-foreground">Oturum Açık</span>
+                        <span className="text-xs font-bold text-foreground">Profilim</span>
                       </div>
                       <Badge
                         variant="outline"
@@ -564,7 +571,7 @@ export function V2Header() {
                       >
                         Aktif
                       </Badge>
-                    </div>
+                    </Link>
                   )}
                 </div>
               </SheetContent>
