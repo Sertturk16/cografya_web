@@ -209,7 +209,13 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   const [zoomLevel, setZoomLevel] = React.useState<number>(1);
   const [panOffset, setPanOffset] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = React.useState<boolean>(false);
-  const [dragStart, setDragStart] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Drag tracking refs (avoids pointer capture stealing clicks when zoom > 1)
+  const dragStartPosRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragStartPanRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isPointerDownRef = React.useRef<boolean>(false);
+  const hasDraggedRef = React.useRef<boolean>(false);
+  const dragResetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -227,8 +233,8 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
   // Global release listener for pointerup and pointercancel
   React.useEffect(() => {
-    if (!isDragging) return;
     const handleGlobalPointerUp = () => {
+      isPointerDownRef.current = false;
       setIsDragging(false);
     };
     window.addEventListener("pointerup", handleGlobalPointerUp);
@@ -236,72 +242,95 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
     return () => {
       window.removeEventListener("pointerup", handleGlobalPointerUp);
       window.removeEventListener("pointercancel", handleGlobalPointerUp);
+      if (dragResetTimerRef.current) {
+        clearTimeout(dragResetTimerRef.current);
+      }
     };
-  }, [isDragging]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging) {
-      if (e.buttons === 0) {
-        setIsDragging(false);
-        return;
-      }
-      const rawX = e.clientX - dragStart.x;
-      const rawY = e.clientY - dragStart.y;
-      const container = mapContainerRef.current;
-      if (container) {
-        setPanOffset(
-          clampPanOffset(
-            { x: rawX, y: rawY },
-            zoomLevel,
-            container.clientWidth,
-            container.clientHeight,
-          ),
-        );
-      } else {
-        setPanOffset({ x: rawX, y: rawY });
-      }
-      return;
-    }
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest("button, a, input")) {
-      return;
-    }
-    if (zoomLevel > 1) {
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - panOffset.x,
-        y: e.clientY - panOffset.y,
-      });
-    }
-  };
+  }, []);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest("button, a, input")) {
       return;
     }
-    if (zoomLevel > 1) {
-      try {
-        e.currentTarget.setPointerCapture(e.pointerId);
-      } catch {
-        // Ignored in non-DOM or unsupported test environments
+    if (e.button !== 0) return;
+
+    if (dragResetTimerRef.current) {
+      clearTimeout(dragResetTimerRef.current);
+      dragResetTimerRef.current = null;
+    }
+    isPointerDownRef.current = true;
+    hasDraggedRef.current = false;
+    dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+    dragStartPanRef.current = { ...panOffset };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isPointerDownRef.current) {
+      if (e.buttons === 0) {
+        isPointerDownRef.current = false;
+        setIsDragging(false);
+        return;
       }
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - panOffset.x,
-        y: e.clientY - panOffset.y,
+      const dx = e.clientX - dragStartPosRef.current.x;
+      const dy = e.clientY - dragStartPosRef.current.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (!hasDraggedRef.current && dist > 5) {
+        if (zoomLevel > 1) {
+          hasDraggedRef.current = true;
+          setIsDragging(true);
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            // Ignored in unsupported test environments
+          }
+        }
+      }
+
+      if (hasDraggedRef.current && zoomLevel > 1) {
+        const rawX = dragStartPanRef.current.x + dx;
+        const rawY = dragStartPanRef.current.y + dy;
+        const container = mapContainerRef.current;
+        if (container) {
+          setPanOffset(
+            clampPanOffset(
+              { x: rawX, y: rawY },
+              zoomLevel,
+              container.clientWidth,
+              container.clientHeight,
+            ),
+          );
+        } else {
+          setPanOffset({ x: rawX, y: rawY });
+        }
+        return;
+      }
+    }
+
+    if (!hasDraggedRef.current) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setMousePos({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
       });
     }
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // Ignored
+      }
+    }
+    isPointerDownRef.current = false;
     setIsDragging(false);
+    if (hasDraggedRef.current) {
+      dragResetTimerRef.current = setTimeout(() => {
+        hasDraggedRef.current = false;
+      }, 50);
+    }
   };
 
   const handleZoomIn = () => {
@@ -523,19 +552,19 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
         {/* EDGE-TO-EDGE Map Panel with Zoom & Mouse Tracker */}
         <div
           ref={mapContainerRef}
-          onMouseMove={handleMouseMove}
-          onMouseDown={handleMouseDown}
           onPointerDown={handlePointerDown}
-          onMouseUp={handleMouseUp}
-          onPointerUp={handleMouseUp}
-          onPointerCancel={handleMouseUp}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           onMouseLeave={() => {
-            if (!isDragging) {
+            if (!isDragging && !isPointerDownRef.current) {
               setHoveredPlate(null);
               setMousePos(null);
             }
           }}
-          className="relative rounded-2xl bg-[var(--map-sea,#dbe7e8)] dark:bg-[#1a2529] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full cursor-crosshair select-none"
+          className={`relative rounded-2xl bg-[var(--map-sea,#dbe7e8)] dark:bg-[#1a2529] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full select-none touch-none ${
+            zoomLevel > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"
+          }`}
         >
           {/* Map Controls Floating Bar */}
           <div
@@ -715,7 +744,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                         }
                       }}
                       onClick={() => {
-                        setSelectedPlate(shape.plateCode);
+                        if (!hasDraggedRef.current) {
+                          setSelectedPlate(shape.plateCode);
+                        }
                       }}
                       className={`${fillColor} transition-all duration-150 cursor-pointer outline-none hover:stroke-foreground/80 hover:stroke-[1.2] focus-visible:stroke-primary focus-visible:stroke-[2]`}
                     />

@@ -12,10 +12,10 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2TurkeyMapExplorer, type ProvinceItem } from "@/components/v2/v2-turkey-map-explorer";
-import { V2TurkeyRegions } from "@/components/v2/v2-turkey-regions";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Map as MapIcon,
@@ -195,8 +195,35 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
             </div>
           </div>
 
-          {/* SECTION 1: INTERACTIVE REALISTIC VECTOR MAP EXPLORER & 7 REGIONS GUIDE */}
-          <V2TurkeyMapExplorer provinces={provinces} regionsSection={<V2TurkeyRegions />} />
+          {/* SECTION 1: INTERACTIVE REALISTIC VECTOR MAP EXPLORER & REGIONS HUB BANNER */}
+          <V2TurkeyMapExplorer
+            provinces={provinces}
+            regionsSection={
+              <div className="rounded-3xl border border-border bg-gradient-to-r from-card via-card to-muted/40 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="space-y-2 max-w-2xl">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="primary" size="sm">
+                      Doğal &amp; Fiziki Coğrafya
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">1941 Kongre Tasnifi</span>
+                  </div>
+                  <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+                    Türkiye&apos;nin 7 Coğrafi Bölgesi &amp; 21 Alt Bölümü
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    İllerimizin ait olduğu 7 coğrafi bölgenin fiziki sınırları, iklim normalleri,
+                    jeomorfolojik havzaları ve analitik karşılaştırma matrisini yeni rehberimizde
+                    inceleyin.
+                  </p>
+                </div>
+                <Link href="/v2/turkiye/bolge" className="shrink-0">
+                  <Button variant="primary" size="md" rightIcon={<ArrowRight className="size-4" />}>
+                    Bölgeler Atlası&apos;na Git
+                  </Button>
+                </Link>
+              </div>
+            }
+          />
 
           {/* SECTION 3: 3-HUB CROSS-LINK CARDS */}
           <section className="space-y-6">

@@ -61,46 +61,59 @@ interface PageProps {
 
 const REGION_THEMES: Record<
   string,
-  { nameTr: string; badgeClass: string; gradient: string; accentColor: string }
+  {
+    nameTr: string;
+    slug: string;
+    badgeClass: string;
+    gradient: string;
+    accentColor: string;
+  }
 > = {
   MARMARA: {
     nameTr: "Marmara Bölgesi",
+    slug: "marmara",
     badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
     gradient: "from-amber-500/10 via-background to-background",
     accentColor: "text-amber-600",
   },
   EGE: {
     nameTr: "Ege Bölgesi",
+    slug: "ege",
     badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
     gradient: "from-teal-500/10 via-background to-background",
     accentColor: "text-teal-600",
   },
   AKDENIZ: {
     nameTr: "Akdeniz Bölgesi",
+    slug: "akdeniz",
     badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
     gradient: "from-emerald-500/10 via-background to-background",
     accentColor: "text-emerald-600",
   },
   IC_ANADOLU: {
     nameTr: "İç Anadolu Bölgesi",
+    slug: "ic-anadolu",
     badgeClass: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30",
     gradient: "from-yellow-500/10 via-background to-background",
     accentColor: "text-yellow-600",
   },
   KARADENIZ: {
     nameTr: "Karadeniz Bölgesi",
+    slug: "karadeniz",
     badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
     gradient: "from-cyan-500/10 via-background to-background",
     accentColor: "text-cyan-600",
   },
   DOGU_ANADOLU: {
     nameTr: "Doğu Anadolu Bölgesi",
+    slug: "dogu-anadolu",
     badgeClass: "bg-stone-500/15 text-stone-700 dark:text-stone-300 border-stone-500/30",
     gradient: "from-stone-500/10 via-background to-background",
     accentColor: "text-stone-600",
   },
   GUNEYDOGU_ANADOLU: {
     nameTr: "Güneydoğu Anadolu Bölgesi",
+    slug: "guneydogu-anadolu",
     badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
     gradient: "from-orange-500/10 via-background to-background",
     accentColor: "text-orange-600",
@@ -322,6 +335,16 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               Türkiye Atlası
             </Link>
             <ChevronRight className="size-3 text-muted-foreground/60" />
+            <Link
+              href={{
+                pathname: "/v2/turkiye/bolge/[slug]",
+                params: { slug: regionTheme.slug },
+              }}
+              className="hover:text-foreground transition-colors"
+            >
+              {region}
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
             <span className="text-foreground font-semibold flex items-center gap-1">
               <span>{name}</span>
               <span className="font-mono text-[11px] opacity-75">({province.plateCode})</span>
@@ -332,9 +355,17 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className={regionTheme.badgeClass}>
-                  {region}
-                </Badge>
+                <Link
+                  href={{
+                    pathname: "/v2/turkiye/bolge/[slug]",
+                    params: { slug: regionTheme.slug },
+                  }}
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <Badge variant="outline" className={`${regionTheme.badgeClass} cursor-pointer`}>
+                    {region}
+                  </Badge>
+                </Link>
                 <Badge variant="primary" className="font-mono font-bold tracking-wider">
                   TR-{province.plateCode}
                 </Badge>
@@ -597,6 +628,23 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
               {/* Ultra-crisp Clean V2 Province Locator Map */}
               <V2ProvinceLocatorMap plateCode={province.plateCode} provinceName={name} />
+
+              {/* Region Association Reference */}
+              <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">
+                  Bağlı Olduğu Coğrafi Bölge:
+                </span>
+                <Link
+                  href={{
+                    pathname: "/v2/turkiye/bolge/[slug]",
+                    params: { slug: regionTheme.slug },
+                  }}
+                  className="text-primary hover:underline font-semibold inline-flex items-center gap-1 group"
+                >
+                  <span>{region}</span>
+                  <ArrowUpRight className="size-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </Link>
+              </div>
 
               {/* Neighboring Provinces Chips */}
               {neighbors.length > 0 && (

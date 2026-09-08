@@ -14,6 +14,7 @@ import {
   Gamepad2,
   Flame,
   Layers,
+  Boxes,
   BookOpen,
   User,
   LogIn,
@@ -162,7 +163,24 @@ export function V2Header() {
                       Türkiye İlleri
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
-                      81 İl & 7 Coğrafi Bölge
+                      81 İl &amp; Mülki İdare
+                    </span>
+                  </div>
+                </Link>
+                <Link
+                  href="/v2/turkiye/bolge"
+                  onClick={() => setActiveDropdown(null)}
+                  className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
+                >
+                  <div className="size-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mr-2 shrink-0 group-hover:scale-105 transition-transform">
+                    <Boxes className="size-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-xs block text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      Coğrafi Bölgeler
+                    </span>
+                    <span className="text-[10px] text-muted-foreground block">
+                      7 Bölge &amp; 21 Alt Bölüm
                     </span>
                   </div>
                 </Link>
@@ -179,7 +197,7 @@ export function V2Header() {
                       Dünya Atlası
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
-                      199 Ülke, Kıtalar & Bayraklar
+                      199 Ülke, Kıtalar &amp; Bayraklar
                     </span>
                   </div>
                 </Link>
@@ -423,6 +441,19 @@ export function V2Header() {
                           </span>
                         </div>
                         <span className="text-xs text-muted-foreground">81 İl</span>
+                      </Link>
+                      <Link
+                        href="/v2/turkiye/bolge"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Boxes className="size-4 text-amber-600 dark:text-amber-400" />
+                          <span className="text-sm font-semibold text-foreground">
+                            Coğrafi Bölgeler
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">7 Bölge</span>
                       </Link>
                       <Link
                         href="/v2/dunya"

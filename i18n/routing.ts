@@ -237,6 +237,10 @@ export const routing = defineRouting({
       tr: "/v2/turkiye/[slug]",
       en: "/v2/turkey/[slug]",
     },
+    "/v2/turkiye/bolge": {
+      tr: "/v2/turkiye/bolge",
+      en: "/v2/turkey/regions",
+    },
     "/v2/turkiye/bolge/[slug]": {
       tr: "/v2/turkiye/bolge/[slug]",
       en: "/v2/turkey/region/[slug]",

@@ -270,7 +270,13 @@ export function V2WorldMapExplorer({
   const [zoom, setZoom] = React.useState<number>(1);
   const [pan, setPan] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = React.useState<boolean>(false);
-  const [dragStart, setDragStart] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Drag tracking refs (avoids pointer capture stealing clicks when zoom > 1)
+  const dragStartPosRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragStartPanRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isPointerDownRef = React.useRef<boolean>(false);
+  const hasDraggedRef = React.useRef<boolean>(false);
+  const dragResetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isEn = locale === "en";
   const alphabet = isEn ? ALPHABET_EN : ALPHABET_TR;
@@ -285,8 +291,8 @@ export function V2WorldMapExplorer({
 
   // Global release listener for pointerup and pointercancel
   React.useEffect(() => {
-    if (!isPanning) return;
     const handleGlobalPointerUp = () => {
+      isPointerDownRef.current = false;
       setIsPanning(false);
     };
     window.addEventListener("pointerup", handleGlobalPointerUp);
@@ -294,18 +300,54 @@ export function V2WorldMapExplorer({
     return () => {
       window.removeEventListener("pointerup", handleGlobalPointerUp);
       window.removeEventListener("pointercancel", handleGlobalPointerUp);
+      if (dragResetTimerRef.current) {
+        clearTimeout(dragResetTimerRef.current);
+      }
     };
-  }, [isPanning]);
+  }, []);
 
-  const handleMouseMove = React.useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (isPanning) {
-        if (e.buttons === 0) {
-          setIsPanning(false);
-          return;
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button, a, input")) {
+      return;
+    }
+    if (e.button !== 0) return;
+
+    if (dragResetTimerRef.current) {
+      clearTimeout(dragResetTimerRef.current);
+      dragResetTimerRef.current = null;
+    }
+    isPointerDownRef.current = true;
+    hasDraggedRef.current = false;
+    dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+    dragStartPanRef.current = { ...pan };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isPointerDownRef.current) {
+      if (e.buttons === 0) {
+        isPointerDownRef.current = false;
+        setIsPanning(false);
+        return;
+      }
+      const dx = e.clientX - dragStartPosRef.current.x;
+      const dy = e.clientY - dragStartPosRef.current.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (!hasDraggedRef.current && dist > 5) {
+        if (zoom > 1) {
+          hasDraggedRef.current = true;
+          setIsPanning(true);
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            // Ignored in unsupported environments
+          }
         }
-        const rawX = e.clientX - dragStart.x;
-        const rawY = e.clientY - dragStart.y;
+      }
+
+      if (hasDraggedRef.current && zoom > 1) {
+        const rawX = dragStartPanRef.current.x + dx;
+        const rawY = dragStartPanRef.current.y + dy;
         const container = containerRef.current;
         if (container) {
           setPan(
@@ -321,51 +363,32 @@ export function V2WorldMapExplorer({
         }
         return;
       }
-
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setMousePos({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
-      }
-    },
-    [isPanning, dragStart, zoom],
-  );
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest("button, a, input")) {
-      return;
     }
-    if (zoom > 1) {
-      setIsPanning(true);
-      setDragStart({
-        x: e.clientX - pan.x,
-        y: e.clientY - pan.y,
+
+    if (!hasDraggedRef.current && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setMousePos({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
       });
     }
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest("button, a, input")) {
-      return;
-    }
-    if (zoom > 1) {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
       try {
-        e.currentTarget.setPointerCapture(e.pointerId);
+        e.currentTarget.releasePointerCapture(e.pointerId);
       } catch {
-        // Ignored in non-DOM or unsupported environments
+        // Ignored
       }
-      setIsPanning(true);
-      setDragStart({
-        x: e.clientX - pan.x,
-        y: e.clientY - pan.y,
-      });
     }
-  };
-
-  const handleMouseUp = () => {
+    isPointerDownRef.current = false;
     setIsPanning(false);
+    if (hasDraggedRef.current) {
+      dragResetTimerRef.current = setTimeout(() => {
+        hasDraggedRef.current = false;
+      }, 50);
+    }
   };
 
   const handleZoomIn = () => {
@@ -587,18 +610,18 @@ export function V2WorldMapExplorer({
         {/* EDGE-TO-EDGE World Map Panel */}
         <div
           ref={containerRef}
-          onMouseMove={handleMouseMove}
-          onMouseDown={handleMouseDown}
           onPointerDown={handlePointerDown}
-          onMouseUp={handleMouseUp}
-          onPointerUp={handleMouseUp}
-          onPointerCancel={handleMouseUp}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           onMouseLeave={() => {
-            if (!isPanning) {
+            if (!isPanning && !isPointerDownRef.current) {
               setHoveredIso(null);
             }
           }}
-          className="relative rounded-2xl bg-[#0d1b2a] dark:bg-[#070e17] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full cursor-crosshair select-none"
+          className={`relative rounded-2xl bg-[#0d1b2a] dark:bg-[#070e17] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full select-none touch-none ${
+            zoom > 1 ? (isPanning ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"
+          }`}
         >
           {/* Map Controls Floating Bar */}
           <div
@@ -820,7 +843,11 @@ export function V2WorldMapExplorer({
                           setSelectedIso(shape.iso);
                         }
                       }}
-                      onClick={() => setSelectedIso(shape.iso)}
+                      onClick={() => {
+                        if (!hasDraggedRef.current) {
+                          setSelectedIso(shape.iso);
+                        }
+                      }}
                     />
                   );
                 })}

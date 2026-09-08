@@ -26,7 +26,7 @@ describe("V2 Map Pan & Hover Contracts", () => {
       expect(turkeyFile).toContain('window.addEventListener("pointerup"');
       expect(turkeyFile).toContain('window.addEventListener("pointercancel"');
       expect(turkeyFile).toContain("onPointerDown={handlePointerDown}");
-      expect(turkeyFile).toContain("onPointerUp={handleMouseUp}");
+      expect(turkeyFile).toContain("onPointerUp={handlePointerUp}");
     });
 
     it("prevents drag initiation and pointer capture on UI button clicks", () => {
@@ -60,7 +60,7 @@ describe("V2 Map Pan & Hover Contracts", () => {
       expect(worldFile).toContain('window.addEventListener("pointerup"');
       expect(worldFile).toContain('window.addEventListener("pointercancel"');
       expect(worldFile).toContain("onPointerDown={handlePointerDown}");
-      expect(worldFile).toContain("onPointerUp={handleMouseUp}");
+      expect(worldFile).toContain("onPointerUp={handlePointerUp}");
     });
 
     it("prevents drag initiation and pointer capture on UI button clicks", () => {

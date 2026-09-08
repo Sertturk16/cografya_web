@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Database, ShieldCheck, BookOpen, ExternalLink } from "lucide-react";
+import { Database, ShieldCheck, BookOpen, ExternalLink, Scale, ChevronDown } from "lucide-react";
 
 export type V2PageScope =
   "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar" | "general";
@@ -407,9 +407,14 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
 interface V2SourcesSectionProps {
   scope?: V2PageScope;
   className?: string;
+  regionalNote?: React.ReactNode;
 }
 
-export function V2SourcesSection({ scope = "home", className = "" }: V2SourcesSectionProps) {
+export function V2SourcesSection({
+  scope = "home",
+  className = "",
+  regionalNote,
+}: V2SourcesSectionProps) {
   const allSources = SOURCES_BY_PAGE[scope] || SOURCES_BY_PAGE.home;
   const officialSources = allSources.filter((s) => s.category !== "academic");
   const academicSources = allSources.filter((s) => s.category === "academic");
@@ -425,40 +430,53 @@ export function V2SourcesSection({ scope = "home", className = "" }: V2SourcesSe
     return (
       <div
         key={src.id}
-        className="p-4 rounded-2xl bg-muted/40 border border-border/70 space-y-2 flex flex-col justify-between hover:border-primary/40 transition-colors shadow-2xs"
+        className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border/70 hover:border-primary/40 hover:bg-muted/20 transition-all space-y-2.5 flex flex-col justify-between shadow-2xs group"
       >
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-bold text-foreground flex items-center gap-1.5 truncate">
-              <span>{src.icon}</span>
-              <span className="truncate">{src.title}</span>
+          <div className="flex items-start justify-between gap-2">
+            <span className="font-bold text-xs text-foreground flex items-center gap-1.5 min-w-0">
+              <span className="text-sm shrink-0">{src.icon}</span>
+              <span className="truncate group-hover:text-primary transition-colors">
+                {src.title}
+              </span>
             </span>
-            <Badge variant="outline" className="text-[10px] py-0 font-mono shrink-0">
+            <Badge
+              variant="outline"
+              className="text-[9.5px] py-0 px-1.5 font-mono shrink-0 bg-muted/50 border-border/60"
+            >
               {src.license}
             </Badge>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">{src.description}</p>
           {src.legalQuote && (
-            <div className="p-2 rounded-xl bg-card border border-border/40 text-[10px] text-muted-foreground font-mono leading-tight">
-              &ldquo;{src.legalQuote}&rdquo;
-            </div>
+            <details className="group/quote text-[10px] pt-0.5">
+              <summary className="cursor-pointer select-none font-medium text-muted-foreground/80 hover:text-primary transition-colors inline-flex items-center gap-1 list-none">
+                <span className="text-[10px]">Atıf şartı &amp; yasal metin</span>
+                <ChevronDown className="size-2.5 text-muted-foreground group-open/quote:rotate-180 transition-transform" />
+              </summary>
+              <div className="mt-1.5 p-2 rounded-xl bg-muted/50 border border-border/50 text-[9.5px] font-mono leading-relaxed text-muted-foreground/90 max-h-28 overflow-y-auto">
+                &ldquo;{src.legalQuote}&rdquo;
+              </div>
+            </details>
           )}
         </div>
 
         <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
           <span className="truncate flex items-center gap-1">
-            <span>Kaynak:</span>
+            <span className="opacity-70">Kaynak:</span>
             {isExternal ? (
               <span className="font-mono text-foreground/80 flex items-center gap-0.5">
                 {src.sourceUrl}
-                <ExternalLink className="size-2.5 text-muted-foreground" aria-hidden="true" />
+                <ExternalLink className="size-2.5 text-muted-foreground/70" aria-hidden="true" />
                 <span className="sr-only">(Harici referans kaynağı)</span>
               </span>
             ) : (
               <span className="font-mono text-foreground/80">{src.sourceUrl}</span>
             )}
           </span>
-          {src.doi && <span className="font-mono text-primary shrink-0">DOI: {src.doi}</span>}
+          {src.doi && (
+            <span className="font-mono text-primary text-[9.5px] shrink-0">DOI: {src.doi}</span>
+          )}
         </div>
       </div>
     );
@@ -467,7 +485,7 @@ export function V2SourcesSection({ scope = "home", className = "" }: V2SourcesSe
   return (
     <section
       aria-labelledby="v2-sources-heading"
-      className={`rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-lg space-y-8 ${className}`}
+      className={`rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-lg space-y-6 ${className}`}
     >
       <div className="space-y-1 border-b border-border pb-4">
         <div className="flex items-center gap-2">
@@ -488,14 +506,38 @@ export function V2SourcesSection({ scope = "home", className = "" }: V2SourcesSe
         </p>
       </div>
 
+      {/* Regional Methodology & Legal Basis Callout */}
+      {regionalNote && (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-muted/30 border border-border/70 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
+            <div className="flex items-center gap-1.5">
+              <Badge
+                variant="outline"
+                size="sm"
+                className="bg-primary/10 text-primary border-primary/30 shrink-0 flex items-center gap-1 font-semibold text-[10px] py-0 px-2"
+              >
+                <Scale className="size-3" /> Bölgesel Metodoloji &amp; Yasal Dayanak
+              </Badge>
+              <span className="text-[11px] font-semibold text-foreground">
+                TÜİK İBBS Düzey-1 ve 1941 Coğrafya Kongresi Tasnifi
+              </span>
+            </div>
+            <span className="text-[10px] text-muted-foreground font-mono">
+              Resmî İdari &amp; Coğrafi Normlar
+            </span>
+          </div>
+          <div className="text-[11px] text-muted-foreground leading-relaxed">{regionalNote}</div>
+        </div>
+      )}
+
       {/* Official Data Section */}
       {officialSources.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           <div className="flex items-center gap-2">
             <Badge
               variant="outline"
               size="sm"
-              className="bg-primary/10 text-primary border-primary/30 shrink-0 flex items-center gap-1 font-semibold"
+              className="bg-primary/10 text-primary border-primary/30 shrink-0 flex items-center gap-1 font-semibold text-xs"
             >
               <ShieldCheck className="size-3.5" /> Doğrulanmış Resmî Veri
             </Badge>
@@ -503,7 +545,11 @@ export function V2SourcesSection({ scope = "home", className = "" }: V2SourcesSe
               Resmî kurumlar ve doğrulanmış açık veri sağlayıcıları
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 ${
+              officialSources.length > 2 ? "lg:grid-cols-3" : ""
+            } gap-3.5 text-xs`}
+          >
             {officialSources.map((src) => renderCard(src))}
           </div>
         </div>
@@ -511,12 +557,12 @@ export function V2SourcesSection({ scope = "home", className = "" }: V2SourcesSe
 
       {/* Academic / Pedagogical Section */}
       {academicSources.length > 0 && (
-        <div className="space-y-4 pt-4 border-t border-border/60">
+        <div className="space-y-3.5 pt-4 border-t border-border/60">
           <div className="flex items-center gap-2">
             <Badge
               variant="outline"
               size="sm"
-              className="bg-secondary/15 text-secondary border-secondary/30 shrink-0 flex items-center gap-1 font-semibold"
+              className="bg-secondary/15 text-secondary border-secondary/30 shrink-0 flex items-center gap-1 font-semibold text-xs"
             >
               <BookOpen className="size-3.5" /> Pedagojik ve Akademik Referanslar
             </Badge>
@@ -524,7 +570,11 @@ export function V2SourcesSection({ scope = "home", className = "" }: V2SourcesSe
               Müfredat, akademik literatür ve eğitim kaynakları
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 ${
+              academicSources.length > 2 ? "lg:grid-cols-3" : ""
+            } gap-3.5 text-xs`}
+          >
             {academicSources.map((src) => renderCard(src))}
           </div>
         </div>
