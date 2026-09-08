@@ -283,6 +283,84 @@ Web-specific filter boundary:
   own chart needs (`DESIGN.md` §6.4/§6.5/§6.6), and a general scales module remains
   deliberately unbuilt rather than merely pending.
 
+## 11. Authenticated rendered-pass capability (dev-only review infrastructure)
+
+`tools/dev-fixtures/render-authenticated-page.ts` gives a **read-only review leg** — FENER
+(`cografya-seo`), `pr-reviewer-routine` (a11y-reviewer, design-fidelity-reviewer), or any leg
+with only `Bash` and no browser-MCP tool — a repeatable, non-interactive way to load an
+**authenticated** page in a real (headless Chromium) browser and capture rendered DOM,
+console **and** network evidence. It exists to close the capability gap PR #128's round-1/
+round-2 checkpoints recorded when `/v2/profil` (auth-gated content) could not be rendered by
+any review leg (`Owner's Inbox/fener-oturumlu-render-pasi/plan.md` §1). It satisfies the
+reviewer read-only boundary (§8 above, `REVIEW-POLICY.md` §0/§3) rather than working around
+it: it never touches `/kayit` (register — the real mutation risk) and only ever logs in with
+an **already-provisioned** synthetic fixture account through the app's own **existing**
+`/giris` login form — no new account, no new content, no product-data row.
+
+**Usage:**
+
+```
+RENDER_AUTH_PASSWORD='<value>' node tools/dev-fixtures/render-authenticated-page.ts \
+  --paths /giris,/en/login --out-dir /tmp/render-pass
+```
+
+**Env contract:**
+
+- `RENDER_AUTH_BASE_URL` — default `http://localhost:3000`. Must pass a DNS-verified
+  loopback-hostname guard (`assertLoopbackTarget`, mirroring — not importing, no cross-repo
+  import path exists here either — `cografya_api/tools/dev-fixtures/
+local-database-guard.ts`'s `isLoopbackHostname`/`isLoopbackAddress` logic) or the script
+  refuses to run. This is the sole enforcement point for "no credential introduced here can
+  be used against production": even a leaked credential authenticates nothing in production,
+  because production has no such row AND this script itself will not point at a non-loopback
+  origin.
+- `RENDER_AUTH_EMAIL` — default `iris-audit@local.test`.
+- `RENDER_AUTH_PASSWORD` — **required, no default.** The script refuses to run without it,
+  and its refusal message names the exact `cografya_api` command below.
+
+**`cografya_api` precondition (operational, not a code dependency — plan §7/§8).** Before a
+review dispatch that needs this capability, the `iris-audit@local.test` account's password
+must be (re)set to a value the dispatch will be given, via `cografya_api`'s own
+already-shipped `tools/dev-fixtures/iris-audit-account.ts` (`DEC 2026-08-27e`):
+
+```
+DATABASE_URL=postgresql://cografya:cografya_dev@localhost:5433/cografya \
+  AUDIT_ACCOUNT_PASSWORD='<a chosen value>' \
+  node tools/dev-fixtures/iris-audit-account.ts
+```
+
+That same value is then passed to this script as `RENDER_AUTH_PASSWORD`. This is idempotent
+(resets the same row) but **not append-only**: it bumps `token_version`, invalidating any
+access token already issued to a session that logged in before the reset. Because this fixture
+account is **shared** with İRİS's own live-audit design-tour sessions (`DEC 2026-08-27e`'s own
+account), a concurrent re-provisioning while another session is mid-flight can invalidate that
+other session — today's actual risk is low (this project's own operating note is never to run
+two dispatches on one repo's shared worktree at once, and provisioning is a rare, deliberate,
+single-operator step), but it is real. A dedicated second fixture account is a recorded,
+not-yet-built option if this ever bites in practice.
+
+**On a stale/absent account, the script fails loud, not with a confusing timeout.** If the
+account does not exist, its password has gone stale, or the two simply do not match, the
+`/giris` form's own submission never navigates away and no `cg_access` cookie appears — the
+script's own post-login cookie check catches exactly this and refuses with an explicit message
+naming the `cografya_api` re-provisioning command above, rather than silently producing an
+unauthenticated (and therefore falsely "clean") render.
+
+**Output, per `--paths` entry** (in the SAME authenticated browser context — cookies persist
+across a TR→EN locale switch): `<out-dir>/<sanitized-path>.html` (`page.content()`),
+`<out-dir>/<sanitized-path>.console.json`, `<out-dir>/<sanitized-path>.network.json`, and
+`<out-dir>/<sanitized-path>.png` — each scoped to that path's OWN navigation only (buffers are
+cleared immediately before each path's own `page.goto`, so one path's evidence never carries
+another path's, or the pre-login anonymous session check's, console/network noise). The
+extracted `<title>`, canonical href, hreflang set, robots meta content and JSON-LD script count
+are also printed to stdout per path. The login step itself — including the
+`POST /api/auth/login` call a reviewer needs to confirm succeeded — gets its own dedicated
+`__login-step.console.json` / `__login-step.network.json` pair, written once per run.
+
+**What this deliberately is NOT.** Not wired into `package.json` scripts, not wired into CI —
+run by hand only, exactly like `iris-audit-account.ts`'s own stated design. Never imported by
+product code. Not reachable from production by any path (see the loopback guard above).
+
 ## Kim neyi okur — kapsam sözleşmesi
 
 This table is the sole owner of this document's read scope. A role definition never
