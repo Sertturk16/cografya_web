@@ -242,13 +242,13 @@ const CONTEXT_LABEL_OMITTED_ISOS = new Set(["MK", "RS", "LB"]);
  *     page, not only the generated-artifact geometry.
  *   CY row (x 260, y 448) — measured at the time against TR "Kıbrıs Cumhuriyeti" and EN
  *     "Republic of Cyprus": same, 0% foreign-shape ink in both locales, verified against the
- *     live rendered page. **NOT re-measured since the rename** (`DEC 2026-08-30b`/
- *     `DEC 2026-08-31a`, `cografya_api` PR #154): the live TR text this anchor now renders is
- *     "Güney Kıbrıs Rum Yönetimi" — ~39% longer (25 vs. 18 characters) than the string this
- *     ink-box claim was measured against — while `nameEn` is unchanged. This specific 0%
- *     claim is therefore UNCONFIRMED for the TR locale's current live text; flagged as an
- *     open follow-up (a fresh ink-box re-measurement, the same method as rounds 1–3 above),
- *     not silently assumed to still hold and not re-derived here.
+ *     live rendered page. The CY canonical-name rename (`DEC 2026-08-30b`/`DEC 2026-08-31a`,
+ *     `cografya_api` PR #154) grew the live TR text to "Güney Kıbrıs Rum Yönetimi" — ~39%
+ *     longer (25 vs. 18 characters) than the string this ink-box claim was measured against —
+ *     while `nameEn` stayed unchanged, and this specific claim went UNCONFIRMED for the new TR
+ *     text (round 1 of PR #119) until the fresh re-measurement below (round 2 of PR #119, PR
+ *     #119 fix round; **FIX ROUND 4**) closed it — not silently assumed to still hold, and not
+ *     re-derived in place: see FIX ROUND 4 below for the actual numbers, before and after.
  *   Leader lines (from 8 u below each row's baseline, clear of its own ink band, to the
  *     shape's own `labelPoint`): the two segments do not cross (checked algebraically);
  *     neither line's own text-clear starting point sits inside the OTHER row's ink box in
@@ -343,12 +343,155 @@ const CONTEXT_LABEL_OMITTED_ISOS = new Set(["MK", "RS", "LB"]);
  * itself is UNTOUCHED (neither its anchor nor `SEA_LABELS` changed this round): re-confirmed
  * at the same 161×9 = 1,449-point grid VAL108-SOV6 used, 0/1,449 points fall inside the QN or
  * CY shapes in either locale — the invariant that fix established is still intact.
+ *
+ * FIX ROUND 4 (PR #119 fix round; SOV119-I1 / SOV119-I2 / SOV119-M1 / DF119-I1 / FEN119-M1).
+ * The CY canonical-name rename above (`DEC 2026-08-30b`/`DEC 2026-08-31a`) grew the live TR
+ * text from "Kıbrıs Cumhuriyeti" (18 chars) to "Güney Kıbrıs Rum Yönetimi" (25 chars, ~39%
+ * longer) without re-measuring the SPACE that text sits in: `cy.x = 260` with
+ * `textAnchor="middle"` meant the label's RIGHT edge — the one facing the KKTC leader's
+ * `leaderFrom` and the island — was a function of a string this repo does not own. This is a
+ * defect CLASS, not a one-time miss: any future rename reproduces it under the same constant.
+ *
+ * Re-measured on the actually-rendered page (Chromium `isPointInFill()`/`getBBox()`, real
+ * shipped Nunito Sans 600, `document.fonts.ready` awaited, 301×21 = 6,321-point grid, all four
+ * TR/EN × 768px/1440px combinations), BEFORE this fix:
+ *   - CY ink box: 0/6,321 foreign points in every combination — the UNCONFIRMED claim above
+ *     turned out to still be true FOR THE INK ITSELF; the rename never put glyph ink on
+ *     foreign territory.
+ *   - `qn.leaderFrom` clearance to the CY box, RAW: 2.79u (TR/768) / 5.72u (TR/1440) / 40.40u
+ *     (EN/768) / 40.48u (EN/1440). PAINTED (ink box + 1.5 CSS px halo per side, converted to
+ *     user units by the MEASURED svg width — see the scale note below, never `1270/viewport`):
+ *     0.17u = 0.096 CSS px (TR/768) / 3.95u (TR/1440) / 37.78u (EN/768) / 38.71u (EN/1440). The
+ *     TR/768 painted gap — a TENTH OF A DEVICE PIXEL — is why the KKTC leader read as
+ *     emanating from the CY label at 768px, the narrowest width this geometry ever renders at
+ *     (context labels hide below 720px). Worse than round 3 could see (round 3 only measured
+ *     1440px); NOT worse than the pre-round-3 defect this component already fixed once, stated
+ *     on ONE basis at a time so the two are never crossed: RAW, the original defect measured
+ *     0.40–1.66u and today's TR/768 raw gap (2.79u) is 1.7×–7× WIDER, not narrower; PAINTED,
+ *     the original defect's painted gap would have been an actual −2.22 to −0.96u overlap,
+ *     against today's +0.168u — a hairline, not an overlap. The severity rests on that
+ *     hairline plus `qn.leaderFrom.y` (438) sitting INSIDE the CY ink band in every
+ *     combination, and on only 6.9% of round 3's own 40.40–41.66u clearance surviving — not on
+ *     any claim that today is worse than what round 3 fixed. It is not.
+ *   - `leaderElbow` (x 360): falls INSIDE the CY ink box in TR, with leg 1 (330→360) 100%
+ *     inside it (Liang–Barsky `t0=0, t1=1`) — the leader's OWN elbow read as CY's text. In EN
+ *     the elbow sits outside and only 32% of leg 1 is inside — the designed relationship. The
+ *     relationship genuinely inverted, TR only.
+ *
+ * FIX: `cy.x` moves from 260 (a CENTRE) to 340 (a RIGHT edge, `anchor: "end"`, new field) —
+ * the same move already made for AZ (`LABEL_ANCHOR_OVERRIDES.AZ`, "flush to the frame's own
+ * east edge"), for the same reason: a label whose length this repo cannot control is anchored
+ * at the edge that must not move. 340 is not a fresh guess — it is CY's OWN measured right
+ * edge before the rename (this docblock's own FIX ROUND text above records "CY's own right
+ * edge sits at x ≈ 338–340 in both locales", and round 3 chose `qn.leaderFrom.x = 380` AGAINST
+ * that number), so this restores exactly the geometry round 3 measured and approved, and makes
+ * it hold for ANY string length, because the string now grows WEST (open Mediterranean water)
+ * instead of EAST (toward the KKTC leader). A build-time client-side measure-and-reposition
+ * was rejected (this is an async Server Component, SSG/ISR, no browser/font metrics at build
+ * time — it would be a post-paint CLS shift, `ENGINEERING.md` §4 #9); `textLength`/
+ * `lengthAdjust` glyph-squashing was rejected too (it would visibly condense a 39%-longer
+ * sovereignty-sensitive name — a quality cost on exactly the surface where quality is the
+ * point, not a saving).
+ *
+ * RE-MEASURED, all four combinations, AFTER this fix:
+ *   - CY ink box: still 0/6,321 foreign points in every combination. `SOV119-I2`/`FEN119-M1`
+ *     close as a DOCBLOCK correction, not a geometry move — FENER's original conclusion (0%
+ *     foreign ink) was right all along; its own 147-point grid simply could not carry the
+ *     claim at the precision this component's own history already showed was needed.
+ *   - CY right edge: EXACTLY 340.00 in all four combinations, by construction — `anchor: "end"`
+ *     pins it regardless of string length or viewport width.
+ *   - `qn.leaderFrom` clearance to the CY box, RAW: exactly 40.00u in ALL FOUR combinations —
+ *     `380 − 340`, string length nowhere in it. **This SUPERSEDES, it does NOT restore, this
+ *     docblock's own `distanceToCyBox` figure of 40.40–41.66u from round 3 above** — that
+ *     figure was a MEASURED by-product of a since-changed string's width; 40.00u is a
+ *     CONSTRUCTED constant. Do not go looking for the missing 0.40–1.66u; it is not coming
+ *     back, and restoring it was never the point. PAINTED: 37.38u = 21.37 CSS px (768) /
+ *     38.23u = 32.45 CSS px (1440), both locales — against 0.168u = 0.096 CSS px measured
+ *     before the fix at TR/768. The failure does not reproduce at any of the four, and it
+ *     CANNOT reproduce by the same mechanism at any future string length, because the raw
+ *     40.00u gap has no string length in it. A future CY rename moves the WEST edge only — a
+ *     different hazard with a different, measured budget (below), not the one this fix closes.
+ *   - `leaderElbow` relationship: OUTSIDE the CY ink box in all four combinations now (was
+ *     inside in TR only); leg 1 exactly 33.3% inside in all four — `SOV119-M1`'s inverted
+ *     relationship is restored, and restored IDENTICALLY in both locales for the first time.
+ *   - Both CY leader legs: `hits: false` against `seaMediterranean`'s ink box in all four
+ *     combinations (exact Liang–Barsky segment-vs-rectangle test) — the `SOV108R2-I2`
+ *     invariant round 3 built is untouched.
+ *
+ * WHAT THE FIX BUYS, BOTH HALVES STATED (`VALREM119-I1`) — do NOT read this as
+ * "text-independent": it is text-independent EASTWARD ONLY. The EAST edge (facing the KKTC
+ * leader) becomes a CONSTANT, so leader adjacency cannot recur AT ANY STRING LENGTH — that
+ * failure mode is closed for good, at any future rename. The WEST edge gains a NEW, FINITE
+ * budget instead: the string grows west as it lengthens, and Greek island shapes sit there.
+ * Measured budget, TR/768 (the worst combination, same method, real-string probes appended to
+ * the live CY text): CLEAN (0/6,321 foreign ink) at every probe tried up to +8.21% width
+ * growth (253.66u); the first reliably NON-ZERO result measured is at +10.45% growth (258.91u
+ * — exactly as long as the QN row's own current TR name, "Kuzey Kıbrıs Türk Cumhuriyeti"):
+ * using that real string, 70/6,321 = 1.11% foreign ink, entirely on Greek (`GR`) shapes (the
+ * plan's own remedy-validation pass recorded 71/6,321 = 1.12% at the same reference point —
+ * reproduced to within one grid point). Both END figures reproduce almost exactly. The plan's
+ * own MIDDLE figure (2/6,321 = 0.03% at ≈253.7u, +8.2%) did NOT reproduce in this run: three
+ * different filler strings built to land at 251.9–253.7u (a comparable width) all measured
+ * 0/6,321 here, and the count right at that boundary turned out to be GLYPH-SHAPE dependent
+ * rather than a pure function of box width — which specific characters sit at the box's
+ * western (leading) edge shifts exactly where the ink lands, so two strings of near-identical
+ * width can measure differently. **Stated as an honest range rather than one borrowed number:
+ * this run measures the west budget as clean through at least +8.2% growth and exhausted by
+ * +10.4% growth (roughly two to three characters) — the same order of magnitude and the same
+ * class of finding as "≈+8% of string width, about two characters", with the specific
+ * 253.7u/8.2%/2-point datapoint not reproducing under this run's glyph choices.** If this
+ * entity is renamed again, THIS is the check to re-run (the PR #119 fix-round plan's Appendix
+ * A, the `text` override) — the number is finite and RE-CHECKABLE, not a number to carry
+ * forward unmeasured, which is the exact mistake this fix round exists to correct.
+ *
+ * WEST-SIDE COST ACCEPTED, recorded honestly rather than only netted against the east-side
+ * gain: painted-box clearance west drops from 53.50u to 16.25u at TR/768 (57.25u → 23.00u at
+ * 1440); the nearest hit north becomes a Greek island at 11.25u (768) / 12.00u (1440) instead
+ * of Mersin at 18–19u. Both remain an order of magnitude above the 0.40–1.66u band this
+ * component's own history recorded as the optical failure threshold, and the ink scan is
+ * 0/6,321 in every combination. EN is materially unaffected — its box barely moves (right edge
+ * 339.60→340.00 at 768, 339.52→340.00 at 1440).
+ *
+ * WHY THE SVG IS 726px AND 1078px, NOT `1270 / viewport` — the mechanism, recorded so nobody
+ * re-derives the wrong scale (this is the single easiest number on this surface to get wrong).
+ * The map sits in `.container` (`app/globals.css` — `max-width: var(--container-max)` =
+ * 1120px, `padding-inline: 20px`) inside a box carrying a 1px border
+ * (`components/map/map.module.css`), and `.svg` is `width: 100%`; so the rendered svg is
+ * `768 − 40 − 2 = 726px` and `1120 − 40 − 2 = 1078px` — arithmetic that reproduces both
+ * measured widths exactly. `1270 / viewport` gives 1.654 and 0.882 user units per CSS px
+ * against the real, MEASURED 1.7493 and 1.1781: it UNDERSTATES the user-unit size of a CSS
+ * pixel — and therefore the halo — by 5% at 768px and by 33% at 1440px. A painted-gap figure
+ * computed that way is not comparable to one computed from the rendered box; every painted
+ * number in this docblock uses the svg's measured `getBoundingClientRect().width`, never the
+ * shortcut.
+ *
+ * THE PAIR'S NEW ALIGNMENT ASYMMETRY. The CY row is now END-ANCHORED (`x` is its RIGHT edge)
+ * while the QN row stays CENTRED (`x` is its CENTRE) — both rows still share the same face,
+ * weight (18px Nunito Sans 600) and pairing (`CONVENTIONS.md` §5 intact, both entities still
+ * named), but **the TWO `x: 340` VALUES IN THIS CONSTANT NOW MEAN DIFFERENT THINGS**: `qn.x =
+ * 340` is a centre, `cy.x = 340` is a right edge — a reader who assumes the two mean the same
+ * thing will get the geometry wrong. The block now reads right-ragged on the CY row, centred
+ * on the QN row. This is a typographic asymmetry, not a status one, and it is the owner's to
+ * look at (`CONVENTIONS.md` §5) — see the PR #119 fix-round plan §13.
+ *
+ * HALO VS INK, restated for this round: 0% INK on any foreign shape holds BEFORE and AFTER
+ * (measured above, both states). The HALO (not the ink) comes within 0.50u of Northern
+ * Cyprus's OWN shape at TR/768 BEFORE this fix; AFTER, that clearance is 37.75u. A halo
+ * crossing a coastline is what `map.module.css`'s halo is FOR, and Northern Cyprus is the
+ * paired entity here, not a foreign one — recorded, not escalated (`SOV119-I2`).
+ *
+ * The QN row is UNTOUCHED by this round (`x: 340, y: 428`, still centred, still the literal
+ * `textAnchor="middle"` in the JSX below) — it carries its OWN latent version of this exact
+ * defect class and is deliberately not fixed here; see the PR #119 fix-round plan §10.4 for
+ * the measured east-clearance arithmetic (EN is the binding locale there, not TR) and the
+ * follow-up this round recommends to Atlas.
  */
 const CY_QN_LABEL_BLOCK = {
   qn: { x: 340, y: 428, leaderFrom: { x: 380, y: 438 } },
   cy: {
-    x: 260,
+    x: 340,
     y: 448,
+    anchor: "end",
     leaderFrom: { x: 330, y: 448 },
     leaderElbow: { x: 360, y: 448 },
   },
@@ -768,7 +911,7 @@ export async function TurkeyMapSection({ locale }: TurkeyMapSectionProps) {
                   <text
                     x={CY_QN_LABEL_BLOCK.cy.x}
                     y={CY_QN_LABEL_BLOCK.cy.y}
-                    textAnchor="middle"
+                    textAnchor={CY_QN_LABEL_BLOCK.cy.anchor}
                     fontSize={CONTEXT_COUNTRY_LABEL_SIZE}
                     className={styles.contextLabel}
                   >
