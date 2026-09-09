@@ -128,3 +128,38 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url, li
     expect(lineSpans).toHaveLength(lineCount);
   });
 });
+
+/**
+ * `marine-map.tsx` is DELIBERATELY NOT a `CASES` row above (FEN121-I1, fix round, → plan
+ * `pr121-duzeltme-turu` §5.2). Its credit paragraph joins the OSM/ODbL line and the JRC line
+ * with a bare `<br />`, not the `.attributionLine`/`{" "}` pattern the shared `describe.each`
+ * loop requires — `marine.module.css` declares no `.attributionLine` class at all (that class
+ * exists only in `map.module.css`), so folding this surface into `CASES` would need a new CSS
+ * rule minted plus a three-block-span rewrite of the whole paragraph: a visible layout change
+ * with its own render-sample obligation, not a small test-only change. That `<br />` itself is
+ * `FEN121-PE1`, out of scope for this fix round and not reopened here.
+ *
+ * What FEN121-I1 actually needed — closed here, by a different remedy (Option C, plan §5.2):
+ * a reader could read the bare OSM/ODbL credit as covering the WHOLE map, when the map also
+ * draws Natural-Earth-sourced neighbouring-country context the OSM credit never licensed. The
+ * fix scopes the OSM line's own claim with a new, `/deniz`-only label
+ * (`Map.attributionProvinceLabel`, "İl sınırları:" / "Province boundaries:") rather than adding
+ * a third line — mirroring the JRC line's own already-established scoping pattern in the same
+ * paragraph. This guard is deliberately narrow: it watches the one thing that regresses the
+ * fix (the scope label silently dropping back to a bare, unscoped credit), not the whole
+ * paragraph's markup.
+ */
+describe("marine-map.tsx — the OSM/ODbL credit line carries its own scope label", () => {
+  const source = codeOnly(new URL("../marine/marine-map.tsx", import.meta.url));
+
+  it("prefixes the province-boundary credit with its own scope label (FEN121-I1)", () => {
+    expect(source).toMatch(/\{tMap\("attributionProvinceLabel"\)\}\s*\{tMap\("attribution"\)\}/);
+  });
+
+  it("positive control: the pre-fix, unscoped shape fails the pattern above", () => {
+    const preFixControl = '{tMap("attribution")}';
+    expect(
+      /\{tMap\("attributionProvinceLabel"\)\}\s*\{tMap\("attribution"\)\}/.test(preFixControl),
+    ).toBe(false);
+  });
+});

@@ -54,6 +54,24 @@ interface ValueCellProps {
  * 3. **A bearing with no published convention is printed as a bare number.** Saying "geldiği
  *    yön" when the api has not stated what a degree means here would be inventing the one
  *    fact the arrow-unlock rule exists to protect.
+ *
+ * THE ARROW CELL NO LONGER PREFIXES "Geldiği yön:" (deniz-notlar.txt madde 4). Every cell used
+ * to repeat the convention word ("Geldiği yön" / "Gittiği yön") in front of the compass name —
+ * ~60 times across the hub's 30 rows × 2 directional columns, plus once more per province page.
+ * The reading key beneath the hub's tables (`Marine.values.readingKeyArrow`) already states
+ * the convention once for the whole page ("Ok... gittiği yönü gösterir; yanındaki yazı geldiği
+ * yönü söyler."), so the per-cell prefix was the same fact stated 60 more times. `MARINE_
+ * DIRECTION_CONVENTION_KEY` (`direction.from`/`direction.towards`) is UNCHANGED and still fully
+ * used elsewhere — `layer-catalogue.tsx`'s own "Yön" column states which convention a LAYER
+ * publishes, a genuinely different, un-repeated fact this fix does not touch.
+ *
+ * AN AT-ONLY RESTATEMENT WAS ADDED BACK (A11Y121-I1, this fix round). The simplification above
+ * stands for sighted readers — no visible prefix, no 60×-repeated text. But a linear- or
+ * heading-navigating screen-reader user does not necessarily reach the page-bottom reading key
+ * before a value cell, so each arrow cell now also carries a `.srOnly` span restating the exact
+ * convention word computed from `directionView.convention` (never hardcoded), giving AT users
+ * back the same accessible name the pre-removal cell had, while the visible text node is
+ * unchanged.
  */
 export async function ValueCell({
   magnitude,
@@ -131,8 +149,10 @@ export async function ValueCell({
       {directionView?.kind === "arrow" && (
         <span className={styles.valueDirection}>
           <DirectionArrow rotationDeg={directionView.rotationDeg} />
+          <span className={styles.srOnly}>
+            {tm(MARINE_DIRECTION_CONVENTION_KEY[directionView.convention])}:{" "}
+          </span>
           {tm("values.direction", {
-            label: tm(MARINE_DIRECTION_CONVENTION_KEY[directionView.convention]),
             compass: tm(MARINE_COMPASS_KEY[directionView.compass]),
             degrees: format.number(directionView.bearing, { maximumFractionDigits: 0 }),
           })}

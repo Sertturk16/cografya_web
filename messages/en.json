@@ -99,6 +99,7 @@
     "attribution": "© OpenStreetMap contributors, ODbL",
     "attributionJrcLabel": "Seasonal lake outlines:",
     "attributionJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
+    "attributionProvinceLabel": "Province boundaries:",
     "seaBlackSea": "Black Sea",
     "seaMarmara": "Sea of Marmara",
     "seaAegean": "Aegean Sea",
@@ -472,6 +473,7 @@
     "sourceCmemsNoticeIntro": "The English sentence below is the attribution the Copernicus Marine Service licence requires to be published verbatim.",
     "teaches": "Wind, waves and sea surface temperature in the seas around Türkiye, and the limits of the forecast models these numbers rest on",
     "valuesHeading": "Current values offshore in the four seas",
+    "valuesIntro": "The tables below show the latest values published at each sea's reference points.",
     "faqHeading": "Frequently asked questions"
   },
   "Marine": {
@@ -496,7 +498,7 @@
     },
     "map": {
       "title": "Map of the reference points off Türkiye's coasts",
-      "description": "{count, plural, one {# reference point} other {# reference points}} marked on a map of the provincial boundaries of Türkiye. The names of the points, and the links to their province pages, are in the list directly below the map.",
+      "description": "{count, plural, one {# reference point} other {# reference points}} marked on a map of the provincial boundaries of Türkiye. The map also shows surrounding countries' land as geographic context. The names of the points, and the links to their province pages, are in the list directly below the map.",
       "caption": "Each marker is a fixed reference point offshore of that province. A province on two seas can appear twice."
     },
     "unit": {
@@ -540,29 +542,27 @@
       "label": "Calm"
     },
     "compass": {
-      "n": "north",
-      "ne": "northeast",
-      "e": "east",
-      "se": "southeast",
-      "s": "south",
-      "sw": "southwest",
-      "w": "west",
-      "nw": "northwest"
+      "n": "North",
+      "ne": "Northeast",
+      "e": "East",
+      "se": "Southeast",
+      "s": "South",
+      "sw": "Southwest",
+      "w": "West",
+      "nw": "Northwest"
     },
     "values": {
-      "caption": "{basin}: the latest values published at the reference points.",
       "scrollRegionLabel": "{basin} value table",
       "colPoint": "Point",
       "colWind": "Wind",
       "colWave": "Waves",
       "colSeaTemperature": "Sea water",
-      "colVintage": "Valid at",
+      "colSampleDistance": "Sample distance",
       "kmh": "({value} km/h)",
-      "direction": "{label}: {compass} ({degrees}°)",
+      "direction": "{compass} ({degrees}°)",
       "bearingOnly": "Bearing: {degrees}°",
       "directionStatus": "Direction: {status}",
-      "validAt": "{value} UTC",
-      "gridDistance": "The model cell centre is at most {km} km away.",
+      "gridDistance": "This point's value is sampled from the nearest model data, {km} km away.",
       "readingKeyHeading": "How to read the table",
       "readingKeyArrow": "The arrow shows where the wind or the swell is heading; the text beside it states where it comes from.",
       "readingKeyCalm": "{term}: the value is below the calm threshold in the measurement catalogue, so this word replaces the direction arrow. The number in the cell is rounded to one decimal, so it can read as the threshold itself.",
@@ -573,6 +573,7 @@
     },
     "vintage": {
       "heading": "When are these numbers from?",
+      "combined": "Wind and wave values are as of {windWave} UTC; sea surface temperature is as of {seaTemperature} UTC.",
       "validAtAndRun": "{source}: {validAt} UTC data (Model update: {modelRun} UTC).",
       "validAt": "{source}: {validAt} UTC data.",
       "runOnly": "{source}: Model update {modelRun} UTC."

@@ -4,10 +4,10 @@ import { buildMarineExplainers, MARINE_EXPLAINER_KEYS, type MarineTranslator } f
 /**
  * The explainer BLOCK SET, asserted structurally (`CONVENTIONS.md` §2). Nothing here reads
  * the real Turkish copy: the translator is synthetic and the assertions are about WHICH
- * keys the seven blocks are built from and in WHICH order, never about what those strings
- * say. B11 requires seven blocks in an editorial order, and the module is the only place
- * that set is declared — so the set, the order and the purity of the builder are what a
- * test can meaningfully pin.
+ * keys the blocks are built from and in WHICH order, never about what those strings say. B11
+ * required seven blocks in an editorial order; an eighth (owner-approved, see this module's
+ * own docblock) joined at array position 6. The module is the only place that set is declared
+ * — so the set, the order and the purity of the builder are what a test can meaningfully pin.
  *
  * That the keys actually RESOLVE in the message catalogues is a separate concern, guarded
  * in `messages.test.ts`.
@@ -17,8 +17,11 @@ import { buildMarineExplainers, MARINE_EXPLAINER_KEYS, type MarineTranslator } f
 const echo: MarineTranslator = (key) => `<${key}>`;
 
 describe("MARINE_EXPLAINER_KEYS", () => {
-  it("lists seven blocks (SPEC-ADDENDUM §7.12 B11: 5 core + 2 added)", () => {
-    expect(MARINE_EXPLAINER_KEYS).toHaveLength(7);
+  // Was 7 (SPEC-ADDENDUM §7.12 B11: 5 core + 2 added) until the owner's own directly-approved
+  // eighth question (deniz-notlar.txt madde 5 / deniz-yeni.txt madde 6, "dataFreshness") was
+  // added at array position 6 — see this module's own docblock on `MARINE_EXPLAINER_KEYS`.
+  it("lists eight blocks (5 core + 2 original additions + the owner-approved dataFreshness block)", () => {
+    expect(MARINE_EXPLAINER_KEYS).toHaveLength(8);
   });
 
   it("uses a distinct id and a distinct key pair per block", () => {

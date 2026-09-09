@@ -26,7 +26,7 @@ interface PageProps {
 
 /**
  * `/deniz` is TR-indexable and `/en/sea` is `noindex, follow` — the existing
- * `"trNarrative"` policy, not a new mechanism. The page's substance is seven hand-written
+ * `"trNarrative"` policy, not a new mechanism. The page's substance is the hand-written
  * Turkish explainer blocks that are NOT machine-translated (`SEO-POLICY.md` §B14), so the
  * English rendering is chrome plus data labels: the same thin-EN shape the province and
  * country detail pages already carry. Declared once here and passed to both
@@ -93,7 +93,7 @@ function rendersExplainers(locale: Locale): boolean {
  * - **Page identity stays stable.** `<title>`, the meta description and the `<h1>` state the
  *   page's SUBJECT — which sea, which quantities, how many points — and that subject is true
  *   in every render: the degraded page still carries the map, the thirty points, the
- *   measurement catalogue for exactly those quantities and the seven explainers about them.
+ *   measurement catalogue for exactly those quantities and the explainers about them.
  *   They are NOT gated, for three reasons. (1) A `<title>` that flips between two strings
  *   across ISR windows is a genuinely worse SEO failure than a transient overpromise — the
  *   SERP would show whichever one the last crawl caught. (2) Gating the title but not the
@@ -130,10 +130,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  *   H1 + one helper line
  *   H2  the sea state right now   — map, four value tables, reading key, künye
  *   H2  which model these come from — the measurement catalogue
- *   H2  frequently asked          — the seven explainers, now H3 beneath it
+ *   H2  frequently asked          — the explainers, now H3 beneath it, in a closed-by-default
+ *                                    accordion (deniz-notlar.txt madde 8)
  *   H2  sources and use           — attribution, licence, educational-use notice
  *
- * The seven blocks did not shrink; they moved under the subject they explain. Their headings
+ * The blocks did not shrink; they moved under the subject they explain. Their headings
  * were also rewritten from the method to the READER's question ("Dalga yüksekliği 1 metre
  * yazıyorsa deniz nasıl olur?" rather than "Belirgin dalga yüksekliği ne demektir?"), which
  * is the one on-page change here with real SERP exposure — accepted because the page landed
@@ -174,7 +175,7 @@ export default async function DenizPage({ params }: PageProps) {
     getMarineOverviewSafe(),
   ]);
 
-  // The seven blocks, resolved through the ONE module that lists their keys
+  // The explainer blocks, resolved through the ONE module that lists their keys
   // (`lib/marine/explainers.ts`) — empty on `/en/sea`, where the narrative does not exist.
   const explainers = rendersExplainers(locale) ? buildMarineExplainers(t) : [];
 
@@ -192,13 +193,17 @@ export default async function DenizPage({ params }: PageProps) {
             path,
             locale,
           }),
-          // NO `FAQPage` node, deliberately. The seven blocks are genuinely visible, so the
-          // §B5 5.7 "markup without content" ban is not what rules here — the reason is that
-          // since 2023 Google restricts FAQ rich results to authoritative government and
-          // health sites, so the markup buys this page exactly zero SERP surface while
-          // adding a second copy of the same text that has to be kept in step forever.
+          // NO `FAQPage` node, deliberately. The blocks are genuinely visible, so the §B5 5.7
+          // "markup without content" ban is not what rules here — the reason is that since
+          // 2023 Google restricts FAQ rich results to authoritative government and health
+          // sites, so the markup buys this page exactly zero SERP surface while adding a
+          // second copy of the same text that has to be kept in step forever.
           // The blocks themselves are untouched: they are the page's substance (B11), they
-          // are what a reader and an AI crawler actually read, and they stay in the HTML.
+          // are what a reader and an AI crawler actually read, and they stay in the first-
+          // response HTML — closed-by-default (`marine-explainers.tsx`'s `<details>`
+          // accordion, deniz-notlar.txt madde 8) is a CSS/UA-level collapse, never a removal:
+          // Google explicitly crawls and indexes content behind a native disclosure the same
+          // as always-visible content, unlike the JSON-LD-only "content" this ban targets.
           learningResourceJsonLd({
             name: t("heading"),
             description: t("metaDescription"),
@@ -218,7 +223,7 @@ export default async function DenizPage({ params }: PageProps) {
       />
       <h1>{t("heading")}</h1>
       {/* EN only (→ DEC 2026-08-04i §4). This page is `"trNarrative"` for a different reason
-          from the detail pages — its substance is the seven hand-written Turkish explainer
+          from the detail pages — its substance is the hand-written Turkish explainer
           blocks, deliberately not machine-translated (SEO-POLICY §B14) — but the reader's
           experience is the same one the notice describes. Renders nothing on Turkish. */}
       <EnWorkInProgressNotice locale={locale} />
