@@ -60,6 +60,26 @@ const CSS = readFileSync(fileURLToPath(new URL("./game-map.module.css", import.m
   .replace(/\s+/g, " ");
 
 /**
+ * Rule-block parser for T2 below (CODE118R2-I1 class guard, VAL118R2-C1, PR #118 round 3).
+ * Splits the (already comment-stripped, whitespace-flattened) stylesheet into
+ * {selectors, declarations} pairs so a comma-joined selector list can be inspected
+ * selector-by-selector — `toContain` alone can only say a string appears somewhere, not that
+ * a SPECIFIC selector owns a SPECIFIC declaration block.
+ */
+function ruleBlocks(css: string): { selectors: string[]; declarations: string }[] {
+  const blocks: { selectors: string[]; declarations: string }[] = [];
+  for (const match of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selectorText = match[1]?.trim() ?? "";
+    const declarations = match[2] ?? "";
+    blocks.push({
+      selectors: selectorText.split(",").map((selector) => selector.trim()),
+      declarations,
+    });
+  }
+  return blocks;
+}
+
+/**
  * `MARMARA` → `--region-marmara`, `IC_ANADOLU` → `--region-ic-anadolu`. The token names are
  * derived rather than listed so the mapping cannot drift into a fifth hand-written copy of
  * the region list — and so a copy-paste that points one region's rule at another region's
@@ -136,5 +156,42 @@ describe("game-map.module.css region rules", () => {
       if (region !== undefined) named.add(region);
     }
     expect([...named].sort()).toEqual([...REGION_KEYS].sort());
+  });
+
+  it("gives a focused, already-marked region member its OWN size delta instead of reactivating its province line (§BÖLGE-2 FOCUS, CODE118R2-M1)", () => {
+    for (const region of REGION_KEYS) {
+      for (const state of ["correct", "shown"] as const) {
+        expect(CSS).toContain(
+          `:has(.hitEdge[data-region="${region}"][data-state="${state}"]:focus-visible) .regionOutline[data-region="${region}"]`,
+        );
+      }
+    }
+    // The selector list's own shared declaration — asserting selectors alone would pass on an
+    // empty rule block (→ CR-R2-5, same reasoning as the tint test above).
+    expect(CSS).toMatch(
+      /\.regionOutline\[data-region="GUNEYDOGU_ANADOLU"\] \{ filter: url\(#game-region-outline-focused\); \}/,
+    );
+  });
+
+  it("lets exactly ONE rule own stroke-width for a region-mode, not-yet-marked focused province (CODE118R2-I1 class guard, VAL118R2-C1)", () => {
+    const prefix =
+      '.stage[data-game-active][data-game-mode="regions"] .hitEdge[data-plate]:focus-visible';
+    const owners = ruleBlocks(CSS).filter(
+      (block) =>
+        block.selectors.some((selector) => selector.startsWith(prefix)) &&
+        /stroke-width\s*:/.test(block.declarations),
+    );
+    expect(
+      owners.length,
+      `Expected exactly one rule in game-map.module.css to declare stroke-width for a ` +
+        `region-mode, focused, not-yet-answered province (selector prefix: "${prefix}") — ` +
+        `found ${owners.length}. Two rules writing stroke-width for the SAME element let the ` +
+        `browser's specificity tiebreak silently pick a winner regardless of which rule a ` +
+        `future edit actually meant to change — this is the exact CODE118R2-I1 defect class, ` +
+        `and it has now recurred three times in this file (PR #38 round 2; this PR's own ` +
+        `round 1, on the "stroke" property; this PR's own round 2, on "stroke-width"). If you ` +
+        `added a new state-specific stroke-width override, delete or fold in whatever rule it ` +
+        `now competes with in the SAME change, rather than leaving two rules to race.`,
+    ).toBe(1);
   });
 });

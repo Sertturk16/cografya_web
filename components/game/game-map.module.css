@@ -633,18 +633,28 @@
   outline: none;
 }
 
-/* THE PER-PROVINCE FOCUS LINE — two branches, not one, and CODE118-I1 (PR #118 round 2) is
-   why. Province mode always draws it: a target IS one shape there, so this line doubles as
-   the permanent-mark line and there is no internal boundary to over-bold (see §BÖLGE-2 below).
-   Region mode draws it ONLY for a shape that does not yet carry §BÖLGE-2's permanent mark — a
-   correct/shown member gets its focus delta from the region ring's own halo instead (§BÖLGE-2
-   FOCUS, further down), never from its own perimeter. This is the SAME split pointer hover
-   already makes on its own subject (`:hover:not([data-state])`, above) — the keyboard rule
-   never carried the equivalent guard, which is the bug: mouse hover could never reintroduce an
-   internal seam on a solved region, and keyboard focus could. */
-.stage[data-game-active]:not([data-game-mode="regions"]) .hitEdge[data-plate]:focus-visible,
-.stage[data-game-active][data-game-mode="regions"]
-  .hitEdge[data-plate]:focus-visible:not([data-state="correct"]):not([data-state="shown"]) {
+/* THE PER-PROVINCE FOCUS LINE — two SEPARATE rules, not a shared block, and CODE118R2-I1 /
+   VAL118R2-C1 (PR #118 round 3) is why. Province mode always draws it: a target IS one shape
+   there, so this line doubles as the permanent-mark line and there is no internal boundary to
+   over-bold (see §BÖLGE-2 below). Region mode draws it ONLY for a shape that does not yet
+   carry §BÖLGE-2's permanent mark — a correct/shown member gets its focus delta from the
+   region ring's own halo instead (§BÖLGE-2 FOCUS, further down), never from its own perimeter.
+   This is the SAME split pointer hover already makes on its own subject
+   (`:hover:not([data-state])`, above) — the keyboard rule never carried the equivalent guard,
+   which is the bug round 2 fixed: mouse hover could never reintroduce an internal seam on a
+   solved region, and keyboard focus could.
+
+   ONE RULE PER BRANCH, EACH OWNING BOTH `stroke` AND `stroke-width` OUTRIGHT (round 3). Round
+   2 shipped both branches sharing THIS ONE declaration block, with a second, untouched rule
+   (the region-mode WIDTH STEP, below the province-only wash rule) correcting the region
+   branch's width afterward. Two rules writing the same property for the same element at
+   different specificities is exactly the shape that let round 2's added `:not()` clauses
+   silently flip who won (measured: region-branch specificity rose from (0,5,0) pre-round-2 to
+   (0,8,0), outranking the step rule's untouched (0,6,0) — the same mechanism as PR #38 round 2
+   and this PR's own round 1, mirrored here onto a different property). The region-mode branch
+   now lives at the WIDTH STEP rule below instead, merged into one self-contained declaration —
+   see that comment. */
+.stage[data-game-active]:not([data-game-mode="regions"]) .hitEdge[data-plate]:focus-visible {
   stroke: var(--game-hover-edge);
   stroke-width: var(--game-hover-width);
 }
@@ -672,7 +682,10 @@
 
 /* Bölge mode — the region's silhouette says "Enter answers for this whole bölge", and the
    focused shape carries a heavier line of its OWN so the player can still see WHICH shape
-   the focus is on.
+   the focus is on. THIS IS THE REGION BRANCH OF THE PER-PROVINCE FOCUS LINE ABOVE (round 3):
+   it now owns `stroke` as well as `stroke-width` outright, for exactly the population that
+   comment forward-references — a region-mode, focused shape that does not yet carry
+   §BÖLGE-2's permanent mark.
    WHY THE STEP IS STILL NEEDED. Its original reason was that the region outline used to be
    drawn as eleven identical member borders, so nothing said which of them held focus. The
    silhouette removed that particular collision — mates no longer carry a line at all — but
@@ -688,9 +701,18 @@
    and 4.5px stay those literal CSS pixels at any zoom level rather than scaling with the
    viewBox; and a width difference is not a colour, so it survives a forced-colours mode
    that repaints every stroke in this stylesheet to one system colour.
-   No `:not([data-state])` here, deliberately: focus must be visible even on a shape that is
-   already marked correct/wrong/revealed. */
-.stage[data-game-active][data-game-mode="regions"] .hitEdge[data-plate]:focus-visible {
+   THE `:not([data-state="correct"]):not([data-state="shown"])` GUARD (round 3, carried over
+   from the rule this one absorbed) is new on this exact selector but changes nothing
+   observable: an earlier version of this comment read "No `:not([data-state])` here,
+   deliberately" — true of the OLD, separate step rule this one replaces, but stale the moment
+   the two rules merged, so it is corrected here rather than left to quietly go false.
+   §BÖLGE-2's `stroke: none` (below) is already the sole contributor to `stroke` for a
+   region-mode correct/shown shape regardless of this selector, so a `stroke-width` on a
+   `none` stroke was always moot for those two states — the guard makes the selector's own
+   scope honest, it does not change what renders. */
+.stage[data-game-active][data-game-mode="regions"]
+  .hitEdge[data-plate]:focus-visible:not([data-state="correct"]):not([data-state="shown"]) {
+  stroke: var(--game-hover-edge);
   stroke-width: calc(var(--game-hover-width) + 1.5px);
 }
 
