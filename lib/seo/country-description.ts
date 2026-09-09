@@ -107,8 +107,8 @@ export interface CountryDescriptionSelection {
  *   there would buy nothing and cost four more strings per locale.
  * - **The neighbour tier requires `neighborCount > 0`.** A zero is a real number but not a
  *   usable prose fact, and turning it into one ("has no land neighbours") would be an
- *   editorial claim about borders — unacceptable on the sovereignty rows (Kıbrıs
- *   Cumhuriyeti / KKTC both carry 0 in the seed, → DEC 2026-07-13). Zero therefore falls
+ *   editorial claim about borders — unacceptable on the sovereignty rows (Güney Kıbrıs Rum
+ *   Yönetimi / KKTC both carry 0 in the seed, → DEC 2026-07-13). Zero therefore falls
  *   through to the capital tier, which is a real named feature (§A2/#1 counts a named
  *   feature as a concrete fact).
  * - **No locale gate.** Unlike the province climate tier, every fact used here — population,
@@ -127,9 +127,9 @@ export function selectCountryMetaDescription(
 ): CountryDescriptionSelection {
   const { isoCode, population, areaKm2, neighborCount, capital, name, continent } = input;
 
-  // Special-status rows (Kıbrıs Cumhuriyeti / KKTC / İsrail / Filistin / Tayvan / Kosova —
-  // whichever the api marks, → lib/geo/sovereignty.ts) leave the chain here, BEFORE any tier
-  // runs. Two reasons, both structural:
+  // Special-status rows (Güney Kıbrıs Rum Yönetimi / KKTC / İsrail / Filistin / Tayvan /
+  // Kosova — whichever the api marks, → lib/geo/sovereignty.ts) leave the chain here,
+  // BEFORE any tier runs. Two reasons, both structural:
   //  (a) The variant rotation is keyed on the ISO code, so which framing a contested entity
   //      gets is decided by a checksum — and KKTC's `QN` is a SELF-ASSIGNED internal code
   //      (→ DEC 2026-07-13), i.e. re-coding a row would silently rewrite its SERP framing.

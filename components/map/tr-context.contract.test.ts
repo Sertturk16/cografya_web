@@ -250,19 +250,28 @@ describe("PR #108 fix round 3 — QN/CY leader-line geometry (SOV108R2-I1 / SOV1
     expect(qn).toMatch(/leaderFrom:\s*\{\s*x:\s*380,\s*y:\s*438\s*\}/);
   });
 
-  it("keeps the CY row's own text at x:260/y:448 and its leader as a two-leg polyline clear of seaMediterranean", () => {
+  it("keeps the CY row's own text right edge pinned at x:340/y:448 (anchor: end, PR #119 fix round) and its leader as a two-leg polyline clear of seaMediterranean", () => {
     const cyMatch = SOURCE.match(
       /cy:\s*\{([^}]*leaderFrom:\s*\{[^}]*\}[^}]*leaderElbow:\s*\{[^}]*\}[^}]*)\}/,
     );
     expect(cyMatch, "cy entry (with leaderElbow) not found in CY_QN_LABEL_BLOCK").not.toBeNull();
     const cy = cyMatch?.[1] ?? "";
-    expect(cy).toMatch(/x:\s*260\b/);
+    // PR #119 fix round: x is now the row's RIGHT edge (anchor: "end"), not a centre — the
+    // string is fetched live and its length is not this repo's to control, so the hazardous
+    // (east) edge is pinned to a constant instead of a function of string width.
+    expect(cy).toMatch(/x:\s*340\b/);
     expect(cy).toMatch(/y:\s*448\b/);
+    expect(cy).toMatch(/anchor:\s*"end"/);
     expect(cy).toMatch(/leaderFrom:\s*\{\s*x:\s*330,\s*y:\s*448\s*\}/);
     // The elbow sits on the SAME y as leaderFrom (the row's own baseline) — leg 1 is safe by
     // staying entirely above seaMediterranean's ink-box top edge regardless of x; leg 2 (elbow
     // to target) is safe by staying entirely right of its ink-box right edge regardless of y.
     expect(cy).toMatch(/leaderElbow:\s*\{\s*x:\s*360,\s*y:\s*448\s*\}/);
+  });
+
+  it('renders the CY row\'s <text> with textAnchor driven by CY_QN_LABEL_BLOCK.cy.anchor, not a literal "middle"', () => {
+    const labelsBlock = layerBlock(SOURCE, "context-labels");
+    expect(labelsBlock).toMatch(/textAnchor=\{CY_QN_LABEL_BLOCK\.cy\.anchor\}/);
   });
 
   it("renders the CY leader as a fill:none <polyline> through leaderFrom → leaderElbow → the shape's labelPoint, not a straight <line>", () => {
