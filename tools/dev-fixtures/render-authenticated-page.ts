@@ -1,7 +1,27 @@
-import { promises as dns } from "node:dns";
+import { randomBytes } from "node:crypto";
+import { writeSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { chromium, type Cookie, type Page, type Request, type Response } from "playwright";
+import {
+  chromium,
+  type BrowserContext,
+  type Cookie,
+  type Page,
+  type Request,
+  type Response,
+} from "playwright";
+
+import {
+  RenderAuthError,
+  assertLoopbackTarget,
+  assertNoRegisterPath,
+  assertSameOrigin,
+  originKey,
+  redactSecrets,
+  registerSecret,
+  allocateBaseName,
+  REGISTER_PATH_PATTERN,
+} from "./render-auth-guards.ts";
 
 /**
  * `tools/dev-fixtures/render-authenticated-page.ts` — a repeatable, non-interactive way for a
@@ -16,7 +36,9 @@ import { chromium, type Cookie, type Page, type Request, type Response } from "p
  * The `iris-audit@local.test` fixture account (`cografya_api/tools/dev-fixtures/
  * iris-audit-account.ts`, `DEC 2026-08-27e`), the app's own `/giris` login FORM
  * (`components/auth/login-form.tsx`) and cookie session (`lib/auth/cookies.ts`), and the repo's
- * own `playwright` devDependency. Nothing new except this driver and its documentation.
+ * own `playwright` devDependency. The pure boundary logic — the loopback guard, the
+ * per-navigation origin check, the register-path guard and secret redaction — lives in the
+ * sibling module `render-auth-guards.ts`; this file keeps only the browser driving and I/O.
  *
  * ## Why the real login FORM, not a raw `fetch('/api/auth/login', …)`
  * A raw fetch would need to reconstruct `submitAuth()`'s exact request shape and would silently
@@ -27,18 +49,22 @@ import { chromium, type Cookie, type Page, type Request, type Response } from "p
  * This script never touches `/kayit` (register — creates a NEW user row, the real mutation
  * risk) and only ever logs in with an EXISTING, already-provisioned synthetic fixture account
  * through the app's own `/giris` login form — no new account, no new content, no product-data
- * row. `assertNoRegisterPath()` below enforces the `/kayit`-avoidance half of that boundary at
- * runtime, not only in this comment.
+ * row. `assertNoRegisterPath()` (imported below) enforces the `/kayit`-avoidance half of that
+ * boundary at runtime, not only in this comment, and is applied to every path this tool
+ * resolves: the raw `--paths` string, the resolved pathname, and the LANDED pathname after
+ * every navigation.
  *
- * ## Production-use risk (plan §10, Acceptance Criterion 3)
- * Even if the fixture credential leaked, it authenticates nothing in production: production has
- * no such row (the api-side fixture tool refuses to provision anywhere but a DNS-verified
- * loopback database), and a login attempt against a real deployment simply fails. This script
- * additionally refuses to run at all unless `RENDER_AUTH_BASE_URL` is itself a DNS-verified
- * loopback target — `assertLoopbackTarget()` below, mirroring (not importing — no cross-repo
- * import is available from a Node-native-TS tool with no build step, the same reason
- * `cografya_api/tools/dev-fixtures/local-database-guard.ts`'s own header gives) that file's
- * `isLoopbackHostname`/`isLoopbackAddress` logic.
+ * ## Production-use risk (plan §10, Acceptance Criterion 3) — narrowed, PR #131 fix round
+ * This guard proves the target *socket* is loopback: the scheme is `http:`/`https:`, the host
+ * literal is a conventional loopback spelling, DNS resolves it inside `127.0.0.0/8` or `::1`
+ * (`assertLoopbackTarget()`, imported from `render-auth-guards.ts` — mirroring, not importing,
+ * `cografya_api/tools/dev-fixtures/local-database-guard.ts`'s own `isLoopbackHostname`/
+ * `isLoopbackAddress` logic, since no cross-repo import path exists for a build-step-free tool
+ * in this repo either), and every navigation this script performs is re-checked against that
+ * verified target, including the origin a redirect actually lands on. It does NOT prove which
+ * *process* is listening there: an `ssh -L` or `kubectl port-forward` tunnel binds a remote
+ * service to loopback and passes this guard unchanged — see `ENGINEERING.md` §11 for the full,
+ * honest guarantee text. Do not run this tool with such a tunnel open.
  *
  * ## Stale/rotated credential (plan §10 risk, Atlas §13.2 ruling)
  * `iris-audit-account.ts` is idempotent but NOT append-only: a re-run (e.g. by İRİS re-running
@@ -67,108 +93,12 @@ const LOGIN_SUBMIT_TIMEOUT_MS = 15_000;
 const HYDRATION_SETTLE_TIMEOUT_MS = 3_000;
 
 // ---------------------------------------------------------------------------------------------
-// Loopback guard for RENDER_AUTH_BASE_URL — the AC-3 enforcement point (plan §10/§400 manifest).
-// Mirrors `cografya_api/tools/dev-fixtures/local-database-guard.ts`'s logic; not imported (no
-// cross-repo import path exists for a build-step-free tool in this repo either).
-// ---------------------------------------------------------------------------------------------
-
-const ALLOWED_LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
-
-/** True only for the three conventional loopback spellings (IPv6 bracket form unwrapped first). */
-function isLoopbackHostname(rawHostname: string): boolean {
-  let hostname = rawHostname.toLowerCase();
-  if (hostname.startsWith("[") && hostname.endsWith("]")) {
-    hostname = hostname.slice(1, -1);
-  }
-  return ALLOWED_LOOPBACK_HOSTNAMES.has(hostname);
-}
-
-const OCTET = "(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])";
-const LOOPBACK_V4_PATTERN = new RegExp(`^127\\.${OCTET}\\.${OCTET}\\.${OCTET}$`);
-
-/** True only for a resolved address inside `127.0.0.0/8` or `::1`. */
-function isLoopbackAddress(address: string): boolean {
-  if (address === "::1") return true;
-  const ipv4 = address.startsWith("::ffff:") ? address.slice("::ffff:".length) : address;
-  return LOOPBACK_V4_PATTERN.test(ipv4);
-}
-
-type DnsLookupFn = (
-  hostname: string,
-) => Promise<ReadonlyArray<{ address: string; family: number }>>;
-
-const defaultLookup: DnsLookupFn = (hostname) => dns.lookup(hostname, { all: true });
-
-class RenderAuthError extends Error {}
-
-/**
- * Refuses (throws {@link RenderAuthError}) unless BOTH hold: the URL's hostname literal is a
- * conventional loopback spelling, AND that hostname's actual DNS resolution is loopback too.
- * No navigation happens before this resolves.
- */
-async function assertLoopbackTarget(
-  rawUrl: string,
-  lookup: DnsLookupFn = defaultLookup,
-): Promise<URL> {
-  let parsed: URL;
-  try {
-    parsed = new URL(rawUrl);
-  } catch {
-    throw new RenderAuthError(
-      `RENDER_AUTH_BASE_URL "${rawUrl}" is not a valid URL — refusing to run.`,
-    );
-  }
-
-  const hostname = parsed.hostname;
-  if (!isLoopbackHostname(hostname)) {
-    throw new RenderAuthError(
-      `RENDER_AUTH_BASE_URL host "${hostname}" is not a conventional loopback spelling ` +
-        `(localhost / 127.0.0.1 / ::1). Refusing to run against a non-local target.`,
-    );
-  }
-
-  let resolved: ReadonlyArray<{ address: string; family: number }>;
-  try {
-    resolved = await lookup(hostname);
-  } catch (error) {
-    throw new RenderAuthError(
-      `RENDER_AUTH_BASE_URL host "${hostname}" could not be resolved: ` +
-        `${error instanceof Error ? error.message : String(error)}. Refusing to run.`,
-    );
-  }
-
-  if (resolved.length === 0 || !resolved.every((entry) => isLoopbackAddress(entry.address))) {
-    const addresses = resolved.map((entry) => entry.address).join(", ") || "(no address)";
-    throw new RenderAuthError(
-      `RENDER_AUTH_BASE_URL host "${hostname}" resolves to a non-loopback address (${addresses}). ` +
-        `The hostname literal alone is never trusted — refusing to run.`,
-    );
-  }
-
-  return parsed;
-}
-
-// ---------------------------------------------------------------------------------------------
 // CLI args + env contract
 // ---------------------------------------------------------------------------------------------
 
 interface CliArgs {
   readonly paths: readonly string[];
   readonly outDir: string;
-}
-
-/** Prohibition (plan §400 manifest, binding): never navigate to or interact with `/kayit`. Also
- *  blocks the EN twin (`/en/register`, `/en/v2/register`) and the v2 TR twin (`/v2/kayit`). */
-const REGISTER_PATH_PATTERN = /(^|\/)(kayit|register)(\/|$)/i;
-
-function assertNoRegisterPath(targetPath: string): void {
-  if (REGISTER_PATH_PATTERN.test(targetPath)) {
-    throw new RenderAuthError(
-      `Refusing to navigate to "${targetPath}" — this tool must never touch a register path ` +
-        `(the reviewer read-only boundary's real mutation risk, plan §2/§10). This is not a ` +
-        `configuration mistake to work around; pass a different --paths value.`,
-    );
-  }
 }
 
 function readFlagValue(argv: readonly string[], flag: string): string | undefined {
@@ -231,18 +161,28 @@ function readEnvContract(): EnvContract {
     );
   }
 
+  // The moment the password validates, before any code that could throw with it in scope.
+  registerSecret(password);
+
   return { baseUrl, email, password };
 }
 
 // ---------------------------------------------------------------------------------------------
-// Output helpers
+// stdout / stderr — every write goes through here, so redaction is structural, not a habit.
 // ---------------------------------------------------------------------------------------------
 
-function sanitizePathForFilename(targetPath: string): string {
-  const trimmed = targetPath.replace(/^\/+/, "").replace(/\/+$/, "");
-  if (trimmed.length === 0) return "root";
-  return trimmed.replace(/[^a-zA-Z0-9._-]+/g, "_");
+function writeStdout(text: string): void {
+  process.stdout.write(redactSecrets(text));
 }
+
+/** Synchronous, so a last-gasp message is never truncated by an immediate `process.exit`. */
+function writeStderr(text: string): void {
+  writeSync(2, redactSecrets(text));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Evidence types
+// ---------------------------------------------------------------------------------------------
 
 interface SeoFacts {
   readonly title: string;
@@ -281,7 +221,274 @@ interface NetworkEntry {
   readonly url: string;
   readonly method: string;
   readonly resourceType: string;
-  readonly status: number;
+  /** `null` when the request never produced a response (see `failure`). */
+  readonly status: number | null;
+  /** `request.failure()?.errorText`, populated only on a `requestfailed` event. */
+  readonly failure: string | null;
+}
+
+// ---------------------------------------------------------------------------------------------
+// RunRecorder — the ONLY writer of run evidence. Every artefact is written THROUGH it, and the
+// same call updates `__run.json`, so there is no code path that writes a file without recording
+// it. Redaction happens on the VALUE handed in, before serialisation — never on an already-
+// serialised string, which could have escaped the literal substring (`JSON.stringify` turns
+// `"`/`\` into `\"`/`\\`).
+// ---------------------------------------------------------------------------------------------
+
+interface RunManifestLoginStep {
+  readonly baseName: string;
+  readonly files: readonly string[];
+  readonly landedUrl: string;
+  readonly at: string;
+}
+
+interface RunManifestCapture {
+  readonly requestedPath: string;
+  readonly baseName: string;
+  readonly landedUrl: string;
+  readonly files: readonly string[];
+  readonly title: string;
+  readonly canonical: string | null;
+  readonly hreflangs: SeoFacts["hreflangs"];
+  readonly robots: string | null;
+  readonly jsonLdCount: number;
+  readonly consoleErrorCount: number;
+  readonly networkFailureCount: number;
+  readonly networkErrorStatusCount: number;
+  readonly at: string;
+}
+
+interface RunManifest {
+  readonly schema: 1;
+  readonly tool: "render-authenticated-page";
+  status: "running" | "completed" | "failed";
+  readonly startedAt: string;
+  finishedAt: string | null;
+  readonly baseUrl: string;
+  readonly verifiedOrigin: string;
+  readonly email: string;
+  readonly requestedPaths: readonly string[];
+  loginStep: RunManifestLoginStep | null;
+  captures: RunManifestCapture[];
+  error: string | null;
+}
+
+/** Redacts every string leaf of a JSON-safe value, recursively — applied to VALUES before
+ *  `JSON.stringify`, never to the serialised string. */
+function redactJsonValue<T>(value: T): T {
+  if (typeof value === "string") {
+    return redactSecrets(value) as unknown as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => redactJsonValue(entry)) as unknown as T;
+  }
+  if (value !== null && typeof value === "object") {
+    const redacted: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      redacted[key] = redactJsonValue(entry);
+    }
+    return redacted as T;
+  }
+  return value;
+}
+
+function formatRunTimestamp(date: Date): string {
+  return date
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
+}
+
+class RunRecorder {
+  readonly runDir: string;
+  private readonly manifestPath: string;
+  private manifest: RunManifest;
+
+  // Not a TypeScript parameter-property constructor: this file runs directly under Node's
+  // native (erasable-syntax-only) type stripping, which does not support that shorthand —
+  // measured directly against this file, not assumed.
+  private constructor(runDir: string, manifestPath: string, manifest: RunManifest) {
+    this.runDir = runDir;
+    this.manifestPath = manifestPath;
+    this.manifest = manifest;
+  }
+
+  static async open(
+    outDir: string,
+    baseUrl: string,
+    verifiedOrigin: string,
+    email: string,
+    requestedPaths: readonly string[],
+  ): Promise<RunRecorder> {
+    const runDir = path.join(
+      outDir,
+      `run-${formatRunTimestamp(new Date())}-${randomBytes(3).toString("hex")}`,
+    );
+    await mkdir(runDir, { recursive: true });
+    const manifest: RunManifest = {
+      schema: 1,
+      tool: "render-authenticated-page",
+      status: "running",
+      startedAt: new Date().toISOString(),
+      finishedAt: null,
+      baseUrl,
+      verifiedOrigin,
+      email,
+      requestedPaths: [...requestedPaths],
+      loginStep: null,
+      captures: [],
+      error: null,
+    };
+    const recorder = new RunRecorder(runDir, path.join(runDir, "__run.json"), manifest);
+    await recorder.persist();
+    // Printed as the FIRST line after the directory is created — before login — so a run that
+    // fails afterwards still tells the operator where to look. A stage-1 refusal (see main())
+    // happens before this ever runs, so it creates no directory and prints none.
+    writeStdout(`[render-authenticated-page] run directory: ${runDir}\n`);
+    return recorder;
+  }
+
+  private async persist(): Promise<void> {
+    await writeFile(this.manifestPath, JSON.stringify(this.manifest, null, 2), "utf8");
+  }
+
+  async writeJson(fileName: string, value: unknown): Promise<string> {
+    const redacted = redactJsonValue(value);
+    await writeFile(path.join(this.runDir, fileName), JSON.stringify(redacted, null, 2), "utf8");
+    return fileName;
+  }
+
+  async writeText(fileName: string, text: string): Promise<string> {
+    await writeFile(path.join(this.runDir, fileName), redactSecrets(text), "utf8");
+    return fileName;
+  }
+
+  /** Binary artefacts (the screenshot) are never redacted — redaction cannot reach image bytes,
+   *  and this is stated as a boundary, not claimed closed (see the fill-path mitigations this
+   *  tool relies on instead). */
+  async writeBinary(fileName: string, data: Buffer): Promise<string> {
+    await writeFile(path.join(this.runDir, fileName), data);
+    return fileName;
+  }
+
+  async recordLoginStep(
+    baseName: string,
+    files: readonly string[],
+    landedUrl: string,
+  ): Promise<void> {
+    this.manifest.loginStep = {
+      baseName,
+      files: [...files],
+      landedUrl,
+      at: new Date().toISOString(),
+    };
+    await this.persist();
+  }
+
+  async recordCapture(capture: RunManifestCapture): Promise<void> {
+    this.manifest.captures.push(capture);
+    await this.persist();
+  }
+
+  async finish(status: "completed" | "failed", error: string | null): Promise<void> {
+    this.manifest.status = status;
+    this.manifest.finishedAt = new Date().toISOString();
+    this.manifest.error = error !== null ? redactSecrets(error) : null;
+    await this.persist();
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Frame-navigation watcher — registered on the context BEFORE any navigation. Catches anything
+// that moves the main frame without going through `navigate()` below, including a same-document
+// (pushState/replaceState-style) navigation. Fail-closed only: it can make the tool refuse, it
+// can never make it accept.
+// ---------------------------------------------------------------------------------------------
+
+interface ViolationWatch {
+  readonly violations: string[];
+}
+
+function createViolationWatch(): ViolationWatch {
+  return { violations: [] };
+}
+
+function watchFrameNavigations(
+  context: BrowserContext,
+  page: Page,
+  verifiedBase: URL,
+  watch: ViolationWatch,
+): void {
+  const watched = new WeakSet<Page>();
+  const attach = (target: Page): void => {
+    if (watched.has(target)) return;
+    watched.add(target);
+    target.on("framenavigated", (frame) => {
+      if (frame !== target.mainFrame()) return; // sub-frames (e.g. the YouTube embed) excluded
+      const raw = frame.url();
+      if (raw === "" || raw === "about:blank") return; // the initial blank document
+      let landed: URL;
+      try {
+        landed = new URL(raw);
+      } catch {
+        watch.violations.push(`unparseable main-frame URL "${raw}"`);
+        return;
+      }
+      if (originKey(landed) !== originKey(verifiedBase)) {
+        watch.violations.push(`main frame landed on ${originKey(landed)}`);
+      } else if (REGISTER_PATH_PATTERN.test(landed.pathname)) {
+        watch.violations.push(`main frame landed on register path ${landed.pathname}`);
+      }
+    });
+  };
+  // Both are used because whether `context.on("page")` fires for the page returned by
+  // `newPage()` was not measured — the main page must not be left unwatched on a guess.
+  context.on("page", attach);
+  attach(page);
+}
+
+function assertNoViolations(watch: ViolationWatch, context: string): void {
+  if (watch.violations.length === 0) return;
+  const detail = watch.violations.join("; ");
+  watch.violations.length = 0;
+  throw new RenderAuthError(
+    `Refusing after ${context} — the frame-navigation watcher recorded a violation: ${detail}.`,
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// The single checked navigation path. Exactly one `page.goto` call site exists in this file,
+// here — a structural test (`render-auth-guards.test.ts` group H) asserts the call-site count
+// so a future contributor cannot quietly add a second one.
+// ---------------------------------------------------------------------------------------------
+
+async function navigate(
+  page: Page,
+  verifiedBase: URL,
+  targetPath: string,
+  watch: ViolationWatch,
+): Promise<URL> {
+  const url = new URL(targetPath, verifiedBase); // may inherit a foreign host
+  assertSameOrigin(url, verifiedBase, `--paths entry "${targetPath}"`); // constructed-URL origin
+  assertNoRegisterPath(url.pathname); // resolved pathname, not the raw string
+
+  await page.goto(url.toString(), { waitUntil: "load", timeout: NAVIGATION_TIMEOUT_MS });
+
+  const landed = new URL(page.url()); // page.goto FOLLOWS redirects
+  assertSameOrigin(landed, verifiedBase, `landed URL for "${targetPath}"`);
+  assertNoRegisterPath(landed.pathname);
+  assertNoViolations(watch, `navigation to "${targetPath}"`);
+  return landed;
+}
+
+/** Re-checks the CURRENT page location against the verified base — used where the page moved
+ *  without a fresh `navigate()` call (a client-side redirect, or the post-hydration settle
+ *  window), never as a substitute for `navigate()` itself. */
+function assertStillOnVerifiedOrigin(page: Page, verifiedBase: URL, context: string): URL {
+  const current = new URL(page.url());
+  assertSameOrigin(current, verifiedBase, context);
+  assertNoRegisterPath(current.pathname);
+  return current;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -300,9 +507,17 @@ function describeLoginFailure(baseUrl: string, email: string): string {
   );
 }
 
-async function login(page: Page, baseUrl: string, email: string, password: string): Promise<void> {
-  const loginUrl = new URL("/giris", baseUrl).toString();
-  await page.goto(loginUrl, { waitUntil: "domcontentloaded", timeout: NAVIGATION_TIMEOUT_MS });
+async function login(
+  page: Page,
+  verifiedBase: URL,
+  email: string,
+  password: string,
+  watch: ViolationWatch,
+): Promise<URL> {
+  // N1 — the landed-origin check inside navigate() MUST complete before the password is typed
+  // below (Appendix B C10, the round's sharpest ordering constraint): once a value is entered
+  // into a foreign document, no later check can recall it.
+  await navigate(page, verifiedBase, "/giris", watch);
 
   await page.fill("#login-email", email);
   await page.fill("#login-password", password);
@@ -318,81 +533,115 @@ async function login(page: Page, baseUrl: string, email: string, password: strin
     // Fall through — the cookie check below is the authoritative, loud failure signal.
   }
 
+  // N3 — the client-side redirect above never goes through navigate(); re-check explicitly,
+  // before trusting the cookie.
+  const landed = assertStillOnVerifiedOrigin(page, verifiedBase, "the post-login redirect");
+  assertNoViolations(watch, "the post-login redirect");
+
   const cookies: readonly Cookie[] = await page.context().cookies();
   const hasAccessCookie = cookies.some((cookie) => cookie.name === "cg_access");
   if (!hasAccessCookie) {
-    throw new RenderAuthError(describeLoginFailure(baseUrl, email));
+    throw new RenderAuthError(describeLoginFailure(verifiedBase.toString(), email));
   }
+
+  return landed;
 }
 
 // ---------------------------------------------------------------------------------------------
 // Per-path capture
 // ---------------------------------------------------------------------------------------------
 
-async function writeEvidenceFiles(
-  outDir: string,
-  baseName: string,
+async function captureLoginStep(
+  recorder: RunRecorder,
   consoleLog: readonly ConsoleEntry[],
   networkLog: readonly NetworkEntry[],
+  landedUrl: URL,
 ): Promise<void> {
-  await writeFile(
-    path.join(outDir, `${baseName}.console.json`),
-    JSON.stringify(consoleLog, null, 2),
-    "utf8",
-  );
-  await writeFile(
-    path.join(outDir, `${baseName}.network.json`),
-    JSON.stringify(networkLog, null, 2),
-    "utf8",
-  );
+  // Dedicated evidence for the login step itself — this is where a reviewer finds the
+  // `POST /api/auth/login` call and its 2xx status, separate from any target page's own scoped
+  // capture. `__` prefix keeps this name out of the way of any real `--paths` entry's sanitized
+  // filename (and `counts` below is pre-seeded so a colliding entry is still distinguishable).
+  const consoleFile = await recorder.writeJson("__login-step.console.json", consoleLog);
+  const networkFile = await recorder.writeJson("__login-step.network.json", networkLog);
+  await recorder.recordLoginStep("__login-step", [consoleFile, networkFile], landedUrl.toString());
 }
 
 async function capturePath(
   page: Page,
-  baseUrl: string,
+  verifiedBase: URL,
   targetPath: string,
-  outDir: string,
+  recorder: RunRecorder,
+  counts: Map<string, number>,
   consoleLog: ConsoleEntry[],
   networkLog: NetworkEntry[],
+  watch: ViolationWatch,
 ): Promise<void> {
   assertNoRegisterPath(targetPath);
 
-  // Reset BEFORE this path's own navigation: each path's `.console.json`/`.network.json` is
-  // scoped to that path's OWN render, never contaminated by another path's activity or by the
-  // pre-login anonymous session check (which legitimately 401s — "not logged in yet" — and is
-  // NOT a defect in the authenticated render this capture exists to evidence). The listeners
-  // keep pushing into these SAME array objects (passed by reference); only their contents are
-  // cleared, never the arrays themselves, so the closures registered once in `main()` keep
-  // working after this reset.
+  // Reset BEFORE this path's own navigation: each path's evidence is scoped to that path's OWN
+  // render, never contaminated by another path's activity or by the pre-login anonymous session
+  // check (which legitimately 401s and is NOT a defect). The listeners keep pushing into these
+  // SAME array objects (passed by reference); only their contents are cleared.
   consoleLog.length = 0;
   networkLog.length = 0;
 
-  const url = new URL(targetPath, baseUrl).toString();
-  // `waitUntil: "networkidle"` is NOT used here: Next's dev server (Turbopack HMR) holds a
-  // persistent WebSocket open for the life of the page, so "no network connections for 500ms"
-  // never becomes true in dev mode — measured directly (a real `/giris` load never reached
-  // networkidle inside a 15s window). `load` is the hard wait; the short networkidle attempt
-  // after it is a best-effort settle window for post-hydration client fetches (e.g.
-  // `useAuthSession`'s own session check) and is allowed to time out without failing the
-  // capture — it is not this function's authoritative readiness signal.
-  await page.goto(url, { waitUntil: "load", timeout: NAVIGATION_TIMEOUT_MS });
+  const landed = await navigate(page, verifiedBase, targetPath, watch);
+
+  // `waitUntil: "networkidle"` is NOT used inside navigate(): Next's dev server (Turbopack HMR)
+  // holds a persistent WebSocket open for the life of the page, so "no network connections for
+  // 500ms" never becomes true in dev mode. `load` is the hard wait; this short attempt is a
+  // best-effort settle window for post-hydration client fetches, allowed to time out.
   await page.waitForLoadState("networkidle", { timeout: HYDRATION_SETTLE_TIMEOUT_MS }).catch(() => {
     // Expected in dev mode (see comment above) — proceed with whatever has settled so far.
   });
 
+  // N5 — a client-side navigation could have moved the page during the settle window above.
+  // Re-check immediately before reading or writing ANY evidence for this path.
+  assertStillOnVerifiedOrigin(page, verifiedBase, `the settle window for "${targetPath}"`);
+  assertNoViolations(watch, `the settle window for "${targetPath}"`);
+
   const html = await page.content();
   const seoFacts = await extractSeoFacts(page);
 
-  const base = sanitizePathForFilename(targetPath);
-  await writeFile(path.join(outDir, `${base}.html`), html, "utf8");
-  await writeEvidenceFiles(outDir, base, consoleLog, networkLog);
-  await page.screenshot({ path: path.join(outDir, `${base}.png`), fullPage: true });
+  const baseName = allocateBaseName(counts, targetPath);
+  const htmlFile = await recorder.writeText(`${baseName}.html`, html);
+  const consoleFile = await recorder.writeJson(`${baseName}.console.json`, consoleLog);
+  const networkFile = await recorder.writeJson(`${baseName}.network.json`, networkLog);
 
-  process.stdout.write(
+  // Taken as a Buffer, with NO `path` option — the recorder is the only writer, and the
+  // violation drain above has already run, so no capture that violated the guard can leave a
+  // screenshot behind.
+  const png = await page.screenshot({ fullPage: true });
+  const pngFile = await recorder.writeBinary(`${baseName}.png`, png);
+
+  const consoleErrorCount = consoleLog.filter((entry) => entry.type === "error").length;
+  const networkFailureCount = networkLog.filter((entry) => entry.status === null).length;
+  const networkErrorStatusCount = networkLog.filter(
+    (entry) => entry.status !== null && entry.status >= 400,
+  ).length;
+
+  await recorder.recordCapture({
+    requestedPath: targetPath,
+    baseName,
+    landedUrl: landed.toString(),
+    files: [htmlFile, consoleFile, networkFile, pngFile],
+    title: seoFacts.title,
+    canonical: seoFacts.canonical,
+    hreflangs: seoFacts.hreflangs,
+    robots: seoFacts.robots,
+    jsonLdCount: seoFacts.jsonLdCount,
+    consoleErrorCount,
+    networkFailureCount,
+    networkErrorStatusCount,
+    at: new Date().toISOString(),
+  });
+
+  writeStdout(
     `[render-authenticated-page] ${targetPath} -> title="${seoFacts.title}" ` +
       `canonical=${seoFacts.canonical ?? "(none)"} ` +
       `hreflang=[${seoFacts.hreflangs.map((entry) => entry.hreflang ?? "?").join(", ")}] ` +
-      `robots=${seoFacts.robots ?? "(none)"} jsonLdCount=${seoFacts.jsonLdCount}\n`,
+      `robots=${seoFacts.robots ?? "(none)"} jsonLdCount=${seoFacts.jsonLdCount} ` +
+      `consoleErrorCount=${consoleErrorCount} networkFailureCount=${networkFailureCount}\n`,
   );
 }
 
@@ -404,30 +653,45 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const env = readEnvContract();
 
-  // AC-3 enforcement point: refuse before opening a browser at all unless the target is a
-  // DNS-verified loopback origin.
-  await assertLoopbackTarget(env.baseUrl);
+  // AC-3 enforcement point: refuse before touching the filesystem or opening a browser at all
+  // unless the target is a DNS-verified loopback origin.
+  const verifiedBase = await assertLoopbackTarget(env.baseUrl);
 
-  await mkdir(args.outDir, { recursive: true });
+  // Stage 1 — every --paths entry is resolved against the VERIFIED base and checked before any
+  // side effect exists. When this refuses there is no run directory and no browser process.
+  // Stage 2 (navigate(), below) exists because stage 1 cannot see a LANDED url, and because a
+  // future caller could reach navigate() without going through this loop.
+  for (const targetPath of args.paths) {
+    const resolved = new URL(targetPath, verifiedBase); // may inherit a foreign host
+    assertSameOrigin(resolved, verifiedBase, `--paths entry "${targetPath}"`);
+    assertNoRegisterPath(resolved.pathname);
+  }
+
+  const recorder = await RunRecorder.open(
+    args.outDir,
+    env.baseUrl,
+    originKey(verifiedBase),
+    env.email,
+    args.paths,
+  );
+  activeRecorder = recorder;
+
+  // Reserved so a --paths entry that happens to sanitize to one of these names is still
+  // distinguishable (pushed to a numeric suffix) rather than colliding silently.
+  const counts = new Map<string, number>([
+    ["__login-step", 1],
+    ["__run", 1],
+  ]);
 
   const browser = await chromium.launch({ headless: true });
   try {
     const context = await browser.newContext();
     const page = await context.newPage();
+    const watch = createViolationWatch();
+    watchFrameNavigations(context, page, verifiedBase, watch); // BEFORE any navigation
 
-    // Two arrays, reused (never reassigned) across the whole run: every `page.on("console"/
-    // "request"/"response")` event pushes into whichever of these is currently "live". Each
-    // path capture (`capturePath`) clears them immediately before its OWN navigation, so a
-    // path's `.console.json`/`.network.json` is scoped to that path's own render — a benign
-    // pre-login 401 from the anonymous session check, or another path's own network traffic,
-    // never leaks into a later path's evidence file (an implementation choice the plan's §5
-    // Technical Direction left open; measured necessary — see the login-step evidence below).
     const consoleLog: ConsoleEntry[] = [];
     const networkLog: NetworkEntry[] = [];
-    const pendingRequests = new Map<
-      Request,
-      { url: string; method: string; resourceType: string }
-    >();
 
     page.on("console", (message) => {
       consoleLog.push({
@@ -436,50 +700,104 @@ async function main(): Promise<void> {
         location: message.location().url || undefined,
       });
     });
-    page.on("request", (request: Request) => {
-      pendingRequests.set(request, {
-        url: request.url(),
-        method: request.method(),
-        resourceType: request.resourceType(),
-      });
-    });
+    // No separate "request" listener / pending-requests map (CS131-M1 removed): both handlers
+    // below read the synchronous getters directly at the moment they fire.
     page.on("response", (response: Response) => {
       const request = response.request();
-      const info = pendingRequests.get(request) ?? {
+      networkLog.push({
         url: request.url(),
         method: request.method(),
         resourceType: request.resourceType(),
-      };
-      networkLog.push({ ...info, status: response.status() });
+        status: response.status(),
+        failure: null,
+      });
+    });
+    page.on("requestfailed", (request: Request) => {
+      networkLog.push({
+        url: request.url(),
+        method: request.method(),
+        resourceType: request.resourceType(),
+        status: null,
+        failure: request.failure()?.errorText ?? "(unknown)",
+      });
     });
 
-    await login(page, env.baseUrl, env.email, env.password);
-    process.stdout.write(
+    const landedLogin = await login(page, verifiedBase, env.email, env.password, watch);
+    writeStdout(
       `[render-authenticated-page] authenticated as ${env.email} — cg_access cookie present.\n`,
     );
-    // Dedicated evidence for the login step itself — this is where a reviewer finds the
-    // `POST /api/auth/login` call and its 2xx status (plan §11 validation item 2), separate
-    // from any target page's own scoped capture. `__` prefix keeps this name out of the way of
-    // any real `--paths` entry's sanitized filename.
-    await writeEvidenceFiles(args.outDir, "__login-step", consoleLog, networkLog);
+    await captureLoginStep(recorder, consoleLog, networkLog, landedLogin);
 
     for (const targetPath of args.paths) {
-      await capturePath(page, env.baseUrl, targetPath, args.outDir, consoleLog, networkLog);
+      await capturePath(
+        page,
+        verifiedBase,
+        targetPath,
+        recorder,
+        counts,
+        consoleLog,
+        networkLog,
+        watch,
+      );
     }
+
+    await recorder.finish("completed", null);
   } finally {
+    // Deliberately NOT abandoned on this path (contrast the crash handlers below): an ordinary
+    // thrown error here still unwinds through this `finally` before the rejection reaches the
+    // shared handler.
     await browser.close();
   }
 }
 
-main().catch((error: unknown) => {
+// ---------------------------------------------------------------------------------------------
+// Fatal-error handling — ONE function serves all three entry points (the rejected main()
+// promise, `uncaughtException`, `unhandledRejection`), so a genuinely uncaught throw (e.g. one
+// raised inside a `page.on` listener, outside this file's own control flow) is handled exactly
+// like an ordinary refusal. Contract, binding: it (1) writes stderr synchronously and redacted,
+// (2) best-effort marks the run manifest failed, wrapped so it can never itself throw, and
+// (3) terminates. Step 3 is not optional — with a live Chromium holding the event loop open, a
+// handler that only prints converts a fatal error into a hang, and evidence could keep being
+// written after a guard violation. Browser cleanup is deliberately abandoned on this path: a
+// leaked headless Chromium is a visible, recoverable local nuisance, whereas a run that keeps
+// writing evidence after a violation is exactly the false-clean outcome this tool exists to
+// prevent.
+// ---------------------------------------------------------------------------------------------
+
+let activeRecorder: RunRecorder | undefined;
+
+async function handleFatalError(error: unknown): Promise<void> {
   if (error instanceof RenderAuthError) {
-    process.stderr.write(`[render-authenticated-page] REFUSED: ${error.message}\n`);
+    writeStderr(`[render-authenticated-page] REFUSED: ${error.message}\n`);
   } else {
-    process.stderr.write(
-      `[render-authenticated-page] failed: ${
-        error instanceof Error ? (error.stack ?? error.message) : String(error)
-      }\n`,
-    );
+    const text = error instanceof Error ? (error.stack ?? error.message) : String(error);
+    writeStderr(`[render-authenticated-page] FATAL: ${text}\n`);
   }
-  process.exitCode = 1;
+
+  if (activeRecorder !== undefined) {
+    const message =
+      error instanceof RenderAuthError
+        ? error.message
+        : error instanceof Error
+          ? (error.stack ?? error.message)
+          : String(error);
+    try {
+      await activeRecorder.finish("failed", message);
+    } catch {
+      // best-effort — this handler must never itself throw.
+    }
+  }
+
+  process.exit(1);
+}
+
+process.on("uncaughtException", (error) => {
+  void handleFatalError(error);
+});
+process.on("unhandledRejection", (reason) => {
+  void handleFatalError(reason);
+});
+
+main().catch((error: unknown) => {
+  void handleFatalError(error);
 });

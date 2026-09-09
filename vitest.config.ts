@@ -23,7 +23,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts", "components/**/*.test.{ts,tsx}"],
+    include: ["lib/**/*.test.ts", "components/**/*.test.{ts,tsx}", "tools/**/*.test.ts"],
     server: {
       deps: {
         // The SEO tests exercise the REAL `getPathname` from `i18n/navigation`, which is

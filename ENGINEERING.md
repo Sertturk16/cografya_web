@@ -159,7 +159,8 @@ semantic colors (AQI / earthquake intensity / SST) stay STANDARD, never recolore
   in PR #15; CI runs the same commands as its own `typecheck-and-lint`, `test` / "Unit
   Tests", and `build` jobs and remains available as a secondary, independent record when it
   is reachable, but is not required to block a merge decision.) Tests live at
-  `lib/**/*.test.ts` + `components/**/*.test.{ts,tsx}` per `vitest.config.ts`.
+  `lib/**/*.test.ts` + `components/**/*.test.{ts,tsx}` + `tools/**/*.test.ts` per
+  `vitest.config.ts`.
 - **A genuine green local run is the merge gate.** Never merge on a red result you have
   seen; never weaken or skip a test/SEO/a11y check to go green — diagnose and fix. Prefer
   CI's evidence when it is available in reasonable time; do not wait indefinitely on it.
@@ -274,8 +275,7 @@ Web-specific filter boundary:
 - Do NOT hardcode brand hex outside the `app/globals.css` token layer; do NOT bleed Terra
   chrome tokens into data-viz scales, and do NOT recolor public-safety semantic colors
   (AQI/earthquake/SST) — see `DESIGN.md`.
-- Do NOT run tests locally as a gate; do NOT merge on red CI; do NOT weaken a check to go
-  green.
+- Do NOT merge on a red result you have seen; do NOT weaken a check to go green.
 - Do NOT grant engineers the subagent-spawn tool / attempt to self-run the reviewer fan-out
   (§8 — review independence is a design choice, not an accident).
 - **Map** colour/scale code is still **Faz-2** (no map scales module lands here yet), but
@@ -306,17 +306,38 @@ RENDER_AUTH_PASSWORD='<value>' node tools/dev-fixtures/render-authenticated-page
 
 **Env contract:**
 
-- `RENDER_AUTH_BASE_URL` — default `http://localhost:3000`. Must pass a DNS-verified
-  loopback-hostname guard (`assertLoopbackTarget`, mirroring — not importing, no cross-repo
-  import path exists here either — `cografya_api/tools/dev-fixtures/
-local-database-guard.ts`'s `isLoopbackHostname`/`isLoopbackAddress` logic) or the script
-  refuses to run. This is the sole enforcement point for "no credential introduced here can
-  be used against production": even a leaked credential authenticates nothing in production,
-  because production has no such row AND this script itself will not point at a non-loopback
-  origin.
+- `RENDER_AUTH_BASE_URL` — default `http://localhost:3000`. The scheme must be `http:` or
+  `https:`, and the host must pass a DNS-verified loopback guard (`assertLoopbackTarget` in
+  `tools/dev-fixtures/render-auth-guards.ts`, mirroring — not importing, no cross-repo import
+  path exists here either — `cografya_api/tools/dev-fixtures/local-database-guard.ts`'s
+  `isLoopbackHostname`/`isLoopbackAddress` logic) or the script refuses to run. Every
+  navigation is then re-checked against that verified origin, including the origin a redirect
+  actually lands on.
+
+  **What this guard proves, and what it does not.** It proves the target _socket_ is
+  loopback: the scheme is `http:`/`https:`, the host literal is a conventional loopback
+  spelling, DNS resolves it inside `127.0.0.0/8` or `::1`, and no navigation the script
+  performs leaves that origin. It does **not** prove which _process_ is listening there. An
+  `ssh -L` or `kubectl port-forward` tunnel binds a remote service to loopback and passes
+  this guard unchanged — and the same hole applies to the api-side provisioner's own
+  DNS-loopback `DATABASE_URL` guard, so a fixture account provisioned through a forwarded
+  production database really would exist there. The honest guarantee is therefore narrower
+  than "cannot reach production": **the script will not point at a non-loopback origin, and
+  the fixture credential authenticates nothing in a deployment that has no such row — but an
+  operator who has deliberately tunnelled a production app, or a production database, to
+  loopback can still drive this tooling against it.** Do not run it with such a tunnel open.
+
 - `RENDER_AUTH_EMAIL` — default `iris-audit@local.test`.
 - `RENDER_AUTH_PASSWORD` — **required, no default.** The script refuses to run without it,
-  and its refusal message names the exact `cografya_api` command below.
+  and its refusal message names the exact `cografya_api` command below. The tool redacts the
+  literal password value from every text artefact and every stderr/stdout write it produces,
+  so a very short fixture password produces noisy evidence — use a normal-length one. Two
+  leak paths sit outside this process and are not fixed here: the Chromium subprocess
+  inherits this variable, so it is readable via `/proc/<pid>/environ` by any process of the
+  same user for the life of the run; and running with `DEBUG=pw:channel` set makes
+  Playwright's own wire logger print call parameters, including the filled value, from
+  outside this tool's sinks, where no redaction can reach it — **do not run this tool with
+  `DEBUG=pw:channel` set.**
 
 **`cografya_api` precondition (operational, not a code dependency — plan §7/§8).** Before a
 review dispatch that needs this capability, the `iris-audit@local.test` account's password
@@ -346,20 +367,36 @@ script's own post-login cookie check catches exactly this and refuses with an ex
 naming the `cografya_api` re-provisioning command above, rather than silently producing an
 unauthenticated (and therefore falsely "clean") render.
 
-**Output, per `--paths` entry** (in the SAME authenticated browser context — cookies persist
-across a TR→EN locale switch): `<out-dir>/<sanitized-path>.html` (`page.content()`),
-`<out-dir>/<sanitized-path>.console.json`, `<out-dir>/<sanitized-path>.network.json`, and
-`<out-dir>/<sanitized-path>.png` — each scoped to that path's OWN navigation only (buffers are
-cleared immediately before each path's own `page.goto`, so one path's evidence never carries
-another path's, or the pre-login anonymous session check's, console/network noise). The
-extracted `<title>`, canonical href, hreflang set, robots meta content and JSON-LD script count
-are also printed to stdout per path. The login step itself — including the
-`POST /api/auth/login` call a reviewer needs to confirm succeeded — gets its own dedicated
-`__login-step.console.json` / `__login-step.network.json` pair, written once per run.
+**Output.** Each run creates its own `<out-dir>/run-<YYYYMMDDTHHmmssZ>-<6 hex>/` subdirectory —
+`--out-dir` itself is never deleted, cleaned, or inspected, so a prior run's evidence is never
+overwritten or mistaken for the current one. The subdirectory's absolute path is printed to
+stdout as the first line after it is created, before login. Every artefact is written through a
+`RunRecorder`, which updates a `__run.json` manifest in the same call: `status`
+(`"running"` → `"completed"`/`"failed"`), `startedAt`/`finishedAt`, the verified origin, the
+requested paths, the login step's own evidence, and one entry per capture (landed URL, files,
+extracted SEO facts, console-error/network-failure counts). A directory whose manifest still
+says `"running"` is one whose process died mid-run; `captures.length === requestedPaths.length`
+plus `status:"completed"` is the only signal that means a whole pass succeeded. Per `--paths`
+entry (in the SAME authenticated browser context — cookies persist across a TR→EN locale
+switch): `<baseName>.html` (`page.content()`, redacted), `<baseName>.console.json`,
+`<baseName>.network.json` — now carrying `status: null` + a `failure` errorText for a request
+that never produced a response (`requestfailed`), so a clean network log means the network was
+actually clean — and `<baseName>.png` (a full-page screenshot, taken as a Buffer with no `path`
+option, written through the recorder like every other artefact). The extracted `<title>`,
+canonical href, hreflang set, robots meta content and JSON-LD script count are also printed to
+stdout per path. The login step gets its own dedicated `__login-step.console.json` /
+`__login-step.network.json` pair, recorded in the manifest's `loginStep` field. **Run
+directories are never deleted or pruned automatically** — this is deliberate (see the guard's
+narrowed guarantee above: destructively cleaning an operator-supplied `--out-dir` is exactly the
+kind of irreversible tree operation this project machine-refuses, and doing so would also
+destroy the "before" half of the rendered-sample gate's before/after comparison). They
+accumulate on disk; prune `--out-dir` by hand when it grows.
 
 **What this deliberately is NOT.** Not wired into `package.json` scripts, not wired into CI —
 run by hand only, exactly like `iris-audit-account.ts`'s own stated design. Never imported by
-product code. Not reachable from production by any path (see the loopback guard above).
+product code, so it has no production code path of its own. It is **not** a production-safety
+boundary: see the guard's narrowed guarantee above — a tunnel or port-forward that binds a
+remote service to loopback passes it.
 
 ## Kim neyi okur — kapsam sözleşmesi
 
