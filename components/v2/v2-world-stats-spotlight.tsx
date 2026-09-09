@@ -248,7 +248,7 @@ export function V2WorldStatsSpotlight() {
                 </div>
               </div>
               <span className="font-mono font-bold text-xs text-teal-600 dark:text-teal-400">
-                -430 m
+                -440 m
               </span>
             </div>
 
