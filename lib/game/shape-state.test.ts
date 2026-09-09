@@ -36,6 +36,7 @@ function markedPlates(
 
 const NONE = {
   solvedTargetIds: new Set<string>(),
+  shownTargetIds: new Set<string>(),
   revealedTargetId: null,
   wrongTargetId: null,
 };
@@ -68,9 +69,19 @@ describe("deriveShapeState", () => {
     expect(revealed).toEqual(correct);
   });
 
+  it("marks a SHOWN (given-up) target on the same shape set too", () => {
+    // THE REGRESSION THIS BRANCH EXISTS FOR (oyun-notlar.txt md. 1): a target `revealRound`
+    // scored 0 for must keep marking the same shapes `correct` would, permanently — not just
+    // while `revealedTargetId` (the CURRENT question's transient flag) still names it.
+    const shown = markedPlates({ ...NONE, shownTargetIds: new Set(["region:A"]) }, "shown");
+    const correct = markedPlates({ ...NONE, solvedTargetIds: new Set(["region:A"]) }, "correct");
+    expect(shown).toEqual(correct);
+  });
+
   it("never marks a shape that has no target", () => {
     const everything = {
       solvedTargetIds: new Set(["region:A", "region:B"]),
+      shownTargetIds: new Set<string>(),
       revealedTargetId: "region:A",
       wrongTargetId: "region:B",
     };
@@ -108,12 +119,23 @@ describe("deriveShapeState", () => {
     expect(markedPlates(input, "correct")).toEqual(["34", "59", "41"]);
   });
 
-  it("applies precedence: solved beats wrong, revealed beats solved, wrong beats revealed", () => {
+  it("keeps an ALREADY-SHOWN target marked when it is clicked as a wrong answer", () => {
+    // SHOWN JOINS SOLVED IN THIS RULE (`lib/game/shape-state.ts`): a target the player was
+    // already shown is a closed question exactly like a solved one, so a stray click naming
+    // it (bölge mode: `wrongTargetId` is keyed on what the CLICKED shape names, not on the
+    // open question) must not repaint it as a fresh mistake.
+    const input = { ...NONE, shownTargetIds: new Set(["region:A"]), wrongTargetId: "region:A" };
+    expect(markedPlates(input, "shown")).toEqual(["34", "59", "41"]);
+    expect(markedPlates(input, "wrong")).toEqual([]);
+  });
+
+  it("applies precedence: solved/shown beat wrong, revealed beats both, wrong beats neither", () => {
     const solved = new Set(["region:A"]);
     expect(
       deriveShapeState({
         targetId: "region:A",
         solvedTargetIds: solved,
+        shownTargetIds: new Set<string>(),
         revealedTargetId: "region:A",
         wrongTargetId: null,
       }),
@@ -122,6 +144,7 @@ describe("deriveShapeState", () => {
       deriveShapeState({
         targetId: "region:B",
         solvedTargetIds: solved,
+        shownTargetIds: new Set<string>(),
         revealedTargetId: "region:B",
         wrongTargetId: "region:B",
       }),
@@ -130,9 +153,21 @@ describe("deriveShapeState", () => {
       deriveShapeState({
         targetId: "region:A",
         solvedTargetIds: solved,
+        shownTargetIds: new Set<string>(),
         revealedTargetId: null,
         wrongTargetId: "region:A",
       }),
     ).toBe("correct");
+    // The new leg: a SHOWN (not solved) target also beats a wrong click naming it, and
+    // "correct" never appears for a target that was only ever given up on.
+    expect(
+      deriveShapeState({
+        targetId: "region:B",
+        solvedTargetIds: new Set<string>(),
+        shownTargetIds: new Set(["region:B"]),
+        revealedTargetId: null,
+        wrongTargetId: "region:B",
+      }),
+    ).toBe("shown");
   });
 });

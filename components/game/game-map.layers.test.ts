@@ -218,14 +218,14 @@ describe("the game island's two shape queries", () => {
     expect(ISLAND).not.toContain('data-map-layer="mark"');
   });
 
-  it("keeps the accessible name in step with the solved state", () => {
-    // A11Y50-I1: the map's one PERMANENT state was visible only as paint, so a screen-reader
-    // user heard the same name at every stop whether or not that target was finished. The
-    // suffix is written in the SAME loop as the name — one writer — and it is a name, not
-    // `aria-disabled`: a solved shape still takes the click, and that click is still a wrong
-    // answer to the open question.
+  it("keeps the accessible name in step with the solved AND shown states", () => {
+    // A11Y50-I1, now covering both of the map's permanent marks (→ oyun-notlar.txt md. 1): a
+    // screen-reader user must hear the same distinction a sighted player sees in paint,
+    // whether that target was found OR given up on. The suffix is written in the SAME loop
+    // as the name — one writer — and it is a name, not `aria-disabled`: a marked shape still
+    // takes the click, and that click is still a wrong answer to the open question.
     expect(ISLAND).toMatch(
-      /querySelectorAll\(HIT_SHAPES\)[\s\S]{0,1600}?setAttribute\(\s*"aria-label",\s*solved \? t\("shapeSolved", \{ name \}\) : name,?\s*\)/,
+      /querySelectorAll\(HIT_SHAPES\)[\s\S]{0,1600}?setAttribute\(\s*"aria-label",\s*solved \? t\("shapeSolved", \{ name \}\) : shown \? t\("shapeShown", \{ name \}\) : name,?\s*\)/,
     );
     expect(ISLAND).not.toContain('setAttribute("aria-disabled"');
   });

@@ -447,6 +447,34 @@
   }
 }
 
+/* ---- §I2 SHOWN MARK — THE CROSS-HATCH (game-map.tsx §I2) ---------------------------------
+   The map's SECOND permanent mark, next to I1's `correct` above: a target `revealRound`
+   scored 0 for (`lib/game/shape-state.ts`'s `shownTargetIds`) stays showing this, not `reveal`
+   and not nothing, for the rest of the round (→ owner report, oyun-notlar.txt md. 1). Deliberately
+   NO `.province[data-state="shown"]` rule: unlike `correct`/`wrong`/`reveal`, this state never
+   overrides the base twin's fill. In bölge mode that leaves the region tint exactly as I1
+   already does; in the il modes it leaves the resting white `--province-fill`, and the hit
+   twin's cross-hatch alone is the whole signal — a plain fill needs no measuring, only a line
+   or a pattern drawn OVER one does (WCAG 1.4.11).
+
+   THE LINE IS `--game-hover-edge` (an alias of `--color-ink-dark`), the SAME already-measured
+   ink I1's hatch uses and for the same reason: it is proven ≥3:1 against every fill this map
+   can put under it, so reusing it costs nothing new to verify. NO forced-colours override is
+   needed here the way I1 needed one (`@media (forced-colors: active)` above): I1's problem was
+   that its NORMAL stroke is `none` (solid), which collapses onto hover/focus/resting solid
+   lines the moment its paint-server fill is gone. This state's own dasharray is never `none`,
+   so it stays self-distinguishing with or without the pattern fill — the same reason `wrong`
+   and `reveal` below never needed one either. */
+.hitEdge[data-state="shown"] {
+  stroke: var(--game-hover-edge);
+  stroke-width: 2.5;
+  /* Its own rhythm, not I1's `none`, not wrong's `1 3`, not reveal's `6 4` — a distinct dash
+     is the redundant, non-colour signal DESIGN.md §6.1 rule 3 asks every categorical mark to
+     carry, independent of the pattern fill below. */
+  stroke-dasharray: 4 2;
+  fill: url(#game-shown-hatch);
+}
+
 .province[data-state="wrong"] {
   fill: var(--game-wrong);
 }
@@ -599,10 +627,34 @@
    Focus is never gated on `@media (hover: hover)` or on `:not([data-panning])`: keyboard
    access must not depend on the pointer type, and a pan can never move the focus. */
 
-/* Common to both modes: kill the UA ring (already suppressed on `:focus` above; repeated
-   here so this block is readable on its own) and draw the line. */
+/* Kill the UA ring in every mode and every state — genuinely universal, unlike the rule
+   below it. */
 .stage[data-game-active] .hitEdge[data-plate]:focus-visible {
   outline: none;
+}
+
+/* THE PER-PROVINCE FOCUS LINE — two SEPARATE rules, not a shared block, and CODE118R2-I1 /
+   VAL118R2-C1 (PR #118 round 3) is why. Province mode always draws it: a target IS one shape
+   there, so this line doubles as the permanent-mark line and there is no internal boundary to
+   over-bold (see §BÖLGE-2 below). Region mode draws it ONLY for a shape that does not yet
+   carry §BÖLGE-2's permanent mark — a correct/shown member gets its focus delta from the
+   region ring's own halo instead (§BÖLGE-2 FOCUS, further down), never from its own perimeter.
+   This is the SAME split pointer hover already makes on its own subject
+   (`:hover:not([data-state])`, above) — the keyboard rule never carried the equivalent guard,
+   which is the bug round 2 fixed: mouse hover could never reintroduce an internal seam on a
+   solved region, and keyboard focus could.
+
+   ONE RULE PER BRANCH, EACH OWNING BOTH `stroke` AND `stroke-width` OUTRIGHT (round 3). Round
+   2 shipped both branches sharing THIS ONE declaration block, with a second, untouched rule
+   (the region-mode WIDTH STEP, below the province-only wash rule) correcting the region
+   branch's width afterward. Two rules writing the same property for the same element at
+   different specificities is exactly the shape that let round 2's added `:not()` clauses
+   silently flip who won (measured: region-branch specificity rose from (0,5,0) pre-round-2 to
+   (0,8,0), outranking the step rule's untouched (0,6,0) — the same mechanism as PR #38 round 2
+   and this PR's own round 1, mirrored here onto a different property). The region-mode branch
+   now lives at the WIDTH STEP rule below instead, merged into one self-contained declaration —
+   see that comment. */
+.stage[data-game-active]:not([data-game-mode="regions"]) .hitEdge[data-plate]:focus-visible {
   stroke: var(--game-hover-edge);
   stroke-width: var(--game-hover-width);
 }
@@ -630,7 +682,10 @@
 
 /* Bölge mode — the region's silhouette says "Enter answers for this whole bölge", and the
    focused shape carries a heavier line of its OWN so the player can still see WHICH shape
-   the focus is on.
+   the focus is on. THIS IS THE REGION BRANCH OF THE PER-PROVINCE FOCUS LINE ABOVE (round 3):
+   it now owns `stroke` as well as `stroke-width` outright, for exactly the population that
+   comment forward-references — a region-mode, focused shape that does not yet carry
+   §BÖLGE-2's permanent mark.
    WHY THE STEP IS STILL NEEDED. Its original reason was that the region outline used to be
    drawn as eleven identical member borders, so nothing said which of them held focus. The
    silhouette removed that particular collision — mates no longer carry a line at all — but
@@ -646,9 +701,18 @@
    and 4.5px stay those literal CSS pixels at any zoom level rather than scaling with the
    viewBox; and a width difference is not a colour, so it survives a forced-colours mode
    that repaints every stroke in this stylesheet to one system colour.
-   No `:not([data-state])` here, deliberately: focus must be visible even on a shape that is
-   already marked correct/wrong/revealed. */
-.stage[data-game-active][data-game-mode="regions"] .hitEdge[data-plate]:focus-visible {
+   THE `:not([data-state="correct"]):not([data-state="shown"])` GUARD (round 3, carried over
+   from the rule this one absorbed) is new on this exact selector but changes nothing
+   observable: an earlier version of this comment read "No `:not([data-state])` here,
+   deliberately" — true of the OLD, separate step rule this one replaces, but stale the moment
+   the two rules merged, so it is corrected here rather than left to quietly go false.
+   §BÖLGE-2's `stroke: none` (below) is already the sole contributor to `stroke` for a
+   region-mode correct/shown shape regardless of this selector, so a `stroke-width` on a
+   `none` stroke was always moot for those two states — the guard makes the selector's own
+   scope honest, it does not change what renders. */
+.stage[data-game-active][data-game-mode="regions"]
+  .hitEdge[data-plate]:focus-visible:not([data-state="correct"]):not([data-state="shown"]) {
+  stroke: var(--game-hover-edge);
   stroke-width: calc(var(--game-hover-width) + 1.5px);
 }
 
@@ -681,6 +745,157 @@
   .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"]:focus-visible:not([data-state]))
   .regionOutline[data-region="GUNEYDOGU_ANADOLU"] {
   display: block;
+}
+
+/* ---- §BÖLGE-2 — THE SOLVED/SHOWN RING (owner report, oyun-notlar.txt md. 2; game-map.tsx
+   §BÖLGE-2) --------------------------------------------------------------------------------
+   NOT gated on `[data-game-active]`, unlike the hover/focus blocks above: `correct`/`shown`
+   are permanent (I1/I2), so the ring has to keep showing after the round ends, exactly like
+   the fill/hatch it sits next to already does.
+
+   THE DEFECT THIS REPLACES. `.hitEdge[data-state="correct"]` used to draw a full-perimeter
+   line on EVERY member of a solved region — right for a single il, wrong for a region, because
+   the borders BETWEEN members bolded too (the pre-I1 hover defect, all over again, for a
+   permanent state this time). The override below turns that per-province line OFF in region
+   mode only: il mode keeps it, because there a target is exactly one shape and there is no
+   internal boundary to over-bold. */
+.stage[data-game-mode="regions"] .hitEdge[data-state="correct"],
+.stage[data-game-mode="regions"] .hitEdge[data-state="shown"] {
+  stroke: none;
+}
+
+/* THE REPLACEMENT is the region's own silhouette (§BÖLGE) — the SAME group the hover/focus
+   rules above already draw, a third and fourth time over, keyed on the permanent states
+   instead of a transient pointer/keyboard one. `fill` is `--game-hover-edge` for BOTH
+   permanent states (→ DSN118-I1, PR #118 round 2) — not `--game-correct-edge` for "correct"
+   and `--game-hover-edge` for "shown" as an earlier version of this comment claimed.
+   `--game-correct-edge` (#2c451c) measured sub-3:1 against two of the seven region tints
+   (Marmara 2.05:1, Güneydoğu Anadolu 2.75:1 — WCAG 1.4.11 fail); `--game-hover-edge` (the
+   palette's darkest line ink, `--color-ink-dark`) is the one neutral already proven ≥3:1
+   against all seven (worst case Marmara 3.25:1, `app/globals.css`). Both permanent marks now
+   read in that single already-measured ink, per `DESIGN.md` §6.5's own doctrine ("both in the
+   same already-measured ink … rather than by a second colour that would need its own contrast
+   table against all seven tints") — the code had drifted from what the doc already said. */
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="MARMARA"][data-state="correct"])
+  .regionOutline[data-region="MARMARA"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="EGE"][data-state="correct"])
+  .regionOutline[data-region="EGE"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="AKDENIZ"][data-state="correct"])
+  .regionOutline[data-region="AKDENIZ"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="IC_ANADOLU"][data-state="correct"])
+  .regionOutline[data-region="IC_ANADOLU"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="KARADENIZ"][data-state="correct"])
+  .regionOutline[data-region="KARADENIZ"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="DOGU_ANADOLU"][data-state="correct"])
+  .regionOutline[data-region="DOGU_ANADOLU"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"][data-state="correct"])
+  .regionOutline[data-region="GUNEYDOGU_ANADOLU"] {
+  display: block;
+  fill: var(--game-hover-edge);
+}
+
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="MARMARA"][data-state="shown"])
+  .regionOutline[data-region="MARMARA"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="EGE"][data-state="shown"])
+  .regionOutline[data-region="EGE"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="AKDENIZ"][data-state="shown"])
+  .regionOutline[data-region="AKDENIZ"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="IC_ANADOLU"][data-state="shown"])
+  .regionOutline[data-region="IC_ANADOLU"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="KARADENIZ"][data-state="shown"])
+  .regionOutline[data-region="KARADENIZ"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="DOGU_ANADOLU"][data-state="shown"])
+  .regionOutline[data-region="DOGU_ANADOLU"],
+.stage[data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"][data-state="shown"])
+  .regionOutline[data-region="GUNEYDOGU_ANADOLU"] {
+  display: block;
+  fill: var(--game-hover-edge);
+}
+
+/* ---- §BÖLGE-2 FOCUS — the currently-focused member's OWN delta (CODE118-I1, PR #118 round 2)
+   --------------------------------------------------------------------------------------------
+   THE GAP THIS CLOSES. The per-province focus rule above now deliberately stops reactivating
+   a region-mode correct/shown shape's own line. Removing that line without replacing it would
+   silently take away the only signal telling a keyboard user which of several functionally
+   identical, already-marked members currently has focus (WCAG 2.4.7) — every member of one
+   region scores identically when picked (lib/game/round.ts answerRound keys on target id, and
+   every member of a region shares one), so the region-level precision this block restores is
+   complete information, not a compromise.
+   THE CHANNEL IS SIZE, NOT COLOUR OR A NEW LINE. REGION_OUTLINE_FOCUS_FILTER_ID (game-map.tsx)
+   is the exact same dilate-then-subtract construction as the resting ring, at a bigger radius —
+   structurally incapable of drawing along a shared internal edge, at any radius, the same
+   guarantee the resting ring already carries. A colour delta was measured and rejected without
+   shipping it: --color-accent (the site's standard focus teal) measures 1.18-2.72:1 against
+   the seven region tints (worst case Marmara) — --color-ink-dark is the only neutral in the
+   whole token set proven >=3:1 against all seven (DESIGN.md §2), and it is already spent on
+   the resting ring, so a size delta on the SAME ink is what is left.
+   THE RADIUS SWAP is a CSS `filter` PROPERTY overriding game-map.tsx's presentation ATTRIBUTE
+   of the same name — a normal authored rule always wins that contest over a presentation
+   attribute regardless of specificity, so this needs no arms race, and it reverts to the
+   resting filter the instant :focus-visible stops matching, no JS involved either way. The
+   raw url(#id) reference inside this CSS module is the same technique already proven at
+   :398/:475 (the I1/I2 hatch fills) — CSS Modules does not rewrite a url(#fragment) reference,
+   only asset paths, and this file already relies on that.
+   WHY NOT WRONG/REVEAL TOO — see game-map.module.css §BÖLGE-2's own note above and plan.md §3:
+   those two states have no resting/focused mismatch to begin with, so nothing here touches
+   them. */
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="MARMARA"][data-state="correct"]:focus-visible)
+  .regionOutline[data-region="MARMARA"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="MARMARA"][data-state="shown"]:focus-visible)
+  .regionOutline[data-region="MARMARA"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="EGE"][data-state="correct"]:focus-visible)
+  .regionOutline[data-region="EGE"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="EGE"][data-state="shown"]:focus-visible)
+  .regionOutline[data-region="EGE"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="AKDENIZ"][data-state="correct"]:focus-visible)
+  .regionOutline[data-region="AKDENIZ"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="AKDENIZ"][data-state="shown"]:focus-visible)
+  .regionOutline[data-region="AKDENIZ"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="IC_ANADOLU"][data-state="correct"]:focus-visible)
+  .regionOutline[data-region="IC_ANADOLU"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="IC_ANADOLU"][data-state="shown"]:focus-visible)
+  .regionOutline[data-region="IC_ANADOLU"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="KARADENIZ"][data-state="correct"]:focus-visible)
+  .regionOutline[data-region="KARADENIZ"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="KARADENIZ"][data-state="shown"]:focus-visible)
+  .regionOutline[data-region="KARADENIZ"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="DOGU_ANADOLU"][data-state="correct"]:focus-visible)
+  .regionOutline[data-region="DOGU_ANADOLU"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="DOGU_ANADOLU"][data-state="shown"]:focus-visible)
+  .regionOutline[data-region="DOGU_ANADOLU"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"][data-state="correct"]:focus-visible)
+  .regionOutline[data-region="GUNEYDOGU_ANADOLU"],
+.stage[data-game-active][data-game-mode="regions"]
+  .svg:has(.hitEdge[data-region="GUNEYDOGU_ANADOLU"][data-state="shown"]:focus-visible)
+  .regionOutline[data-region="GUNEYDOGU_ANADOLU"] {
+  filter: url(#game-region-outline-focused);
 }
 
 /* ---- THE ZOOM CLUSTER (→ DEC 2026-08-17g md. 3; markup note in `game-map.tsx`) -----------

@@ -214,6 +214,27 @@ export function GameIsland({
       new Set(round.results.filter((result) => result.score > 0).map((result) => result.targetId)),
     [round.results],
   );
+  /**
+   * The targets GIVEN UP ON this round — the map's OTHER permanent state
+   * (→ oyun-notlar.txt md. 1). Every `QuestionResult` that scored 0 was shown via "Cevabı
+   * göster" (`revealRound` is the only way to score 0, `lib/game/round.ts`), which is the same
+   * filter `summarizeRound` already uses for the end-of-round "Bilemediklerin" list — so the
+   * map and that list can never disagree about which targets were shown rather than found.
+   *
+   * BEFORE THIS, the shown mark lived only in `feedback.kind === "revealed"` below: a flag
+   * about the CURRENT question, cleared the moment "Devam" fires (`goNext` → `setFeedback
+   * (null)`). The distinction the player was just shown therefore vanished from the map one
+   * click later, even though it stayed correct in the end-of-round list the whole time — the
+   * defect the owner reported. Hoisted next to `solvedTargetIds` for the same reason that one
+   * is: the paint effect and the accessible-name effect both need it.
+   */
+  const shownTargetIds = useMemo(
+    () =>
+      new Set(
+        round.results.filter((result) => result.score === 0).map((result) => result.targetId),
+      ),
+    [round.results],
+  );
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   /**
    * The most recent wrong answer, as the TARGET it named — not as the plate that was
@@ -509,9 +530,20 @@ export function GameIsland({
         // signal for a false one.
         // It leaks nothing the hatch does not already show, and in bölge mode it names no
         // region: it says this AREA is done, never which bölge it belongs to (SPEC §8.2).
+        //
+        // PLUS "shown", the map's SECOND permanent mark (→ oyun-notlar.txt md. 1): the same
+        // reasoning applies unchanged — a sighted player keeps a glanceable record of what
+        // was given up on via the shown hatch, and a screen-reader user needs the same fact
+        // in words, not just the "solved" one. Mutually exclusive with `solved` by
+        // construction (`lib/game/round.ts`: a question scores either > 0 or exactly 0, never
+        // both), so the two never compete for one shape's name.
         const targetId = targetSet.plateToTarget[plate];
         const solved = targetId !== undefined && solvedTargetIds.has(targetId);
-        shape.setAttribute("aria-label", solved ? t("shapeSolved", { name }) : name);
+        const shown = targetId !== undefined && shownTargetIds.has(targetId);
+        shape.setAttribute(
+          "aria-label",
+          solved ? t("shapeSolved", { name }) : shown ? t("shapeShown", { name }) : name,
+        );
         shape.removeAttribute("aria-hidden");
       } else {
         shape.removeAttribute("role");
@@ -526,11 +558,12 @@ export function GameIsland({
       svg.setAttribute("role", "img");
       svg.setAttribute("focusable", "false");
     }
-    // `solvedTargetIds` is in the list because the names now change DURING a round, not just
-    // when it opens or closes. The loop is idempotent — it writes the same three attributes
-    // every pass — so re-running it per answer costs 81 `setAttribute` calls next to the 162
-    // the paint effect already makes, and it keeps ONE writer for the accessible name.
-  }, [interactive, shapes, solvedTargetIds, targetSet, t]);
+    // `solvedTargetIds`/`shownTargetIds` are in the list because the names now change DURING
+    // a round, not just when it opens or closes. The loop is idempotent — it writes the same
+    // three attributes every pass — so re-running it per answer costs 81 `setAttribute` calls
+    // next to the 162 the paint effect already makes, and it keeps ONE writer for the
+    // accessible name.
+  }, [interactive, shapes, solvedTargetIds, shownTargetIds, targetSet, t]);
 
   // --- DOM sync: answer marks ----------------------------------------------------------------
   useEffect(() => {
@@ -546,13 +579,14 @@ export function GameIsland({
       const state = deriveShapeState({
         targetId: targetSet.plateToTarget[shape.dataset.plate ?? ""],
         solvedTargetIds,
+        shownTargetIds,
         revealedTargetId: revealed,
         wrongTargetId: wrongAnswer?.targetId ?? null,
       });
       if (state) shape.setAttribute("data-state", state);
       else shape.removeAttribute("data-state");
     }
-  }, [feedback, wrongAnswer, targetSet, solvedTargetIds]);
+  }, [feedback, wrongAnswer, targetSet, solvedTargetIds, shownTargetIds]);
 
   /**
    * --- DOM sync: the camera, for a SHOWN answer only (→ DEC 2026-08-17g md. 4) --------------
