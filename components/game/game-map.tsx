@@ -36,6 +36,15 @@ const REGION_OUTLINE_FILTER_ID = "game-region-outline";
  */
 const REGION_OUTLINE_RADIUS = 1.4;
 
+const REGION_OUTLINE_FOCUS_FILTER_ID = "game-region-outline-focused";
+
+/** DERIVED from REGION_OUTLINE_RADIUS, not a second independently-chosen tunable — same
+ * reasoning as the per-province focus STEP in game-map.module.css: whatever the owner rules
+ * on for the resting radius, the focused ring stays proportionally bigger. Starting value
+ * doubles the resting radius; re-tune from rendered samples exactly like REGION_OUTLINE_RADIUS
+ * itself already is. */
+const REGION_OUTLINE_FOCUS_RADIUS = REGION_OUTLINE_RADIUS * 2;
+
 /**
  * ---- I1 · HOW A SOLVED TARGET IS MARKED ---------------------------------------------------
  *
@@ -321,6 +330,28 @@ export async function GameMap({ shapes, viewBox, title, mode }: GameMapProps) {
                 operator="dilate"
                 radius={REGION_OUTLINE_RADIUS}
                 data-zoom-radius={REGION_OUTLINE_RADIUS}
+                result="grown"
+              />
+              <feComposite in="grown" in2="SourceGraphic" operator="out" />
+            </filter>
+
+            {/* CODE118-I1 (PR #118 round 2) — the SAME outer-ring construction, at a bigger
+                radius, used ONLY while a permanently-marked (correct/shown) member of this
+                region holds keyboard focus (game-map.module.css §BÖLGE-2 FOCUS). A drop-shadow
+                halo was already tried and rejected for this file for the identical reason (see
+                the `reveal` state's own note, game-map.module.css): a CSS filter evaluates in
+                the element's own user space and its blur grows with zoom exactly like
+                feMorphology's radius does. Reusing feMorphology/feComposite means
+                data-zoom-radius compensates it for free — MapZoomPan discovers every element
+                carrying that attribute generically, by attribute, not by id
+                (map-zoom-pan.tsx:170-172), so this second primitive costs it nothing to
+                support. */}
+            <filter id={REGION_OUTLINE_FOCUS_FILTER_ID}>
+              <feMorphology
+                in="SourceGraphic"
+                operator="dilate"
+                radius={REGION_OUTLINE_FOCUS_RADIUS}
+                data-zoom-radius={REGION_OUTLINE_FOCUS_RADIUS}
                 result="grown"
               />
               <feComposite in="grown" in2="SourceGraphic" operator="out" />

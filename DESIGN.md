@@ -453,6 +453,14 @@ set (§6.1 rule 1) and read only by `components/game/game-map.module.css`.
   (`game-map.tsx` §BÖLGE), instead of stroking every member province's own full perimeter —
   which would also bold the borders BETWEEN members, the exact "eleven outlined provinces"
   look the owner rejected for hover in the first place.
+
+  This holds under keyboard focus too (→ PR #118 round 2, `CODE118-I1`): a member whose own
+  `data-state` is `correct`/`shown` never regains its own per-province line just because it is
+  the currently-tabbed shape — the focus delta for that combination is expressed on the same
+  ring instead, at a larger radius (`game-map.module.css` §BÖLGE-2 FOCUS), never on the
+  per-province channel. WCAG 2.4.7 stays satisfied because the ring itself changes size while
+  focus is present.
+
 - **Never a public-safety scale** (§6.2) — regions carry no standardized-colour obligation.
 - **Where it is NOT used:** the 81-province mode and the per-region rounds draw one neutral
   fill. Tinting by region there would hand the player the answer, which is the product
