@@ -35,7 +35,15 @@ interface ActiveCard {
    * `top - EDGE_INSET` when `above` (room up to the container's top), `c.height - EDGE_INSET -
    * top` when not (room down to the container's bottom). Bounds the card's own rendered height
    * via CSS `max-height`; NEVER repositions it (→ CODE120-M1/A11Y120-M1 fix round — see the
-   * placement note below for why a positional ceiling is the wrong fix here).
+   * placement note below for why a positional ceiling is the wrong fix here). In `above` mode
+   * this IS also a position invariant in effect, even though it writes no `top`/`above`/`left`
+   * value: CSS resolves `translateY(calc(-100% + 4px))` (map.module.css) against the card's OWN
+   * rendered height, so any change to this value moves the card's rendered top edge by exactly
+   * the same amount (measured: 49.52px→100.375px moved one card's top from +9.00px to −41.86px
+   * relative to the container — the full 50.85px delta). A remedy that grows this value past the
+   * room ceiling therefore also pushes the box's own edge toward — and past — the container's
+   * outer boundary; this is why a "just add a floor" idea was tried, measured, and rejected
+   * (A11Y120R2-I1 fix round) rather than shipped.
    */
   maxHeight: number;
 }
@@ -188,10 +196,18 @@ export function MapHoverCard() {
     // `pointerType === "touch"`, so a real phone never opens this card for a province at
     // all), so even the narrower-viewport numbers above are a mouse-on-a-narrowed-window
     // case, not the reported defect. That panel-edge residual is no longer left to
-    // `.mapRoot`'s ambient clip (CODE120-M1/A11Y120-M1 fix round): `maxHeight` below bounds
-    // the card to the room actually available and pairs with `overflow-y: auto`
-    // (map.module.css), so a card that still does not fit is scrollable rather than silently
-    // truncated — the same pixels can clip at rest, but they are now recoverable.
+    // `.mapRoot`'s ambient clip alone (A11Y120R2-I1 fix round): `maxHeight` below bounds the
+    // card to the room actually available and pairs with `overflow-y: auto` plus a
+    // paint-based scroll-shadow (map.module.css `.card`) so a card that still does not fit is
+    // both scrollable AND visibly signalled as such — a bare scrollbar style alone measured
+    // unreliable on this platform (VAL120R3-I1) and is not relied on here. Independently
+    // measured (all 240 `/dunya` shapes, 320×256/360×640/768×900): the card's own box never
+    // escapes `.mapRoot`'s clip, 0/240, so every row this ceiling admits is genuinely
+    // reachable by the card's own scroll — the same pixels can clip at rest, and they are, in
+    // fact, recoverable, now with a visible cue that says so. (A candidate that grows this
+    // ceiling to guarantee the name/badge never clip at rest was tested and rejected — see the
+    // CEILING note below `openFrom` — because it breaks exactly the "never escapes the clip"
+    // property this sentence depends on.)
     const openFrom = (anchor: HTMLElement | SVGElement) => {
       if (panning) return; // mid-gesture: any position computed here is already stale
       const a = anchor.getBoundingClientRect();
@@ -217,9 +233,21 @@ export function MapHoverCard() {
       // collision-aware side choice above, which this must not perturb). `above`: room from the
       // container's top inset up to the card's bottom anchor. `below`: room from the card's top
       // anchor down to the container's bottom inset. CSS pairs this with `overflow-y: auto`
-      // (map.module.css) so content that still does not fit is reachable by scroll instead of
-      // silently gone under `.mapRoot`'s ambient `overflow: hidden` — the same clip
-      // pixel-for-pixel, but now recoverable rather than invisible.
+      // plus a paint-based scroll-shadow (map.module.css `.card`, A11Y120R2-I1 fix round) so
+      // content that still does not fit is reachable by scroll AND visibly signalled as such,
+      // instead of silently gone under `.mapRoot`'s ambient `overflow: hidden` with no cue at
+      // all. This ceiling is what keeps the card's own box inside `.mapRoot` in the first
+      // place — measured across all 240 `/dunya` shapes at 320×256/360×640/768×900, 0 escape
+      // the ancestor's clip — which is what makes every row of the card reachable by the
+      // card's own vertical scroll. A candidate that grows `maxHeight` PAST this ceiling (tried
+      // and rejected, A11Y120R2-I1 fix round) pushes the box outside `.mapRoot`'s hard clip
+      // instead, where no scroll — the card's own or otherwise — reaches it: measured at
+      // 320×256, DR Congo loses its name's first line and its badge entirely (0% reachable at
+      // any scroll position), Saint Helena loses its name's first line, and in the mirror
+      // (`below`-branch) case the last stat row drops to ~51–53% reachable. This ceiling is
+      // therefore a reachability guarantee as well as a positioning one — see the docstring
+      // above `ActiveCard.maxHeight` for why growing it is also a position change, not only a
+      // size one.
       const maxHeight = Math.max(0, above ? top - EDGE_INSET : c.height - EDGE_INSET - top);
       const d = anchor.dataset;
       const stats: CardStat[] = [];

@@ -30,28 +30,43 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  /* Closes DF120-I1 (PR #120 fix round): `.intro`'s own removed box used to contribute a
-     CONSTANT ~41.6px here regardless of viewport — its line box (16px body font × 1.6
-     line-height = 25.6px) plus the global `p { margin: 0 0 1rem }` (16px) — on top of `h2`'s
-     own fluid `margin: 0 0 0.5em` (DESIGN.md §3, ~11.2–14.4px). When `description` is omitted
-     (today: /turkiye), that 41.6px vanished with the paragraph and nothing replaced it. This
-     rule restores it UNCONDITIONALLY, then the sibling rule below suppresses it exactly when
-     `.intro` is present and already supplying its own version — so the total gap stays the
-     same ~52–56px on EVERY caller, whether or not it passes `description`, rather than the
-     caller's content decision leaking into the section's own internal spacing. 42px, not
-     41.6px: rounded to a whole pixel: the pre-PR total already varied by a few px across the
-     viewport range from h2's own fluid clamp, so exact-to-the-decimal restoration was never
-     the target. */
-  margin-top: 42px;
+  /* Closes DF120-I1 (PR #120), corrected in the round-3 fix (CODE120-I1 + VAL120R3-I3): a
+     PADDING, not a margin. Round 2 added this as `margin-top: 42px` on the assumption that an
+     adjacent sibling's margin and this rule's margin SUM. They do not — CSS collapses adjacent
+     block-level margins to their MAX, so with no `.intro` in between (today: /turkiye, whose
+     `description` prop is omitted) the real gap measured a flat 42px at EVERY width, never
+     h2's own fluid margin (11.2–14.4px, DESIGN.md §3) landing on top of it. Padding does not
+     collapse: h2's own margin-bottom now survives ABOVE this padding — the same mechanism
+     /dunya's `.intro` construction already relies on.
+
+     Measured (Playwright, localhost:3100, commit 64aaac2, BOTH locales — TR and EN produce
+     IDENTICAL numbers at every width, since both description strings wrap at the same points):
+     at DESKTOP widths /turkiye now tracks /dunya CLOSELY — 768px: 55.376px vs 54.969px (0.41px
+     apart); 1024/1440px: 56.4px vs 55.984px (0.42px apart) — closer than a flat
+     `margin-top: 56px` would manage (0.4–1.03px further off at the same widths), because this
+     reflects h2's own fluid clamp instead of guessing a single number for it.
+
+     AT 360px THIS IS A STRUCTURAL DIFFERENCE, NOT A TUNING GAP, AND NO SINGLE NUMBER CLOSES
+     IT: /dunya's real gap there is 78.375px, not ~52-56px — its `.intro` paragraph genuinely
+     wraps to two lines at that width (measured: 51.1875px, exactly 2× its own 25.59375px
+     single-line box), and /turkiye has no `.intro` content to reproduce that wrap. Any single
+     `padding-top` value leaves 360px genuinely unequal between the two pages — stated here
+     rather than hidden behind a repeat of the "now exactly equal" claim this fix round exists
+     to retire.
+
+     42px, not 41.6px: rounded to a whole pixel — the original rationale (a removed paragraph's
+     own line box + margin, 25.6+16=41.6px) still grounds the number; only the PROPERTY
+     changed, not the value. */
+  padding-top: 42px;
   margin-bottom: 28px;
 }
 
-/* `.intro` already supplies the historical gap on its own (line box + margin, see above) when
-   it renders — true today only on /dunya, and on /turkiye again the day a future caller passes
-   `description`. Suppress the compensating margin-top exactly then, so the two contributions
-   never stack into a gap larger than either page has ever shown. */
+/* `.intro` already supplies its own gap (line box + margin, see above) when it renders — true
+   today only on /dunya, and on /turkiye again the day a future caller passes `description`.
+   Suppress the compensating padding-top exactly then, so the two contributions never stack
+   into a gap larger than either page has ever shown. */
 .intro + .letterNav {
-  margin-top: 0;
+  padding-top: 0;
 }
 
 .letterNav a {

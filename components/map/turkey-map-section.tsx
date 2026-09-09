@@ -37,12 +37,14 @@ const CONTEXT_CASING_ISO = "TR";
 const CONTEXT_COUNTRY_LABEL_SIZE = 18;
 const CONTEXT_SEA_LABEL_SIZE = 26;
 
-/** Marmara's own label size (fix round, DF120-M1). Intentionally EQUALS
- * CONTEXT_COUNTRY_LABEL_SIZE today — see the FONT-SIZE OVERRIDE note on SEA_LABELS below for
- * why a smaller/lighter size was chosen for this one sea name — but is named independently so
- * a future retune of either constant does not silently retune the other; the two agree on a
- * value, they are not the same constant. */
-const MARMARA_SEA_LABEL_SIZE = CONTEXT_COUNTRY_LABEL_SIZE;
+/** Marmara's own label size (fix round, DF120-M1 → DF120R2-M1 → VAL120R3-M1). A LITERAL, not a
+ * reference to CONTEXT_COUNTRY_LABEL_SIZE — a future retune of either constant genuinely
+ * cannot retune the other any more. Intentionally equals CONTEXT_COUNTRY_LABEL_SIZE's value
+ * TODAY (18, ≈15.3px at a 1080px content column) — see the FONT-SIZE OVERRIDE note on
+ * SEA_LABELS below for why this one sea name uses the smaller/lighter size — matching the same
+ * deliberate-match-as-literal pattern LABEL_ANCHOR_OVERRIDES.AZ.fontSize (16, line 215) already
+ * establishes for this file. */
+const MARMARA_SEA_LABEL_SIZE = 18;
 
 /**
  * Sea names — four hand-picked anchors (a sea has no polygon to derive a centre from),

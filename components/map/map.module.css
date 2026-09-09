@@ -528,7 +528,40 @@
      page to click through to. */
   pointer-events: auto;
   cursor: default;
-  background: #fff;
+  /* SCROLL-SHADOW AFFORDANCE (A11Y120R2-I1 fix round, → VAL120R3-I1). WCAG 1.4.10: overflow
+     content was already reachable by scroll (`overflow-y: auto` below) but round 2 shipped
+     that with NO visible cue. Measured (this Chromium's own overlay-scrollbar mode, Playwright
+     1.62.1): `scrollbar-width: auto` / `::-webkit-scrollbar` styling applied — confirmed via
+     `getComputedStyle` — but painted ZERO pixels across three screenshots, because this
+     platform's classic-scrollbar CSS does not force classic-scrollbar BEHAVIOUR (a real
+     platform fact: a control `overflow:scroll` box measured `clientWidth === offsetWidth -
+     border`, i.e. the scrollbar reserves no layout space at all there). An ordinary
+     `box-shadow` rendered correctly in the same test, which is why this is PAINT, not a
+     scrollbar-style request: two solid covers that scroll WITH the content
+     (`background-attachment: local`) mask two shadow gradients pinned to the box's own edges
+     (`background-attachment: scroll`) — a shadow shows ONLY where its cover has scrolled away
+     from that edge, i.e. only where there genuinely is more content in that direction.
+     `scrollbar-width: auto` is deliberately NOT added alongside this: VAL120R3-I1 found it
+     inert on the measured platform, so it would be an unverified no-op, not a real second
+     layer. This REPLACES the old `background: #fff;` — not an addition: only one
+     `background`/`background-color` wins on one element, and `#fff` survives below as the
+     white ground the covers paint with (C1). Shadow colour reuses --color-ink's own rgb
+     triplet (43, 38, 34) — the same one `--shadow-card` (app/globals.css) already uses for
+     this component's own drop shadow — not a new raw value. */
+  background-color: #fff;
+  background-image:
+    linear-gradient(#fff 30%, rgba(255, 255, 255, 0)),
+    linear-gradient(rgba(255, 255, 255, 0), #fff 70%),
+    radial-gradient(farthest-side at 50% 0, rgba(43, 38, 34, 0.18), rgba(43, 38, 34, 0)),
+    radial-gradient(farthest-side at 50% 100%, rgba(43, 38, 34, 0.18), rgba(43, 38, 34, 0));
+  background-repeat: no-repeat;
+  background-position: top, bottom, top, bottom;
+  background-size:
+    100% 16px,
+    100% 16px,
+    100% 8px,
+    100% 8px;
+  background-attachment: local, local, scroll, scroll;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
@@ -544,7 +577,8 @@
     scrolling value and overflow-x is left `visible` — pin it `hidden` so a fixed 220px card
     never grows an unwanted horizontal scrollbar; nothing in this card's own content is meant
     to scroll sideways. */
-  overflow-y: auto; /* CODE120-M1/A11Y120-M1 fix round — pairs with the JS `maxHeight` above. */
+  overflow-y: auto; /* CODE120-M1/A11Y120-M1 fix round — pairs with the JS `maxHeight` above,
+    and with the scroll-shadow affordance above it in this rule (A11Y120R2-I1 fix round). */
 }
 
 .card[data-visible="true"] {
