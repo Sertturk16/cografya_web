@@ -540,6 +540,11 @@
     opacity 0.16s ease-out,
     transform 0.16s ease-out;
   z-index: 5;
+  overflow-x: hidden; /* explicit: CSS forces overflow-x to `auto` once overflow-y is a
+    scrolling value and overflow-x is left `visible` — pin it `hidden` so a fixed 220px card
+    never grows an unwanted horizontal scrollbar; nothing in this card's own content is meant
+    to scroll sideways. */
+  overflow-y: auto; /* CODE120-M1/A11Y120-M1 fix round — pairs with the JS `maxHeight` above. */
 }
 
 .card[data-visible="true"] {

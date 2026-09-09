@@ -37,6 +37,13 @@ const CONTEXT_CASING_ISO = "TR";
 const CONTEXT_COUNTRY_LABEL_SIZE = 18;
 const CONTEXT_SEA_LABEL_SIZE = 26;
 
+/** Marmara's own label size (fix round, DF120-M1). Intentionally EQUALS
+ * CONTEXT_COUNTRY_LABEL_SIZE today — see the FONT-SIZE OVERRIDE note on SEA_LABELS below for
+ * why a smaller/lighter size was chosen for this one sea name — but is named independently so
+ * a future retune of either constant does not silently retune the other; the two agree on a
+ * value, they are not the same constant. */
+const MARMARA_SEA_LABEL_SIZE = CONTEXT_COUNTRY_LABEL_SIZE;
+
 /**
  * Sea names — four hand-picked anchors (a sea has no polygon to derive a centre from),
  * projected with `projectToFrame()` in the TR-frame coordinate space and verified to fall
@@ -67,7 +74,11 @@ const SEA_LABELS = [
   // reads as clutter rather than a sea name. `CONTEXT_COUNTRY_LABEL_SIZE` (18) is the
   // smaller/lighter size already used for the neighbouring-country and KKTC/Cyprus labels on
   // this same map, matching the owner's own suggested target rather than a new invented
-  // number. The anchor (x, y) is UNCHANGED, and unlike a position move this cannot introduce
+  // number. (DF120-M1 fix round: the entry below now reads MARMARA_SEA_LABEL_SIZE, a
+  // dedicated constant that intentionally equals CONTEXT_COUNTRY_LABEL_SIZE rather than
+  // aliasing it directly — the rendered value is unchanged, 18/≈15.3px at a 1080px content
+  // column, identical to this override's own shipped, owner-approved value.) The anchor
+  // (x, y) is UNCHANGED, and unlike a position move this cannot introduce
   // a new land collision: an SVG `<text>` shrunk around the SAME baseline/anchor point is a
   // strict geometric SUBSET of its own larger ink box (`textAnchor="middle"` keeps the box
   // centred on `x`; a smaller `fontSize` scales ascent/descent down from the same baseline
@@ -77,7 +88,7 @@ const SEA_LABELS = [
   // versus 197.65×35.34 / 196.47×35.34 at 26px — every dimension smaller and centred on the
   // same `(x, y)`, i.e. genuinely nested inside the box the 24.79%/24.61% figure was measured
   // against.
-  { key: "seaMarmara", x: 75, y: 114, fontSize: CONTEXT_COUNTRY_LABEL_SIZE },
+  { key: "seaMarmara", x: 75, y: 114, fontSize: MARMARA_SEA_LABEL_SIZE },
   { key: "seaAegean", x: -13, y: 258 },
   // FIX ROUND (VAL108-SOV6): the original anchor (281, 464) put the EN-only "Mediterranean
   // Sea" label's east end over the Cyprus/KKTC island shapes (16% of its ink, 32/201 sampled

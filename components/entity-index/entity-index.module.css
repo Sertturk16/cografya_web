@@ -30,7 +30,28 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  /* Closes DF120-I1 (PR #120 fix round): `.intro`'s own removed box used to contribute a
+     CONSTANT ~41.6px here regardless of viewport — its line box (16px body font × 1.6
+     line-height = 25.6px) plus the global `p { margin: 0 0 1rem }` (16px) — on top of `h2`'s
+     own fluid `margin: 0 0 0.5em` (DESIGN.md §3, ~11.2–14.4px). When `description` is omitted
+     (today: /turkiye), that 41.6px vanished with the paragraph and nothing replaced it. This
+     rule restores it UNCONDITIONALLY, then the sibling rule below suppresses it exactly when
+     `.intro` is present and already supplying its own version — so the total gap stays the
+     same ~52–56px on EVERY caller, whether or not it passes `description`, rather than the
+     caller's content decision leaking into the section's own internal spacing. 42px, not
+     41.6px: rounded to a whole pixel: the pre-PR total already varied by a few px across the
+     viewport range from h2's own fluid clamp, so exact-to-the-decimal restoration was never
+     the target. */
+  margin-top: 42px;
   margin-bottom: 28px;
+}
+
+/* `.intro` already supplies the historical gap on its own (line box + margin, see above) when
+   it renders — true today only on /dunya, and on /turkiye again the day a future caller passes
+   `description`. Suppress the compensating margin-top exactly then, so the two contributions
+   never stack into a gap larger than either page has ever shown. */
+.intro + .letterNav {
+  margin-top: 0;
 }
 
 .letterNav a {

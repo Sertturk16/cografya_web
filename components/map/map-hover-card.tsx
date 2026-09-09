@@ -30,6 +30,14 @@ interface ActiveCard {
   above: boolean;
   left: number;
   top: number;
+  /**
+   * Room (px) available between the card's anchored edge and the container's OPPOSITE edge —
+   * `top - EDGE_INSET` when `above` (room up to the container's top), `c.height - EDGE_INSET -
+   * top` when not (room down to the container's bottom). Bounds the card's own rendered height
+   * via CSS `max-height`; NEVER repositions it (→ CODE120-M1/A11Y120-M1 fix round — see the
+   * placement note below for why a positional ceiling is the wrong fix here).
+   */
+  maxHeight: number;
 }
 
 const CARD_WIDTH = 220;
@@ -179,7 +187,11 @@ export function MapHoverCard() {
     // below the desktop breakpoints anyway (`onPointerOver` above returns immediately for
     // `pointerType === "touch"`, so a real phone never opens this card for a province at
     // all), so even the narrower-viewport numbers above are a mouse-on-a-narrowed-window
-    // case, not the reported defect.
+    // case, not the reported defect. That panel-edge residual is no longer left to
+    // `.mapRoot`'s ambient clip (CODE120-M1/A11Y120-M1 fix round): `maxHeight` below bounds
+    // the card to the room actually available and pairs with `overflow-y: auto`
+    // (map.module.css), so a card that still does not fit is scrollable rather than silently
+    // truncated — the same pixels can clip at rest, but they are now recoverable.
     const openFrom = (anchor: HTMLElement | SVGElement) => {
       if (panning) return; // mid-gesture: any position computed here is already stale
       const a = anchor.getBoundingClientRect();
@@ -200,6 +212,15 @@ export function MapHoverCard() {
       // box already runs past it (never reachable in the chosen-more-room branch in practice,
       // kept for the same defensive reason `left` above has one).
       const top = above ? anchorTop - CARD_GAP : Math.max(EDGE_INSET, anchorBottom + CARD_GAP);
+      // CEILING (CODE120-M1/A11Y120-M1 fix round). Bounds the card's OWN height to the room
+      // actually left on the side it was anchored to — never moves `top`/`above` (see the
+      // collision-aware side choice above, which this must not perturb). `above`: room from the
+      // container's top inset up to the card's bottom anchor. `below`: room from the card's top
+      // anchor down to the container's bottom inset. CSS pairs this with `overflow-y: auto`
+      // (map.module.css) so content that still does not fit is reachable by scroll instead of
+      // silently gone under `.mapRoot`'s ambient `overflow: hidden` — the same clip
+      // pixel-for-pixel, but now recoverable rather than invisible.
+      const maxHeight = Math.max(0, above ? top - EDGE_INSET : c.height - EDGE_INSET - top);
       const d = anchor.dataset;
       const stats: CardStat[] = [];
       for (let n = 1; n <= MAX_STATS; n++) {
@@ -216,6 +237,7 @@ export function MapHoverCard() {
         above,
         left,
         top,
+        maxHeight,
       });
     };
 
@@ -315,7 +337,9 @@ export function MapHoverCard() {
       // Territory cards have no destination, so they must not offer a pointer cursor for a
       // click that would do nothing (the CSS keys off this).
       data-clickable={active?.href ? "true" : undefined}
-      style={active ? { left: active.left, top: active.top } : undefined}
+      style={
+        active ? { left: active.left, top: active.top, maxHeight: active.maxHeight } : undefined
+      }
       onClick={() => {
         if (active?.href) window.location.assign(active.href);
       }}
