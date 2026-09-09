@@ -1,6 +1,11 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import type { MarineLayer, MarineValue } from "@/lib/api/types";
-import { MARINE_COMPASS_KEY, displayBearing, marineDirectionView } from "@/lib/marine/direction";
+import {
+  MARINE_COMPASS_KEY,
+  MARINE_DIRECTION_CONVENTION_KEY,
+  displayBearing,
+  marineDirectionView,
+} from "@/lib/marine/direction";
 import { MODEL_INSTANT_FORMAT, parseModelInstant } from "@/lib/marine/model-run";
 import {
   KMH_FRACTION_DIGITS,
@@ -59,6 +64,14 @@ interface ValueCellProps {
  * DIRECTION_CONVENTION_KEY` (`direction.from`/`direction.towards`) is UNCHANGED and still fully
  * used elsewhere — `layer-catalogue.tsx`'s own "Yön" column states which convention a LAYER
  * publishes, a genuinely different, un-repeated fact this fix does not touch.
+ *
+ * AN AT-ONLY RESTATEMENT WAS ADDED BACK (A11Y121-I1, this fix round). The simplification above
+ * stands for sighted readers — no visible prefix, no 60×-repeated text. But a linear- or
+ * heading-navigating screen-reader user does not necessarily reach the page-bottom reading key
+ * before a value cell, so each arrow cell now also carries a `.srOnly` span restating the exact
+ * convention word computed from `directionView.convention` (never hardcoded), giving AT users
+ * back the same accessible name the pre-removal cell had, while the visible text node is
+ * unchanged.
  */
 export async function ValueCell({
   magnitude,
@@ -136,6 +149,9 @@ export async function ValueCell({
       {directionView?.kind === "arrow" && (
         <span className={styles.valueDirection}>
           <DirectionArrow rotationDeg={directionView.rotationDeg} />
+          <span className={styles.srOnly}>
+            {tm(MARINE_DIRECTION_CONVENTION_KEY[directionView.convention])}:{" "}
+          </span>
           {tm("values.direction", {
             compass: tm(MARINE_COMPASS_KEY[directionView.compass]),
             degrees: format.number(directionView.bearing, { maximumFractionDigits: 0 }),

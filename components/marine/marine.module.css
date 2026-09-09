@@ -50,21 +50,34 @@
 }
 
 /* ---- Geographic context (deniz-notlar.txt madde 1) ---------------------------
-   Same two rule sets as `components/map/map.module.css`'s `.contextCasing`/`.contextLand`
-   (turkiye-yenileme PR-B), reused byte-for-byte rather than re-derived — this is a second CSS
-   Module, so the class names cannot be shared, but the declarations must not drift from the
-   surface they were measured on. Neither group carries a link, a tab stop or a `data-shape`;
-   the map has no hit layer at all on this page (no province link exists here), so
-   `pointer-events: none` is belt-and-braces rather than load-bearing the way it is on
-   `/turkiye`. */
+   Two different things are reused from `components/map/map.module.css`'s
+   `.contextCasing`/`.contextLand` (turkiye-yenileme PR-B), and they carry two different
+   guarantees. The GEOMETRY (`CONTEXT_SHAPES`/`TR_CONTEXT_VIEWBOX`, `lib/map/
+   tr-context.generated.ts`) is imported directly by both pages, so it cannot drift by
+   construction. The CSS DECLARATIONS below are a second, independent copy — this is a
+   separate CSS Module, so the class names cannot be shared — and a copy can drift even when
+   nobody means it to: `.contextCasing`'s colour did, once. `/turkiye`'s copy retinted from
+   `--color-border` to `--map-context-land` when #117 closed a reported seam-wedge defect at
+   Hakkari–Iraq / Şanlıurfa-Gaziantep-Kilis–Syria / Hatay–Syria / Iğdır-Kars–Armenia
+   (ΔE76 5.41 against `--color-border`, a generic hairline token never tuned against a
+   neighbour fill); this file's copy did not move with it, and this fix round re-syncs the
+   two (→ DEC 2026-09-09f md.2, deliberately extending #117's owner-approved exception to a
+   second page — the sovereignty finding on `/turkiye`'s own casing tone was OVERRIDDEN, not
+   withdrawn, → DEC 2026-09-09c md.2). `.contextLand` has stayed byte-identical throughout;
+   `.contextCasing` is byte-identical again as of this fix, but that is a MAINTAINED fact, not
+   a structural one — nothing enforces the two files' `.contextCasing` staying equal, so a
+   future retint of either needs the same manual update on the other. Neither group carries a
+   link, a tab stop or a `data-shape`; the map has no hit layer at all on this page (no
+   province link exists here), so `pointer-events: none` is belt-and-braces rather than
+   load-bearing the way it is on `/turkiye`. */
 .contextCasing,
 .contextLand {
   pointer-events: none;
 }
 
 .contextCasing path {
-  fill: var(--color-border);
-  stroke: var(--color-border);
+  fill: var(--map-context-land);
+  stroke: var(--map-context-land);
   stroke-width: 6;
   stroke-linejoin: round;
 }

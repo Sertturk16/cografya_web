@@ -99,6 +99,7 @@
     "attribution": "© OpenStreetMap katkıcıları, ODbL",
     "attributionJrcLabel": "Mevsimlik göl sınırları:",
     "attributionJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
+    "attributionProvinceLabel": "İl sınırları:",
     "seaBlackSea": "Karadeniz",
     "seaMarmara": "Marmara Denizi",
     "seaAegean": "Ege Denizi",
@@ -513,7 +514,7 @@
     },
     "map": {
       "title": "Türkiye kıyılarındaki referans noktaları haritası",
-      "description": "{count} referans noktası, Türkiye'nin il sınırlarını gösteren bir harita üzerinde işaretlendi. Noktaların adları ve il sayfalarına bağlantıları haritanın hemen altındaki listede yer alıyor.",
+      "description": "{count} referans noktası, Türkiye'nin il sınırlarını gösteren bir harita üzerinde işaretlendi. Harita, coğrafi bağlam olarak çevredeki ülkelerin topraklarını da gösterir. Noktaların adları ve il sayfalarına bağlantıları haritanın hemen altındaki listede yer alıyor.",
       "caption": "Her işaret, ilin açığındaki sabit bir referans noktasını gösterir. İki denize kıyısı olan bir il haritada iki kez geçebilir."
     },
     "unit": {

@@ -85,6 +85,12 @@ const CONTEXT_CASING_ISO = "TR";
  * complete list with its province links sits directly below. İstanbul, Çanakkale and
  * Balıkesir each appear twice because they genuinely own two points on two different seas —
  * that duplication is the lesson, not a defect.
+ *
+ * `Marine.map.description` (the SVG `<desc>` below) was extended in this fix round to
+ * mention the context layer (→ VAL121-I3): it says "surrounding … land," not "neighbouring …
+ * boundaries," because three of the 14 context shapes — Serbia, North Macedonia, Lebanon — do
+ * not actually border Türkiye (`map.module.css`'s own "near-neighbour" comment), and the
+ * layer is filled land (`context-land`), not a boundary line. Names zero countries.
  */
 export async function MarineMap({ locale, points, provinces }: MarineMapProps) {
   const t = await getTranslations("Marine");
@@ -219,7 +225,7 @@ export async function MarineMap({ locale, points, provinces }: MarineMapProps) {
             English licence string carries its own `lang="en"`. Same strings and same corner as
             every other TR-frame surface: one `Map` namespace. */}
         <p className={styles.mapAttribution}>
-          {tMap("attribution")}
+          {tMap("attributionProvinceLabel")} {tMap("attribution")}
           <br />
           {tMap("attributionJrcLabel")} <span lang="en">{tMap("attributionJrcEnglish")}</span>
         </p>
