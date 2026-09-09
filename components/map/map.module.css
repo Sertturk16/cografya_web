@@ -540,11 +540,18 @@
 }
 
 /* ---- Hover / focus card (the floating overlay) ---- */
+/* SHRUNK (owner report, turkiye-editor-notlari md.2 → `map-hover-card.tsx`'s own
+   `CARD_WIDTH`, which this value must stay in step with — the JS reads its OWN
+   position math off the same number, never off this file). 258px → 220px width, plus
+   the padding/font reductions below: on `/turkiye` (the uniform province-card case)
+   this took the real rendered height from a measured 176px down to 155px — smaller
+   both dimensions, and a smaller footprint is strictly less of the map any placement
+   can cover, independent of the collision-side fix in the island. */
 .card {
   position: absolute;
   top: 0;
   left: 0;
-  width: 258px;
+  width: 220px;
   /* The card is a hover target AND itself clickable (mouse affordance → same detail
      page). It stays open while the pointer is on it, and a hover-intent delay in the
      island bridges the shape→card gap so the click can land (PR#6 owner report).
@@ -553,11 +560,44 @@
      page to click through to. */
   pointer-events: auto;
   cursor: default;
-  background: #fff;
+  /* SCROLL-SHADOW AFFORDANCE (A11Y120R2-I1 fix round, → VAL120R3-I1). WCAG 1.4.10: overflow
+     content was already reachable by scroll (`overflow-y: auto` below) but round 2 shipped
+     that with NO visible cue. Measured (this Chromium's own overlay-scrollbar mode, Playwright
+     1.62.1): `scrollbar-width: auto` / `::-webkit-scrollbar` styling applied — confirmed via
+     `getComputedStyle` — but painted ZERO pixels across three screenshots, because this
+     platform's classic-scrollbar CSS does not force classic-scrollbar BEHAVIOUR (a real
+     platform fact: a control `overflow:scroll` box measured `clientWidth === offsetWidth -
+     border`, i.e. the scrollbar reserves no layout space at all there). An ordinary
+     `box-shadow` rendered correctly in the same test, which is why this is PAINT, not a
+     scrollbar-style request: two solid covers that scroll WITH the content
+     (`background-attachment: local`) mask two shadow gradients pinned to the box's own edges
+     (`background-attachment: scroll`) — a shadow shows ONLY where its cover has scrolled away
+     from that edge, i.e. only where there genuinely is more content in that direction.
+     `scrollbar-width: auto` is deliberately NOT added alongside this: VAL120R3-I1 found it
+     inert on the measured platform, so it would be an unverified no-op, not a real second
+     layer. This REPLACES the old `background: #fff;` — not an addition: only one
+     `background`/`background-color` wins on one element, and `#fff` survives below as the
+     white ground the covers paint with (C1). Shadow colour reuses --color-ink's own rgb
+     triplet (43, 38, 34) — the same one `--shadow-card` (app/globals.css) already uses for
+     this component's own drop shadow — not a new raw value. */
+  background-color: #fff;
+  background-image:
+    linear-gradient(#fff 30%, rgba(255, 255, 255, 0)),
+    linear-gradient(rgba(255, 255, 255, 0), #fff 70%),
+    radial-gradient(farthest-side at 50% 0, rgba(43, 38, 34, 0.18), rgba(43, 38, 34, 0)),
+    radial-gradient(farthest-side at 50% 100%, rgba(43, 38, 34, 0.18), rgba(43, 38, 34, 0));
+  background-repeat: no-repeat;
+  background-position: top, bottom, top, bottom;
+  background-size:
+    100% 16px,
+    100% 16px,
+    100% 8px,
+    100% 8px;
+  background-attachment: local, local, scroll, scroll;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
-  padding: 12px 14px 11px;
+  padding: 10px 12px 9px;
   opacity: 0;
   visibility: hidden;
   transform: translateY(4px);
@@ -565,6 +605,12 @@
     opacity 0.16s ease-out,
     transform 0.16s ease-out;
   z-index: 5;
+  overflow-x: hidden; /* explicit: CSS forces overflow-x to `auto` once overflow-y is a
+    scrolling value and overflow-x is left `visible` — pin it `hidden` so a fixed 220px card
+    never grows an unwanted horizontal scrollbar; nothing in this card's own content is meant
+    to scroll sideways. */
+  overflow-y: auto; /* CODE120-M1/A11Y120-M1 fix round — pairs with the JS `maxHeight` above,
+    and with the scroll-shadow affordance above it in this rule (A11Y120R2-I1 fix round). */
 }
 
 .card[data-visible="true"] {
@@ -601,7 +647,7 @@
 .cardName {
   font-family: var(--font-heading);
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   line-height: 1.15;
   letter-spacing: -0.01em;
   color: var(--color-primary-dark);
@@ -612,21 +658,21 @@
   background: var(--color-chip-bg);
   color: var(--color-chip-ink);
   border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 0.72rem;
+  padding: 2px 8px;
+  font-size: 0.68rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .cardRegion {
-  margin-top: 3px;
-  font-size: 0.82rem;
+  margin-top: 2px;
+  font-size: 0.76rem;
   color: var(--color-slate);
 }
 
 .cardRule {
   height: 1px;
-  margin: 10px 0 9px;
+  margin: 8px 0 7px;
   background: var(--color-border);
 }
 
@@ -634,7 +680,7 @@
 .stats {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   margin: 0;
 }
 
@@ -657,7 +703,7 @@
 
 .statLabel {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--color-slate);
 }
@@ -666,7 +712,7 @@
   margin: 0;
   font-family: var(--font-heading);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.92rem;
   color: var(--color-ink);
 }
 

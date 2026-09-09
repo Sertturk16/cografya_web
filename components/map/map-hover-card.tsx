@@ -30,32 +30,25 @@ interface ActiveCard {
   above: boolean;
   left: number;
   top: number;
+  /**
+   * Room (px) available between the card's anchored edge and the container's OPPOSITE edge —
+   * `top - EDGE_INSET` when `above` (room up to the container's top), `c.height - EDGE_INSET -
+   * top` when not (room down to the container's bottom). Bounds the card's own rendered height
+   * via CSS `max-height`; NEVER repositions it (→ CODE120-M1/A11Y120-M1 fix round — see the
+   * placement note below for why a positional ceiling is the wrong fix here). In `above` mode
+   * this IS also a position invariant in effect, even though it writes no `top`/`above`/`left`
+   * value: CSS resolves `translateY(calc(-100% + 4px))` (map.module.css) against the card's OWN
+   * rendered height, so any change to this value moves the card's rendered top edge by exactly
+   * the same amount (measured: 49.52px→100.375px moved one card's top from +9.00px to −41.86px
+   * relative to the container — the full 50.85px delta). A remedy that grows this value past the
+   * room ceiling therefore also pushes the box's own edge toward — and past — the container's
+   * outer boundary; this is why a "just add a floor" idea was tried, measured, and rejected
+   * (A11Y120R2-I1 fix round) rather than shipped.
+   */
+  maxHeight: number;
 }
 
-const CARD_WIDTH = 258;
-/**
- * Upper bound on the card's rendered height, used ONLY to decide which side of the shape it
- * hangs on (exact placement is CSS's job — see `data-place` below). MEASURED, not guessed —
- * every card of both maps was opened and measured at 1440×900 (heights do not vary with the
- * viewport: the card is a fixed 258px wide):
- *
- * - `/dunya` territory cards 70–194px TR, 70–216px EN — the tallest are MP/PM/TC/VI, a
- *   two-line name over three stat rows; the shortest is the Siachen Glacier, a name over a
- *   label and nothing else. They SHRANK from 237px when the status sentences became 3-word
- *   labels (→ DEC 2026-08-01m); the English ones then grew ~24px when the English labels
- *   added their line to a card that had been stat-only (→ DEC 2026-08-01p).
- * - `/dunya` country cards 73–215px — the tallest is EN "Democratic Republic of the Congo",
- *   a three-line name.
- * - `/turkiye` province cards: a uniform 176px.
- *
- * 240 was the measured country worst case (215) plus one wrapped name line of headroom, and
- * it still clears the new overall worst case (EN territory 216) by 24px — so the number does
- * NOT move: it is still an over-estimate, and over-estimating is the safe direction. It only
- * flips a short card BELOW a near-the-top shape that could have hosted it above, whereas
- * under-estimating pushes a card off the top of the map. Re-measure before trusting this
- * bound again if a card ever gains a fourth content line.
- */
-const CARD_MAX_HEIGHT = 240;
+const CARD_WIDTH = 220;
 const CARD_GAP = 10; // shape↔card breathing room
 const EDGE_INSET = 8; // keep the card off the container edge
 const HIDE_DELAY_MS = 140; // hover-intent: bridge the gap between shape and card
@@ -164,8 +157,57 @@ export function MapHoverCard() {
     // PREVIOUS entity's card — the DOM has not re-rendered yet — which placed a tall card as
     // if it were short and vice versa; territory cards, whose height still swings from a
     // single stat row (70px) to a wrapped name over three rows (194px), made that visible.
-    // Height now only decides WHICH SIDE, against a conservative bound, so no measurement is
-    // needed at all.
+    // No JS height measurement happens at all — see the collision-aware side choice below.
+    //
+    // COLLISION-AWARE SIDE CHOICE (owner report, turkiye-editor-notlari md.2 — verified on
+    // Konya: the card covered Konya's own shape AND the neighbouring Karaman). The OLD rule
+    // picked "above" only when a fixed conservative height bound (240px) fit above the
+    // shape's top, and fell through to "below" — UNCONDITIONALLY, however little room was
+    // actually there — otherwise; its own edge-clamp (removed below) then pulled the card's
+    // top edge back UP past the shape's own bottom edge to keep it inside the panel whenever
+    // that "below" room ran out — landing the card ON TOP OF the very shape it describes.
+    // MEASURED (Chromium, 1440×900, default unzoomed view, Playwright `getBoundingClientRect`
+    // + a real `pointerover` dispatch on all 81 il, self-overlap = the intersection area of
+    // the rendered card box against the hovered shape's own box): 20 of 81 provinces showed
+    // real, non-zero overlap with their OWN shape this way — up to 100% of the shape's
+    // bounding box on Kahramanmaraş and Batman, Konya included at 78%.
+    //
+    // The fix compares the REAL available room on both sides and picks whichever is larger —
+    // `spaceAbove`/`spaceBelow` below — rather than testing one side against an arbitrary
+    // threshold and defaulting to the other. This is sufficient on its own, with NO height
+    // clamp at all, because of a placement invariant that holds regardless of the card's real
+    // height: the "above" `top` is always the shape's own top edge minus the gap (the card
+    // only grows AWAY from the shape, upward), and the "below" `top` is always the shape's own
+    // bottom edge plus the gap (the card only grows away from the shape, downward) — so
+    // NEITHER branch can ever re-enter the shape's own bounding box, by construction, as long
+    // as neither is clamped back TOWARD the shape afterwards (the old bug). The only residual
+    // risk is the FAR edge of the panel (the top of the map for "above", the bottom for
+    // "below") clipping the card's last row on a genuinely short panel — `.mapRoot`'s own
+    // `overflow: hidden` — which is the pre-existing, lesser failure mode this same file's
+    // history already accepted for the party who is NOT the hovered shape, and is now also
+    // the fallback for the hovered shape itself, and even that residual never touches the
+    // shape (it can only clip against the panel's OUTER edge, never the shape's edge). RE-
+    // MEASURED after picking the larger side, same method, all 81 il: 0 of 81 provinces
+    // overlap their own shape at 768/1024/1280/1440×900 — including 768px, where 16 of 81
+    // provinces' larger side is shorter than the card's real rendered height (155px) and
+    // could in principle clip at the panel's outer edge, yet self-overlap with the hovered
+    // shape still measured 0 of 81 there too. `/turkiye`'s province cards are touch-only
+    // below the desktop breakpoints anyway (`onPointerOver` above returns immediately for
+    // `pointerType === "touch"`, so a real phone never opens this card for a province at
+    // all), so even the narrower-viewport numbers above are a mouse-on-a-narrowed-window
+    // case, not the reported defect. That panel-edge residual is no longer left to
+    // `.mapRoot`'s ambient clip alone (A11Y120R2-I1 fix round): `maxHeight` below bounds the
+    // card to the room actually available and pairs with `overflow-y: auto` plus a
+    // paint-based scroll-shadow (map.module.css `.card`) so a card that still does not fit is
+    // both scrollable AND visibly signalled as such — a bare scrollbar style alone measured
+    // unreliable on this platform (VAL120R3-I1) and is not relied on here. Independently
+    // measured (all 240 `/dunya` shapes, 320×256/360×640/768×900): the card's own box never
+    // escapes `.mapRoot`'s clip, 0/240, so every row this ceiling admits is genuinely
+    // reachable by the card's own scroll — the same pixels can clip at rest, and they are, in
+    // fact, recoverable, now with a visible cue that says so. (A candidate that grows this
+    // ceiling to guarantee the name/badge never clip at rest was tested and rejected — see the
+    // CEILING note below `openFrom` — because it breaks exactly the "never escapes the clip"
+    // property this sentence depends on.)
     const openFrom = (anchor: HTMLElement | SVGElement) => {
       if (panning) return; // mid-gesture: any position computed here is already stale
       const a = anchor.getBoundingClientRect();
@@ -176,30 +218,37 @@ export function MapHoverCard() {
         Math.min(centerX - CARD_WIDTH / 2, c.width - CARD_WIDTH - EDGE_INSET),
       );
       const anchorTop = a.top - c.top;
-      const above = anchorTop - CARD_GAP - CARD_MAX_HEIGHT >= EDGE_INSET;
-      // `top` is clamped to the container the same way `left` is two lines above — it was
-      // not, and a shape low in the frame pushed its card straight past the panel's bottom
-      // edge. MEASURED on `/turkiye` at 1440 (default view, no zoom): 13 provinces landed
-      // past that edge, Konya worst at 114px of a 176px card — its name row survived and
-      // the rule plus all three stat rows, the reason the card exists, did not. The panel
-      // clips (`map.module.css .mapRoot`), so "past the edge" means invisible, with no
-      // affordance that anything was cut.
-      //
-      // Only the BELOW branch needs it. In the ABOVE branch `top` is the card's BOTTOM edge
-      // and the shape is by construction inside the panel, so the card cannot pass the
-      // bottom; its top is already bounded by the `above` test itself.
-      //
-      // Clamped against CARD_MAX_HEIGHT, not a measured height, for the reason the placement
-      // note above gives: measuring here reads the PREVIOUS card. That over-clamps a 176px
-      // province card by 64px — the safe direction, and the same over-estimate the `above`
-      // decision already accepts. When the panel is shorter than the bound (the world map on
-      // a phone, 184px), the `Math.max` pins the card to the top inset instead: the tallest
-      // territory cards still lose their last rows there, but they start at the top of the
-      // panel rather than below it, which is strictly more content than before.
-      const rawTop = above ? anchorTop - CARD_GAP : a.bottom - c.top + CARD_GAP;
-      const top = above
-        ? rawTop
-        : Math.max(EDGE_INSET, Math.min(rawTop, c.height - CARD_MAX_HEIGHT - EDGE_INSET));
+      const anchorBottom = a.bottom - c.top;
+      const spaceAbove = anchorTop - EDGE_INSET; // real room above the shape's own top edge
+      const spaceBelow = c.height - EDGE_INSET - anchorBottom; // real room below its bottom edge
+      const above = spaceAbove >= spaceBelow;
+      // Each branch anchors OFF the shape's own edge and grows away from it — never clamped
+      // back toward the shape (see the comment above). `Math.max(EDGE_INSET, …)` is a floor
+      // against the opposite panel edge only, for the degenerate case where the shape's own
+      // box already runs past it (never reachable in the chosen-more-room branch in practice,
+      // kept for the same defensive reason `left` above has one).
+      const top = above ? anchorTop - CARD_GAP : Math.max(EDGE_INSET, anchorBottom + CARD_GAP);
+      // CEILING (CODE120-M1/A11Y120-M1 fix round). Bounds the card's OWN height to the room
+      // actually left on the side it was anchored to — never moves `top`/`above` (see the
+      // collision-aware side choice above, which this must not perturb). `above`: room from the
+      // container's top inset up to the card's bottom anchor. `below`: room from the card's top
+      // anchor down to the container's bottom inset. CSS pairs this with `overflow-y: auto`
+      // plus a paint-based scroll-shadow (map.module.css `.card`, A11Y120R2-I1 fix round) so
+      // content that still does not fit is reachable by scroll AND visibly signalled as such,
+      // instead of silently gone under `.mapRoot`'s ambient `overflow: hidden` with no cue at
+      // all. This ceiling is what keeps the card's own box inside `.mapRoot` in the first
+      // place — measured across all 240 `/dunya` shapes at 320×256/360×640/768×900, 0 escape
+      // the ancestor's clip — which is what makes every row of the card reachable by the
+      // card's own vertical scroll. A candidate that grows `maxHeight` PAST this ceiling (tried
+      // and rejected, A11Y120R2-I1 fix round) pushes the box outside `.mapRoot`'s hard clip
+      // instead, where no scroll — the card's own or otherwise — reaches it: measured at
+      // 320×256, DR Congo loses its name's first line and its badge entirely (0% reachable at
+      // any scroll position), Saint Helena loses its name's first line, and in the mirror
+      // (`below`-branch) case the last stat row drops to ~51–53% reachable. This ceiling is
+      // therefore a reachability guarantee as well as a positioning one — see the docstring
+      // above `ActiveCard.maxHeight` for why growing it is also a position change, not only a
+      // size one.
+      const maxHeight = Math.max(0, above ? top - EDGE_INSET : c.height - EDGE_INSET - top);
       const d = anchor.dataset;
       const stats: CardStat[] = [];
       for (let n = 1; n <= MAX_STATS; n++) {
@@ -216,6 +265,7 @@ export function MapHoverCard() {
         above,
         left,
         top,
+        maxHeight,
       });
     };
 
@@ -315,7 +365,9 @@ export function MapHoverCard() {
       // Territory cards have no destination, so they must not offer a pointer cursor for a
       // click that would do nothing (the CSS keys off this).
       data-clickable={active?.href ? "true" : undefined}
-      style={active ? { left: active.left, top: active.top } : undefined}
+      style={
+        active ? { left: active.left, top: active.top, maxHeight: active.maxHeight } : undefined
+      }
       onClick={() => {
         if (active?.href) window.location.assign(active.href);
       }}
