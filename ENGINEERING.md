@@ -329,15 +329,33 @@ RENDER_AUTH_PASSWORD='<value>' node tools/dev-fixtures/render-authenticated-page
 
 - `RENDER_AUTH_EMAIL` — default `iris-audit@local.test`.
 - `RENDER_AUTH_PASSWORD` — **required, no default.** The script refuses to run without it,
-  and its refusal message names the exact `cografya_api` command below. The tool redacts the
-  literal password value from every text artefact and every stderr/stdout write it produces,
-  so a very short fixture password produces noisy evidence — use a normal-length one. Two
-  leak paths sit outside this process and are not fixed here: the Chromium subprocess
-  inherits this variable, so it is readable via `/proc/<pid>/environ` by any process of the
-  same user for the life of the run; and running with `DEBUG=pw:channel` set makes
-  Playwright's own wire logger print call parameters, including the filled value, from
-  outside this tool's sinks, where no redaction can reach it — **do not run this tool with
-  `DEBUG=pw:channel` set.**
+  and its refusal message names the exact `cografya_api` command below.
+  The tool redacts the literal password value from every text artefact and every stderr/stdout
+  write it produces, so a very short fixture password produces noisy evidence -- use a
+  normal-length one. That redaction reaches only this tool's own sinks. **Three leak paths sit
+  outside this process and are not closed here:**
+
+  1. **The Chromium subprocess inherits this variable**, so it is readable through
+     `/proc/<pid>/environ` by any process of the same user for the life of the run.
+  2. **Playwright's own `debug`-based loggers print the filled value verbatim, from outside this
+     tool's sinks, where no redaction can reach it -- and this is a CLASS of namespaces, not one
+     name.** Measured against the pinned `playwright-core@1.62.1` by filling a password field in
+     a real headless Chromium and counting occurrences in the output: `DEBUG=pw:api` prints it
+     once (`fill("<value>")`, `coreBundle.js:20027`, logged under the default `"api"` log name at
+     `:12067-12071`); `DEBUG=pw:channel` prints it once (the client/server wire message's own
+     `params.value`, `:63443-63446`); `DEBUG=pw:protocol` prints it **twice** (the
+     `Runtime.callFunctionOn` argument and the `Input.insertText` browser-protocol message,
+     `:20032-20042` and `:35610-35611`, dumped at `:20563-20571`). Any wildcard that reaches
+     them -- `DEBUG=pw:*` or a bare `DEBUG=*` -- enables all three at once. **Do not run this
+     tool with a `DEBUG` value that enables any `pw:` namespace. Do not read the three names
+     above as an allow-list of the rest: they are the ones measured, not the only ones
+     possible.**
+  3. **`DEBUG_FILE` moves that output onto disk instead of the terminal.** When `DEBUG_FILE` is
+     set, `DebugLogger`'s constructor replaces `debug.log` itself with a file stream
+     (`coreBundle.js:7917-7927`), so it does not duplicate the output -- it redirects it:
+     measured with `DEBUG=pw:api DEBUG_FILE=<path>`, the value appeared **zero** times on stderr
+     and **once** in `<path>`. The leak becomes silent and persistent. **Do not set `DEBUG_FILE`
+     while running this tool.**
 
 **`cografya_api` precondition (operational, not a code dependency — plan §7/§8).** Before a
 review dispatch that needs this capability, the `iris-audit@local.test` account's password
@@ -370,13 +388,22 @@ unauthenticated (and therefore falsely "clean") render.
 **Output.** Each run creates its own `<out-dir>/run-<YYYYMMDDTHHmmssZ>-<6 hex>/` subdirectory —
 `--out-dir` itself is never deleted, cleaned, or inspected, so a prior run's evidence is never
 overwritten or mistaken for the current one. The subdirectory's absolute path is printed to
-stdout as the first line after it is created, before login. Every artefact is written through a
-`RunRecorder`, which updates a `__run.json` manifest in the same call: `status`
+stdout as the first line after it is created, before login — but **stdout is best-effort, not a
+guarantee**: the writer is synchronous and completes a short write, and it still drops a line
+rather than failing or blocking when the reader has closed the pipe (`| head`) or has stopped
+consuming for longer than a two-second budget. `__run.json` on disk, not stdout, is a run's
+authoritative record. Every artefact is written through a `RunRecorder`, which updates a
+`__run.json` manifest in the same call: `status`
 (`"running"` → `"completed"`/`"failed"`), `startedAt`/`finishedAt`, the verified origin, the
 requested paths, the login step's own evidence, and one entry per capture (landed URL, files,
 extracted SEO facts, console-error/network-failure counts). A directory whose manifest still
 says `"running"` is one whose process died mid-run; `captures.length === requestedPaths.length`
-plus `status:"completed"` is the only signal that means a whole pass succeeded. Per `--paths`
+plus `status:"completed"` is the only signal that means a whole pass succeeded. The manifest is
+written atomically — serialised in full to a sibling `__run.json.tmp`, then renamed over the
+target, both inside one synchronous step — so a reader always sees either the previous complete
+document or the next one and never a half-written file. That `.tmp` file is the one thing in a
+run directory that is not an artefact and carries no manifest entry of its own; finding one left
+behind means the process died between the write and the rename. Per `--paths`
 entry (in the SAME authenticated browser context — cookies persist across a TR→EN locale
 switch): `<baseName>.html` (`page.content()`, redacted), `<baseName>.console.json`,
 `<baseName>.network.json` — now carrying `status: null` + a `failure` errorText for a request
@@ -384,7 +411,8 @@ that never produced a response (`requestfailed`), so a clean network log means t
 actually clean — and `<baseName>.png` (a full-page screenshot, taken as a Buffer with no `path`
 option, written through the recorder like every other artefact). The extracted `<title>`,
 canonical href, hreflang set, robots meta content and JSON-LD script count are also printed to
-stdout per path. The login step gets its own dedicated `__login-step.console.json` /
+stdout per path, under the same best-effort caveat as the run-directory line above — the same
+facts are recorded in `__run.json`, which is where they should be read from. The login step gets its own dedicated `__login-step.console.json` /
 `__login-step.network.json` pair, recorded in the manifest's `loginStep` field. **Run
 directories are never deleted or pruned automatically** — this is deliberate (see the guard's
 narrowed guarantee above: destructively cleaning an operator-supplied `--out-dir` is exactly the

@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { writeSync } from "node:fs";
+import { renameSync, writeFileSync, writeSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -17,6 +17,7 @@ import {
   assertNoRegisterPath,
   assertSameOrigin,
   originKey,
+  redactJsonValue,
   redactSecrets,
   registerSecret,
   allocateBaseName,
@@ -79,6 +80,16 @@ import {
  * three surface at the same login form and all three get the SAME, explicit, actionable refusal
  * (`describeLoginFailure()` below): re-run the provisioner and pass its fresh password through.
  * It never proceeds past a failed login and never reports a false "clean" evidence set.
+ *
+ * ## Credential leak paths OUTSIDE this tool's sinks (`ENGINEERING.md` §11, the same class
+ * sentence). Redaction reaches only what this file writes. The Chromium subprocess inherits
+ * `RENDER_AUTH_PASSWORD` and it is readable through `/proc/<pid>/environ` for the life of the
+ * run; Playwright's own `debug`-based loggers print the filled value verbatim, from outside
+ * these sinks, for a CLASS of namespaces (`pw:api`, `pw:channel` and `pw:protocol` are the ones
+ * measured, not the only ones possible — `pw:*` and a bare `*` enable all three), so do not run
+ * this tool with a `DEBUG` value that enables any `pw:` namespace; and `DEBUG_FILE` REDIRECTS
+ * that output to a file rather than duplicating it, which makes the leak silent and persistent,
+ * so do not set it while running this tool.
  *
  * ## What this deliberately is NOT
  * Not wired into `package.json` scripts, not wired into CI — run by hand only, exactly like
@@ -171,13 +182,45 @@ function readEnvContract(): EnvContract {
 // stdout / stderr — every write goes through here, so redaction is structural, not a habit.
 // ---------------------------------------------------------------------------------------------
 
-function writeStdout(text: string): void {
-  process.stdout.write(redactSecrets(text));
+/** Overall budget for one write against a reader that has stopped consuming but has not closed.
+ *  A line that cannot be handed over inside this window is dropped rather than parking the run
+ *  behind a stalled consumer. */
+const WRITE_DEADLINE_MS = 2_000;
+const EAGAIN_PAUSE_MS = 5;
+/** `Atomics.wait` needs a shared `Int32Array`. Nothing ever notifies this cell, so every wait
+ *  times out — that is the point: a synchronous sleep with no busy loop, available on Node's
+ *  main thread (measured: a 25 ms request returned "timed-out"). */
+const writePauseCell = new Int32Array(new SharedArrayBuffer(4));
+
+function writeFdSync(fd: 1 | 2, text: string): void {
+  const buffer = Buffer.from(redactSecrets(text), "utf8");
+  let offset = 0;
+  const deadline = Date.now() + WRITE_DEADLINE_MS;
+  while (offset < buffer.length) {
+    try {
+      offset += writeSync(fd, buffer, offset, buffer.length - offset);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === "EAGAIN" || code === "EINTR") {
+        if (Date.now() >= deadline) return;
+        if (code === "EAGAIN") Atomics.wait(writePauseCell, 0, 0, EAGAIN_PAUSE_MS);
+        continue;
+      }
+      return;
+    }
+  }
 }
 
-/** Synchronous, so a last-gasp message is never truncated by an immediate `process.exit`. */
+function writeStdout(text: string): void {
+  writeFdSync(1, text);
+}
+
+/** Synchronous, so a last-gasp message reaches fd 2 before an immediate `process.exit`, and it
+ *  finishes a short write instead of assuming one call was enough. It can still drop a message
+ *  a reader has stopped taking; it never throws, which is what lets the fatal handler always
+ *  reach `process.exit(1)`. */
 function writeStderr(text: string): void {
-  writeSync(2, redactSecrets(text));
+  writeFdSync(2, text);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -233,6 +276,11 @@ interface NetworkEntry {
 // it. Redaction happens on the VALUE handed in, before serialisation — never on an already-
 // serialised string, which could have escaped the literal substring (`JSON.stringify` turns
 // `"`/`\` into `\"`/`\\`).
+//
+// One file in `runDir` is not an artefact and carries no manifest entry: `__run.json.tmp`, the
+// manifest's own staging file. `persist()` writes it and renames it over `__run.json` in the
+// same synchronous call, so it is normally never observable; finding one left behind means the
+// process died between those two operations.
 // ---------------------------------------------------------------------------------------------
 
 interface RunManifestLoginStep {
@@ -271,25 +319,6 @@ interface RunManifest {
   loginStep: RunManifestLoginStep | null;
   captures: RunManifestCapture[];
   error: string | null;
-}
-
-/** Redacts every string leaf of a JSON-safe value, recursively — applied to VALUES before
- *  `JSON.stringify`, never to the serialised string. */
-function redactJsonValue<T>(value: T): T {
-  if (typeof value === "string") {
-    return redactSecrets(value) as unknown as T;
-  }
-  if (Array.isArray(value)) {
-    return value.map((entry) => redactJsonValue(entry)) as unknown as T;
-  }
-  if (value !== null && typeof value === "object") {
-    const redacted: Record<string, unknown> = {};
-    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
-      redacted[key] = redactJsonValue(entry);
-    }
-    return redacted as T;
-  }
-  return value;
 }
 
 function formatRunTimestamp(date: Date): string {
@@ -340,7 +369,13 @@ class RunRecorder {
       error: null,
     };
     const recorder = new RunRecorder(runDir, path.join(runDir, "__run.json"), manifest);
-    await recorder.persist();
+    // Published BEFORE the first persist: the window between this directory existing and
+    // `main()` receiving the recorder used to be one in which a fatal error could not mark the
+    // run failed at all (CODE131R2-M1). This does not make the first write itself infallible —
+    // if the very first `persist()` throws, no manifest can exist — but from that write onward
+    // the handler always has a recorder to mark.
+    activeRecorder = recorder;
+    recorder.persist();
     // Printed as the FIRST line after the directory is created — before login — so a run that
     // fails afterwards still tells the operator where to look. A stage-1 refusal (see main())
     // happens before this ever runs, so it creates no directory and prints none.
@@ -348,8 +383,26 @@ class RunRecorder {
     return recorder;
   }
 
-  private async persist(): Promise<void> {
-    await writeFile(this.manifestPath, JSON.stringify(this.manifest, null, 2), "utf8");
+  /** Atomic and synchronous, both deliberately.
+   *
+   *  ATOMIC: the manifest is serialised in full to a sibling `.tmp` file and then renamed over
+   *  the target, so a reader never observes a truncated or half-written `__run.json` — measured
+   *  on the previous plain-`writeFile` shape, 216 unparseable reads over 40 rounds.
+   *
+   *  SYNCHRONOUS: the fatal handler marks the manifest and calls `process.exit(1)` in the SAME
+   *  tick, so it must not be parked on a promise that may never settle. A synchronous function
+   *  also cannot interleave with itself on a single-threaded runtime, which is what makes the
+   *  temp file safe under a fixed name — the async `writeFile` + `rename` form of the same
+   *  recipe rejected 40 of 80 concurrent persists with ENOENT, because the first rename moved
+   *  the temp file out from under the second.
+   *
+   *  Redaction is applied to a COPY at serialisation time and never assigned back onto
+   *  `this.manifest`, so the in-memory manifest keeps its real values and no value is redacted
+   *  twice. */
+  private persist(): void {
+    const tmpPath = `${this.manifestPath}.tmp`;
+    writeFileSync(tmpPath, JSON.stringify(redactJsonValue(this.manifest), null, 2), "utf8");
+    renameSync(tmpPath, this.manifestPath);
   }
 
   async writeJson(fileName: string, value: unknown): Promise<string> {
@@ -371,30 +424,39 @@ class RunRecorder {
     return fileName;
   }
 
-  async recordLoginStep(
-    baseName: string,
-    files: readonly string[],
-    landedUrl: string,
-  ): Promise<void> {
+  recordLoginStep(baseName: string, files: readonly string[], landedUrl: string): void {
     this.manifest.loginStep = {
       baseName,
       files: [...files],
       landedUrl,
       at: new Date().toISOString(),
     };
-    await this.persist();
+    this.persist();
   }
 
-  async recordCapture(capture: RunManifestCapture): Promise<void> {
+  recordCapture(capture: RunManifestCapture): void {
     this.manifest.captures.push(capture);
-    await this.persist();
+    this.persist();
   }
 
-  async finish(status: "completed" | "failed", error: string | null): Promise<void> {
+  /** Writes the run's terminal status. Guarded so the FIRST terminal status wins: on one
+   *  failure both `main()`'s own catch and the shared fatal handler reach this, and the
+   *  earlier, more specific message must not be overwritten by the later one. A consequence
+   *  worth knowing: a run whose evidence completed but whose browser teardown then failed keeps
+   *  `status: "completed"` while the process still exits 1. */
+  finishSync(status: "completed" | "failed", error: string | null): void {
+    if (this.manifest.status !== "running") return;
     this.manifest.status = status;
     this.manifest.finishedAt = new Date().toISOString();
     this.manifest.error = error !== null ? redactSecrets(error) : null;
-    await this.persist();
+    this.persist();
+  }
+
+  /** The ordinary-path name for `finishSync` — same behaviour, no second mechanism. Two names
+   *  exist so the fatal path's call site reads as what it is: a terminal mark that must land in
+   *  the same tick as `process.exit(1)`. */
+  finish(status: "completed" | "failed", error: string | null): void {
+    this.finishSync(status, error);
   }
 }
 
@@ -456,6 +518,16 @@ function assertNoViolations(watch: ViolationWatch, context: string): void {
   );
 }
 
+/** The three checks stage 1 (`main()`) and stage 2 (`navigate()`) both run on a `--paths`
+ *  entry, defined once so the two copies cannot drift. This does NOT merge the two call sites:
+ *  they exist at two different times for two different reasons (plan §5.3) and both are kept. */
+function resolveCheckedTarget(targetPath: string, verifiedBase: URL): URL {
+  const url = new URL(targetPath, verifiedBase); // may inherit a foreign host
+  assertSameOrigin(url, verifiedBase, `--paths entry "${targetPath}"`); // constructed-URL check
+  assertNoRegisterPath(url.pathname); // resolved pathname, not the raw string
+  return url;
+}
+
 // ---------------------------------------------------------------------------------------------
 // The single checked navigation path. Exactly one `page.goto` call site exists in this file,
 // here — a structural test (`render-auth-guards.test.ts` group H) asserts the call-site count
@@ -468,9 +540,7 @@ async function navigate(
   targetPath: string,
   watch: ViolationWatch,
 ): Promise<URL> {
-  const url = new URL(targetPath, verifiedBase); // may inherit a foreign host
-  assertSameOrigin(url, verifiedBase, `--paths entry "${targetPath}"`); // constructed-URL origin
-  assertNoRegisterPath(url.pathname); // resolved pathname, not the raw string
+  const url = resolveCheckedTarget(targetPath, verifiedBase);
 
   await page.goto(url.toString(), { waitUntil: "load", timeout: NAVIGATION_TIMEOUT_MS });
 
@@ -563,7 +633,7 @@ async function captureLoginStep(
   // filename (and `counts` below is pre-seeded so a colliding entry is still distinguishable).
   const consoleFile = await recorder.writeJson("__login-step.console.json", consoleLog);
   const networkFile = await recorder.writeJson("__login-step.network.json", networkLog);
-  await recorder.recordLoginStep("__login-step", [consoleFile, networkFile], landedUrl.toString());
+  recorder.recordLoginStep("__login-step", [consoleFile, networkFile], landedUrl.toString());
 }
 
 async function capturePath(
@@ -600,18 +670,25 @@ async function capturePath(
   assertStillOnVerifiedOrigin(page, verifiedBase, `the settle window for "${targetPath}"`);
   assertNoViolations(watch, `the settle window for "${targetPath}"`);
 
+  // EVERY browser read happens first and NOTHING is written until the guard has been drained
+  // again below. The screenshot is taken as a Buffer with no `path` option for the same reason:
+  // the recorder stays the only writer, so a capture the guard refuses leaves nothing behind —
+  // no html file, no console log, no network log, no image.
   const html = await page.content();
   const seoFacts = await extractSeoFacts(page);
+  const png = await page.screenshot({ fullPage: true });
+
+  // The reads above can themselves span a client-side navigation, so the guard is drained once
+  // more here: after the last read, before the first write. The previous revision drained only
+  // before the reads, which left three of this path's four artefacts already on disk by the
+  // time a violation could be noticed.
+  assertStillOnVerifiedOrigin(page, verifiedBase, `the evidence read for "${targetPath}"`);
+  assertNoViolations(watch, `the evidence read for "${targetPath}"`);
 
   const baseName = allocateBaseName(counts, targetPath);
   const htmlFile = await recorder.writeText(`${baseName}.html`, html);
   const consoleFile = await recorder.writeJson(`${baseName}.console.json`, consoleLog);
   const networkFile = await recorder.writeJson(`${baseName}.network.json`, networkLog);
-
-  // Taken as a Buffer, with NO `path` option — the recorder is the only writer, and the
-  // violation drain above has already run, so no capture that violated the guard can leave a
-  // screenshot behind.
-  const png = await page.screenshot({ fullPage: true });
   const pngFile = await recorder.writeBinary(`${baseName}.png`, png);
 
   const consoleErrorCount = consoleLog.filter((entry) => entry.type === "error").length;
@@ -620,7 +697,7 @@ async function capturePath(
     (entry) => entry.status !== null && entry.status >= 400,
   ).length;
 
-  await recorder.recordCapture({
+  recorder.recordCapture({
     requestedPath: targetPath,
     baseName,
     landedUrl: landed.toString(),
@@ -662,9 +739,7 @@ async function main(): Promise<void> {
   // Stage 2 (navigate(), below) exists because stage 1 cannot see a LANDED url, and because a
   // future caller could reach navigate() without going through this loop.
   for (const targetPath of args.paths) {
-    const resolved = new URL(targetPath, verifiedBase); // may inherit a foreign host
-    assertSameOrigin(resolved, verifiedBase, `--paths entry "${targetPath}"`);
-    assertNoRegisterPath(resolved.pathname);
+    resolveCheckedTarget(targetPath, verifiedBase);
   }
 
   const recorder = await RunRecorder.open(
@@ -674,7 +749,6 @@ async function main(): Promise<void> {
     env.email,
     args.paths,
   );
-  activeRecorder = recorder;
 
   // Reserved so a --paths entry that happens to sanitize to one of these names is still
   // distinguishable (pushed to a numeric suffix) rather than colliding silently.
@@ -741,11 +815,26 @@ async function main(): Promise<void> {
       );
     }
 
-    await recorder.finish("completed", null);
+    // The watcher can hold a violation no per-path drain happened to observe — a frame
+    // navigation that lands after the last capture's own check. Draining here is what makes
+    // `status: "completed"` mean "no violation was ever recorded", not "none was seen at a
+    // checkpoint".
+    assertNoViolations(watch, "the run");
+    recorder.finish("completed", null);
+  } catch (error) {
+    // The terminal status is written HERE, synchronously, and deliberately BEFORE the `finally`
+    // below: `browser.close()` is issued with playwright's own `kNoTimeout` and then awaits the
+    // browser's closed-promise, so an unresponsive Chromium can park this unwind indefinitely.
+    // Writing first means `__run.json` carries `failed` plus the message even in that case. The
+    // shared fatal handler runs afterwards, finds the status already terminal, and leaves this
+    // more specific message alone.
+    recorder.finishSync("failed", describeFatalError(error));
+    throw error;
   } finally {
     // Deliberately NOT abandoned on this path (contrast the crash handlers below): an ordinary
     // thrown error here still unwinds through this `finally` before the rejection reaches the
-    // shared handler.
+    // shared handler — as long as `browser.close()` resolves, which is exactly why the terminal
+    // status is written in the `catch` above rather than left to this unwind.
     await browser.close();
   }
 }
@@ -754,50 +843,62 @@ async function main(): Promise<void> {
 // Fatal-error handling — ONE function serves all three entry points (the rejected main()
 // promise, `uncaughtException`, `unhandledRejection`), so a genuinely uncaught throw (e.g. one
 // raised inside a `page.on` listener, outside this file's own control flow) is handled exactly
-// like an ordinary refusal. Contract, binding: it (1) writes stderr synchronously and redacted,
-// (2) best-effort marks the run manifest failed, wrapped so it can never itself throw, and
-// (3) terminates. Step 3 is not optional — with a live Chromium holding the event loop open, a
-// handler that only prints converts a fatal error into a hang, and evidence could keep being
-// written after a guard violation. Browser cleanup is deliberately abandoned on this path: a
-// leaked headless Chromium is a visible, recoverable local nuisance, whereas a run that keeps
-// writing evidence after a violation is exactly the false-clean outcome this tool exists to
-// prevent.
+// like an ordinary refusal. Contract, binding: it (1) writes stderr, redacted, through a writer
+// that cannot throw, (2) best-effort marks the run manifest failed, wrapped so it can never
+// itself throw, and (3) terminates.
+//
+// The handler is FULLY SYNCHRONOUS, and that is what makes step 3 a guarantee rather than an
+// intention. There is no `await` in front of `process.exit(1)`, so no write that fails to settle
+// can park the process short of it; and because the event loop is never re-entered, `main()`
+// cannot write one further line of evidence after a fatal error — no separate abort flag is
+// needed to hold that property. The re-entry guard exits rather than returning, so a second
+// entry can only ever shorten the path to termination.
+//
+// Step 3 is not optional — with a live Chromium holding the event loop open, a handler that only
+// prints converts a fatal error into a hang. Browser cleanup is deliberately abandoned on this
+// path: a leaked headless Chromium is a visible, recoverable local nuisance, whereas a run that
+// keeps writing evidence after a violation is exactly the false-clean outcome this tool exists
+// to prevent.
 // ---------------------------------------------------------------------------------------------
 
 let activeRecorder: RunRecorder | undefined;
+let exiting = false;
 
-async function handleFatalError(error: unknown): Promise<void> {
-  if (error instanceof RenderAuthError) {
-    writeStderr(`[render-authenticated-page] REFUSED: ${error.message}\n`);
-  } else {
-    const text = error instanceof Error ? (error.stack ?? error.message) : String(error);
-    writeStderr(`[render-authenticated-page] FATAL: ${text}\n`);
+/** The single derivation of a fatal error's text, so the operator's terminal line and the
+ *  manifest's `error` field can never say different things. */
+function describeFatalError(error: unknown): string {
+  if (error instanceof RenderAuthError) return error.message;
+  if (error instanceof Error) return error.stack ?? error.message;
+  return String(error);
+}
+
+function handleFatalError(error: unknown): never {
+  if (exiting) process.exit(1);
+  exiting = true;
+
+  const prefix = error instanceof RenderAuthError ? "REFUSED" : "FATAL";
+  try {
+    writeStderr(`[render-authenticated-page] ${prefix}: ${describeFatalError(error)}\n`);
+  } catch {
+    // Defence in depth: `writeStderr` is built not to throw, and step 3 still runs if it does.
   }
 
-  if (activeRecorder !== undefined) {
-    const message =
-      error instanceof RenderAuthError
-        ? error.message
-        : error instanceof Error
-          ? (error.stack ?? error.message)
-          : String(error);
-    try {
-      await activeRecorder.finish("failed", message);
-    } catch {
-      // best-effort — this handler must never itself throw.
-    }
+  try {
+    activeRecorder?.finishSync("failed", describeFatalError(error));
+  } catch {
+    // best-effort — this handler must never itself throw.
   }
 
   process.exit(1);
 }
 
 process.on("uncaughtException", (error) => {
-  void handleFatalError(error);
+  handleFatalError(error);
 });
 process.on("unhandledRejection", (reason) => {
-  void handleFatalError(reason);
+  handleFatalError(reason);
 });
 
 main().catch((error: unknown) => {
-  void handleFatalError(error);
+  handleFatalError(error);
 });

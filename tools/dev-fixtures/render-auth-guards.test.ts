@@ -14,6 +14,7 @@ import {
   isLoopbackHostname,
   normalizeHostname,
   originKey,
+  redactJsonValue,
   redactSecrets,
   registerSecret,
   sanitizePathForFilename,
@@ -267,6 +268,9 @@ describe("redactSecrets / registerSecret", () => {
 
   it("redacts the measured Playwright call-log message shape, keeping the surrounding diagnostic text", () => {
     registerSecret("HuntedPassword42");
+    // Fixture provenance: playwright-core@1.62.1, coreBundle.js:20027, measured 2026-09-09.
+    // `redactSecrets` is a literal-substring replacement, so this asserts the fixture, never
+    // Playwright's live output shape — a version bump could change the real shape silently.
     const message =
       'page.fill: Timeout 15000ms exceeded.\nCall log:\n  fill("HuntedPassword42")\n  waiting for element to be visible, enabled and editable';
     const redacted = redactSecrets(message);
@@ -318,11 +322,13 @@ describe("allocateBaseName", () => {
 // `page.goto`, or an inline origin comparison that bypasses originKey entirely.
 // -------------------------------------------------------------------------------------------
 
-describe("structural tripwires on render-authenticated-page.ts", () => {
-  const source = readFileSync(
-    fileURLToPath(new URL("./render-authenticated-page.ts", import.meta.url)),
-    "utf8",
-  );
+describe("structural tripwires on the two shipped tool files", () => {
+  // BOTH shipped files are scanned, not just the CLI: originKey/assertSameOrigin — the code an
+  // inline comparison would bypass — live in the guards module. This test file is deliberately
+  // NOT in the set: it carries one of each pattern in its own regex sources.
+  const source = ["./render-authenticated-page.ts", "./render-auth-guards.ts"]
+    .map((name) => readFileSync(fileURLToPath(new URL(name, import.meta.url)), "utf8"))
+    .join("\n");
 
   it("(i) .goto( appears exactly once, inside a navigate() function", () => {
     const gotoMatches = source.match(/\.goto\s*\(/g) ?? [];
@@ -333,5 +339,25 @@ describe("structural tripwires on render-authenticated-page.ts", () => {
   it("(ii) the built-in origin getter never appears — every comparison goes through originKey", () => {
     const originGetterMatches = source.match(/\.origin\b/g) ?? [];
     expect(originGetterMatches).toHaveLength(0);
+  });
+});
+
+// -------------------------------------------------------------------------------------------
+// I. redactJsonValue — the recursive half of redaction, exercised on the shape it actually
+// meets in `__run.json`: a secret several levels down, inside an array of objects.
+// -------------------------------------------------------------------------------------------
+
+describe("redactJsonValue", () => {
+  it("replaces a secret nested three levels deep, leaving non-string leaves untouched", () => {
+    registerSecret("nested-fixture-secret");
+    const redacted = redactJsonValue({
+      captures: [
+        { hreflangs: [{ hreflang: "tr", href: "nested-fixture-secret" }], jsonLdCount: 2 },
+      ],
+      status: "running",
+    });
+    expect(redacted.captures[0]?.hreflangs[0]?.href).toBe("[REDACTED:RENDER_AUTH_PASSWORD]");
+    expect(redacted.captures[0]?.jsonLdCount).toBe(2);
+    expect(redacted.status).toBe("running");
   });
 });

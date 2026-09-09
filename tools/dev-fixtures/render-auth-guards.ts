@@ -3,7 +3,8 @@ import { promises as dns } from "node:dns";
 /**
  * `tools/dev-fixtures/render-auth-guards.ts` — the pure, testable boundary logic that
  * `render-authenticated-page.ts`'s safety claims rest on: the loopback-target guard, the
- * per-navigation same-origin check, the register-path guard, secret redaction, and the
+ * per-navigation same-origin check, the register-path guard, secret redaction (both the flat
+ * string form and the recursive JSON-value form), and the
  * evidence-filename allocator. Nothing here touches Playwright or the filesystem, and nothing
  * here calls `main()` at module load — that split is what makes this module safely importable
  * from a test file (PR #131 fix round plan §5.0).
@@ -46,6 +47,26 @@ export function redactSecrets(text: string): string {
     result = result.split(secret).join(REDACTED_PLACEHOLDER);
   }
   return result;
+}
+
+/** Redacts every string leaf of a JSON-safe value, recursively — applied to VALUES before
+ *  `JSON.stringify`, never to the serialised string. Lives here rather than beside its caller
+ *  because it is pure: no Playwright, no filesystem, and therefore directly testable. */
+export function redactJsonValue<T>(value: T): T {
+  if (typeof value === "string") {
+    return redactSecrets(value) as unknown as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => redactJsonValue(entry)) as unknown as T;
+  }
+  if (value !== null && typeof value === "object") {
+    const redacted: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      redacted[key] = redactJsonValue(entry);
+    }
+    return redacted as T;
+  }
+  return value;
 }
 
 // -------------------------------------------------------------------------------------------
