@@ -812,7 +812,22 @@
       "resend": "Send the code again",
       "resendAccepted": "Your request was received."
     },
+    "profile": {
+      "metaTitle": "Profile",
+      "metaDescription": "View and manage your profile details.",
+      "heading": "Complete your profile",
+      "teacherHeading": "Your profile",
+      "teacherDescription": "No additional profile fields are required for your teacher account.",
+      "breadcrumbHome": "Home",
+      "breadcrumbCurrent": "Profile",
+      "submit": "Save",
+      "saved": "Your details are saved.",
+      "complete": "Your profile is complete.",
+      "loadError": "Your details couldn't load.",
+      "retry": "Try again"
+    },
     "fields": {
+      "educationLevel": "Education level",
       "firstName": "First name",
       "lastName": "Last name",
       "phone": "Phone",

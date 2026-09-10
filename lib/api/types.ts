@@ -285,3 +285,18 @@ export type RegionProvinceItem = components["schemas"]["RegionProvinceItemDto"];
 export type RegionComparisonItem = components["schemas"]["RegionComparisonItemDto"];
 /** FAQ item for FAQPage structured data and accordion display. */
 export type RegionFaq = components["schemas"]["RegionFaqDto"];
+
+// ---- Profile (post-registration completion — DEC 2026-09-03a md.1) ----------
+/**
+ * Full profile payload returned by `GET /api/auth/profile` and `PUT /api/auth/profile`.
+ * All seven properties are required on the wire, but the education-axis fields
+ * may be `null`. `isComplete` is the API's published completion flag,
+ * never re-derived on the web (C-5, C-9).
+ */
+export type Profile = components["schemas"]["ProfileDto"];
+
+/**
+ * Full replacement payload sent to `PUT /api/auth/profile`.
+ * Exactly five properties on every call (explicit `null` for fields the active branch clears).
+ */
+export type UpdateProfileRequest = components["schemas"]["UpdateProfileRequestDto"];

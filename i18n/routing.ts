@@ -313,6 +313,18 @@ export const routing = defineRouting({
       tr: "/v2/kayit",
       en: "/v2/register",
     },
+    // The v2 post-registration profile-completion step (`DEC 2026-09-03a` md.1's destination
+    // half). LOCALIZED segment on the `/v2/giris ↔ /v2/login` · `/v2/kayit ↔ /v2/register`
+    // precedent: "profil" is a Turkish word that does not read as English, so the governing
+    // rule is `/hakkimizda ↔ /en/about`, not `/turkiye`'s shared segment.
+    //
+    // `surface: "noindex"` in BOTH locales (`lib/auth/auth-metadata.ts`'s `AUTH_SURFACE`) —
+    // this is an authenticated personal-data page. A `noindex` page still must resolve to
+    // exactly ONE correct URL per locale, which is why the segment is declared here.
+    "/v2/profil": {
+      tr: "/v2/profil",
+      en: "/v2/profile",
+    },
     "/design-system": {
       tr: "/design-system",
       en: "/design-system",
