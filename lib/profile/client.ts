@@ -26,15 +26,17 @@ export function isProfileLike(value: unknown): value is Profile {
   const p = value as Record<string, unknown>;
 
   const isValidRole = p.accountRole === "STUDENT" || p.accountRole === "TEACHER";
+  // Object.hasOwn (not `in`) — an Object.prototype property name must not satisfy this check (VAL128R3-I1).
   const isValidEducationLevel =
     p.educationLevel === null ||
-    (typeof p.educationLevel === "string" && p.educationLevel in EDUCATION_LEVEL_LABELS);
+    (typeof p.educationLevel === "string" &&
+      Object.hasOwn(EDUCATION_LEVEL_LABELS, p.educationLevel));
   const isValidGradeLevel =
     p.gradeLevel === null ||
-    (typeof p.gradeLevel === "string" && p.gradeLevel in GRADE_LEVEL_LABELS);
+    (typeof p.gradeLevel === "string" && Object.hasOwn(GRADE_LEVEL_LABELS, p.gradeLevel));
   const isValidStudyStream =
     p.studyStream === null ||
-    (typeof p.studyStream === "string" && p.studyStream in STUDY_STREAM_LABELS);
+    (typeof p.studyStream === "string" && Object.hasOwn(STUDY_STREAM_LABELS, p.studyStream));
   const isValidUniversityName = p.universityName === null || typeof p.universityName === "string";
   const isValidDepartmentName = p.departmentName === null || typeof p.departmentName === "string";
 
@@ -57,10 +59,11 @@ function parseProfileBffBody(value: unknown): SubmitProfileResult {
   if (body.ok === true && isProfileLike(body.profile)) {
     return { ok: true, profile: body.profile };
   }
+  // Object.hasOwn (not `in`) — an Object.prototype property name must not satisfy this check (VAL128R3-I1).
   if (
     body.ok === false &&
     typeof body.code === "string" &&
-    body.code in PROFILE_ERROR_MESSAGE_KEYS
+    Object.hasOwn(PROFILE_ERROR_MESSAGE_KEYS, body.code)
   ) {
     return { ok: false, code: body.code as ProfileBffCode };
   }

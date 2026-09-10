@@ -116,6 +116,22 @@ describe("isProfileLike (CON128-I1 runtime contract validation)", () => {
   });
 });
 
+describe("isProfileLike rejects the whole Object.prototype property-name class (VAL128R3-I1)", () => {
+  const prototypePropertyNames = Object.getOwnPropertyNames(Object.prototype);
+
+  it.each(prototypePropertyNames)("rejects %s as educationLevel", (name) => {
+    expect(isProfileLike({ ...VALID_STUDENT_PROFILE, educationLevel: name })).toBe(false);
+  });
+
+  it.each(prototypePropertyNames)("rejects %s as gradeLevel", (name) => {
+    expect(isProfileLike({ ...VALID_STUDENT_PROFILE, gradeLevel: name })).toBe(false);
+  });
+
+  it.each(prototypePropertyNames)("rejects %s as studyStream", (name) => {
+    expect(isProfileLike({ ...VALID_STUDENT_PROFILE, studyStream: name })).toBe(false);
+  });
+});
+
 describe("submitProfileReplacement", () => {
   const payload = {
     educationLevel: "SECONDARY" as const,
@@ -173,6 +189,23 @@ describe("submitProfileReplacement", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.reject(new Error("Network failure"))),
+    );
+
+    const result = await submitProfileReplacement(payload);
+    expect(result).toEqual({ ok: false, code: "errors.transport.unavailable" });
+  });
+
+  it("returns ok: false with errors.transport.unavailable when BFF error code is an Object.prototype property name (VAL128R3-I1)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse(200, {
+            ok: false,
+            code: "toString",
+          }),
+        ),
+      ),
     );
 
     const result = await submitProfileReplacement(payload);
