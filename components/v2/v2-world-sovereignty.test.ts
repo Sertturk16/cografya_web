@@ -69,4 +69,24 @@ describe("V2 sovereignty and naming invariants", () => {
     const badgeUsages = content.match(/<SpecialStatusBadge/g);
     expect(badgeUsages?.length).toBe(5);
   });
+
+  it("localizes the sovereign/special-status entity badge in v2/dunya/[slug] via next-intl, matching the canonical explorer strings", () => {
+    const pageUrl = new URL("../../app/[locale]/v2/dunya/[slug]/page.tsx", import.meta.url);
+    const pageContent = readFileSync(pageUrl, "utf8");
+
+    // The badge text comes from CountryDetail messages, never a hardcoded literal.
+    expect(pageContent).toContain('t("specialStatusBadge")');
+    expect(pageContent).toContain('t("sovereignEntityBadge")');
+    expect(pageContent).not.toMatch(/>\s*Özel Statülü Varlık\s*</);
+    expect(pageContent).not.toMatch(/>\s*Egemen Devlet\s*</);
+
+    const tr = JSON.parse(readFileSync(new URL("../../messages/tr.json", import.meta.url), "utf8"));
+    const en = JSON.parse(readFileSync(new URL("../../messages/en.json", import.meta.url), "utf8"));
+
+    // Same canonical pair the explorer's SpecialStatusBadge renders (SOV125-I1).
+    expect(tr.CountryDetail.specialStatusBadge).toBe("Özel Statülü Varlık");
+    expect(en.CountryDetail.specialStatusBadge).toBe("Special Status Entity");
+    expect(tr.CountryDetail.sovereignEntityBadge).toBe("Egemen Devlet");
+    expect(en.CountryDetail.sovereignEntityBadge).toBe("Sovereign State");
+  });
 });

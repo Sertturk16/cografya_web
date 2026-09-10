@@ -447,7 +447,19 @@
     "locationAlt": "Location of {name} on the world map",
     "flag": "Flag",
     "flagAlt": "Flag of {name}",
-    "sovereigntyHeading": "Sovereignty and Recognition"
+    "sovereigntyHeading": "Sovereignty and Recognition",
+    "sovereignEntityBadge": "Sovereign State",
+    "specialStatusBadge": "Special Status Entity",
+    "climateHydrographyGroupHeading": "{name} Climate and Water Resources",
+    "continentExploreLink": "{continent} and Other Countries",
+    "administrativeGroupHeading": "{name} Government, Population and Identity",
+    "governanceFallback": "{name} has a <strong>{governmentForm}</strong> structure.",
+    "officialStatusLabel": "Official status: {status}.",
+    "officialLanguagesLabel": "Official language(s): {languages}.",
+    "neighborsGroupHeading": "{name} Land Neighbors ({count})",
+    "islandCountryHeading": "Island Country · No Direct Land Border",
+    "islandCountryBody": "{name} lies on an island or island group and has no bordering country on land. It is surrounded by open-sea jurisdiction and coastal boundaries.",
+    "islandCountryCta": "View {continent} Countries"
   },
   "Favorites": {
     "label": "Favorite",

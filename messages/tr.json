@@ -447,7 +447,19 @@
     "locationAlt": "{name} dünya haritası üzerindeki konumu",
     "flag": "Bayrak",
     "flagAlt": "{name} bayrağı",
-    "sovereigntyHeading": "Egemenlik ve Tanınma"
+    "sovereigntyHeading": "Egemenlik ve Tanınma",
+    "sovereignEntityBadge": "Egemen Devlet",
+    "specialStatusBadge": "Özel Statülü Varlık",
+    "climateHydrographyGroupHeading": "{name} İklim Özellikleri ve Su Varlığı",
+    "continentExploreLink": "{continent} Kıtası ve Diğer Ülkeler",
+    "administrativeGroupHeading": "{name} Yönetim, Nüfus ve Ülke Kimliği",
+    "governanceFallback": "{name}, <strong>{governmentForm}</strong> yapısına sahiptir.",
+    "officialStatusLabel": "Resmî statü tanımı: {status}.",
+    "officialLanguagesLabel": "Ülkede resmî olarak kullanılan ana dil(ler): {languages}.",
+    "neighborsGroupHeading": "{name} Kara Komşuları ({count})",
+    "islandCountryHeading": "Ada Ülkesi · Doğrudan Kara Sınırı Bulunmuyor",
+    "islandCountryBody": "{name}, bir ada ya da ada öbeği üzerinde yer almakta olup doğrudan komşu bir kara sınırına sahip değildir. Çevresi açık deniz yetki alanları ve kıyı sınırlarıyla çevrilidir.",
+    "islandCountryCta": "{continent} Kıtası Ülkelerini Görüntüle"
   },
   "Favorites": {
     "label": "Favori",
