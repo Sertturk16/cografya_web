@@ -39,14 +39,12 @@ async function loadBooks(locale: Locale) {
       name: book.titleTr,
       path: `/v2/kitaplar/${slugForLocale(book, locale)}`,
     })),
-    videoCount: books.reduce((total, book) => total + book.videoCount, 0),
-    questionCount: books.reduce((total, book) => total + book.questionCount, 0),
   };
 }
 
 export async function generateMetadata({ params }: V2KitaplarPageProps): Promise<Metadata> {
   const { locale } = await params;
-  const { books, videoCount, questionCount } = await loadBooks(locale);
+  const { books } = await loadBooks(locale);
   if (books.length === 0) return {};
 
   return buildMetadata({
@@ -54,7 +52,10 @@ export async function generateMetadata({ params }: V2KitaplarPageProps): Promise
     surface: "noindex",
     hrefForLocale: () => "/v2/kitaplar",
     title: "Video Çözümlü Coğrafya Kitapları v2 — AYT & TYT Branş Denemeleri",
-    description: `Coğrafya kitaplarının soru bazlı ayrıntılı video çözümleri, ${videoCount} video ve ${questionCount} soru çözümü, konu kazanım analizleri ve sınav hazırlık rehberi.`,
+    // No book-level count is published any more (P0 generic-catalogue cut-over,
+    // `DEC 2026-09-10c` md.1) — fixed editorial copy, no interpolated numbers.
+    description:
+      "Coğrafya kitaplarının soru bazlı ayrıntılı video çözümleri, konu kazanım analizleri ve sınav hazırlık rehberi.",
   });
 }
 
@@ -62,7 +63,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { books, items, videoCount, questionCount } = await loadBooks(locale);
+  const { books, items } = await loadBooks(locale);
   if (books.length === 0) {
     notFound();
   }
@@ -74,7 +75,8 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
         schema={[
           collectionPageJsonLd({
             name: "Video Çözümlü Coğrafya Kitapları v2",
-            description: `Coğrafya kitaplarının soru bazlı video çözümleri, ${videoCount} video ve ${questionCount} soru çözümü ile sınav hazırlık rehberi.`,
+            description:
+              "Coğrafya kitaplarının soru bazlı video çözümleri ve sınav hazırlık rehberi.",
             path: "/v2/kitaplar",
             locale,
           }),
@@ -128,25 +130,17 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
               </p>
             </div>
 
-            {/* Dynamic Metric Strip from Real Data */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
+            {/* Dynamic Metric Strip from Real Data. Two of the four tiles carried
+                `videoCount`/`questionCount` — DELETED with the fields (P0 generic-catalogue
+                cut-over, `DEC 2026-09-10c` md.1: no book-level count is published any more).
+                `sm:grid-cols-4` narrows to `sm:grid-cols-2` for the two tiles that remain,
+                rather than leaving a half-empty row. */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-8">
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
                 <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
                   {books.length} Kitap
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">Yayın Kataloğu</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  {videoCount} Video
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">Çözümlü Deneme</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  {questionCount} Soru
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">Ayrıntılı Çözüm</span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
                 <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">

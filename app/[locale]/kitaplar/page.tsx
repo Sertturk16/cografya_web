@@ -28,12 +28,13 @@ function slugForLocale(book: BookListItem, locale: Locale): string {
 }
 
 /**
- * The hub's ONE derivation of the book list, shared by the visible cards, the `ItemList`
- * and the meta description.
+ * The hub's ONE derivation of the book list, shared by the visible cards and the `ItemList`.
  *
  * Single source on purpose (`SEO-POLICY.md` §B5 5.7 + the `/dunya` twin): the structured
- * data enumerates exactly the pages the reader can see and the description counts exactly
- * what the page lists, so neither can promise a book the hub does not carry.
+ * data enumerates exactly the pages the reader can see, so it can never promise a book the
+ * hub does not carry. The meta description no longer derives from this list at all — the
+ * generic-catalogue cut-over (P0, `DEC 2026-09-10c` md.1) dropped the two counts it used to
+ * carry, and the replacement sentence is fixed editorial copy (`Kitaplar.metaDescription`).
  *
  * `titleTr` serves both locales — `titleEn` is `null` by contract and stays that way, since
  * a product name is not translated (`GLOSSARY.md` §4.2; `SEO-POLICY.md` §B14 14.2 omits a
@@ -42,8 +43,6 @@ function slugForLocale(book: BookListItem, locale: Locale): string {
 async function loadBooks(locale: Locale): Promise<{
   books: BookListItem[];
   items: ItemListEntry[];
-  videoCount: number;
-  questionCount: number;
 }> {
   const books = await getBooksResilient();
   return {
@@ -55,14 +54,12 @@ async function loadBooks(locale: Locale): Promise<{
         href: { pathname: "/kitaplar/[slug]", params: { slug: slugForLocale(book, locale) } },
       }),
     })),
-    videoCount: books.reduce((total, book) => total + book.videoCount, 0),
-    questionCount: books.reduce((total, book) => total + book.questionCount, 0),
   };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
-  const { books, videoCount, questionCount } = await loadBooks(locale);
+  const { books } = await loadBooks(locale);
   // An empty catalogue makes the page component call `notFound()` (see below), and Next
   // then resolves the document title from the not-found boundary — so anything returned
   // here would be discarded. Same reasoning as the province route's `if (!province) return {}`.
@@ -74,9 +71,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     hrefForLocale: () => "/kitaplar",
     title: t("metaTitle"),
-    // The counts come from the same derivation the body renders, so the description can
-    // never claim more than the page lists (§B2.6).
-    description: t("metaDescription", { videoCount, questionCount }),
+    // No per-book editorial text can produce a corpus total (`DEC 2026-09-10c` md.4), so this
+    // sentence carries no interpolated numbers any more — fixed editorial copy.
+    description: t("metaDescription"),
     // Permanently single-locale: the English twin is `noindex` for good and the
     // `EN_CONTENT_READY` flag does not reach it (→ DEC 2026-08-15g V-4, `lib/seo/indexing.ts`).
     surface: "trOnly",
@@ -102,7 +99,7 @@ export default async function KitaplarPage({ params }: PageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { books, items, videoCount, questionCount } = await loadBooks(locale);
+  const { books, items } = await loadBooks(locale);
   if (books.length === 0) {
     notFound();
   }
@@ -117,7 +114,7 @@ export default async function KitaplarPage({ params }: PageProps) {
         schema={[
           collectionPageJsonLd({
             name: t("heading"),
-            description: t("metaDescription", { videoCount, questionCount }),
+            description: t("metaDescription"),
             path,
             locale,
           }),
@@ -173,9 +170,15 @@ export default async function KitaplarPage({ params }: PageProps) {
               <span className={styles.cardBody}>
                 <span className={styles.cardTitle}>{book.titleTr}</span>
                 <span className={styles.cardPublisher}>{book.publisherName}</span>
+                {/* THE EXAM-TRACK BADGE, REPLACING THE TWO COUNT CHIPS — FENER's ruling
+                    (`cografya_web/pr-reviews/p0-kitaplar-hub.json`, `FENP0HUB-NEW-I1`): with
+                    both counts gone (`DEC 2026-09-10c` md.1), `SEO-POLICY.md` §B12.2.d's hub-
+                    thinness check fires on this TR primary hub, and the named zero-cost remedy
+                    is `book.examTrack` in this same slot — the pattern `v2-books-hub.tsx`
+                    already renders live. No new api field; the `.chip` class is the same
+                    global component the removed chips used (`cografya_web/DESIGN.md` §4). */}
                 <span className={styles.cardBadges}>
-                  <span className="chip">{t("cardVideos", { count: book.videoCount })}</span>
-                  <span className="chip">{t("cardQuestions", { count: book.questionCount })}</span>
+                  <span className="chip">{book.examTrack}</span>
                 </span>
               </span>
               <CardArrow />

@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/routing";
 import type { AuthSessionState } from "@/lib/auth/use-session.client";
 import { formatDuration } from "@/lib/book/duration";
 import { videoTitle } from "@/lib/book/video-identity";
@@ -42,14 +43,27 @@ import styles from "./book-video.module.css";
  * instead of a player.
  */
 export interface BenchVideo {
-  readonly denemeNo: number;
+  readonly orderNo: number;
   /** `book_videos.id` — the identifier the video-progress endpoints key on (UYELIK-06 plan
    *  §5.2). Populated from the api's own `BookVideoDto.bookVideoId`, never derived here. */
   readonly bookVideoId: string;
   readonly videoId: string;
+  /** The generic contract's per-video display title, both nullable (`FU-BOOK-GENERIC-CONTRACT`
+   *  — the trigger `videoTitle`'s own docblock names). `null` for every seeded row today: the
+   *  reader-facing "Deneme N" label is still composed in the web layer from i18n + `orderNo`. */
+  readonly titleTr: string | null;
+  readonly titleEn: string | null;
   /** False for a video the provider refuses to embed — no player, an outbound link instead. */
   readonly playable: boolean;
-  readonly questions: readonly { readonly no: number; readonly second: number }[];
+  readonly tags: readonly {
+    readonly orderNo: number;
+    readonly second: number;
+    /** Reachable only once a seeded etiket carries a non-null name (`FU-BOOK-GENERIC-CONTRACT`)
+     *  — kept on this shape even though nothing renders it today, because `BenchTimeline`'s
+     *  ticks compute the SAME fragment the server-rendered index row assigned, and that
+     *  computation needs it (`lib/book/video-identity.ts`'s `tagFragment`). */
+    readonly nameTr: string | null;
+  }[];
   readonly rich: {
     readonly thumbnailUrl: string;
     readonly thumbnailWidth: number;
@@ -69,16 +83,17 @@ export interface BenchVideo {
  * ## Why the stage exists at all, in one sentence
  *
  * Before this, each of the thirty index rows could grow its own player; a reader working through
- * a book therefore lost the video every time they moved to another deneme. The stage is the
- * single place a video lives, so moving between denemeler moves the picture rather than the page.
+ * a book therefore lost the video every time they moved to another one. The stage is the
+ * single place a video lives, so moving between videos moves the picture rather than the page.
  *
  * ## The default selection comes from the server, and the sentinel is what keeps hydration honest
  *
- * `defaultDenemeNo` is the first video that actually rendered (page.tsx derives it from the
- * rendered blocks, never from `coverage.denemeNumbers` — the same discipline `FENER66-M2` asked
- * for on the jump strip). The store's `selected` starts as `null` meaning "the server's choice",
- * so this component resolves `selected ?? defaultDenemeNo` and the server's HTML and the client's
- * first frame cannot disagree about which video is on the stage.
+ * `defaultOrderNo` is the first video that actually rendered (page.tsx derives it from the
+ * rendered blocks, never from a declared count — the same discipline `FENER66-M2` asked for on
+ * the jump strip, and `SEO-POLICY.md` §B8 8.9's BLOCKER for a link with no target). The store's
+ * `selected` starts as `null` meaning "the server's choice", so this component resolves
+ * `selected ?? defaultOrderNo` and the server's HTML and the client's first frame cannot disagree
+ * about which video is on the stage.
  *
  * ## The box is reserved in EVERY state, and that inverts an earlier decision on purpose
  *
@@ -106,13 +121,13 @@ export interface BenchVideo {
  */
 export function BenchStage({
   videos,
-  defaultDenemeNo,
+  defaultOrderNo,
   authState,
   progress,
   onSaveWatched,
 }: {
   videos: readonly BenchVideo[];
-  defaultDenemeNo: number;
+  defaultOrderNo: number;
   /** The login gate's own read of the shared session hook (UYELIK-06 §5.3.2), threaded down
    *  from `VideoBench` — never a second `useAuthSession()` call here, which would be a second
    *  live session check racing the one the gate already owns. */
@@ -126,13 +141,19 @@ export function BenchStage({
   onSaveWatched: (watched: boolean) => Promise<{ readonly ok: boolean }>;
 }) {
   const t = useTranslations("BookDetail");
+  // `useLocale()`'s own return type is `use-intl`'s `Locale`, which resolves to plain `string`
+  // absent an `AppConfig` augmentation this repo does not declare — narrower than the app's own
+  // `Locale` (`@/i18n/routing`'s `"tr" | "en"`). The cast is safe: this component only ever
+  // renders under the `[locale]` segment, which next-intl's own routing config restricts to
+  // exactly those two values.
+  const locale = useLocale() as Locale;
   const { selected, active } = useBenchState();
 
-  const denemeNo = selected ?? defaultDenemeNo;
+  const orderNo = selected ?? defaultOrderNo;
   // A selection that names no rendered video cannot happen through the island (it reads
   // `data-deneme` off markup this same array produced), but the lookup is total anyway: the
   // fallback keeps the stage rendering rather than blanking if a stale store survives a remount.
-  const video = videos.find((candidate) => candidate.denemeNo === denemeNo) ?? videos[0];
+  const video = videos.find((candidate) => candidate.orderNo === orderNo) ?? videos[0];
   if (video === undefined) return null;
 
   const rich = video.rich;
@@ -143,9 +164,9 @@ export function BenchStage({
        an attribute rather than a closure because the island delegates ONE listener over both the
        stage and the thirty index rows. The index puts the same attribute on each row's question
        list, so `closest("[data-deneme]")` answers the question from either side. */
-    <div className={styles.stage} data-deneme={video.denemeNo}>
+    <div className={styles.stage} data-deneme={video.orderNo}>
       {/* `active` IS HANDED DOWN WHOLE, and the gate is the swap point's alone. This site used to
-          re-derive `video.playable && active?.denemeNo === video.denemeNo` and pass `null` when it
+          re-derive `video.playable && active?.orderNo === video.orderNo` and pass `null` when it
           failed — the same expression `deneme-video.tsx` computes again on arrival, because that
           component checks `playable` for itself rather than trusting a caller (→ PR #63 review
           `CODE63-I1`). Two copies of one gate is not defence in depth when only one of them
@@ -156,14 +177,14 @@ export function BenchStage({
         active={active}
         authState={authState}
         watched={knownWatched}
-        title={t("playerTitle", { no: video.denemeNo })}
+        title={t("playerTitle", { no: video.orderNo })}
         watchLabel={t("watch")}
-        watchAriaLabel={t("watchAria", { no: video.denemeNo })}
-        watchAriaSignedOutLabel={t("watchAriaSignedOut", { no: video.denemeNo })}
+        watchAriaLabel={t("watchAria", { no: video.orderNo })}
+        watchAriaSignedOutLabel={t("watchAriaSignedOut", { no: video.orderNo })}
         signInCtaText={t("signInCta")}
         sessionReadyAnnounceText={t("sessionReadyAnnounce")}
         watchOnYoutubeLabel={t("watchOnYoutube")}
-        watchOnYoutubeAriaLabel={t("watchOnYoutubeAria", { no: video.denemeNo })}
+        watchOnYoutubeAriaLabel={t("watchOnYoutubeAria", { no: video.orderNo })}
         watchOnYoutubeUrl={watchUrl(video.videoId)}
       />
 
@@ -175,9 +196,9 @@ export function BenchStage({
         {/* Through the shared builder, exactly as the index row and `VideoObject.name` are. The
             three strings must be one string (§B5 5.7), and this caption was the consumer outside
             the seam (→ PR #70 review `FENER70-M1` / `CODE70-M4`). */}
-        <span className={styles.stageName}>{videoTitle(t, video)}</span>
+        <span className={styles.stageName}>{videoTitle(t, locale, video)}</span>
         <span className={styles.stageFacts}>
-          <span>{t("denemeQuestionCount", { count: video.questions.length })}</span>
+          <span>{t("videoTagCount", { count: video.tags.length })}</span>
           {rich !== null && (
             <>
               <span className={styles.metaSeparator} aria-hidden="true">
@@ -198,12 +219,12 @@ export function BenchStage({
       {/* UNCONDITIONAL, AND THE `rich` GATE IS INSIDE THE COMPONENT. The strip's whole encoding is
           proportional position, so without `durationSeconds` there is nothing to be proportional
           to and the ticks are dropped — but the CARD stays, because a box that appears and
-          disappears with the selection moves the thirty rows below it (→ `FENER70-I1`). The
-          questions are never lost either way: they are in the index row below, as they are for
-          every one of the thirty videos. */}
+          disappears with the selection moves the thirty rows below it (→ `FENER70-I1`). The tags
+          are never lost either way: they are in the index row below, as they are for every one
+          of the thirty videos. */}
       <BenchTimeline
-        denemeNo={video.denemeNo}
-        questions={video.questions}
+        orderNo={video.orderNo}
+        tags={video.tags}
         durationSeconds={rich?.durationSeconds ?? null}
       />
 

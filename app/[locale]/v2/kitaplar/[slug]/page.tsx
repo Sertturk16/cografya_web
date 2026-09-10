@@ -18,7 +18,7 @@ import { routing, type Locale } from "@/i18n/routing";
 import { getBookBySlug, getBooksResilient } from "@/lib/api/books";
 import { formatDuration } from "@/lib/book/duration";
 import { PUBLISHED_DATE_FORMAT } from "@/lib/book/published-date";
-import { denemeFragment, questionFragment, videoTitle } from "@/lib/book/video-identity";
+import { tagFragment, videoFragment, videoTitle } from "@/lib/book/video-identity";
 import { isPlayable, resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
 import { canonicalEmbedUrl } from "@/lib/youtube/embed";
@@ -90,17 +90,22 @@ export default async function V2BookDetailPage({ params }: PageProps) {
   const introText = locale === "tr" ? book.introTr : null;
   const videoStates = book.videos.map((video) => ({ video, state: resolveVideoState(video) }));
 
-  const jumpNumbers = Array.from({ length: book.coverage.denemeCount }, (_, index) => index + 1);
-  const coveredDenemeNumbers = new Set(videoStates.map(({ video }) => video.denemeNo));
+  // No book-level count is published any more (P0 generic-catalogue cut-over, `DEC 2026-09-10c`
+  // md.1), so the jump strip is derived entirely from the blocks that actually render — see the
+  // primary `/kitaplar/[slug]` page's own comment for the full reasoning.
+  const jumpNumbers = videoStates.map(({ video }) => video.orderNo);
 
   const benchVideos: BenchVideo[] = videoStates.map(({ video, state }) => ({
-    denemeNo: video.denemeNo,
+    orderNo: video.orderNo,
     bookVideoId: video.bookVideoId,
     videoId: video.youtubeVideoId,
+    titleTr: video.titleTr,
+    titleEn: video.titleEn,
     playable: isPlayable(state),
-    questions: video.questions.map((question) => ({
-      no: question.questionNo,
-      second: question.startSecond,
+    tags: video.tags.map((tag) => ({
+      orderNo: tag.orderNo,
+      second: tag.startSecond,
+      nameTr: tag.nameTr,
     })),
     rich:
       state.kind === "rich"
@@ -119,7 +124,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
         : null,
   }));
 
-  const defaultDenemeNo = benchVideos[0]?.denemeNo ?? null;
+  const defaultOrderNo = benchVideos[0]?.orderNo ?? null;
 
   const attributionRows = book.attribution.filter(
     (row) => row.providerId !== "youtube" || book.videos.length > 0,
@@ -128,7 +133,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
   const videoSchemas = videoStates.flatMap(({ video, state }) => {
     if (state.kind !== "rich") return [];
     const schema = videoObjectJsonLd({
-      name: `${title} — ${videoTitle(t, video)}`,
+      name: `${title} — ${videoTitle(t, locale, video)}`,
       thumbnailUrl: state.youtube.thumbnailUrl,
       uploadDate: state.youtube.publishedAtUtc,
       duration: state.youtube.durationIso,
@@ -199,13 +204,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
             <div className="space-y-4 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
-                  {book.examTrack || "AYT / TYT"}
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  {book.coverage.videoCount} Video Çözümlü Deneme
-                </Badge>
-                <Badge variant="outline" size="sm" className="font-mono">
-                  {book.coverage.questionCount} Soru Çözümü
+                  {book.examTrack}
                 </Badge>
               </div>
 
@@ -264,7 +263,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
             <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
               <span className="text-[11px] text-muted-foreground font-medium block">Kapsam</span>
               <span className="font-heading font-bold text-sm text-foreground block mt-0.5">
-                {book.denemeCount} Deneme &bull; {book.pageCount} Sayfa
+                {book.pageCount} Sayfa
               </span>
             </div>
             <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
@@ -286,9 +285,6 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                 <Badge variant="primary" size="sm" icon={<Video className="size-3.5" />}>
                   İnteraktif Video Çözüm Tezgâhı
                 </Badge>
-                <span className="text-xs text-muted-foreground font-mono">
-                  1–{book.coverage.denemeCount} Deneme Soru Havuzu
-                </span>
               </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-1">
                 Soru Bazlı Video Çözüm &amp; Zaman Çizelgesi
@@ -302,50 +298,40 @@ export default async function V2BookDetailPage({ params }: PageProps) {
               {t("jumpHeading")}
             </h3>
             <ul role="list" className={styles.jumpList}>
-              {jumpNumbers.map((no) => {
-                const covered = coveredDenemeNumbers.has(no);
-                return (
-                  <li key={no}>
-                    {covered ? (
-                      <a className={styles.jumpItem} href={`#${denemeFragment(no)}`}>
-                        <span className={styles.srOnly}>{t("denemeHeading", { no })}</span>
-                        <span aria-hidden="true">{no}</span>
-                      </a>
-                    ) : (
-                      <span className={`${styles.jumpItem} ${styles.jumpItemEmpty}`}>
-                        <span className={styles.srOnly}>{t("jumpNoVideo", { no })}</span>
-                        <span aria-hidden="true">{no}</span>
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
+              {jumpNumbers.map((no) => (
+                <li key={no}>
+                  <a className={styles.jumpItem} href={`#${videoFragment(no)}`}>
+                    <span className={styles.srOnly}>{t("videoFallbackHeading", { no })}</span>
+                    <span aria-hidden="true">{no}</span>
+                  </a>
+                </li>
+              ))}
             </ul>
           </nav>
 
           {/* Video Bench Player and Question Matrix (With Auth Gating) */}
-          {defaultDenemeNo !== null && (
+          {defaultOrderNo !== null && (
             <VideoBench
               className={styles.workbench}
               indexClassName={styles.index}
               videos={benchVideos}
-              defaultDenemeNo={defaultDenemeNo}
+              defaultOrderNo={defaultOrderNo}
             >
               {videoStates.map(({ video, state }) => {
                 const playable = isPlayable(state);
                 return (
                   <article
-                    key={video.denemeNo}
+                    key={video.orderNo}
                     className={styles.deneme}
-                    aria-labelledby={denemeFragment(video.denemeNo)}
-                    data-deneme={video.denemeNo}
+                    aria-labelledby={videoFragment(video.orderNo)}
+                    data-deneme={video.orderNo}
                   >
                     <div className={styles.denemeHead}>
-                      <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
-                        {videoTitle(t, video)}
+                      <h3 id={videoFragment(video.orderNo)} className={styles.denemeHeading}>
+                        {videoTitle(t, locale, video)}
                       </h3>
                       <span className={styles.denemeFacts}>
-                        <span>{t("denemeQuestionCount", { count: video.questions.length })}</span>
+                        <span>{t("videoTagCount", { count: video.tags.length })}</span>
                         {state.kind === "rich" && (
                           <>
                             <span className={styles.factSeparator} aria-hidden="true">
@@ -358,25 +344,25 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                     </div>
 
                     <ul role="list" className={styles.questionGrid}>
-                      {video.questions.map((question) => {
-                        const fragment = questionFragment(video.denemeNo, question.questionNo);
+                      {video.tags.map((tag) => {
+                        const fragment = tagFragment(video.orderNo, tag);
                         return (
-                          <li key={question.questionNo}>
+                          <li key={tag.orderNo}>
                             <a
                               id={fragment}
                               href={`#${fragment}`}
                               className={styles.questionLink}
-                              data-second={question.startSecond}
+                              data-second={tag.startSecond}
                               aria-label={
                                 playable
-                                  ? t("questionLabelAria", {
-                                      no: question.questionNo,
-                                      time: formatDuration(question.startSecond),
+                                  ? t("tagLabelAria", {
+                                      no: tag.orderNo,
+                                      time: formatDuration(tag.startSecond),
                                     })
                                   : undefined
                               }
                             >
-                              {t("questionLabel", { no: question.questionNo })}
+                              {t("tagLabel", { no: tag.orderNo })}
                             </a>
                           </li>
                         );

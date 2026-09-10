@@ -10,10 +10,10 @@ import trMessages from "@/messages/tr.json";
  *
  * next-intl does not fail a build on a missing key — it logs and renders the dotted key path in
  * place of the copy. On this namespace that is worse than a visible typo in one place:
- * `jumpNoVideo` is the ONLY accessible name of the jump strip's uncovered tiles, because the
- * digit beside it is `aria-hidden`. A one-locale addition or a rename therefore ships
- * "BookDetail.jumpNoVideo" as the accessible name of ten controls per book page, with typecheck,
- * lint and every rendered frame perfectly clean (→ PR #66 review `TA66-M5`).
+ * `videoFallbackHeading` is the ONLY accessible name of every jump strip tile, because the digit
+ * beside it is `aria-hidden`. A one-locale addition or a rename therefore ships
+ * "BookDetail.videoFallbackHeading" as the accessible name of every jump control on a book page,
+ * with typecheck, lint and every rendered frame perfectly clean (→ PR #66 review `TA66-M5`).
  *
  * Both locales, always. The English twin is permanently `noindex` (→ DEC 2026-08-15c) but it is
  * still a page a reader can open, so "missing in en" is a defect rather than a translation
@@ -26,14 +26,16 @@ import trMessages from "@/messages/tr.json";
 const BOOK_DETAIL_KEYS = [
   "kunyeHeading",
   "videosHeading",
-  "denemeHeading",
+  "videoFallbackHeading",
   // The index row's fact strip.
-  "denemeQuestionCount",
-  // The jump strip. `jumpNoVideo` is an accessible name with no visible twin.
+  "videoTagCount",
+  // The jump strip. `videoFallbackHeading` above is its own accessible name, with no visible
+  // twin — the covered/uncovered split (and `jumpNoVideo`, its own former accessible name) is
+  // gone with the book-level count it depended on (P0 generic-catalogue cut-over,
+  // `DEC 2026-09-10c` md.1).
   "jumpHeading",
-  "jumpNoVideo",
-  "questionLabel",
-  "questionLabelAria",
+  "tagLabel",
+  "tagLabelAria",
   // The bench's timeline. Another accessible name with no visible twin: the strip's meaning is
   // carried by the ticks' POSITION, which is exactly the part that does not reach the
   // accessibility tree, so a missing key here leaves a group of six links named by a dotted path.
@@ -45,8 +47,6 @@ const BOOK_DETAIL_KEYS = [
   "playerTitle",
   "durationLabel",
   "publishedLabel",
-  "badgeVideos",
-  "badgeQuestions",
   "coverAlt",
   "purchase",
   "purchaseAria",
@@ -54,7 +54,6 @@ const BOOK_DETAIL_KEYS = [
   "authorsLabel",
   "isbnLabel",
   "pageCountLabel",
-  "denemeCountLabel",
   "examLabel",
   "sourcesLabel",
   "sourceNewTab",

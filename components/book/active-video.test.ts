@@ -52,7 +52,7 @@ describe("bench store", () => {
     const store = createActiveVideoStore();
     store.open(1, 0);
     store.open(3, 94);
-    expect(store.getSnapshot().active?.denemeNo).toBe(3);
+    expect(store.getSnapshot().active?.orderNo).toBe(3);
     expect(store.getSnapshot().selected).toBe(3);
   });
 

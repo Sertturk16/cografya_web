@@ -82,7 +82,7 @@ describe("the login gate (§5.3.2)", () => {
     const handler = clickHandler();
     expect(handler).not.toBe("");
     const gate = handler.indexOf('if (authState !== "authenticated")');
-    const openCall = handler.indexOf("openVideo(denemeNo, second)");
+    const openCall = handler.indexOf("openVideo(orderNo, second)");
     expect(gate).toBeGreaterThan(0);
     expect(openCall).toBeGreaterThan(gate);
   });
@@ -99,7 +99,7 @@ describe("the login gate (§5.3.2)", () => {
     const gate = handler.indexOf('if (authState !== "authenticated")');
     const requestCall = handler.indexOf('requestAuth("video")', gate);
     const gateReturn = handler.indexOf("return;", requestCall);
-    const openCall = handler.indexOf("openVideo(denemeNo, second)");
+    const openCall = handler.indexOf("openVideo(orderNo, second)");
     expect(gate).toBeGreaterThan(0);
     expect(requestCall).toBeGreaterThan(gate);
     expect(gateReturn).toBeGreaterThan(requestCall);
@@ -115,7 +115,7 @@ describe("the login gate (§5.3.2)", () => {
   it("applies the fragment and selects the video at GATE time (not deferred to a page the reader never leaves), before opening the modal", () => {
     const handler = clickHandler();
     const gate = handler.indexOf('if (authState !== "authenticated")');
-    const applyCall = handler.indexOf("applyFragmentAndSelect(denemeNo,", gate);
+    const applyCall = handler.indexOf("applyFragmentAndSelect(orderNo,", gate);
     const requestCall = handler.indexOf('requestAuth("video")', gate);
     expect(gate).toBeGreaterThan(0);
     expect(applyCall).toBeGreaterThan(gate);

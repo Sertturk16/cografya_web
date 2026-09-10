@@ -191,12 +191,12 @@ describe("the click gate", () => {
     // `closest()` matches nothing: İzle stops opening a player, rows and ticks stop jumping, and
     // tsc, ESLint and every screenshot agree that nothing happened (→ `TA63R2-M3`).
     expect(VIDEO).toContain('data-player-open=""');
-    expect(PAGE).toContain("data-second={question.startSecond}");
-    expect(TIMELINE).toContain("data-second={question.second}");
+    expect(PAGE).toContain("data-second={tag.startSecond}");
+    expect(TIMELINE).toContain("data-second={tag.second}");
     // And the third hook the bench added: without `data-deneme` the island can resolve no video
     // at all, so every press falls through and the page silently becomes fragment-only.
-    expect(PAGE).toContain("data-deneme={video.denemeNo}");
-    expect(STAGE).toContain("data-deneme={video.denemeNo}");
+    expect(PAGE).toContain("data-deneme={video.orderNo}");
+    expect(STAGE).toContain("data-deneme={video.orderNo}");
   });
 });
 

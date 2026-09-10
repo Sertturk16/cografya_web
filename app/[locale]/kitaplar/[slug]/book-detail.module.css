@@ -342,7 +342,7 @@ a.jumpItem:hover {
   color: var(--color-taupe);
 }
 
-/* THE FRAGMENT OFFSET, and it is not decoration. `#deneme-12` is part of the IA
+/* THE FRAGMENT OFFSET, and it is not decoration. `#video-12` is part of the IA
    (`SEO-POLICY.md` §B4's book row), so §B4 4.9 requires the target to land BELOW the sticky
    header and be visible at every viewport, 320px included. The measurement lives in the global
    token layer, never here — `components/anchor-offset-token.test.ts` is the tripwire for the
@@ -423,7 +423,7 @@ a.jumpItem:hover {
 
 .questionLink {
   /* ONE ADDEND, for the same reason `.denemeHeading` above has one: the sticky row that made
-     the second one necessary is gone. `#deneme-12-soru-3` is an IA fragment (`SEO-POLICY.md`
+     the second one necessary is gone. `#video-12-etiket-3` is an IA fragment (`SEO-POLICY.md`
      §B4's book row) and this element carries the id, so this is the element that has to end up
      visible below the site header — §B4 4.9, measured at 320/360/768/1440 in both locales with
      JavaScript on and off. PR #56 is the standing lesson about what an offset that

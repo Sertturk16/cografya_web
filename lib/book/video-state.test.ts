@@ -23,9 +23,11 @@ const snapshot: BookVideoYoutube = {
 function video(youtube: BookVideoYoutube | null): BookVideo {
   return {
     bookVideoId: "11111111-2222-4333-8444-555555555555",
-    denemeNo: 12,
+    orderNo: 12,
+    titleTr: null,
+    titleEn: null,
     youtubeVideoId: "mnF6F4kQ3CA",
-    questions: [{ questionNo: 1, startSecond: 0 }],
+    tags: [{ orderNo: 1, startSecond: 0, nameTr: null, nameEn: null }],
     youtube,
   };
 }

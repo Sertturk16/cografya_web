@@ -27,7 +27,7 @@ import { BenchStage, type BenchVideo } from "./bench-stage";
  *
  * ## The links stay REAL links, and the interception is conditional
  *
- * Every question row is a server-rendered `<a href="#deneme-12-soru-3">` that resolves with no
+ * Every question row is a server-rendered `<a href="#video-12-etiket-3">` that resolves with no
  * JavaScript at all — `SEO-POLICY.md` §B8 8.2 rates JavaScript navigation a BLOCKER, and §B12
  * 12.2.b is what makes this index the page rather than an afterthought. This island does not
  * replace that behaviour; it adds to it, and only when all four of these hold:
@@ -61,7 +61,7 @@ import { BenchStage, type BenchVideo } from "./bench-stage";
  *
  * ## Arriving on a fragment selects, and does NOT load
  *
- * `#deneme-12-soru-3` puts video 12 on the stage and arms İzle with that question's second. It
+ * `#video-12-etiket-3` puts video 12 on the stage and arms İzle with that etiket's second. It
  * does not start a player: the ledger permits the load on a click or a key press, and a hash is
  * neither — the reader would otherwise have a third-party request made on their behalf by a link
  * somebody else sent them. The fragment still works exactly as it always did; what it adds is
@@ -82,10 +82,10 @@ import { BenchStage, type BenchVideo } from "./bench-stage";
  * return value rather than a comment: `data-deneme` is markup, so "absent" and "not a number" are
  * both reachable from a page edit, and neither may resolve to video 0.
  */
-function denemeNoOf(node: Element): number | null {
+function orderNoOf(node: Element): number | null {
   const holder = node.closest<HTMLElement>("[data-deneme]");
-  const denemeNo = Number.parseInt(holder?.dataset.deneme ?? "", 10);
-  return Number.isFinite(denemeNo) ? denemeNo : null;
+  const orderNo = Number.parseInt(holder?.dataset.deneme ?? "", 10);
+  return Number.isFinite(orderNo) ? orderNo : null;
 }
 
 /**
@@ -99,16 +99,16 @@ function denemeNoOf(node: Element): number | null {
  * page load is achieved here by doing the SAME two things — select the video, replace the URL
  * — immediately, at click time, rather than deferring them to a page the reader never leaves.
  */
-function applyFragmentAndSelect(denemeNo: number, fragment: string | null): void {
+function applyFragmentAndSelect(orderNo: number, fragment: string | null): void {
   if (fragment !== null) window.history.replaceState(null, "", fragment);
-  selectVideo(denemeNo);
+  selectVideo(orderNo);
 }
 
 export function VideoBench({
   className,
   indexClassName,
   videos,
-  defaultDenemeNo,
+  defaultOrderNo,
   children,
 }: {
   /** Optional exactly as React types it: a CSS-module lookup is `string | undefined` under
@@ -118,7 +118,7 @@ export function VideoBench({
   className?: string;
   indexClassName?: string;
   videos: readonly BenchVideo[];
-  defaultDenemeNo: number;
+  defaultOrderNo: number;
   /** The server-rendered index — 30 rows, 180 links, untouched markup. */
   children: ReactNode;
 }) {
@@ -130,7 +130,7 @@ export function VideoBench({
   const authRequestId = useRef<string | null>(null);
   /** What to resume once auth succeeds — the video only; the second is kept for the one-line
    *  future flip named in §13, unused by the deliberate no-auto-load resume below. */
-  const authResume = useRef<{ readonly denemeNo: number; readonly second: number } | null>(null);
+  const authResume = useRef<{ readonly orderNo: number; readonly second: number } | null>(null);
 
   // THE LOGIN GATE'S OWN SESSION READ (§5.3.2), called ONCE at the VideoBench level — `authState`
   // is threaded down to `BenchStage`/`DenemeVideo`/`VideoProgressControls` as a prop, never
@@ -139,12 +139,12 @@ export function VideoBench({
 
   // THE PROGRESS FETCH (§5.4) — lazy, per video, on selection, never eager for all 30. Resolves
   // the SELECTED video's `bookVideoId` the same way `BenchStage` resolves its own `video` (the
-  // `selected ?? defaultDenemeNo` formula — the store is a singleton, so both components read
+  // `selected ?? defaultOrderNo` formula — the store is a singleton, so both components read
   // the same underlying value, but this one has to compute it independently because it has to
   // be available at CLICK TIME inside `onClick` below, which `BenchStage` does not own).
   const { selected } = useBenchState();
-  const selectedDenemeNo = selected ?? defaultDenemeNo;
-  const selectedVideo = videos.find((candidate) => candidate.denemeNo === selectedDenemeNo);
+  const selectedOrderNo = selected ?? defaultOrderNo;
+  const selectedVideo = videos.find((candidate) => candidate.orderNo === selectedOrderNo);
   const bookVideoId = selectedVideo?.bookVideoId;
 
   const [rawProgress, setRawProgress] = useState<VideoProgressValue | null | "loading">(null);
@@ -210,12 +210,12 @@ export function VideoBench({
     const root = rootRef.current;
     if (target === null || root === null || !root.contains(target)) return;
 
-    const denemeNo = denemeNoOf(target);
-    if (denemeNo === null) return;
+    const orderNo = orderNoOf(target);
+    if (orderNo === null) return;
 
-    const video = videos.find((candidate) => candidate.denemeNo === denemeNo);
+    const video = videos.find((candidate) => candidate.orderNo === orderNo);
     if (video === undefined) return;
-    selectVideo(denemeNo);
+    selectVideo(orderNo);
 
     const raw = target.dataset.second;
     if (video.playable && raw !== undefined) {
@@ -257,9 +257,9 @@ export function VideoBench({
     const trigger = event.target.closest<HTMLElement>("[data-second], [data-player-open]");
     if (trigger === null) return;
 
-    const denemeNo = denemeNoOf(trigger);
-    if (denemeNo === null) return;
-    const video = videos.find((candidate) => candidate.denemeNo === denemeNo);
+    const orderNo = orderNoOf(trigger);
+    if (orderNo === null) return;
+    const video = videos.find((candidate) => candidate.orderNo === orderNo);
     if (video === undefined || !video.playable) return;
 
     const raw = trigger.dataset.second;
@@ -287,8 +287,8 @@ export function VideoBench({
       // itself. Applied immediately — no navigation happens this time, so the fragment/
       // selection have to be set here rather than deferred to a page the reader never leaves
       // (uyelik-auth-redesign plan §5.6.4).
-      applyFragmentAndSelect(denemeNo, trigger.getAttribute("href"));
-      authResume.current = { denemeNo, second };
+      applyFragmentAndSelect(orderNo, trigger.getAttribute("href"));
+      authResume.current = { orderNo, second };
       authRequestId.current = requestAuth("video");
       return;
     }
@@ -296,14 +296,14 @@ export function VideoBench({
     // The İzle button has no href of its own, so it addresses the video; a row addresses itself.
     const fragment = trigger.getAttribute("href");
     if (fragment !== null) window.history.replaceState(null, "", fragment);
-    openVideo(denemeNo, second);
+    openVideo(orderNo, second);
   };
 
   // The resume — DELIBERATELY does NOT call `openVideo()` (plan §5.6.4, §13's one genuine
   // owner-judgment item, surfaced with a reasoned default rather than left open). The video is
   // already selected (`applyFragmentAndSelect` ran at click time); this only closes the modal
   // and moves focus to the now-unblocked İzle control, one deliberate keypress from playing —
-  // a standing rule in this component tree, not caution for its own sake: `denemeNoOf`'s own
+  // a standing rule in this component tree, not caution for its own sake: `orderNoOf`'s own
   // docblock states the ledger permits the load ONLY on a click or a key press, so a third-
   // party (YouTube) request must never be made on the reader's behalf by an auth round trip
   // that was not itself aimed at the player.
@@ -316,7 +316,7 @@ export function VideoBench({
     authResume.current = null;
     if (resume === null) return;
     const target = rootRef.current?.querySelector<HTMLElement>(
-      `[data-deneme="${resume.denemeNo}"] [data-player-open]`,
+      `[data-deneme="${resume.orderNo}"] [data-player-open]`,
     );
     target?.focus();
   }, [modal.resolvedRequestId]);
@@ -325,7 +325,7 @@ export function VideoBench({
     <div ref={rootRef} className={className} onClick={onClick}>
       <BenchStage
         videos={videos}
-        defaultDenemeNo={defaultDenemeNo}
+        defaultOrderNo={defaultOrderNo}
         authState={authState}
         progress={progress}
         onSaveWatched={saveWatched}

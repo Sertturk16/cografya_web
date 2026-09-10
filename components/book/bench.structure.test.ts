@@ -96,7 +96,7 @@ describe("the bench keeps the index crawlable", () => {
   it("anchors the scan on markup that must exist", () => {
     // Without this every assertion below could pass vacuously after a rename or a file move,
     // which is the one way a source-scan guard fails silently.
-    expect(PAGE).toContain("questionFragment(");
+    expect(PAGE).toContain("tagFragment(");
     expect(PAGE).toContain("<VideoBench");
     expect(BENCH).toContain("BenchStage");
   });
@@ -133,20 +133,19 @@ describe("the bench keeps the index crawlable", () => {
 
   it("keeps the deneme heading a real heading carrying the fragment id", () => {
     // Demoting it to a `<span>` — what all three design mockups drew — would delete 30 headings
-    // from the document outline (§B3), and moving the `id` off it would break `#deneme-12`,
+    // from the document outline (§B3), and moving the `id` off it would break `#video-12`,
     // which is binding IA (§B4's book row).
-    expect(FLAT_PAGE).toMatch(/<h3 id=\{denemeFragment\(video\.denemeNo\)\}/);
+    expect(FLAT_PAGE).toMatch(/<h3 id=\{videoFragment\(video\.orderNo\)\}/);
   });
 });
 
 describe("the stage cannot disagree with the index", () => {
   it("derives its default from the videos that actually render", () => {
-    // §B8 8.9's discipline applied to the new surface: `coverage.denemeNumbers` and `videos[]`
-    // are two independent contract fields describing the same thing, and only one of them is the
-    // source of the `data-deneme` the stage has to match. A default taken from the other would
-    // put the stage and the index on different videos at first paint on the day they diverge.
-    expect(FLAT_PAGE).toMatch(/const defaultDenemeNo = benchVideos\[0\]\?\.denemeNo \?\? null;/);
-    expect(FLAT_PAGE).not.toContain("coverage.denemeNumbers[0]");
+    // §B8 8.9's discipline applied to the new surface: no book-level count is published any
+    // more (`DEC 2026-09-10c` md.1), so `videos[]` is the ONLY source `defaultOrderNo` could
+    // ever be derived from — a declared-count fallback is not merely disfavoured, it is
+    // structurally unreachable.
+    expect(FLAT_PAGE).toMatch(/const defaultOrderNo = benchVideos\[0\]\?\.orderNo \?\? null;/);
     // Built from the same iteration the rows are built from.
     expect(FLAT_PAGE).toMatch(/const benchVideos: BenchVideo\[\] = videoStates\.map\(/);
   });
@@ -155,37 +154,37 @@ describe("the stage cannot disagree with the index", () => {
     // `selected === null` means "the server's choice". If the stage ever computed its own
     // default instead, the server's HTML and the client's first frame could disagree about which
     // video is on the stage — a hydration mismatch that renders fine and is wrong.
-    expect(FLAT_STAGE).toContain("selected ?? defaultDenemeNo");
+    expect(FLAT_STAGE).toContain("selected ?? defaultOrderNo");
   });
 
   it("emits no VideoObject name that the page does not print", () => {
     // §B5 5.7: the markup's `name` is composed from the `<h1>` and the row's `<h3>`, so both must
     // come from ONE builder. Two call sites composing "the same" string is how they stop being
     // the same string.
-    expect(FLAT_PAGE).toContain("videoTitle(t, video)");
+    expect(FLAT_PAGE).toContain("videoTitle(t, locale, video)");
     expect(IDENTITY).toContain("export function videoTitle");
   });
 });
 
 describe("the timeline adds no dead fragment", () => {
   it("builds its hrefs with the same function that builds the ids", () => {
-    // The whole guarantee, in one line: the ticks and the rows both call `questionFragment`, so
+    // The whole guarantee, in one line: the ticks and the rows both call `tagFragment`, so
     // "every href has a target" is true by construction rather than by two lists agreeing
     // (the `FENER66-M2` discipline).
-    expect(FLAT_TIMELINE).toMatch(/href=\{`#\$\{questionFragment\(denemeNo, question\.no\)\}`\}/);
-    expect(IDENTITY).toContain("export function questionFragment");
+    expect(FLAT_TIMELINE).toMatch(/href=\{`#\$\{tagFragment\(orderNo, tag\)\}`\}/);
+    expect(IDENTITY).toContain("export function tagFragment");
   });
 
-  it("iterates the same questions array the rows do", () => {
-    // A timeline fed from anything else — a range, a count, `coverage` — could emit a tick for a
-    // question that has no row.
-    expect(FLAT_STAGE).toContain("questions={video.questions}");
-    expect(FLAT_TIMELINE).toContain("questions.map(");
+  it("iterates the same tags array the rows do", () => {
+    // A timeline fed from anything else — a range, a count, a declared total — could emit a
+    // tick for an etiket that has no row.
+    expect(FLAT_STAGE).toContain("tags={video.tags}");
+    expect(FLAT_TIMELINE).toContain("tags.map(");
   });
 
   it("puts no id on a tick", () => {
-    // The ids live on the index rows. A tick carrying one would define `#deneme-12-soru-3` twice
-    // in one document, and which one a fragment resolves to is then the engine's choice.
+    // The ids live on the index rows. A tick carrying one would define `#video-12-etiket-3`
+    // twice in one document, and which one a fragment resolves to is then the engine's choice.
     expect(FLAT_TIMELINE).not.toMatch(/<a[^>]*\bid=/);
   });
 });
@@ -198,21 +197,21 @@ describe("the delegated listener stays narrow", () => {
   it("resolves the video from the DOM rather than from a parsed fragment", () => {
     // One island covers the stage and all thirty rows, so it has to answer "which video is this
     // press about". Reading `data-deneme` keeps that answer out of the fragment STRING — parsing
-    // `#deneme-24-soru-3` would make the id scheme load-bearing for behaviour as well as for the
+    // `#video-24-etiket-3` would make the id scheme load-bearing for behaviour as well as for the
     // IA, which is the coupling `lib/book/video-identity.ts` exists to keep to one place.
     expect(BENCH).toContain('closest<HTMLElement>("[data-deneme]")');
-    expect(FLAT_PAGE).toContain("data-deneme={video.denemeNo}");
-    expect(FLAT_STAGE).toContain("data-deneme={video.denemeNo}");
+    expect(FLAT_PAGE).toContain("data-deneme={video.orderNo}");
+    expect(FLAT_STAGE).toContain("data-deneme={video.orderNo}");
   });
 
   it("puts the row's data-deneme on the element that CONTAINS its heading", () => {
     // `closest()` walks ANCESTORS. With the attribute on the question `<ul>`, a fragment landing
-    // on `#deneme-15` — whose `id` is on the `<h3>`, a SIBLING of that list — resolved to nothing
+    // on `#video-15` — whose `id` is on the `<h3>`, a SIBLING of that list — resolved to nothing
     // and the stage silently stayed on the book's first video, while the same attribute answered
     // correctly from a question row one level down (→ PR #70 review `FENER70-M2` / `CODE70-M5`).
     // Presence alone cannot tell those two placements apart, so the containment is what is
     // asserted: the attribute is on the `<article>`, and the `<ul>` no longer carries one.
-    expect(FLAT_PAGE).toMatch(/<article[^>]*\bdata-deneme=\{video\.denemeNo\}/);
+    expect(FLAT_PAGE).toMatch(/<article[^>]*\bdata-deneme=\{video\.orderNo\}/);
     expect(FLAT_PAGE).not.toMatch(/<ul[^>]*\bdata-deneme=/);
     // And the id that landing resolves to is inside it.
     expect(FLAT_PAGE).toMatch(/<article[^>]*>\s*<div className=\{styles\.denemeHead\}>\s*<h3 id=/);
@@ -222,7 +221,7 @@ describe("the delegated listener stays narrow", () => {
     // An `<article>` is a region a screen reader lists by name, and a heading INSIDE an element
     // does not name it — so the rows arrived as thirty unnamed "article"s (→ `A11Y70-M1`). The
     // name borrows the fragment id, which already exists and is already unique per video.
-    expect(FLAT_PAGE).toMatch(/<article[^>]*aria-labelledby=\{denemeFragment\(video\.denemeNo\)\}/);
+    expect(FLAT_PAGE).toMatch(/<article[^>]*aria-labelledby=\{videoFragment\(video\.orderNo\)\}/);
   });
 
   it("never opens a player for a video the provider refuses to embed", () => {
@@ -238,7 +237,7 @@ describe("the delegated listener stays narrow", () => {
   });
 
   it("loads no player from a hash alone", () => {
-    // Arriving on `#deneme-12-soru-3` selects and arms; it does not start a third-party embed,
+    // Arriving on `#video-12-etiket-3` selects and arms; it does not start a third-party embed,
     // because a hash is neither a click nor a key press. The hash effect may call `selectVideo`
     // and must not call `openVideo`.
     const hashEffect = FLAT_BENCH.slice(
@@ -246,7 +245,7 @@ describe("the delegated listener stays narrow", () => {
       FLAT_BENCH.indexOf("useEffect(() => resetBench"),
     );
     expect(hashEffect.length).toBeGreaterThan(0);
-    expect(hashEffect).toContain("selectVideo(denemeNo)");
+    expect(hashEffect).toContain("selectVideo(orderNo)");
     expect(hashEffect).not.toContain("openVideo(");
   });
 });
@@ -258,7 +257,7 @@ describe("the stage reserves its height in every cover state", () => {
     // a card that only exists in the `rich` state disappears under a reader already looking at the
     // rows below it (→ PR #70 review `FENER70-I1`, validated). The gate belongs inside the
     // component, which drops the ticks and keeps the box.
-    expect(FLAT_STAGE).toMatch(/<BenchTimeline denemeNo=/);
+    expect(FLAT_STAGE).toMatch(/<BenchTimeline orderNo=/);
     expect(FLAT_STAGE).toContain("durationSeconds={rich?.durationSeconds ?? null}");
     expect(FLAT_STAGE).not.toMatch(/\{rich !== null && \(?\s*<BenchTimeline/);
   });
@@ -339,27 +338,24 @@ describe("the guards the accordion's retired test used to carry", () => {
 
 describe("the jump strip emits no dead fragment", () => {
   it("derives the linked set from the videos that actually render", () => {
-    // §B8 8.9, BLOCKER. The covered numbers are NOT a contiguous range, so a strip derived from
-    // `denemeCount` alone would ship one dead anchor per gap — and one derived from
-    // `coverage.denemeNumbers` would hold only while two independent contract fields agree
-    // (→ `FENER66-M2`).
-    expect(FLAT_PAGE).toContain("coveredDenemeNumbers.has(no)");
-    expect(FLAT_PAGE).toContain("new Set(videoStates.map(({ video }) => video.denemeNo))");
-    expect(FLAT_PAGE).not.toContain("new Set(book.coverage.denemeNumbers)");
+    // §B8 8.9, BLOCKER. The generic-catalogue cut-over (P0, `DEC 2026-09-10c` md.1) dropped the
+    // book-level count outright — there is no total left to over-iterate against, so
+    // `jumpNumbers` is read off the same `videoStates` the rows are built from and nothing else.
+    expect(FLAT_PAGE).toMatch(
+      /const jumpNumbers = videoStates\.map\(\(\{ video \}\) => video\.orderNo\);/,
+    );
   });
 
-  it("puts the href on the covered branch and nothing on the other", () => {
-    // The branch is what binds the inputs to the output, and it was unpinned once: inverting the
-    // condition to `!coveredDenemeNumbers.has(no)` passed every assertion while the strip linked
-    // precisely the ten numbers that have no target (→ `TA66-M3` / `TA66R2-M2`).
-    expect(FLAT_PAGE).toMatch(/const covered = coveredDenemeNumbers\.has\(no\);/);
+  it("gives every number a real link, with no uncovered branch left to invert", () => {
+    // The covered/uncovered split this once needed — and the bug class that came with it
+    // (inverting the condition passed every OLD assertion while the strip linked precisely the
+    // numbers that had no target, → `TA66-M3` / `TA66R2-M2`) — is gone with the declared total
+    // it existed to guard against. Every number this strip can name now has a target by
+    // construction, so there is no second branch to get backwards.
     expect(FLAT_PAGE).toMatch(
-      /\{covered \? \(\s*<a className=\{styles\.jumpItem\} href=\{`#\$\{denemeFragment\(no\)\}`\}/,
+      /\{jumpNumbers\.map\(\(no\) => \(\s*<li key=\{no\}>\s*<a className=\{styles\.jumpItem\} href=\{`#\$\{videoFragment\(no\)\}`\}/,
     );
-    // The non-link branch must stay a <span>: an <a> without href is not a link either, but it
-    // is the shape someone "fixes" into one.
-    expect(FLAT_PAGE).toMatch(
-      /<span className=\{`\$\{styles\.jumpItem\} \$\{styles\.jumpItemEmpty\}`\}>/,
-    );
+    expect(FLAT_PAGE).not.toContain("jumpItemEmpty");
+    expect(FLAT_PAGE).not.toContain("coveredDenemeNumbers");
   });
 });
