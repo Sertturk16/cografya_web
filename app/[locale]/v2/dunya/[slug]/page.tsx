@@ -22,7 +22,9 @@ import { neighborViaTerritory } from "@/lib/geo/neighbor-via-territory";
 import { hasFlag } from "@/lib/geo/flag-set";
 import { isSpecialStatusRow, showsCountryFlag, showsSovereigntyNote } from "@/lib/geo/sovereignty";
 import { showsSubregionCard } from "@/lib/geo/subregion";
+import { SPECIAL_STATUS_ISO_CODES } from "@/lib/geo/special-status-isos";
 import { COUNTRY_SHAPES } from "@/lib/map/world-countries.generated";
+import { CONTINENT_META } from "@/lib/map/continent-theme";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { selectCountryMetaDescription } from "@/lib/seo/country-description";
@@ -74,75 +76,6 @@ const COUNTRY_SHAPE_BY_ISO = new Map(COUNTRY_SHAPES.map((shape) => [shape.iso, s
 type Neighbor =
   | { kind: "link"; label: string; slug: string; iso: string }
   | { kind: "text"; label: string; iso: string };
-
-const CONTINENT_THEMES: Record<
-  string,
-  {
-    nameTr: string;
-    badgeClass: string;
-    gradient: string;
-    accentColor: string;
-    glowColor: string;
-    borderAccent: string;
-  }
-> = {
-  AVRUPA: {
-    nameTr: "Avrupa",
-    badgeClass: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
-    gradient: "from-blue-500/10 via-background to-background",
-    accentColor: "text-blue-600 dark:text-blue-400",
-    glowColor: "bg-blue-500/10",
-    borderAccent: "border-blue-500/30",
-  },
-  ASYA: {
-    nameTr: "Asya",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-    gradient: "from-amber-500/10 via-background to-background",
-    accentColor: "text-amber-600 dark:text-amber-400",
-    glowColor: "bg-amber-500/10",
-    borderAccent: "border-amber-500/30",
-  },
-  AFRIKA: {
-    nameTr: "Afrika",
-    badgeClass: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30",
-    gradient: "from-yellow-500/10 via-background to-background",
-    accentColor: "text-yellow-600 dark:text-yellow-400",
-    glowColor: "bg-yellow-500/10",
-    borderAccent: "border-yellow-500/30",
-  },
-  KUZEY_AMERIKA: {
-    nameTr: "Kuzey Amerika",
-    badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
-    gradient: "from-teal-500/10 via-background to-background",
-    accentColor: "text-teal-600 dark:text-teal-400",
-    glowColor: "bg-teal-500/10",
-    borderAccent: "border-teal-500/30",
-  },
-  GUNEY_AMERIKA: {
-    nameTr: "Güney Amerika",
-    badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    gradient: "from-emerald-500/10 via-background to-background",
-    accentColor: "text-emerald-600 dark:text-emerald-400",
-    glowColor: "bg-emerald-500/10",
-    borderAccent: "border-emerald-500/30",
-  },
-  OKYANUSYA: {
-    nameTr: "Okyanusya",
-    badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
-    gradient: "from-cyan-500/10 via-background to-background",
-    accentColor: "text-cyan-600 dark:text-cyan-400",
-    glowColor: "bg-cyan-500/10",
-    borderAccent: "border-cyan-500/30",
-  },
-  ANTARKTIKA: {
-    nameTr: "Antarktika",
-    badgeClass: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30",
-    gradient: "from-indigo-500/10 via-background to-background",
-    accentColor: "text-indigo-600 dark:text-indigo-400",
-    glowColor: "bg-indigo-500/10",
-    borderAccent: "border-indigo-500/30",
-  },
-};
 
 export async function generateStaticParams() {
   const countries = await getCountriesResilient();
@@ -203,7 +136,8 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
   const name = nameForLocale(country, locale);
   const continent = tContinents(country.continent);
   const capital = locale === "en" ? country.capitalNameEn : country.capitalNameTr;
-  const continentTheme = CONTINENT_THEMES[country.continent] ?? CONTINENT_THEMES.AVRUPA!;
+  const localizedStatusLabel = locale === "en" ? country.statusLabelEn : country.statusLabelTr;
+  const continentTheme = CONTINENT_META[country.continent] ?? CONTINENT_META.AVRUPA!;
 
   const path = `/v2/dunya/${slugForLocale(country, locale)}`;
 
@@ -259,11 +193,17 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
   const introText =
     isTr && country.introTr !== null
       ? country.introTr
-      : country.population !== null
-        ? t("introFallbackPopulation", { name, continent, population: country.population })
-        : country.areaKm2 !== null
-          ? t("introFallbackArea", { name, continent, area: country.areaKm2 })
-          : t("introFallbackContinent", { name, continent });
+      : country.entityType !== "country"
+        ? country.population !== null
+          ? t("introFallbackNonCountryPopulation", { name, population: country.population })
+          : country.areaKm2 !== null
+            ? t("introFallbackNonCountryArea", { name, area: country.areaKm2 })
+            : t("introFallbackNonCountryContinent", { name, continent })
+        : country.population !== null
+          ? t("introFallbackPopulation", { name, continent, population: country.population })
+          : country.areaKm2 !== null
+            ? t("introFallbackArea", { name, continent, area: country.areaKm2 })
+            : t("introFallbackContinent", { name, continent });
 
   const landformNote = isTr ? country.landformNoteTr : null;
   const climateNote = isTr ? country.climateNoteTr : null;
@@ -272,8 +212,11 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
   const settlementNote = isTr ? country.settlementNoteTr : null;
   const economyNote = isTr ? country.economyNoteTr : null;
   const governanceNote = isTr ? country.governanceNoteTr : null;
+  const governmentFormForLocale = isTr ? country.governmentFormTr : null;
+  const currencyNameForLocale = isTr ? country.currencyNameTr : null;
 
   const isSpecialStatus = isSpecialStatusRow(country.sovereigntyNoteTr);
+  const isSpecialGeography = isSpecialStatus || country.entityType === "special";
   const entityNamedHeadings = !isSpecialStatus;
   const sectionHeading = (slot: CountryHeadingSlot): string =>
     entityNamedHeadings
@@ -288,6 +231,27 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
   const showsFlag = showsCountryFlag(locale, country.sovereigntyNoteTr);
   const officialLanguages = isTr ? country.officialLanguagesTr : null;
   const countryShapeD = COUNTRY_SHAPE_BY_ISO.get(country.isoCode);
+
+  // §5.2.1 — the governance-card fallback renders only when it has something to say; on EN
+  // that is true only for the two rows with a localized status label (GL, AQ).
+  const showsGovernanceFallback = Boolean(
+    governmentFormForLocale ||
+    localizedStatusLabel ||
+    (officialLanguages && officialLanguages.length > 0),
+  );
+  // §5.2.1 layout consequence — on EN, section 3's left column has nothing left in it once
+  // the governance fallback is suppressed (sovereigntyNote/settlementNote/economyNote are all
+  // isTr-gated too), so the identity card spans the full width instead of leaving a gap.
+  const hasLeftColumnCards = Boolean(
+    sovereigntyNote || governanceNote || showsGovernanceFallback || settlementNote || economyNote,
+  );
+  // §5.2.3 Decision 0 — the neighbours section is suppressed for the four special-geography
+  // rows at zero neighbours (Decision 2), AND for the divergent state where the contract says
+  // there are neighbours but the resolved array came back empty because the fetch failed
+  // (asserts nothing rather than rendering a false "no border" claim, VALB133R2-NEW-I1).
+  const showsNeighbourSection =
+    !(isSpecialGeography && country.neighborCount === 0) &&
+    !(country.neighborCount > 0 && neighbors.length === 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
@@ -371,13 +335,15 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 <Badge variant="secondary" className="font-mono font-bold tracking-wider">
                   ISO: {country.isoCode} {country.isoCodeAlpha3 ? `/ ${country.isoCodeAlpha3}` : ""}
                 </Badge>
-                {country.entityType === "territory" ? (
-                  <Badge
-                    variant="outline"
-                    className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30"
-                  >
-                    {country.statusLabelTr || "Özerk / Bağlı Bölge"}
-                  </Badge>
+                {country.entityType !== "country" ? (
+                  localizedStatusLabel ? (
+                    <Badge
+                      variant="outline"
+                      className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30"
+                    >
+                      {localizedStatusLabel}
+                    </Badge>
+                  ) : null
                 ) : isSpecialStatus ? (
                   <Badge
                     variant="outline"
@@ -394,15 +360,17 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   </Badge>
                 )}
                 {country.neighborCount === 0 ? (
-                  <Badge
-                    variant="outline"
-                    className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
-                  >
-                    <Waves className="size-3" /> Ada Ülkesi
-                  </Badge>
+                  isSpecialGeography ? null : (
+                    <Badge
+                      variant="outline"
+                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+                    >
+                      <Waves className="size-3" /> {t("islandChipLabel")}
+                    </Badge>
+                  )
                 ) : (
                   <Badge variant="outline" className="bg-muted text-muted-foreground">
-                    🌍 {country.neighborCount} Kara Komşusu
+                    {t("landNeighboursChip", { count: country.neighborCount })}
                   </Badge>
                 )}
               </div>
@@ -439,7 +407,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {country.population ? format.number(country.population) : "—"}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                <span>Kaynak:</span>
+                <span>{t("kpiSourceLabel")}</span>
                 <span
                   className="font-semibold text-foreground truncate max-w-[130px]"
                   title={
@@ -468,9 +436,13 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   : "—"}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                <span>Kara Komşusu:</span>
+                <span>{t("kpiLandNeighboursLabel")}</span>
                 <span className="font-mono font-semibold text-foreground">
-                  {country.neighborCount === 0 ? "0 (Ada Ülkesi)" : `${country.neighborCount} Ülke`}
+                  {country.neighborCount === 0
+                    ? isSpecialGeography
+                      ? "0"
+                      : t("kpiIslandNeighbourValue")
+                    : t("kpiNeighbourCountriesValue", { count: country.neighborCount })}
                 </span>
               </div>
             </div>
@@ -485,10 +457,10 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {capital || "—"}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                <span>Koordinat:</span>
+                <span>{t("kpiCoordinatesLabel")}</span>
                 <span className="font-mono font-semibold text-foreground">
                   {country.capitalLatitude !== null && country.capitalLongitude !== null
-                    ? `${country.capitalLatitude.toFixed(1)}°K, ${country.capitalLongitude.toFixed(1)}°D`
+                    ? `${Math.abs(country.capitalLatitude).toFixed(1)}°${t(country.capitalLatitude >= 0 ? "coordinateNorth" : "coordinateSouth")}, ${Math.abs(country.capitalLongitude).toFixed(1)}°${t(country.capitalLongitude >= 0 ? "coordinateEast" : "coordinateWest")}`
                     : "—"}
                 </span>
               </div>
@@ -504,9 +476,9 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {country.governmentFormTr || "—"}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center justify-between pt-0.5">
-                <span>Para Birimi:</span>
+                <span>{t("kpiCurrencyLabel")}</span>
                 <span className="font-semibold text-foreground truncate max-w-[120px]">
-                  {country.currencyNameTr || country.currencyCode || "—"}
+                  {currencyNameForLocale || country.currencyCode || "—"}
                 </span>
               </div>
             </div>
@@ -516,44 +488,46 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
       {/* QUICKNAV / JUMP NAVIGATION BAR (STICKY, SCROLLBAR HIDDEN) */}
       <nav
-        aria-label="Bölüm İndeksi"
+        aria-label={t("sectionNavAriaLabel")}
         className="sticky top-14 z-30 bg-background/90 backdrop-blur-md border-b border-border py-2.5 overflow-x-auto scrollbar-none"
       >
         <div className="container mx-auto px-4 max-w-7xl flex items-center gap-2 text-xs whitespace-nowrap">
           <span className="text-muted-foreground font-semibold flex items-center gap-1 shrink-0 mr-1">
-            <Layers className="size-3.5" /> Bölümler:
+            <Layers className="size-3.5" /> {t("sectionNavLabel")}
           </span>
           <a
             href="#konum-ve-harita"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Konum &amp; Harita
+            {t("sectionNavLocation")}
           </a>
           {(climateNote || hydrographyNote) && (
             <a
               href="#iklim-ve-hidrografya"
               className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
             >
-              İklim &amp; Hidrografya
+              {t("sectionNavClimateHydrography")}
             </a>
           )}
           <a
             href="#yonetim-ve-demografi"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Yönetim &amp; Kimlik
+            {t("sectionNavGovernance")}
           </a>
-          <a
-            href="#komsular"
-            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
-          >
-            Sınırlar &amp; Komşular
-          </a>
+          {showsNeighbourSection && (
+            <a
+              href="#komsular"
+              className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+            >
+              {t("sectionNavBorders")}
+            </a>
+          )}
           <a
             href="#kaynakca"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Kaynakça
+            {t("sectionNavSources")}
           </a>
         </div>
       </nav>
@@ -569,12 +543,14 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 <div className="space-y-2 border-b border-border/70 pb-4">
                   <div className="flex items-center gap-2">
                     <Badge variant="primary" size="sm">
-                      Fiziki Coğrafya &amp; Konum
+                      {t("physicalGeographyBadge")}
                     </Badge>
                   </div>
-                  <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
+                  <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
                     <Mountain className="size-6 text-primary shrink-0" />
-                    <span>{sectionHeading("landform")}</span>
+                    <span>
+                      {t("landformHeadingWithLocation", { heading: sectionHeading("landform") })}
+                    </span>
                   </h2>
                 </div>
 
@@ -588,36 +564,39 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
-                      <Globe className="size-3.5 text-primary" /> Kıta &amp; Bölge
+                      <Globe className="size-3.5 text-primary" /> {t("quickFactContinentRegion")}
                     </span>
                     <span className="font-heading font-semibold text-sm text-foreground block">
-                      {continent} {country.unSubregionTr ? `(${country.unSubregionTr})` : ""}
+                      {continent}{" "}
+                      {isTr && country.unSubregionTr ? `(${country.unSubregionTr})` : ""}
                     </span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
-                      <MapPin className="size-3.5 text-rose-600" /> Başkent Koordinatları
+                      <MapPin className="size-3.5 text-rose-600" />{" "}
+                      {t("quickFactCapitalCoordinates")}
                     </span>
                     <span className="font-mono font-semibold text-sm text-foreground block">
                       {country.capitalLatitude !== null && country.capitalLongitude !== null
-                        ? `${country.capitalLatitude.toFixed(2)}°K, ${country.capitalLongitude.toFixed(2)}°D`
-                        : "Belirtilmemiş"}
+                        ? `${Math.abs(country.capitalLatitude).toFixed(2)}°${t(country.capitalLatitude >= 0 ? "coordinateNorth" : "coordinateSouth")}, ${Math.abs(country.capitalLongitude).toFixed(2)}°${t(country.capitalLongitude >= 0 ? "coordinateEast" : "coordinateWest")}`
+                        : t("quickFactNotSpecified")}
                     </span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
-                      <Coins className="size-3.5 text-amber-600" /> Para Birimi
+                      <Coins className="size-3.5 text-amber-600" /> {t("quickFactCurrency")}
                     </span>
                     <span className="font-semibold text-sm text-foreground block">
-                      {country.currencyNameTr || country.currencyCode || "—"}
+                      {currencyNameForLocale || country.currencyCode || "—"}
                     </span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
-                      <Languages className="size-3.5 text-teal-600" /> Resmî Dil(ler)
+                      <Languages className="size-3.5 text-teal-600" />{" "}
+                      {t("quickFactOfficialLanguages")}
                     </span>
                     <span
                       className="font-semibold text-sm text-foreground truncate block"
@@ -674,20 +653,26 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {/* Spatial Context Details */}
                 <div className="pt-3 border-t border-border space-y-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground font-medium">Başkent:</span>
+                    <span className="text-muted-foreground font-medium">{t("labelCapital")}</span>
                     <span className="font-semibold text-foreground">{capital || "—"}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground font-medium">Coğrafi Durum:</span>
+                    <span className="text-muted-foreground font-medium">
+                      {t("spatialStatusLabel")}
+                    </span>
                     <span className="font-medium text-foreground">
                       {country.neighborCount === 0
-                        ? "Ada / Açık Deniz Sınırları"
-                        : `${country.neighborCount} Kara Sınırı Komşuluğu`}
+                        ? isSpecialGeography
+                          ? "0"
+                          : t("spatialIslandBoundaries")
+                        : t("spatialLandBorderCount", { count: country.neighborCount })}
                     </span>
                   </div>
-                  {country.unSubregionTr && (
+                  {isTr && country.unSubregionTr && (
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground font-medium">BM Alt Bölgesi:</span>
+                      <span className="text-muted-foreground font-medium">
+                        {t("unSubregionLabel")}
+                      </span>
                       <span className="font-medium text-foreground">{country.unSubregionTr}</span>
                     </div>
                   )}
@@ -717,10 +702,10 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   variant="outline"
                   className="bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20"
                 >
-                  Doğal Çevre &amp; Hidrosfer
+                  {t("climateHydrographyBadge")}
                 </Badge>
               </div>
-              <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+              <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight">
                 {t("climateHydrographyGroupHeading", { name })}
               </h2>
             </div>
@@ -742,7 +727,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                       </h3>
                     </div>
                     <Badge variant="secondary" size="sm">
-                      İklim Kuşakları
+                      {t("climateBeltsBadge")}
                     </Badge>
                   </div>
                   <V2RichProse
@@ -766,7 +751,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                       size="sm"
                       className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20"
                     >
-                      Su Varlığı &amp; Kıyılar
+                      {t("hydrographyResourcesBadge")}
                     </Badge>
                   </div>
                   <V2RichProse
@@ -784,131 +769,144 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                Sosyo-Ekonomik ve İdari Yapı
+                {t("administrativeStructureBadge")}
               </Badge>
             </div>
-            <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+            <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight">
               {t("administrativeGroupHeading", { name })}
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div
+            className={
+              hasLeftColumnCards
+                ? "grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+                : "grid grid-cols-1 gap-8 items-start"
+            }
+          >
             {/* Left 7 Columns: Notes (Settlement, Economy, Governance, Sovereignty) */}
-            <div className="lg:col-span-7 space-y-6">
-              {/* Sovereignty Note if applicable */}
-              {sovereigntyNote && (
-                <div className="rounded-3xl border border-amber-500/30 bg-amber-500/5 p-6 sm:p-8 shadow-sm space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                    >
-                      <ShieldAlert className="size-3 mr-1" />
-                      Egemenlik ve Tanınma Durumu
-                    </Badge>
+            {hasLeftColumnCards && (
+              <div className="lg:col-span-7 space-y-6">
+                {/* Sovereignty Note if applicable */}
+                {sovereigntyNote && (
+                  <div className="rounded-3xl border border-amber-500/30 bg-amber-500/5 p-6 sm:p-8 shadow-sm space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        size="sm"
+                        className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                      >
+                        <ShieldAlert className="size-3 mr-1" />
+                        {t("sovereigntyStatusBadge")}
+                      </Badge>
+                    </div>
+                    <h3 className="font-heading text-xl font-bold text-foreground">
+                      {t("sovereigntyHeading")}
+                    </h3>
+                    <V2RichProse
+                      text={sovereigntyNote}
+                      paragraphClassName="text-sm text-muted-foreground leading-relaxed"
+                    />
                   </div>
-                  <h3 className="font-heading text-xl font-bold text-foreground">
-                    {t("sovereigntyHeading")}
-                  </h3>
-                  <V2RichProse
-                    text={sovereigntyNote}
-                    paragraphClassName="text-sm text-muted-foreground leading-relaxed"
-                  />
-                </div>
-              )}
+                )}
 
-              {/* Governance & Political Structure Note */}
-              {governanceNote ? (
-                <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" size="sm">
-                      İdari Yapı
-                    </Badge>
+                {/* Governance & Political Structure Note */}
+                {governanceNote ? (
+                  <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" size="sm">
+                        {t("governanceStructureBadge")}
+                      </Badge>
+                    </div>
+                    <h3 className="font-heading text-xl font-bold text-foreground">
+                      {t("governanceStructureHeading")}
+                    </h3>
+                    <V2RichProse
+                      text={governanceNote}
+                      paragraphClassName="text-sm text-muted-foreground leading-relaxed"
+                    />
                   </div>
-                  <h3 className="font-heading text-xl font-bold text-foreground">
-                    Siyasi Yönetim ve İdari Çerçeve
-                  </h3>
-                  <V2RichProse
-                    text={governanceNote}
-                    paragraphClassName="text-sm text-muted-foreground leading-relaxed"
-                  />
-                </div>
-              ) : (
-                <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" size="sm">
-                      Yönetim Şekli
-                    </Badge>
+                ) : showsGovernanceFallback ? (
+                  <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" size="sm">
+                        {t("politicalLegalStatusBadge")}
+                      </Badge>
+                    </div>
+                    <h3 className="font-heading text-xl font-bold text-foreground">
+                      {t("politicalLegalStatusHeading")}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {governmentFormForLocale
+                        ? t.rich("governanceFallback", {
+                            name,
+                            governmentForm: governmentFormForLocale,
+                            strong: (chunks) => <strong>{chunks}</strong>,
+                          })
+                        : null}
+                      {localizedStatusLabel
+                        ? ` ${t("officialStatusLabel", { status: localizedStatusLabel })}`
+                        : ""}
+                      {officialLanguages && officialLanguages.length > 0
+                        ? ` ${t("officialLanguagesLabel", { languages: officialLanguages.join(", ") })}`
+                        : ""}
+                    </p>
                   </div>
-                  <h3 className="font-heading text-xl font-bold text-foreground">
-                    Siyasi ve Hukuki Statü
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {t.rich("governanceFallback", {
-                      name,
-                      governmentForm:
-                        country.governmentFormTr || (isTr ? "egemen devlet" : "sovereign state"),
-                      strong: (chunks) => <strong>{chunks}</strong>,
-                    })}
-                    {country.statusLabelTr
-                      ? ` ${t("officialStatusLabel", { status: country.statusLabelTr })}`
-                      : ""}
-                    {officialLanguages && officialLanguages.length > 0
-                      ? ` ${t("officialLanguagesLabel", { languages: officialLanguages.join(", ") })}`
-                      : ""}
-                  </p>
-                </div>
-              )}
+                ) : null}
 
-              {/* Settlement / Demographic distribution Note if available */}
-              {settlementNote && (
-                <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" size="sm">
-                      Nüfus ve Yerleşme
-                    </Badge>
+                {/* Settlement / Demographic distribution Note if available */}
+                {settlementNote && (
+                  <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" size="sm">
+                        {t("settlementBadge")}
+                      </Badge>
+                    </div>
+                    <h3 className="font-heading text-xl font-bold text-foreground">
+                      {t("settlementHeading")}
+                    </h3>
+                    <V2RichProse
+                      text={settlementNote}
+                      paragraphClassName="text-sm text-muted-foreground leading-relaxed"
+                    />
                   </div>
-                  <h3 className="font-heading text-xl font-bold text-foreground">
-                    Nüfus Dağılışı ve Yerleşim Merkezleri
-                  </h3>
-                  <V2RichProse
-                    text={settlementNote}
-                    paragraphClassName="text-sm text-muted-foreground leading-relaxed"
-                  />
-                </div>
-              )}
+                )}
 
-              {/* Economy Note if available */}
-              {economyNote && (
-                <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
-                    >
-                      Ekonomik Yapı
-                    </Badge>
+                {/* Economy Note if available */}
+                {economyNote && (
+                  <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        size="sm"
+                        className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                      >
+                        {t("economyBadge")}
+                      </Badge>
+                    </div>
+                    <h3 className="font-heading text-xl font-bold text-foreground">
+                      {t("economyHeading")}
+                    </h3>
+                    <V2RichProse
+                      text={economyNote}
+                      paragraphClassName="text-sm text-muted-foreground leading-relaxed"
+                    />
                   </div>
-                  <h3 className="font-heading text-xl font-bold text-foreground">
-                    Ekonomik Coğrafya ve Kaynaklar
-                  </h3>
-                  <V2RichProse
-                    text={economyNote}
-                    paragraphClassName="text-sm text-muted-foreground leading-relaxed"
-                  />
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Right 5 Columns: Official Atlas Identity Card / Data Sheet */}
-            <div className="lg:col-span-5 space-y-6">
+            <div
+              className={
+                hasLeftColumnCards ? "lg:col-span-5 space-y-6" : "lg:col-span-12 space-y-6"
+              }
+            >
               <div className="rounded-3xl border border-border bg-card p-6 sm:p-7 shadow-sm space-y-5">
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <h3 className="font-heading font-bold text-lg text-foreground flex items-center gap-2">
                     <FileText className="size-4 text-primary" />
-                    <span>Resmî Atlas Kimlik Kartı</span>
+                    <span>{t("identityCardTitle")}</span>
                   </h3>
                   <Badge variant="outline" className="font-mono text-xs">
                     {country.isoCode}
@@ -917,55 +915,71 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
                 <div className="divide-y divide-border/60 text-xs">
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Resmî Adı (TR):</span>
+                    <span className="text-muted-foreground font-medium">
+                      {t("identityRowNameTr")}
+                    </span>
                     <span className="font-semibold text-foreground text-right">
                       {country.nameTr}
                     </span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Resmî Adı (EN):</span>
+                    <span className="text-muted-foreground font-medium">
+                      {t("identityRowNameEn")}
+                    </span>
                     <span className="font-semibold text-foreground text-right">
                       {country.nameEn}
                     </span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Başkent:</span>
+                    <span className="text-muted-foreground font-medium">{t("labelCapital")}</span>
                     <span className="font-semibold text-foreground text-right">
                       {capital || "—"}
                     </span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Toplam Nüfus:</span>
+                    <span className="text-muted-foreground font-medium">
+                      {t("identityRowPopulation")}
+                    </span>
                     <span className="font-semibold text-foreground text-right">
                       {country.population ? format.number(country.population) : "—"}
                       {country.populationYear ? ` (${country.populationYear})` : ""}
                     </span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Yüzölçümü:</span>
+                    <span className="text-muted-foreground font-medium">
+                      {t("identityRowArea")}
+                    </span>
                     <span className="font-semibold text-foreground text-right">
                       {country.areaKm2
                         ? `${country.areaIsApproximate ? "≈ " : ""}${format.number(country.areaKm2)} km²`
                         : "—"}
                     </span>
                   </div>
+                  {governmentFormForLocale && (
+                    <div className="py-2.5 flex items-center justify-between gap-4">
+                      <span className="text-muted-foreground font-medium">
+                        {t("identityRowGovernmentForm")}
+                      </span>
+                      <span className="font-semibold text-foreground text-right">
+                        {governmentFormForLocale}
+                      </span>
+                    </div>
+                  )}
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Yönetim Biçimi:</span>
-                    <span className="font-semibold text-foreground text-right">
-                      {country.governmentFormTr || "—"}
+                    <span className="text-muted-foreground font-medium">
+                      {t("identityRowCurrency")}
                     </span>
-                  </div>
-                  <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Para Birimi:</span>
                     <span className="font-semibold text-foreground text-right">
-                      {country.currencyNameTr || country.currencyCode || "—"}
-                      {country.currencyCode && country.currencyNameTr
+                      {currencyNameForLocale || country.currencyCode || "—"}
+                      {country.currencyCode && currencyNameForLocale
                         ? ` (${country.currencyCode})`
                         : ""}
                     </span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Resmî Dil(ler):</span>
+                    <span className="text-muted-foreground font-medium">
+                      {t("identityRowOfficialLanguages")}
+                    </span>
                     <span className="font-semibold text-foreground text-right">
                       {officialLanguages && officialLanguages.length > 0
                         ? officialLanguages.join(", ")
@@ -973,23 +987,32 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     </span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Kıta &amp; Alt Bölge:</span>
+                    <span className="text-muted-foreground font-medium">
+                      {t("identityRowContinentSubregion")}
+                    </span>
                     <span className="font-semibold text-foreground text-right">
-                      {continent} {country.unSubregionTr ? `· ${country.unSubregionTr}` : ""}
+                      {continent}{" "}
+                      {isTr && country.unSubregionTr ? `· ${country.unSubregionTr}` : ""}
                     </span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">ISO Kodları:</span>
+                    <span className="text-muted-foreground font-medium">
+                      {t("identityRowIsoCodes")}
+                    </span>
                     <span className="font-mono font-semibold text-foreground text-right">
                       {country.isoCode} {country.isoCodeAlpha3 ? `/ ${country.isoCodeAlpha3}` : ""}
                     </span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-medium">Komşu Sayısı:</span>
+                    <span className="text-muted-foreground font-medium">
+                      {t("identityRowNeighbourCount")}
+                    </span>
                     <span className="font-semibold text-foreground text-right">
                       {country.neighborCount === 0
-                        ? "0 (Ada Ülkesi)"
-                        : `${country.neighborCount} kara komşusu`}
+                        ? isSpecialGeography
+                          ? "0"
+                          : t("identityIslandNeighbourValue")
+                        : t("identityLandNeighbours", { count: country.neighborCount })}
                     </span>
                   </div>
                 </div>
@@ -999,107 +1022,130 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 4: KARA SINIRLARI VE KOMŞU ÜLKELER (EXPANSIVE FULL-WIDTH GRID) */}
-        <section id="komsular" className="scroll-mt-28 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm">
-                  Sınırlar &amp; Bölgesel Bağlantılar
-                </Badge>
+        {showsNeighbourSection && (
+          <section id="komsular" className="scroll-mt-28 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="primary" size="sm">
+                    {t("bordersRegionalBadge")}
+                  </Badge>
+                </div>
+                <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+                  <Globe className="size-6 text-primary shrink-0" />
+                  <span>
+                    {sectionHeading("neighbors")}
+                    {neighbors.length > 0 ? ` (${neighbors.length})` : ""}
+                  </span>
+                </h2>
               </div>
-              <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                <Globe className="size-6 text-primary shrink-0" />
-                <span>{t("neighborsGroupHeading", { name, count: neighbors.length })}</span>
-              </h2>
+              <span className="text-xs text-muted-foreground">
+                {country.neighborCount === 0
+                  ? t("neighboursHelperIsland")
+                  : t("neighboursHelperWithNeighbours")}
+              </span>
             </div>
-            <span className="text-xs text-muted-foreground">
-              {neighbors.length > 0
-                ? "Sınır komşusu olan ülkeleri inceleyin"
-                : "Açık deniz sınırları ve ada coğrafyası"}
-            </span>
-          </div>
 
-          {neighbors.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {neighbors.map((nb) =>
-                nb.kind === "link" ? (
-                  <Link
-                    key={nb.iso}
-                    href={{ pathname: "/v2/dunya/[slug]", params: { slug: nb.slug } }}
-                    className="p-4 rounded-2xl border border-border bg-card hover:bg-muted/60 hover:border-primary/40 transition-all group flex items-start justify-between gap-3 shadow-xs hover:shadow-md cursor-pointer"
-                  >
-                    <div className="space-y-1.5 min-w-0">
-                      <div className="flex items-center gap-2">
-                        {hasFlag(nb.iso) && (
-                          /* eslint-disable-next-line @next/next/no-img-element -- Flag icon asset */
-                          <img
-                            src={`/flags/${nb.iso.toUpperCase()}.svg`}
-                            alt={`${nb.label} bayrağı`}
-                            width={22}
-                            height={15}
-                            className="w-5.5 h-3.5 object-cover rounded-xs border border-border shrink-0"
-                          />
-                        )}
-                        <span className="font-mono text-[10px] text-muted-foreground font-semibold">
-                          #{nb.iso}
-                        </span>
-                      </div>
-                      <div className="font-heading font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
-                        {nb.label}
-                      </div>
-                    </div>
-                    <ArrowUpRight className="size-4 text-muted-foreground opacity-60 group-hover:opacity-100 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 mt-1" />
+            {country.neighborCount === 0 ? (
+              <div className="p-8 rounded-3xl border border-dashed border-border bg-card/60 text-center space-y-3">
+                <div className="size-12 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center">
+                  <Waves className="size-6" />
+                </div>
+                <h3 className="font-heading font-bold text-lg text-foreground">
+                  {t("islandCountryHeading")}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                  {t("islandCountryBody", { name })}
+                </p>
+                <div className="pt-2">
+                  <Link href="/v2/dunya">
+                    <Button variant="outline" size="sm" leftIcon={<Globe className="size-4" />}>
+                      {t("islandCountryCta", { continent })}
+                    </Button>
                   </Link>
-                ) : (
-                  <div
-                    key={nb.iso}
-                    className="p-4 rounded-2xl border border-border/60 bg-muted/30 flex items-start justify-between gap-3"
-                  >
-                    <div className="space-y-1.5 min-w-0">
-                      <div className="flex items-center gap-2">
-                        {hasFlag(nb.iso) && (
-                          /* eslint-disable-next-line @next/next/no-img-element -- Flag icon asset */
-                          <img
-                            src={`/flags/${nb.iso.toUpperCase()}.svg`}
-                            alt={`${nb.label} bayrağı`}
-                            width={22}
-                            height={15}
-                            className="w-5.5 h-3.5 object-cover rounded-xs border border-border shrink-0"
-                          />
-                        )}
-                        <span className="font-mono text-[10px] text-muted-foreground font-semibold">
-                          #{nb.iso}
-                        </span>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {neighbors.map((nb) => {
+                  const nbIsSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(nb.iso.toUpperCase());
+                  const showsNeighbourFlag = hasFlag(nb.iso) && (isTr || !nbIsSpecialStatus);
+                  return nb.kind === "link" ? (
+                    <Link
+                      key={nb.iso}
+                      href={{ pathname: "/v2/dunya/[slug]", params: { slug: nb.slug } }}
+                      className="p-4 rounded-2xl border border-border bg-card hover:bg-muted/60 hover:border-primary/40 transition-all group flex items-start justify-between gap-3 shadow-xs hover:shadow-md cursor-pointer"
+                    >
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {showsNeighbourFlag && (
+                            /* eslint-disable-next-line @next/next/no-img-element -- Flag icon asset */
+                            <img
+                              src={`/flags/${nb.iso.toUpperCase()}.svg`}
+                              alt={t("neighbourFlagAlt", { name: nb.label })}
+                              width={22}
+                              height={15}
+                              className="w-5.5 h-3.5 object-cover rounded-xs border border-border shrink-0"
+                            />
+                          )}
+                          <span className="font-mono text-[10px] text-muted-foreground font-semibold">
+                            #{nb.iso}
+                          </span>
+                          {isTr && nbIsSpecialStatus && (
+                            <Badge
+                              variant="outline"
+                              className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] px-1.5 py-0"
+                            >
+                              {t("specialStatusBadge")}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="font-heading font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                          {nb.label}
+                        </div>
                       </div>
-                      <div className="font-heading font-medium text-sm text-muted-foreground truncate">
-                        {nb.label}
+                      <ArrowUpRight className="size-4 text-muted-foreground opacity-60 group-hover:opacity-100 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 mt-1" />
+                    </Link>
+                  ) : (
+                    <div
+                      key={nb.iso}
+                      className="p-4 rounded-2xl border border-border/60 bg-muted/30 flex items-start justify-between gap-3"
+                    >
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {showsNeighbourFlag && (
+                            /* eslint-disable-next-line @next/next/no-img-element -- Flag icon asset */
+                            <img
+                              src={`/flags/${nb.iso.toUpperCase()}.svg`}
+                              alt={t("neighbourFlagAlt", { name: nb.label })}
+                              width={22}
+                              height={15}
+                              className="w-5.5 h-3.5 object-cover rounded-xs border border-border shrink-0"
+                            />
+                          )}
+                          <span className="font-mono text-[10px] text-muted-foreground font-semibold">
+                            #{nb.iso}
+                          </span>
+                          {isTr && nbIsSpecialStatus && (
+                            <Badge
+                              variant="outline"
+                              className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] px-1.5 py-0"
+                            >
+                              {t("specialStatusBadge")}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="font-heading font-medium text-sm text-muted-foreground truncate">
+                          {nb.label}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ),
-              )}
-            </div>
-          ) : (
-            <div className="p-8 rounded-3xl border border-dashed border-border bg-card/60 text-center space-y-3">
-              <div className="size-12 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center">
-                <Waves className="size-6" />
+                  );
+                })}
               </div>
-              <h3 className="font-heading font-bold text-lg text-foreground">
-                {t("islandCountryHeading")}
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                {t("islandCountryBody", { name })}
-              </p>
-              <div className="pt-2">
-                <Link href="/v2/dunya">
-                  <Button variant="outline" size="sm" leftIcon={<Globe className="size-4" />}>
-                    {t("islandCountryCta", { continent })}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        )}
 
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex items-center justify-between pt-4 border-t border-border">
@@ -1119,8 +1165,8 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
         <div id="kaynakca" className="scroll-mt-28">
           <V2SourcesSection scope="dunya" />
         </div>
-        <V2Footer />
       </main>
+      <V2Footer />
     </div>
   );
 }
