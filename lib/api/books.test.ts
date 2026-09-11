@@ -6,6 +6,7 @@ import {
 } from "@/test/fixtures/books/book-fixtures";
 import { getBookBySlug, getBooks, getBooksResilient, isBookSlugShape } from "./books";
 import { isProductionBuild } from "./provinces";
+import type { BookDetail } from "./types";
 
 // Both hoisted above the imports by vitest, for the same reasons `lib/api/marine.test.ts`
 // records them:
@@ -257,6 +258,66 @@ describe("getBookBySlug", () => {
     await getBookBySlug("fixture-book-one");
 
     expect(requestedUrl(stub, 1)).toBe("http://api.test/api/books/fixture-book-one");
+  });
+});
+
+/**
+ * `withResolvedThumbnails` — the api's own planned own-hosted cover address (`Owner's Inbox/
+ * uyelik-uyum-denetimi/p2-video-kapisi/kapak-adresi/plan.md` §5.3) is a RELATIVE path, and this
+ * is the one place the web repo turns it into something an `<img src>` and a JSON-LD
+ * `thumbnailUrl` can actually be built from — against the SAME api origin `apiGet` already
+ * targets, never a new configuration key (dispatch: `Owner's Inbox/uyelik-uyum-denetimi/
+ * p2-video-kapisi/atlas-karar-kapak.md`).
+ */
+describe("getBookBySlug — thumbnail address resolution", () => {
+  const firstVideoYoutube = BOOK_DETAIL.videos[0]?.youtube;
+  if (firstVideoYoutube === undefined || firstVideoYoutube === null) {
+    throw new Error(
+      "fixture regression: BOOK_DETAIL.videos[0].youtube must be populated for this suite",
+    );
+  }
+
+  it("leaves TODAY's real, ABSOLUTE provider address byte-unchanged", async () => {
+    apiAnswersInOrder(ok(BOOK_DETAIL));
+
+    const book = await getBookBySlug("fixture-book-one");
+
+    expect(book?.videos[0]?.youtube?.thumbnailUrl).toBe(firstVideoYoutube.thumbnailUrl);
+  });
+
+  it("resolves a RELATIVE cover address against the api origin — no new config key", async () => {
+    const relativeBook: BookDetail = {
+      ...BOOK_DETAIL,
+      videos: BOOK_DETAIL.videos.map((video, index) =>
+        index === 0 && video.youtube !== null
+          ? {
+              ...video,
+              youtube: {
+                ...video.youtube,
+                thumbnailUrl: "/api/video-cover/11111111-2222-4333-8444-555555555551",
+              },
+            }
+          : video,
+      ),
+    };
+    apiAnswersInOrder(ok(relativeBook));
+
+    const book = await getBookBySlug("fixture-book-one");
+
+    // "http://api.test" is this file's OWN `@/lib/env.server` mock (top of file) — the exact
+    // same origin `apiGet`'s own fetch already targets (asserted above, "asks for the slug it
+    // was handed"), never a second/new configuration source.
+    expect(book?.videos[0]?.youtube?.thumbnailUrl).toBe(
+      "http://api.test/api/video-cover/11111111-2222-4333-8444-555555555551",
+    );
+  });
+
+  it("leaves a null snapshot alone — the normal path, not a value to resolve", async () => {
+    apiAnswersInOrder(ok(BOOK_DETAIL));
+
+    const book = await getBookBySlug("fixture-book-one");
+
+    expect(book?.videos[1]?.youtube).toBeNull();
   });
 });
 
