@@ -155,6 +155,20 @@
   border-radius: var(--radius);
 }
 
+/* Focus-ring opt-in for the dead-link gate's transient "checking" status line
+   (`password-reset-confirm-form.tsx`, pr-reviews/136.md CODE136-NEW-I1 fix), same reasoning,
+   same (0,2,0) weight and same `:focus`-not-`:focus-visible` fix as `.errorHeading:focus`/
+   `.successHeading:focus` above: reached ONLY via a script `.focus()` call on entering the
+   "checking" state — it carries `tabIndex={-1}`, never reached by click or Tab. Scoped to its
+   own class rather than widening the shared `.hint` class (reused by every field's non-
+   focusable hint text elsewhere in this form) — mirrors the `#register-districtId:focus` /
+   `.districtRetry:focus` precedent of a narrowly-scoped opt-in over a blanket one. */
+.checkingStatus:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 6px;
+  border-radius: var(--radius);
+}
+
 .actions {
   display: flex;
   align-items: center;
