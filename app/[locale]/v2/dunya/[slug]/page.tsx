@@ -400,7 +400,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             {/* 1. Nüfus */}
             <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Toplam Nüfus</span>
+                <span className="text-xs font-medium">{t("kpiPopulationTitle")}</span>
                 <Users className="size-4 text-primary" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
@@ -427,7 +427,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             {/* 2. Yüzölçümü */}
             <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Yüzölçümü</span>
+                <span className="text-xs font-medium">{t("kpiAreaTitle")}</span>
                 <Maximize2 className="size-4 text-teal-600" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
@@ -450,7 +450,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             {/* 3. Başkent ve Konum */}
             <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Başkent</span>
+                <span className="text-xs font-medium">{t("kpiCapitalTitle")}</span>
                 <Building2 className="size-4 text-amber-600" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground truncate">
@@ -469,7 +469,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             {/* 4. Yönetim & Para Birimi */}
             <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Yönetim Şekli</span>
+                <span className="text-xs font-medium">{t("kpiGovernmentFormTitle")}</span>
                 <Scroll className="size-4 text-rose-600" />
               </div>
               <div className="font-heading font-bold text-sm sm:text-base text-foreground pt-1 leading-snug truncate">
@@ -656,18 +656,18 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     <span className="text-muted-foreground font-medium">{t("labelCapital")}</span>
                     <span className="font-semibold text-foreground">{capital || "—"}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground font-medium">
-                      {t("spatialStatusLabel")}
-                    </span>
-                    <span className="font-medium text-foreground">
-                      {country.neighborCount === 0
-                        ? isSpecialGeography
-                          ? "0"
-                          : t("spatialIslandBoundaries")
-                        : t("spatialLandBorderCount", { count: country.neighborCount })}
-                    </span>
-                  </div>
+                  {!(isSpecialGeography && country.neighborCount === 0) && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">
+                        {t("spatialStatusLabel")}
+                      </span>
+                      <span className="font-medium text-foreground">
+                        {country.neighborCount === 0
+                          ? t("spatialIslandBoundaries")
+                          : t("spatialLandBorderCount", { count: country.neighborCount })}
+                      </span>
+                    </div>
+                  )}
                   {isTr && country.unSubregionTr && (
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground font-medium">
@@ -1091,7 +1091,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                           <span className="font-mono text-[10px] text-muted-foreground font-semibold">
                             #{nb.iso}
                           </span>
-                          {isTr && nbIsSpecialStatus && (
+                          {nbIsSpecialStatus && (
                             <Badge
                               variant="outline"
                               className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] px-1.5 py-0"
@@ -1126,7 +1126,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                           <span className="font-mono text-[10px] text-muted-foreground font-semibold">
                             #{nb.iso}
                           </span>
-                          {isTr && nbIsSpecialStatus && (
+                          {nbIsSpecialStatus && (
                             <Badge
                               variant="outline"
                               className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] px-1.5 py-0"

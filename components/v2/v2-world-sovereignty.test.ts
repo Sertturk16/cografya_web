@@ -214,9 +214,18 @@ describe("V2 sovereignty and naming invariants", () => {
       "islandCountryBody",
       "islandCountryCta",
     ];
-    const allKeys = [...inventoryKeys, ...introKeys, ...restoredKeys, ...keptKeys];
-    expect(allKeys.length).toBe(75);
-    expect(new Set(allKeys).size).toBe(75);
+    // The 4 hero-card title keys this round-2 fix adds (SOV133R2-NEW-M3 / FEN133R2-NEW-M1):
+    // the card subtitle labels were already next-intl, the titles were not, so an EN reader
+    // saw a Turkish title over an English subtitle. Moving the titles closes that mismatch.
+    const round2Keys = [
+      "kpiPopulationTitle",
+      "kpiAreaTitle",
+      "kpiCapitalTitle",
+      "kpiGovernmentFormTitle",
+    ];
+    const allKeys = [...inventoryKeys, ...introKeys, ...restoredKeys, ...keptKeys, ...round2Keys];
+    expect(allKeys.length).toBe(79);
+    expect(new Set(allKeys).size).toBe(79);
 
     for (const [locale, messages] of Object.entries(catalogues)) {
       const countryDetail = messages.CountryDetail as Record<string, unknown>;
@@ -230,5 +239,33 @@ describe("V2 sovereignty and naming invariants", () => {
       // The deleted key must not silently regress back in.
       expect(countryDetail.neighborsGroupHeading).toBeUndefined();
     }
+  });
+
+  it("pins the three round-2 sovereignty gates as exact source substrings — a refactor that changes any of them must fail this suite (SOV133R2-NEW-I2)", () => {
+    const pageUrl = new URL("../../app/[locale]/v2/dunya/[slug]/page.tsx", import.meta.url);
+    const pageContent = readFileSync(pageUrl, "utf8");
+
+    // (1) The special-geography predicate — gates the island-country framing (heading,
+    // body, chip, spatial-status row) off for the four contested/special rows (Güney
+    // Kıbrıs Rum Yönetimi, KKTC, Tayvan, Antarktika) so it is never asserted for them.
+    expect(pageContent).toContain(
+      'const isSpecialGeography = isSpecialStatus || country.entityType === "special";',
+    );
+
+    // (2) The neighbours-section suppression — silences the whole borders section rather
+    // than rendering a false "no land border" claim, both for the four special-geography
+    // rows AND for the divergent state where the contract's count and the resolved array
+    // disagree (VALB133R2-NEW-I1's remedy).
+    expect(pageContent).toContain(
+      "  const showsNeighbourSection =\n" +
+        "    !(isSpecialGeography && country.neighborCount === 0) &&\n" +
+        "    !(country.neighborCount > 0 && neighbors.length === 0);",
+    );
+
+    // (3) The EN neighbour-flag suppression — hides a contested neighbour's flag on the
+    // English page while leaving it visible (with the badge, SOV133R2-NEW-I1) on Turkish.
+    expect(pageContent).toContain(
+      "const showsNeighbourFlag = hasFlag(nb.iso) && (isTr || !nbIsSpecialStatus);",
+    );
   });
 });
