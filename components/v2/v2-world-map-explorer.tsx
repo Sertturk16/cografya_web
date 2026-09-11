@@ -30,6 +30,7 @@ import {
 import { foldForSearch } from "@/lib/search/normalize";
 import { cn } from "@/lib/utils";
 import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
+import { CONTINENT_META } from "@/lib/map/continent-theme";
 
 export interface WorldCountryItem {
   isoCode: string;
@@ -59,107 +60,6 @@ export function SpecialStatusBadge({ isEn, className }: { isEn: boolean; classNa
     </span>
   );
 }
-
-export const CONTINENT_META: Record<
-  string,
-  {
-    name: string;
-    nameEn: string;
-    color: string;
-    hoverColor: string;
-    strokeColor: string;
-    badgeClass: string;
-    headerClass: string;
-    borderClass: string;
-    textClass: string;
-    count: number;
-  }
-> = {
-  AVRUPA: {
-    name: "Avrupa",
-    nameEn: "Europe",
-    color: "fill-indigo-600/85 dark:fill-indigo-500/85",
-    hoverColor: "hover:fill-indigo-500 dark:hover:fill-indigo-400",
-    strokeColor: "stroke-indigo-400/50",
-    badgeClass: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30",
-    headerClass: "from-indigo-700 to-blue-900",
-    borderClass: "border-indigo-500/30",
-    textClass: "text-indigo-700 dark:text-indigo-300",
-    count: 44,
-  },
-  ASYA: {
-    name: "Asya",
-    nameEn: "Asia",
-    color: "fill-amber-600/85 dark:fill-amber-500/85",
-    hoverColor: "hover:fill-amber-500 dark:hover:fill-amber-400",
-    strokeColor: "stroke-amber-400/50",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-    headerClass: "from-amber-700 to-orange-950",
-    borderClass: "border-amber-500/30",
-    textClass: "text-amber-700 dark:text-amber-300",
-    count: 48,
-  },
-  AFRIKA: {
-    name: "Afrika",
-    nameEn: "Africa",
-    color: "fill-emerald-600/85 dark:fill-emerald-500/85",
-    hoverColor: "hover:fill-emerald-500 dark:hover:fill-emerald-400",
-    strokeColor: "stroke-emerald-400/50",
-    badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    headerClass: "from-emerald-700 to-emerald-950",
-    borderClass: "border-emerald-500/30",
-    textClass: "text-emerald-700 dark:text-emerald-300",
-    count: 54,
-  },
-  KUZEY_AMERIKA: {
-    name: "Kuzey Amerika",
-    nameEn: "North America",
-    color: "fill-sky-600/85 dark:fill-sky-500/85",
-    hoverColor: "hover:fill-sky-500 dark:hover:fill-sky-400",
-    strokeColor: "stroke-sky-400/50",
-    badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
-    headerClass: "from-sky-700 to-cyan-950",
-    borderClass: "border-sky-500/30",
-    textClass: "text-sky-700 dark:text-sky-300",
-    count: 23,
-  },
-  GUNEY_AMERIKA: {
-    name: "Güney Amerika",
-    nameEn: "South America",
-    color: "fill-rose-600/85 dark:fill-rose-500/85",
-    hoverColor: "hover:fill-rose-500 dark:hover:fill-rose-400",
-    strokeColor: "stroke-rose-400/50",
-    badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
-    headerClass: "from-rose-700 to-rose-950",
-    borderClass: "border-rose-500/30",
-    textClass: "text-rose-700 dark:text-rose-300",
-    count: 12,
-  },
-  OKYANUSYA: {
-    name: "Okyanusya",
-    nameEn: "Oceania",
-    color: "fill-purple-600/85 dark:fill-purple-500/85",
-    hoverColor: "hover:fill-purple-500 dark:hover:fill-purple-400",
-    strokeColor: "stroke-purple-400/50",
-    badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
-    headerClass: "from-purple-700 to-purple-950",
-    borderClass: "border-purple-500/30",
-    textClass: "text-purple-700 dark:text-purple-300",
-    count: 14,
-  },
-  ANTARKTIKA: {
-    name: "Antarktika",
-    nameEn: "Antarctica",
-    color: "fill-teal-600/85 dark:fill-teal-500/85",
-    hoverColor: "hover:fill-teal-500 dark:hover:fill-teal-400",
-    strokeColor: "stroke-teal-400/50",
-    badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
-    headerClass: "from-teal-700 to-teal-950",
-    borderClass: "border-teal-500/30",
-    textClass: "text-teal-700 dark:text-teal-300",
-    count: 1,
-  },
-};
 
 const CONTINENT_KEYS = Object.keys(CONTINENT_META);
 
