@@ -211,12 +211,20 @@ describe("Retired AFAD seismic-degree classification stays gone (plan §2.1) —
   // file's own assertions use below) DOES carry lastIndex state across separate calls on a
   // global-flagged instance; see tur2-plan.md §2.3 for where that bit this plan's own
   // verification script, and why it is not a real exposure for the three assertions below.
+  // Extended again for CODE135R2-NEW-I1: branches (2) and (3) above were shipped lowercase-only
+  // — "1'İNCİ DERECE" / "1'INCI DERECE" / "DERECESİ 1" / "DERECESI 1" all passed uncaught, the
+  // exact ALL-CAPS threat this comment already named as the reason for the extension. Every
+  // letter in the ordinal-suffix alternation and the possessive "si" marker now carries its own
+  // case-tolerant bracket class, the same way branches (1) and the base ordinal words already do.
   const I = "[İIi]";
+  const U = "[ÜüU]";
+  const IDOTLESS = "[Iı]";
   const degreeClassPattern = new RegExp(
     `[0-9] ?\\. ?${D}|[Bb]${I}[Rr]${I}[Nn][Cc]${I} ${D}|${I}[Kk]${I}[Nn][Cc]${I} ${D}|` +
       `[ÜüU][ÇçC][ÜüU][Nn][Cc][ÜüU] ${D}|[Dd][ÖöO][Rr][Dd][ÜüU][Nn][Cc][ÜüU] ${D}|` +
       `${D} [Dd][Ee][Pp][Rr][Ee][Mm]|[Dd][Ee][Pp][Rr][Ee][Mm] [Bb][öÖ][Ll][Gg][Ee]|` +
-      `[0-9]['’]? ?(?:inci|nci|üncü|ncı|ıncı|uncu) ?${D}|${D}(?:si)? ?[:.]? ?[1-4]`,
+      `[0-9]['’]? ?(?:${I}[Nn][Cc]${I}|[Nn][Cc]${I}|${U}[Nn][Cc]${U}|[Nn][Cc]${IDOTLESS}|` +
+      `${IDOTLESS}[Nn][Cc]${IDOTLESS}|[Uu][Nn][Cc][Uu]) ?${D}|${D}(?:[Ss]${I})? ?[:.]? ?[1-4]`,
   );
 
   it("[slug]/page.tsx (REGION_DISASTER_PROFILES) carries no retired degree-classification wording", () => {

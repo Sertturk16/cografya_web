@@ -417,7 +417,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                   </span>
                 ) : (
                   <span className="text-[11px] text-muted-foreground/80 block">
-                    Morphological Sub-regions
+                    Morphological Subregions
                   </span>
                 )}
               </div>
@@ -431,7 +431,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                   {totalPop.toLocaleString("tr-TR")}
                 </span>
                 <span className="text-[11px] text-muted-foreground/80 block">
-                  TÜİK 31 Aralık 2025
+                  {locale === "tr" ? "TÜİK 31 Aralık 2025" : "TÜİK, 31 December 2025"}
                 </span>
               </div>
 
@@ -444,7 +444,9 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                   {totalArea.toLocaleString("tr-TR")} km²
                 </span>
                 <span className="text-[11px] text-muted-foreground/80 block">
-                  81 İl HGM Tescili
+                  {locale === "tr"
+                    ? "81 İl HGM Tescili"
+                    : "81 Provinces, General Directorate of Mapping (HGM)"}
                 </span>
               </div>
             </div>
