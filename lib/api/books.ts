@@ -1,4 +1,5 @@
 import "server-only";
+import { serverEnv } from "@/lib/env.server";
 import { ApiError, apiGet } from "./client";
 import { isProductionBuild } from "./provinces";
 import type { BookDetail, BookList, BookListItem } from "./types";
@@ -194,11 +195,58 @@ export async function getBookBySlug(slug: string): Promise<BookDetail | null> {
   if (!isBookSlugShape(slug)) return null;
 
   try {
-    return await apiGet<BookDetail>(`/api/books/${encodeURIComponent(slug)}`);
+    const book = await apiGet<BookDetail>(`/api/books/${encodeURIComponent(slug)}`);
+    return withResolvedThumbnails(book);
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
       return null;
     }
     throw error;
   }
+}
+
+/**
+ * Resolves a `thumbnailUrl` that arrives RELATIVE against the same api origin this module
+ * already reads every book from (`serverEnv.API_BASE_URL`) — never a new configuration key
+ * (Atlas dispatch, `Owner's Inbox/uyelik-uyum-denetimi/p2-video-kapisi/atlas-karar-kapak.md`).
+ *
+ * TODAY's real value is always absolute (the provider's own hotlink,
+ * `https://i.ytimg.com/vi/{id}/...`) and passes through this function byte-unchanged — the
+ * `startsWith("/")` branch is unreached on the current contract and exists for the api's own
+ * planned own-hosted replacement address, which the sibling plan proposes as a RELATIVE
+ * `/api/video-cover/{bookVideoId}` precisely because no "this api's own public base URL" config
+ * exists on that side yet
+ * (`Owner's Inbox/uyelik-uyum-denetimi/p2-video-kapisi/kapak-adresi/plan.md` §3/§13). Unlike
+ * this site's OWN pages (`lib/seo/site.ts`'s `absoluteUrl`, resolved against
+ * `NEXT_PUBLIC_SITE_URL`), a relative cover address must resolve against the API's origin, not
+ * this site's own — that is where the bytes are actually served from. `isProviderThumbnailUrl`
+ * (`lib/seo/json-ld.tsx`)/`resolveVideoState` (`lib/book/video-state.ts`) still gate the
+ * RESULT against the provider-host allowlist unchanged by this function; widening that
+ * allowlist to also trust the resolved api origin is a separate decision this fix does not
+ * make — see the accompanying return for why.
+ */
+function resolveThumbnailUrl(url: string): string {
+  return url.startsWith("/") ? `${serverEnv.API_BASE_URL}${url}` : url;
+}
+
+/** Applies {@link resolveThumbnailUrl} to every video's snapshot on one book payload — the one
+ *  place `getBookBySlug` normalises the api's raw response before any page reads it, so
+ *  `resolveVideoState`, `videoObjectJsonLd` and `DenemeVideo` all see an address that is
+ *  already safe to treat as absolute. `youtube: null` (the normal path — no snapshot yet)
+ *  passes through untouched. */
+function withResolvedThumbnails(book: BookDetail): BookDetail {
+  return {
+    ...book,
+    videos: book.videos.map((video) =>
+      video.youtube === null
+        ? video
+        : {
+            ...video,
+            youtube: {
+              ...video.youtube,
+              thumbnailUrl: resolveThumbnailUrl(video.youtube.thumbnailUrl),
+            },
+          },
+    ),
+  };
 }

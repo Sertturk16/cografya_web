@@ -128,7 +128,6 @@ export const BOOK_DETAIL: BookDetail = {
       // i18n + orderNo (P0 generic-catalogue cut-over) — matches every seeded row today.
       titleTr: null,
       titleEn: null,
-      youtubeVideoId: "fixtureVid1",
       tags: [
         // `startSecond: 0` is an ordinary value, never a sentinel (contract note).
         { orderNo: 1, startSecond: 0, nameTr: null, nameEn: null },
@@ -153,7 +152,6 @@ export const BOOK_DETAIL: BookDetail = {
       orderNo: 3,
       titleTr: null,
       titleEn: null,
-      youtubeVideoId: "fixtureVid3",
       tags: [
         { orderNo: 1, startSecond: 11, nameTr: null, nameEn: null },
         { orderNo: 2, startSecond: 205, nameTr: null, nameEn: null },

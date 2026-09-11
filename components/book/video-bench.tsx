@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { consumeResolved, requestAuth, useAuthModalState } from "@/lib/auth/auth-modal.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { resolveIzleStartSecond } from "@/lib/book/resume-second";
+import { fetchVideoIdentity, VIDEO_IDENTITY_FETCH_TIMEOUT_MS } from "@/lib/video-identity/client";
 import {
   buildWatchedTogglePayload,
   fetchVideoProgress,
@@ -11,6 +12,7 @@ import {
   VIDEO_PROGRESS_FETCH_TIMEOUT_MS,
   type VideoProgressValue,
 } from "@/lib/video-progress/client";
+import { watchUrl } from "@/lib/youtube/embed";
 import { openVideo, resetBench, selectVideo, useBenchState } from "./active-video";
 import { BenchStage, type BenchVideo } from "./bench-stage";
 
@@ -37,8 +39,13 @@ import { BenchStage, type BenchVideo } from "./bench-stage";
  * · that control sits inside something carrying `data-deneme`, so the video is known;
  * · the press is an unmodified primary click — Ctrl/Cmd/Shift/Alt and middle-click go to the
  *   browser, so "open this question in a new tab" still works;
- * · the video is `playable` — a video the provider refuses to embed has no player to seek, so its
- *   rows keep their plain fragment behaviour, exactly as before.
+ * · EITHER the video is `playable` (a question row, a timeline tick, or İzle loads/seeks its
+ *   in-page player) OR the press landed on `data-player-open` for a video that is NOT playable
+ *   (§10, P2 plan §5.3) — that combination is the ONE case this handler acts on for an
+ *   `external` video: its own "watch on YouTube" control, gated and fetched the same way İzle
+ *   is, resolving to an outbound tab instead of a player. A non-playable video's question rows
+ *   and timeline ticks (`data-second`, no `data-player-open`) keep their plain fragment
+ *   behaviour, exactly as before — this handler does nothing for them.
  *
  * Anything else falls through untouched.
  *
@@ -248,6 +255,41 @@ export function VideoBench({
      one-tick same-route residue is documented in `active-video.ts`, where the state lives. */
   useEffect(() => resetBench, []);
 
+  /** The `external`-state "watch on YouTube" control's own in-flight orderNo, or `null` (§10).
+   *  Local to `VideoBench` rather than `active-video.ts`'s store: an external video never gets
+   *  a player, so it has no business inside a store whose whole shape is "one player, ever". */
+  const [externalResolving, setExternalResolving] = useState<number | null>(null);
+
+  /**
+   * The `external`-state control's own flow (§10, P2 plan §5.3) — gated exactly like İzle
+   * (login gate already checked by the caller below), but resolving to a real outbound tab
+   * instead of an in-page player once the guarded fetch answers, rather than publishing the
+   * raw id into a real `href` before any click the way this control used to. Refuses a second
+   * press for the SAME video while its own fetch is already in flight; a different video
+   * pressed mid-flight simply starts its own, independent attempt.
+   *
+   * `window.open` runs only AFTER the `await` — a known, accepted trade named in the plan's own
+   * validation notes: some browsers may treat a popup opened after an async gap as not
+   * originating from the click and block it. The alternative (opening a blank tab
+   * SYNCHRONOUSLY and writing its `location` once the fetch resolves) needs a real reference
+   * back to that tab, which `noopener` — this repo's own standing rule for every other outbound
+   * `target="_blank"` link, kept here rather than weakened for this one control — deliberately
+   * prevents `window.open` from returning.
+   */
+  async function openExternalWatch(video: BenchVideo): Promise<void> {
+    if (externalResolving === video.orderNo) return;
+    setExternalResolving(video.orderNo);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), VIDEO_IDENTITY_FETCH_TIMEOUT_MS);
+    try {
+      const videoId = await fetchVideoIdentity(video.bookVideoId, controller.signal);
+      if (videoId !== null) window.open(watchUrl(videoId), "_blank", "noopener,noreferrer");
+    } finally {
+      clearTimeout(timeout);
+      setExternalResolving(null);
+    }
+  }
+
   const onClick = (event: React.MouseEvent<HTMLElement>) => {
     if (event.defaultPrevented) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
@@ -260,7 +302,24 @@ export function VideoBench({
     const orderNo = orderNoOf(trigger);
     if (orderNo === null) return;
     const video = videos.find((candidate) => candidate.orderNo === orderNo);
-    if (video === undefined || !video.playable) return;
+    if (video === undefined) return;
+
+    if (!video.playable) {
+      // A question row or a timeline tick on a non-playable video is nothing but a fragment
+      // jump — the native default IS that behaviour (bench-stage.tsx's own docblock), so it is
+      // left untouched here. Only the "watch on YouTube" control (data-player-open, §10) is an
+      // action this handler owns for an `external` video: gated the same way İzle is, but
+      // resolving to an outbound tab instead of an in-page player.
+      if (!trigger.hasAttribute("data-player-open")) return;
+      event.preventDefault();
+      if (authState !== "authenticated") {
+        authResume.current = { orderNo, second: 0 };
+        authRequestId.current = requestAuth("video");
+        return;
+      }
+      void openExternalWatch(video);
+      return;
+    }
 
     const raw = trigger.dataset.second;
     let second = hashStartSecond.current;
@@ -329,6 +388,7 @@ export function VideoBench({
         authState={authState}
         progress={progress}
         onSaveWatched={saveWatched}
+        externalResolvingOrderNo={externalResolving}
       />
       <div className={indexClassName}>{children}</div>
     </div>

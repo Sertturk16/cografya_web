@@ -156,9 +156,12 @@ export type BookList = components["schemas"]["BookListDto"];
  *    untouchable class and are printed as received — never translated, shortened or
  *    reworded on the way to the page. */
 export type BookDetail = components["schemas"]["BookDetailDto"];
-/** One video solution: `book_videos.id` (the identifier the video-progress endpoints below
- *  key on — UYELIK-06), its position IN THE BOOK, the video id the embed is built from, the
- *  etiket index, and the nullable provider snapshot. */
+/** One video solution: `book_videos.id` (the identifier the video-progress AND video-identity
+ *  endpoints key on — UYELIK-06 / P2), its position IN THE BOOK, its display-title pair, the
+ *  etiket index, and the nullable provider snapshot. **No YouTube video id here any more** (P2,
+ *  `DEC 2026-09-09b`): the anonymous payload never carried a reliable gate for it, so the field
+ *  was removed from this DTO outright rather than nulled — see `VideoIdentity` below for the
+ *  one, guarded way to read it. */
 export type BookVideo = components["schemas"]["BookVideoDto"];
 /** The provider snapshot on one video — thumbnail (address AND dimensions), publication
  *  instant, duration in both forms, and `embeddable`. Reached only through the non-null branch
@@ -191,6 +194,16 @@ export type ApiErrorBody = components["schemas"]["ApiErrorDto"];
  *  for why (the global pipe's `whitelist`+`forbidNonWhitelisted` rejects an undeclared key
  *  BY NAME, `cografya_api` `src/main.ts:43-47`). */
 export type RegisterRequest = components["schemas"]["RegisterRequestDto"];
+
+// ---- Video identity (guarded per-video YouTube id read — P2) ----------------
+/** The one field a signed-in reader needs to actually play a video: `book_videos.id`'s YouTube
+ *  video id. The anonymous book payload never carries this any more (`BookVideo` above) — it
+ *  is reached only through the web's own narrow BFF proxy
+ *  (`lib/video-identity/transport.server.ts`), fetched once a login-gated reader actually
+ *  presses İzle (or the external "watch on YouTube" control), never fetched directly from the
+ *  api by a page — the same posture `VideoProgress`/`Favorite` below state for their own
+ *  domains. */
+export type VideoIdentity = components["schemas"]["VideoIdentityDto"];
 
 // ---- Video progress (per-user watch state — UYELIK-05/06) -------------------
 /** The caller's own saved progress on one video: `book_videos.id`, last playback position

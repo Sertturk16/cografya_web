@@ -3,10 +3,21 @@ import {
   bookJsonLd,
   faqPageJsonLd,
   type FaqEntry,
+  isProviderThumbnailUrl,
   learningResourceJsonLd,
   videoObjectJsonLd,
 } from "./json-ld";
 import { absoluteUrl } from "./site";
+
+// `./json-ld` now reads `serverEnv.API_BASE_URL` (the C2 widening below), so every test in
+// this file gets a fixed, explicit origin — never the ambient machine's `.env` — the exact
+// discipline `lib/api/books.test.ts` already established for the same reason. `https://` (not
+// the `books.test.ts` mock's `http://api.test`) on purpose: `isProviderThumbnailUrl` requires
+// `https:` on ANY accepted host, provider or our own, so this is the realistic production shape
+// the widened gate is actually meant to accept.
+vi.mock("@/lib/env.server", () => ({
+  serverEnv: { API_BASE_URL: "https://api.cografya.test", INTERNAL_REQUEST_TOKEN: undefined },
+}));
 
 /**
  * Shape guards for the two JSON-LD builders the game shell added (PR #26 review).
@@ -261,12 +272,25 @@ describe("videoObjectJsonLd", () => {
     expect(emitted({ ...video, duration: "PT1H2M3S" }).duration).toBe("PT1H2M3S");
   });
 
-  it("always carries an embedUrl, passed through from the caller", () => {
-    // A `VideoObject` with neither `contentUrl` nor `embedUrl` names no playable resource,
-    // and on this surface there is no legitimate case for one: a block that cannot be
-    // embedded emits no markup at all. The value is the caller's — the player host is W2's
-    // decision, not this builder's.
+  it("carries an embedUrl when the caller supplies one, passed through unchanged", () => {
+    // The value is the caller's — the player host is the caller's decision, not this
+    // builder's. Rare since P2 (Option C, `DEC 2026-09-09b` md.2/md.4): both book pages
+    // now call this builder with no address to give it, on every request.
     expect(emitted(video).embedUrl).toBe("https://example.invalid/embed/syntheticId");
+  });
+
+  it("emits no embedUrl key at all when none is supplied — Option C, the normal call shape since P2", () => {
+    // The anonymous book payload no longer carries the video id, and the api response this
+    // JSON-LD is built from is the SSG/ISR-cached one — never a per-session variant — so
+    // BOTH book pages call this builder with no address on EVERY request now, anonymous and
+    // authenticated alike (plan §2.2/§5.1). `not.toHaveProperty` — never a `.toBeUndefined()`
+    // — because `{ embedUrl: undefined }` is a key JSON.stringify still serialises, which is
+    // exactly the placeholder this Option C ruling forbids.
+    const { embedUrl: _embedUrl, ...withoutEmbedUrl } = video;
+    void _embedUrl; // discarded on purpose — see the comment above
+    const schema = emitted(withoutEmbedUrl);
+    expect(schema).not.toHaveProperty("embedUrl");
+    expect(schema).not.toHaveProperty("contentUrl");
   });
 
   // THE HOST ASSERTION (→ PR #61 review `SEC61-M3`). The address becomes markup AND, in W2,
@@ -347,5 +371,39 @@ describe("videoObjectJsonLd", () => {
     const schema = emitted(video);
     expect(schema).not.toHaveProperty("hasPart");
     expect(JSON.stringify(schema)).not.toContain("Clip");
+  });
+});
+
+/**
+ * `isProviderThumbnailUrl` — the SAME gate `videoObjectJsonLd` above already exercises
+ * indirectly, tested here directly because C2 (Atlas ruling, `Owner's Inbox/
+ * uyelik-uyum-denetimi/p2-video-kapisi/`) widened what it accepts: this repo's OWN configured
+ * api origin, alongside the provider's CDN, so that `lib/api/books.ts`'s `resolveThumbnailUrl`
+ * — which turns the api's planned own-hosted RELATIVE cover address into an absolute one —
+ * does not immediately get rejected by the very gate standing between it and the page.
+ *
+ * The three outcomes a real gate has to keep distinguishing, all in one place: the provider's
+ * host still works (today's real value), the newly-trusted api origin works (tomorrow's real
+ * value, in the exact RESOLVED shape `resolveThumbnailUrl` produces from a relative path — see
+ * `lib/api/books.test.ts`'s own coverage of that resolution step), and an unrelated host is
+ * still refused — proving the widening is one named origin, not a wildcard.
+ */
+describe("isProviderThumbnailUrl — the configured api origin is also trusted (C2)", () => {
+  it.each([
+    ["the provider's own CDN host — today's real value", "https://i.ytimg.com/vi/x/hqdefault.jpg"],
+    [
+      "the configured api origin, in the exact RESOLVED shape resolveThumbnailUrl produces " +
+        "from a relative '/api/video-cover/{bookVideoId}' path (lib/api/books.ts) — " +
+        "'https://api.cografya.test' is this file's own @/lib/env.server mock above",
+      "https://api.cografya.test/api/video-cover/11111111-2222-4333-8444-555555555551",
+    ],
+  ])("accepts %s", (_case, url) => {
+    expect(isProviderThumbnailUrl(url)).toBe(true);
+  });
+
+  it("still rejects an unrelated host — the widening is ONE named origin, not a wildcard", () => {
+    // Not the provider's CDN and not the configured api origin: a real gate has to keep
+    // refusing this, or "widened" quietly became "open".
+    expect(isProviderThumbnailUrl("https://cdn.example.invalid/video-cover/x")).toBe(false);
   });
 });
