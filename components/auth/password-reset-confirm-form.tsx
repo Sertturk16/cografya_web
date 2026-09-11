@@ -207,20 +207,19 @@ export function PasswordResetConfirmForm() {
   // An early `return`, not a ternary — chosen for consistency with this file's OWN existing
   // idiom for a full-card-state swap (matching `done` below), not primarily because of the
   // gate. Recorded honestly (Phase 2 verification session, UYE-P4-SIFIRLAMA), because the
-  // superseded version of this comment overclaimed a technical difference that does not hold:
-  // it said an `if`/`return` gives assistive tech a "something changed" signal a ternary would
-  // not, but a ternary embedded in this same return would swap the identical subtree for the
-  // identical state — React's reconciler works off the returned element tree, not off whether
-  // the branch was written as an `if` or a `? :`, so the committed DOM (and whatever a screen
-  // reader does with it) is the same either way. What genuinely differs is that
+  // superseded version of this comment claimed an `if`/`return` gives assistive tech a
+  // "something changed" signal a ternary here would not — measured this session, that specific
+  // claim does not survive: temporarily rewriting this branch as `tokenGateState === "checking"
+  // ? (...) : null` and re-running the gate, the ternary shape fails it (`role="status"` as the
+  // consequent of a null-alternate conditional), the `if`/`return` shape passes — but
   // `auth-a11y.structure.test.ts`'s A11Y93-I1 scan (`ts.isConditionalExpression` +
-  // `ts.BinaryExpression` `&&`) cannot see a plain `if` statement at all — verified empirically
-  // this session by temporarily rewriting this branch as `tokenGateState === "checking" ? (...)
-  // : null` and re-running the gate: the ternary shape fails it (`role="status"` as the
-  // consequent of a null-alternate conditional), the `if`/`return` shape passes, and both
-  // shapes render byte-identical output for the same state. So this shape is correct on its
-  // own merits (matches `done`'s idiom) AND happens to be invisible to the scanner; it is not
-  // correct BECAUSE the scanner cannot see it.
+  // `ts.BinaryExpression` `&&`) is a syntactic AST check that does not visit `if` statements at
+  // all, which is sufficient on its own to explain the pass/fail difference without any claim
+  // about React's reconciliation or about assistive-tech behaviour — neither was independently
+  // measured this session (no jsdom in this repo, `FU-WEB-JSDOM`). So: this shape is kept
+  // because it matches `done`'s own established idiom, and it happens to also satisfy the
+  // scanner; the previous comment's ASSISTIVE-TECH rationale for the choice is retracted as
+  // unmeasured, not restated in a weaker form.
   if (tokenGateState === "checking") {
     return (
       <div className={styles.card}>
