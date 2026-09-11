@@ -66,8 +66,8 @@ const REGION_THEMES: Record<
     gradient: "from-amber-500/10 via-background to-background",
     accentColor: "text-amber-600 dark:text-amber-400",
     borderAccent: "border-amber-500/30",
-    mapFill: "#d97706",
-    mapStroke: "#92400e",
+    mapFill: "var(--region-marmara, #0072b2)",
+    mapStroke: "var(--color-ink-dark, #211c19)",
   },
   EGE: {
     nameTr: "Ege Bölgesi",
@@ -75,8 +75,8 @@ const REGION_THEMES: Record<
     gradient: "from-teal-500/10 via-background to-background",
     accentColor: "text-teal-600 dark:text-teal-400",
     borderAccent: "border-teal-500/30",
-    mapFill: "#0d9488",
-    mapStroke: "#115e59",
+    mapFill: "var(--region-ege, #e69f00)",
+    mapStroke: "var(--color-ink-dark, #211c19)",
   },
   AKDENIZ: {
     nameTr: "Akdeniz Bölgesi",
@@ -84,8 +84,8 @@ const REGION_THEMES: Record<
     gradient: "from-emerald-500/10 via-background to-background",
     accentColor: "text-emerald-600 dark:text-emerald-400",
     borderAccent: "border-emerald-500/30",
-    mapFill: "#059669",
-    mapStroke: "#065f46",
+    mapFill: "var(--region-akdeniz, #56b4e9)",
+    mapStroke: "var(--color-ink-dark, #211c19)",
   },
   IC_ANADOLU: {
     nameTr: "İç Anadolu Bölgesi",
@@ -93,8 +93,8 @@ const REGION_THEMES: Record<
     gradient: "from-yellow-500/10 via-background to-background",
     accentColor: "text-yellow-600 dark:text-yellow-400",
     borderAccent: "border-yellow-500/30",
-    mapFill: "#ca8a04",
-    mapStroke: "#854d0e",
+    mapFill: "var(--region-ic-anadolu, #f0e442)",
+    mapStroke: "var(--color-ink-dark, #211c19)",
   },
   KARADENIZ: {
     nameTr: "Karadeniz Bölgesi",
@@ -102,8 +102,8 @@ const REGION_THEMES: Record<
     gradient: "from-cyan-500/10 via-background to-background",
     accentColor: "text-cyan-600 dark:text-cyan-400",
     borderAccent: "border-cyan-500/30",
-    mapFill: "#0891b2",
-    mapStroke: "#155e75",
+    mapFill: "var(--region-karadeniz, #cc79a7)",
+    mapStroke: "var(--color-ink-dark, #211c19)",
   },
   DOGU_ANADOLU: {
     nameTr: "Doğu Anadolu Bölgesi",
@@ -111,8 +111,8 @@ const REGION_THEMES: Record<
     gradient: "from-stone-500/10 via-background to-background",
     accentColor: "text-stone-600 dark:text-stone-400",
     borderAccent: "border-stone-500/30",
-    mapFill: "#78716c",
-    mapStroke: "#44403c",
+    mapFill: "var(--region-dogu-anadolu, #009e73)",
+    mapStroke: "var(--color-ink-dark, #211c19)",
   },
   GUNEYDOGU_ANADOLU: {
     nameTr: "Güneydoğu Anadolu Bölgesi",
@@ -120,8 +120,8 @@ const REGION_THEMES: Record<
     gradient: "from-orange-500/10 via-background to-background",
     accentColor: "text-orange-600 dark:text-orange-400",
     borderAccent: "border-orange-500/30",
-    mapFill: "#ea580c",
-    mapStroke: "#9a3412",
+    mapFill: "var(--region-guneydogu-anadolu, #d55e00)",
+    mapStroke: "var(--color-ink-dark, #211c19)",
   },
 };
 
@@ -152,7 +152,7 @@ const SUBREGION_DETAILS: Record<string, { provincesTr: string; highlight: string
     provincesTr: "Edirne, Tekirdağ",
     highlight: "Ergene havzası, düz tabanlı tarım arazileri, ayçiçeği, çeltik ve buğday tarımı",
   },
-  "Çatalca - Kocaeli Bölümü": {
+  "Çatalca-Kocaeli Bölümü": {
     provincesTr: "İstanbul, Kocaeli, Sakarya, Yalova",
     highlight:
       "İstanbul ve Çanakkale boğazları, küresel sanayi ve lojistik ağı, en yüksek nüfus yoğunluğu",
@@ -162,7 +162,7 @@ const SUBREGION_DETAILS: Record<string, { provincesTr: string; highlight: string
     highlight: "Verimli çöküntü ve delta ovaları, tarım-sanayi entegrasyonu ve Uludağ masifi",
   },
   // Ege
-  "Asıl Ege Bölümü": {
+  "Ege Bölümü (Asıl Ege)": {
     provincesTr: "İzmir, Manisa, Aydın, Muğla, Denizli",
     highlight:
       "Horst-graben morfolojisi, kıyıya dik uzanan dağlar, Gediz ve Menderes graben ovaları",
@@ -218,7 +218,7 @@ const SUBREGION_DETAILS: Record<string, { provincesTr: string; highlight: string
     highlight: "En yüksek yıllık yağış, dik Kaçkar yamaçları, çay ve fındık monokültürü",
   },
   // Doğu Anadolu
-  "Erzurum - Kars Bölümü": {
+  "Erzurum-Kars Bölümü": {
     provincesTr: "Erzurum, Kars, Ardahan, Ağrı, Iğdır",
     highlight:
       "Yüksek bazaltik lav platoları, çernozyom topraklar, sert karasal kışlar ve mera hayvancılığı",
@@ -227,23 +227,23 @@ const SUBREGION_DETAILS: Record<string, { provincesTr: string; highlight: string
     provincesTr: "Malatya, Elazığ, Erzincan, Tunceli, Bingöl",
     highlight: "Fırat havzası baraj gölleri (Keban, Karakaya), çöküntü ovaları ve kayısı bahçeleri",
   },
-  "Yukarı Murat - Van Bölümü": {
+  "Yukarı Murat-Van Bölümü": {
     provincesTr: "Van, Muş, Bitlis",
     highlight: "Van Gölü kapalı havzası, volkanik koniler (Nemrut, Süphan) ve yüksek yaylalar",
   },
-  "Hakkâri Bölümü": {
+  "Hakkari Bölümü": {
     provincesTr: "Hakkâri, Şırnak (doğusu)",
     highlight:
       "Türkiye'nin en sarp ve engebeli buzul topoğrafyası (Cilo-Sat zirveleri) ve derin vadiler",
   },
   // Güneydoğu Anadolu
   "Dicle Bölümü": {
-    provincesTr: "Diyarbakır, Şanlıurfa, Batman, Mardin, Siirt",
+    provincesTr: "Diyarbakır, Şırnak, Batman, Mardin, Siirt",
     highlight:
       "Dicle havzası, GAP sulama alanları, Karacadağ bazalt platosu ve Batman petrol sahaları",
   },
   "Orta Fırat Bölümü": {
-    provincesTr: "Gaziantep, Kilis, Adıyaman",
+    provincesTr: "Gaziantep, Kilis, Adıyaman, Şanlıurfa",
     highlight: "Gaziantep sanayi koridoru, Fırat kıyısı ovaları, Antep fıstığı ve zeytin tarımı",
   },
 };
@@ -253,7 +253,6 @@ const REGION_DISASTER_PROFILES: Record<
   {
     faultLines: string[];
     primaryRisks: string[];
-    riskLevel: string;
     warningNote: string;
   }
 > = {
@@ -264,7 +263,6 @@ const REGION_DISASTER_PROFILES: Record<
       "Marmara Denizi İkincil Tsunami Riski",
       "Alüvyon Zemin Sıvılaşması",
     ],
-    riskLevel: "1. Derece Yüksek Sismik Risk Kuşağı",
     warningNote:
       "İstanbul, Kocaeli, Sakarya ve Yalova aksı aktif fay segmentleri üzerinde yer almakta olup kentsel dirençlilik ve zemin güçlendirmesi hayatidir.",
   },
@@ -280,7 +278,6 @@ const REGION_DISASTER_PROFILES: Record<
       "Graben Tabanlarında Zemin Sıvılaşması",
       "Ege Denizi Kıyı Tsunami Olasılığı",
     ],
-    riskLevel: "1. Derece Aktif Çöküntü & Graben Kuşağı",
     warningNote:
       "Horst-graben sistemi sebebiyle kabuk sürekli gerilme altındadır; sığ odaklı sarsıntılar geniş alanda yüksek şiddetle hissedilir.",
   },
@@ -295,7 +292,6 @@ const REGION_DISASTER_PROFILES: Record<
       "Karstik Arazide Çöküntü ve Kaya Düşmesi",
       "Akdeniz Kıyı Kuşağında Fırtına ve Taşkın",
     ],
-    riskLevel: "Bölgesel 1. ve 2. Derece Deprem Kuşağı",
     warningNote:
       "Doğu Akdeniz (Hatay, Kahramanmaraş, Osmaniye) DAF etkisiyle en kritik sismik fay hattı üzerindedir; batıda ise karstik obruk ve sel riskleri öne çıkar.",
   },
@@ -311,7 +307,6 @@ const REGION_DISASTER_PROFILES: Record<
       "Meteorolojik ve Tarımsal Kuraklık / Çölleşme",
       "Yerel Orta Büyüklükte Sarsıntılar",
     ],
-    riskLevel: "Ağırlıklı 3. ve 4. Derece (Bölgesel 2. Derece)",
     warningNote:
       "Deprem tehlikesi kıyılara kıyasla düşük olsa da yeraltı suyunun çekilmesine bağlı obruk yarıkları ve kuraklık riski en belirgin afettir.",
   },
@@ -323,9 +318,8 @@ const REGION_DISASTER_PROFILES: Record<
     primaryRisks: [
       "Şiddetli Heyelan ve Kütle Hareketleri",
       "Ani Sağanak, Sel ve Moloz Taşkınları",
-      "KAF Kuşağı Boyunca 1. Derece Deprem",
+      "KAF Güney Vadiler Boyunca Sismik Etkinlik",
     ],
-    riskLevel: "Sahil Kuşağı 3-4. Derece, Güney Vadiler 1. Derece KAF",
     warningNote:
       "Dik yamaçlar, suya doygun killi zemin ve yoğun yağış rejimi, Türkiye'de en fazla heyelan ve sel hadisesinin yaşandığı afet bölgesini oluşturur.",
   },
@@ -340,7 +334,6 @@ const REGION_DISASTER_PROFILES: Record<
       "Kış Aylarında Kar Engeli ve Çığ Düşmesi",
       "Sarp Vadilerde Heyelan ve Kaya Düşmesi",
     ],
-    riskLevel: "1. Derece Çok Yüksek Sismik Risk Kuşağı",
     warningNote:
       "KAF ve DAF hatlarının kesiştiği Karlıova ve çevre iller (Bingöl, Malatya, Elazığ, Erzincan, Muş) Türkiye'nin en hareketli tektonik düğümüdür.",
   },
@@ -354,7 +347,6 @@ const REGION_DISASTER_PROFILES: Record<
       "Yaz Kuraklığı, Aşırı Sıcaklar ve Toz Fırtınası",
       "Fırat-Dicle Tabanlarında Taşkın",
     ],
-    riskLevel: "Güney Platolar 3-4. Derece, Kuzey Dağ Etekleri 1. Derece",
     warningNote:
       "Kuzeyde Bitlis bindirmesi ve batıda DAF kritik sismik risk taşırken, güney düzlüklerinde iklim krizi, aşırı sıcaklar ve toz taşınımı etkilidir.",
   },
@@ -408,7 +400,8 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
   const canonicalPath = `/v2/turkiye/bolge/${region.slug}`;
 
   // Find most populous and largest provinces in this region
-  const mostPopulousProvince = region.provinces[0] ?? null;
+  const mostPopulousProvince =
+    [...region.provinces].sort((a, b) => (b.population ?? 0) - (a.population ?? 0))[0] ?? null;
   const largestProvince =
     [...region.provinces].sort((a, b) => (b.areaKm2 ?? 0) - (a.areaKm2 ?? 0))[0] ?? null;
   const avgProvincePop =
@@ -664,7 +657,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
       {/* BODY CONTENT CONTAINER */}
       <main className="container mx-auto px-4 max-w-7xl py-10 space-y-12">
         {/* SECTION 1: KONUM, SINIRLAR & HARİTA VİTRİNİ (12-COLUMN ASYMMETRIC GRID) */}
-        <section id="konum-ve-harita" className="scroll-mt-28">
+        <section id="konum-ve-harita" className="scroll-mt-28" tabIndex={-1}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left 7 Columns: Prose & Boundaries Card */}
             <div className="lg:col-span-7 space-y-6">
@@ -844,7 +837,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 2: FİZİKİ COĞRAFYA & DOĞAL ÇEVRE */}
-        <section id="fiziki-cografya" className="scroll-mt-28">
+        <section id="fiziki-cografya" className="scroll-mt-28" tabIndex={-1}>
           <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
@@ -958,7 +951,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 3: SOSYO-EKONOMİK DİNAMİKLER */}
-        <section id="sosyo-ekonomi" className="scroll-mt-28">
+        <section id="sosyo-ekonomi" className="scroll-mt-28" tabIndex={-1}>
           <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
@@ -1061,7 +1054,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 4: 1941 BİRİNCİ COĞRAFYA KONGRESİ BÖLÜMLERİ */}
-        <section id="bolumler" className="scroll-mt-28">
+        <section id="bolumler" className="scroll-mt-28" tabIndex={-1}>
           <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
@@ -1133,7 +1126,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 5: BÖLGEDEKİ İLLER REHBERİ & CANLI VERİ TABLOSU */}
-        <section id="iller" className="scroll-mt-28">
+        <section id="iller" className="scroll-mt-28" tabIndex={-1}>
           <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
@@ -1286,7 +1279,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 6: DOĞAL AFET VE DEPREM RİSKİ */}
-        <section id="afet" className="scroll-mt-28">
+        <section id="afet" className="scroll-mt-28" tabIndex={-1}>
           <div className="rounded-3xl border border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/15 p-6 sm:p-8 shadow-sm space-y-6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-rose-500/20 pb-5">
@@ -1320,17 +1313,11 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="lg:col-span-5 space-y-4">
                 {disasterProfile && (
                   <div className="p-5 rounded-2xl bg-card border border-rose-500/20 shadow-xs space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center">
                       <span className="font-heading font-bold text-sm text-foreground flex items-center gap-1.5">
                         <ShieldAlert className="size-4 text-rose-600" />
                         <span>Sismik &amp; Afet Özeti</span>
                       </span>
-                      <Badge
-                        variant="outline"
-                        className="text-[11px] bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
-                      >
-                        {disasterProfile.riskLevel}
-                      </Badge>
                     </div>
 
                     {/* Active Fault Lines */}
@@ -1375,9 +1362,8 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                       {disasterProfile.warningNote}
                     </div>
 
-                    {/* Official AFAD Notice */}
-                    <div className="p-2.5 rounded-xl bg-muted/60 border border-border text-[10px] text-muted-foreground flex items-center justify-between">
-                      <span>Resmî Kaynak: AFAD TDTH</span>
+                    {/* Emergency Notice */}
+                    <div className="p-2.5 rounded-xl bg-muted/60 border border-border text-[10px] text-muted-foreground flex items-center justify-end">
                       <span className="font-semibold text-rose-600">Acil: 112</span>
                     </div>
                   </div>
@@ -1388,7 +1374,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 7: 7 BÖLGE KARŞILAŞTIRMASI */}
-        <section id="kiyaslama" className="scroll-mt-28">
+        <section id="kiyaslama" className="scroll-mt-28" tabIndex={-1}>
           <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
@@ -1497,7 +1483,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
         {/* SECTION 8: SIKÇA SORULAN SORULAR */}
         {region.faqs?.length > 0 && (
-          <section id="sss" className="scroll-mt-28">
+          <section id="sss" className="scroll-mt-28" tabIndex={-1}>
             <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
               {/* Header INSIDE the Card */}
               <div className="space-y-2 border-b border-border/70 pb-5">
@@ -1551,7 +1537,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         </div>
 
         {/* SECTION 9: BİLİMSEL KAYNAKÇA & BÖLGESEL METODOLOJİ */}
-        <div id="kaynakca" className="scroll-mt-28">
+        <div id="kaynakca" className="scroll-mt-28" tabIndex={-1}>
           <V2SourcesSection
             scope="turkiye"
             regionalNote={

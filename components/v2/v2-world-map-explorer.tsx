@@ -619,8 +619,10 @@ export function V2WorldMapExplorer({
               setHoveredIso(null);
             }
           }}
-          className={`relative rounded-2xl bg-[#0d1b2a] dark:bg-[#070e17] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full select-none touch-none ${
-            zoom > 1 ? (isPanning ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"
+          className={`relative rounded-2xl bg-[#0d1b2a] dark:bg-[#070e17] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full select-none ${
+            zoom > 1
+              ? `touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`
+              : "cursor-crosshair"
           }`}
         >
           {/* Map Controls Floating Bar */}

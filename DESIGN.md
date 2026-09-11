@@ -414,7 +414,10 @@ general system (that would be scope creep).
 The second data-viz surface, and the first **categorical** one: in the game's region mode
 (`/oyun/bolge-bulma`) the map is filled by coğrafi bölge, which is a nominal variable with
 seven values. Tokens live in `app/globals.css`, physically separate from the Terra chrome
-set (§6.1 rule 1) and read only by `components/game/game-map.module.css`.
+set (§6.1 rule 1) and read by `components/game/game-map.module.css`, and — since the `b75cc52`
+correction round — also by `app/[locale]/v2/turkiye/bolge/[slug]/page.tsx`'s `REGION_THEMES`
+map fill/stroke pair (`mapFill`/`mapStroke`), which previously hardcoded a Tailwind hex
+per region instead of reusing this set.
 
 | Token                        | Hex       | Region            |
 | ---------------------------- | --------- | ----------------- |

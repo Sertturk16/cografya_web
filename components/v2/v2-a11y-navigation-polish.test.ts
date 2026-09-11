@@ -66,6 +66,8 @@ describe("V2 A11y and navigation invariants", () => {
       "../../app/[locale]/v2/araclar/alan-hesaplama/page.tsx",
       "../../app/[locale]/v2/araclar/mesafe-olcme/page.tsx",
       "../../app/[locale]/v2/araclar/koordinat-bulma/page.tsx",
+      "../../app/[locale]/v2/turkiye/bolge/page.tsx",
+      "../../app/[locale]/v2/turkiye/bolge/[slug]/page.tsx",
     ];
 
     for (const pageRel of pages) {
