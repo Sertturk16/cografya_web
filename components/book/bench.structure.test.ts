@@ -171,7 +171,7 @@ describe("the timeline adds no dead fragment", () => {
     // The whole guarantee, in one line: the ticks and the rows both call `tagFragment`, so
     // "every href has a target" is true by construction rather than by two lists agreeing
     // (the `FENER66-M2` discipline).
-    expect(FLAT_TIMELINE).toMatch(/href=\{`#\$\{tagFragment\(orderNo, tag\)\}`\}/);
+    expect(FLAT_TIMELINE).toMatch(/href=\{`#\$\{tagFragment\(orderNo, tag, tags\)\}`\}/);
     expect(IDENTITY).toContain("export function tagFragment");
   });
 

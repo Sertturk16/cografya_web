@@ -133,16 +133,19 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
             {/* Dynamic Metric Strip from Real Data. Two of the four tiles carried
                 `videoCount`/`questionCount` — DELETED with the fields (P0 generic-catalogue
                 cut-over, `DEC 2026-09-10c` md.1: no book-level count is published any more).
-                `sm:grid-cols-4` narrows to `sm:grid-cols-2` for the two tiles that remain,
-                rather than leaving a half-empty row. */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                The grid stays byte-identical to the 9 sibling metric strips elsewhere in /v2
+                (`DESIGN.md` §4's established-component-pattern precedent, → PR #103 review
+                DF103-I1) — `sm:col-span-2` on each surviving tile fills all four tracks evenly
+                instead of inventing a page-local two-column variant (fix round, PR #134 review
+                DES134-I1). */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
                 <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
                   {books.length} Kitap
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">Yayın Kataloğu</span>
               </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
                 <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">
                   ÖSYM / MEB
                 </span>

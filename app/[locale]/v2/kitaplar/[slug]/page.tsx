@@ -345,7 +345,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
 
                     <ul role="list" className={styles.questionGrid}>
                       {video.tags.map((tag) => {
-                        const fragment = tagFragment(video.orderNo, tag);
+                        const fragment = tagFragment(video.orderNo, tag, video.tags);
                         return (
                           <li key={tag.orderNo}>
                             <a

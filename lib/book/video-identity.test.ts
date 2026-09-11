@@ -24,19 +24,31 @@ describe("the book surface's fragment scheme", () => {
   });
 
   it("addresses an unnamed etiket as `video-N-etiket-M`", () => {
-    expect(tagFragment(12, { orderNo: 3, nameTr: null })).toBe("video-12-etiket-3");
-    expect(tagFragment(33, { orderNo: 6, nameTr: null })).toBe("video-33-etiket-6");
-  });
-
-  it("addresses a named etiket as `video-N-{folded name}`, not by its order number", () => {
-    expect(tagFragment(12, { orderNo: 3, nameTr: "İklim" })).toBe("video-12-iklim");
-    expect(tagFragment(1, { orderNo: 1, nameTr: "Nüfus ve Yerleşme" })).toBe(
-      "video-1-nufus-ve-yerlesme",
+    expect(tagFragment(12, { orderNo: 3, nameTr: null }, [{ orderNo: 3, nameTr: null }])).toBe(
+      "video-12-etiket-3",
+    );
+    expect(tagFragment(33, { orderNo: 6, nameTr: null }, [{ orderNo: 6, nameTr: null }])).toBe(
+      "video-33-etiket-6",
     );
   });
 
+  it("addresses a named etiket as `video-N-{folded name}`, not by its order number", () => {
+    expect(
+      tagFragment(12, { orderNo: 3, nameTr: "İklim" }, [{ orderNo: 3, nameTr: "İklim" }]),
+    ).toBe("video-12-iklim");
+    expect(
+      tagFragment(1, { orderNo: 1, nameTr: "Nüfus ve Yerleşme" }, [
+        { orderNo: 1, nameTr: "Nüfus ve Yerleşme" },
+      ]),
+    ).toBe("video-1-nufus-ve-yerlesme");
+  });
+
   it("folds every Turkish character GLOSSARY.md §5 names, and collapses non-alnum runs", () => {
-    expect(tagFragment(1, { orderNo: 1, nameTr: "Çöğüşı  --  Test" })).toBe("video-1-cogusi-test");
+    expect(
+      tagFragment(1, { orderNo: 1, nameTr: "Çöğüşı  --  Test" }, [
+        { orderNo: 1, nameTr: "Çöğüşı  --  Test" },
+      ]),
+    ).toBe("video-1-cogusi-test");
   });
 
   it("builds the etiket fragment ON the block fragment rather than beside it", () => {
@@ -44,10 +56,9 @@ describe("the book surface's fragment scheme", () => {
     // a reader lands on one from the other. Composing the second from the first is what keeps a
     // change to the block scheme from leaving 180 orphans behind.
     for (const videoOrderNo of [1, 15, 40]) {
+      const tag = { orderNo: 4, nameTr: null };
       expect(
-        tagFragment(videoOrderNo, { orderNo: 4, nameTr: null }).startsWith(
-          `${videoFragment(videoOrderNo)}-`,
-        ),
+        tagFragment(videoOrderNo, tag, [tag]).startsWith(`${videoFragment(videoOrderNo)}-`),
       ).toBe(true);
     }
   });
@@ -56,8 +67,27 @@ describe("the book surface's fragment scheme", () => {
     // Turkish is the authoring language of this surface and the fallback token `etiket` is
     // deliberately ASCII: a `ş` or an `ı` here would be percent-encoded by half the tooling that
     // touches a URL and left alone by the other half, so one link would exist in two spellings.
-    expect(tagFragment(7, { orderNo: 2, nameTr: null })).toMatch(/^[a-z0-9-]+$/);
-    expect(tagFragment(7, { orderNo: 2, nameTr: "Şehirleşme" })).toMatch(/^[a-z0-9-]+$/);
+    expect(tagFragment(7, { orderNo: 2, nameTr: null }, [{ orderNo: 2, nameTr: null }])).toMatch(
+      /^[a-z0-9-]+$/,
+    );
+    expect(
+      tagFragment(7, { orderNo: 2, nameTr: "Şehirleşme" }, [{ orderNo: 2, nameTr: "Şehirleşme" }]),
+    ).toMatch(/^[a-z0-9-]+$/);
+  });
+
+  it("appends orderNo to disambiguate two named tags in the same video that fold to the same string", () => {
+    // `CODE134-I1`/`A11Y134-NEW-M1` (PR #134 fix round) — two distinct `nameTr` spellings that
+    // fold to the same string collided on the same fragment before this guard existed.
+    const tagA = { orderNo: 3, nameTr: "İklim-Bitki" };
+    const tagB = { orderNo: 5, nameTr: "İklim Bitki" };
+    const siblings = [tagA, tagB];
+    expect(tagFragment(12, tagA, siblings)).toBe("video-12-iklim-bitki-3");
+    expect(tagFragment(12, tagB, siblings)).toBe("video-12-iklim-bitki-5");
+  });
+
+  it("does not append orderNo when a named tag's folded name is unique in its own video", () => {
+    const tag = { orderNo: 3, nameTr: "İklim" };
+    expect(tagFragment(12, tag, [tag])).toBe("video-12-iklim");
   });
 });
 

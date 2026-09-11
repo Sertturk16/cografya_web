@@ -71,13 +71,6 @@
   color: var(--color-ink);
 }
 
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 16px 0;
-}
-
 /* ── Künye ────────────────────────────────────────────────────────────────────────────── */
 
 .factSheet {
@@ -211,32 +204,6 @@
 a.jumpItem:hover {
   border-color: var(--color-primary);
   background: var(--color-surface);
-}
-
-/* THE DENEMELER WITH NO VIDEO SOLUTION. Not a link, because there is no fragment to point at —
-   linking one would be a broken in-page anchor (`SEO-POLICY.md` §B8 8.9, BLOCKER).
-
-   THE MEANING IS NOT CARRIED BY COLOUR. `DESIGN.md` §5's last line bars encoding meaning by
-   colour alone, so the state is drawn as a dashed border (shape) and stated in words in a
-   visually-hidden span inside the element (text). Slate on the parchment page background is
-   7.48:1 (§5's table), so the muted treatment is a weight/border change rather than a drop
-   below the contrast floor — the number stays as readable as its neighbours, it simply stops
-   looking pressable. */
-.jumpItemEmpty {
-  border-style: dashed;
-  /* THE SHAPE CUE HAS TO BE VISIBLE TO BE A CUE. This rule claims the state is carried by shape
-     rather than colour, and with `--color-border` it was not: #ddd5cc is 1.37:1 against the page
-     background and 1.45:1 against the covered tile's own white fill, i.e. below the 3:1 floor
-     `ENGINEERING.md` §5 sets for a UI boundary — so a reader with reduced contrast sensitivity,
-     a greyscale display or a poor projector met forty near-identical tiles and could not tell
-     which were pressable (→ PR #66 review `A11Y66-M2`). `--color-slate` is 7.48:1 on the page
-     background, so the dashed edge is now actually perceivable and the non-colour cue is real.
-     The covered tiles keep the repo-wide `--color-border` hairline; that pattern is a separate,
-     pre-existing question (`A11Y66-P1`) and is not changed here on one page. */
-  border-color: var(--color-slate);
-  background: transparent;
-  font-weight: 500;
-  color: var(--color-slate);
 }
 
 /* ── Tezgâh: sahne + dizin ────────────────────────────────────────────────────────────── */

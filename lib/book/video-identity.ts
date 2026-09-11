@@ -13,9 +13,25 @@ interface TagIdentity {
   readonly nameTr: string | null;
 }
 
-export function tagFragment(videoOrderNo: number, tag: TagIdentity): string {
+/** Disambiguates against the video's OWN sibling tags (`CODE134-I1`/`A11Y134-NEW-M1`, PR #134
+ *  fix round). `SEO-POLICY.md` §B4's book-layer note states the video-order prefix already
+ *  makes the fragment unique — true across videos, but it says nothing about two NAMED tags
+ *  within the same video's own list folding to the same string, which `foldTagName` can do
+ *  (Turkish-char/punctuation variants of one concept, e.g. "İklim-Bitki" vs "İklim Bitki"). This
+ *  guard restores the uniqueness the policy text already asserts rather than contradicting it. */
+export function tagFragment(
+  videoOrderNo: number,
+  tag: TagIdentity,
+  siblingTags: readonly TagIdentity[],
+): string {
   if (tag.nameTr === null) return `${videoFragment(videoOrderNo)}-etiket-${tag.orderNo}`;
-  return `${videoFragment(videoOrderNo)}-${foldTagName(tag.nameTr)}`;
+  const folded = foldTagName(tag.nameTr);
+  const collisionCount = siblingTags.filter(
+    (sibling) => sibling.nameTr !== null && foldTagName(sibling.nameTr) === folded,
+  ).length;
+  return collisionCount > 1
+    ? `${videoFragment(videoOrderNo)}-${folded}-${tag.orderNo}`
+    : `${videoFragment(videoOrderNo)}-${folded}`;
 }
 
 type VideoTitleTranslator = (key: "videoFallbackHeading", values: { no: number }) => string;

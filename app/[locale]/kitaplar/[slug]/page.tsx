@@ -549,7 +549,7 @@ export default async function BookDetailPage({ params }: PageProps) {
                   </div>
                   <ul role="list" className={styles.questionGrid}>
                     {video.tags.map((tag) => {
-                      const fragment = tagFragment(video.orderNo, tag);
+                      const fragment = tagFragment(video.orderNo, tag, video.tags);
                       return (
                         <li key={tag.orderNo}>
                           {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link

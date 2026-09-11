@@ -109,7 +109,7 @@ export function BenchTimeline({
               key={tag.orderNo}
               className={styles.tick}
               style={{ left: `${(ratio * 100).toFixed(2)}%` }}
-              href={`#${tagFragment(orderNo, tag)}`}
+              href={`#${tagFragment(orderNo, tag, tags)}`}
               data-second={tag.second}
               aria-label={t("tagLabelAria", {
                 no: tag.orderNo,
