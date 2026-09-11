@@ -12,6 +12,7 @@ import { routing, type Locale } from "@/i18n/routing";
 import { getRegionsResilient } from "@/lib/api/regions";
 import { breadcrumbJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { tr } from "@/lib/text/format-number";
 import {
   Mountain,
   Compass,
@@ -50,9 +51,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     hrefForLocale: () => ({
       pathname: "/v2/turkiye/bolge",
     }),
-    title: "Türkiye'nin 7 Coğrafi Bölgesi: İlleri, İklimi ve Haritası | Coğrafya Gurmesi",
+    title:
+      locale === "tr"
+        ? "Türkiye'nin 7 Coğrafi Bölgesi: İlleri, İklimi ve Haritası | Coğrafya Gurmesi"
+        : "Türkiye's 7 Geographic Regions: Provinces, Climate and Map",
     description:
-      "1941 Birinci Türk Coğrafya Kongresi kararlarıyla belirlenen Türkiye'nin 7 coğrafi bölgesi ve 21 bölümü. Nüfus dağılımı, yüzölçümü, iklim özellikleri ve analitik karşılaştırma rehberi.",
+      locale === "tr"
+        ? "1941 Birinci Türk Coğrafya Kongresi kararlarıyla belirlenen Türkiye'nin 7 coğrafi bölgesi ve 21 bölümü. Nüfus dağılımı, yüzölçümü, iklim özellikleri ve analitik karşılaştırma rehberi."
+        : "Türkiye's 7 geographic regions and 21 subregions. Population distribution, area, climate features and an analytical comparison guide.",
   });
 }
 
@@ -81,11 +87,11 @@ const REGIONS_STATIC_FALLBACK = [
     headingName: "Ege",
     provinceCount: 8,
     districtCount: 132,
-    population: 10636830,
-    populationSharePercent: 12.35,
-    areaKm2: 89966,
-    areaSharePercent: 11.53,
-    populationDensity: 118,
+    population: 11011261,
+    populationSharePercent: 12.79,
+    areaKm2: 89339,
+    areaSharePercent: 11.45,
+    populationDensity: 123,
     highestPeakNameTr: "Honaz Dağı",
     highestPeakElevationM: 2571,
     subregionCount: 2,
@@ -98,12 +104,12 @@ const REGIONS_STATIC_FALLBACK = [
     headingName: "Akdeniz",
     provinceCount: 8,
     districtCount: 104,
-    population: 10925760,
-    populationSharePercent: 12.69,
-    areaKm2: 120287,
-    areaSharePercent: 15.42,
-    populationDensity: 91,
-    highestPeakNameTr: "Medetsiz Zirvesi (Toroslar)",
+    population: 11028175,
+    populationSharePercent: 12.81,
+    areaKm2: 89516,
+    areaSharePercent: 11.48,
+    populationDensity: 123,
+    highestPeakNameTr: "Medetsiz Tepesi",
     highestPeakElevationM: 3524,
     subregionCount: 2,
     climateTr: "Tipik Akdeniz İklimi",
@@ -115,11 +121,11 @@ const REGIONS_STATIC_FALLBACK = [
     headingName: "İç Anadolu",
     provinceCount: 13,
     districtCount: 172,
-    population: 13192450,
-    populationSharePercent: 15.32,
-    areaKm2: 151978,
-    areaSharePercent: 19.48,
-    populationDensity: 87,
+    population: 13809574,
+    populationSharePercent: 16.04,
+    areaKm2: 187227,
+    areaSharePercent: 24.0,
+    populationDensity: 74,
     highestPeakNameTr: "Erciyes Dağı",
     highestPeakElevationM: 3917,
     subregionCount: 4,
@@ -132,11 +138,11 @@ const REGIONS_STATIC_FALLBACK = [
     headingName: "Karadeniz",
     provinceCount: 18,
     districtCount: 193,
-    population: 7785420,
-    populationSharePercent: 9.04,
-    areaKm2: 143537,
-    areaSharePercent: 18.4,
-    populationDensity: 54,
+    population: 8041038,
+    populationSharePercent: 9.34,
+    areaKm2: 116379,
+    areaSharePercent: 14.92,
+    populationDensity: 69,
     highestPeakNameTr: "Kaçkar Dağı",
     highestPeakElevationM: 3937,
     subregionCount: 3,
@@ -149,11 +155,11 @@ const REGIONS_STATIC_FALLBACK = [
     headingName: "Doğu Anadolu",
     provinceCount: 14,
     districtCount: 125,
-    population: 5886340,
-    populationSharePercent: 6.84,
-    areaKm2: 164287,
-    areaSharePercent: 21.06,
-    populationDensity: 36,
+    population: 5902603,
+    populationSharePercent: 6.86,
+    areaKm2: 148966,
+    areaSharePercent: 19.1,
+    populationDensity: 40,
     highestPeakNameTr: "Ağrı Dağı (Büyük Ağrı)",
     highestPeakElevationM: 5137,
     subregionCount: 4,
@@ -166,51 +172,83 @@ const REGIONS_STATIC_FALLBACK = [
     headingName: "Güneydoğu Anadolu",
     provinceCount: 9,
     districtCount: 89,
-    population: 9453843,
-    populationSharePercent: 10.98,
-    areaKm2: 75325,
-    areaSharePercent: 9.66,
+    population: 9587992,
+    populationSharePercent: 11.14,
+    areaKm2: 75947,
+    areaSharePercent: 9.74,
     populationDensity: 126,
-    highestPeakNameTr: "Karacadağ",
-    highestPeakElevationM: 1957,
+    highestPeakNameTr: "Yazlıca (Herekul) Dağı",
+    highestPeakElevationM: 2838,
     subregionCount: 2,
     climateTr: "Karasal - Akdeniz Bozulmuş İklimi",
     isCoastal: false,
   },
 ];
 
-const BOLGELER_FAQS = [
-  {
-    question: "Türkiye kaç coğrafi bölgeye ayrılmıştır ve bu ayrım ne zaman yapılmıştır?",
-    answer:
-      "Türkiye, 6-21 Haziran 1941 tarihleri arasında Ankara Üniversitesi Dil ve Tarih-Coğrafya Fakültesi'nde toplanan Birinci Türk Coğrafya Kongresi kararıyla 7 ana coğrafi bölgeye ve 21 coğrafi bölüme ayrılmıştır.",
-  },
-  {
-    question: "Bölgeler belirlenirken hangi bilimsel kriterler esas alınmıştır?",
-    answer:
-      "Bölge sınırlarının tespitinde üç ana unsur gözetilmiştir: 1) Doğal etkenler (yer şekilleri, jeomorfolojik uzanış, dağ sıraları, yükselti ve kıyı tipleri), 2) Klimatolojik etkenler (sıcaklık, yağış rejimi ve vejetasyon örtüsü), 3) Beşeri ve ekonomik etkenler (nüfus dağılımı, tarım desenleri, sanayi ve ulaşım ağları).",
-  },
-  {
-    question: "TÜİK İBBS bölgeleri ile klasik 7 coğrafi bölge arasındaki fark nedir?",
-    answer:
-      "7 Coğrafi Bölge, Türkiye'nin doğal ve fiziki yapısını yansıtan temel morfolojik sınıflamadır. TÜİK'in kullandığı İBBS (İstatistiki Bölge Birimleri Sınıflandırması) Düzey-1 ise Avrupa Birliği istatistik normlarına uyum sağlamak için idari sınırlarla belirlenmiş 12 sosyo-ekonomik bölgeden oluşur. Klasik coğrafi bölgeler idari sınırlara değil doğal sınırlara dayanır.",
-  },
-  {
-    question: "Yüzölçümü ve nüfus bakımından en büyük bölgeler hangileridir?",
-    answer:
-      "Yüzölçümü bakımından Türkiye'nin en büyük coğrafi bölgesi 164.287 km² (%21,06 pay) ile Doğu Anadolu Bölgesi'dir. Nüfus büyüklüğü ve nüfus yoğunluğu bakımından ise 26,7 milyonu aşan nüfusu (%31,03 pay) ve km² başına 368 kişilik yoğunluğuyla Marmara Bölgesi birinci sıradadır.",
-  },
-  {
-    question: "Bir ilin toprakları birden fazla coğrafi bölgede bulunabilir mi?",
-    answer:
-      "Evet. Coğrafi bölgeler idari il sınırlarıyla değil doğal hatlarla çizildiği için birçok ilimiz birden çok bölgeye yayılır. Örneğin Bilecik (Marmara, Ege, Karadeniz ve İç Anadolu), Balıkesir ve Çanakkale (Marmara ve Ege), Bursa (Marmara ve Karadeniz), Kahramanmaraş (Akdeniz, Doğu Anadolu ve Güneydoğu) bu durumun en bilinen örnekleridir.",
-  },
-  {
-    question: "Türkiye'nin denize kıyısı olan ve olmayan bölgeleri hangileridir?",
-    answer:
-      "Türkiye'nin 7 coğrafi bölgesinden 4'ü kıyı bölgesidir (Karadeniz, Marmara, Ege ve Akdeniz). Kalan 3 bölge ise iç kara bölgesidir (İç Anadolu, Doğu Anadolu ve Güneydoğu Anadolu).",
-  },
-];
+/** The subset of a `regionsList` entry `buildBolgelerFaqs` needs — accepts either branch of
+ * the ternary below, since both carry every one of these fields. */
+type RegionsListEntry = {
+  nameTr: string;
+  areaKm2: number;
+  areaSharePercent: number;
+  population: number;
+  populationSharePercent: number;
+  populationDensity: number;
+};
+
+/**
+ * The FAQ list, with the 4th answer DERIVED from the real `regionsList` rather than
+ * hand-typed — `regionsList` is computed inside the page component (after `apiRegions` is
+ * fetched), so this cannot be a module-level const the way the other five entries are.
+ * `noUncheckedIndexedAccess` makes the sorted-array destructure `T | undefined`; when either
+ * is undefined the derived FAQ is simply omitted rather than rendered with a placeholder.
+ */
+function buildBolgelerFaqs(regions: RegionsListEntry[]): { question: string; answer: string }[] {
+  const [largestByArea] = [...regions].sort((a, b) => b.areaKm2 - a.areaKm2);
+  const [mostPopulous] = [...regions].sort((a, b) => b.population - a.population);
+
+  const largestAreaFaq =
+    largestByArea && mostPopulous
+      ? {
+          question: "Yüzölçümü ve nüfus bakımından en büyük bölgeler hangileridir?",
+          answer:
+            `Yüzölçümü bakımından Türkiye'nin en büyük coğrafi bölgesi ${tr(largestByArea.areaKm2)} km² ` +
+            `(%${tr(largestByArea.areaSharePercent, 2)} pay) ile ${largestByArea.nameTr}'dir. ` +
+            `Nüfus büyüklüğü ve nüfus yoğunluğu bakımından ise ${tr(mostPopulous.population)} kişilik ` +
+            `nüfusu (%${tr(mostPopulous.populationSharePercent, 2)} pay) ve km² başına ` +
+            `${tr(mostPopulous.populationDensity)} kişilik yoğunluğuyla ${mostPopulous.nameTr} birinci sıradadır.`,
+        }
+      : null;
+
+  return [
+    {
+      question: "Türkiye kaç coğrafi bölgeye ayrılmıştır ve bu ayrım ne zaman yapılmıştır?",
+      answer:
+        "Türkiye, 6-21 Haziran 1941 tarihleri arasında Ankara Üniversitesi Dil ve Tarih-Coğrafya Fakültesi'nde toplanan Birinci Türk Coğrafya Kongresi kararıyla 7 ana coğrafi bölgeye ve 21 coğrafi bölüme ayrılmıştır.",
+    },
+    {
+      question: "Bölgeler belirlenirken hangi bilimsel kriterler esas alınmıştır?",
+      answer:
+        "Bölge sınırlarının tespitinde üç ana unsur gözetilmiştir: 1) Doğal etkenler (yer şekilleri, jeomorfolojik uzanış, dağ sıraları, yükselti ve kıyı tipleri), 2) Klimatolojik etkenler (sıcaklık, yağış rejimi ve vejetasyon örtüsü), 3) Beşeri ve ekonomik etkenler (nüfus dağılımı, tarım desenleri, sanayi ve ulaşım ağları).",
+    },
+    {
+      question: "TÜİK İBBS bölgeleri ile klasik 7 coğrafi bölge arasındaki fark nedir?",
+      answer:
+        "7 Coğrafi Bölge, Türkiye'nin doğal ve fiziki yapısını yansıtan temel morfolojik sınıflamadır. TÜİK'in kullandığı İBBS (İstatistiki Bölge Birimleri Sınıflandırması) Düzey-1 ise Avrupa Birliği istatistik normlarına uyum sağlamak için idari sınırlarla belirlenmiş 12 sosyo-ekonomik bölgeden oluşur. Klasik coğrafi bölgeler idari sınırlara değil doğal sınırlara dayanır.",
+    },
+    ...(largestAreaFaq ? [largestAreaFaq] : []),
+    {
+      question: "Bir ilin toprakları birden fazla coğrafi bölgede bulunabilir mi?",
+      answer:
+        "Evet. Coğrafi bölgeler idari il sınırlarıyla değil doğal hatlarla çizildiği için birçok ilimiz birden çok bölgeye yayılır. Örneğin Bilecik (Marmara, Ege, Karadeniz ve İç Anadolu), Balıkesir ve Çanakkale (Marmara ve Ege), Bursa (Marmara ve Karadeniz), Kahramanmaraş (Akdeniz, Doğu Anadolu ve Güneydoğu) bu durumun en bilinen örnekleridir.",
+    },
+    {
+      question: "Türkiye'nin denize kıyısı olan ve olmayan bölgeleri hangileridir?",
+      answer:
+        "Türkiye'nin 7 coğrafi bölgesinden 4'ü kıyı bölgesidir (Karadeniz, Marmara, Ege ve Akdeniz). Kalan 3 bölge ise iç kara bölgesidir (İç Anadolu, Doğu Anadolu ve Güneydoğu Anadolu).",
+    },
+  ];
+}
 
 export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
   const { locale } = await params;
@@ -237,7 +275,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
             highestPeakElevationM: fallback?.highestPeakElevationM ?? 0,
             subregionCount: fallback?.subregionCount ?? 2,
             climateTr: fallback?.climateTr ?? "Karasal / Akdeniz / Karadeniz",
-            isCoastal: fallback?.isCoastal ?? true,
+            isCoastal: fallback?.isCoastal ?? null,
           };
         })
       : REGIONS_STATIC_FALLBACK;
@@ -245,24 +283,33 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
   const totalProvincesCount = regionsList.reduce((acc, r) => acc + r.provinceCount, 0) || 81;
   const totalPop = regionsList.reduce((acc, r) => acc + r.population, 0) || 86092168;
   const totalArea = regionsList.reduce((acc, r) => acc + r.areaKm2, 0) || 780040;
+  const bolgelerFaqs = buildBolgelerFaqs(regionsList);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
       <JsonLd
         schema={breadcrumbJsonLd([
-          { name: "Ana Sayfa", path: "/v2" },
-          { name: "Türkiye Atlası", path: "/v2/turkiye" },
-          { name: "Coğrafi Bölgeler", path: "/v2/turkiye/bolge" },
+          { name: locale === "tr" ? "Ana Sayfa" : "Home", path: "/v2" },
+          { name: locale === "tr" ? "Türkiye Atlası" : "Türkiye Atlas", path: "/v2/turkiye" },
+          {
+            name: locale === "tr" ? "Coğrafi Bölgeler" : "Geographic Regions",
+            path: "/v2/turkiye/bolge",
+          },
         ])}
       />
-      <JsonLd
-        schema={faqPageJsonLd(
-          BOLGELER_FAQS.map((faq) => ({
-            question: faq.question,
-            answer: faq.answer,
-          })),
-        )}
-      />
+      {/* trOnly surface (`FENB75-I2`, → `lib/seo/indexing.ts`): the FAQ narrative has no
+          English counterpart, so the EN twin carries BreadcrumbList JSON-LD only rather than
+          a translated FAQPage block. */}
+      {locale === "tr" && (
+        <JsonLd
+          schema={faqPageJsonLd(
+            bolgelerFaqs.map((faq) => ({
+              question: faq.question,
+              answer: faq.answer,
+            })),
+          )}
+        />
+      )}
 
       <V2Header />
       <V2LiveTicker />
@@ -280,7 +327,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               className="flex items-center gap-1 hover:text-foreground transition-colors"
             >
               <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
+              <span>{locale === "tr" ? "Ana Sayfa" : "Home"}</span>
             </Link>
             <ChevronRight className="size-3 text-muted-foreground/60" />
             <Link
@@ -288,86 +335,118 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               className="hover:text-foreground transition-colors flex items-center gap-1"
             >
               <Compass className="size-3.5" />
-              <span>Türkiye Atlası</span>
+              <span>{locale === "tr" ? "Türkiye Atlası" : "Türkiye Atlas"}</span>
             </Link>
             <ChevronRight className="size-3 text-muted-foreground/60" />
-            <span className="text-foreground font-semibold">7 Coğrafi Bölge</span>
+            <span className="text-foreground font-semibold">
+              {locale === "tr" ? "7 Coğrafi Bölge" : "7 Geographic Regions"}
+            </span>
           </nav>
 
           {/* Hero Content Card */}
           <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/20 p-6 sm:p-10 shadow-lg space-y-6">
             <div className="space-y-4 max-w-4xl">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<Landmark className="size-3.5" />}>
-                  1941 Coğrafya Kongresi Tasnifi
-                </Badge>
+                {/* The 1941-Congress and TÜİK-vintage badges are source/provenance-flavoured
+                    claims, not structural counts — gated rather than translated so no new
+                    English prose is authored for them in this round (§9). */}
+                {locale === "tr" && (
+                  <Badge variant="primary" size="sm" icon={<Landmark className="size-3.5" />}>
+                    1941 Coğrafya Kongresi Tasnifi
+                  </Badge>
+                )}
                 <Badge variant="secondary" size="sm" icon={<Boxes className="size-3.5" />}>
-                  7 Coğrafi Bölge &amp; 21 Bölüm
+                  {locale === "tr" ? "7 Coğrafi Bölge & 21 Bölüm" : "7 Regions & 21 Subregions"}
                 </Badge>
-                <Badge variant="outline" size="sm" className="font-mono text-xs">
-                  TÜİK ADNKS 2025 Tabanlı
-                </Badge>
+                {locale === "tr" && (
+                  <Badge variant="outline" size="sm" className="font-mono text-xs">
+                    TÜİK ADNKS 2025 Tabanlı
+                  </Badge>
+                )}
               </div>
 
               <h1 className="font-heading text-3xl sm:text-5xl font-extrabold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
-                Türkiye&apos;nin 7 Coğrafi Bölgesi Rehberi
+                {locale === "tr"
+                  ? "Türkiye'nin 7 Coğrafi Bölgesi Rehberi"
+                  : "Türkiye's 7 Geographic Regions Guide"}
               </h1>
 
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-3xl">
-                6–21 Haziran 1941 Birinci Türk Coğrafya Kongresi kararlarıyla çizilen doğal
-                sınırlar, morfotektonik kuşaklar ve iklim havzaları ışığında Türkiye&apos;nin 7
-                coğrafi bölgesi, 21 alt bölümü ve analitik karşılaştırma atlası.
-              </p>
+              {/* Same provenance-flavoured claim as the 1941-Congress badge two elements above —
+                  gated rather than translated for the same reason (tur2-plan.md §7, FEN135-NEW-M5). */}
+              {locale === "tr" && (
+                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-3xl">
+                  6–21 Haziran 1941 Birinci Türk Coğrafya Kongresi kararlarıyla çizilen doğal
+                  sınırlar, morfotektonik kuşaklar ve iklim havzaları ışığında Türkiye&apos;nin 7
+                  coğrafi bölgesi, 21 alt bölümü ve analitik karşılaştırma atlası.
+                </p>
+              )}
             </div>
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-2">
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
                 <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                  <Boxes className="size-3.5 text-primary" /> Coğrafi Bölge
+                  <Boxes className="size-3.5 text-primary" />{" "}
+                  {locale === "tr" ? "Coğrafi Bölge" : "Geographic Region"}
                 </span>
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-primary block">
-                  7 Bölge
+                  {locale === "tr" ? "7 Bölge" : "7 Regions"}
                 </span>
-                <span className="text-[11px] text-muted-foreground/80 block">
-                  4 Kıyı, 3 İç Kara Havzası
-                </span>
+                {locale === "tr" ? (
+                  <span className="text-[11px] text-muted-foreground/80 block">
+                    4 Kıyı, 3 İç Kara Havzası
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground/80 block">
+                    4 Coastal, 3 Landlocked
+                  </span>
+                )}
               </div>
 
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
                 <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                  <Layers className="size-3.5 text-secondary" /> Coğrafi Bölüm
+                  <Layers className="size-3.5 text-secondary" />{" "}
+                  {locale === "tr" ? "Coğrafi Bölüm" : "Subregion"}
                 </span>
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-secondary block">
-                  21 Bölüm
+                  {locale === "tr" ? "21 Bölüm" : "21 Subregions"}
                 </span>
-                <span className="text-[11px] text-muted-foreground/80 block">
-                  Morfolojik Alt Yöreler
-                </span>
+                {locale === "tr" ? (
+                  <span className="text-[11px] text-muted-foreground/80 block">
+                    Morfolojik Alt Yöreler
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground/80 block">
+                    Morphological Subregions
+                  </span>
+                )}
               </div>
 
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
                 <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                  <Users className="size-3.5 text-accent" /> Toplam Nüfus
+                  <Users className="size-3.5 text-accent" />{" "}
+                  {locale === "tr" ? "Toplam Nüfus" : "Total Population"}
                 </span>
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-accent block">
                   {totalPop.toLocaleString("tr-TR")}
                 </span>
                 <span className="text-[11px] text-muted-foreground/80 block">
-                  TÜİK 31 Aralık 2025
+                  {locale === "tr" ? "TÜİK 31 Aralık 2025" : "TÜİK, 31 December 2025"}
                 </span>
               </div>
 
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
                 <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
                   <Maximize2 className="size-3.5 text-[var(--color-primary-dark,#7e3a1e)]" />{" "}
-                  Yüzölçümü
+                  {locale === "tr" ? "Yüzölçümü" : "Area"}
                 </span>
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-[var(--color-primary-dark,#7e3a1e)] block">
                   {totalArea.toLocaleString("tr-TR")} km²
                 </span>
                 <span className="text-[11px] text-muted-foreground/80 block">
-                  81 İl HGM Tescili
+                  {locale === "tr"
+                    ? "81 İl HGM Tescili"
+                    : "81 Provinces, General Directorate of Mapping (HGM)"}
                 </span>
               </div>
             </div>
@@ -399,12 +478,16 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
           >
             Analitik Kıyaslama
           </a>
-          <a
-            href="#sss"
-            className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
-          >
-            Sıkça Sorulan Sorular
-          </a>
+          {/* The FAQ section itself is TR-only (§9) — the quicknav target would be dead on
+              the EN twin, so the link is gated with it rather than left pointing at nothing. */}
+          {locale === "tr" && (
+            <a
+              href="#sss"
+              className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+            >
+              Sıkça Sorulan Sorular
+            </a>
+          )}
           <a
             href="#kaynakca"
             className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
@@ -417,12 +500,12 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
       {/* MAIN BODY CONTENT */}
       <main className="container mx-auto px-4 max-w-7xl py-10 space-y-14">
         {/* SECTION 1: 7 BÖLGE VİTRİNİ */}
-        <section id="bolgeler" className="scroll-mt-28">
-          <V2TurkeyRegions />
+        <section id="bolgeler" className="scroll-mt-28" tabIndex={-1}>
+          <V2TurkeyRegions regions={regionsList} />
         </section>
 
         {/* SECTION 2: 1941 COĞRAFYA KONGRESİ & TARİHÇE */}
-        <section id="tarihce" className="scroll-mt-28">
+        <section id="tarihce" className="scroll-mt-28" tabIndex={-1}>
           <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
             <div className="space-y-2 border-b border-border/70 pb-5">
               <div className="flex items-center gap-2">
@@ -512,7 +595,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 3: ANALİTİK KIYASLAMA TABLOSU */}
-        <section id="kiyaslama" className="scroll-mt-28">
+        <section id="kiyaslama" className="scroll-mt-28" tabIndex={-1}>
           <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
             <div className="space-y-2 border-b border-border/70 pb-5">
               <div className="flex items-center gap-2">
@@ -562,16 +645,30 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                         >
                           {r.nameTr}
                         </Link>
-                        {r.isCoastal ? (
-                          <span
-                            title="Kıyı Bölgesi"
-                            className="inline-flex size-2 rounded-full bg-teal-500 shrink-0"
-                          />
+                        {r.isCoastal === true ? (
+                          <span className="inline-flex items-center gap-1 shrink-0">
+                            <span
+                              title="Kıyı Bölgesi"
+                              className="inline-flex size-2 rounded-full bg-teal-500 shrink-0"
+                            />
+                            <span className="text-[10px] text-muted-foreground">Kıyı</span>
+                          </span>
+                        ) : r.isCoastal === false ? (
+                          <span className="inline-flex items-center gap-1 shrink-0">
+                            <span
+                              title="İç Kara Bölgesi"
+                              className="inline-flex size-2 rounded-full bg-amber-500 shrink-0"
+                            />
+                            <span className="text-[10px] text-muted-foreground">İç</span>
+                          </span>
                         ) : (
-                          <span
-                            title="İç Kara Bölgesi"
-                            className="inline-flex size-2 rounded-full bg-amber-500 shrink-0"
-                          />
+                          <span className="inline-flex items-center gap-1 shrink-0">
+                            <span
+                              title="Bilinmiyor"
+                              className="inline-flex size-2 rounded-full bg-muted-foreground/40 shrink-0"
+                            />
+                            <span className="text-[10px] text-muted-foreground">Bilinmiyor</span>
+                          </span>
                         )}
                       </td>
                       <td className="p-3.5 sm:p-4 text-center text-muted-foreground font-mono">
@@ -581,13 +678,13 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                         {r.areaKm2.toLocaleString("tr-TR")}
                       </td>
                       <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-primary">
-                        %{r.areaSharePercent.toFixed(1)}
+                        %{tr(r.areaSharePercent, 1)}
                       </td>
                       <td className="p-3.5 sm:p-4 text-right font-mono">
                         {r.population.toLocaleString("tr-TR")}
                       </td>
                       <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-secondary">
-                        %{r.populationSharePercent.toFixed(1)}
+                        %{tr(r.populationSharePercent, 1)}
                       </td>
                       <td className="p-3.5 sm:p-4 text-right font-mono">
                         {r.populationDensity} kişi/km²
@@ -625,43 +722,46 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* SECTION 4: SIKÇA SORULAN SORULAR */}
-        <section id="sss" className="scroll-mt-28">
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="space-y-2 border-b border-border/70 pb-5">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" size="sm">
-                  Rehber &amp; Soru-Cevap
-                </Badge>
-              </div>
-              <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                <HelpCircle className="size-6 text-primary shrink-0" />
-                <span>Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular</span>
-              </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Coğrafya müfredatı, sınav hazırlığı ve genel kültür açısından en çok merak edilen
-                bölgesel kavramlar.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {BOLGELER_FAQS.map((faq, idx) => (
-                <div
-                  key={idx}
-                  className="p-5 rounded-2xl bg-muted/30 border border-border/80 space-y-2"
-                >
-                  <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
-                    <span className="text-primary font-bold text-sm">S:</span>
-                    <span>{faq.question}</span>
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-5">
-                    {faq.answer}
-                  </p>
+        {/* SECTION 4: SIKÇA SORULAN SORULAR — trOnly (§9): the FAQ narrative has no English
+            counterpart, so the whole section (visible cards + the JsonLd above) is TR-only. */}
+        {locale === "tr" && (
+          <section id="sss" className="scroll-mt-28" tabIndex={-1}>
+            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="space-y-2 border-b border-border/70 pb-5">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" size="sm">
+                    Rehber &amp; Soru-Cevap
+                  </Badge>
                 </div>
-              ))}
+                <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
+                  <HelpCircle className="size-6 text-primary shrink-0" />
+                  <span>Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
+                  Coğrafya müfredatı, sınav hazırlığı ve genel kültür açısından en çok merak edilen
+                  bölgesel kavramlar.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {bolgelerFaqs.map((faq, idx) => (
+                  <div
+                    key={idx}
+                    className="p-5 rounded-2xl bg-muted/30 border border-border/80 space-y-2"
+                  >
+                    <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
+                      <span className="text-primary font-bold text-sm">S:</span>
+                      <span>{faq.question}</span>
+                    </h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-5">
+                      {faq.answer}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex items-center justify-between pt-2">
@@ -678,7 +778,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         </div>
 
         {/* SECTION 5: BİLİMSEL KAYNAKÇA & METODOLOJİ */}
-        <div id="kaynakca" className="scroll-mt-28">
+        <div id="kaynakca" className="scroll-mt-28" tabIndex={-1}>
           <V2SourcesSection scope="turkiye" />
         </div>
       </main>

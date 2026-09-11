@@ -172,11 +172,11 @@ export function V2Header() {
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
-                  <div className="size-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mr-2 shrink-0 group-hover:scale-105 transition-transform">
+                  <div className="size-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center mr-2 shrink-0 group-hover:scale-105 transition-transform">
                     <Boxes className="size-4" />
                   </div>
                   <div>
-                    <span className="font-bold text-xs block text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                    <span className="font-bold text-xs block text-foreground group-hover:text-accent transition-colors">
                       Coğrafi Bölgeler
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
@@ -452,7 +452,7 @@ export function V2Header() {
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
                         <div className="flex items-center gap-2.5">
-                          <Boxes className="size-4 text-amber-600 dark:text-amber-400" />
+                          <Boxes className="size-4 text-accent" />
                           <span className="text-sm font-semibold text-foreground">
                             Coğrafi Bölgeler
                           </span>
