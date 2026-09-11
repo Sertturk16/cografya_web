@@ -223,13 +223,23 @@ export function V2LoginCard({
           <Label htmlFor="v2-login-password" className="text-xs font-bold text-foreground">
             Şifre
           </Label>
-          <button
-            type="button"
+          {/* UYE-P4-SIFIRLAMA (owner ruling, `Owner's Inbox/uyelik-uyum-denetimi/
+              p4-sifirlama-ekranlari/atlas-karar.md` §2): was a bare `alert()` — zero network
+              calls, no real screen reached (İRİS finding A2). `/sifre-sifirlama` is a
+              LOCALIZED pathname (`/reset-password` under `/en`), so this is `Link` from
+              `@/i18n/navigation`, never `next/navigation`'s `useRouter().push()` (already
+              imported in this file for the login-submit redirect only) — a raw push would
+              send an `en` visitor to a TR-only path segment that does not exist under `/en`.
+              `Link`'s locale-aware `href` resolution does not depend on this component
+              calling `useTranslations`; the visible text stays the file's existing hardcoded
+              Turkish literal on purpose (`/v2` has no i18n today, a separate, already-deferred
+              gap this task does not fix). */}
+          <Link
+            href="/sifre-sifirlama"
             className="text-[11px] font-semibold text-primary hover:underline transition-colors"
-            onClick={() => alert("Şifre sıfırlama bağlantısı e-posta adresinize gönderilecektir.")}
           >
             Şifremi Unuttum?
-          </button>
+          </Link>
         </div>
         <div className="relative">
           <Input

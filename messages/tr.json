@@ -843,7 +843,9 @@
       "metaDescription": "Yeni şifreni belirle.",
       "heading": "Yeni şifre",
       "submit": "Şifreyi değiştir",
-      "done": "Şifren değişti. Yeni şifrenle giriş yap."
+      "done": "Şifren değişti. Yeni şifrenle giriş yap.",
+      "checking": "Yükleniyor…",
+      "deadLinkCta": "Yeni bağlantı iste"
     },
     "register": {
       "metaTitle": "Üye ol",

@@ -789,7 +789,9 @@
       "metaDescription": "Set your new password.",
       "heading": "New password",
       "submit": "Change the password",
-      "done": "Your password has changed. Log in with the new one."
+      "done": "Your password has changed. Log in with the new one.",
+      "checking": "Loading…",
+      "deadLinkCta": "Request new link"
     },
     "register": {
       "metaTitle": "Sign up",
