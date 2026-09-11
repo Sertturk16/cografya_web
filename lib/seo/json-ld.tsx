@@ -1,4 +1,6 @@
+import "server-only";
 import type { Locale } from "@/i18n/routing";
+import { serverEnv } from "@/lib/env.server";
 import { absoluteUrl, getSiteUrl, siteConfig } from "./site";
 
 // Minimal JSON-LD value typing — avoids `any` while staying schema-agnostic.
@@ -330,8 +332,33 @@ export function bookJsonLd(args: {
 const PROVIDER_THUMBNAIL_HOST_SUFFIXES = [".ytimg.com", ".youtube.com"] as const;
 
 /**
- * Whether an address is a provider-served thumbnail — the gate for
- * {@link videoObjectJsonLd}, which explains why it exists.
+ * The configured api origin's own hostname — the SECOND trusted source this gate accepts.
+ *
+ * Closes a gap the accompanying fix itself created: the sibling api-side plan (`Owner's
+ * Inbox/uyelik-uyum-denetimi/p2-video-kapisi/kapak-adresi/plan.md` §5.3) ships the fixed,
+ * identity-free cover address FROM THIS OWN ORIGIN, and `lib/api/books.ts`'s
+ * `resolveThumbnailUrl` already resolves a relative form of it against
+ * `serverEnv.API_BASE_URL` — without this, the widened resolver's own output would reach
+ * this gate and be rejected by it, degrading every video to `typographic` (no cover, no
+ * `VideoObject`) the moment the api actually ships that address. Derived from
+ * `serverEnv.API_BASE_URL` — the SAME configured value every api read already uses, never a
+ * new configuration key.
+ *
+ * EXACT hostname equality, not a suffix and not a pattern: unlike the provider's subdomain
+ * family above, there is exactly ONE api origin to trust, so a suffix match here would admit
+ * `evil-<hostname>` the same way the comment above warns a bare suffix would for the
+ * provider's own case — the failure mode this widening must not reopen.
+ */
+const API_ORIGIN_HOSTNAME = new URL(serverEnv.API_BASE_URL).hostname;
+
+/**
+ * Whether an address is a trusted thumbnail source — the gate for {@link videoObjectJsonLd}
+ * and for `lib/book/video-state.ts`'s `resolveVideoState`, which explains why it exists.
+ *
+ * TWO trusted origins, not one: the provider's own CDN (`PROVIDER_THUMBNAIL_HOST_SUFFIXES` —
+ * today's real value) and this repo's own configured api origin (`API_ORIGIN_HOSTNAME` — the
+ * sibling plan's own-hosted replacement). Both must keep passing, because this repo cannot
+ * assume which one a given response carries.
  *
  * `https` is required alongside the host: the address becomes an `<img src>` on an https
  * page, so an `http` one would be blocked as mixed content anyway and is not a value we
@@ -345,6 +372,7 @@ export function isProviderThumbnailUrl(url: string): boolean {
     return false;
   }
   if (parsed.protocol !== "https:") return false;
+  if (parsed.hostname === API_ORIGIN_HOSTNAME) return true;
   return PROVIDER_THUMBNAIL_HOST_SUFFIXES.some((suffix) => parsed.hostname.endsWith(suffix));
 }
 
