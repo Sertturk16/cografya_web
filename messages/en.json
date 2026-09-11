@@ -791,7 +791,7 @@
       "submit": "Change the password",
       "done": "Your password has changed. Log in with the new one.",
       "checking": "Loading…",
-      "deadLinkCta": "Request new link"
+      "deadLinkCta": "Request a new link"
     },
     "register": {
       "metaTitle": "Sign up",

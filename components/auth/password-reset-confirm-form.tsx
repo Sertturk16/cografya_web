@@ -94,6 +94,7 @@ export function PasswordResetConfirmForm() {
   const errorHeadingRef = useRef<HTMLHeadingElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
   const deadLinkHeadingRef = useRef<HTMLHeadingElement>(null);
+  const checkingStatusRef = useRef<HTMLParagraphElement>(null);
 
   // Drops `?token=` from the address bar once it has been read (plan §6.2). A pure
   // external-system side effect (browser history) — no `setState` inside it. The honest
@@ -150,6 +151,18 @@ export function PasswordResetConfirmForm() {
 
   useEffect(() => {
     if (tokenGateState === "blocked") deadLinkHeadingRef.current?.focus();
+  }, [tokenGateState]);
+
+  // Round-2 fix (pr-reviews/136.md, CODE136-NEW-I1): the "checking" state used to rely on
+  // `role="status"` ALONE, with no focus movement — the one full-card state in this file that
+  // did not follow its own siblings' idiom. `done`/`blocked` never depend on live-region mount
+  // timing at all: they move focus to a `tabIndex={-1}` element the instant they mount, which
+  // is a signal AT gets unconditionally, independent of whether a browser happened to notice a
+  // live region before its content settled. This gives "checking" the SAME mechanism, rather
+  // than pairing a weaker, unverified signal with a stronger one — see the comment at the
+  // render site below for why `role="status"` itself was removed, not merely supplemented.
+  useEffect(() => {
+    if (tokenGateState === "checking") checkingStatusRef.current?.focus();
   }, [tokenGateState]);
 
   const hasFieldErrors =
@@ -211,24 +224,43 @@ export function PasswordResetConfirmForm() {
 
   // An early `return`, not a ternary — chosen for consistency with this file's OWN existing
   // idiom for a full-card-state swap (matching `done` below), not primarily because of the
-  // gate. Recorded honestly (Phase 2 verification session, UYE-P4-SIFIRLAMA), because the
-  // superseded version of this comment claimed an `if`/`return` gives assistive tech a
-  // "something changed" signal a ternary here would not — measured this session, that specific
-  // claim does not survive: temporarily rewriting this branch as `tokenGateState === "checking"
-  // ? (...) : null` and re-running the gate, the ternary shape fails it (`role="status"` as the
-  // consequent of a null-alternate conditional), the `if`/`return` shape passes — but
-  // `auth-a11y.structure.test.ts`'s A11Y93-I1 scan (`ts.isConditionalExpression` +
-  // `ts.BinaryExpression` `&&`) is a syntactic AST check that does not visit `if` statements at
-  // all, which is sufficient on its own to explain the pass/fail difference without any claim
-  // about React's reconciliation or about assistive-tech behaviour — neither was independently
-  // measured this session (no jsdom in this repo, `FU-WEB-JSDOM`). So: this shape is kept
-  // because it matches `done`'s own established idiom, and it happens to also satisfy the
-  // scanner; the previous comment's ASSISTIVE-TECH rationale for the choice is retracted as
-  // unmeasured, not restated in a weaker form.
+  // gate.
+  //
+  // Round-2 correction (pr-reviews/136.md, CODE136-NEW-I1), recorded honestly rather than
+  // silently: this comment previously claimed the `if`/`return` shape merely "happened to
+  // satisfy the scanner" because `auth-a11y.structure.test.ts`'s A11Y93-I1/TA93R2-M1 scans
+  // (`ts.isConditionalExpression` + `ts.BinaryExpression` `&&`) do not visit `ts.IfStatement`
+  // at all — true, but incomplete: it left the state's own AT-safety genuinely unverified
+  // rather than closing it. `auth-a11y.structure.test.ts` now carries a THIRD detector
+  // (CODE136-NEW-I1) that DOES visit an `if (cond) { return (...) }` early return and flags a
+  // `role="status"`/`aria-live` node that is the SOLE content of one — the same hazard class
+  // the other two catch (a live-region node whose role and first content arrive in the same
+  // commit gives AT no "something changed" signal), extended to this third control-flow shape.
+  // Confirmed: with the scan extended, THIS state's original shape (a bare
+  // `<p role="status">` as the entire returned content) failed it — genuinely, not just in
+  // spirit; see the test file's own comment at that detector for why a blanket rule is correct
+  // here and does not also (falsely) flag `register-form.tsx`'s own, already-safe
+  // `step === "code"` `resendNote` paragraph, which sits among real siblings rather than being
+  // sole content.
+  //
+  // The fix applied is Fix (b) from that review, not Fix (a) alone: `role="status"` is REMOVED
+  // rather than paired with a ref, because a role=status/aria-live live region is the wrong
+  // tool for a WHOLESALE subtree replacement like this one (the previous "open" form, if it was
+  // ever actually painted — see `checkingStatusRef`'s own effect above for why that is a real,
+  // not merely a scanner, concern for a full-card swap) — the robust, already-established
+  // signal this file's OWN siblings (`done`, `blocked`) use for exactly this situation is
+  // FOCUS MOVEMENT to a `tabIndex={-1}` target, which does not depend on a browser noticing a
+  // live region before its content settles. `checkingStatusRef` + the effect above give this
+  // state that same treatment, closing the "genuinely wrong" gap that extending the scan turned
+  // up, rather than only making the scan able to see an unresolved one.
   if (tokenGateState === "checking") {
     return (
       <div className={styles.card}>
-        <p role="status" className={styles.hint}>
+        <p
+          ref={checkingStatusRef}
+          tabIndex={-1}
+          className={`${styles.hint} ${styles.checkingStatus}`}
+        >
           {t("resetNew.checking")}
         </p>
       </div>
