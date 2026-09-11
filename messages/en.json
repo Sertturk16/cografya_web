@@ -655,6 +655,8 @@
     "watchAria": "Watch — video solution for Deneme {no}",
     "watchOnYoutube": "Watch on YouTube",
     "watchOnYoutubeAria": "Watch on YouTube — video solution for Deneme {no}, opens in a new tab",
+    "watchLoading": "Loading…",
+    "watchLoadingAria": "Loading the video solution for Deneme {no}",
     "playerTitle": "Video solution for Deneme {no}",
     "durationLabel": "Duration",
     "publishedLabel": "Publication date",

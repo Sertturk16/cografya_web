@@ -225,9 +225,20 @@ describe("the delegated listener stays narrow", () => {
   });
 
   it("never opens a player for a video the provider refuses to embed", () => {
-    // `CODE63-I1`'s invariant, restated on the new shape: the island refuses the press, and the
-    // swap point refuses the render even if a stale store says otherwise.
-    expect(FLAT_BENCH).toMatch(/if \(video === undefined \|\| !video\.playable\) return;/);
+    // `CODE63-I1`'s invariant, restated on the new shape: the swap point refuses the render
+    // even if a stale store says otherwise. The island's OWN gate is asserted below, position-
+    // scoped to the non-playable branch — P2 (§10) gave that branch a real action (the external
+    // "watch on YouTube" control), so "returns unconditionally" is no longer the right shape to
+    // pin; "never reaches openVideo" still is.
+    const nonPlayableBranchStart = FLAT_BENCH.indexOf("if (!video.playable) {");
+    const nonPlayableBranchEnd = FLAT_BENCH.indexOf("const raw = trigger.dataset.second;");
+    expect(nonPlayableBranchStart).toBeGreaterThan(0);
+    expect(nonPlayableBranchEnd).toBeGreaterThan(nonPlayableBranchStart);
+    const nonPlayableBranch = FLAT_BENCH.slice(nonPlayableBranchStart, nonPlayableBranchEnd);
+    expect(nonPlayableBranch).not.toContain("openVideo(");
+    // A question row or timeline tick (no data-player-open) on a non-playable video still falls
+    // through to the native fragment jump — the one case this branch does nothing for.
+    expect(nonPlayableBranch).toContain('if (!trigger.hasAttribute("data-player-open")) return;');
   });
 
   it("clears the store when the bench leaves the page", () => {

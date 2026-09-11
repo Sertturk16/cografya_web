@@ -78,11 +78,23 @@ function handleToggleBody(): string {
 }
 
 describe("the login gate (§5.3.2)", () => {
+  // P2 (§10) gave the delegated handler a SECOND, earlier `if (authState !== "authenticated")`
+  // — the external "watch on YouTube" control's own gate, inside the `!video.playable` branch.
+  // The assertions below are about the PLAYABLE path's gate specifically (the one that reaches
+  // `openVideo`), so they anchor past `const raw = trigger.dataset.second;`, which only exists
+  // in that branch, rather than finding the first (external) occurrence by accident.
+  function playableBranch(handler: string): string {
+    const start = handler.indexOf("const raw = trigger.dataset.second;");
+    return start < 0 ? "" : handler.slice(start);
+  }
+
   it("checks authState before ever calling openVideo", () => {
     const handler = clickHandler();
     expect(handler).not.toBe("");
-    const gate = handler.indexOf('if (authState !== "authenticated")');
-    const openCall = handler.indexOf("openVideo(orderNo, second)");
+    const playable = playableBranch(handler);
+    expect(playable).not.toBe("");
+    const gate = playable.indexOf('if (authState !== "authenticated")');
+    const openCall = playable.indexOf("openVideo(orderNo, second)");
     expect(gate).toBeGreaterThan(0);
     expect(openCall).toBeGreaterThan(gate);
   });
@@ -96,10 +108,12 @@ describe("the login gate (§5.3.2)", () => {
   it("returns immediately after opening the auth modal, never falling through to openVideo (uyelik-auth-redesign plan §5.6.4, superseding the earlier /kayit redirect)", () => {
     // Position-based, like `deneme-video.src-invariant.test.ts`'s own click-gate checks.
     const handler = clickHandler();
-    const gate = handler.indexOf('if (authState !== "authenticated")');
-    const requestCall = handler.indexOf('requestAuth("video")', gate);
-    const gateReturn = handler.indexOf("return;", requestCall);
-    const openCall = handler.indexOf("openVideo(orderNo, second)");
+    const playable = playableBranch(handler);
+    expect(playable).not.toBe("");
+    const gate = playable.indexOf('if (authState !== "authenticated")');
+    const requestCall = playable.indexOf('requestAuth("video")', gate);
+    const gateReturn = playable.indexOf("return;", requestCall);
+    const openCall = playable.indexOf("openVideo(orderNo, second)");
     expect(gate).toBeGreaterThan(0);
     expect(requestCall).toBeGreaterThan(gate);
     expect(gateReturn).toBeGreaterThan(requestCall);
@@ -114,9 +128,10 @@ describe("the login gate (§5.3.2)", () => {
 
   it("applies the fragment and selects the video at GATE time (not deferred to a page the reader never leaves), before opening the modal", () => {
     const handler = clickHandler();
-    const gate = handler.indexOf('if (authState !== "authenticated")');
-    const applyCall = handler.indexOf("applyFragmentAndSelect(orderNo,", gate);
-    const requestCall = handler.indexOf('requestAuth("video")', gate);
+    const playable = playableBranch(handler);
+    const gate = playable.indexOf('if (authState !== "authenticated")');
+    const applyCall = playable.indexOf("applyFragmentAndSelect(orderNo,", gate);
+    const requestCall = playable.indexOf('requestAuth("video")', gate);
     expect(gate).toBeGreaterThan(0);
     expect(applyCall).toBeGreaterThan(gate);
     expect(requestCall).toBeGreaterThan(applyCall);
@@ -188,8 +203,10 @@ describe("the sign-in CTA's reserved box (§5.3.4)", () => {
   });
 
   it("swaps the İzle button's own accessible name for a signed-out reader", () => {
+    // Nested inside a `resolving` check now (P2 plan §5.3, §10's loading state) — the ternary
+    // text itself, not the exact `aria-label={…}` wrapper, is what this invariant is about.
     expect(VIDEO).toContain(
-      'aria-label={authState === "authenticated" ? watchAriaLabel : watchAriaSignedOutLabel}',
+      'authState === "authenticated" ? watchAriaLabel : watchAriaSignedOutLabel',
     );
   });
 });

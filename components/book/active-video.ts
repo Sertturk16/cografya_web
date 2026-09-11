@@ -108,6 +108,14 @@ export interface ActiveVideo {
   readonly seekSecond: number;
   /** Bumped on every request, so repeat jumps to one second are still distinguishable. */
   readonly seekNonce: number;
+  /** The resolved YouTube video id for THIS load, or `null` while the guarded identity fetch a
+   *  NEW load always starts (P2 plan §5.3 — the anonymous payload no longer carries this value
+   *  at all) is still in flight. `deneme-video.tsx`'s own effect is what turns a `null` into a
+   *  real id via {@link ActiveVideoStore.resolveVideoId}, never this store on its own; the
+   *  iframe branch does not render until it does. A continuing seek of the video already open
+   *  carries this field FORWARD unchanged in `open()` below — a question jump does not re-ask
+   *  who the video is — so only a genuinely NEW load ever starts at `null`. */
+  readonly videoId: string | null;
 }
 
 export interface BenchState {
@@ -123,8 +131,22 @@ export interface ActiveVideoStore {
   getServerSnapshot(): BenchState;
   /** Moves the stage WITHOUT loading a player. Tears down a player on another video. */
   select(orderNo: number): void;
-  /** Moves the stage AND loads/seeks its player. */
+  /** Moves the stage AND loads/seeks its player. A NEW load starts with `videoId: null` — the
+   *  identity is not known yet, so the iframe branch does not render until
+   *  {@link resolveVideoId} answers it (P2 plan §5.3). */
   open(orderNo: number, startSecond: number): void;
+  /** Resolves a NEW load's fetched identity. A no-op if the store has since moved past this
+   *  exact load — a different video selected, or the SAME video reloaded with a fresh
+   *  `loadToken` — so a slow, stale response can never overwrite what the reader is looking at
+   *  now. */
+  resolveVideoId(orderNo: number, loadToken: number, videoId: string): void;
+  /** The identity fetch failed (network error, 401 mid-flight, a genuine 404). Clears `active`
+   *  entirely rather than leaving a permanently loading button: `selected` is left alone, so
+   *  the stage still shows the video's ordinary cover, and a fresh press starts a fresh
+   *  attempt — the same silent-revert-and-retry posture `VideoProgressControls`' own save
+   *  toggle already takes for a failed write. Same stale-load guard as
+   *  {@link resolveVideoId}. */
+  failLoad(orderNo: number, loadToken: number): void;
   /** Clears both axes — the page is leaving. */
   reset(): void;
 }
@@ -180,8 +202,19 @@ export function createActiveVideoStore(): ActiveVideoStore {
               loadStartSecond: startSecond,
               seekSecond: startSecond,
               seekNonce,
+              videoId: null,
             };
       commit({ selected: orderNo, active });
+    },
+    resolveVideoId(orderNo, token, videoId) {
+      const current = state.active;
+      if (current === null || current.orderNo !== orderNo || current.loadToken !== token) return;
+      commit({ selected: state.selected, active: { ...current, videoId } });
+    },
+    failLoad(orderNo, token) {
+      const current = state.active;
+      if (current === null || current.orderNo !== orderNo || current.loadToken !== token) return;
+      commit({ selected: state.selected, active: null });
     },
     reset() {
       if (state === EMPTY) return;
@@ -194,6 +227,8 @@ const store = createActiveVideoStore();
 
 export const selectVideo = store.select;
 export const openVideo = store.open;
+export const resolveVideoId = store.resolveVideoId;
+export const failLoad = store.failLoad;
 export const resetBench = store.reset;
 
 export function useBenchState(): BenchState {

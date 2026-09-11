@@ -725,6 +725,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/video-identity/{bookVideoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A signed-in member's own way to fetch one video's identity.
+         * @description The anonymous book payload never carries this value (P2) — a member fetches it through this guarded route instead, keyed on the same public bookVideoId the anonymous payload already carries.
+         */
+        get: operations["VideoIdentityController_getIdentity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/favorites": {
         parameters: {
             query?: never;
@@ -2725,15 +2745,17 @@ export interface components {
              * @example null
              */
             titleEn: string | null;
-            /**
-             * @description The YouTube video id, 11 characters — the identifier the embed is built from. Load the player only on a click or key press, never on hover, and place nothing on top of it once it is in. Moving between etiketler happens INSIDE the loaded player through the IFrame Player API, not by rebuilding the embed URL per etiket (owner ruling DEC 2026-08-15d): six etiketler per video would otherwise cost six full player reloads.
-             * @example dQw4w9WgXcQ
-             */
-            youtubeVideoId: string;
             /** @description The etiket index for this video, ascending by orderNo and by startSecond. It must be readable and clickable WITHOUT JavaScript: SEO-POLICY §12.2.b treats a page whose body exists to send the visitor elsewhere as a BLOCKER, and this index is what keeps the page on the right side of that line. Renamed from `questions` (P0 PR-3, `DEC 2026-09-10b` md.1). */
             tags: components["schemas"]["BookVideoTagDto"][];
             /** @description Provider-sourced enrichment, or NULL — and null is a normal state, not an error: the sync may never have run, the data may have aged past its serve threshold, or the video may have stopped being returned. When it is null, do NOT emit VideoObject and fall back to a typographic facade; the rest of this object is unaffected. */
             youtube: components["schemas"]["BookVideoYoutubeDto"] | null;
+        };
+        VideoIdentityDto: {
+            /**
+             * @description The YouTube video id, 11 characters — the identifier the embed is built from.
+             * @example dQw4w9WgXcQ
+             */
+            youtubeVideoId: string;
         };
         BookAttributionDto: {
             /**
@@ -4814,6 +4836,55 @@ export interface operations {
                 };
             };
             /** @description errors.videoProgress.videoNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoIdentityController_getIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description book_videos.id. */
+                bookVideoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoIdentityDto"];
+                };
+            };
+            /** @description A malformed (non-UUID) bookVideoId. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.videoIdentity.notFound */
             404: {
                 headers: {
                     [name: string]: unknown;

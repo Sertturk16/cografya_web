@@ -671,6 +671,8 @@
     "watchAria": "İzle — Deneme {no} video çözümü",
     "watchOnYoutube": "YouTube'da izle",
     "watchOnYoutubeAria": "YouTube'da izle — Deneme {no} video çözümü, yeni sekmede açılır",
+    "watchLoading": "Yükleniyor…",
+    "watchLoadingAria": "Deneme {no} video çözümü yükleniyor",
     "playerTitle": "Deneme {no} video çözümü",
     "durationLabel": "Süre",
     "publishedLabel": "Yayın tarihi",

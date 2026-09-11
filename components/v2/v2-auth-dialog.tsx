@@ -40,10 +40,14 @@ const INTENT_CONFIGS: Record<AuthIntent, IntentConfig> = {
     desc: "İl ve ülke verilerini hızlı erişim listene eklemek ve güncel telemetrileri takip etmek için giriş yap.",
   },
   video: {
+    // Names WATCHING, not progress-tracking (İRİS A12; plan §2.7/§5.2). The page's own CTA
+    // already gets this right ("Bu videoyu izlemek için üye ol.", `BookDetail.signInCta`) and
+    // so does the OTHER auth dialog's video sentence (`Auth.modal.intent.video`,
+    // `components/auth/auth-dialog-body.tsx`) — this component just never matched them.
     icon: <Video className="size-4 text-rose-500" />,
-    badgeText: "Soru Çözüm Takibi",
-    title: "Video İlerlemeni Kaydet",
-    desc: "Hangi deneme sorularını çözdüğünü ve izlediğini soru soru takip etmek için giriş yap.",
+    badgeText: "Video Çözümü",
+    title: "Videoyu İzlemek İçin Üye Ol",
+    desc: "Video çözümünü izlemek için giriş yap.",
   },
   gameRound: {
     icon: <Trophy className="size-4 text-emerald-500" />,

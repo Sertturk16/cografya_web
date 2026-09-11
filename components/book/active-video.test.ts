@@ -160,6 +160,61 @@ describe("bench store", () => {
     expect(calls).toBe(0);
   });
 
+  it("starts a NEW load with no known identity yet (P2 plan §5.3)", () => {
+    // The anonymous payload no longer carries the video id at all — a fresh load has nothing
+    // to put here until the guarded fetch answers.
+    const store = createActiveVideoStore();
+    store.open(12, 94);
+    expect(store.getSnapshot().active?.videoId).toBeNull();
+  });
+
+  it("carries a resolved identity forward across a seek of the same video", () => {
+    const store = createActiveVideoStore();
+    store.open(12, 0);
+    const token = store.getSnapshot().active?.loadToken;
+    expect(token).toBeDefined();
+    store.resolveVideoId(12, token as number, "fixtureVid");
+    store.open(12, 141);
+    expect(store.getSnapshot().active?.videoId).toBe("fixtureVid");
+  });
+
+  it("starts the NEXT video's load with no identity, even once the previous one resolved one", () => {
+    const store = createActiveVideoStore();
+    store.open(1, 0);
+    const token = store.getSnapshot().active?.loadToken;
+    store.resolveVideoId(1, token as number, "fixtureVid1");
+    store.open(3, 94);
+    expect(store.getSnapshot().active?.videoId).toBeNull();
+  });
+
+  it("ignores a resolution for a load the store has since moved past", () => {
+    const store = createActiveVideoStore();
+    store.open(1, 0);
+    const staleToken = store.getSnapshot().active?.loadToken as number;
+    store.open(3, 94); // a different video — the first load's token is now stale
+    store.resolveVideoId(1, staleToken, "late-answer");
+    expect(store.getSnapshot().active?.orderNo).toBe(3);
+    expect(store.getSnapshot().active?.videoId).toBeNull();
+  });
+
+  it("clears active on a failed load, leaving the selection alone", () => {
+    const store = createActiveVideoStore();
+    store.open(12, 94);
+    const token = store.getSnapshot().active?.loadToken as number;
+    store.failLoad(12, token);
+    expect(store.getSnapshot()).toEqual({ selected: 12, active: null });
+  });
+
+  it("ignores a failure for a load the store has since moved past", () => {
+    const store = createActiveVideoStore();
+    store.open(1, 0);
+    const staleToken = store.getSnapshot().active?.loadToken as number;
+    store.open(3, 94);
+    store.failLoad(1, staleToken);
+    expect(store.getSnapshot().active?.orderNo).toBe(3);
+    expect(store.getSnapshot().active).not.toBeNull();
+  });
+
   it("notifies subscribers and stops after unsubscribe", () => {
     const store = createActiveVideoStore();
     let calls = 0;

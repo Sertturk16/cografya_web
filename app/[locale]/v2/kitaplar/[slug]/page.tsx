@@ -21,7 +21,6 @@ import { PUBLISHED_DATE_FORMAT } from "@/lib/book/published-date";
 import { tagFragment, videoFragment, videoTitle } from "@/lib/book/video-identity";
 import { isPlayable, resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
-import { canonicalEmbedUrl } from "@/lib/youtube/embed";
 import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import {
@@ -98,7 +97,6 @@ export default async function V2BookDetailPage({ params }: PageProps) {
   const benchVideos: BenchVideo[] = videoStates.map(({ video, state }) => ({
     orderNo: video.orderNo,
     bookVideoId: video.bookVideoId,
-    videoId: video.youtubeVideoId,
     titleTr: video.titleTr,
     titleEn: video.titleEn,
     playable: isPlayable(state),
@@ -137,7 +135,10 @@ export default async function V2BookDetailPage({ params }: PageProps) {
       thumbnailUrl: state.youtube.thumbnailUrl,
       uploadDate: state.youtube.publishedAtUtc,
       duration: state.youtube.durationIso,
-      embedUrl: canonicalEmbedUrl(video.youtubeVideoId),
+      // NO embedUrl (P2, Option C — `DEC 2026-09-09b` md.2/md.4). Same reasoning as the
+      // primary `/kitaplar/[slug]` page: the anonymous payload no longer carries the video id,
+      // and this page's api call is the same SSG/ISR-cached one, so there is no address to
+      // give the builder on any request.
     });
     return schema === null ? [] : [schema];
   });

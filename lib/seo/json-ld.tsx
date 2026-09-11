@@ -354,12 +354,11 @@ export function isProviderThumbnailUrl(url: string): boolean {
  *
  * ## The required arguments are required ON PURPOSE — and they cover ONE of two gates
  *
- * `name`, `thumbnailUrl`, `uploadDate`, `duration` and `embedUrl` are non-optional in this
- * signature. Three of them can only come from the api's provider-snapshot object, which is
- * nullable and is null on the normal path today — so when there is no snapshot, a
- * `VideoObject` cannot be constructed here **without inventing data**, and inventing it is
- * exactly what §B5 5.8 rates BLOCKER. That much the type really does enforce, with no
- * comment for anyone to remember.
+ * `name`, `thumbnailUrl`, `uploadDate` and `duration` are non-optional in this signature.
+ * Three of them can only come from the api's provider-snapshot object, which is nullable and
+ * is null on the normal path today — so when there is no snapshot, a `VideoObject` cannot be
+ * constructed here **without inventing data**, and inventing it is exactly what §B5 5.8 rates
+ * BLOCKER. That much the type really does enforce, with no comment for anyone to remember.
  *
  * **It does not enforce the second gate, and the difference is worth stating rather than
  * glossing.** The contract's other condition is `BookVideoYoutubeDto.embeddable`: a
@@ -373,11 +372,30 @@ export function isProviderThumbnailUrl(url: string): boolean {
  * (Google's own required set is `name` + `thumbnailUrl` + `uploadDate`. `duration` is
  * required here rather than optional because §B5 5.7 pairs it with visible page content: if
  * it is in the markup it is on the page, and the page shows it whenever the snapshot
- * exists. `embedUrl` is required because a `VideoObject` carrying neither `contentUrl` nor
- * `embedUrl` names no playable resource at all — and on this surface there is no case where
- * one is legitimately absent, since a block we cannot embed emits no markup in the first
- * place. The builder still takes it as a parameter rather than composing it, so the player
- * host stays W2's decision.)
+ * exists.)
+ *
+ * ## `embedUrl` is OPTIONAL now, and that is Option C (P2, `DEC 2026-09-09b` md.2/md.4) —
+ * not the gap this docblock used to call unreachable
+ *
+ * Until P2 this parameter was required, on the stated ground that "a block we cannot embed
+ * emits no markup in the first place" — true only while the caller always HAD an embed
+ * address to hand in. P2 changes that premise: the anonymous book payload no longer carries
+ * the video id at all (`lib/api/types.ts`'s `BookVideo` has no `youtubeVideoId`; it is read
+ * only through the guarded `GET /api/video-identity/{bookVideoId}` a signed-in reader's own
+ * click resolves), and the api response this JSON-LD is built from is the SSG/ISR-cached one
+ * — never a per-session variant (plan §2.2) — so both book pages now call this builder with
+ * no embed address to give it, on EVERY request, anonymous and authenticated alike. Three
+ * grounds settled which of "omit the field" and "keep emitting a value" is correct, cited by
+ * reference rather than re-argued here (`DEC 2026-09-09b` md.2): Google's own required set for
+ * `VideoObject` is `name` + `thumbnailUrl` + `uploadDate` — `embedUrl` is recommended, not
+ * required, so omitting it keeps the node valid; a block this page cannot embed already emits
+ * no markup at all, so `embedUrl` only ever described a facade every visitor already sees
+ * rendered; and inventing a placeholder or carrying a stale value would be exactly the "no
+ * case where one is legitimately absent" cloaking risk this docblock used to wave away —
+ * omission closes that question rather than opening it. The builder still takes the address
+ * as a parameter rather than composing one (the player host stays the caller's decision, on
+ * the rare path where one is supplied), and emits the key only when it is — never
+ * `embedUrl: undefined`, which is a key JSON still serialises.
  *
  * ## The host is ASSERTED, and the builder answers `null` rather than rewriting (→ PR #61
  * review `SEC61-M3`)
@@ -406,7 +424,7 @@ export function isProviderThumbnailUrl(url: string): boolean {
  *   parsed seconds. The contract publishes both precisely because a parser that reads
  *   "PT6M8S" as 68 seconds satisfies every range check and is still wrong on the page.
  *
- * ## Two fields that are never emitted
+ * ## Fields that are never emitted
  *
  * · **`description`** — recommended by Google, not required, and this surface has no
  *   visible per-video summary. §B5 5.7 rates structured data that is not on the page a
@@ -417,13 +435,15 @@ export function isProviderThumbnailUrl(url: string): boolean {
  *   and generating query-parameter variants was rejected separately under §B12 12.2.c. A
  *   `url` the page does not honour is a structured-data claim about a page behaviour that
  *   does not exist.
+ * · **`contentUrl`** — never composed as a substitute for the now-usually-absent `embedUrl`;
+ *   this builder has no parameter that could produce it and P2 adds none.
  *
- * `json-ld.test.ts` asserts the absence of both keys — and asserts it over the emitted
- * OBJECT, which is a narrower guard than "these fields can never come back". Since this
- * builder has no parameter that could produce either key, the two are the same thing today;
- * they would stop being the same the moment someone adds a `clips` argument and emits
- * `hasPart` only when it is supplied. Whoever adds that argument is the one who has to
- * reopen the ruling, and the test will not do it for them.
+ * `json-ld.test.ts` asserts the absence of all three keys — and asserts it over the emitted
+ * OBJECT, which is a narrower guard than "these fields can never come back". `description` and
+ * `contentUrl` stop being covered by that guard the moment someone adds a parameter that could
+ * produce them; whoever adds one is reopening a ruling, and the test will not do it for them.
+ * `embedUrl` is different since P2: it IS a real, tested parameter now, and its own emit-only-
+ * when-supplied behaviour is asserted directly, not inferred from the absence of a parameter.
  */
 export function videoObjectJsonLd(args: {
   /** The video's visible title on our page. */
@@ -434,8 +454,10 @@ export function videoObjectJsonLd(args: {
   uploadDate: string;
   /** ISO 8601 duration, the provider's raw string (contract `durationIso`). */
   duration: string;
-  /** The player address this page actually loads. The host is the caller's decision. */
-  embedUrl: string;
+  /** The player address this page actually loads, WHEN the caller has one to give (P2 Option
+   *  C — see the docblock above). Omitted entirely, never a placeholder, when it is not
+   *  supplied; the host is the caller's decision on the rare path where it is. */
+  embedUrl?: string;
 }): JsonLdSchema | null {
   if (!isProviderThumbnailUrl(args.thumbnailUrl)) {
     console.warn(
@@ -452,7 +474,7 @@ export function videoObjectJsonLd(args: {
     thumbnailUrl: args.thumbnailUrl,
     uploadDate: args.uploadDate,
     duration: args.duration,
-    embedUrl: args.embedUrl,
+    ...(args.embedUrl !== undefined ? { embedUrl: args.embedUrl } : {}),
   };
 }
 

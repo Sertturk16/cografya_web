@@ -219,7 +219,16 @@ describe("the two attributes the privacy rulings put on this surface", () => {
     expect(VIDEO).toContain('referrerPolicy="no-referrer"');
   });
 
-  it("leaves a non-playable video's rows entirely alone", () => {
-    expect(BENCH).toMatch(/if \(video === undefined \|\| !video\.playable\) return;/);
+  it("leaves a non-playable video's question rows entirely alone", () => {
+    // A question row/timeline tick carries `data-second`, no `data-player-open`, so it still
+    // falls through to the native fragment jump — the one branch P2's own "watch on YouTube"
+    // gating (§10) left untouched.
+    const nonPlayableBranchStart = BENCH.indexOf("if (!video.playable) {");
+    const nonPlayableBranchEnd = BENCH.indexOf("const raw = trigger.dataset.second;");
+    expect(nonPlayableBranchStart).toBeGreaterThan(0);
+    expect(nonPlayableBranchEnd).toBeGreaterThan(nonPlayableBranchStart);
+    expect(BENCH.slice(nonPlayableBranchStart, nonPlayableBranchEnd)).toContain(
+      'if (!trigger.hasAttribute("data-player-open")) return;',
+    );
   });
 });

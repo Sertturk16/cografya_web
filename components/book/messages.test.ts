@@ -44,6 +44,11 @@ const BOOK_DETAIL_KEYS = [
   "watchAria",
   "watchOnYoutube",
   "watchOnYoutubeAria",
+  // The identity fetch's own loading state (P2 plan §5.3/§10) — shared by İzle and the
+  // external "watch on YouTube" control, both of which now resolve the video id on click
+  // rather than receiving it in the anonymous payload.
+  "watchLoading",
+  "watchLoadingAria",
   "playerTitle",
   "durationLabel",
   "publishedLabel",

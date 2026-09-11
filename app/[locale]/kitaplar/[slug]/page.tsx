@@ -16,7 +16,6 @@ import { PUBLISHED_DATE_FORMAT } from "@/lib/book/published-date";
 import { tagFragment, videoFragment, videoTitle } from "@/lib/book/video-identity";
 import { isPlayable, resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
-import { canonicalEmbedUrl } from "@/lib/youtube/embed";
 import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import styles from "./book-detail.module.css";
@@ -224,7 +223,6 @@ export default async function BookDetailPage({ params }: PageProps) {
   const benchVideos: BenchVideo[] = videoStates.map(({ video, state }) => ({
     orderNo: video.orderNo,
     bookVideoId: video.bookVideoId,
-    videoId: video.youtubeVideoId,
     titleTr: video.titleTr,
     titleEn: video.titleEn,
     playable: isPlayable(state),
@@ -287,7 +285,12 @@ export default async function BookDetailPage({ params }: PageProps) {
       // The provider's RAW ISO string, never re-derived from the parsed seconds: the contract
       // publishes both precisely because "PT6M8S" read as 68 seconds passes every range check.
       duration: state.youtube.durationIso,
-      embedUrl: canonicalEmbedUrl(video.youtubeVideoId),
+      // NO embedUrl (P2, Option C — `DEC 2026-09-09b` md.2/md.4). The anonymous payload no
+      // longer carries the video id at all, and this page's api call is the SSG/ISR-cached one
+      // — never a per-session variant — so there is no address to give the builder on ANY
+      // request, signed in or not. Omitting the key keeps the node valid (Google's required
+      // set is name + thumbnailUrl + uploadDate) without inventing or restating a value this
+      // page cannot back; see `lib/seo/json-ld.tsx`'s own docblock for the full reasoning.
     });
     return schema === null ? [] : [schema];
   });

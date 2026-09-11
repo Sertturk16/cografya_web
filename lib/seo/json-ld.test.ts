@@ -261,12 +261,25 @@ describe("videoObjectJsonLd", () => {
     expect(emitted({ ...video, duration: "PT1H2M3S" }).duration).toBe("PT1H2M3S");
   });
 
-  it("always carries an embedUrl, passed through from the caller", () => {
-    // A `VideoObject` with neither `contentUrl` nor `embedUrl` names no playable resource,
-    // and on this surface there is no legitimate case for one: a block that cannot be
-    // embedded emits no markup at all. The value is the caller's — the player host is W2's
-    // decision, not this builder's.
+  it("carries an embedUrl when the caller supplies one, passed through unchanged", () => {
+    // The value is the caller's — the player host is the caller's decision, not this
+    // builder's. Rare since P2 (Option C, `DEC 2026-09-09b` md.2/md.4): both book pages
+    // now call this builder with no address to give it, on every request.
     expect(emitted(video).embedUrl).toBe("https://example.invalid/embed/syntheticId");
+  });
+
+  it("emits no embedUrl key at all when none is supplied — Option C, the normal call shape since P2", () => {
+    // The anonymous book payload no longer carries the video id, and the api response this
+    // JSON-LD is built from is the SSG/ISR-cached one — never a per-session variant — so
+    // BOTH book pages call this builder with no address on EVERY request now, anonymous and
+    // authenticated alike (plan §2.2/§5.1). `not.toHaveProperty` — never a `.toBeUndefined()`
+    // — because `{ embedUrl: undefined }` is a key JSON.stringify still serialises, which is
+    // exactly the placeholder this Option C ruling forbids.
+    const { embedUrl: _embedUrl, ...withoutEmbedUrl } = video;
+    void _embedUrl; // discarded on purpose — see the comment above
+    const schema = emitted(withoutEmbedUrl);
+    expect(schema).not.toHaveProperty("embedUrl");
+    expect(schema).not.toHaveProperty("contentUrl");
   });
 
   // THE HOST ASSERTION (→ PR #61 review `SEC61-M3`). The address becomes markup AND, in W2,

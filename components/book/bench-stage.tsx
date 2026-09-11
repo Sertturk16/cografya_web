@@ -6,7 +6,6 @@ import type { AuthSessionState } from "@/lib/auth/use-session.client";
 import { formatDuration } from "@/lib/book/duration";
 import { videoTitle } from "@/lib/book/video-identity";
 import type { VideoProgressValue } from "@/lib/video-progress/client";
-import { watchUrl } from "@/lib/youtube/embed";
 import { useBenchState } from "./active-video";
 import { BenchTimeline } from "./bench-timeline";
 import { DenemeVideo } from "./deneme-video";
@@ -44,10 +43,14 @@ import styles from "./book-video.module.css";
  */
 export interface BenchVideo {
   readonly orderNo: number;
-  /** `book_videos.id` — the identifier the video-progress endpoints key on (UYELIK-06 plan
-   *  §5.2). Populated from the api's own `BookVideoDto.bookVideoId`, never derived here. */
+  /** `book_videos.id` — the identifier the video-progress AND video-identity endpoints key on
+   *  (UYELIK-06 plan §5.2, P2 plan §5.3). Populated from the api's own `BookVideoDto.bookVideoId`,
+   *  never derived here. **No `videoId` field here any more** (P2): the anonymous payload never
+   *  carries the YouTube video id at all, so it cannot ship in this props array either — a
+   *  signed-in reader's own click resolves it through the guarded
+   *  `lib/video-identity/client.ts` fetch, and `active-video.ts`'s store is what holds the
+   *  resolved answer once one exists. */
   readonly bookVideoId: string;
-  readonly videoId: string;
   /** The generic contract's per-video display title, both nullable (`FU-BOOK-GENERIC-CONTRACT`
    *  — the trigger `videoTitle`'s own docblock names). `null` for every seeded row today: the
    *  reader-facing "Deneme N" label is still composed in the web layer from i18n + `orderNo`. */
@@ -125,6 +128,7 @@ export function BenchStage({
   authState,
   progress,
   onSaveWatched,
+  externalResolvingOrderNo,
 }: {
   videos: readonly BenchVideo[];
   defaultOrderNo: number;
@@ -139,6 +143,11 @@ export function BenchStage({
   /** Persists a watched-toggle press (§5.6); owned by `VideoBench` because it also updates the
    *  progress state this component reads. */
   onSaveWatched: (watched: boolean) => Promise<{ readonly ok: boolean }>;
+  /** The `external`-state "watch on YouTube" control's own identity fetch, in flight for this
+   *  orderNo, or `null` (P2 plan §5.3/§10). Owned by `VideoBench`, not by `active-video.ts`'s
+   *  store: an external video never gets a player, so it has no business in that store's own
+   *  "one player, ever" shape. */
+  externalResolvingOrderNo: number | null;
 }) {
   const t = useTranslations("BookDetail");
   // `useLocale()`'s own return type is `use-intl`'s `Locale`, which resolves to plain `string`
@@ -185,7 +194,9 @@ export function BenchStage({
         sessionReadyAnnounceText={t("sessionReadyAnnounce")}
         watchOnYoutubeLabel={t("watchOnYoutube")}
         watchOnYoutubeAriaLabel={t("watchOnYoutubeAria", { no: video.orderNo })}
-        watchOnYoutubeUrl={watchUrl(video.videoId)}
+        watchOnYoutubeLoading={externalResolvingOrderNo === video.orderNo}
+        watchLoadingLabel={t("watchLoading")}
+        watchLoadingAriaLabel={t("watchLoadingAria", { no: video.orderNo })}
       />
 
       {/* THE STAGE CAPTION — which video is on the stage, and its two visible facts.

@@ -2,10 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import type { AuthSessionState } from "@/lib/auth/use-session.client";
+import { fetchVideoIdentity, VIDEO_IDENTITY_FETCH_TIMEOUT_MS } from "@/lib/video-identity/client";
 import { saveVideoProgress } from "@/lib/video-progress/client";
 import { loadIframeApi, YT_PLAYER_STATE, type YouTubePlayer } from "@/lib/youtube/iframe-api";
 import { playerEmbedSrc } from "@/lib/youtube/embed";
-import type { ActiveVideo } from "./active-video";
+import { failLoad, resolveVideoId, type ActiveVideo } from "./active-video";
 import type { BenchVideo } from "./bench-stage";
 import styles from "./book-video.module.css";
 
@@ -110,7 +111,9 @@ export function DenemeVideo({
   sessionReadyAnnounceText,
   watchOnYoutubeLabel,
   watchOnYoutubeAriaLabel,
-  watchOnYoutubeUrl,
+  watchOnYoutubeLoading,
+  watchLoadingLabel,
+  watchLoadingAriaLabel,
 }: {
   video: BenchVideo;
   /** The store's loaded player, WHATEVER video it belongs to — or `null` when none is loaded.
@@ -149,9 +152,35 @@ export function DenemeVideo({
   sessionReadyAnnounceText: string;
   watchOnYoutubeLabel: string;
   watchOnYoutubeAriaLabel: string;
-  watchOnYoutubeUrl: string;
+  /** Whether the EXTERNAL-state "watch on YouTube" control's own identity fetch is in flight
+   *  for this video (§10, P2 plan §5.3) — owned by `VideoBench`'s own local state, never
+   *  `active-video.ts`'s store (an external video never gets a player). */
+  watchOnYoutubeLoading: boolean;
+  /** Shared loading copy for BOTH controls this file renders — the İzle button while its own
+   *  identity fetch (below) is in flight, and the external control while `watchOnYoutubeLoading`
+   *  is true. One pair of strings because both describe the same fact: the video is being
+   *  prepared to open. */
+  watchLoadingLabel: string;
+  watchLoadingAriaLabel: string;
 }) {
-  const isActive = video.playable && active !== null && active.orderNo === video.orderNo;
+  // `active.videoId !== null` is P2's own addition to this gate (plan §5.3): the anonymous
+  // payload no longer carries the id at all, so a NEW load starts with it `null` and the iframe
+  // branch below must not render — and must not attach a player to it — until the guarded fetch
+  // this component's own effect starts has actually answered.
+  const isActive =
+    video.playable &&
+    active !== null &&
+    active.orderNo === video.orderNo &&
+    active.videoId !== null;
+  // A load IS requested (İzle was pressed, or a seek re-opened this exact video) but the
+  // identity fetch that load started has not answered yet — the complement of `isActive` within
+  // "this is the video with a load in progress". Drives the İzle button's own loading state
+  // below; the fetch that resolves it is the effect further down.
+  const resolving =
+    video.playable &&
+    active !== null &&
+    active.orderNo === video.orderNo &&
+    active.videoId === null;
   // Saving requires a genuinely loaded, genuinely authenticated player (§5.5). In practice
   // `isActive` alone already implies `authState === "authenticated"`, since the click gate
   // (`video-bench.tsx`) never calls `openVideo` for anyone else — this check is the belt the
@@ -184,6 +213,49 @@ export function DenemeVideo({
   useEffect(() => {
     bookVideoIdRef.current = video.bookVideoId;
   }, [video.bookVideoId]);
+
+  /**
+   * THE IDENTITY FETCH (P2 plan §5.3) — the server-side gate itself. A press already passed the
+   * login gate in `video-bench.tsx` and called `openVideo`, which sets `active` with
+   * `videoId: null` for a genuinely NEW load (a continuing seek of the video already open
+   * carries whatever id it already resolved forward — see `active-video.ts`'s own `open()`).
+   * This effect is what turns that `null` into the real id, via the ONE authenticated route
+   * this whole package exists to add (`GET /api/video-identity/{bookVideoId}`) — never the
+   * anonymous payload, which no longer carries it at all.
+   *
+   * KEYED ON `[resolving, active, video.bookVideoId]`, DELIBERATELY NOT ON the pinned
+   * `[isActive, active?.loadToken]` pair the player-attach/focus effects below share
+   * (`deneme-video.src-invariant.test.ts` counts that exact array twice): `resolving` is this
+   * effect's own, disjoint condition — true only in the window between a load starting and its
+   * identity landing — so this effect can never be mistaken for either of those two, and a
+   * rename here can never silently widen or narrow them.
+   *
+   * ON FAILURE (network error, 401 mid-flight, a genuine 404), `failLoad` clears the store's
+   * `active` entirely rather than leaving a permanently loading button: the video falls back to
+   * its ordinary, un-loaded cover and a fresh press starts a fresh attempt — the same
+   * silent-revert-and-retry posture `VideoProgressControls`' own save toggle already takes for
+   * a failed write, rather than new error-banner infrastructure this surface does not have.
+   */
+  useEffect(() => {
+    if (!resolving || active === null) return;
+    const requestedOrderNo = active.orderNo;
+    const requestedToken = active.loadToken;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), VIDEO_IDENTITY_FETCH_TIMEOUT_MS);
+    fetchVideoIdentity(video.bookVideoId, controller.signal)
+      .then((videoId) => {
+        if (videoId === null) {
+          failLoad(requestedOrderNo, requestedToken);
+          return;
+        }
+        resolveVideoId(requestedOrderNo, requestedToken, videoId);
+      })
+      .finally(() => clearTimeout(timeout));
+    return () => {
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [resolving, active, video.bookVideoId]);
 
   // Attach the player to the iframe WE rendered, rather than letting the API replace a
   // placeholder with an iframe of its own: the DOM here is React's. The script is fetched on
@@ -370,7 +442,7 @@ export function DenemeVideo({
     player.seekTo(active.seekSecond, true);
   }, [isActive, active]);
 
-  if (isActive && active !== null) {
+  if (isActive && active !== null && active.videoId !== null) {
     return (
       // `data-player-box` is not styling and not dead markup: it is the handle `SPEC.md` §9's
       // criterion 12 addresses when it measures that this box holds the iframe and NOTHING else
@@ -394,7 +466,7 @@ export function DenemeVideo({
           ref={iframeRef}
           className={styles.player}
           src={playerEmbedSrc({
-            videoId: video.videoId,
+            videoId: active.videoId,
             origin: window.location.origin,
             startSecond: active.loadStartSecond,
           })}
@@ -422,7 +494,16 @@ export function DenemeVideo({
      also owns the 180 index rows. The control does nothing without JavaScript, and that is stated
      rather than hidden: the page's content is the question index, every row of which is a real
      link that works with no script at all, and the video itself stays reachable through the
-     source credit at the foot of the page. */
+     source credit at the foot of the page.
+
+     A `<button>` NOW, NOT A PLAIN `<a href>` (§10, P2 plan §5.3). The address used to be built
+     and printed BEFORE any click — the raw video id sitting in a real `href`, for every
+     anonymous visitor, which is exactly what the Objective bars. It is resolved the same way
+     İzle resolves one now: gated on `data-player-open` in the delegated listener
+     (`video-bench.tsx`'s `openExternalWatch`), fetched only on a click or a key press, opened
+     in a new tab only once the fetch answers. This control never sets `active` in the bench
+     store — an external video never gets a player — so its own loading flag
+     (`watchOnYoutubeLoading`) is `VideoBench`'s own local state, threaded down as a prop. */
   if (!video.playable) {
     return (
       <div className={`${styles.frame} ${styles.thumbBox}`}>
@@ -431,15 +512,16 @@ export function DenemeVideo({
               Name — → PR #63 review `A11Y63-I1`). A name that REPLACES the visible word breaks
               speech input: a Voice Control user says "İzle" and nothing matches. So the
               disambiguation is appended to the visible token rather than substituted for it. */}
-          <a
+          <button
+            type="button"
             className={`btn btn-ghost ${styles.watchButton}`}
-            href={watchOnYoutubeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={watchOnYoutubeAriaLabel}
+            data-player-open=""
+            aria-busy={watchOnYoutubeLoading}
+            aria-disabled={watchOnYoutubeLoading}
+            aria-label={watchOnYoutubeLoading ? watchLoadingAriaLabel : watchOnYoutubeAriaLabel}
           >
-            {watchOnYoutubeLabel}
-          </a>
+            {watchOnYoutubeLoading ? watchLoadingLabel : watchOnYoutubeLabel}
+          </button>
         </span>
       </div>
     );
@@ -477,13 +559,29 @@ export function DenemeVideo({
         />
       )}
       <span className={styles.watchOverlay}>
+        {/* `resolving` (P2 plan §5.3) is the window between İzle being pressed and this
+            component's own identity-fetch effect (above) answering — the server-side gate
+            itself, made visible. `aria-disabled`, NOT `disabled` (mirrors
+            `VideoProgressControls`' own WCAG rationale, PR #90 review `A11Y90-I3`): a truly
+            `disabled` button drops out of the Tab sequence and loses focus the instant the
+            attribute flips, and nothing here restores it. The click gate's own idempotence
+            (`active-video.ts`'s `open()`) is what actually refuses a duplicate fetch — this
+            attribute is the visible/AT-audible signal, not the guard. */}
         <button
           type="button"
           className={`btn btn-primary ${styles.watchButton}`}
           data-player-open=""
-          aria-label={authState === "authenticated" ? watchAriaLabel : watchAriaSignedOutLabel}
+          aria-busy={resolving}
+          aria-disabled={resolving}
+          aria-label={
+            resolving
+              ? watchLoadingAriaLabel
+              : authState === "authenticated"
+                ? watchAriaLabel
+                : watchAriaSignedOutLabel
+          }
         >
-          {watchLabel}
+          {resolving ? watchLoadingLabel : watchLabel}
         </button>
       </span>
       {/* THE SIGN-IN CTA (§5.3.4) — reserved, never toggled in and out of a laid-out area.
