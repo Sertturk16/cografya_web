@@ -360,9 +360,15 @@ const API_ORIGIN_HOSTNAME = new URL(serverEnv.API_BASE_URL).hostname;
  * sibling plan's own-hosted replacement). Both must keep passing, because this repo cannot
  * assume which one a given response carries.
  *
- * `https` is required alongside the host: the address becomes an `<img src>` on an https
- * page, so an `http` one would be blocked as mixed content anyway and is not a value we
- * would publish in structured data either. A string `new URL()` cannot parse fails closed.
+ * `https` is required on the PROVIDER host, not on ours: that address becomes an `<img src>`
+ * on an https page, so a provider `http` one would be blocked as mixed content anyway and is
+ * not a value we would publish in structured data either. Our own configured api origin is
+ * accepted whatever scheme it is configured with — this repo's own local/dev checked-in
+ * configuration is `http` (`.env.example`'s `API_BASE_URL`), and demanding `https` there would
+ * silently fail every cover behind this same gate rather than reject an untrusted host, which
+ * is not what this check exists to do (host trust is the exact-hostname comparison below; the
+ * scheme requirement is the separate, narrower mixed-content concern that only applies once a
+ * host is already untrusted-provider-shaped). A string `new URL()` cannot parse fails closed.
  */
 export function isProviderThumbnailUrl(url: string): boolean {
   let parsed: URL;
@@ -371,8 +377,8 @@ export function isProviderThumbnailUrl(url: string): boolean {
   } catch {
     return false;
   }
-  if (parsed.protocol !== "https:") return false;
   if (parsed.hostname === API_ORIGIN_HOSTNAME) return true;
+  if (parsed.protocol !== "https:") return false;
   return PROVIDER_THUMBNAIL_HOST_SUFFIXES.some((suffix) => parsed.hostname.endsWith(suffix));
 }
 

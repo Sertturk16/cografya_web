@@ -12,9 +12,11 @@ import { absoluteUrl } from "./site";
 // `./json-ld` now reads `serverEnv.API_BASE_URL` (the C2 widening below), so every test in
 // this file gets a fixed, explicit origin — never the ambient machine's `.env` — the exact
 // discipline `lib/api/books.test.ts` already established for the same reason. `https://` (not
-// the `books.test.ts` mock's `http://api.test`) on purpose: `isProviderThumbnailUrl` requires
-// `https:` on ANY accepted host, provider or our own, so this is the realistic production shape
-// the widened gate is actually meant to accept.
+// the `books.test.ts` mock's `http://api.test`) is still the realistic production shape for the
+// provider-facing tests in this file. `isProviderThumbnailUrl` no longer requires `https:` on
+// OUR OWN origin (the scheme-widening fix below) — only on the provider's — which is why the
+// dedicated describe block for that gate constructs its own `http://`/`https://` variants of
+// this same mocked hostname rather than relying on this module-level scheme.
 vi.mock("@/lib/env.server", () => ({
   serverEnv: { API_BASE_URL: "https://api.cografya.test", INTERNAL_REQUEST_TOKEN: undefined },
 }));
@@ -382,23 +384,38 @@ describe("videoObjectJsonLd", () => {
  * — which turns the api's planned own-hosted RELATIVE cover address into an absolute one —
  * does not immediately get rejected by the very gate standing between it and the page.
  *
- * The three outcomes a real gate has to keep distinguishing, all in one place: the provider's
- * host still works (today's real value), the newly-trusted api origin works (tomorrow's real
- * value, in the exact RESOLVED shape `resolveThumbnailUrl` produces from a relative path — see
- * `lib/api/books.test.ts`'s own coverage of that resolution step), and an unrelated host is
- * still refused — proving the widening is one named origin, not a wildcard.
+ * The four outcomes a real gate has to keep distinguishing, all in one place: the configured
+ * api origin works whatever scheme it is configured with — `http`, this repo's own checked-in
+ * local/dev shape (`.env.example`'s `API_BASE_URL`) — and `https`, the exact RESOLVED shape
+ * `resolveThumbnailUrl` produces from a relative path (see `lib/api/books.test.ts`'s own
+ * coverage of that resolution step); the provider's own host still requires `https` and is
+ * refused over `http`; and an unrelated host is refused regardless — proving the widening is
+ * one named origin, not a wildcard, and that dropping the scheme requirement for our own origin
+ * did not also drop it for the provider's.
  */
 describe("isProviderThumbnailUrl — the configured api origin is also trusted (C2)", () => {
   it.each([
-    ["the provider's own CDN host — today's real value", "https://i.ytimg.com/vi/x/hqdefault.jpg"],
     [
-      "the configured api origin, in the exact RESOLVED shape resolveThumbnailUrl produces " +
-        "from a relative '/api/video-cover/{bookVideoId}' path (lib/api/books.ts) — " +
+      "the configured api origin over http — this repo's own checked-in local/dev scheme",
+      "http://api.cografya.test/api/video-cover/11111111-2222-4333-8444-555555555551",
+    ],
+    [
+      "the configured api origin over https, in the exact RESOLVED shape resolveThumbnailUrl " +
+        "produces from a relative '/api/video-cover/{bookVideoId}' path (lib/api/books.ts) — " +
         "'https://api.cografya.test' is this file's own @/lib/env.server mock above",
       "https://api.cografya.test/api/video-cover/11111111-2222-4333-8444-555555555551",
     ],
+    [
+      "the provider's own CDN host over https — today's real value",
+      "https://i.ytimg.com/vi/x/hqdefault.jpg",
+    ],
   ])("accepts %s", (_case, url) => {
     expect(isProviderThumbnailUrl(url)).toBe(true);
+  });
+
+  it("still rejects the provider's own CDN host over http — the scheme requirement stays for the provider", () => {
+    // Our own origin's scheme requirement was dropped; the provider's was not.
+    expect(isProviderThumbnailUrl("http://i.ytimg.com/vi/x/hqdefault.jpg")).toBe(false);
   });
 
   it("still rejects an unrelated host — the widening is ONE named origin, not a wildcard", () => {
