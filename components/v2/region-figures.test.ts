@@ -56,7 +56,7 @@ describe("REGIONS_STATIC_FALLBACK numeric fields (plan §2.4)", () => {
     expect(hubPage).toContain("population: 13809574,");
     expect(hubPage).toContain("populationSharePercent: 16.04,");
     expect(hubPage).toContain("areaKm2: 187227,");
-    expect(hubPage).toContain("areaSharePercent: 24");
+    expect(hubPage).toContain("areaSharePercent: 24.0,");
     expect(hubPage).toContain("populationDensity: 74,");
   });
 
@@ -203,10 +203,20 @@ describe("Retired AFAD seismic-degree classification stays gone (plan §2.1) —
   // reinsert the retired wording (§2.1's original KARADENIZ `primaryRisks[2]` string) into a
   // `primaryRisks` entry and this assertion must go red.
   const D = "[Dd][Ee][Rr][Ee][Cc][Ee]";
+  // Extended for CODE135-I1: (1) ASCII "I" beside dotted "İ/i" in the ordinal words, for text
+  // typed on a non-Turkish keyboard or pasted from an ALL-CAPS source; (2) apostrophe-suffixed
+  // ordinal digits ("1'inci Derece", straight or curly apostrophe); (3) the reversed/possessive
+  // form ("Derece(si): 1"). No "g" flag, matching the pattern this replaces — kept for
+  // consistency and because RegExp.prototype.test() (unlike the .match()-based toMatch() this
+  // file's own assertions use below) DOES carry lastIndex state across separate calls on a
+  // global-flagged instance; see tur2-plan.md §2.3 for where that bit this plan's own
+  // verification script, and why it is not a real exposure for the three assertions below.
+  const I = "[İIi]";
   const degreeClassPattern = new RegExp(
-    `[0-9] ?\\. ?${D}|[Bb][İi][Rr][İi][Nn][Cc][İi] ${D}|[İi][Kk][İi][Nn][Cc][İi] ${D}|` +
+    `[0-9] ?\\. ?${D}|[Bb]${I}[Rr]${I}[Nn][Cc]${I} ${D}|${I}[Kk]${I}[Nn][Cc]${I} ${D}|` +
       `[ÜüU][ÇçC][ÜüU][Nn][Cc][ÜüU] ${D}|[Dd][ÖöO][Rr][Dd][ÜüU][Nn][Cc][ÜüU] ${D}|` +
-      `${D} [Dd][Ee][Pp][Rr][Ee][Mm]|[Dd][Ee][Pp][Rr][Ee][Mm] [Bb][öÖ][Ll][Gg][Ee]`,
+      `${D} [Dd][Ee][Pp][Rr][Ee][Mm]|[Dd][Ee][Pp][Rr][Ee][Mm] [Bb][öÖ][Ll][Gg][Ee]|` +
+      `[0-9]['’]? ?(?:inci|nci|üncü|ncı|ıncı|uncu) ?${D}|${D}(?:si)? ?[:.]? ?[1-4]`,
   );
 
   it("[slug]/page.tsx (REGION_DISASTER_PROFILES) carries no retired degree-classification wording", () => {

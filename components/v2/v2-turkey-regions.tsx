@@ -194,6 +194,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
             fig !== undefined && fig.populationSharePercent === maxPopulationSharePercent;
           const isHighestPeak =
             fig !== undefined && fig.highestPeakElevationM === maxHighestPeakElevationM;
+          const peakNameHasParenthetical = fig !== undefined && fig.highestPeakNameTr.includes("(");
 
           return (
             <Card
@@ -241,7 +242,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
                     <span className="text-muted-foreground block text-[10px]">En Yüksek Zirve</span>
                     <span className="font-semibold text-foreground text-[11px] truncate block">
                       {fig
-                        ? `${fig.highestPeakNameTr} (${tr(fig.highestPeakElevationM)} m)${isHighestPeak ? " · TR Zirvesi" : ""}`
+                        ? `${fig.highestPeakNameTr}${peakNameHasParenthetical ? ", " : " ("}${tr(fig.highestPeakElevationM)} m${peakNameHasParenthetical ? "" : ")"}${isHighestPeak ? " · TR Zirvesi" : ""}`
                         : "—"}
                     </span>
                   </div>

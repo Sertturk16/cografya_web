@@ -51,9 +51,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     hrefForLocale: () => ({
       pathname: "/v2/turkiye/bolge",
     }),
-    title: "Türkiye'nin 7 Coğrafi Bölgesi: İlleri, İklimi ve Haritası | Coğrafya Gurmesi",
+    title:
+      locale === "tr"
+        ? "Türkiye'nin 7 Coğrafi Bölgesi: İlleri, İklimi ve Haritası | Coğrafya Gurmesi"
+        : "Türkiye's 7 Geographic Regions: Provinces, Climate and Map",
     description:
-      "1941 Birinci Türk Coğrafya Kongresi kararlarıyla belirlenen Türkiye'nin 7 coğrafi bölgesi ve 21 bölümü. Nüfus dağılımı, yüzölçümü, iklim özellikleri ve analitik karşılaştırma rehberi.",
+      locale === "tr"
+        ? "1941 Birinci Türk Coğrafya Kongresi kararlarıyla belirlenen Türkiye'nin 7 coğrafi bölgesi ve 21 bölümü. Nüfus dağılımı, yüzölçümü, iklim özellikleri ve analitik karşılaştırma rehberi."
+        : "Türkiye's 7 geographic regions and 21 subregions. Population distribution, area, climate features and an analytical comparison guide.",
   });
 }
 
@@ -285,7 +290,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
       <JsonLd
         schema={breadcrumbJsonLd([
           { name: locale === "tr" ? "Ana Sayfa" : "Home", path: "/v2" },
-          { name: locale === "tr" ? "Türkiye Atlası" : "Turkey Atlas", path: "/v2/turkiye" },
+          { name: locale === "tr" ? "Türkiye Atlası" : "Türkiye Atlas", path: "/v2/turkiye" },
           {
             name: locale === "tr" ? "Coğrafi Bölgeler" : "Geographic Regions",
             path: "/v2/turkiye/bolge",
@@ -330,7 +335,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               className="hover:text-foreground transition-colors flex items-center gap-1"
             >
               <Compass className="size-3.5" />
-              <span>{locale === "tr" ? "Türkiye Atlası" : "Turkey Atlas"}</span>
+              <span>{locale === "tr" ? "Türkiye Atlası" : "Türkiye Atlas"}</span>
             </Link>
             <ChevronRight className="size-3 text-muted-foreground/60" />
             <span className="text-foreground font-semibold">
@@ -363,14 +368,18 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               <h1 className="font-heading text-3xl sm:text-5xl font-extrabold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
                 {locale === "tr"
                   ? "Türkiye'nin 7 Coğrafi Bölgesi Rehberi"
-                  : "Turkey's 7 Geographic Regions Guide"}
+                  : "Türkiye's 7 Geographic Regions Guide"}
               </h1>
 
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-3xl">
-                6–21 Haziran 1941 Birinci Türk Coğrafya Kongresi kararlarıyla çizilen doğal
-                sınırlar, morfotektonik kuşaklar ve iklim havzaları ışığında Türkiye&apos;nin 7
-                coğrafi bölgesi, 21 alt bölümü ve analitik karşılaştırma atlası.
-              </p>
+              {/* Same provenance-flavoured claim as the 1941-Congress badge two elements above —
+                  gated rather than translated for the same reason (tur2-plan.md §7, FEN135-NEW-M5). */}
+              {locale === "tr" && (
+                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-3xl">
+                  6–21 Haziran 1941 Birinci Türk Coğrafya Kongresi kararlarıyla çizilen doğal
+                  sınırlar, morfotektonik kuşaklar ve iklim havzaları ışığında Türkiye&apos;nin 7
+                  coğrafi bölgesi, 21 alt bölümü ve analitik karşılaştırma atlası.
+                </p>
+              )}
             </div>
 
             {/* Metric Strip */}
@@ -383,9 +392,13 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-primary block">
                   {locale === "tr" ? "7 Bölge" : "7 Regions"}
                 </span>
-                {locale === "tr" && (
+                {locale === "tr" ? (
                   <span className="text-[11px] text-muted-foreground/80 block">
                     4 Kıyı, 3 İç Kara Havzası
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground/80 block">
+                    4 Coastal, 3 Landlocked
                   </span>
                 )}
               </div>
@@ -398,9 +411,13 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-secondary block">
                   {locale === "tr" ? "21 Bölüm" : "21 Subregions"}
                 </span>
-                {locale === "tr" && (
+                {locale === "tr" ? (
                   <span className="text-[11px] text-muted-foreground/80 block">
                     Morfolojik Alt Yöreler
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground/80 block">
+                    Morphological Sub-regions
                   </span>
                 )}
               </div>
@@ -413,11 +430,9 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-accent block">
                   {totalPop.toLocaleString("tr-TR")}
                 </span>
-                {locale === "tr" && (
-                  <span className="text-[11px] text-muted-foreground/80 block">
-                    TÜİK 31 Aralık 2025
-                  </span>
-                )}
+                <span className="text-[11px] text-muted-foreground/80 block">
+                  TÜİK 31 Aralık 2025
+                </span>
               </div>
 
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
@@ -428,11 +443,9 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-[var(--color-primary-dark,#7e3a1e)] block">
                   {totalArea.toLocaleString("tr-TR")} km²
                 </span>
-                {locale === "tr" && (
-                  <span className="text-[11px] text-muted-foreground/80 block">
-                    81 İl HGM Tescili
-                  </span>
-                )}
+                <span className="text-[11px] text-muted-foreground/80 block">
+                  81 İl HGM Tescili
+                </span>
               </div>
             </div>
           </div>
