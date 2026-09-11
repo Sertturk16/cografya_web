@@ -31,13 +31,21 @@ describe("V2 sovereignty and naming invariants", () => {
     expect(content).toContain("199 ülke ve özerk bölge");
   });
 
-  it("enforces locale-aware flag gating and synchronizes special status set in v2/dunya (SOV125-C1, SOV124-I1)", () => {
+  it("enforces locale-aware flag gating and synchronizes special status set in v2/dunya (SOV125-C1, SOV124-I1, RV133R4-NEW-I1)", () => {
     const pageUrl = new URL("../../app/[locale]/v2/dunya/page.tsx", import.meta.url);
     const pageContent = readFileSync(pageUrl, "utf8");
 
     // Must suppress flags in EN for special-status rows per DEC 2026-08-08h and DEC 2026-09-03a md.2
     expect(pageContent).toContain(
       'const flagVisible = hasFlagAsset && (!isSpecialStatus || locale === "tr");',
+    );
+
+    // (Amendment 2, RV133R4-NEW-I1) flagVisible's own locale condition above is correct and untouched.
+    // This pins what it READS: a locale fold folded in HERE instead — the sibling of the same fold
+    // round 2/3/4 each found one address lower on the country-detail page — would slip the pin above
+    // (flagVisible's own line does not change) while breaking every EN row's flag/note symmetry.
+    expect(pageContent).toContain(
+      "const isSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(c.isoCode.toUpperCase());",
     );
 
     // The declaration lives in ONE neutral module (PR #133 fix round, VAL133RX-I1) — reading
@@ -241,7 +249,7 @@ describe("V2 sovereignty and naming invariants", () => {
     }
   });
 
-  it("pins the three round-2 sovereignty gates as exact source substrings — a refactor that changes any of them must fail this suite (SOV133R2-NEW-I2)", () => {
+  it("pins the three round-2 sovereignty gates, their call sites, AND the two upstream booleans that feed them — a refactor that changes any of them, at their declaration, at any place the page reads them, or at the input each declaration reads, must fail this suite (SOV133R2-NEW-I2, SOV133R3-NEW-I1, FEN133R3-NEW-M2, RV133R4-NEW-I1)", () => {
     const pageUrl = new URL("../../app/[locale]/v2/dunya/[slug]/page.tsx", import.meta.url);
     const pageContent = readFileSync(pageUrl, "utf8");
 
@@ -267,5 +275,58 @@ describe("V2 sovereignty and naming invariants", () => {
     expect(pageContent).toContain(
       "const showsNeighbourFlag = hasFlag(nb.iso) && (isTr || !nbIsSpecialStatus);",
     );
+
+    // (SOV133R3-NEW-I1 / FEN133R3-NEW-M2) The three pins above lock only the DECLARATION line of
+    // each gate. The page reads these gates at further call sites the declaration pin cannot
+    // reach — including two call sites this PR's own round-2 fix round created. Pin the call
+    // sites too, in the idiom lib/geo/sovereignty.test.ts:96-103/118-121 already established for
+    // the v1 page: a call-site COUNT plus a gated-use pattern, comments stripped first so a
+    // left-behind comment cannot satisfy a raw-text scan after the real code is deleted.
+    const strippedPageContent = pageContent
+      .replace(/\r\n/g, "\n")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+      .replace(/^[ \t]*\/\/.*$/gm, " ");
+
+    // The neighbour-card special-status badge must never be gated on locale again
+    // (SOV133R2-NEW-I1's regression). Checked before the count below so a re-added `isTr &&`
+    // fails on THIS line, not on the count.
+    expect(strippedPageContent).not.toMatch(/isTr\s*&&\s*nbIsSpecialStatus/);
+    // ...and it has exactly its two known call sites (the "link" and "text" neighbour branches),
+    // ungated.
+    expect(strippedPageContent.match(/\{nbIsSpecialStatus && \(/g) ?? []).toHaveLength(2);
+
+    // The EN neighbour-flag suppression gate: exactly its two known call sites.
+    expect(strippedPageContent.match(/\{showsNeighbourFlag && \(/g) ?? []).toHaveLength(2);
+
+    // The neighbours-section suppression gate: exactly its two known call sites (the quicknav
+    // chip and the section itself).
+    expect(strippedPageContent.match(/\{showsNeighbourSection && \(/g) ?? []).toHaveLength(2);
+
+    // The four remaining isSpecialGeography call sites the declaration pin does not reach.
+    expect(strippedPageContent).toMatch(/isSpecialGeography\s*\?\s*null\s*:\s*\(/); // hero empty-neighbour chip
+    expect(strippedPageContent).toMatch(
+      /isSpecialGeography\s*\?\s*"0"\s*:\s*t\("kpiIslandNeighbourValue"\)/,
+    ); // hero KPI land-neighbours value
+    expect(strippedPageContent).toContain(
+      "{!(isSpecialGeography && country.neighborCount === 0) && (",
+    ); // spatial-status row suppression (FEN133R3-NEW-M2)
+    expect(strippedPageContent).toMatch(
+      /isSpecialGeography\s*\?\s*"0"\s*:\s*t\("identityIslandNeighbourValue"\)/,
+    ); // identity-card neighbour-count row
+
+    // (Amendment 1, RV133R4-NEW-I1, §5.1.1-§5.1.2 — APPENDED after the 8 assertions above; none
+    // of the 8 moved position, per the validator's own confirmation, §0.) The 8 pins above guard
+    // the three DERIVED gates and their call sites. They do not guard what feeds those gates: the
+    // two booleans the page computes fresh at every read. `nbIsSpecialStatus` (§5.1.2) IS its own
+    // chain's origin already — a raw Set.has() call, no further function indirection to hide a
+    // locale gate in. `isSpecialStatus` (§5.1.1) is NOT its chain's origin — see
+    // lib/geo/sovereignty.test.ts's own new pin (§5.1.3) for the one link still further up.
+    expect(strippedPageContent).toContain(
+      "const isSpecialStatus = isSpecialStatusRow(country.sovereigntyNoteTr);",
+    ); // §5.1.1 — RV133R4-NEW-I1
+    expect(strippedPageContent).toContain(
+      "const nbIsSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(nb.iso.toUpperCase());",
+    ); // §5.1.2 — RV133R4-NEW-I1
   });
 });

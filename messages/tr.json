@@ -461,7 +461,7 @@
     "officialStatusLabel": "Resmî statü tanımı: {status}.",
     "officialLanguagesLabel": "Ülkede resmî dil(ler): {languages}.",
     "islandCountryHeading": "Ada Ülkesi · Doğrudan Kara Sınırı Bulunmuyor",
-    "islandCountryBody": "{name}, çevresi yalnızca deniz sınırlarıyla çevrilidir.",
+    "islandCountryBody": "{name}, yalnızca deniz sınırlarıyla çevrilidir.",
     "islandCountryCta": "{continent} Kıtası Ülkelerini Görüntüle",
     "islandChipLabel": "Ada Ülkesi",
     "landNeighboursChip": "🌍 {count} Kara Komşusu",
