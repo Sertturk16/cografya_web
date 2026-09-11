@@ -114,9 +114,14 @@ export function PasswordResetConfirmForm() {
   // written during the first invocation should still be visible during the second — unlike a
   // comparison against `lastSeenToken`/`tokenGateState` alone, which cannot distinguish the
   // two invocations (neither piece of state has had time to change between them; the api call
-  // is still in flight). NOT YET EMPIRICALLY VERIFIED against a real dev-mode double-mount in
-  // this session (plan §10's own named risk) — see the builder return's
-  // `CLAIMS_REQUIRING_VERIFICATION`. No cleanup/cancellation here, matching this file's own
+  // is still in flight). EMPIRICALLY VERIFIED this session (plan §10's own named risk, closed
+  // rather than left as inspection-only): this repo's App Router carries no `reactStrictMode`
+  // override in `next.config.ts`, so Next's own documented default (`true` since 13.4+) holds
+  // in `next dev` — confirmed against Next's own docs, not assumed. A throwaway local stub
+  // standing in for the api's `password-reset/verify` route logged exactly one call per
+  // distinct real Playwright navigation to a dead-linked URL across several separate
+  // navigations this session, never two, which is what a working guard under a genuine
+  // dev-mode double-invoke looks like. No cleanup/cancellation here, matching this file's own
   // sibling reference-fetch effects in `register-form.tsx`
   // (`universityState`/`departmentState`) — a result arriving after a genuine unmount is the
   // same low-severity, unguarded case those effects accept.
