@@ -68,6 +68,18 @@ describe("V2 sovereignty and naming invariants", () => {
     for (const content of [pageContent, slugContent]) {
       expect(content).toContain('from "@/lib/geo/special-status-isos"');
       expect(content).not.toContain("SPECIAL_STATUS_ISO_CODES = new Set(");
+      // (Bounded close-out, SOV133R4-NEW-I1) The two checks above match TEXT PRESENCE, not which
+      // definition the name `SPECIAL_STATUS_ISO_CODES` actually binds to. An aliased re-import
+      // (`SPECIAL_STATUS_ISO_CODES as _SPECIAL_STATUS_ISO_CODES`) plus a page-local, locale-gated
+      // `const SPECIAL_STATUS_ISO_CODES = isTr ? _SPECIAL_STATUS_ISO_CODES : new Set<string>();`
+      // satisfies both checks above without the identifier ever resolving through the real
+      // import — this loop covers BOTH consumers (`pageContent` = the hub page's own
+      // declaration at its :63, `slugContent` = the slug page's `nbIsSpecialStatus` at its
+      // :1071), so pinning the exact, unaliased import line here closes the binding gap for
+      // both addresses at once.
+      expect(content).toContain(
+        'import { SPECIAL_STATUS_ISO_CODES } from "@/lib/geo/special-status-isos";',
+      );
     }
   });
 
@@ -328,5 +340,14 @@ describe("V2 sovereignty and naming invariants", () => {
     expect(strippedPageContent).toContain(
       "const nbIsSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(nb.iso.toUpperCase());",
     ); // §5.1.2 — RV133R4-NEW-I1
+
+    // (Bounded close-out, SOV133R4-NEW-I1) The §5.1.1 pin above locks the CALL SITE's own text —
+    // not which definition the name `isSpecialStatusRow` resolves to. Removing the name from the
+    // import and adding a page-local, same-named function (closing over `isTr`, already in scope)
+    // leaves the call-site line's text byte-identical while the runtime behaviour regresses on
+    // EN only. Pin the import statement itself, unaliased, so that construction fails HERE.
+    expect(strippedPageContent).toContain(
+      'import { isSpecialStatusRow, showsCountryFlag, showsSovereigntyNote } from "@/lib/geo/sovereignty";',
+    ); // binding pin — SOV133R4-NEW-I1
   });
 });
