@@ -13,7 +13,7 @@ import { routing, type Locale } from "@/i18n/routing";
 import { getBookBySlug, getBooksResilient } from "@/lib/api/books";
 import { formatDuration } from "@/lib/book/duration";
 import { PUBLISHED_DATE_FORMAT } from "@/lib/book/published-date";
-import { denemeFragment, questionFragment, videoTitle } from "@/lib/book/video-identity";
+import { tagFragment, videoFragment, videoTitle } from "@/lib/book/video-identity";
 import { isPlayable, resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
 import { canonicalEmbedUrl } from "@/lib/youtube/embed";
@@ -129,8 +129,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * surface for a reader who wants only the list. That is a real loss and it is the price of the
  * one-press promise, taken knowingly (→ AK-23).
  *
- * The fragments (`#deneme-12`, `#deneme-12-soru-3`) are part of the IA (`SEO-POLICY.md`
- * §B4's book row) and deliberately NOT routes: a page per deneme or per question would be
+ * The fragments (`#video-12`, `#video-12-etiket-3`) are part of the IA (`SEO-POLICY.md`
+ * §B4's book row) and deliberately NOT routes: a page per video or per question would be
  * 30 and 180 near-identical thin pages, which is §B12 12.1's shape exactly. Each target
  * carries `scroll-margin-top` so a followed fragment lands below the sticky header at every
  * viewport, 320px included (§B4 4.9).
@@ -188,30 +188,17 @@ export default async function BookDetailPage({ params }: PageProps) {
   // künye row, and the structured data. One resolution is what keeps them from disagreeing.
   const videoStates = book.videos.map((video) => ({ video, state: resolveVideoState(video) }));
 
-  /* The jump strip's two inputs, and they are DIFFERENT FACTS rather than one derived from the
-     other. `denemeCount` is how many denemeler the BOOK has (a künye fact); `denemeNumbers` is
-     exactly which of them have an indexed solution. The api publishes the set on purpose —
-     "Ranges for display are the web layer's to derive; the api publishes the set, never a
-     formatted string" — because the covered numbers are not a contiguous range: today they are
-     1–13, 15–21, 23, 24 and 33–40. A strip built from the count alone, or from
-     `min…max` of the set, would link ten fragments that do not exist (§B8 8.9, BLOCKER).
-     A `Set` rather than `.includes()` in the loop: 40 iterations over a 30-element array is
-     nothing, but the lookup states the intent.
-
-     THE COVERED SET IS DERIVED FROM THE BLOCKS THAT ACTUALLY RENDER, not from
-     `coverage.denemeNumbers`. Both fields describe the same thing and are set-equal on today's
-     live data (measured: both `[1..13, 15..21, 23, 24, 33..40]`), but they are two independent
-     contract fields, and only one of them is the source of the `id`s these links point at. A
-     `denemeNumbers` entry with no row in `videos[]` would render `<a href="#deneme-25">` with no
-     target — a broken in-page anchor, which §B8 8.9 rates BLOCKER — and it would ship green,
-     because typecheck, lint and the structure test all still pass and the dead tile looks
-     exactly like a working one. Deriving from `videoStates` makes "every jump href has a
-     target" true by construction rather than by the two projections agreeing (→ PR #66 review
-     `FENER66-M2` (validated) / `CODE66-M8` / `TA66-M3`). `coverage.denemeNumbers` stays what it
-     reads as: a künye fact. This is the same discipline `resolveVideoState` already applies one
-     level down — resolve once, so two consumers cannot drift. */
-  const jumpNumbers = Array.from({ length: book.coverage.denemeCount }, (_, index) => index + 1);
-  const coveredDenemeNumbers = new Set(videoStates.map(({ video }) => video.denemeNo));
+  /* THE JUMP STRIP'S INPUT, AND IT IS DERIVED FROM THE BLOCKS THAT ACTUALLY RENDER — the only
+     source that exists any more. The generic-catalogue contract (P0, `DEC 2026-09-10c` md.1)
+     dropped the book-level deneme count outright rather than renaming it: "no count on the
+     surface" means there is no longer a total to iterate up to, and therefore no gap to
+     represent either. Before this cut-over the strip iterated 1..denemeCount and marked each
+     number covered/uncovered against the published `denemeNumbers` set, because the two could
+     diverge (14, 22, 25–32 were never indexed). That whole distinction is gone with the total:
+     every number this strip can name now IS one with an indexed solution, by construction,
+     because it is read off `videoStates` and nothing else — so "every jump href has a target"
+     (§B8 8.9, BLOCKER) holds without a covered/uncovered branch to get wrong. */
+  const jumpNumbers = videoStates.map(({ video }) => video.orderNo);
 
   /* THE STAGE'S PAYLOAD — the only thing on this page that crosses into the client bundle.
      Built from the SAME `videoStates` the index rows render from, so the stage and the rows can
@@ -235,13 +222,16 @@ export default async function BookDetailPage({ params }: PageProps) {
 
      Measured payload (live data, 30 videos): see the closing summary's size table. */
   const benchVideos: BenchVideo[] = videoStates.map(({ video, state }) => ({
-    denemeNo: video.denemeNo,
+    orderNo: video.orderNo,
     bookVideoId: video.bookVideoId,
     videoId: video.youtubeVideoId,
+    titleTr: video.titleTr,
+    titleEn: video.titleEn,
     playable: isPlayable(state),
-    questions: video.questions.map((question) => ({
-      no: question.questionNo,
-      second: question.startSecond,
+    tags: video.tags.map((tag) => ({
+      orderNo: tag.orderNo,
+      second: tag.startSecond,
+      nameTr: tag.nameTr,
     })),
     rich:
       state.kind === "rich"
@@ -260,13 +250,11 @@ export default async function BookDetailPage({ params }: PageProps) {
         : null,
   }));
 
-  /* WHICH VIDEO THE STAGE OPENS ON, and it is derived from the blocks that actually render —
-     never from `coverage.denemeNumbers`. Both fields describe the same thing and are set-equal on
-     today's data, but only one of them is the source of the markup the stage's `data-deneme` has
-     to match, and a default naming a video with no row would put the stage and the index on
-     different videos at first paint (the `FENER66-M2` discipline, applied to the new surface).
-     The array is the contract's own order, so this is the book's first covered deneme. */
-  const defaultDenemeNo = benchVideos[0]?.denemeNo ?? null;
+  /* WHICH VIDEO THE STAGE OPENS ON, and it is derived from the blocks that actually render — the
+     only source left now that no declared count exists to name a video with no row (the
+     `FENER66-M2` discipline, applied to the new surface). The array is the contract's own order,
+     so this is the book's first video. */
+  const defaultOrderNo = benchVideos[0]?.orderNo ?? null;
 
   // Which credit rows this page owes — selected by the contract's own machine token, never by
   // matching the notice text, and never re-ordered (see the source statement's comment below).
@@ -293,7 +281,7 @@ export default async function BookDetailPage({ params }: PageProps) {
       // THROUGH THE SHARED BUILDER, not a second composition of the same string: this must be
       // byte-identical to the `<h3>` the row prints, or §B5 5.7 has markup naming something the
       // page does not show. `lib/book/video-identity.ts` is the one place that decides it.
-      name: `${title} — ${videoTitle(t, video)}`,
+      name: `${title} — ${videoTitle(t, locale, video)}`,
       thumbnailUrl: state.youtube.thumbnailUrl,
       uploadDate: state.youtube.publishedAtUtc,
       // The provider's RAW ISO string, never re-derived from the parsed seconds: the contract
@@ -366,12 +354,6 @@ export default async function BookDetailPage({ params }: PageProps) {
 
         <div className={styles.introBody}>
           {introText !== null && <ProseNote text={introText} className={styles.prose} />}
-          <p className={styles.badges}>
-            <span className="chip">{t("badgeVideos", { count: book.coverage.videoCount })}</span>
-            <span className="chip">
-              {t("badgeQuestions", { count: book.coverage.questionCount })}
-            </span>
-          </p>
           {/* Outbound seller link, and a PLAIN one: the owner ruled it is not an affiliate
               or commission link (→ DEC 2026-08-15g V-5), so it carries no `rel="sponsored"`
               — marking a plain link as sponsored would be as wrong as the reverse.
@@ -420,10 +402,6 @@ export default async function BookDetailPage({ params }: PageProps) {
             <dd>{book.examTrack}</dd>
           </div>
           <div className={styles.fact}>
-            <dt>{t("denemeCountLabel")}</dt>
-            <dd>{format.number(book.denemeCount)}</dd>
-          </div>
-          <div className={styles.fact}>
             <dt>{t("pageCountLabel")}</dt>
             <dd>{format.number(book.pageCount)}</dd>
           </div>
@@ -445,53 +423,39 @@ export default async function BookDetailPage({ params }: PageProps) {
             missing (`CONTENT-STYLE.md` §22, "eksik-vurgusu"): the reader did not need that
             number at that point, and we were the ones putting the gap in front of them.
 
-            The half the reader DOES need survives, at the point of use. The ruling's own
-            litmus is whether someone would otherwise act on a wrong expectation, and here they
-            would: the covered denemeler are 1–13, 15–21, 23, 24 and 33–40, so the index skips
-            14, 22 and 25–32, and a reader holding the book and looking for deneme 14 meets a
-            hole with no explanation. The jump strip below answers exactly that, once, where the
-            question is asked — a neutral non-link rather than a sentence about a shortfall.
-
-            V-2 (→ DEC 2026-08-15g) is untouched: the LIST is still only the denemeler that have
-            a solution. What changed is that the sentence which used to carry the coverage fact
-            no longer exists, so the strip carries the necessary part of it instead. */}
+            THE GENERIC CATALOGUE CUT-OVER (P0, `DEC 2026-09-10c` md.1) THEN REMOVED THE COUNT
+            ITSELF, not merely the sentence — there is no longer any book-level total published
+            anywhere in the contract. That also retires the jump strip's old job of marking
+            GAPS (14, 22, 25–32 used to render as empty, unlinked tiles): with no total to
+            iterate up to, every number the strip can name is one with an indexed solution, by
+            construction, because `jumpNumbers` is read off `videoStates` and nothing else. The
+            strip below is now a plain quick-jump index, not a coverage disclosure. */}
         <nav className={styles.jump} aria-labelledby="denemeye-atla">
           <h3 id="denemeye-atla" className={styles.jumpHeading}>
             {t("jumpHeading")}
           </h3>
           <ul role="list" className={styles.jumpList}>
-            {jumpNumbers.map((no) => {
-              const covered = coveredDenemeNumbers.has(no);
-              return (
-                <li key={no}>
-                  {/* A REAL `<a href>` FOR EVERY NUMBER THAT HAS A TARGET, AND NOTHING FOR THE
-                      REST. `SEO-POLICY.md` §B8 8.9 rates a link to a fragment that does not
-                      exist a BLOCKER, and the covered set is NOT a contiguous range — the api
-                      publishes `denemeNumbers` precisely because the gaps are scattered
-                      (14, 22, 25–32 today). Deriving the strip from `denemeCount` alone and
-                      linking all of it would ship ten dead anchors.
+            {jumpNumbers.map((no) => (
+              <li key={no}>
+                {/* A REAL `<a href>` FOR EVERY NUMBER, AND EVERY NUMBER HAS A TARGET BY
+                    CONSTRUCTION — `SEO-POLICY.md` §B8 8.9 rates a link to a fragment that does
+                    not exist a BLOCKER, and there is no declared total this strip could
+                    over-iterate against any more (§B8 8.9's own concern, now structurally
+                    unreachable rather than merely avoided).
 
-                      THE VISIBLE TEXT IS THE BARE NUMBER AND THE ACCESSIBLE NAME IS NOT.
-                      Thirty links named "1"…"40" tell a screen-reader user nothing, so the
-                      full name sits in a visually-hidden span while the digit is
-                      `aria-hidden`. The name still CONTAINS the visible label, which is what
-                      WCAG 2.5.3 asks and what keeps speech input working — saying "12" matches
-                      "Deneme 12". `title` was rejected for this job: Google treats it as anchor
-                      text only for an EMPTY `<a>`, and these are not empty. */}
-                  {covered ? (
-                    <a className={styles.jumpItem} href={`#${denemeFragment(no)}`}>
-                      <span className={styles.srOnly}>{t("denemeHeading", { no })}</span>
-                      <span aria-hidden="true">{no}</span>
-                    </a>
-                  ) : (
-                    <span className={`${styles.jumpItem} ${styles.jumpItemEmpty}`}>
-                      <span className={styles.srOnly}>{t("jumpNoVideo", { no })}</span>
-                      <span aria-hidden="true">{no}</span>
-                    </span>
-                  )}
-                </li>
-              );
-            })}
+                    THE VISIBLE TEXT IS THE BARE NUMBER AND THE ACCESSIBLE NAME IS NOT.
+                    Thirty links named "1"…"40" tell a screen-reader user nothing, so the
+                    full name sits in a visually-hidden span while the digit is
+                    `aria-hidden`. The name still CONTAINS the visible label, which is what
+                    WCAG 2.5.3 asks and what keeps speech input working — saying "12" matches
+                    "Deneme 12". `title` was rejected for this job: Google treats it as anchor
+                    text only for an EMPTY `<a>`, and these are not empty. */}
+                <a className={styles.jumpItem} href={`#${videoFragment(no)}`}>
+                  <span className={styles.srOnly}>{t("videoFallbackHeading", { no })}</span>
+                  <span aria-hidden="true">{no}</span>
+                </a>
+              </li>
+            ))}
           </ul>
         </nav>
 
@@ -503,18 +467,18 @@ export default async function BookDetailPage({ params }: PageProps) {
             lives in a client component: React renders the island on the server too, so the stage's
             cover is in the HTML as well — with no iframe anywhere in it.
 
-            `defaultDenemeNo === null` means the book has no indexed video at all. The bench is
+            `defaultOrderNo === null` means the book has no indexed video at all. The bench is
             then not rendered and neither is an empty stage; the section keeps its heading and its
             jump strip, which is the honest shape for a book whose solutions are not indexed here.
             On today's data it is unreachable — every seeded book has thirty videos — but the
             contract permits `videos: []` and an empty stage would be a 16:9 grey rectangle with a
             caption naming nothing. */}
-        {defaultDenemeNo !== null && (
+        {defaultOrderNo !== null && (
           <VideoBench
             className={styles.workbench}
             indexClassName={styles.index}
             videos={benchVideos}
-            defaultDenemeNo={defaultDenemeNo}
+            defaultOrderNo={defaultOrderNo}
           >
             {videoStates.map(({ video, state }) => {
               /* ONE value, three consumers. `playable` is false for a video the provider refuses
@@ -530,7 +494,7 @@ export default async function BookDetailPage({ params }: PageProps) {
                 /* THE ROW. An `<article>` and no disclosure control at all: with the panel gone
                    there is no state to toggle, so the `<summary>`/`<button aria-expanded>`
                    question the accordion had to answer does not arise. The `<h3>` keeps the `id`,
-                   which is what keeps `#deneme-12` stable across this change — the fragment is
+                   which is what keeps `#video-12` stable across this change — the fragment is
                    binding IA (`SEO-POLICY.md` §B4's book row) and nothing about the layout is
                    allowed to move it.
 
@@ -542,21 +506,21 @@ export default async function BookDetailPage({ params }: PageProps) {
                    already unique per video.
 
                    `data-deneme` SITS HERE NOW, AND IT WAS ON THE `<ul>` UNTIL PR #70's REVIEW.
-                   That is why `#deneme-15` scrolled correctly and left the stage on the book's
+                   That is why `#video-15` scrolled correctly and left the stage on the book's
                    first video: the fragment resolves to the `<h3>`, and `closest("[data-deneme]")`
                    from the `<h3>` walked past a `<ul>` that is its SIBLING and found nothing at
                    all (→ `FENER70-M2` / `CODE70-M5`). On the article it covers both the heading
                    and every question row beneath it, which is the whole subtree the island can be
                    asked about — still one attribute per video, not one per question. */
                 <article
-                  key={video.denemeNo}
+                  key={video.orderNo}
                   className={styles.deneme}
-                  aria-labelledby={denemeFragment(video.denemeNo)}
-                  data-deneme={video.denemeNo}
+                  aria-labelledby={videoFragment(video.orderNo)}
+                  data-deneme={video.orderNo}
                 >
                   <div className={styles.denemeHead}>
-                    <h3 id={denemeFragment(video.denemeNo)} className={styles.denemeHeading}>
-                      {videoTitle(t, video)}
+                    <h3 id={videoFragment(video.orderNo)} className={styles.denemeHeading}>
+                      {videoTitle(t, locale, video)}
                     </h3>
                     {/* The scannable facts. The count is real per-block data rather than the
                         constant it looks like: the contract does not promise six. It names
@@ -565,7 +529,7 @@ export default async function BookDetailPage({ params }: PageProps) {
                         video solves six questions, never that the book's deneme contains six
                         (→ PR #66 review `CS66-I1`). */}
                     <span className={styles.denemeFacts}>
-                      <span>{t("denemeQuestionCount", { count: video.questions.length })}</span>
+                      <span>{t("videoTagCount", { count: video.tags.length })}</span>
                       {/* SEPARATOR AND KÜNYE TOGETHER OR NEITHER. `DenemeMeta` renders nothing in
                           the `typographic` and `external` states, so a separator outside this
                           conditional left a dangling "6 soru ·" on any video whose provider
@@ -584,12 +548,12 @@ export default async function BookDetailPage({ params }: PageProps) {
                     </span>
                   </div>
                   <ul role="list" className={styles.questionGrid}>
-                    {video.questions.map((question) => {
-                      const fragment = questionFragment(video.denemeNo, question.questionNo);
+                    {video.tags.map((tag) => {
+                      const fragment = tagFragment(video.orderNo, tag, video.tags);
                       return (
-                        <li key={question.questionNo}>
+                        <li key={tag.orderNo}>
                           {/* THE ROW IS ITS OWN FRAGMENT TARGET, which is what makes the deep link
-                            real: `#deneme-12-soru-3` is copyable, shareable and enters browser
+                            real: `#video-12-etiket-3` is copyable, shareable and enters browser
                             history, and it resolves to this element with no JavaScript involved.
                             An `<a href>` rather than a `<button>` for the same reason — §B8 8.2
                             rates JavaScript navigation a BLOCKER, and the player wiring attaches
@@ -605,7 +569,7 @@ export default async function BookDetailPage({ params }: PageProps) {
                             what the row DOES without changing what it says (→ PR #63 review
                             `A11Y63-I2`). A links-list or rotor user meets 180 rows named
                             `Soru 1`…`Soru 6`, and pressing one now moves the stage and starts a
-                            player. The suffix states a FACT about the question — question 3 is at
+                            player. The suffix states a FACT about the etiket — question 3 is at
                             3:24 of the video — rather than promising a behaviour, so it stays true
                             for a reader with no JavaScript, for whom the row is still the plain
                             fragment jump it always was. It begins with the visible token, which is
@@ -618,17 +582,17 @@ export default async function BookDetailPage({ params }: PageProps) {
                             id={fragment}
                             href={`#${fragment}`}
                             className={styles.questionLink}
-                            data-second={question.startSecond}
+                            data-second={tag.startSecond}
                             aria-label={
                               playable
-                                ? t("questionLabelAria", {
-                                    no: question.questionNo,
-                                    time: formatDuration(question.startSecond),
+                                ? t("tagLabelAria", {
+                                    no: tag.orderNo,
+                                    time: formatDuration(tag.startSecond),
                                   })
                                 : undefined
                             }
                           >
-                            {t("questionLabel", { no: question.questionNo })}
+                            {t("tagLabel", { no: tag.orderNo })}
                           </a>
                         </li>
                       );

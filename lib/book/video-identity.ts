@@ -1,68 +1,72 @@
-/**
- * How one video solution is NAMED and ADDRESSED — the two things that change when the book is
- * not a deneme book.
- *
- * ## Why these three functions sit together in a file of their own
- *
- * `DEC 2026-08-17i` binds the book surface to stay generic: books are not only deneme books, and
- * a video's title is not necessarily `Soru N` — in a konu-anlatım book the videos map to topic
- * headings. Nothing on this page assumes otherwise EXCEPT the two answers below, and they were
- * previously spread across the page component, the JSON-LD call site and (after the bench) the
- * timeline. Collected here they become one seam: when the api grows a per-video display title
- * (`FU-BOOK-GENERIC-CONTRACT`, triggered before the second book's data), `videoTitle` is the one
- * function that learns to prefer it, and every consumer follows without being found first.
- *
- * **This file does not make the surface generic and does not pretend to.** It makes the
- * dependency countable. The fragment scheme in particular is BINDING IA (`SEO-POLICY.md` §B4's
- * book row names `#deneme-12` and `#deneme-12-soru-3` in as many words), so changing it is a
- * ruling rather than a refactor; what this file buys is that the ruling has one place to land.
- */
+import type { Locale } from "@/i18n/routing";
 
-/** The minimum a video has to carry to be named and addressed. Deliberately structural rather
- *  than `BookVideo`: the JSON-LD call site and the stage both hold less than a full DTO.
- *
- *  Not exported, and neither is `VideoTitleTranslator` below: both exist to type `videoTitle`'s
- *  parameters, every caller satisfies them structurally, and an exported name nothing imports is
- *  surface that reads as an API (→ PR #70 review `SIMP70-M6`). Exporting either is a one-word
- *  change on the day a consumer needs to name it. */
 interface VideoIdentity {
-  readonly denemeNo: number;
+  readonly orderNo: number;
 }
 
-/** The stable fragment id of one video's block (`SEO-POLICY.md` §B4's book row). */
-export function denemeFragment(denemeNo: number): string {
-  return `deneme-${denemeNo}`;
+export function videoFragment(orderNo: number): string {
+  return `video-${orderNo}`;
 }
 
-/** The stable fragment id of one question row — `#deneme-12-soru-3`, IA, not a route. */
-export function questionFragment(denemeNo: number, questionNo: number): string {
-  return `${denemeFragment(denemeNo)}-soru-${questionNo}`;
+interface TagIdentity {
+  readonly orderNo: number;
+  readonly nameTr: string | null;
 }
 
-/**
- * The translator shape this needs, and nothing wider.
- *
- * Structural rather than next-intl's own `t` type on purpose: both a server `getTranslations`
- * and a client `useTranslations` binding satisfy it, so the same function serves the page, the
- * stage and the structured-data call site without either side importing the other's runtime.
- */
-type VideoTitleTranslator = (key: "denemeHeading", values: { no: number }) => string;
+/** Disambiguates against the video's OWN sibling tags (`CODE134-I1`/`A11Y134-NEW-M1`, PR #134
+ *  fix round). `SEO-POLICY.md` §B4's book-layer note states the video-order prefix already
+ *  makes the fragment unique — true across videos, but it says nothing about two NAMED tags
+ *  within the same video's own list folding to the same string, which `foldTagName` can do
+ *  (Turkish-char/punctuation variants of one concept, e.g. "İklim-Bitki" vs "İklim Bitki"). This
+ *  guard restores the uniqueness the policy text already asserts rather than contradicting it. */
+export function tagFragment(
+  videoOrderNo: number,
+  tag: TagIdentity,
+  siblingTags: readonly TagIdentity[],
+): string {
+  if (tag.nameTr === null) return `${videoFragment(videoOrderNo)}-etiket-${tag.orderNo}`;
+  const folded = foldTagName(tag.nameTr);
+  const collisionCount = siblingTags.filter(
+    (sibling) => sibling.nameTr !== null && foldTagName(sibling.nameTr) === folded,
+  ).length;
+  return collisionCount > 1
+    ? `${videoFragment(videoOrderNo)}-${folded}-${tag.orderNo}`
+    : `${videoFragment(videoOrderNo)}-${folded}`;
+}
 
-/**
- * The video's visible title — the string the reader sees on the index row, on the stage caption
- * and inside `VideoObject.name`.
+type VideoTitleTranslator = (key: "videoFallbackHeading", values: { no: number }) => string;
+
+export function videoTitle(
+  t: VideoTitleTranslator,
+  locale: Locale,
+  video: VideoIdentity & { readonly titleTr: string | null; readonly titleEn: string | null },
+): string {
+  const authored = locale === "en" ? video.titleEn : video.titleTr;
+  if (authored !== null) return authored;
+  return t("videoFallbackHeading", { no: video.orderNo });
+}
+
+/** GLOSSARY.md §5's 4-step fold (lowercase → Turkish-char fold → non-alnum runs to one
+ *  hyphen → trim), reused here rather than re-invented per that section's own note. Reachable
+ *  only once a video's tag carries a non-null `nameTr` — no seeded row does yet
+ *  (`FU-BOOK-GENERIC-CONTRACT`), so this is proven by a synthetic unit case (§5.7), not by
+ *  live data.
  *
- * All three MUST agree: §B5 5.7 bars structured data carrying anything the page does not show,
- * and `VideoObject.name` is composed from this title plus the book's `<h1>`. One function is what
- * makes that agreement structural instead of three call sites happening to pass the same
- * arguments.
- *
- * THE STAGE CAPTION WAS THE ONE CONSUMER OUTSIDE THE SEAM until PR #70's review, and the docblock
- * above counted it while the code did not import it (→ `FENER70-M1` / `CODE70-M4`). That is the
- * exact shape this file exists to prevent: when `FU-BOOK-GENERIC-CONTRACT` teaches this function a
- * per-video display title, a caption still spelling `t("denemeHeading", …)` by hand keeps printing
- * "Deneme 12" while the row beside it prints the real one.
- */
-export function videoTitle(t: VideoTitleTranslator, video: VideoIdentity): string {
-  return t("denemeHeading", { no: video.denemeNo });
+ *  `toLocaleLowerCase("tr")`, NOT the plain `toLowerCase()` a first draft of this function
+ *  carried: the ASCII-only default lowercases `İ` (dotted capital I) to a TWO-code-point
+ *  sequence (`i` + a combining dot above, U+0307), which this function's own character class
+ *  cannot fold as one unit — the combining mark falls through as a non-alphanumeric character
+ *  and becomes a stray hyphen (`"İklim"` → `"i-klim"`, caught by this file's own unit case
+ *  before it shipped). `lib/search/normalize.ts`'s `foldForSearch` already carries this exact
+ *  lesson ("Turkish lowercasing runs FIRST so İ→i … follow Turkish rules rather than English
+ *  ones") for the same reason; this function follows it rather than re-deriving it. With
+ *  Turkish casing, `İ` folds to plain `i` directly, so the FOLD table needs no combining-mark
+ *  entry at all. */
+function foldTagName(value: string): string {
+  const FOLD: Record<string, string> = { ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" };
+  return value
+    .toLocaleLowerCase("tr")
+    .replace(/[çğıöşü]/g, (ch) => FOLD[ch] ?? ch)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

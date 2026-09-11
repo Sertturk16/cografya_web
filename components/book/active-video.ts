@@ -14,12 +14,13 @@ import { useSyncExternalStore } from "react";
  * · **First paint.** The stage shows a video and no player exists anywhere on the page (zero
  *   iframes in the first response is the whole facade architecture). `selected` therefore has to
  *   be meaningful while `active` is `null`.
- * · **Arriving on a fragment.** `#deneme-33-soru-4` moves the stage to video 33 and arms İzle with
- *   that question's second; it loads nothing, because a hash is neither a click nor a key press.
+ * · **Arriving on a fragment.** `#video-33-etiket-4` moves the stage to video 33 and arms İzle
+ *   with that etiket's second; it loads nothing, because a hash is neither a click nor a key
+ *   press.
  *   `selected` moves while `active` stays `null`, which is the same shape as first paint and is
  *   reached by a different path.
  *
- * A `close(denemeNo)` method used to be the second bullet here. It is gone with the control that
+ * A `close(orderNo)` method used to be the second bullet here. It is gone with the control that
  * would have called it: the stage offers no way to dismiss a loaded player, so the method, its
  * export and the two cases that certified it were surface nothing could reach — and a test that
  * proves a state machine handles an event no code emits is confidence bought rather than earned
@@ -57,7 +58,7 @@ import { useSyncExternalStore } from "react";
  * The stage and the index are siblings with server markup in between: the wrapper that HEARS the
  * press sits above the slot that has to RENDER the player. A context provider would solve that
  * and still leave the store as the natural home for "one player, ever" — with the state being a
- * single `denemeNo`, two open players is not a state this code can express.
+ * single `orderNo`, two open players is not a state this code can express.
  *
  * The singleton is what the page uses; the factory is what `active-video.test.ts` uses, so the
  * invariants are tested on a fresh instance per case instead of through a reset hatch that only
@@ -74,7 +75,7 @@ import { useSyncExternalStore } from "react";
  * the fix it was reachable in three presses: İzle, breadcrumb, back.
  *
  * `reset` is called from the bench island's unmount cleanup. It is unconditional where the
- * pre-bench `close(denemeNo)` had to be scoped, and the reason that scoping existed is gone: the
+ * pre-bench `close(orderNo)` had to be scoped, and the reason that scoping existed is gone: the
  * page now has ONE island rather than thirty, so "my island is going away" and "the page is going
  * away" are the same event. It clears `selected` too — a stale selection would put another book's
  * video number on the stage.
@@ -91,14 +92,14 @@ import { useSyncExternalStore } from "react";
  * is accepted rather than fixed here.
  *
  * WHAT WOULD MAKE IT A REAL DEFECT, so that whoever gets there does not have to rediscover it: a
- * direct book→book link. The store's `denemeNo` would then match a video of a DIFFERENT book, and
+ * direct book→book link. The store's `orderNo` would then match a video of a DIFFERENT book, and
  * the tick would request an embed for a video the reader never asked for — the gesture-free
  * third-party request this whole architecture exists to prevent. No such link exists on this page
  * today. Whoever adds one closes the residue in the same change; full closure scopes the store to
  * the page instance, which sits with Atlas as a tracked follow-up.
  */
 export interface ActiveVideo {
-  readonly denemeNo: number;
+  readonly orderNo: number;
   /** Bumped only when the OPEN video changes — the iframe's identity and `src` follow this. */
   readonly loadToken: number;
   /** Frozen at load time; the only second that reaches the `src`. */
@@ -121,9 +122,9 @@ export interface ActiveVideoStore {
   getSnapshot(): BenchState;
   getServerSnapshot(): BenchState;
   /** Moves the stage WITHOUT loading a player. Tears down a player on another video. */
-  select(denemeNo: number): void;
+  select(orderNo: number): void;
   /** Moves the stage AND loads/seeks its player. */
-  open(denemeNo: number, startSecond: number): void;
+  open(orderNo: number, startSecond: number): void;
   /** Clears both axes — the page is leaving. */
   reset(): void;
 }
@@ -156,31 +157,31 @@ export function createActiveVideoStore(): ActiveVideoStore {
     getServerSnapshot() {
       return EMPTY;
     },
-    select(denemeNo) {
+    select(orderNo) {
       // The stage holds ONE player, so moving to another video drops it; moving to the video that
       // already has it keeps it. Both cases are the same sentence: work out what the next state
       // WOULD be, and commit only if it differs. The previous three-term guard said the same
       // thing by enumerating when a change is absent, which is the harder half to read and the
       // half that goes wrong when a third axis arrives (→ PR #70 review `SIMP70-M4`).
-      const keepsPlayer = state.active !== null && state.active.denemeNo === denemeNo;
+      const keepsPlayer = state.active !== null && state.active.orderNo === orderNo;
       const active = keepsPlayer ? state.active : null;
-      if (state.selected === denemeNo && state.active === active) return;
-      commit({ selected: denemeNo, active });
+      if (state.selected === orderNo && state.active === active) return;
+      commit({ selected: orderNo, active });
     },
-    open(denemeNo, startSecond) {
+    open(orderNo, startSecond) {
       seekNonce += 1;
       const current = state.active;
       const active =
-        current !== null && current.denemeNo === denemeNo
+        current !== null && current.orderNo === orderNo
           ? { ...current, seekSecond: startSecond, seekNonce }
           : {
-              denemeNo,
+              orderNo,
               loadToken: (loadToken += 1),
               loadStartSecond: startSecond,
               seekSecond: startSecond,
               seekNonce,
             };
-      commit({ selected: denemeNo, active });
+      commit({ selected: orderNo, active });
     },
     reset() {
       if (state === EMPTY) return;

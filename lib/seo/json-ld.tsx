@@ -413,7 +413,7 @@ export function isProviderThumbnailUrl(url: string): boolean {
  *   BLOCKER, so emitting one would trade a nice-to-have for a violation.
  * · **`hasPart` / `Clip`** — ruled: not emitted (Atlas, 2026-08-15, closing web SPEC E4).
  *   Google defines a clip URL as the video's own URL plus a time QUERY PARAMETER; our ruled
- *   deep link is a fragment (`#deneme-12-soru-3`), which does not satisfy that definition,
+ *   deep link is a fragment (`#video-12-etiket-3`), which does not satisfy that definition,
  *   and generating query-parameter variants was rejected separately under §B12 12.2.c. A
  *   `url` the page does not honour is a structured-data claim about a page behaviour that
  *   does not exist.

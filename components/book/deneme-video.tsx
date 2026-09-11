@@ -151,7 +151,7 @@ export function DenemeVideo({
   watchOnYoutubeAriaLabel: string;
   watchOnYoutubeUrl: string;
 }) {
-  const isActive = video.playable && active !== null && active.denemeNo === video.denemeNo;
+  const isActive = video.playable && active !== null && active.orderNo === video.orderNo;
   // Saving requires a genuinely loaded, genuinely authenticated player (§5.5). In practice
   // `isActive` alone already implies `authState === "authenticated"`, since the click gate
   // (`video-bench.tsx`) never calls `openVideo` for anyone else — this check is the belt the

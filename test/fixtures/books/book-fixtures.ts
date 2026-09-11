@@ -52,8 +52,6 @@ export const BOOK_LIST_PAGE_1: BookList = {
       publisherName: "Fixture Publisher",
       examTrack: "AYT",
       coverImagePath: "/kitaplar/fixture-book-one.webp",
-      videoCount: 2,
-      questionCount: 4,
       displayOrder: 1,
       updatedAt: "2026-01-02T03:04:05.000Z",
     },
@@ -66,8 +64,6 @@ export const BOOK_LIST_PAGE_1: BookList = {
       examTrack: "TYT",
       // `null` is a contract state, not a gap: a book with no cover renders no image.
       coverImagePath: null,
-      videoCount: 0,
-      questionCount: 0,
       displayOrder: 2,
       updatedAt: "2026-01-03T03:04:05.000Z",
     },
@@ -88,8 +84,6 @@ export const BOOK_LIST_PAGE_2: BookList = {
       publisherName: "Fixture Publisher",
       examTrack: "KPSS",
       coverImagePath: "/kitaplar/fixture-book-three.webp",
-      videoCount: 1,
-      questionCount: 2,
       displayOrder: 3,
       updatedAt: "2026-01-04T03:04:05.000Z",
     },
@@ -112,8 +106,6 @@ export const BOOK_DETAIL: BookDetail = {
   publisherName: "Fixture Publisher",
   examTrack: "AYT",
   coverImagePath: "/kitaplar/fixture-book-one.webp",
-  videoCount: 2,
-  questionCount: 4,
   displayOrder: 1,
   // Required since the api opened its read side; it feeds the sitemap's `lastmod` and
   // `Book.dateModified`, so a fixture without it would let a consumer forget both.
@@ -121,7 +113,6 @@ export const BOOK_DETAIL: BookDetail = {
   authorNames: ["Fixture Author Alpha", "Fixture Author Beta"],
   isbn13: "9780000000000",
   pageCount: 120,
-  denemeCount: 4,
   introTr: "Fixture narrative paragraph one.\n\nFixture narrative paragraph two.",
   introEn: null,
   metaTitleTr: "Fixture Book One meta title",
@@ -129,21 +120,22 @@ export const BOOK_DETAIL: BookDetail = {
   youtubeChannelId: "UCfixturechannelid00000",
   youtubePlaylistId: null,
   purchaseUrl: "https://example.invalid/fixture-book-one",
-  coverage: {
-    videoCount: 2,
-    questionCount: 4,
-    denemeNumbers: [1, 3],
-    denemeCount: 4,
-  },
   videos: [
     {
       bookVideoId: "11111111-2222-4333-8444-555555555551",
-      denemeNo: 1,
+      orderNo: 1,
+      // `null` on both: the reader-facing "Deneme N" label is composed in the web layer from
+      // i18n + orderNo (P0 generic-catalogue cut-over) — matches every seeded row today.
+      titleTr: null,
+      titleEn: null,
       youtubeVideoId: "fixtureVid1",
-      questions: [
+      tags: [
         // `startSecond: 0` is an ordinary value, never a sentinel (contract note).
-        { questionNo: 1, startSecond: 0 },
-        { questionNo: 2, startSecond: 94 },
+        { orderNo: 1, startSecond: 0, nameTr: null, nameEn: null },
+        // The one named tag in this fixture — exercises `tagFragment`'s named branch and
+        // `foldTagName` (§5.2/§5.7) through something other than a hand-rolled unit case in
+        // isolation. Synthetic, per `CONVENTIONS.md` §2.
+        { orderNo: 2, startSecond: 94, nameTr: "İklim", nameEn: null },
       ],
       youtube: {
         thumbnailUrl: "https://i.ytimg.com/vi/fixtureVid1/hqdefault.jpg?sqp=fixture&rs=fixture",
@@ -158,11 +150,13 @@ export const BOOK_DETAIL: BookDetail = {
     },
     {
       bookVideoId: "11111111-2222-4333-8444-555555555553",
-      denemeNo: 3,
+      orderNo: 3,
+      titleTr: null,
+      titleEn: null,
       youtubeVideoId: "fixtureVid3",
-      questions: [
-        { questionNo: 1, startSecond: 11 },
-        { questionNo: 2, startSecond: 205 },
+      tags: [
+        { orderNo: 1, startSecond: 11, nameTr: null, nameEn: null },
+        { orderNo: 2, startSecond: 205, nameTr: null, nameEn: null },
       ],
       // The normal path today: no provider snapshot, so no VideoObject may be emitted.
       youtube: null,

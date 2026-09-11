@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { formatDuration } from "@/lib/book/duration";
-import { questionFragment } from "@/lib/book/video-identity";
+import { tagFragment } from "@/lib/book/video-identity";
 import styles from "./book-video.module.css";
 
 /**
@@ -18,14 +18,14 @@ import styles from "./book-video.module.css";
  * ## Every tick is a REAL link to a REAL target
  *
  * `href` is the question's own fragment, built by the same function that builds the `id` on the
- * index row (`lib/book/video-identity.ts`), from the same `questions` array that renders those
+ * index row (`lib/book/video-identity.ts`), from the same `tags` array that renders those
  * rows. A tick pointing at a fragment that does not exist is `SEO-POLICY.md` §B8 8.9's BLOCKER,
  * and deriving both ends from one array is what makes "every href has a target" true by
  * construction rather than by two lists agreeing — the discipline `FENER66-M2` established for
  * the jump strip, applied to the strip this PR adds.
  *
  * The ticks carry no `id`. The ids stay on the index rows, where they have always been, so this
- * strip adds no duplicate id and no second definition of where `#deneme-12-soru-3` points.
+ * strip adds no duplicate id and no second definition of where `#video-12-etiket-3` points.
  *
  * ## The group label, and why this is the one new string
  *
@@ -36,7 +36,7 @@ import styles from "./book-video.module.css";
  * directions: `aria-hidden` over focusable links is its own violation, and dropping the links
  * would leave a row of dots that look pressable and are not.
  *
- * Each tick keeps `questionLabelAria`, the same accessible name the index row carries — the name
+ * Each tick keeps `tagLabelAria`, the same accessible name the index row carries — the name
  * states a FACT about the question ("question 3 is at 3:24 of the video") rather than promising a
  * behaviour, so it stays true for a reader with no JavaScript, for whom the tick is the plain
  * fragment jump it always was.
@@ -48,7 +48,7 @@ import styles from "./book-video.module.css";
  * not, and the difference is 88px of Cumulative Layout Shift on a page whose stage sits ABOVE
  * thirty index rows (→ PR #70 review `FENER70-I1`, validated).
  *
- * The reachable path is a shared deep link. `#deneme-33-soru-4` renders on the server with the
+ * The reachable path is a shared deep link. `#video-33-etiket-4` renders on the server with the
  * book's FIRST video on the stage; hydration then moves the stage to video 33, and if that video's
  * snapshot has aged out — which the contract calls the normal path, not an error — a card that
  * existed in the first response disappears under a reader who is already looking at the rows below
@@ -73,12 +73,16 @@ import styles from "./book-video.module.css";
  * outside its own card.
  */
 export function BenchTimeline({
-  denemeNo,
-  questions,
+  orderNo,
+  tags,
   durationSeconds,
 }: {
-  denemeNo: number;
-  questions: readonly { readonly no: number; readonly second: number }[];
+  orderNo: number;
+  tags: readonly {
+    readonly orderNo: number;
+    readonly second: number;
+    readonly nameTr: string | null;
+  }[];
   /** `null` in the two non-rich states — the card still renders, with no ticks in it. */
   durationSeconds: number | null;
 }) {
@@ -98,25 +102,25 @@ export function BenchTimeline({
   return (
     <div className={styles.timeline} role="group" aria-label={t("timelineLabel")}>
       <div className={styles.timelineBar}>
-        {questions.map((question) => {
-          const ratio = Math.min(1, Math.max(0, question.second / durationSeconds));
+        {tags.map((tag) => {
+          const ratio = Math.min(1, Math.max(0, tag.second / durationSeconds));
           return (
             <a
-              key={question.no}
+              key={tag.orderNo}
               className={styles.tick}
               style={{ left: `${(ratio * 100).toFixed(2)}%` }}
-              href={`#${questionFragment(denemeNo, question.no)}`}
-              data-second={question.second}
-              aria-label={t("questionLabelAria", {
-                no: question.no,
-                time: formatDuration(question.second),
+              href={`#${tagFragment(orderNo, tag, tags)}`}
+              data-second={tag.second}
+              aria-label={t("tagLabelAria", {
+                no: tag.orderNo,
+                time: formatDuration(tag.second),
               })}
             >
               <span className={styles.tickDot} aria-hidden="true">
-                {question.no}
+                {tag.orderNo}
               </span>
               <span className={styles.tickTime} aria-hidden="true">
-                {formatDuration(question.second)}
+                {formatDuration(tag.second)}
               </span>
             </a>
           );

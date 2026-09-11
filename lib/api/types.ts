@@ -133,9 +133,9 @@ export type EarthquakeAttribution = components["schemas"]["EarthquakeAttribution
 export type EarthquakeMeta = components["schemas"]["EarthquakeMetaDto"];
 
 // ---- Book (kitap video çözümleri — /kitaplar, W0) ---------------------------
-/** One book on the `/kitaplar` hub card: identity, the two localized slugs, and the two
- *  coverage numbers the card shows. `coverImagePath` is a path inside THIS repo's own
- *  `public/` directory (never a remote URL) or `null` when there is no cover to render. */
+/** One book on the `/kitaplar` hub card: identity, the two localized slugs, and the exam-track
+ *  badge the card shows. `coverImagePath` is a path inside THIS repo's own `public/` directory
+ *  (never a remote URL) or `null` when there is no cover to render. */
 export type BookListItem = components["schemas"]["BookListItemDto"];
 /** The `/api/books` pagination envelope (`items` + `page`/`pageSize`/`total`/`hasMore`).
  *  The endpoint uses the repo's envelope rather than a flat array because the book set is
@@ -143,8 +143,8 @@ export type BookListItem = components["schemas"]["BookListItemDto"];
  *  must page until `hasMore === false` instead of reading one response — see
  *  `lib/api/books.ts`, which is the only place that loop is written. */
 export type BookList = components["schemas"]["BookListDto"];
-/** One book's full payload: künye, editorial narrative, hand-written metadata, coverage
- *  numbers, every indexed deneme with its question index, and the attribution rows.
+/** One book's full payload: künye, editorial narrative, hand-written metadata, every video and
+ *  its etiket index, and the attribution rows.
  *
  *  TWO TRAPS THE CONTRACT DOCUMENTS, WORTH REPEATING AT THE ALIAS:
  *  · `videos[].youtube` is `| null`, and null is the NORMAL path (the provider sync is a
@@ -156,9 +156,9 @@ export type BookList = components["schemas"]["BookListDto"];
  *    untouchable class and are printed as received — never translated, shortened or
  *    reworded on the way to the page. */
 export type BookDetail = components["schemas"]["BookDetailDto"];
-/** One indexed deneme: `book_videos.id` (the identifier the video-progress endpoints below
- *  key on — UYELIK-06), its number IN THE BOOK, the video id the embed is built from, the
- *  question index, and the nullable provider snapshot. */
+/** One video solution: `book_videos.id` (the identifier the video-progress endpoints below
+ *  key on — UYELIK-06), its position IN THE BOOK, the video id the embed is built from, the
+ *  etiket index, and the nullable provider snapshot. */
 export type BookVideo = components["schemas"]["BookVideoDto"];
 /** The provider snapshot on one video — thumbnail (address AND dimensions), publication
  *  instant, duration in both forms, and `embeddable`. Reached only through the non-null branch

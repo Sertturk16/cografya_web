@@ -345,8 +345,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get one book by its TR or EN slug, with its full question index.
-         * @description One request carries the whole page: künye, coverage, every deneme and all its questions. There is deliberately no separate videos endpoint — the SSG build makes one round trip.
+         * Get one book by its TR or EN slug, with every video and its tags.
+         * @description One request carries the whole page: künye, every video and every tag on it. There is no book-level count anywhere in the payload — what a book offers is said by its own editorial text (introTr, metaDescriptionTr), not a number. There is deliberately no separate videos endpoint — the SSG build makes one round trip.
          */
         get: operations["BookController_findBySlug"];
         put?: never;
@@ -2617,23 +2617,13 @@ export interface components {
              */
             coverImagePath: string | null;
             /**
-             * @description How many denemeler of this book have an indexed video solution. Present on the card so the hub carries real content of its own rather than being a bare list of links.
-             * @example 30
-             */
-            videoCount: number;
-            /**
-             * @description How many individual question solutions are indexed, across every video.
-             * @example 180
-             */
-            questionCount: number;
-            /**
              * @description Hub ordering. Read with a deterministic secondary sort — equal values must not leave the order to chance.
              * @example 1
              */
             displayOrder: number;
             /**
              * Format: date-time
-             * @description ISO 8601 UTC instant this book last changed, across its own row AND its videos and questions. Feeds sitemap lastmod and Book.dateModified — use it directly, never the build time.
+             * @description ISO 8601 UTC instant this book last changed, across its own row AND its videos and etiketler. Feeds sitemap lastmod and Book.dateModified — use it directly, never the build time.
              * @example 2026-08-15T09:12:33.000Z
              */
             updatedAt: string;
@@ -2662,46 +2652,27 @@ export interface components {
             /** @description The page of books, ordered by displayOrder ascending and tie-broken by slugTr. The tie-break is not decoration: displayOrder is hand-assigned and may repeat, and offset pagination without a total order can serve the same book on two pages. slugTr carries a UNIQUE constraint, which is what makes the ordering total rather than merely intended. */
             items: components["schemas"]["BookListItemDto"][];
         };
-        BookCoverageDto: {
+        BookVideoTagDto: {
             /**
-             * @description How many denemeler of this book have a video solution indexed here.
-             * @example 30
-             */
-            videoCount: number;
-            /**
-             * @description How many individual question solutions are indexed, across every video.
-             * @example 180
-             */
-            questionCount: number;
-            /**
-             * @description Exactly which deneme numbers are covered, ascending. Ranges for display ("1–13") are the web layer's to derive; the api publishes the set, never a formatted string.
-             * @example [
-             *       1,
-             *       2,
-             *       3,
-             *       15,
-             *       33,
-             *       40
-             *     ]
-             */
-            denemeNumbers: number[];
-            /**
-             * @description How many denemeler the BOOK contains — a künye fact, not a coverage figure. It is not derived from videoCount, and nothing forces the two apart: a fully covered book makes them equal. Non-nullable: the owner checked the book (K-E), and denemeler 14 and 22 DO exist there — only their solution videos are missing.
-             * @example 40
-             */
-            denemeCount: number;
-        };
-        BookVideoQuestionDto: {
-            /**
-             * @description The question position inside its deneme, from 1, gapless. The reader-facing "Soru 3" label is composed in the web layer from this number and an i18n key.
+             * @description The etiket's position inside its video, from 1, gapless. ALWAYS stored, never derived from startSecond (`DEC 2026-09-10b` md.3). The reader-facing "Soru 3" label of a deneme book is composed in the web layer from this number and an i18n key.
              * @example 3
              */
-            questionNo: number;
+            orderNo: number;
             /**
-             * @description Whole seconds from the start of the video to this question's solution — the jump target handed to the player (DEC 2026-08-15d: the jump happens inside the loaded player, not by rebuilding the embed URL). DO NOT assume the first question starts at 0 — the measured set of first-question seconds is {0, 2, 6, 11, 94}, so 0 is an ordinary value and not a sentinel.
+             * @description Whole seconds from the start of the video to this etiket's solution — the jump target handed to the player (DEC 2026-08-15d: the jump happens inside the loaded player, not by rebuilding the embed URL). DO NOT assume the first etiket starts at 0 — the measured set of first-mark seconds is {0, 2, 6, 11, 94}, so 0 is an ordinary value and not a sentinel.
              * @example 94
              */
             startSecond: number;
+            /**
+             * @description The etiket's own name — generic-model addition (`GLOSSARY.md` §4.2, `etiket adı`). NULL for every etiket of a deneme book: sıra and saniye are the only information, and the reader sees "Soru 3" built from the web repo's own i18n key plus orderNo. A topic-summary/soru-bankası book's etiketler carry one.
+             * @example null
+             */
+            nameTr: string | null;
+            /**
+             * @description EN counterpart of nameTr, null on the same SEO-POLICY §B14 14.2 grounds every other EN twin uses: a field with no counterpart is omitted, never machine-filled.
+             * @example null
+             */
+            nameEn: string | null;
         };
         BookVideoYoutubeDto: {
             /** @description Thumbnail URL exactly as the provider returned it. NEVER construct this address from the video id — replacing API Data with independently computed data is barred (Developer Policies III.E.5). Hotlink it; do not copy, cache or optimise the bytes (III.E.1), which is why image optimisation is off on this surface. */
@@ -2740,17 +2711,27 @@ export interface components {
              */
             bookVideoId: string;
             /**
-             * @description The deneme's number IN THE BOOK — not its position in the playlist. The two diverge (+1 after 14, +2 after 21) because denemeler 14 and 22 exist in the book while their solution videos do not. The playlist position is stored nowhere and is never published.
+             * @description The video's position IN THE BOOK — not its position in the playlist. For a deneme book the two diverge (+1 after 14, +2 after 21) because denemeler 14 and 22 exist in the book while their solution videos do not. The playlist position is stored nowhere and is never published. The generic successor to the retired `denemeNo` (`GLOSSARY.md` §4.2, `video sırası`); also the anchor prefix on the book page (`#video-{orderNo}-…`).
              * @example 12
              */
-            denemeNo: number;
+            orderNo: number;
             /**
-             * @description The YouTube video id, 11 characters — the identifier the embed is built from. Load the player only on a click or key press, never on hover, and place nothing on top of it once it is in. Moving between questions happens INSIDE the loaded player through the IFrame Player API, not by rebuilding the embed URL per question (owner ruling DEC 2026-08-15d): six questions per video would otherwise cost six full player reloads.
+             * @description Our own display title for this video — never the YouTube API's own title, which is not published on this contract. NULL for a deneme book: the reader-facing "Deneme 12" label is still composed in the web repo from i18n + orderNo. A topic-summary/soru-bankası book may set it (`GLOSSARY.md` §4.2, `video başlığı`).
+             * @example null
+             */
+            titleTr: string | null;
+            /**
+             * @description EN counterpart of titleTr, null on the same SEO-POLICY §B14 14.2 grounds every other EN twin uses: a field with no counterpart is omitted, never machine-filled.
+             * @example null
+             */
+            titleEn: string | null;
+            /**
+             * @description The YouTube video id, 11 characters — the identifier the embed is built from. Load the player only on a click or key press, never on hover, and place nothing on top of it once it is in. Moving between etiketler happens INSIDE the loaded player through the IFrame Player API, not by rebuilding the embed URL per etiket (owner ruling DEC 2026-08-15d): six etiketler per video would otherwise cost six full player reloads.
              * @example dQw4w9WgXcQ
              */
             youtubeVideoId: string;
-            /** @description The question index for this deneme, ascending by questionNo and by startSecond. It must be readable and clickable WITHOUT JavaScript: SEO-POLICY §12.2.b treats a page whose body exists to send the visitor elsewhere as a BLOCKER, and this index is what keeps the page on the right side of that line. */
-            questions: components["schemas"]["BookVideoQuestionDto"][];
+            /** @description The etiket index for this video, ascending by orderNo and by startSecond. It must be readable and clickable WITHOUT JavaScript: SEO-POLICY §12.2.b treats a page whose body exists to send the visitor elsewhere as a BLOCKER, and this index is what keeps the page on the right side of that line. Renamed from `questions` (P0 PR-3, `DEC 2026-09-10b` md.1). */
+            tags: components["schemas"]["BookVideoTagDto"][];
             /** @description Provider-sourced enrichment, or NULL — and null is a normal state, not an error: the sync may never have run, the data may have aged past its serve threshold, or the video may have stopped being returned. When it is null, do NOT emit VideoObject and fall back to a typographic facade; the rest of this object is unaffected. */
             youtube: components["schemas"]["BookVideoYoutubeDto"] | null;
         };
@@ -2802,23 +2783,13 @@ export interface components {
              */
             coverImagePath: string | null;
             /**
-             * @description How many denemeler of this book have an indexed video solution. Present on the card so the hub carries real content of its own rather than being a bare list of links.
-             * @example 30
-             */
-            videoCount: number;
-            /**
-             * @description How many individual question solutions are indexed, across every video.
-             * @example 180
-             */
-            questionCount: number;
-            /**
              * @description Hub ordering. Read with a deterministic secondary sort — equal values must not leave the order to chance.
              * @example 1
              */
             displayOrder: number;
             /**
              * Format: date-time
-             * @description ISO 8601 UTC instant this book last changed, across its own row AND its videos and questions. Feeds sitemap lastmod and Book.dateModified — use it directly, never the build time.
+             * @description ISO 8601 UTC instant this book last changed, across its own row AND its videos and etiketler. Feeds sitemap lastmod and Book.dateModified — use it directly, never the build time.
              * @example 2026-08-15T09:12:33.000Z
              */
             updatedAt: string;
@@ -2842,11 +2813,6 @@ export interface components {
              * @example 144
              */
             pageCount: number;
-            /**
-             * @description How many denemeler the BOOK contains — a künye fact, distinct from how many have video solutions. Also present inside coverage; both come from the same value.
-             * @example 40
-             */
-            denemeCount: number;
             /** @description The editorial narrative, hand-written and reviewed against CONTENT-STYLE and SEO-POLICY Part A. Paragraphs are separated by a blank line; render it as prose, never as a single run-on block. */
             introTr: string;
             /** @description Null today (SEO-POLICY §B14 14.2). The EN page carries no narrative rather than a machine-translated one; the EN twin is permanently noindex by owner ruling. */
@@ -2867,9 +2833,7 @@ export interface components {
              * @example https://www.kitapisler.com/cografya-gurmesi-yayinlari-ayt-cografya-konu-ozetli-brans-denemeleri_106636.html
              */
             purchaseUrl: string | null;
-            /** @description What this index actually covers, as numbers. The counts belong to the interface rather than to the prose (owner ruling); the editorial text asserts nothing about them. */
-            coverage: components["schemas"]["BookCoverageDto"];
-            /** @description Every indexed deneme with its question index, ascending by denemeNo. The 180-row index must be readable and clickable without JavaScript — that is what keeps this page clear of SEO-POLICY §12.2.b. */
+            /** @description Every indexed video with its etiket index, ascending by orderNo. The 180-row index must be readable and clickable without JavaScript — that is what keeps this page clear of SEO-POLICY §12.2.b. */
             videos: components["schemas"]["BookVideoDto"][];
             /** @description Never empty, on any response, in any data state — an empty array would be a breach of the attribution obligation rather than a degraded widget. Two rows: the YouTube source credit and the content partner credit; neither substitutes for the other. */
             attribution: components["schemas"]["BookAttributionDto"][];

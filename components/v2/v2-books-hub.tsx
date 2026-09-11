@@ -7,7 +7,7 @@ import type { Locale } from "@/i18n/routing";
 import type { BookListItem } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Video, ArrowRight, HelpCircle, Search, Building } from "lucide-react";
+import { BookOpen, ArrowRight, Search, Building } from "lucide-react";
 
 interface V2BooksHubProps {
   books: BookListItem[];
@@ -104,8 +104,12 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
               <div className="flex-1 flex flex-col justify-between space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
+                    {/* `|| "AYT / TYT"` fallback removed: `examTrack` is non-nullable and
+                        "AYT / TYT" was not even a valid enum member, so the branch was dead
+                        code (`FENP0HUB-NEW-PE1`, riding along with the count-chip removal
+                        below in the same file). */}
                     <Badge variant="primary" size="sm">
-                      {book.examTrack || "AYT / TYT"}
+                      {book.examTrack}
                     </Badge>
                     <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
                       <Building className="size-3 text-muted-foreground/70" />
@@ -118,19 +122,11 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
                   </h3>
                 </div>
 
-                {/* Badges & Action Link */}
+                {/* Action Link. The two count chips (video/soru) sat here until the
+                    generic-catalogue cut-over (P0, `DEC 2026-09-10c` md.1) dropped
+                    `videoCount`/`questionCount` outright — no book-level count is published
+                    any more. */}
                 <div className="space-y-4 pt-2 border-t border-border/60">
-                  <div className="flex items-center gap-2 flex-wrap text-xs">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-semibold">
-                      <Video className="size-3.5" />
-                      {book.videoCount} Video Çözüm
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary/10 text-secondary font-semibold font-mono">
-                      <HelpCircle className="size-3.5" />
-                      {book.questionCount} Soru
-                    </span>
-                  </div>
-
                   <div className="flex items-center justify-between text-xs font-semibold text-primary group-hover:translate-x-1 transition-transform">
                     <span>Video Çözüm Tezgâhına Git</span>
                     <ArrowRight className="size-4 ml-1" />

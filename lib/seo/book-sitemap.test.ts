@@ -32,8 +32,6 @@ function book(overrides: Partial<BookListItem> = {}): BookListItem {
     publisherName: "Synthetic Publisher",
     examTrack: "AYT",
     coverImagePath: null,
-    videoCount: 3,
-    questionCount: 18,
     displayOrder: 1,
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,

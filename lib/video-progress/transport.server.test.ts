@@ -84,7 +84,7 @@ describe("isBookVideoIdShape", () => {
   it("accepts a real uuid", () => {
     expect(isBookVideoIdShape(VALID_BOOK_VIDEO_ID)).toBe(true);
   });
-  it("rejects a denemeNo-shaped value, a slug, and an empty string", () => {
+  it("rejects an orderNo-shaped value, a slug, and an empty string", () => {
     expect(isBookVideoIdShape("12")).toBe(false);
     expect(isBookVideoIdShape("kitap-slug")).toBe(false);
     expect(isBookVideoIdShape("")).toBe(false);
