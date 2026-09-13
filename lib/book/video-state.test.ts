@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { BookVideo, BookVideoYoutube } from "@/lib/api/types";
 import { resolveVideoState } from "./video-state";
 
@@ -51,14 +51,33 @@ describe("resolveVideoState", () => {
     expect(state.kind === "rich" && state.youtube.durationIso).toBe("PT6M8S");
   });
 
-  it("degrades to typographic — NOT external — when the thumbnail is off a provider host", () => {
-    // The video is still embeddable, so the player must still work. What is withheld is the
-    // image, the two visible facts and the markup. Sending the reader away from a video we may
-    // embed would be a worse page, not a safer one.
+  it("degrades to typographic and logs a warning when thumbnail host is rejected", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const state = resolveVideoState(
       video({ ...snapshot, thumbnailUrl: "https://evil-ytimg.com/vi/x/hqdefault.jpg" }),
     );
     expect(state).toEqual({ kind: "typographic" });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]?.[0]).toContain("11111111-2222-4333-8444-555555555555");
+    expect(warnSpy.mock.calls[0]?.[0]).toContain("https://evil-ytimg.com/vi/x/hqdefault.jpg");
+    warnSpy.mockRestore();
+  });
+
+  it("does not log a warning on the normal unsynced null snapshot path", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(resolveVideoState(video(null))).toEqual({ kind: "typographic" });
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it("resolves rich for our own web site origin cover address", () => {
+    const state = resolveVideoState(
+      video({
+        ...snapshot,
+        thumbnailUrl: "http://localhost:3000/api/video-cover/11111111-2222-4333-8444-555555555555",
+      }),
+    );
+    expect(state.kind).toBe("rich");
   });
 
   it("puts the embeddable gate FIRST when both gates would fire", () => {

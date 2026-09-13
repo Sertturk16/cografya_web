@@ -1,5 +1,5 @@
 import "server-only";
-import { serverEnv } from "@/lib/env.server";
+import { absoluteUrl } from "@/lib/seo/site";
 import { ApiError, apiGet } from "./client";
 import { isProductionBuild } from "./provinces";
 import type { BookDetail, BookList, BookListItem } from "./types";
@@ -206,27 +206,21 @@ export async function getBookBySlug(slug: string): Promise<BookDetail | null> {
 }
 
 /**
- * Resolves a `thumbnailUrl` that arrives RELATIVE against the same api origin this module
- * already reads every book from (`serverEnv.API_BASE_URL`) — never a new configuration key
- * (Atlas dispatch, `Owner's Inbox/uyelik-uyum-denetimi/p2-video-kapisi/atlas-karar-kapak.md`).
+ * Resolves a `thumbnailUrl` that arrives RELATIVE against this web site's OWN origin
+ * (`lib/seo/site.ts`'s `absoluteUrl`, resolved against `NEXT_PUBLIC_SITE_URL`) — closing
+ * SEC138-NEW-I1 (P2-KAPAK-TARAYICI-YOLU, `kapak-devri.md`).
  *
- * TODAY's real value is always absolute (the provider's own hotlink,
- * `https://i.ytimg.com/vi/{id}/...`) and passes through this function byte-unchanged — the
- * `startsWith("/")` branch is unreached on the current contract and exists for the api's own
- * planned own-hosted replacement address, which the sibling plan proposes as a RELATIVE
- * `/api/video-cover/{bookVideoId}` precisely because no "this api's own public base URL" config
- * exists on that side yet
- * (`Owner's Inbox/uyelik-uyum-denetimi/p2-video-kapisi/kapak-adresi/plan.md` §3/§13). Unlike
- * this site's OWN pages (`lib/seo/site.ts`'s `absoluteUrl`, resolved against
- * `NEXT_PUBLIC_SITE_URL`), a relative cover address must resolve against the API's origin, not
- * this site's own — that is where the bytes are actually served from. `isProviderThumbnailUrl`
- * (`lib/seo/json-ld.tsx`)/`resolveVideoState` (`lib/book/video-state.ts`) still gate the
- * RESULT against the provider-host allowlist unchanged by this function; widening that
- * allowlist to also trust the resolved api origin is a separate decision this fix does not
- * make — see the accompanying return for why.
+ * The cover is served from web's own `/api/video-cover/[bookVideoId]` proxy route.
+ * Resolving against `serverEnv.API_BASE_URL` would expose the internal API address to
+ * the reader's browser, which fails in production where the API sits on an internal network
+ * unreachable from the internet, and trips CORP/CORS barriers. Resolving against the web
+ * site origin ensures zero API origin leakage in markup, JSON-LD, or network requests.
+ *
+ * Absolute provider URLs (`https://i.ytimg.com/...`) pass through unchanged to be
+ * gated by `isProviderThumbnailUrl`.
  */
 function resolveThumbnailUrl(url: string): string {
-  return url.startsWith("/") ? `${serverEnv.API_BASE_URL}${url}` : url;
+  return url.startsWith("/") ? absoluteUrl(url) : url;
 }
 
 /** Applies {@link resolveThumbnailUrl} to every video's snapshot on one book payload — the one

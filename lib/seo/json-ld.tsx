@@ -1,6 +1,5 @@
 import "server-only";
 import type { Locale } from "@/i18n/routing";
-import { serverEnv } from "@/lib/env.server";
 import { absoluteUrl, getSiteUrl, siteConfig } from "./site";
 
 // Minimal JSON-LD value typing — avoids `any` while staying schema-agnostic.
@@ -332,43 +331,26 @@ export function bookJsonLd(args: {
 const PROVIDER_THUMBNAIL_HOST_SUFFIXES = [".ytimg.com", ".youtube.com"] as const;
 
 /**
- * The configured api origin's own hostname — the SECOND trusted source this gate accepts.
- *
- * Closes a gap the accompanying fix itself created: the sibling api-side plan (`Owner's
- * Inbox/uyelik-uyum-denetimi/p2-video-kapisi/kapak-adresi/plan.md` §5.3) ships the fixed,
- * identity-free cover address FROM THIS OWN ORIGIN, and `lib/api/books.ts`'s
- * `resolveThumbnailUrl` already resolves a relative form of it against
- * `serverEnv.API_BASE_URL` — without this, the widened resolver's own output would reach
- * this gate and be rejected by it, degrading every video to `typographic` (no cover, no
- * `VideoObject`) the moment the api actually ships that address. Derived from
- * `serverEnv.API_BASE_URL` — the SAME configured value every api read already uses, never a
- * new configuration key.
- *
- * EXACT hostname equality, not a suffix and not a pattern: unlike the provider's subdomain
- * family above, there is exactly ONE api origin to trust, so a suffix match here would admit
- * `evil-<hostname>` the same way the comment above warns a bare suffix would for the
- * provider's own case — the failure mode this widening must not reopen.
- */
-const API_ORIGIN_HOSTNAME = new URL(serverEnv.API_BASE_URL).hostname;
-
-/**
  * Whether an address is a trusted thumbnail source — the gate for {@link videoObjectJsonLd}
- * and for `lib/book/video-state.ts`'s `resolveVideoState`, which explains why it exists.
+ * and for `lib/book/video-state.ts`'s `resolveVideoState`.
  *
- * TWO trusted origins, not one: the provider's own CDN (`PROVIDER_THUMBNAIL_HOST_SUFFIXES` —
- * today's real value) and this repo's own configured api origin (`API_ORIGIN_HOSTNAME` — the
- * sibling plan's own-hosted replacement). Both must keep passing, because this repo cannot
- * assume which one a given response carries.
+ * Closes SEC138-NEW-I1, SEC138-NEW-M1 (P2-KAPAK-TARAYICI-YOLU, `kapak-devri.md`).
  *
- * `https` is required on the PROVIDER host, not on ours: that address becomes an `<img src>`
- * on an https page, so a provider `http` one would be blocked as mixed content anyway and is
- * not a value we would publish in structured data either. Our own configured api origin is
- * accepted whatever scheme it is configured with — this repo's own local/dev checked-in
- * configuration is `http` (`.env.example`'s `API_BASE_URL`), and demanding `https` there would
- * silently fail every cover behind this same gate rather than reject an untrusted host, which
- * is not what this check exists to do (host trust is the exact-hostname comparison below; the
- * scheme requirement is the separate, narrower mixed-content concern that only applies once a
- * host is already untrusted-provider-shaped). A string `new URL()` cannot parse fails closed.
+ * TWO trusted sources:
+ * 1. The web site's OWN origin (derived from `getSiteUrl()`, `NEXT_PUBLIC_SITE_URL`):
+ *    - Hostname must match the site's hostname exactly (no wildcard, no pattern, no lookalike).
+ *    - Protocol must match the site's configured protocol (`https:` in production,
+ *      `http:` in local dev).
+ *    - Port must match the site's configured port (e.g. `:3000` in dev).
+ *    - Path must start with `/api/video-cover/`.
+ *    - Userinfo (`username` / `password`) must be empty.
+ *
+ * 2. External provider CDN (`PROVIDER_THUMBNAIL_HOST_SUFFIXES` — `i.ytimg.com`, `youtube.com`):
+ *    - `https:` protocol is strictly required.
+ *    - Userinfo must be empty.
+ *    - Hostname must end with one of the dot-prefixed suffixes or match exactly.
+ *
+ * A string `new URL()` cannot parse fails closed.
  */
 export function isProviderThumbnailUrl(url: string): boolean {
   let parsed: URL;
@@ -377,9 +359,24 @@ export function isProviderThumbnailUrl(url: string): boolean {
   } catch {
     return false;
   }
-  if (parsed.hostname === API_ORIGIN_HOSTNAME) return true;
+
+  // Reject userinfo tricks across all branches (e.g. https://user:pass@host)
+  if (parsed.username || parsed.password) return false;
+
+  // Branch 1: Web site's own origin (/api/video-cover/{id})
+  const siteUrl = new URL(getSiteUrl());
+  if (parsed.hostname === siteUrl.hostname) {
+    if (parsed.protocol !== siteUrl.protocol) return false;
+    if ((parsed.port || "") !== (siteUrl.port || "")) return false;
+    if (!parsed.pathname.startsWith("/api/video-cover/")) return false;
+    return true;
+  }
+
+  // Branch 2: External provider CDN
   if (parsed.protocol !== "https:") return false;
-  return PROVIDER_THUMBNAIL_HOST_SUFFIXES.some((suffix) => parsed.hostname.endsWith(suffix));
+  return PROVIDER_THUMBNAIL_HOST_SUFFIXES.some(
+    (suffix) => parsed.hostname === suffix.slice(1) || parsed.hostname.endsWith(suffix),
+  );
 }
 
 /**

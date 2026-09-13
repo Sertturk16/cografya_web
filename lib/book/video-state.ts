@@ -65,6 +65,12 @@ export function resolveVideoState(video: BookVideo): BookVideoState {
   const youtube = video.youtube;
   if (youtube === null) return { kind: "typographic" };
   if (!youtube.embeddable) return { kind: "external" };
-  if (!isProviderThumbnailUrl(youtube.thumbnailUrl)) return { kind: "typographic" };
+  if (!isProviderThumbnailUrl(youtube.thumbnailUrl)) {
+    console.warn(
+      `[video-state] refusing thumbnail for video "${video.bookVideoId}": ` +
+        `thumbnailUrl is not on an allowed host (${youtube.thumbnailUrl}). Degrading to typographic.`,
+    );
+    return { kind: "typographic" };
+  }
   return { kind: "rich", youtube };
 }
