@@ -285,7 +285,7 @@ describe("getBookBySlug — thumbnail address resolution", () => {
     expect(book?.videos[0]?.youtube?.thumbnailUrl).toBe(firstVideoYoutube.thumbnailUrl);
   });
 
-  it("resolves a RELATIVE cover address against the api origin — no new config key", async () => {
+  it("resolves a RELATIVE cover address against the web site origin — zero api origin leakage", async () => {
     const relativeBook: BookDetail = {
       ...BOOK_DETAIL,
       videos: BOOK_DETAIL.videos.map((video, index) =>
@@ -304,11 +304,10 @@ describe("getBookBySlug — thumbnail address resolution", () => {
 
     const book = await getBookBySlug("fixture-book-one");
 
-    // "http://api.test" is this file's OWN `@/lib/env.server` mock (top of file) — the exact
-    // same origin `apiGet`'s own fetch already targets (asserted above, "asks for the slug it
-    // was handed"), never a second/new configuration source.
+    // Resolved against the web site's own origin (`getSiteUrl()`, `http://localhost:3000` in test),
+    // NEVER against the API origin (`http://api.test`) — closing SEC138-NEW-I1 (P2-KAPAK-TARAYICI-YOLU).
     expect(book?.videos[0]?.youtube?.thumbnailUrl).toBe(
-      "http://api.test/api/video-cover/11111111-2222-4333-8444-555555555551",
+      "http://localhost:3000/api/video-cover/11111111-2222-4333-8444-555555555551",
     );
   });
 

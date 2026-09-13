@@ -9,16 +9,6 @@ import {
 } from "./json-ld";
 import { absoluteUrl } from "./site";
 
-// `./json-ld` now reads `serverEnv.API_BASE_URL` (the C2 widening below), so every test in
-// this file gets a fixed, explicit origin — never the ambient machine's `.env` — the exact
-// discipline `lib/api/books.test.ts` already established for the same reason. `https://` (not
-// the `books.test.ts` mock's `http://api.test`) on purpose: `isProviderThumbnailUrl` requires
-// `https:` on ANY accepted host, provider or our own, so this is the realistic production shape
-// the widened gate is actually meant to accept.
-vi.mock("@/lib/env.server", () => ({
-  serverEnv: { API_BASE_URL: "https://api.cografya.test", INTERNAL_REQUEST_TOKEN: undefined },
-}));
-
 /**
  * Shape guards for the two JSON-LD builders the game shell added (PR #26 review).
  *
@@ -375,35 +365,119 @@ describe("videoObjectJsonLd", () => {
 });
 
 /**
- * `isProviderThumbnailUrl` — the SAME gate `videoObjectJsonLd` above already exercises
- * indirectly, tested here directly because C2 (Atlas ruling, `Owner's Inbox/
- * uyelik-uyum-denetimi/p2-video-kapisi/`) widened what it accepts: this repo's OWN configured
- * api origin, alongside the provider's CDN, so that `lib/api/books.ts`'s `resolveThumbnailUrl`
- * — which turns the api's planned own-hosted RELATIVE cover address into an absolute one —
- * does not immediately get rejected by the very gate standing between it and the page.
+ * `isProviderThumbnailUrl` — the gate for `videoObjectJsonLd` and `resolveVideoState`.
  *
- * The three outcomes a real gate has to keep distinguishing, all in one place: the provider's
- * host still works (today's real value), the newly-trusted api origin works (tomorrow's real
- * value, in the exact RESOLVED shape `resolveThumbnailUrl` produces from a relative path — see
- * `lib/api/books.test.ts`'s own coverage of that resolution step), and an unrelated host is
- * still refused — proving the widening is one named origin, not a wildcard.
+ * Closes SEC138-NEW-I1, SEC138-NEW-M1 (P2-KAPAK-TARAYICI-YOLU, `kapak-devri.md` §6).
+ *
+ * Full test matrix covering all INPUT AXES rather than remembered single outcomes:
+ * - Scheme axis: http (accepted on site in dev, rejected on provider), https, data:, javascript:
+ * - Hostname axis: exact match, lookalike domain, left-label subdomain trick
+ * - Port axis: matching port (:3000 in dev) vs mismatched port (:8080)
+ * - Path axis: /api/video-cover/{id} vs arbitrary paths / path traversal
+ * - Userinfo axis: https://user:pass@host
+ * - Api origin axis: api origin is NO LONGER trusted for client thumbnails
  */
-describe("isProviderThumbnailUrl — the configured api origin is also trusted (C2)", () => {
-  it.each([
-    ["the provider's own CDN host — today's real value", "https://i.ytimg.com/vi/x/hqdefault.jpg"],
-    [
-      "the configured api origin, in the exact RESOLVED shape resolveThumbnailUrl produces " +
-        "from a relative '/api/video-cover/{bookVideoId}' path (lib/api/books.ts) — " +
-        "'https://api.cografya.test' is this file's own @/lib/env.server mock above",
-      "https://api.cografya.test/api/video-cover/11111111-2222-4333-8444-555555555551",
-    ],
-  ])("accepts %s", (_case, url) => {
-    expect(isProviderThumbnailUrl(url)).toBe(true);
+describe("isProviderThumbnailUrl — input-axes test matrix", () => {
+  describe("Axis 1: Web Site Origin (dev environment: http://localhost:3000)", () => {
+    it("accepts valid cover paths on the site origin", () => {
+      expect(
+        isProviderThumbnailUrl(
+          "http://localhost:3000/api/video-cover/11111111-2222-4333-8444-555555555551",
+        ),
+      ).toBe(true);
+      expect(
+        isProviderThumbnailUrl(
+          "http://localhost:3000/api/video-cover/c246d465-6d6f-4157-a62a-b6e46f1abb4e",
+        ),
+      ).toBe(true);
+    });
+
+    it("rejects scheme mismatch (https on http-configured dev site)", () => {
+      expect(
+        isProviderThumbnailUrl(
+          "https://localhost:3000/api/video-cover/11111111-2222-4333-8444-555555555551",
+        ),
+      ).toBe(false);
+    });
+
+    it("rejects port mismatch", () => {
+      expect(
+        isProviderThumbnailUrl(
+          "http://localhost:8080/api/video-cover/11111111-2222-4333-8444-555555555551",
+        ),
+      ).toBe(false);
+    });
+
+    it("rejects paths outside /api/video-cover/", () => {
+      expect(isProviderThumbnailUrl("http://localhost:3000/kitaplar/some-book")).toBe(false);
+      expect(isProviderThumbnailUrl("http://localhost:3000/other/path")).toBe(false);
+      expect(isProviderThumbnailUrl("http://localhost:3000/api/video-cover/../../escape")).toBe(
+        false,
+      );
+    });
+
+    it("rejects lookalike hostnames and left-label tricks", () => {
+      expect(
+        isProviderThumbnailUrl(
+          "http://evil-localhost:3000/api/video-cover/11111111-2222-4333-8444-555555555551",
+        ),
+      ).toBe(false);
+      expect(
+        isProviderThumbnailUrl(
+          "http://localhost.evil.test:3000/api/video-cover/11111111-2222-4333-8444-555555555551",
+        ),
+      ).toBe(false);
+    });
+
+    it("rejects userinfo segments on the site origin", () => {
+      expect(
+        isProviderThumbnailUrl(
+          "http://user:pass@localhost:3000/api/video-cover/11111111-2222-4333-8444-555555555551",
+        ),
+      ).toBe(false);
+    });
+
+    it("rejects the API origin (API origin must never be exposed to readers)", () => {
+      expect(
+        isProviderThumbnailUrl(
+          "http://api.test:3001/api/video-cover/11111111-2222-4333-8444-555555555551",
+        ),
+      ).toBe(false);
+      expect(
+        isProviderThumbnailUrl(
+          "https://api.cografya.test/api/video-cover/11111111-2222-4333-8444-555555555551",
+        ),
+      ).toBe(false);
+    });
   });
 
-  it("still rejects an unrelated host — the widening is ONE named origin, not a wildcard", () => {
-    // Not the provider's CDN and not the configured api origin: a real gate has to keep
-    // refusing this, or "widened" quietly became "open".
-    expect(isProviderThumbnailUrl("https://cdn.example.invalid/video-cover/x")).toBe(false);
+  describe("Axis 2: External Provider CDN", () => {
+    it("accepts https URLs on provider CDN hosts", () => {
+      expect(isProviderThumbnailUrl("https://i.ytimg.com/vi/x/hqdefault.jpg")).toBe(true);
+      expect(isProviderThumbnailUrl("https://i9.ytimg.com/vi/x/hqdefault.jpg")).toBe(true);
+      expect(isProviderThumbnailUrl("https://img.youtube.com/vi/x/hqdefault.jpg")).toBe(true);
+    });
+
+    it("rejects http plaintext scheme on provider CDN (mixed content protection)", () => {
+      expect(isProviderThumbnailUrl("http://i.ytimg.com/vi/x/hqdefault.jpg")).toBe(false);
+    });
+
+    it("rejects lookalike hostnames and left-label tricks for provider", () => {
+      expect(isProviderThumbnailUrl("https://evil-ytimg.com/vi/x/hqdefault.jpg")).toBe(false);
+      expect(isProviderThumbnailUrl("https://i.ytimg.com.attacker.test/x.jpg")).toBe(false);
+      expect(isProviderThumbnailUrl("https://notyoutube.com/vi/x/hqdefault.jpg")).toBe(false);
+    });
+
+    it("rejects userinfo tricks for provider", () => {
+      expect(isProviderThumbnailUrl("https://i.ytimg.com@evil.test/vi/x/hq.jpg")).toBe(false);
+    });
+
+    it("rejects unrelated hosts and malformed URLs", () => {
+      expect(isProviderThumbnailUrl("https://cdn.example.invalid/video-cover/x")).toBe(false);
+      expect(isProviderThumbnailUrl("not-a-url")).toBe(false);
+      expect(isProviderThumbnailUrl("")).toBe(false);
+      expect(isProviderThumbnailUrl("javascript:alert(1)")).toBe(false);
+      expect(isProviderThumbnailUrl("data:image/jpeg;base64,...")).toBe(false);
+    });
   });
 });
