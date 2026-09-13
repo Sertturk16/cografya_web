@@ -58,7 +58,7 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
               <span>Ana Sayfa</span>
             </Link>
             <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Üye Ol v2</span>
+            <span className="text-foreground font-semibold">Üye Ol</span>
           </nav>
 
           {/* 2-Column Auth Workbench: Form on Left/Center, Benefits Showcase on Right */}

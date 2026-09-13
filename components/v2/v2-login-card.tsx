@@ -161,7 +161,7 @@ export function V2LoginCard({
         <div className="space-y-1 pb-2 border-b border-border/80">
           <div className="flex items-center gap-2">
             <Badge variant="primary" size="sm" icon={<LogIn className="size-3.5" />}>
-              Giriş Portalı v2
+              Giriş Portalı
             </Badge>
             <span className="text-xs text-muted-foreground font-medium">
               Kişiselleştirilmiş Atlas

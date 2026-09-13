@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: V2KitaplarPageProps): Promise
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/kitaplar",
-    title: "Video Çözümlü Coğrafya Kitapları v2 — AYT & TYT Branş Denemeleri",
+    title: "Video Çözümlü Coğrafya Kitapları — AYT & TYT Branş Denemeleri",
     // No book-level count is published any more (P0 generic-catalogue cut-over,
     // `DEC 2026-09-10c` md.1) — fixed editorial copy, no interpolated numbers.
     description:
@@ -74,7 +74,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Video Çözümlü Coğrafya Kitapları v2",
+            name: "Video Çözümlü Coğrafya Kitapları",
             description:
               "Coğrafya kitaplarının soru bazlı video çözümleri ve sınav hazırlık rehberi.",
             path: "/v2/kitaplar",
@@ -113,7 +113,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
             <div className="relative z-10 max-w-3xl space-y-4">
               <div className="flex items-center gap-2">
                 <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
-                  Dijital Eğitim Platformu v2
+                  Dijital Eğitim Platformu
                 </Badge>
                 <Badge variant="secondary" size="sm">
                   AYT &bull; TYT &bull; YKS

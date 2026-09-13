@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: V2CoordinatesPageProps): Prom
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/araclar/koordinat-bulma",
-    title: "Haritada Koordinat Bulma & Dönüştürme v2 — Enlem, Boylam ve WGS84 GPS",
+    title: "Haritada Koordinat Bulma & Dönüştürme — Enlem, Boylam ve WGS84 GPS",
     description:
       "İnteraktif harita üzerinde tıklayarak veya arama yaparak Ondalık Derece (DD), Derece-Dakika-Saniye (DMS) ve UTM koordinatlarını WGS84 standardında tespit edin.",
   });
@@ -52,7 +52,7 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={learningResourceJsonLd({
-          name: "Haritada Koordinat Bulma & Dönüştürme v2",
+          name: "Haritada Koordinat Bulma & Dönüştürme",
           description:
             "Haritada dilediğiniz noktanın enlem, boylam ve WGS84 coğrafi koordinatlarını bulun.",
           path: "/v2/araclar/koordinat-bulma",
@@ -157,7 +157,7 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
             lockMode={true}
             provincePoints={provincePoints}
             provinceAreas={provinceAreas}
-            downloadName="cografya-v2-koordinat"
+            downloadName="cografya-koordinat"
           />
 
           {/* SECTION 2: PEDAGOGICAL EDUCATIONAL & CBS GUIDE */}

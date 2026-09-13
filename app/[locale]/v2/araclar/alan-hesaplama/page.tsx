@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: V2AreaPageProps): Promise<Met
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/araclar/alan-hesaplama",
-    title: "Haritada Alan & Yüzölçümü Hesaplama v2 — Çokgen (Polygon) Ölçümü",
+    title: "Haritada Alan & Yüzölçümü Hesaplama — Çokgen (Polygon) Ölçümü",
     description:
       "İnteraktif harita üzerinde çokgen çizerek WGS84 küresel elipsoid jeodezik modeliyle km², hektar, dönüm ve metrekare cinsinden gerçek yüzölçümü ve çevre uzunluğu hesaplama.",
   });
@@ -50,7 +50,7 @@ export default async function V2AreaToolPage({ params }: V2AreaPageProps) {
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={learningResourceJsonLd({
-          name: "Haritada Alan & Yüzölçümü Hesaplama v2",
+          name: "Haritada Alan & Yüzölçümü Hesaplama",
           description:
             "Haritada çokgen köşe noktaları belirleyerek jeodezik poligon alanını hesaplayın.",
           path: "/v2/araclar/alan-hesaplama",
@@ -156,7 +156,7 @@ export default async function V2AreaToolPage({ params }: V2AreaPageProps) {
             lockMode={true}
             provincePoints={provincePoints}
             provinceAreas={provinceAreas}
-            downloadName="cografya-v2-alan"
+            downloadName="cografya-alan"
           />
 
           {/* SECTION 2: PEDAGOGICAL EDUCATIONAL & CBS GUIDE */}

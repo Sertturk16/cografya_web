@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: V2DistancePageProps): Promise
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/araclar/mesafe-olcme",
-    title: "Haritada Kuş Uçuşu Mesafe Ölçme v2 — Büyük Daire Jeodezik Hesaplama",
+    title: "Haritada Kuş Uçuşu Mesafe Ölçme — Büyük Daire Jeodezik Hesaplama",
     description:
       "İki veya çok duraklı noktalar arasında WGS84 küresel elipsoid modeli ve Haversine formülü ile kuş uçuşu mesafe, uçuş süresi ve karayolu tahmini hesaplama.",
   });
@@ -50,7 +50,7 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={learningResourceJsonLd({
-          name: "Haritada Kuş Uçuşu Mesafe Ölçme v2",
+          name: "Haritada Kuş Uçuşu Mesafe Ölçme",
           description:
             "İki nokta ya da çok duraklı güzergâh boyunca büyük daire jeodezik uzaklığını haritada ölçün.",
           path: "/v2/araclar/mesafe-olcme",
@@ -155,7 +155,7 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
             lockMode={true}
             provincePoints={provincePoints}
             provinceAreas={provinceAreas}
-            downloadName="cografya-v2-mesafe"
+            downloadName="cografya-mesafe"
           />
 
           {/* SECTION 2: PEDAGOGICAL EDUCATIONAL & CBS GUIDE */}

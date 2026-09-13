@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: V2OyunPageProps): Promise<Met
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/oyun",
-    title: "Harita Oyunları & Sınavlar v2 — 81 İl ve Bölge Bulma",
+    title: "Harita Oyunları & Sınavlar — 81 İl ve Bölge Bulma",
     description:
       "Dilsiz harita üzerinde Türkiye illerini ve coğrafi bölgelerini bularak harita hafızanızı geliştirin.",
   });
@@ -42,7 +42,7 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
       <JsonLd
         schema={[
           learningResourceJsonLd({
-            name: "Harita Oyunları & Coğrafya Sınavları v2",
+            name: "Harita Oyunları & Coğrafya Sınavları",
             description: "Dilsiz Türkiye haritası üzerinde illeri ve coğrafi bölgeleri keşfet.",
             path: "/v2/oyun",
             locale,
@@ -74,14 +74,14 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
                 <span>Ana Sayfa</span>
               </Link>
               <ChevronRight className="size-3.5" />
-              <span className="text-foreground font-semibold">Harita Oyunları v2</span>
+              <span className="text-foreground font-semibold">Harita Oyunları</span>
             </nav>
 
             <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
               <div className="relative z-10 max-w-3xl space-y-4">
                 <div className="flex items-center gap-2">
                   <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
-                    Oyunlaştırılmış Coğrafya v2
+                    Oyunlaştırılmış Coğrafya
                   </Badge>
                   <Badge variant="secondary" size="sm">
                     3 İnteraktif Sınav Modu

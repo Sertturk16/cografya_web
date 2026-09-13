@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Me
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/dunya",
-    title: "Dünya Ülkeleri & Kıtalar Atlası v2 — İnteraktif Dünya Haritası",
+    title: "Dünya Ülkeleri & Kıtalar Atlası — İnteraktif Dünya Haritası",
     description:
       "Dünyanın 199 ülke ve bölgesi, 7 kıtası, bayrakları, nüfus verileri, yüzölçümleri ve coğrafi ekstremleri tek ekranda.",
   });
@@ -98,7 +98,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Dünya Ülkeleri & Kıtalar Atlası v2",
+            name: "Dünya Ülkeleri & Kıtalar Atlası",
             description:
               "Dünyanın 199 ülke ve bölgesi, 7 kıtası, bayrakları, nüfus verileri, yüzölçümleri ve coğrafi ekstremleri.",
             path: "/v2/dunya",
@@ -135,14 +135,14 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
               <span>Ana Sayfa</span>
             </Link>
             <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Dünya Atlası v2</span>
+            <span className="text-foreground font-semibold">Dünya Atlası</span>
           </nav>
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">
               <div className="flex items-center gap-2">
                 <Badge variant="primary" size="sm" icon={<Globe className="size-3.5" />}>
-                  Dünya Coğrafya Portalı v2
+                  Dünya Coğrafya Portalı
                 </Badge>
                 <Badge variant="secondary" size="sm">
                   {totalCountries} Ülke & 7 Kıta

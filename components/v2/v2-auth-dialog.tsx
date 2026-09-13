@@ -6,68 +6,12 @@ import {
   dismissAuth,
   resolveAuth,
   setAuthModalMode,
-  type AuthIntent,
 } from "@/lib/auth/auth-modal.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { V2LoginCard } from "./v2-login-card";
 import { V2RegisterCard } from "./v2-register-card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Compass,
-  Star,
-  Trophy,
-  Video,
-  Layers,
-  ShieldCheck,
-  X,
-  LogIn,
-  UserPlus,
-} from "lucide-react";
-
-interface IntentConfig {
-  icon: React.ReactNode;
-  badgeText: string;
-  title: string;
-  desc: string;
-}
-
-const INTENT_CONFIGS: Record<AuthIntent, IntentConfig> = {
-  favorite: {
-    icon: <Star className="size-4 text-amber-500" />,
-    badgeText: "Favorilere Ekleme",
-    title: "Bu Sayfayı Favorilerine Kaydet",
-    desc: "İl ve ülke verilerini hızlı erişim listene eklemek ve güncel telemetrileri takip etmek için giriş yap.",
-  },
-  video: {
-    // Names WATCHING, not progress-tracking (İRİS A12; plan §2.7/§5.2). The page's own CTA
-    // already gets this right ("Bu videoyu izlemek için üye ol.", `BookDetail.signInCta`) and
-    // so does the OTHER auth dialog's video sentence (`Auth.modal.intent.video`,
-    // `components/auth/auth-dialog-body.tsx`) — this component just never matched them.
-    icon: <Video className="size-4 text-rose-500" />,
-    badgeText: "Video Çözümü",
-    title: "Videoyu İzlemek İçin Üye Ol",
-    desc: "Video çözümünü izlemek için giriş yap.",
-  },
-  gameRound: {
-    icon: <Trophy className="size-4 text-emerald-500" />,
-    badgeText: "Lider Tablosu & Skor",
-    title: "Harita Sınavı Skorunu Kaydet",
-    desc: "Kazandığın puanları profiline işlemek ve başarı rozetlerini açmak için hesabına giriş yap.",
-  },
-  measurement: {
-    icon: <Layers className="size-4 text-primary" />,
-    badgeText: "CBS Ölçüm Arşivi",
-    title: "CBS Harita Ölçümünü Kaydet",
-    desc: "Haversine mesafe ve küresel alan ölçümlerini bulut arşivine kaydetmek için giriş yap.",
-  },
-  generic: {
-    icon: <Compass className="size-4 text-primary" />,
-    badgeText: "Coğrafya Gurmesi",
-    title: "Coğrafya Hesabına Eriş",
-    desc: "Tüm harita testleri, video çözümleri ve CBS araçlarına sınırsız erişim sağla.",
-  },
-};
+import { X, LogIn, UserPlus } from "lucide-react";
 
 export function V2AuthDialog() {
   const modal = useAuthModalState();
@@ -95,8 +39,6 @@ export function V2AuthDialog() {
     resolveAuth();
   };
 
-  const intentInfo = INTENT_CONFIGS[modal.intent] || INTENT_CONFIGS.generic;
-
   return (
     <Dialog
       open={modal.open}
@@ -107,42 +49,25 @@ export function V2AuthDialog() {
       <DialogContent
         size="md"
         showCloseButton={false}
-        className="p-0 overflow-hidden sm:max-w-[480px] max-h-[min(90vh,680px)] flex flex-col rounded-3xl border border-border/80 shadow-2xl bg-card"
+        className="p-0 overflow-hidden sm:max-w-[450px] max-h-[min(90vh,680px)] flex flex-col gap-0 rounded-3xl border border-border/80 shadow-2xl bg-card"
       >
         {/* Custom Header Bar with Clean Terra Styling & Close Button (shrink-0) */}
-        <div className="relative p-5 sm:p-6 bg-card border-b border-border/80 space-y-3.5 shrink-0">
-          <button
-            type="button"
-            onClick={dismissAuth}
-            className="absolute right-4 top-4 size-8 rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-            aria-label="Kapat"
-          >
-            <X className="size-4" />
-          </button>
-
-          {/* Brand & Intent Badge */}
-          <div className="flex items-center gap-2">
-            <span className="font-heading font-bold text-sm text-[var(--color-primary-dark,#7e3a1e)]">
-              Coğrafya<span className="text-primary font-normal">.v2</span>
+        <div className="relative px-5 pt-4.5 pb-3 sm:px-5.5 sm:pt-5 sm:pb-3 bg-card border-b border-border/80 space-y-3 shrink-0">
+          <div className="flex items-center justify-between">
+            <span className="font-heading font-bold text-base text-[var(--color-primary-dark,#7e3a1e)]">
+              Coğrafya <span className="text-primary">Gurmesi</span>
             </span>
-            <span className="text-muted-foreground">&bull;</span>
-            <Badge
-              variant="secondary"
-              size="sm"
-              icon={intentInfo.icon}
-              className="text-[11px] py-0"
+            <button
+              type="button"
+              onClick={dismissAuth}
+              className="size-8 rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+              aria-label="Kapat"
             >
-              {intentInfo.badgeText}
-            </Badge>
-          </div>
-
-          {/* Heading and Intent Message */}
-          <div className="space-y-1">
-            <DialogTitle className="font-heading text-lg sm:text-xl font-bold text-foreground">
-              {intentInfo.title}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-              {intentInfo.desc}
+              <X className="size-4" />
+            </button>
+            <DialogTitle className="sr-only">Coğrafya Gurmesi Hesabı</DialogTitle>
+            <DialogDescription className="sr-only">
+              Giriş yapın veya yeni hesap oluşturun.
             </DialogDescription>
           </div>
 
@@ -193,7 +118,7 @@ export function V2AuthDialog() {
           role="tabpanel"
           aria-labelledby={`v2-auth-tab-${modal.mode}`}
           tabIndex={0}
-          className="p-5 sm:p-6 bg-card flex-1 min-h-0 overflow-y-auto"
+          className="px-5 pt-3 pb-5 sm:px-5.5 sm:pt-3 sm:pb-6 bg-card flex-1 min-h-0 overflow-y-auto"
         >
           {modal.mode === "login" ? (
             <V2LoginCard
@@ -209,15 +134,6 @@ export function V2AuthDialog() {
               onSwitchToLogin={() => setAuthModalMode("login")}
             />
           )}
-        </div>
-
-        {/* Footer Security Badges (shrink-0) */}
-        <div className="px-5 sm:px-6 py-2.5 bg-muted/30 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground shrink-0">
-          <div className="flex items-center gap-1">
-            <ShieldCheck className="size-3.5 text-emerald-600" />
-            <span>256-Bit SSL Güvenli Bağlantı</span>
-          </div>
-          <span className="font-mono text-[10px]">Coğrafya Gurmesi</span>
         </div>
       </DialogContent>
     </Dialog>

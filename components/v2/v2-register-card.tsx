@@ -336,9 +336,11 @@ export function V2RegisterCard({
 
   return (
     <div
-      className={`relative w-full rounded-3xl border border-border bg-card/95 backdrop-blur-md p-6 sm:p-8 shadow-2xl transition-all ${
-        inModal ? "border-none shadow-none p-0 bg-transparent" : "max-w-md mx-auto"
-      }`}
+      className={
+        inModal
+          ? "w-full"
+          : "relative w-full rounded-3xl border border-border bg-card/95 backdrop-blur-md p-6 sm:p-8 shadow-2xl transition-all max-w-md mx-auto"
+      }
     >
       {/* Decorative Aura */}
       {!inModal && (
@@ -348,20 +350,22 @@ export function V2RegisterCard({
         />
       )}
 
-      {/* Header Info */}
-      <div className="text-center space-y-2 mb-6">
-        <Badge variant="primary" size="sm" className="mb-1">
-          {step === "form" ? "Yeni Nesil Coğrafya v2" : "Doğrulama Adımı"}
-        </Badge>
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          {step === "form" ? "Hesap Oluştur" : "E-posta Doğrulama"}
-        </h2>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          {step === "form"
-            ? "Müfredat haritaları, soru bankası ve interaktif araçlara anında erişin."
-            : `${email} adresine gönderilen 6 haneli kodu giriniz.`}
-        </p>
-      </div>
+      {/* Header Info (only rendered on standalone page, hidden in modal for clean minimalist design) */}
+      {!inModal && (
+        <div className="text-center space-y-2 mb-6">
+          <Badge variant="primary" size="sm" className="mb-1">
+            {step === "form" ? "Coğrafya Gurmesi" : "Doğrulama Adımı"}
+          </Badge>
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            {step === "form" ? "Hesap Oluştur" : "E-posta Doğrulama"}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {step === "form"
+              ? "Müfredat haritaları, soru bankası ve interaktif araçlara anında erişin."
+              : `${email} adresine gönderilen 6 haneli kodu giriniz.`}
+          </p>
+        </div>
+      )}
 
       {/* Success Notification */}
       {successMsg && (
@@ -680,6 +684,15 @@ export function V2RegisterCard({
       {/* STEP 2: Email Verification */}
       {step === "verify" && (
         <form onSubmit={handleVerifySubmit} className="space-y-4" noValidate>
+          {inModal && (
+            <div className="text-center space-y-1 mb-3">
+              <h3 className="font-heading text-lg font-bold text-foreground">E-posta Doğrulama</h3>
+              <p className="text-xs text-muted-foreground">
+                {registeredEmail || email} adresine gönderilen 6 haneli kodu giriniz.
+              </p>
+            </div>
+          )}
+
           {generalError && (
             <div
               role="alert"

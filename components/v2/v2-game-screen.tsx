@@ -473,7 +473,7 @@ export function V2GameScreen({
             </Link>
             <ChevronRight className="size-3.5" />
             <Link href="/v2/oyun" className="hover:text-foreground transition-colors">
-              Harita Oyunları v2
+              Harita Oyunları
             </Link>
             <ChevronRight className="size-3.5" />
             <span className="text-foreground font-semibold">{modeName}</span>

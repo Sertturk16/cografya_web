@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: V2DepremPageProps): Promise<M
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/deprem",
-    title: "Canlı Deprem Takip & Sismik Monitör v2 — AFAD TDVMS Verileri",
+    title: "Canlı Deprem Takip & Sismik Monitör — AFAD TDVMS Verileri",
     description:
       "Türkiye ve çevre coğrafyadaki son depremler, merkez üsleri ve odak derinlikleri canlı harita üzerinde.",
   });
@@ -64,7 +64,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Canlı Deprem Takip & Sismik Monitör v2",
+            name: "Canlı Deprem Takip & Sismik Monitör",
             description:
               "Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita üzerinde merkez üssü ve odak derinliğiyle anlık takip edin.",
             path: "/v2/deprem",
@@ -94,14 +94,14 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
               <span>Ana Sayfa</span>
             </Link>
             <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Canlı Deprem Monitörü v2</span>
+            <span className="text-foreground font-semibold">Canlı Deprem Monitörü</span>
           </nav>
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">
               <div className="flex items-center gap-2">
                 <Badge variant="destructive" size="sm" icon={<Flame className="size-3.5" />} dot>
-                  Canlı Sismik Telemetri v2
+                  Canlı Sismik Telemetri
                 </Badge>
                 <Badge variant="outline" size="sm">
                   T.C. İçişleri Bakanlığı AFAD (TDVMS)

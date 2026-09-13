@@ -87,7 +87,7 @@ export function V2ToolWorkbench({
   lockMode = false,
   provincePoints = [],
   provinceAreas = [],
-  downloadName = "cografya-v2-olcum",
+  downloadName = "cografya-olcum",
 }: V2ToolWorkbenchProps) {
   const [activeTool, setActiveTool] = React.useState<ToolMode>(initialMode);
   const [points, setPoints] = React.useState<PointWithSvg[]>([]);
@@ -670,7 +670,7 @@ export function V2ToolWorkbench({
             <div>
               <div className="flex items-center gap-2">
                 <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                  CBS Coğrafi Ölçüm Laboratuvarı v2
+                  CBS Coğrafi Ölçüm Laboratuvarı
                 </Badge>
                 <span className="text-xs text-muted-foreground font-medium">
                   Jeodezik Büyük Daire &amp; Küresel Alan Hesabı

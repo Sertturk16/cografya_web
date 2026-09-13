@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: V2DenizPageProps): Promise<Me
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/deniz",
-    title: "Denizler & Kıyılar Atlası v2 — Canlı Deniz Telemetrisi ve Su Sıcaklıkları",
+    title: "Denizler & Kıyılar Atlası — Canlı Deniz Telemetrisi ve Su Sıcaklıkları",
     description:
       "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı istasyonundan saatlik su sıcaklığı, dalga boyu, rüzgâr vektörleri ve oşinografi modelleri.",
   });
@@ -126,14 +126,14 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Denizler & Kıyılar Atlası v2",
+            name: "Denizler & Kıyılar Atlası",
             description:
               "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı istasyonundan saatlik su sıcaklığı, dalga yüksekliği ve oşinografi verileri.",
             path: "/v2/deniz",
             locale,
           }),
           learningResourceJsonLd({
-            name: "Denizler & Kıyılar Atlası v2",
+            name: "Denizler & Kıyılar Atlası",
             description:
               "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı istasyonundan saatlik su sıcaklığı, dalga yüksekliği ve oşinografi verileri.",
             path: "/v2/deniz",
@@ -165,14 +165,14 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
               <span>Ana Sayfa</span>
             </Link>
             <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Denizler &amp; Kıyılar Atlası v2</span>
+            <span className="text-foreground font-semibold">Denizler &amp; Kıyılar Atlası</span>
           </nav>
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">
               <div className="flex items-center gap-2">
                 <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
-                  Mavi Vatan Oşinografi Portalı v2
+                  Mavi Vatan Oşinografi Portalı
                 </Badge>
                 <Badge variant="secondary" size="sm">
                   30 Canlı Telemetri İstasyonu

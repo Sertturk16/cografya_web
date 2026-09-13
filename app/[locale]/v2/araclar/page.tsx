@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: V2AraclarPageProps): Promise<
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/araclar",
-    title: "CBS & Coğrafi Ölçüm Araçları v2 — Mesafe, Koordinat ve Alan Hesaplama",
+    title: "CBS & Coğrafi Ölçüm Araçları — Mesafe, Koordinat ve Alan Hesaplama",
     description:
       "İnteraktif harita üzerinde kuş uçuşu jeodezik mesafe ölçümü, enlem/boylam koordinat tespiti ve çokgen alan hesabı.",
   });
@@ -41,7 +41,7 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "CBS & Coğrafi Ölçüm Araçları v2",
+            name: "CBS & Coğrafi Ölçüm Araçları",
             description:
               "İnteraktif harita üzerinde kuş uçuşu jeodezik mesafe ölçümü, enlem/boylam koordinat tespiti ve çokgen alan hesabı.",
             path: "/v2/araclar",
@@ -80,14 +80,14 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
                 <span>Ana Sayfa</span>
               </Link>
               <ChevronRight className="size-3.5" />
-              <span className="text-foreground font-semibold">CBS Araçları v2</span>
+              <span className="text-foreground font-semibold">CBS Araçları</span>
             </nav>
 
             <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
               <div className="relative z-10 max-w-3xl space-y-4">
                 <div className="flex items-center gap-2">
                   <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                    Coğrafi Bilgi Sistemleri v2
+                    Coğrafi Bilgi Sistemleri
                   </Badge>
                   <Badge variant="secondary" size="sm">
                     3&apos;ü 1 Arada Ölçüm Stüdyosu

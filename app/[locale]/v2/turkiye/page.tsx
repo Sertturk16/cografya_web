@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: V2TurkiyePageProps): Promise<
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/turkiye",
-    title: "Türkiye İller Atlası v2 — 81 İl İnteraktif Haritası ve Coğrafyası",
+    title: "Türkiye İller Atlası — 81 İl İnteraktif Haritası ve Coğrafyası",
     description:
       "Türkiye'nin 81 ili, 7 coğrafi bölgesi, fiziki haritaları, demografisi, iklim normalleri ve canlı deniz/deprem telemetrisi.",
   });
@@ -95,7 +95,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Türkiye İlleri Atlası v2",
+            name: "Türkiye İlleri Atlası",
             description:
               "Türkiye'nin 81 ili, 7 coğrafi bölgesi, fiziki haritaları, demografisi ve canlı telemetrisi.",
             path: "/v2/turkiye",
@@ -133,14 +133,14 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                 <span>Ana Sayfa</span>
               </Link>
               <ChevronRight className="size-3.5" />
-              <span className="text-foreground font-semibold">Türkiye İller Atlası v2</span>
+              <span className="text-foreground font-semibold">Türkiye İller Atlası</span>
             </nav>
 
             <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
               <div className="relative z-10 max-w-3xl space-y-4">
                 <div className="flex items-center gap-2">
                   <Badge variant="primary" size="sm" icon={<MapIcon className="size-3.5" />}>
-                    Coğrafya Atlası v2
+                    Coğrafya Atlası
                   </Badge>
                   <Badge variant="secondary" size="sm">
                     {totalProvinces} İl &amp; 7 Bölge

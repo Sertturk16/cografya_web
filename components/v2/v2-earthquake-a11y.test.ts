@@ -41,7 +41,7 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
 
     const pageUrl = new URL("../../app/[locale]/v2/deprem/page.tsx", import.meta.url);
     const pageContent = readFileSync(pageUrl, "utf8");
-    expect(pageContent).toContain("Canlı Deprem Takip & Sismik Monitör v2");
+    expect(pageContent).toContain("Canlı Deprem Takip & Sismik Monitör");
     expect(pageContent).not.toContain("Sismik Fay Monitörü");
     expect(pageContent).not.toContain("ve fay hatlarıyla anlık takip edin");
   });

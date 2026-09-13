@@ -43,9 +43,7 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
   const allShapes = buildGameShapes(PROVINCE_SHAPES, summaries, locale);
 
   const regionCards = REGION_KEYS.map((regionKey) => {
-    const members = allShapes
-      .filter((s) => s.target?.region === regionKey)
-      .map((s) => s.plateCode);
+    const members = allShapes.filter((s) => s.target?.region === regionKey).map((s) => s.plateCode);
     return {
       id: regionKey,
       slug: regionSlug(regionKey),
@@ -69,14 +67,20 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-8">
         {/* Top Navigation & Breadcrumbs */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Link href="/v2" className="flex items-center gap-1 hover:text-foreground transition-colors">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Link
+              href="/v2"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
               <Home className="size-3.5" />
               <span>Ana Sayfa</span>
             </Link>
             <ChevronRight className="size-3.5" />
             <Link href="/v2/oyun" className="hover:text-foreground transition-colors">
-              Harita Oyunları v2
+              Harita Oyunları
             </Link>
             <ChevronRight className="size-3.5" />
             <span className="text-foreground font-semibold">Bölge Seçimi</span>
@@ -95,13 +99,16 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
             <Badge variant="primary" size="sm" icon={<Layers className="size-3.5" />}>
               Bölgesel Odaklı Mod
             </Badge>
-            <span className="text-xs text-muted-foreground font-medium">Bölge Bölge İl Tamamlama</span>
+            <span className="text-xs text-muted-foreground font-medium">
+              Bölge Bölge İl Tamamlama
+            </span>
           </div>
           <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
             Bir Coğrafi Bölge Seçin
           </h1>
           <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-            Seçtiğiniz bölgenin sınırları otomatik olarak büyütülecek ve harita sadece o bölgenin illerine odaklanacaktır.
+            Seçtiğiniz bölgenin sınırları otomatik olarak büyütülecek ve harita sadece o bölgenin
+            illerine odaklanacaktır.
           </p>
         </div>
 
@@ -125,12 +132,22 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2">
-                  {region.name} kapsamındaki {region.count} ilin dilsiz haritadaki konumlarını bulun.
+                  {region.name} kapsamındaki {region.count} ilin dilsiz haritadaki konumlarını
+                  bulun.
                 </p>
               </div>
 
-              <Link href={{ pathname: "/v2/oyun/bolge-bolge-il/[bolge]", params: { bolge: region.slug } }}>
-                <Button variant="primary" className="w-full justify-between" rightIcon={<ArrowRight className="size-4" />}>
+              <Link
+                href={{
+                  pathname: "/v2/oyun/bolge-bolge-il/[bolge]",
+                  params: { bolge: region.slug },
+                }}
+              >
+                <Button
+                  variant="primary"
+                  className="w-full justify-between"
+                  rightIcon={<ArrowRight className="size-4" />}
+                >
                   <span>Bölgeyi Başlat</span>
                 </Button>
               </Link>

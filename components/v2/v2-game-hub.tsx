@@ -26,7 +26,7 @@ export function V2GameHub() {
           <div>
             <div className="flex items-center gap-2">
               <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
-                Harita Oyun Stüdyosu v2
+                Harita Oyun Stüdyosu
               </Badge>
               <span className="text-xs text-muted-foreground font-medium">
                 İnteraktif Sınav &amp; Hafıza Motoru
