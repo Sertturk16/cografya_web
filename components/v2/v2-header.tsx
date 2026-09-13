@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -19,16 +19,21 @@ import {
   User,
   LogIn,
   UserPlus,
+  LogOut,
+  Loader2,
   ChevronDown,
   Menu,
 } from "lucide-react";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth, setAuthModalMode } from "@/lib/auth/auth-modal.client";
+import { submitAuth } from "@/lib/auth/submit.client";
 
 export function V2Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const pathStr = (pathname as string) || "";
-  const [authState] = useAuthSession();
+  const [authState, setAuthState] = useAuthSession();
+  const [signingOut, setSigningOut] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [activeDropdown, setActiveDropdown] = React.useState<
     "atlas" | "telemetry" | "interactive" | null
@@ -92,6 +97,20 @@ export function V2Header() {
 
   const toggleDropdown = (name: "atlas" | "telemetry" | "interactive") => {
     setActiveDropdown((prev) => (prev === name ? null : name));
+  };
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await submitAuth("logout", {});
+      setAuthState("anonymous");
+      if (pathStr.startsWith("/v2/hesabim") || pathStr.startsWith("/v2/profil")) {
+        router.push("/v2");
+      }
+    } finally {
+      setSigningOut(false);
+      setMobileOpen(false);
+    }
   };
 
   return (
@@ -358,15 +377,32 @@ export function V2Header() {
         {/* Right Side Actions & Mobile Trigger */}
         <div className="flex items-center gap-2">
           {authState === "authenticated" ? (
-            <Link
-              href="/v2/profil"
-              aria-label="Profilim"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold shadow-2xs hover:bg-muted/50 transition-colors"
-            >
-              <span className="size-2 rounded-full bg-emerald-500" />
-              <User className="size-3.5 text-primary" />
-              <span className="hidden sm:inline">Profilim</span>
-            </Link>
+            <div className="flex items-center gap-1.5">
+              <Link
+                href="/v2/hesabim"
+                aria-label="Hesabım"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold shadow-2xs hover:bg-muted/50 transition-colors"
+              >
+                <span className="size-2 rounded-full bg-emerald-500" />
+                <User className="size-3.5 text-primary" />
+                <span>Hesabım</span>
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="text-xs h-8 px-2.5 text-destructive hover:bg-destructive/10 font-semibold gap-1.5"
+                aria-label="Çıkış Yap"
+              >
+                {signingOut ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <LogOut className="size-3.5" />
+                )}
+                <span className="hidden sm:inline">Çıkış Yap</span>
+              </Button>
+            </div>
           ) : (
             <div className="flex items-center gap-1.5">
               <Button
@@ -587,23 +623,42 @@ export function V2Header() {
                       </Button>
                     </div>
                   ) : (
-                    <Link
-                      href="/v2/profil"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center justify-between p-3 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <User className="size-4 text-primary" />
-                        <span className="text-xs font-bold text-foreground">Profilim</span>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        size="sm"
-                        className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                    <div className="space-y-2">
+                      <Link
+                        href="/v2/hesabim"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-between p-3 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors"
                       >
-                        Aktif
-                      </Badge>
-                    </Link>
+                        <div className="flex items-center gap-2">
+                          <User className="size-4 text-primary" />
+                          <span className="text-xs font-bold text-foreground">
+                            Hesabım &amp; Profil
+                          </span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          size="sm"
+                          className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                        >
+                          Aktif
+                        </Badge>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        className="w-full text-destructive border-destructive/30 hover:bg-destructive/10 text-xs font-semibold gap-2"
+                        onClick={handleSignOut}
+                        disabled={signingOut}
+                        leftIcon={
+                          signingOut ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <LogOut className="size-4" />
+                          )
+                        }
+                      >
+                        Çıkış Yap
+                      </Button>
+                    </div>
                   )}
                 </div>
               </SheetContent>

@@ -9,6 +9,7 @@ import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { V2RegionLocatorMap } from "@/components/v2/v2-region-locator-map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionBySlug, getRegionsResilient } from "@/lib/api/regions";
@@ -511,6 +512,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
             {/* Top Quick Actions */}
             <div className="flex items-center gap-3 shrink-0">
+              <V2FavoriteButton target={{ kind: "region", slug: region.slug }} />
               <Link href="/v2/turkiye">
                 <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
                   Tüm İller &amp; Atlas

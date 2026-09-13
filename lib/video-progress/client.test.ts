@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   VIDEO_PROGRESS_FETCH_TIMEOUT_MS,
   buildWatchedTogglePayload,
+  fetchBookProgress,
   fetchVideoProgress,
   saveVideoProgress,
 } from "./client";
@@ -320,4 +321,104 @@ describe("buildWatchedTogglePayload — the full-state-replace hazard (§5.6)", 
       expect(result.lastPositionSeconds).toBe(500);
     },
   );
+});
+
+describe("fetchBookProgress (PR-B / UYE-P3)", () => {
+  const SLUG = "ayt-cografya-denemeleri";
+
+  it("resolves the book progress value on a well-formed 200 with resume", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse(200, {
+            ok: true,
+            progress: {
+              bookSlugTr: SLUG,
+              videoCount: 30,
+              watchedCount: 6,
+              startedCount: 10,
+              resume: {
+                bookVideoId: BOOK_VIDEO_ID,
+                orderNo: 4,
+                lastPositionSeconds: 245,
+                watched: true,
+                updatedAt: "2026-08-27T10:00:00.000Z",
+              },
+            },
+          }),
+        ),
+      ),
+    );
+
+    const controller = new AbortController();
+    const result = await fetchBookProgress(SLUG, controller.signal);
+
+    expect(result).toEqual({
+      bookSlugTr: SLUG,
+      videoCount: 30,
+      watchedCount: 6,
+      startedCount: 10,
+      resume: {
+        bookVideoId: BOOK_VIDEO_ID,
+        orderNo: 4,
+        lastPositionSeconds: 245,
+        watched: true,
+        updatedAt: "2026-08-27T10:00:00.000Z",
+      },
+    });
+  });
+
+  it("resolves cleanly with resume: null when caller has no resume point", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse(200, {
+            ok: true,
+            progress: {
+              bookSlugTr: SLUG,
+              videoCount: 30,
+              watchedCount: 0,
+              startedCount: 0,
+              resume: null,
+            },
+          }),
+        ),
+      ),
+    );
+
+    const controller = new AbortController();
+    const result = await fetchBookProgress(SLUG, controller.signal);
+
+    expect(result).toEqual({
+      bookSlugTr: SLUG,
+      videoCount: 30,
+      watchedCount: 0,
+      startedCount: 0,
+      resume: null,
+    });
+  });
+
+  it("collapses non-200 responses to null", async () => {
+    for (const status of [401, 404, 500, 502]) {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() => Promise.resolve(jsonResponse(status, { ok: false }))),
+      );
+      const controller = new AbortController();
+      const result = await fetchBookProgress(SLUG, controller.signal);
+      expect(result).toBeNull();
+    }
+  });
+
+  it("collapses network/abort failures to null", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new Error("network failure"))),
+    );
+    const controller = new AbortController();
+    const result = await fetchBookProgress(SLUG, controller.signal);
+    expect(result).toBeNull();
+  });
 });

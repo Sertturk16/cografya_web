@@ -12,7 +12,8 @@ import {
 } from "@/lib/http/bff-helpers.server";
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
-import type { VideoProgress } from "@/lib/api/types";
+import { isBookSlugShape } from "@/lib/api/books";
+import type { BookProgress, VideoProgress } from "@/lib/api/types";
 
 /**
  * The web half of the video-progress BFF proxy (UYELIK-06 plan §5.7). NARROW and MODELLED ON
@@ -71,6 +72,30 @@ const _videoProgressShapeAgreesWithContract: [VideoProgressShape, VideoProgress]
 ];
 void _videoProgressShapeAgreesWithContract;
 
+export const bookProgressResumeSchema = z.object({
+  bookVideoId: z.string(),
+  orderNo: z.number(),
+  lastPositionSeconds: z.number(),
+  watched: z.boolean(),
+  updatedAt: z.string(),
+});
+
+export const bookProgressSchema = z.object({
+  bookSlugTr: z.string(),
+  videoCount: z.number(),
+  watchedCount: z.number(),
+  startedCount: z.number(),
+  resume: bookProgressResumeSchema.nullable(),
+});
+
+export type BookProgressShape = z.infer<typeof bookProgressSchema>;
+
+const _bookProgressShapeAgreesWithContract: [BookProgressShape, BookProgress] = [
+  null as unknown as BookProgress,
+  null as unknown as BookProgressShape,
+];
+void _bookProgressShapeAgreesWithContract;
+
 export type VideoProgressBffCode =
   | "errors.auth.unauthenticated"
   | "errors.videoProgress.notFound"
@@ -87,6 +112,16 @@ export type VideoProgressBffBody =
 export interface VideoProgressBffResult {
   readonly status: number;
   readonly body: VideoProgressBffBody;
+  readonly headers: Record<string, string>;
+}
+
+export type BookProgressBffBody =
+  | { readonly ok: true; readonly progress: BookProgressShape }
+  | { readonly ok: false; readonly code: VideoProgressBffCode };
+
+export interface BookProgressBffResult {
+  readonly status: number;
+  readonly body: BookProgressBffBody;
   readonly headers: Record<string, string>;
 }
 
@@ -284,4 +319,100 @@ export async function handlePutVideoProgress(
   }
   await drainBody(res);
   return bffResult(502, { ok: false, code: "errors.transport.unavailable" });
+}
+
+/**
+ * `GET /api/video-progress/books/{slug}` — aggregate progress across all videos in a book (PR-B / UYE-P3).
+ * No `cg_access` cookie short-circuits to 401 without an API call.
+ */
+export async function handleGetBookProgress(
+  request: Request,
+  slug: string,
+): Promise<BookProgressBffResult> {
+  if (!isBookSlugShape(slug)) {
+    return {
+      status: 400,
+      body: { ok: false, code: "errors.transport.invalidRequest" },
+      headers: bffHeaders(),
+    };
+  }
+  const accessToken = readCookieValue(request, ACCESS_COOKIE_NAME);
+  if (!accessToken) {
+    return {
+      status: 401,
+      body: { ok: false, code: "errors.auth.unauthenticated" },
+      headers: bffHeaders(),
+    };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), VIDEO_PROGRESS_REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(
+      `${serverEnv.API_BASE_URL}/api/video-progress/books/${encodeURIComponent(slug)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+  } catch {
+    return {
+      status: 502,
+      body: { ok: false, code: "errors.transport.unavailable" },
+      headers: bffHeaders(),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (res.status === 200) {
+    const rawBody = await safeReadText(res);
+    try {
+      const json: unknown = JSON.parse(rawBody);
+      const parsed = bookProgressSchema.safeParse(json);
+      if (!parsed.success) {
+        return {
+          status: 502,
+          body: { ok: false, code: "errors.transport.unavailable" },
+          headers: bffHeaders(),
+        };
+      }
+      return { status: 200, body: { ok: true, progress: parsed.data }, headers: bffHeaders() };
+    } catch {
+      return {
+        status: 502,
+        body: { ok: false, code: "errors.transport.unavailable" },
+        headers: bffHeaders(),
+      };
+    }
+  }
+  if (res.status === 401) {
+    await drainBody(res);
+    return {
+      status: 401,
+      body: { ok: false, code: "errors.auth.unauthenticated" },
+      headers: bffHeaders(),
+    };
+  }
+  if (res.status === 404) {
+    await drainBody(res);
+    return {
+      status: 404,
+      body: { ok: false, code: "errors.videoProgress.notFound" },
+      headers: bffHeaders(),
+    };
+  }
+  await drainBody(res);
+  return {
+    status: 502,
+    body: { ok: false, code: "errors.transport.unavailable" },
+    headers: bffHeaders(),
+  };
 }

@@ -28,6 +28,7 @@ import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { V2LeaderboardButton } from "./v2-leaderboard-modal";
 import {
   Gamepad2,
   Trophy,
@@ -904,35 +905,44 @@ export function V2GameScreen({
                 <div className="space-y-1 max-w-md">
                   <Badge
                     variant={
-                      endedEarly
-                        ? "secondary"
-                        : wrongCount >= 3 && difficulty === "klasik"
-                          ? "destructive"
-                          : "primary"
+                      correctPlates.size + correctRegions.size === 0 ||
+                      normalizedAcademicScore === 0
+                        ? "destructive"
+                        : endedEarly
+                          ? "warning"
+                          : wrongCount >= 3 && difficulty === "klasik"
+                            ? "destructive"
+                            : "primary"
                     }
                     size="sm"
                   >
-                    {endedEarly
-                      ? "Yarım Tur Tamamlandı"
-                      : wrongCount >= 3 && difficulty === "klasik"
-                        ? "3 Hata Limiti Doldu"
-                        : "Tur Tamamlandı"}
+                    {correctPlates.size + correctRegions.size === 0 || normalizedAcademicScore === 0
+                      ? "Puan Alınamadı"
+                      : endedEarly
+                        ? "Yarım Tur Tamamlandı"
+                        : wrongCount >= 3 && difficulty === "klasik"
+                          ? "3 Hata Limiti Doldu"
+                          : "Tur Tamamlandı"}
                   </Badge>
                   <h3
                     ref={resultHeadingRef}
                     tabIndex={-1}
                     className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
                   >
-                    {endedEarly
-                      ? "Yarım Tur Sonuçları"
-                      : wrongCount >= 3 && difficulty === "klasik"
-                        ? "Tur Tamamlanamadı — Tekrar Dene!"
-                        : "Tebrikler, Harita Turunu Tamamladın!"}
+                    {correctPlates.size + correctRegions.size === 0 || normalizedAcademicScore === 0
+                      ? "Tur Sona Erdi (Puan Alınamadı) — Tekrar Dene!"
+                      : endedEarly
+                        ? "Yarım Tur Sonuçları"
+                        : wrongCount >= 3 && difficulty === "klasik"
+                          ? "Tur Tamamlanamadı — Tekrar Dene!"
+                          : "Tebrikler, Harita Turunu Tamamladın!"}
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground">
-                    {endedEarly
-                      ? `${questions.length} sorunun ${questionScores.length} tanesini oynadın.`
-                      : "Mekânsal hafıza sınavını bitirdin. İşte performans raporun:"}
+                    {correctPlates.size + correctRegions.size === 0 || normalizedAcademicScore === 0
+                      ? "Bu turda hiç puan kazanamadın. İpuçlarından yararlanarak tekrar dene!"
+                      : endedEarly
+                        ? `${questions.length} sorunun ${questionScores.length} tanesini oynadın.`
+                        : "Mekânsal hafıza sınavını bitirdin. İşte performans raporun:"}
                   </p>
                 </div>
 
@@ -1035,7 +1045,7 @@ export function V2GameScreen({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                   <Button
                     variant="primary"
                     size="lg"
@@ -1044,6 +1054,7 @@ export function V2GameScreen({
                   >
                     Tekrar Oyna
                   </Button>
+                  <V2LeaderboardButton mode={submitModeTag} size="lg" />
                   <Link href={region ? "/v2/oyun/bolge-bolge-il" : "/v2/oyun"}>
                     <Button variant="outline" size="lg">
                       Mod Seçimine Dön

@@ -7,6 +7,7 @@ import {
   fetchFavorites,
   saveFavorite,
   removeFavorite,
+  isFavoriteMatch,
   FAVORITES_FETCH_TIMEOUT_MS,
   type FavoriteTargetParam,
 } from "@/lib/favorites/client";
@@ -46,11 +47,7 @@ export function V2FavoriteButton({
       .then((favorites) => {
         if (cancelled || favorites === null || hasClickedRef.current) return;
         const currentTarget = targetRef.current;
-        const match = favorites.some((favorite) =>
-          currentTarget.kind === "province"
-            ? favorite.type === "province" && favorite.plateCode === currentTarget.plateCode
-            : favorite.type === "country" && favorite.isoCode === currentTarget.isoCode,
-        );
+        const match = favorites.some((favorite) => isFavoriteMatch(currentTarget, favorite));
         setFavorited(match);
       })
       .catch(() => {})
@@ -175,13 +172,7 @@ export function V2FavoriteButton({
           </div>
         )}
 
-        <span>
-          {favorited
-            ? "Favorilerde"
-            : authState === "authenticated"
-              ? "Favoriye Ekle"
-              : "Favoriye Kaydet"}
-        </span>
+        <span>{favorited ? "Favorilerde" : "Favoriye Ekle"}</span>
 
         {justToggled && favorited && (
           <Sparkles className="size-3 text-amber-300 animate-spin-slow" />

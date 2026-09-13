@@ -11,87 +11,129 @@ import {
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
 import type { Favorite } from "@/lib/api/types";
-import type { FavoriteTargetParam } from "./client";
+import { normalizeFavoriteTarget, type FavoriteTargetParam } from "./client";
 
 /**
- * The web half of the favorites BFF proxy (UYELIK-08 plan §5.1). NARROW and MODELLED ON
- * `lib/video-progress/transport.server.ts`'s shape — a cookie read, an Origin check on the
+ * The web half of the favorites BFF proxy (UYELIK-08 plan §5.1, widened to 4 entity types by UYE-P3).
+ * NARROW and MODELLED ON `lib/video-progress/transport.server.ts`'s shape — a cookie read, an Origin check on the
  * state-changing verbs, `Cache-Control: no-store` unconditionally, a zod response guard on
- * the api's 200 body — WITHOUT importing it, and without importing
- * `lib/auth/transport.server.ts` either: favorites is a third, different domain (per-user
- * saved-entity state, neither credentials nor playback progress) that has no business
- * joining either closed action table. `lib/http/same-origin.ts` and
- * `lib/http/bff-helpers.server.ts` (SIMP90-M1/SIMP96-M1) are reused directly — the
- * deliberately-shared, domain-agnostic mechanics (a security-relevant Origin check; cookie
- * read, body drain and the fixed response-header set), never the domain-specific action table
- * or response shape.
- *
- * NO BODY-HANDLING MACHINERY, and that is a measured omission, not an oversight: unlike
- * video-progress's `PUT` (which carries `{lastPositionSeconds, watched}`), every favorites
- * `PUT`/`DELETE` carries NO REQUEST BODY at all (confirmed fresh against the live contract,
- * plan §2) — the target is entirely the route param plus the auth cookie. There is nothing
- * for `readBoundedBody`/`MAX_REQUEST_BODY_BYTES`/content-length-bound machinery to consume
- * here, so it is not carried forward unused.
- *
- * THREE RESOURCES, THREE HANDLERS. Unlike the auth transport's nine-action table keyed by a
- * catch-all path segment, this proxies the api's own three real resources 1:1
- * (`GET /api/favorites`, `PUT`/`DELETE /api/favorites/{provinces,countries}/{code}`) — no
- * invented action-table abstraction.
+ * the api's 200 body.
  */
 
-/** Mirrors both existing server modules' request-timeout budget (15s) — no mail-send
- *  interaction on this surface, but no reason to pick a different number than the house
- *  standard either. */
+/** Mirrors both existing server modules' request-timeout budget (15s). */
 const FAVORITES_REQUEST_TIMEOUT_MS = 15_000;
 
 const PLATE_CODE_PATTERN = /^\d{2}$/;
 const ISO_CODE_PATTERN = /^[A-Z]{2}$/;
+const REGION_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const CONTINENT_PATTERN = /^[A-Z][A-Z_]{2,15}$/;
 
-/** Whether a route parameter is shaped like `provinces.plate_code` — checked before it is
- *  used to build an outbound api path, mirroring `lib/video-progress/transport.server.ts`'s
- *  `isBookVideoIdShape` reasoning: refusing an unshapely value here is cheaper and safer
- *  than spending a request the api would reject anyway. */
+/** Whether a route parameter is shaped like `provinces.plate_code` (2 digits). */
 export function isPlateCodeShape(value: string): boolean {
   return PLATE_CODE_PATTERN.test(value);
 }
 
-/** Whether a route parameter is shaped like `countries.iso_code` — same reasoning. */
+/** Whether a route parameter is shaped like `countries.iso_code` (2 uppercase letters). */
 export function isIsoCodeShape(value: string): boolean {
   return ISO_CODE_PATTERN.test(value);
 }
 
-/** `target` is well-shaped for its own `kind` — the one predicate both `handlePutFavorite`
- *  and `handleDeleteFavorite` gate on before spending an api call. */
-function isTargetShapeValid(target: FavoriteTargetParam): boolean {
-  return target.kind === "province"
-    ? isPlateCodeShape(target.plateCode)
-    : isIsoCodeShape(target.isoCode);
+/** Whether a route parameter is shaped like `regions.slug` (kebab-case, <= 50 chars). */
+export function isRegionSlugShape(value: string): boolean {
+  return value.length <= 50 && REGION_SLUG_PATTERN.test(value);
+}
+
+/** Whether a route parameter is shaped like a `Continent` enum label (3-16 uppercase/underscore chars). */
+export function isContinentShape(value: string): boolean {
+  return CONTINENT_PATTERN.test(value);
+}
+
+/** `target` is well-shaped for its own `entityType` / `kind`. */
+export function isTargetShapeValid(target: FavoriteTargetParam): boolean {
+  const norm = normalizeFavoriteTarget(target);
+  switch (norm.entityType) {
+    case "province":
+      return isPlateCodeShape(norm.entityId);
+    case "country":
+      return isIsoCodeShape(norm.entityId);
+    case "region":
+      return isRegionSlugShape(norm.entityId);
+    case "continent":
+      return isContinentShape(norm.entityId);
+    default:
+      return false;
+  }
 }
 
 function targetPath(target: FavoriteTargetParam): string {
-  return target.kind === "province"
-    ? `/api/favorites/provinces/${encodeURIComponent(target.plateCode)}`
-    : `/api/favorites/countries/${encodeURIComponent(target.isoCode)}`;
+  const norm = normalizeFavoriteTarget(target);
+  return `/api/favorites/${encodeURIComponent(norm.entityType)}/${encodeURIComponent(norm.entityId)}`;
 }
 
 function notFoundCode(target: FavoriteTargetParam): FavoritesBffCode {
-  return target.kind === "province"
-    ? "errors.favorites.provinceNotFound"
-    : "errors.favorites.countryNotFound";
+  const norm = normalizeFavoriteTarget(target);
+  switch (norm.entityType) {
+    case "province":
+      return "errors.favorites.provinceNotFound";
+    case "country":
+      return "errors.favorites.countryNotFound";
+    case "region":
+      return "errors.favorites.regionNotFound";
+    case "continent":
+      return "errors.favorites.continentNotFound";
+  }
 }
 
-const favoriteSchema = z.object({
-  type: z.enum(["province", "country"]),
-  plateCode: z.string().nullable(),
-  isoCode: z.string().nullable(),
-  createdAt: z.string(),
-});
-const favoritesListSchema = z.array(favoriteSchema);
+export const favoriteSchema = z.preprocess(
+  (val) => {
+    if (typeof val !== "object" || val === null) return val;
+    const obj = val as Record<string, unknown>;
+    const rawType = (obj.entityType ?? obj.type) as string | undefined;
+    const entityType =
+      rawType === "province" ||
+      rawType === "country" ||
+      rawType === "region" ||
+      rawType === "continent"
+        ? rawType
+        : undefined;
+    const rawId = (obj.entityId ?? (entityType === "province" ? obj.plateCode : obj.isoCode)) as
+      string | undefined;
+    const entityId = rawId !== undefined ? String(rawId) : undefined;
+    const type = entityType === "province" || entityType === "country" ? entityType : undefined;
+    const plateCode =
+      obj.plateCode !== undefined
+        ? (obj.plateCode as string | null)
+        : entityType === "province" && entityId
+          ? entityId
+          : null;
+    const isoCode =
+      obj.isoCode !== undefined
+        ? (obj.isoCode as string | null)
+        : entityType === "country" && entityId
+          ? entityId
+          : null;
+    return {
+      ...obj,
+      entityType,
+      entityId,
+      type,
+      plateCode,
+      isoCode,
+    };
+  },
+  z.object({
+    type: z.enum(["province", "country"]).optional(),
+    plateCode: z.string().nullable().optional(),
+    isoCode: z.string().nullable().optional(),
+    entityType: z.enum(["province", "country", "region", "continent"]).optional(),
+    entityId: z.string().optional(),
+    createdAt: z.string(),
+  }),
+);
+export const favoritesListSchema = z.array(favoriteSchema);
 
-type FavoriteShape = z.infer<typeof favoriteSchema>;
-// Drift gate, the same idiom `lib/video-progress/transport.server.ts`/`lib/auth/transport.server.ts`
-// already use: a contract change this schema misses is a TYPE ERROR in the Typecheck & Lint
-// job, not a runtime surprise. Do not relax either direction.
+export type FavoriteShape = z.infer<typeof favoriteSchema>;
+// Drift gate: ensures FavoriteShape stays compatible with Favorite in types.ts.
 const _favoriteShapeAgreesWithContract: [FavoriteShape, Favorite] = [
   null as unknown as Favorite,
   null as unknown as FavoriteShape,
@@ -102,6 +144,8 @@ export type FavoritesBffCode =
   | "errors.auth.unauthenticated"
   | "errors.favorites.provinceNotFound"
   | "errors.favorites.countryNotFound"
+  | "errors.favorites.regionNotFound"
+  | "errors.favorites.continentNotFound"
   | "errors.transport.unavailable"
   | "errors.transport.invalidRequest"
   | "errors.transport.forbidden";

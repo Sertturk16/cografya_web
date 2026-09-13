@@ -1193,7 +1193,7 @@ export function V2ToolWorkbench({
               <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                 <span>3. Bu Ölçümü Kaydet:</span>
                 <span className="text-[11px] text-muted-foreground font-normal">
-                  Yerel Hafızaya Sakla
+                  Bulut Arşivine Kaydet
                 </span>
               </label>
               <div className="flex items-center gap-2">
@@ -1220,6 +1220,15 @@ export function V2ToolWorkbench({
                   {saveSuccess ? "Kaydedildi!" : "Kaydet"}
                 </Button>
               </div>
+              {saveSuccess && (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium"
+                >
+                  Ölçüm bulut arşivine başarıyla kaydedildi.
+                </p>
+              )}
               {authState !== "authenticated" && (
                 <p className="text-[11px] text-muted-foreground mt-1.5">
                   Ölçümlerini bulut arşivine kaydetmek için giriş yapmalısın.

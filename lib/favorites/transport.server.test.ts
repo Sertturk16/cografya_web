@@ -4,8 +4,10 @@ import {
   handleDeleteFavorite,
   handleListFavorites,
   handlePutFavorite,
+  isContinentShape,
   isIsoCodeShape,
   isPlateCodeShape,
+  isRegionSlugShape,
 } from "./transport.server";
 
 /**
@@ -40,13 +42,20 @@ function emptyResponse(status: number): Response {
 }
 
 function favoriteBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
-  return {
+  const base = {
     type: "province",
+    entityType: "province",
+    entityId: "34",
     plateCode: "34",
     isoCode: null,
     createdAt: "2026-08-27T10:00:00.000Z",
-    ...overrides,
   };
+  const merged = { ...base, ...overrides };
+  if (merged.type === "country" && !overrides.entityType) {
+    merged.entityType = "country";
+    merged.entityId = (merged.isoCode as unknown as string) ?? "TR";
+  }
+  return merged;
 }
 
 interface RequestOptions {
@@ -98,6 +107,33 @@ describe("isIsoCodeShape", () => {
     expect(isIsoCodeShape("34")).toBe(false);
     expect(isIsoCodeShape("tr")).toBe(false);
     expect(isIsoCodeShape("")).toBe(false);
+  });
+});
+
+describe("isRegionSlugShape", () => {
+  it("accepts valid kebab-case slugs", () => {
+    expect(isRegionSlugShape("marmara")).toBe(true);
+    expect(isRegionSlugShape("ic-anadolu")).toBe(true);
+    expect(isRegionSlugShape("guneydogu-anadolu")).toBe(true);
+  });
+  it("rejects invalid slugs", () => {
+    expect(isRegionSlugShape("Marmara")).toBe(false);
+    expect(isRegionSlugShape("ic_anadolu")).toBe(false);
+    expect(isRegionSlugShape("")).toBe(false);
+    expect(isRegionSlugShape("a".repeat(51))).toBe(false);
+  });
+});
+
+describe("isContinentShape", () => {
+  it("accepts valid continent enum labels", () => {
+    expect(isContinentShape("AVRUPA")).toBe(true);
+    expect(isContinentShape("KUZEY_AMERIKA")).toBe(true);
+    expect(isContinentShape("ASYA")).toBe(true);
+  });
+  it("rejects invalid continent labels", () => {
+    expect(isContinentShape("avrupa")).toBe(false);
+    expect(isContinentShape("A")).toBe(false);
+    expect(isContinentShape("")).toBe(false);
   });
 });
 
@@ -331,7 +367,7 @@ describe("T8 — PUT: outbound path/method, and a non-OK api response mapped by 
       { kind: "province", plateCode: "34" },
     );
     const [url, init] = mock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://api.test/api/favorites/provinces/34");
+    expect(url).toBe("http://api.test/api/favorites/province/34");
     expect(init.method).toBe("PUT");
     expect(init.body).toBeUndefined();
   });
@@ -349,7 +385,47 @@ describe("T8 — PUT: outbound path/method, and a non-OK api response mapped by 
       { kind: "country", isoCode: "TR" },
     );
     const [url] = mock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://api.test/api/favorites/countries/TR");
+    expect(url).toBe("http://api.test/api/favorites/country/TR");
+  });
+
+  it("sends a bodyless PUT to the region path", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValue(
+      jsonResponse(200, {
+        entityType: "region",
+        entityId: "marmara",
+        createdAt: "2026-08-27T10:00:00.000Z",
+      }),
+    );
+    await handlePutFavorite(
+      makeRequest("PUT", "/api/favorites/region/marmara", {
+        origin: SITE_URL,
+        cookie: `${ACCESS_COOKIE_NAME}=token`,
+      }),
+      { kind: "region", slug: "marmara" },
+    );
+    const [url] = mock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("http://api.test/api/favorites/region/marmara");
+  });
+
+  it("sends a bodyless PUT to the continent path", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValue(
+      jsonResponse(200, {
+        entityType: "continent",
+        entityId: "AVRUPA",
+        createdAt: "2026-08-27T10:00:00.000Z",
+      }),
+    );
+    await handlePutFavorite(
+      makeRequest("PUT", "/api/favorites/continent/AVRUPA", {
+        origin: SITE_URL,
+        cookie: `${ACCESS_COOKIE_NAME}=token`,
+      }),
+      { kind: "continent", code: "AVRUPA" },
+    );
+    const [url] = mock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("http://api.test/api/favorites/continent/AVRUPA");
   });
 
   it("a 200 body that fails the response guard collapses to unavailable, never a cookie-less 200", async () => {
@@ -408,6 +484,34 @@ describe("T8 — PUT: outbound path/method, and a non-OK api response mapped by 
     expect(result.body).toEqual({ ok: false, code: "errors.favorites.countryNotFound" });
   });
 
+  it("a 404 maps to regionNotFound for a region target", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValue(emptyResponse(404));
+    const result = await handlePutFavorite(
+      makeRequest("PUT", "/api/favorites/region/bilinmeyen", {
+        origin: SITE_URL,
+        cookie: `${ACCESS_COOKIE_NAME}=token`,
+      }),
+      { kind: "region", slug: "bilinmeyen" },
+    );
+    expect(result.status).toBe(404);
+    expect(result.body).toEqual({ ok: false, code: "errors.favorites.regionNotFound" });
+  });
+
+  it("a 404 maps to continentNotFound for a continent target", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValue(emptyResponse(404));
+    const result = await handlePutFavorite(
+      makeRequest("PUT", "/api/favorites/continent/BILINMEYEN", {
+        origin: SITE_URL,
+        cookie: `${ACCESS_COOKIE_NAME}=token`,
+      }),
+      { kind: "continent", code: "BILINMEYEN" },
+    );
+    expect(result.status).toBe(404);
+    expect(result.body).toEqual({ ok: false, code: "errors.favorites.continentNotFound" });
+  });
+
   it("a 5xx collapses to errors.transport.unavailable", async () => {
     const mock = fetchMock();
     mock.mockResolvedValue(emptyResponse(500));
@@ -448,7 +552,7 @@ describe("T9 — DELETE: 204 unconditionally, never a not-found branch", () => {
       { kind: "country", isoCode: "TR" },
     );
     const [url, init] = mock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://api.test/api/favorites/countries/TR");
+    expect(url).toBe("http://api.test/api/favorites/country/TR");
     expect(init.method).toBe("DELETE");
     expect(init.body).toBeUndefined();
   });

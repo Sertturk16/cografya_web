@@ -317,6 +317,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
               indexClassName={styles.index}
               videos={benchVideos}
               defaultOrderNo={defaultOrderNo}
+              bookSlug={book.slugTr}
             >
               {videoStates.map(({ video, state }) => {
                 const playable = isPlayable(state);

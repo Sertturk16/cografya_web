@@ -325,6 +325,10 @@ export const routing = defineRouting({
       tr: "/v2/profil",
       en: "/v2/profile",
     },
+    "/v2/hesabim": {
+      tr: "/v2/hesabim",
+      en: "/v2/account",
+    },
     "/design-system": {
       tr: "/design-system",
       en: "/design-system",

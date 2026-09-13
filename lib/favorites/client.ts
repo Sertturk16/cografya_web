@@ -20,19 +20,54 @@
  *  repeats its own number instead of importing the auth transport's. */
 export const FAVORITES_FETCH_TIMEOUT_MS = 8000;
 
-/** One favoritable target: a province (keyed by `plateCode`) or a country (keyed by
- *  `isoCode`) — the discriminated shape both the client and server halves key their
- *  outbound path on. */
+export type FavoriteEntityType = "province" | "country" | "region" | "continent";
+
+/** One favoritable target: province, country, region, continent, or generic polymorphic shape. */
 export type FavoriteTargetParam =
   | { readonly kind: "province"; readonly plateCode: string }
-  | { readonly kind: "country"; readonly isoCode: string };
+  | { readonly kind: "country"; readonly isoCode: string }
+  | { readonly kind: "region"; readonly slug: string }
+  | { readonly kind: "continent"; readonly code: string }
+  | { readonly entityType: FavoriteEntityType; readonly entityId: string };
 
-/** The narrowed, parsed shape a caller actually needs — not a re-export of the raw BFF
- *  body, the same split `lib/video-progress/client.ts`'s `VideoProgressValue` draws. */
+/** The narrowed, parsed shape a caller actually needs. */
 export interface FavoriteRecord {
-  readonly type: "province" | "country";
+  readonly type: FavoriteEntityType;
+  readonly entityType: FavoriteEntityType;
+  readonly entityId: string;
   readonly plateCode: string | null;
   readonly isoCode: string | null;
+}
+
+/** Normalizes any valid FavoriteTargetParam variant into standard entityType + entityId. */
+export function normalizeFavoriteTarget(target: FavoriteTargetParam): {
+  readonly entityType: FavoriteEntityType;
+  readonly entityId: string;
+} {
+  if ("entityType" in target) {
+    return { entityType: target.entityType, entityId: target.entityId };
+  }
+  switch (target.kind) {
+    case "province":
+      return { entityType: "province", entityId: target.plateCode };
+    case "country":
+      return { entityType: "country", entityId: target.isoCode };
+    case "region":
+      return { entityType: "region", entityId: target.slug };
+    case "continent":
+      return { entityType: "continent", entityId: target.code };
+  }
+}
+
+/** Checks whether a FavoriteRecord matches a target param across all 4 entity types. */
+export function isFavoriteMatch(target: FavoriteTargetParam, record: FavoriteRecord): boolean {
+  const norm = normalizeFavoriteTarget(target);
+  return (
+    (record.entityType === norm.entityType || record.type === norm.entityType) &&
+    (record.entityId === norm.entityId ||
+      (norm.entityType === "province" && record.plateCode === norm.entityId) ||
+      (norm.entityType === "country" && record.isoCode === norm.entityId))
+  );
 }
 
 /**
@@ -48,15 +83,18 @@ function buildFavoritesListUrl(): string {
 }
 
 function buildFavoriteUrl(target: FavoriteTargetParam): string {
-  return target.kind === "province"
-    ? `/api/favorites/provinces/${encodeURIComponent(target.plateCode)}`
-    : `/api/favorites/countries/${encodeURIComponent(target.isoCode)}`;
+  const norm = normalizeFavoriteTarget(target);
+  if (norm.entityType === "province") {
+    return `/api/favorites/provinces/${encodeURIComponent(norm.entityId)}`;
+  }
+  if (norm.entityType === "country") {
+    return `/api/favorites/countries/${encodeURIComponent(norm.entityId)}`;
+  }
+  return `/api/favorites/${encodeURIComponent(norm.entityType)}/${encodeURIComponent(norm.entityId)}`;
 }
 
 /** Narrows an unknown BFF body into a {@link FavoriteRecord} array, or `null` on anything
- *  that is not the exact shape `handleListFavorites` promises — unchecked network input,
- *  the same principle `lib/video-progress/client.ts`'s `parseProgressBody` docblock states:
- *  a value that only PASSED THROUGH the BFF unexamined is not safe to trust as typed. */
+ *  that is not the exact shape `handleListFavorites` promises. */
 function parseFavoritesListBody(value: unknown): readonly FavoriteRecord[] | null {
   if (typeof value !== "object" || value === null || !("ok" in value) || value.ok !== true) {
     return null;
@@ -66,23 +104,34 @@ function parseFavoritesListBody(value: unknown): readonly FavoriteRecord[] | nul
 
   const records: FavoriteRecord[] = [];
   for (const entry of favorites) {
-    const entryType =
-      typeof entry === "object" && entry !== null ? (entry as { type?: unknown }).type : undefined;
-    if (entryType !== "province" && entryType !== "country") {
-      return null;
-    }
-    const plateCode = (entry as { plateCode?: unknown }).plateCode;
-    const isoCode = (entry as { isoCode?: unknown }).isoCode;
+    if (typeof entry !== "object" || entry === null) return null;
+    const e = entry as Record<string, unknown>;
+    const rawType = e.entityType ?? e.type;
     if (
-      (plateCode !== null && typeof plateCode !== "string") ||
-      (isoCode !== null && typeof isoCode !== "string")
+      rawType !== "province" &&
+      rawType !== "country" &&
+      rawType !== "region" &&
+      rawType !== "continent"
     ) {
       return null;
     }
+    const entityType = rawType as FavoriteEntityType;
+    const rawId = e.entityId ?? (entityType === "province" ? e.plateCode : e.isoCode);
+    if (typeof rawId !== "string" || !rawId) {
+      return null;
+    }
+    const entityId = rawId;
+    const plateCode =
+      typeof e.plateCode === "string" ? e.plateCode : entityType === "province" ? entityId : null;
+    const isoCode =
+      typeof e.isoCode === "string" ? e.isoCode : entityType === "country" ? entityId : null;
+
     records.push({
-      type: entryType,
-      plateCode: typeof plateCode === "string" ? plateCode : null,
-      isoCode: typeof isoCode === "string" ? isoCode : null,
+      type: entityType,
+      entityType,
+      entityId,
+      plateCode,
+      isoCode,
     });
   }
   return records;
