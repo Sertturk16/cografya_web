@@ -5,6 +5,7 @@ import { getProvinceBySlug, getProvincesResilient, isProductionBuild } from "@/l
 import type { CountryDetail, ProvinceDetail } from "@/lib/api/types";
 import { bookSitemapEntries } from "@/lib/seo/book-sitemap";
 import { sitemapEntriesFor } from "@/lib/seo/sitemap-entries";
+import { getAllContinents } from "@/lib/geo/continents";
 
 /**
  * Root sitemap — a single flat urlset served at `/sitemap.xml` (the URL `robots.ts` points
@@ -77,6 +78,7 @@ function staticEntries(): MetadataRoute.Sitemap {
     // (events, coordinates, magnitudes, timestamps, place names), not a Turkish-only
     // narrative, so both locales are indexable from day one.
     ...sitemapEntriesFor(() => "/deprem", now, 0.7),
+    ...sitemapEntriesFor(() => "/v2/dunya/kita", now, 0.8, "trOnly"),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
   ];
 }
@@ -169,6 +171,23 @@ async function countryEntries(): Promise<MetadataRoute.Sitemap> {
   );
 }
 
+/** Continents detail pages (7 continents). */
+function continentEntries(): MetadataRoute.Sitemap {
+  const now = new Date();
+  const continents = getAllContinents();
+  return continents.flatMap((continent) =>
+    sitemapEntriesFor(
+      () => ({
+        pathname: "/v2/dunya/kita/[slug]",
+        params: { slug: continent.slugTr },
+      }),
+      now,
+      0.7,
+      "trOnly",
+    ),
+  );
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Per-hub builders concatenated into one flat urlset. Provinces, countries and books fetch
   // in parallel (independent hubs); a build-time api outage degrades each to empty per its
@@ -178,5 +197,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     countryEntries(),
     bookEntries(),
   ]);
-  return [...staticEntries(), ...provinces, ...countries, ...books];
+  return [...staticEntries(), ...provinces, ...countries, ...books, ...continentEntries()];
 }

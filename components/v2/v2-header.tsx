@@ -15,6 +15,7 @@ import {
   Flame,
   Layers,
   Boxes,
+  Compass,
   BookOpen,
   User,
   LogIn,
@@ -217,6 +218,23 @@ export function V2Header() {
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
                       199 Ülke, Kıtalar &amp; Bayraklar
+                    </span>
+                  </div>
+                </Link>
+                <Link
+                  href="/v2/dunya/kita"
+                  onClick={() => setActiveDropdown(null)}
+                  className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
+                >
+                  <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center mr-2 shrink-0 group-hover:scale-105 transition-transform">
+                    <Compass className="size-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-xs block text-foreground group-hover:text-emerald-600 transition-colors">
+                      Kıtalar Atlası
+                    </span>
+                    <span className="text-[10px] text-muted-foreground block">
+                      7 Kıta &amp; Karakteristikleri
                     </span>
                   </div>
                 </Link>
@@ -507,6 +525,19 @@ export function V2Header() {
                           </span>
                         </div>
                         <span className="text-xs text-muted-foreground">199 Ülke</span>
+                      </Link>
+                      <Link
+                        href="/v2/dunya/kita"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Compass className="size-4 text-emerald-600" />
+                          <span className="text-sm font-semibold text-foreground">
+                            Kıtalar Atlası
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">7 Kıta</span>
                       </Link>
                     </div>
                   </div>

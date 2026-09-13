@@ -11,7 +11,7 @@ import {
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
 import type { Favorite } from "@/lib/api/types";
-import { normalizeFavoriteTarget, type FavoriteTargetParam } from "./client";
+import { normalizeFavoriteTarget, type FavoriteTargetParam } from "./target";
 
 /**
  * The web half of the favorites BFF proxy (UYELIK-08 plan §5.1, widened to 4 entity types by UYE-P3).
