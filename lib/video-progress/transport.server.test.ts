@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ACCESS_COOKIE_NAME } from "@/lib/auth/cookies";
 import {
+  handleGetBookProgress,
   handleGetVideoProgress,
   handlePutVideoProgress,
   isBookVideoIdShape,
@@ -412,5 +413,110 @@ describe("T9 — Cache-Control: no-store on every branch", () => {
   ])("%s", async (_label, run) => {
     const result = await run();
     expect(result.headers["Cache-Control"]).toBe("no-store");
+  });
+});
+
+describe("handleGetBookProgress (PR-B / UYE-P3)", () => {
+  const VALID_SLUG = "ayt-cografya-denemeleri";
+
+  function validBookProgressBody() {
+    return {
+      bookSlugTr: VALID_SLUG,
+      videoCount: 30,
+      watchedCount: 5,
+      startedCount: 8,
+      resume: {
+        bookVideoId: VALID_BOOK_VIDEO_ID,
+        orderNo: 4,
+        lastPositionSeconds: 120,
+        watched: false,
+        updatedAt: "2026-08-27T10:00:00.000Z",
+      },
+    };
+  }
+
+  it("returns 400 invalidRequest when slug is not a valid shape", async () => {
+    const result = await handleGetBookProgress(
+      makeRequest("GET", "/api/video-progress/books/INVALID_SLUG!"),
+      "INVALID_SLUG!",
+    );
+    expect(result.status).toBe(400);
+    expect(result.body).toEqual({ ok: false, code: "errors.transport.invalidRequest" });
+    expect(fetchMock()).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 unauthenticated when cg_access cookie is absent without calling fetch", async () => {
+    const result = await handleGetBookProgress(
+      makeRequest("GET", `/api/video-progress/books/${VALID_SLUG}`),
+      VALID_SLUG,
+    );
+    expect(result.status).toBe(401);
+    expect(result.body).toEqual({ ok: false, code: "errors.auth.unauthenticated" });
+    expect(fetchMock()).not.toHaveBeenCalled();
+  });
+
+  it("returns 200 ok with BookProgressShape when api responds 200", async () => {
+    const payload = validBookProgressBody();
+    fetchMock().mockResolvedValue(jsonResponse(200, payload));
+
+    const result = await handleGetBookProgress(
+      makeRequest("GET", `/api/video-progress/books/${VALID_SLUG}`, {
+        cookie: `${ACCESS_COOKIE_NAME}=test-token`,
+      }),
+      VALID_SLUG,
+    );
+
+    expect(result.status).toBe(200);
+    expect(result.body).toEqual({ ok: true, progress: payload });
+    expect(result.headers["Cache-Control"]).toBe("no-store");
+  });
+
+  it("returns 200 ok with resume: null when caller has no progress yet", async () => {
+    const payload = {
+      bookSlugTr: VALID_SLUG,
+      videoCount: 30,
+      watchedCount: 0,
+      startedCount: 0,
+      resume: null,
+    };
+    fetchMock().mockResolvedValue(jsonResponse(200, payload));
+
+    const result = await handleGetBookProgress(
+      makeRequest("GET", `/api/video-progress/books/${VALID_SLUG}`, {
+        cookie: `${ACCESS_COOKIE_NAME}=test-token`,
+      }),
+      VALID_SLUG,
+    );
+
+    expect(result.status).toBe(200);
+    expect(result.body).toEqual({ ok: true, progress: payload });
+  });
+
+  it("returns 404 notFound when api responds 404", async () => {
+    fetchMock().mockResolvedValue(emptyResponse(404));
+
+    const result = await handleGetBookProgress(
+      makeRequest("GET", `/api/video-progress/books/${VALID_SLUG}`, {
+        cookie: `${ACCESS_COOKIE_NAME}=test-token`,
+      }),
+      VALID_SLUG,
+    );
+
+    expect(result.status).toBe(404);
+    expect(result.body).toEqual({ ok: false, code: "errors.videoProgress.notFound" });
+  });
+
+  it("returns 502 unavailable when api responds with invalid json or non-200/401/404", async () => {
+    fetchMock().mockResolvedValue(emptyResponse(500));
+
+    const result = await handleGetBookProgress(
+      makeRequest("GET", `/api/video-progress/books/${VALID_SLUG}`, {
+        cookie: `${ACCESS_COOKIE_NAME}=test-token`,
+      }),
+      VALID_SLUG,
+    );
+
+    expect(result.status).toBe(502);
+    expect(result.body).toEqual({ ok: false, code: "errors.transport.unavailable" });
   });
 });

@@ -52,3 +52,33 @@ export function describeGameRoundModeTag(tag: string): GameRoundModeShape {
   }
   return { kind: "unknown", raw: tag };
 }
+
+const REGION_TR_NAMES: Record<GeographicRegion, string> = {
+  MARMARA: "Marmara Bölgesi",
+  EGE: "Ege Bölgesi",
+  AKDENIZ: "Akdeniz Bölgesi",
+  IC_ANADOLU: "İç Anadolu Bölgesi",
+  KARADENIZ: "Karadeniz Bölgesi",
+  DOGU_ANADOLU: "Doğu Anadolu Bölgesi",
+  GUNEYDOGU_ANADOLU: "Güneydoğu Anadolu Bölgesi",
+};
+
+/**
+ * Returns a human-friendly Turkish title for any game round mode tag (e.g. "81 İl Bulma", "7 Bölge Bulma", "Marmara Bölgesi İlleri").
+ * Closes IRIS A7 by replacing raw tags like "provinces" or "provinces-marmara".
+ */
+export function getGameRoundModeTitle(tag: string): string {
+  const shape = describeGameRoundModeTag(tag);
+  switch (shape.kind) {
+    case "regions":
+      return "7 Bölge Bulma";
+    case "provinces":
+      return "81 İl Bulma";
+    case "provinces-region":
+      return `${REGION_TR_NAMES[shape.region] ?? shape.region} İlleri`;
+    case "unknown":
+      if (shape.raw === "81-il") return "81 İl Bulma";
+      if (shape.raw === "bolge-bulma") return "7 Bölge Bulma";
+      return shape.raw;
+  }
+}

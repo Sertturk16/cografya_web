@@ -28,6 +28,8 @@ export const AUTH_PATHNAMES = [
   // Note: /v2/giris and /v2/kayit remain outside AUTH_PATHNAMES today (D-4)
   // because their v2 shells were introduced before this centralization.
   "/v2/profil",
+  // The v2 dedicated member area / hub (UYE-P3).
+  "/v2/hesabim",
 ] as const satisfies readonly AppPathname[];
 
 export type AuthPathname = (typeof AUTH_PATHNAMES)[number];

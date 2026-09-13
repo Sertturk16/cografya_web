@@ -7,9 +7,11 @@ import { resolveIzleStartSecond } from "@/lib/book/resume-second";
 import { fetchVideoIdentity, VIDEO_IDENTITY_FETCH_TIMEOUT_MS } from "@/lib/video-identity/client";
 import {
   buildWatchedTogglePayload,
+  fetchBookProgress,
   fetchVideoProgress,
   saveVideoProgress,
   VIDEO_PROGRESS_FETCH_TIMEOUT_MS,
+  type BookProgressValue,
   type VideoProgressValue,
 } from "@/lib/video-progress/client";
 import { watchUrl } from "@/lib/youtube/embed";
@@ -116,6 +118,7 @@ export function VideoBench({
   indexClassName,
   videos,
   defaultOrderNo,
+  bookSlug,
   children,
 }: {
   /** Optional exactly as React types it: a CSS-module lookup is `string | undefined` under
@@ -126,6 +129,7 @@ export function VideoBench({
   indexClassName?: string;
   videos: readonly BenchVideo[];
   defaultOrderNo: number;
+  bookSlug?: string;
   /** The server-rendered index — 30 rows, 180 links, untouched markup. */
   children: ReactNode;
 }) {
@@ -143,6 +147,31 @@ export function VideoBench({
   // is threaded down to `BenchStage`/`DenemeVideo`/`VideoProgressControls` as a prop, never
   // re-derived with a second `useAuthSession()` call anywhere in this tree.
   const [authState] = useAuthSession();
+
+  // Book-level aggregate progress (UYE-P3, PR-B / §3.1) — only fetched when authenticated
+  const [fetchedBookProgress, setFetchedBookProgress] = useState<BookProgressValue | null>(null);
+
+  useEffect(() => {
+    if (authState !== "authenticated" || !bookSlug) {
+      return;
+    }
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), VIDEO_PROGRESS_FETCH_TIMEOUT_MS);
+    fetchBookProgress(bookSlug, controller.signal)
+      .then((result) => {
+        if (!cancelled && result !== null) setFetchedBookProgress(result);
+      })
+      .finally(() => clearTimeout(timeout));
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [authState, bookSlug]);
+
+  const bookProgress = authState === "authenticated" && bookSlug ? fetchedBookProgress : null;
+  const setBookProgress = setFetchedBookProgress;
 
   // THE PROGRESS FETCH (§5.4) — lazy, per video, on selection, never eager for all 30. Resolves
   // the SELECTED video's `bookVideoId` the same way `BenchStage` resolves its own `video` (the
@@ -205,6 +234,14 @@ export function VideoBench({
         lastPositionSeconds: payload.lastPositionSeconds,
         watched: payload.watched,
         watchedAt: payload.watched ? new Date().toISOString() : null,
+      });
+      setBookProgress((prev) => {
+        if (!prev) return prev;
+        const diff = nextWatched ? 1 : -1;
+        return {
+          ...prev,
+          watchedCount: Math.max(0, Math.min(prev.videoCount, prev.watchedCount + diff)),
+        };
       });
     }
     return result;
@@ -382,6 +419,47 @@ export function VideoBench({
 
   return (
     <div ref={rootRef} className={className} onClick={onClick}>
+      {bookProgress !== null && bookProgress.videoCount > 0 && (
+        <div className="mb-6 p-4 rounded-2xl bg-card border border-border shadow-xs flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+              %{Math.round((bookProgress.watchedCount / bookProgress.videoCount) * 100)}
+            </div>
+            <div>
+              <div className="text-xs font-bold text-foreground">
+                Kitap İlerlemesi: {bookProgress.watchedCount} / {bookProgress.videoCount} video
+                izlendi
+              </div>
+              <div className="w-36 sm:w-48 h-1.5 bg-muted rounded-full overflow-hidden mt-1.5">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, Math.round((bookProgress.watchedCount / bookProgress.videoCount) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {bookProgress.resume !== null && (
+            <button
+              type="button"
+              onClick={() => {
+                if (bookProgress.resume) {
+                  selectVideo(bookProgress.resume.orderNo);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <span>Kaldığın Yer: Deneme {bookProgress.resume.orderNo}</span>
+              <span className="text-[10px] text-muted-foreground">
+                ({Math.floor(bookProgress.resume.lastPositionSeconds / 60)}:
+                {String(bookProgress.resume.lastPositionSeconds % 60).padStart(2, "0")})
+              </span>
+            </button>
+          )}
+        </div>
+      )}
       <BenchStage
         videos={videos}
         defaultOrderNo={defaultOrderNo}

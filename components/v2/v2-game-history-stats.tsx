@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trophy, Award, Flame, Zap, ShieldCheck, Lock, Loader2, Calendar } from "lucide-react";
+import { getGameRoundModeTitle } from "@/lib/game/round-mode-tag";
 
 export function V2GameHistoryStats() {
   const [authState] = useAuthSession();
@@ -61,7 +62,8 @@ export function V2GameHistoryStats() {
       title: "İlk Adım",
       desc: "Platformda ilk harita sınavını başarıyla tamamla.",
       icon: <Award className="size-5" />,
-      unlocked: totalRounds >= 1,
+      // IRIS A10: requires at least one round with score > 0 (abandoned zero-score rounds do not unlock)
+      unlocked: Boolean(records && records.some((r) => r.score > 0)),
       color: "bg-primary/10 text-primary border-primary/30",
     },
     {
@@ -196,11 +198,7 @@ export function V2GameHistoryStats() {
                 >
                   <div className="flex items-center justify-between">
                     <Badge variant="outline" size="sm" className="text-[10px]">
-                      {rec.mode === "81-il"
-                        ? "81 İl"
-                        : rec.mode === "bolge-bulma"
-                          ? "7 Bölge"
-                          : rec.mode}
+                      {getGameRoundModeTitle(rec.mode)}
                     </Badge>
                     <span className="font-heading font-bold text-base text-primary">
                       %{rec.score}

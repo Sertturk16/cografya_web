@@ -8,6 +8,7 @@ import { useAuthSession } from "@/lib/auth/use-session.client";
 import {
   FAVORITES_FETCH_TIMEOUT_MS,
   fetchFavorites,
+  isFavoriteMatch,
   removeFavorite,
   saveFavorite,
   type FavoriteTargetParam,
@@ -94,11 +95,7 @@ export function FavoriteButton({ target }: { readonly target: FavoriteTargetPara
       .then((favorites) => {
         if (cancelled || favorites === null || hasClickedRef.current) return;
         const currentTarget = targetRef.current;
-        const match = favorites.some((favorite) =>
-          currentTarget.kind === "province"
-            ? favorite.type === "province" && favorite.plateCode === currentTarget.plateCode
-            : favorite.type === "country" && favorite.isoCode === currentTarget.isoCode,
-        );
+        const match = favorites.some((favorite) => isFavoriteMatch(currentTarget, favorite));
         setFavorited(match);
       })
       .finally(() => clearTimeout(timeout));

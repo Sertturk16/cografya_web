@@ -4,6 +4,7 @@ import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { V2LeaderboardButton } from "./v2-leaderboard-modal";
 import {
   Gamepad2,
   MapPin,
@@ -80,8 +81,8 @@ export function V2GameHub() {
               </div>
             </div>
 
-            <div className="pt-6">
-              <Link href="/v2/oyun/81-il">
+            <div className="pt-6 flex items-center gap-2">
+              <Link href="/v2/oyun/81-il" className="flex-1">
                 <Button
                   variant="primary"
                   size="default"
@@ -91,6 +92,7 @@ export function V2GameHub() {
                   Sınava Başla
                 </Button>
               </Link>
+              <V2LeaderboardButton mode="provinces" variant="outline" />
             </div>
           </div>
 
@@ -127,8 +129,8 @@ export function V2GameHub() {
               </div>
             </div>
 
-            <div className="pt-6">
-              <Link href="/v2/oyun/bolge-bulma">
+            <div className="pt-6 flex items-center gap-2">
+              <Link href="/v2/oyun/bolge-bulma" className="flex-1">
                 <Button
                   variant="secondary"
                   size="default"
@@ -138,6 +140,7 @@ export function V2GameHub() {
                   Bölgeleri Keşfet
                 </Button>
               </Link>
+              <V2LeaderboardButton mode="regions" variant="outline" />
             </div>
           </div>
 

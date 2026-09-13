@@ -12,7 +12,13 @@ import {
 } from "@/lib/http/bff-helpers.server";
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
-import type { GameRound, GameRoundList, SubmitGameRoundRequest } from "@/lib/api/types";
+import type {
+  GameRound,
+  GameRoundList,
+  LeaderboardEntry,
+  LeaderboardList,
+  SubmitGameRoundRequest,
+} from "@/lib/api/types";
 
 /**
  * The web half of the game-rounds BFF proxy (UYELIK-10 plan §5.2) — a FOURTH small
@@ -116,6 +122,47 @@ const _gameRoundListShapeAgreesWithContract: [GameRoundListShape, GameRoundList]
 ];
 void _gameRoundListShapeAgreesWithContract;
 
+export const leaderboardEntrySchema = z.object({
+  rank: z.number().int().min(1),
+  firstName: z.string().min(1),
+  // Surname defense (§3.6): exactly 1-2 characters (e.g. "Y" or "Y."), never full surname
+  lastNameInitial: z.string().min(1).max(2),
+  score: z.number().min(0).max(100),
+  found: z.number().min(0),
+  firstTry: z.number().min(0),
+  totalWrongs: z.number().min(0),
+  completionTimeSeconds: z.number().nullable().optional(),
+  achievedAt: z.string(),
+  isCurrentUser: z.boolean(),
+});
+
+export const leaderboardListSchema = z.object({
+  items: z.array(leaderboardEntrySchema),
+  total: z.number().min(0),
+  page: z.number().min(1),
+  pageSize: z.number().min(1),
+  pageCount: z.number().min(0),
+  meta: z.object({
+    mode: z.string(),
+    currentUserRank: z.number().nullable(),
+  }),
+});
+
+export type LeaderboardEntryShape = z.infer<typeof leaderboardEntrySchema>;
+export type LeaderboardListShape = z.infer<typeof leaderboardListSchema>;
+
+const _leaderboardEntryAgreesWithContract: [LeaderboardEntryShape, LeaderboardEntry] = [
+  null as unknown as LeaderboardEntry,
+  null as unknown as LeaderboardEntryShape,
+];
+void _leaderboardEntryAgreesWithContract;
+
+const _leaderboardListAgreesWithContract: [LeaderboardListShape, LeaderboardList] = [
+  null as unknown as LeaderboardList,
+  null as unknown as LeaderboardListShape,
+];
+void _leaderboardListAgreesWithContract;
+
 /** The request-side mirror of `SubmitGameRoundRequestDto`'s own bounds (plan §2.2's table) —
  *  a malformed/out-of-bounds client body is rejected LOCALLY, before an outbound call is
  *  spent, never forwarded as-is the way `lib/video-progress/transport.server.ts`'s `PUT`
@@ -186,6 +233,16 @@ export type GameRoundBffBody =
 export interface GameRoundBffResult {
   readonly status: number;
   readonly body: GameRoundBffBody;
+  readonly headers: Record<string, string>;
+}
+
+export type LeaderboardBffBody =
+  | ({ readonly ok: true } & LeaderboardListShape)
+  | { readonly ok: false; readonly code: GameRoundsBffCode };
+
+export interface LeaderboardBffResult {
+  readonly status: number;
+  readonly body: LeaderboardBffBody;
   readonly headers: Record<string, string>;
 }
 
@@ -376,4 +433,93 @@ export async function handleSubmitGameRound(request: Request): Promise<GameRound
   }
   await drainBody(res);
   return itemResult(502, { ok: false, code: "errors.transport.unavailable" });
+}
+
+/**
+ * `GET /api/game-rounds/leaderboard?mode=...&page=...&pageSize=...`
+ * Reads mode leaderboard across all users, with strict server-side surname truncation (§3.6).
+ */
+export async function handleGetLeaderboard(
+  request: Request,
+  params: { mode?: string; page?: string; pageSize?: string },
+): Promise<LeaderboardBffResult> {
+  const accessToken = readCookieValue(request, ACCESS_COOKIE_NAME);
+  if (!accessToken) {
+    return {
+      status: 401,
+      body: { ok: false, code: "errors.auth.unauthenticated" },
+      headers: bffHeaders(),
+    };
+  }
+
+  const rawMode = params.mode;
+  if (!rawMode || !/^[a-z][a-z0-9-]{0,39}$/.test(rawMode)) {
+    return {
+      status: 400,
+      body: { ok: false, code: "errors.transport.invalidRequest" },
+      headers: bffHeaders(),
+    };
+  }
+
+  const page = parseIntParam(params.page, 1, 1, 10_000);
+  const pageSize = parseIntParam(params.pageSize, 20, 1, 50);
+
+  let res: Response;
+  try {
+    res = await sendApiRequest(
+      "GET",
+      `/api/game-rounds/leaderboard?mode=${encodeURIComponent(rawMode)}&page=${page}&pageSize=${pageSize}`,
+      accessToken,
+      undefined,
+    );
+  } catch {
+    return {
+      status: 502,
+      body: { ok: false, code: "errors.transport.unavailable" },
+      headers: bffHeaders(),
+    };
+  }
+
+  if (res.status === 200) {
+    const rawBody = await safeReadText(res);
+    let json: unknown;
+    try {
+      json = JSON.parse(rawBody);
+    } catch {
+      return {
+        status: 502,
+        body: { ok: false, code: "errors.transport.unavailable" },
+        headers: bffHeaders(),
+      };
+    }
+    const parsed = leaderboardListSchema.safeParse(json);
+    if (!parsed.success) {
+      return {
+        status: 502,
+        body: { ok: false, code: "errors.transport.unavailable" },
+        headers: bffHeaders(),
+      };
+    }
+    return {
+      status: 200,
+      body: { ok: true, ...parsed.data },
+      headers: bffHeaders(),
+    };
+  }
+
+  if (res.status === 401) {
+    await drainBody(res);
+    return {
+      status: 401,
+      body: { ok: false, code: "errors.auth.unauthenticated" },
+      headers: bffHeaders(),
+    };
+  }
+
+  await drainBody(res);
+  return {
+    status: 502,
+    body: { ok: false, code: "errors.transport.unavailable" },
+    headers: bffHeaders(),
+  };
 }

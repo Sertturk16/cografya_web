@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FAVORITES_FETCH_TIMEOUT_MS, fetchFavorites, removeFavorite, saveFavorite } from "./client";
+import {
+  FAVORITES_FETCH_TIMEOUT_MS,
+  fetchFavorites,
+  isFavoriteMatch,
+  removeFavorite,
+  saveFavorite,
+} from "./client";
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -60,8 +66,8 @@ describe("fetchFavorites", () => {
       ),
     );
     await expect(fetchFavorites(new AbortController().signal)).resolves.toEqual([
-      { type: "province", plateCode: "34", isoCode: null },
-      { type: "country", plateCode: null, isoCode: "TR" },
+      { type: "province", entityType: "province", entityId: "34", plateCode: "34", isoCode: null },
+      { type: "country", entityType: "country", entityId: "TR", plateCode: null, isoCode: "TR" },
     ]);
   });
 
@@ -346,6 +352,80 @@ describe("removeFavorite", () => {
       expect(signals[0]).toBeInstanceOf(AbortSignal);
       expect(signals[1]).toBeInstanceOf(AbortSignal);
       expect(signals[0]).not.toBe(signals[1]);
+    });
+  });
+
+  describe("Polymorphic 4-type favorites support", () => {
+    it("fetches and parses region and continent favorites", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() =>
+          Promise.resolve(
+            jsonResponse(200, {
+              ok: true,
+              favorites: [
+                {
+                  entityType: "region",
+                  entityId: "marmara",
+                  createdAt: "2026-08-27T10:00:00.000Z",
+                },
+                {
+                  entityType: "continent",
+                  entityId: "AVRUPA",
+                  createdAt: "2026-08-27T11:00:00.000Z",
+                },
+              ],
+            }),
+          ),
+        ),
+      );
+      await expect(fetchFavorites(new AbortController().signal)).resolves.toEqual([
+        {
+          type: "region",
+          entityType: "region",
+          entityId: "marmara",
+          plateCode: null,
+          isoCode: null,
+        },
+        {
+          type: "continent",
+          entityType: "continent",
+          entityId: "AVRUPA",
+          plateCode: null,
+          isoCode: null,
+        },
+      ]);
+    });
+
+    it("saves and removes region target with correct URL", async () => {
+      const fetchMock = vi.fn(() => Promise.resolve(jsonResponse(200, { ok: true })));
+      vi.stubGlobal("fetch", fetchMock);
+
+      await saveFavorite({ kind: "region", slug: "marmara" });
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/favorites/region/marmara",
+        expect.objectContaining({ method: "PUT" }),
+      );
+
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+      await removeFavorite({ kind: "region", slug: "marmara" });
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/favorites/region/marmara",
+        expect.objectContaining({ method: "DELETE" }),
+      );
+    });
+
+    it("isFavoriteMatch matches all four entity types accurately", () => {
+      const record = {
+        type: "region" as const,
+        entityType: "region" as const,
+        entityId: "ege",
+        plateCode: null,
+        isoCode: null,
+      };
+      expect(isFavoriteMatch({ kind: "region", slug: "ege" }, record)).toBe(true);
+      expect(isFavoriteMatch({ kind: "region", slug: "marmara" }, record)).toBe(false);
+      expect(isFavoriteMatch({ kind: "province", plateCode: "35" }, record)).toBe(false);
     });
   });
 });

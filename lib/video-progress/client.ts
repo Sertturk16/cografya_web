@@ -154,3 +154,98 @@ export function buildWatchedTogglePayload(
 ): { readonly lastPositionSeconds: number; readonly watched: boolean } {
   return { lastPositionSeconds: current?.lastPositionSeconds ?? 0, watched: nextWatched };
 }
+
+export interface BookProgressResumeValue {
+  readonly bookVideoId: string;
+  readonly orderNo: number;
+  readonly lastPositionSeconds: number;
+  readonly watched: boolean;
+  readonly updatedAt: string;
+}
+
+export interface BookProgressValue {
+  readonly bookSlugTr: string;
+  readonly videoCount: number;
+  readonly watchedCount: number;
+  readonly startedCount: number;
+  readonly resume: BookProgressResumeValue | null;
+}
+
+export type FetchBookProgressResult = BookProgressValue | null;
+
+function buildBookProgressUrl(slug: string): string {
+  return `/api/video-progress/books/${encodeURIComponent(slug)}`;
+}
+
+function parseBookProgressBody(value: unknown): BookProgressValue | null {
+  if (typeof value !== "object" || value === null || !("ok" in value) || value.ok !== true) {
+    return null;
+  }
+  const progress = (value as { progress?: unknown }).progress;
+  if (
+    typeof progress !== "object" ||
+    progress === null ||
+    typeof (progress as { bookSlugTr?: unknown }).bookSlugTr !== "string" ||
+    typeof (progress as { videoCount?: unknown }).videoCount !== "number" ||
+    typeof (progress as { watchedCount?: unknown }).watchedCount !== "number" ||
+    typeof (progress as { startedCount?: unknown }).startedCount !== "number"
+  ) {
+    return null;
+  }
+  const resume = (progress as { resume?: unknown }).resume;
+  let parsedResume: BookProgressResumeValue | null = null;
+  if (typeof resume === "object" && resume !== null) {
+    const r = resume as {
+      bookVideoId?: unknown;
+      orderNo?: unknown;
+      lastPositionSeconds?: unknown;
+      watched?: unknown;
+      updatedAt?: unknown;
+    };
+    if (
+      typeof r.bookVideoId === "string" &&
+      typeof r.orderNo === "number" &&
+      typeof r.lastPositionSeconds === "number" &&
+      typeof r.watched === "boolean" &&
+      typeof r.updatedAt === "string"
+    ) {
+      parsedResume = {
+        bookVideoId: r.bookVideoId,
+        orderNo: r.orderNo,
+        lastPositionSeconds: r.lastPositionSeconds,
+        watched: r.watched,
+        updatedAt: r.updatedAt,
+      };
+    }
+  }
+
+  return {
+    bookSlugTr: (progress as { bookSlugTr: string }).bookSlugTr,
+    videoCount: (progress as { videoCount: number }).videoCount,
+    watchedCount: (progress as { watchedCount: number }).watchedCount,
+    startedCount: (progress as { startedCount: number }).startedCount,
+    resume: parsedResume,
+  };
+}
+
+/**
+ * `GET /api/video-progress/books/{slug}` — one bounded fetch for book-level progress.
+ */
+export async function fetchBookProgress(
+  slug: string,
+  signal: AbortSignal,
+): Promise<FetchBookProgressResult> {
+  try {
+    const res = await fetch(buildBookProgressUrl(slug), {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      signal,
+    });
+    if (res.status !== 200) return null;
+    const parsed: unknown = await res.json();
+    return parseBookProgressBody(parsed);
+  } catch {
+    return null;
+  }
+}

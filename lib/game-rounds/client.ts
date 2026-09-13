@@ -178,3 +178,123 @@ function parseSubmitBody(value: unknown): GameRoundRecord | null {
   }
   return parseGameRoundEntry((value as { round?: unknown }).round);
 }
+
+export interface LeaderboardEntryRecord {
+  readonly rank: number;
+  readonly firstName: string;
+  readonly lastNameInitial: string;
+  readonly score: number;
+  readonly found: number;
+  readonly firstTry: number;
+  readonly totalWrongs: number;
+  readonly completionTimeSeconds: number | null;
+  readonly achievedAt: string;
+  readonly isCurrentUser: boolean;
+}
+
+export interface LeaderboardListRecord {
+  readonly items: readonly LeaderboardEntryRecord[];
+  readonly total: number;
+  readonly page: number;
+  readonly pageSize: number;
+  readonly pageCount: number;
+  readonly meta: {
+    readonly mode: string;
+    readonly currentUserRank: number | null;
+  };
+}
+
+export type FetchLeaderboardResult = LeaderboardListRecord | null;
+
+/**
+ * Formats a player's public display name safely with surname initial (e.g. "Ahmet Y.").
+ * Ensures surname is never revealed in full (§3.6).
+ */
+export function formatLeaderboardDisplayName(firstName: string, lastNameInitial: string): string {
+  const cleanInitial = lastNameInitial.replace(/\.?$/, "");
+  return `${firstName} ${cleanInitial}.`;
+}
+
+function parseLeaderboardBody(value: unknown): LeaderboardListRecord | null {
+  if (typeof value !== "object" || value === null || !("ok" in value) || value.ok !== true) {
+    return null;
+  }
+  const body = value as Record<string, unknown>;
+  if (!Array.isArray(body.items)) return null;
+
+  const items: LeaderboardEntryRecord[] = [];
+  for (const item of body.items) {
+    if (typeof item !== "object" || item === null) return null;
+    const it = item as Record<string, unknown>;
+    if (
+      typeof it.rank !== "number" ||
+      typeof it.firstName !== "string" ||
+      typeof it.lastNameInitial !== "string" ||
+      typeof it.score !== "number" ||
+      typeof it.found !== "number" ||
+      typeof it.firstTry !== "number" ||
+      typeof it.totalWrongs !== "number" ||
+      typeof it.achievedAt !== "string" ||
+      typeof it.isCurrentUser !== "boolean" ||
+      (it.completionTimeSeconds !== undefined &&
+        it.completionTimeSeconds !== null &&
+        typeof it.completionTimeSeconds !== "number")
+    ) {
+      return null;
+    }
+    items.push({
+      rank: it.rank,
+      firstName: it.firstName,
+      lastNameInitial: it.lastNameInitial,
+      score: it.score,
+      found: it.found,
+      firstTry: it.firstTry,
+      totalWrongs: it.totalWrongs,
+      completionTimeSeconds:
+        typeof it.completionTimeSeconds === "number" ? it.completionTimeSeconds : null,
+      achievedAt: it.achievedAt,
+      isCurrentUser: it.isCurrentUser,
+    });
+  }
+
+  const metaObj = (typeof body.meta === "object" && body.meta !== null ? body.meta : {}) as Record<
+    string,
+    unknown
+  >;
+  return {
+    items,
+    total: typeof body.total === "number" ? body.total : items.length,
+    page: typeof body.page === "number" ? body.page : 1,
+    pageSize: typeof body.pageSize === "number" ? body.pageSize : items.length,
+    pageCount: typeof body.pageCount === "number" ? body.pageCount : 1,
+    meta: {
+      mode: typeof metaObj.mode === "string" ? metaObj.mode : "",
+      currentUserRank: typeof metaObj.currentUserRank === "number" ? metaObj.currentUserRank : null,
+    },
+  };
+}
+
+/**
+ * `GET /api/game-rounds/leaderboard` — fetches ranked leaderboard for a given game mode.
+ */
+export async function fetchLeaderboard(
+  mode: string,
+  page: number = 1,
+  pageSize: number = 20,
+  signal?: AbortSignal,
+): Promise<FetchLeaderboardResult> {
+  try {
+    const url = `/api/game-rounds/leaderboard?mode=${encodeURIComponent(mode)}&page=${page}&pageSize=${pageSize}`;
+    const res = await fetch(url, {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      signal,
+    });
+    if (res.status !== 200) return null;
+    const parsed: unknown = await res.json();
+    return parseLeaderboardBody(parsed);
+  } catch {
+    return null;
+  }
+}
