@@ -68,8 +68,21 @@ export function V2Footer() {
                 </Link>
               </li>
               <li>
+                <Link
+                  href="/v2/turkiye/bolge"
+                  className="hover:text-primary transition-colors block"
+                >
+                  Coğrafi Bölgeler (7 Bölge)
+                </Link>
+              </li>
+              <li>
                 <Link href="/v2/dunya" className="hover:text-primary transition-colors block">
                   Dünya Atlası (199 Ülke)
+                </Link>
+              </li>
+              <li>
+                <Link href="/v2/dunya/kita" className="hover:text-primary transition-colors block">
+                  Kıtalar Atlası (7 Kıta)
                 </Link>
               </li>
               <li>

@@ -25,6 +25,7 @@ import { showsSubregionCard } from "@/lib/geo/subregion";
 import { SPECIAL_STATUS_ISO_CODES } from "@/lib/geo/special-status-isos";
 import { COUNTRY_SHAPES } from "@/lib/map/world-countries.generated";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
+import { CONTINENT_KEY_TO_SLUG } from "@/lib/geo/continents";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { selectCountryMetaDescription } from "@/lib/seo/country-description";
@@ -297,7 +298,15 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
               Dünya Atlası
             </Link>
             <ChevronRight className="size-3 text-muted-foreground/60" />
-            <span className="text-muted-foreground">{continent}</span>
+            <Link
+              href={{
+                pathname: "/v2/dunya/kita/[slug]",
+                params: { slug: CONTINENT_KEY_TO_SLUG[country.continent] ?? "afrika" },
+              }}
+              className="hover:text-foreground transition-colors"
+            >
+              {continent}
+            </Link>
             <ChevronRight className="size-3 text-muted-foreground/60" />
             <span className="text-foreground font-semibold flex items-center gap-1.5">
               <span>{name}</span>
@@ -319,7 +328,13 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     className="w-9 h-6 object-cover rounded-xs border border-border shadow-sm"
                   />
                 )}
-                <Link href="/v2/dunya" className="hover:opacity-80 transition-opacity">
+                <Link
+                  href={{
+                    pathname: "/v2/dunya/kita/[slug]",
+                    params: { slug: CONTINENT_KEY_TO_SLUG[country.continent] ?? "afrika" },
+                  }}
+                  className="hover:opacity-80 transition-opacity"
+                >
                   <Badge
                     variant="outline"
                     className={`${continentTheme.badgeClass} cursor-pointer`}
@@ -681,7 +696,10 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {/* Quick Continent Exploration Link */}
                 <div className="pt-2">
                   <Link
-                    href="/v2/dunya"
+                    href={{
+                      pathname: "/v2/dunya/kita/[slug]",
+                      params: { slug: CONTINENT_KEY_TO_SLUG[country.continent] ?? "afrika" },
+                    }}
                     className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-muted hover:bg-primary/10 hover:text-primary transition-colors border border-border/60"
                   >
                     <span>{t("continentExploreLink", { continent })}</span>

@@ -253,6 +253,14 @@ export const routing = defineRouting({
       tr: "/v2/dunya/[slug]",
       en: "/v2/world/[slug]",
     },
+    "/v2/dunya/kita": {
+      tr: "/v2/dunya/kita",
+      en: "/v2/world/continents",
+    },
+    "/v2/dunya/kita/[slug]": {
+      tr: "/v2/dunya/kita/[slug]",
+      en: "/v2/world/continent/[slug]",
+    },
     "/v2/deniz": {
       tr: "/v2/deniz",
       en: "/v2/sea",

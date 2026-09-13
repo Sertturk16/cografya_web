@@ -483,13 +483,35 @@ export function V2RegisterCard({
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-foreground">Kullanıcı tipi</Label>
             <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Kullanıcı tipi">
-              {USER_ROLES.map((role) => (
+              {USER_ROLES.map((role, idx) => (
                 <button
                   key={role.id}
                   type="button"
                   role="radio"
+                  tabIndex={selectedRole === role.id ? 0 : -1}
                   aria-checked={selectedRole === role.id}
                   onClick={() => setSelectedRole(role.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                      e.preventDefault();
+                      const next = USER_ROLES[(idx + 1) % USER_ROLES.length];
+                      if (next) setSelectedRole(next.id);
+                      (
+                        e.currentTarget.parentElement?.children[
+                          (idx + 1) % USER_ROLES.length
+                        ] as HTMLElement
+                      )?.focus();
+                    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                      e.preventDefault();
+                      const prev = USER_ROLES[(idx - 1 + USER_ROLES.length) % USER_ROLES.length];
+                      if (prev) setSelectedRole(prev.id);
+                      (
+                        e.currentTarget.parentElement?.children[
+                          (idx - 1 + USER_ROLES.length) % USER_ROLES.length
+                        ] as HTMLElement
+                      )?.focus();
+                    }
+                  }}
                   className={`p-2 rounded-xl border text-xs font-medium flex items-center gap-2 transition-all ${
                     selectedRole === role.id
                       ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs"

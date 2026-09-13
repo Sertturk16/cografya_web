@@ -14,6 +14,8 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { CONTINENT_KEY_TO_SLUG } from "@/lib/geo/continents";
 import type { Continent } from "@/lib/api/types";
 
 export interface ContinentData {
@@ -50,7 +52,11 @@ export const CONTINENTS_DATA: ContinentData[] = [
     longestRiver: { name: "Volga Nehri", length: "3.530 km" },
     largestLake: { name: "Ladoga Gölü", area: "17.700 km²" },
     dominantClimate: "Ilıman Okyanusal, Akdeniz ve Karasal İklim",
-    keyFeatures: ["Gelişmiş Sanayi Kuşağı", "Alp Dağ Silsilesi", "Girintili Çıkıntılı Kıyılar (Fiyortlar)"],
+    keyFeatures: [
+      "Gelişmiş Sanayi Kuşağı",
+      "Alp Dağ Silsilesi",
+      "Girintili Çıkıntılı Kıyılar (Fiyortlar)",
+    ],
   },
   {
     id: "ASYA",
@@ -67,7 +73,11 @@ export const CONTINENTS_DATA: ContinentData[] = [
     longestRiver: { name: "Yangtze Nehri", length: "6.300 km" },
     largestLake: { name: "Hazar Denizi", area: "371.000 km²" },
     dominantClimate: "Muson, Çöl, Step ve Sibirya Tundra İklimi",
-    keyFeatures: ["Dünyanın En Yüksek Zirveleri (Himalayalar)", "En Kalabalık Nüfus Yoğunluğu", "Tibet Yaylası"],
+    keyFeatures: [
+      "Dünyanın En Yüksek Zirveleri (Himalayalar)",
+      "En Kalabalık Nüfus Yoğunluğu",
+      "Tibet Yaylası",
+    ],
   },
   {
     id: "AFRIKA",
@@ -84,7 +94,11 @@ export const CONTINENTS_DATA: ContinentData[] = [
     longestRiver: { name: "Nil Nehri", length: "6.650 km" },
     largestLake: { name: "Victoria Gölü", area: "68.800 km²" },
     dominantClimate: "Ekvatoral, Savan ve Tropikal Çöl İklimi",
-    keyFeatures: ["Büyük Sahra Çölü (En Büyük Sıcak Çöl)", "Doğu Afrika Rift Vadisi", "Zengin Yaban Hayatı ve Biyoçeşitlilik"],
+    keyFeatures: [
+      "Büyük Sahra Çölü (En Büyük Sıcak Çöl)",
+      "Doğu Afrika Rift Vadisi",
+      "Zengin Yaban Hayatı ve Biyoçeşitlilik",
+    ],
   },
   {
     id: "KUZEY_AMERIKA",
@@ -101,7 +115,11 @@ export const CONTINENTS_DATA: ContinentData[] = [
     longestRiver: { name: "Mississippi-Missouri", length: "6.275 km" },
     largestLake: { name: "Superior Gölü", area: "82.100 km²" },
     dominantClimate: "Kutup, Karasal Ilıman ve Çöl İklimi",
-    keyFeatures: ["Büyük Göller Havzası (Dünya Tatlı Su Rezervi)", "Kayalık Dağları (Rocky Mountains)", "Büyük Kanyon (Grand Canyon)"],
+    keyFeatures: [
+      "Büyük Göller Havzası (Dünya Tatlı Su Rezervi)",
+      "Kayalık Dağları (Rocky Mountains)",
+      "Büyük Kanyon (Grand Canyon)",
+    ],
   },
   {
     id: "GUNEY_AMERIKA",
@@ -118,7 +136,11 @@ export const CONTINENTS_DATA: ContinentData[] = [
     longestRiver: { name: "Amazon Nehri", length: "6.400 km" },
     largestLake: { name: "Titicaca Gölü", area: "8.372 km²" },
     dominantClimate: "Tropikal Yağmur Ormanı ve Dağ İklimi",
-    keyFeatures: ["Amazon Yağmur Ormanları (Dünyanın Akciğerleri)", "And Dağ Silsilesi (En Uzun Sıradağ)", "Atacama Çölü (En Kurak Bölge)"],
+    keyFeatures: [
+      "Amazon Yağmur Ormanları (Dünyanın Akciğerleri)",
+      "And Dağ Silsilesi (En Uzun Sıradağ)",
+      "Atacama Çölü (En Kurak Bölge)",
+    ],
   },
   {
     id: "OKYANUSYA",
@@ -135,7 +157,11 @@ export const CONTINENTS_DATA: ContinentData[] = [
     longestRiver: { name: "Murray-Darling", length: "3.672 km" },
     largestLake: { name: "Eyre Gölü", area: "9.500 km²" },
     dominantClimate: "Tropikal, Çöl ve Ilıman Okyanusal",
-    keyFeatures: ["Büyük Set Resifi (Great Barrier Reef)", "Avustralya İç Çölleri (Outback)", "Volkanik Polinezya ve Mikronezya Adaları"],
+    keyFeatures: [
+      "Büyük Set Resifi (Great Barrier Reef)",
+      "Avustralya İç Çölleri (Outback)",
+      "Volkanik Polinezya ve Mikronezya Adaları",
+    ],
   },
   {
     id: "ANTARKTIKA",
@@ -152,7 +178,11 @@ export const CONTINENTS_DATA: ContinentData[] = [
     longestRiver: { name: "Onyx Nehri", length: "32 km (Buzul Eriyik)" },
     largestLake: { name: "Vostok Gölü (Buzulaltı)", area: "12.500 km²" },
     dominantClimate: "Kutup İklimi (En Soğuk, En Rüzgarlı, En Kurak)",
-    keyFeatures: ["Dünya Buzul Kütlesinin %90'ı", "Uluslararası Bilimsel Araştırma Üsleri", "Kutup Gündüz & Gece Döngüleri"],
+    keyFeatures: [
+      "Dünya Buzul Kütlesinin %90'ı",
+      "Uluslararası Bilimsel Araştırma Üsleri",
+      "Kutup Gündüz & Gece Döngüleri",
+    ],
   },
 ];
 
@@ -170,20 +200,32 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
             <Badge variant="primary" size="sm" icon={<Globe className="size-3.5" />}>
               Kıtalar Atlası
             </Badge>
-            <span className="text-xs font-semibold text-muted-foreground">Küresel Jeomorfoloji</span>
+            <span className="text-xs font-semibold text-muted-foreground">
+              Küresel Jeomorfoloji
+            </span>
           </div>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)]">
             Dünyanın 7 Kıtası &amp; Coğrafi Karakteristikleri
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Her kıtanın en yüksek zirvesi, en uzun akarsuyu, yüzölçümü ve jeolojik karakteristikleri.
+            Her kıtanın en yüksek zirvesi, en uzun akarsuyu, yüzölçümü ve jeolojik
+            karakteristikleri.
           </p>
         </div>
+        <Link
+          href="/v2/dunya/kita"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all shadow-2xs group/btn shrink-0"
+        >
+          <span>Tüm Kıtaları Karşılaştır</span>
+          <ArrowRight className="size-3.5 text-primary transition-transform group-hover/btn:translate-x-0.5" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {CONTINENTS_DATA.map((continent) => {
-          const dynamicCount = countryCounts ? countryCounts[continent.id] ?? continent.countryCount : continent.countryCount;
+          const dynamicCount = countryCounts
+            ? (countryCounts[continent.id] ?? continent.countryCount)
+            : continent.countryCount;
           return (
             <Card
               key={continent.id}
@@ -194,79 +236,99 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
                   <Badge variant="outline" className={continent.badgeClass}>
                     {dynamicCount > 0 ? `${dynamicCount} Ülke` : "Özel Statü"}
                   </Badge>
-                  <span className="text-[11px] font-mono text-muted-foreground uppercase">{continent.code}</span>
-                </div>
-              <CardTitle className="text-xl font-heading font-bold text-foreground group-hover:text-primary transition-colors flex items-center justify-between">
-                <span>{continent.nameTr}</span>
-                <span className="text-xs font-normal text-muted-foreground">({continent.nameEn})</span>
-              </CardTitle>
-              <CardDescription className="text-xs flex items-center gap-3 pt-1">
-                <span className="flex items-center gap-1">
-                  <Compass className="size-3 text-primary" /> {continent.areaKm2}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Users className="size-3 text-secondary" /> {continent.population}
-                </span>
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-3.5 text-xs pt-0">
-              {/* Key Geographic Landmarks */}
-              <div className="space-y-2 rounded-xl bg-muted/40 p-3 border border-border/60">
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
-                    <Mountain className="size-3.5 text-amber-600 dark:text-amber-400" /> Zirve:
-                  </span>
-                  <span className="font-semibold text-right text-foreground">
-                    {continent.highestPoint.name} ({continent.highestPoint.elevation})
+                  <span className="text-[11px] font-mono text-muted-foreground uppercase">
+                    {continent.code}
                   </span>
                 </div>
+                <CardTitle className="text-xl font-heading font-bold text-foreground group-hover:text-primary transition-colors flex items-center justify-between">
+                  <span>{continent.nameTr}</span>
+                  <span className="text-xs font-normal text-muted-foreground">
+                    ({continent.nameEn})
+                  </span>
+                </CardTitle>
+                <CardDescription className="text-xs flex items-center gap-3 pt-1">
+                  <span className="flex items-center gap-1">
+                    <Compass className="size-3 text-primary" /> {continent.areaKm2}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users className="size-3 text-secondary" /> {continent.population}
+                  </span>
+                </CardDescription>
+              </CardHeader>
 
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
-                    <Waves className="size-3.5 text-cyan-600 dark:text-cyan-400" /> Nehir:
-                  </span>
-                  <span className="font-semibold text-right text-foreground">
-                    {continent.longestRiver.name} ({continent.longestRiver.length})
-                  </span>
-                </div>
-
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
-                    <TreePine className="size-3.5 text-emerald-600 dark:text-emerald-400" /> İklim:
-                  </span>
-                  <span className="font-medium text-right text-muted-foreground text-[11px]">
-                    {continent.dominantClimate}
-                  </span>
-                </div>
-              </div>
-
-              {/* Characteristic Bullets */}
-              <div className="space-y-1">
-                {continent.keyFeatures.map((feat, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <Sparkles className="size-3 text-primary shrink-0" />
-                    <span>{feat}</span>
+              <CardContent className="space-y-3.5 text-xs pt-0">
+                {/* Key Geographic Landmarks */}
+                <div className="space-y-2 rounded-xl bg-muted/40 p-3 border border-border/60">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
+                      <Mountain className="size-3.5 text-amber-600 dark:text-amber-400" /> Zirve:
+                    </span>
+                    <span className="font-semibold text-right text-foreground">
+                      {continent.highestPoint.name} ({continent.highestPoint.elevation})
+                    </span>
                   </div>
-                ))}
-              </div>
 
-              {/* Action Button */}
-              {onSelectContinent && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full mt-2 text-xs group-hover:border-primary/40 group-hover:text-primary transition-all"
-                  onClick={() => onSelectContinent(continent.id)}
-                  rightIcon={<ArrowRight className="size-3.5" />}
-                >
-                  Haritada {continent.nameTr}&apos;yi İncele
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
+                      <Waves className="size-3.5 text-cyan-600 dark:text-cyan-400" /> Nehir:
+                    </span>
+                    <span className="font-semibold text-right text-foreground">
+                      {continent.longestRiver.name} ({continent.longestRiver.length})
+                    </span>
+                  </div>
+
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
+                      <TreePine className="size-3.5 text-emerald-600 dark:text-emerald-400" />{" "}
+                      İklim:
+                    </span>
+                    <span className="font-medium text-right text-muted-foreground text-[11px]">
+                      {continent.dominantClimate}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Characteristic Bullets */}
+                <div className="space-y-1">
+                  {continent.keyFeatures.map((feat, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+                    >
+                      <Sparkles className="size-3 text-primary shrink-0" />
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-2 flex flex-col gap-2">
+                  <Link
+                    href={{
+                      pathname: "/v2/dunya/kita/[slug]",
+                      params: { slug: CONTINENT_KEY_TO_SLUG[continent.id] ?? "afrika" },
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity shadow-2xs"
+                  >
+                    <span>{continent.nameTr} Coğrafyası &amp; Ülkeleri</span>
+                    <ArrowRight className="size-3.5" />
+                  </Link>
+
+                  {onSelectContinent && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs text-muted-foreground hover:text-foreground border-border/70"
+                      onClick={() => onSelectContinent(continent.id)}
+                    >
+                      Haritada Filtrele
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </section>
   );
