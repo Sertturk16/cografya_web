@@ -562,8 +562,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               setMousePos(null);
             }
           }}
-          className={`relative rounded-2xl bg-[var(--map-sea,#dbe7e8)] dark:bg-[#1a2529] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full select-none touch-none ${
-            zoomLevel > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"
+          className={`relative rounded-2xl bg-[var(--map-sea,#dbe7e8)] dark:bg-[#1a2529] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full select-none ${
+            zoomLevel > 1
+              ? `touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`
+              : "cursor-crosshair"
           }`}
         >
           {/* Map Controls Floating Bar */}

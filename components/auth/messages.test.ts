@@ -36,6 +36,9 @@ const AUTH_KEYS = [
   "resetNew.heading",
   "resetNew.submit",
   "resetNew.done",
+  // UYE-P4-SIFIRLAMA plan §5.1/§5.3 — the dead-link gate's two new states.
+  "resetNew.checking",
+  "resetNew.deadLinkCta",
   "register.metaTitle",
   "register.metaDescription",
   "register.heading",

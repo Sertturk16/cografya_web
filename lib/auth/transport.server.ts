@@ -154,7 +154,8 @@ function parseSession(rawBody: string): SessionShape | undefined {
 }
 
 // ---------------------------------------------------------------------------------------
-// The action table (plan §10) — a closed set of nine actions. An action not in it is a 404.
+// The action table (plan §10, extended by UYE-P4-SIFIRLAMA) — a closed set of ten actions.
+// An action not in it is a 404.
 // ---------------------------------------------------------------------------------------
 
 interface AuthAction {
@@ -171,6 +172,10 @@ const AUTH_ACTIONS: Readonly<Record<string, AuthAction>> = {
   logout: { method: "POST", apiPath: "/api/auth/logout" },
   "password-reset/request": { method: "POST", apiPath: "/api/auth/password-reset/request" },
   "password-reset/confirm": { method: "POST", apiPath: "/api/auth/password-reset/confirm" },
+  // UYE-P4-SIFIRLAMA: read-only check of whether a reset token is still usable, without
+  // consuming it (`cografya_api` PR #167, `origin/dev` @ `c4a6804`) — no consumedAt write, no
+  // token_version bump, no session revocation on either outcome.
+  "password-reset/verify": { method: "POST", apiPath: "/api/auth/password-reset/verify" },
   session: { method: "GET", apiPath: "/api/auth/session" },
 };
 
@@ -693,6 +698,36 @@ async function handlePasswordResetConfirm(
   return bffResult(200, { ok: true }, clearSessionCookies(getSiteUrl()));
 }
 
+/** `password-reset/verify` (UYE-P4-SIFIRLAMA plan §5.1/§10, extending plan §10's original
+ *  table) — UNLIKE `handleAnonymousAction`'s three actions, this one is deliberately NOT
+ *  anti-enumeration: its entire purpose is to tell the caller whether the presented token is
+ *  still usable, so the api's real, two-outcome distinction (204 usable / 400
+ *  `errors.password.resetTokenInvalid`) passes straight through rather than collapsing to a
+ *  single `ok` cell. Read-only on the api side (plan §2.4) — no cookie mutation here either
+ *  way, since nothing about the session changes. */
+async function handlePasswordResetVerify(
+  actionKey: string,
+  action: AuthAction,
+  request: Request,
+): Promise<AuthBffResult> {
+  const read = await readClientBody(actionKey, request);
+  if (!read.ok) return read.result;
+
+  const outcome = await callAuthApiForStatus(action.apiPath, read.body);
+
+  if (outcome.kind === "unavailable") {
+    logAuthOutcome(actionKey, "unavailable");
+    return bffResult(502, { ok: false, code: "errors.transport.unavailable" });
+  }
+  if (outcome.kind === "mapped-error") {
+    logAuthOutcome(actionKey, outcome.code);
+    return bffResult(outcome.status, { ok: false, code: outcome.code });
+  }
+
+  logAuthOutcome(actionKey, "ok");
+  return bffResult(200, { ok: true });
+}
+
 /** `session` (plan §10/§11 as amended) — no `cg_access` cookie is a short-circuit: 401, no
  *  api call, no cookie change (the module's own decision, not a read of an api status — §11's
  *  precedence rule does not apply to it). A genuine api 401 clears `cg_access` only — it is
@@ -845,6 +880,8 @@ export async function handleAuthRequest(
       return handleLogout(action, request);
     case "password-reset/confirm":
       return handlePasswordResetConfirm(action, request);
+    case "password-reset/verify":
+      return handlePasswordResetVerify(actionKey, action, request);
     case "session":
       return handleSession(request);
     default:

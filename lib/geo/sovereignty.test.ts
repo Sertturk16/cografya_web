@@ -31,9 +31,22 @@ const LOCALES = ["tr", "en"] as const;
 const FIELD_STATES: readonly (string | null)[] = [null, SOME_NOTE];
 
 describe("special-status marker — mechanism, not membership", () => {
-  it("is a read of the api field, so any filled value marks the row", () => {
+  it("is a read of the api field, so any filled value marks the row, and takes no locale — a fold-in must fail this suite (RV133R4-NEW-I1)", () => {
     expect(isSpecialStatusRow(null)).toBe(false);
     expect(isSpecialStatusRow(SOME_NOTE)).toBe(true);
+
+    // The two behavioural assertions above call this function with ONE argument, its only
+    // current parameter. They would stay green even if the function grew an OPTIONAL second
+    // (locale) parameter defaulting to "tr", because a 1-arg call always hits that default —
+    // proved by §11.B2's break/prove, not assumed. Pin the function's own source text too, so a
+    // widened signature (or any other change to this one-line body) fails HERE regardless of what
+    // any caller passes.
+    const sovereigntyModuleSrc = readFileSync(new URL("./sovereignty.ts", import.meta.url), "utf8");
+    expect(sovereigntyModuleSrc).toContain(
+      "export function isSpecialStatusRow(sovereigntyNoteTr: string | null): boolean {\n" +
+        "  return sovereigntyNoteTr !== null;\n" +
+        "}",
+    );
   });
 });
 

@@ -29,10 +29,14 @@ export const AUTH_FETCH_TIMEOUT_MS = 8000;
  *
  * `transport.server.ts` carries `import "server-only"` and is not importable from a client
  * bundle; this union is intentionally NOT re-exported from there. It is typed by hand
- * against the same seven POST rows `AUTH_ACTIONS` declares, and a future ninth action added
- * there needs a matching edit here — there is no compile-time link between the two, the same
+ * against the same eight POST rows `AUTH_ACTIONS` declares, and a future action added there
+ * needs a matching edit here — there is no compile-time link between the two, the same
  * posture `transport.server.ts`'s own `handleAuthRequest` docblock records for its literal
  * mount-point string.
+ *
+ * `"password-reset/verify"` (UYE-P4-SIFIRLAMA) joined this union rather than the excluded
+ * pair above it: unlike `refresh`/`session`, an island calls it directly (the reset-confirm
+ * screen's dead-link gate, plan §5.1).
  */
 export type AuthAction =
   | "register"
@@ -41,7 +45,8 @@ export type AuthAction =
   | "login"
   | "logout"
   | "password-reset/request"
-  | "password-reset/confirm";
+  | "password-reset/confirm"
+  | "password-reset/verify";
 
 export type SubmitAuthResult =
   | { readonly ok: true; readonly redirectTo?: string }

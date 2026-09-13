@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { getCountriesResilient, getCountryMapSummaryResilient } from "@/lib/api/countries";
 import { hasFlag } from "@/lib/geo/flag-set";
+import { SPECIAL_STATUS_ISO_CODES } from "@/lib/geo/special-status-isos";
 import type { CountryMapSummary, Continent } from "@/lib/api/types";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -27,14 +28,6 @@ interface V2DunyaPageProps {
 function slugForLocale(country: { slugTr: string; slugEn: string }, locale: Locale): string {
   return locale === "en" ? country.slugEn : country.slugTr;
 }
-
-// Special-status entities, HAND-MAINTAINED. There is no api-side flag to read from: the
-// committed contract publishes `sovereigntyNoteTr` on CountryDetailDto only, not on the
-// CountryListItemDto / CountryMapSummaryDto this page consumes — so no test in this repo can
-// compare this set to the api seed. `components/v2/v2-world-sovereignty.test.ts` only FREEZES
-// this set's current contents; it does NOT verify a sync invariant. When the api seed gains a
-// new `sovereigntyNoteTr` row, this set must be updated by hand (and that test with it).
-const SPECIAL_STATUS_ISO_CODES = new Set(["QN", "CY", "IL", "PS", "TW", "XK"]);
 
 export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Metadata> {
   const { locale } = await params;

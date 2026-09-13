@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Mountain, ArrowRight } from "lucide-react";
+import { tr } from "@/lib/text/format-number";
 
 export const CANONICAL_REGION_SLUGS: Record<string, string> = {
   marmara: "marmara",
@@ -16,16 +17,25 @@ export const CANONICAL_REGION_SLUGS: Record<string, string> = {
   guneydogu: "guneydogu-anadolu",
 };
 
+/** The live per-region figures this deck renders — sourced from the hub page's own
+ * `regionsList` (never hand-typed here), so a figure can never drift from the comparison
+ * table or the FAQ on the same page. Matched to a `TURKEY_REGIONS` entry via
+ * `CANONICAL_REGION_SLUGS`. */
+export interface RegionDeckFigures {
+  slug: string;
+  areaKm2: number;
+  populationSharePercent: number;
+  highestPeakNameTr: string;
+  highestPeakElevationM: number;
+}
+
 export interface RegionInfo {
   id: string;
   name: string;
   badgeVariant: "primary" | "secondary" | "info" | "warning" | "default" | "outline";
   color: string;
   provincesCount: number;
-  areaKm2: string;
-  populationShare: string;
   climate: string;
-  highestPeak: string;
   description: string;
   highlightProvinces: { name: string; slug: string; plate: string }[];
 }
@@ -37,10 +47,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "primary",
     color: "from-amber-700 to-amber-900",
     provincesCount: 11,
-    areaKm2: "67.000 km²",
-    populationShare: "%31 (En Kalabalık)",
     climate: "Geçiş İklimi (Akdeniz - Karadeniz - Karasal)",
-    highestPeak: "Uludağ (2.543 m)",
     description:
       "İki kıtayı birbirine bağlayan boğazları, sanayi, ticaret ve finans merkezleriyle Türkiye ekonomisinin kalbi.",
     highlightProvinces: [
@@ -57,10 +64,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "info",
     color: "from-teal-700 to-teal-900",
     provincesCount: 8,
-    areaKm2: "89.000 km²",
-    populationShare: "%13",
     climate: "Tipik Akdeniz İklimi",
-    highestPeak: "Honaz Dağı (2.571 m)",
     description:
       "Denize dik uzanan kırıklı dağ sıraları (horst-graben), verimli graben ovaları, zeytinlikler ve girintili kıyı şeridi.",
     highlightProvinces: [
@@ -77,10 +81,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "secondary",
     color: "from-emerald-700 to-emerald-900",
     provincesCount: 8,
-    areaKm2: "120.000 km²",
-    populationShare: "%13",
     climate: "Sıcak & Kurak Yazlar, Ilık Kışlar",
-    highestPeak: "Kızlar Sivrisi (3.070 m) / Medetsiz (3.524 m)",
     description:
       "Toros sıradağları, karstik plato ve kanyonlar, seracılık, turunçgil üretimi ve turizm kıyıları.",
     highlightProvinces: [
@@ -97,10 +98,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "warning",
     color: "from-yellow-800 to-amber-950",
     provincesCount: 13,
-    areaKm2: "151.000 km²",
-    populationShare: "%15",
     climate: "Step (Karasal) İklimi",
-    highestPeak: "Erciyes Dağı (3.917 m)",
     description:
       "Geniş platolar, Tuz Gölü kapalı havzası, volkanik dağlar, tahıl ambarı ovalar ve başkent Ankara.",
     highlightProvinces: [
@@ -117,10 +115,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "info",
     color: "from-cyan-800 to-slate-900",
     provincesCount: 18,
-    areaKm2: "141.000 km²",
-    populationShare: "%9",
     climate: "Her Mevsim Yağışlı Ilıman İklim",
-    highestPeak: "Kaçkar Dağı (3.937 m)",
     description:
       "Kıyıya paralel Kuzey Anadolu Dağları, zengin orman kuşağı, fındık ve çay tarımı, yaylacılık kültürü.",
     highlightProvinces: [
@@ -137,10 +132,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "default",
     color: "from-stone-700 to-stone-900",
     provincesCount: 14,
-    areaKm2: "164.000 km² (En Geniş)",
-    populationShare: "%7",
     climate: "Sert Karasal & Uzun Kışlar",
-    highestPeak: "Ağrı Dağı (5.137 m - TR Zirvesi)",
     description:
       "Türkiye'nin en yüksek ve en engebeli bölgesi, volkanik koniler, Van Gölü havzası ve Fırat-Dicle nehirlerinin kaynağı.",
     highlightProvinces: [
@@ -157,10 +149,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "outline",
     color: "from-orange-800 to-orange-950",
     provincesCount: 9,
-    areaKm2: "75.000 km²",
-    populationShare: "%11",
     climate: "Şiddetli Yaz Kuraklığı & Karasal",
-    highestPeak: "Karacadağ (1.957 m)",
     description:
       "Geniş düzlükler, plato alanları, GAP sulama projeleri, verimli Harran Ovası ve antik Mezopotamya yerleşimleri.",
     highlightProvinces: [
@@ -173,7 +162,13 @@ export const TURKEY_REGIONS: RegionInfo[] = [
   },
 ];
 
-export function V2TurkeyRegions() {
+export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigures[] }) {
+  // Superlatives are derived from the live figures, never typed — the exact defect this
+  // page corrected: a hand-typed "(En Geniş)" can go stale, a computed one cannot.
+  const maxAreaKm2 = Math.max(...regions.map((r) => r.areaKm2));
+  const maxPopulationSharePercent = Math.max(...regions.map((r) => r.populationSharePercent));
+  const maxHighestPeakElevationM = Math.max(...regions.map((r) => r.highestPeakElevationM));
+
   return (
     <section className="space-y-6">
       <div className="border-b border-border pb-3 flex flex-wrap items-center justify-between gap-3">
@@ -191,103 +186,121 @@ export function V2TurkeyRegions() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {TURKEY_REGIONS.map((region) => (
-          <Card
-            key={region.id}
-            className="flex flex-col justify-between hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-card overflow-hidden group"
-          >
-            {/* Header Banner */}
-            <div
-              className={`p-4 bg-gradient-to-r ${region.color} text-white flex items-center justify-between`}
+        {TURKEY_REGIONS.map((region) => {
+          const slug = CANONICAL_REGION_SLUGS[region.id] ?? region.id;
+          const fig = regions.find((r) => r.slug === slug);
+          const isLargestArea = fig !== undefined && fig.areaKm2 === maxAreaKm2;
+          const isMostPopulous =
+            fig !== undefined && fig.populationSharePercent === maxPopulationSharePercent;
+          const isHighestPeak =
+            fig !== undefined && fig.highestPeakElevationM === maxHighestPeakElevationM;
+          const peakNameHasParenthetical = fig !== undefined && fig.highestPeakNameTr.includes("(");
+
+          return (
+            <Card
+              key={region.id}
+              className="flex flex-col justify-between hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-card overflow-hidden group"
             >
-              <div>
-                <span className="text-[10px] text-white/80 font-mono block">Bölge Profili</span>
-                <h3 className="font-heading font-bold text-lg text-white leading-tight">
-                  <Link
-                    href={
-                      `/v2/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
-                        typeof Link
-                      >["href"]
-                    }
-                    className="hover:underline inline-flex items-center gap-1 text-white"
-                  >
-                    {region.name}
-                  </Link>
-                </h3>
-              </div>
-              <Badge className="bg-white/20 text-white backdrop-blur-xs border-white/30 text-xs">
-                {region.provincesCount} İl
-              </Badge>
-            </div>
-
-            <CardHeader className="space-y-3 pb-2 pt-4">
-              <CardDescription className="text-xs leading-relaxed text-muted-foreground">
-                {region.description}
-              </CardDescription>
-
-              {/* Geographic Metrics */}
-              <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                <div className="p-2 rounded-lg bg-muted/40 border border-border">
-                  <span className="text-muted-foreground block text-[10px]">İklim</span>
-                  <span className="font-semibold text-foreground text-[11px] truncate block">
-                    {region.climate}
-                  </span>
-                </div>
-                <div className="p-2 rounded-lg bg-muted/40 border border-border">
-                  <span className="text-muted-foreground block text-[10px]">En Yüksek Zirve</span>
-                  <span className="font-semibold text-foreground text-[11px] truncate block">
-                    {region.highestPeak}
-                  </span>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-2 py-2">
-              <div className="border-t border-border pt-2.5">
-                <span className="text-[11px] font-semibold text-muted-foreground block mb-2">
-                  Önemli Şehirler:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {region.highlightProvinces.map((prov) => (
+              {/* Header Banner */}
+              <div
+                className={`p-4 bg-gradient-to-r ${region.color} text-white flex items-center justify-between`}
+              >
+                <div>
+                  <span className="text-[10px] text-white/80 font-mono block">Bölge Profili</span>
+                  <h3 className="font-heading font-bold text-lg text-white leading-tight">
                     <Link
-                      key={prov.slug}
                       href={
-                        `/v2/turkiye/${prov.slug}` as unknown as React.ComponentProps<
+                        `/v2/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
                           typeof Link
                         >["href"]
                       }
-                      className="text-xs px-2 py-0.5 rounded-md bg-muted hover:bg-primary/20 hover:text-primary transition-colors border border-border/80 font-medium"
+                      className="hover:underline inline-flex items-center gap-1 text-white"
                     >
-                      {prov.name}{" "}
-                      <span className="text-[10px] text-muted-foreground font-mono">
-                        ({prov.plate})
-                      </span>
+                      {region.name}
                     </Link>
-                  ))}
+                  </h3>
                 </div>
+                <Badge className="bg-white/20 text-white backdrop-blur-xs border-white/30 text-xs">
+                  {region.provincesCount} İl
+                </Badge>
               </div>
-            </CardContent>
 
-            <CardFooter className="pt-3 border-t border-border bg-muted/20 items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-[11px] text-muted-foreground">
-                  Yüzölçümü: {region.areaKm2}
-                </span>
-                <span className="text-[11px] font-bold text-primary">{region.populationShare}</span>
-              </div>
-              <Link
-                href={
-                  `/v2/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
-                    typeof Link
-                  >["href"]
-                }
-                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 py-1 px-2.5 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
-              >
-                Bölge Rehberi <ArrowRight className="size-3" />
-              </Link>
-            </CardFooter>
-          </Card>
-        ))}
+              <CardHeader className="space-y-3 pb-2 pt-4">
+                <CardDescription className="text-xs leading-relaxed text-muted-foreground">
+                  {region.description}
+                </CardDescription>
+
+                {/* Geographic Metrics */}
+                <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                  <div className="p-2 rounded-lg bg-muted/40 border border-border">
+                    <span className="text-muted-foreground block text-[10px]">İklim</span>
+                    <span className="font-semibold text-foreground text-[11px] truncate block">
+                      {region.climate}
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-muted/40 border border-border">
+                    <span className="text-muted-foreground block text-[10px]">En Yüksek Zirve</span>
+                    <span className="font-semibold text-foreground text-[11px] truncate block">
+                      {fig
+                        ? `${fig.highestPeakNameTr}${peakNameHasParenthetical ? ", " : " ("}${tr(fig.highestPeakElevationM)} m${peakNameHasParenthetical ? "" : ")"}${isHighestPeak ? " · TR Zirvesi" : ""}`
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-2 py-2">
+                <div className="border-t border-border pt-2.5">
+                  <span className="text-[11px] font-semibold text-muted-foreground block mb-2">
+                    Önemli Şehirler:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {region.highlightProvinces.map((prov) => (
+                      <Link
+                        key={prov.slug}
+                        href={
+                          `/v2/turkiye/${prov.slug}` as unknown as React.ComponentProps<
+                            typeof Link
+                          >["href"]
+                        }
+                        className="text-xs px-2 py-0.5 rounded-md bg-muted hover:bg-primary/20 hover:text-primary transition-colors border border-border/80 font-medium"
+                      >
+                        {prov.name}{" "}
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          ({prov.plate})
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+
+              <CardFooter className="pt-3 border-t border-border bg-muted/20 items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-[11px] text-muted-foreground">
+                    Yüzölçümü:{" "}
+                    {fig ? `${tr(fig.areaKm2)} km²${isLargestArea ? " (En Geniş)" : ""}` : "—"}
+                  </span>
+                  <span className="text-[11px] font-bold text-primary">
+                    {fig
+                      ? `%${tr(fig.populationSharePercent, 1)}${isMostPopulous ? " (En Kalabalık)" : ""}`
+                      : "—"}
+                  </span>
+                </div>
+                <Link
+                  href={
+                    `/v2/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
+                      typeof Link
+                    >["href"]
+                  }
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 py-1 px-2.5 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
+                >
+                  Bölge Rehberi <ArrowRight className="size-3" />
+                </Link>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
     </section>
   );

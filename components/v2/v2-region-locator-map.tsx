@@ -150,7 +150,9 @@ export function V2RegionLocatorMap({
                   }}
                   onMouseEnter={() => setHoveredPlate(shape.plateCode)}
                   onMouseLeave={() => setHoveredPlate(null)}
-                  className="focus:outline-none"
+                  onFocus={() => setHoveredPlate(shape.plateCode)}
+                  onBlur={() => setHoveredPlate(null)}
+                  aria-label={prov?.nameTr ?? shape.plateCode}
                 >
                   <path
                     d={shape.d}
@@ -160,7 +162,6 @@ export function V2RegionLocatorMap({
                       strokeWidth: isHovered ? 2.2 : 1.2,
                     }}
                     className="transition-all duration-150 filter drop-shadow-xs"
-                    aria-label={prov?.nameTr ?? shape.plateCode}
                   />
                 </Link>
               );

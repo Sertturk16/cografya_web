@@ -610,3 +610,171 @@ describe("a role=status/aria-live node is never the right-hand side of a && shor
     expect(descendants(ast, isAndGuardedStatusMount)).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// CODE136-NEW-I1 (pr-reviews/136.md): the two blocks above only scan `ts.ConditionalExpression`
+// (ternary) and `ts.BinaryExpression` (`&&`) — React's THIRD common way to swap a component's
+// entire rendered output is a component-body early return (`if (cond) { return (...); }`),
+// parsed as `ts.IfStatement`, which neither block above visits at all. This round's own
+// dead-link gate (`password-reset-confirm-form.tsx`) added exactly this shape for its new
+// "checking" state — confirmed, by that file's own comment at the call site, to fail the
+// EXISTING ternary scan when temporarily rewritten as one, and to pass ONLY because the
+// if/return shape is invisible to this file, not because the shape is safe. This block closes
+// that blind spot.
+//
+// The hazard is identical to the ternary/&& case: a status/live-region node whose role AND
+// first content both arrive in the SAME commit gives AT no "something changed" signal. What
+// differs for `if`/`return` is that this codebase ALREADY has an established SAFE idiom that
+// happens to sit inside an if/return without being this hazard: `register-form.tsx`'s
+// `step === "code"` branch permanently mounts a `role="status"` paragraph (`resendNote`)
+// ALONGSIDE many other, unconditional siblings (a heading, the code field, the submit/resend
+// buttons) — the node's OWN text starts empty (`resendState === "sent" ? … : ""`) and only
+// fills in later, once the node has already been stably in the DOM for a render or more
+// (that file's own A11Y87R2-M1 comment says so explicitly). A blanket "any status node inside
+// an if/return is forbidden" rule would falsely flag that ALREADY-shipped, ALREADY-safe
+// pattern — so the detector instead matches the review's own Fix (a) wording precisely: a
+// status/live node that is the SOLE meaningful content of the branch (reachable by unwrapping
+// only single-child wrapper elements, e.g. `<div className={styles.card}><p role="status">…
+// </p></div>`), never a node sitting among unrelated siblings.
+// ---------------------------------------------------------------------------------------
+
+function unwrapParens(node: ts.Node): ts.Node {
+  return ts.isParenthesizedExpression(node) ? unwrapParens(node.expression) : node;
+}
+
+function meaningfulJsxChildren(node: ts.JsxElement | ts.JsxFragment): ts.Node[] {
+  return node.children.filter((child) => !(ts.isJsxText(child) && child.text.trim() === ""));
+}
+
+/** `true` when a role=status/aria-live element is reachable from `root` by unwrapping ONLY
+ *  single-meaningful-child wrapper elements — i.e., it IS (modulo layout wrappers) the entire
+ *  rendered output of `root`, never one of several siblings. */
+function isSoleContentStatusNode(root: ts.Node): boolean {
+  const node = unwrapParens(root);
+  if (ts.isJsxSelfClosingElement(node)) {
+    return attrText(node, "role") === "status" || hasAttr(node, "aria-live");
+  }
+  if (ts.isJsxElement(node)) {
+    if (
+      attrText(node.openingElement, "role") === "status" ||
+      hasAttr(node.openingElement, "aria-live")
+    ) {
+      return true;
+    }
+    const kids = meaningfulJsxChildren(node);
+    if (kids.length !== 1) return false;
+    const only = kids[0];
+    if (only === undefined) return false;
+    return isSoleContentStatusNode(
+      ts.isJsxExpression(only) && only.expression !== undefined ? only.expression : only,
+    );
+  }
+  if (ts.isJsxFragment(node)) {
+    const kids = meaningfulJsxChildren(node);
+    if (kids.length !== 1) return false;
+    const only = kids[0];
+    if (only === undefined) return false;
+    return isSoleContentStatusNode(
+      ts.isJsxExpression(only) && only.expression !== undefined ? only.expression : only,
+    );
+  }
+  return false;
+}
+
+/** Every `if (cond) { return (...); }` / `if (cond) return (...);` early return in `root`,
+ *  reduced to the JSX root of what it returns (parens stripped). A `return;` / `return null;`
+ *  with no JSX-shaped expression is skipped — `isSoleContentStatusNode` would also correctly
+ *  reject a non-JSX node, but skipping keeps the intent explicit. */
+function ifReturnJsxRoots(root: ts.Node): ts.Node[] {
+  const roots: ts.Node[] = [];
+  for (const ifStatement of descendants(root, ts.isIfStatement)) {
+    for (const returnStatement of descendants(ifStatement.thenStatement, ts.isReturnStatement)) {
+      if (returnStatement.expression === undefined) continue;
+      roots.push(unwrapParens(returnStatement.expression));
+    }
+  }
+  return roots;
+}
+
+describe("a role=status/aria-live node is never the sole content of an if/return early return (CODE136-NEW-I1 regression class)", () => {
+  it.each(ISLAND_FILES)("%s", (relativePath) => {
+    const { ast } = parse(relativePath);
+    // No `.toBeGreaterThan(0)` positive control on the real files, same reasoning as the &&
+    // block above: this round's fix (see `password-reset-confirm-form.tsx`) removed the one
+    // real occurrence this scan exists to catch. The synthetic-fixture block below is the
+    // positive control proving the detector still fires on the shape it exists to catch.
+    for (const jsxRoot of ifReturnJsxRoots(ast)) {
+      expect(isSoleContentStatusNode(jsxRoot)).toBe(false);
+    }
+  });
+
+  it('flags `if (cond) { return (<div><p role="status">…</p></div>); }` — the exact shape this round\'s "checking" state originally used', () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        if (cond) {
+          return (
+            <div className="card">
+              <p role="status">Loading…</p>
+            </div>
+          );
+        }
+        return <div>form</div>;
+      }
+    `);
+    const roots = ifReturnJsxRoots(ast);
+    expect(roots.some((root) => isSoleContentStatusNode(root))).toBe(true);
+  });
+
+  it('flags the brace-less form `if (cond) return (<p aria-live="polite">…</p>);` too', () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        if (cond) return <p aria-live="polite">Loading…</p>;
+        return <div>form</div>;
+      }
+    `);
+    const roots = ifReturnJsxRoots(ast);
+    expect(roots.some((root) => isSoleContentStatusNode(root))).toBe(true);
+  });
+
+  // False-positive control: the ALREADY-shipped `register-form.tsx` `step === "code"` shape —
+  // a status node with real siblings (a heading, a field, buttons), not this hazard's
+  // sole-content shape. Must NOT be flagged, or this detector would regress already-reviewed,
+  // already-safe code the instant it landed.
+  it("does not flag a status node that sits among real siblings inside an if/return (register-form.tsx's own resendNote shape)", () => {
+    const ast = parseSource(`
+      function Demo({ step, sent }: { step: string; sent: boolean }) {
+        if (step === "code") {
+          return (
+            <div className="card">
+              <form>
+                <h2>heading</h2>
+                <input />
+                <p role="status">{sent ? "sent" : ""}</p>
+              </form>
+            </div>
+          );
+        }
+        return <div>form</div>;
+      }
+    `);
+    const roots = ifReturnJsxRoots(ast);
+    expect(roots.some((root) => isSoleContentStatusNode(root))).toBe(false);
+  });
+
+  it("does not flag an if/return with no status/live node at all (the done/blocked shape)", () => {
+    const ast = parseSource(`
+      function Demo({ cond }: { cond: boolean }) {
+        if (cond) {
+          return (
+            <div className="card">
+              <h2 tabIndex={-1}>done</h2>
+            </div>
+          );
+        }
+        return <div>form</div>;
+      }
+    `);
+    const roots = ifReturnJsxRoots(ast);
+    expect(roots.some((root) => isSoleContentStatusNode(root))).toBe(false);
+  });
+});
