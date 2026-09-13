@@ -135,4 +135,40 @@ describe("createAuthSessionStore", () => {
     store.ensureFetched();
     await vi.waitFor(() => expect(store.getSnapshot()).toBe("anonymous"));
   });
+
+  it("anonymous visit with no cg_has_session cookie resolves directly to anonymous with ZERO fetch calls (UYE-P5, İRİS A14)", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(statusOnlyResponse(200)));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("document", { cookie: "" });
+
+    const store = createAuthSessionStore();
+    store.ensureFetched();
+
+    expect(store.getSnapshot()).toBe("anonymous");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("authenticated visit with cg_has_session=1 calls fetch and resolves to authenticated", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(statusOnlyResponse(200)));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("document", { cookie: "cg_has_session=1" });
+
+    const store = createAuthSessionStore();
+    store.ensureFetched();
+
+    await vi.waitFor(() => expect(store.getSnapshot()).toBe("authenticated"));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("store.set updates cookie flag and notifies subscribers", () => {
+    const fakeDoc = { cookie: "" };
+    vi.stubGlobal("document", fakeDoc);
+
+    const store = createAuthSessionStore();
+    store.set("authenticated");
+    expect(fakeDoc.cookie).toContain("cg_has_session=1");
+
+    store.set("anonymous");
+    expect(fakeDoc.cookie).toContain("max-age=0");
+  });
 });

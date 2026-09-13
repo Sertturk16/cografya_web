@@ -2,6 +2,11 @@
 
 import { type Dispatch, type SetStateAction, useEffect, useSyncExternalStore } from "react";
 import { AUTH_FETCH_TIMEOUT_MS } from "@/lib/auth/submit.client";
+import {
+  clearSessionFlag,
+  hasSessionFlag,
+  setSessionFlag,
+} from "@/lib/session/session-flag.client";
 
 export type AuthSessionState = "checking" | "authenticated" | "anonymous";
 
@@ -24,7 +29,12 @@ export async function fetchAuthSessionState(signal: AbortSignal): Promise<AuthSe
       cache: "no-store",
       signal,
     });
-    return res.status === 200 ? "authenticated" : "anonymous";
+    if (res.status === 200) {
+      setSessionFlag();
+      return "authenticated";
+    }
+    clearSessionFlag();
+    return "anonymous";
   } catch {
     return "anonymous";
   }
@@ -100,9 +110,18 @@ export function createAuthSessionStore(): AuthSessionStore {
     },
     ensureFetched() {
       if (fetchInFlight) return;
+      if (!hasSessionFlag()) {
+        commit("anonymous");
+        return;
+      }
       runFetch();
     },
     set(next) {
+      if (next === "authenticated") {
+        setSessionFlag();
+      } else if (next === "anonymous") {
+        clearSessionFlag();
+      }
       commit(next);
     },
     invalidate() {
