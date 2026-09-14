@@ -53,7 +53,6 @@ import {
   Home,
   ChevronRight,
   BookOpen,
-  Lock,
   Loader2,
   ShieldCheck,
   Star,
@@ -220,6 +219,15 @@ export function V2GameScreen({
     setPan({ x: 0, y: 0 });
   }, [targetSet, difficulty]);
 
+  // Start new round or request authentication if guest
+  const handleStartGameClick = React.useCallback(() => {
+    if (authState !== "authenticated") {
+      authRequestId.current = requestAuth("gameRound");
+      return;
+    }
+    startRound();
+  }, [authState, startRound]);
+
   const currentTarget = questions[currentIndex] || null;
 
   // Handle Answer / Province Click
@@ -384,12 +392,7 @@ export function V2GameScreen({
 
   // Submit round to API
   const handleSaveRound = React.useCallback(async () => {
-    if (authState === "checking" || saveStatus === "pending" || saveStatus === "saved") return;
-
-    if (authState !== "authenticated") {
-      authRequestId.current = requestAuth("gameRound");
-      return;
-    }
+    if (saveStatus === "pending" || saveStatus === "saved") return;
 
     setSaveStatus("pending");
     const normalizedScore =
@@ -411,7 +414,6 @@ export function V2GameScreen({
 
     setSaveStatus(res.ok ? "saved" : "failed");
   }, [
-    authState,
     saveStatus,
     questionScores,
     submitModeTag,
@@ -423,14 +425,24 @@ export function V2GameScreen({
     endedEarly,
   ]);
 
-  // Resume after authentication
+  // Resume after authentication — start game automatically
   React.useEffect(() => {
     const id = authRequestId.current;
     if (id === null || modal.resolvedRequestId !== id) return;
     if (!consumeResolved(id)) return;
     authRequestId.current = null;
-    void handleSaveRound();
-  }, [modal.resolvedRequestId, handleSaveRound]);
+    startRound();
+  }, [modal.resolvedRequestId, startRound]);
+
+  // Auto-save round to API once finished
+  React.useEffect(() => {
+    if (isFinished && saveStatus === "idle") {
+      const timer = setTimeout(() => {
+        void handleSaveRound();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [isFinished, saveStatus, handleSaveRound]);
 
   // Normalized academic score (0-100%)
   const normalizedAcademicScore = React.useMemo(() => {
@@ -881,7 +893,7 @@ export function V2GameScreen({
                 <Button
                   variant="primary"
                   size="lg"
-                  onClick={startRound}
+                  onClick={handleStartGameClick}
                   leftIcon={<Zap className="size-4" />}
                 >
                   Sınavı Başlat
@@ -1015,33 +1027,36 @@ export function V2GameScreen({
                   </div>
                 )}
 
-                {/* Save Round to Profile Button */}
-                <div className="pt-1">
-                  <Button
-                    variant={saveStatus === "saved" ? "outline" : "primary"}
-                    size="default"
-                    onClick={handleSaveRound}
-                    disabled={saveStatus === "pending" || saveStatus === "saved"}
-                    leftIcon={
-                      saveStatus === "pending" ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : saveStatus === "saved" ? (
-                        <CheckCircle2 className="size-4 text-emerald-600" />
-                      ) : authState !== "authenticated" ? (
-                        <Lock className="size-4" />
-                      ) : (
-                        <Trophy className="size-4" />
-                      )
-                    }
-                  >
-                    {saveStatus === "saved"
-                      ? "Skor Profilinize Kaydedildi"
-                      : saveStatus === "pending"
-                        ? "Kaydediliyor..."
-                        : authState !== "authenticated"
-                          ? "Skoru Kaydet (Giriş Yap)"
-                          : "Skoru Profilime Kaydet"}
-                  </Button>
+                {/* Auto-Save Status Strip */}
+                <div className="pt-1 flex items-center justify-center">
+                  {saveStatus === "pending" && (
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
+                      <Loader2 className="size-3.5 animate-spin text-primary" />
+                      <span>Skorunuz profilinize kaydediliyor...</span>
+                    </div>
+                  )}
+                  {saveStatus === "saved" && (
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
+                      <CheckCircle2 className="size-3.5" />
+                      <span>Skor profilinize kaydedildi</span>
+                    </div>
+                  )}
+                  {saveStatus === "failed" && (
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive text-xs font-semibold">
+                      <XCircle className="size-3.5" />
+                      <span>Skor kaydedilemedi</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSaveStatus("idle");
+                          void handleSaveRound();
+                        }}
+                        className="underline hover:opacity-80 ml-1 cursor-pointer font-bold"
+                      >
+                        Tekrar Dene
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
@@ -1049,7 +1064,7 @@ export function V2GameScreen({
                   <Button
                     variant="primary"
                     size="lg"
-                    onClick={startRound}
+                    onClick={handleStartGameClick}
                     leftIcon={<RotateCcw className="size-4" />}
                   >
                     Tekrar Oyna
