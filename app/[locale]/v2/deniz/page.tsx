@@ -17,7 +17,9 @@ import { V2MarineLayerCatalogue } from "@/components/v2/v2-marine-layer-catalogu
 import { V2MarineFaqAccordion } from "@/components/v2/v2-marine-faq-accordion";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
-import { Waves, Home, ChevronRight } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Waves, Home, ChevronRight, Layers, ArrowRight } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
 
 export const revalidate = 900;
@@ -236,6 +238,34 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
 
         {/* SECTION 3: COASTAL TYPES & OCEANOGRAPHY GUIDE */}
         <V2MarineOceanographyGuide />
+
+        {/* SUBMARINE FAULTS CALLOUT BANNER */}
+        <div className="p-5 rounded-3xl border border-red-500/30 bg-gradient-to-r from-red-500/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-2xl bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
+              <Layers className="size-5" />
+            </div>
+            <div>
+              <span className="font-heading text-base font-bold text-foreground block">
+                Denizaltı Sismotektoniği &amp; Aktif Fay Hatları
+              </span>
+              <span className="text-xs text-muted-foreground block">
+                Kuzey Anadolu Fayı&apos;nın Marmara Denizi derin çukurlarındaki geçişi ve Ege açılma
+                tektoniği.
+              </span>
+            </div>
+          </div>
+          <Link
+            href="/v2/deprem/fay-hatlari"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "shrink-0 font-bold text-xs group gap-1.5",
+            )}
+          >
+            <span>Fay Hatları Atlasına Git</span>
+            <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
 
         {/* SECTION 4: MEASUREMENT LAYERS CATALOGUE */}
         <V2MarineLayerCatalogue layers={rawLayers} />

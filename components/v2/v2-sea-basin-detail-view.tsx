@@ -1,0 +1,552 @@
+"use client";
+
+import * as React from "react";
+import { Link } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/routing";
+import type { SeaBasinDetailData } from "@/lib/marine/sea-basins-detail";
+import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  Waves,
+  Home,
+  ChevronRight,
+  Droplets,
+  Compass,
+  MapPin,
+  Layers,
+  ArrowRight,
+  AlertTriangle,
+  HelpCircle,
+  CheckCircle2,
+  Anchor,
+  CloudRain,
+  Mountain,
+} from "lucide-react";
+import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+
+type LinkHref = React.ComponentProps<typeof Link>["href"];
+
+interface V2SeaBasinDetailViewProps {
+  data: SeaBasinDetailData;
+  marinePoints: MarinePointData[];
+  locale: Locale;
+}
+
+export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailViewProps) {
+  // Sort points by displayOrder
+  const sortedPoints = [...marinePoints].sort((a, b) => a.displayOrder - b.displayOrder);
+
+  const otherBasins = [
+    { slug: "karadeniz", name: "Karadeniz", badge: "En Az Tuzlu", href: "/v2/deniz/karadeniz" },
+    {
+      slug: "marmara",
+      name: "Marmara Denizi",
+      badge: "İç Deniz & Boğazlar",
+      href: "/v2/deniz/marmara",
+    },
+    { slug: "ege", name: "Ege Denizi", badge: "Enine Kıyı & Şelf", href: "/v2/deniz/ege" },
+    { slug: "akdeniz", name: "Akdeniz", badge: "En Sıcak & Tuzlu", href: "/v2/deniz/akdeniz" },
+  ].filter((b) => b.slug !== data.slug);
+
+  return (
+    <div className="space-y-14">
+      {/* Breadcrumb & Hero */}
+      <div className="space-y-4">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-2 text-xs text-muted-foreground"
+        >
+          <Link
+            href="/v2"
+            className="flex items-center gap-1 hover:text-foreground transition-colors"
+          >
+            <Home className="size-3.5" />
+            <span>Ana Sayfa</span>
+          </Link>
+          <ChevronRight className="size-3.5" />
+          <Link href="/v2/deniz" className="hover:text-foreground transition-colors">
+            Denizler &amp; Kıyılar Atlası
+          </Link>
+          <ChevronRight className="size-3.5" />
+          <span className="text-foreground font-semibold">{data.fullNameTr}</span>
+        </nav>
+
+        <div
+          className={`relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b ${data.gradientClass} p-6 sm:p-10 shadow-lg`}
+        >
+          <div className="relative z-10 max-w-3xl space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
+                Mavi Vatan Havza Atlası
+              </Badge>
+              <Badge variant="secondary" size="sm">
+                {data.badge}
+              </Badge>
+            </div>
+
+            <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
+              {data.fullNameTr}
+            </h1>
+
+            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+              Fiziki coğrafyası, derinlik profili, akıntı rejimleri, kıyı yer şekilleri, canlı
+              telemetri istasyonları ve çevre sorunlarıyla kapsamlı {data.nameTr} rehberi.
+            </p>
+          </div>
+
+          {/* Metric Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mt-8">
+            <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
+              <span className="text-[10px] text-muted-foreground font-medium block">Yüzölçümü</span>
+              <span className="font-heading text-lg sm:text-xl font-bold text-foreground block mt-0.5">
+                {data.metrics.area}
+              </span>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
+              <span className="text-[10px] text-muted-foreground font-medium block">
+                Maksimum Derinlik
+              </span>
+              <span className="font-heading text-lg sm:text-xl font-bold text-cyan-600 block mt-0.5">
+                {data.metrics.maxDepth}
+              </span>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
+              <span className="text-[10px] text-muted-foreground font-medium block">
+                Ortalama Derinlik
+              </span>
+              <span className="font-heading text-lg sm:text-xl font-bold text-foreground block mt-0.5">
+                {data.metrics.avgDepth}
+              </span>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
+              <span className="text-[10px] text-muted-foreground font-medium block">
+                Tuzluluk Oranı
+              </span>
+              <span className="font-heading text-lg sm:text-xl font-bold text-accent block mt-0.5">
+                {data.metrics.salinity}
+              </span>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
+              <span className="text-[10px] text-muted-foreground font-medium block">
+                Türkiye Kıyı Şeridi
+              </span>
+              <span className="font-heading text-lg sm:text-xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block mt-0.5">
+                {data.metrics.coastalLengthTr}
+              </span>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
+              <span className="text-[10px] text-muted-foreground font-medium block">
+                Kıyı İli Sayısı
+              </span>
+              <span className="font-heading text-lg sm:text-xl font-bold text-primary block mt-0.5">
+                {data.metrics.provincesCount} İl
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION: FILTERED LIVE TELEMETRY TABLE */}
+      <section aria-labelledby="basin-telemetry-heading" className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-cyan-500 animate-pulse" />
+            <h2
+              id="basin-telemetry-heading"
+              className="font-heading text-xl sm:text-2xl font-bold text-foreground"
+            >
+              {data.nameTr} Canlı Telemetri İstasyonları ({sortedPoints.length} Nokta)
+            </h2>
+          </div>
+          <span className="text-xs text-muted-foreground font-mono">
+            CMEMS &amp; ECMWF Açık Deniz Modelleri
+          </span>
+        </div>
+
+        {sortedPoints.length > 0 ? (
+          <div className="overflow-x-auto rounded-3xl border border-border bg-card shadow-sm">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[10px] tracking-wider font-semibold">
+                <tr>
+                  <th className="p-3 sm:p-4">İstasyon &amp; Kıyı</th>
+                  <th className="p-3 sm:p-4">İl</th>
+                  <th className="p-3 sm:p-4">Su Sıcaklığı (SST)</th>
+                  <th className="p-3 sm:p-4">Belirgin Dalga (Hs)</th>
+                  <th className="p-3 sm:p-4">Rüzgâr (10m)</th>
+                  <th className="p-3 sm:p-4">Model Zamanı</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {sortedPoints.map((pt) => {
+                  return (
+                    <tr key={pt.slugTr} className="hover:bg-muted/20 transition-colors">
+                      <td className="p-3 sm:p-4">
+                        <div className="font-bold text-foreground text-xs sm:text-sm">
+                          {pt.nameTr}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">{pt.coastLabelTr}</div>
+                      </td>
+                      <td className="p-3 sm:p-4">
+                        {pt.provinceSlug ? (
+                          <Link
+                            href={`/turkiye/${pt.provinceSlug}` as LinkHref}
+                            className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                          >
+                            <span>{pt.provinceName}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              ({pt.plateCode})
+                            </span>
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">{pt.provinceName}</span>
+                        )}
+                      </td>
+                      <td className="p-3 sm:p-4 font-mono font-bold text-rose-600 dark:text-rose-400">
+                        {pt.sst !== null && pt.sst !== undefined ? `${pt.sst.toFixed(1)} °C` : "—"}
+                      </td>
+                      <td className="p-3 sm:p-4 font-mono text-cyan-600 dark:text-cyan-400">
+                        {pt.waveHeight !== null && pt.waveHeight !== undefined
+                          ? `${pt.waveHeight.toFixed(2)} m`
+                          : "—"}
+                      </td>
+                      <td className="p-3 sm:p-4 font-mono text-foreground">
+                        {pt.windSpeedKmh !== null && pt.windSpeedKmh !== undefined
+                          ? `${pt.windSpeedKmh.toFixed(0)} km/h`
+                          : "—"}
+                      </td>
+                      <td className="p-3 sm:p-4 text-[11px] text-muted-foreground font-mono">
+                        {pt.validAt || "Güncel"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-8 text-center rounded-3xl border border-dashed border-border bg-card/40 text-xs text-muted-foreground">
+            Bu havzaya ait istasyon verisi yükleniyor...
+          </div>
+        )}
+      </section>
+
+      {/* SUBMARINE FAULT CALLOUT (IF MARMARA OR EGE) */}
+      {data.faultLineNotice && (
+        <div className="p-5 sm:p-6 rounded-3xl border border-red-500/30 bg-gradient-to-r from-red-500/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-2xl bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
+              <Layers className="size-6" />
+            </div>
+            <div>
+              <span className="font-heading text-base sm:text-lg font-bold text-foreground block">
+                Denizaltı Sismotektoniği &amp; Aktif Faylar
+              </span>
+              <p className="text-xs text-muted-foreground mt-0.5">{data.faultLineNotice.text}</p>
+            </div>
+          </div>
+          <Link
+            href={data.faultLineNotice.href as LinkHref}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "shrink-0 font-bold text-xs group gap-1.5",
+            )}
+          >
+            <span>Fay Hatları Atlasına Git</span>
+            <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+      )}
+
+      {/* 8 CORE CURRICULUM GEOGRAPHICAL SECTIONS */}
+      <div className="space-y-10">
+        {/* 1. PHYSICAL GEOGRAPHY */}
+        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-primary font-bold text-sm">
+            <Mountain className="size-4.5" />
+            <span>Fiziki Coğrafya &amp; Havza Morfolojisi</span>
+          </div>
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+            {data.physicalGeography.title}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {data.physicalGeography.content}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {data.physicalGeography.points.map((pt, i) => (
+              <div
+                key={i}
+                className="p-3.5 rounded-2xl bg-muted/30 border border-border/80 text-xs text-muted-foreground space-y-1"
+              >
+                <span className="size-2 rounded-full bg-primary inline-block mr-1.5" />
+                <span>{pt}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        {/* 2. CLIMATE IMPACT */}
+        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-secondary font-bold text-sm">
+            <CloudRain className="size-4.5" />
+            <span>İklim Dinamikleri</span>
+          </div>
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+            {data.climateImpact.title}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {data.climateImpact.content}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {data.climateImpact.points.map((pt, i) => (
+              <div
+                key={i}
+                className="p-3.5 rounded-2xl bg-muted/30 border border-border/80 text-xs text-muted-foreground space-y-1"
+              >
+                <span className="size-2 rounded-full bg-secondary inline-block mr-1.5" />
+                <span>{pt}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        {/* 3. COASTAL GEOMORPHOLOGY & TYPES */}
+        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
+            <div className="flex items-center gap-2 text-teal-600 font-bold text-sm">
+              <Compass className="size-4.5" />
+              <span>Kıyı Tipleri &amp; Yer Şekilleri</span>
+            </div>
+            <Link
+              href={data.coastalGeomorphology.coastalTypesHref as LinkHref}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "shrink-0 text-xs font-bold gap-1",
+              )}
+            >
+              <span>Kıyı Tipleri Atlası</span>
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+            {data.coastalGeomorphology.title}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {data.coastalGeomorphology.content}
+          </p>
+          <div className="flex flex-wrap gap-2 pt-2">
+            {data.coastalGeomorphology.coastalTypes.map((type, i) => (
+              <span
+                key={i}
+                className="px-3 py-1 rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-xs font-semibold"
+              >
+                {type}
+              </span>
+            ))}
+          </div>
+        </article>
+
+        {/* 4. CURRENTS & WATER MOVEMENT */}
+        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-cyan-600 font-bold text-sm">
+            <Waves className="size-4.5" />
+            <span>Hidrodinami &amp; Akıntı Rejimi</span>
+          </div>
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+            {data.currentsAndWaterMovement.title}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {data.currentsAndWaterMovement.content}
+          </p>
+          <div className="space-y-2 pt-2">
+            {data.currentsAndWaterMovement.keyPoints.map((kp, i) => (
+              <div
+                key={i}
+                className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground flex items-start gap-2"
+              >
+                <CheckCircle2 className="size-4 text-cyan-600 shrink-0 mt-0.5" />
+                <span>{kp}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        {/* 5. HYDROGRAPHIC BALANCE & RIVERS */}
+        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
+            <Droplets className="size-4.5" />
+            <span>Beslenme Kaynakları &amp; Akarsular</span>
+          </div>
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+            {data.hydrographicBalance.title}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {data.hydrographicBalance.content}
+          </p>
+          <div className="space-y-2 pt-1">
+            <span className="text-xs font-bold text-foreground block">
+              Havzayı Besleyen Ana Akarsular:
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {data.hydrographicBalance.majorRivers.map((riv, i) => (
+                <span
+                  key={i}
+                  className="px-3 py-1 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30 text-xs font-mono"
+                >
+                  {riv}
+                </span>
+              ))}
+            </div>
+          </div>
+        </article>
+
+        {/* 6. ECONOMIC GEOGRAPHY */}
+        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-primary font-bold text-sm">
+            <Anchor className="size-4.5" />
+            <span>Ekonomik Coğrafya</span>
+          </div>
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+            {data.economicGeography.title}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {data.economicGeography.content}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {data.economicGeography.sectors.map((sec, i) => (
+              <div
+                key={i}
+                className="p-4 rounded-2xl bg-card border border-border space-y-1 text-xs"
+              >
+                <span className="font-bold text-foreground block">{sec.name}</span>
+                <p className="text-muted-foreground leading-relaxed">{sec.desc}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        {/* 7. HUMAN GEOGRAPHY & COASTAL PROVINCES */}
+        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-secondary font-bold text-sm">
+            <MapPin className="size-4.5" />
+            <span>Nüfus &amp; Kıyı Şehirleri</span>
+          </div>
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+            {data.humanGeography.title}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {data.humanGeography.content}
+          </p>
+          <div className="space-y-2 pt-2">
+            <span className="text-xs font-bold text-foreground block">
+              {data.nameTr}&apos;ne Kıyısı Olan {data.coastalProvinces.length} İlimiz:
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {data.coastalProvinces.map((prov) => (
+                <Link
+                  key={prov.plate}
+                  href={`/turkiye/${prov.slug}` as LinkHref}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-card border border-border text-xs font-semibold hover:border-primary hover:text-primary transition-colors group"
+                >
+                  <span className="text-[10px] font-mono text-muted-foreground group-hover:text-primary">
+                    {prov.plate}
+                  </span>
+                  <span>{prov.name}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </article>
+
+        {/* 8. ENVIRONMENTAL ISSUES */}
+        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-destructive font-bold text-sm">
+            <AlertTriangle className="size-4.5" />
+            <span>Çevre Sorunları &amp; Ekolojik Tehditler</span>
+          </div>
+          <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+            {data.environmentalIssues.title}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {data.environmentalIssues.content}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {data.environmentalIssues.risks.map((risk, i) => (
+              <div
+                key={i}
+                className="p-3.5 rounded-2xl bg-destructive/5 border border-destructive/20 text-xs text-muted-foreground space-y-1"
+              >
+                <span className="size-2 rounded-full bg-destructive inline-block mr-1.5" />
+                <span>{risk}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+
+      {/* SSS / FAQ ACCORDION-FREE CARDS */}
+      <section aria-labelledby="basin-faq-heading" className="space-y-5">
+        <div className="border-b border-border pb-3 flex items-center gap-2">
+          <HelpCircle className="size-5 text-primary" />
+          <h2
+            id="basin-faq-heading"
+            className="font-heading text-xl sm:text-2xl font-bold text-foreground"
+          >
+            {data.nameTr} Hakkında Sıkça Sorulan Sorular
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          {data.faq.map((item, i) => (
+            <div
+              key={i}
+              className="p-5 rounded-2xl border border-border bg-card space-y-2 text-xs sm:text-sm"
+            >
+              <h3 className="font-heading font-bold text-foreground flex items-center gap-2">
+                <span className="size-5 rounded-full bg-primary/10 text-primary font-mono text-xs flex items-center justify-center shrink-0">
+                  ?
+                </span>
+                <span>{item.question}</span>
+              </h3>
+              <p className="text-muted-foreground leading-relaxed pl-7">{item.answer}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* OTHER SEAS CROSS-NAVIGATION STRIP */}
+      <section className="p-6 sm:p-8 rounded-3xl border border-border bg-gradient-to-r from-card via-muted/30 to-card space-y-4">
+        <div className="space-y-1">
+          <h3 className="font-heading text-lg font-bold text-foreground">
+            Diğer Deniz Havzalarını İnceleyin
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Türkiye&apos;yi çevreleyen 4 denizin canlı telemetri ve fiziki coğrafya atlası.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {otherBasins.map((ob) => (
+            <Link
+              key={ob.slug}
+              href={ob.href as LinkHref}
+              className="p-4 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all group flex items-center justify-between"
+            >
+              <div>
+                <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors block">
+                  {ob.name}
+                </span>
+                <span className="text-[11px] text-muted-foreground">{ob.badge}</span>
+              </div>
+              <ArrowRight className="size-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Sources Section */}
+      <V2SourcesSection scope="deniz" />
+    </div>
+  );
+}

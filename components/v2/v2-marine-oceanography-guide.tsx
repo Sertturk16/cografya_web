@@ -1,30 +1,46 @@
 import * as React from "react";
+import { Link } from "@/i18n/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Compass } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Compass, ArrowRight } from "lucide-react";
 
 export function V2MarineOceanographyGuide() {
   return (
     <section className="space-y-6" aria-labelledby="v2-marine-coastal-guide-heading">
-      <div className="border-b border-border pb-4 space-y-1.5">
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" size="sm" icon={<Compass className="size-3.5" />}>
-            Jeomorfoloji &amp; Kıyı Coğrafyası
-          </Badge>
-          <span className="text-xs font-semibold text-muted-foreground">
-            Kıyı Tipleri &amp; Dinamikler
-          </span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" size="sm" icon={<Compass className="size-3.5" />}>
+              Jeomorfoloji &amp; Kıyı Coğrafyası
+            </Badge>
+            <span className="text-xs font-semibold text-muted-foreground">
+              Kıyı Tipleri &amp; Dinamikler
+            </span>
+          </div>
+          <h2
+            id="v2-marine-coastal-guide-heading"
+            className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)]"
+          >
+            Türkiye&apos;nin Kıyı Tipleri &amp; Denizel Jeomorfolojisi
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Dağların kıyıya uzanış doğrultusu ve dördüncü zaman deniz seviyesi değişimlerine
+            (östatik hareketler) göre şekillenen 6 temel kıyı tipi.
+          </p>
         </div>
-        <h2
-          id="v2-marine-coastal-guide-heading"
-          className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)]"
+
+        <Link
+          href="/v2/deniz/kiyi-tipleri"
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "shrink-0 group font-bold text-xs gap-1.5",
+          )}
         >
-          Türkiye&apos;nin Kıyı Tipleri &amp; Denizel Jeomorfolojisi
-        </h2>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          Dağların kıyıya uzanış doğrultusu ve dördüncü zaman deniz seviyesi değişimlerine (östatik
-          hareketler) göre şekillenen 6 temel kıyı tipi.
-        </p>
+          <span>Kıyı Tipleri Atlasına Git</span>
+          <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

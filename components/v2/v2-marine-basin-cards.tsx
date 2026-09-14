@@ -1,6 +1,5 @@
-"use client";
-
 import * as React from "react";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -204,18 +203,35 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
                 ))}
               </div>
 
-              {/* Action Button */}
-              {onSelectBasin && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full mt-2 text-xs group-hover:border-primary/40 group-hover:text-primary transition-all"
-                  onClick={() => onSelectBasin(basin.id)}
-                  rightIcon={<ArrowRight className="size-3.5" />}
+              {/* Action Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 pt-1">
+                <Link
+                  href={
+                    basin.id === "black_sea"
+                      ? "/v2/deniz/karadeniz"
+                      : basin.id === "marmara"
+                        ? "/v2/deniz/marmara"
+                        : basin.id === "aegean"
+                          ? "/v2/deniz/ege"
+                          : "/v2/deniz/akdeniz"
+                  }
+                  className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] text-xs font-bold shadow-xs transition-all w-full"
                 >
-                  Haritada {basin.nameTr}&apos;ni İncele
-                </Button>
-              )}
+                  <span>{basin.nameTr} Atlası</span>
+                  <ArrowRight className="size-3.5 ml-1" />
+                </Link>
+
+                {onSelectBasin && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs group-hover:border-primary/40 transition-all"
+                    onClick={() => onSelectBasin(basin.id)}
+                  >
+                    Haritada Filtrele
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         ))}

@@ -265,6 +265,26 @@ export const routing = defineRouting({
       tr: "/v2/deniz",
       en: "/v2/sea",
     },
+    "/v2/deniz/karadeniz": {
+      tr: "/v2/deniz/karadeniz",
+      en: "/v2/sea/black-sea",
+    },
+    "/v2/deniz/marmara": {
+      tr: "/v2/deniz/marmara",
+      en: "/v2/sea/marmara",
+    },
+    "/v2/deniz/ege": {
+      tr: "/v2/deniz/ege",
+      en: "/v2/sea/aegean",
+    },
+    "/v2/deniz/akdeniz": {
+      tr: "/v2/deniz/akdeniz",
+      en: "/v2/sea/mediterranean",
+    },
+    "/v2/deniz/kiyi-tipleri": {
+      tr: "/v2/deniz/kiyi-tipleri",
+      en: "/v2/sea/coastal-types",
+    },
     "/v2/oyun": {
       tr: "/v2/oyun",
       en: "/v2/game",
@@ -288,6 +308,14 @@ export const routing = defineRouting({
     "/v2/deprem": {
       tr: "/v2/deprem",
       en: "/v2/earthquakes",
+    },
+    "/v2/deprem/fay-hatlari": {
+      tr: "/v2/deprem/fay-hatlari",
+      en: "/v2/earthquakes/fault-lines",
+    },
+    "/v2/deprem/hazirlik": {
+      tr: "/v2/deprem/hazirlik",
+      en: "/v2/earthquakes/preparedness",
     },
     "/v2/araclar": {
       tr: "/v2/araclar",
