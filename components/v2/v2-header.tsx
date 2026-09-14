@@ -24,12 +24,18 @@ import {
   Loader2,
   ChevronDown,
   Menu,
+  Search,
 } from "lucide-react";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/routing";
+import { SearchCombobox } from "@/components/site-search/search-combobox";
+import { ThemeToggle } from "./theme-toggle";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth, setAuthModalMode } from "@/lib/auth/auth-modal.client";
 import { submitAuth } from "@/lib/auth/submit.client";
 
 export function V2Header() {
+  const locale = useLocale() as Locale;
   const pathname = usePathname();
   const router = useRouter();
   const pathStr = (pathname as string) || "";
@@ -394,6 +400,19 @@ export function V2Header() {
 
         {/* Right Side Actions & Mobile Trigger */}
         <div className="flex items-center gap-2">
+          {/* Global Search Combobox (Ctrl+K) */}
+          <SearchCombobox
+            variant="v2"
+            pathPrefix="/v2"
+            enableGlobalShortcut={true}
+            provinceIndexHref="/v2/turkiye"
+            countryIndexHref="/v2/dunya"
+            indexUrl={`/api/search-index/${locale}`}
+          />
+
+          {/* Theme Toggle (Dark / Light) */}
+          <ThemeToggle />
+
           {authState === "authenticated" ? (
             <div className="flex items-center gap-1.5">
               <Link
@@ -481,6 +500,28 @@ export function V2Header() {
                 </SheetHeader>
 
                 <div className="p-4 space-y-6 overflow-y-auto flex-1">
+                  {/* Mobile Quick Search Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileOpen(false);
+                      const searchBtn = (document.querySelector('[data-testid="global-search"]') ||
+                        document.querySelector(
+                          '[data-testid="global-search-mobile"]',
+                        )) as HTMLElement;
+                      searchBtn?.click();
+                    }}
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Search className="size-4 text-primary" />
+                      <span>İl veya Ülke Ara...</span>
+                    </div>
+                    <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-background border border-border rounded-md shadow-2xs">
+                      Ctrl K
+                    </kbd>
+                  </button>
+
                   {/* Category 1: Atlas */}
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase">
@@ -627,7 +668,13 @@ export function V2Header() {
                 </div>
 
                 {/* Mobile Drawer Auth Footer */}
-                <div className="p-4 border-t border-border bg-muted/30 space-y-2">
+                <div className="p-4 border-t border-border bg-muted/30 space-y-3">
+                  {/* Theme Switcher Row in Mobile Drawer */}
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-card border border-border">
+                    <span className="text-xs font-semibold text-foreground">Görünüm Teması</span>
+                    <ThemeToggle />
+                  </div>
+
                   {authState !== "authenticated" ? (
                     <div className="grid grid-cols-2 gap-2">
                       <Button

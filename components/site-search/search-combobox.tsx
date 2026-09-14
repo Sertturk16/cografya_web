@@ -51,6 +51,9 @@ interface SearchComboboxProps {
   /** `/dunya#ulkeler` for this locale — the panel's second list link. */
   readonly countryIndexHref: string;
   readonly indexUrl: string;
+  readonly pathPrefix?: string;
+  readonly variant?: "default" | "v2";
+  readonly enableGlobalShortcut?: boolean;
 }
 
 /**
@@ -96,6 +99,9 @@ export function SearchCombobox({
   provinceIndexHref,
   countryIndexHref,
   indexUrl,
+  pathPrefix,
+  variant = "default",
+  enableGlobalShortcut = false,
 }: SearchComboboxProps) {
   const t = useTranslations("Search");
   const mounted = useSyncExternalStore(NEVER_CHANGES, onClient, onServer);
@@ -107,7 +113,7 @@ export function SearchCombobox({
   const [announcement, setAnnouncement] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const triggerRef = useRef<HTMLAnchorElement>(null);
+  const triggerRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const inFlight = useRef(false);
   /** Set by `close(true)`; consumed after commit so `focus()` never runs on a hidden node. */
@@ -117,6 +123,15 @@ export function SearchCombobox({
   const inputId = `${baseId}-input`;
   const listboxId = `${baseId}-listbox`;
   const optionId = useCallback((index: number) => `${baseId}-option-${index}`, [baseId]);
+
+  const resolvePath = useCallback(
+    (rawPath: string) => {
+      if (!pathPrefix) return rawPath;
+      if (rawPath.startsWith(pathPrefix)) return rawPath;
+      return `${pathPrefix}${rawPath}`;
+    },
+    [pathPrefix],
+  );
 
   /**
    * A USABLE index — non-null and non-empty. An empty one is treated as "not loaded yet"
@@ -249,13 +264,30 @@ export function SearchCombobox({
     requestAnimationFrame(() => inputRef.current?.focus());
   }, [ensureIndex]);
 
+  useEffect(() => {
+    if (!enableGlobalShortcut) return;
+    function handleGlobalKeyDown(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        if (open) {
+          close(true);
+        } else {
+          openAndFocus();
+        }
+        return;
+      }
+      if (open && event.key === "Escape") {
+        event.preventDefault();
+        close(true);
+      }
+    }
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [enableGlobalShortcut, open, openAndFocus, close]);
+
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape") {
       event.preventDefault();
-      if (query.length > 0) {
-        updateQuery("");
-        return;
-      }
       close(true);
       return;
     }
@@ -288,7 +320,7 @@ export function SearchCombobox({
       const hit = hits[activeIndex >= 0 ? activeIndex : 0];
       if (hit) {
         event.preventDefault();
-        window.location.assign(hit.path);
+        window.location.assign(resolvePath(hit.path));
       }
     }
   };
@@ -301,6 +333,7 @@ export function SearchCombobox({
    * focus on `<body>`.
    */
   const onBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    if (variant === "v2") return;
     // A deliberate close (Escape, ×) is already restoring focus through the effect above;
     // the blur it causes must not cancel that by re-closing with `restore: false`.
     if (restoreFocus.current) return;
@@ -312,20 +345,38 @@ export function SearchCombobox({
   // `aria-label` because the visible word is `display: none` below the desktop breakpoint,
   // which would otherwise leave a NAMELESS link in the first HTML response — and that is the
   // state the no-JS reader never leaves (review C2).
-  //
-  // The name is `Search.label` ("İl veya ülke ara"), which names the CONTROL rather than one
-  // of its destinations (→ PR #47 review CR-M3). Both alternatives are worse: the old
-  // "Tüm il ve ülke listesi" promised two corpora from a link that reaches one — the exact
-  // defect this PR removes — and my first pass narrowed it to "Tüm il listesi", which told a
-  // screen-reader user the site search was a province list. `label` covers both hubs at the
-  // level that is actually true (this searches provinces and countries) and matches the
-  // `<label>` the hydrated input already carries, so the control keeps one identity across
-  // the upgrade.
   if (!mounted) {
+    if (variant === "v2") {
+      return (
+        <div className="flex items-center">
+          <a
+            ref={triggerRef as unknown as React.RefObject<HTMLAnchorElement>}
+            className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 text-xs text-muted-foreground font-medium shadow-2xs"
+            href={provinceIndexHref}
+            aria-label={t("label")}
+            data-testid="global-search"
+          >
+            <SearchIcon />
+            <span>{t("triggerLabel")}...</span>
+            <kbd className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-background border border-border rounded-md shadow-2xs text-muted-foreground">
+              Ctrl K
+            </kbd>
+          </a>
+          <a
+            className="sm:hidden size-9 rounded-xl border border-border/80 bg-card flex items-center justify-center text-foreground shadow-2xs"
+            href={provinceIndexHref}
+            aria-label={t("label")}
+            data-testid="global-search-mobile"
+          >
+            <SearchIcon />
+          </a>
+        </div>
+      );
+    }
     return (
       <div className={styles.slot}>
         <a
-          ref={triggerRef}
+          ref={triggerRef as unknown as React.RefObject<HTMLAnchorElement>}
           className={styles.trigger}
           href={provinceIndexHref}
           aria-label={t("label")}
@@ -337,17 +388,165 @@ export function SearchCombobox({
     );
   }
 
+  if (variant === "v2") {
+    return (
+      <div className="flex items-center">
+        {/* Desktop trigger: command bar button with Ctrl+K badge */}
+        <button
+          ref={triggerRef as unknown as React.RefObject<HTMLButtonElement>}
+          type="button"
+          data-testid="global-search"
+          aria-label={t("openLabel")}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          onClick={() => openAndFocus()}
+          onFocus={() => void ensureIndex()}
+          className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground font-medium transition-all cursor-pointer shadow-2xs group"
+        >
+          <SearchIcon />
+          <span>{t("triggerLabel")}...</span>
+          <kbd className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-background border border-border rounded-md shadow-2xs text-muted-foreground group-hover:text-foreground pointer-events-none">
+            Ctrl K
+          </kbd>
+        </button>
+
+        {/* Mobile trigger: icon button */}
+        <button
+          type="button"
+          className="sm:hidden size-9 rounded-xl border border-border/80 bg-card hover:bg-muted flex items-center justify-center text-foreground transition-colors cursor-pointer shadow-2xs"
+          aria-label={t("openLabel")}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          data-testid="global-search-mobile"
+          onClick={() => openAndFocus()}
+          onFocus={() => void ensureIndex()}
+        >
+          <SearchIcon />
+        </button>
+
+        {/* Modal dialog when open */}
+        {open ? (
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4 sm:px-0">
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in-0 duration-150"
+              onClick={() => close(true)}
+              aria-hidden="true"
+            />
+            <div
+              className="relative z-50 w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 flex flex-col max-h-[75vh]"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.stopPropagation();
+                  close(true);
+                }
+              }}
+            >
+              <label className="sr-only" htmlFor={inputId}>
+                {t("label")}
+              </label>
+              <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border bg-background">
+                <SearchIcon />
+                <input
+                  ref={inputRef}
+                  id={inputId}
+                  className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none border-none"
+                  type="text"
+                  role="combobox"
+                  autoComplete="off"
+                  placeholder={t("placeholder")}
+                  value={query}
+                  aria-expanded={hits.length > 0}
+                  aria-controls={listboxId}
+                  aria-autocomplete="list"
+                  aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
+                  onChange={(event) => updateQuery(event.target.value)}
+                  onKeyDown={onKeyDown}
+                />
+                <button
+                  type="button"
+                  className="size-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => close(true)}
+                >
+                  <span className="sr-only">{t("closeLabel")}</span>
+                  <kbd className="text-[10px] font-semibold border border-border px-1.5 py-0.5 rounded bg-muted/50">
+                    ESC
+                  </kbd>
+                </button>
+              </div>
+
+              {indexUnavailable ? (
+                <p className="p-4 text-center text-xs text-muted-foreground">{t("loadFailed")}</p>
+              ) : null}
+
+              {hits.length > 0 ? (
+                <ul
+                  ref={listRef}
+                  id={listboxId}
+                  role="listbox"
+                  aria-label={t("label")}
+                  data-combobox-items="true"
+                  className="p-2 overflow-y-auto space-y-1 flex-1 max-h-80"
+                >
+                  {hits.map((hit, index) => {
+                    const resolvedPath = resolvePath(hit.path);
+                    return (
+                      <li key={hit.path} role="presentation">
+                        <a
+                          id={optionId(index)}
+                          role="option"
+                          tabIndex={-1}
+                          aria-selected={index === activeIndex}
+                          href={resolvedPath}
+                          className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                            index === activeIndex
+                              ? "bg-primary/10 text-primary"
+                              : "text-foreground hover:bg-muted"
+                          }`}
+                          onMouseEnter={() => setActiveIndex(index)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.location.assign(resolvedPath);
+                          }}
+                        >
+                          <span className="font-bold">{hit.name}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-muted text-muted-foreground">
+                            {hit.kind === "p" ? t("province") : t("country")}
+                          </span>
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
+
+              {showNoResults ? (
+                <p className="p-6 text-center text-xs text-muted-foreground">{t("noResults")}</p>
+              ) : null}
+
+              <div className="p-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                <a href={provinceIndexHref} className="hover:text-primary transition-colors">
+                  {t("seeAllProvinces")} →
+                </a>
+                <a href={countryIndexHref} className="hover:text-primary transition-colors">
+                  {t("seeAllCountries")} →
+                </a>
+              </div>
+
+              <div role="status" aria-live="polite" className="sr-only">
+                {announcement}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.slot} onBlur={onBlur}>
-      {/* The collapsed trigger. It stays an <a href> after hydration, so a middle-click still
-          opens the full index. `hidden` is honoured by an explicit
-          `.trigger[hidden] { visibility: hidden }` rule: the UA's `display:none` for [hidden]
-          loses to this module's own author-origin `display:inline-flex`, which left the
-          control rendered, focusable and — below the desktop breakpoint — NAMELESS while the
-          panel was open (review C1). `visibility:hidden` keeps the slot's box, so the header
-          cannot reflow. The accessible name is never cleared. */}
       <a
-        ref={triggerRef}
+        ref={triggerRef as unknown as React.RefObject<HTMLAnchorElement>}
         className={styles.trigger}
         href={provinceIndexHref}
         aria-label={t("openLabel")}
@@ -392,12 +591,6 @@ export function SearchCombobox({
             <button
               type="button"
               className={styles.close}
-              // WebKit does not mouse-focus form controls (bug 254655), so clicking × fires
-              // `focusout` from the input with `relatedTarget === null` — which `onBlur`
-              // below would read as "focus left the control" and close WITHOUT restoring
-              // focus, dropping the reader on <body> (confirm-leg NEW-2). Preventing the
-              // mousedown default keeps focus on the input until `close(true)` hands it back
-              // deliberately, and costs nothing on engines that would have focused it.
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => close(true)}
             >
@@ -416,36 +609,32 @@ export function SearchCombobox({
               aria-label={t("label")}
               className={styles.results}
             >
-              {hits.map((hit, index) => (
-                // `role="presentation"` so the options are the listbox's OWNED elements — an
-                // intervening listitem breaks that chain (review M11).
-                <li key={hit.path} role="presentation" className={styles.resultItem}>
-                  <a
-                    id={optionId(index)}
-                    role="option"
-                    tabIndex={-1}
-                    aria-selected={index === activeIndex}
-                    href={hit.path}
-                    className={`${styles.result} ${index === activeIndex ? styles.resultActive : ""}`}
-                    onMouseEnter={() => setActiveIndex(index)}
-                  >
-                    <span className={styles.resultName}>{hit.name}</span>
-                    {/* A text badge, never colour alone (DESIGN.md §5). */}
-                    <span className={styles.resultKind}>
-                      {hit.kind === "p" ? t("province") : t("country")}
-                    </span>
-                  </a>
-                </li>
-              ))}
+              {hits.map((hit, index) => {
+                const resolvedPath = resolvePath(hit.path);
+                return (
+                  <li key={hit.path} role="presentation" className={styles.resultItem}>
+                    <a
+                      id={optionId(index)}
+                      role="option"
+                      tabIndex={-1}
+                      aria-selected={index === activeIndex}
+                      href={resolvedPath}
+                      className={`${styles.result} ${index === activeIndex ? styles.resultActive : ""}`}
+                      onMouseEnter={() => setActiveIndex(index)}
+                    >
+                      <span className={styles.resultName}>{hit.name}</span>
+                      <span className={styles.resultKind}>
+                        {hit.kind === "p" ? t("province") : t("country")}
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           ) : null}
 
           {showNoResults ? <p className={styles.notice}>{t("noResults")}</p> : null}
 
-          {/* One row, two corpora. Not a `role="list"`: these are two sibling links in a
-              footer row, not an enumeration of content — and the panel already owns a
-              listbox above, so a second list role here would add noise for AT rather than
-              structure. */}
           <div className={styles.seeAllRow}>
             <a className={styles.seeAllLink} href={provinceIndexHref}>
               {t("seeAllProvinces")}
