@@ -33,6 +33,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy assets if present
 COPY --from=builder --chown=nextjs:nodejs /app/assets ./assets
+# Copy flag-icons package for runtime file system reading by country and flag routes
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/flag-icons ./node_modules/flag-icons
 
 USER nextjs
 

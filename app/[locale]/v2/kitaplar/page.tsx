@@ -64,9 +64,6 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
   setRequestLocale(locale);
 
   const { books, items } = await loadBooks(locale);
-  if (books.length === 0) {
-    notFound();
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-24">
