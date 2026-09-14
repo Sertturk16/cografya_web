@@ -5,6 +5,9 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Next.js standalone output for minimal Docker production container size
+  output: "standalone",
+
   // SEO non-negotiable (CONVENTIONS §6 #10): trailing slash pinned in config so
   // canonical/hreflang/sitemap URLs are stable and never depend on an implicit default.
   trailingSlash: false,

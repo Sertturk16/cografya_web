@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.tmp-scratch
+marine_shots
+*_shots
+*_verified
+coverage
+*.log
+.env.local
+.env*.local

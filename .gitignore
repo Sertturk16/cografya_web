@@ -59,3 +59,5 @@ next-env.d.ts
 /*_verified/
 /marine_shots/
 inspect_deprem.js
+.tmp-scratch/
+scripts/verify_*.mjs

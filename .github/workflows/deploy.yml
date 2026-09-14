@@ -1,0 +1,96 @@
+name: Deploy Web
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-web-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  HUSKY: "0"
+
+jobs:
+  ci-gate:
+    name: CI Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Map artifact drift
+        run: pnpm generate:map:check
+
+      - name: World map artifact drift
+        run: pnpm generate:world-map:check
+
+      - name: Inland water artifact drift
+        run: pnpm generate:water:check
+
+      - name: TR context artifact drift
+        run: pnpm generate:tr-context:check
+
+      - name: OpenAPI codegen drift
+        run: pnpm codegen:check
+
+      - name: Unit Tests
+        run: pnpm test
+
+  deploy-web:
+    name: Deploy to Production
+    needs: [ci-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          HOST: ${{ secrets.SERVER_HOST }}
+          USER: ${{ secrets.SERVER_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key "$USER@$HOST" << 'EOF'
+            set -euo pipefail
+            echo "==> Pulling latest Web code on production server..."
+            cd /opt/cografya/cografya_web
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "==> Building Web container (Next.js standalone)..."
+            cd /opt/cografya
+            docker compose -f docker-compose.prod.yml build web
+
+            echo "==> Restarting Web container..."
+            docker compose -f docker-compose.prod.yml up -d --no-deps web
+
+            echo "==> Waiting for container readiness..."
+            sleep 5
+
+            echo "==> Verifying Web container status..."
+            docker compose -f docker-compose.prod.yml ps web
+            echo "==> Web Deployment completed successfully! 🚀"
+          EOF
