@@ -299,10 +299,41 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       icon: "⚡",
       title: "T.C. İçişleri Bakanlığı AFAD (TDVMS)",
       license: "T.C. Resmî Açık Veri",
+      category: "official",
       description:
         "Türkiye Deprem Veri Merkezi Sistemi (TDVMS) üzerinden anlık deprem merkez üssü, odak derinliği ve büyüklük (ML/Mw) kayıtları.",
       legalQuote: "AFAD TDVMS Yönetmeliği, RG 28.08.2015/29459, m.9/4",
       sourceUrl: "deprem.afad.gov.tr",
+    },
+    {
+      id: "mta-diri-fay",
+      icon: "🗺️",
+      title: "MTA Genel Müdürlüğü — Türkiye Diri Fay Haritası",
+      license: "T.C. Resmî Jeoloji Verisi",
+      category: "official",
+      description:
+        "Kuzey Anadolu Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS) diri fay geometrileri, segmentasyon modelleri ve sismotektonik hatlar.",
+      sourceUrl: "yerbilimleri.mta.gov.tr",
+    },
+    {
+      id: "boun-kandilli",
+      icon: "🏛️",
+      title: "Boğaziçi Üniv. Kandilli Rasathanesi ve DAE (KRDAE)",
+      license: "Akademik Sismoloji",
+      category: "academic",
+      description:
+        "Türkiye ve çevresinin tarihsel ve aletsel dönem deprem katalogları, odak mekanizması çözümleri ve derinlik kayıtları.",
+      sourceUrl: "koeri.boun.edu.tr",
+    },
+    {
+      id: "afad-hazirlik",
+      icon: "🎒",
+      title: "AFAD Afet Farkındalık & AKUT Arama Kurtarma",
+      license: "Ulusal Afet Bilinci Standartları",
+      category: "official",
+      description:
+        "Deprem öncesi yaşam alanı sabitlemeleri, afet ve acil durum çantası içeriği, sarsıntı anı Çök-Kapan-Tutun tekniği ve ilk 72 saat tahliye protokolü.",
+      sourceUrl: "afad.gov.tr • akut.org.tr",
     },
     {
       id: "afad-disclaimer",

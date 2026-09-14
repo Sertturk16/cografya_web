@@ -11,11 +11,11 @@ import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2Footer } from "@/components/v2/v2-footer";
 import { V2EarthquakeExplorer, type ProvinceMeta } from "@/components/v2/v2-earthquake-explorer";
-import { V2FaultLinesGuide } from "@/components/v2/v2-fault-lines-guide";
-import { V2EarthquakePreparedness } from "@/components/v2/v2-earthquake-preparedness";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
-import { Flame, Home, ChevronRight } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Flame, Home, ChevronRight, Layers, ShieldCheck, ArrowRight } from "lucide-react";
 
 export const revalidate = 120;
 
@@ -162,11 +162,151 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
           defaultWindowDays={7}
         />
 
-        {/* SECTION 2: FAULT LINES & SEISMOTECTONIC GUIDE */}
-        <V2FaultLinesGuide />
+        {/* SECTION 2: FAULT LINES NAVIGATION CARD */}
+        <section
+          aria-labelledby="v2-fault-lines-nav-heading"
+          className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/20 p-6 sm:p-8 shadow-lg space-y-5"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Badge variant="destructive" size="sm" icon={<Layers className="size-3.5" />}>
+                  Sismotektonik Yapı
+                </Badge>
+                <span className="text-xs text-muted-foreground font-semibold">
+                  MTA Diri Fay Ağı
+                </span>
+              </div>
+              <h2
+                id="v2-fault-lines-nav-heading"
+                className="font-heading text-xl sm:text-2xl font-bold text-foreground"
+              >
+                Türkiye&apos;nin Ana Fay Hatları: KAF, DAF ve BAFS
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
+                Kuzey Anadolu Fayı, Doğu Anadolu Fayı ve Batı Anadolu Fay Sistemi&apos;nin tektonik
+                arka planı, geçtiği iller, segment kırılmaları ve tarihsel büyük deprem ilişkileri.
+              </p>
+            </div>
+            <Link
+              href="/v2/deprem/fay-hatlari"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "shrink-0 group gap-1.5 font-bold",
+              )}
+            >
+              <span>Fay Hatları Atlasına Git</span>
+              <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
 
-        {/* SECTION 3: PREPAREDNESS & ATTRIBUTION GUIDE */}
-        <V2EarthquakePreparedness />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="p-4 rounded-2xl border border-red-500/30 bg-red-500/5 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-red-700 dark:text-red-300">KAF</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/10 text-red-700 dark:text-red-300">
+                  Sağ Yanal Atımlı
+                </span>
+              </div>
+              <p className="text-muted-foreground">
+                Saros Körfezi&apos;nden Marmara Denizi tabanına ve Karlıova&apos;ya uzanan 1.200
+                km&apos;lik ana kırık hattı.
+              </p>
+            </div>
+            <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-blue-700 dark:text-blue-300">DAF</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-700 dark:text-blue-300">
+                  Sol Yanal Atımlı
+                </span>
+              </div>
+              <p className="text-muted-foreground">
+                Hatay grabeninden Kahramanmaraş, Malatya ve Elazığ üzerinden Karlıova birleşimine
+                ulaşan hat.
+              </p>
+            </div>
+            <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-emerald-700 dark:text-emerald-300">BAFS</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                  Graben Açılması
+                </span>
+              </div>
+              <p className="text-muted-foreground">
+                Gediz, Menderes ve Bakırçay graben çöküntülerini oluşturan çok parçalı normal fay
+                sistemi.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 3: QUICK PREPAREDNESS SUMMARY BOX */}
+        <section
+          aria-labelledby="v2-preparedness-summary-heading"
+          className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-6 sm:p-8 shadow-md space-y-4"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <ShieldCheck className="size-6" />
+              </div>
+              <div>
+                <h2
+                  id="v2-preparedness-summary-heading"
+                  className="font-heading text-lg sm:text-xl font-bold text-foreground"
+                >
+                  Deprem Anında Ne Yapmalısınız?
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Sarsıntı esnasında doğru refleksler hayat kurtarır.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/v2/deprem/hazirlik"
+              className={cn(
+                buttonVariants({ variant: "primary", size: "sm" }),
+                "shrink-0 group gap-1.5 font-bold",
+              )}
+            >
+              <span>Kapsamlı Hazırlık Rehberi</span>
+              <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1">
+              <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-primary" />
+                1. Çök - Kapan - Tutun
+              </span>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Sağlam bir eşyanın yanında hayat üçgeni oluşturun. Baş ve ensenizi koruyarak
+                sarsıntı geçene kadar bekleyin.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1">
+              <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-destructive" />
+                2. Merdiven &amp; Asansöre Koşmayın
+              </span>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Binaların en zayıf yerleri merdiven boşluklarıdır. Asla merdivenlere hücum etmeyin,
+                asansörleri kullanmayın.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1">
+              <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-accent" />
+                3. Tesisatları Kapatıp Tahliye Edin
+              </span>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Sarsıntı bitince doğal gaz vanası ve şarteli kapatın. Afet çantanızı alarak açık
+                toplanma alanına yürüyün.
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* SECTION 4: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
         <V2SourcesSection scope="deprem" />
