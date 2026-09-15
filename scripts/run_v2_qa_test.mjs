@@ -49,7 +49,6 @@ async function run() {
           const dialog = page.getByRole("dialog");
           const isDialogVisible = await dialog.isVisible();
           const registerTab = page.locator("#v2-auth-tab-register");
-          const loginTab = page.locator("#v2-auth-tab-login");
 
           let regAriaSelected = false;
           if (await registerTab.isVisible()) {
@@ -712,8 +711,6 @@ async function run() {
         const marmaraRes = await page.goto(`${BASE_URL}/v2/turkiye/bolge/marmara`, {
           waitUntil: "domcontentloaded",
         });
-        const marmaraStats =
-          (await page.locator("text=/Marmara|İl Sayısı|Karakteristik/i").count()) > 0;
 
         // Germany detail
         const gerRes = await page.goto(`${BASE_URL}/v2/dunya/almanya`, {

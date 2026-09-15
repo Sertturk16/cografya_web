@@ -1,16 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getBooksResilient } from "@/lib/api/books";
 import type { BookListItem } from "@/lib/api/types";
-import {
-  collectionPageJsonLd,
-  itemListJsonLd,
-  JsonLd,
-  type ItemListEntry,
-} from "@/lib/seo/json-ld";
+import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";

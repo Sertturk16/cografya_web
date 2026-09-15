@@ -13,13 +13,11 @@ import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionBySlug, getRegionsResilient } from "@/lib/api/regions";
-import type { RegionProvinceItem } from "@/lib/api/types";
 import { breadcrumbJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import {
   Mountain,
   Compass,
-  MapPin,
   Users,
   Maximize2,
   Waves,
@@ -31,13 +29,11 @@ import {
   Building2,
   HelpCircle,
   Table,
-  Info,
   Layers,
   ArrowUpRight,
   ShieldAlert,
   Globe2,
   Droplets,
-  Activity,
   Award,
   BarChart3,
   Landmark,

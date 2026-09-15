@@ -1,124 +1,77 @@
 # cografya_web
 
-Frontend for the **Coğrafya platform** — an SEO-first, free geography education site
-(TR + EN). Built with **Next.js (App Router)** and TypeScript in `strict` mode.
+Frontend of the **Coğrafya platform**, a free, SEO-first geography education site in Turkish
+with an English shell. Built with **Next.js 16 (App Router)**, **React 19** and TypeScript in
+`strict` mode. The API lives in the separate
+[`cografya_api`](https://github.com/Sertturk16/cografya_api) repo.
 
-> Working title. The brand/domain is not final yet (provisional: "Terraloji").
-> This is the standalone web repo; the API lives in the separate
-> [`cografya_api`](https://github.com/Sertturk16/cografya_api) repo.
-
-Written and maintained by [Ömer Can Serttürk](https://github.com/Sertturk16).
-
-![Homepage (TR, Terra theme)](docs/screenshot-home.png)
+Written and maintained by [Ömer Can Serttürk](https://github.com/Sertturk16). Working title;
+the brand and domain are not final.
 
 ## Stack
 
-- **Next.js 16** (App Router) · **React 19** · **TypeScript** (`strict` + `noUncheckedIndexedAccess`)
-- **Node 24** (pinned in `.nvmrc`) · **pnpm** (pinned via `packageManager`)
-- **next-intl 4** — i18n routing (TR `/`, EN `/en`) + localized pathnames
-- **zod** — boot-time env validation (`lib/env.ts`)
-- **ESLint** (flat config, from `eslint-config-next`) + **Prettier**
-- **husky** + **lint-staged** + **commitlint** (Conventional Commits)
-
-## Prerequisites
-
-- Node 24 (`nvm use` reads `.nvmrc`)
-- pnpm (`corepack enable` or install per the version in `package.json`)
+- Next.js 16 App Router, React 19, TypeScript (`strict` + `noUncheckedIndexedAccess`)
+- Tailwind CSS v4 (CSS-first config in `app/globals.css`), shadcn `base-nova` on Base UI
+- next-intl 4 (TR at `/`, EN at `/en`, localized pathnames)
+- zod env validation (`lib/env.ts` public, `lib/env.server.ts` server-only)
+- vitest (node environment), ESLint flat config, Prettier, husky + lint-staged + commitlint
+- Node 24 (`.nvmrc`), pnpm (pinned via `packageManager`)
 
 ## Getting started
 
 ```bash
-pnpm install      # installs deps + sets up git hooks (husky)
-pnpm dev          # start the dev server at http://localhost:3000
+pnpm install                 # deps + git hooks
+cp .env.example .env.local   # set API_BASE_URL (default http://localhost:3001)
+pnpm dev                     # http://localhost:3000/v2
 ```
+
+The site expects the API running on port 3001 (see the API repo's README). Without it,
+content pages render their empty states.
 
 ## Scripts
 
-| Script              | What it does               |
-| ------------------- | -------------------------- |
-| `pnpm dev`          | Start the local dev server |
-| `pnpm build`        | Production build           |
-| `pnpm start`        | Serve the production build |
-| `pnpm lint`         | ESLint over the project    |
-| `pnpm typecheck`    | `tsc --noEmit`             |
-| `pnpm format`       | Prettier write             |
-| `pnpm format:check` | Prettier check (no writes) |
+| Script                                                                                | What it does                                                                            |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `pnpm dev` / `pnpm build` / `pnpm start`                                              | Dev server, production build (standalone), serve                                        |
+| `pnpm typecheck`                                                                      | `tsc --noEmit`                                                                          |
+| `pnpm lint`                                                                           | ESLint                                                                                  |
+| `pnpm test` / `pnpm test:watch`                                                       | vitest                                                                                  |
+| `pnpm format` / `pnpm format:check`                                                   | Prettier                                                                                |
+| `pnpm codegen`                                                                        | `openapi/openapi.json` → `lib/api/schema.ts` (after copying the spec from the API repo) |
+| `pnpm codegen:check`                                                                  | fails if the committed `schema.ts` is stale                                             |
+| `pnpm generate:map` / `generate:world-map` / `generate:water` / `generate:tr-context` | rebuild the committed SVG map artifacts in `lib/map/` from `data/*.geojson`             |
+| `pnpm generate:*:check`                                                               | drift gates for the four artifacts above                                                |
 
-## Conventions
+## Layout
 
-- **Commits:** Conventional Commits, enforced by commitlint on the `commit-msg` hook.
-- **Pre-commit:** `lint-staged` runs `eslint --fix` + Prettier on staged files and a
-  project-wide `tsc --noEmit`.
-- **Branches:** `feature/* → dev` (squash PR); `dev` is promoted to `main` as it
-  stabilizes.
-- **CI (GitHub Actions):** a `typecheck-and-lint` job and a `build` job run on every PR
-  to `dev`/`main`. No deploy job yet — hosting is undecided.
+- `app/[locale]/` — the root layout and every page. `v2/**` is the current UI (Tailwind +
+  shadcn); the routes outside `v2/` are the frozen V1 surface (CSS Modules).
+- `app/api/**` — BFF route handlers that proxy authenticated and mutating calls to the API.
+- `components/ui/` shadcn primitives · `components/v2/` V2 surface · `components/{game,map,
+tools,marine,book,...}` feature components.
+- `lib/api/` typed API client (`client.ts` is the only read path; `schema.ts` is generated).
+- `lib/seo/` metadata, hreflang, JSON-LD, sitemap builders · `lib/map/` projection, zoom-pan,
+  generated geometry · `lib/<domain>/transport.server.ts` server-side transports.
+- `i18n/` routing, request config, navigation · `messages/{tr,en}.json`.
+- `data/` build-time GeoJSON with its provenance ledger (`data/README.md`) · `scripts/`
+  artifact generators and ad-hoc Playwright audits.
+- `docs/` — `architecture.md`, `conventions.md`, `design.md` (Terra design system and
+  data-viz colour rules), `public-kitaplar.md`.
 
 ## Environment
 
-Copy `.env.example` to `.env.local`. Vars are validated at boot by a zod schema
-(`lib/env.ts`) — no unvalidated `process.env` reads.
+Validated at boot by zod; an invalid value aborts startup.
 
-- `NEXT_PUBLIC_SITE_URL` — absolute site origin. Drives `metadataBase` + canonical /
-  hreflang / sitemap URLs. Defaults to `http://localhost:3000`; **must** be the real
-  domain in production.
+- `NEXT_PUBLIC_SITE_URL` — absolute site origin, drives canonicals, hreflang and the sitemap.
+- `API_BASE_URL` — server-only API origin (`http://api:3001` in production compose).
+- `INTERNAL_REQUEST_TOKEN` — server-only; exempts server-side GETs from the API throttle.
 - `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_GSC_VERIFICATION` — declared, not wired yet.
 
-## Internationalization (`next-intl`)
+## Conventions
 
-- Sub-path routing: **TR at `/`** (default, unprefixed), **EN at `/en`**.
-  `localePrefix: "as-needed"` (never `"never"` — distinct crawlable URLs per locale).
-  `localeDetection: false` — no Accept-Language redirects; URLs are deterministic for
-  crawlers and hreflang carries the language mapping.
-- **Localized pathnames** (static segments): `/il` ↔ `/en/province`,
-  `/iller` ↔ `/en/provinces`, `/hakkimizda` ↔ `/en/about`. Defined once in
-  `i18n/routing.ts`.
-- **Localized slugs** (`slug_tr` / `slug_en`): the dynamic `[slug]` value is the
-  per-locale slug supplied by the caller; resolution lives in the page + `lib/geo`.
-- Config: `i18n/routing.ts` (routing + pathnames), `i18n/request.ts` (per-request
-  messages), `i18n/navigation.ts` (`Link`/`getPathname`/…), `proxy.ts` (middleware —
-  renamed from `middleware.ts` in Next 16). Messages: `messages/{tr,en}.json`.
-  Faz-1 is TR-content; EN carries the translated chrome so `/en` is a valid shell.
-
-## SEO surface
-
-Central helpers keep every page uniform:
-
-- `lib/seo/metadata.ts` — `buildMetadata()` builds the templated title/description,
-  self-canonical, and **symmetric hreflang** (tr / en / x-default) from `getPathname`.
-  `metadataBase` is set once in `app/[locale]/layout.tsx`.
-- `lib/seo/json-ld.tsx` — server-rendered JSON-LD (`<JsonLd>` + typed builders:
-  WebSite, Organization, BreadcrumbList, CollectionPage, AdministrativeArea).
-- `app/sitemap.ts` — flat, hreflang-annotated urlset today; structured with per-hub
-  entry builders so a hub can split to `generateSitemaps()` when it nears 50k URLs.
-- `app/robots.ts` — allow-all + `Disallow: /api/` (de-indexing uses `noindex` meta,
-  never Disallow) + sitemap/host.
-- Unknown slug → `notFound()` (real 404, never a soft-200).
-
-## Theme (Terra visual identity)
-
-The locked "Terra" direction (terracotta / olive / water-teal + Fraunces / Nunito Sans)
-lives as a **token layer** in `app/globals.css` (`:root` custom properties) — reference
-`var(--token)` only; never hardcode brand hex elsewhere. Fonts load via `next/font`
-(`lib/fonts.ts`, self-hosted, `latin` + `latin-ext` for Turkish glyphs) — **not** a
-render-blocking Google Fonts `<link>`. Component styling uses CSS Modules.
-
-## `next/image` conventions
-
-No images ship yet. When they do: local images live in `/public` and always render
-through `next/image` with explicit `width`/`height` (or `fill` + a fixed-size
-container) to hold CLS < 0.1. Remote sources are allowlisted via `images.remotePatterns`
-in `next.config.ts` (never the deprecated `images.domains`).
-
-## Roadmap notes (scope guard)
-
-The i18n + SEO foundations and the Terra theme are wired on top of the initial
-scaffold. The `app/[locale]/il/[slug]` province pages currently render from a
-**placeholder routing fixture** (`lib/geo/placeholder-provinces.ts`, names + slugs
-only, no geographic facts) that exists solely to exercise the localized-slug pattern
-end to end. Real province data arrives from the
-[`cografya_api`](https://github.com/Sertturk16/cografya_api) repo — replace the
-fixture with the typed API client then.
+Conventional Commits (commitlint), `feature/*` → `dev` squash PR, `dev` → `main` deploys via
+GitHub Actions to the production host. CI on every PR: typecheck, lint, five drift gates,
+tests, build. Details in `docs/conventions.md`.
 
 ## License
 

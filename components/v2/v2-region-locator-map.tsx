@@ -20,7 +20,6 @@ interface V2RegionLocatorMapProps {
 
 export function V2RegionLocatorMap({
   regionName,
-  regionSlug,
   provinces,
   fillColor = "var(--color-primary, #b0522e)",
   strokeColor = "var(--color-primary-dark, #7e3a1e)",

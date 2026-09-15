@@ -18,7 +18,6 @@ interface V2ContinentLocatorMapProps {
 
 export function V2ContinentLocatorMap({
   continentName,
-  continentSlug: _continentSlug,
   countries,
   fillColor = "var(--color-primary, #b0522e)",
   hoverFillColor = "var(--color-primary-dark, #7e3a1e)",

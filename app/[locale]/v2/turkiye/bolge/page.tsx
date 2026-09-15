@@ -14,23 +14,18 @@ import { breadcrumbJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { tr } from "@/lib/text/format-number";
 import {
-  Mountain,
   Compass,
   Users,
   Maximize2,
-  Waves,
   Home,
   ChevronRight,
   Boxes,
-  Building2,
   Table,
   HelpCircle,
   Landmark,
   Scale,
   ArrowRight,
-  ShieldAlert,
   Layers,
-  Sparkles,
 } from "lucide-react";
 
 export const revalidate = 3600;
@@ -280,7 +275,6 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         })
       : REGIONS_STATIC_FALLBACK;
 
-  const totalProvincesCount = regionsList.reduce((acc, r) => acc + r.provinceCount, 0) || 81;
   const totalPop = regionsList.reduce((acc, r) => acc + r.population, 0) || 86092168;
   const totalArea = regionsList.reduce((acc, r) => acc + r.areaKm2, 0) || 780040;
   const bolgelerFaqs = buildBolgelerFaqs(regionsList);

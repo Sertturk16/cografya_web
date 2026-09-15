@@ -3,26 +3,16 @@
 import * as React from "react";
 import { magnitudeBucket, magnitudeBucketToken } from "@/lib/earthquake/magnitude";
 import {
-  Search,
-  Mail,
-  Lock,
-  ArrowRight,
   Sparkles,
   MapPin,
   Compass,
   Layers,
-  Activity,
-  CheckCircle2,
   AlertCircle,
-  AlertTriangle,
   Flame,
   Globe,
-  Settings,
   Heart,
   Share2,
   RefreshCw,
-  Eye,
-  EyeOff,
   Sliders,
   MoreVertical,
   Maximize2,
@@ -30,11 +20,8 @@ import {
   PanelLeft,
   PanelBottom,
   Download,
-  Filter,
-  Check,
   ChevronRight,
   Trash2,
-  Info,
   ExternalLink,
   BookOpen,
   Map,
@@ -44,7 +31,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -58,7 +44,6 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-  CardAction,
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -78,7 +63,6 @@ import {
   SheetTitle,
   SheetDescription,
   SheetFooter,
-  SheetClose,
 } from "@/components/ui/sheet";
 import {
   Table,
@@ -97,18 +81,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuGroup,
-  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  AvatarBadge,
-  AvatarGroup,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarBadge, AvatarGroup } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
 interface SampleEarthquake {
@@ -171,12 +146,8 @@ const mockEarthquakes: SampleEarthquake[] = [
 
 export default function DesignSystemPage() {
   const [btnLoading, setBtnLoading] = React.useState(false);
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [demoSwitch, setDemoSwitch] = React.useState(true);
-  const [demoCheckbox, setDemoCheckbox] = React.useState(true);
   const [tableState, setTableState] = React.useState<"data" | "loading" | "empty">("data");
   const [selectedEarthquakes, setSelectedEarthquakes] = React.useState<string[]>(["EQ-8941"]);
-  const [filterVerifiedOnly, setFilterVerifiedOnly] = React.useState(false);
   const [showAlert, setShowAlert] = React.useState(true);
 
   const toggleSelectAll = () => {

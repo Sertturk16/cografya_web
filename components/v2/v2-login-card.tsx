@@ -32,7 +32,6 @@ export interface V2LoginCardProps {
 }
 
 export function V2LoginCard({
-  locale: _locale = "tr",
   inModal = false,
   onAuthenticated,
   onSwitchToRegister,
