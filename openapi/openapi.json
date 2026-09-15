@@ -1354,6 +1354,42 @@
         ]
       }
     },
+    "/api/auth/password-reset/verify": {
+      "post": {
+        "description": "Read-only: no consumedAt write, no token_version bump, no session revocation. The presented token stays fully usable by password-reset/confirm afterwards.",
+        "operationId": "AuthController_verifyPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetVerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "errors.password.resetTokenInvalid — unknown, consumed or expired token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Check whether a password-reset token is still usable, without consuming it.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/session": {
       "get": {
         "description": "id, firstName, accountRole ONLY. No e-posta, telefon, soyad or education fields.",
@@ -1483,6 +1519,78 @@
         "summary": "Replace the declared education profile of the authenticated caller (full replacement).",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/video-progress/books/{slug}": {
+      "get": {
+        "description": "A caller with no progress at all for this book still gets 200: videoCount is the book's own video-row count (the denominator), watchedCount/startedCount default to zero and resume is null — this route answers \"how far am I\", which has a valid zero, unlike the single-video GET's \"do I have a row here\" 404.",
+        "operationId": "VideoProgressController_getBookProgress",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "TR or EN slug of the book — the same slug space as GET /api/books/{slug}.",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 140,
+              "pattern": "^[a-z0-9-]+$",
+              "example": "ayt-cografya-konu-ozetli-brans-denemeleri",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookProgressDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A malformed slug.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "errors.auth.unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "errors.videoProgress.bookNotFound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The caller's own reading progress on one book.",
+        "tags": [
+          "video-progress"
         ]
       }
     },
@@ -1691,9 +1799,45 @@
         ]
       }
     },
+    "/api/video-cover/{bookVideoId}": {
+      "get": {
+        "description": "Proxies the video's cover bytes from the api's own address, keyed on the video's own already-public bookVideoId. No response this route can produce — success, 404, or any unexpected error — ever carries the provider's own video identity, in a field value or embedded in an address path segment. Every failure state (an unknown id, a non-servable snapshot, a disallowed upstream host, or any upstream failure) answers the identical 404 — nothing distinguishes WHY a cover is unavailable.",
+        "operationId": "VideoCoverController_getCover",
+        "parameters": [
+          {
+            "name": "bookVideoId",
+            "required": true,
+            "in": "path",
+            "description": "book_videos.id.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The cover image bytes. Content-Type: image/jpeg."
+          },
+          "400": {
+            "description": "bookVideoId is not a well-formed UUID."
+          },
+          "404": {
+            "description": "No cover is available for this id, for any reason."
+          },
+          "429": {
+            "description": "The per-client rate limit for this route was exceeded. Tighter than the global limit because this route can reach an external provider."
+          }
+        },
+        "summary": "The api's own cover proxy for one book video — never the provider's own address.",
+        "tags": [
+          "video-cover"
+        ]
+      }
+    },
     "/api/favorites": {
       "get": {
-        "description": "A plain, unpaginated array — bounded at at most 81 provinces + ~199 countries = 280 rows per user, ever, the same \"bounded and small\" shape `ENGINEERING.md` §2 already uses for the province/country lists themselves.",
+        "description": "A plain, unpaginated array — bounded at at most 81 provinces + ~199 countries + 7 regions + 7 continents = 294 rows per user, ever, the same \"bounded and small\" shape `ENGINEERING.md` §2 already uses for the province/country lists themselves.",
         "operationId": "FavoritesController_listMine",
         "parameters": [],
         "responses": {
@@ -1726,24 +1870,40 @@
             "access-token": []
           }
         ],
-        "summary": "The caller's own favorited provinces and countries.",
+        "summary": "The caller's own favorited provinces, countries, regions and continents.",
         "tags": [
           "favorites"
         ]
       }
     },
-    "/api/favorites/provinces/{plateCode}": {
+    "/api/favorites/{entityType}/{entityId}": {
       "put": {
-        "description": "Always 200, never 201 — the resource's final state is identical whether this call created or found the row, matching video_progress's idempotent-upsert convention. No request body: the target comes entirely from the route param and the auth context.",
-        "operationId": "FavoritesController_addProvince",
+        "description": "Always 200, never 201 — the resource's final state is identical whether this call created or found the row, matching video_progress's idempotent-upsert convention. No request body: the target comes entirely from the route params and the auth context.",
+        "operationId": "FavoritesController_addTarget",
         "parameters": [
           {
-            "name": "plateCode",
+            "name": "entityType",
             "required": true,
             "in": "path",
-            "description": "Two-digit zero-padded province plate code.",
             "schema": {
-              "pattern": "^\\d{2}$",
+              "enum": [
+                "province",
+                "country",
+                "region",
+                "continent"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "path",
+            "description": "The published business key for entityType — provinces.plate_code, countries.iso_code, regions.slug, or a Continent enum label.",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
               "example": "34",
               "type": "string"
             }
@@ -1771,7 +1931,7 @@
             }
           },
           "404": {
-            "description": "errors.favorites.provinceNotFound",
+            "description": "One of errors.favorites.{provinceNotFound,countryNotFound,regionNotFound,continentNotFound}, matching the request entityType.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1786,22 +1946,38 @@
             "access-token": []
           }
         ],
-        "summary": "Idempotent add — favorite one province.",
+        "summary": "Idempotent add — favorite one province, country, region or continent.",
         "tags": [
           "favorites"
         ]
       },
       "delete": {
-        "description": "204 unconditionally: whether the row was favorited and removed, was never favorited, or plateCode is well-formed but names no real province at all. No 404 branch on this route at all — \"remove\" never needs to distinguish those cases from the caller's point of view.",
-        "operationId": "FavoritesController_removeProvince",
+        "description": "204 unconditionally: whether the row was favorited and removed, was never favorited, or entityId is well-formed but names nothing real at all. No 404 branch on this route at all — \"remove\" never needs to distinguish those cases from the caller's point of view.",
+        "operationId": "FavoritesController_removeTarget",
         "parameters": [
           {
-            "name": "plateCode",
+            "name": "entityType",
             "required": true,
             "in": "path",
-            "description": "Two-digit zero-padded province plate code.",
             "schema": {
-              "pattern": "^\\d{2}$",
+              "enum": [
+                "province",
+                "country",
+                "region",
+                "continent"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "path",
+            "description": "The published business key for entityType — provinces.plate_code, countries.iso_code, regions.slug, or a Continent enum label.",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
               "example": "34",
               "type": "string"
             }
@@ -1809,7 +1985,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Removed, already absent, or plateCode names no province — all answer identically."
+            "description": "Removed, already absent, or entityId names nothing real — all answer identically."
           },
           "401": {
             "description": "errors.auth.unauthenticated",
@@ -1827,108 +2003,7 @@
             "access-token": []
           }
         ],
-        "summary": "Idempotent remove — unfavorite one province.",
-        "tags": [
-          "favorites"
-        ]
-      }
-    },
-    "/api/favorites/countries/{isoCode}": {
-      "put": {
-        "description": "Mirrors the province add route exactly, substituting isoCode/countryNotFound.",
-        "operationId": "FavoritesController_addCountry",
-        "parameters": [
-          {
-            "name": "isoCode",
-            "required": true,
-            "in": "path",
-            "description": "ISO 3166-1 alpha-2 country code.",
-            "schema": {
-              "pattern": "^[A-Z]{2}$",
-              "example": "TR",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FavoriteDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "errors.auth.unauthenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "errors.favorites.countryNotFound",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "access-token": []
-          }
-        ],
-        "summary": "Idempotent add — favorite one country.",
-        "tags": [
-          "favorites"
-        ]
-      },
-      "delete": {
-        "description": "Mirrors the province remove route exactly, substituting isoCode.",
-        "operationId": "FavoritesController_removeCountry",
-        "parameters": [
-          {
-            "name": "isoCode",
-            "required": true,
-            "in": "path",
-            "description": "ISO 3166-1 alpha-2 country code.",
-            "schema": {
-              "pattern": "^[A-Z]{2}$",
-              "example": "TR",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Removed, already absent, or isoCode names no country — all answer identically."
-          },
-          "401": {
-            "description": "errors.auth.unauthenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "access-token": []
-          }
-        ],
-        "summary": "Idempotent remove — unfavorite one country.",
+        "summary": "Idempotent remove — unfavorite one province, country, region or continent.",
         "tags": [
           "favorites"
         ]
@@ -2062,6 +2137,86 @@
           }
         ],
         "summary": "The caller's own round history, paginated, most-recent-first.",
+        "tags": [
+          "game-rounds"
+        ]
+      }
+    },
+    "/api/game-rounds/leaderboard": {
+      "get": {
+        "description": "One row per user (their single best qualifying round in the requested mode), ranked over the FULL filtered set so rank stays stable across pages. Each row carries only the row owner's first name plus their surname's initial — never a full surname, an id, an e-mail or any other profile field. An unknown or never-played mode answers 200 with an empty page, never 404.",
+        "operationId": "GameRoundsController_leaderboard",
+        "parameters": [
+          {
+            "name": "mode",
+            "required": true,
+            "in": "query",
+            "description": "The game mode to rank. Never validated against a closed set; an unknown mode answers 200 with an empty page, not 404.",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[a-z][a-z0-9-]{0,39}$",
+              "example": "provinces",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page to read, 1-based. A page past the end answers 200 with an empty items array.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "format": "int32",
+              "default": 1,
+              "example": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "Rows per page, ranked best-first.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "format": "int32",
+              "default": 20,
+              "example": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "errors.auth.unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The ranked per-mode leaderboard — every player, one row each, best round first.",
         "tags": [
           "game-rounds"
         ]
@@ -5630,7 +5785,7 @@
         "properties": {
           "thumbnailUrl": {
             "type": "string",
-            "description": "Thumbnail URL exactly as the provider returned it. NEVER construct this address from the video id — replacing API Data with independently computed data is barred (Developer Policies III.E.5). Hotlink it; do not copy, cache or optimise the bytes (III.E.1), which is why image optimisation is off on this surface."
+            "description": "The address of the api's OWN cover proxy for this video, keyed on the video's own already-public bookVideoId — never the provider's own address (closes VAL137-NEW-C1/VAL137-C1). Render it exactly like any other image; treat an unavailable cover as a normal degraded state, because the proxy route's own 404 carries no information about why. The field name, type and required/non-nullable status are unchanged; only the VALUE changed. The retired warning (\"never construct this address from the video id\") governed building the PROVIDER's address from the id (Developer Policies III.E.5) and still holds: the proxy fetches through the STORED, API-verified snapshot server-side only, never reconstructing the provider's address — the PUBLISHED address here is simply now deliberately ours. Do not copy, cache or optimise the bytes client-side (III.E.1); the proxy itself holds no byte durably either (no Redis, no disk) — it relays them per request."
           },
           "thumbnailWidth": {
             "type": "number",
@@ -5730,19 +5885,6 @@
           "titleEn",
           "tags",
           "youtube"
-        ]
-      },
-      "VideoIdentityDto": {
-        "type": "object",
-        "properties": {
-          "youtubeVideoId": {
-            "type": "string",
-            "example": "dQw4w9WgXcQ",
-            "description": "The YouTube video id, 11 characters — the identifier the embed is built from."
-          }
-        },
-        "required": [
-          "youtubeVideoId"
         ]
       },
       "BookAttributionDto": {
@@ -6610,7 +6752,8 @@
           "accountRole": {
             "enum": [
               "STUDENT",
-              "TEACHER"
+              "TEACHER",
+              "PARENT"
             ],
             "type": "string",
             "example": "STUDENT",
@@ -6624,7 +6767,7 @@
             ],
             "type": "string",
             "example": "SECONDARY",
-            "description": "Yalnız accountRole=STUDENT gönderir; TEACHER bu alanı hiç göndermez (profil matrisi, §6.4)."
+            "description": "Yalnız accountRole=STUDENT|PARENT gönderir; TEACHER bu alanı hiç göndermez (profil matrisi, §6.4)."
           },
           "gradeLevel": {
             "enum": [
@@ -6660,6 +6803,12 @@
             "type": "string",
             "example": "SAYISAL",
             "description": "Yalnız educationLevel=SECONDARY gönderir."
+          },
+          "schoolName": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Synthetic Lisesi",
+            "description": "Okul adı — yalnız educationLevel=SECONDARY dalında anlamlıdır (öğrenci veya veli); isteğe bağlıdır, kapalı küme değildir, serbest metindir (`GLOSSARY.md` §7.1 `schoolName` alt bloğu, `DEC 2026-09-11g`)."
           },
           "universityName": {
             "type": "string",
@@ -6887,6 +7036,19 @@
           "password"
         ]
       },
+      "PasswordResetVerifyDto": {
+        "type": "object",
+        "properties": {
+          "resetToken": {
+            "type": "string",
+            "writeOnly": true,
+            "description": "Opak şifre sıfırlama jetonu (§5.4). Hiçbir yanıtta, örnekte ya da logda dönmez."
+          }
+        },
+        "required": [
+          "resetToken"
+        ]
+      },
       "SessionDto": {
         "type": "object",
         "properties": {
@@ -6903,7 +7065,8 @@
           "accountRole": {
             "enum": [
               "STUDENT",
-              "TEACHER"
+              "TEACHER",
+              "PARENT"
             ],
             "type": "string",
             "example": "STUDENT",
@@ -6922,7 +7085,8 @@
           "accountRole": {
             "enum": [
               "STUDENT",
-              "TEACHER"
+              "TEACHER",
+              "PARENT"
             ],
             "type": "string",
             "example": "STUDENT",
@@ -6976,6 +7140,12 @@
             "example": "SAYISAL",
             "description": "Öğrenim alanı / kolu — yalnızca educationLevel = SECONDARY iken geçerlidir."
           },
+          "schoolName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Synthetic Lisesi",
+            "description": "Okul adı — yalnızca educationLevel = SECONDARY iken anlamlıdır, isteğe bağlıdır, kapalı küme değildir (`GLOSSARY.md` §7.1 `schoolName` alt bloğu, `DEC 2026-09-11g`)."
+          },
           "universityName": {
             "type": "string",
             "nullable": true,
@@ -6999,6 +7169,7 @@
           "educationLevel",
           "gradeLevel",
           "studyStream",
+          "schoolName",
           "universityName",
           "departmentName",
           "isComplete"
@@ -7052,6 +7223,12 @@
             "type": "string",
             "description": "Öğrenim alanı (SECONDARY için). null değeri alanı temizlemek için kullanılır."
           },
+          "schoolName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "Okul adı (SECONDARY için, isteğe bağlı, kapalı küme değil — `GLOSSARY.md` §7.1 `schoolName` alt bloğu, `DEC 2026-09-11g`). null değeri alanı temizlemek için kullanılır."
+          },
           "universityName": {
             "type": "string",
             "nullable": true,
@@ -7067,8 +7244,91 @@
           "educationLevel",
           "gradeLevel",
           "studyStream",
+          "schoolName",
           "universityName",
           "departmentName"
+        ]
+      },
+      "BookProgressResumeDto": {
+        "type": "object",
+        "properties": {
+          "bookVideoId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "book_videos.id of the resume video — feeds GET/PUT /api/video-progress/{bookVideoId}."
+          },
+          "orderNo": {
+            "type": "number",
+            "minimum": 1,
+            "example": 12,
+            "description": "The resume video's position IN THE BOOK (`BookVideoDto.orderNo`'s own field, never the retired denemeNo) — the anchor prefix on the book page (`#video-{orderNo}-…`)."
+          },
+          "lastPositionSeconds": {
+            "type": "number",
+            "example": 245,
+            "description": "Last playback position on the resume video, in seconds."
+          },
+          "watched": {
+            "type": "boolean",
+            "description": "The caller's declared watched signal on this video."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this progress row was last written, UTC — the ordering key that selects the resume row among the caller's progress rows for this book."
+          }
+        },
+        "required": [
+          "bookVideoId",
+          "orderNo",
+          "lastPositionSeconds",
+          "watched",
+          "updatedAt"
+        ]
+      },
+      "BookProgressDto": {
+        "type": "object",
+        "properties": {
+          "bookSlugTr": {
+            "type": "string",
+            "example": "ayt-cografya-konu-ozetli-brans-denemeleri",
+            "description": "The resolved book's canonical TR slug (`books.slug_tr`), regardless of which locale slug the request named."
+          },
+          "videoCount": {
+            "type": "number",
+            "minimum": 0,
+            "example": 30,
+            "description": "The book's own video-row count — the progress denominator. A live COUNT, never a stored/declared column."
+          },
+          "watchedCount": {
+            "type": "number",
+            "minimum": 0,
+            "example": 4,
+            "description": "The caller's progress rows among this book's videos with watched = true — declared marks only, never inferred from position."
+          },
+          "startedCount": {
+            "type": "number",
+            "minimum": 0,
+            "example": 6,
+            "description": "The caller's progress rows among this book's videos, whatever their watched state — every video the caller has ever saved a position for."
+          },
+          "resume": {
+            "nullable": true,
+            "description": "The caller's most-recently-updated progress row among this book's videos, or null when the caller has none.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BookProgressResumeDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "bookSlugTr",
+          "videoCount",
+          "watchedCount",
+          "startedCount",
+          "resume"
         ]
       },
       "VideoProgressDto": {
@@ -7128,28 +7388,36 @@
           "watched"
         ]
       },
+      "VideoIdentityDto": {
+        "type": "object",
+        "properties": {
+          "youtubeVideoId": {
+            "type": "string",
+            "example": "dQw4w9WgXcQ",
+            "description": "The YouTube video id, 11 characters — the identifier the embed is built from."
+          }
+        },
+        "required": [
+          "youtubeVideoId"
+        ]
+      },
       "FavoriteDto": {
         "type": "object",
         "properties": {
-          "type": {
+          "entityType": {
             "enum": [
               "province",
-              "country"
+              "country",
+              "region",
+              "continent"
             ],
             "type": "string",
             "description": "Which kind of target this favorite names."
           },
-          "plateCode": {
+          "entityId": {
             "type": "string",
-            "nullable": true,
             "example": "34",
-            "description": "provinces.plate_code. Set iff type === \"province\"; null otherwise."
-          },
-          "isoCode": {
-            "type": "string",
-            "nullable": true,
-            "example": "TR",
-            "description": "countries.iso_code. Set iff type === \"country\"; null otherwise."
+            "description": "The published business key for entityType — provinces.plate_code, countries.iso_code, regions.slug, or a Continent enum label. Never the entity's internal uuid."
           },
           "createdAt": {
             "type": "string",
@@ -7158,9 +7426,8 @@
           }
         },
         "required": [
-          "type",
-          "plateCode",
-          "isoCode",
+          "entityType",
+          "entityId",
           "createdAt"
         ]
       },
@@ -7348,6 +7615,143 @@
           "total",
           "hasMore",
           "items"
+        ]
+      },
+      "LeaderboardEntryDto": {
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": "number",
+            "minimum": 1,
+            "example": 1,
+            "description": "Position in the FULL ranked set for this mode, 1-based and stable across pages (computed once over every qualifying round, not per page)."
+          },
+          "firstName": {
+            "type": "string",
+            "example": "Ayşe",
+            "description": "This row's `users.first_name`, verbatim."
+          },
+          "lastNameInitial": {
+            "type": "string",
+            "example": "Y",
+            "description": "Exactly one grapheme: this row's surname, truncated to its first letter and Turkish-locale upper-cased. The full surname never leaves the api."
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 96
+          },
+          "found": {
+            "type": "number",
+            "minimum": 0,
+            "example": 79
+          },
+          "firstTry": {
+            "type": "number",
+            "minimum": 0,
+            "example": 74
+          },
+          "totalWrongs": {
+            "type": "number",
+            "minimum": 0,
+            "example": 5
+          },
+          "completionTimeSeconds": {
+            "type": "number",
+            "nullable": true,
+            "example": null,
+            "description": "Elapsed seconds for this best round, or null when the client sent none."
+          },
+          "achievedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-08T19:22:11.000Z",
+            "description": "When this row's best round was recorded (`game_rounds.created_at`)."
+          },
+          "isCurrentUser": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether this row is the calling user's own row."
+          }
+        },
+        "required": [
+          "rank",
+          "firstName",
+          "lastNameInitial",
+          "score",
+          "found",
+          "firstTry",
+          "totalWrongs",
+          "completionTimeSeconds",
+          "achievedAt",
+          "isCurrentUser"
+        ]
+      },
+      "LeaderboardMetaDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "example": "provinces",
+            "description": "The mode this page ranks — echoes the request query."
+          },
+          "currentUserRank": {
+            "type": "number",
+            "nullable": true,
+            "example": 1,
+            "description": "The caller's own rank in this mode's FULL ranking (comparable to items[].rank across pages), or null when the caller has no qualifying round in this mode."
+          }
+        },
+        "required": [
+          "mode",
+          "currentUserRank"
+        ]
+      },
+      "LeaderboardDto": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "minimum": 1,
+            "example": 1,
+            "description": "Requested page, 1-based."
+          },
+          "pageSize": {
+            "type": "number",
+            "minimum": 1,
+            "example": 50,
+            "description": "Requested page size. Each endpoint documents its own ceiling."
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0,
+            "example": 630,
+            "description": "Total rows matching the applied filter, across all pages."
+          },
+          "hasMore": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether a further page exists after this one."
+          },
+          "items": {
+            "description": "The page of ranked rows, best-first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardEntryDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/LeaderboardMetaDto"
+          }
+        },
+        "required": [
+          "page",
+          "pageSize",
+          "total",
+          "hasMore",
+          "items",
+          "meta"
         ]
       },
       "MeasurementPointDto": {

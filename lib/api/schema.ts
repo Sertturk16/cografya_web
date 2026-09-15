@@ -657,6 +657,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/password-reset/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check whether a password-reset token is still usable, without consuming it.
+         * @description Read-only: no consumedAt write, no token_version bump, no session revocation. The presented token stays fully usable by password-reset/confirm afterwards.
+         */
+        post: operations["AuthController_verifyPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/session": {
         parameters: {
             query?: never;
@@ -694,6 +714,26 @@ export interface paths {
          * @description Replaces the caller’s entire declared education profile (`plan-api.md` §5.3.1, §5.3.3). All five keys are required; explicit null clears a field. Idempotent.
          */
         put: operations["AuthController_replaceProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/video-progress/books/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The caller's own reading progress on one book.
+         * @description A caller with no progress at all for this book still gets 200: videoCount is the book's own video-row count (the denominator), watchedCount/startedCount default to zero and resume is null — this route answers "how far am I", which has a valid zero, unlike the single-video GET's "do I have a row here" 404.
+         */
+        get: operations["VideoProgressController_getBookProgress"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -745,6 +785,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/video-cover/{bookVideoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The api's own cover proxy for one book video — never the provider's own address.
+         * @description Proxies the video's cover bytes from the api's own address, keyed on the video's own already-public bookVideoId. No response this route can produce — success, 404, or any unexpected error — ever carries the provider's own video identity, in a field value or embedded in an address path segment. Every failure state (an unknown id, a non-servable snapshot, a disallowed upstream host, or any upstream failure) answers the identical 404 — nothing distinguishes WHY a cover is unavailable.
+         */
+        get: operations["VideoCoverController_getCover"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/favorites": {
         parameters: {
             query?: never;
@@ -753,8 +813,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The caller's own favorited provinces and countries.
-         * @description A plain, unpaginated array — bounded at at most 81 provinces + ~199 countries = 280 rows per user, ever, the same "bounded and small" shape `ENGINEERING.md` §2 already uses for the province/country lists themselves.
+         * The caller's own favorited provinces, countries, regions and continents.
+         * @description A plain, unpaginated array — bounded at at most 81 provinces + ~199 countries + 7 regions + 7 continents = 294 rows per user, ever, the same "bounded and small" shape `ENGINEERING.md` §2 already uses for the province/country lists themselves.
          */
         get: operations["FavoritesController_listMine"];
         put?: never;
@@ -765,7 +825,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/favorites/provinces/{plateCode}": {
+    "/api/favorites/{entityType}/{entityId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -774,40 +834,16 @@ export interface paths {
         };
         get?: never;
         /**
-         * Idempotent add — favorite one province.
-         * @description Always 200, never 201 — the resource's final state is identical whether this call created or found the row, matching video_progress's idempotent-upsert convention. No request body: the target comes entirely from the route param and the auth context.
+         * Idempotent add — favorite one province, country, region or continent.
+         * @description Always 200, never 201 — the resource's final state is identical whether this call created or found the row, matching video_progress's idempotent-upsert convention. No request body: the target comes entirely from the route params and the auth context.
          */
-        put: operations["FavoritesController_addProvince"];
+        put: operations["FavoritesController_addTarget"];
         post?: never;
         /**
-         * Idempotent remove — unfavorite one province.
-         * @description 204 unconditionally: whether the row was favorited and removed, was never favorited, or plateCode is well-formed but names no real province at all. No 404 branch on this route at all — "remove" never needs to distinguish those cases from the caller's point of view.
+         * Idempotent remove — unfavorite one province, country, region or continent.
+         * @description 204 unconditionally: whether the row was favorited and removed, was never favorited, or entityId is well-formed but names nothing real at all. No 404 branch on this route at all — "remove" never needs to distinguish those cases from the caller's point of view.
          */
-        delete: operations["FavoritesController_removeProvince"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/favorites/countries/{isoCode}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Idempotent add — favorite one country.
-         * @description Mirrors the province add route exactly, substituting isoCode/countryNotFound.
-         */
-        put: operations["FavoritesController_addCountry"];
-        post?: never;
-        /**
-         * Idempotent remove — unfavorite one country.
-         * @description Mirrors the province remove route exactly, substituting isoCode.
-         */
-        delete: operations["FavoritesController_removeCountry"];
+        delete: operations["FavoritesController_removeTarget"];
         options?: never;
         head?: never;
         patch?: never;
@@ -831,6 +867,26 @@ export interface paths {
          * @description Always 200, never 201 — the resource's final state is identical whether this call created or found the row, matching this repo's established idempotent-write convention (video-progress/favorites). Resubmitting the same clientRoundId for the same caller returns the ORIGINAL recorded values, even if the resubmitted body differs.
          */
         post: operations["GameRoundsController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/game-rounds/leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The ranked per-mode leaderboard — every player, one row each, best round first.
+         * @description One row per user (their single best qualifying round in the requested mode), ranked over the FULL filtered set so rank stays stable across pages. Each row carries only the row owner's first name plus their surname's initial — never a full surname, an id, an e-mail or any other profile field. An unknown or never-played mode answers 200 with an empty page, never 404.
+         */
+        get: operations["GameRoundsController_leaderboard"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2695,7 +2751,7 @@ export interface components {
             nameEn: string | null;
         };
         BookVideoYoutubeDto: {
-            /** @description Thumbnail URL exactly as the provider returned it. NEVER construct this address from the video id — replacing API Data with independently computed data is barred (Developer Policies III.E.5). Hotlink it; do not copy, cache or optimise the bytes (III.E.1), which is why image optimisation is off on this surface. */
+            /** @description The address of the api's OWN cover proxy for this video, keyed on the video's own already-public bookVideoId — never the provider's own address (closes VAL137-NEW-C1/VAL137-C1). Render it exactly like any other image; treat an unavailable cover as a normal degraded state, because the proxy route's own 404 carries no information about why. The field name, type and required/non-nullable status are unchanged; only the VALUE changed. The retired warning ("never construct this address from the video id") governed building the PROVIDER's address from the id (Developer Policies III.E.5) and still holds: the proxy fetches through the STORED, API-verified snapshot server-side only, never reconstructing the provider's address — the PUBLISHED address here is simply now deliberately ours. Do not copy, cache or optimise the bytes client-side (III.E.1); the proxy itself holds no byte durably either (no Redis, no disk) — it relays them per request. */
             thumbnailUrl: string;
             /** @description Thumbnail width in pixels, as reported. Render the image with explicit dimensions: the facade reserves its box from these two numbers, which is how this surface holds CLS at 0. */
             thumbnailWidth: number;
@@ -2749,13 +2805,6 @@ export interface components {
             tags: components["schemas"]["BookVideoTagDto"][];
             /** @description Provider-sourced enrichment, or NULL — and null is a normal state, not an error: the sync may never have run, the data may have aged past its serve threshold, or the video may have stopped being returned. When it is null, do NOT emit VideoObject and fall back to a typographic facade; the rest of this object is unaffected. */
             youtube: components["schemas"]["BookVideoYoutubeDto"] | null;
-        };
-        VideoIdentityDto: {
-            /**
-             * @description The YouTube video id, 11 characters — the identifier the embed is built from.
-             * @example dQw4w9WgXcQ
-             */
-            youtubeVideoId: string;
         };
         BookAttributionDto: {
             /**
@@ -3260,9 +3309,9 @@ export interface components {
              * @example STUDENT
              * @enum {string}
              */
-            accountRole: "STUDENT" | "TEACHER";
+            accountRole: "STUDENT" | "TEACHER" | "PARENT";
             /**
-             * @description Yalnız accountRole=STUDENT gönderir; TEACHER bu alanı hiç göndermez (profil matrisi, §6.4).
+             * @description Yalnız accountRole=STUDENT|PARENT gönderir; TEACHER bu alanı hiç göndermez (profil matrisi, §6.4).
              * @example SECONDARY
              * @enum {string}
              */
@@ -3279,6 +3328,11 @@ export interface components {
              * @enum {string}
              */
             studyStream?: "SAYISAL" | "SOZEL" | "ESIT_AGIRLIK" | "TYT" | "DIL" | "LGS" | "MSU" | "ARA_SINIF" | "KPSS" | "DIGER";
+            /**
+             * @description Okul adı — yalnız educationLevel=SECONDARY dalında anlamlıdır (öğrenci veya veli); isteğe bağlıdır, kapalı küme değildir, serbest metindir (`GLOSSARY.md` §7.1 `schoolName` alt bloğu, `DEC 2026-09-11g`).
+             * @example Synthetic Lisesi
+             */
+            schoolName?: string;
             /**
              * @description Yalnız educationLevel=UNDERGRADUATE|GRADUATE gönderir; `GET /api/reference/universities`'ün nameTr kümesinde olmak zorunda.
              * @example Boğaziçi Üniversitesi
@@ -3390,6 +3444,10 @@ export interface components {
             /** @description Yeni şifre — aynı politika register ile paylaşılır (`DEC 2026-08-20g` md.1 #5). Hiçbir yanıtta, örnekte ya da logda dönmez. */
             password: string;
         };
+        PasswordResetVerifyDto: {
+            /** @description Opak şifre sıfırlama jetonu (§5.4). Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            resetToken: string;
+        };
         SessionDto: {
             /**
              * Format: uuid
@@ -3406,7 +3464,7 @@ export interface components {
              * @example STUDENT
              * @enum {string}
              */
-            accountRole: "STUDENT" | "TEACHER";
+            accountRole: "STUDENT" | "TEACHER" | "PARENT";
         };
         ProfileDto: {
             /**
@@ -3414,7 +3472,7 @@ export interface components {
              * @example STUDENT
              * @enum {string}
              */
-            accountRole: "STUDENT" | "TEACHER";
+            accountRole: "STUDENT" | "TEACHER" | "PARENT";
             /**
              * @description Eğitim düzeyi — null: henüz beyan edilmedi veya öğretmen hesabı.
              * @example SECONDARY
@@ -3433,6 +3491,11 @@ export interface components {
              * @enum {string|null}
              */
             studyStream: "SAYISAL" | "SOZEL" | "ESIT_AGIRLIK" | "TYT" | "DIL" | "LGS" | "MSU" | "ARA_SINIF" | "KPSS" | "DIGER" | null;
+            /**
+             * @description Okul adı — yalnızca educationLevel = SECONDARY iken anlamlıdır, isteğe bağlıdır, kapalı küme değildir (`GLOSSARY.md` §7.1 `schoolName` alt bloğu, `DEC 2026-09-11g`).
+             * @example Synthetic Lisesi
+             */
+            schoolName: string | null;
             /**
              * @description Üniversite adı — yalnızca UNDERGRADUATE / GRADUATE iken geçerlidir.
              * @example Boğaziçi Üniversitesi
@@ -3465,10 +3528,60 @@ export interface components {
              * @enum {string|null}
              */
             studyStream: "SAYISAL" | "SOZEL" | "ESIT_AGIRLIK" | "TYT" | "DIL" | "LGS" | "MSU" | "ARA_SINIF" | "KPSS" | "DIGER" | null;
+            /** @description Okul adı (SECONDARY için, isteğe bağlı, kapalı küme değil — `GLOSSARY.md` §7.1 `schoolName` alt bloğu, `DEC 2026-09-11g`). null değeri alanı temizlemek için kullanılır. */
+            schoolName: string | null;
             /** @description Üniversite adı (UNDERGRADUATE / GRADUATE için). null değeri alanı temizlemek için kullanılır. */
             universityName: string | null;
             /** @description Bölüm adı (UNDERGRADUATE / GRADUATE için). null değeri alanı temizlemek için kullanılır. */
             departmentName: string | null;
+        };
+        BookProgressResumeDto: {
+            /**
+             * Format: uuid
+             * @description book_videos.id of the resume video — feeds GET/PUT /api/video-progress/{bookVideoId}.
+             */
+            bookVideoId: string;
+            /**
+             * @description The resume video's position IN THE BOOK (`BookVideoDto.orderNo`'s own field, never the retired denemeNo) — the anchor prefix on the book page (`#video-{orderNo}-…`).
+             * @example 12
+             */
+            orderNo: number;
+            /**
+             * @description Last playback position on the resume video, in seconds.
+             * @example 245
+             */
+            lastPositionSeconds: number;
+            /** @description The caller's declared watched signal on this video. */
+            watched: boolean;
+            /**
+             * Format: date-time
+             * @description When this progress row was last written, UTC — the ordering key that selects the resume row among the caller's progress rows for this book.
+             */
+            updatedAt: string;
+        };
+        BookProgressDto: {
+            /**
+             * @description The resolved book's canonical TR slug (`books.slug_tr`), regardless of which locale slug the request named.
+             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             */
+            bookSlugTr: string;
+            /**
+             * @description The book's own video-row count — the progress denominator. A live COUNT, never a stored/declared column.
+             * @example 30
+             */
+            videoCount: number;
+            /**
+             * @description The caller's progress rows among this book's videos with watched = true — declared marks only, never inferred from position.
+             * @example 4
+             */
+            watchedCount: number;
+            /**
+             * @description The caller's progress rows among this book's videos, whatever their watched state — every video the caller has ever saved a position for.
+             * @example 6
+             */
+            startedCount: number;
+            /** @description The caller's most-recently-updated progress row among this book's videos, or null when the caller has none. */
+            resume: components["schemas"]["BookProgressResumeDto"] | null;
         };
         VideoProgressDto: {
             /**
@@ -3503,22 +3616,24 @@ export interface components {
             /** @description A user-declared "I watched this" signal. Not derived from lastPositionSeconds — a caller may mark watched without scrubbing to the exact end. */
             watched: boolean;
         };
+        VideoIdentityDto: {
+            /**
+             * @description The YouTube video id, 11 characters — the identifier the embed is built from.
+             * @example dQw4w9WgXcQ
+             */
+            youtubeVideoId: string;
+        };
         FavoriteDto: {
             /**
              * @description Which kind of target this favorite names.
              * @enum {string}
              */
-            type: "province" | "country";
+            entityType: "province" | "country" | "region" | "continent";
             /**
-             * @description provinces.plate_code. Set iff type === "province"; null otherwise.
+             * @description The published business key for entityType — provinces.plate_code, countries.iso_code, regions.slug, or a Continent enum label. Never the entity's internal uuid.
              * @example 34
              */
-            plateCode: string | null;
-            /**
-             * @description countries.iso_code. Set iff type === "country"; null otherwise.
-             * @example TR
-             */
-            isoCode: string | null;
+            entityId: string;
             /**
              * Format: date-time
              * @description When this favorite was created, UTC.
@@ -3609,6 +3724,84 @@ export interface components {
             hasMore: boolean;
             /** @description The page of the caller's own rounds, ordered by createdAt DESCENDING (most recent first). */
             items: components["schemas"]["GameRoundDto"][];
+        };
+        LeaderboardEntryDto: {
+            /**
+             * @description Position in the FULL ranked set for this mode, 1-based and stable across pages (computed once over every qualifying round, not per page).
+             * @example 1
+             */
+            rank: number;
+            /**
+             * @description This row's `users.first_name`, verbatim.
+             * @example Ayşe
+             */
+            firstName: string;
+            /**
+             * @description Exactly one grapheme: this row's surname, truncated to its first letter and Turkish-locale upper-cased. The full surname never leaves the api.
+             * @example Y
+             */
+            lastNameInitial: string;
+            /** @example 96 */
+            score: number;
+            /** @example 79 */
+            found: number;
+            /** @example 74 */
+            firstTry: number;
+            /** @example 5 */
+            totalWrongs: number;
+            /**
+             * @description Elapsed seconds for this best round, or null when the client sent none.
+             * @example null
+             */
+            completionTimeSeconds: number | null;
+            /**
+             * Format: date-time
+             * @description When this row's best round was recorded (`game_rounds.created_at`).
+             * @example 2026-09-08T19:22:11.000Z
+             */
+            achievedAt: string;
+            /**
+             * @description Whether this row is the calling user's own row.
+             * @example true
+             */
+            isCurrentUser: boolean;
+        };
+        LeaderboardMetaDto: {
+            /**
+             * @description The mode this page ranks — echoes the request query.
+             * @example provinces
+             */
+            mode: string;
+            /**
+             * @description The caller's own rank in this mode's FULL ranking (comparable to items[].rank across pages), or null when the caller has no qualifying round in this mode.
+             * @example 1
+             */
+            currentUserRank: number | null;
+        };
+        LeaderboardDto: {
+            /**
+             * @description Requested page, 1-based.
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Requested page size. Each endpoint documents its own ceiling.
+             * @example 50
+             */
+            pageSize: number;
+            /**
+             * @description Total rows matching the applied filter, across all pages.
+             * @example 630
+             */
+            total: number;
+            /**
+             * @description Whether a further page exists after this one.
+             * @example true
+             */
+            hasMore: boolean;
+            /** @description The page of ranked rows, best-first. */
+            items: components["schemas"]["LeaderboardEntryDto"][];
+            meta: components["schemas"]["LeaderboardMetaDto"];
         };
         MeasurementPointDto: {
             /** @example 32.85 */
@@ -4656,6 +4849,36 @@ export interface operations {
             };
         };
     };
+    AuthController_verifyPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetVerifyDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description errors.password.resetTokenInvalid — unknown, consumed or expired token. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     AuthController_session: {
         parameters: {
             query?: never;
@@ -4744,6 +4967,55 @@ export interface operations {
             };
             /** @description errors.auth.unauthenticated. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoProgressController_getBookProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description TR or EN slug of the book — the same slug space as GET /api/books/{slug}. */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookProgressDto"];
+                };
+            };
+            /** @description A malformed slug. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.videoProgress.bookNotFound */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4895,6 +5167,48 @@ export interface operations {
             };
         };
     };
+    VideoCoverController_getCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description book_videos.id. */
+                bookVideoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cover image bytes. Content-Type: image/jpeg. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description bookVideoId is not a well-formed UUID. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No cover is available for this id, for any reason. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The per-client rate limit for this route was exceeded. Tighter than the global limit because this route can reach an external provider. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     FavoritesController_listMine: {
         parameters: {
             query?: never;
@@ -4923,13 +5237,14 @@ export interface operations {
             };
         };
     };
-    FavoritesController_addProvince: {
+    FavoritesController_addTarget: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Two-digit zero-padded province plate code. */
-                plateCode: string;
+                entityType: "province" | "country" | "region" | "continent";
+                /** @description The published business key for entityType — provinces.plate_code, countries.iso_code, regions.slug, or a Continent enum label. */
+                entityId: string;
             };
             cookie?: never;
         };
@@ -4952,7 +5267,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
-            /** @description errors.favorites.provinceNotFound */
+            /** @description One of errors.favorites.{provinceNotFound,countryNotFound,regionNotFound,continentNotFound}, matching the request entityType. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4963,89 +5278,20 @@ export interface operations {
             };
         };
     };
-    FavoritesController_removeProvince: {
+    FavoritesController_removeTarget: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Two-digit zero-padded province plate code. */
-                plateCode: string;
+                entityType: "province" | "country" | "region" | "continent";
+                /** @description The published business key for entityType — provinces.plate_code, countries.iso_code, regions.slug, or a Continent enum label. */
+                entityId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Removed, already absent, or plateCode names no province — all answer identically. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description errors.auth.unauthenticated */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    FavoritesController_addCountry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description ISO 3166-1 alpha-2 country code. */
-                isoCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FavoriteDto"];
-                };
-            };
-            /** @description errors.auth.unauthenticated */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            /** @description errors.favorites.countryNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    FavoritesController_removeCountry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description ISO 3166-1 alpha-2 country code. */
-                isoCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Removed, already absent, or isoCode names no country — all answer identically. */
+            /** @description Removed, already absent, or entityId names nothing real — all answer identically. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -5137,6 +5383,41 @@ export interface operations {
             };
             /** @description errors.gameRounds.tooManySubmissions */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    GameRoundsController_leaderboard: {
+        parameters: {
+            query: {
+                /** @description The game mode to rank. Never validated against a closed set; an unknown mode answers 200 with an empty page, not 404. */
+                mode: string;
+                /** @description Page to read, 1-based. A page past the end answers 200 with an empty items array. */
+                page?: number;
+                /** @description Rows per page, ranked best-first. */
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaderboardDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

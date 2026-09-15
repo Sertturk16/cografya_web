@@ -25,7 +25,8 @@ export function isProfileLike(value: unknown): value is Profile {
   if (!value || typeof value !== "object") return false;
   const p = value as Record<string, unknown>;
 
-  const isValidRole = p.accountRole === "STUDENT" || p.accountRole === "TEACHER";
+  const isValidRole =
+    p.accountRole === "STUDENT" || p.accountRole === "TEACHER" || p.accountRole === "PARENT";
   // Object.hasOwn (not `in`) — an Object.prototype property name must not satisfy this check (VAL128R3-I1).
   const isValidEducationLevel =
     p.educationLevel === null ||
@@ -37,6 +38,7 @@ export function isProfileLike(value: unknown): value is Profile {
   const isValidStudyStream =
     p.studyStream === null ||
     (typeof p.studyStream === "string" && Object.hasOwn(STUDY_STREAM_LABELS, p.studyStream));
+  const isValidSchoolName = p.schoolName === null || typeof p.schoolName === "string";
   const isValidUniversityName = p.universityName === null || typeof p.universityName === "string";
   const isValidDepartmentName = p.departmentName === null || typeof p.departmentName === "string";
 
@@ -46,6 +48,7 @@ export function isProfileLike(value: unknown): value is Profile {
     isValidEducationLevel &&
     isValidGradeLevel &&
     isValidStudyStream &&
+    isValidSchoolName &&
     isValidUniversityName &&
     isValidDepartmentName
   );

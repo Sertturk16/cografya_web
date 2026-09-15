@@ -281,6 +281,7 @@ export interface ProfileAxisFormState {
   readonly educationLevel: EducationLevel | "";
   readonly gradeLevel: GradeLevel | "";
   readonly studyStream: StudyStream | "";
+  readonly schoolName: string;
   readonly universityName: string;
   readonly departmentName: string;
 }
@@ -297,6 +298,7 @@ export function buildProfileReplacementPayload(
       educationLevel: null,
       gradeLevel: null,
       studyStream: null,
+      schoolName: null,
       universityName: null,
       departmentName: null,
     };
@@ -308,6 +310,7 @@ export function buildProfileReplacementPayload(
         educationLevel: "SECONDARY",
         gradeLevel: formState.gradeLevel ? (formState.gradeLevel as GradeLevel) : null,
         studyStream: formState.studyStream ? (formState.studyStream as StudyStream) : null,
+        schoolName: formState.schoolName.trim().length > 0 ? formState.schoolName.trim() : null,
         universityName: null,
         departmentName: null,
       };
@@ -316,6 +319,7 @@ export function buildProfileReplacementPayload(
         educationLevel: "UNDERGRADUATE",
         gradeLevel: null,
         studyStream: null,
+        schoolName: null,
         universityName: formState.universityName ? formState.universityName : null,
         departmentName: formState.departmentName ? formState.departmentName : null,
       };
@@ -324,6 +328,7 @@ export function buildProfileReplacementPayload(
         educationLevel: "GRADUATE",
         gradeLevel: null,
         studyStream: null,
+        schoolName: null,
         universityName: formState.universityName ? formState.universityName : null,
         departmentName:
           formState.departmentName && formState.departmentName.trim().length > 0

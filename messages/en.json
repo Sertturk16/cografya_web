@@ -917,6 +917,7 @@
       "district": "District",
       "grade": "Grade",
       "stream": "Study stream",
+      "school": "School",
       "university": "University",
       "department": "Department",
       "verificationCode": "Verification code",

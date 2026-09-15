@@ -43,7 +43,7 @@ export interface ProfileBffResult {
 }
 
 export const profileSchema = z.object({
-  accountRole: z.enum(["STUDENT", "TEACHER"]),
+  accountRole: z.enum(["STUDENT", "TEACHER", "PARENT"]),
   educationLevel: z.enum(["SECONDARY", "UNDERGRADUATE", "GRADUATE"]).nullable(),
   gradeLevel: z
     .enum([
@@ -74,6 +74,7 @@ export const profileSchema = z.object({
       "DIGER",
     ])
     .nullable(),
+  schoolName: z.string().nullable(),
   universityName: z.string().nullable(),
   departmentName: z.string().nullable(),
   isComplete: z.boolean(),
@@ -120,6 +121,7 @@ const updateProfileRequestSchema = z
         "DIGER",
       ])
       .nullable(),
+    schoolName: z.string().max(200).nullable(),
     universityName: z.string().max(200).nullable(),
     departmentName: z.string().max(200).nullable(),
   })

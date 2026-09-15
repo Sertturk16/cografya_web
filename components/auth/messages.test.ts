@@ -61,6 +61,7 @@ const AUTH_KEYS = [
   "fields.district",
   "fields.grade",
   "fields.stream",
+  "fields.school",
   "fields.university",
   "fields.department",
   "fields.verificationCode",

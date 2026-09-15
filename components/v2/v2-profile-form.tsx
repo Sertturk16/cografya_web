@@ -36,6 +36,7 @@ const FIELD_ELEMENT_IDS: Record<string, string> = {
   educationLevel: "v2-profile-education-level",
   gradeLevel: "v2-profile-grade-level",
   studyStream: "v2-profile-study-stream",
+  schoolName: "v2-profile-school-name",
   universityName: "v2-profile-university-name",
   departmentName: "v2-profile-department-name",
 };
@@ -62,6 +63,7 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
   );
   const [gradeLevel, setGradeLevel] = React.useState<GradeLevel | "">(profile.gradeLevel ?? "");
   const [studyStream, setStudyStream] = React.useState<StudyStream | "">(profile.studyStream ?? "");
+  const [schoolName, setSchoolName] = React.useState<string>(profile.schoolName ?? "");
   const [universityName, setUniversityName] = React.useState<string>(profile.universityName ?? "");
   const [departmentName, setDepartmentName] = React.useState<string>(profile.departmentName ?? "");
 
@@ -166,6 +168,7 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
         educationLevel,
         gradeLevel,
         studyStream,
+        schoolName,
         universityName,
         departmentName,
       });
@@ -177,6 +180,7 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
         setEducationLevel(res.profile.educationLevel ?? "");
         setGradeLevel(res.profile.gradeLevel ?? "");
         setStudyStream(res.profile.studyStream ?? "");
+        setSchoolName(res.profile.schoolName ?? "");
         setUniversityName(res.profile.universityName ?? "");
         setDepartmentName(res.profile.departmentName ?? "");
         router.refresh();
@@ -385,6 +389,24 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
                   </p>
                 )}
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label
+                htmlFor={FIELD_ELEMENT_IDS.schoolName}
+                className="text-xs font-bold text-foreground"
+              >
+                {t("fields.school")}
+              </Label>
+              <input
+                id={FIELD_ELEMENT_IDS.schoolName}
+                type="text"
+                value={schoolName}
+                onChange={(e) => setSchoolName(e.target.value)}
+                disabled={submitting}
+                maxLength={200}
+                autoComplete="organization"
+                className={selectClass}
+              />
             </div>
           </fieldset>
         )}

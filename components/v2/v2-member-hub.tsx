@@ -1075,7 +1075,11 @@ export function V2MemberHub({
             <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
               <span className="text-muted-foreground font-medium block">Hesap Rolü</span>
               <span className="font-semibold text-foreground text-sm block">
-                {session.accountRole === "TEACHER" ? "Öğretmen" : "Öğrenci"}
+                {session.accountRole === "TEACHER"
+                  ? "Öğretmen"
+                  : session.accountRole === "PARENT"
+                    ? "Veli"
+                    : "Öğrenci"}
               </span>
             </div>
 
