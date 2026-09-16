@@ -30,37 +30,49 @@ export async function SiteNav() {
 
   return (
     <NavDisclosure>
+      {/* Every Link below gets prefetch={false}: this whole nav renders on every page (it's
+          in the header), so Next's default viewport prefetch was fetching all ~9 targets'
+          CSS chunks on every single load, almost all unused within the browser's few-second
+          window — the dominant source of T-029's "preloaded but not used" warning, bigger
+          than the single logo link already fixed in site-header.tsx. Prefetch on hover/focus
+          instead, so only the one link a visitor is about to click gets warmed. */}
       <nav aria-label={t("label")} className={styles.nav}>
-        <Link href="/">{t("home")}</Link>
+        <Link href="/" prefetch={false}>
+          {t("home")}
+        </Link>
         {/* Grouped under "Haritalar" (finding 8, → plan §5.7b): the owner's live-tour finding
             named "Deniz" as a meaningless singular item sitting alone at the top level. It
             gets its meaning from sitting inside this explicit group instead — the concrete
             mechanism behind the fix, not just a relabel. The three link labels are unchanged,
             reused verbatim from the same `Nav` keys the flat links used before. */}
         <NavGroupDisclosure label={t("haritalar")}>
-          <Link href="/turkiye" className={styles.groupLink}>
+          <Link href="/turkiye" className={styles.groupLink} prefetch={false}>
             {t("turkiye")}
           </Link>
-          <Link href="/dunya" className={styles.groupLink}>
+          <Link href="/dunya" className={styles.groupLink} prefetch={false}>
             {t("dunya")}
           </Link>
           {/* The marine hub sits with the two map hubs, not under `/turkiye`: it spans 27
               provinces and four seas, so no single province owns it. A nav link is also
               what keeps it from being an orphan page (`SEO-POLICY.md` §B8) — the second
               entry point is the cross-link on `/turkiye` (owner answer S8: both). */}
-          <Link href="/deniz" className={styles.groupLink}>
+          <Link href="/deniz" className={styles.groupLink} prefetch={false}>
             {t("deniz")}
           </Link>
         </NavGroupDisclosure>
         {/* The game is a primary surface, not a sub-page of the map hub (owner answer
             S4, → DEC 2026-07-30c) — so it sits in the top nav, after the map group and
             before the site-info link. */}
-        <Link href="/oyun">{t("game")}</Link>
+        <Link href="/oyun" prefetch={false}>
+          {t("game")}
+        </Link>
         {/* The book hub (owner ruling V-6, → DEC 2026-08-15g). It sits here rather than
             being reached only from the home page because §B8 8.1 wants every indexable page
             behind at least one static internal link, and a nav link is the one entry point
             that exists on every page. */}
-        <Link href="/kitaplar">{t("kitaplar")}</Link>
+        <Link href="/kitaplar" prefetch={false}>
+          {t("kitaplar")}
+        </Link>
         {/* Grouped under "Araçlar" (finding 8, → plan §5.7b): the CBS tool hub (owner ruling
             O-1, → DEC 2026-08-19g md.1) was a flat top-level link before this change. Its
             three tools now sit as named links inside this group, plus a "Tüm araçlar" see-all
@@ -70,7 +82,9 @@ export async function SiteNav() {
             for a namespace-purity reason its own docblock explains, not a structural one — it
             renders the identical `NavGroupDisclosure` shape "Haritalar" uses above. */}
         <ToolsNavGroup label={t("araclar")} allToolsLabel={t("allTools")} />
-        <Link href="/hakkimizda">{t("about")}</Link>
+        <Link href="/hakkimizda" prefetch={false}>
+          {t("about")}
+        </Link>
       </nav>
       {/* The header's auth entry points (finding 8c, → plan §5.7c/§5.8). A second `<nav>`
           landmark, mirroring `site-footer.tsx`'s own identical pattern: real server-rendered
@@ -85,10 +99,10 @@ export async function SiteNav() {
           (plan §2) — the footer's own pair stays untouched; redundant entry points across
           header and footer are normal and were not asked to be removed. */}
       <nav aria-label={t("authLabel")} className={styles.authNav}>
-        <Link href="/giris" className="btn btn-ghost">
+        <Link href="/giris" className="btn btn-ghost" prefetch={false}>
           {t("login")}
         </Link>
-        <Link href="/kayit" className="btn btn-primary">
+        <Link href="/kayit" className="btn btn-primary" prefetch={false}>
           {t("register")}
         </Link>
       </nav>
