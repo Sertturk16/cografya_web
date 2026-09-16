@@ -137,7 +137,7 @@ export function V2Header() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="font-heading text-lg font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-none">
+              <span className="font-heading text-lg font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] dark:text-[#e2896a] leading-none">
                 Coğrafya <span className="text-primary">Gurmesi</span>
               </span>
               <span className="text-[10px] text-muted-foreground font-medium">
@@ -414,7 +414,7 @@ export function V2Header() {
           <ThemeToggle />
 
           {authState === "authenticated" ? (
-            <div className="flex items-center gap-1.5">
+            <div className="hidden lg:flex items-center gap-1.5">
               <Link
                 href="/v2/hesabim"
                 aria-label="Hesabım"
@@ -441,7 +441,7 @@ export function V2Header() {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="hidden lg:flex items-center gap-1.5">
               <Button
                 variant="ghost"
                 size="sm"
