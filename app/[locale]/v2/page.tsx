@@ -82,6 +82,14 @@ export default async function V2HomePage({ params }: V2PageProps) {
 
   const totalProvinces = provinces.length || 81;
   const totalCountries = countries.length || 199;
+  /**
+   * A hardcoded literal, not a cross-import from `app/[locale]/page.tsx`'s `GAME_MODE_COUNT`:
+   * that file explicitly documents choosing a hand-maintained literal over a shared export
+   * because it is a Server Component that pulls in `next-intl/server` and API-fetch modules at
+   * module scope, which is not safe to import into `V2Hero` (a "use client" component). Same
+   * three static routes it tracks: `/oyun/bolge-bulma`, `/oyun/81-il`, `/oyun/bolge-bolge-il`.
+   */
+  const V2_GAME_MODE_COUNT = 3;
 
   const marine = buildMarineHomeSummary(marineOverview, locale);
   const scope = marineScope(marinePoints);
@@ -134,7 +142,15 @@ export default async function V2HomePage({ params }: V2PageProps) {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-16">
           {/* HERO SECTION */}
-          <V2Hero provinceCount={totalProvinces} countryCount={totalCountries} />
+          <V2Hero
+            provinceCount={totalProvinces}
+            countryCount={totalCountries}
+            locale={locale}
+            provinceStatLabel={t("statProvincesLabel", { count: totalProvinces })}
+            countryStatLabel={t("statCountriesLabel", { count: totalCountries })}
+            modeCount={V2_GAME_MODE_COUNT}
+            modeStatLabel={t("statGameModesLabel", { count: V2_GAME_MODE_COUNT })}
+          />
 
           {/* SECTION 1: ATLAS SPOTLIGHT & COĞRAFİ MERKEZLER */}
           <section className="space-y-6">

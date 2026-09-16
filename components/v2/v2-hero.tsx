@@ -12,6 +12,15 @@ import { foldForSearch } from "@/lib/search/normalize";
 interface V2HeroProps {
   provinceCount: number;
   countryCount: number;
+  /** Locale-aware copy for the description line (TR/EN both authored below, T-026). */
+  locale: "tr" | "en";
+  /** "İl" / "Provinces" — reuses the Home namespace's existing bilingual stat labels. */
+  provinceStatLabel: string;
+  /** "Ülke" / "Countries" — same source of truth as the country-count fallback below. */
+  countryStatLabel: string;
+  modeCount: number;
+  /** "Oyun Modu" / "Modes". */
+  modeStatLabel: string;
 }
 
 interface SearchEntry {
@@ -89,7 +98,15 @@ const STATIC_SHORTCUTS: SearchEntry[] = [
   },
 ];
 
-export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
+export function V2Hero({
+  provinceCount,
+  countryCount,
+  locale,
+  provinceStatLabel,
+  countryStatLabel,
+  modeCount,
+  modeStatLabel,
+}: V2HeroProps) {
   const router = useRouter();
   const [query, setQuery] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
@@ -277,10 +294,38 @@ export function V2Hero({ provinceCount, countryCount }: V2HeroProps) {
               Haritada Keşfet.
             </span>
           </h1>
+          {/* A single template-literal expression, not mixed JSX text + `{totalCountries}`:
+              wrapping plain JSX text across a line break right after an expression drops the
+              leading space at build time (rendered as "199dünya", T-017) — the template
+              literal sidesteps that JSX-whitespace trap entirely regardless of line wrapping. */}
           <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
-            Türkiye&apos;nin {totalProvinces} ili, {totalCountries} dünya ülkesi, anlık deniz &amp;
-            deprem telemetrisi ve interaktif CBS harita araçları tek ekranda.
+            {locale === "en"
+              ? `${totalProvinces} provinces of Türkiye, ${totalCountries} countries of the world, real-time sea & earthquake telemetry, and interactive GIS map tools — all on one screen.`
+              : `Türkiye'nin ${totalProvinces} ili, ${totalCountries} dünya ülkesi, anlık deniz & deprem telemetrisi ve interaktif CBS harita araçları tek ekranda.`}
           </p>
+          {/* Hero stat trio (T-026): reuses the Home namespace's existing bilingual
+              statProvincesLabel/statCountriesLabel/statGameModesLabel copy (already correct in
+              both messages/tr.json and messages/en.json, same pattern as the V1 homepage's stat
+              strip) so EN renders real English numbers instead of showing nothing. */}
+          <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground font-medium flex-wrap">
+            <span>
+              <strong className="font-heading text-foreground">{totalProvinces}</strong>{" "}
+              {provinceStatLabel}
+            </span>
+            <span aria-hidden="true" className="text-border">
+              &bull;
+            </span>
+            <span>
+              <strong className="font-heading text-foreground">{totalCountries}</strong>{" "}
+              {countryStatLabel}
+            </span>
+            <span aria-hidden="true" className="text-border">
+              &bull;
+            </span>
+            <span>
+              <strong className="font-heading text-foreground">{modeCount}</strong> {modeStatLabel}
+            </span>
+          </div>
         </div>
 
         {/* Central Omni-Search Bar (Interactive & Integrated) */}
