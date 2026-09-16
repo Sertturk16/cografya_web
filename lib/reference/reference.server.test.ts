@@ -1,9 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isProductionBuild } from "@/lib/api/provinces";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  getDepartmentsResilient,
+  getDepartments,
   getDistricts,
-  getUniversitiesResilient,
+  getUniversities,
   isValidPlateCode,
 } from "./reference.server";
 
@@ -11,12 +10,14 @@ import {
  * G7 (plan §9, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`): `"34"`
  * passes; `"6"`, `"034"`, `""`, `"3a"`, `" 34"`, `"34\n"` and a 40-character string are all
  * refused BEFORE any api call (the fetch stub records zero calls); a valid-but-unknown code
- * returns `[]` with no throw. Plus the build-vs-runtime split the two flat reference reads
- * carry, on the `lib/api/books.test.ts` pattern: `fetch` is stubbed, not `apiGet` — stubbing
- * `apiGet` would test a `catch` against an error the code never actually meets.
+ * returns `[]` with no throw. `fetch` is stubbed, not `apiGet` — stubbing `apiGet` would test
+ * a `catch` against an error the code never actually meets (`lib/api/books.test.ts` pattern).
+ *
+ * No build-vs-runtime split to test any more (T-020): `getUniversities`/`getDepartments` are
+ * plain runtime reads now that their only callers are `force-dynamic` routes, so they always
+ * throw on api failure, same as `getDistricts`.
  */
 
-vi.mock("@/lib/api/provinces", () => ({ isProductionBuild: vi.fn(() => false) }));
 vi.mock("@/lib/env.server", () => ({
   serverEnv: { API_BASE_URL: "http://api.test", INTERNAL_REQUEST_TOKEN: undefined },
 }));
@@ -35,11 +36,6 @@ function stubFetch(response: Response): ReturnType<typeof vi.fn> {
   vi.stubGlobal("fetch", stub);
   return stub;
 }
-
-beforeEach(() => {
-  vi.spyOn(console, "warn").mockImplementation(() => {});
-  vi.mocked(isProductionBuild).mockReturnValue(false);
-});
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -76,40 +72,26 @@ describe("getDistricts", () => {
   });
 });
 
-describe("getUniversitiesResilient / getDepartmentsResilient — build-vs-runtime split", () => {
-  it("re-throws at RUNTIME on an api failure (universities)", async () => {
-    vi.mocked(isProductionBuild).mockReturnValue(false);
+describe("getUniversities / getDepartments — plain runtime reads", () => {
+  it("re-throws on an api failure (universities)", async () => {
     stubFetch(new Response("upstream failure", { status: 502 }));
-    await expect(getUniversitiesResilient()).rejects.toMatchObject({ name: "ApiError" });
+    await expect(getUniversities()).rejects.toMatchObject({ name: "ApiError" });
   });
 
-  it("degrades to [] during a no-api BUILD (universities)", async () => {
-    vi.mocked(isProductionBuild).mockReturnValue(true);
+  it("re-throws on an api failure (departments)", async () => {
     stubFetch(new Response("upstream failure", { status: 502 }));
-    await expect(getUniversitiesResilient()).resolves.toEqual([]);
-  });
-
-  it("re-throws at RUNTIME on an api failure (departments)", async () => {
-    vi.mocked(isProductionBuild).mockReturnValue(false);
-    stubFetch(new Response("upstream failure", { status: 502 }));
-    await expect(getDepartmentsResilient()).rejects.toMatchObject({ name: "ApiError" });
-  });
-
-  it("degrades to [] during a no-api BUILD (departments)", async () => {
-    vi.mocked(isProductionBuild).mockReturnValue(true);
-    stubFetch(new Response("upstream failure", { status: 502 }));
-    await expect(getDepartmentsResilient()).resolves.toEqual([]);
+    await expect(getDepartments()).rejects.toMatchObject({ name: "ApiError" });
   });
 
   it("returns the real payload when the api answers — positive control", async () => {
     stubFetch(ok([{ nameTr: "Boğaziçi Üniversitesi", type: "DEVLET" }]));
-    await expect(getUniversitiesResilient()).resolves.toEqual([
+    await expect(getUniversities()).resolves.toEqual([
       { nameTr: "Boğaziçi Üniversitesi", type: "DEVLET" },
     ]);
   });
 
   it("returns the real department payload when the api answers — positive control", async () => {
     stubFetch(ok([{ nameTr: "Coğrafya Öğretmenliği" }]));
-    await expect(getDepartmentsResilient()).resolves.toEqual([{ nameTr: "Coğrafya Öğretmenliği" }]);
+    await expect(getDepartments()).resolves.toEqual([{ nameTr: "Coğrafya Öğretmenliği" }]);
   });
 });
