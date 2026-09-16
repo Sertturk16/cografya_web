@@ -3,8 +3,8 @@ import { getPathname } from "@/i18n/navigation";
 import { hasLocale } from "next-intl";
 import { routing } from "@/i18n/routing";
 import { CONTENT_REVALIDATE_SECONDS } from "@/lib/api/client";
-import { getCountriesResilient } from "@/lib/api/countries";
-import { getProvincesResilient } from "@/lib/api/provinces";
+import { getCountries } from "@/lib/api/countries";
+import { getProvinces } from "@/lib/api/provinces";
 import { buildSearchIndex } from "@/lib/search/index-source";
 import type { SearchIndexPayload } from "@/lib/search/types";
 
@@ -23,8 +23,7 @@ import type { SearchIndexPayload } from "@/lib/search/types";
  *
  * A generated TS module would be frozen at build time, so a newly seeded country would stay
  * unfindable until the next deploy — inconsistent with the ISR hubs that would already be
- * listing it. `revalidate` matches `CONTENT_REVALIDATE_SECONDS`, the same window every hub
- * uses, so the index is exactly as fresh as the pages it points at.
+ * listing it.
  *
  * ## Indexing posture
  *
@@ -33,20 +32,20 @@ import type { SearchIndexPayload } from "@/lib/search/types";
  * render anything — the header's fallback link is in the server HTML with or without it, so
  * blocking it cannot hide content from a crawler. It is also unlinked, so nothing discovers
  * it in the first place.
+ *
+ * ## `force-dynamic`, not build-time-prerendered
+ *
+ * This route used to set `revalidate = 3600` and prerender BOTH real locales via
+ * `generateStaticParams` — which is the same bug class as T-020 wearing a dynamic-segment
+ * disguise: because every possible `[locale]` value was enumerated at build, the handler's
+ * body still ran once during `next build`, where `getProvincesResilient`/
+ * `getCountriesResilient` degrade to `[]` (the production Docker build has no network access
+ * to the api container). That baked an empty search index into BOTH locale variants, served
+ * until ISR's background revalidation kicked in. `force-dynamic` runs this handler at
+ * request time only; freshness/caching is handled entirely by this handler's own
+ * `Cache-Control` header below, which the CDN and browser already respect.
  */
-/**
- * Next requires a route segment config export to be a statically analyzable literal, so
- * this cannot BE `CONTENT_REVALIDATE_SECONDS` (importing it fails the build with "Invalid
- * segment configuration export"). The annotation is the guard instead: it is the shared
- * constant's literal type, so changing the constant without changing this number is a
- * type error rather than silent drift.
- */
-export const revalidate: typeof CONTENT_REVALIDATE_SECONDS = 3600;
-
-/** Pre-render both locales at build time; ISR refreshes them on the window above. */
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
-}
+export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, ctx: { params: Promise<{ locale: string }> }) {
   const { locale } = await ctx.params;
@@ -57,15 +56,13 @@ export async function GET(_request: Request, ctx: { params: Promise<{ locale: st
     return new NextResponse(null, { status: 404 });
   }
 
-  // Build-time resilient, runtime strict — the honest contract (review M2): the resilient
-  // helpers return `[]` only during `next build`, and RE-THROW at runtime, so an api outage
-  // during ISR regeneration surfaces as a 500 from this handler rather than an empty 200.
-  // Either way the island's `!response.ok` branch degrades to the fallback link, and a failed
+  // `force-dynamic` means this body only ever runs at request time — no build-time
+  // resilience wrapper needed (previously used `getProvincesResilient`/
+  // `getCountriesResilient`; dropped for the same reason `lib/reference/reference.server.ts`
+  // dropped its own, see T-020). A genuine api outage throws and surfaces as a 500 from this
+  // handler; the island's `!response.ok` branch degrades to the fallback link, and a failed
   // attempt no longer latches search off for the session.
-  const [provinces, countries] = await Promise.all([
-    getProvincesResilient(),
-    getCountriesResilient(),
-  ]);
+  const [provinces, countries] = await Promise.all([getProvinces(), getCountries()]);
 
   const payload: SearchIndexPayload = {
     entries: buildSearchIndex({

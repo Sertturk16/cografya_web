@@ -9,10 +9,17 @@ import { V2RegisterCard } from "@/components/v2/v2-register-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
-import { getProvincesResilient } from "@/lib/api/provinces";
+import { getProvinces } from "@/lib/api/provinces";
 import { Home, ChevronRight } from "lucide-react";
 
-export const revalidate = 86400;
+/**
+ * `force-dynamic`: the province list feeds a REQUIRED registration-form field. The previous
+ * `revalidate = 86400` meant a build-time api outage could bake an empty province list into
+ * this route and serve it for up to 24 hours before ISR self-healed — the worst window of
+ * this bug class found in the repo (T-020's bug class). Freshness/caching risk is negligible
+ * here: this is a low-traffic authenticated/transactional flow, not a content hub.
+ */
+export const dynamic = "force-dynamic";
 
 interface V2RegisterPageProps {
   params: Promise<{ locale: Locale }>;
@@ -33,7 +40,7 @@ export async function generateMetadata({ params }: V2RegisterPageProps): Promise
 export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const provinces = await getProvincesResilient();
+  const provinces = await getProvinces();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">

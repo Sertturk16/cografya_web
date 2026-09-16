@@ -22,6 +22,16 @@ interface PageProps {
   params: Promise<{ locale: Locale }>;
 }
 
+/**
+ * `force-dynamic`: the `/turkiye` twin's exact reasoning. This hub's map
+ * (`WorldMapSection`) and its A–Z country index (`loadCountryIndex` below) both source the
+ * country list from the api; a build-time outage bakes an empty index into the static
+ * output AND drops every country link from the map (same unlinked-shape pattern as
+ * `components/map/turkey-map-section.tsx`), breaking the hub's entire browsing purpose for
+ * up to an hour after every deploy with no visible error (T-020's bug class).
+ */
+export const dynamic = "force-dynamic";
+
 /** The localized slug (slug_tr for tr, slug_en for en). */
 function slugForLocale(country: CountryListItem, locale: Locale): string {
   return locale === "en" ? country.slugEn : country.slugTr;

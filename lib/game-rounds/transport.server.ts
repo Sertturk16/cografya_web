@@ -131,7 +131,9 @@ export const leaderboardEntrySchema = z.object({
   found: z.number().min(0),
   firstTry: z.number().min(0),
   totalWrongs: z.number().min(0),
-  completionTimeSeconds: z.number().nullable().optional(),
+  // Required + nullable on `LeaderboardEntryDto` (unlike `GameRoundDto`'s optional field above):
+  // always present, `null` only when the round carried no timing.
+  completionTimeSeconds: z.number().nullable(),
   achievedAt: z.string(),
   isCurrentUser: z.boolean(),
 });
@@ -141,7 +143,7 @@ export const leaderboardListSchema = z.object({
   total: z.number().min(0),
   page: z.number().min(1),
   pageSize: z.number().min(1),
-  pageCount: z.number().min(0),
+  hasMore: z.boolean(),
   meta: z.object({
     mode: z.string(),
     currentUserRank: z.number().nullable(),

@@ -72,7 +72,7 @@ describe("handleGetLeaderboard (Server Transport)", () => {
       total: 1,
       page: 1,
       pageSize: 20,
-      pageCount: 1,
+      hasMore: false,
       meta: {
         mode: "provinces",
         currentUserRank: 1,
@@ -118,7 +118,7 @@ describe("handleGetLeaderboard (Server Transport)", () => {
       total: 1,
       page: 1,
       pageSize: 20,
-      pageCount: 1,
+      hasMore: false,
       meta: { mode: "provinces", currentUserRank: null },
     };
     mock.mockResolvedValue(jsonResponse(200, leakedPayload));
@@ -161,7 +161,7 @@ describe("Leaderboard Client Utilities", () => {
         total: 1,
         page: 1,
         pageSize: 20,
-        pageCount: 1,
+        hasMore: false,
         meta: { mode: "provinces", currentUserRank: null },
       }),
     );

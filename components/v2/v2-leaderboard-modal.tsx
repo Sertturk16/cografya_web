@@ -256,10 +256,10 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
               </div>
 
               {/* Pagination controls */}
-              {displayData.pageCount > 1 && (
+              {(displayData.page > 1 || displayData.hasMore) && (
                 <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
                   <span>
-                    Sayfa {displayData.page} / {displayData.pageCount} ({displayData.total} kayıt)
+                    Sayfa {displayData.page} ({displayData.total} kayıt)
                   </span>
                   <div className="flex items-center gap-1">
                     <Button
@@ -274,8 +274,8 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                     <Button
                       variant="outline"
                       size="icon-sm"
-                      disabled={displayData.page >= displayData.pageCount}
-                      onClick={() => setPage((p) => Math.min(displayData.pageCount, p + 1))}
+                      disabled={!displayData.hasMore}
+                      onClick={() => setPage((p) => p + 1)}
                       aria-label="Sonraki Sayfa"
                     >
                       <ChevronRight className="size-3.5" />

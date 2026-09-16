@@ -1,6 +1,5 @@
 import "server-only";
 import { apiGet } from "@/lib/api/client";
-import { isProductionBuild } from "@/lib/api/provinces";
 import type { Department, District, University } from "@/lib/api/types";
 import { PLATE_CODE_PATTERN } from "@/lib/auth/form-rules";
 
@@ -31,13 +30,10 @@ export function isValidPlateCode(value: string): boolean {
  * well-formed but UNMATCHED code still reaches the api and answers `[]` with a 200 — the
  * api's own contract for that case (plan §3.4) — never a throw.
  *
- * No build-time resilience wrapper, unlike {@link getUniversitiesResilient} /
- * {@link getDepartmentsResilient} below: the route handler's own `generateStaticParams`
- * already degrades to an EMPTY params list when the api is unreachable at build
- * (`getProvincesResilient`), so with zero listed plate codes this function's body never runs
- * during a no-api CI build at all (plan §4.4's "Build resilience" paragraph). Every actual
- * invocation is therefore a genuine runtime call, where a real api is assumed reachable —
- * the same posture every other runtime-only read in this repo already has.
+ * No build-time resilience wrapper, matching {@link getUniversities} / {@link getDepartments}
+ * below: none of the three has one any more. Every actual invocation is a genuine runtime
+ * call, where a real api is assumed reachable — the same posture every other runtime-only
+ * read in this repo already has.
  */
 export async function getDistricts(plateCode: string): Promise<District[]> {
   if (!isValidPlateCode(plateCode)) {
@@ -50,39 +46,21 @@ export async function getDistricts(plateCode: string): Promise<District[]> {
 
 /**
  * Every university the registration form offers, Turkish-alphabetical (the api's own
- * order). Unlike {@link getDistricts}, this route has no dynamic segment and no
- * `generateStaticParams` guard of its own, so its GET handler body DOES run during
- * `next build` (the same reasoning `app/api/search-index/[locale]/route.ts` already
- * documents for its own two resilient reads) — CI has no api service, so this degrades to
- * `[]` at build and re-throws at runtime, the identical split `getMapSummaryResilient`
- * establishes in `lib/api/provinces.ts`.
+ * order). Both `app/api/reference/universities/route.ts` and its `departments` sibling are
+ * `export const dynamic = "force-dynamic"` routes, so this body only ever runs at request
+ * time, when a real api is reachable — no build-time fallback needed (previously this had a
+ * try/catch that degraded to `[]` during `next build`, matching `getMapSummaryResilient` in
+ * `lib/api/provinces.ts`; that branch was dropped because the production Docker build has no
+ * network access to the api, so it was silently baking an empty `[]` into the static output,
+ * which then served for up to an hour post-deploy before ISR self-healed — see T-020). Throws
+ * on failure, same posture as {@link getDistricts}.
  */
-export async function getUniversitiesResilient(): Promise<University[]> {
-  try {
-    return await apiGet<University[]>("/api/reference/universities");
-  } catch (error) {
-    if (isProductionBuild()) {
-      console.warn(
-        `[reference] universities fetch failed during build; deferring to on-demand ISR. ${String(error)}`,
-      );
-      return [];
-    }
-    throw error;
-  }
+export async function getUniversities(): Promise<University[]> {
+  return apiGet<University[]>("/api/reference/universities");
 }
 
 /** Every bachelor-level programme name the registration form offers, Turkish-alphabetical —
- *  the same build-vs-runtime split as {@link getUniversitiesResilient}, for the same reason. */
-export async function getDepartmentsResilient(): Promise<Department[]> {
-  try {
-    return await apiGet<Department[]>("/api/reference/departments");
-  } catch (error) {
-    if (isProductionBuild()) {
-      console.warn(
-        `[reference] departments fetch failed during build; deferring to on-demand ISR. ${String(error)}`,
-      );
-      return [];
-    }
-    throw error;
-  }
+ *  same reasoning and posture as {@link getUniversities}. */
+export async function getDepartments(): Promise<Department[]> {
+  return apiGet<Department[]>("/api/reference/departments");
 }

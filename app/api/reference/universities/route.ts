@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server";
-import { CONTENT_REVALIDATE_SECONDS, PUBLIC_REFERENCE_CACHE_CONTROL } from "@/lib/api/client";
-import { getUniversitiesResilient } from "@/lib/reference/reference.server";
+import { PUBLIC_REFERENCE_CACHE_CONTROL } from "@/lib/api/client";
+import { getUniversities } from "@/lib/reference/reference.server";
 
 /**
  * `/api/reference/universities` — the registration form's university list, on OUR OWN
- * origin (plan §4.4, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`). No
- * dynamic segment, so this handler's body runs once at build (CI has no api service —
- * `getUniversitiesResilient` degrades to `[]` there) and is ISR-revalidated afterward, the
- * same posture `/api/search-index/{locale}` documents for its own two resilient reads.
+ * origin (plan §4.4, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`).
+ *
+ * `force-dynamic`: this handler always runs at request time and is never prerendered or
+ * ISR-cached by Next. The production Docker build has no network access to the api
+ * container, so a build-time snapshot of this route would always bake in an empty `[]` —
+ * previously served to real users for up to an hour after every deploy, until ISR's
+ * background revalidation kicked in (T-020). Freshness/caching is handled entirely by this
+ * handler's own `Cache-Control` header below, which the CDN and browser already respect.
  */
-export const revalidate: typeof CONTENT_REVALIDATE_SECONDS = 3600;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const universities = await getUniversitiesResilient();
+  const universities = await getUniversities();
 
   return NextResponse.json(universities, {
     headers: {

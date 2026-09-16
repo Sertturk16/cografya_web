@@ -27,7 +27,13 @@ import {
   Flame,
 } from "lucide-react";
 
-export const revalidate = 3600;
+/**
+ * `force-dynamic`: same reasoning as the V1 `/turkiye` twin — a build-time api outage would
+ * bake an empty province list AND an inert, unlinked map into this hub, breaking its entire
+ * browsing purpose until the next ISR revalidation (T-020's bug class).
+ * `app/[locale]/v2/hesabim/page.tsx` already accepts this trade-off for a hub-shaped page.
+ */
+export const dynamic = "force-dynamic";
 
 interface V2TurkiyePageProps {
   params: Promise<{ locale: Locale }>;

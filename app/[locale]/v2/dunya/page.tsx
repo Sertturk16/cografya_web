@@ -19,7 +19,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Globe, Gamepad2, ArrowRight, Home, ChevronRight } from "lucide-react";
 
-export const revalidate = 86400;
+/**
+ * `force-dynamic`: same reasoning as the V1 `/dunya` twin — a build-time api outage would
+ * bake an empty country list AND an inert, unlinked map into this hub, breaking its entire
+ * browsing purpose until the next ISR revalidation (T-020's bug class). The previous
+ * `revalidate = 86400` meant that broken state could persist for up to 24 hours.
+ */
+export const dynamic = "force-dynamic";
 
 interface V2DunyaPageProps {
   params: Promise<{ locale: Locale }>;
