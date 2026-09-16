@@ -21,6 +21,11 @@ import {
   type BookProgressValue,
   VIDEO_PROGRESS_FETCH_TIMEOUT_MS,
 } from "@/lib/video-progress/client";
+import {
+  fetchGameRounds,
+  type GameRoundRecord,
+  GAME_ROUNDS_FETCH_TIMEOUT_MS,
+} from "@/lib/game-rounds/client";
 import { submitAuth } from "@/lib/auth/submit.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
@@ -119,6 +124,12 @@ export function V2MemberHub({
     "loading",
   );
 
+  // Game rounds state
+  const [gameRounds, setGameRounds] = React.useState<readonly GameRoundRecord[] | null>(null);
+  const [gameRoundsStatus, setGameRoundsStatus] = React.useState<"loading" | "ready" | "error">(
+    "loading",
+  );
+
   // Video progress state (keyed by book slugTr)
   const [bookProgressMap, setBookProgressMap] = React.useState<
     Record<string, BookProgressValue | null>
@@ -161,7 +172,24 @@ export function V2MemberHub({
       })
       .finally(() => clearTimeout(measTimeout));
 
-    // 3. Fetch Video Progress for all provided books
+    // 3. Fetch Game Rounds (page size at the transport's max, so the stat box reflects the
+    // caller's real round count rather than an arbitrary small page)
+    const roundsController = new AbortController();
+    const roundsTimeout = setTimeout(() => roundsController.abort(), GAME_ROUNDS_FETCH_TIMEOUT_MS);
+    fetchGameRounds(1, 100, roundsController.signal)
+      .then((data) => {
+        if (cancelled) return;
+        setGameRounds(data);
+        setGameRoundsStatus("ready");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setGameRounds(null);
+        setGameRoundsStatus("error");
+      })
+      .finally(() => clearTimeout(roundsTimeout));
+
+    // 4. Fetch Video Progress for all provided books
     const videoController = new AbortController();
     const videoTimeout = setTimeout(() => videoController.abort(), VIDEO_PROGRESS_FETCH_TIMEOUT_MS);
     const progressPromises = books.map((book) =>
@@ -191,9 +219,11 @@ export function V2MemberHub({
       cancelled = true;
       favController.abort();
       measController.abort();
+      roundsController.abort();
       videoController.abort();
       clearTimeout(favTimeout);
       clearTimeout(measTimeout);
+      clearTimeout(roundsTimeout);
       clearTimeout(videoTimeout);
     };
   }, [books]);
@@ -295,6 +325,7 @@ export function V2MemberHub({
 
   const totalFavoritesCount = favorites ? favorites.length : 0;
   const totalMeasurementsCount = measurements ? measurements.length : 0;
+  const totalGameRoundsCount = gameRounds ? gameRounds.length : 0;
   const totalWatchedVideos = Object.values(bookProgressMap).reduce(
     (acc, cur) => acc + (cur?.watchedCount ?? 0),
     0,
@@ -424,7 +455,7 @@ export function V2MemberHub({
               Sınav Turları
             </div>
             <div className="font-heading font-bold text-xl text-foreground mt-0.5">
-              Aktif Skorlar
+              {gameRoundsStatus === "loading" ? "…" : totalGameRoundsCount}
             </div>
           </div>
           <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
