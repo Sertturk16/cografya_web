@@ -64,7 +64,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       pathname: "/v2/kitaplar/[slug]",
       params: { slug: slugForLocale(book, l) },
     }),
-    title: `${book.metaTitleTr} | V2 Kitaplar`,
+    // `metaTitleTr`/`metaDescriptionTr` render verbatim on BOTH locales on purpose (API
+    // contract docblock, `lib/api/schema.ts`): a Turkish exam-prep book's own title/description
+    // has no EN counterpart by owner ruling, so the EN page renders the TR book content rather
+    // than inventing a translation. Only the trailing site-chrome label is locale text, and it
+    // was hardcoded Turkish regardless of locale (T-026) — that part alone is localized here.
+    title: `${book.metaTitleTr} | ${locale === "en" ? "Books" : "V2 Kitaplar"}`,
     description: book.metaDescriptionTr,
     openGraphType: "article",
     surface: "noindex",
@@ -284,7 +289,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
             <div>
               <div className="flex items-center gap-2">
                 <Badge variant="primary" size="sm" icon={<Video className="size-3.5" />}>
-                  İnteraktif Video Çözüm Tezgâhı
+                  İnteraktif Video Çözüm Merkezi
                 </Badge>
               </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-1">

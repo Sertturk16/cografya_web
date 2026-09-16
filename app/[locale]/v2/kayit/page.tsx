@@ -76,7 +76,7 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
             </div>
 
             {/* Value Proposition & Feature Showcase */}
-            <div className="lg:col-span-6 xl:col-span-7 h-full">
+            <div className="lg:col-span-6 xl:col-span-7">
               <V2AuthBenefitsPlate mode="register" />
             </div>
           </div>

@@ -128,7 +128,7 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
                     any more. */}
                 <div className="space-y-4 pt-2 border-t border-border/60">
                   <div className="flex items-center justify-between text-xs font-semibold text-primary group-hover:translate-x-1 transition-transform">
-                    <span>Video Çözüm Tezgâhına Git</span>
+                    <span>Video Çözüm Merkezine Git</span>
                     <ArrowRight className="size-4 ml-1" />
                   </div>
                 </div>
