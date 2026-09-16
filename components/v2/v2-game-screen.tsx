@@ -527,7 +527,11 @@ export function V2GameScreen({
                     ? "81 İl Sınavı"
                     : mode === "regions"
                       ? "7 Coğrafi Bölge"
-                      : `${modeName} İlleri`}
+                      : // The remaining case is the region-scoped province quiz
+                        // (`/oyun/bolge-bolge-il/[bolge]`), whose `modeName` prop already IS
+                        // "{region} İlleri" — appending " İlleri" again produced "Ege İlleri
+                        // İlleri" (T-017).
+                        modeName}
                 </span>
               </div>
             </div>
