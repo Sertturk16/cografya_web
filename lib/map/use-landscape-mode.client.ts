@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 
 /**
  * "Yatay Modda Oyna" — shared fullscreen + landscape-orientation entry for the two map/game
- * surfaces that are cramped by portrait height on a phone (`game-island.tsx`,
+ * surfaces that are cramped by portrait height on a phone (`v2-game-screen.tsx`,
  * `v2-tool-workbench.tsx`; T-015). One hook rather than two copies, because the browser-quirk
  * handling below (three fullscreen vendor prefixes, an orientation-lock call that may not
  * exist at all, iOS Safari supporting neither) is exactly the kind of logic that drifts
@@ -125,12 +125,11 @@ function screenOrientationOf(win: Window): (OrientationLockable & { unlock?: () 
 }
 
 /**
- * `isPortrait`/`isCoarsePointer` read through `useSyncExternalStore` (this file's own version
- * of the `actionSlot`/`mapFrame` pattern `game-island.tsx` already uses for DOM it does not
- * render) rather than `useState` + a `useEffect` that calls `setState` synchronously in its
- * body to seed the initial value — the latter is a real lint error under this repo's
- * `react-hooks/set-state-in-effect` rule, not a style preference: `matchMedia(...).matches`
- * IS external, subscribable state, which is exactly what the hook exists for.
+ * `isPortrait`/`isCoarsePointer` read through `useSyncExternalStore` rather than `useState` +
+ * a `useEffect` that calls `setState` synchronously in its body to seed the initial value —
+ * the latter is a real lint error under this repo's `react-hooks/set-state-in-effect` rule,
+ * not a style preference: `matchMedia(...).matches` IS external, subscribable state, which is
+ * exactly what `useSyncExternalStore` exists for.
  */
 function subscribeMediaQuery(query: string) {
   return (onChange: () => void): (() => void) => {
@@ -152,9 +151,9 @@ const readCoarsePointer = readMediaQuery("(pointer: coarse)");
 
 /**
  * `containerRef` is whichever element should fill the screen and (ideally) rotate — the CBS
- * canvas's own container in `v2-tool-workbench.tsx`, or the game map's `.frame` card reached
- * imperatively in `game-island.tsx` (that file already enhances server-rendered DOM it does
- * not render itself; this hook only needs *an* element, not one it owns).
+ * canvas's own container in `v2-tool-workbench.tsx`, or the game arena card in
+ * `v2-game-screen.tsx`. Either way, this hook only needs *an* element ref; it never assumes
+ * anything about what else lives inside it.
  */
 export function useLandscapeMode(containerRef: React.RefObject<HTMLElement | null>): LandscapeMode {
   const [active, setActive] = useState(false);
