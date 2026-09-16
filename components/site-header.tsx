@@ -10,7 +10,16 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
   return (
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
-        <Link href="/" className={styles.brand}>
+        <Link
+          href="/"
+          className={styles.brand}
+          // This link is in the header on every page, so Next's default viewport
+          // prefetch fetches the (static) home route's full CSS chunk on every load —
+          // almost never clicked, so the browser warns it was "preloaded but not used"
+          // (T-029). Prefetch on hover/focus instead, same fix as v2-hero.tsx's
+          // quick-access pills.
+          prefetch={false}
+        >
           <span
             className={styles.glyph}
             aria-hidden="true"
