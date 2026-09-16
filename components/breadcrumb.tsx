@@ -32,7 +32,15 @@ export async function Breadcrumb({ locale, items }: { locale: Locale; items: Cru
           {items.map((crumb, index) =>
             index < items.length - 1 ? (
               <li key={index}>
-                <Link href={crumb.href}>{crumb.label}</Link>
+                {/* The first crumb is home ("/") on every caller. This breadcrumb renders on
+                    every V1 detail/hub page, so Next's default viewport prefetch was fetching
+                    the home route's CSS chunk on every load — the third and last source of
+                    T-029's "preloaded but not used" warning, alongside the header logo
+                    (site-header.tsx) and primary nav (site-nav.tsx), both already fixed the
+                    same way. */}
+                <Link href={crumb.href} prefetch={index === 0 ? false : undefined}>
+                  {crumb.label}
+                </Link>
               </li>
             ) : (
               <li key={index}>
