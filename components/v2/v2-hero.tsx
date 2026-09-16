@@ -431,6 +431,14 @@ export function V2Hero({
               <Link
                 key={tag.path}
                 href={tag.path as unknown as React.ComponentProps<typeof Link>["href"]}
+                // These five pills sit above the fold, so Next's default viewport
+                // prefetch fires for all of them on every home page load, pulling in
+                // each target's CSS/image preloads (e.g. the locator map + flag SVG on
+                // /v2/dunya/japonya) even though a visitor clicks at most one — the
+                // browser then warns the rest were "preloaded but not used" (T-029).
+                // Prefetch on hover/focus instead, which only warms the one the
+                // visitor is actually about to click.
+                prefetch={false}
               >
                 <Badge
                   variant="outline"
