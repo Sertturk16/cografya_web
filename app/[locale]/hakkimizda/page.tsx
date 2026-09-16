@@ -47,6 +47,21 @@ export default async function AboutPage({ params }: PageProps) {
       <p className="lede">{t("body1")}</p>
       <p>{t("sourcing")}</p>
 
+      {/* T-030 — team / mission / contact copy, approved verbatim by the product owner
+          after live research on the brand. Placed ahead of the licence-attribution block
+          below: it is who-we-are/why-us content that belongs with the page's own intro,
+          not with the data-source colophon it sits next to. */}
+      <h2>{t("aboutHeading")}</h2>
+      <p>{t("aboutBody1")}</p>
+      <p>{t("aboutBody2")}</p>
+      <p>{t("aboutCurriculum")}</p>
+
+      <h2>{t("contactHeading")}</h2>
+      <p>
+        {t("contactBody")}{" "}
+        <a href="mailto:info.cografyagurmesi@gmail.com">info.cografyagurmesi@gmail.com</a>
+      </p>
+
       {/* MAP AND FLAG SOURCES — a licence obligation, not a colophon.
           JRC Global Surface Water's terms require crediting "datasets AND the journal
           article", and one line under a map cannot carry a bibliographic citation. This
