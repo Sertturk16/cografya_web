@@ -83,4 +83,40 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     // Should check e.target !== e.currentTarget
     expect(source).toContain("e.target !== e.currentTarget");
   });
+
+  describe("touch pinch-zoom + pan (T-015)", () => {
+    it("reuses the shared zoom/pan math instead of re-deriving pinch/clamp arithmetic", () => {
+      expect(source).toContain('from "@/lib/map/zoom-pan"');
+      expect(source).toContain("zoomFromPinch(");
+      expect(source).toContain("clampPan(");
+    });
+
+    it("filters every touch handler to pointerType, so a mouse click never double-fires", () => {
+      // A mouse click ALSO dispatches a `pointerdown`/`pointerup` — without this guard the
+      // existing onMouseDown/onMouseMove/onMouseUp path above would run a second time.
+      const guardCount = (source.match(/if \(e\.pointerType !== "touch"\) return;/g) ?? []).length;
+      expect(guardCount).toBeGreaterThanOrEqual(3); // down, move, up (+ cancel reuses up)
+    });
+  });
+
+  describe("smart region focus (T-015)", () => {
+    it("frames newly named points, never a raw map click", () => {
+      expect(source).toContain("focusOnMapPoints(");
+      // The one action that must NOT trigger a re-frame: the player already navigated there.
+      const clickHandler = (() => {
+        const start = source.indexOf("const handleMapClick = ");
+        expect(start).toBeGreaterThan(-1);
+        const end = source.indexOf("\n  };", start);
+        return source.slice(start, end);
+      })();
+      expect(clickHandler).not.toContain("focusOnMapPoints(");
+    });
+  });
+
+  describe("landscape / fullscreen entry (T-015)", () => {
+    it("wires the shared landscape hook to the map's own container ref", () => {
+      expect(source).toContain('from "@/lib/map/use-landscape-mode.client"');
+      expect(source).toContain("useLandscapeMode(mapContainerRef)");
+    });
+  });
 });

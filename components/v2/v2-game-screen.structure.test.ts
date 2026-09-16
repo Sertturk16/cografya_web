@@ -42,4 +42,42 @@ describe("V2GameScreen structural contract and auth gate", () => {
     expect(source).toContain("Skor profilinize kaydedildi");
     expect(source).toContain("Skor kaydedilemedi");
   });
+
+  describe("touch pinch-zoom + pan (T-015)", () => {
+    it("reuses the shared pinch-ratio math instead of re-deriving it from raw touch deltas", () => {
+      expect(source).toContain('from "@/lib/map/zoom-pan"');
+      expect(source).toContain("zoomFromPinch(");
+    });
+
+    it("filters every touch handler to pointerType, so a mouse click never double-fires", () => {
+      const guardCount = (source.match(/if \(e\.pointerType !== "touch"\) return;/g) ?? []).length;
+      expect(guardCount).toBeGreaterThanOrEqual(3); // down, move, up (+ cancel reuses up)
+    });
+  });
+
+  describe("smart region focus on reveal (T-015)", () => {
+    it("pans to the revealed answer without ever changing zoom (no auto-zoom to an OPEN answer)", () => {
+      const start = source.indexOf("const panToRevealedPlates = ");
+      expect(start).toBeGreaterThan(-1);
+      const end = source.indexOf("\n  );", start);
+      const body = source.slice(start, end);
+      expect(body).toContain("setPan(");
+      expect(body).not.toContain("setZoom(");
+    });
+
+    it("unions the whole region's provinces when the target is a region, not one plate", () => {
+      const start = source.indexOf("const revealedPlates =");
+      expect(start).toBeGreaterThan(-1);
+      const block = source.slice(start, start + 300);
+      expect(block).toContain('mode === "regions"');
+      expect(block).toContain("s.target?.region === currentTarget.id");
+    });
+  });
+
+  describe("landscape / fullscreen entry (T-015)", () => {
+    it("wires the shared landscape hook to the game arena's own container ref", () => {
+      expect(source).toContain('from "@/lib/map/use-landscape-mode.client"');
+      expect(source).toContain("useLandscapeMode(mapArenaRef)");
+    });
+  });
 });

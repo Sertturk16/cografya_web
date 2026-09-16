@@ -29,6 +29,13 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { V2LeaderboardButton } from "./v2-leaderboard-modal";
+import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
+import {
+  CLICK_MOVE_THRESHOLD_PX,
+  moveDistance,
+  parseViewBox,
+  zoomFromPinch,
+} from "@/lib/map/zoom-pan";
 import {
   Gamepad2,
   Trophy,
@@ -48,6 +55,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  Minimize2,
   Eye,
   Flag,
   Home,
@@ -57,6 +65,10 @@ import {
   ShieldCheck,
   Star,
 } from "lucide-react";
+
+/** Same bounds the existing +/− buttons already clamp `zoom` to (see the toolbar below). */
+const MIN_ZOOM = 0.8;
+const MAX_ZOOM = 2.5;
 
 export type V2Difficulty = "klasik" | "zamana-karsi" | "alistirma";
 
@@ -109,6 +121,27 @@ export function V2GameScreen({
   // Map Zoom & Pan State
   const [zoom, setZoom] = React.useState<number>(1);
   const [pan, setPan] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const svgRef = React.useRef<SVGSVGElement | null>(null);
+  const mapArenaRef = React.useRef<HTMLDivElement | null>(null);
+  /** The `<svg>`'s own direct, untransformed parent — `offsetWidth`/`Height` here is the
+   *  "meet"-fit layout box the smart-focus math below needs; the same properties are not
+   *  part of `SVGSVGElement`'s TS surface, and reading them off this plain div sidesteps that
+   *  without touching the CSS `transform` that only ever targets the `<svg>` itself. */
+  const mapViewportRef = React.useRef<HTMLDivElement | null>(null);
+
+  // "Tam Ekran / Yatay Mod" (T-015) — fullscreen + best-effort landscape lock for the whole
+  // game arena (map + HUD + question banner), so none of it is left behind on rotation.
+  const landscape = useLandscapeMode(mapArenaRef);
+
+  // Touch pinch-zoom + one-finger pan (T-015). This map had NO pan interaction of any kind
+  // before this — `pan` existed only as state the reset button zeroed — and no touch gesture
+  // beyond whatever a `<path>`'s native tap-to-click already gave it. Refs, not state: a
+  // gesture fires many times a frame and only `zoom`/`pan` themselves need to re-render.
+  const touchPointsRef = React.useRef<Map<number, { x: number; y: number }>>(new Map());
+  const touchPinchStartRef = React.useRef<{ dist: number; zoom: number } | null>(null);
+  const touchPanLastRef = React.useRef<{ x: number; y: number } | null>(null);
+  const touchStartPosRef = React.useRef<{ x: number; y: number } | null>(null);
+  const touchMaxMoveRef = React.useRef(0);
 
   // Game Engine State
   const [isPlaying, setIsPlaying] = React.useState<boolean>(false);
@@ -170,6 +203,141 @@ export function V2GameScreen({
 
   // Neighbor lands outline
   const trCasing = React.useMemo(() => CONTEXT_SHAPES.find((c) => c.iso === "TR"), []);
+
+  // --- Touch pinch-zoom + one-finger pan (T-015) ----------------------------------------
+  // Filtered to `pointerType === "touch"` throughout, so a mouse click (which also fires a
+  // `pointerdown`) never double-runs against the existing per-`<path>` `onClick` handlers.
+  const handleTouchPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType !== "touch") return;
+    touchPointsRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    touchMaxMoveRef.current = 0;
+    touchStartPosRef.current = { x: e.clientX, y: e.clientY };
+
+    if (touchPointsRef.current.size === 1) {
+      touchPanLastRef.current = { x: e.clientX, y: e.clientY };
+      touchPinchStartRef.current = null;
+    } else if (touchPointsRef.current.size === 2) {
+      const [a, b] = [...touchPointsRef.current.values()];
+      if (a && b) {
+        touchPinchStartRef.current = { dist: Math.hypot(a.x - b.x, a.y - b.y), zoom };
+        touchPanLastRef.current = null; // suspend one-finger pan while pinching
+      }
+    }
+  };
+
+  const handleTouchPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType !== "touch") return;
+    if (!touchPointsRef.current.has(e.pointerId)) return;
+    touchPointsRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    const start = touchStartPosRef.current;
+    if (start) {
+      touchMaxMoveRef.current = Math.max(
+        touchMaxMoveRef.current,
+        moveDistance(e.clientX - start.x, e.clientY - start.y),
+      );
+    }
+
+    const pinch = touchPinchStartRef.current;
+    if (pinch && touchPointsRef.current.size >= 2) {
+      const [a, b] = [...touchPointsRef.current.values()];
+      if (!a || !b) return;
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch.dist > 0) {
+        setZoom(
+          Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomFromPinch(pinch.zoom, pinch.dist, dist))),
+        );
+      }
+      return;
+    }
+
+    // One finger: pan, gated to zoomed-in — at 1× (the resting scale) there is nothing to
+    // pan to, and a single stationary-ish touch is a candidate tap-to-answer instead.
+    const last = touchPanLastRef.current;
+    if (!last || zoom <= 1) return;
+    if (touchMaxMoveRef.current < CLICK_MOVE_THRESHOLD_PX) return; // still a candidate tap
+    const dxClient = e.clientX - last.x;
+    const dyClient = e.clientY - last.y;
+    // `pan` is applied INSIDE the CSS `scale(zoom)` (see the `<svg>` transform below: the
+    // transform list is `scale(zoom) translate(pan.x, pan.y)`, so `translate` runs in the
+    // element's own pre-scale pixel space) — a screen-pixel drag delta is therefore this
+    // element's own delta divided by the current zoom, not the raw client delta.
+    setPan((prev) => ({ x: prev.x + dxClient / zoom, y: prev.y + dyClient / zoom }));
+    touchPanLastRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleTouchPointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType !== "touch") return;
+    touchPointsRef.current.delete(e.pointerId);
+    if (touchPointsRef.current.size < 2) touchPinchStartRef.current = null;
+    if (touchPointsRef.current.size === 1) {
+      const remaining = [...touchPointsRef.current.values()][0];
+      touchPanLastRef.current = remaining ?? null;
+      return;
+    }
+    if (touchPointsRef.current.size === 0) {
+      touchPanLastRef.current = null;
+      touchStartPosRef.current = null;
+      // A real tap (never crossed the movement threshold) is left alone: the browser still
+      // delivers the native `click` the per-`<path>` `onClick` below already listens for.
+    }
+  };
+
+  /**
+   * "Smart region focus" (T-015) — pan (never zoom) so the just-revealed answer sits centred
+   * once the player has given up on a question, mirroring the V1 game map's own reveal-only
+   * camera move: showing the answer honestly, without the auto-zoom-toward-the-target that
+   * would answer an OPEN question for the player. Every plate named in `plateCodes` is
+   * unioned first, so a "bölge" reveal (many provinces sharing one target id) frames the
+   * whole answer rather than whichever province happened to be scanned first.
+   *
+   * Deliberately ALWAYS recentres rather than only-if-clipped: `pan`/`zoom` here are a CSS
+   * transform over a `viewBox` that never itself changes, so "is it currently visible" would
+   * need the same box-vs-window arithmetic this function already does to answer "where is
+   * it" — recentring unconditionally is simpler and, for an action that fires once per
+   * question, not a worse experience.
+   */
+  const panToRevealedPlates = React.useCallback(
+    (plateCodes: readonly string[]) => {
+      const svg = svgRef.current;
+      if (!svg || plateCodes.length === 0) return;
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const plate of plateCodes) {
+        const el = document.getElementById(`game-prov-${plate}`);
+        if (!(el instanceof SVGGraphicsElement)) continue;
+        const box = el.getBBox();
+        if (box.width <= 0 || box.height <= 0) continue;
+        minX = Math.min(minX, box.x);
+        minY = Math.min(minY, box.y);
+        maxX = Math.max(maxX, box.x + box.width);
+        maxY = Math.max(maxY, box.y + box.height);
+      }
+      if (!Number.isFinite(minX) || !Number.isFinite(minY)) return; // nothing found — no-op
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+
+      const world = parseViewBox(viewBox);
+      // `offsetWidth`/`Height` are the LAYOUT box (unaffected by the CSS transform below),
+      // matching the "meet" fit the `<svg viewBox>` painted before any transform is applied.
+      const viewport = mapViewportRef.current;
+      const boxW = viewport?.offsetWidth ?? 0;
+      const boxH = viewport?.offsetHeight ?? 0;
+      if (boxW <= 0 || boxH <= 0) return;
+      const scale = Math.min(boxW / world.w, boxH / world.h);
+      const letterboxX = (boxW - world.w * scale) / 2;
+      const letterboxY = (boxH - world.h * scale) / 2;
+      const localX = letterboxX + (cx - world.x) * scale;
+      const localY = letterboxY + (cy - world.y) * scale;
+
+      // Centre `(localX, localY)` under the transform's own origin (`transform-origin:
+      // center center`): solving `O + zoom * ((local - O) + pan) = O` for `pan`.
+      setPan({ x: boxW / 2 - localX, y: boxH / 2 - localY });
+    },
+    [viewBox],
+  );
 
   // Timer Effect
   React.useEffect(() => {
@@ -364,6 +532,14 @@ export function V2GameScreen({
       type: "revealed",
       message: `Cevap: ${currentTarget.label} (0 Puan). Haritada sarı ile işaretlendi.`,
     });
+
+    // Smart region focus (T-015): province mode reveals one plate; region mode's target id
+    // IS a region key, shared by every province in it, so this frames the whole answer.
+    const revealedPlates =
+      mode === "regions"
+        ? targetEntries.filter((s) => s.target?.region === currentTarget.id).map((s) => s.plateCode)
+        : [currentTarget.id];
+    panToRevealedPlates(revealedPlates);
   };
 
   // Advance to next question after reveal
@@ -563,7 +739,58 @@ export function V2GameScreen({
         </div>
 
         {/* 2. ACTIVE GAME ARENA & SVG VECTOR CANVAS */}
-        <div className="rounded-3xl border border-primary/40 bg-card p-4 sm:p-6 shadow-xl space-y-5 relative overflow-hidden">
+        <div
+          ref={mapArenaRef}
+          className={`border border-primary/40 bg-card p-4 sm:p-6 shadow-xl space-y-5 relative overflow-hidden ${
+            // The CSS-only fallback layout (no Fullscreen API, e.g. iOS Safari) is a
+            // fixed-position box the hook sizes to the viewport — a fixed radius would clip
+            // the arena's own corners against straight screen edges (T-015).
+            landscape.active ? "" : "rounded-3xl"
+          }`}
+        >
+          {/* Fullscreen / landscape toggle (T-015) — ONE control for both directions. Placed
+              here, inside the fullscreened element itself, because once the real Fullscreen
+              API engages only this subtree stays on screen: a toggle living in the
+              breadcrumb row above would become unreachable the moment it is needed to exit. */}
+          <div className="absolute top-3 left-3 z-30 flex flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
+            <button
+              type="button"
+              onClick={landscape.toggle}
+              aria-pressed={landscape.active}
+              aria-label={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda oyna"}
+              title={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda oyna"}
+              className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
+            >
+              {landscape.active ? (
+                <Minimize2 className="size-4" />
+              ) : (
+                <Maximize2 className="size-4" />
+              )}
+            </button>
+          </div>
+
+          {/* "Rotate your phone" (T-015) — only once landscape mode is on, the device is
+              STILL portrait (no orientation-lock support, e.g. iOS Safari), and the pointer
+              is coarse. Lives inside the same arena for the same reason as the toggle above:
+              it must stay visible under a real Fullscreen session. */}
+          {landscape.showRotateHint && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
+            >
+              <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
+              <span>Daha geniş bir görünüm için telefonunu yatay çevir.</span>
+              <button
+                type="button"
+                onClick={landscape.exit}
+                className="shrink-0 px-2 py-1 rounded-lg border border-white/40 hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                Anladım
+              </button>
+            </div>
+          )}
+
           {/* Active HUD Telemetry */}
           {isPlaying && !isFinished && (
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 rounded-2xl bg-muted/40 border border-border">
@@ -744,7 +971,10 @@ export function V2GameScreen({
           )}
 
           {/* 3. SVG INTERACTIVE MAP VIEWPORT */}
-          <div className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[#dbe8ee] dark:bg-[#15232d] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center">
+          <div
+            ref={mapViewportRef}
+            className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[#dbe8ee] dark:bg-[#15232d] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center"
+          >
             {/* Zoom / Pan Floating Toolbar */}
             <div className="absolute top-3 right-3 z-20 flex items-center gap-1 p-1 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-md">
               <button
@@ -781,12 +1011,23 @@ export function V2GameScreen({
 
             {/* SVG Map */}
             <svg
+              ref={svgRef}
               viewBox={viewBox}
-              className="w-full h-full object-contain cursor-crosshair transition-transform select-none"
+              className={`w-full h-full object-contain cursor-crosshair transition-transform select-none ${
+                // Zoomed in, this element owns one-finger dragging (pan); at rest a vertical
+                // swipe over the map should still scroll the PAGE. `pan-y` also leaves the
+                // browser's own pinch-zoom suppressed either way (T-015) — our handler above
+                // replaces it.
+                zoom > 1 ? "touch-none" : "touch-pan-y"
+              }`}
               style={{
                 transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
                 transformOrigin: "center center",
               }}
+              onPointerDown={handleTouchPointerDown}
+              onPointerMove={handleTouchPointerMove}
+              onPointerUp={handleTouchPointerUp}
+              onPointerCancel={handleTouchPointerUp}
               aria-label="Türkiye İnteraktif Oyun Haritası"
             >
               {/* Background Neighbor Countries (Rendered when full country is shown) */}

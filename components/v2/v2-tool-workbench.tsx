@@ -18,6 +18,15 @@ import {
   type CardinalLetters,
 } from "@/lib/map/measure";
 import { parseSubpaths, pointInPolygon, type ShapePoint } from "@/lib/map/shape-geometry";
+import {
+  CLICK_MOVE_THRESHOLD_PX,
+  clampPan,
+  moveDistance,
+  parseViewBox,
+  zoomFromPinch,
+  type ViewBox,
+} from "@/lib/map/zoom-pan";
+import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
 import type { ProvincePoint } from "@/lib/tools/province-points";
 import type { ProvinceArea } from "@/components/tools/tool-island";
 import type { MeasurementType } from "@/lib/api/types";
@@ -54,6 +63,8 @@ import {
   RefreshCw,
   Navigation,
   Plus,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 
 export type ToolMode = "distance" | "coordinates" | "area";
@@ -72,6 +83,48 @@ const TURKISH_CARDINALS: CardinalLetters = {
   east: "D",
   west: "B",
 };
+
+/**
+ * The CBS canvas's world rect, parsed once with the shared zoom/pan module's own parser
+ * (T-015) rather than the ad hoc `.split(" ").map(Number)` `currentViewBox` still does below —
+ * that inline parse stays untouched (it is exercised, working code); this constant is only for
+ * the NEW touch-gesture and smart-focus math, which reuses `lib/map/zoom-pan.ts`'s pure
+ * geometry (`zoomFromPinch`, `clampPan`) instead of re-deriving pinch/pan arithmetic by hand.
+ */
+const WORLD_VIEWBOX: ViewBox = parseViewBox(TR_CONTEXT_VIEWBOX);
+/** Upper zoom bound this tool's own +/− buttons already use (`handleZoomIn`) — the touch
+ *  pinch below is clamped to the SAME ceiling, not `zoom-pan.ts`'s own (higher) `MAX_ZOOM`. */
+const MAX_TOOL_ZOOM = 8;
+
+/** This component's `{ zoomLevel, panOffset }` pair, expressed as a `ViewBox` — the exact
+ *  rectangle `currentViewBox` (below) already computes, in the shape `zoom-pan.ts`'s pure
+ *  functions expect. Kept local rather than replacing `currentViewBox` itself: that memo is
+ *  tested-by-use throughout the file, and this is additive, touch-only math. */
+function viewOfZoomPan(
+  zoomLevel: number,
+  panOffset: { x: number; y: number },
+  world: ViewBox,
+): ViewBox {
+  const w = world.w / zoomLevel;
+  const h = world.h / zoomLevel;
+  const cx = world.x + world.w / 2 + panOffset.x;
+  const cy = world.y + world.h / 2 + panOffset.y;
+  return { x: cx - w / 2, y: cy - h / 2, w, h };
+}
+
+/** The inverse of `viewOfZoomPan` — a `ViewBox` back to `{ zoomLevel, panOffset }`. */
+function zoomPanOfView(
+  view: ViewBox,
+  world: ViewBox,
+): { zoomLevel: number; panOffset: { x: number; y: number } } {
+  return {
+    zoomLevel: world.w / view.w,
+    panOffset: {
+      x: view.x + view.w / 2 - (world.x + world.w / 2),
+      y: view.y + view.h / 2 - (world.y + world.h / 2),
+    },
+  };
+}
 
 interface V2ToolWorkbenchProps {
   /** If provided, locks the workbench to this specific tool mode (e.g. on dedicated sub-pages). */
@@ -116,6 +169,58 @@ export function V2ToolWorkbench({
 
   const svgRef = React.useRef<SVGSVGElement | null>(null);
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
+
+  // "Tam Ekran / Yatay Mod" (T-015) — fullscreen + best-effort landscape lock for the canvas
+  // card itself, so the toolbar, scale bar and zoom cluster all come along.
+  const landscape = useLandscapeMode(mapContainerRef);
+
+  // Touch pinch-zoom + one-finger pan (T-015). Kept as refs, not state: a pinch/pan gesture
+  // fires many times a frame and none of these values are ever read by render — only the
+  // mouse-driven `isPanning`/`hasMovedDrag` state (shared with the existing mouse path below,
+  // so a touch drag swallows the trailing synthetic click exactly like a mouse drag already
+  // does) and `zoomLevel`/`panOffset` themselves need to trigger a re-render.
+  const touchPointsRef = React.useRef<Map<number, { x: number; y: number }>>(new Map());
+  const touchPinchStartRef = React.useRef<{ dist: number; zoom: number } | null>(null);
+  const touchPanLastRef = React.useRef<{ x: number; y: number } | null>(null);
+  const touchStartPosRef = React.useRef<{ x: number; y: number } | null>(null);
+  const touchMaxMoveRef = React.useRef(0);
+
+  /**
+   * "Smart region focus" (T-015): pan/zoom the canvas to frame the point(s) just named by
+   * VALUE rather than by screen location — an 81-il dropdown pick, a typed coordinate, a
+   * quick-scenario preset, or a restored saved measurement. A point placed by CLICKING the
+   * map is deliberately excluded (`handleMapClick` never calls this): the player already
+   * navigated there themselves, so re-framing under their finger would fight the pan/zoom
+   * they just did instead of helping it.
+   *
+   * Reuses this file's own `currentViewBox` convention (zoomLevel/panOffset around
+   * `WORLD_VIEWBOX`) rather than `zoom-pan.ts`'s `viewToIncludeShape` — that helper only ever
+   * grows the view to include something already close to visible; here the map is very often
+   * still at its 1× national extent and needs an actual zoom-IN, which is exactly what a
+   * "fit these points, with padding" computation gives.
+   */
+  const focusOnMapPoints = React.useCallback((mapPoints: readonly { x: number; y: number }[]) => {
+    if (mapPoints.length === 0) return;
+    const xs = mapPoints.map((p) => p.x);
+    const ys = mapPoints.map((p) => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    // A single point (or a tight cluster) has zero span — floor it to a fraction of the
+    // world so "fit the bounds" still produces a sensible close-in zoom instead of infinity.
+    const spanX = Math.max(maxX - minX, WORLD_VIEWBOX.w * 0.06);
+    const spanY = Math.max(maxY - minY, WORLD_VIEWBOX.h * 0.06);
+    const PAD = 1.7; // headroom so the point(s) never sit edge-to-edge against the frame
+    const zoomForWidth = WORLD_VIEWBOX.w / (spanX * PAD);
+    const zoomForHeight = WORLD_VIEWBOX.h / (spanY * PAD);
+    const nextZoom = Math.min(MAX_TOOL_ZOOM, Math.max(1, Math.min(zoomForWidth, zoomForHeight)));
+    setZoomLevel(nextZoom);
+    setPanOffset({
+      x: (minX + maxX) / 2 - (WORLD_VIEWBOX.x + WORLD_VIEWBOX.w / 2),
+      y: (minY + maxY) / 2 - (WORLD_VIEWBOX.y + WORLD_VIEWBOX.h / 2),
+    });
+  }, []);
 
   // Background context shape
   const trCasing = React.useMemo(() => CONTEXT_SHAPES.find((c) => c.iso === "TR"), []);
@@ -265,6 +370,126 @@ export function V2ToolWorkbench({
     setIsPanning(false);
   };
 
+  // --- Touch pinch-zoom + one-finger pan (T-015) ---------------------------------------
+  // Filtered to `pointerType === "touch"` throughout: mouse input keeps using the handlers
+  // above unchanged (a mouse click ALSO fires a `pointerdown`, so without this guard every
+  // mouse gesture would run twice). Pen input is deliberately left alone too — the mouse
+  // handlers already cover it, and this tool has no pen-specific gesture to add.
+  const handleTouchPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType !== "touch") return;
+    touchPointsRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    touchMaxMoveRef.current = 0;
+    touchStartPosRef.current = { x: e.clientX, y: e.clientY };
+
+    if (touchPointsRef.current.size === 1) {
+      touchPanLastRef.current = { x: e.clientX, y: e.clientY };
+      touchPinchStartRef.current = null;
+    } else if (touchPointsRef.current.size === 2) {
+      const [a, b] = [...touchPointsRef.current.values()];
+      if (a && b) {
+        touchPinchStartRef.current = { dist: Math.hypot(a.x - b.x, a.y - b.y), zoom: zoomLevel };
+        touchPanLastRef.current = null; // suspend one-finger pan while pinching
+      }
+    }
+  };
+
+  const handleTouchPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType !== "touch") return;
+    if (!touchPointsRef.current.has(e.pointerId)) return;
+    touchPointsRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    const start = touchStartPosRef.current;
+    if (start) {
+      touchMaxMoveRef.current = Math.max(
+        touchMaxMoveRef.current,
+        moveDistance(e.clientX - start.x, e.clientY - start.y),
+      );
+    }
+
+    // Two fingers: pinch-zoom, anchored at the pinch's own midpoint — reuses `zoomFromPinch`
+    // (the ratio) and `zoomAtPoint`-equivalent anchoring via `viewOfZoomPan`/`zoomPanOfView`
+    // rather than re-deriving either from raw touch deltas.
+    const pinch = touchPinchStartRef.current;
+    if (pinch && touchPointsRef.current.size >= 2) {
+      const [a, b] = [...touchPointsRef.current.values()];
+      if (!a || !b) return;
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch.dist > 0) {
+        const targetZoom = Math.min(
+          MAX_TOOL_ZOOM,
+          Math.max(1, zoomFromPinch(pinch.zoom, pinch.dist, dist)),
+        );
+        const svg = svgRef.current;
+        const view = viewOfZoomPan(zoomLevel, panOffset, WORLD_VIEWBOX);
+        if (svg) {
+          const rect = svg.getBoundingClientRect();
+          const midX = (a.x + b.x) / 2;
+          const midY = (a.y + b.y) / 2;
+          const fx = rect.width > 0 ? (midX - rect.left) / rect.width : 0.5;
+          const fy = rect.height > 0 ? (midY - rect.top) / rect.height : 0.5;
+          // World-space point under the pinch midpoint, held stationary as the view resizes
+          // around it — the same anchoring `zoomAtPoint` does for wheel/pinch on the game map.
+          const anchorX = view.x + fx * view.w;
+          const anchorY = view.y + fy * view.h;
+          const nextW = WORLD_VIEWBOX.w / targetZoom;
+          const nextH = WORLD_VIEWBOX.h / targetZoom;
+          const nextView = clampPan(
+            { x: anchorX - fx * nextW, y: anchorY - fy * nextH, w: nextW, h: nextH },
+            WORLD_VIEWBOX,
+          );
+          const next = zoomPanOfView(nextView, WORLD_VIEWBOX);
+          setZoomLevel(next.zoomLevel);
+          setPanOffset(next.panOffset);
+        } else {
+          setZoomLevel(targetZoom);
+        }
+      }
+      setHasMovedDrag(true); // a pinch must never also register as a tap-to-add-point
+      return;
+    }
+
+    // One finger: pan, gated to zoomed-in exactly like the mouse path above (at 1× there is
+    // nothing to pan to, and a single touch is a candidate tap-to-add-point instead).
+    const last = touchPanLastRef.current;
+    if (!last || zoomLevel <= 1) return;
+    if (touchMaxMoveRef.current < CLICK_MOVE_THRESHOLD_PX) return; // still a candidate tap
+    setHasMovedDrag(true);
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const dxClient = e.clientX - last.x;
+    const dyClient = e.clientY - last.y;
+    const view = viewOfZoomPan(zoomLevel, panOffset, WORLD_VIEWBOX);
+    const worldPerPxX = view.w / rect.width;
+    const worldPerPxY = view.h / rect.height;
+    const nextView = clampPan(
+      { ...view, x: view.x - dxClient * worldPerPxX, y: view.y - dyClient * worldPerPxY },
+      WORLD_VIEWBOX,
+    );
+    setPanOffset(zoomPanOfView(nextView, WORLD_VIEWBOX).panOffset);
+    touchPanLastRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleTouchPointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType !== "touch") return;
+    touchPointsRef.current.delete(e.pointerId);
+    if (touchPointsRef.current.size < 2) touchPinchStartRef.current = null;
+    if (touchPointsRef.current.size === 1) {
+      // Lifting one finger of a pinch: keep going, panning with whichever finger remains.
+      const remaining = [...touchPointsRef.current.values()][0];
+      touchPanLastRef.current = remaining ?? null;
+      return;
+    }
+    if (touchPointsRef.current.size === 0) {
+      touchPanLastRef.current = null;
+      touchStartPosRef.current = null;
+      // A real tap (never crossed the movement threshold) must still add a point: the
+      // browser synthesizes a `click` after a touch that called no `preventDefault`, which
+      // is exactly what `handleMapClick` below is already wired to receive via `onClick`.
+    }
+  };
+
   // Map Click to Add Point
   const handleMapClick = (e: React.MouseEvent<SVGSVGElement>) => {
     if (hasMovedDrag) {
@@ -315,15 +540,13 @@ export function V2ToolWorkbench({
 
     const mapPt = projectToMapPoint(geo.lon, geo.lat);
     const label = ("nameTr" in prov ? prov.nameTr : prov.geoName) || "İl Merkezi";
+    const newPoint: PointWithSvg = { svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "dropdown" };
 
-    if (activeTool === "coordinates") {
-      setPoints([{ svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "dropdown" }]);
-    } else {
-      setPoints((prev) => [
-        ...prev,
-        { svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "dropdown" },
-      ]);
-    }
+    // Smart region focus (T-015): the province was picked by NAME from a list, not by tapping
+    // the map, so the canvas has no reason yet to be looking anywhere near it.
+    const nextPoints = activeTool === "coordinates" ? [newPoint] : [...points, newPoint];
+    setPoints(nextPoints);
+    focusOnMapPoints(nextPoints.map((p) => ({ x: p.svgX, y: p.svgY })));
     setSelectedProvinceCode("");
   };
 
@@ -350,15 +573,13 @@ export function V2ToolWorkbench({
     const geo = parsed.point;
     const mapPt = projectToMapPoint(geo.lon, geo.lat);
     const label = `Girdi (${geo.lat.toFixed(2)}°, ${geo.lon.toFixed(2)}°)`;
+    const newPoint: PointWithSvg = { svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "manual" };
 
-    if (activeTool === "coordinates") {
-      setPoints([{ svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "manual" }]);
-    } else {
-      setPoints((prev) => [
-        ...prev,
-        { svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "manual" },
-      ]);
-    }
+    // Smart region focus (T-015): a typed coordinate has no on-screen anchor at all until
+    // the canvas moves to it.
+    const nextPoints = activeTool === "coordinates" ? [newPoint] : [...points, newPoint];
+    setPoints(nextPoints);
+    focusOnMapPoints(nextPoints.map((p) => ({ x: p.svgX, y: p.svgY })));
     setManualCoordText("");
   };
 
@@ -387,6 +608,8 @@ export function V2ToolWorkbench({
   };
 
   // Quick Preset Scenarios
+  // Smart region focus (T-015): every branch ends by framing the SCENARIO'S own points —
+  // a preset is picked by name ("İstanbul - Ankara") with no map location behind it yet.
   const loadPreset = (type: "ist-ank" | "izm-van" | "tuz-golu" | "van-golu" | "merkez") => {
     if (type === "ist-ank") {
       setActiveTool("distance");
@@ -398,6 +621,7 @@ export function V2ToolWorkbench({
         { svgX: istPt.x, svgY: istPt.y, geo: istGeo, label: "İstanbul", source: "preset" },
         { svgX: ankPt.x, svgY: ankPt.y, geo: ankGeo, label: "Ankara", source: "preset" },
       ]);
+      focusOnMapPoints([istPt, ankPt]);
     } else if (type === "izm-van") {
       setActiveTool("distance");
       const izmGeo = { lat: 38.4237, lon: 27.1428 };
@@ -408,6 +632,7 @@ export function V2ToolWorkbench({
         { svgX: izmPt.x, svgY: izmPt.y, geo: izmGeo, label: "İzmir", source: "preset" },
         { svgX: vanPt.x, svgY: vanPt.y, geo: vanGeo, label: "Van", source: "preset" },
       ]);
+      focusOnMapPoints([izmPt, vanPt]);
     } else if (type === "tuz-golu") {
       setActiveTool("area");
       const poly = [
@@ -422,6 +647,7 @@ export function V2ToolWorkbench({
           return { svgX: pt.x, svgY: pt.y, geo: p, label: `Sınır ${idx + 1}`, source: "preset" };
         }),
       );
+      focusOnMapPoints(poly.map((p) => projectToMapPoint(p.lon, p.lat)));
     } else if (type === "van-golu") {
       setActiveTool("area");
       const poly = [
@@ -437,6 +663,7 @@ export function V2ToolWorkbench({
           return { svgX: pt.x, svgY: pt.y, geo: p, label: `Sınır ${idx + 1}`, source: "preset" };
         }),
       );
+      focusOnMapPoints(poly.map((p) => projectToMapPoint(p.lon, p.lat)));
     } else if (type === "merkez") {
       setActiveTool("coordinates");
       const centerGeo = { lat: 39.14, lon: 34.16 };
@@ -450,6 +677,7 @@ export function V2ToolWorkbench({
           source: "preset",
         },
       ]);
+      focusOnMapPoints([pt]);
     }
   };
 
@@ -614,6 +842,10 @@ export function V2ToolWorkbench({
       };
     });
     setPoints(restored);
+    // Smart region focus (T-015): a restored measurement can be anywhere on the map, and
+    // until now this action never moved the canvas at all — reopening one made for a
+    // distant area silently showed nothing.
+    focusOnMapPoints(restored.map((p) => ({ x: p.svgX, y: p.svgY })));
   };
 
   // Delete saved measurement
@@ -922,8 +1154,58 @@ export function V2ToolWorkbench({
         {/* Interactive SVG Canvas Container with Zero Top/Bottom Gaps */}
         <div
           ref={mapContainerRef}
-          className="relative w-full aspect-[1270/580] bg-[#dbe8ee] dark:bg-[#15232d] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center select-none"
+          className={`relative w-full aspect-[1270/580] bg-[#dbe8ee] dark:bg-[#15232d] border border-border/80 overflow-hidden shadow-inner flex items-center justify-center select-none ${
+            // The fallback (non-Fullscreen-API) landscape layout is a fixed-position box the
+            // hook sizes to the viewport itself — a fixed corner radius would clip the map's
+            // own corners against straight screen edges (T-015).
+            landscape.active ? "" : "rounded-2xl"
+          }`}
         >
+          {/* Fullscreen / landscape toggle — ONE control for both directions, kept INSIDE
+              this container rather than in the toolbar above: once the real Fullscreen API
+              engages, only this element's own subtree stays on screen, so an "exit" control
+              living in the toolbar would be unreachable (T-015). */}
+          <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
+            <button
+              type="button"
+              onClick={landscape.toggle}
+              aria-pressed={landscape.active}
+              aria-label={
+                landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda görüntüle"
+              }
+              title={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay mod"}
+              className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
+            >
+              {landscape.active ? (
+                <Minimize2 className="size-4" />
+              ) : (
+                <Maximize2 className="size-4" />
+              )}
+            </button>
+          </div>
+
+          {/* "Rotate your phone" (T-015) — only once landscape mode is on, the device is
+              STILL portrait (no orientation-lock support, e.g. iOS Safari), and the pointer
+              is coarse. Lives inside this same container for the identical reason as the
+              toggle button above: it must stay visible under a real Fullscreen session. */}
+          {landscape.showRotateHint && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
+            >
+              <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
+              <span>Daha geniş bir görünüm için telefonunu yatay çevir.</span>
+              <button
+                type="button"
+                onClick={landscape.exit}
+                className="shrink-0 px-2 py-1 rounded-lg border border-white/40 hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                Anladım
+              </button>
+            </div>
+          )}
+
           {/* Absolute Floating Self-Intersection Warning Banner (Zero Layout Shift) */}
           {isSelfIntersecting && (
             <div
@@ -1004,11 +1286,21 @@ export function V2ToolWorkbench({
           <svg
             ref={svgRef}
             viewBox={currentViewBox}
-            className={`w-full h-full object-fill ${isPanning ? "cursor-grabbing" : "cursor-crosshair"}`}
+            className={`w-full h-full object-fill ${isPanning ? "cursor-grabbing" : "cursor-crosshair"} ${
+              // Zoomed in, the map itself owns one-finger dragging (pan); at 1× a vertical
+              // swipe over the map should still scroll the PAGE, and `pan-y` is what leaves
+              // that native behaviour intact while still suppressing the browser's own
+              // pinch-zoom (T-015) — our pinch handler above replaces it.
+              zoomLevel > 1 ? "touch-none" : "touch-pan-y"
+            }`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onClick={handleMapClick}
+            onPointerDown={handleTouchPointerDown}
+            onPointerMove={handleTouchPointerMove}
+            onPointerUp={handleTouchPointerUp}
+            onPointerCancel={handleTouchPointerUp}
             aria-label="Türkiye CBS Ölçüm Haritası"
           >
             {/* Background neighbor lands */}
