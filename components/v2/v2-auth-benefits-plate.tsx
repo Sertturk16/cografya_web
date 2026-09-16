@@ -13,7 +13,7 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
     {
       icon: <Star className="size-4 text-amber-500" />,
       title: "Kişisel Favoriler & Hızlı Erişim",
-      desc: "İlgi duyduğun 81 il ve 248 ülkeyi favorilerine ekle, güncel hava, iklim ve deniz telemetrilerini anında takip et.",
+      desc: "İlgi duyduğun 81 il ve 199 ülkeyi favorilerine ekle, güncel hava, iklim ve deniz telemetrilerini anında takip et.",
       badge: "Özelleştirilmiş",
     },
     {
@@ -37,7 +37,7 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
   ];
 
   return (
-    <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-xl space-y-6 flex flex-col justify-between h-full">
+    <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-xl space-y-6 flex flex-col">
       <div className="space-y-6">
         {/* Header Badge & Title */}
         <div className="space-y-2">
@@ -72,9 +72,7 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
               </div>
               <div className="space-y-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="font-heading font-bold text-sm text-foreground truncate">
-                    {b.title}
-                  </h4>
+                  <h4 className="font-heading font-bold text-sm text-foreground">{b.title}</h4>
                   <Badge variant="outline" className="text-[10px] py-0 font-mono shrink-0">
                     {b.badge}
                   </Badge>
@@ -92,7 +90,7 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
           <ShieldCheck className="size-4 text-emerald-500" />
           <span>KVKK ve GDPR Uyumlu Güvenli Altyapı</span>
         </div>
-        <span className="font-mono text-[11px]">81 İl &bull; 248 Ülke &bull; 30 İstasyon</span>
+        <span className="font-mono text-[11px]">81 İl &bull; 199 Ülke &bull; 30 İstasyon</span>
       </div>
     </div>
   );
