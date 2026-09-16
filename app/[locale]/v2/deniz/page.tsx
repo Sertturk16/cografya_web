@@ -21,6 +21,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Waves, Home, ChevronRight, Layers, ArrowRight } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
+import { marineShowsValues } from "@/lib/marine/overview";
 
 export const revalidate = 900;
 
@@ -34,9 +35,9 @@ export async function generateMetadata({ params }: V2DenizPageProps): Promise<Me
     locale,
     surface: "noindex",
     hrefForLocale: () => "/v2/deniz",
-    title: "Denizler & Kıyılar Atlası — Canlı Deniz Telemetrisi ve Su Sıcaklıkları",
+    title: "Denizler & Kıyılar Atlası — Deniz Telemetrisi ve Su Sıcaklıkları",
     description:
-      "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı istasyonundan saatlik su sıcaklığı, dalga boyu, rüzgâr vektörleri ve oşinografi modelleri.",
+      "Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktası: su sıcaklığı, dalga boyu, rüzgâr vektörleri ve oşinografi modelleri.",
   });
 }
 
@@ -52,6 +53,12 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
     getMarineLayersSafe(),
     getProvincesResilient(),
   ]);
+
+  // The one signal that decides whether this render may make a value/"live" claim in prose —
+  // false whenever MARINE_ENABLED is off (prod today) or the overview payload is otherwise
+  // empty. Copy above the fold must not promise hourly telemetry the value band cannot back
+  // up (mirrors the reasoning already recorded in `app/[locale]/deniz/page.tsx`, the V1 hub).
+  const showValues = marineShowsValues(rawOverview);
 
   // Province lookup map by plateCode
   const provinceByPlate = new Map<string, { name: string; slug: string }>();
@@ -130,14 +137,14 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
           collectionPageJsonLd({
             name: "Denizler & Kıyılar Atlası",
             description:
-              "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı istasyonundan saatlik su sıcaklığı, dalga yüksekliği ve oşinografi verileri.",
+              "Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktası: su sıcaklığı, dalga yüksekliği ve oşinografi verileri.",
             path: "/v2/deniz",
             locale,
           }),
           learningResourceJsonLd({
             name: "Denizler & Kıyılar Atlası",
             description:
-              "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı istasyonundan saatlik su sıcaklığı, dalga yüksekliği ve oşinografi verileri.",
+              "Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktası: su sıcaklığı, dalga yüksekliği ve oşinografi verileri.",
             path: "/v2/deniz",
             locale,
             learningResourceType: "Article",
@@ -177,7 +184,7 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
                   Mavi Vatan Oşinografi Portalı
                 </Badge>
                 <Badge variant="secondary" size="sm">
-                  30 Canlı Telemetri İstasyonu
+                  {showValues ? "30 Canlı Telemetri İstasyonu" : "30 Referans Noktası"}
                 </Badge>
               </div>
 
@@ -186,9 +193,19 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
               </h1>
 
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Karadeniz, Marmara, Ege ve Akdeniz havzalarının saatlik deniz suyu sıcaklıkları,
-                dalga boyları, tuzluluk oranları, akıntı rejimleri ve 28 kıyı ilinin oşinografik
-                yapısı.
+                {showValues ? (
+                  <>
+                    Karadeniz, Marmara, Ege ve Akdeniz havzalarının saatlik deniz suyu sıcaklıkları,
+                    dalga boyları, tuzluluk oranları, akıntı rejimleri ve 28 kıyı ilinin oşinografik
+                    yapısı.
+                  </>
+                ) : (
+                  <>
+                    Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktasının kapsadığı
+                    deniz suyu sıcaklığı, dalga boyu, rüzgâr ve akıntı büyüklükleri; 28 kıyı ilinin
+                    oşinografik yapısıyla birlikte. Güncel ölçüm değerleri şu an yayında değil.
+                  </>
+                )}
               </p>
             </div>
 
@@ -207,7 +224,7 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
                   30 Nokta
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
-                  Saatlik Telemetri İstasyonu
+                  {showValues ? "Saatlik Telemetri İstasyonu" : "Referans İzleme Noktası"}
                 </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
