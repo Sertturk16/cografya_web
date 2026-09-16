@@ -47,9 +47,14 @@ async function loadBooks(locale: Locale) {
 
 export async function generateMetadata({ params }: V2KitaplarPageProps): Promise<Metadata> {
   const { locale } = await params;
-  const { books } = await loadBooks(locale);
-  if (books.length === 0) return {};
 
+  // Fixed editorial copy (no book-level count is published — see the comment below), so
+  // this never depends on the catalogue fetch succeeding. Previously this bailed to `{}`
+  // whenever `getBooksResilient()` came back empty (a real, reachable state: any build-time
+  // api hiccup degrades the catalogue to `[]`, see the `revalidate` comment above) — Next
+  // then fell back to the root layout's `title.default`, the SITE'S OWN homepage title, on
+  // a page that is not the homepage. A page-specific title must hold regardless of whether
+  // the catalogue itself loaded.
   return buildMetadata({
     locale,
     surface: "noindex",
