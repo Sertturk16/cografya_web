@@ -124,9 +124,9 @@ export function V2Header() {
     <nav className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-xl transition-all shadow-2xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         {/* Brand / Logo */}
-        <div className="flex items-center gap-3 shrink-0">
-          <Link href="/v2" className="flex items-center gap-2.5 group">
-            <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform">
+        <div className="flex items-center gap-3 min-w-0 lg:shrink-0">
+          <Link href="/v2" className="flex items-center gap-2.5 group min-w-0">
+            <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
               <Image
                 src="/brand/logo.png"
                 alt="Coğrafya Gurmesi"
@@ -136,11 +136,11 @@ export function V2Header() {
                 priority
               />
             </div>
-            <div className="flex flex-col">
-              <span className="font-heading text-lg font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-none">
+            <div className="flex flex-col min-w-0">
+              <span className="font-heading text-lg font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] dark:text-[#e2896a] leading-none truncate">
                 Coğrafya <span className="text-primary">Gurmesi</span>
               </span>
-              <span className="text-[10px] text-muted-foreground font-medium">
+              <span className="text-[10px] text-muted-foreground font-medium truncate">
                 Atlas &amp; Eğitim Portalı
               </span>
             </div>
@@ -399,7 +399,7 @@ export function V2Header() {
         </div>
 
         {/* Right Side Actions & Mobile Trigger */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Global Search Combobox (Ctrl+K) */}
           <SearchCombobox
             variant="v2"
@@ -414,7 +414,7 @@ export function V2Header() {
           <ThemeToggle />
 
           {authState === "authenticated" ? (
-            <div className="flex items-center gap-1.5">
+            <div className="hidden lg:flex items-center gap-1.5">
               <Link
                 href="/v2/hesabim"
                 aria-label="Hesabım"
@@ -441,7 +441,7 @@ export function V2Header() {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="hidden lg:flex items-center gap-1.5">
               <Button
                 variant="ghost"
                 size="sm"
