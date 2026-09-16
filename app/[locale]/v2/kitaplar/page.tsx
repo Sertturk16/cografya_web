@@ -15,7 +15,16 @@ import { V2Footer } from "@/components/v2/v2-footer";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Home, ChevronRight } from "lucide-react";
 
-export const revalidate = 86400;
+/**
+ * 3600s, not the previous 86400: the fix round that dropped this page's `notFound()` on an
+ * empty catalogue (`58a2c6d`, "render graceful empty state for books") left the degrade
+ * window at 24h. A build-time api outage still bakes an empty book list into this route —
+ * `V2BooksHub` below now renders an honest "henüz kitap yayımlanmadı" state for that case
+ * (see its own comment) rather than the old misleading "no search results" copy, so the
+ * degrade is legible, but a whole day of it is still needlessly long. 3600s matches this
+ * repo's own reference-list precedent (`lib/api/client.ts`'s `CONTENT_REVALIDATE_SECONDS`).
+ */
+export const revalidate = 3600;
 
 interface V2KitaplarPageProps {
   params: Promise<{ locale: Locale }>;

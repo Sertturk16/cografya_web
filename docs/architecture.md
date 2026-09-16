@@ -48,6 +48,22 @@ noindex | trOnly`) that decides which locales a page is indexable in.
 - Contract: `openapi/openapi.json` is a manual copy of the API repo's spec; `pnpm codegen`
   emits `lib/api/schema.ts` (committed, ESLint/Prettier ignored). Alias types in
   `lib/api/types.ts`.
+- **When to pick `force-dynamic` over `revalidate` + a resilient empty fallback.** The
+  production Docker build has no network access to the api container, so any build-time
+  fetch through `*Resilient`/`*Safe` always degrades to empty — and on a `revalidate`-only
+  route that empty result gets baked into the static/ISR output and served to real users
+  until a post-deploy request finally lands after the revalidate window and triggers a
+  background refresh. If that empty-fallback state would leave a route or page looking
+  broken after every deploy — a required form field with nothing to pick, a BFF route with
+  no dynamic segment (or one whose `generateStaticParams` enumerates every possible value,
+  which bakes it in just the same), or a hub page whose map/index both go empty and lose
+  their links — use `export const dynamic = "force-dynamic"` instead, and let the route's own
+  `Cache-Control` header (or nothing, for a low-traffic authenticated flow) carry the caching
+  benefit. Keep the `revalidate` + resilient-empty-fallback pattern only where the empty
+  fallback is genuinely graceful: the primary content still renders, and the missing piece
+  degrades legibly (a thinner list, a map that loses only hover stats, a section that omits
+  itself instead of rendering with nothing under a heading) — and prefer a shorter window
+  over a needlessly long one even then.
 
 ## SEO (`lib/seo/`)
 

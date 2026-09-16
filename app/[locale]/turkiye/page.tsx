@@ -24,6 +24,19 @@ interface PageProps {
 }
 
 /**
+ * `force-dynamic`: this hub's map (`TurkeyMapSection`) and its A–Z province index
+ * (`loadProvinceIndex` below) both source the province list from the api. A build-time
+ * outage bakes an EMPTY province list into the static output — the alphabetical index
+ * disappears AND every province shape in the map loses its link (see
+ * `components/map/turkey-map-section.tsx`'s hit layer: a province with no summary entry
+ * renders no `<a>` at all) — so the combined result is a hub page whose entire browsing
+ * purpose silently fails for up to an hour after every deploy, with no visible error
+ * (T-020's bug class). `app/[locale]/v2/hesabim/page.tsx` already accepts this same
+ * force-dynamic trade-off for a hub-shaped page in this repo.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Province labels are Turkish in BOTH locales — `ProvinceListItem` carries no `nameEn` —
  * so the index collates with Turkish rules even on `/en/turkiye`. Collating Turkish names
  * with English rules is what would mis-file "Ağrı" and "Çanakkale"
