@@ -992,14 +992,30 @@ body:has(.v2-app) > footer {
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
+  /* T-018: the three Terra-mapped bridge tokens (primary/secondary/accent) were still
+     shadcn's stock neutral greys here, so `bg-primary` buttons and every `text-primary` /
+     `text-secondary` / `text-accent` use rendered near-invisible or brand-less in dark mode
+     (QA 2026-09-15). Each hue below is the SAME brand hue + chroma as its `:root` value
+     (terracotta 40.65°, olive 130.85°, water-teal 202°), only lifted in lightness — the
+     light-mode values are too dark to read as text on a near-black surface, and lifting
+     lightness far enough for that also means white foreground text no longer clears 4.5:1
+     on top of them, so the foreground pairs with the warm `--color-ink-dark` neutral
+     instead (light mode keeps white; only the dark pairing changes).
+     WCAG contrast, measured against this block's own `--background` (oklch .145 / #0a0a0a)
+     and `--card` (oklch .205 / #171717), plus the ink-dark foreground ON each new bg:
+       primary   oklch(0.65 0.13  40.65) → 5.80:1 bg · 5.25:1 card · ink-dark fg 4.94:1
+       secondary oklch(0.65 0.095 130.85) → 6.31:1 bg · 5.71:1 card · ink-dark fg 5.37:1
+       accent    oklch(0.65 0.0675 202)   → 6.32:1 bg · 5.72:1 card · ink-dark fg 5.39:1
+     All clear the 4.5:1 normal-text floor with margin, both as direct text on the page
+     and as a button/badge fill. */
+  --primary: oklch(0.65 0.13 40.65);
+  --primary-foreground: var(--color-ink-dark);
+  --secondary: oklch(0.65 0.095 130.85);
+  --secondary-foreground: var(--color-ink-dark);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.65 0.0675 202);
+  --accent-foreground: var(--color-ink-dark);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -1017,6 +1033,27 @@ body:has(.v2-app) > footer {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* T-018: `components/climate/climate.module.css` is a frozen V1 CSS Module — it reads the
+   raw `--color-ink` / `--color-slate` / `--color-surface` / `--color-border` Terra tokens
+   directly, and those are never redefined above (V1 is meant to stay light always). Inside
+   the V2 province page the ERA5-Land table and chart axis labels inherit whatever the
+   ambient background is, which is `--card` there, so `--color-ink` body text (#2b2622,
+   1.20:1) and `--color-slate` caption text (#57504a, 2.26:1) both fail badly in dark mode.
+   Rather than edit the frozen module or override these tokens globally under `.dark` (which
+   would leak into V1's own pages, since V1 depends on their light values), the V2 page wraps
+   just that block in `.climate-dark-scope` and only THOSE four custom properties are
+   shadowed for that subtree, reusing existing dark-adapted tokens instead of new hex:
+     --color-ink     → var(--color-bg)             16.9:1 vs card (#171717)
+     --color-slate   → var(--muted-foreground)       6.9:1 vs card
+     --color-surface → var(--muted)                 (dark header-row fill, pairs with ink above)
+     --color-border  → var(--border)                (existing dark hairline/grid-line token) */
+.dark .climate-dark-scope {
+  --color-ink: var(--color-bg);
+  --color-slate: var(--muted-foreground);
+  --color-surface: var(--muted);
+  --color-border: var(--border);
 }
 
 @layer base {

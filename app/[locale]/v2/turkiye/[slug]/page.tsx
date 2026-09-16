@@ -760,13 +760,20 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               )}
             </div>
 
-            <ClimateSection
-              locale={locale}
-              provinceName={name}
-              plateCode={province.plateCode}
-              climate={climateSeries}
-              hideAttribution
-            />
+            {/* climate-dark-scope: components/climate/climate.module.css is a frozen V1
+                CSS Module whose text/surface colours are the raw (never dark-adapted)
+                --color-* Terra tokens; this wrapper shadows just those four custom
+                properties for dark mode (see app/globals.css) without touching the
+                frozen file or affecting V1's own /turkiye/[slug] page. */}
+            <div className="climate-dark-scope">
+              <ClimateSection
+                locale={locale}
+                provinceName={name}
+                plateCode={province.plateCode}
+                climate={climateSeries}
+                hideAttribution
+              />
+            </div>
           </section>
         )}
 
