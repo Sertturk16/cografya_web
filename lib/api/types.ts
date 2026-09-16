@@ -220,22 +220,10 @@ export type VideoProgress = components["schemas"]["VideoProgressDto"];
  *  this repo has to be careful never to send only one of the two. */
 export type UpsertVideoProgressRequest = components["schemas"]["UpsertVideoProgressRequestDto"];
 
-export interface BookProgressResume {
-  readonly bookVideoId: string;
-  readonly orderNo: number;
-  readonly lastPositionSeconds: number;
-  readonly watched: boolean;
-  readonly updatedAt: string;
-}
+export type BookProgressResume = components["schemas"]["BookProgressResumeDto"];
 
 /** `GET /api/video-progress/books/{slug}`'s aggregate progress response on one book (PR-B / UYE-P3). */
-export interface BookProgress {
-  readonly bookSlugTr: string;
-  readonly videoCount: number;
-  readonly watchedCount: number;
-  readonly startedCount: number;
-  readonly resume: BookProgressResume | null;
-}
+export type BookProgress = components["schemas"]["BookProgressDto"];
 
 // ---- Favorites (per-user saved provinces/countries — UYELIK-07/08) ----------
 /** One favorited entity: which axis it names (`type`), the matching plate/iso code (the
@@ -243,12 +231,6 @@ export interface BookProgress {
  *  narrow BFF proxy (`lib/favorites/transport.server.ts`), never fetched directly from the
  *  api by a page — the same posture `VideoProgress` above states for its own domain. */
 export type FavoriteEntityType = "province" | "country" | "region" | "continent";
-
-export interface PolymorphicFavorite {
-  readonly entityType: FavoriteEntityType;
-  readonly entityId: string;
-  readonly createdAt: string;
-}
 
 export type Favorite = {
   readonly type?: "province" | "country";
@@ -272,30 +254,8 @@ export type GameRoundList = components["schemas"]["GameRoundListDto"];
  *  request-side zod schema mirroring these same bounds before an outbound call is spent. */
 export type SubmitGameRoundRequest = components["schemas"]["SubmitGameRoundRequestDto"];
 
-export interface LeaderboardEntry {
-  readonly rank: number;
-  readonly firstName: string;
-  readonly lastNameInitial: string;
-  readonly score: number;
-  readonly found: number;
-  readonly firstTry: number;
-  readonly totalWrongs: number;
-  readonly completionTimeSeconds?: number | null;
-  readonly achievedAt: string;
-  readonly isCurrentUser: boolean;
-}
-
-export interface LeaderboardList {
-  readonly items: LeaderboardEntry[];
-  readonly total: number;
-  readonly page: number;
-  readonly pageSize: number;
-  readonly pageCount: number;
-  readonly meta: {
-    readonly mode: string;
-    readonly currentUserRank: number | null;
-  };
-}
+export type LeaderboardEntry = components["schemas"]["LeaderboardEntryDto"];
+export type LeaderboardList = components["schemas"]["LeaderboardDto"];
 
 // ---- Measurements (per-user saved map measurements — UYELIK-11/12) --------------
 /** One saved map measurement: which kind of geometry it is, its points, an optional

@@ -197,7 +197,7 @@ export interface LeaderboardListRecord {
   readonly total: number;
   readonly page: number;
   readonly pageSize: number;
-  readonly pageCount: number;
+  readonly hasMore: boolean;
   readonly meta: {
     readonly mode: string;
     readonly currentUserRank: number | null;
@@ -266,7 +266,7 @@ function parseLeaderboardBody(value: unknown): LeaderboardListRecord | null {
     total: typeof body.total === "number" ? body.total : items.length,
     page: typeof body.page === "number" ? body.page : 1,
     pageSize: typeof body.pageSize === "number" ? body.pageSize : items.length,
-    pageCount: typeof body.pageCount === "number" ? body.pageCount : 1,
+    hasMore: typeof body.hasMore === "boolean" ? body.hasMore : false,
     meta: {
       mode: typeof metaObj.mode === "string" ? metaObj.mode : "",
       currentUserRank: typeof metaObj.currentUserRank === "number" ? metaObj.currentUserRank : null,
