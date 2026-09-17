@@ -456,13 +456,17 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   `lib/geo/country-sources.ts` is where that decision lives, and it is truthy
                   rather than `!== null` on purpose: an api that predates the field yields
                   `undefined`, which an exact null check misses. */}
+              {/* NOT `truncate max-w-[130px]` any more. At 360 px that clipped the institution to
+                  "Dünya Bank…" — and this line is the whole reason the country page needs no
+                  bibliography block: the source travels beside the number instead. Truncating it
+                  is the one place that argument does not survive contact with a phone. Wrapping
+                  costs a second line on the narrowest screens and loses nothing; the `title` went
+                  with the clipping, since a tooltip repeating text that is now fully visible is
+                  the redundant kind T-036 removed everywhere else. */}
               {populationSource.key === "sources" && (
-                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <div className="text-[11px] text-muted-foreground flex flex-wrap items-baseline justify-between gap-x-2">
                   <span>{t("kpiSourceLabel")}</span>
-                  <span
-                    className="font-semibold text-foreground truncate max-w-[130px]"
-                    title={populationSource.values.populationSource}
-                  >
+                  <span className="font-semibold text-foreground text-right">
                     {populationSource.values.populationSource}
                     {country.populationYear ? ` (${country.populationYear})` : ""}
                   </span>
