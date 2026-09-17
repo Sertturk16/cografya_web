@@ -1,17 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Home } from "lucide-react";
-import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2PasswordResetConfirmCard } from "@/components/v2/v2-password-reset-confirm-card";
 import { PageContainer } from "@/components/patterns/page-container";
@@ -40,31 +31,18 @@ export default async function V2PasswordResetConfirmPage({
   setRequestLocale(locale);
   const t = await getTranslations("Auth");
 
+  const breadcrumbItems: BreadcrumbTrailItem[] = [
+    { label: t("breadcrumb.home"), href: "/", path: "/" },
+    { label: t("reset.heading"), href: "/sifre-sifirlama", path: "/sifre-sifirlama" },
+    { label: t("resetNew.heading"), path: "/sifre-sifirlama/yeni" },
+  ];
+
   return (
     <>
       <V2LiveTicker />
 
       <PageContainer>
-        <Breadcrumb className="text-xs">
-          <BreadcrumbList className="text-xs">
-            <BreadcrumbItem>
-              <BreadcrumbLink render={<Link href="/" />}>
-                <Home className="size-3.5" aria-hidden="true" />
-                <span>{t("breadcrumb.home")}</span>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink render={<Link href="/sifre-sifirlama" />}>
-                {t("reset.heading")}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="font-semibold">{t("resetNew.heading")}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <Breadcrumbs items={breadcrumbItems} locale={locale} surface="noindex" />
 
         <div className="max-w-xl">
           <h1 className="font-heading text-2xl font-bold text-foreground mb-2">

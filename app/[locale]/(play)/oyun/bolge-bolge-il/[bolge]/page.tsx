@@ -77,6 +77,9 @@ export default async function V2RegionalProvinceModePage({ params }: PageProps) 
       submitModeTag={submitModeTag}
       region={region}
       viewBox={viewBox}
+      locale={locale}
+      surface="noindex"
+      currentPath={`/oyun/bolge-bolge-il/${bolge}`}
     />
   );
 }

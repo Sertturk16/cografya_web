@@ -57,8 +57,15 @@ export function Breadcrumbs({ items, locale, surface }: BreadcrumbsProps) {
           {items.map((item, index) => (
             <Fragment key={item.path}>
               <BreadcrumbItem>
-                {index === last || item.href === undefined ? (
+                {index === last ? (
                   <BreadcrumbPage className="font-semibold">{item.label}</BreadcrumbPage>
+                ) : item.href === undefined ? (
+                  // A non-last item with no `href`: there is nothing to link it to, but it is
+                  // also not the page you are on, so it may not render as `BreadcrumbPage`
+                  // either — that primitive is the one thing in this tree that emits
+                  // `aria-current="page"`, and reserving it for `index === last` above is what
+                  // keeps a gap earlier in the trail from producing a SECOND "current page".
+                  <span className="text-muted-foreground">{item.label}</span>
                 ) : (
                   // `render` is Base UI's slot: the primitive's styling merges onto next-intl's
                   // `Link` instead of wrapping it in a second anchor. `AppPathname` also

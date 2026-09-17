@@ -374,8 +374,28 @@ function breadcrumbNavFiles(): string[] {
  * `deniz/{akdeniz,karadeniz,marmara,ege}` pages that also call it do NOT subtract from this
  * counter: their call lives in their own `page.tsx`, but their nav lives in
  * `v2-sea-basin-detail-view.tsx`, a different file, and this counter is per-file.
+ *
+ * Task 7 (2026-09-17) moved `v2-sea-basin-detail-view.tsx` and `v2-game-screen.tsx` onto
+ * `Breadcrumbs` (`components/patterns/breadcrumbs.tsx`, Task 6), so both stop hand-writing
+ * the nav: 27 → **25**, exactly the 25 `page.tsx` files left, none of them touched by this
+ * task (Task 8's scope). `BREADCRUMBS_WITHOUT_ARIA_CURRENT` moves with it, 27 → **25**, same
+ * file list, for the same reason (`Breadcrumbs` is the file that owns `aria-current` on
+ * behalf of both). `BREADCRUMBS_WITHOUT_JSONLD` drops by the same two files, 20 → **18**:
+ * `Breadcrumbs` now emits `breadcrumbJsonLd` internally (gated on the `surface` each caller
+ * passes), so a file that only rendered the nav through it no longer needs to call the
+ * builder itself to leave this list — which is also why the four `deniz/{akdeniz,karadeniz,
+ * marmara,ege}` pages each had their own manual `breadcrumbJsonLd([...])` call DELETED in
+ * this task: `V2SeaBasinDetailView` renders `Breadcrumbs` with `surface="trOnly"` now, and a
+ * second call in the page itself would have published the identical `BreadcrumbList` schema
+ * twice. Those four pages were never members of `breadcrumbNavFiles()` to begin with (their
+ * nav lived in the component, not the page), so removing their own call does not change
+ * either counter — it only stops a live duplicate-JSON-LD bug the adoption would otherwise
+ * have introduced. The three `(play)/oyun/*` pages needed no such removal: none of them ever
+ * called `breadcrumbJsonLd` (their surface is `"noindex"` in every case, so `Breadcrumbs`
+ * still emits nothing there, exactly as before). See `task-7-report.md` for the full
+ * before/after file lists.
  */
-const HAND_WRITTEN_BREADCRUMBS = 27;
+const HAND_WRITTEN_BREADCRUMBS = 25;
 
 describe("breadcrumbs are rendered by one component", () => {
   it("the hand-written nav count is exactly the recorded number", () => {
@@ -410,7 +430,7 @@ describe("breadcrumbs are rendered by one component", () => {
  */
 const ARIA_CURRENT = /aria-current/;
 
-const BREADCRUMBS_WITHOUT_ARIA_CURRENT = 27;
+const BREADCRUMBS_WITHOUT_ARIA_CURRENT = 25;
 
 function breadcrumbsWithoutAriaCurrent(): string[] {
   return breadcrumbNavFiles().filter((path) => !ARIA_CURRENT.test(sourceOf(path)));
@@ -446,7 +466,7 @@ describe("breadcrumbs mark the current page for assistive technology", () => {
  */
 const BREADCRUMB_JSONLD_SYMBOL = "breadcrumbJsonLd";
 
-const BREADCRUMBS_WITHOUT_JSONLD = 20;
+const BREADCRUMBS_WITHOUT_JSONLD = 18;
 
 function breadcrumbsWithoutJsonLd(): string[] {
   return breadcrumbNavFiles().filter((path) => !sourceOf(path).includes(BREADCRUMB_JSONLD_SYMBOL));
@@ -471,7 +491,12 @@ describe("visible breadcrumbs carry matching JSON-LD", () => {
   });
 
   it("at least one real page already calls it — positive control against the live tree", () => {
-    const withJsonLd = sourceOf(join(repoRoot, "app/[locale]/(site)/deniz/akdeniz/page.tsx"));
+    // Was `deniz/akdeniz/page.tsx` — Task 7 DELETED that page's own `breadcrumbJsonLd` call
+    // (its nav and JSON-LD both moved into `V2SeaBasinDetailView`'s `Breadcrumbs` call, and a
+    // second call here would have duplicated the schema), so it stopped being a member of
+    // `breadcrumbNavFiles()` at all and can no longer serve as this control. `kiyi-tipleri` is
+    // still a hand-written nav (Task 8's scope) that calls `breadcrumbJsonLd` itself.
+    const withJsonLd = sourceOf(join(repoRoot, "app/[locale]/(site)/deniz/kiyi-tipleri/page.tsx"));
     expect(withJsonLd.includes(BREADCRUMB_JSONLD_SYMBOL)).toBe(true);
   });
 });

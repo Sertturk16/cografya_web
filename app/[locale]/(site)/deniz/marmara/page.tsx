@@ -4,7 +4,7 @@ import { getMarinePointsSafe, getMarineOverviewSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import type { Locale } from "@/i18n/routing";
 import type { MarineOverviewPoint } from "@/lib/api/types";
-import { breadcrumbJsonLd, learningResourceJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { learningResourceJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SeaBasinDetailView } from "@/components/v2/v2-sea-basin-detail-view";
@@ -122,11 +122,10 @@ export default async function V2MarmaraPage({ params }: PageProps) {
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={[
-          breadcrumbJsonLd([
-            { name: "Ana Sayfa", path: "/" },
-            { name: "Denizler & Kıyılar Atlası", path: "/deniz" },
-            { name: "Marmara Denizi", path: "/deniz/marmara" },
-          ]),
+          // No manual `breadcrumbJsonLd` call here any more: `V2SeaBasinDetailView` below
+          // now renders `Breadcrumbs`, which emits the identical `BreadcrumbList` itself
+          // (gated on the same `surface="trOnly"` passed to it) — a second call here would
+          // have published the schema twice.
           learningResourceJsonLd({
             name: "Marmara Denizi Coğrafi Analizi ve İki Tabakalı Akıntı Rehberi",
             description: basinData.physicalGeography.content,
@@ -143,7 +142,12 @@ export default async function V2MarmaraPage({ params }: PageProps) {
       <V2LiveTicker />
 
       <PageContainer>
-        <V2SeaBasinDetailView data={basinData} marinePoints={marinePoints} locale={locale} />
+        <V2SeaBasinDetailView
+          data={basinData}
+          marinePoints={marinePoints}
+          locale={locale}
+          surface="trOnly"
+        />
 
         {/* THE SAFETY DISCLAIMER, BESIDE THE VALUES — plus a link to the licence text.
 

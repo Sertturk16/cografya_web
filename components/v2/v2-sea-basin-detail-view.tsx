@@ -7,11 +7,11 @@ import type { SeaBasinDetailData } from "@/lib/marine/sea-basins-detail";
 import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
+import type { ContentSurface } from "@/lib/seo/indexing";
 import { cn } from "@/lib/utils";
 import {
   Waves,
-  Home,
-  ChevronRight,
   Droplets,
   Compass,
   MapPin,
@@ -30,9 +30,15 @@ interface V2SeaBasinDetailViewProps {
   data: SeaBasinDetailData;
   marinePoints: MarinePointData[];
   locale: Locale;
+  surface: ContentSurface;
 }
 
-export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailViewProps) {
+export function V2SeaBasinDetailView({
+  data,
+  marinePoints,
+  locale,
+  surface,
+}: V2SeaBasinDetailViewProps) {
   // Sort points by displayOrder
   const sortedPoints = [...marinePoints].sort((a, b) => a.displayOrder - b.displayOrder);
 
@@ -48,28 +54,17 @@ export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailVie
     { slug: "akdeniz", name: "Akdeniz", badge: "En Sıcak & Tuzlu", href: "/deniz/akdeniz" },
   ].filter((b) => b.slug !== data.slug);
 
+  const breadcrumbItems: BreadcrumbTrailItem[] = [
+    { label: "Ana Sayfa", href: "/", path: "/" },
+    { label: "Denizler & Kıyılar Atlası", href: "/deniz", path: "/deniz" },
+    { label: data.fullNameTr, path: `/deniz/${data.slug}` },
+  ];
+
   return (
     <div className="space-y-14">
       {/* Breadcrumb & Hero */}
       <div className="space-y-4">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
-          >
-            <Home className="size-3.5" />
-            <span>Ana Sayfa</span>
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <Link href="/deniz" className="hover:text-foreground transition-colors">
-            Denizler &amp; Kıyılar Atlası
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">{data.fullNameTr}</span>
-        </nav>
+        <Breadcrumbs items={breadcrumbItems} locale={locale} surface={surface} />
 
         <div
           className={`relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b ${data.gradientClass} p-6 sm:p-10 shadow-lg`}

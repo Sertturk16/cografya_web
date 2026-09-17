@@ -56,6 +56,9 @@ export default async function V2ProvinceModePage({ params }: PageProps) {
       provinceUrlTemplate={provinceUrlTemplate}
       submitModeTag={submitModeTag}
       viewBox={MAP_VIEWBOX}
+      locale={locale}
+      surface="noindex"
+      currentPath="/oyun/81-il"
     />
   );
 }

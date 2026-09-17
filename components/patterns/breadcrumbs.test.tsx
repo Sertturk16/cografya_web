@@ -44,6 +44,38 @@ describe("Breadcrumbs", () => {
     expect(html).toContain("<li");
   });
 
+  it("renders the linked crumb's href, not just its label", () => {
+    // The component casts `item.href` (`as unknown as ComponentProps<typeof Link>["href"]`)
+    // to get past next-intl's typed `Link` rejecting `AppPathname`'s dynamic-route members —
+    // CLAUDE.md's sanctioned escape, but one that bypasses type checking on the exact value
+    // that becomes the href. And this test renders through a `NextIntlClientProvider`, a path
+    // with no prior precedent in this repo. Asserting the literal `href="/"` covers both: the
+    // cast produced the right string, and the provider renders a production-shaped anchor.
+    const html = renderWithIntl(
+      "tr",
+      <Breadcrumbs items={TRAIL} locale="tr" surface="localized" />,
+    );
+    expect(html).toContain('href="/"');
+  });
+
+  it("never emits a second aria-current when a middle item has no href", () => {
+    // The component's own condition used to read `index === last || item.href === undefined`
+    // — ANY href-less item satisfied that, not only the last one, so a middle item that omits
+    // `href` (nothing to link to, but not the page you're on) rendered through `BreadcrumbPage`
+    // too and emitted a SECOND `aria-current="page"`. Only the last item may ever be current.
+    const trailWithGap = [
+      { label: "Ana Sayfa", href: "/" as const, path: "/" },
+      { label: "Ortadaki (href yok)", path: "/ortada" },
+      { label: "CBS Araçları", path: "/araclar" },
+    ];
+    const html = renderWithIntl(
+      "tr",
+      <Breadcrumbs items={trailWithGap} locale="tr" surface="localized" />,
+    );
+    const occurrences = html.match(/aria-current="page"/g) ?? [];
+    expect(occurrences).toHaveLength(1);
+  });
+
   it("emits BreadcrumbList JSON-LD from the same array on an indexable page", () => {
     const html = renderWithIntl(
       "tr",
