@@ -42,6 +42,31 @@ const label = (path: string) => relative(repoRoot, path);
  * — `max-w-7xl mx-auto …` and `container mx-auto px-4 max-w-7xl …` — because the second is
  * the same intent with the Tailwind tokens written in the other order, and a counter that saw
  * only the first would report progress while five pages kept their own spelling.
+ *
+ * SCOPE. This is a literal `className="…"` string scan, not a rendered-DOM or computed-style
+ * check, and `PAGE_BODY_SPELLINGS` reading 0 is a claim about that scan only. Three shapes carry
+ * the same width intent and are invisible to it:
+ *
+ *   - a template-literal className, `className={`max-w-7xl …`}` — the pattern only opens
+ *     inside a `"…"` literal, so an interpolated class string never reaches it;
+ *   - a `cn("max-w-7xl …")` call — the token sits inside a function-call argument, not a bare
+ *     `className="…"` attribute, for the same reason;
+ *   - any width token other than `max-w-7xl` / `container` — `max-w-6xl`, `max-w-screen-xl`,
+ *     `max-w-[1280px]` would all carry a page body past this scanner unnoticed.
+ *
+ * Not hypothetical: 14 template-literal classNames already exist on these exact pages today
+ * (`turkiye/[slug]/page.tsx:351`, `dunya/[slug]/page.tsx:295`, and twelve more across
+ * `deprem/fay-hatlari`, `dunya/kita` and `dunya/kita/[slug]`) — the idiom that evades this
+ * scanner is one the surface it scans already writes, there for a theme/gradient hole rather
+ * than a width one, but the shape is identical and nothing here would catch it wearing a width
+ * token instead.
+ *
+ * `walkPages()` below adds a second, independent scope limit: it visits files named `page.tsx`
+ * only. `loading.tsx`, `layout.tsx`, `error.tsx` and `not-found.tsx` in these same route groups,
+ * and every `components/v2` wrapper a page composes, are never read, regardless of what their
+ * className looks like. A future `loading.tsx` skeleton task is out of this counter's reach for
+ * that reason — the walk, not the regex — so a body-shaped className landing there would need
+ * its own check, not an extension of this one.
  */
 const BODY_WRAPPER = /className="((?:[^"]*\b(?:max-w-7xl|container)\b)[^"]*)"/g;
 
@@ -151,6 +176,17 @@ function nonExemptBodySpellings(): Map<string, string[]> {
  * That leaves ONLY the three sticky quicknav/tab-strip bars, now named and reasoned about in
  * `BODY_WRAPPER_EXEMPTIONS` above rather than carried in this docblock — the counter itself
  * reads 0. See task-4b-report.md for the full before/after list.
+ *
+ * MUTATION-CHECKED 2026-09-17, against this ZERO target specifically (`docs/conventions.md`:
+ * a source-text assertion that has never failed has not been shown to work). Every earlier
+ * check ran against 17; the target then moved 17 → 15 → 7 → 0 across three tasks with no
+ * re-check, so passing at 17 proved nothing about passing at 0. Reintroduced
+ * `max-w-7xl mx-auto` on a real page (`araclar/page.tsx`'s header wrapper) — went RED, message
+ * `1x max-w-7xl mx-auto space-y-4: expected 1 to be +0`; reverted — back to GREEN. The message
+ * names the spelling and how many files carry it but NOT which file(s) — `nonExemptBodySpellings()`
+ * has the file list in hand (it is the map value) and the assertion message simply does not
+ * print it. Left as found: fixing the message is a behaviour change to a test this task's scope
+ * (docblock plus mutation check) does not cover.
  */
 export const PAGE_BODY_SPELLINGS = 0;
 
@@ -197,6 +233,44 @@ describe("the sticky-nav body-wrapper exemptions", () => {
         matches,
         `${file} no longer contains the exempted spelling; drop the exemption`,
       ).toContain(spelling);
+    }
+  });
+});
+
+/**
+ * Ruling 8 re-spelled the three nav bars to byte-match `PageContainer`'s base string by hand —
+ * `mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8`, read here straight out of
+ * `components/patterns/page-container.tsx` rather than retyped, so this cannot drift from the
+ * component the way a second hard-coded copy could. `BODY_WRAPPER_EXEMPTIONS` above already
+ * binds the OTHER direction — editing a nav's spelling fails "every exemption is still live" —
+ * but editing `PageContainer`'s base does not touch this file at all and slipped through
+ * silently until now. If the base's width/padding tokens ever change, this goes red and names
+ * which nav fell out of alignment, instead of the drift being caught only by eye at x=32.
+ */
+const CONTAINER_BASE_TOKENS = (() => {
+  const source = sourceOf(join(repoRoot, "components/patterns/page-container.tsx"));
+  const base = source.match(/cn\(\s*"([^"]+)"/)?.[1] ?? "";
+  return base.split(/\s+/).filter(Boolean);
+})();
+
+describe("the sticky navs stay aligned to PageContainer's base", () => {
+  it("read a real, non-empty base string out of page-container.tsx — positive control", () => {
+    // Guards the regex above: if `cn(` were restructured or the base became a template literal,
+    // this list would silently go empty and every assertion below would pass vacuously.
+    expect(CONTAINER_BASE_TOKENS).toEqual([
+      "mx-auto",
+      "w-full",
+      "max-w-7xl",
+      "px-4",
+      "sm:px-6",
+      "lg:px-8",
+    ]);
+  });
+
+  it.each(BODY_WRAPPER_EXEMPTIONS)("%s's nav still carries every base token", (file, spelling) => {
+    const words = spelling.split(" ");
+    for (const token of CONTAINER_BASE_TOKENS) {
+      expect(words, `${file}: missing "${token}" from PageContainer's base`).toContain(token);
     }
   });
 });

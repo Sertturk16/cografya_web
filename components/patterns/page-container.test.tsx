@@ -1,6 +1,24 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { PageContainer } from "./page-container";
+import { PageContainer, type PageContainerProps } from "./page-container";
+
+type Space = Required<PageContainerProps>["space"];
+
+/**
+ * A compile-time closed-union check, not a hand-written list a fifth member could silently
+ * outgrow. `Record<Space, true>` requires every member of `Space` as a key and rejects any key
+ * that is not one — TypeScript's excess-property check on an object literal assigned to a
+ * mapped type runs in both directions. Add a fifth rhythm to `RHYTHM` (which is what `Space`
+ * is derived from, `keyof typeof RHYTHM`) without adding it here and `pnpm typecheck` fails on
+ * this file; delete one from here without `RHYTHM` shrinking and it fails the other way. The
+ * `Object.keys` read below turns that same exactness into a runtime assertion.
+ */
+const RHYTHM_MEMBERS: Record<Space, true> = {
+  band: true,
+  tight: true,
+  default: true,
+  loose: true,
+};
 
 describe("PageContainer", () => {
   it("renders one container with the shared width and padding", () => {
@@ -34,4 +52,38 @@ describe("PageContainer", () => {
     expect(tight).toContain("pt-6");
     expect(tight).toContain("pb-20");
   });
+
+  it("renders `default`, the rhythm 21 of the 34 migrated call sites use and the prop's own fallback", () => {
+    // `default` is the no-`space`-prop shape — the omitted rhythm in the test above, and the
+    // one no test rendered at all before this. `RHYTHM.default` (`pt-6 pb-20 sm:pt-10
+    // space-y-14`) sits between `tight` (`space-y-8`) and `loose` (`space-y-16`): same
+    // page-level padding as both, its own `space-y-14`.
+    const withProp = renderToStaticMarkup(<PageContainer space="default">b</PageContainer>);
+    const omitted = renderToStaticMarkup(<PageContainer>b</PageContainer>);
+    expect(withProp).toEqual(omitted);
+    expect(withProp).toContain("pt-6");
+    expect(withProp).toContain("pb-20");
+    expect(withProp).toContain("space-y-14");
+  });
+
+  it("the rhythm union has exactly four members", () => {
+    // Nothing asserted the union was CLOSED at four before this — only that three of the four
+    // differ from each other. An open `className` passthrough was refused on this branch
+    // precisely because it would let the collapsed six-tail spellings back in (see the
+    // `className?: never` comment on `PageContainerProps` and `docs/design.md`); a fifth
+    // rhythm added without matching discussion is the same regression through a different
+    // door, and nothing before this test would have noticed it landing.
+    expect(Object.keys(RHYTHM_MEMBERS).sort()).toEqual(["band", "default", "loose", "tight"]);
+  });
+
+  it.each(Object.keys(RHYTHM_MEMBERS) as Space[])(
+    'space="%s" renders without throwing',
+    (space) => {
+      // Each member of the checked-exhaustive list above must actually be a real, renderable
+      // rhythm — the exactness check alone would pass just as well against a typo'd key.
+      expect(() =>
+        renderToStaticMarkup(<PageContainer space={space}>b</PageContainer>),
+      ).not.toThrow();
+    },
+  );
 });
