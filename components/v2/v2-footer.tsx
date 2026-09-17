@@ -19,6 +19,23 @@ import { MARINE_SOURCES_ANCHOR } from "@/lib/marine/attribution-anchor";
  * like a badge is `<Link className={cn(badgeVariants({…}))}>` — the same pattern `CLAUDE.md`
  * prescribes for `buttonVariants`. `badgeVariants` is exported from `components/ui/badge.tsx`
  * for exactly this.
+ *
+ * ## Each chip points at a page that actually names it
+ *
+ * Making the chips links turned a cosmetic question into a factual one: a link is a claim about
+ * where the attribution is, so it has to land somewhere that carries it. Measured against the
+ * anchor section, which names OpenStreetMap/ODbL, Natural Earth, JRC Global Surface Water and —
+ * through `MarineAttribution`, reading `Marine.attribution.*` rather than a second copy —
+ * Copernicus Marine and ECMWF.
+ *
+ * - **TÜİK was on a chip and is on no page.** The population and area figures it supplies are
+ *   already sourced where they are shown, next to the number (`sourcesMessage`, the province and
+ *   hub pages). Naming it in the footer and linking to a page that does not mention it made the
+ *   chip a pointer to nothing; the chip now names what the destination carries.
+ * - **AFAD's notice is payload-driven** (`EarthquakeAttribution`, from the earthquake meta), so
+ *   it cannot live on a static About section without someone writing AFAD copy by hand — which
+ *   is inventing attribution, the thing this repo guards hardest. Its chip points at `/deprem`,
+ *   which renders the real notice and the real disclaimer.
  */
 const SOURCE_BADGE = cn(
   badgeVariants({ variant: "outline", size: "sm" }),
@@ -68,7 +85,7 @@ export function V2Footer() {
               className="flex flex-wrap items-center gap-x-1.5 gap-y-2 pt-1"
             >
               <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
-                TÜİK &amp; OSM
+                OpenStreetMap
               </Link>
               <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
                 Copernicus
@@ -76,7 +93,7 @@ export function V2Footer() {
               <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
                 ECMWF
               </Link>
-              <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
+              <Link href="/deprem" className={SOURCE_BADGE}>
                 AFAD
               </Link>
             </nav>
