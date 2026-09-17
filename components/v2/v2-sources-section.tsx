@@ -5,6 +5,26 @@ import { Database, ShieldCheck, BookOpen, ExternalLink, Scale, ChevronDown } fro
 export type V2PageScope =
   "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar" | "general";
 
+/**
+ * `legalQuote` IS AN ECHO, NEVER THE SOLE CARRIER OF A MANDATED NOTICE.
+ *
+ * `renderCard` puts this field inside a `<details>` labelled "Atıf şartı & yasal metin",
+ * CLOSED BY DEFAULT. That is the right weight for a bibliography — a reader who wants the
+ * licence text can open it — and it is NOT enough to discharge a licence. The criterion this
+ * repo applies, stated in `components/marine/marine-attribution.tsx`'s own docblock, is that
+ * the notice is visible WITHOUT A CLICK on the page that carries the derived material; a
+ * disclosure the reader must find and open is a click.
+ *
+ * Three call sites had bet the other way, passing `hideAttribution` to `ClimateSection` and
+ * `AirPollutionSection` so the inline blocks vanished and this `<details>` became the only
+ * place ERA5-Land's and ACAG's required wording appeared. That prop is gone from both
+ * components, and neither may get it back.
+ *
+ * So: a source whose licence requires a notice is credited by a dedicated attribution block on
+ * the page (`MarineAttribution`, `EarthquakeAttribution`, the inline blocks in `ClimateSection`
+ * and `AirPollutionSection`). This card names the source; the quote, where it is worth showing
+ * at all, repeats what the page already shows in full.
+ */
 interface SourceItem {
   id: string;
   icon: string;
