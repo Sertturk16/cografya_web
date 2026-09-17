@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ThemeToggle } from "@/components/v2/theme-toggle";
 import { CATEGORIES } from "@/components/showcase/registry";
@@ -10,7 +11,22 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function DesignSystemLayout({ children }: { readonly children: ReactNode }) {
+// No `readonly` and no local name reuse: Next.js 16 generates a global
+// `LayoutProps<"/route">` whose `children` is mutable and whose `locale` is a plain
+// `string`. A stricter local shape — `readonly`, or the `Locale` union — fails the generated
+// constraint. `app/[locale]/layout.tsx` uses this same plain form for the same reason.
+interface DesignSystemLayoutProps {
+  children: ReactNode;
+  params: Promise<{ locale: string }>;
+}
+
+export default async function DesignSystemLayout({ children, params }: DesignSystemLayoutProps) {
+  // Without this the whole subtree renders dynamically: next-intl needs the request locale
+  // set in every layout and page for static rendering. The first build of these routes came
+  // out `ƒ` rather than `●` for exactly this reason.
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-6 lg:flex-row lg:px-8">
