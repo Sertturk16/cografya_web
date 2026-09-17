@@ -15,6 +15,7 @@ import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2Footer } from "@/components/v2/v2-footer";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Home, ChevronRight } from "lucide-react";
+import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
 
 export const revalidate = 86400;
 
@@ -105,6 +106,8 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
                 <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
                   Haritada Koordinat Bulma &amp; Dönüştürme
                 </h1>
+
+                <V2EnWorkInProgressNotice locale={locale} />
 
                 <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                   Harita üzerinde tıkladığınız herhangi bir noktanın veya seçtiğiniz il merkezinin

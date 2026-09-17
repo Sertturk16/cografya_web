@@ -52,6 +52,7 @@ import {
   Activity,
   Info,
 } from "lucide-react";
+import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
 
 export const revalidate = 120;
 
@@ -392,6 +393,8 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               <h1 className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
                 {name}
               </h1>
+
+              <V2EnWorkInProgressNotice locale={locale} />
 
               <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
                 {introText}
