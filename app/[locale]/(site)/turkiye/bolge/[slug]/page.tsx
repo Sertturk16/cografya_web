@@ -12,8 +12,9 @@ import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionBySlug, getRegionsResilient } from "@/lib/api/regions";
-import { breadcrumbJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
   Mountain,
   Compass,
@@ -22,7 +23,6 @@ import {
   Waves,
   CloudSun,
   Home,
-  ChevronRight,
   TrendingUp,
   Boxes,
   Building2,
@@ -415,13 +415,6 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <JsonLd
-        schema={breadcrumbJsonLd([
-          { name: "Ana Sayfa", path: "/" },
-          { name: "Türkiye Atlası", path: "/turkiye" },
-          { name: region.nameTr, path: canonicalPath },
-        ])}
-      />
       {region.faqs?.length > 0 && (
         <JsonLd
           schema={faqPageJsonLd(
@@ -444,26 +437,15 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
         <PageContainer space="band">
           {/* Breadcrumb Bar */}
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
-          >
-            <Link
-              href="/"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <Link href="/turkiye" className="hover:text-foreground transition-colors">
-              Türkiye Atlası
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <span className="text-foreground font-semibold flex items-center gap-1">
-              <span>{region.nameTr}</span>
-            </span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Türkiye Atlası", href: "/turkiye", path: "/turkiye" },
+              { label: region.nameTr, path: canonicalPath },
+            ]}
+            locale={locale}
+            surface="trOnly"
+          />
 
           {/* Main Title & Action Row */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">

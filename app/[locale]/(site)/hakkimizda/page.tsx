@@ -1,17 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Home, Mail } from "lucide-react";
-import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { buildMetadata } from "@/lib/seo/metadata";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { H1, H2, Lede } from "@/components/patterns/typography";
 import { PageContainer } from "@/components/patterns/page-container";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
@@ -93,22 +85,14 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
   // invented to fill a template is the one thing an attribution may not do.
   const marineLayers = await getMarineLayersSafe();
 
+  const breadcrumbItems: BreadcrumbTrailItem[] = [
+    { label: tb("home"), href: "/", path: "/", icon: <Home className="size-3.5" /> },
+    { label: t("heading"), path: "/hakkimizda" },
+  ];
+
   return (
     <PageContainer space="tight">
-      <Breadcrumb className="text-xs">
-        <BreadcrumbList className="text-xs">
-          <BreadcrumbItem>
-            <BreadcrumbLink render={<Link href="/" />}>
-              <Home className="size-3.5" aria-hidden="true" />
-              <span>{tb("home")}</span>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage className="font-semibold">{t("heading")}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <Breadcrumbs items={breadcrumbItems} locale={locale} surface="localized" />
 
       <article className="mt-8 max-w-3xl space-y-12">
         <header className="space-y-4">

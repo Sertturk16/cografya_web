@@ -101,18 +101,50 @@ describe("showcase coverage", () => {
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join("");
 
+  /**
+   * A real JSX tag boundary, not a bare substring — review round 1's finding.
+   * `SPECIMENS.includes("<Breadcrumbs")` is `true` the moment any specimen writes
+   * `<BreadcrumbsNav`, because `"<BreadcrumbsNav".includes("<Breadcrumbs")` is `true`: one is a
+   * text prefix of the other. That let the `"breadcrumbs"` entry pass this check while
+   * `Breadcrumbs` itself was rendered nowhere — `BreadcrumbsServerSpecimen` (`components/
+   * showcase/specimens/breadcrumbs-server.tsx`) now renders the real thing, so this fix is
+   * belt-and-braces rather than the only fix, but the collision was real and general: any two
+   * components sharing a name PREFIX (`Table`/`TableSkeleton`, `Card`/`CardHeader`, the next
+   * pair nobody has written yet) hits the identical hole. A tag name is followed by whitespace,
+   * `>`, or `/` (self-closing) — never another identifier character — so requiring that next
+   * character closes it for every pair, not just this one.
+   */
+  const rendersJsxTag = (source: string, tagName: string): boolean =>
+    new RegExp(`<${tagName}(?![A-Za-z0-9_])`).test(source);
+
   it("positive control — the specimen sources were actually read", () => {
     expect(SPECIMENS.length).toBeGreaterThan(5000);
     expect(SPECIMENS).toContain("<Specimen");
   });
 
+  it("the tag-boundary matcher rejects a prefix collision — regression control", () => {
+    // The exact shape of the bug this closes: `<BreadcrumbsNav` must NOT satisfy `Breadcrumbs`.
+    expect(rendersJsxTag("<BreadcrumbsNav items={x} />", "Breadcrumbs")).toBe(false);
+  });
+
+  it("the tag-boundary matcher accepts every real boundary a tag can end on", () => {
+    expect(rendersJsxTag("<Breadcrumbs items={x} />", "Breadcrumbs")).toBe(true);
+    expect(rendersJsxTag("<Breadcrumbs>", "Breadcrumbs")).toBe(true);
+    expect(rendersJsxTag("<Breadcrumbs\n  items={x}\n/>", "Breadcrumbs")).toBe(true);
+  });
+
   it.each(LISTED.filter((name) => !EXEMPT_FILES.includes(name)))(
     "%s is rendered by a specimen, not merely listed",
     (name) => {
-      const needles = SYMBOL_OVERRIDES[name] ?? [`<${pascal(name)}`];
+      const overrides = SYMBOL_OVERRIDES[name];
+      const found = overrides
+        ? overrides.some((needle) => SPECIMENS.includes(needle))
+        : rendersJsxTag(SPECIMENS, pascal(name));
       expect(
-        needles.some((needle) => SPECIMENS.includes(needle)),
-        `${name} is in the registry but no specimen uses ${needles.join(" or ")}`,
+        found,
+        overrides
+          ? `${name} is in the registry but no specimen uses ${overrides.join(" or ")}`
+          : `${name} is in the registry but no specimen renders <${pascal(name)}`,
       ).toBe(true);
     },
   );

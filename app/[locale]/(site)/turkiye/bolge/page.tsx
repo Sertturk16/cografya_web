@@ -9,15 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionsResilient } from "@/lib/api/regions";
-import { breadcrumbJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { tr } from "@/lib/text/format-number";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
   Compass,
   Users,
   Maximize2,
   Home,
-  ChevronRight,
   Boxes,
   Table,
   HelpCircle,
@@ -299,16 +299,6 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
 
   return (
     <>
-      <JsonLd
-        schema={breadcrumbJsonLd([
-          { name: locale === "tr" ? "Ana Sayfa" : "Home", path: "/" },
-          { name: locale === "tr" ? "Türkiye Atlası" : "Türkiye Atlas", path: "/turkiye" },
-          {
-            name: locale === "tr" ? "Coğrafi Bölgeler" : "Geographic Regions",
-            path: "/turkiye/bolge",
-          },
-        ])}
-      />
       {/* trOnly surface (`FENB75-I2`, → `lib/seo/indexing.ts`): the FAQ narrative has no
           English counterpart, so the EN twin carries BreadcrumbList JSON-LD only rather than
           a translated FAQPage block. */}
@@ -329,30 +319,27 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
       <header className="border-b border-border bg-gradient-to-b from-muted/30 via-background to-background py-10 sm:py-14">
         <PageContainer space="band">
           {/* Breadcrumbs */}
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>{locale === "tr" ? "Ana Sayfa" : "Home"}</span>
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <Link
-              href="/turkiye"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <Compass className="size-3.5" />
-              <span>{locale === "tr" ? "Türkiye Atlası" : "Türkiye Atlas"}</span>
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <span className="text-foreground font-semibold">
-              {locale === "tr" ? "7 Coğrafi Bölge" : "7 Geographic Regions"}
-            </span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              {
+                label: locale === "tr" ? "Ana Sayfa" : "Home",
+                href: "/",
+                path: "/",
+                icon: <Home className="size-3.5" />,
+              },
+              {
+                label: locale === "tr" ? "Türkiye Atlası" : "Türkiye Atlas",
+                href: "/turkiye",
+                path: "/turkiye",
+              },
+              {
+                label: locale === "tr" ? "7 Coğrafi Bölge" : "7 Geographic Regions",
+                path: "/turkiye/bolge",
+              },
+            ]}
+            locale={locale}
+            surface="trOnly"
+          />
 
           {/* Hero Content Card */}
           <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/20 p-6 sm:p-10 shadow-lg space-y-6">

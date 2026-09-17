@@ -48,7 +48,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Home } from "lucide-react";
 import { PageContainer } from "@/components/patterns/page-container";
+import { BreadcrumbsNav } from "@/components/patterns/breadcrumbs-nav";
 import { Specimen, SpecimenRow } from "../specimen";
 
 const RHYTHMS = ["band", "tight", "default", "loose"] as const;
@@ -292,6 +294,19 @@ export function DuzenSpecimens() {
           </BreadcrumbList>
         </Breadcrumb>
       </Specimen>
+      <Specimen
+        name="BreadcrumbsNav"
+        description="`components/patterns/breadcrumbs-nav.tsx`: aynı diziden `aria-current` taşıyan son kırıntıyı üretir, ilk kırıntının `icon`'u `aria-hidden` sarmalanır. `components/patterns/breadcrumbs.tsx`'in `Breadcrumbs`'ı bunun üstüne eşleşen `BreadcrumbList` JSON-LD'sini ekleyen bir SUNUCU bileşeni (`lib/seo/json-ld`'nin `server-only` koruması yüzünden) — bu vitrin sayfası gibi bir Client Component'ten render edilemez, ayrı bir dosyada olması da bundan: aynı dosyada iki export olarak dursaydı `pnpm build` yine kırılırdı (Turbopack sınırı export değil dosya bazlı çalışıyor). Görünen çıktısı birebir aynı olduğundan bu tek örnek hem `breadcrumbs-nav` hem `breadcrumbs` kayıtlarını karşılar."
+      >
+        <BreadcrumbsNav
+          items={[
+            { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+            { label: "Türkiye", href: "/turkiye", path: "/turkiye" },
+            { label: "Çanakkale", path: "/turkiye/canakkale" },
+          ]}
+        />
+      </Specimen>
+
       <Specimen
         name="PageContainer — ritimler"
         description="`band` sayfa dikey dolgusu taşımaz; sayfanın kendi `py-10 sm:py-14` bandının içine oturur. Diğer üçü `pt-6 pb-20 sm:pt-10` üstüne kendi `space-y` değerini ekler."

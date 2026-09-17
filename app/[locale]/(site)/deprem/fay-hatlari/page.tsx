@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { breadcrumbJsonLd, learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { FAULT_LINES_DATA } from "@/lib/earthquake/fault-lines-data";
 import {
   Layers,
   Home,
-  ChevronRight,
   AlertTriangle,
   MapPin,
   Clock,
@@ -51,11 +51,6 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={[
-          breadcrumbJsonLd([
-            { name: "Ana Sayfa", path: "/" },
-            { name: "Canlı Deprem Monitörü", path: "/deprem" },
-            { name: "Türkiye'nin Fay Hatları", path: "/deprem/fay-hatlari" },
-          ]),
           learningResourceJsonLd({
             name: "Türkiye'nin Ana Fay Hatları Sismotektonik Atlası",
             description:
@@ -73,24 +68,15 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
       <PageContainer>
         {/* Breadcrumb & Hero */}
         <div className="space-y-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <Link href="/deprem" className="hover:text-foreground transition-colors">
-              Canlı Deprem Monitörü
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Türkiye&apos;nin Fay Hatları</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Canlı Deprem Monitörü", href: "/deprem", path: "/deprem" },
+              { label: "Türkiye'nin Fay Hatları", path: "/deprem/fay-hatlari" },
+            ]}
+            locale={locale}
+            surface="trOnly"
+          />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">

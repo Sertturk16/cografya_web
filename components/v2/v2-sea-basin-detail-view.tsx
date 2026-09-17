@@ -2,16 +2,14 @@
 
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
-import type { Locale } from "@/i18n/routing";
 import type { SeaBasinDetailData } from "@/lib/marine/sea-basins-detail";
 import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { BreadcrumbsNav, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs-nav";
 import { cn } from "@/lib/utils";
 import {
   Waves,
-  Home,
-  ChevronRight,
   Droplets,
   Compass,
   MapPin,
@@ -29,10 +27,23 @@ type LinkHref = React.ComponentProps<typeof Link>["href"];
 interface V2SeaBasinDetailViewProps {
   data: SeaBasinDetailData;
   marinePoints: MarinePointData[];
-  locale: Locale;
+  /**
+   * The SAME array the page's own `breadcrumbJsonLd` call is built from — passed in rather
+   * than computed here, because this is a Client Component and cannot render the JSON-LD half
+   * of `components/patterns/breadcrumbs.tsx` (that half, `Breadcrumbs`, imports `lib/seo/
+   * json-ld`, which is `server-only`). The four `/deniz/{akdeniz,ege,karadeniz,marmara}/
+   * page.tsx` callers build this once and feed both the visible nav below (via
+   * `BreadcrumbsNav`) and their own server-rendered `<JsonLd>` from it — ONE array, never
+   * typed out twice.
+   */
+  breadcrumbItems: readonly BreadcrumbTrailItem[];
 }
 
-export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailViewProps) {
+export function V2SeaBasinDetailView({
+  data,
+  marinePoints,
+  breadcrumbItems,
+}: V2SeaBasinDetailViewProps) {
   // Sort points by displayOrder
   const sortedPoints = [...marinePoints].sort((a, b) => a.displayOrder - b.displayOrder);
 
@@ -52,24 +63,7 @@ export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailVie
     <div className="space-y-14">
       {/* Breadcrumb & Hero */}
       <div className="space-y-4">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
-          >
-            <Home className="size-3.5" />
-            <span>Ana Sayfa</span>
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <Link href="/deniz" className="hover:text-foreground transition-colors">
-            Denizler &amp; Kıyılar Atlası
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">{data.fullNameTr}</span>
-        </nav>
+        <BreadcrumbsNav items={breadcrumbItems} />
 
         <div
           className={`relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b ${data.gradientClass} p-6 sm:p-10 shadow-lg`}

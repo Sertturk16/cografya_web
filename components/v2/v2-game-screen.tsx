@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import type { GeographicRegion } from "@/lib/api/types";
+import { BreadcrumbsNav, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs-nav";
 import type { GameModeId } from "@/lib/game/config";
 import type { GameShapeEntry, GameShapeTargetEntry } from "@/lib/game/map-shapes";
 import {
@@ -60,7 +61,6 @@ import {
   Eye,
   Flag,
   Home,
-  ChevronRight,
   BookOpen,
   ShieldCheck,
   Star,
@@ -85,6 +85,16 @@ export interface V2GameScreenProps {
   readonly submitModeTag: string;
   readonly region?: GeographicRegion | null;
   readonly viewBox?: string;
+  /**
+   * Root-relative path of THIS screen, for the breadcrumb trail's last item's `path` (the
+   * primitive's React `key`, and the datum a future JSON-LD emitter would need). No `locale`
+   * or `surface` prop alongside it any more: this component renders `BreadcrumbsNav`, the
+   * client-safe half of `components/patterns/breadcrumbs.tsx`'s split, which draws the trail
+   * only and has no JSON-LD to gate — every `(play)/oyun/*` route is `surface: "noindex"` in
+   * `lib/seo/indexing.ts` regardless, so the full `Breadcrumbs` server component emitted
+   * nothing extra here even before the split forced this component off it.
+   */
+  readonly currentPath: string;
 }
 
 const REGION_COLOR_CLASSES: Record<GeographicRegion, { fill: string; border: string }> = {
@@ -111,6 +121,7 @@ export function V2GameScreen({
   submitModeTag,
   region = null,
   viewBox = MAP_VIEWBOX,
+  currentPath,
 }: V2GameScreenProps) {
   const [authState] = useAuthSession();
   const modal = useAuthModalState();
@@ -655,24 +666,20 @@ export function V2GameScreen({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
         {/* Top Navigation & Breadcrumbs */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <Link href="/oyun" className="hover:text-foreground transition-colors">
-              Harita Oyunları
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">{modeName}</span>
-          </nav>
+          <BreadcrumbsNav
+            items={
+              [
+                {
+                  label: "Ana Sayfa",
+                  href: "/",
+                  path: "/",
+                  icon: <Home className="size-3.5" />,
+                },
+                { label: "Harita Oyunları", href: "/oyun", path: "/oyun" },
+                { label: modeName, path: currentPath },
+              ] satisfies BreadcrumbTrailItem[]
+            }
+          />
 
           <div className="flex items-center gap-2">
             <Link href={region ? "/oyun/bolge-bolge-il" : "/oyun"}>

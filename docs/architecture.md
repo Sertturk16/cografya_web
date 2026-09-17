@@ -193,3 +193,9 @@ Details and the open dark-mode bugs: `docs/design.md`.
 - `scripts/` mixes durable generators with ad-hoc Playwright audits; `scripts/verify_*.mjs`
   is gitignored yet two such files are tracked.
 - Prod is plain HTTP on a bare IP; the internal token rides every web→api call in clear.
+- `pnpm build` against a live local API fails at random — a different province or country page
+  each run, fetch aborts / 500s — under Next's ~19 parallel prerender workers. Reproduces at
+  commits predating this work, so it is not a regression of anything landed here.
+  `experimental.cpus: 4` in `next.config.ts` makes it disappear. CI never hits it: the CI
+  runner has no API service, so every `generateStaticParams` degrades to `[]` and the throwing
+  code path is never reached.

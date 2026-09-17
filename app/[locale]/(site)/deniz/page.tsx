@@ -18,8 +18,9 @@ import { PageContainer } from "@/components/patterns/page-container";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
-import { Waves, Home, ChevronRight, Layers, ArrowRight } from "lucide-react";
+import { Waves, Home, Layers, ArrowRight } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
 import { marineShowsValues } from "@/lib/marine/overview";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
@@ -163,20 +164,14 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
       <PageContainer space="loose">
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Denizler &amp; Kıyılar Atlası</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Denizler & Kıyılar Atlası", path: "/deniz" },
+            ]}
+            locale={locale}
+            surface="trNarrative"
+          />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">

@@ -4,7 +4,7 @@ import { getMarinePointsSafe, getMarineOverviewSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import type { Locale } from "@/i18n/routing";
 import type { MarineOverviewPoint } from "@/lib/api/types";
-import { breadcrumbJsonLd, learningResourceJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { learningResourceJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SeaBasinDetailView } from "@/components/v2/v2-sea-basin-detail-view";
@@ -12,8 +12,10 @@ import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
+import { breadcrumbListSchema, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { SEA_BASINS_DETAIL } from "@/lib/marine/sea-basins-detail";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
+import { Home } from "lucide-react";
 
 export const revalidate = 900;
 
@@ -116,16 +118,28 @@ export default async function V2AkdenizPage({ params }: PageProps) {
     };
   });
 
+  // The ONE array: feeds both the visible nav (`V2SeaBasinDetailView` renders it through
+  // `BreadcrumbsNav`, the client-safe half of `components/patterns/breadcrumbs.tsx`) and the
+  // `breadcrumbListSchema` call below. `V2SeaBasinDetailView` is a Client Component and cannot
+  // render `Breadcrumbs` itself any more (that half imports `lib/seo/json-ld`, which is
+  // `server-only`) — the emission moved up here instead of splitting the array in two.
+  const breadcrumbItems: BreadcrumbTrailItem[] = [
+    { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+    { label: "Denizler & Kıyılar Atlası", href: "/deniz", path: "/deniz" },
+    { label: basinData.fullNameTr, path: "/deniz/akdeniz" },
+  ];
+
   return (
     <>
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={[
-          breadcrumbJsonLd([
-            { name: "Ana Sayfa", path: "/" },
-            { name: "Denizler & Kıyılar Atlası", path: "/deniz" },
-            { name: "Akdeniz Havzası", path: "/deniz/akdeniz" },
-          ]),
+          // The `BreadcrumbList` schema, gated exactly the way `Breadcrumbs` gates it
+          // internally — this page IS that gate's server component, standing in for
+          // `V2SeaBasinDetailView`, which cannot render it (see the comment above). One
+          // implementation (`breadcrumbListSchema`, `components/patterns/breadcrumbs.tsx`),
+          // four callers (this page and its three basin siblings) plus `Breadcrumbs` itself.
+          ...breadcrumbListSchema(breadcrumbItems, locale, "trOnly"),
           learningResourceJsonLd({
             name: "Akdeniz Havzası Coğrafi Analizi ve Termal Rejimi Rehberi",
             description: basinData.physicalGeography.content,
@@ -142,7 +156,11 @@ export default async function V2AkdenizPage({ params }: PageProps) {
       <V2LiveTicker />
 
       <PageContainer>
-        <V2SeaBasinDetailView data={basinData} marinePoints={marinePoints} locale={locale} />
+        <V2SeaBasinDetailView
+          data={basinData}
+          marinePoints={marinePoints}
+          breadcrumbItems={breadcrumbItems}
+        />
 
         {/* THE SAFETY DISCLAIMER, BESIDE THE VALUES — plus a link to the licence text.
 

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { Home, ChevronRight } from "lucide-react";
-import { Link, getPathname } from "@/i18n/navigation";
+import { Home } from "lucide-react";
+import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { getSession } from "@/lib/auth/session";
@@ -11,6 +11,7 @@ import { getProvincesResilient } from "@/lib/api/provinces";
 import { getCountriesResilient } from "@/lib/api/countries";
 import { getRegionsResilient } from "@/lib/api/regions";
 import { getBooksResilient } from "@/lib/api/books";
+import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2MemberHub } from "@/components/v2/v2-member-hub";
 import { PageContainer } from "@/components/patterns/page-container";
@@ -74,26 +75,17 @@ export default async function V2MemberHubPage({ params }: V2MemberHubPageProps) 
     slugTr: b.slugTr,
   }));
 
+  const breadcrumbItems: BreadcrumbTrailItem[] = [
+    { label: "Ana sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+    { label: "Hesabım", path: "/hesabim" },
+  ];
+
   return (
     <>
       <V2LiveTicker />
 
       <PageContainer space="tight">
-        {/* Breadcrumb Navigation */}
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
-          >
-            <Home className="size-3.5" />
-            <span>Ana sayfa</span>
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">Hesabım</span>
-        </nav>
+        <Breadcrumbs items={breadcrumbItems} locale={locale} surface="noindex" />
 
         {/* Member Hub Island */}
         <V2MemberHub

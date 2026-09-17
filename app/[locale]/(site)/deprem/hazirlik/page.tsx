@@ -2,24 +2,17 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { breadcrumbJsonLd, learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { PREPAREDNESS_DATA } from "@/lib/earthquake/preparedness-data";
-import {
-  ShieldCheck,
-  Home,
-  ChevronRight,
-  ArrowLeft,
-  PhoneCall,
-  CheckCircle2,
-  AlertOctagon,
-} from "lucide-react";
+import { ShieldCheck, Home, ArrowLeft, PhoneCall, CheckCircle2, AlertOctagon } from "lucide-react";
 
 export const revalidate = 86400;
 
@@ -48,11 +41,6 @@ export default async function V2PreparednessPage({ params }: PageProps) {
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={[
-          breadcrumbJsonLd([
-            { name: "Ana Sayfa", path: "/" },
-            { name: "Canlı Deprem Monitörü", path: "/deprem" },
-            { name: "Deprem Hazırlık Rehberi", path: "/deprem/hazirlik" },
-          ]),
           learningResourceJsonLd({
             name: "Deprem Öncesi, Sırası ve Sonrası Kapsamlı Hazırlık Kılavuzu",
             description:
@@ -70,24 +58,15 @@ export default async function V2PreparednessPage({ params }: PageProps) {
       <PageContainer>
         {/* Breadcrumb & Hero */}
         <div className="space-y-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <Link href="/deprem" className="hover:text-foreground transition-colors">
-              Canlı Deprem Monitörü
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Deprem Hazırlık Rehberi</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Canlı Deprem Monitörü", href: "/deprem", path: "/deprem" },
+              { label: "Deprem Hazırlık Rehberi", path: "/deprem/hazirlik" },
+            ]}
+            locale={locale}
+            surface="trOnly"
+          />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">
