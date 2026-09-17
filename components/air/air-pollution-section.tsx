@@ -16,9 +16,28 @@ interface AirPollutionSectionProps {
   /** Plaka kodu — keeps the chart's title/desc ids unique on the page. */
   plateCode: string;
   locale: Locale;
-  /** When true, omits the inline attribution/license aside block (delegated to page footer/sources). */
-  hideAttribution?: boolean;
 }
+
+/**
+ * THERE IS NO `hideAttribution` PROP, AND THERE MUST NOT BE ONE.
+ *
+ * The province page used to pass one. It dropped this component's whole attribution block —
+ * the ACAG source line, the CC-BY-4.0 licence line, the reference citation AND the provider's
+ * own verbatim `methodNoticeText` — and delegated the credit to `V2SourcesSection`, where a
+ * source's `legalQuote` sits inside a `<details>` labelled "Atıf şartı & yasal metin", CLOSED
+ * BY DEFAULT.
+ *
+ * That contradicts the criterion `components/marine/marine-attribution.tsx` states in its own
+ * docblock and that this repo applies everywhere else: the notice is "visible without a click
+ * on the page that carries the derived material". A disclosure the reader has to find and open
+ * is a click. CC BY 4.0 also wants the credit, the licence and the reference TOGETHER with the
+ * material, which is a second reason none of the four paragraphs above was optional.
+ *
+ * So the three components that publish provider-licensed values now agree: `MarineAttribution`
+ * has no such prop, and neither does this one nor `ClimateSection`. `V2SourcesSection` is the
+ * bibliography; its `<details>` quote echoes a notice rendered in full elsewhere on the page
+ * and may never be the only place a mandated string appears.
+ */
 
 /**
  * Permanent deep-link anchor for the section heading. Localized so a shared link always
@@ -87,7 +106,6 @@ export async function AirPollutionSection({
   headingName,
   plateCode,
   locale,
-  hideAttribution = false,
 }: AirPollutionSectionProps) {
   const t = await getTranslations("AirPollution");
   const tp = await getTranslations("ProvinceDetail");
@@ -156,61 +174,60 @@ export async function AirPollutionSection({
 
       <Pm25Table pm25={pm25} provinceName={provinceName} displayUnit={displayUnit} />
 
-      {!hideAttribution && (
-        <div className={styles.attribution}>
-          {notices.satelliteDerived && (
-            <p className={styles.notice}>{t("notice.satelliteDerived")}</p>
-          )}
+      {/* ALWAYS RENDERED — see the "no `hideAttribution` prop" note above. */}
+      <div className={styles.attribution}>
+        {notices.satelliteDerived && (
+          <p className={styles.notice}>{t("notice.satelliteDerived")}</p>
+        )}
 
-          <p className={styles.sourceLine}>
-            {t.rich("sourceLine", {
-              provider: pm25.attribution.providerName,
-              workTitle: pm25.attribution.workTitle,
-              // Deliberately NOT `nofollow`: an editorial citation to the authority the whole
-              // section rests on. `nofollow` is for untrusted / paid / UGC links and using it
-              // here would understate a real attribution (the climate source line's reasoning).
-              source: (chunks) => (
-                <a href={pm25.attribution.datasetUrl} target="_blank" rel="noopener noreferrer">
-                  {chunks}
-                </a>
-              ),
-            })}
-          </p>
+        <p className={styles.sourceLine}>
+          {t.rich("sourceLine", {
+            provider: pm25.attribution.providerName,
+            workTitle: pm25.attribution.workTitle,
+            // Deliberately NOT `nofollow`: an editorial citation to the authority the whole
+            // section rests on. `nofollow` is for untrusted / paid / UGC links and using it
+            // here would understate a real attribution (the climate source line's reasoning).
+            source: (chunks) => (
+              <a href={pm25.attribution.datasetUrl} target="_blank" rel="noopener noreferrer">
+                {chunks}
+              </a>
+            ),
+          })}
+        </p>
 
-          <p className={styles.sourceLine}>
-            {t.rich("licenceLine", {
-              licenceName: pm25.attribution.licenceName,
-              licence: (chunks) => (
-                <a href={pm25.attribution.licenceUrl} target="_blank" rel="noopener noreferrer">
-                  {chunks}
-                </a>
-              ),
-            })}
-          </p>
+        <p className={styles.sourceLine}>
+          {t.rich("licenceLine", {
+            licenceName: pm25.attribution.licenceName,
+            licence: (chunks) => (
+              <a href={pm25.attribution.licenceUrl} target="_blank" rel="noopener noreferrer">
+                {chunks}
+              </a>
+            ),
+          })}
+        </p>
 
-          <p className={styles.sourceLine}>
-            {t.rich("referenceLine", {
-              citation: pm25.attribution.referenceCitation,
-              ref: (chunks) => (
-                <a href={pm25.attribution.referenceUrl} target="_blank" rel="noopener noreferrer">
-                  {chunks}
-                </a>
-              ),
-            })}
-          </p>
+        <p className={styles.sourceLine}>
+          {t.rich("referenceLine", {
+            citation: pm25.attribution.referenceCitation,
+            ref: (chunks) => (
+              <a href={pm25.attribution.referenceUrl} target="_blank" rel="noopener noreferrer">
+                {chunks}
+              </a>
+            ),
+          })}
+        </p>
 
-          <p className={styles.sourceLine}>{t("noticeIntro")}</p>
-          {/* The provider's own caveat, VERBATIM and untranslated. `lang="en"` so a screen
+        <p className={styles.sourceLine}>{t("noticeIntro")}</p>
+        {/* The provider's own caveat, VERBATIM and untranslated. `lang="en"` so a screen
               reader on the Turkish page does not read it with Turkish phonemes (WCAG 3.1.2).
               The text lives ONLY in the payload — this repo keeps no second copy of it. */}
-          <p className={styles.licenceNotice} lang="en">
-            {pm25.attribution.methodNoticeText}
-          </p>
-          {/* The Turkish explanation stands BESIDE the English caveat, never instead of it
+        <p className={styles.licenceNotice} lang="en">
+          {pm25.attribution.methodNoticeText}
+        </p>
+        {/* The Turkish explanation stands BESIDE the English caveat, never instead of it
               (`data-provenance.md` write rule, ACAG row). */}
-          {notices.gridResolution && <p className={styles.notice}>{t("notice.gridResolution")}</p>}
-        </div>
-      )}
+        {notices.gridResolution && <p className={styles.notice}>{t("notice.gridResolution")}</p>}
+      </div>
     </section>
   );
 }

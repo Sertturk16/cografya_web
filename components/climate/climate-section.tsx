@@ -13,9 +13,27 @@ interface ClimateSectionProps {
   plateCode: string;
   /** Active locale — selects the permanent deep-link anchor slug. */
   locale: Locale;
-  /** When true, omits the inline attribution/license aside column (delegated to page footer/sources). */
-  hideAttribution?: boolean;
 }
+
+/**
+ * THERE IS NO `hideAttribution` PROP, AND THERE MUST NOT BE ONE.
+ *
+ * The province page used to pass one. It dropped this component's whole aside — the source
+ * line, the model/reading-method disclosure AND the verbatim CC-BY-4.0 C3S notice — and
+ * delegated the credit to `V2SourcesSection`, where a source's `legalQuote` sits inside a
+ * `<details>` labelled "Atıf şartı & yasal metin", CLOSED BY DEFAULT.
+ *
+ * That contradicts the criterion `components/marine/marine-attribution.tsx` states in its own
+ * docblock and that this repo applies everywhere else: the notice is "visible without a click
+ * on the page that carries the derived material", the conservative reading of the licences'
+ * "prominently". A disclosure the reader has to find and open is a click. So the three
+ * components that publish provider-licensed values now agree — `MarineAttribution` has no such
+ * prop, and neither does this one nor `AirPollutionSection`.
+ *
+ * `V2SourcesSection` is the BIBLIOGRAPHY: what the page is built on, in our words. Its
+ * `<details>` quote is an echo of a notice rendered in full elsewhere on the page, and it may
+ * never be the only place a mandated string appears.
+ */
 
 /**
  * Permanent deep-link anchor for the chart heading (PLAN §2). Localized so a shared
@@ -134,7 +152,6 @@ export async function ClimateSection({
   provinceName,
   plateCode,
   locale,
-  hideAttribution = false,
 }: ClimateSectionProps) {
   const t = await getTranslations("Climate");
   const format = await getFormatter();
@@ -161,27 +178,27 @@ export async function ClimateSection({
       <div className={`${styles.detailRow} ${styles.d2Rails}`}>
         <ClimateTable climate={climate} provinceName={provinceName} />
 
-        {!hideAttribution && (
-          <div className={styles.detailAside}>
-            <p className={styles.sourceLine}>
-              {t.rich("sourceLine", {
-                // Strings so ICU never group-separates the years (1991, not 1.991).
-                start: String(climate.periodStartYear),
-                end: String(climate.periodEndYear),
-                // Deliberately NOT `nofollow`: this is an editorial citation to the authoritative
-                // source the whole section's information-gain thesis rests on. `nofollow` is for
-                // untrusted / paid / UGC links; using it here would understate a real attribution.
-                // The api now serves ONE dataset URL for all 81 provinces (there is no per-province
-                // page in the Copernicus Climate Data Store), so this link points at the dataset.
-                source: (chunks) => (
-                  <a href={climate.sourceUrl} target="_blank" rel="noopener noreferrer">
-                    {chunks}
-                  </a>
-                ),
-              })}
-            </p>
+        {/* ALWAYS RENDERED — see the "no `hideAttribution` prop" note above. */}
+        <div className={styles.detailAside}>
+          <p className={styles.sourceLine}>
+            {t.rich("sourceLine", {
+              // Strings so ICU never group-separates the years (1991, not 1.991).
+              start: String(climate.periodStartYear),
+              end: String(climate.periodEndYear),
+              // Deliberately NOT `nofollow`: this is an editorial citation to the authoritative
+              // source the whole section's information-gain thesis rests on. `nofollow` is for
+              // untrusted / paid / UGC links; using it here would understate a real attribution.
+              // The api now serves ONE dataset URL for all 81 provinces (there is no per-province
+              // page in the Copernicus Climate Data Store), so this link points at the dataset.
+              source: (chunks) => (
+                <a href={climate.sourceUrl} target="_blank" rel="noopener noreferrer">
+                  {chunks}
+                </a>
+              ),
+            })}
+          </p>
 
-            {/* SPEC §9.2-1 / §9.2-2 — the model + reading-method disclosure, in the FIXED
+          {/* SPEC §9.2-1 / §9.2-2 — the model + reading-method disclosure, in the FIXED
             provenance block rather than in body prose, because §9.2-1 puts it there in as many
             words ("sabit provenance/caveat bloğunda (gövde prose'unda DEĞİL)") and §9.2-2 asks
             for the reading-method line in that SAME block.
@@ -213,11 +230,11 @@ export async function ClimateSection({
             the source line above: 1991-2020 is OUR chosen WMO normal window, not the dataset's
             coverage (which starts in 1950), and the copy says "referans dönemi" rather than
             claiming a dataset period. */}
-            {SOURCE_OWES_METHOD_DISCLOSURE[climate.source] && (
-              <div className={styles.notices}>
-                <p className={styles.notice}>{t("notice.reanalysis")}</p>
-                <p className={styles.notice}>{t("notice.readingPoint")}</p>
-                {/* A-1's declared shift, on the five provinces it applies to (A-5 ruled: static
+          {SOURCE_OWES_METHOD_DISCLOSURE[climate.source] && (
+            <div className={styles.notices}>
+              <p className={styles.notice}>{t("notice.reanalysis")}</p>
+              <p className={styles.notice}>{t("notice.readingPoint")}</p>
+              {/* A-1's declared shift, on the five provinces it applies to (A-5 ruled: static
                     web copy, `lib/climate/cell-fallback.ts`). The other 76 render nothing here —
                     the line above already describes them correctly, and an "eksik veri"
                     placeholder for a province that HAS no shift would be a CONTENT-STYLE §22
@@ -227,20 +244,20 @@ export async function ClimateSection({
                     for nothing but the locale's decimal separator. Passing the already-formatted
                     string keeps ICU from touching the number a second time — the same reason the
                     source line above passes its years as strings. */}
-                {fallbackKm !== null && (
-                  <p className={styles.notice}>
-                    {t("notice.cellFallback", {
-                      km: format.number(fallbackKm, {
-                        minimumFractionDigits: 1,
-                        maximumFractionDigits: 1,
-                      }),
-                    })}
-                  </p>
-                )}
-              </div>
-            )}
+              {fallbackKm !== null && (
+                <p className={styles.notice}>
+                  {t("notice.cellFallback", {
+                    km: format.number(fallbackKm, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    }),
+                  })}
+                </p>
+              )}
+            </div>
+          )}
 
-            {/* CC-BY-4.0's required notice for the ERA5-Land series (data-provenance.md §0b).
+          {/* CC-BY-4.0's required notice for the ERA5-Land series (data-provenance.md §0b).
             Published VERBATIM, in English, in BOTH locales and marked `lang="en"` so a screen
             reader on the Turkish page does not read it with Turkish phonemes — the same
             treatment, and the same obligation, as the marine provider notices
@@ -252,12 +269,11 @@ export async function ClimateSection({
             the Copernicus information was generated, and this series comes from a committed
             2026 artifact. `new Date().getFullYear()` would silently claim a later year for
             data that did not change. */}
-            <p className={styles.sourceLine}>{t("sourceC3sNoticeIntro")}</p>
-            <p className={styles.licenceNotice} lang="en">
-              {t("attribution.c3sNotice")}
-            </p>
-          </div>
-        )}
+          <p className={styles.sourceLine}>{t("sourceC3sNoticeIntro")}</p>
+          <p className={styles.licenceNotice} lang="en">
+            {t("attribution.c3sNotice")}
+          </p>
+        </div>
       </div>
     </div>
   );
