@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Every region key gets a visual treatment, and the page keys it on the api's KEY.
@@ -43,9 +44,7 @@ const REGION_KEYS = [
 
 /** Source with comments removed — this file's own prose names the identifiers under test. */
 function tsxCode(url: URL): string {
-  return readFileSync(url, "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/^[ \t]*\/\/.*$/gm, " ");
+  return stripComments(readFileSync(url, "utf8"));
 }
 
 const provincePage = tsxCode(

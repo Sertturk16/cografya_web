@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { COUNTRY_SHAPES } from "./world-countries.generated";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Structural invariants of the generated `/dunya` geometry. These assert SHAPE, not facts:
@@ -318,9 +319,6 @@ describe("the Natural Earth world-country credit", () => {
   // Comments stripped first, for the reason the JRC guard records: a file that MENTIONS the
   // import in prose does not draw the layer, and failing it for explaining itself teaches the
   // next person to delete the explanation.
-  const stripComments = (source: string) =>
-    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
-
   const surfaces = roots
     .flatMap(walk)
     .map((file) => ({

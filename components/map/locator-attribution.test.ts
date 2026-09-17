@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { LOCATOR_DESKTOP_PRELOAD_MEDIA, shouldPreloadLocator } from "@/lib/map/locator-preload";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * The PAGE-LEVEL half of the ODbL obligation.
@@ -21,11 +22,7 @@ import { LOCATOR_DESKTOP_PRELOAD_MEDIA, shouldPreloadLocator } from "@/lib/map/l
  */
 
 function code(url: URL): string {
-  return readFileSync(url, "utf8")
-    .replace(/\r\n/g, "\n")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
-    .replace(/^[ \t]*\/\/.*$/gm, " ");
+  return stripComments(readFileSync(url, "utf8").replace(/\r\n/g, "\n"));
 }
 
 const locator = code(new URL("./locator-map.tsx", import.meta.url));

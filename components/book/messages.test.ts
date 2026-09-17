@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * MESSAGE-KEY RESOLUTION GUARD for the book detail surface (the `components/site-nav/
@@ -91,13 +92,6 @@ const ROOTS = [
 /** BOTH comment forms, not only the C-style one: a `t("…")` written in a line comment as an
  *  example would otherwise enter the key scan and fail this guard on a change that broke nothing
  *  (→ PR #66 review `CODE66R2-M6`). */
-const stripComments = (source: string) =>
-  source
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join("\n");
-
 /**
  * BOTH binding shapes, in the discovery filter AND in the assertions built on it.
  *

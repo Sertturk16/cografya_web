@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * This repo's vitest environment is `node`, and the list/badge are plain, hook-free components
@@ -20,8 +21,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
 
 /** Source with comments removed, matching `air-pollution.structure.test.ts`'s own reasoning:
  *  a docblock explaining WHY there is no raw hex/no `"use client"` contains those very words. */
-const code = (source: string) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/.*$/gm, "");
+const code = stripComments;
 
 const list = read("./earthquake-list.tsx");
 const badge = read("./magnitude-badge.tsx");

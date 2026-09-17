@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * G6 (plan §9, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`):
@@ -178,10 +179,7 @@ const consumerSources = ROOTS.flatMap(({ label, url }) =>
     )
     .map((name) => ({
       path: `${label}/${name}`,
-      source: readFileSync(fileURLToPath(new URL(name, url)), "utf8").replace(
-        /\/\*[\s\S]*?\*\//g,
-        " ",
-      ),
+      source: stripComments(readFileSync(fileURLToPath(new URL(name, url)), "utf8")),
     }))
     .filter(({ source }) => AUTH_NAMESPACE_CALL.test(source)),
 );

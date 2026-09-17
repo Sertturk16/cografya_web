@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripCssComments } from "@/lib/test-support/strip-comments";
 
 /**
  * DANGLING-TOKEN TRIPWIRE for sticky-header anchor offsets.
@@ -39,11 +40,7 @@ const ROOTS = [
   { label: "app", url: new URL("../app/", import.meta.url) },
 ] as const;
 
-/** CSS comments are stripped before every scan — the PR-A CR-S2 lesson: a rule quoted inside
- *  a comment must never satisfy (or trip) a source-text guard. */
-const stripComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, " ");
-
-const globals = stripComments(readFileSync(GLOBALS, "utf8"));
+const globals = stripCssComments(readFileSync(GLOBALS, "utf8"));
 
 /**
  * Only the UNCONDITIONAL `:root` block counts as a definition (review TA56-M3). A token
@@ -79,10 +76,10 @@ const cssFiles = ROOTS.flatMap(({ label: rootLabel, url: root }) =>
 
 /** Every custom-property read inside a `calc()` in either stylesheet root. */
 const calculatedReferences = cssFiles.flatMap(({ css, label }) =>
-  [...stripComments(css).matchAll(/calc\(([^;{}]+)\)/g)].flatMap((calculation) =>
+  [...stripCssComments(css).matchAll(/calc\(([^;{}]+)\)/g)].flatMap((calculation) =>
     [...(calculation[1] ?? "").matchAll(/var\(\s*(--[a-z0-9-]+)(?:\s*,[^)]*)?\)/gi)].map(
       (reference) => ({
-        css: stripComments(css),
+        css: stripCssComments(css),
         label,
         token: reference[1] ?? "",
       }),
@@ -179,7 +176,7 @@ describe("sticky-header anchor offsets", () => {
     // be reading a property nothing declares — and the declaration side has to stay gone too,
     // or the next reader finds a token with no owner and assumes it means something.
     for (const { css } of cssFiles) {
-      expect(stripComments(css)).not.toContain(token);
+      expect(stripCssComments(css)).not.toContain(token);
     }
   });
 });

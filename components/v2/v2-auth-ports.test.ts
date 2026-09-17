@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * T-032 PR1 — the four ported pages and the three client islands behind them.
@@ -23,8 +24,6 @@ import { describe, expect, it } from "vitest";
  */
 
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8");
-const stripComments = (source: string) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
 
 const AUTH_PAGES = [
   "../../app/[locale]/(site)/sifre-sifirlama/page.tsx",

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Comments are stripped, for the third time in this task. A docblock that explains why a
@@ -9,9 +10,7 @@ import { describe, expect, it } from "vitest";
  * `components/ui/token-binding.test.ts` learned the same lesson.
  */
 const read = (name: string) =>
-  readFileSync(fileURLToPath(new URL(`./${name}.tsx`, import.meta.url)), "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/^\s*\/\/.*$/gm, " ");
+  stripComments(readFileSync(fileURLToPath(new URL(`./${name}.tsx`, import.meta.url)), "utf8"));
 
 /**
  * Accessibility contracts for the primitives T-034 added.

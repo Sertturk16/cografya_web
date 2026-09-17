@@ -50,9 +50,11 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   a pair of `String.replace` calls: a `/*` inside a line comment (`messages/*.json`) makes the
   block-comment regex eat everything to the next delimiter — 220 lines of `v2-sources-section.tsx`,
   including the scope a `not.toContain` was asserting about — and swapping the two replaces only
-  moves the hole. Exclude routing and config modules from an import-graph walk; then
-  **mutation-check it** — break the thing the test exists to catch and watch it go red, because a
-  source-text assertion that has never failed has not been shown to work.
+  moves the hole. A stylesheet gets `stripCssComments` from the same module instead: `//` is not a
+  comment in CSS, so the JS scanner would eat the rest of any `url(https://…)` line. Exclude
+  routing and config modules from an import-graph walk; then **mutation-check it** — break the
+  thing the test exists to catch and watch it go red, because a source-text assertion that has
+  never failed has not been shown to work.
 - Fixtures: `test/fixtures/{marine,books}`. Do not add network calls to tests.
 - Playwright is a library here, not a runner: no `playwright.config`, no e2e suite. Ad-hoc
   audits live in `scripts/` and `tools/dev-fixtures/`; do not wire them into CI.

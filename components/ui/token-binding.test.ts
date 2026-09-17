@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * `../showcase/specimens` is scanned for the same reason the other two are. It was left out
@@ -19,9 +20,6 @@ const DIRS = ["../ui", "../patterns", "../showcase/specimens"] as const;
  * `lib/theme/bridge-tokens.test.ts`, whose parser found `@theme inline` inside a comment
  * before finding the real block.
  */
-const stripComments = (source: string) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
-
 const FILES = DIRS.flatMap((rel) => {
   const dir = fileURLToPath(new URL(rel, import.meta.url));
   return readdirSync(dir)

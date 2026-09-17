@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { stripCssComments } from "@/lib/test-support/strip-comments";
 
 /**
  * V1 IS GONE, AND STAYS GONE.
@@ -113,7 +114,7 @@ describe("the V1 global utility classes stay removed", () => {
   it.each(DELETED_GLOBAL_CLASSES)("globals.css declares no .%s rule", (name) => {
     // Declarations only — a class NAME may legitimately appear in a comment explaining why it
     // was removed, and this file's own docblock is an example of why that distinction matters.
-    const withoutComments = globals.replace(/\/\*[\s\S]*?\*\//g, " ");
+    const withoutComments = stripCssComments(globals);
     expect(withoutComments).not.toMatch(
       new RegExp(String.raw`(^|[\s,>+~])\.${name}\b[^{;]*\{`, "m"),
     );

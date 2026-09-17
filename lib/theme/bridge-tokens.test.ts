@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripCssComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Comments are stripped before parsing, the same precaution
@@ -9,10 +10,9 @@ import { describe, expect, it } from "vitest";
  * what happened when the `--success` comment below was written to say "re-exported in
  * `@theme inline` below".
  */
-const CSS = readFileSync(
-  fileURLToPath(new URL("../../app/globals.css", import.meta.url)),
-  "utf8",
-).replace(/\/\*[\s\S]*?\*\//g, " ");
+const CSS = stripCssComments(
+  readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8"),
+);
 
 /** Returns the body of the first top-level block whose selector starts with `name`. */
 function section(name: string): string {

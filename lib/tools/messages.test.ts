@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * MESSAGE-KEY RESOLUTION GUARD for the CBS tool tier (the `lib/marine/messages.test.ts`
@@ -320,11 +321,6 @@ function scanBindings(source: string): Omit<ToolsBinding, "path">[] {
       requested: [...window.matchAll(calls)].map((call) => call[1]!),
     };
   });
-}
-
-/** Comments out, so a docblock naming a key is not a request and one naming a namespace is not a binding. */
-function stripComments(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
 }
 
 const bindings: ToolsBinding[] = CONSUMER_ROOTS.flatMap(({ label, url }) =>

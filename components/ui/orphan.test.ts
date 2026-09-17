@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * EVERY PRIMITIVE HAS A PRODUCT CALL SITE.
@@ -152,9 +153,7 @@ function resolveSpecifier(fromFile: string, specifier: string): string | null {
 const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*)["']([^"']+)["']/g;
 
 function importsOf(file: string): string[] {
-  const source = readFileSync(file, "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/^\s*\/\/.*$/gm, " ");
+  const source = stripComments(readFileSync(file, "utf8"));
   return [...source.matchAll(SPECIFIER)]
     .map((match) => resolveSpecifier(file, match[1]!))
     .filter((path): path is string => path !== null);

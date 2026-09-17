@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { stripComments } from "./strip-comments";
+import { stripComments, stripCssComments } from "./strip-comments";
 
 /**
  * The stripper other source-text tests depend on, so its own failure modes are pinned here
@@ -42,6 +42,46 @@ describe("stripComments", () => {
     expect(stripComments('const escaped = "a \\" // b";')).toContain("// b");
   });
 
+  it("does not let a quote inside a REGEX literal swallow the comments after it", () => {
+    const source = [
+      'const token = /(`([^`]+)`|"([^"]+)")/g;',
+      "// Push preceding plain text",
+      "const kept = 1;",
+    ].join("\n");
+    const stripped = stripComments(source);
+    expect(stripped).toContain("const kept = 1;");
+    expect(stripped).not.toContain("Push preceding plain text");
+  });
+
+  it("keeps a regex body verbatim, character classes and escapes included", () => {
+    expect(stripComments("const re = /[/]\\//g;")).toContain("/[/]\\//g");
+    expect(stripComments("const re = /a\\/\\/b/;\n// gone")).toContain("/a\\/\\/b/");
+    expect(stripComments("const re = /a\\/\\/b/;\n// gone")).not.toContain("gone");
+  });
+
+  it("reads a slash after a value or in JSX text as division, not as a regex opener", () => {
+    expect(stripComments("const ratio = total / count; // note")).toContain("total / count;");
+    expect(stripComments("const ratio = total / count; // note")).not.toContain("note");
+    expect(stripComments("<p>km/h</p>\n// gone\nconst kept = 1;")).toContain("const kept = 1;");
+    expect(stripComments("<br />\n// gone\nconst kept = 1;")).toContain("const kept = 1;");
+  });
+
+  it("strips comments inside a template literal's `${}` holes but not its text", () => {
+    const source = [
+      "const cls = `base ${",
+      "  // fullscreen fallback",
+      "  wide ? `a ${inner} b` : `c`",
+      "} tail`;",
+    ].join("\n");
+    const stripped = stripComments(source);
+    expect(stripped).not.toContain("fullscreen fallback");
+    expect(stripped).toContain("base ${");
+    expect(stripped).toContain("} tail`");
+    expect(stripped).toContain("`a ${inner} b`");
+    expect(stripComments("const s = `a // b`;")).toContain("`a // b`");
+    expect(stripComments("const s = `a /* b */ c`;")).toContain("`a /* b */ c`");
+  });
+
   it("separates the tokens a comment stood between, so they cannot weld into a new one", () => {
     expect(stripComments("id/* x */Name")).toBe("id Name");
     expect(stripComments("id// x\nName")).toBe("id \nName");
@@ -49,6 +89,15 @@ describe("stripComments", () => {
 
   it("survives an unterminated block comment instead of looping", () => {
     expect(stripComments("const a = 1; /* never closed")).toBe("const a = 1;  ");
+  });
+
+  it("leaves a CSS `url()` alone, which is why stylesheets get their own strip", () => {
+    const rule = ".a { background: url(https://example.org/a.png); /* why */ color: red; }";
+    expect(stripCssComments(rule)).toContain("url(https://example.org/a.png)");
+    expect(stripCssComments(rule)).toContain("color: red");
+    expect(stripCssComments(rule)).not.toContain("why");
+    // The JS scanner would read the `//` as a line comment and lose the rest of the rule.
+    expect(stripComments(rule)).not.toContain("color: red");
   });
 
   it("strips the real component this task's guards read, without eating its scopes", () => {

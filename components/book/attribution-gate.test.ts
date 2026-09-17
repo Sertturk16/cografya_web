@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * The book page's SOURCE STATEMENT gate, pinned in the shape PR #63 fixed it into.
@@ -33,13 +34,7 @@ import { describe, expect, it } from "vitest";
 /** Comments out, whitespace collapsed: the prose around this code says several of the words
  *  asserted below, and Prettier is free to break the lines wherever it likes. */
 function flatCode(source: string): string {
-  return source
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join(" ")
-    .replace(/\s+/g, " ");
+  return stripComments(source).replace(/\s+/g, " ");
 }
 
 const PAGE = flatCode(

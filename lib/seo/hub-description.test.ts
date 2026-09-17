@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { pickHubDescription } from "./hub-description";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Structural invariants of the hub meta-description selection (PR #44 review TA-2).
@@ -56,7 +57,7 @@ describe("the hub pages take their description from this function", () => {
   describe.each(HUBS)("$name", ({ path, count }) => {
     const raw = readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8");
     /** Comments stripped: each page documents the literal it used to carry. */
-    const code = raw.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
+    const code = stripComments(raw);
 
     it("calls pickHubDescription for the head AND the structured data", () => {
       expect(code).toContain('from "@/lib/seo/hub-description"');

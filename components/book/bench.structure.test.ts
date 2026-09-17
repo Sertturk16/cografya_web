@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments, stripCssComments } from "@/lib/test-support/strip-comments";
 
 /**
  * SOURCE-SCAN TRIPWIRE for the workbench's SEO and no-JavaScript contract.
@@ -44,14 +45,6 @@ const sourceOf = (relative: string) =>
  *  braces that wrapped it standing between two elements that ARE adjacent in the tree, so "the
  *  heading has no wrapper around it" could not be written as a regex, and the assertion that
  *  claimed to check it checked nothing (→ PR #66 review `TA66R2-M1` / `CODE66R2-M4`). */
-const stripComments = (source: string) =>
-  source
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join("\n");
-
 const PAGE = stripComments(sourceOf("../../app/[locale]/(site)/kitaplar/[slug]/page.tsx"));
 const BENCH = stripComments(sourceOf("./video-bench.tsx"));
 const STAGE = stripComments(sourceOf("./bench-stage.tsx"));
@@ -60,7 +53,7 @@ const IDENTITY = stripComments(sourceOf("../../lib/book/video-identity.ts"));
 
 /** CSS comments use only the C-style form, so the `//`-line filter above would be wrong here —
  *  a `//` inside a `url()` is not a comment. */
-const STYLES = sourceOf("./book-video.module.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+const STYLES = stripCssComments(sourceOf("./book-video.module.css"));
 
 /**
  * Every value a named property takes inside every rule matching `selector`, in source order.

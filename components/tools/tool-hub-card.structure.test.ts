@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { TOOL_REGISTRY } from "@/lib/tools/tool-registry";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * The `/araclar` hub's tool cards: every registered tool is reachable from the hub, through a
@@ -35,7 +36,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
  * Source with comments removed. Every absence check below runs against this: the component's
  * docblocks name the identifiers under test, and prose about a rule is not the rule.
  */
-const code = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, " ");
+const code = stripComments;
 
 const hubHtml = code(read("../v2/v2-tools-hub.tsx"));
 

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * STRUCTURE, NOT FACTS — the Bölge Seç cards' mini map (→ DEC 2026-08-05g md. 3, Atlas AO-5).
@@ -21,11 +22,7 @@ function sourceOf(relativePath: string): string {
 
 /** Strip comments: both files quote their own attributes in prose. */
 function code(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join("\n");
+  return stripComments(source);
 }
 
 /**
