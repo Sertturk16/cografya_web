@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { Waves, Home, ChevronRight, Layers, ArrowRight } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
 import { marineShowsValues } from "@/lib/marine/overview";
+import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
 
 export const revalidate = 900;
 
@@ -191,6 +192,8 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
               <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
                 Denizler &amp; Kıyılar Atlası
               </h1>
+
+              <V2EnWorkInProgressNotice locale={locale} />
 
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                 {showValues ? (
