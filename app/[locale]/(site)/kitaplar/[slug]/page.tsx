@@ -70,8 +70,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // `metaTitleTr`/`metaDescriptionTr` render verbatim on BOTH locales on purpose (API
     // contract docblock, `lib/api/schema.ts`): a Turkish exam-prep book's own title/description
     // has no EN counterpart by owner ruling, so the EN page renders the TR book content rather
-    // than inventing a translation. Only the trailing site-chrome label is locale text, and it
-    // was hardcoded Turkish regardless of locale (T-026) — that part alone is localized here.
+    // than inventing a translation.
+    //
     // The trailing chrome label is gone rather than localized: it said "V2 Kitaplar", naming a
     // route prefix T-032 PR3 retired, and it sat in front of the root layout's own
     // `%s · Coğrafya Gurmesi` template — two brand suffixes for one title.
