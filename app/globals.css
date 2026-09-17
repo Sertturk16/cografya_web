@@ -73,6 +73,26 @@
   --color-danger: #b23b2e;
   --color-info: #276b70;
 
+  /* HIGH-CONTRAST MEMBERS of the four semantic families (T-034). A semantic colour has two
+     jobs and one value cannot do both: the base is the FILL, chosen to read as "this is a
+     warning", while text sitting on a 10-15% tint of that same fill needs to be much darker.
+     Measured on the worst surface a tinted chip can land on (a 15% tint over --color-surface,
+     the darkest light panel), the BASE tokens come in at success 4.00:1, info 4.17:1,
+     danger 3.98:1 — all under the 4.5:1 floor for normal text. That failure predates this
+     commit; badge and alert were already painting text in the base colour.
+     Each value below is the closest step to its base that clears 4.5:1 across every
+     combination of {white, --color-bg, --color-surface} × {10%, 15%} tint:
+       --color-success-dark #3d5d2c  worst 5.16:1 · on white 7.50:1
+       --color-warning-dark #7d5207  worst 4.97:1 · on white 6.81:1
+       --color-info-dark    #1f575b  worst 5.55:1 · on white 8.16:1
+       --color-danger-dark  #96301f  worst 5.17:1 · on white 7.67:1
+     Warning is the family where this matters most: amber has to stay light to read as amber,
+     so its base is 2.62:1 as text on its own tint — the single worst case in the set. */
+  --color-success-dark: #3d5d2c;
+  --color-warning-dark: #7d5207;
+  --color-info-dark: #1f575b;
+  --color-danger-dark: #96301f;
+
   /* ---- Interactive map CHROME (Faz-1 navigation map — not a data encoding;
      DESIGN §6 data-viz rules do not apply here, see SPEC §2 doctrine note) ---- */
   --province-fill: #ffffff; /* available il base fill */
@@ -472,6 +492,31 @@
   --accent: #276b70;
   --accent-foreground: #ffffff;
   --destructive: #b23b2e;
+
+  /* Semantic bridge tokens (T-034). Terra has carried --color-success/-warning/-info and the
+     chip pair since the start, but the BRIDGE never did — so components reached for the raw
+     Terra token with a hex fallback, e.g. bg-[var(--color-success,#496f35)]. Those escapes
+     read a token the .dark block does not redefine, which froze all 44 of them at their light
+     value in dark mode. Declared here, re-exported in @theme inline below, and redefined in
+     .dark, they become ordinary theme-aware utilities: bg-success, text-info, border-warning.
+     The light values ARE the Terra tokens, so light mode does not move.
+     Foregrounds are MEASURED, not assumed (lib/theme/contrast.ts, WCAG 2.x, 4.5:1 for normal
+     text). On white: success 5.82:1 ✓, info 6.13:1 ✓. Warning is the one that does not take
+     white — #c9860f is a mid amber where white lands at 3.04:1, clearing the 3:1 graphical
+     floor but failing normal text outright; the warm near-black gives 5.54:1, so that is the
+     pairing. Chip keeps Terra's own pair, 6.59:1. */
+  --success: var(--color-success);
+  --success-foreground: #ffffff;
+  --warning: var(--color-warning);
+  --warning-foreground: var(--color-ink-dark);
+  --info: var(--color-info);
+  --info-foreground: #ffffff;
+  --chip: var(--color-chip-bg);
+  --success-strong: var(--color-success-dark);
+  --warning-strong: var(--color-warning-dark);
+  --info-strong: var(--color-info-dark);
+  --destructive-strong: var(--color-danger-dark);
+  --chip-foreground: var(--color-chip-ink);
   --border: var(--color-border);
   --input: var(--color-border);
   --ring: #276b70;
@@ -954,10 +999,19 @@ body:has(.v2-app) > footer {
   --color-primary-dark: var(--color-primary-dark);
   --color-ink: var(--color-ink);
   --color-ink-dark: var(--color-ink-dark);
-  --color-success: var(--color-success);
-  --color-warning: var(--color-warning);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-success-strong: var(--success-strong);
+  --color-warning-strong: var(--warning-strong);
+  --color-info-strong: var(--info-strong);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-chip: var(--chip);
+  --color-chip-foreground: var(--chip-foreground);
   --color-danger: var(--color-danger);
-  --color-info: var(--color-info);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -1031,6 +1085,29 @@ body:has(.v2-app) > footer {
   --accent: oklch(0.65 0.0675 202);
   --accent-foreground: var(--color-ink-dark);
   --destructive: oklch(0.704 0.191 22.216);
+  /* T-034 phase A2 placeholders. Phase C replaces these with measured night-sea values; they
+     exist now so the bridge is complete and the six rebound primitives have something to
+     resolve against in dark mode instead of staying at their light value. Lifting lightness
+     while keeping the brand hue is the same move T-018 made for primary/secondary/accent, and
+     the foreground flips to the warm near-black for the same reason it did there: a value
+     light enough to read on a near-black surface is too light to carry white text. */
+  --success: oklch(0.65 0.095 140);
+  --success-foreground: var(--color-ink-dark);
+  --warning: oklch(0.75 0.13 75);
+  --warning-foreground: var(--color-ink-dark);
+  --info: oklch(0.65 0.0675 202);
+  --info-foreground: var(--color-ink-dark);
+  --chip: oklch(0.269 0 0);
+  --chip-foreground: oklch(0.85 0.04 40);
+  /* In dark mode the high-contrast member is LIGHTER than its base, not darker — text sits on
+     a dark tint here. That is why the bridge name is `-strong` rather than `-dark`: a token
+     called dark holding a light value would be a lie in half the themes. Terra's own
+     `--color-*-dark` literals keep their name because they are light-mode values that the
+     `.dark` block never redefines. Phase C measures these. */
+  --success-strong: oklch(0.78 0.09 140);
+  --warning-strong: oklch(0.82 0.11 75);
+  --info-strong: oklch(0.78 0.06 202);
+  --destructive-strong: oklch(0.78 0.13 22);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);

@@ -3,19 +3,28 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { AlertCircle, CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/**
+ * T-034: every variant below reads BRIDGE tokens (`bg-success`, `text-info`) rather than the
+ * `var(--color-x, #hex)` escapes it shipped with. Those escapes read Terra tokens that the
+ * `.dark` block never redefines, so the whole component was frozen at its light values in
+ * dark mode.
+ *
+ * The `dark:` twins that used to sit beside each variant are deleted rather than translated.
+ * They never did anything: `dark:text-[var(--color-success,#496f35)]` resolved to the exact
+ * same colour as its light counterpart, because both read the same un-redefined token. The
+ * difference between the themes belongs in the `.dark` block, which is where it now lives.
+ */
 const alertVariants = cva(
   "relative w-full rounded-xl border p-4 shadow-2xs transition-all flex items-start gap-3.5 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
         default: "bg-card text-foreground border-border [&>svg]:text-primary",
-        success:
-          "bg-[var(--color-success,#496f35)]/10 text-[var(--color-success,#496f35)] border-[var(--color-success,#496f35)]/30 dark:bg-[var(--color-success,#496f35)]/20 dark:text-[var(--color-success,#496f35)] dark:border-[var(--color-success,#496f35)]/40 [&>svg]:text-[var(--color-success,#496f35)]",
-        warning:
-          "bg-amber-500/10 text-amber-900 border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-500/40 [&>svg]:text-amber-700 dark:[&>svg]:text-amber-300",
+        success: "bg-success/10 text-success-strong border-success/30 [&>svg]:text-success-strong",
+        warning: "bg-warning/10 text-warning-strong border-warning/30 [&>svg]:text-warning-strong",
         destructive:
-          "bg-[var(--color-danger,#b23b2e)]/10 text-[var(--color-danger,#b23b2e)] border-[var(--color-danger,#b23b2e)]/30 dark:bg-[var(--color-danger,#b23b2e)]/20 dark:text-[var(--color-danger,#b23b2e)] dark:border-[var(--color-danger,#b23b2e)]/40 [&>svg]:text-[var(--color-danger,#b23b2e)]",
-        info: "bg-[var(--color-info,#276b70)]/10 text-[var(--color-info,#276b70)] border-[var(--color-info,#276b70)]/30 dark:bg-[var(--color-info,#276b70)]/20 dark:text-[var(--color-info,#276b70)] dark:border-[var(--color-info,#276b70)]/40 [&>svg]:text-[var(--color-info,#276b70)]",
+          "bg-destructive/10 text-destructive-strong border-destructive/30 [&>svg]:text-destructive-strong",
+        info: "bg-info/10 text-info-strong border-info/30 [&>svg]:text-info-strong",
       },
     },
     defaultVariants: {
