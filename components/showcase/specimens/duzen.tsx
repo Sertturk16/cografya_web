@@ -37,6 +37,14 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Specimen, SpecimenRow } from "../specimen";
 
 const BADGE_VARIANTS = [
@@ -190,6 +198,27 @@ export function DuzenSpecimens() {
             </SheetHeader>
           </SheetContent>
         </Sheet>
+      </Specimen>
+
+      <Specimen
+        name="Breadcrumb"
+        description="27 V2 dosyası bunu elle <nav aria-label='Breadcrumb'> olarak yazıyordu. Son kırıntı bir bağlantı değil, aria-current='page' taşıyan bir metindir."
+      >
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="#">Ana Sayfa</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="#">Türkiye</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Çanakkale</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
       </Specimen>
     </>
   );

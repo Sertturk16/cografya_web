@@ -4,6 +4,15 @@ import { toast } from "sonner";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverDescription,
+} from "@/components/ui/popover";
 import { Specimen, SpecimenRow } from "../specimen";
 
 const ALERT_VARIANTS = ["default", "success", "warning", "destructive", "info"] as const;
@@ -61,6 +70,61 @@ export function GeriBildirimSpecimens() {
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
         </div>
+      </Specimen>
+
+      <Specimen
+        name="Tooltip"
+        portals
+        description="8 V2 dosyası bunun yerine title= kullanıyordu. title klavye odağında görünmez, dokunmada hiç görünmez ve stillenemez — yani bir erişilebilirlik düzeltmesi, süs değil."
+      >
+        <TooltipProvider>
+          <SpecimenRow>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button variant="outline" size="sm">
+                    M 4.5
+                  </Button>
+                }
+              />
+              <TooltipContent>Magnitüd 4,5 ve üzeri olaylar</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button variant="ghost" size="sm">
+                    ODbL
+                  </Button>
+                }
+              />
+              <TooltipContent>Open Database License</TooltipContent>
+            </Tooltip>
+          </SpecimenRow>
+        </TooltipProvider>
+      </Specimen>
+
+      <Specimen
+        name="Popover"
+        portals
+        description="Tooltip'ten farkı içeriğin zengin ve odaklanabilir olabilmesi: harita üzerinde bir noktanın künyesi, bir lejant açıklaması."
+      >
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button variant="outline" size="sm">
+                Kaynak künyesi
+              </Button>
+            }
+          />
+          <PopoverContent className="max-w-xs">
+            <PopoverHeader>
+              <PopoverTitle>ERA5-Land</PopoverTitle>
+              <PopoverDescription>
+                Copernicus İklim Değişikliği Servisi tarafından üretilen yeniden analiz verisi.
+              </PopoverDescription>
+            </PopoverHeader>
+          </PopoverContent>
+        </Popover>
       </Specimen>
     </>
   );

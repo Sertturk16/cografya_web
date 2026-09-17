@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Specimen, SpecimenRow } from "../specimen";
 import { ArrowRight, Download, Trash2 } from "lucide-react";
 
@@ -74,6 +75,19 @@ export function AksiyonlarSpecimens() {
           <Button variant="destructive" leftIcon={<Trash2 className="size-4" />}>
             Sil
           </Button>
+        </SpecimenRow>
+      </Specimen>
+
+      <Specimen
+        name="Spinner"
+        description="Button'ın kendi isLoading'inin kapsamadığı yerler için. role=status, alert değil — bir yüklemenin başlaması okuyucuyu bölmesi gereken bir olay değil."
+      >
+        <SpecimenRow>
+          <Spinner size="sm" />
+          <Spinner />
+          <Spinner size="lg" />
+          <Spinner size="xl" />
+          <Spinner label="Harita yükleniyor" className="text-primary" />
         </SpecimenRow>
       </Specimen>
     </>

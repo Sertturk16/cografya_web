@@ -9,6 +9,22 @@ import {
   TableEmpty,
   TableSkeleton,
 } from "@/components/ui/table";
+import {
+  Progress,
+  ProgressTrack,
+  ProgressIndicator,
+  ProgressLabel,
+  ProgressValue,
+} from "@/components/ui/progress";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 import { Specimen } from "../specimen";
 
 export function VeriSpecimens() {
@@ -77,6 +93,60 @@ export function VeriSpecimens() {
             </TableBody>
           </Table>
         </div>
+      </Specimen>
+
+      <Specimen
+        name="Progress"
+        description="Belirli ilerleme role=progressbar ve aria-valuenow taşır. Belirsiz olan aria-valuenow'u ATLAR — 0 göndermek 'hiç ilerlemedi' demek olurdu, oysa kastedilen 'ne kadar ilerlediği bilinmiyor'."
+      >
+        <div className="max-w-sm space-y-6">
+          <Progress value={64}>
+            <ProgressLabel>Tur ilerlemesi</ProgressLabel>
+            <ProgressValue />
+            <ProgressTrack>
+              <ProgressIndicator />
+            </ProgressTrack>
+          </Progress>
+          <Progress value={null}>
+            <ProgressLabel>Veri çekiliyor</ProgressLabel>
+            <ProgressTrack>
+              <ProgressIndicator />
+            </ProgressTrack>
+          </Progress>
+        </div>
+      </Specimen>
+
+      <Specimen
+        name="Pagination"
+        description="Gerçek <a> elemanları: bir sayfa bağlantısı bir konumdur, orta tık ve yeni sekmede aç çalışmalı. Aktif sayfa aria-current='page' taşır, yalnızca renkle değil."
+      >
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious href="#" />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationLink href="#">1</PaginationLink>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationLink href="#" isActive>
+                2
+              </PaginationLink>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationLink href="#">3</PaginationLink>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationEllipsis />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationLink href="#">9</PaginationLink>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext href="#" />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </Specimen>
     </>
   );
