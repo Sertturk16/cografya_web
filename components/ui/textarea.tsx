@@ -14,18 +14,20 @@ const textareaVariants = cva(
       },
       hasError: {
         true: "border-destructive text-destructive focus-visible:border-destructive focus-visible:ring-3 focus-visible:ring-destructive/20",
-        false: "border-border hover:border-primary/50 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
+        false:
+          "border-input hover:border-primary/50 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
       },
     },
     defaultVariants: {
       textareaSize: "default",
       hasError: false,
     },
-  }
+  },
 );
 
 export interface TextareaProps
-  extends React.ComponentProps<"textarea">,
+  extends
+    React.ComponentProps<"textarea">,
     Omit<VariantProps<typeof textareaVariants>, "hasError"> {
   isError?: boolean;
   autoResize?: boolean;
@@ -49,7 +51,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {...props}
       />
     );
-  }
+  },
 );
 Textarea.displayName = "Textarea";
 
