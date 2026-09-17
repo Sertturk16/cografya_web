@@ -155,7 +155,6 @@ Details and the open dark-mode bugs: `docs/design.md`.
   statically-listed sitemap row and its page disagree, and all 307 sitemap URLs were verified
   200-and-indexable against a production build.
 - `--radius-lg` is `16px` in `:root` and `var(--radius)` (10px) in `@theme inline`.
-- `lib/map/tr-context.generated.ts` is Prettier-ignored but missing from ESLint ignores.
 - ~~Dark users get a light-theme flash (no blocking theme script); `.dark` overrides only
   shadcn greys, no Terra token.~~ CLOSED (T-016 / T-018). `next-themes` ships the blocking
   script, and `.dark` redefines the bridge tokens with a measured contrast table beside it in
