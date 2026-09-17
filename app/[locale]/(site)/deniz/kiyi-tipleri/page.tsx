@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { breadcrumbJsonLd, learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { COASTAL_TYPES_DATA, NON_EXISTENT_COASTAL_TYPES } from "@/lib/marine/coastal-types-detail";
 import {
   Compass,
   Home,
-  ChevronRight,
   ArrowRight,
   Waves,
   Sparkles,
@@ -50,11 +50,6 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={[
-          breadcrumbJsonLd([
-            { name: "Ana Sayfa", path: "/" },
-            { name: "Denizler & Kıyılar Atlası", path: "/deniz" },
-            { name: "Kıyı Tipleri Atlası", path: "/deniz/kiyi-tipleri" },
-          ]),
           learningResourceJsonLd({
             name: "Türkiye'nin Kıyı Tipleri ve Kıyı Jeomorfolojisi Atlası",
             description:
@@ -72,24 +67,15 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
       <PageContainer>
         {/* Breadcrumb & Hero */}
         <div className="space-y-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <Link href="/deniz" className="hover:text-foreground transition-colors">
-              Denizler &amp; Kıyılar Atlası
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Kıyı Tipleri Atlası</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Denizler & Kıyılar Atlası", href: "/deniz", path: "/deniz" },
+              { label: "Kıyı Tipleri Atlası", path: "/deniz/kiyi-tipleri" },
+            ]}
+            locale={locale}
+            surface="trOnly"
+          />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">

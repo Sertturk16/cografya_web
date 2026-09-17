@@ -12,7 +12,7 @@ import { ProseNote } from "@/components/prose-note";
 import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/i18n/navigation";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { routing, type Locale } from "@/i18n/routing";
 import { getBookBySlug, getBooksResilient } from "@/lib/api/books";
 import { formatDuration } from "@/lib/book/duration";
@@ -22,15 +22,7 @@ import { isPlayable, resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
 import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import {
-  BookOpen,
-  Video,
-  Home,
-  ChevronRight,
-  ExternalLink,
-  ShoppingBag,
-  PlayCircle,
-} from "lucide-react";
+import { BookOpen, Video, Home, ExternalLink, ShoppingBag, PlayCircle } from "lucide-react";
 // Co-located. This used to reach three levels up into the V1 route's directory, which T-032
 // PR3 deleted — and nothing caught it: TypeScript types `*.module.css` as `any` without
 // resolving the path, so `pnpm typecheck` stayed green over a broken import that only the
@@ -181,24 +173,15 @@ export default async function V2BookDetailPage({ params }: PageProps) {
       <section className="relative border-b border-border bg-gradient-to-b from-primary/5 via-background to-background pt-6 sm:pt-10 pb-10 overflow-hidden">
         <PageContainer space="band">
           {/* Breadcrumb Navigation */}
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
-          >
-            <Link
-              href="/"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <Link href="/kitaplar" className="hover:text-foreground transition-colors">
-              Video Çözümlü Kitaplar
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <span className="text-foreground font-semibold truncate max-w-xs">{title}</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Video Çözümlü Kitaplar", href: "/kitaplar", path: "/kitaplar" },
+              { label: title, path },
+            ]}
+            locale={locale}
+            surface="trOnly"
+          />
 
           {/* Book Hero Card */}
           <div className="flex flex-col md:flex-row gap-8 items-start bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-lg">

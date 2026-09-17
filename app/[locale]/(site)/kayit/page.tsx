@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
+import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2RegisterCard } from "@/components/v2/v2-register-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
 import { PageContainer } from "@/components/patterns/page-container";
 import { getProvinces } from "@/lib/api/provinces";
-import { Home, ChevronRight } from "lucide-react";
+import { Home } from "lucide-react";
 
 /**
  * `force-dynamic`: the province list feeds a REQUIRED registration-form field. The previous
@@ -44,26 +44,17 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
   setRequestLocale(locale);
   const provinces = await getProvinces();
 
+  const breadcrumbItems: BreadcrumbTrailItem[] = [
+    { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+    { label: "Üye Ol", path: "/kayit" },
+  ];
+
   return (
     <>
       <V2LiveTicker />
 
       <PageContainer>
-        {/* Breadcrumb Navigation */}
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
-          >
-            <Home className="size-3.5" />
-            <span>Ana Sayfa</span>
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">Üye Ol</span>
-        </nav>
+        <Breadcrumbs items={breadcrumbItems} locale={locale} surface="noindex" />
 
         {/* 2-Column Auth Workbench: Form on Left/Center, Benefits Showcase on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

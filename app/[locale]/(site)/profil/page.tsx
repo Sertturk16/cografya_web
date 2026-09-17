@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Home, ChevronRight, AlertCircle, RefreshCw, GraduationCap } from "lucide-react";
+import { Home, AlertCircle, RefreshCw, GraduationCap } from "lucide-react";
 import { Link, getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { readProfileForPage } from "@/lib/profile/profile.server";
+import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ProfileForm } from "@/components/v2/v2-profile-form";
 import { PageContainer } from "@/components/patterns/page-container";
@@ -40,26 +41,22 @@ export default async function V2ProfilePage({ params }: V2ProfilePageProps) {
     redirect(getPathname({ locale, href: "/giris" }));
   }
 
+  const breadcrumbItems: BreadcrumbTrailItem[] = [
+    {
+      label: t("profile.breadcrumbHome"),
+      href: "/",
+      path: "/",
+      icon: <Home className="size-3.5" />,
+    },
+    { label: t("profile.breadcrumbCurrent"), path: "/profil" },
+  ];
+
   return (
     <>
       <V2LiveTicker />
 
       <PageContainer space="tight">
-        {/* Breadcrumb Navigation */}
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
-          >
-            <Home className="size-3.5" />
-            <span>{t("profile.breadcrumbHome")}</span>
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">{t("profile.breadcrumbCurrent")}</span>
-        </nav>
+        <Breadcrumbs items={breadcrumbItems} locale={locale} surface="noindex" />
 
         {/* Main Content Area */}
         <div>

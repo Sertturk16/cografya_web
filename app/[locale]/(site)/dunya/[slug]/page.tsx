@@ -6,6 +6,7 @@ import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
 import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { LocatorMap } from "@/components/map/locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +32,7 @@ import { COUNTRY_SHAPES } from "@/lib/map/world-countries.generated";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
 import { CONTINENT_KEY_TO_SLUG } from "@/lib/geo/continents";
 import { Link } from "@/i18n/navigation";
-import { routing, type Locale } from "@/i18n/routing";
+import { routing, type AppPathname, type Locale } from "@/i18n/routing";
 import { selectCountryMetaDescription } from "@/lib/seo/country-description";
 import { countryJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -47,7 +48,6 @@ import {
   Users,
   Maximize2,
   Home,
-  ChevronRight,
   ArrowUpRight,
   Building2,
   Scroll,
@@ -150,6 +150,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
   const capital = locale === "en" ? country.capitalNameEn : country.capitalNameTr;
   const localizedStatusLabel = locale === "en" ? country.statusLabelEn : country.statusLabelTr;
   const continentTheme = CONTINENT_META[country.continent] ?? CONTINENT_META.AVRUPA!;
+  const continentSlug = CONTINENT_KEY_TO_SLUG[country.continent] ?? "afrika";
 
   const path = `/dunya/${slugForLocale(country, locale)}`;
 
@@ -301,37 +302,23 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
         <PageContainer space="band">
           {/* Breadcrumb Bar */}
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
-          >
-            <Link
-              href="/"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <Link href="/dunya" className="hover:text-foreground transition-colors">
-              Dünya Atlası
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <Link
-              href={{
-                pathname: "/dunya/kita/[slug]",
-                params: { slug: CONTINENT_KEY_TO_SLUG[country.continent] ?? "afrika" },
-              }}
-              className="hover:text-foreground transition-colors"
-            >
-              {continent}
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <span className="text-foreground font-semibold flex items-center gap-1.5">
-              <span>{name}</span>
-              <span className="font-mono text-[11px] opacity-75">({country.isoCode})</span>
-            </span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Dünya Atlası", href: "/dunya", path: "/dunya" },
+              {
+                label: continent,
+                // A concrete, already-interpolated path, not the `"/dunya/kita/[slug]"` route
+                // pattern `AppPathname` itself enumerates — the cast
+                // `components/patterns/breadcrumbs.tsx` documents for exactly this shape.
+                href: `/dunya/kita/${continentSlug}` as AppPathname,
+                path: `/dunya/kita/${continentSlug}`,
+              },
+              { label: `${name} (${country.isoCode})`, path },
+            ]}
+            locale={locale}
+            surface="trNarrative"
+          />
 
           {/* Title & Flag Row */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">

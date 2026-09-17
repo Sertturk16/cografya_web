@@ -7,8 +7,9 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getAllContinents } from "@/lib/geo/continents";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
-import { breadcrumbJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
   Globe2,
   Mountain,
@@ -88,11 +89,6 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
 
   const continents = getAllContinents();
 
-  const breadcrumbs = [
-    { name: "Dünya Atlası", path: "/dunya" },
-    { name: "Kıtalar Atlası", path: "/dunya/kita" },
-  ];
-
   return (
     <>
       <V2LiveTicker />
@@ -104,24 +100,15 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
 
         <PageContainer space="band">
           {/* Breadcrumb */}
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
-          >
-            <Link
-              href="/"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3 opacity-60" />
-            <Link href="/dunya" className="hover:text-foreground transition-colors">
-              Dünya Atlası
-            </Link>
-            <ChevronRight className="size-3 opacity-60" />
-            <span className="font-semibold text-foreground">Kıtalar Atlası</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Dünya Atlası", href: "/dunya", path: "/dunya" },
+              { label: "Kıtalar Atlası", path: "/dunya/kita" },
+            ]}
+            locale={locale}
+            surface="trOnly"
+          />
 
           {/* Title & Badges */}
           <div className="space-y-3 max-w-3xl">
@@ -543,7 +530,6 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
       </PageContainer>
 
       {/* Structured Data JSON-LD */}
-      <JsonLd schema={breadcrumbJsonLd(breadcrumbs)} />
       <JsonLd schema={faqPageJsonLd(HUB_FAQS)} />
     </>
   );

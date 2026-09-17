@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import { buildProvincePoints } from "@/lib/tools/province-points";
@@ -15,7 +14,8 @@ import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-co
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Home, ChevronRight } from "lucide-react";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
+import { MapPin, Home } from "lucide-react";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
 
 export const revalidate = 86400;
@@ -72,24 +72,15 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
       <PageContainer>
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <Link href="/araclar" className="hover:text-foreground transition-colors">
-              CBS Araçları
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Koordinat Bulucu</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "CBS Araçları", href: "/araclar", path: "/araclar" },
+              { label: "Koordinat Bulucu", path: "/araclar/koordinat-bulma" },
+            ]}
+            locale={locale}
+            surface={TOOLS_SURFACE}
+          />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">

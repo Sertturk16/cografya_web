@@ -394,8 +394,28 @@ function breadcrumbNavFiles(): string[] {
  * called `breadcrumbJsonLd` (their surface is `"noindex"` in every case, so `Breadcrumbs`
  * still emits nothing there, exactly as before). See `task-7-report.md` for the full
  * before/after file lists.
+ *
+ * Task 8 (2026-09-18) adopted `Breadcrumbs` at the remaining 25 `page.tsx` files (the exact
+ * list `breadcrumbNavFiles()` printed at the start of the task, confirmed against the brief's
+ * own count rather than assumed): 25 → **0**. Seven of the 25 already called `breadcrumbJsonLd`
+ * by hand (`deniz/kiyi-tipleri`, `deprem/fay-hatlari`, `deprem/hazirlik`, `turkiye/bolge`,
+ * `turkiye/bolge/[slug]`, `dunya/kita`, `dunya/kita/[slug]`) — each had that call DELETED (and,
+ * where it left the import with no other use, the `breadcrumbJsonLd` import dropped too), for
+ * the identical double-publish reason Task 7 already fixed on the four `deniz/*` pages: the
+ * component now emits the same schema from the same array. Two pages (`dunya/[slug]`,
+ * `turkiye/[slug]`) carried a middle crumb whose destination was a dynamic route
+ * (`"/dunya/kita/[slug]"`, `"/turkiye/bolge/[slug]"`) rendered via next-intl's
+ * `{pathname, params}` href form; `BreadcrumbTrailItem.href` takes only a concrete,
+ * already-interpolated `AppPathname`, so each became a template-literal path
+ * (`` `/dunya/kita/${continentSlug}` ``) cast `as AppPathname` — the same "computed href,
+ * typed `Link` rejects it" shape this component's own docblock already names, not a new
+ * exception. `BREADCRUMBS_WITHOUT_ARIA_CURRENT` and `BREADCRUMBS_WITHOUT_JSONLD` move with it,
+ * 25 → **0** and 18 → **0**, for the same reasons Task 7 recorded at 27 → 25 and 20 → 18: every
+ * remaining hand-written nav is gone, so both derived lists (built by filtering
+ * `breadcrumbNavFiles()`) are empty by construction, not by a separate fix. See
+ * `task-8-report.md` for the full per-file surface list and before/after detail.
  */
-const HAND_WRITTEN_BREADCRUMBS = 25;
+const HAND_WRITTEN_BREADCRUMBS = 0;
 
 describe("breadcrumbs are rendered by one component", () => {
   it("the hand-written nav count is exactly the recorded number", () => {
@@ -430,7 +450,7 @@ describe("breadcrumbs are rendered by one component", () => {
  */
 const ARIA_CURRENT = /aria-current/;
 
-const BREADCRUMBS_WITHOUT_ARIA_CURRENT = 25;
+const BREADCRUMBS_WITHOUT_ARIA_CURRENT = 0;
 
 function breadcrumbsWithoutAriaCurrent(): string[] {
   return breadcrumbNavFiles().filter((path) => !ARIA_CURRENT.test(sourceOf(path)));
@@ -466,7 +486,7 @@ describe("breadcrumbs mark the current page for assistive technology", () => {
  */
 const BREADCRUMB_JSONLD_SYMBOL = "breadcrumbJsonLd";
 
-const BREADCRUMBS_WITHOUT_JSONLD = 18;
+const BREADCRUMBS_WITHOUT_JSONLD = 0;
 
 function breadcrumbsWithoutJsonLd(): string[] {
   return breadcrumbNavFiles().filter((path) => !sourceOf(path).includes(BREADCRUMB_JSONLD_SYMBOL));
@@ -490,13 +510,17 @@ describe("visible breadcrumbs carry matching JSON-LD", () => {
     expect(stripped.includes(BREADCRUMB_JSONLD_SYMBOL)).toBe(false);
   });
 
-  it("at least one real page already calls it — positive control against the live tree", () => {
-    // Was `deniz/akdeniz/page.tsx` — Task 7 DELETED that page's own `breadcrumbJsonLd` call
-    // (its nav and JSON-LD both moved into `V2SeaBasinDetailView`'s `Breadcrumbs` call, and a
-    // second call here would have duplicated the schema), so it stopped being a member of
-    // `breadcrumbNavFiles()` at all and can no longer serve as this control. `kiyi-tipleri` is
-    // still a hand-written nav (Task 8's scope) that calls `breadcrumbJsonLd` itself.
-    const withJsonLd = sourceOf(join(repoRoot, "app/[locale]/(site)/deniz/kiyi-tipleri/page.tsx"));
+  it("at least one real file already calls it — positive control against the live tree", () => {
+    // Was `deniz/akdeniz/page.tsx`, then (after Task 7 deleted that call)
+    // `deniz/kiyi-tipleri/page.tsx` — Task 8 migrated `kiyi-tipleri`, and every other remaining
+    // hand-written nav, onto `Breadcrumbs`, deleting each page's own `breadcrumbJsonLd` call in
+    // the same move (the component now emits the identical schema from the same array). With
+    // `HAND_WRITTEN_BREADCRUMBS` at 0, no `page.tsx` in `breadcrumbNavFiles()` calls the symbol
+    // by hand any more — that is the point of the migration, not an oversight here. The ONE
+    // real file left in the tree that still calls it directly is the component itself:
+    // `Breadcrumbs`'s JSON-LD block (`components/patterns/breadcrumbs.tsx`) builds the schema
+    // from `breadcrumbJsonLd(...)`, so the control moves there rather than to a page.
+    const withJsonLd = sourceOf(join(repoRoot, "components/patterns/breadcrumbs.tsx"));
     expect(withJsonLd.includes(BREADCRUMB_JSONLD_SYMBOL)).toBe(true);
   });
 });

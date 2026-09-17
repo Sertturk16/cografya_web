@@ -17,15 +17,8 @@ import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import {
-  Map as MapIcon,
-  Gamepad2,
-  ArrowRight,
-  Home,
-  ChevronRight,
-  Waves,
-  Flame,
-} from "lucide-react";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
+import { Map as MapIcon, Gamepad2, ArrowRight, Home, Waves, Flame } from "lucide-react";
 
 /**
  * `force-dynamic`: same reasoning as the V1 `/turkiye` twin — a build-time api outage would
@@ -151,20 +144,14 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
       <PageContainer>
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Türkiye İller Atlası</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Türkiye İller Atlası", path: "/turkiye" },
+            ]}
+            locale={locale}
+            surface="localized"
+          />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">

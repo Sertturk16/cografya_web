@@ -15,7 +15,8 @@ import { V2RegionThumb, V2RegionThumbDefs } from "@/components/v2/v2-region-thum
 import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Layers, Home, ChevronRight, ArrowRight, RotateCcw } from "lucide-react";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
+import { Layers, Home, ArrowRight, RotateCcw } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;
@@ -77,24 +78,15 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
       <PageContainer space="tight">
         {/* Top Navigation & Breadcrumbs */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <Link href="/oyun" className="hover:text-foreground transition-colors">
-              Harita Oyunları
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Bölge Seçimi</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Harita Oyunları", href: "/oyun", path: "/oyun" },
+              { label: "Bölge Seçimi", path: "/oyun/bolge-bolge-il" },
+            ]}
+            locale={locale}
+            surface="noindex"
+          />
 
           <Link href="/oyun">
             <Button variant="outline" size="sm" leftIcon={<RotateCcw className="size-3.5" />}>

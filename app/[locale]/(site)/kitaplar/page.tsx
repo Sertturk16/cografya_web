@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getBooksResilient } from "@/lib/api/books";
 import type { BookListItem } from "@/lib/api/types";
@@ -11,8 +10,9 @@ import { V2BooksHub } from "@/components/v2/v2-books-hub";
 import { V2StudyStrategyGuide } from "@/components/v2/v2-study-strategy-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Home, ChevronRight } from "lucide-react";
+import { BookOpen, Home } from "lucide-react";
 
 /**
  * 3600s, not the previous 86400: the fix round that dropped this page's `notFound()` on an
@@ -100,20 +100,14 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
       <PageContainer>
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
-            <Link
-              href="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-foreground font-semibold">Video Çözümlü Kitaplar</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Video Çözümlü Kitaplar", path: "/kitaplar" },
+            ]}
+            locale={locale}
+            surface="trOnly"
+          />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
             <div className="relative z-10 max-w-3xl space-y-4">

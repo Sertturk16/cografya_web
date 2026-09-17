@@ -6,12 +6,13 @@ import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { V2ContinentLocatorMap } from "@/components/v2/v2-continent-locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getAllContinents, getContinentBySlug } from "@/lib/geo/continents";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
-import { breadcrumbJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import {
   Globe2,
@@ -98,12 +99,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
   const theme = CONTINENT_META[continent.id] ?? CONTINENT_META.AVRUPA!;
   const path = `/dunya/kita/${continent.slugTr}`;
 
-  const breadcrumbs = [
-    { name: "Dünya Atlası", path: "/dunya" },
-    { name: "Kıtalar Atlası", path: "/dunya/kita" },
-    { name: `${continent.nameTr} Kıtası`, path },
-  ];
-
   return (
     <>
       <V2LiveTicker />
@@ -119,28 +114,16 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
 
         <PageContainer space="band">
           {/* Breadcrumb Navigation */}
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
-          >
-            <Link
-              href="/"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3 opacity-60" />
-            <Link href="/dunya" className="hover:text-foreground transition-colors">
-              Dünya Atlası
-            </Link>
-            <ChevronRight className="size-3 opacity-60" />
-            <Link href="/dunya/kita" className="hover:text-foreground transition-colors">
-              Kıtalar
-            </Link>
-            <ChevronRight className="size-3 opacity-60" />
-            <span className="font-semibold text-foreground">{continent.nameTr} Kıtası</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Dünya Atlası", href: "/dunya", path: "/dunya" },
+              { label: "Kıtalar Atlası", href: "/dunya/kita", path: "/dunya/kita" },
+              { label: `${continent.nameTr} Kıtası`, path },
+            ]}
+            locale={locale}
+            surface="trOnly"
+          />
 
           {/* Title & Badges */}
           <div className="space-y-3 max-w-3xl">
@@ -668,7 +651,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
       </PageContainer>
 
       {/* Structured Data JSON-LD */}
-      <JsonLd schema={breadcrumbJsonLd(breadcrumbs)} />
       <JsonLd schema={faqPageJsonLd(continent.faqs)} />
     </>
   );

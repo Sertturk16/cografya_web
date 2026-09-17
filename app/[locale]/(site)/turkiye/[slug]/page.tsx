@@ -12,6 +12,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ProvinceLocatorMap } from "@/components/v2/v2-province-locator-map";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ import {
 import type { ProvinceDetail, ProvinceListItem } from "@/lib/api/types";
 import { isCoastalPlate, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
 import { Link } from "@/i18n/navigation";
-import { routing, type Locale } from "@/i18n/routing";
+import { routing, type AppPathname, type Locale } from "@/i18n/routing";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
 import { climateBlockGates } from "@/lib/climate/climate-block-gates";
 import { administrativeAreaJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
@@ -49,7 +50,6 @@ import {
   Waves,
   CloudSun,
   Home,
-  ChevronRight,
   Droplets,
   ArrowUpRight,
   Activity,
@@ -355,37 +355,23 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
         <PageContainer space="band">
           {/* Breadcrumb Bar */}
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
-          >
-            <Link
-              href="/"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <Home className="size-3.5" />
-              <span>Ana Sayfa</span>
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <Link href="/turkiye" className="hover:text-foreground transition-colors">
-              Türkiye Atlası
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <Link
-              href={{
-                pathname: "/turkiye/bolge/[slug]",
-                params: { slug: regionTheme.slug },
-              }}
-              className="hover:text-foreground transition-colors"
-            >
-              {region}
-            </Link>
-            <ChevronRight className="size-3 text-muted-foreground/60" />
-            <span className="text-foreground font-semibold flex items-center gap-1">
-              <span>{name}</span>
-              <span className="font-mono text-[11px] opacity-75">({province.plateCode})</span>
-            </span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
+              { label: "Türkiye Atlası", href: "/turkiye", path: "/turkiye" },
+              {
+                label: region,
+                // A concrete, already-interpolated path, not the `"/turkiye/bolge/[slug]"`
+                // route pattern `AppPathname` itself enumerates — the cast
+                // `components/patterns/breadcrumbs.tsx` documents for exactly this shape.
+                href: `/turkiye/bolge/${regionTheme.slug}` as AppPathname,
+                path: `/turkiye/bolge/${regionTheme.slug}`,
+              },
+              { label: `${name} (${province.plateCode})`, path },
+            ]}
+            locale={locale}
+            surface="trNarrative"
+          />
 
           {/* Main Title & Action Row */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
