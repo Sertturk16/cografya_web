@@ -220,8 +220,30 @@ describe("the import closure itself", () => {
  * It is NOT deleted here, because deleting it is a decision and this was a measurement. It
  * also has the strongest contract test of any primitive in this directory — the
  * `TabsVariantContext` block in `primitives-a11y.test.ts` exists because a real rendering
- * defect shipped through the weaker version of it — so the choice between "adopt it at a real
- * tabset" and "delete it" belongs to whoever owns that surface, not to a refactor.
+ * defect shipped through the weaker version of it.
+ *
+ * ## The decision, so this does not sit open
+ *
+ * KEEP IT. Unlike the eight that went, `tabs` has four real call sites, in two kinds:
+ *
+ * ALREADY TABLISTS, hand-rolled and otherwise correct — `v2-auth-dialog.tsx` (login/register)
+ * and `v2-member-hub.tsx` (four member panels). Both carry `role="tablist"`, `role="tab"`,
+ * `aria-selected`, `aria-controls` and real tabpanels. **But neither implements arrow-key
+ * navigation** (`onKeyDown` count: 0 in both; the `ArrowRight` hits in member-hub are the lucide
+ * icon). ARIA APG requires Left/Right to move between tabs in a tablist — a keyboard user can
+ * reach the widget and cannot move inside it. Base UI's Tabs ships that behaviour, so adopting
+ * here removes duplicated ARIA wiring AND closes a live defect.
+ *
+ * TABLIST-SHAPED WITH NO TAB SEMANTICS — the `viewMode` segmented controls in
+ * `v2-turkey-map-explorer.tsx` and `v2-world-map-explorer.tsx`: three mutually exclusive views
+ * of the same data (grouped / table / alphabetical index), rendered below, selected state shown
+ * only as a background colour. No `role`, no `aria-selected`, no `aria-controls`, so a screen
+ * reader announces three unrelated buttons and never says which view is showing.
+ *
+ * Not done in T-036: the two explorers are ~1,300-line files that the dark-map and
+ * page-composition work already opens, and the two dialogs are stateful client components whose
+ * panel wiring is not a primitive-deletion refactor's business. Restructuring either inside this
+ * PR would put a visible, keyboard-behaviour-changing edit somewhere nobody reviews for one.
  *
  * Recorded as an exact list and asserted as an equality, so it ratchets in both directions: a
  * TENTH showcase-only primitive fails here, and so does resolving this one without shortening
