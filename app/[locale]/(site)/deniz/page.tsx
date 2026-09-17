@@ -14,7 +14,7 @@ import { V2MarineOceanographyGuide } from "@/components/v2/v2-marine-oceanograph
 import { V2MarineLayerCatalogue } from "@/components/v2/v2-marine-layer-catalogue";
 import { V2MarineFaqAccordion } from "@/components/v2/v2-marine-faq-accordion";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
-import { MarineAttribution } from "@/components/marine/marine-attribution";
+import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -295,16 +295,19 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         {/* SECTION 5: PEDAGOGICAL FAQ ACCORDION */}
         <V2MarineFaqAccordion />
 
-        {/* SECTION 6: ATTRIBUTION, LICENCE AND EDUCATIONAL-USE NOTICE
-            The ECMWF and Copernicus Marine wording is the LICENCE, not copy — published
-            verbatim, in English, in both locales (see the component's docblock). Ungated: this
-            hub describes and catalogues the derived material on every render, so the notice is
-            owed on every render. The V2 rewrite dropped this block and left only the card grid
-            below, whose ECMWF "legal quote" was a paraphrase nobody could source. */}
-        <MarineAttribution layers={rawLayers} headingId="deniz-sources" />
+        {/* SECTION 6: SAFETY DISCLAIMER, AND THE LINK TO THE LICENCE TEXT
+            The ECMWF and Copernicus Marine wording is the LICENCE, not copy. It is published
+            verbatim, in English, in both locales — once, on `/hakkimizda`, reached from the link
+            in this block: CC BY 4.0 §3(a)(2) lets the required information be carried by a
+            hyperlink, and ECMWF Open Data is CC BY 4.0.
+            What stays HERE is the sentence that is not a licence notice at all — "eğitim
+            amaçlıdır; denizcilik, seyir veya can güvenliği kararlarında kullanılamaz". This hub
+            publishes values and catalogues the derived material on every render, so that
+            sentence is owed on every render, beside them. Ungated for the same reason.  */}
+        <MarineDataNotice />
 
         {/* SECTION 7: SOURCES (KAYNAKÇA) — the bibliography, in our words. It sits alongside the
-            attribution block above and never in place of it. */}
+            notice above and never in place of it. */}
         <V2SourcesSection scope="deniz" />
       </div>
       {/* V2 Footer */}

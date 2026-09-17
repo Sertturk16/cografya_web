@@ -205,14 +205,19 @@ describe("value-band message keys are derived from the render code, not hand-lis
     expect(Object.keys(MARINE_COMPASS_KEY).sort()).toEqual([...COMPASS_POINTS].sort());
   });
 
-  it("resolves the two ProvinceDetail keys the marine section renders", () => {
-    // The section's `<h2>` and its licence block's heading live in the PAGE's namespace
-    // rather than in `Marine.*`, because both are about the province page, not about the
-    // marine vocabulary. They would otherwise fall outside every guard in this file.
+  it("resolves the ProvinceDetail key the marine section renders", () => {
+    // The section's `<h2>` lives in the PAGE's namespace rather than in `Marine.*`, because it
+    // is about the province page, not about the marine vocabulary. It would otherwise fall
+    // outside every guard in this file.
+    //
+    // `marineSourcesHeading` used to be checked alongside it and is GONE from both catalogues.
+    // It titled the province page's own copy of the ECMWF/Copernicus licence block; that block
+    // now renders once, on `/hakkimizda`, under `About.marineDataHeading`. Keeping the old key
+    // resolvable would have kept this assertion green over a string nothing renders.
     const trProvince = flatten((trMessages as Catalogue).ProvinceDetail);
     const enProvince = flatten((enMessages as Catalogue).ProvinceDetail);
 
-    for (const key of ["marineHeading", "marineSourcesHeading"]) {
+    for (const key of ["marineHeading"]) {
       expectNonEmptyString(trProvince, key);
       expectNonEmptyString(enProvince, key);
     }

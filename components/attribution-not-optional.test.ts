@@ -29,10 +29,24 @@ import { describe, expect, it } from "vitest";
  *
  * ## What is derived
  *
- * The subject list is not hand-kept. A component is in scope if it renders a `lang="en"`
- * scope, which is how this repo marks an untranslated provider string published verbatim
- * (WCAG 3.1.2, and the rule is written down in all four attribution components). Whatever the
- * next such component is called, it is caught by writing the `lang="en"` its own notice needs.
+ * The subject list is not hand-kept. A component is in scope if it renders EITHER of the two
+ * markers a mandated notice leaves in source:
+ *
+ *  - a `lang="en"` scope — how this repo marks an untranslated provider string published
+ *    verbatim (WCAG 3.1.2, and the rule is written down in all four attribution components);
+ *  - `Marine.disclaimer.educationalOnly` — the sea-safety sentence, "not for maritime,
+ *    navigational or safety-of-life decisions".
+ *
+ * The second marker was added when the licence notices centralized onto `/hakkimizda`. That
+ * move was licence-correct (CC BY 4.0 §3(a)(2) admits a hyperlink), and it had one hazard: the
+ * component left beside the values, `MarineDataNotice`, carries the safety disclaimer and NO
+ * verbatim provider string, so the `lang="en"` marker alone would have stopped seeing the one
+ * component whose notice is least safe to make optional. A `variant="compact"` that dropped the
+ * sentence would have been the exact `hideAttribution` defect again, on the exact page where a
+ * reader is reading a wave height.
+ *
+ * Whatever the next such component is called, it is caught by writing the `lang="en"` its own
+ * notice needs or by rendering the disclaimer it is there to carry.
  *
  * Structural only (`CONVENTIONS.md` §2): prop shapes, never copy.
  */
@@ -50,9 +64,17 @@ const walkTsx = (dir: string): string[] =>
  * `lang="en"` on a Turkish-locale surface means one thing here: a provider's own wording,
  * published untranslated because a licence requires it.
  */
+const VERBATIM_PROVIDER_STRING = 'lang="en"';
+
+/** The sea-safety sentence. Not a licence notice, and the least optional string on the site. */
+const SAFETY_DISCLAIMER = "disclaimer.educationalOnly";
+
+const isCarrier = (source: string) =>
+  source.includes(VERBATIM_PROVIDER_STRING) || source.includes(SAFETY_DISCLAIMER);
+
 const carriers = walkTsx(componentsDir)
   .map((file) => ({ file, source: readFileSync(file, "utf8") }))
-  .filter(({ source }) => source.includes('lang="en"'))
+  .filter(({ source }) => isCarrier(source))
   // Comments are stripped before the scan below, and the reason is not tidiness: the two
   // components this rule was written for now carry a docblock saying "THERE IS NO
   // `hideAttribution` PROP, AND THERE MUST NOT BE ONE". Matching on that would fail the file
@@ -65,17 +87,38 @@ const carriers = walkTsx(componentsDir)
 
 /**
  * A prop that switches a notice off. `hide`/`suppress`/`without` + `attribution`,
- * `licence`/`license`, `notice`, `credit` or `source`, in either order, case-insensitive —
- * the shapes a future `omitLicence` or `noAttribution` would take.
+ * `licence`/`license`, `notice`, `credit`, `source`, `disclaimer` or `warning`, in either
+ * order, case-insensitive — the shapes a future `omitLicence`, `noAttribution` or
+ * `hideDisclaimer` would take.
  */
 const OFF_SWITCH =
-  /\b(?:hide|suppress|without|no|omit|skip)(?:Attribution|Licen[cs]e|Notice|Credit|Sources?)\b/i;
+  /\b(?:hide|suppress|without|no|omit|skip)(?:Attribution|Licen[cs]e|Notice|Credit|Sources?|Disclaimer|Warning)\b/i;
 
 describe("an attribution is not a prop", () => {
   it("finds the components that publish a verbatim provider string", () => {
     // Anti-vacuity: a marker that stopped matching would satisfy the loop below for free, and
     // finding these components is the whole point of deriving them rather than listing them.
-    expect(carriers.length, 'components rendering a lang="en" provider string').toBeGreaterThan(3);
+    expect(carriers.length, "components rendering a mandated notice").toBeGreaterThan(3);
+  });
+
+  it("finds them by BOTH markers, not only the older one", () => {
+    // Per-marker anti-vacuity, and the reason it is worth its own assertion: the disclaimer
+    // marker was added for a component that carries no `lang="en"` at all. If it ever matches
+    // nothing, the derivation has silently gone back to the list it had before the licence
+    // notices centralized — green, and blind to the compact notice.
+    const withProviderString = carriers.filter(({ source }) =>
+      source.includes(VERBATIM_PROVIDER_STRING),
+    );
+    const withDisclaimer = carriers.filter(({ source }) => source.includes(SAFETY_DISCLAIMER));
+
+    expect(
+      withProviderString.length,
+      'components rendering a lang="en" provider string',
+    ).toBeGreaterThan(3);
+    expect(
+      withDisclaimer.length,
+      "components rendering the marine safety disclaimer",
+    ).toBeGreaterThan(0);
   });
 
   it("gives none of them a switch for turning the notice off", () => {

@@ -2,7 +2,28 @@ import * as React from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { Map, Layers, BookOpen } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { badgeVariants } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { MARINE_SOURCES_ANCHOR } from "@/lib/marine/attribution-anchor";
+
+/**
+ * The source badges are the FOOTER HALF of the central-attribution decision.
+ *
+ * They used to be four `Badge` chips: institution names, styled like affiliations, pointing
+ * nowhere. Now that the ECMWF and Copernicus Marine licence notices are published once on
+ * `/hakkimizda` rather than repeated on every value surface, the hyperlink to that page is part
+ * of how the attribution is discharged (CC BY 4.0 §3(a)(2)) — so a chip that names a provider
+ * and goes nowhere is the one thing these may not be.
+ *
+ * `Button` has no `asChild` in this repo and `Badge` renders a `<span>`, so a link that looks
+ * like a badge is `<Link className={cn(badgeVariants({…}))}>` — the same pattern `CLAUDE.md`
+ * prescribes for `buttonVariants`. `badgeVariants` is exported from `components/ui/badge.tsx`
+ * for exactly this.
+ */
+const SOURCE_BADGE = cn(
+  badgeVariants({ variant: "outline", size: "sm" }),
+  "text-[10px] font-mono border-border transition-colors hover:border-primary/50 hover:text-primary",
+);
 
 export function V2Footer() {
   const currentYear = new Date().getFullYear();
@@ -39,20 +60,20 @@ export function V2Footer() {
               platformu.
             </p>
 
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <Badge variant="outline" size="sm" className="text-[10px] font-mono border-border">
+            <nav aria-label="Veri kaynakları" className="flex flex-wrap items-center gap-1.5 pt-1">
+              <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
                 TÜİK &amp; OSM
-              </Badge>
-              <Badge variant="outline" size="sm" className="text-[10px] font-mono border-border">
+              </Link>
+              <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
                 Copernicus
-              </Badge>
-              <Badge variant="outline" size="sm" className="text-[10px] font-mono border-border">
+              </Link>
+              <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
                 ECMWF
-              </Badge>
-              <Badge variant="outline" size="sm" className="text-[10px] font-mono border-border">
+              </Link>
+              <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
                 AFAD
-              </Badge>
-            </div>
+              </Link>
+            </nav>
           </div>
 
           {/* Col 3: Atlas & Haritalar */}

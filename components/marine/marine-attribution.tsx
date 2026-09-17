@@ -39,14 +39,14 @@ const DISCLAIMER =
 interface MarineAttributionProps {
   /** The catalogue, which carries the ingested cycle the copyright year is derived from. */
   layers: MarineLayer[];
-  /** `id` of this block's `<h2>` — unique per page, since two surfaces render it. */
+  /** `id` of this block's `<h2>`, for its `aria-labelledby`. */
   headingId?: string;
   /**
-   * The block's heading. Defaults to `/deniz`'s "Kaynaklar ve kullanım"; the province page
-   * passes its own, because that page already carries a Kaynaklar line for its own facts and
-   * two identically-titled sources surfaces would leave the reader guessing which is which.
-   * ONLY the heading is overridable — every licence string below is single-sourced and
-   * verbatim, and none of it is a prop.
+   * The block's heading. Defaults to `/deniz`'s "Kaynaklar ve kullanım"; `/hakkimizda` — the
+   * one page that renders this block today — passes its own, because that page already carries
+   * a sources colophon for the map and flag data and two identically-titled sources surfaces
+   * would leave the reader guessing which licence covers what. ONLY the heading is overridable
+   * — every licence string below is single-sourced and verbatim, and none of it is a prop.
    */
   heading?: string;
 }
@@ -55,14 +55,44 @@ interface MarineAttributionProps {
  * Attribution + licence + educational-use notice — ONE component, rendered wherever an
  * ECMWF- or CMEMS-derived value appears.
  *
- * WHY IT IS A COMPONENT. In W1a this markup was inline in `/deniz` because `/deniz` was the
- * only page carrying derived material. W2a put real values on the hub and W2b put them on the
- * 27 coastal province pages; CC BY 4.0 and ECMWF's "shall be attached" wording require the
- * notice to travel WITH the material, not to stay on the page it was first written for. A
- * second copy of a verbatim licence text is a licence breach waiting for the day someone edits
- * one of them, so there is exactly one copy and two render sites — and the province site is
- * gated on the SAME signal as the values it accompanies (`provinceShowsMarine`), so the notice
- * can neither go missing where a value appears nor appear where none does.
+ * WHERE IT RENDERS, AND THE READING THAT WAS CORRECTED.
+ *
+ * The earlier reading, recorded here and acted on for seven releases, was:
+ *
+ *   "CC BY 4.0 and ECMWF's 'shall be attached' wording require the notice to travel WITH the
+ *   material, not to stay on the page it was first written for."
+ *
+ * That is more conservative than the licence requires, and the licence says so in terms. CC BY
+ * 4.0 §3(a)(2): "You may satisfy the conditions in Section 3(a)(1) in any reasonable manner
+ * based on the medium, means, and context in which You Share the Licensed Material. For
+ * example, it may be reasonable to satisfy the conditions by providing a URI or hyperlink to a
+ * resource that includes the required information." ECMWF Open Data IS CC BY 4.0, and the
+ * Copernicus Marine framework is looser still. A hyperlink to a page that publishes the notice
+ * is a compliant way to attach it.
+ *
+ * So on the owner's decision the licence notices CENTRALIZE: this block renders EXACTLY ONCE,
+ * on `/hakkimizda` (`/en/about`), and the seven surfaces that publish a derived value carry
+ * `components/marine/marine-data-notice.tsx` — the safety disclaimer plus a link to that page.
+ * The old sentence is kept above rather than deleted because it is the reasoning a future
+ * reader will otherwise re-derive: the conclusion changed, the licence did not.
+ *
+ * WHAT DID NOT MOVE. `Marine.disclaimer.educationalOnly` — "not for maritime, navigational or
+ * safety-of-life decisions" — is NOT a licence notice, no licence clause governs where it goes,
+ * and a reader looking at a sea temperature needs it beside the numbers. It travels with every
+ * value, and `MarineDataNotice` is what carries it there. This block renders it too, on the one
+ * page it now lives on, because there is no prop here that could switch it off and there must
+ * not be one.
+ *
+ * NOR DID THE MAP CREDITS, NOR THE CLIMATE AND AIR NOTICES. OpenStreetMap's guidance asks for
+ * the credit ON a browsable map, which is a different requirement from CC BY 4.0's, so
+ * `V2MapAttribution` is untouched. `ClimateSection` and `AirPollutionSection` keep their inline
+ * ERA5-Land and ACAG blocks: the decision recorded here was taken about the marine licences and
+ * was not extended to them, and the criterion those two files cite from this docblock — visible
+ * without a click on the page carrying the values — still governs them.
+ *
+ * A second copy of a verbatim licence text is a licence breach waiting for the day someone edits
+ * one of them, so there is exactly ONE copy of each string, in `messages/{tr,en}.json`, read
+ * here and nowhere else.
  *
  * THE ENGLISH BLOCKS ARE NOT COPY — THEY ARE THE LICENCE (→ DEC 2026-08-02c, from NOVA's
  * first-hand reading of ECMWF's licence page). ECMWF's terms say the wording "shall be
@@ -87,8 +117,9 @@ interface MarineAttributionProps {
  * state the SOURCE of the data. Nothing here may read as "ECMWF onaylı", "resmî Copernicus
  * verisi" or any other claim that a provider or the EU endorses this platform.
  *
- * They are also visible without a click on the page that carries the derived material, which
- * is the conservative reading of the licence's "prominently".
+ * They are visible without a click on the page that publishes them — no disclosure, no
+ * `<details>` — which is what "prominently" asks of the page that carries the notice. Under the
+ * corrected reading above, that page is `/hakkimizda` rather than every value surface.
  *
  * Provider names, licence names and product classes come from `data-provenance.md`, not from
  * the payload: `MarineAttributionDto` is frozen in the contract but has no endpoint and no

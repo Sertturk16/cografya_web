@@ -113,7 +113,10 @@ describe("V2SourcesSection's conditional citations", () => {
      * It now points at the SINGLE SOURCE OF TRUTH — the message catalogue, verbatim and
      * identical in both locales, rendered by `MarineAttribution` — and at the absence of any
      * second copy in this component. The bibliography card names the source; the licence lives
-     * in the attribution block, visible without a click on the page carrying the values.
+     * in the attribution block, which since the owner's centralization decision renders once,
+     * on `/hakkimizda`, one hyperlink from every page that publishes a value (CC BY 4.0
+     * §3(a)(2)). What this asserts is unchanged by that move and deliberately so: wherever the
+     * block renders, this component may not carry a second copy of the string.
      */
     const REQUIRED = "Generated using E.U. Copernicus Marine Service Information";
 

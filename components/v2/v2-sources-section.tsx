@@ -26,18 +26,22 @@ export type V2PageScope =
  * CLOSED BY DEFAULT. That is the right weight for a bibliography — a reader who wants the
  * licence text can open it — and it is NOT enough to discharge a licence. The criterion this
  * repo applies, stated in `components/marine/marine-attribution.tsx`'s own docblock, is that
- * the notice is visible WITHOUT A CLICK on the page that carries the derived material; a
- * disclosure the reader must find and open is a click.
+ * the notice is visible WITHOUT A CLICK on the page that PUBLISHES it; a disclosure the reader
+ * must find and open is a click. (For the marine licences that page is now `/hakkimizda`, on
+ * the owner decision recorded in that docblock — CC BY 4.0 §3(a)(2) lets a hyperlink carry the
+ * required information. The notice is still visible without a click when the reader gets
+ * there, which is the part this card can never satisfy.)
  *
  * Three call sites had bet the other way, passing `hideAttribution` to `ClimateSection` and
  * `AirPollutionSection` so the inline blocks vanished and this `<details>` became the only
  * place ERA5-Land's and ACAG's required wording appeared. That prop is gone from both
  * components, and neither may get it back.
  *
- * So: a source whose licence requires a notice is credited by a dedicated attribution block on
- * the page (`MarineAttribution`, `EarthquakeAttribution`, the inline blocks in `ClimateSection`
- * and `AirPollutionSection`). This card names the source; the quote, where it is worth showing
- * at all, repeats what the page already shows in full.
+ * So: a source whose licence requires a notice is credited by a dedicated attribution block —
+ * `EarthquakeAttribution` and the inline blocks in `ClimateSection` and `AirPollutionSection` on
+ * the page itself, `MarineAttribution` on `/hakkimizda` with `MarineDataNotice` linking every
+ * value surface to it. This card names the source; the quote, where it is worth showing at all,
+ * repeats what one of those blocks already shows in full.
  */
 interface SourceItem {
   id: string;
@@ -78,10 +82,10 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       // NO `legalQuote`, for the reason already recorded on the `deniz` scope's `cmems` entry —
       // this was the surviving copy of the same defect. The Copernicus Marine notice is
       // single-sourced as `Marine.attribution.cmemsNotice` in `messages/{tr,en}.json` and
-      // rendered verbatim by `MarineAttribution` on every page carrying a CMEMS-derived value,
-      // the home page included. This copy read "…Information 2026": the notice attaches to the
-      // SERVICE and not to a data year, so the year was not merely a second version of a
-      // verbatim licence string, it was a WRONG one.
+      // rendered verbatim by `MarineAttribution` on `/hakkimizda`; this page reaches it through
+      // the link in `MarineDataNotice`, above. This copy read "…Information 2026": the notice
+      // attaches to the SERVICE and not to a data year, so the year was not merely a second
+      // version of a verbatim licence string, it was a WRONG one.
       sourceUrl: "marine.copernicus.eu",
     },
     {
@@ -226,10 +230,11 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       description:
         "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı noktasında saatlik yüzey deniz suyu sıcaklığı (SST) ve dalga boyu modelleri.",
       // NO `legalQuote`. The Copernicus Marine notice is single-sourced in `messages/*.json`
-      // and rendered by `MarineAttribution` on every page that carries CMEMS-derived values.
-      // A near-copy here — this one used to read "…Information 2026" — is a second version of
-      // a verbatim licence string, which is a breach waiting for the day someone edits one of
-      // them. This card is a bibliography entry; the licence lives in the attribution block.
+      // and rendered by `MarineAttribution` on `/hakkimizda`, which every page carrying
+      // CMEMS-derived values links to through `MarineDataNotice`. A near-copy here — this one
+      // used to read "…Information 2026" — is a second version of a verbatim licence string,
+      // which is a breach waiting for the day someone edits one of them. This card is a
+      // bibliography entry; the licence lives on the central page.
       sourceUrl: "marine.copernicus.eu",
     },
     {
@@ -242,7 +247,8 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       // NO `legalQuote`. This field used to read "Generated using ECMWF Open Data information
       // 2026", which is not ECMWF's required wording and not traceable to any licence text —
       // an invented sentence presented to the reader under "Atıf şartı & yasal metin". ECMWF's
-      // actual notice is long, single-sourced, and rendered verbatim by `MarineAttribution`.
+      // actual notice is long, single-sourced, and rendered verbatim by `MarineAttribution` on
+      // `/hakkimizda` — one hyperlink away, in the notice above this card.
       sourceUrl: "ecmwf.int",
     },
     {
