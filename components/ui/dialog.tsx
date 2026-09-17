@@ -23,16 +23,13 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
-function DialogOverlay({
-  className,
-  ...props
-}: DialogPrimitive.Backdrop.Props) {
+function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
         "fixed inset-0 isolate z-50 bg-black/50 backdrop-blur-xs transition-opacity duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-        className
+        className,
       )}
       {...props}
     />
@@ -55,12 +52,11 @@ const dialogContentVariants = cva(
     defaultVariants: {
       size: "default",
     },
-  }
+  },
 );
 
 export interface DialogContentProps
-  extends DialogPrimitive.Popup.Props,
-    VariantProps<typeof dialogContentVariants> {
+  extends DialogPrimitive.Popup.Props, VariantProps<typeof dialogContentVariants> {
   showCloseButton?: boolean;
 }
 
@@ -104,7 +100,10 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-1.5 text-left border-b border-border pb-3 -mx-6 px-6", className)}
+      className={cn(
+        "flex flex-col gap-1.5 text-left border-b border-border pb-3 -mx-6 px-6",
+        className,
+      )}
       {...props}
     />
   );
@@ -123,15 +122,13 @@ function DialogFooter({
       data-slot="dialog-footer"
       className={cn(
         "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-xl border-t border-border bg-muted/40 p-4 sm:flex-row sm:justify-end",
-        className
+        className,
       )}
       {...props}
     >
       {children}
       {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>
-          Kapat
-        </DialogPrimitive.Close>
+        <DialogPrimitive.Close render={<Button variant="outline" />}>Kapat</DialogPrimitive.Close>
       )}
     </div>
   );
@@ -141,26 +138,17 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn(
-        "font-heading text-xl font-bold leading-tight text-[var(--color-primary-dark,#7e3a1e)]",
-        className
-      )}
+      className={cn("font-heading text-xl font-bold leading-tight text-primary", className)}
       {...props}
     />
   );
 }
 
-function DialogDescription({
-  className,
-  ...props
-}: DialogPrimitive.Description.Props) {
+function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn(
-        "text-sm text-muted-foreground",
-        className
-      )}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   );

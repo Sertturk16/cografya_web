@@ -13,11 +13,10 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm hover:shadow",
         emerald:
-          "bg-[var(--color-secondary,#4f6d30)] text-white hover:bg-[var(--color-secondary,#4f6d30)]/90 shadow-sm hover:shadow",
-        sky: "bg-[var(--color-info,#276b70)] text-white hover:bg-[var(--color-info,#276b70)]/90 shadow-sm hover:shadow",
-        teal: "bg-[var(--color-accent,#276b70)] text-white hover:bg-[var(--color-accent,#276b70)]/90 shadow-sm hover:shadow",
-        amber:
-          "bg-[var(--color-warning,#c9860f)] text-white hover:bg-[var(--color-warning,#c9860f)]/90 shadow-sm hover:shadow",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm hover:shadow",
+        sky: "bg-info text-info-foreground hover:bg-info/90 shadow-sm hover:shadow",
+        teal: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm hover:shadow",
+        amber: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm hover:shadow",
         outline:
           "border border-border bg-card text-foreground hover:bg-muted hover:border-primary/50 shadow-xs",
         ghost: "text-foreground hover:bg-muted hover:text-foreground",

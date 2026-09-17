@@ -2,24 +2,27 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
+/**
+ * TEXT ON A TINT USES THE `-strong` MEMBER, not the base (T-034). A 15% tint of the base is a
+ * very light surface, and the base colour on top of it measures 4.00-4.17:1 for success and
+ * info, 3.98:1 for destructive and 2.62:1 for warning — all under 4.5:1. `app/globals.css`
+ * documents the derivation and the measurements beside the tokens.
+ */
 const badgeVariants = cva(
   "inline-flex items-center justify-center font-semibold transition-colors select-none",
   {
     variants: {
       variant: {
-        default:
-          "bg-primary/12 text-[var(--color-primary-dark,#7e3a1e)] border border-primary/25 hover:bg-primary/20",
+        default: "bg-primary/12 text-primary border border-primary/25 hover:bg-primary/20",
         primary: "bg-primary text-primary-foreground shadow-xs",
         secondary:
           "bg-secondary/15 text-secondary border border-secondary/25 hover:bg-secondary/25",
-        success:
-          "bg-[var(--color-success,#496f35)]/15 text-[var(--color-success,#496f35)] border border-[var(--color-success,#496f35)]/30",
-        warning: "bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/30",
-        destructive:
-          "bg-[var(--color-danger,#b23b2e)]/15 text-[var(--color-danger,#b23b2e)] border border-[var(--color-danger,#b23b2e)]/30",
+        success: "bg-success/15 text-success-strong border border-success/30",
+        warning: "bg-warning/15 text-warning-strong border border-warning/30",
+        destructive: "bg-destructive/15 text-destructive-strong border border-destructive/30",
         outline: "border border-border bg-card text-foreground",
-        info: "bg-[var(--color-info,#276b70)]/15 text-[var(--color-info,#276b70)] border border-[var(--color-info,#276b70)]/30",
-        chip: "bg-[var(--color-chip-bg,#ede3d5)] text-[var(--color-chip-ink,#7e3a1e)] rounded-full",
+        info: "bg-info/15 text-info-strong border border-info/30",
+        chip: "bg-chip text-chip-foreground rounded-full",
       },
       size: {
         sm: "px-2 py-0.5 text-[11px] gap-1 rounded-md",

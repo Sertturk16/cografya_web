@@ -208,7 +208,7 @@ export function CustomSelect({
           arrow-key highlight two options per press. The only two focusable elements in this
           component — the trigger <button> and that <input> — carry the handler themselves. */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 w-full z-50 rounded-2xl border border-border bg-white dark:bg-card text-foreground shadow-2xl overflow-hidden py-1">
+        <div className="absolute top-full left-0 mt-1.5 w-full z-50 rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl overflow-hidden py-1">
           {searchable && (
             <div className="p-2 border-b border-border/80">
               <div className="relative flex items-center">
