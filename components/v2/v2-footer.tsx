@@ -22,7 +22,10 @@ import { MARINE_SOURCES_ANCHOR } from "@/lib/marine/attribution-anchor";
  */
 const SOURCE_BADGE = cn(
   badgeVariants({ variant: "outline", size: "sm" }),
-  "text-[10px] font-mono border-border transition-colors hover:border-primary/50 hover:text-primary",
+  // `min-h-6`: the `sm` badge is 22px tall, which was fine for a `<span>` and is not fine for a
+  // TAP TARGET — WCAG 2.2 SC 2.5.8 asks for 24×24 CSS px. The chips keep the badge's look and
+  // gain the two pixels; `gap-y-2` keeps the rows 24px apart when they wrap at 320px.
+  "min-h-6 text-[10px] font-mono border-border transition-colors hover:border-primary/50 hover:text-primary",
 );
 
 export function V2Footer() {
@@ -60,7 +63,10 @@ export function V2Footer() {
               platformu.
             </p>
 
-            <nav aria-label="Veri kaynakları" className="flex flex-wrap items-center gap-1.5 pt-1">
+            <nav
+              aria-label="Veri kaynakları"
+              className="flex flex-wrap items-center gap-x-1.5 gap-y-2 pt-1"
+            >
               <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
                 TÜİK &amp; OSM
               </Link>
