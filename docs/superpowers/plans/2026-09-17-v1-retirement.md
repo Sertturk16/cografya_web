@@ -633,9 +633,26 @@ git commit -m "feat(v2): add password-reset and verify-email pages"
     },
 ```
 
-- [ ] **Step 2: Port the page**
+- [ ] **Step 2: Port the page with a real V2 design pass**
 
-The copy is entirely in `messages/{tr,en}.json` already (T-030, PR #147) — reuse the same translation keys verbatim. Change nothing about the wording; this is a re-housing, not an edit. Replace the V1 `Breadcrumb` component and `.container .page` wrapper with the V2 chrome idiom from Task 5. Keep the existing `buildMetadata` surface value the V1 page uses (`/hakkimizda` is `"localized"` per `lib/seo/indexing.ts` — do not silently change it to `noindex`).
+**The copy moves verbatim; the layout does not.** The strings are already in
+`messages/{tr,en}.json` (T-030, PR #147) — reuse those exact keys and change no wording. The
+V1 page is a bare `.container .page` with an `<h1>` and paragraphs, which is a pre-V2 shape;
+transcribing it into a V2 wrapper would leave the site's one editorial page visibly older
+than everything around it.
+
+Rebuild the layout in the V2 language instead: `components/ui/card` for the team and mission
+blocks, the section rhythm and `font-heading` scale the other V2 pages use, and
+`V2SourcesSection` where the V1 page's data-source block sits today. `components/v2/v2-hero.tsx`
+and `components/v2/v2-member-hub.tsx` are the closest reference shapes for an editorial page
+with distinct content blocks.
+
+Keep the existing `buildMetadata` surface value (`/hakkimizda` is `"localized"` per
+`lib/seo/indexing.ts` — do not silently change it to `noindex`), and keep the existing
+data-source section's content; only its presentation changes.
+
+Load the `frontend-design` skill before starting this step, and check the result against
+`docs/design.md` — which overrides anything the skill suggests.
 
 - [ ] **Step 3: Write the port-coverage structure test**
 
@@ -1179,6 +1196,13 @@ Nothing changed. This is a read-only gate before Task 11.
 - Modify: `app/[locale]/v2/deprem/page.tsx`
 - Modify: `app/[locale]/v2/deniz/page.tsx` (switch it to the extracted predicate)
 
+**Owner decision, 2026-09-17: the production feature flags are being switched on** (Task 11a).
+So these pages launch with real data, and the conditional branch below becomes the _degraded_
+path rather than the normal one. Write it anyway — that is precisely when it earns its keep.
+`getMarineOverviewSafe` and `getEarthquakeListResilient` answer an upstream outage with an
+empty payload rather than an error, so without the branch a Copernicus or AFAD outage
+silently reproduces T-024's defect: prose promising live hourly telemetry over nothing.
+
 - [ ] **Step 1: Audit what each page currently claims**
 
 For each of the five pages, list every sentence that asserts something about live data — "canlı", "saatlik", "güncel", "son 24 saat", a timestamp, a unit, an empty table with headers. Run:
@@ -1221,8 +1245,98 @@ With the flags off (the default locally), screenshot all five pages: none may cl
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm build
 git add "app/[locale]/v2/deniz" "app/[locale]/v2/deprem"
-git commit -m "fix(v2): condition sea and earthquake copy on real data availability"
+git commit -m "fix(v2): keep sea and earthquake copy honest when upstream is empty"
 ```
+
+## Task 11a: Switch the production feature flags on — OPS, NOT A PR
+
+**This task is not a code change and belongs to no PR.** `docker-compose.prod.yml` lives on
+the Hetzner host, not in either repository: both `deploy.yml` workflows SSH in and run
+`docker compose -f docker-compose.prod.yml` against the host's own copy. Editing the working
+copy at the workspace root deploys nothing.
+
+Run it independently of the four PRs. It is reversible in one line and needs no code.
+
+- [ ] **Step 1: Place `ADS_API_KEY` in `.env.prod` FIRST**
+
+This ordering is not a preference. `src/config/env.schema.ts` declares `ADS_API_KEY` as
+`optional()` and then requires it through a `superRefine` cross-check whenever
+`AIR_QUALITY_ENABLED` is true — the schema's own comment says "a keyless deployment with the
+leg off must still boot". `.env.prod` currently holds eight keys and this is not one of them;
+the local `.env` has it, which is why air quality works in development.
+
+Setting the flag without the key **fails env validation at boot**. The API container
+crashloops, and `web` depends on `api` in the compose file, so the whole site goes down —
+not just the air-quality pages.
+
+Copy the value from the local `.env`. Never print it, never commit it, never paste it into a
+PR description or a commit message.
+
+- [ ] **Step 2: Flip the three credential-free flags first**
+
+On the host, in `docker-compose.prod.yml`:
+
+```yaml
+MARINE_ENABLED: "true"
+EARTHQUAKE_ENABLED: "true"
+ELEVATION_ENABLED: "true"
+```
+
+These three need nothing else. Every upstream URL they read has a schema default
+(`CMEMS_STAC_BASE_URL`, `AFAD_EVENT_API_BASE_URL`, `ELEVATION_BASE_URL`), and the companion
+ingest switches — `MARINE_WARMUP_ENABLED`, `EARTHQUAKE_INGEST_ENABLED`, `ECMWF_ENABLED` —
+all default to `true`, so the leg flag alone starts ingest.
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --no-deps api
+docker compose -f docker-compose.prod.yml ps api
+docker compose -f docker-compose.prod.yml logs --tail=100 api
+```
+
+Expected: `api` healthy, no validation error in the logs. If it crashloops, revert the three
+lines and restart before investigating — do not leave production down while reading logs.
+
+- [ ] **Step 3: Flip `AIR_QUALITY_ENABLED` as a separate change**
+
+Only after Step 2 is verified healthy, and only with the key already in place:
+
+```yaml
+AIR_QUALITY_ENABLED: "true"
+```
+
+Restart and check health exactly as in Step 2. Keeping it separate means a rollback is one
+line and you know which flag caused a failure.
+
+- [ ] **Step 4: Confirm data actually arrives**
+
+Ingest is scheduled, not instant. Give it one interval, then:
+
+```bash
+curl -s http://localhost:3001/api/marine/overview | head -c 400
+curl -s http://localhost:3001/api/earthquakes?limit=3 | head -c 400
+```
+
+Expected: real values, and `dataAvailable` true on the marine payload. Then load
+`/deniz/karadeniz` and `/deprem` in a browser and confirm the pages render values rather than
+the Task 11 degraded copy. If they still show the degraded state, the flag is on but ingest
+has not completed or is failing — check the API logs before assuming the page is wrong.
+
+- [ ] **Step 5: Watch the host for a day**
+
+None of this has ever run in production. Marine warmup, AFAD ingest and the CAMS air-quality
+tour all write to Postgres and call upstream on a timer. Check disk and memory the following
+day:
+
+```bash
+df -h && free -m
+docker compose -f docker-compose.prod.yml exec -T postgres \
+  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\l+" | head
+```
+
+- [ ] **Step 6: Record the outcome in `TASKS.md`**
+
+Note which flags are on, the date, and anything the first day surfaced. The board is the only
+place this is written down — the compose file is not in version control.
 
 ---
 
@@ -1938,7 +2052,14 @@ Run: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`
 
 - [ ] **Step 4: Open the PR against `dev`**
 
-State in the description: the launch is gated on T-019, `dev` accumulates until a domain and TLS exist, and merging to `main` is the launch. Do not merge to `main`.
+Target `dev`, never `main`. Launch timing is the owner's separate call (2026-09-17) and
+nothing in this task waits on it — but do not merge to `main` yourself, because that merge
+_is_ the launch.
+
+Carry one fact into the PR description so it is not rediscovered later: without TLS, `Secure`
+cookies are not stored and `crypto.randomUUID` is unavailable, so login persistence,
+favourites and every game mode remain broken until T-019 lands. That is equally true of V1
+today, so it is a limitation the launch inherits, not a regression it introduces.
 
 ---
 
@@ -1954,5 +2075,19 @@ State in the description: the launch is gated on T-019, `dev` accumulates until 
 
 1. The first draft had Task 10 _create_ `lib/marine/data-availability.ts`. That module would have been a duplicate: `marineShowsValues` already exists in `lib/marine/overview.ts`, is already consumed by `/v2/deniz` and V1 `/deniz`, and is already unit-tested through `lib/home/marine-summary.test.ts`. Task 10 is now a read-only gate and Task 11 imports the existing function.
 2. That draft also guessed `MarineOverviewPoint.seaSurfaceTemperatureC`. The real field is `seaSurfaceTemperature: MarineValueDto` (`lib/api/schema.ts:2226`), and the payload carries its own `dataAvailable` flag. The guess is gone with the module that held it.
+
+**Owner revisions, 2026-09-17 (after the first review pass):**
+
+1. **Feature flags go on in production**, so Task 11's conditional copy is now the degraded
+   path rather than the launch state. It is still written, because the `*Safe`/`*Resilient`
+   wrappers turn an upstream outage into an empty payload and the branch is what keeps that
+   honest. New Task 11a covers the flip — as an ops action, not a PR, since the compose file
+   lives on the host. The `ADS_API_KEY`-before-`AIR_QUALITY_ENABLED` ordering in that task is
+   load-bearing: the reverse order crashloops the API at boot and takes `web` down with it.
+2. **`/hakkimizda` gets a real V2 design pass** (Task 6 Step 2), not a transcription. Copy
+   still moves verbatim.
+3. **Launch timing is no longer a documented gate.** Task 20 Step 4 still says to target
+   `dev` and not to merge to `main`, and still records the TLS limitation as a fact to carry
+   forward rather than a blocker on this work.
 
 **Verified against source, not assumed:** the `Button` API (Task 2), `Common.skipToContent` and `Common.enWorkInProgress` (Tasks 9, 14), the `NotFound` namespace keys `heading`/`body` (Tasks 7, 8), and `Auth.reset` / `Auth.verify` (Task 5). `Auth.breadcrumb.home` does **not** exist — Task 5 Step 3 says to add it to both message files rather than copy the hard-coded Turkish string that `v2/giris/page.tsx` currently inlines.

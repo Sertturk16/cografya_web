@@ -36,14 +36,14 @@ same path**, so the migration is mostly a move rather than a redirect.
 
 Six V1 routes have no V2 counterpart:
 
-| V1 route                | Decision                                                         |
-| ----------------------- | ---------------------------------------------------------------- |
-| `/hakkimizda`           | Port to V2. Carries T-030's team/mission/contact copy (PR #147). |
-| `/e-posta-dogrulama`    | Port to V2. Landing page for the SES verification mail.          |
-| `/sifre-sifirlama`      | Port to V2. Path is hard-coded in the API.                       |
-| `/sifre-sifirlama/yeni` | Port to V2. Reads `?token=`; path hard-coded in the API.         |
-| `/araclar/[...rest]`    | **Delete.** Superseded by a root `not-found` — see §7.           |
-| `/design-system`        | **Delete.** Internal; `docs/design.md` is the source of truth.   |
+| V1 route                | Decision                                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/hakkimizda`           | Port to V2 **with a real V2 design pass**. T-030's copy (PR #147) moves verbatim; the layout is rebuilt in the V2 language rather than transcribed. |
+| `/e-posta-dogrulama`    | Port to V2. Landing page for the SES verification mail.                                                                                             |
+| `/sifre-sifirlama`      | Port to V2. Path is hard-coded in the API.                                                                                                          |
+| `/sifre-sifirlama/yeni` | Port to V2. Reads `?token=`; path hard-coded in the API.                                                                                            |
+| `/araclar/[...rest]`    | **Delete.** Superseded by a root `not-found` — see §7.                                                                                              |
+| `/design-system`        | **Delete.** Internal; `docs/design.md` is the source of truth.                                                                                      |
 
 V2's login and registration are already built (`v2-login-card`, `v2-register-card`), so only
 the three mail-driven auth flows need porting.
@@ -219,18 +219,40 @@ out of the way; the current call sites say they do not.
 
 ## 9. Pre-launch product work
 
-**Data-gated pages.** `MARINE_ENABLED`, `AIR_QUALITY_ENABLED`, `EARTHQUAKE_ENABLED` and
-`ELEVATION_ENABLED` are all `false` in production. Publishing V2 makes these pages public:
+**Feature flags go on in production (owner decision, 2026-09-17).** `MARINE_ENABLED`,
+`AIR_QUALITY_ENABLED`, `EARTHQUAKE_ENABLED` and `ELEVATION_ENABLED` are `"false"` in
+`docker-compose.prod.yml` today. They are to be switched on, so these pages launch with real
+data rather than a conditioned empty state.
 
-- Editorial, no live data, safe as-is: `/deniz/kiyi-tipleri`, `/deprem/fay-hatlari`,
-  `/deprem/hazirlik`, `/dunya/kita`, `/turkiye/bolge`.
-- Data-dependent: `/deniz/karadeniz`, `/deniz/ege`, `/deniz/marmara`, `/deniz/akdeniz`,
-  `/deprem`.
+Three of the four flip safely. Every upstream URL they need carries a schema default —
+`CMEMS_STAC_BASE_URL`, `AFAD_EVENT_API_BASE_URL`, `ELEVATION_BASE_URL` — and the companion
+ingest switches (`MARINE_WARMUP_ENABLED`, `EARTHQUAKE_INGEST_ENABLED`,
+`AIR_QUALITY_INGEST_ENABLED`, `ECMWF_ENABLED`) all default to `true`, so flipping the leg
+flag is sufficient to start ingest. No credential is involved.
 
-Apply T-024's pattern to the five data-dependent pages: conditional copy driven by whether
-real values are present, no claim of live telemetry when there is none, a neutral
-"source not connected yet" state instead of empty tables. Never a fabricated number. When a
-flag is switched on, the values fill in with no further copy change.
+**`AIR_QUALITY_ENABLED` is the exception and it is a hard blocker.** `src/config/env.schema.ts`
+declares `ADS_API_KEY` as `optional()` and then requires it through a `superRefine`
+cross-check whenever the leg is on — the schema comment states the intent outright: "a
+keyless deployment with the leg off must still boot". `.env.prod` carries eight keys
+(`AUTH_HMAC_PEPPER`, `INTERNAL_REQUEST_TOKEN`, `JWT_SECRET`, the Postgres trio,
+`REDIS_PASSWORD`, `SITE_URL`) and `ADS_API_KEY` is not among them; the local `.env` has it,
+which is why air quality works in development.
+
+Setting `AIR_QUALITY_ENABLED=true` in production without first placing `ADS_API_KEY` in
+`.env.prod` fails env validation **at boot**. The API container then crashloops, and because
+`web` depends on `api` the entire site goes down — not just the air-quality pages. The key
+must land first; the flag second.
+
+**The conditional copy still gets written.** With the flags on it becomes the degraded path
+rather than the normal one, and that is exactly when it matters: the `*Safe`/`*Resilient`
+wrappers answer an upstream outage with an empty payload rather than an error, so without
+the branch a Copernicus or AFAD outage silently returns the site to T-024's defect —
+prose promising live hourly telemetry over nothing. Same rule either way: a page may
+describe the geography it is about; it may not claim a reading it does not have, and it
+never fabricates a number or paints an absent value with the magnitude ramp.
+
+`/deniz/kiyi-tipleri`, `/deprem/fay-hatlari`, `/deprem/hazirlik`, `/dunya/kita` and
+`/turkiye/bolge` are purely editorial and need nothing either way.
 
 **English content.** `lib/seo/indexing.ts` already carries `EN_CONTENT_READY = false`, which
 drives per-surface index decisions. V1 tells English readers the truth on seven pages via
@@ -239,10 +261,14 @@ drives per-surface index decisions. V1 tells English readers the truth on seven 
 remember to render it; binding the notice and the indexing decision to one flag means the
 two cannot drift, and flipping the flag retires the notice everywhere at once.
 
-**Launch gating.** The work accumulates on `dev`. The merge to `main` — which is the launch —
-happens after T-019 delivers a domain and TLS. Launching before that would introduce the new
-site with login, favourites and every game mode broken, because `Secure` cookies and
-`crypto.randomUUID` both require a secure context.
+**Launch timing is not decided here (owner, 2026-09-17).** The work accumulates on `dev` and
+is merge-ready when the four PRs land; when it goes to `main` is a separate call the owner
+makes later, and nothing in this task waits on it.
+
+One fact to carry into that call rather than rediscover: without TLS, `Secure` cookies are
+not stored and `crypto.randomUUID` is unavailable, so login persistence, favourites and every
+game mode stay broken whatever else ships (T-019). That is true of V1 today as well, so it is
+not a regression the launch introduces — only a limitation it inherits.
 
 ## 10. Out of scope
 
@@ -274,6 +300,13 @@ PR4  Dead-code removal                    (site-*, auth, country, entity-index, 
 PR3 must be atomic: the prefix removal, the V1 route deletion and the redirect table land
 together or the site is briefly inconsistent. PR4 is deliberately separate so PR3's diff
 stays reviewable.
+
+**One piece of work belongs to no PR: switching the production feature flags on.**
+`docker-compose.prod.yml` lives on the Hetzner host, not in either repository — both
+`deploy.yml` workflows SSH in and run `docker compose` against the host's own copy — so
+editing the working copy at the workspace root deploys nothing. It is an operational change,
+runs independently of the four PRs, and is reversible in one line. The plan carries it as
+Task 11a with the key-before-flag ordering spelled out.
 
 ## 12. Verification
 
@@ -309,5 +342,13 @@ Specific gates:
   lands underneath the sticky header — a silent failure no test currently catches.
   `components/anchor-offset-token.test.ts` is the existing tripwire for this token family and
   should be extended rather than bypassed.
-- **Launch timing depends on T-019**, which depends on a domain that is not yet in hand. The
-  work is sequenced so that none of it is blocked by that, only the final merge.
+- **`ADS_API_KEY` can take the whole site down.** Switching `AIR_QUALITY_ENABLED` on in
+  production before the key is in `.env.prod` fails env validation at boot, crashloops the
+  API container, and takes `web` with it through the compose dependency. The ordering — key
+  first, flag second — is not a preference. Verify the container is healthy after the flip
+  before doing anything else, and keep the other three flags in a separate change so a
+  rollback is one line.
+- **Turning the flags on starts scheduled ingest on the Hetzner host.** Marine warmup,
+  AFAD earthquake ingest and the CAMS air-quality tour all begin writing to Postgres and
+  calling upstream on a timer. Watch disk and memory on the first day; none of this has ever
+  run in production.
