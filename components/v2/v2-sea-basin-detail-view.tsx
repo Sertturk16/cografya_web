@@ -215,7 +215,13 @@ export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailVie
                           : "—"}
                       </td>
                       <td className="p-3 sm:p-4 text-[11px] text-muted-foreground font-mono">
-                        {pt.validAt || "Güncel"}
+                        {/* "—", never "Güncel". The column heading is "Model Zamanı", so a
+                            fallback string here is read as an ANSWER to it: the row states a
+                            freshness it does not have, and states it in the case where no cycle
+                            has been ingested and the platform knows least. The three cells to
+                            the left of this one already use the neutral dash; `validAt` was the
+                            exception to the table's own convention. */}
+                        {pt.validAt || "—"}
                       </td>
                     </tr>
                   );
