@@ -9,6 +9,11 @@ import { describe, expect, it } from "vitest";
  * `caches` — the mechanism behind the acceptance line "no token and no PII in browser
  * storage" (plan §12 #2).
  *
+ * T-032 PR4 deleted `components/auth/`; the auth UI is `components/v2/v2-*-card.tsx` and the
+ * scan roots moved with it. The rule did not move — a token in browser storage is the same
+ * breach whichever component puts it there — and this file was nearly deleted with the directory
+ * it happened to live in, which is why it now lives beside the modules it actually guards.
+ *
  * `LIB_FILES` is DERIVED from the import graph, not hand-maintained (review
  * `TEST85-M1`/`C3`; plan header item 5) — a hand list silently stopped covering a new
  * `lib/auth` module the moment one shipped without a matching edit here, exactly the gap
@@ -26,9 +31,18 @@ import { describe, expect, it } from "vitest";
  * which must not self-trigger the scan.
  */
 
-const COMPONENT_DIR = new URL("./", import.meta.url);
-const LIB_AUTH_DIR = new URL("../../lib/auth/", import.meta.url);
-const SELF = "no-browser-storage.test.ts";
+const COMPONENT_DIR = new URL("../../components/v2/", import.meta.url);
+const LIB_AUTH_DIR = new URL("./", import.meta.url);
+/**
+ * Tests are excluded, not just this one.
+ *
+ * The rule is about SHIPPED code. A test asserting that nothing touches `localStorage` has to
+ * name `localStorage` to do it, and so does a test that stubs it — under the old
+ * `components/auth/**` root there was exactly one such file and excluding it by name was enough.
+ * The V2 root has several, and excluding by name again would be the hand-kept list this file's
+ * own docblock argues against two paragraphs down.
+ */
+const isTest = (name: string) => /\.test\.tsx?$/.test(name);
 
 function stripComments(source: string): string {
   return source
@@ -41,7 +55,7 @@ function stripComments(source: string): string {
 function componentFiles(): { path: string; code: string }[] {
   const names = readdirSync(COMPONENT_DIR, { recursive: true, encoding: "utf8" }).filter(
     (name): name is string =>
-      typeof name === "string" && /\.(?:ts|tsx)$/.test(name) && name !== SELF,
+      typeof name === "string" && /\.(?:ts|tsx)$/.test(name) && !isTest(name),
   );
   return names.map((name) => ({
     path: `components/auth/${name}`,

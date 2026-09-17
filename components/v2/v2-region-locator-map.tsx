@@ -8,6 +8,7 @@ import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import type { RegionProvinceItem } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Compass, Users, ArrowUpRight } from "lucide-react";
+import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
 
 interface V2RegionLocatorMapProps {
   regionName: string;
@@ -167,6 +168,7 @@ export function V2RegionLocatorMap({
             })}
           </g>
         </svg>
+        <V2MapAttribution inlandWater context />
       </div>
 
       {/* Quick Province Pill Shortcuts */}

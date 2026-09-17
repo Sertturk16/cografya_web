@@ -66,6 +66,7 @@ import {
   Maximize2,
   Minimize2,
 } from "lucide-react";
+import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
 
 export type ToolMode = "distance" | "coordinates" | "area";
 
@@ -1389,6 +1390,7 @@ export function V2ToolWorkbench({
               );
             })}
           </svg>
+          <V2MapAttribution inlandWater context />
         </div>
       </div>
 

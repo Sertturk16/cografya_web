@@ -123,13 +123,19 @@ describe("both detail pages render a locator that carries its obligations", () =
     expect(v2Locator).not.toMatch(/aria-label=\{`/);
   });
 
-  it("credits OSM on the province locator, in the markup and not only in a comment", () => {
+  it("credits its sources on the province locator, in the markup and not only in a comment", () => {
     // `code()` has already stripped comments — this component's docblock argues the credit at
     // length, so a naive scan would pass on the prose after someone deleted the <figcaption>.
-    expect(v2Locator).toMatch(/<figcaption[^>]*>\{t\("attribution"\)\}<\/figcaption>/);
-    // Read in the component, not accepted as a prop: a caller-supplied credit can be dropped at
-    // the call site and stops travelling with the figure (the same rule `LocatorMap` follows).
-    expect(v2Locator).toMatch(/getTranslations\("Map"\)/);
+    //
+    // T-032 PR4 moved the credit itself into `V2MapAttribution`, shared by all eight V2 map
+    // surfaces: this one drew the JRC inland-water layer and the Natural Earth context while
+    // crediting only OSM, and the other seven credited nothing at all. What this file still
+    // guards is that the figure has a caption and that the caption is the shared component —
+    // the layer-by-layer rule lives in `lib/map/tr-inland-water-jrc.test.ts`, which derives its
+    // surface list from the imports rather than from a hand-kept list.
+    expect(v2Locator).toMatch(/<figcaption>[\s\S]{0,120}<V2MapAttribution/);
+    expect(v2Locator).toMatch(/<V2MapAttribution[^>]*\binlandWater\b/);
+    expect(v2Locator).toMatch(/<V2MapAttribution[^>]*\bcontext\b/);
   });
 
   it("names the province composite once for assistive tech and hides the drawing", () => {

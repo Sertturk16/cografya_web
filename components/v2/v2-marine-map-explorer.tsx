@@ -30,6 +30,8 @@ import {
   Clock,
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
+import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { marinePointAnchorId } from "@/lib/marine/anchors";
 
 export interface MarinePointData {
   slugTr: string;
@@ -199,7 +201,10 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
   };
 
   const scrollToStationRow = (slug: string) => {
-    const el = document.getElementById(`station-row-${slug}`);
+    // Resolved through the same function, from the point the slug belongs to — a second
+    // hand-built template here would be the drift this page just paid for.
+    const target = marinePoints.find((p) => p.slugTr === slug);
+    const el = target === undefined ? null : document.getElementById(marinePointAnchorId(target));
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -509,6 +514,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             })}
           </g>
         </svg>
+        <V2MapAttribution inlandWater context />
 
         {/* SELECTED STATION SPOTLIGHT MODAL / CARD OVERLAY */}
         {selectedPoint && (
@@ -887,7 +893,14 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   return (
                     <TableRow
                       key={point.slugTr}
-                      id={`station-row-${point.slugTr}`}
+                      /* THE ID IS THE LINK TARGET, so it comes from the shared function.
+                         It read `station-row-${point.slugTr}` — hand-built, and it did not match
+                         `marinePointAnchorId`, which is what the 27 coastal province pages link
+                         to (`/deniz#deniz-reference-points-BASIN-slug`). Every one of those
+                         links landed at the top of this page instead of at the station: no
+                         error, no 404, no CI signal. That silent-failure class is the entire
+                         reason `lib/marine/anchors.ts` exists. */
+                      id={marinePointAnchorId(point)}
                       tabIndex={0}
                       aria-selected={isSelected}
                       aria-label={`${point.nameTr} istasyonunu seç`}

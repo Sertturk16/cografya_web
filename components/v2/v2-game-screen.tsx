@@ -65,6 +65,7 @@ import {
   ShieldCheck,
   Star,
 } from "lucide-react";
+import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
 
 /** Same bounds the existing +/− buttons already clamp `zoom` to (see the toolbar below). */
 const MIN_ZOOM = 0.8;
@@ -1119,6 +1120,7 @@ export function V2GameScreen({
                 );
               })}
             </svg>
+            <V2MapAttribution inlandWater context />
 
             {/* Not Playing Overlay */}
             {!isPlaying && !isFinished && (
