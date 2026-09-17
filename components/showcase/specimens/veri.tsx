@@ -8,6 +8,7 @@ import {
   TableCaption,
   TableEmpty,
   TableSkeleton,
+  TableSortButton,
 } from "@/components/ui/table";
 import {
   Progress,
@@ -187,6 +188,39 @@ export function VeriSpecimens() {
             absent={{ label: "Veri bağlı değil", hint: "MARINE_ENABLED kapalı" }}
           />
         </div>
+      </Specimen>
+
+      <Specimen
+        name="Table — sıralama"
+        description="Sıralama bir EYLEM, o yüzden gerçek bir button — klavyeyle ulaşılabilir ve basılabilir olarak duyurulur; tıklanabilir bir <th> ikisi de değildir. aria-sort ise <th>'de durur, butonda değil: sütunun durumunu tarif eder, buton onu yalnızca değiştirir. Sırasız durumun kendi ikonu var, yani sıralanabilen bir sütun sıralanamayandan tıklamadan ayırt edilir."
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead sort="ascending">
+                <TableSortButton direction="ascending">İl</TableSortButton>
+              </TableHead>
+              <TableHead sort="none">
+                <TableSortButton direction="none">Bölge</TableSortButton>
+              </TableHead>
+              <TableHead sort="none" className="text-right">
+                <TableSortButton direction="none">Ortalama °C</TableSortButton>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>Adana</TableCell>
+              <TableCell>Akdeniz</TableCell>
+              <TableCell className="text-right tabular-nums">18,2</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Erzurum</TableCell>
+              <TableCell>Doğu Anadolu</TableCell>
+              <TableCell className="text-right tabular-nums">5,1</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </Specimen>
     </>
   );

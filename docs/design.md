@@ -82,22 +82,62 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
 - Mandatory viewports for any header/layout change: 320, 360, 390 px and desktop.
   Await `document.fonts.ready` before measuring heights (fallback fonts are narrower).
 
-## Components (V2)
+## Components
 
-- `components/ui/button.tsx`: `cva`, renders a real `<button>`, no `asChild`. Variants
-  `default | primary | secondary | emerald | sky | teal | amber | outline | ghost |
-destructive | link`; sizes `sm | md | default | lg | icon | icon-sm | icon-lg`; props
-  `isLoading`, `leftIcon`, `rightIcon`. Button-styled link:
-  `<Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>`.
-- Primitives on Base UI: accordion, alert, avatar, badge, card, checkbox, dialog,
-  dropdown-menu, input, label, select, sheet, skeleton, sonner, switch, table, tabs,
-  textarea. Add new ones with the shadcn CLI (`base-nova` style) and fix the token bridge
-  if the generated file introduces raw oklch values.
-- Fully clickable card: wrap the whole card in one `Link` (one target, one accessible
-  name). The `::after` stretched-link trick exists only in V1 `/araclar`; do not add a
-  third variant.
+Two directories, and the boundary is operational rather than taxonomic:
+
+- **`components/ui/`** — output of `shadcn add` (`base-nova` style), Terra-themed. CLI-managed.
+- **`components/patterns/`** — written here: `typography` (with `Kbd`), `stat-tile`,
+  `metric-value`, `empty-state`, `callout`, `form-field`, `map-attribution`, `map-legend`,
+  `theme-pair`.
+
+The reason is concrete: `shadcn add` **overwrites** files in the configured `ui` alias — it
+asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living
+there is one CLI run away from being silently clobbered.
+
+Read every CLI import before committing it. The T-034 batch arrived with `import { cn } from
+"cn"`, an unrelated npm package the CLI also installed, and with a `Tooltip` that had no
+`role` and no `aria-describedby`.
+
+### Rules that hold across every component
+
+- Colour comes from a bridge token. No `bg-[var(--color-x,#hex)]` escape, no brand hex, no raw
+  Tailwind palette class, no hand-written `dark:`. `components/ui/token-binding.test.ts`
+  enforces all four across `ui`, `patterns`, `components/v2` and the V2 pages; its two
+  exemptions are listed there with reasons.
+- A semantic family has two members: the base is the FILL, the `-strong` member is text on a
+  tint of that fill. Not interchangeable — the base measures 2.62:1 as text on its own 15%
+  tint for warning, 3.98–4.17:1 for the others.
+- `Button` has no `asChild`. A link styled as a button is
+  `<Link className={cn(buttonVariants({ variant, size }))}>`.
+- A component is not done until its specimen renders at `/design-system`;
+  `components/showcase/registry.test.ts` fails if one is missing.
+
+### Boundaries worth knowing before reaching for the wrong one
+
+- **`Alert` vs `Callout`.** `Alert` reports SYSTEM STATE and resolves `role="alert"`/`"status"`
+  for that reason. `Callout` is an editorial aside and carries NO role — typesetting a
+  pedagogical note as an Alert interrupts assistive technology for something that is not an
+  event. `FormErrorSummary` does carry `role="alert"`: a failed submission genuinely is one.
+- **`MetricValue.absent` is required.** There is no safe default. It never renders `0` and
+  never a bare dash — a dash sits in the same slot a number would and reads as a measurement.
+  This is T-024's defect made impossible rather than re-fixed per page.
+- **`MapLegend` requires `bins` on the classed variant**, so an unlabelled classed legend
+  cannot be built (data-viz rule 5 below).
+- **`MapAttribution` beside every map** is ODbL compliance, not house style.
+- **`Separator` takes `decorative`** for a rule that carries no meaning; Base UI announces
+  every separator otherwise.
+
+### Known warts
+
+- `Button`'s `emerald`, `sky`, `teal` and `amber` are colour-named variants in an otherwise
+  semantic set. 34 files call them, so renaming is its own change.
+- `--chart-*` and `--sidebar-*` remain shadcn's achromatic stock. Nothing reads them.
+- Row selection and multi-select were dropped from the T-034 scope: measured, zero consumers.
+  Add them when one appears.
+- Fully clickable card: wrap the whole card in one `Link` (one target, one accessible name).
+  The `::after` stretched-link trick exists only in V1 `/araclar`; do not add a third variant.
 - Map hover/selection chrome uses `--province-*`, `--map-*`, `--game-*` tokens.
-  Attribution ("© OpenStreetMap katkıcıları, ODbL") renders beside every map.
 
 ## Data-viz colour doctrine (a correctness rule, not taste)
 
