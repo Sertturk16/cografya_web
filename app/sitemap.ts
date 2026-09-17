@@ -237,6 +237,27 @@ function continentEntries(): MetadataRoute.Sitemap {
   );
 }
 
+/**
+ * FORCE-DYNAMIC, and this route is the clearest case `docs/architecture.md`'s rule describes.
+ *
+ * Every dynamic tier below reaches the api through a `*Resilient` wrapper, and the production
+ * Docker build has no network to the api container — so at build time all five degrade to empty
+ * and that empty is what gets baked in. On a `revalidate`-only route it is then served until a
+ * request happens to land after the window.
+ *
+ * Measured on the live deployment minutes after the 2026-09-17 release: **31 URLs instead of
+ * 320.** The twenty static rows were all there; every province, country, book, continent and
+ * region — 289 URLs — was missing, and would have stayed missing for up to an hour after each
+ * deploy. Two hours earlier this file gained nine routes it had never advertised (#176), which
+ * is a strange thing to fix on a document that arrives nine-tenths empty.
+ *
+ * The caching this gives up is worth nothing here: a sitemap is fetched by crawlers, rarely, and
+ * one api round-trip per fetch is not a load concern. Correctness is the whole product of this
+ * route — a sitemap that omits 90% of the site is worse than a slow one, and an empty-ish urlset
+ * is a signal to a crawler, not a neutral absence.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Per-hub builders concatenated into one flat urlset. Provinces, countries and books fetch
   // in parallel (independent hubs); a build-time api outage degrades each to empty per its
