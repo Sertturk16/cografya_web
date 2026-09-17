@@ -182,3 +182,28 @@ describe("Tabs carries its variant on context", () => {
     expect(source).toContain("inset_0_-2px_0_0_currentColor");
   });
 });
+
+describe("AlertTitle is a paragraph unless asked otherwise", () => {
+  const source = read("alert");
+
+  /**
+   * `Callout` and `EmptyState` both use `<p>` for their leads and document why: a component
+   * that sits inside a section which already has a heading puts a rung in the outline the page
+   * structure does not have. `AlertTitle` shipped as `<h5>` and contradicted both — and an
+   * alert is a component you use several of, so five demo alerts put ten headings into one
+   * page's outline, two levels below anything above them.
+   */
+  it("does not hard-code a heading element", () => {
+    expect(source).not.toMatch(/<h[1-6]\b/);
+  });
+
+  it("defaults to a paragraph", () => {
+    expect(source).toContain('level === undefined ? "p"');
+  });
+
+  it("still offers a real heading for the case that wants one", () => {
+    // A full-page error state is content, not an aside, and does belong in the outline.
+    expect(source).toContain("level?: AlertTitleLevel");
+    expect(source).toContain("`h${level}`");
+  });
+});

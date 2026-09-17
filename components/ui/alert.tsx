@@ -77,9 +77,32 @@ function Alert({
   );
 }
 
-function AlertTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+type AlertTitleLevel = 2 | 3 | 4 | 5 | 6;
+
+export interface AlertTitleProps extends React.HTMLAttributes<HTMLElement> {
+  /**
+   * Promote the title to a real heading. Only for an alert that IS the page's content — a
+   * full-page error state, say — where the reader needs it in the document outline.
+   */
+  readonly level?: AlertTitleLevel;
+}
+
+/**
+ * A paragraph by default, not a heading.
+ *
+ * `Callout` and `EmptyState` both deliberately use `<p>` for their leads and record why: a
+ * component that sits inside a section which already has a heading puts a rung in the outline
+ * that the page structure does not have. `AlertTitle` shipped as `<h5>` and contradicted its
+ * own siblings — and because an alert is a component you use several of, five demo alerts
+ * added ten headings to one page's outline, at a level two rungs below anything above them.
+ *
+ * The `level` prop is the door out, for the case that genuinely wants a heading. It is a
+ * deliberate act rather than the default, which is the point.
+ */
+function AlertTitle({ className, level, ...props }: AlertTitleProps) {
+  const Tag = (level === undefined ? "p" : `h${level}`) as React.ElementType;
   return (
-    <h5
+    <Tag
       className={cn("font-semibold leading-tight text-sm tracking-tight", className)}
       {...props}
     />

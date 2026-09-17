@@ -1,11 +1,25 @@
+import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { CATEGORIES } from "@/components/showcase/registry";
 import { ArrowRight } from "lucide-react";
 
 interface PageProps {
   readonly params: Promise<{ locale: Locale }>;
+}
+
+/** See the category page's note: a distinct title, and `noindex` stated per-route. */
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildMetadata({
+    locale,
+    surface: "noindex",
+    hrefForLocale: () => "/v2/design-system",
+    title: "Terra tasarım sistemi",
+    description: "Her bileşenin iki temadaki hâli, tek sayfada.",
+  });
 }
 
 export default async function DesignSystemIndexPage({ params }: PageProps) {

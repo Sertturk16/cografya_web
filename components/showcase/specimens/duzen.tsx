@@ -10,6 +10,10 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -44,6 +48,8 @@ import {
   SheetTrigger,
   SheetContent,
   SheetHeader,
+  SheetFooter,
+  SheetClose,
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
@@ -222,15 +228,52 @@ export function DuzenSpecimens() {
       <Specimen
         name="Sheet"
         portals
-        description="Drawer olarak da bu bileşen kullanılır; ayrı bir Drawer yok."
+        description="Drawer olarak da bu bileşen kullanılır; ayrı bir Drawer yok. Filtre paneli en doğal V2 kullanımı: başlık, gövde ve kapanış eylemleri bir arada."
       >
         <Sheet>
-          <SheetTrigger render={<Button variant="outline">Paneli aç</Button>} />
+          <SheetTrigger render={<Button variant="outline">Filtreler</Button>} />
           <SheetContent>
             <SheetHeader>
               <SheetTitle>Katman ayarları</SheetTitle>
               <SheetDescription>Haritada hangi katmanların görüneceğini seçin.</SheetDescription>
             </SheetHeader>
+            <div className="flex-1 space-y-5 overflow-y-auto px-4 py-2">
+              <div className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Katmanlar
+                </p>
+                {[
+                  ["sheet-layer-provinces", "İl sınırları", true],
+                  ["sheet-layer-water", "Göller ve barajlar", true],
+                  ["sheet-layer-faults", "Fay hatları", false],
+                  ["sheet-layer-relief", "Yükselti gölgelemesi", false],
+                ].map(([id, label, on]) => (
+                  <div key={id as string} className="flex items-center justify-between gap-3">
+                    <Label htmlFor={id as string} className="text-sm font-normal">
+                      {label as string}
+                    </Label>
+                    <Switch id={id as string} defaultChecked={on as boolean} />
+                  </div>
+                ))}
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label htmlFor="sheet-magnitude" className="text-xs font-bold">
+                  En düşük büyüklük
+                </Label>
+                <Select id="sheet-magnitude" defaultValue="4">
+                  <option value="3">3,0 ve üzeri</option>
+                  <option value="4">4,0 ve üzeri</option>
+                  <option value="5">5,0 ve üzeri</option>
+                </Select>
+              </div>
+            </div>
+            <SheetFooter>
+              <SheetClose render={<Button variant="ghost">Temizle</Button>} />
+              <SheetClose render={<Button variant="primary">Uygula</Button>} />
+            </SheetFooter>
           </SheetContent>
         </Sheet>
       </Specimen>
