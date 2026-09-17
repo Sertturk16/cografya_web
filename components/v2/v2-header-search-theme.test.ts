@@ -30,12 +30,45 @@ describe("T-014 V2 Header Global Search and Theme Toggle", () => {
     expect(matches!.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("ThemeToggle toggles 'dark' class on documentElement and matches QA selectors", () => {
-    expect(themeToggleContent).toContain('document.documentElement.classList.add("dark")');
-    expect(themeToggleContent).toContain('document.documentElement.classList.remove("dark")');
-    expect(themeToggleContent).toContain('localStorage.setItem("theme"');
-    // Accessible label must match /Tema|Karanlık|Aydınlık|Dark|Light/i
+  /**
+   * Rewritten by T-034 phase B for the mechanism that replaced the hand-rolled toggle.
+   *
+   * What this test protects is unchanged: the control must actually drive the theme, must
+   * persist the choice under the key the site has always used, and must carry an accessible
+   * name the QA selectors can find.
+   *
+   * What changed is how. The original asserted three implementation details —
+   * `classList.add("dark")`, `classList.remove("dark")` and a direct `localStorage.setItem`
+   * — all of which are now `next-themes`' job, done in a blocking script before hydration
+   * rather than in a `useEffect` after it. Asserting them here would pin an implementation
+   * the app no longer has, and pinning it would have meant keeping the light flash the
+   * provider exists to remove.
+   */
+  it("ThemeToggle drives next-themes, offers three states, and keeps the QA selectors", () => {
+    expect(themeToggleContent).toContain('from "next-themes"');
+    expect(themeToggleContent).toContain("useTheme()");
+
+    // Three real destinations. `system` being reachable is the point: the previous binary
+    // toggle pinned a choice on first press and could never follow the OS again.
+    for (const choice of ["light", "dark", "system"]) {
+      expect(themeToggleContent).toContain(`"${choice}"`);
+    }
+
+    // The storage key is a compatibility promise — visitors keep the preference they set
+    // before this change. next-themes writes it; the provider passes it.
+    const providerContent = readFileSync(
+      fileURLToPath(new URL("../theme-provider.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(providerContent).toContain('storageKey="theme"');
+    expect(providerContent).toContain('attribute="class"');
+
+    // Accessible name must still match /Tema|Karanlık|Aydınlık|Dark|Light/i
     expect(themeToggleContent).toMatch(/Tema|Karanlık|Aydınlık|Dark|Light/i);
+    expect(themeToggleContent).toContain("aria-label");
+
+    // The old toggle changed nothing a screen reader could perceive.
+    expect(themeToggleContent).toContain('aria-live="polite"');
   });
 
   it("SearchCombobox supports Ctrl+K global shortcut and v2 command dialog", () => {
