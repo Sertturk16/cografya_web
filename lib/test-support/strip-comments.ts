@@ -27,17 +27,43 @@
  * literals are copied through verbatim (a `//` in a URL literal is not a comment); both comment
  * forms collapse to a single space, so tokens either side never weld into a new identifier.
  *
- * NOT a parser. Regex literals are not tracked, so a regex whose body contains an escaped comment
- * opener would still be read as one. No file scanned by these tests contains such a literal; if
- * that changes, this function is the place to fix it, once, rather than in each test.
+ * Regex literals are tracked too, for the same reason strings are. `components/v2/v2-rich-prose.tsx`
+ * holds `/(\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`)/g`: the backticks in it flipped the
+ * scanner into template-literal mode and it copied the next fifteen lines through verbatim,
+ * comments and all — the leak this helper exists to close, in the other direction. Eleven tracked
+ * files leaked that way, `v2-tool-workbench.tsx` and `tool-png.ts` among them, both already read
+ * through this function.
+ *
+ * NOT a parser. Whether a `/` opens a regex or divides is decided from the previous significant
+ * character, the standard heuristic; `<` and `>` are deliberately NOT treated as regex-opening, so
+ * JSX text containing a slash stays division. A misread regex bails at the newline rather than
+ * running to EOF, so the worst case is a few characters copied through, never a swallowed scope.
  */
 export function stripComments(source: string): string {
+  return scan(source, 0, false).out;
+}
+
+/**
+ * Scans from `start`, returning the stripped text and the index it stopped at. With
+ * `untilCloseBrace` it is reading a `${…}` interpolation and returns on the brace that closes it.
+ */
+function scan(source: string, start: number, untilCloseBrace: boolean): { out: string; i: number } {
   let out = "";
-  let i = 0;
+  let i = start;
+  let depth = 0;
 
   while (i < source.length) {
     const ch = source[i]!;
     const next = source[i + 1];
+
+    if (untilCloseBrace) {
+      if (ch === "}") {
+        if (depth === 0) return { out, i };
+        depth -= 1;
+      } else if (ch === "{") {
+        depth += 1;
+      }
+    }
 
     // Line comment: to end of line, newline kept so line-anchored assertions still line up.
     if (ch === "/" && next === "/") {
@@ -56,9 +82,43 @@ export function stripComments(source: string): string {
     }
 
     // String or template literal: copied verbatim, escapes honoured so `\"` does not close it.
+    // A template's `${…}` holes are code, not text, so they are scanned rather than copied —
+    // `v2-game-screen.tsx` puts a `//` comment inside one, and copying it through would leak the
+    // prose this function exists to remove.
     if (ch === '"' || ch === "'" || ch === "`") {
       out += ch;
       i += 1;
+      while (i < source.length) {
+        const inner = source[i]!;
+        if (inner === "\\") {
+          out += inner;
+          i += 1;
+          if (i < source.length) {
+            out += source[i]!;
+            i += 1;
+          }
+          continue;
+        }
+        if (ch === "`" && inner === "$" && source[i + 1] === "{") {
+          out += "${";
+          const hole = scan(source, i + 2, true);
+          out += hole.out;
+          i = hole.i;
+          continue;
+        }
+        out += inner;
+        i += 1;
+        if (inner === ch) break;
+      }
+      continue;
+    }
+
+    // Regex literal: copied verbatim, character classes and escapes honoured so `[/]` and `\/` do
+    // not close it. Bails at a newline, so a `/` misread as an opener cannot run away.
+    if (ch === "/" && opensRegex(out)) {
+      out += ch;
+      i += 1;
+      let inClass = false;
       while (i < source.length) {
         const inner = source[i]!;
         out += inner;
@@ -70,7 +130,13 @@ export function stripComments(source: string): string {
           }
           continue;
         }
-        if (inner === ch) break;
+        if (inner === "\n") break;
+        if (inClass) {
+          if (inner === "]") inClass = false;
+          continue;
+        }
+        if (inner === "[") inClass = true;
+        else if (inner === "/") break;
       }
       continue;
     }
@@ -79,5 +145,44 @@ export function stripComments(source: string): string {
     i += 1;
   }
 
-  return out;
+  return { out, i };
+}
+
+/** Operators and punctuation after which a `/` can only begin a regex, never divide. */
+const REGEX_PRECEDING_PUNCTUATION = new Set("(,=:[!&|?;{+-*%^~".split(""));
+
+/** Keywords after which the same holds. `return /x/` divides nothing. */
+const REGEX_PRECEDING_KEYWORDS = new Set([
+  "return",
+  "typeof",
+  "instanceof",
+  "in",
+  "of",
+  "new",
+  "delete",
+  "void",
+  "case",
+  "do",
+  "else",
+  "yield",
+  "await",
+]);
+
+/**
+ * Whether the `/` about to be read opens a regex literal, judged from the last significant
+ * character already emitted. Comments emit a space, so the lookback lands on the token before
+ * them. `<` and `>` are absent on purpose: `<br />` and `km/h` in JSX text are not regexes.
+ */
+function opensRegex(out: string): boolean {
+  let j = out.length - 1;
+  while (j >= 0 && /\s/.test(out[j]!)) j -= 1;
+  if (j < 0) return true;
+
+  const ch = out[j]!;
+  if (REGEX_PRECEDING_PUNCTUATION.has(ch)) return true;
+  if (!/[A-Za-z0-9_$]/.test(ch)) return false;
+
+  let k = j;
+  while (k >= 0 && /[A-Za-z0-9_$]/.test(out[k]!)) k -= 1;
+  return REGEX_PRECEDING_KEYWORDS.has(out.slice(k + 1, j + 1));
 }
