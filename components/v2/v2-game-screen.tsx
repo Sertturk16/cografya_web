@@ -3,9 +3,7 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import type { GeographicRegion } from "@/lib/api/types";
-import type { Locale } from "@/i18n/routing";
-import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
-import type { ContentSurface } from "@/lib/seo/indexing";
+import { BreadcrumbsNav, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs-nav";
 import type { GameModeId } from "@/lib/game/config";
 import type { GameShapeEntry, GameShapeTargetEntry } from "@/lib/game/map-shapes";
 import {
@@ -87,17 +85,15 @@ export interface V2GameScreenProps {
   readonly submitModeTag: string;
   readonly region?: GeographicRegion | null;
   readonly viewBox?: string;
-  readonly locale: Locale;
   /**
-   * Every `(play)/oyun/*` route that renders this screen carries its own literal
-   * `surface: "noindex"` in `buildMetadata` (`lib/seo/indexing.ts`'s ruling for the per-mode
-   * game screens) — threaded in here rather than hardcoded so this component cannot drift
-   * from the page's own SEO surface if a future mode ever opens one up.
+   * Root-relative path of THIS screen, for the breadcrumb trail's last item's `path` (the
+   * primitive's React `key`, and the datum a future JSON-LD emitter would need). No `locale`
+   * or `surface` prop alongside it any more: this component renders `BreadcrumbsNav`, the
+   * client-safe half of `components/patterns/breadcrumbs.tsx`'s split, which draws the trail
+   * only and has no JSON-LD to gate — every `(play)/oyun/*` route is `surface: "noindex"` in
+   * `lib/seo/indexing.ts` regardless, so the full `Breadcrumbs` server component emitted
+   * nothing extra here even before the split forced this component off it.
    */
-  readonly surface: ContentSurface;
-  /** Root-relative path of THIS screen, for the breadcrumb trail's last item. Only feeds
-   *  `breadcrumbJsonLd`'s absolute-URL construction, which never runs while `surface` is
-   *  `"noindex"` — still required so the trail is correct data if that ever changes. */
   readonly currentPath: string;
 }
 
@@ -125,8 +121,6 @@ export function V2GameScreen({
   submitModeTag,
   region = null,
   viewBox = MAP_VIEWBOX,
-  locale,
-  surface,
   currentPath,
 }: V2GameScreenProps) {
   const [authState] = useAuthSession();
@@ -672,7 +666,7 @@ export function V2GameScreen({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
         {/* Top Navigation & Breadcrumbs */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <Breadcrumbs
+          <BreadcrumbsNav
             items={
               [
                 {
@@ -685,8 +679,6 @@ export function V2GameScreen({
                 { label: modeName, path: currentPath },
               ] satisfies BreadcrumbTrailItem[]
             }
-            locale={locale}
-            surface={surface}
           />
 
           <div className="flex items-center gap-2">

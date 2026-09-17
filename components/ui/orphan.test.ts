@@ -1,8 +1,7 @@
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join, relative, resolve } from "node:path";
+import { readdirSync } from "node:fs";
+import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { stripComments } from "@/lib/test-support/strip-comments";
+import { repoRoot, closureFrom } from "@/lib/test-support/import-closure";
 
 /**
  * EVERY PRIMITIVE HAS A PRODUCT CALL SITE.
@@ -87,10 +86,6 @@ import { stripComments } from "@/lib/test-support/strip-comments";
  * button whose explanatory `title` is `aria-describedby` semantics).
  */
 
-const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
-
-const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
-
 /**
  * The surface a reader can actually reach. Route groups and the domain component folders,
  * named explicitly: a pattern like "everything under app" would swallow `design-system` and
@@ -119,59 +114,6 @@ const PRODUCT_ROOTS = [
 
 /** Reachable only from here does not count as reachable. */
 const SHOWCASE_ROOTS = ["app/[locale]/design-system", "components/showcase"] as const;
-
-/** A root may name a directory or a single file. */
-function walk(dir: string): string[] {
-  if (!existsSync(dir)) return [];
-  if (statSync(dir).isFile()) return [dir];
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) return entry.name === "node_modules" ? [] : walk(full);
-    return EXTENSIONS.some((ext) => entry.name.endsWith(ext)) && !entry.name.includes(".test.")
-      ? [full]
-      : [];
-  });
-}
-
-/** `"@/components/ui/button"` / `"./table"` → an absolute path on disk, or `null` for a package. */
-function resolveSpecifier(fromFile: string, specifier: string): string | null {
-  let base: string;
-  if (specifier.startsWith("@/")) base = join(repoRoot, specifier.slice(2));
-  else if (specifier.startsWith(".")) base = resolve(dirname(fromFile), specifier);
-  else return null; // node_modules — not our graph
-
-  for (const candidate of [
-    ...EXTENSIONS.map((ext) => `${base}${ext}`),
-    ...EXTENSIONS.map((ext) => join(base, `index${ext}`)),
-  ]) {
-    if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
-  }
-  return null;
-}
-
-/** Static `import`/`export … from` and dynamic `import()`. Comments stripped first. */
-const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*)["']([^"']+)["']/g;
-
-function importsOf(file: string): string[] {
-  const source = stripComments(readFileSync(file, "utf8"));
-  return [...source.matchAll(SPECIFIER)]
-    .map((match) => resolveSpecifier(file, match[1]!))
-    .filter((path): path is string => path !== null);
-}
-
-function closureFrom(roots: readonly string[]): Set<string> {
-  const seen = new Set<string>();
-  const queue = roots.flatMap((rel) => walk(join(repoRoot, rel)));
-  for (const file of queue) seen.add(file);
-  while (queue.length > 0) {
-    for (const next of importsOf(queue.pop()!)) {
-      if (seen.has(next)) continue;
-      seen.add(next);
-      queue.push(next);
-    }
-  }
-  return seen;
-}
 
 const UI_DIR = join(repoRoot, "components/ui");
 const PRIMITIVES = readdirSync(UI_DIR)

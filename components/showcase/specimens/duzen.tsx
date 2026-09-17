@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Home } from "lucide-react";
 import { PageContainer } from "@/components/patterns/page-container";
-import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
+import { BreadcrumbsNav } from "@/components/patterns/breadcrumbs-nav";
 import { Specimen, SpecimenRow } from "../specimen";
 
 const RHYTHMS = ["band", "tight", "default", "loose"] as const;
@@ -295,17 +295,15 @@ export function DuzenSpecimens() {
         </Breadcrumb>
       </Specimen>
       <Specimen
-        name="Breadcrumbs"
-        description="`Breadcrumb` üstünde: aynı diziden hem `aria-current` taşıyan son kırıntıyı hem de eşleşen `BreadcrumbList` JSON-LD'sini üretir. İlk kırıntının `icon`'u `aria-hidden` sarmalanır, JSON-LD'ye hiç taşınmaz. Bu vitrin sayfası kendi `surface: noindex` yüzeyini taşıdığından JSON-LD'yi burada emitmez."
+        name="BreadcrumbsNav"
+        description="`components/patterns/breadcrumbs-nav.tsx`: aynı diziden `aria-current` taşıyan son kırıntıyı üretir, ilk kırıntının `icon`'u `aria-hidden` sarmalanır. `components/patterns/breadcrumbs.tsx`'in `Breadcrumbs`'ı bunun üstüne eşleşen `BreadcrumbList` JSON-LD'sini ekleyen bir SUNUCU bileşeni (`lib/seo/json-ld`'nin `server-only` koruması yüzünden) — bu vitrin sayfası gibi bir Client Component'ten render edilemez, ayrı bir dosyada olması da bundan: aynı dosyada iki export olarak dursaydı `pnpm build` yine kırılırdı (Turbopack sınırı export değil dosya bazlı çalışıyor). Görünen çıktısı birebir aynı olduğundan bu tek örnek hem `breadcrumbs-nav` hem `breadcrumbs` kayıtlarını karşılar."
       >
-        <Breadcrumbs
+        <BreadcrumbsNav
           items={[
             { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
             { label: "Türkiye", href: "/turkiye", path: "/turkiye" },
             { label: "Çanakkale", path: "/turkiye/canakkale" },
           ]}
-          locale="tr"
-          surface="noindex"
         />
       </Specimen>
 
