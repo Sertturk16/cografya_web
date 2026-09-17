@@ -48,7 +48,10 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Specimen, SpecimenRow } from "../specimen";
+
+const RHYTHMS = ["band", "tight", "default", "loose"] as const;
 
 const BADGE_VARIANTS = [
   "default",
@@ -288,6 +291,27 @@ export function DuzenSpecimens() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+      </Specimen>
+      <Specimen
+        name="PageContainer — ritimler"
+        description="`band` sayfa dikey dolgusu taşımaz; sayfanın kendi `py-10 sm:py-14` bandının içine oturur. Diğer üçü `pt-6 pb-20 sm:pt-10` üstüne kendi `space-y` değerini ekler."
+      >
+        <div className="w-full space-y-6">
+          {RHYTHMS.map((space) => (
+            <div
+              key={space}
+              className="overflow-hidden rounded-md border border-dashed border-border"
+            >
+              <p className="border-b border-dashed border-border bg-muted px-3 py-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                space=&quot;{space}&quot;
+              </p>
+              <PageContainer space={space}>
+                <div className="rounded-md bg-card p-4 text-sm text-foreground">Blok 1</div>
+                <div className="rounded-md bg-card p-4 text-sm text-foreground">Blok 2</div>
+              </PageContainer>
+            </div>
+          ))}
+        </div>
       </Specimen>
     </>
   );
