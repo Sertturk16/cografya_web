@@ -29,8 +29,8 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   entries and none of them says `v2`. Reading surfaces live in `app/[locale]/(site)/**` and share
   that group's layout (header, footer, skip link, ONE `<main>`); the three fullscreen game screens
   opt out by living in `(play)`. A page gets the chrome by its directory, never by importing it.
-- New UI is Tailwind + `components/ui/*`. Eleven `*.module.css` files survive, each with live
-  consumers (`earthquake`, `marine`, `climate`, `air-pollution`, `book-video`, `tools`, `map`,
+- New UI is Tailwind + `components/ui/*`. Ten `*.module.css` files survive, each with live
+  consumers (`earthquake`, `marine`, `climate`, `air-pollution`, `book-video`, `tools`,
   `locator-map`, `home`, `site-search`, `book-detail`). They are NOT frozen — "do not touch"
   is what kept `marine-attribution.module.css` shipping a mandated licence notice at 2.34:1 in
   dark mode. Their raw Terra tokens (`--color-slate`, `--color-ink`) do not redefine under

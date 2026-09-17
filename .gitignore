@@ -62,3 +62,6 @@ next-env.d.ts
 inspect_deprem.js
 .tmp-scratch/
 scripts/verify_*.mjs
+
+# Subagent git worktrees (transient; created inside the repo by the agent harness)
+.claude/worktrees/
