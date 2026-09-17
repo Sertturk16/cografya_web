@@ -30,8 +30,8 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
 ## Typography
 
 - Headings Fraunces, body Nunito Sans, body 16px / 1.6. `h2` renders in primary-dark.
-- Fluid scale in V1 globals: h1 `clamp(1.9rem, 1.2rem + 2.6vw, 2.6rem)`, h2
-  `clamp(1.4rem, 1rem + 1.4vw, 1.8rem)`. In V2 use Tailwind sizes but keep the same
+- Fluid scale in `app/globals.css`'s base layer: h1 `clamp(1.9rem, 1.2rem + 2.6vw, 2.6rem)`,
+  h2 `clamp(1.4rem, 1rem + 1.4vw, 1.8rem)`. Use Tailwind sizes on the page but keep the same
   hierarchy: one `h1` per page, headings in document order.
 
 ## Dark mode — "Night Sea"
@@ -141,8 +141,12 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 - `--chart-*` and `--sidebar-*` remain shadcn's achromatic stock. Nothing reads them.
 - Row selection and multi-select were dropped from the T-034 scope: measured, zero consumers.
   Add them when one appears.
-- Fully clickable card: wrap the whole card in one `Link` (one target, one accessible name).
-  The `::after` stretched-link trick exists only in V1 `/araclar`; do not add a third variant.
+- Fully clickable card: wrap the whole card in one `Link` (one target, one accessible name), or
+  end the card in a real CTA button inside a `Link` — which is what the tool hub does. The
+  `::after` stretched-link trick is GONE (T-032 PR4 deleted `araclar/tools.module.css` with the
+  V1 page): an invisible edge-to-edge pseudo-element is a click target nobody can see, and its
+  focus ring had to be hand-scoped with `:has()` to avoid the `:focus-within` defect this repo
+  already paid for once. Do not bring it back as a third variant.
 - Map hover/selection chrome uses `--province-*`, `--map-*`, `--game-*` tokens.
 
 ## Data-viz colour doctrine (a correctness rule, not taste)
@@ -167,7 +171,7 @@ Shipped data token sets (all in `:root`, separate from chrome):
 | -------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------ |
 | Climate chart        | `--chart-temp-line` #c2410c, `--chart-precip-bar` #1b5f8a             | `components/climate/` (shape carries meaning: line vs bars)  |
 | PM2.5                | `--chart-pm25-line` #4a3b6b                                           | `components/air/` (single series; no band, no WHO line)      |
-| Regions              | `--region-marmara` … `--region-guneydogu-anadolu` (Okabe-Ito, 7 of 8) | game region mode, `v2/turkiye/bolge/[slug]`                  |
+| Regions              | `--region-marmara` … `--region-guneydogu-anadolu` (Okabe-Ito, 7 of 8) | game region mode, `/turkiye/bolge/[slug]`                    |
 | Earthquake magnitude | `--eq-mag-1..5` (purple ramp)                                         | earthquake lists/maps                                        |
 | Game states          | `--game-correct`, `--game-wrong`, `--game-reveal` + `*-edge`          | `components/game/` (stroke pattern + glyph reinforce colour) |
 | Hypsometric          | `--map-1..6`                                                          | reserved for elevation choropleths                           |
