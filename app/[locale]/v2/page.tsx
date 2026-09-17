@@ -159,7 +159,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
                 <Badge variant="outline" size="sm" className="mb-1">
                   Atlas &amp; Harita Merkezleri
                 </Badge>
-                <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
+                <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
                   Coğrafi Bölgeler &amp; Harita Keşifleri
                 </h2>
               </div>
@@ -288,7 +288,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
                     Copernicus Marine Service &amp; ECMWF
                   </span>
                 </div>
-                <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
+                <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
                   Bugün Denizler ve Canlı Sıcaklık / Dalga Modelleri
                 </h2>
               </div>
@@ -501,7 +501,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
           </section>
 
           {/* SECTION 6: GAMIFICATION CHALLENGE BANNER */}
-          <section className="rounded-3xl border border-[var(--color-secondary,#4f6d30)]/40 bg-gradient-to-r from-[var(--color-surface,#f1e9de)] via-card to-[var(--color-surface,#f1e9de)] p-6 sm:p-10 lg:p-12 shadow-md flex flex-col md:flex-row items-center justify-between gap-8">
+          <section className="rounded-3xl border border-secondary/40 bg-gradient-to-r from-muted via-card to-muted p-6 sm:p-10 lg:p-12 shadow-md flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="space-y-4 max-w-2xl">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
@@ -509,7 +509,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
                 </Badge>
                 <span className="text-xs font-semibold text-secondary">3 İnteraktif Oyun Modu</span>
               </div>
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
+              <h2 className="font-heading text-3xl sm:text-4xl font-bold text-primary leading-tight">
                 {t("gameHeading")}
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">

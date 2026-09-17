@@ -125,7 +125,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
                 </Badge>
               </div>
 
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
                 Video Çözümlü Coğrafya Kitapları
               </h1>
 
@@ -151,7 +151,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
                 <span className="text-xs text-muted-foreground font-medium">Yayın Kataloğu</span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
                   ÖSYM / MEB
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">Müfredat Uyumu</span>

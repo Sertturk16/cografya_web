@@ -155,7 +155,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
                 </Badge>
               </div>
 
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
                 Dünya Ülkeleri &amp; Kıtalar Atlası
               </h1>
 
@@ -190,7 +190,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
                 </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
                   148.9M km²
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
@@ -217,7 +217,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
         />
 
         {/* SECTION 4: GAMIFICATION & EXPLORER BANNER */}
-        <section className="rounded-3xl border border-[var(--color-secondary,#4f6d30)]/40 bg-gradient-to-r from-[var(--color-surface,#f1e9de)] via-card to-[var(--color-surface,#f1e9de)] p-6 sm:p-10 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+        <section className="rounded-3xl border border-secondary/40 bg-gradient-to-r from-muted via-card to-muted p-6 sm:p-10 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
@@ -225,7 +225,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
               </Badge>
               <span className="text-xs font-semibold text-secondary">Etkileşimli Öğrenme</span>
             </div>
-            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
+            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
               Dünya Coğrafyasını ve Ülkeleri Ne Kadar İyi Tanıyorsun?
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">

@@ -137,7 +137,7 @@ export function V2Header() {
               />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-heading text-lg font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] dark:text-[#e2896a] leading-none truncate">
+              <span className="font-heading text-lg font-bold tracking-tight text-primary dark:text-[#e2896a] leading-none truncate">
                 Coğrafya <span className="text-primary">Gurmesi</span>
               </span>
               <span className="text-[10px] text-muted-foreground font-medium truncate">

@@ -278,7 +278,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             30 İstasyon • 4 Deniz Havzası
           </Badge>
         </div>
-        <h2 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)]">
+        <h2 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight text-primary">
           Türkiye Kıyıları &amp; Deniz Suyu Sıcaklık Atlası
         </h2>
         <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
@@ -307,7 +307,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 isSelected
-                  ? "bg-[var(--color-primary,#b0522e)] text-white shadow-xs font-bold scale-105"
+                  ? "bg-primary text-white shadow-xs font-bold scale-105"
                   : "bg-card hover:bg-muted text-muted-foreground border border-border"
               }`}
             >
@@ -371,14 +371,14 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           </g>
 
           {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#152228] stroke-[var(--color-accent,#276b70)]/40 stroke-[0.5] pointer-events-none">
+          <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
             {INLAND_WATER_SHAPES.map((lake) => (
               <path key={lake.id} d={lake.d} />
             ))}
           </g>
 
           {/* 5. Sea Water Typography */}
-          <g className="fill-[var(--color-accent,#276b70)] dark:fill-[#6ec7d1] font-heading font-bold tracking-wider pointer-events-none select-none">
+          <g className="fill-accent dark:fill-[#6ec7d1] font-heading font-bold tracking-wider pointer-events-none select-none">
             {SEA_LABELS.map((sea, i) => (
               <text
                 key={i}
@@ -636,7 +636,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                     pathname: "/v2/turkiye/[slug]",
                     params: { slug: selectedPoint.provinceSlug },
                   }}
-                  className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-8 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs"
+                  className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-8 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-primary shadow-xs"
                 >
                   <span className="text-white">İl Detayına Git</span>
                   <ArrowRight className="size-3.5 ml-1 text-white" />

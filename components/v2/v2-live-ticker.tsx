@@ -152,7 +152,7 @@ export function V2LiveTicker() {
             variant="primary"
             size="sm"
             dot
-            className="bg-[var(--color-primary,#b0522e)] text-white shadow-2xs font-mono text-[10px] px-2"
+            className="bg-primary text-white shadow-2xs font-mono text-[10px] px-2"
           >
             CANLI TELEMETRİ
           </Badge>

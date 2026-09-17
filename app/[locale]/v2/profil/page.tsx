@@ -77,7 +77,7 @@ export default async function V2ProfilePage({ params }: V2ProfilePageProps) {
                 <div>
                   <Link
                     href="/v2/profil"
-                    className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-lg h-10 px-4 py-2 text-xs bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-sm"
+                    className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-lg h-10 px-4 py-2 text-xs bg-primary text-white hover:bg-primary shadow-sm"
                   >
                     <RefreshCw className="size-3.5 mr-2" />
                     {t("profile.retry")}

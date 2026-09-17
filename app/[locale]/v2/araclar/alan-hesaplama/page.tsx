@@ -101,7 +101,7 @@ export default async function V2AreaToolPage({ params }: V2AreaPageProps) {
                   </Badge>
                 </div>
 
-                <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
+                <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
                   Haritada Alan &amp; Yüzölçümü Hesaplama
                 </h1>
 
@@ -139,7 +139,7 @@ export default async function V2AreaToolPage({ params }: V2AreaPageProps) {
                   </span>
                 </div>
                 <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block">
+                  <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
                     WGS84
                   </span>
                   <span className="text-xs text-muted-foreground font-medium">

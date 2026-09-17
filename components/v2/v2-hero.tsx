@@ -288,9 +288,9 @@ export function V2Hero({
 
         {/* Heading & Value Proposition */}
         <div className="space-y-3">
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-[1.12]">
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-primary leading-[1.12]">
             Coğrafyayı Ezberleme, <br className="hidden sm:inline" />
-            <span className="text-primary bg-gradient-to-r from-primary via-[var(--color-primary-dark,#7e3a1e)] to-primary bg-clip-text text-transparent">
+            <span className="text-primary bg-gradient-to-r from-primary via-primary to-primary bg-clip-text text-transparent">
               Haritada Keşfet.
             </span>
           </h1>

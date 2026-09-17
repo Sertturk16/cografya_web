@@ -24,7 +24,7 @@ export function V2ToolsHub() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
               Özel CBS &amp; Harita Ölçüm Modülleri
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -218,7 +218,7 @@ export function V2ToolsHub() {
               Kimin İçin Tasarlandı?
             </span>
           </div>
-          <h3 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
+          <h3 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
             Eğitimden Akademik Araştırmaya Çok Yönlü CBS Deneyimi
           </h3>
           <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed max-w-3xl">

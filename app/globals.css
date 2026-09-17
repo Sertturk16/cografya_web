@@ -28,6 +28,15 @@
   /* ---- Brand ---- */
   --color-primary: #b0522e; /* terracotta */
   --color-primary-dark: #7e3a1e;
+  /* The HOVER step of the terracotta, one shade lighter than the base rather than darker —
+     a map shape lifts toward the viewer on hover instead of receding.
+
+     It had never actually existed. `components/v2/v2-region-locator-map.tsx` has been reading
+     `var(--color-primary-hover, #c8633c)` since it was written, and with no declaration
+     anywhere the fallback fired every single time. Declaring it here changes no pixel; it
+     makes the intent real, so the value can be tuned in one place and so the escape can be
+     removed from the component (T-034). */
+  --color-primary-hover: #c8633c;
   --color-secondary: #4f6d30; /* olive */
   --color-accent: #276b70; /* water teal */
   --color-on-primary: #ffffff;

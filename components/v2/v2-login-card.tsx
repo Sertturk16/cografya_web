@@ -166,7 +166,7 @@ export function V2LoginCard({
               Kişiselleştirilmiş Atlas
             </span>
           </div>
-          <h2 className="font-heading text-2xl font-bold text-[var(--color-primary-dark,#7e3a1e)] tracking-tight">
+          <h2 className="font-heading text-2xl font-bold text-primary tracking-tight">
             Hesabınıza Giriş Yapın
           </h2>
           <p className="text-xs text-muted-foreground">
