@@ -135,7 +135,9 @@ export default async function V2KaradenizPage({ params }: PageProps) {
 
       <V2LiveTicker />
 
-      <V2SeaBasinDetailView data={basinData} marinePoints={marinePoints} locale={locale} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10">
+        <V2SeaBasinDetailView data={basinData} marinePoints={marinePoints} locale={locale} />
+      </div>
     </>
   );
 }

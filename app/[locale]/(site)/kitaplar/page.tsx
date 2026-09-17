@@ -97,45 +97,46 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
       {/* V2 Header & Telemetry */}
       <V2LiveTicker />
 
-      {/* Breadcrumb & Header Hero */}
-      <div className="space-y-4">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-12">
+        {/* Breadcrumb & Header Hero */}
+        <div className="space-y-4">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
           >
-            <Home className="size-3.5" />
-            <span>Ana Sayfa</span>
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">Video Çözümlü Kitaplar</span>
-        </nav>
+            <Link
+              href="/"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <span className="text-foreground font-semibold">Video Çözümlü Kitaplar</span>
+          </nav>
 
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-          <div className="relative z-10 max-w-3xl space-y-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
-                Dijital Eğitim Platformu
-              </Badge>
-              <Badge variant="secondary" size="sm">
-                AYT &bull; TYT &bull; YKS
-              </Badge>
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+            <div className="relative z-10 max-w-3xl space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
+                  Dijital Eğitim Platformu
+                </Badge>
+                <Badge variant="secondary" size="sm">
+                  AYT &bull; TYT &bull; YKS
+                </Badge>
+              </div>
+
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
+                Video Çözümlü Coğrafya Kitapları
+              </h1>
+
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                Yayımlanan Coğrafya branş denemelerinin soru bazlı ayrıntılı video çözümleri, zaman
+                çizelgesi atlama noktaları ve sınav hazırlık stratejileri.
+              </p>
             </div>
 
-            <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-              Video Çözümlü Coğrafya Kitapları
-            </h1>
-
-            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-              Yayımlanan Coğrafya branş denemelerinin soru bazlı ayrıntılı video çözümleri, zaman
-              çizelgesi atlama noktaları ve sınav hazırlık stratejileri.
-            </p>
-          </div>
-
-          {/* Dynamic Metric Strip from Real Data. Two of the four tiles carried
+            {/* Dynamic Metric Strip from Real Data. Two of the four tiles carried
                 `videoCount`/`questionCount` — DELETED with the fields (P0 generic-catalogue
                 cut-over, `DEC 2026-09-10c` md.1: no book-level count is published any more).
                 The grid stays byte-identical to the 9 sibling metric strips elsewhere in /v2
@@ -143,32 +144,32 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
                 DF103-I1) — `sm:col-span-2` on each surviving tile fills all four tracks evenly
                 instead of inventing a page-local two-column variant (fix round, PR #134 review
                 DES134-I1). */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                {books.length} Kitap
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">Yayın Kataloğu</span>
-            </div>
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                ÖSYM / MEB
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">Müfredat Uyumu</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  {books.length} Kitap
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">Yayın Kataloğu</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  ÖSYM / MEB
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">Müfredat Uyumu</span>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* SECTION 1: DYNAMIC BOOKS CATALOGUE */}
+        <V2BooksHub books={books} locale={locale} />
+
+        {/* SECTION 2: STUDY STRATEGY & EXAM TOPIC GUIDE */}
+        <V2StudyStrategyGuide />
+
+        {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
+        <V2SourcesSection scope="kitaplar" />
       </div>
-
-      {/* SECTION 1: DYNAMIC BOOKS CATALOGUE */}
-      <V2BooksHub books={books} locale={locale} />
-
-      {/* SECTION 2: STUDY STRATEGY & EXAM TOPIC GUIDE */}
-      <V2StudyStrategyGuide />
-
-      {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
-      <V2SourcesSection scope="kitaplar" />
-
       {/* Modern V2 Footer */}
     </>
   );

@@ -152,130 +152,131 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
         <V2LiveTicker />
       </div>
 
-      {/* Breadcrumb & Header Hero */}
-      <div className="space-y-4">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-14 flex-1 w-full pb-16">
+        {/* Breadcrumb & Header Hero */}
+        <div className="space-y-4">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
           >
-            <Home className="size-3.5" />
-            <span>Ana Sayfa</span>
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">Dünya Atlası</span>
-        </nav>
+            <Link
+              href="/"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <span className="text-foreground font-semibold">Dünya Atlası</span>
+          </nav>
 
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-          <div className="relative z-10 max-w-3xl space-y-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm" icon={<Globe className="size-3.5" />}>
-                Dünya Coğrafya Portalı
-              </Badge>
-              <Badge variant="secondary" size="sm">
-                {totalCountries} Ülke & 7 Kıta
-              </Badge>
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+            <div className="relative z-10 max-w-3xl space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant="primary" size="sm" icon={<Globe className="size-3.5" />}>
+                  Dünya Coğrafya Portalı
+                </Badge>
+                <Badge variant="secondary" size="sm">
+                  {totalCountries} Ülke & 7 Kıta
+                </Badge>
+              </div>
+
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
+                Dünya Ülkeleri &amp; Kıtalar Atlası
+              </h1>
+
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                Gezegenimizin 7 kıtası, {totalCountries} ülke ve bölgesi, bayrakları, demografik
+                dağılımı, yeryüzü şekilleri ve coğrafi ekstremleri tek ekranda.
+              </p>
             </div>
 
-            <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-              Dünya Ülkeleri &amp; Kıtalar Atlası
-            </h1>
+            {/* Verified Metric Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  {totalCountries} Ülke
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">Ülke &amp; Bölge</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
+                  7 Kıta
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Coğrafi Kara Kütlesi
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
+                  ~8.1 Milyar
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Dünya Nüfusu (BM WPP)
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  148.9M km²
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Karasal Alan (USGS/NASA)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-              Gezegenimizin 7 kıtası, {totalCountries} ülke ve bölgesi, bayrakları, demografik
-              dağılımı, yeryüzü şekilleri ve coğrafi ekstremleri tek ekranda.
+        {/* SECTION 1: INTERACTIVE VECTOR WORLD MAP WITH INTEGRATED MIDDLE SECTIONS & 199 COUNTRIES CATALOGUE */}
+        <V2WorldMapExplorer
+          countries={countries}
+          locale={locale}
+          middleSections={
+            <div key="v2-world-middle-sections" className="space-y-12 my-6">
+              {/* SECTION 2: 7 CONTINENTS COMPREHENSIVE GUIDE */}
+              <V2WorldContinents countryCounts={continentCounts} />
+
+              {/* SECTION 3: WORLD SUPERLATIVES & EXTREMES */}
+              <V2WorldStatsSpotlight />
+            </div>
+          }
+        />
+
+        {/* SECTION 4: GAMIFICATION & EXPLORER BANNER */}
+        <section className="rounded-3xl border border-secondary/40 bg-gradient-to-r from-muted via-card to-muted p-6 sm:p-10 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
+                Coğrafya Sınavı &amp; Harita Oyunu
+              </Badge>
+              <span className="text-xs font-semibold text-secondary">Etkileşimli Öğrenme</span>
+            </div>
+            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
+              Dünya Coğrafyasını ve Ülkeleri Ne Kadar İyi Tanıyorsun?
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Dilsiz dünya haritası üzerinde ülkeleri bulun, kıta testlerinde hızınızı sınayın ve
+              puan toplayarak lider tablosunda yükselin.
             </p>
           </div>
 
-          {/* Verified Metric Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                {totalCountries} Ülke
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">Ülke &amp; Bölge</span>
-            </div>
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                7 Kıta
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">
-                Coğrafi Kara Kütlesi
-              </span>
-            </div>
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                ~8.1 Milyar
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">
-                Dünya Nüfusu (BM WPP)
-              </span>
-            </div>
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                148.9M km²
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">
-                Karasal Alan (USGS/NASA)
-              </span>
-            </div>
+          <div className="shrink-0 w-full md:w-auto">
+            <Link href="/oyun">
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full md:w-auto shadow-md"
+                rightIcon={<ArrowRight className="size-4" />}
+              >
+                Harita Oyununu Başlat
+              </Button>
+            </Link>
           </div>
-        </div>
+        </section>
+
+        {/* SECTION 5: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
+        <V2SourcesSection scope="dunya" />
       </div>
-
-      {/* SECTION 1: INTERACTIVE VECTOR WORLD MAP WITH INTEGRATED MIDDLE SECTIONS & 199 COUNTRIES CATALOGUE */}
-      <V2WorldMapExplorer
-        countries={countries}
-        locale={locale}
-        middleSections={
-          <div key="v2-world-middle-sections" className="space-y-12 my-6">
-            {/* SECTION 2: 7 CONTINENTS COMPREHENSIVE GUIDE */}
-            <V2WorldContinents countryCounts={continentCounts} />
-
-            {/* SECTION 3: WORLD SUPERLATIVES & EXTREMES */}
-            <V2WorldStatsSpotlight />
-          </div>
-        }
-      />
-
-      {/* SECTION 4: GAMIFICATION & EXPLORER BANNER */}
-      <section className="rounded-3xl border border-secondary/40 bg-gradient-to-r from-muted via-card to-muted p-6 sm:p-10 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-2 max-w-2xl">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
-              Coğrafya Sınavı &amp; Harita Oyunu
-            </Badge>
-            <span className="text-xs font-semibold text-secondary">Etkileşimli Öğrenme</span>
-          </div>
-          <h3 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
-            Dünya Coğrafyasını ve Ülkeleri Ne Kadar İyi Tanıyorsun?
-          </h3>
-          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Dilsiz dünya haritası üzerinde ülkeleri bulun, kıta testlerinde hızınızı sınayın ve puan
-            toplayarak lider tablosunda yükselin.
-          </p>
-        </div>
-
-        <div className="shrink-0 w-full md:w-auto">
-          <Link href="/oyun">
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full md:w-auto shadow-md"
-              rightIcon={<ArrowRight className="size-4" />}
-            >
-              Harita Oyununu Başlat
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* SECTION 5: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
-      <V2SourcesSection scope="dunya" />
-
       {/* V2 Footer */}
     </>
   );
