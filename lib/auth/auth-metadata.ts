@@ -30,6 +30,12 @@ export const AUTH_PATHNAMES = [
   "/v2/profil",
   // The v2 dedicated member area / hub (UYE-P3).
   "/v2/hesabim",
+  // T-032 PR1 — the V2 shells of the V1 routes of the same name. Each pair serves the same
+  // screen under two prefixes until PR3 collapses them, so both members are listed and the
+  // conformance gate in `lib/seo/auth-routes.test.ts` covers the new pages automatically.
+  "/v2/sifre-sifirlama",
+  "/v2/sifre-sifirlama/yeni",
+  "/v2/e-posta-dogrulama",
 ] as const satisfies readonly AppPathname[];
 
 export type AuthPathname = (typeof AUTH_PATHNAMES)[number];

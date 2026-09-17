@@ -907,6 +907,9 @@
     }
   },
   "Auth": {
+    "breadcrumb": {
+      "home": "Ana Sayfa"
+    },
     "login": {
       "metaTitle": "Giriş yap",
       "metaDescription": "Coğrafya Gurmesi hesabına giriş yap.",

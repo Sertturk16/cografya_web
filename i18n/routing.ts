@@ -359,6 +359,30 @@ export const routing = defineRouting({
       tr: "/v2/kayit",
       en: "/v2/register",
     },
+    // T-032 PR1 — the three V1 auth screens that had no V2 counterpart, ported under the
+    // prefix like every other V2 route. Their EN segments deliberately MIRROR the V1 ones
+    // (`/en/reset-password`, `/en/reset-password/new`, `/en/verify-email`), because PR3
+    // strips the `/v2` prefix and the result must land exactly on the paths
+    // `cografya_api`'s `src/auth/mail/mail-copy.ts` hard-codes into outbound mail. Nothing in
+    // either CI compares route names across the two repos; PR3 adds the tripwire that does.
+    "/v2/sifre-sifirlama": {
+      tr: "/v2/sifre-sifirlama",
+      en: "/v2/reset-password",
+    },
+    "/v2/sifre-sifirlama/yeni": {
+      tr: "/v2/sifre-sifirlama/yeni",
+      en: "/v2/reset-password/new",
+    },
+    "/v2/e-posta-dogrulama": {
+      tr: "/v2/e-posta-dogrulama",
+      en: "/v2/verify-email",
+    },
+    // T-032 PR1 — the V2 rebuild of the editorial `/hakkimizda` page. Same localized-segment
+    // rule as its V1 twin (`/hakkimizda ↔ /en/about`).
+    "/v2/hakkimizda": {
+      tr: "/v2/hakkimizda",
+      en: "/v2/about",
+    },
     // The v2 post-registration profile-completion step (`DEC 2026-09-03a` md.1's destination
     // half). LOCALIZED segment on the `/v2/giris ↔ /v2/login` · `/v2/kayit ↔ /v2/register`
     // precedent: "profil" is a Turkish word that does not read as English, so the governing

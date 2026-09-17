@@ -161,6 +161,23 @@ describe("Tabs carries its variant on context", () => {
     expect(source).toContain("React.useContext(TabsVariantContext)");
   });
 
+  it("BOTH halves read the context, not just the trigger", () => {
+    /**
+     * This assertion exists because the weaker one above passed while the bug was live.
+     * T-034 shipped `TabsList` with the pills container hard-coded and `listVariants`
+     * unreferenced, so a `line` tabset rendered underlined triggers inside a grey pill bar —
+     * exactly the drift the context was introduced to prevent. ESLint caught it only as an
+     * unused variable, which reads like tidy-up rather than a rendering defect.
+     *
+     * Counting the reads is what makes it a real gate: a single `useContext` call satisfies
+     * `toContain`, so only the count distinguishes "both halves wired" from "one half wired".
+     */
+    const reads = source.match(/React\.useContext\(TabsVariantContext\)/g) ?? [];
+    expect(reads).toHaveLength(2);
+    expect(source).toContain("listVariants[React.useContext(TabsVariantContext)]");
+    expect(source).toContain("triggerVariants[React.useContext(TabsVariantContext)]");
+  });
+
   it("underlines with an inset shadow, so selecting does not shift the tab", () => {
     expect(source).toContain("inset_0_-2px_0_0_currentColor");
   });
