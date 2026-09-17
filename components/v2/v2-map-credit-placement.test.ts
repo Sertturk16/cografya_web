@@ -42,7 +42,14 @@ const surfaces = roots
   }))
   .filter(
     ({ source, name }) => source.includes("<V2MapAttribution") && name !== "v2-map-attribution.tsx",
-  );
+  )
+  // A surface that draws NO inline `<svg>` has no map box for the credit to be nested inside,
+  // so this rule is vacuous there and asserting it would be a false failure.
+  // `/oyun/bolge-bolge-il` is the first such surface: it composes `V2RegionThumb`, whose seven
+  // OSM-derived thumbnails draw their SVG in their own file, and carries ONE credit under the
+  // grid for all of them. What that page owes is a credit at all — which is the subject of
+  // `lib/map/tr-inland-water-jrc.test.ts`'s derived list, not of this file.
+  .filter(({ source }) => /<svg[\s>]/.test(source));
 
 describe("the map credit sits under the map box, never on it", () => {
   it("finds the surfaces to check", () => {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getFormatter, setRequestLocale } from "next-intl/server";
-import { getMarinePointsSafe, getMarineOverviewSafe } from "@/lib/api/marine";
+import { getMarinePointsSafe, getMarineOverviewSafe, getMarineLayersSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import type { Locale } from "@/i18n/routing";
 import type { MarineOverviewPoint } from "@/lib/api/types";
@@ -8,6 +8,8 @@ import { breadcrumbJsonLd, learningResourceJsonLd, faqPageJsonLd, JsonLd } from 
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SeaBasinDetailView } from "@/components/v2/v2-sea-basin-detail-view";
+import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { MarineAttribution } from "@/components/marine/marine-attribution";
 import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
 import { SEA_BASINS_DETAIL } from "@/lib/marine/sea-basins-detail";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
@@ -36,10 +38,11 @@ export default async function V2AkdenizPage({ params }: PageProps) {
   const format = await getFormatter();
   const basinData = SEA_BASINS_DETAIL.akdeniz;
 
-  const [rawPoints, rawOverview, rawProvinces] = await Promise.all([
+  const [rawPoints, rawOverview, rawProvinces, rawLayers] = await Promise.all([
     getMarinePointsSafe(),
     getMarineOverviewSafe(),
     getProvincesResilient(),
+    getMarineLayersSafe(),
   ]);
 
   const provinceByPlate = new Map<string, { name: string; slug: string }>();
@@ -135,8 +138,29 @@ export default async function V2AkdenizPage({ params }: PageProps) {
 
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-14">
         <V2SeaBasinDetailView data={basinData} marinePoints={marinePoints} locale={locale} />
+
+        {/* ECMWF + Copernicus Marine attribution, licence and educational-use notice — the SAME
+            component and the SAME verbatim strings `/deniz` and the province pages render, never
+            a second copy (`components/marine/marine-attribution.tsx`).
+
+            THIS PAGE OWED IT AND DID NOT CARRY IT. The telemetry table above publishes
+            `sst`, `waveHeight` and `windSpeed10m` under a heading that names "CMEMS & ECMWF
+            Açık Deniz Modelleri", and the only credit on the page was the bibliography card
+            below — whose `cmems` and `ecmwf-marine` entries deliberately carry NO `legalQuote`,
+            because "the licence lives in the attribution block". The block was on no basin page,
+            so ECMWF's required notice was rendered nowhere in the product for these values.
+
+            UNGATED, like `/deniz`'s and unlike the province page's: the heading and the table
+            describe the derived material on every render, including the render where the API
+            published nothing and the cells read "—". The notice is owed to the claim as much as
+            to the numbers. */}
+        <MarineAttribution layers={rawLayers} headingId="basin-marine-sources" />
+
+        {/* The bibliography — what this page is built on, in our words. It sits AFTER the
+            attribution block and never in place of it. */}
+        <V2SourcesSection scope="deniz" />
       </div>
     </>
   );

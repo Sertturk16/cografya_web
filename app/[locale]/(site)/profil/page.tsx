@@ -8,7 +8,6 @@ import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { readProfileForPage } from "@/lib/profile/profile.server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ProfileForm } from "@/components/v2/v2-profile-form";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
@@ -109,8 +108,6 @@ export default async function V2ProfilePage({ params }: V2ProfilePageProps) {
             </div>
           )}
         </div>
-
-        <V2SourcesSection scope="general" />
       </div>
     </>
   );

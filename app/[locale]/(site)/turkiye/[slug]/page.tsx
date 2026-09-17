@@ -811,7 +811,6 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               provinceName={name}
               plateCode={province.plateCode}
               climate={climateSeries}
-              hideAttribution
             />
           </div>
         </section>
@@ -827,7 +826,6 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               headingName={sectionHeading("airPollution")}
               plateCode={province.plateCode}
               pm25={pm25Annual}
-              hideAttribution
             />
           </div>
           <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
@@ -848,7 +846,6 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             headingName={sectionHeading("airPollution")}
             plateCode={province.plateCode}
             pm25={pm25Annual}
-            hideAttribution
           />
         </section>
       ) : showMarine ? (
@@ -925,19 +922,25 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
       )}
 
       {/* UNIFIED COMPREHENSIVE DATA SOURCES (KAYNAKÇA)
-            Bound to the SAME two signals the sections above are gated on, so the bibliography
+            Bound to the SAME signals the sections above are gated on, so the bibliography
             cites what this province actually shows and nothing else.
             - `include`: the marine block renders CMEMS/ECMWF-derived sea-surface values, and
               both licences require the attribution to travel with the values. ECMWF's terms say
               the notice "shall be attached" and, unlike the Copernicus framework, allow no
               "or similar" wording, so this is a licence term rather than a courtesy.
-            - `omit`: `acag-pm25` is in the `turkiye` scope list, but the air-quality section
+            - `omit` `acag-pm25`: it is in the `turkiye` scope list, but the air-quality section
               only renders when the API published a series. Citing it on a province with no
-              PM2.5 figure sources content that is not on the page. */}
+              PM2.5 figure sources content that is not on the page.
+            - `omit` `era5`: the same defect, and it had no counterpart until now. `climateSeries`
+              is `isTr ? province.climate : null`, so the climate block renders on NO English
+              province page — while the ERA5-Land card and its verbatim ECMWF quote were cited on
+              all 81 of them, for a section that is not there. It is bound to `climateSeries`
+              rather than to `isTr` because that is the expression the section itself reads: a
+              TR province the api publishes no series for is the same case. */}
       <V2SourcesSection
         scope="turkiye"
         include={showMarine ? ["cmems", "ecmwf-marine"] : []}
-        omit={pm25Annual ? [] : ["acag-pm25"]}
+        omit={[...(pm25Annual ? [] : ["acag-pm25"]), ...(climateSeries ? [] : ["era5"])]}
       />
     </div>
   );

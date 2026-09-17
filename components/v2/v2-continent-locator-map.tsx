@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
+import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
 import type { CountryListItem, CountryMapSummary } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Compass, ArrowUpRight, Globe2 } from "lucide-react";
@@ -176,8 +177,14 @@ export function V2ContinentLocatorMap({
           <Globe2 className="size-3.5 text-primary" />
           <span>Vurgulanan alanlar {continentName} kıtasına ait ülkeleri temsil eder.</span>
         </span>
+        {/* "Projeksiyon: Natural Earth 1" names the PROJECTION. It reads like a source line
+            and is not one, which is how this surface drew 199 Natural Earth polygons with
+            nothing crediting them. The credit is its own line now and the projection keeps its
+            own words. */}
         <span className="font-mono text-[11px]">Projeksiyon: Natural Earth 1</span>
       </div>
+
+      <V2MapAttribution boundaries={false} world />
     </div>
   );
 }

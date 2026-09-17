@@ -2,9 +2,43 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Database, ShieldCheck, BookOpen, ExternalLink, Scale, ChevronDown } from "lucide-react";
 
+/**
+ * NO `general` SCOPE. It existed for the seven auth pages — `/giris`, `/kayit`, `/profil`,
+ * `/hesabim`, `/sifre-sifirlama`, `/sifre-sifirlama/yeni`, `/e-posta-dogrulama` — and claimed
+ * TÜİK demographics, OSM administrative boundaries, Copernicus and AFAD under the heading
+ * "Bu Sayfada Kullanılan Veri Setleri". A sign-in form renders none of them. The pages no
+ * longer render this component at all, which is the only honest answer for a page that
+ * publishes no data: the fix for an over-cited bibliography on a page with no sources is not
+ * a shorter bibliography.
+ *
+ * (The live ticker DOES publish AFAD and CMEMS values in the chrome of those seven pages and
+ * of 26 others. That is one question with one answer, recorded as an open item for the owner
+ * in `components/marine/marine-attribution-coverage.test.ts`; half-answering it on seven pages
+ * with a card at the foot of a login form would have made it harder to see, not easier.)
+ */
 export type V2PageScope =
-  "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar" | "general";
+  "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar";
 
+/**
+ * `legalQuote` IS AN ECHO, NEVER THE SOLE CARRIER OF A MANDATED NOTICE.
+ *
+ * `renderCard` puts this field inside a `<details>` labelled "Atıf şartı & yasal metin",
+ * CLOSED BY DEFAULT. That is the right weight for a bibliography — a reader who wants the
+ * licence text can open it — and it is NOT enough to discharge a licence. The criterion this
+ * repo applies, stated in `components/marine/marine-attribution.tsx`'s own docblock, is that
+ * the notice is visible WITHOUT A CLICK on the page that carries the derived material; a
+ * disclosure the reader must find and open is a click.
+ *
+ * Three call sites had bet the other way, passing `hideAttribution` to `ClimateSection` and
+ * `AirPollutionSection` so the inline blocks vanished and this `<details>` became the only
+ * place ERA5-Land's and ACAG's required wording appeared. That prop is gone from both
+ * components, and neither may get it back.
+ *
+ * So: a source whose licence requires a notice is credited by a dedicated attribution block on
+ * the page (`MarineAttribution`, `EarthquakeAttribution`, the inline blocks in `ClimateSection`
+ * and `AirPollutionSection`). This card names the source; the quote, where it is worth showing
+ * at all, repeats what the page already shows in full.
+ */
 interface SourceItem {
   id: string;
   icon: string;
@@ -21,23 +55,18 @@ interface SourceItem {
 const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
   home: [
     {
+      // TÜİK ALONE. This card used to be "TÜİK & OpenStreetMap" and carried ODbL's credit as
+      // its `legalQuote`. The home page draws NO MAP — no `PROVINCE_SHAPES`, no
+      // `COUNTRY_SHAPES`, no `INLAND_WATER_SHAPES` — so the OSM half credited a source the
+      // page does not use. The population facts in the featured cards are the TÜİK half, and
+      // they are real. Every surface that DOES draw OSM geometry carries the credit inline,
+      // through `V2MapAttribution` (`lib/map/tr-inland-water-jrc.test.ts` derives that list).
       id: "tuik-osm",
-      icon: "🗺️",
-      title: "TÜİK & OpenStreetMap",
-      license: "ODbL / TÜİK ADNKS",
-      description: "Türkiye 81 il demografisi, nüfus sayımları ve idari sınır vektörleri.",
-      legalQuote: "© OpenStreetMap katkıcıları, Open Database License (ODbL)",
-      sourceUrl: "tuik.gov.tr • openstreetmap.org",
-    },
-    {
-      id: "natural-earth",
-      icon: "🌍",
-      title: "Natural Earth Data 1:50m",
-      license: "Kamu Malı (Public Domain)",
-      description:
-        "199 dünya ülkesi sınır geometrileri, başkent koordinatları ve kıta jeomorfolojisi.",
-      legalQuote: "Natural Earth Vector & Raster Map Data 2026",
-      sourceUrl: "naturalearthdata.com",
+      icon: "📊",
+      title: "TÜİK Adrese Dayalı Nüfus Kayıt Sistemi (ADNKS)",
+      license: "TÜİK ADNKS",
+      description: "Türkiye 81 il demografisi ve nüfus sayımı göstergeleri.",
+      sourceUrl: "tuik.gov.tr",
     },
     {
       id: "copernicus-marine",
@@ -46,19 +75,14 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       license: "E.U. Copernicus",
       description:
         "30 kıyı istasyonunda saatlik deniz suyu sıcaklığı (SST), dalga boyu ve akıntı telemetrisi.",
-      legalQuote: "Generated using E.U. Copernicus Marine Service Information 2026",
+      // NO `legalQuote`, for the reason already recorded on the `deniz` scope's `cmems` entry —
+      // this was the surviving copy of the same defect. The Copernicus Marine notice is
+      // single-sourced as `Marine.attribution.cmemsNotice` in `messages/{tr,en}.json` and
+      // rendered verbatim by `MarineAttribution` on every page carrying a CMEMS-derived value,
+      // the home page included. This copy read "…Information 2026": the notice attaches to the
+      // SERVICE and not to a data year, so the year was not merely a second version of a
+      // verbatim licence string, it was a WRONG one.
       sourceUrl: "marine.copernicus.eu",
-    },
-    {
-      id: "era5-land",
-      icon: "🌡️",
-      title: "Copernicus ERA5-Land (ECMWF)",
-      license: "CC-BY-4.0",
-      description:
-        "1991–2020 dönemi 12 aylık sıcaklık ve yağış normalleri reanaliz iklim modelleri.",
-      legalQuote: "Generated using Copernicus Climate Change Service information 2026",
-      sourceUrl: "cds.climate.copernicus.eu",
-      doi: "10.24381/cds.68d2bb30",
     },
     {
       id: "afad",
@@ -68,16 +92,6 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       description:
         "Türkiye ve çevre havzadaki eşzamanlı deprem sarsıntıları ve merkez üssü derinlik verileri.",
       sourceUrl: "deprem.afad.gov.tr",
-    },
-    {
-      id: "cams-pm25",
-      icon: "💨",
-      title: "Copernicus CAMS & ACAG SatPM2.5",
-      license: "Açık Veri",
-      description:
-        "Uydu tabanlı yıllık ortalama yüzey PM2.5 hava kirliliği konsantrasyonu ve hava kalitesi.",
-      legalQuote: "Contains modified Copernicus Atmosphere Monitoring Service information 2026",
-      sourceUrl: "ads.atmosphere.copernicus.eu",
     },
   ],
   turkiye: [
@@ -318,20 +332,22 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       title: "MTA Genel Müdürlüğü — Türkiye Diri Fay Haritası",
       license: "T.C. Resmî Jeoloji Verisi",
       category: "official",
+      // NARROWED. This read "diri fay geometrileri, segmentasyon modelleri ve sismotektonik
+      // hatlar" — three things the site does not publish. `/deprem/fay-hatlari` renders
+      // `lib/earthquake/fault-lines-data.ts`, a hand-written registry of fault-zone names,
+      // types, lengths and segment descriptions; there is no MTA geometry, no segmentation
+      // model and no fault vector anywhere in the repo. What is left is what MTA's published
+      // map is to that page: the reference classification for the zones it names.
       description:
-        "Kuzey Anadolu Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS) diri fay geometrileri, segmentasyon modelleri ve sismotektonik hatlar.",
+        "Kuzey Anadolu Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS) adlandırma ve tasnifi için referans diri fay haritası.",
       sourceUrl: "yerbilimleri.mta.gov.tr",
     },
-    {
-      id: "boun-kandilli",
-      icon: "🏛️",
-      title: "Boğaziçi Üniv. Kandilli Rasathanesi ve DAE (KRDAE)",
-      license: "Akademik Sismoloji",
-      category: "academic",
-      description:
-        "Türkiye ve çevresinin tarihsel ve aletsel dönem deprem katalogları, odak mekanizması çözümleri ve derinlik kayıtları.",
-      sourceUrl: "koeri.boun.edu.tr",
-    },
+    // NO KRDAE / KANDİLLİ CARD. The contract states it in as many words — "AFAD is the sole
+    // Faz-1 provider" (`openapi/openapi.json`) — and this site publishes no historical or
+    // instrumental catalogue, no focal-mechanism solution and no depth record from Kandilli.
+    // The card claimed all three. Crediting an institution for data it did not supply is the
+    // same class of false statement as the invented `licenseUrl` the same contract forbids
+    // ("Inventing a plausible URL would be a false statement about the terms").
     {
       id: "afad-hazirlik",
       icon: "🎒",
@@ -414,32 +430,6 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       sourceUrl: "mufredat.meb.gov.tr • osym.gov.tr",
     },
   ],
-  general: [
-    {
-      id: "tuik",
-      icon: "🗺️",
-      title: "TÜİK & OpenStreetMap",
-      license: "ODbL / TÜİK",
-      description: "Türkiye demografik verileri ve idari sınır vektörleri.",
-      sourceUrl: "tuik.gov.tr • openstreetmap.org",
-    },
-    {
-      id: "copernicus",
-      icon: "🌡️",
-      title: "Copernicus ERA5 & Marine",
-      license: "E.U. Copernicus",
-      description: "Sıcaklık, iklim normalleri ve canlı deniz telemetrisi modelleri.",
-      sourceUrl: "copernicus.eu",
-    },
-    {
-      id: "afad",
-      icon: "⚡",
-      title: "AFAD Deprem Dairesi Başkanlığı",
-      license: "T.C. Resmî",
-      description: "Sismik deprem gözlemleri ve odak derinliği verileri.",
-      sourceUrl: "deprem.afad.gov.tr",
-    },
-  ],
 };
 
 /**
@@ -464,7 +454,19 @@ const SOURCE_BY_ID: ReadonlyMap<string, SourceItem> = (() => {
 })();
 
 interface V2SourcesSectionProps {
-  scope?: V2PageScope;
+  /**
+   * REQUIRED, and it used to be optional with a `home` default.
+   *
+   * `/oyun/bolge-bolge-il` rendered `<V2SourcesSection />` with no props at all and therefore
+   * claimed CMEMS marine telemetry, ERA5-Land climate normals, AFAD seismic records and PM2.5
+   * — on a page that is a region picker. The correct `oyun` scope already existed and `/oyun`
+   * was already using it; nothing failed, because a default cannot be wrong.
+   *
+   * Required is a stronger guard than a test for this: the compiler sees every call site,
+   * including the one someone adds next year, and there is no value a forgotten prop can
+   * silently fall to.
+   */
+  scope: V2PageScope;
   className?: string;
   regionalNote?: React.ReactNode;
   /**
@@ -483,13 +485,17 @@ interface V2SourcesSectionProps {
 }
 
 export function V2SourcesSection({
-  scope = "home",
+  scope,
   className = "",
   regionalNote,
   include,
   omit,
 }: V2SourcesSectionProps) {
-  const scoped = SOURCES_BY_PAGE[scope] || SOURCES_BY_PAGE.home;
+  // No `|| SOURCES_BY_PAGE.home` fallback either: `SOURCES_BY_PAGE` is a `Record` over the
+  // closed scope union, so every key resolves and the fallback could only ever fire for a
+  // value the type system says cannot exist — while silently citing the home page's sources
+  // if it somehow did.
+  const scoped = SOURCES_BY_PAGE[scope];
   const omitted = new Set(omit ?? []);
   const kept = scoped.filter((s) => !omitted.has(s.id));
   const keptIds = new Set(kept.map((s) => s.id));

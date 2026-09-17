@@ -342,9 +342,16 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
         return entry.name.endsWith(".tsx") && !entry.name.includes(".test.") ? [full] : [];
       });
 
+    // COMMENTS ARE STRIPPED FIRST. A file that MENTIONS `INLAND_WATER_SHAPES` in prose — a
+    // bibliography card explaining that the home page imports no map geometry, say — does not
+    // draw the layer, and failing it for saying so would teach the next person to delete the
+    // explanation. The derived list is about imports, so it reads code only.
+    const stripComments = (source: string) =>
+      source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+
     const surfaces = roots
       .flatMap(walk)
-      .map((file) => ({ file, source: readFileSync(file, "utf8") }))
+      .map((file) => ({ file, source: stripComments(readFileSync(file, "utf8")) }))
       .filter(({ source }) => source.includes("INLAND_WATER_SHAPES"));
 
     // Anti-vacuity: a walk that found nothing would pass this test for free, and finding the

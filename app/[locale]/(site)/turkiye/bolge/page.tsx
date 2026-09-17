@@ -796,9 +796,19 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* SECTION 5: BİLİMSEL KAYNAKÇA & METODOLOJİ */}
+      {/* SECTION 5: BİLİMSEL KAYNAKÇA & METODOLOJİ
+          `omit`, because the `turkiye` scope is written for the PROVINCE page and this hub shows
+          a strict subset of it. What is on this page: region populations and areas (TÜİK), the
+          hand-written climate-classification names and peak elevations in the comparison table
+          (MGM, HGM), and the 1941 congress taxonomy the whole page is about. What is NOT:
+          - `osm` — this page draws no map. `V2TurkeyRegions` is cards and a table, no SVG and no
+            `PROVINCE_SHAPES` import; the ODbL credit named a source the page does not use.
+          - `era5` — no monthly normals here, and the card carried the verbatim ECMWF quote with
+            them. The climate column is seven hand-written classification names.
+          - `acag-pm25` — no PM2.5 figure anywhere on the page.
+          - `jrc` — no inland-water layer, because no map. */}
       <div id="kaynakca" className="scroll-mt-28" tabIndex={-1}>
-        <V2SourcesSection scope="turkiye" />
+        <V2SourcesSection scope="turkiye" omit={["osm", "era5", "acag-pm25", "jrc"]} />
       </div>
     </>
   );

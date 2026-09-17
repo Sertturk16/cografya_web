@@ -377,8 +377,13 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* Sources Section */}
-        <V2SourcesSection scope="deniz" />
+        {/* Sources Section.
+            `omit` the two telemetry providers: this page renders ZERO marine values. Its whole
+            content is `lib/marine/coastal-types-detail` — static, hand-written coastal-landform
+            copy — so CMEMS and ECMWF Open Data were cited for material that is not here. The
+            remaining cards (HGM/TÜİK coast lengths, SHOD, IMS-METU, MEB & Erinç) are what the
+            page is actually built on. */}
+        <V2SourcesSection scope="deniz" omit={["cmems", "ecmwf-marine"]} />
       </div>
     </>
   );

@@ -104,7 +104,8 @@
     "seaMarmara": "Sea of Marmara",
     "seaAegean": "Aegean Sea",
     "seaMediterranean": "Mediterranean Sea",
-    "attributionContextLabel": "Neighbouring-country boundaries: Natural Earth (public domain)"
+    "attributionContextLabel": "Neighbouring-country boundaries: Natural Earth (public domain)",
+    "attributionWorldLabel": "Country boundaries: Natural Earth (public domain)"
   },
   "MapExplorer": {
     "zoomIn": "Zoom in (+)",
@@ -400,7 +401,9 @@
     "intro": "Select a country to see its details.",
     "indexHeading": "Countries A–Z",
     "indexDescription": "{count} countries, grouped by the first letter of their name.",
-    "indexLetterNavLabel": "Jump to a letter"
+    "indexLetterNavLabel": "Jump to a letter",
+    "continentFiguresNote": "The continent area, population, summit and river figures on this page come from the platform's own compiled reference record and are rounded for teaching use. Continent boundaries and country membership differ between sources, so these figures may not match any single institution's published numbers exactly.",
+    "continentFiguresNoteNamed": "The area, population, summit and river figures given for {name} on this page come from the platform's own compiled reference record and are rounded for teaching use. Continent boundaries and country membership differ between sources, so these figures may not match any single institution's published numbers exactly."
   },
   "WorldMap": {
     "mapTitle": "Map of world countries (regional)",

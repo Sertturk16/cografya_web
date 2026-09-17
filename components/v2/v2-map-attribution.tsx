@@ -30,6 +30,14 @@ import { cn } from "@/lib/utils";
  *   (WCAG 3.1.2), with the Turkish scope label beside it rather than instead of it.
  * - **Context** — `tr-context.generated.ts`, Natural Earth, public domain. Credited because the
  *   line states its scope; the other two lines would otherwise read as covering it too.
+ * - **World** — `world-countries.generated.ts`, Natural Earth again, and a SEPARATE line from
+ *   `context` because the two are different claims: `context` says "neighbouring-country
+ *   boundaries", which is what a map of Türkiye draws around its subject, and saying that on a
+ *   map of the whole world would be false. Public domain, so this one is not a licence
+ *   obligation — but the rule in this repo covers a source the surface uses, and three surfaces
+ *   were drawing 199 country polygons with nothing naming where they came from. One of them,
+ *   `V2ContinentLocatorMap`, printed "Projeksiyon: Natural Earth 1", which names a PROJECTION
+ *   and reads like a source without being one.
  *
  * `"use client"` because seven of the eight consumers are client components. The one server
  * component among them renders this as a client child, which is free — the strings are already
@@ -42,6 +50,8 @@ interface V2MapAttributionProps {
   inlandWater?: boolean;
   /** The map draws Natural Earth neighbouring-country context shapes. */
   context?: boolean;
+  /** The map draws the Natural Earth world-country layer (`COUNTRY_SHAPES`). */
+  world?: boolean;
   className?: string;
 }
 
@@ -49,6 +59,7 @@ export function V2MapAttribution({
   boundaries = true,
   inlandWater = false,
   context = false,
+  world = false,
   className,
 }: V2MapAttributionProps) {
   const t = useTranslations("Map");
@@ -75,7 +86,7 @@ export function V2MapAttribution({
           Alone on the line there is nothing to confuse it with, so it stays unlabelled. */}
       {boundaries && (
         <span>
-          {(inlandWater || context) && `${t("attributionProvinceLabel")} `}
+          {(inlandWater || context || world) && `${t("attributionProvinceLabel")} `}
           {t("attribution")}
         </span>
       )}{" "}
@@ -84,7 +95,8 @@ export function V2MapAttribution({
           {t("attributionJrcLabel")} <span lang="en">{t("attributionJrcEnglish")}</span>
         </span>
       )}{" "}
-      {context && <span>{t("attributionContextLabel")}</span>}
+      {context && <span>{t("attributionContextLabel")}</span>}{" "}
+      {world && <span>{t("attributionWorldLabel")}</span>}
     </p>
   );
 }
