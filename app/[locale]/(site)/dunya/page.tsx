@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getCountriesResilient, getCountryMapSummaryResilient } from "@/lib/api/countries";
 import { hasFlag } from "@/lib/geo/flag-set";
 import { SPECIAL_STATUS_ISO_CODES } from "@/lib/geo/special-status-isos";
@@ -9,6 +9,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { pickHubDescription } from "@/lib/seo/hub-description";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2WorldMapExplorer, type WorldCountryItem } from "@/components/v2/v2-world-map-explorer";
 import { V2WorldContinents } from "@/components/v2/v2-world-continents";
@@ -36,6 +37,9 @@ function slugForLocale(country: { slugTr: string; slugEn: string }, locale: Loca
 
 export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Dunya" });
+  // Cached by the same ISR entry the page body reads, so this is not a second round trip.
+  const countries = await getCountriesResilient();
   return buildMetadata({
     locale,
     // T-032 PR3: this page lived under `/v2`, whose layout marked the whole tree
@@ -44,14 +48,23 @@ export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Me
     // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
     hrefForLocale: () => "/dunya",
     title: "Dünya Ülkeleri & Kıtalar Atlası — İnteraktif Dünya Haritası",
-    description:
-      "Dünyanın 199 ülke ve bölgesi, 7 kıtası, bayrakları, nüfus verileri, yüzölçümleri ve coğrafi ekstremleri tek ekranda.",
+    /**
+     * The count comes from the FETCH, never from a literal (`lib/seo/hub-description.ts`).
+     * `getCountriesResilient` degrades to an empty list on an api blip; a description still
+     * promising 199 countries is SEO-POLICY §B2.6, and T-032 PR3 made this page indexable again.
+     */
+    description: pickHubDescription(
+      t("metaDescription", { count: countries.length }),
+      t("metaDescriptionFallback"),
+      countries.length,
+    ),
   });
 }
 
 export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "Dunya" });
 
   // Fetch country summary and resilient list
   const [mapSummaries, rawCountries] = await Promise.all([
@@ -98,7 +111,9 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
     };
   });
 
-  const totalCountries = countries.length || 199;
+  // NO `|| 199`. A degraded fetch lists nothing; claiming 199 anyway is the same invention as a
+  // hardcoded meta description, one layer down.
+  const totalCountries = countries.length;
 
   const continentCounts: Partial<Record<Continent, number>> = {};
   for (const c of countries) {
@@ -113,8 +128,12 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
         schema={[
           collectionPageJsonLd({
             name: "Dünya Ülkeleri & Kıtalar Atlası",
-            description:
-              "Dünyanın 199 ülke ve bölgesi, 7 kıtası, bayrakları, nüfus verileri, yüzölçümleri ve coğrafi ekstremleri.",
+            // Structured data may not carry what the page does not show (SEO-POLICY §B5 5.7).
+            description: pickHubDescription(
+              t("metaDescription", { count: totalCountries }),
+              t("metaDescriptionFallback"),
+              totalCountries,
+            ),
             path: "/dunya",
             locale,
           }),

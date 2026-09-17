@@ -31,6 +31,7 @@ import { isCoastalPlate, provinceMarineBlocks, provinceShowsMarine } from "@/lib
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
+import { climateBlockGates } from "@/lib/climate/climate-block-gates";
 import { administrativeAreaJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import {
@@ -298,6 +299,28 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
   const showEconomy = isTr && province.economyIndicator !== null;
   const economyIndicator = province.economyIndicator;
   const climateSeries = isTr ? province.climate : null;
+
+  /**
+   * The climate block's gates, as ONE decision (`lib/climate/climate-block-gates.ts`).
+   *
+   * The section itself was already gated on `climateSeries`, which is TR-only — but three OTHER
+   * places printed the classification outside it: the hero badge, the fact-sheet's "Köppen" row
+   * and the similar-climate chips' heading. None was gated on the locale, so an English province
+   * page showed a bare Köppen code while the mandatory MGM caveat (`climateNoteTr`, untranslated
+   * Turkish) sat inside the section that renders nothing there. `CONVENTIONS.md` §6 forbids
+   * exactly that pairing, and this module exists so the four sites cannot disagree about it.
+   */
+  const climate = climateBlockGates({
+    isTr,
+    hasClimateClass: province.climateClassTr !== null && province.climateKoppen !== null,
+    hasClimateSeries: climateSeries !== null,
+    hasSimilarClimate: similarClimate.length > 0,
+    hasCurriculumName: province.climateCurriculumNameTr !== null,
+    // The defense-in-depth fallback: with no caveat the class line shows neither the curriculum
+    // name nor the code, so nothing MEB- or MGM-sourced is on the page (PR #51 review I4).
+    hasClimateNote: province.climateNoteTr !== null,
+    hasCurriculumNoteText: province.climateCurriculumNoteTr !== null,
+  });
   const pm25Annual = province.pm25Annual;
 
   const sectionHeading = (slot: keyof typeof PROVINCE_HEADING_CASE): string =>
@@ -389,7 +412,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                     🌾 İç Kara
                   </Badge>
                 )}
-                {province.climateClassTr && (
+                {climate.showClass && (
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     <CloudSun className="size-3 mr-1" />{" "}
                     {province.climateCurriculumNameTr || province.climateClassTr}
@@ -464,12 +487,16 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {province.elevationM !== null ? `${province.elevationM} m` : "—"}
               </div>
-              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                <span>Köppen:</span>
-                <span className="font-mono font-semibold text-primary">
-                  {province.climateKoppen || "—"}
-                </span>
-              </div>
+              {/* Dropped, not dashed: an em dash here would still be a classification row on a
+                  page that carries no caveat for it. */}
+              {climate.showClass && (
+                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                  <span>Köppen:</span>
+                  <span className="font-mono font-semibold text-primary">
+                    {province.climateKoppen}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* 4. Koordinatlar */}
@@ -679,7 +706,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             )}
 
             {/* Similar Climate Provinces Chips */}
-            {similarClimate.length > 0 && (
+            {climate.showSection && similarClimate.length > 0 && (
               <div className="pt-3 border-t border-border space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-muted-foreground block">
@@ -736,20 +763,22 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
           {/* MEB Müfredat ve MGM Köppen Açıklama Rehberi */}
           <div className="p-4 sm:p-5 rounded-2xl bg-muted/40 border border-border space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2.5">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm">
-                  {province.climateCurriculumNameTr || province.climateClassTr}
-                </Badge>
-                <span className="text-xs font-mono font-bold text-foreground">
-                  Köppen: {province.climateKoppen}
-                </span>
-              </div>
+              {climate.showClass && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="primary" size="sm">
+                    {province.climateCurriculumNameTr || province.climateClassTr}
+                  </Badge>
+                  <span className="text-xs font-mono font-bold text-foreground">
+                    Köppen: {province.climateKoppen}
+                  </span>
+                </div>
+              )}
               <span className="text-[11px] text-muted-foreground italic">
                 Ders kitabı adı ile Köppen kodu illerin çoğunda örtüşmez.
               </span>
             </div>
 
-            {province.climateCurriculumNoteTr && (
+            {climate.showCurriculumNote && (
               <p className="text-xs sm:text-sm text-foreground leading-relaxed">
                 {province.climateCurriculumNoteTr}
               </p>
