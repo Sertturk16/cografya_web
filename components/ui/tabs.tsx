@@ -42,10 +42,7 @@ function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn(
-        "inline-flex h-11 items-center justify-center rounded-xl bg-muted p-1 text-muted-foreground border border-border select-none gap-1",
-        className,
-      )}
+      className={cn(listVariants[React.useContext(TabsVariantContext)], className)}
       {...props}
     />
   );
