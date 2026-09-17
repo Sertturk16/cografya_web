@@ -17,6 +17,7 @@ import {
 import type { CountryDetail, CountryListItem } from "@/lib/api/types";
 import { neighborCountryNameTr } from "@/lib/geo/neighbor-country-names";
 import { neighborViaTerritory } from "@/lib/geo/neighbor-via-territory";
+import { sourcesMessage } from "@/lib/geo/country-sources";
 import { hasFlag } from "@/lib/geo/flag-set";
 import {
   isSpecialStatusRow,
@@ -216,6 +217,15 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
   const landformNote = isTr ? country.landformNoteTr : null;
   const climateNote = isTr ? country.climateNoteTr : null;
+  /**
+   * Which population-source clause this page prints — decided in `lib/geo/country-sources.ts`
+   * rather than inline, because `vitest.config.ts` collects `lib/**` and `components/**` only:
+   * a branch inside this async Server Component has no gate at all.
+   */
+  const populationSource = sourcesMessage(
+    locale === "en" ? country.populationSourceNameEn : country.populationSourceNameTr,
+  );
+
   const independenceNote = isTr ? country.independenceNoteTr : null;
   const hydrographyNote = isTr ? country.hydrographyNoteTr : null;
   const settlementNote = isTr ? country.settlementNoteTr : null;
@@ -434,22 +444,29 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {country.population ? format.number(country.population) : "—"}
               </div>
-              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                <span>{t("kpiSourceLabel")}</span>
-                <span
-                  className="font-semibold text-foreground truncate max-w-[130px]"
-                  title={
-                    locale === "en"
-                      ? country.populationSourceNameEn || "World Bank"
-                      : country.populationSourceNameTr || "Dünya Bankası"
-                  }
-                >
-                  {locale === "en"
-                    ? country.populationSourceNameEn || "World Bank"
-                    : country.populationSourceNameTr || "Dünya Bankası"}
-                  {country.populationYear ? ` (${country.populationYear})` : ""}
-                </span>
-              </div>
+              {/* NO CLIENT-SIDE DEFAULT. This read `?? "Dünya Bankası"` / `?? "World Bank"`,
+                  which the contract prohibits in as many words: "İstemcide sabitlemeyin veya
+                  kendi varsayılanınızı eklemeyin (`?? "Dünya Bankası"`) — tek doğruluk kaynağı
+                  burasıdır" (`CountryDetailDto.populationSourceNameTr`). The field is null if and
+                  only if `population` is null — today that is Antarctica alone — so the fallback
+                  did not paper over a gap, it credited the World Bank with a population figure
+                  that does not exist. The contract's instruction for that state is to drop the
+                  clause entirely, never to write "no source". `sourcesMessage` in
+                  `lib/geo/country-sources.ts` is where that decision lives, and it is truthy
+                  rather than `!== null` on purpose: an api that predates the field yields
+                  `undefined`, which an exact null check misses. */}
+              {populationSource.key === "sources" && (
+                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                  <span>{t("kpiSourceLabel")}</span>
+                  <span
+                    className="font-semibold text-foreground truncate max-w-[130px]"
+                    title={populationSource.values.populationSource}
+                  >
+                    {populationSource.values.populationSource}
+                    {country.populationYear ? ` (${country.populationYear})` : ""}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* 2. Yüzölçümü */}

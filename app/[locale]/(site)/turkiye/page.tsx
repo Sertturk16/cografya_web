@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getProvincesResilient, getMapSummaryResilient } from "@/lib/api/provinces";
 import { getMarinePointsSafe } from "@/lib/api/marine";
 import { coastalPlateCodes } from "@/lib/marine/coastal";
@@ -9,6 +9,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { pickHubDescription } from "@/lib/seo/hub-description";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2TurkeyMapExplorer, type ProvinceItem } from "@/components/v2/v2-turkey-map-explorer";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
@@ -43,6 +44,9 @@ function slugForLocale(province: ProvinceListItem, locale: Locale): string {
 
 export async function generateMetadata({ params }: V2TurkiyePageProps): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Turkiye" });
+  // Cached by the same ISR entry the page body reads, so this is not a second round trip.
+  const provinces = await getProvincesResilient();
   return buildMetadata({
     locale,
     // T-032 PR3: this page lived under `/v2`, whose layout marked the whole tree
@@ -51,14 +55,27 @@ export async function generateMetadata({ params }: V2TurkiyePageProps): Promise<
     // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
     hrefForLocale: () => "/turkiye",
     title: "Türkiye İller Atlası — 81 İl İnteraktif Haritası ve Coğrafyası",
-    description:
-      "Türkiye'nin 81 ili, 7 coğrafi bölgesi, fiziki haritaları, demografisi, iklim normalleri ve canlı deniz/deprem telemetrisi.",
+    /**
+     * The count comes from the FETCH, never from a literal (`lib/seo/hub-description.ts`).
+     *
+     * This read "Türkiye'nin 81 ili, …" as a fixed string. `getProvincesResilient` degrades to an
+     * empty list on an api blip — that is its whole point — and the page then renders no
+     * provinces while its description, and its `CollectionPage` structured data, still promise
+     * 81. SEO-POLICY §B2.6 is about exactly that: a description must not promise content the
+     * page does not have. T-032 PR3 made this page indexable again, so the promise is now live.
+     */
+    description: pickHubDescription(
+      t("metaDescription", { count: provinces.length }),
+      t("metaDescriptionFallback"),
+      provinces.length,
+    ),
   });
 }
 
 export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "Turkiye" });
 
   const [rawProvinces, rawSummary, rawMarinePoints] = await Promise.all([
     getProvincesResilient(),
@@ -93,7 +110,9 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
     };
   });
 
-  const totalProvinces = provinces.length || 81;
+  // NO `|| 81`. A degraded fetch lists nothing; claiming 81 anyway is the same invention as a
+  // hardcoded meta description, one layer down.
+  const totalProvinces = provinces.length;
   const totalDistricts = rawSummary.reduce((acc, s) => acc + (s.districtCount || 0), 0) || 973;
 
   return (
@@ -103,8 +122,12 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
         schema={[
           collectionPageJsonLd({
             name: "Türkiye İlleri Atlası",
-            description:
-              "Türkiye'nin 81 ili, 7 coğrafi bölgesi, fiziki haritaları, demografisi ve canlı telemetrisi.",
+            // Structured data may not carry what the page does not show (SEO-POLICY §B5 5.7).
+            description: pickHubDescription(
+              t("metaDescription", { count: totalProvinces }),
+              t("metaDescriptionFallback"),
+              totalProvinces,
+            ),
             path: "/turkiye",
             locale,
           }),

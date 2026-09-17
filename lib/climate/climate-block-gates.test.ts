@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { climateBlockGates, type ClimateBlockInput } from "./climate-block-gates";
 
@@ -178,5 +180,49 @@ describe("climateBlockGates", () => {
           .showCurriculumNote,
       ).toBe(false);
     });
+  });
+});
+
+/**
+ * THE BINDING HALF — the assertions above can all pass on a page that never calls this module.
+ *
+ * They did. The V2 province page decided the climate block inline, and the four render sites
+ * disagreed: the section was gated on `climateSeries` (TR-only), while the hero badge, the
+ * fact-sheet's "Köppen" row and the similar-climate chips' heading were gated on the data alone.
+ * An English province page therefore printed a bare Köppen code with the mandatory MGM caveat
+ * (`climateNoteTr`, untranslated Turkish) nowhere on it — the pairing `CONVENTIONS.md` §6
+ * forbids, and the reason the locale gate lives INSIDE this module rather than beside each call.
+ *
+ * Source-read, the repo's usual form for a file under `app/` that vitest does not collect.
+ */
+describe("the province page reads its climate gates from this module", () => {
+  const page = readFileSync(
+    fileURLToPath(new URL("../../app/[locale]/(site)/turkiye/[slug]/page.tsx", import.meta.url)),
+    "utf8",
+  );
+  /** Comments stripped: the page's own prose names every identifier under test. */
+  const code = page.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
+
+  it("derives them once, from the api's own fields", () => {
+    expect(code).toContain('from "@/lib/climate/climate-block-gates"');
+    expect(code).toMatch(/const climate = climateBlockGates\(\{/);
+    // The caveat's presence is an INPUT to the decision, never a separate condition beside it.
+    expect(code).toMatch(/hasClimateNote: province\.climateNoteTr !== null/);
+  });
+
+  it("gates every classification render site on showClass", () => {
+    // Three sites outside the section plus the section's own line. Counted, because a single
+    // `toContain` would pass on the first one and say nothing about the other three — which is
+    // precisely how they came apart.
+    expect(code.match(/climate\.showClass/g) ?? []).toHaveLength(3);
+    expect(code).toMatch(/climate\.showSection && similarClimate\.length/);
+    expect(code).toMatch(/climate\.showCurriculumNote/);
+  });
+
+  it("leaves no classification render site on the raw field", () => {
+    // `climateClassTr &&` / `climateKoppen ||` are the shapes that shipped. The fields may still
+    // be READ inside a gated block; what must not survive is either of them acting as the gate.
+    expect(code).not.toMatch(/\{province\.climateClassTr && \(/);
+    expect(code).not.toMatch(/province\.climateKoppen \|\| "—"/);
   });
 });

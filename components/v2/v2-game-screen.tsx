@@ -66,6 +66,7 @@ import {
   Star,
 } from "lucide-react";
 import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { GAME_CONFIG, STAR_THRESHOLDS } from "@/lib/game/config";
 
 /** Same bounds the existing +/− buttons already clamp `zoom` to (see the toolbar below). */
 const MIN_ZOOM = 0.8;
@@ -414,8 +415,15 @@ export function V2GameScreen({
         // Correct Click!
         playSuccessSound(soundEnabled);
 
-        // Halving score calculation (100 -> 50 -> 25 -> 12 -> 6 -> 3 -> 1)
-        const baseQuestionPoints = Math.max(1, Math.round(100 / Math.pow(2, questionWrongs)));
+        // Halving score ladder (100 -> 50 -> 25 -> 13 -> 6 -> 3 -> 2 -> 1), from GAME_CONFIG.
+        // The three numbers were written out here as `Math.max(1, …100 / 2 ** wrongs)`; they
+        // happened to match, but `lib/game/config.ts` is where the ladder is DECIDED and the end
+        // screen's own explanation is built from the same constants. Two copies of a tunable
+        // product rule is how the explanation ends up describing the old ladder.
+        const baseQuestionPoints = Math.max(
+          GAME_CONFIG.minQuestionPoints,
+          Math.round(GAME_CONFIG.fullQuestionPoints / GAME_CONFIG.halvingBase ** questionWrongs),
+        );
         const finalQuestionPoints = showHint
           ? Math.round(baseQuestionPoints * 0.5)
           : baseQuestionPoints;
@@ -629,14 +637,12 @@ export function V2GameScreen({
   }, [questionScores]);
 
   // Calculate Stars (1-3 stars)
-  const starCount =
-    normalizedAcademicScore >= 85
-      ? 3
-      : normalizedAcademicScore >= 60
-        ? 2
-        : normalizedAcademicScore >= 40
-          ? 1
-          : 0;
+  // From the published ladder, never a second copy of it: `STAR_THRESHOLDS` is what the end
+  // screen's own "3 yıldız: 85+ puan · …" sentence is built from, so a tuned threshold cannot
+  // leave the explanation describing the old one.
+  const starCount = STAR_THRESHOLDS.filter(
+    (threshold) => normalizedAcademicScore >= threshold,
+  ).length;
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-24">

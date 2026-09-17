@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createTranslator } from "next-intl";
 import { sourcesMessage } from "@/lib/geo/country-sources";
@@ -276,5 +278,51 @@ describe("sourcesMessage", () => {
       expect(message.key).toBe("sourcesNoPopulation");
       expect(Object.keys(message.values)).toHaveLength(0);
     }
+  });
+});
+
+/**
+ * THE BINDING HALF — the one the assertions above cannot make.
+ *
+ * `sourcesMessage` can be perfect and unused. It was: the V2 country page decided the credit
+ * inline instead, as `country.populationSourceNameTr || "Dünya Bankası"` (and the EN twin
+ * `|| "World Bank"`), which the contract prohibits in as many words —
+ *
+ *   "İstemcide sabitlemeyin veya kendi varsayılanınızı eklemeyin (`?? "Dünya Bankası"`) — tek
+ *    doğruluk kaynağı burasıdır"  (`CountryDetailDto.populationSourceNameTr`)
+ *
+ * — and the prohibition is not stylistic. The field is null IF AND ONLY IF `population` is null,
+ * today Antarctica alone, so the fallback never papered over a missing credit: it credited the
+ * World Bank with a population figure that does not exist. The contract's instruction for that
+ * state is to drop the clause, never to print "no source".
+ *
+ * Source-read, the repo's usual form for a file under `app/` that vitest does not collect.
+ */
+describe("the country page takes the credit from this module, not from a literal", () => {
+  const page = readFileSync(
+    fileURLToPath(new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url)),
+    "utf8",
+  );
+  /** Comments stripped: the page documents the banned default by quoting it. */
+  const code = page.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
+
+  it("calls sourcesMessage with the locale's own field", () => {
+    expect(code).toContain('from "@/lib/geo/country-sources"');
+    expect(code).toMatch(
+      /sourcesMessage\(\s*locale === "en"\s*\?\s*country\.populationSourceNameEn\s*:\s*country\.populationSourceNameTr,?\s*\)/,
+    );
+  });
+
+  it("invents no institution name", () => {
+    // Both locales, both operators. `||` is what shipped; `??` is what the contract names.
+    for (const literal of ["Dünya Bankası", "World Bank"]) {
+      expect(code, `client-side default for ${literal}`).not.toContain(literal);
+    }
+    expect(code).not.toMatch(/populationSourceName(?:Tr|En)\s*(?:\|\||\?\?)/);
+  });
+
+  it("drops the whole clause when there is no credit to give", () => {
+    // Not an empty string, not "kaynak yok" — the row does not render at all.
+    expect(code).toMatch(/populationSource\.key === "sources" && \(/);
   });
 });
