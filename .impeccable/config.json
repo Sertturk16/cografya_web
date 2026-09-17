@@ -1,0 +1,15 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": ["app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx"],
+        "createdAt": "2026-09-17T21:36:56.316Z",
+        "reason": "Claude, evidence: the flagged border-l-4 border-l-primary is on a <tr>, not a card. It marks the current row of the region comparison table, and colour is not carrying the meaning alone - the same row also has bg-primary/10, font-semibold, and an explicit <Badge>Aktif Bolge</Badge> text label, which is what docs/design.md requires ('never encode meaning by colour alone: pair with text, icon, pattern or shape'). The repo's recorded side-tab rejections (Callout, .placeholder-note) are about decorative editorial asides, not table row state. Predates this session (introduced in d2039b6, T-032 PR2). Scoped to the file only because the side-tab rule exposes no extractable value; narrower suppression is not available. NOT user-confirmed - my judgement."
+      }
+    ]
+  }
+}

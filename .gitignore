@@ -65,3 +65,7 @@ scripts/verify_*.mjs
 
 # Subagent git worktrees (transient; created inside the repo by the agent harness)
 .claude/worktrees/
+
+# Impeccable: the config records deliberate rule suppressions and travels with the repo;
+# the hook cache is a local scratch index and does not.
+.impeccable/hook.cache.json
