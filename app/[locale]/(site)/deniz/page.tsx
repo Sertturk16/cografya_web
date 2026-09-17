@@ -162,150 +162,151 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
       {/* Live Telemetry Ticker */}
       <V2LiveTicker />
 
-      {/* Breadcrumb & Header Hero */}
-      <div className="space-y-4">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-16">
+        {/* Breadcrumb & Header Hero */}
+        <div className="space-y-4">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
           >
-            <Home className="size-3.5" />
-            <span>Ana Sayfa</span>
+            <Link
+              href="/"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <span className="text-foreground font-semibold">Denizler &amp; Kıyılar Atlası</span>
+          </nav>
+
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+            <div className="relative z-10 max-w-3xl space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
+                  Mavi Vatan Oşinografi Portalı
+                </Badge>
+                <Badge variant="secondary" size="sm">
+                  {showValues ? "30 Canlı Telemetri İstasyonu" : "30 Referans Noktası"}
+                </Badge>
+              </div>
+
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
+                Denizler &amp; Kıyılar Atlası
+              </h1>
+
+              <V2EnWorkInProgressNotice locale={locale} />
+
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                {showValues ? (
+                  <>
+                    Karadeniz, Marmara, Ege ve Akdeniz havzalarının saatlik deniz suyu sıcaklıkları,
+                    dalga boyları, tuzluluk oranları, akıntı rejimleri ve 28 kıyı ilinin oşinografik
+                    yapısı.
+                  </>
+                ) : (
+                  <>
+                    Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktasının kapsadığı
+                    deniz suyu sıcaklığı, dalga boyu, rüzgâr ve akıntı büyüklükleri; 28 kıyı ilinin
+                    oşinografik yapısıyla birlikte. Güncel ölçüm değerleri şu an yayında değil.
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* Metric Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  4 Deniz
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Farklı Havza &amp; Akıntı
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-cyan-600 block">
+                  30 Nokta
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  {showValues ? "Saatlik Telemetri İstasyonu" : "Referans İzleme Noktası"}
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
+                  28 İl
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Denize Kıyısı Olan Şehir
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  8.333 km
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Toplam Kıyı Uzunluğu (HGM)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 1: INTERACTIVE REALISTIC TURKEY & SEA MAP EXPLORER */}
+        <V2MarineMapExplorer marinePoints={marinePoints} locale={locale} />
+
+        {/* SECTION 2: 4 SEA BASINS COMPREHENSIVE GUIDE */}
+        <V2MarineBasinCards />
+
+        {/* SECTION 3: COASTAL TYPES & OCEANOGRAPHY GUIDE */}
+        <V2MarineOceanographyGuide />
+
+        {/* SUBMARINE FAULTS CALLOUT BANNER */}
+        <div className="p-5 rounded-3xl border border-red-500/30 bg-gradient-to-r from-red-500/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-2xl bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
+              <Layers className="size-5" />
+            </div>
+            <div>
+              <span className="font-heading text-base font-bold text-foreground block">
+                Denizaltı Sismotektoniği &amp; Aktif Fay Hatları
+              </span>
+              <span className="text-xs text-muted-foreground block">
+                Kuzey Anadolu Fayı&apos;nın Marmara Denizi derin çukurlarındaki geçişi ve Ege açılma
+                tektoniği.
+              </span>
+            </div>
+          </div>
+          <Link
+            href="/deprem/fay-hatlari"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "shrink-0 font-bold text-xs group gap-1.5",
+            )}
+          >
+            <span>Fay Hatları Atlasına Git</span>
+            <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">Denizler &amp; Kıyılar Atlası</span>
-        </nav>
-
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-          <div className="relative z-10 max-w-3xl space-y-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
-                Mavi Vatan Oşinografi Portalı
-              </Badge>
-              <Badge variant="secondary" size="sm">
-                {showValues ? "30 Canlı Telemetri İstasyonu" : "30 Referans Noktası"}
-              </Badge>
-            </div>
-
-            <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-              Denizler &amp; Kıyılar Atlası
-            </h1>
-
-            <V2EnWorkInProgressNotice locale={locale} />
-
-            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-              {showValues ? (
-                <>
-                  Karadeniz, Marmara, Ege ve Akdeniz havzalarının saatlik deniz suyu sıcaklıkları,
-                  dalga boyları, tuzluluk oranları, akıntı rejimleri ve 28 kıyı ilinin oşinografik
-                  yapısı.
-                </>
-              ) : (
-                <>
-                  Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktasının kapsadığı
-                  deniz suyu sıcaklığı, dalga boyu, rüzgâr ve akıntı büyüklükleri; 28 kıyı ilinin
-                  oşinografik yapısıyla birlikte. Güncel ölçüm değerleri şu an yayında değil.
-                </>
-              )}
-            </p>
-          </div>
-
-          {/* Metric Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                4 Deniz
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">
-                Farklı Havza &amp; Akıntı
-              </span>
-            </div>
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-cyan-600 block">
-                30 Nokta
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">
-                {showValues ? "Saatlik Telemetri İstasyonu" : "Referans İzleme Noktası"}
-              </span>
-            </div>
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                28 İl
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">
-                Denize Kıyısı Olan Şehir
-              </span>
-            </div>
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                8.333 km
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">
-                Toplam Kıyı Uzunluğu (HGM)
-              </span>
-            </div>
-          </div>
         </div>
-      </div>
 
-      {/* SECTION 1: INTERACTIVE REALISTIC TURKEY & SEA MAP EXPLORER */}
-      <V2MarineMapExplorer marinePoints={marinePoints} locale={locale} />
+        {/* SECTION 4: MEASUREMENT LAYERS CATALOGUE */}
+        <V2MarineLayerCatalogue layers={rawLayers} />
 
-      {/* SECTION 2: 4 SEA BASINS COMPREHENSIVE GUIDE */}
-      <V2MarineBasinCards />
+        {/* SECTION 5: PEDAGOGICAL FAQ ACCORDION */}
+        <V2MarineFaqAccordion />
 
-      {/* SECTION 3: COASTAL TYPES & OCEANOGRAPHY GUIDE */}
-      <V2MarineOceanographyGuide />
-
-      {/* SUBMARINE FAULTS CALLOUT BANNER */}
-      <div className="p-5 rounded-3xl border border-red-500/30 bg-gradient-to-r from-red-500/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="size-10 rounded-2xl bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
-            <Layers className="size-5" />
-          </div>
-          <div>
-            <span className="font-heading text-base font-bold text-foreground block">
-              Denizaltı Sismotektoniği &amp; Aktif Fay Hatları
-            </span>
-            <span className="text-xs text-muted-foreground block">
-              Kuzey Anadolu Fayı&apos;nın Marmara Denizi derin çukurlarındaki geçişi ve Ege açılma
-              tektoniği.
-            </span>
-          </div>
-        </div>
-        <Link
-          href="/deprem/fay-hatlari"
-          className={cn(
-            buttonVariants({ variant: "outline", size: "sm" }),
-            "shrink-0 font-bold text-xs group gap-1.5",
-          )}
-        >
-          <span>Fay Hatları Atlasına Git</span>
-          <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
-      </div>
-
-      {/* SECTION 4: MEASUREMENT LAYERS CATALOGUE */}
-      <V2MarineLayerCatalogue layers={rawLayers} />
-
-      {/* SECTION 5: PEDAGOGICAL FAQ ACCORDION */}
-      <V2MarineFaqAccordion />
-
-      {/* SECTION 6: ATTRIBUTION, LICENCE AND EDUCATIONAL-USE NOTICE
+        {/* SECTION 6: ATTRIBUTION, LICENCE AND EDUCATIONAL-USE NOTICE
             The ECMWF and Copernicus Marine wording is the LICENCE, not copy — published
             verbatim, in English, in both locales (see the component's docblock). Ungated: this
             hub describes and catalogues the derived material on every render, so the notice is
             owed on every render. The V2 rewrite dropped this block and left only the card grid
             below, whose ECMWF "legal quote" was a paraphrase nobody could source. */}
-      <MarineAttribution layers={rawLayers} headingId="deniz-sources" />
+        <MarineAttribution layers={rawLayers} headingId="deniz-sources" />
 
-      {/* SECTION 7: SOURCES (KAYNAKÇA) — the bibliography, in our words. It sits alongside the
+        {/* SECTION 7: SOURCES (KAYNAKÇA) — the bibliography, in our words. It sits alongside the
             attribution block above and never in place of it. */}
-      <V2SourcesSection scope="deniz" />
-
+        <V2SourcesSection scope="deniz" />
+      </div>
       {/* V2 Footer */}
     </>
   );

@@ -74,98 +74,100 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
       {/* SVG Defs for mini-thumbnails */}
       {hasThumbs ? <V2RegionThumbDefs shapes={allShapes} /> : null}
 
-      {/* Top Navigation & Breadcrumbs */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-8">
+        {/* Top Navigation & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
           >
-            <Home className="size-3.5" />
-            <span>Ana Sayfa</span>
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <Link href="/oyun" className="hover:text-foreground transition-colors">
-            Harita Oyunları
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="text-foreground font-semibold">Bölge Seçimi</span>
-        </nav>
+            <Link
+              href="/"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <Link href="/oyun" className="hover:text-foreground transition-colors">
+              Harita Oyunları
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <span className="text-foreground font-semibold">Bölge Seçimi</span>
+          </nav>
 
-        <Link href="/oyun">
-          <Button variant="outline" size="sm" leftIcon={<RotateCcw className="size-3.5" />}>
-            Oyun Hub&apos;ına Dön
-          </Button>
-        </Link>
-      </div>
-
-      {/* Header Hero Banner */}
-      <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/20 p-6 sm:p-8 shadow-sm space-y-2">
-        <div className="flex items-center gap-2">
-          <Badge variant="primary" size="sm" icon={<Layers className="size-3.5" />}>
-            Bölgesel Odaklı Mod
-          </Badge>
-          <span className="text-xs text-muted-foreground font-medium">
-            Bölge Bölge İl Tamamlama
-          </span>
+          <Link href="/oyun">
+            <Button variant="outline" size="sm" leftIcon={<RotateCcw className="size-3.5" />}>
+              Oyun Hub&apos;ına Dön
+            </Button>
+          </Link>
         </div>
-        <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-          Bir Coğrafi Bölge Seçin
-        </h1>
-        <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-          Seçtiğiniz bölgenin sınırları otomatik olarak büyütülecek ve harita sadece o bölgenin
-          illerine odaklanacaktır.
-        </p>
-      </div>
 
-      {/* 7 REGION GRID CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {regionCards.map((region) => (
-          <div
-            key={region.id}
-            className="group rounded-3xl border border-border bg-card p-5 hover:border-primary/50 hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-4"
-          >
-            {/* Region Vector Mini Thumbnail */}
-            {hasThumbs ? <V2RegionThumb region={region.id} members={region.members} /> : null}
+        {/* Header Hero Banner */}
+        <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/20 p-6 sm:p-8 shadow-sm space-y-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="primary" size="sm" icon={<Layers className="size-3.5" />}>
+              Bölgesel Odaklı Mod
+            </Badge>
+            <span className="text-xs text-muted-foreground font-medium">
+              Bölge Bölge İl Tamamlama
+            </span>
+          </div>
+          <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+            Bir Coğrafi Bölge Seçin
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+            Seçtiğiniz bölgenin sınırları otomatik olarak büyütülecek ve harita sadece o bölgenin
+            illerine odaklanacaktır.
+          </p>
+        </div>
 
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                  {region.name}
-                </h3>
-              </div>
-              {/* NO COUNT ON THE CARD — neither as a badge nor inside this sentence.
+        {/* 7 REGION GRID CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {regionCards.map((region) => (
+            <div
+              key={region.id}
+              className="group rounded-3xl border border-border bg-card p-5 hover:border-primary/50 hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-4"
+            >
+              {/* Region Vector Mini Thumbnail */}
+              {hasThumbs ? <V2RegionThumb region={region.id} members={region.members} /> : null}
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                    {region.name}
+                  </h3>
+                </div>
+                {/* NO COUNT ON THE CARD — neither as a badge nor inside this sentence.
                     "11 il" is the badge the owner removed from the mode cards one level up
                     (DEC 2026-07-30q) and then from these cards too (DEC 2026-08-05g md.3); the
                     V2 rewrite reintroduced it in both places. */}
-              <p className="text-xs text-muted-foreground line-clamp-2">
-                {region.name} kapsamındaki illerin dilsiz haritadaki konumlarını bulun.
-              </p>
-            </div>
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {region.name} kapsamındaki illerin dilsiz haritadaki konumlarını bulun.
+                </p>
+              </div>
 
-            <Link
-              href={{
-                pathname: "/oyun/bolge-bolge-il/[bolge]",
-                params: { bolge: region.slug },
-              }}
-            >
-              <Button
-                variant="primary"
-                className="w-full justify-between"
-                rightIcon={<ArrowRight className="size-4" />}
+              <Link
+                href={{
+                  pathname: "/oyun/bolge-bolge-il/[bolge]",
+                  params: { bolge: region.slug },
+                }}
               >
-                <span>Bölgeyi Başlat</span>
-              </Button>
-            </Link>
-          </div>
-        ))}
-      </div>
+                <Button
+                  variant="primary"
+                  className="w-full justify-between"
+                  rightIcon={<ArrowRight className="size-4" />}
+                >
+                  <span>Bölgeyi Başlat</span>
+                </Button>
+              </Link>
+            </div>
+          ))}
+        </div>
 
-      {/* Sources & Pedagogy Footer Section */}
-      <V2SourcesSection />
+        {/* Sources & Pedagogy Footer Section */}
+        <V2SourcesSection />
+      </div>
     </>
   );
 }

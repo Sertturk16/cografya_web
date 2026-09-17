@@ -78,30 +78,35 @@ export default async function V2MemberHubPage({ params }: V2MemberHubPageProps) 
     <>
       <V2LiveTicker />
 
-      {/* Breadcrumb Navigation */}
-      <nav
-        aria-label="Breadcrumb"
-        className="flex items-center gap-2 text-xs text-muted-foreground"
-      >
-        <Link href="/" className="flex items-center gap-1 hover:text-foreground transition-colors">
-          <Home className="size-3.5" />
-          <span>Ana sayfa</span>
-        </Link>
-        <ChevronRight className="size-3.5" />
-        <span className="text-foreground font-semibold">Hesabım</span>
-      </nav>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-8">
+        {/* Breadcrumb Navigation */}
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-2 text-xs text-muted-foreground"
+        >
+          <Link
+            href="/"
+            className="flex items-center gap-1 hover:text-foreground transition-colors"
+          >
+            <Home className="size-3.5" />
+            <span>Ana sayfa</span>
+          </Link>
+          <ChevronRight className="size-3.5" />
+          <span className="text-foreground font-semibold">Hesabım</span>
+        </nav>
 
-      {/* Member Hub Island */}
-      <V2MemberHub
-        session={session}
-        profile={profile}
-        provinces={provinces}
-        countries={countries}
-        regions={regions}
-        books={books}
-      />
+        {/* Member Hub Island */}
+        <V2MemberHub
+          session={session}
+          profile={profile}
+          provinces={provinces}
+          countries={countries}
+          regions={regions}
+          books={books}
+        />
 
-      <V2SourcesSection scope="general" />
+        <V2SourcesSection scope="general" />
+      </div>
     </>
   );
 }
