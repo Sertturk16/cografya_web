@@ -75,7 +75,7 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
             <Link
               key={book.slugTr}
               href={{
-                pathname: "/v2/kitaplar/[slug]",
+                pathname: "/kitaplar/[slug]",
                 params: { slug: slugForLocale(book, locale) },
               }}
               className="group relative flex flex-col sm:flex-row gap-6 p-6 rounded-3xl border border-border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5"

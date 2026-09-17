@@ -32,13 +32,24 @@ describe("V2 sovereignty and naming invariants", () => {
   });
 
   it("enforces locale-aware flag gating and synchronizes special status set in v2/dunya (SOV125-C1, SOV124-I1, RV133R4-NEW-I1)", () => {
-    const pageUrl = new URL("../../app/[locale]/v2/dunya/page.tsx", import.meta.url);
+    const pageUrl = new URL("../../app/[locale]/(site)/dunya/page.tsx", import.meta.url);
     const pageContent = readFileSync(pageUrl, "utf8");
 
     // Must suppress flags in EN for special-status rows per DEC 2026-08-08h and DEC 2026-09-03a md.2
+    //
+    // This used to pin the condition WRITTEN OUT here: `!isSpecialStatus || locale === "tr"`.
+    // T-032 PR3 moved it behind `showsCountryFlagForStatus`, which is the same rule
+    // `lib/geo/sovereignty.ts` already applied to the country-detail page's own flag — this page
+    // had a hand-rolled restatement of it, correct but free to drift. Pinning the delegation is
+    // strictly stronger than pinning the old text: the condition can now only be changed in the
+    // decision module, where `lib/geo/sovereignty.test.ts` guards its truth table, and where a
+    // change lands on every consumer at once instead of on whichever one someone remembered.
     expect(pageContent).toContain(
-      'const flagVisible = hasFlagAsset && (!isSpecialStatus || locale === "tr");',
+      "const flagVisible = hasFlagAsset && showsCountryFlagForStatus(locale, isSpecialStatus);",
     );
+    expect(pageContent).toContain('from "@/lib/geo/sovereignty"');
+    // The restatement must not come back alongside the call.
+    expect(pageContent).not.toMatch(/!isSpecialStatus \|\| locale === "tr"/);
 
     // (Amendment 2, RV133R4-NEW-I1) flagVisible's own locale condition above is correct and untouched.
     // This pins what it READS: a locale fold folded in HERE instead — the sibling of the same fold
@@ -63,7 +74,7 @@ describe("V2 sovereignty and naming invariants", () => {
     expect(codes).toEqual(["CY", "IL", "PS", "QN", "TW", "XK"].sort());
 
     // Neither consuming page may silently re-declare a private copy of the set (§5.1-C).
-    const slugUrl = new URL("../../app/[locale]/v2/dunya/[slug]/page.tsx", import.meta.url);
+    const slugUrl = new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url);
     const slugContent = readFileSync(slugUrl, "utf8");
     for (const content of [pageContent, slugContent]) {
       expect(content).toContain('from "@/lib/geo/special-status-isos"');
@@ -103,7 +114,7 @@ describe("V2 sovereignty and naming invariants", () => {
   });
 
   it("localizes the sovereign/special-status entity badge in v2/dunya/[slug] via next-intl, matching the canonical explorer strings", () => {
-    const pageUrl = new URL("../../app/[locale]/v2/dunya/[slug]/page.tsx", import.meta.url);
+    const pageUrl = new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url);
     const pageContent = readFileSync(pageUrl, "utf8");
 
     // The badge text comes from CountryDetail messages, never a hardcoded literal.
@@ -125,7 +136,7 @@ describe("V2 sovereignty and naming invariants", () => {
   });
 
   it("keeps the entityType/status badge branch order stable — a swap must fail this suite (TEST133-I1)", () => {
-    const pageUrl = new URL("../../app/[locale]/v2/dunya/[slug]/page.tsx", import.meta.url);
+    const pageUrl = new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url);
     const pageContent = readFileSync(pageUrl, "utf8");
 
     // The territory/special branch is keyed on entityType, not on a re-derived condition.
@@ -262,7 +273,7 @@ describe("V2 sovereignty and naming invariants", () => {
   });
 
   it("pins the three round-2 sovereignty gates, their call sites, AND the two upstream booleans that feed them — a refactor that changes any of them, at their declaration, at any place the page reads them, or at the input each declaration reads, must fail this suite (SOV133R2-NEW-I2, SOV133R3-NEW-I1, FEN133R3-NEW-M2, RV133R4-NEW-I1)", () => {
-    const pageUrl = new URL("../../app/[locale]/v2/dunya/[slug]/page.tsx", import.meta.url);
+    const pageUrl = new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url);
     const pageContent = readFileSync(pageUrl, "utf8");
 
     // (1) The special-geography predicate — gates the island-country framing (heading,
@@ -284,9 +295,16 @@ describe("V2 sovereignty and naming invariants", () => {
 
     // (3) The EN neighbour-flag suppression — hides a contested neighbour's flag on the
     // English page while leaving it visible (with the badge, SOV133R2-NEW-I1) on Turkish.
+    //
+    // T-032 PR3 replaced the written-out `(isTr || !nbIsSpecialStatus)` with a call into
+    // `lib/geo/sovereignty.ts`. The rule is unchanged — it was a hand-rolled restatement of
+    // `showsCountryFlag`, correct but drift-prone, and the module's own docblock rules that this
+    // coupling be expressed as a dependency. Pinning the delegation keeps this assertion's teeth
+    // and moves the truth table under `lib/geo/sovereignty.test.ts`, which tests it directly.
     expect(pageContent).toContain(
-      "const showsNeighbourFlag = hasFlag(nb.iso) && (isTr || !nbIsSpecialStatus);",
+      "hasFlag(nb.iso) && showsCountryFlagForStatus(locale, nbIsSpecialStatus);",
     );
+    expect(pageContent).not.toMatch(/isTr \|\| !nbIsSpecialStatus/);
 
     // (SOV133R3-NEW-I1 / FEN133R3-NEW-M2) The three pins above lock only the DECLARATION line of
     // each gate. The page reads these gates at further call sites the declaration pin cannot
@@ -346,8 +364,29 @@ describe("V2 sovereignty and naming invariants", () => {
     // import and adding a page-local, same-named function (closing over `isTr`, already in scope)
     // leaves the call-site line's text byte-identical while the runtime behaviour regresses on
     // EN only. Pin the import statement itself, unaliased, so that construction fails HERE.
-    expect(strippedPageContent).toContain(
-      'import { isSpecialStatusRow, showsCountryFlag, showsSovereigntyNote } from "@/lib/geo/sovereignty";',
-    ); // binding pin — SOV133R4-NEW-I1
+    // The import is multi-line since PR3 added `showsCountryFlagForStatus`, so the pin is on the
+    // named bindings rather than on one formatted line — Prettier's wrapping is not the subject.
+    // `[^}]*`, not `[\s\S]*?`: a lazy any-char run still starts at the FIRST `import {` in the
+    // file and swallows every import between it and this one.
+    const importBlock = /import \{([^}]*)\} from "@\/lib\/geo\/sovereignty";/.exec(
+      strippedPageContent,
+    )?.[1];
+    expect(importBlock, "sovereignty import block").toBeDefined();
+    const bound = (importBlock ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .sort();
+    expect(bound).toEqual(
+      [
+        "isSpecialStatusRow",
+        "showsCountryFlag",
+        "showsCountryFlagForStatus",
+        "showsSovereigntyNote",
+      ].sort(),
+    );
+    // Unaliased: `as _x` would let a page-local same-named function shadow the real one while
+    // every call-site pin above stayed byte-identical.
+    expect(importBlock).not.toContain(" as ");
   });
 });

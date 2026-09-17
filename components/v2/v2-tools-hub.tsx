@@ -75,7 +75,7 @@ export function V2ToolsHub() {
             </div>
 
             <div className="pt-6 mt-4 border-t border-border/60">
-              <Link href="/v2/araclar/mesafe-olcme" className="block w-full">
+              <Link href="/araclar/mesafe-olcme" className="block w-full">
                 <Button
                   variant="primary"
                   className="w-full text-white font-bold h-11 text-xs gap-2"
@@ -133,7 +133,7 @@ export function V2ToolsHub() {
             </div>
 
             <div className="pt-6 mt-4 border-t border-border/60">
-              <Link href="/v2/araclar/koordinat-bulma" className="block w-full">
+              <Link href="/araclar/koordinat-bulma" className="block w-full">
                 <Button
                   variant="emerald"
                   className="w-full text-white font-bold h-11 text-xs gap-2"
@@ -191,7 +191,7 @@ export function V2ToolsHub() {
             </div>
 
             <div className="pt-6 mt-4 border-t border-border/60">
-              <Link href="/v2/araclar/alan-hesaplama" className="block w-full">
+              <Link href="/araclar/alan-hesaplama" className="block w-full">
                 <Button
                   variant="sky"
                   className="w-full text-white font-bold h-11 text-xs gap-2"

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 describe("V2MemberHub Component & /v2/hesabim Security", () => {
   const hubSource = readFileSync(new URL("./v2-member-hub.tsx", import.meta.url), "utf8");
   const pageSource = readFileSync(
-    new URL("../../app/[locale]/v2/hesabim/page.tsx", import.meta.url),
+    new URL("../../app/[locale]/(site)/hesabim/page.tsx", import.meta.url),
     "utf8",
   );
 
@@ -17,7 +17,7 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
     });
   });
 
-  describe("/v2/hesabim Server Security & Negative Control (§3.2)", () => {
+  describe("/hesabim Server Security & Negative Control (§3.2)", () => {
     it("enforces dynamic = 'force-dynamic' and fetchCache = 'force-no-store'", () => {
       expect(pageSource).toContain('export const dynamic = "force-dynamic";');
       expect(pageSource).toContain('export const fetchCache = "force-no-store";');
@@ -26,12 +26,12 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
     it("verifies server-side session and redirects unauthenticated users to /v2/giris", () => {
       expect(pageSource).toContain("const session = await getSession();");
       expect(pageSource).toContain("if (!session) {");
-      expect(pageSource).toContain('redirect(getPathname({ locale, href: "/v2/giris" }));');
+      expect(pageSource).toContain('redirect(getPathname({ locale, href: "/giris" }));');
     });
 
     it("uses buildAuthMetadata to guarantee noindex,follow and proper canonical alternates", () => {
       expect(pageSource).toContain("buildAuthMetadata({");
-      expect(pageSource).toContain('pathname: "/v2/hesabim"');
+      expect(pageSource).toContain('pathname: "/hesabim"');
     });
 
     it("fetches resilient reference datasets on the server for friendly UI names", () => {
@@ -75,7 +75,7 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
     it("displays cloud measurements and provides delete functionality", () => {
       expect(hubSource).toContain("fetchMeasurements");
       expect(hubSource).toContain("removeMeasurement");
-      expect(hubSource).toContain("/v2/araclar");
+      expect(hubSource).toContain("/araclar");
     });
 
     it("embeds V2GameHistoryStats for game history and achievements", () => {

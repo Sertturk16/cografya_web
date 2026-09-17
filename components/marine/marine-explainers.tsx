@@ -41,7 +41,7 @@ const FAQ_ACCORDION_GROUP = "deniz-faq";
  *
  * NATIVE `<details>`/`<summary>` rather than a client component with `useState`, for three
  * reasons, in order of weight. (1) **No-JS reality.** This page's substance is the seven
- * hand-written Turkish narrative blocks (`app/[locale]/deniz/page.tsx`'s own docblock) —
+ * hand-written Turkish narrative blocks (`app/[locale]/(site)/deniz/page.tsx`'s own docblock) —
  * exactly the content this whole surface exists to keep reachable. A JS-only accordion would
  * make every answer permanently unreachable to a reader with JavaScript disabled or broken
  * (SSR still ships the closed markup, so a CRAWLER reads everything regardless — the risk is

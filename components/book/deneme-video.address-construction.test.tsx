@@ -86,7 +86,7 @@ if (seededIdentifierMatch === null) {
 }
 const seededIdentifier = seededIdentifierMatch[1];
 
-/** The exact `rich` shape BOTH `/kitaplar/[slug]/page.tsx` and `/v2/kitaplar/[slug]/page.tsx`
+/** The exact `rich` shape BOTH `/kitaplar/[slug]/page.tsx` and `/kitaplar/[slug]/page.tsx`
  *  build inline from `state.youtube` — field-for-field identical at both call sites. Written
  *  out here rather than imported: this guard must fail if EITHER page's own construction ever
  *  stops matching this shape, and an imported helper could drift together with the page instead

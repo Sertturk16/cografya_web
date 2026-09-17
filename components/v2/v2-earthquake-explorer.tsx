@@ -869,7 +869,7 @@ export function V2EarthquakeExplorer({
               {selectedEvent.provinceSlug && (
                 <Link
                   href={{
-                    pathname: "/v2/turkiye/[slug]",
+                    pathname: "/turkiye/[slug]",
                     params: { slug: selectedEvent.provinceSlug },
                   }}
                   className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-9 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-primary shadow-xs"

@@ -210,7 +210,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
                   <h3 className="font-heading font-bold text-lg text-white leading-tight">
                     <Link
                       href={
-                        `/v2/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
+                        `/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
                           typeof Link
                         >["href"]
                       }
@@ -259,7 +259,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
                       <Link
                         key={prov.slug}
                         href={
-                          `/v2/turkiye/${prov.slug}` as unknown as React.ComponentProps<
+                          `/turkiye/${prov.slug}` as unknown as React.ComponentProps<
                             typeof Link
                           >["href"]
                         }
@@ -289,7 +289,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
                 </div>
                 <Link
                   href={
-                    `/v2/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
+                    `/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
                       typeof Link
                     >["href"]
                   }

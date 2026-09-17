@@ -9,7 +9,7 @@ import { TOOL_HUB_PATHNAME, TOOL_REGISTRY } from "./tool-registry";
  * THE TOOL TIER'S THREE SIDES MUST AGREE: the register, the routing table, and the pages on
  * disk.
  *
- * A tool is a page (`app/[locale]/araclar/{segment}/page.tsx`), a route
+ * A tool is a page (`app/[locale]/(site)/araclar/{segment}/page.tsx`), a route
  * (`i18n/routing.ts`) and a hub card built from `TOOL_REGISTRY`. Nothing in the type system
  * ties them together, and each mismatch has a different, silent failure:
  *
@@ -28,14 +28,14 @@ import { TOOL_HUB_PATHNAME, TOOL_REGISTRY } from "./tool-registry";
  * word of copy.
  */
 
-const TOOLS_DIR = new URL("../../app/[locale]/araclar/", import.meta.url);
+const TOOLS_DIR = new URL("../../app/[locale]/(site)/araclar/", import.meta.url);
 
 /** Every subdirectory of the tool hub that actually ships a page. */
 const pageSegments = readdirSync(fileURLToPath(TOOLS_DIR), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   // `[...rest]` is the tier's 404 BOUNDARY (fix round, İRİS finding A1 —
-  // `app/[locale]/araclar/[...rest]/page.tsx`'s own docblock), never a tool: a real tool
+  // `app/[locale]/(site)/araclar/[...rest]/page.tsx`'s own docblock), never a tool: a real tool
   // segment is always `[a-z0-9-]+` (the transliteration guard below), so any directory name
   // that is itself a Next.js dynamic-segment token (`[…]`) is excluded on sight rather than
   // by a hand-maintained name, which is what keeps this filter correct if a second boundary

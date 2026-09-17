@@ -125,7 +125,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
       "1999 Gölcük depremiyle boşalan gerilim enerjisi Marmara Denizi altındaki Kuzey Marmara Segmenti'ne aktarılmıştır. Prens Adaları ile Silivri açıkları arasındaki fay parçası 1766'dan beri kırılmamış olup kritik bir 'sismik boşluk' niteliği taşımaktadır.",
     marineConnection: {
       seaName: "Marmara Denizi",
-      href: "/v2/deniz/marmara",
+      href: "/deniz/marmara",
       description:
         "KAF'ın Marmara Denizi tabanındaki 3 derin çukurluk (Tekirdağ, Orta Marmara, Çınarcık) ve denizaltı fay geometrisi Marmara Denizi sayfasında incelenmektedir.",
     },
@@ -221,7 +221,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
       "6 Şubat 2023 depremleri DAF'ın güneybatı kollarındaki yüzlerce yıllık enerji birikimini büyük ölçüde boşaltmıştır. Buna karşılık kuzey uçtaki Yedisu Fayı (Erzincan-Bingöl arası) 1784'ten beri kırılmamış olup sismik boşluk vasfını sürdürmektedir.",
     marineConnection: {
       seaName: "Akdeniz (İskenderun Körfezi)",
-      href: "/v2/deniz/akdeniz",
+      href: "/deniz/akdeniz",
       description:
         "DAF'ın güney ucu Samandağ kıyısından Doğu Akdeniz basenine ve Kıbrıs Yayı tektoniğine bağlanır.",
     },
@@ -312,7 +312,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
       "BAFS üzerindeki faylar KAF gibi tek bir ana iz üzerinde değil, yüzlerce parçalı paralel kırık ağından oluşur. Bu nedenle 5.0 - 6.5 büyüklüğündeki orta ölçekli depremler çok sık tekrarlanır. Alüvyon zeminli ovalardaki yapı stokları zemin büyütmesi nedeniyle yüksek risk taşır.",
     marineConnection: {
       seaName: "Ege Denizi",
-      href: "/v2/deniz/ege",
+      href: "/deniz/ege",
       description:
         "BAFS graben vadilerinin Ege Denizi tabanında devam eden denizaltı kırıkları ve kıta sahanlığı etkileşimi Ege Denizi sayfasında incelenmektedir.",
     },

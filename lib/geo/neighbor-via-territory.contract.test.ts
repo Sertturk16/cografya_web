@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
+import { ungatedRenderSite } from "@/lib/testing/jsx-gate";
 import { NEIGHBOR_VIA_TERRITORY, neighborViaTerritory } from "./neighbor-via-territory";
 
 /**
@@ -44,7 +45,7 @@ function code(source: string): string {
     .join("\n");
 }
 
-const PAGE = code(sourceOf("../../app/[locale]/dunya/[slug]/page.tsx"));
+const PAGE = code(sourceOf("../../app/[locale]/(site)/dunya/[slug]/page.tsx"));
 
 describe("the country page's neighbour-label wiring", () => {
   it("asks the table HOST first, neighbour second", () => {
@@ -76,22 +77,32 @@ describe("the country page's neighbour-label wiring", () => {
     // to `t("neighborVia", …)` and the Fas card silently reverts to the identify form —
     // "İspanya (Ceuta ve Melilla)", the exact attribution the owner ruled out — with every
     // module test still green, because the module would still be returning the right key.
-    expect(PAGE).toContain("t(via.key, { name, territory: via.territory })");
+    // The parameter the name is passed under is a local binding (`name` in V1, `nName` in V2 —
+    // the V2 helper takes it as an argument instead of closing over the page's `name`). What
+    // must not change is that the KEY comes from the pair.
+    expect(PAGE).toMatch(/t\(via\.key, \{ name: \w+, territory: via\.territory \}\)/);
     expect(PAGE).not.toMatch(/t\(\s*["']neighborVia(?:Through)?["']/);
   });
 
   it("renders the resolved label, not the raw name", () => {
     // `neighbor.name` was renamed to `neighbor.label` precisely so a missed rename is a
-    // compile error rather than a silently bare card.
-    expect(PAGE).not.toMatch(/\{neighbor\.name\}/);
-    expect(PAGE).toMatch(/\{neighbor\.label\}/);
+    // compile error rather than a silently bare card. V2 shortened the loop variable to `nb`
+    // and renders the cards twice (linked and plain-text branches), so this counts label reads
+    // instead of pinning one spelling — and still refuses any read of a `.name` on the card.
+    const labelReads = PAGE.match(/\{(?:neighbor|nb)\.label\}/g) ?? [];
+    expect(labelReads.length, "neighbour card label reads").toBeGreaterThan(0);
+    expect(PAGE).not.toMatch(/\{(?:neighbor|nb)\.name\}/);
   });
 
   it("keeps the künye row behind the null guard", () => {
     // → TA72-M4. The ~26 rows with no note (20 null + 6 absent) and every EN page must not
-    // render a labelled-but-empty "Bağımsızlık" card. The guard is a move, not a new
-    // condition — it is byte-identical to the one the removed <section> used.
-    expect(PAGE).toContain("independenceNote !== null &&");
+    // render a labelled-but-empty "Bağımsızlık" card.
+    //
+    // V1 wrote the guard as `independenceNote !== null &&`; V2 writes a truthy test on the same
+    // constant, which additionally drops an empty-string note — no looser. The guarantee is that
+    // the card hangs on the DERIVED, locale-folded constant, so the second assertion (the one
+    // that actually carries the locale rule) is the load-bearing half and is unchanged.
+    expect(ungatedRenderSite(PAGE, "{independenceNote}", "independenceNote")).toBeNull();
     expect(PAGE).toContain("isTr ? country.independenceNoteTr : null");
   });
 });

@@ -98,7 +98,7 @@ describe("the dot's contract is bound on BOTH sides", () => {
 
   const component = tsxCode(new URL("./region-dot.tsx", import.meta.url));
   const provincePage = tsxCode(
-    new URL("../../app/[locale]/turkiye/[slug]/page.tsx", import.meta.url),
+    new URL("../../app/[locale]/(site)/turkiye/[slug]/page.tsx", import.meta.url),
   );
 
   it("emits the attribute the seven CSS rules select on", () => {
@@ -109,9 +109,21 @@ describe("the dot's contract is bound on BOTH sides", () => {
     expect(component).toMatch(/aria-hidden="true"/);
   });
 
-  it("is rendered by the province page with the api's KEY, not its localized label", () => {
-    // The page holds both in one scope and renders them side by side. `province.region` is the
-    // enum key the selectors match; the local `region` is "İç Anadolu" and matches nothing.
-    expect(provincePage).toMatch(/<RegionDot region=\{province\.region\}/);
+  it("is keyed by the province page on the api's KEY, not its localized label", () => {
+    /**
+     * The rule is the point, not the component. The page holds both values in one scope —
+     * `province.region` is the enum key (`IC_ANADOLU`), the local `region` is the translated
+     * label ("İç Anadolu") — and keying the region's visual treatment off the label yields
+     * nothing at all, silently, and differently per locale.
+     *
+     * V1 expressed the treatment as `<RegionDot region={province.region} />` and a CSS
+     * attribute selector. V2 dropped `RegionDot` (T-032 PR4 deletes this whole directory) and
+     * looks the treatment up in `REGION_THEMES` instead. Different mechanism, same rule, so the
+     * assertion follows the rule.
+     */
+    expect(provincePage).toMatch(/REGION_THEMES\[province\.region\]/);
+    // The localized label must never be the lookup key. `region` is bound to `tRegions(...)`.
+    expect(provincePage).not.toMatch(/REGION_THEMES\[region\]/);
+    expect(provincePage).toMatch(/const region = tRegions\(province\.region\)/);
   });
 });

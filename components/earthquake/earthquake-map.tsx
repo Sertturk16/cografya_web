@@ -49,7 +49,7 @@ interface EarthquakeMapProps {
  *
  * A plain, hook-free presentational component — no `getTranslations`/`useTranslations` call
  * inside it — so it renders identically whether the caller resolved its strings on the server
- * (`app/[locale]/deprem/page.tsx`) or on the client (`earthquake-filters.tsx`, `"use client"`,
+ * (`app/[locale]/(site)/deprem/page.tsx`) or on the client (`earthquake-filters.tsx`, `"use client"`,
  * after a re-fetch). This is a deliberate deviation from most of this repo's server components,
  * which resolve their own translations — the reason is this exact dual-context requirement,
  * which no earlier surface in this repo has had.

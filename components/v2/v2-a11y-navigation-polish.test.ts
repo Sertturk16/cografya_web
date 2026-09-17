@@ -1,4 +1,6 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -49,35 +51,49 @@ describe("V2 A11y and navigation invariants", () => {
     const url = new URL("../auth/auth-mount.tsx", import.meta.url);
     const content = readFileSync(url, "utf8");
 
-    // Strict V2 path check
-    expect(content).toContain('if (pathStr === "/v2" || pathStr.startsWith("/v2/"))');
-    // No render-phase DOM querying
+    // The guard is unconditional now: T-032 PR3 retired the `/v2` prefix, so the path test
+    // that used to distinguish the two trees would read `startsWith("/")` and be true for
+    // everything. Nothing mounts this component any more either.
+    expect(content).toContain("return null;");
+    expect(content).not.toMatch(/pathStr\.startsWith\("\/"\)/);
+    // No render-phase DOM querying — the original point of SEC125-M2.
     expect(content).not.toContain('document.querySelector(".v2-app")');
   });
 
   it("ensures exactly one id=main-content landmark exists across the entire app (CODE125-I2)", () => {
-    const pages = [
-      "../../app/[locale]/v2/turkiye/page.tsx",
-      "../../app/[locale]/v2/page.tsx",
-      "../../app/[locale]/v2/oyun/page.tsx",
-      "../../app/[locale]/v2/kayit/page.tsx",
-      "../../app/[locale]/v2/giris/page.tsx",
-      "../../app/[locale]/v2/araclar/page.tsx",
-      "../../app/[locale]/v2/araclar/alan-hesaplama/page.tsx",
-      "../../app/[locale]/v2/araclar/mesafe-olcme/page.tsx",
-      "../../app/[locale]/v2/araclar/koordinat-bulma/page.tsx",
-      "../../app/[locale]/v2/turkiye/bolge/page.tsx",
-      "../../app/[locale]/v2/turkiye/bolge/[slug]/page.tsx",
-    ];
+    /**
+     * DERIVED from the filesystem, not a hand-kept list. T-032 PR3 moved the landmark into
+     * `(site)/layout.tsx`, which is what makes this invariant structural: before, 24 pages
+     * rendered their own `<main>` inside the root layout's, nesting the landmark, and this
+     * assertion could only name the pages somebody had remembered to add.
+     */
+    const appDir = fileURLToPath(new URL("../../app/[locale]/", import.meta.url));
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) return walk(full);
+        return entry.name === "page.tsx" ? [full] : [];
+      });
+    const pages = walk(appDir);
 
-    for (const pageRel of pages) {
-      const url = new URL(pageRel, import.meta.url);
-      const content = readFileSync(url, "utf8");
-      expect(content).not.toContain('id="main-content"');
+    // Anti-vacuity: a scan that found nothing would satisfy the loop below trivially.
+    expect(pages.length, "page.tsx files under app/[locale]").toBeGreaterThan(25);
+
+    for (const page of pages) {
+      expect(readFileSync(page, "utf8"), page).not.toContain('id="main-content"');
     }
 
-    const layoutUrl = new URL("../../app/[locale]/layout.tsx", import.meta.url);
-    const layoutContent = readFileSync(layoutUrl, "utf8");
-    expect(layoutContent).toContain('id="main-content"');
+    const siteLayout = readFileSync(
+      fileURLToPath(new URL("../../app/[locale]/(site)/layout.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(siteLayout).toContain('id="main-content"');
+
+    // The root layout is the document shell now and must NOT carry a second one.
+    const rootLayout = readFileSync(
+      fileURLToPath(new URL("../../app/[locale]/layout.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(rootLayout).not.toContain('id="main-content"');
   });
 });

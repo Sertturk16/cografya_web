@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { TOOL_HUB_PATHNAME, TOOL_REGISTRY } from "./tool-registry";
+import { TOOL_HUB_PATHNAME, TOOL_REGISTRY, TOOLS_SURFACE } from "./tool-registry";
 
 /**
  * THE FOURTH SIDE OF THE TOOL TIER: the sitemap (→ PR #73 review `TEST73-I4` / `FENER73-M3`).
@@ -51,13 +51,13 @@ const SITEMAP = codeOnly("../../app/sitemap.ts");
  * compared to its sitemap row, which is the rot direction `TA56-M4` names: the list would
  * still pass while describing yesterday's tier.
  */
-const TOOLS_DIR = new URL("../../app/[locale]/araclar/", import.meta.url);
+const TOOLS_DIR = new URL("../../app/[locale]/(site)/araclar/", import.meta.url);
 const PAGE_SOURCES = [
   "page.tsx",
   ...readdirSync(fileURLToPath(TOOLS_DIR), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     // `[...rest]` is the tier's 404 BOUNDARY (fix round, İRİS finding A1 —
-    // `app/[locale]/araclar/[...rest]/page.tsx`'s own docblock), never a tool, and carries no
+    // `app/[locale]/(site)/araclar/[...rest]/page.tsx`'s own docblock), never a tool, and carries no
     // `TOOLS_SURFACE` declaration to compare — excluded the same way
     // `tool-registry.test.ts` excludes it, by dynamic-segment name rather than a hand-listed
     // one.
@@ -66,8 +66,8 @@ const PAGE_SOURCES = [
     .filter((relative) => existsSync(fileURLToPath(new URL(relative, TOOLS_DIR))))
     .sort(),
 ].map((relative) => ({
-  path: `app/[locale]/araclar/${relative}`,
-  code: codeOnly(`../../app/[locale]/araclar/${relative}`),
+  path: `app/[locale]/(site)/araclar/${relative}`,
+  code: codeOnly(`../../app/[locale]/(site)/araclar/${relative}`),
 }));
 
 /** Every tool-tier pathname that may appear in an internal surface today. */
@@ -104,15 +104,35 @@ describe("the tool tier's sitemap rows", () => {
     // Anti-vacuity: the discovery above must have found the hub plus one page per published
     // tool, or the surface comparison below is comparing nothing.
     expect(PAGE_SOURCES.length).toBe(PUBLISHED.length);
-    const declared = PAGE_SOURCES.map(({ path, code }) => {
-      const match = /const TOOLS_SURFACE: ContentSurface = "([^"]+)"/.exec(code);
-      if (match === null) throw new Error(`${path} must declare TOOLS_SURFACE`);
-      return match[1]!;
-    });
+    /**
+     * V1 declared `const TOOLS_SURFACE: ContentSurface = "…"` in each of the four page files,
+     * and this test compared the four against each other and against the sitemap. There is now
+     * ONE declaration, exported from `lib/tools/tool-registry.ts`, so the pages cannot disagree
+     * by construction — what is left to check is that each page actually reads it (an inlined
+     * literal beside the import would satisfy a naive import check) and that the sitemap rows
+     * were built from the same value.
+     *
+     * This is not a loosening. T-032 PR3 is the reason it changed: the V2 rewrite had inlined
+     * `surface: "noindex"` in all four pages — correct under `/v2`, whose layout de-indexed the
+     * tree — and PR3 moved them onto the canonical URLs `app/sitemap.ts` already publishes. Four
+     * `noindex` pages advertised in `sitemap.xml` is a SEO-POLICY §B6 6.8 blocker, and the old
+     * assertion could not see it: all four pages agreed with each other, and the surface
+     * comparison against the sitemap only ran after a regex that no longer matched anything.
+     */
+    for (const { path, code } of PAGE_SOURCES) {
+      expect(code, `${path} must import TOOLS_SURFACE`).toContain(
+        'from "@/lib/tools/tool-registry"',
+      );
+      expect(code, `${path} must import TOOLS_SURFACE`).toMatch(/\bTOOLS_SURFACE\b/);
+      expect(code, `${path} must pass TOOLS_SURFACE, not a literal`).toMatch(
+        /surface: TOOLS_SURFACE,/,
+      );
+      expect(code, `${path} must not also spell a surface out`).not.toMatch(/surface: "/);
+    }
 
-    // One value across the whole tier: every page and every sitemap row. The head↔sitemap
-    // symmetry `lib/seo/sitemap-entries.ts` guarantees is only as good as the argument it is
-    // handed, and that argument is written out once per page and once per row.
-    expect(new Set([...declared, ...toolEntries.map((entry) => entry.surface)]).size).toBe(1);
+    // One value across the whole tier: the constant, and every sitemap row built from it.
+    expect(new Set([TOOLS_SURFACE, ...toolEntries.map((entry) => entry.surface)]).size).toBe(1);
+    // And it is not `noindex` — the tier is published in the sitemap.
+    expect(TOOLS_SURFACE).not.toBe("noindex");
   });
 });

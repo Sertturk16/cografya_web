@@ -1,6 +1,6 @@
 /**
  * The lexemes ENGLISH country copy may not contain, because the field each one names is
- * `isTr`-gated in `app/[locale]/dunya/[slug]/page.tsx` and is therefore never drawn on an
+ * `isTr`-gated in `app/[locale]/(site)/dunya/[slug]/page.tsx` and is therefore never drawn on an
  * English page (→ PR #54 `CR54-M2`, PR #55 `CR55-M1`).
  *
  * ## Why one module instead of two arrays

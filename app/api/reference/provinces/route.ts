@@ -4,7 +4,7 @@ import { getProvinces } from "@/lib/api/provinces";
 
 /**
  * `/api/reference/provinces` — the registration form's province list, on OUR OWN origin
- * (uyelik-auth-redesign plan §5.7). The page (`app/[locale]/kayit/page.tsx`) already fetches
+ * (uyelik-auth-redesign plan §5.7). The page (`app/[locale]/(site)/kayit/page.tsx`) already fetches
  * the province list server-side and hands it to `RegisterForm` as a prop; the auth MODAL
  * cannot do that (shipping 81 provinces into every page's payload for a control that opens
  * on a fraction of them is an unacceptable CWV cost), so `RegisterForm` falls back to this

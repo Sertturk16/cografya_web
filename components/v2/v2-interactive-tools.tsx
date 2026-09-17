@@ -66,7 +66,7 @@ export function V2InteractiveTools() {
             Canlı Jeodezik Mesafe &amp; Harita Araçları
           </h2>
         </div>
-        <Link href="/v2/araclar">
+        <Link href="/araclar">
           <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
             Tüm CBS Araçları
           </Button>
@@ -147,7 +147,7 @@ export function V2InteractiveTools() {
             <span className="text-xs text-muted-foreground">
               Harita üzerinde serbest ölçüm için:
             </span>
-            <Link href="/v2/araclar/mesafe-olcme">
+            <Link href="/araclar/mesafe-olcme">
               <Button variant="primary" size="sm" rightIcon={<ArrowRight className="size-3.5" />}>
                 Haritada Ölç
               </Button>
@@ -157,7 +157,7 @@ export function V2InteractiveTools() {
 
         {/* WIDGET 2: Direct Navigation Cards to CBS Tools Suite */}
         <div className="lg:col-span-5 flex flex-col justify-between gap-3">
-          <Link href="/v2/araclar/mesafe-olcme" className="group flex-1">
+          <Link href="/araclar/mesafe-olcme" className="group flex-1">
             <div className="h-full p-4 rounded-2xl border border-border bg-card hover:border-primary/60 hover:bg-muted/40 transition-all flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -176,7 +176,7 @@ export function V2InteractiveTools() {
             </div>
           </Link>
 
-          <Link href="/v2/araclar/koordinat-bulma" className="group flex-1">
+          <Link href="/araclar/koordinat-bulma" className="group flex-1">
             <div className="h-full p-4 rounded-2xl border border-border bg-card hover:border-secondary/60 hover:bg-muted/40 transition-all flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -195,7 +195,7 @@ export function V2InteractiveTools() {
             </div>
           </Link>
 
-          <Link href="/v2/araclar/alan-hesaplama" className="group flex-1">
+          <Link href="/araclar/alan-hesaplama" className="group flex-1">
             <div className="h-full p-4 rounded-2xl border border-border bg-card hover:border-accent/60 hover:bg-muted/40 transition-all flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center group-hover:scale-105 transition-transform">

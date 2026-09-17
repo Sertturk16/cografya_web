@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isSpecialStatusRow, showsCountryFlag, showsSovereigntyNote } from "./sovereignty";
+import { gatesGoverning, ungatedRenderSite } from "@/lib/testing/jsx-gate";
 
 /**
  * The "Egemenlik ve Tanınma" section's GATE, and the weld between that gate and the flag
@@ -107,7 +108,7 @@ describe("the pair falls together", () => {
  * of the raw text would be satisfied by the prose after someone deleted the code.
  */
 const countryPage = readFileSync(
-  new URL("../../app/[locale]/dunya/[slug]/page.tsx", import.meta.url),
+  new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url),
   "utf8",
 )
   .replace(/\r\n/g, "\n")
@@ -129,17 +130,75 @@ describe("country page reads both gates from the single decision module", () => 
   });
 
   it("has exactly one flag call site, and it sits behind that gate", () => {
-    expect(countryPage.match(/<CountryFlag\b/g)).toHaveLength(1);
-    expect(countryPage).toMatch(/\{showsFlag && \(\s*<CountryFlag\b/);
+    /**
+     * The V2 rewrite replaced the `CountryFlag` component with an inline `<img>`, so this no
+     * longer names a component. The gate is what the test is about and it is intact — but the
+     * inline form is why the flag's OWN contract is asserted here now rather than left to
+     * `components/country/country-flag.test.ts`, which guards a component this page stopped
+     * using (and T-032 PR4 deletes). Inlining a component silently drops whatever the component
+     * guaranteed; here that had already cost the page its localized alt text.
+     */
+    // The SUBJECT country's flag: one call site, behind `showsFlag`.
+    const subjectFlags = countryPage.match(/src=\{`\/flags\/\$\{country\.isoCode/g);
+    expect(subjectFlags, "subject-country flag call sites").toHaveLength(1);
+    expect(countryPage).toMatch(/\{showsFlag && hasFlag\(country\.isoCode\) && \(/);
+  });
+
+  it("takes the neighbours' flag decision from the module too, never a second copy of the rule", () => {
+    /**
+     * V1 listed neighbours as text and rendered no flag for them, so this guarantee is new: the
+     * V2 page puts a flag on every neighbour card, which raises the same question the subject
+     * flag raises — a flag is a visual sovereignty claim, and on a contested row it needs the
+     * same gate.
+     *
+     * The page answered it correctly and in the wrong place. `hasFlag(nb.iso) && (isTr ||
+     * !nbIsSpecialStatus)` is `showsCountryFlag` rewritten by hand: right today, and free to
+     * drift the next time the rule is revisited in `lib/geo/sovereignty.ts` alone. Membership
+     * genuinely cannot be shared (the list DTO carries no `sovereigntyNoteTr`); the consequence
+     * can, and now is.
+     */
+    expect(countryPage).toContain("showsCountryFlagForStatus(locale, nbIsSpecialStatus)");
+    // No hand-rolled restatement anywhere on the page.
+    expect(countryPage).not.toMatch(/isTr \|\| !nbIsSpecialStatus/);
+    expect(countryPage).not.toMatch(/!nbIsSpecialStatus \|\| isTr/);
+
+    // Every neighbour flag sits behind that one derived boolean.
+    expect(
+      ungatedRenderSite(countryPage, "src={`/flags/${nb.iso", "showsNeighbourFlag"),
+    ).toBeNull();
+  });
+
+  it("gives the flag a localized alt and explicit dimensions", () => {
+    // An informative image: a real alt, from the catalogue, never a literal and never `alt=""`.
+    // `width`/`height` are the CLS half of the ENGINEERING §4 #9 raw-`<img>` exception.
+    const flagBlock = /src=\{`\/flags\/[\s\S]{0,400}?\/>/.exec(countryPage)?.[0];
+    expect(flagBlock, "flag <img> element").toBeDefined();
+    expect(flagBlock).toMatch(/alt=\{t\("flagAlt", \{ name \}\)\}/);
+    expect(flagBlock).not.toMatch(/alt=""/);
+    expect(flagBlock).toMatch(/width=\{\d+\}/);
+    expect(flagBlock).toMatch(/height=\{\d+\}/);
   });
 
   it("renders the note section behind the derived note, not behind the raw locale flag", () => {
-    expect(countryPage).toMatch(
-      /\{sovereigntyNote !== null && \([\s\S]{0,200}?<ProseNote text=\{sovereigntyNote\}/,
-    );
+    // The point has never been the operator — it is WHICH value the section hangs on. V1 wrote
+    // `sovereigntyNote !== null`, V2 writes a truthy test on the same derived constant (which
+    // also drops an empty-string note, so it is no looser). What must never appear here is
+    // `locale`/`isTr`: the note is gated on the DERIVED decision, not on the raw locale flag,
+    // which is the whole reason `showsSovereigntyNote` exists.
+    const gates = gatesGoverning(countryPage, "text={sovereigntyNote}");
+    expect(gates.length, "sovereigntyNote render sites").toBeGreaterThan(0);
+    expect(ungatedRenderSite(countryPage, "text={sovereigntyNote}", "sovereigntyNote")).toBeNull();
+    for (const gate of gates) {
+      expect(gate, "note gated on the raw locale, not the derived decision").not.toMatch(
+        /\bisTr\b|\blocale\b/,
+      );
+    }
   });
 
   it("takes the heading from the catalogue, never a literal", () => {
-    expect(countryPage).toMatch(/<h2>\{t\("sovereigntyHeading"\)\}<\/h2>/);
+    // V1 wrote `<h2>`, V2 writes `<h3>` — the note is a card inside a section that already has
+    // its own heading, so the level is a document-outline decision, not this test's business.
+    // What is this test's business is that the string comes from the catalogue.
+    expect(countryPage).toMatch(/<h[2-4][^>]*>\s*\{t\("sovereigntyHeading"\)\}\s*<\/h[2-4]>/);
   });
 });

@@ -82,7 +82,7 @@ export function V2GameHub() {
             </div>
 
             <div className="pt-6 flex items-center gap-2">
-              <Link href="/v2/oyun/81-il" className="flex-1">
+              <Link href="/oyun/81-il" className="flex-1">
                 <Button
                   variant="primary"
                   size="default"
@@ -130,7 +130,7 @@ export function V2GameHub() {
             </div>
 
             <div className="pt-6 flex items-center gap-2">
-              <Link href="/v2/oyun/bolge-bulma" className="flex-1">
+              <Link href="/oyun/bolge-bulma" className="flex-1">
                 <Button
                   variant="secondary"
                   size="default"
@@ -178,7 +178,7 @@ export function V2GameHub() {
             </div>
 
             <div className="pt-6">
-              <Link href="/v2/oyun/bolge-bolge-il">
+              <Link href="/oyun/bolge-bolge-il">
                 <Button
                   variant="outline"
                   size="default"

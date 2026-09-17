@@ -84,7 +84,7 @@ export async function ProvinceEarthquakeSection({
   // empty-state sentence above ("no earthquakes near {name} in the last 7 days") reads as an
   // absolute "no seismic activity" claim unless the reader also knows it is filtered to
   // `minMagnitude`+ — the SAME gap `/deprem`'s own `meta.magnitudeFloorLabel`/`Value` block
-  // exists to close (`app/[locale]/deprem/page.tsx`). No new copy is authored: this reuses that
+  // exists to close (`app/[locale]/(site)/deprem/page.tsx`). No new copy is authored: this reuses that
   // EXACT established i18n pair verbatim (CONTENT-STYLE.md §22's own instruction against
   // inventing new wording for a fact already phrased once), formatted the same way the three
   // other magnitude displays on this feature already do (`magnitude-badge.tsx`,

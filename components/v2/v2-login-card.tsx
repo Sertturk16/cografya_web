@@ -79,7 +79,7 @@ export function V2LoginCard({
       const result = await submitAuth(
         "login",
         { email: cleanEmail, password },
-        inModal ? {} : { returnTo: "/v2" },
+        inModal ? {} : { returnTo: "/" },
       );
 
       if (result.ok) {
@@ -90,7 +90,7 @@ export function V2LoginCard({
         } else if (result.redirectTo) {
           router.replace(result.redirectTo);
         } else {
-          router.replace("/v2");
+          router.replace("/");
         }
       } else {
         if (result.code === "errors.auth.invalidCredentials") {
@@ -128,7 +128,7 @@ export function V2LoginCard({
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-          <Link href="/v2" className="w-full sm:w-auto">
+          <Link href="/" className="w-full sm:w-auto">
             <Button
               variant="primary"
               size="md"
@@ -231,7 +231,7 @@ export function V2LoginCard({
               send an `en` visitor to a TR-only path segment that does not exist under `/en`.
               `Link`'s locale-aware `href` resolution does not depend on this component
               calling `useTranslations`; the visible text stays the file's existing hardcoded
-              Turkish literal on purpose (`/v2` has no i18n today, a separate, already-deferred
+              Turkish literal on purpose (`/` has no i18n today, a separate, already-deferred
               gap this task does not fix). */}
           <Link
             href="/sifre-sifirlama"
@@ -291,7 +291,7 @@ export function V2LoginCard({
               Ücretsiz Üye Olun
             </button>
           ) : (
-            <Link href="/v2/kayit" className="font-bold text-primary hover:underline ml-1">
+            <Link href="/kayit" className="font-bold text-primary hover:underline ml-1">
               Ücretsiz Üye Olun
             </Link>
           )}

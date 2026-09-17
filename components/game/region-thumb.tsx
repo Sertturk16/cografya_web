@@ -3,7 +3,7 @@ import type { GeographicRegion } from "@/lib/api/types";
 import { aspectOfViewBox } from "@/lib/game/map-bbox";
 import type { GameShapeEntry } from "@/lib/game/map-shapes";
 import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
-import styles from "@/app/[locale]/oyun/game.module.css";
+import styles from "@/app/[locale]/(site)/oyun/game.module.css";
 
 /**
  * The Bölge Seç cards' mini map (→ DEC 2026-08-05g md. 3, shape ruled by Atlas AO-5).

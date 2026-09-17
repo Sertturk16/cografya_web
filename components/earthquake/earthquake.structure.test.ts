@@ -128,8 +128,30 @@ describe("EarthquakeAttribution renders API strings verbatim, never re-authors t
   });
 
   it('marks every TR-only string lang="tr" — including on the EN page (WCAG 3.1.2)', () => {
-    expect(attributionCode).toMatch(/lang="tr"[\s\S]{0,80}attribution\.requiredNoticeTr/);
-    expect(attributionCode).toMatch(/lang="tr"[\s\S]{0,80}\{disclaimerTr\}/);
+    /**
+     * Asserted per ELEMENT rather than by proximity. The original form allowed 80 characters
+     * between `lang="tr"` and the string, which is a proxy for "on the same element" — and it
+     * broke the moment T-032 PR3 gave these two paragraphs a `className` (they had been styled
+     * by a CSS module whose raw Terra tokens left the mandated notice at ~2.3:1 in dark mode).
+     * The attribute count is not the rule; being on the element that carries the Turkish string
+     * is, and matching the whole opening tag says exactly that with no distance budget to blow.
+     */
+    const elementsCarrying = (needle: string) =>
+      [...attributionCode.matchAll(/<(\w+)\b([^>]*)>/g)].filter((tag, index, all) => {
+        const openEnd = tag.index! + tag[0].length;
+        const next = all[index + 1];
+        const body = attributionCode.slice(openEnd, next ? next.index! : attributionCode.length);
+        return body.includes(needle);
+      });
+
+    for (const needle of ["attribution.requiredNoticeTr", "{disclaimerTr}"]) {
+      const owners = elementsCarrying(needle);
+      // Anti-vacuity: the string must be rendered at all for the lang mark to mean anything.
+      expect(owners.length, `${needle} is not rendered`).toBeGreaterThan(0);
+      for (const tag of owners) {
+        expect(tag[2], `${needle} is not inside a lang="tr" element`).toContain('lang="tr"');
+      }
+    }
   });
 
   it("carries no client directive — attribution never changes with the filter island's re-fetch", () => {

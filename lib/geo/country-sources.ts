@@ -4,7 +4,7 @@
  * This exists as a pure function for one reason: it is the only executable logic the
  * source-credit work adds to a rendered page, and `vitest.config.ts` collects only
  * `lib/**` and `components/**` — a branch left inside the 500-line async Server Component
- * in `app/[locale]/dunya/[slug]/page.tsx` has no gate at all (→ PR #54 `TA54-M3`). The
+ * in `app/[locale]/(site)/dunya/[slug]/page.tsx` has no gate at all (→ PR #54 `TA54-M3`). The
  * catalogue guard in `country-sources.test.ts` proves both strings are well formed; it
  * cannot prove the right one is chosen.
  *

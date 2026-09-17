@@ -1,37 +1,52 @@
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { GAME_MODE_COUNT } from "@/app/[locale]/page";
 
 /**
  * STRUCTURAL GUARD for the hero stat strip's game-modes count (→ round-2 review TEST102-I1).
  *
- * `app/[locale]/page.tsx`'s `GAME_MODE_COUNT` is a hand-maintained literal, printed verbatim in
- * the hero stat strip ("3 Oyun Modu" / "3 Modes") with nothing tying it to the real number of
- * game-mode routes under `app/[locale]/oyun/`. A 4th mode could ship and this card would keep
- * claiming three forever, with CI green.
+ * The home page prints a hand-maintained literal verbatim in the hero stat strip ("3 Oyun
+ * Modu" / "3 Modes") with nothing tying it to the real number of game-mode routes. A fourth
+ * mode could ship and the card would keep claiming three forever, with CI green.
  *
- * This is the same directory-scan idea `lib/tools/messages.test.ts`'s `CONSUMER_ROOTS` uses — a
- * real filesystem read, not a second hardcoded number to keep in sync with the first. No new
- * framework, no new dependency.
+ * ## Why this reads source text rather than importing the constant
+ *
+ * It used to import `GAME_MODE_COUNT` from the V1 home page. T-032 deleted that page, and its
+ * V2 replacement deliberately keeps the literal LOCAL and unexported — its own docblock
+ * explains why: the page is a Server Component that pulls `next-intl/server` and API-fetch
+ * modules in at module scope, which is not safe to import into the `"use client"` hero.
+ * Exporting it to satisfy a test would undo a decision the code argues for, so the test reads
+ * the literal out of the source instead. That is this repo's established form for asserting
+ * anything about a file under `app/`, which vitest does not collect.
  *
  * Structural only (`CONVENTIONS.md` §2): this asserts a COUNT, never a mode's name, slug or
  * copy.
  */
 describe("the hero stat strip's game-mode count", () => {
-  it("GAME_MODE_COUNT equals the number of app/[locale]/oyun/ route subdirectories", () => {
-    const oyunDir = fileURLToPath(new URL("../../app/[locale]/oyun/", import.meta.url));
-    const entries = readdirSync(oyunDir, { withFileTypes: true });
-    // Only real route subdirectories count as a "mode" — `page.tsx` (the hub) and
-    // `game.module.css` sit alongside them as files, not routes.
-    const routeDirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+  it("matches the number of play-group mode routes", () => {
+    /**
+     * The three playable mode screens live in the `(play)` route group — no header, no
+     * footer, fullscreen. The `(site)` group holds the two hub pages that link INTO them,
+     * which are not modes and must not be counted.
+     */
+    const playDir = fileURLToPath(new URL("../../app/[locale]/(play)/oyun/", import.meta.url));
+    const routeDirs = readdirSync(playDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
 
     // Anti-vacuity: a scan that silently found nothing would make the equality below
-    // meaningless by satisfying it with GAME_MODE_COUNT === 0.
-    expect(routeDirs.length, "app/[locale]/oyun/ route subdirectory count").toBeGreaterThan(0);
-    expect(routeDirs.sort(), "app/[locale]/oyun/ route subdirectory names").toEqual(
+    // meaningless by satisfying it with a count of 0.
+    expect(routeDirs.length, "(play)/oyun route subdirectory count").toBeGreaterThan(0);
+    expect(routeDirs.sort(), "(play)/oyun route subdirectory names").toEqual(
       ["81-il", "bolge-bolge-il", "bolge-bulma"].sort(),
     );
-    expect(GAME_MODE_COUNT).toBe(routeDirs.length);
+
+    const home = readFileSync(
+      fileURLToPath(new URL("../../app/[locale]/(site)/page.tsx", import.meta.url)),
+      "utf8",
+    );
+    const match = /const V2_GAME_MODE_COUNT = (\d+);/.exec(home);
+    expect(match, "V2_GAME_MODE_COUNT literal not found in the home page").not.toBeNull();
+    expect(Number(match?.[1])).toBe(routeDirs.length);
   });
 });

@@ -45,7 +45,7 @@ describe("flag-set credit", () => {
 
   it('is rendered inside lang="en", like the JRC citation beside it', () => {
     const page = readFileSync(
-      new URL("../../app/[locale]/hakkimizda/page.tsx", import.meta.url),
+      new URL("../../app/[locale]/(site)/hakkimizda/page.tsx", import.meta.url),
       "utf8",
     )
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")

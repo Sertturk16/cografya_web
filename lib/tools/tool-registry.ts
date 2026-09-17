@@ -1,4 +1,5 @@
 import type { AppPathname } from "@/i18n/routing";
+import type { ContentSurface } from "@/lib/seo/indexing";
 
 /**
  * A route that needs no params — which every tool route is, by ruling.
@@ -18,7 +19,7 @@ type StaticPathname = Exclude<AppPathname, `${string}[${string}`>;
  * ## What it is for
  *
  * Three things have to agree about a tool and nothing but this file makes them: the route in
- * `i18n/routing.ts`, the page directory under `app/[locale]/araclar/`, and the hub's card +
+ * `i18n/routing.ts`, the page directory under `app/[locale]/(site)/araclar/`, and the hub's card +
  * `ItemList` entry. `tool-registry.test.ts` derives all three from each other, so a tool that
  * gains a page without a route (or a card without a page) fails CI rather than shipping a
  * dead hub link — `SEO-POLICY.md` A4/3 and §B8 8.8 rate that a BLOCKER.
@@ -103,3 +104,22 @@ export const TOOL_REGISTRY = [
 
 /** The tool hub's own route — one constant, so the pages and the sitemap cannot disagree. */
 export const TOOL_HUB_PATHNAME: StaticPathname = "/araclar";
+
+/**
+ * The indexing surface for the WHOLE tool tier — the hub and every tool page — and for the
+ * matching rows in `app/sitemap.ts`.
+ *
+ * `"trNarrative"` (→ DEC 2026-08-19a md.6): the tool itself is locale-independent, but its
+ * doorway defence is Turkish prose, so `/en/tools*` is `noindex` and must not be advertised.
+ * `buildAlternates` and `sitemapEntriesFor` both take this value, and the head↔sitemap symmetry
+ * `lib/seo/sitemap-entries.ts` guarantees is only as good as the argument each is handed.
+ *
+ * ONE constant rather than one per page. V1 declared `const TOOLS_SURFACE: ContentSurface` in
+ * each of the four page files — four places to keep in step, which `lib/tools/tool-sitemap.test.ts`
+ * had to compare against each other. The V2 rewrite then inlined `surface: "noindex"` in all four
+ * (correct while the tier lived under `/v2`, whose layout de-indexed the tree) and T-032 PR3 moved
+ * those pages onto the canonical URLs the sitemap already publishes — leaving four `noindex` pages
+ * advertised in `sitemap.xml`, which SEO-POLICY §B6 6.8 calls a blocker. Exported from here, the
+ * value is written once and the test compares the pages and the sitemap against IT.
+ */
+export const TOOLS_SURFACE: ContentSurface = "trNarrative";

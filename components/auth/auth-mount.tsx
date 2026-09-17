@@ -32,11 +32,14 @@ export function AuthMount({ locale }: { readonly locale: Locale }) {
   const modal = useAuthModalState();
   const [hasOpened, setHasOpened] = useState(false);
 
-  // On V2 routes, V2AuthDialog handles the auth modal; avoid double-dialog collision (SEC125-M2).
-  const pathStr = (pathname as string) || "";
-  if (pathStr === "/v2" || pathStr.startsWith("/v2/")) {
-    return null;
-  }
+  // SUPERSEDED, AND SAYING SO. This used to return null on `/v2/*` only, so the V1 tree kept
+  // its own dialog while V2 used `V2AuthDialog` — avoiding a double-dialog collision
+  // (SEC125-M2). T-032 PR3 retired the prefix and every route is now that surface, so the
+  // condition is unconditional rather than a path test that would read as `startsWith("/")`
+  // and be true for everything. Nothing mounts this component any more; T-032 PR4 deletes
+  // `components/auth/` entirely.
+  void pathname;
+  return null;
 
   if (modal.open && !hasOpened) {
     setHasOpened(true);

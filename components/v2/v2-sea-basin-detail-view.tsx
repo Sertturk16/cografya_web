@@ -39,15 +39,15 @@ export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailVie
   const sortedPoints = [...marinePoints].sort((a, b) => a.displayOrder - b.displayOrder);
 
   const otherBasins = [
-    { slug: "karadeniz", name: "Karadeniz", badge: "En Az Tuzlu", href: "/v2/deniz/karadeniz" },
+    { slug: "karadeniz", name: "Karadeniz", badge: "En Az Tuzlu", href: "/deniz/karadeniz" },
     {
       slug: "marmara",
       name: "Marmara Denizi",
       badge: "İç Deniz & Boğazlar",
-      href: "/v2/deniz/marmara",
+      href: "/deniz/marmara",
     },
-    { slug: "ege", name: "Ege Denizi", badge: "Enine Kıyı & Şelf", href: "/v2/deniz/ege" },
-    { slug: "akdeniz", name: "Akdeniz", badge: "En Sıcak & Tuzlu", href: "/v2/deniz/akdeniz" },
+    { slug: "ege", name: "Ege Denizi", badge: "Enine Kıyı & Şelf", href: "/deniz/ege" },
+    { slug: "akdeniz", name: "Akdeniz", badge: "En Sıcak & Tuzlu", href: "/deniz/akdeniz" },
   ].filter((b) => b.slug !== data.slug);
 
   return (
@@ -59,14 +59,14 @@ export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailVie
           className="flex items-center gap-2 text-xs text-muted-foreground"
         >
           <Link
-            href="/v2"
+            href="/"
             className="flex items-center gap-1 hover:text-foreground transition-colors"
           >
             <Home className="size-3.5" />
             <span>Ana Sayfa</span>
           </Link>
           <ChevronRight className="size-3.5" />
-          <Link href="/v2/deniz" className="hover:text-foreground transition-colors">
+          <Link href="/deniz" className="hover:text-foreground transition-colors">
             Denizler &amp; Kıyılar Atlası
           </Link>
           <ChevronRight className="size-3.5" />

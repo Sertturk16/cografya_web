@@ -176,7 +176,7 @@ describe("components bind colour through the token bridge", () => {
 describe("the V2 surface binds chrome colour through the bridge too", () => {
   const V2_DIRS = [
     fileURLToPath(new URL("../v2", import.meta.url)),
-    fileURLToPath(new URL("../../app/[locale]/v2", import.meta.url)),
+    fileURLToPath(new URL("../../app/[locale]", import.meta.url)),
   ];
 
   function walk(dir: string): string[] {

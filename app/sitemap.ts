@@ -78,7 +78,7 @@ function staticEntries(): MetadataRoute.Sitemap {
     // (events, coordinates, magnitudes, timestamps, place names), not a Turkish-only
     // narrative, so both locales are indexable from day one.
     ...sitemapEntriesFor(() => "/deprem", now, 0.7),
-    ...sitemapEntriesFor(() => "/v2/dunya/kita", now, 0.8, "trOnly"),
+    ...sitemapEntriesFor(() => "/dunya/kita", now, 0.8, "trOnly"),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
   ];
 }
@@ -178,7 +178,7 @@ function continentEntries(): MetadataRoute.Sitemap {
   return continents.flatMap((continent) =>
     sitemapEntriesFor(
       () => ({
-        pathname: "/v2/dunya/kita/[slug]",
+        pathname: "/dunya/kita/[slug]",
         params: { slug: continent.slugTr },
       }),
       now,

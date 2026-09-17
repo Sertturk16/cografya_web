@@ -26,7 +26,9 @@ function code(url: URL): string {
 }
 
 const flagComponent = code(new URL("./country-flag.tsx", import.meta.url));
-const countryPage = code(new URL("../../app/[locale]/dunya/[slug]/page.tsx", import.meta.url));
+const countryPage = code(
+  new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url),
+);
 
 describe("flag card fail-soft gate", () => {
   it("returns null for a row with no asset, before rendering anything", () => {
@@ -50,10 +52,30 @@ describe("flag card accessibility and CLS", () => {
     expect(flagComponent).toMatch(/height=\{3\}/);
   });
 
-  it("is rendered by the country page with catalogue strings, not literals", () => {
-    expect(countryPage).toContain("<CountryFlag");
-    expect(countryPage).toMatch(/label=\{t\("flag"\)\}/);
-    expect(countryPage).toMatch(/alt=\{t\("flagAlt"/);
+  it("is no longer what the country page renders — the contract moved with the markup", () => {
+    /**
+     * The V2 country page inlines its own `<img>` instead of using this component, and T-032
+     * PR4 deletes `components/country/` outright. Asserting a call site that does not exist
+     * would just fail; asserting nothing would quietly drop a real contract on the way past.
+     *
+     * So the flag's page-level contract — one call site, behind `showsFlag`, a localized alt
+     * from the catalogue, explicit dimensions — moved to `lib/geo/sovereignty.test.ts`, which
+     * is where the gate it hangs on is already tested and which survives PR4. Inlining a
+     * component silently drops whatever the component guaranteed: here it had already cost the
+     * page its localized alt, which read `${name} bayrağı` on the English page.
+     *
+     * What is left here is the component's own fail-soft contract, above, for as long as the
+     * component exists. This assertion is the marker that the two halves were separated
+     * deliberately rather than one of them being forgotten.
+     */
+    expect(countryPage).not.toContain("<CountryFlag");
+    const sovereigntyTest = readFileSync(
+      new URL("../../lib/geo/sovereignty.test.ts", import.meta.url),
+      "utf8",
+    );
+    expect(sovereigntyTest, "the page-level flag contract has no home").toContain(
+      'alt=\\{t\\("flagAlt", \\{ name \\}\\)\\}',
+    );
   });
 });
 

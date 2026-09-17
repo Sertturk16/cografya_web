@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { gatesGoverning, ungatedRenderSite } from "@/lib/testing/jsx-gate";
 import en from "@/messages/en.json";
 import tr from "@/messages/tr.json";
 
@@ -133,8 +134,8 @@ describe("Copernicus Marine attribution is verbatim", () => {
 describe("the attribution block is rendered on every surface that shows derived values", () => {
   const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-  const hub = read("../../app/[locale]/deniz/page.tsx");
-  const province = read("../../app/[locale]/turkiye/[slug]/page.tsx");
+  const hub = read("../../app/[locale]/(site)/deniz/page.tsx");
+  const province = read("../../app/[locale]/(site)/turkiye/[slug]/page.tsx");
   const section = read("../../components/marine/province-marine-section.tsx");
 
   it("renders it on the /deniz hub", () => {
@@ -146,11 +147,33 @@ describe("the attribution block is rendered on every surface that shows derived 
   });
 
   it("gates the province block on the SAME signal as the province's values", () => {
-    // Not "a boolean that happens to be true at the same time": literally the one signal the
-    // section reads, so the notice can neither go missing where a value appears nor appear
-    // where none does.
-    expect(province).toMatch(/showMarine && \(\s*<ProvinceMarineSection/);
-    expect(province).toMatch(/showMarine && \(\s*<MarineAttribution/);
+    /**
+     * Not "a boolean that happens to be true at the same time": literally the one signal the
+     * section reads, so the notice can neither go missing where a value appears nor appear
+     * where none does.
+     *
+     * This used to pin the V1 page's exact shape, `showMarine && (<ProvinceMarineSection`. The
+     * V2 page renders the marine and air-quality sections from one three-branch ternary
+     * (`pm25Annual && showMarine ? … : pm25Annual ? … : showMarine ? …`), so the marine section
+     * has TWO render sites and neither is written `&&`. Pinning the old spelling would have
+     * failed on a page that honours the invariant perfectly — and loosening it to a bare
+     * `toContain("showMarine")` would pass a page that had stopped honouring it at all.
+     *
+     * So the assertion moved from the SPELLING to the PROPERTY: find every render site of each
+     * component and read the condition that immediately governs it. `provinceShowsMarine` is
+     * the single derivation both must trace back to.
+     */
+    // The signal itself is derived once, from the shared decision module — not recomputed
+    // inline where either consumer could drift from the other.
+    expect(province).toMatch(/const showMarine = provinceShowsMarine\(/);
+
+    // Anti-vacuity: no render site means no gate to check, which would pass silently. The probe
+    // itself is tested in `lib/testing/jsx-gate.test.ts`, including that it can say NO.
+    expect(gatesGoverning(province, "<ProvinceMarineSection").length).toBeGreaterThan(0);
+    expect(gatesGoverning(province, "<MarineAttribution").length).toBeGreaterThan(0);
+
+    expect(ungatedRenderSite(province, "<ProvinceMarineSection", "showMarine")).toBeNull();
+    expect(ungatedRenderSite(province, "<MarineAttribution", "showMarine")).toBeNull();
   });
 
   it("keeps the licence text out of the section component — one copy, two render sites", () => {

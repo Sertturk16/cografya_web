@@ -130,8 +130,8 @@ describe("showcase coverage", () => {
 describe("showcase routes", () => {
   const page = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8");
 
-  const INDEX = "../../app/[locale]/v2/design-system/page.tsx";
-  const CATEGORY = "../../app/[locale]/v2/design-system/[category]/page.tsx";
+  const INDEX = "../../app/[locale]/design-system/page.tsx";
+  const CATEGORY = "../../app/[locale]/design-system/[category]/page.tsx";
 
   it("positive control — both page files were read", () => {
     expect(page(INDEX)).toContain("DesignSystemIndexPage");

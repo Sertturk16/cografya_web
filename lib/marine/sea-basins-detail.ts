@@ -154,7 +154,7 @@ export const SEA_BASINS_DETAIL: Record<
         "Delta Kıyıları (Bafra & Çarşamba)",
         "Tombolo (Sinop İnceburun)",
       ],
-      coastalTypesHref: "/v2/deniz/kiyi-tipleri",
+      coastalTypesHref: "/deniz/kiyi-tipleri",
     },
     currentsAndWaterMovement: {
       title: "Akıntı Sistemi & Su Hareketi",
@@ -299,7 +299,7 @@ export const SEA_BASINS_DETAIL: Record<
         "Lagün & Limanlı Kıyı Tipi (Çekmece Gölleri)",
         "Tombolo (Kapıdağ Yarımadası)",
       ],
-      coastalTypesHref: "/v2/deniz/kiyi-tipleri",
+      coastalTypesHref: "/deniz/kiyi-tipleri",
     },
     currentsAndWaterMovement: {
       title: "Akıntı Sistemi: İki Tabakalı Zıt Sirkülasyon",
@@ -358,7 +358,7 @@ export const SEA_BASINS_DETAIL: Record<
     },
     faultLineNotice: {
       text: "Marmara Denizi tabanından geçen Kuzey Anadolu Fay Hattı (KAF) ve sismik boşluklar hakkında detaylı jeolojik analiz için:",
-      href: "/v2/deprem/fay-hatlari",
+      href: "/deprem/fay-hatlari",
     },
     faq: [
       {
@@ -432,7 +432,7 @@ export const SEA_BASINS_DETAIL: Record<
         "Geniş Körfezler & Yarımadalar",
         "Delta Kıyıları (Gediz, Balat Deltaları)",
       ],
-      coastalTypesHref: "/v2/deniz/kiyi-tipleri",
+      coastalTypesHref: "/deniz/kiyi-tipleri",
     },
     currentsAndWaterMovement: {
       title: "Akıntı Sistemi: Boğaz Suyu & Akdeniz Döngüsü",
@@ -496,7 +496,7 @@ export const SEA_BASINS_DETAIL: Record<
     },
     faultLineNotice: {
       text: "Batı Anadolu Fay Sistemi (BAFS) ve Ege graben tektoniği hakkında detaylı sismik analiz için:",
-      href: "/v2/deprem/fay-hatlari",
+      href: "/deprem/fay-hatlari",
     },
     faq: [
       {
@@ -570,7 +570,7 @@ export const SEA_BASINS_DETAIL: Record<
         "Kalanklı Kıyı Tipi (Silifke)",
         "Delta Kıyıları (Çukurova Deltası)",
       ],
-      coastalTypesHref: "/v2/deniz/kiyi-tipleri",
+      coastalTypesHref: "/deniz/kiyi-tipleri",
     },
     currentsAndWaterMovement: {
       title: "Akıntı Sistemi: Sıcak Doğu Akdeniz Çevrimi",
