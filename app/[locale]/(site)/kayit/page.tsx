@@ -6,6 +6,7 @@ import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2RegisterCard } from "@/components/v2/v2-register-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
+import { PageContainer } from "@/components/patterns/page-container";
 import { getProvinces } from "@/lib/api/provinces";
 import { Home, ChevronRight } from "lucide-react";
 
@@ -45,12 +46,9 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
 
   return (
     <>
-      {/* V2 Header */}
-
-      {/* Live Telemetry Ticker */}
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14">
+      <PageContainer>
         {/* Breadcrumb Navigation */}
         <nav
           aria-label="Breadcrumb"
@@ -79,9 +77,7 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
             <V2AuthBenefitsPlate mode="register" />
           </div>
         </div>
-      </div>
-
-      {/* Modern V2 Footer */}
+      </PageContainer>
     </>
   );
 }

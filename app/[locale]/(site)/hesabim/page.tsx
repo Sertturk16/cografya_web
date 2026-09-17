@@ -13,6 +13,7 @@ import { getRegionsResilient } from "@/lib/api/regions";
 import { getBooksResilient } from "@/lib/api/books";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2MemberHub } from "@/components/v2/v2-member-hub";
+import { PageContainer } from "@/components/patterns/page-container";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -77,7 +78,7 @@ export default async function V2MemberHubPage({ params }: V2MemberHubPageProps) 
     <>
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-8">
+      <PageContainer space="tight">
         {/* Breadcrumb Navigation */}
         <nav
           aria-label="Breadcrumb"
@@ -103,7 +104,7 @@ export default async function V2MemberHubPage({ params }: V2MemberHubPageProps) 
           regions={regions}
           books={books}
         />
-      </div>
+      </PageContainer>
     </>
   );
 }

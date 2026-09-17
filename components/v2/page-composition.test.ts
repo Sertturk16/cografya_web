@@ -77,8 +77,17 @@ function bodySpellings(): Map<string, string[]> {
  * with them: 15 distinct spellings across 34 elements. The three sticky quicknav/tab-strip bars
  * named above are UNCHANGED (out of scope — they are not page body wrappers) and still count
  * toward this total. See task-3-report.md for the full before/after list.
+ *
+ * Task 4a (2026-09-17) moved the 24 mechanical family-A pages (`max-w-7xl mx-auto px-4 sm:px-6
+ * lg:px-8 pt-6 sm:pt-10 …` with a `space-y-*` and, on 13 of them, `pb-20`, and nothing else) onto
+ * `PageContainer` too, collapsing 8 distinct spellings shared across those 24 pages: 7 distinct
+ * spellings across 10 elements remain. What is left is exactly the deliberate leftovers —
+ * `hakkimizda` (no `space-y-*`), `oyun/bolge-bolge-il` (`sm:pt-8`), `dunya` (`flex-1 w-full
+ * pb-16`), `dunya/kita` and `dunya/kita/[slug]` (two spellings each, nested inside their own
+ * `min-h-screen` wrapper) for task 4b, plus the three sticky quicknav/tab-strip bars from task 3
+ * that are never migrated. See task-4a-report.md for the full before/after list.
  */
-export const PAGE_BODY_SPELLINGS = 15;
+export const PAGE_BODY_SPELLINGS = 7;
 
 describe("the scanner itself", () => {
   it("walked the product surface and nothing else", () => {

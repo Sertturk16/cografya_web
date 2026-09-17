@@ -6,6 +6,7 @@ import { breadcrumbJsonLd, learningResourceJsonLd, JsonLd } from "@/lib/seo/json
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -66,7 +67,7 @@ export default async function V2PreparednessPage({ params }: PageProps) {
 
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-12">
+      <PageContainer>
         {/* Breadcrumb & Hero */}
         <div className="space-y-4">
           <nav
@@ -281,7 +282,7 @@ export default async function V2PreparednessPage({ params }: PageProps) {
 
         {/* Sources Section */}
         <V2SourcesSection scope="deprem" />
-      </div>
+      </PageContainer>
     </>
   );
 }

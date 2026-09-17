@@ -13,6 +13,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ToolWorkbench } from "@/components/v2/v2-tool-workbench";
 import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-content";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Home, ChevronRight } from "lucide-react";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
@@ -66,118 +67,111 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
         })}
       />
 
-      <div>
-        {/* V2 Header */}
+      <V2LiveTicker />
 
-        {/* Live Telemetry Ticker */}
-        <V2LiveTicker />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-12">
-          {/* Breadcrumb & Header Hero */}
-          <div className="space-y-4">
-            <nav
-              aria-label="Breadcrumb"
-              className="flex items-center gap-2 text-xs text-muted-foreground"
+      <PageContainer>
+        {/* Breadcrumb & Header Hero */}
+        <div className="space-y-4">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Link
+              href="/"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
             >
-              <Link
-                href="/"
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                <Home className="size-3.5" />
-                <span>Ana Sayfa</span>
-              </Link>
-              <ChevronRight className="size-3.5" />
-              <Link href="/araclar" className="hover:text-foreground transition-colors">
-                CBS Araçları
-              </Link>
-              <ChevronRight className="size-3.5" />
-              <span className="text-foreground font-semibold">Koordinat Bulucu</span>
-            </nav>
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <Link href="/araclar" className="hover:text-foreground transition-colors">
+              CBS Araçları
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <span className="text-foreground font-semibold">Koordinat Bulucu</span>
+          </nav>
 
-            <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-              <div className="relative z-10 max-w-3xl space-y-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="primary" size="sm" icon={<MapPin className="size-3.5" />}>
-                    Coğrafi Koordinat Tespit &amp; GPS
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    WGS84 (EPSG:4326)
-                  </Badge>
-                </div>
-
-                <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                  Haritada Koordinat Bulma &amp; Dönüştürme
-                </h1>
-
-                <V2EnWorkInProgressNotice locale={locale} />
-
-                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                  Harita üzerinde tıkladığınız herhangi bir noktanın veya seçtiğiniz il merkezinin
-                  Ondalık Derece (DD), Derece Dakika Saniye (DMS) ve UTM izdüşüm koordinatlarını
-                  anında görüntüleyin.
-                </p>
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+            <div className="relative z-10 max-w-3xl space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant="primary" size="sm" icon={<MapPin className="size-3.5" />}>
+                  Coğrafi Koordinat Tespit &amp; GPS
+                </Badge>
+                <Badge variant="secondary" size="sm">
+                  WGS84 (EPSG:4326)
+                </Badge>
               </div>
 
-              {/* Metric Strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-                <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                    WGS84
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    EPSG:4326 Jeodezik Standart
-                  </span>
-                </div>
-                <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                    DMS + DD
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Çift Format Koordinat Gösterimi
-                  </span>
-                </div>
-                <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                    UTM Zonu
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    6° Dilimli Düzlemsel Izgara
-                  </span>
-                </div>
-                <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                    İl Tespiti
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Otomatik Sınır Eşleme (Polygon)
-                  </span>
-                </div>
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
+                Haritada Koordinat Bulma &amp; Dönüştürme
+              </h1>
+
+              <V2EnWorkInProgressNotice locale={locale} />
+
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                Harita üzerinde tıkladığınız herhangi bir noktanın veya seçtiğiniz il merkezinin
+                Ondalık Derece (DD), Derece Dakika Saniye (DMS) ve UTM izdüşüm koordinatlarını
+                anında görüntüleyin.
+              </p>
+            </div>
+
+            {/* Metric Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  WGS84
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  EPSG:4326 Jeodezik Standart
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
+                  DMS + DD
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Çift Format Koordinat Gösterimi
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
+                  UTM Zonu
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  6° Dilimli Düzlemsel Izgara
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  İl Tespiti
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Otomatik Sınır Eşleme (Polygon)
+                </span>
               </div>
             </div>
           </div>
-
-          {/* SECTION 1: STANDALONE COORDINATE WORKBENCH */}
-          <V2ToolWorkbench
-            initialMode="coordinates"
-            lockMode={true}
-            provincePoints={provincePoints}
-            provinceAreas={provinceAreas}
-            downloadName="cografya-koordinat"
-          />
-
-          {/* SECTION 2: PEDAGOGICAL EDUCATIONAL & CBS GUIDE */}
-          <V2ToolEducationalContent mode="coordinates" />
-
-          {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES */}
-          {/* The tier exit. Both locales — an English reader was as stuck as a Turkish
-              one, and the labels are already bilingual. */}
-          <V2RelatedTools current={COORDINATE_TOOL.pathname} />
-
-          <V2SourcesSection scope="araclar" />
         </div>
-      </div>
 
-      {/* Modern V2 Footer */}
+        {/* SECTION 1: STANDALONE COORDINATE WORKBENCH */}
+        <V2ToolWorkbench
+          initialMode="coordinates"
+          lockMode={true}
+          provincePoints={provincePoints}
+          provinceAreas={provinceAreas}
+          downloadName="cografya-koordinat"
+        />
+
+        {/* SECTION 2: PEDAGOGICAL EDUCATIONAL & CBS GUIDE */}
+        <V2ToolEducationalContent mode="coordinates" />
+
+        {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES */}
+        {/* The tier exit. Both locales — an English reader was as stuck as a Turkish
+              one, and the labels are already bilingual. */}
+        <V2RelatedTools current={COORDINATE_TOOL.pathname} />
+
+        <V2SourcesSection scope="araclar" />
+      </PageContainer>
     </>
   );
 }
