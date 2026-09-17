@@ -163,7 +163,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return buildMetadata({
     locale,
-    title: `${title} | V2 Atlas`,
+    // No ` | V2 Atlas`. `/v2` was retired in T-032 PR3 but the label outlived the route and kept
+    // shipping in `<title>`, OG and Twitter. It was also a second brand suffix: `buildMetadata`
+    // leaves the title relative, so the root layout's `%s · Coğrafya Gurmesi` template already
+    // appends the brand — this rendered "… | V2 Atlas · Coğrafya Gurmesi".
+    title,
     description,
     // T-032 PR3: this page lived under `/v2`, whose layout marked the whole tree
     // `noindex`. It now serves the canonical URL, so it carries the surface its V1

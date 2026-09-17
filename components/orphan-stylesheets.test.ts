@@ -20,9 +20,10 @@ import { describe, expect, it } from "vitest";
  *
  * ## What it does NOT assert
  *
- * Not a count. The eleven survivors are listed in `docs/architecture.md` as a description, not a
- * rule, and pinning the number here would fail the day a component legitimately grows or drops
- * one. The rule is the relationship: a stylesheet exists because something imports it.
+ * Not a count. The survivors — ten, since this file's own blind spot was closed — are listed in
+ * `docs/architecture.md` as a description, not a rule, and pinning the number here would fail the
+ * day a component legitimately grows or drops one. The rule is the relationship: a stylesheet
+ * exists because something imports it.
  *
  * ## Why the check reads import specifiers instead of searching for the filename
  *

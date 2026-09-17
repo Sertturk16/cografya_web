@@ -7,6 +7,7 @@ import {
   MARINE_VALUES_REVALIDATE_SECONDS,
 } from "@/lib/api/marine";
 import { getMapSummaryResilient } from "@/lib/api/provinces";
+import { getAllContinents } from "@/lib/geo/continents";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
@@ -81,8 +82,17 @@ export default async function V2HomePage({ params }: V2PageProps) {
     getMarineOverviewSafe(),
   ]);
 
-  const totalProvinces = provinces.length || 81;
-  const totalCountries = countries.length || 199;
+  // NO `|| 81` and NO `|| 199`. PR #171 removed both of these expressions from `/turkiye` and
+  // `/dunya`; the home page kept its own copies, because the guard that found them
+  // (`lib/geo/country-sources.test.ts`) opens one file. A degraded fetch lists nothing, and the
+  // hero reads these counts out as "81 İl · 199 Ülke" — a promise about what the atlas contains,
+  // made at the moment it contains neither.
+  const totalProvinces = provinces.length;
+  const totalCountries = countries.length;
+  // Derived, not typed: the card said "6 Kıta" while `/dunya` — the page this card links to —
+  // said "7 Kıta", and the registry has seven (Antarktika included). A hardcoded count drifts
+  // from the page it advertises; this one had.
+  const totalContinents = getAllContinents().length;
   /**
    * A hardcoded literal, deliberately local and unexported. This page is a Server Component
    * that pulls `next-intl/server` and API-fetch modules in at module scope, which is not safe
@@ -228,7 +238,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
                       Dünya Atlası
                     </Badge>
                     <span className="text-xs font-mono text-muted-foreground">
-                      {totalCountries} Ülke · 6 Kıta
+                      {totalCountries} Ülke · {totalContinents} Kıta
                     </span>
                   </div>
                   <CardTitle className="text-2xl">{t("worldHeading")}</CardTitle>
@@ -241,7 +251,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
                     <div className="p-3 rounded-xl bg-muted/40 border border-border">
                       <span className="text-muted-foreground block text-[11px]">Kıtalar</span>
                       <span className="font-heading font-bold text-base text-foreground">
-                        6 Kıta
+                        {totalContinents} Kıta
                       </span>
                     </div>
                     <div className="p-3 rounded-xl bg-muted/40 border border-border">
