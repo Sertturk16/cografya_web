@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * SEO-INVARIANCE GUARD (UYELIK-10 plan §5.7/§9/§10 item 4) — the concrete, TESTABLE form of
@@ -21,11 +22,7 @@ function sourceOf(relativePath: string): string {
  *  prose about `cookies()`/`headers()` — the same `game-island.early-finish.test.ts`
  *  precedent. */
 function code(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join("\n");
+  return stripComments(source);
 }
 
 const PAGE = code(sourceOf("../../app/[locale]/(site)/oyun/page.tsx"));

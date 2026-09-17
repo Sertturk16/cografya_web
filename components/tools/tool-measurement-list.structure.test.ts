@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * SOURCE-SCAN, the same reason `components/game/game-round-save.structure.test.ts`/
@@ -15,12 +16,7 @@ function sourceOf(relativePath: string): string {
 }
 
 function flatCode(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join(" ")
-    .replace(/\s+/g, " ");
+  return stripComments(source).replace(/\s+/g, " ");
 }
 
 const PANEL = flatCode(sourceOf("./tool-measurement-list.tsx"));

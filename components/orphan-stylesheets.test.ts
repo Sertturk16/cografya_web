@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * EVERY STYLESHEET HAS A CONSUMER.
@@ -54,9 +55,6 @@ const walk = (dir: string, match: (name: string) => boolean): string[] =>
 const ROOTS = ["app", "components"] as const;
 
 const stylesheets = ROOTS.flatMap((r) => walk(join(repoRoot, r), (n) => n.endsWith(".module.css")));
-const stripComments = (source: string): string =>
-  source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
-
 /** The last path segment of every `*.module.css` specifier actually imported by a source file. */
 const importedStylesheetNames = new Set(
   ROOTS.flatMap((r) => walk(join(repoRoot, r), (n) => /\.tsx?$/.test(n) && !n.includes(".test.")))

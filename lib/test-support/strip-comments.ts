@@ -186,3 +186,17 @@ function opensRegex(out: string): boolean {
   while (k >= 0 && /[A-Za-z0-9_$]/.test(out[k]!)) k -= 1;
   return REGEX_PRECEDING_KEYWORDS.has(out.slice(k + 1, j + 1));
 }
+
+/**
+ * The CSS half, for the tests that scan `*.module.css` and `app/globals.css`.
+ *
+ * CSS has exactly one comment form, so this is one `replace` and not a scanner. It is a separate
+ * function rather than a reuse of `stripComments` because `//` is NOT a comment in CSS:
+ * `url(https://example.org/a.png)` would lose the rest of its line, and
+ * `components/book/bench.structure.test.ts` had already written that reason down beside its own
+ * pair of strips. No stylesheet in the tree contains a `//` today, so the two agree right now —
+ * which is precisely why the wrong one would be adopted silently.
+ */
+export function stripCssComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, " ");
+}

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * The map attribution's TEXT-RUN SEPARATION (UX tour B26, → PR #47 review CR-S2).
@@ -96,14 +97,11 @@ const CASES = [
  * deleted the real one — and `game-map.tsx`'s comment names the token explicitly, so this is
  * not a hypothetical.
  *
- * Both assertions therefore run against CODE ONLY. Block comments go first, so the `//` inside
- * any URL they contain is gone before line comments are stripped.
+ * Both assertions therefore run against CODE ONLY, through the shared scanner: no ordering of
+ * two `String.replace` calls gets both a `//` inside a URL and a `/*` inside a line comment right.
  */
 function codeOnly(url: URL): string {
-  return readFileSync(url, "utf8")
-    .replace(/\r\n/g, "\n")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/^[ \t]*\/\/.*$/gm, " ");
+  return stripComments(readFileSync(url, "utf8").replace(/\r\n/g, "\n"));
 }
 
 describe.each(CASES)("map attribution text-run separation — $name", ({ url, lineCount }) => {

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * REGRESSION SHIELD — "the iframe's `src` comes from the FROZEN second, never the live one".
@@ -39,12 +40,7 @@ function sourceOf(relativePath: string): string {
 /** Strip comments, then collapse whitespace: the prose above the code says all of these words,
  *  and Prettier is free to break the lines wherever it likes. */
 function flatCode(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join(" ")
-    .replace(/\s+/g, " ");
+  return stripComments(source).replace(/\s+/g, " ");
 }
 
 const VIDEO = flatCode(sourceOf("./deneme-video.tsx"));

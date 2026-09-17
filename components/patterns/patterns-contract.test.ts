@@ -1,12 +1,11 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /** Comments stripped — a docblock explaining why something is NOT `role="alert"` contains it. */
 const read = (name: string) =>
-  readFileSync(fileURLToPath(new URL(`./${name}.tsx`, import.meta.url)), "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/^\s*\/\/.*$/gm, " ");
+  stripComments(readFileSync(fileURLToPath(new URL(`./${name}.tsx`, import.meta.url)), "utf8"));
 
 describe("MetricValue makes T-024's defect impossible", () => {
   const source = read("metric-value");
@@ -130,10 +129,9 @@ describe("Callout is an editorial aside, not a system alert", () => {
 });
 
 describe("Alert is the one with a box", () => {
-  const source = readFileSync(
-    fileURLToPath(new URL("../ui/alert.tsx", import.meta.url)),
-    "utf8",
-  ).replace(/\/\*[\s\S]*?\*\//g, " ");
+  const source = stripComments(
+    readFileSync(fileURLToPath(new URL("../ui/alert.tsx", import.meta.url)), "utf8"),
+  );
 
   it("tints the whole box including the body text", () => {
     for (const variant of ["success", "warning", "destructive", "info"]) {

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * A FOOTER SOURCE CHIP NAMES AN INSTITUTION THE PAGE IT LINKS TO ACTUALLY CARRIES.
@@ -50,11 +51,7 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * comment in a module that renders nothing — the same trap `locator-attribution.test.ts` and
  * `lib/map/tr-inland-water-jrc.test.ts` each document, arrived at independently a third time.
  */
-const read = (file: string) =>
-  readFileSync(file, "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
-    .replace(/^[ \t]*\/\/.*$/gm, " ");
+const read = (file: string) => stripComments(readFileSync(file, "utf8"));
 
 /** Source as written, for the parts of this file that are about code rather than copy. */
 const readRaw = (file: string) => readFileSync(file, "utf8");

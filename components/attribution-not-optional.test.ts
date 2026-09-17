@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * BINDING GUARD: a component that renders a mandated notice has no switch for turning it off.
@@ -82,7 +83,7 @@ const carriers = walkTsx(componentsDir)
   // one thing that must not happen.
   .map(({ file, source }) => ({
     file,
-    source: source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1"),
+    source: stripComments(source),
   }));
 
 /**

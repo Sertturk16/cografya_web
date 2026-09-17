@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { stripComments } from "./strip-comments";
+import { stripComments, stripCssComments } from "./strip-comments";
 
 /**
  * The stripper other source-text tests depend on, so its own failure modes are pinned here
@@ -89,6 +89,15 @@ describe("stripComments", () => {
 
   it("survives an unterminated block comment instead of looping", () => {
     expect(stripComments("const a = 1; /* never closed")).toBe("const a = 1;  ");
+  });
+
+  it("leaves a CSS `url()` alone, which is why stylesheets get their own strip", () => {
+    const rule = ".a { background: url(https://example.org/a.png); /* why */ color: red; }";
+    expect(stripCssComments(rule)).toContain("url(https://example.org/a.png)");
+    expect(stripCssComments(rule)).toContain("color: red");
+    expect(stripCssComments(rule)).not.toContain("why");
+    // The JS scanner would read the `//` as a line comment and lose the rest of the rule.
+    expect(stripComments(rule)).not.toContain("color: red");
   });
 
   it("strips the real component this task's guards read, without eating its scopes", () => {

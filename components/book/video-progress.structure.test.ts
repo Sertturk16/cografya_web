@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments, stripCssComments } from "@/lib/test-support/strip-comments";
 
 /**
  * SOURCE-SCAN, for the same reason `deneme-video.src-invariant.test.ts` and
@@ -18,19 +19,14 @@ function sourceOf(relativePath: string): string {
 }
 
 function flatCode(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join(" ")
-    .replace(/\s+/g, " ");
+  return stripComments(source).replace(/\s+/g, " ");
 }
 
 const BENCH = flatCode(sourceOf("./video-bench.tsx"));
 const VIDEO = flatCode(sourceOf("./deneme-video.tsx"));
 const PROGRESS_CONTROLS = flatCode(sourceOf("./video-progress-controls.tsx"));
 /** CSS comments use only the C-style form — the `bench.structure.test.ts` precedent. */
-const STYLES = sourceOf("./book-video.module.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+const STYLES = stripCssComments(sourceOf("./book-video.module.css"));
 
 function declaredValues(selector: string, property: string): string[] {
   return [...STYLES.matchAll(new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`, "g"))].flatMap((rule) =>
