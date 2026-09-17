@@ -71,3 +71,57 @@ describe("semantic bridge tokens", () => {
     expect(dark).toContain(`--${name}-foreground:`);
   });
 });
+
+/**
+ * The night-sea invariant (T-034 phase C).
+ *
+ * What this block replaced was shadcn's stock ramp, every neutral written `oklch(x 0 0)` —
+ * chroma exactly zero. Light mode's identity is warmth, so an achromatic dark mode was by
+ * definition a different brand. These assertions are what stops a future edit, or a
+ * `shadcn add` that rewrites the block, quietly restoring it.
+ */
+describe("the dark neutrals carry the brand's hue", () => {
+  const dark = section(".dark {");
+  const NEUTRALS = [
+    "--background",
+    "--foreground",
+    "--card",
+    "--card-foreground",
+    "--popover",
+    "--popover-foreground",
+    "--muted",
+    "--muted-foreground",
+    "--border",
+    "--input",
+    "--chip",
+  ] as const;
+
+  const declared = (token: string): string => {
+    const match = new RegExp(`${token}:\\s*([^;]+);`).exec(dark);
+    expect(match, `${token} is not declared in .dark`).not.toBeNull();
+    return match![1]!.trim();
+  };
+
+  it.each(NEUTRALS)("%s is not an achromatic oklch", (token) => {
+    // `oklch(L 0 H)` is a grey whatever the hue says, and that is the exact shape this
+    // palette exists to remove.
+    expect(declared(token)).not.toMatch(/oklch\([\d.]+\s+0\s/);
+  });
+
+  it.each(NEUTRALS)("%s is not a neutral hex either", (token) => {
+    const value = declared(token);
+    const hex = /^#([0-9a-fA-F]{6})$/.exec(value);
+    if (hex === null) return; // authored in oklch with real chroma; the row above covers it
+    const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(hex[1]!.slice(i, i + 2), 16));
+    expect(
+      Math.max(r!, g!, b!) - Math.min(r!, g!, b!),
+      `${token} = ${value} has no colour in it`,
+    ).toBeGreaterThan(2);
+  });
+
+  it("the border is opaque, so it draws the same line on every surface", () => {
+    // A white-alpha border picks up whatever sits behind it, which on a tinted field reads
+    // as the border changing colour between --card and --background.
+    expect(declared("--border")).not.toContain("/");
+  });
+});

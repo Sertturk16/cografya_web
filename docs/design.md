@@ -34,19 +34,36 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
   `clamp(1.4rem, 1rem + 1.4vw, 1.8rem)`. In V2 use Tailwind sizes but keep the same
   hierarchy: one `h1` per page, headings in document order.
 
-## Dark mode (current state, read before touching)
+## Dark mode — "Night Sea"
 
-- Mechanism: `components/v2/theme-toggle.tsx` toggles `.dark` on `<html>` and stores
-  `localStorage.theme`; falls back to `prefers-color-scheme`. `next-themes` is installed but
-  no `ThemeProvider` is mounted; `useTheme()` in `sonner.tsx` always returns `"system"`.
-- `.dark` block redefines only shadcn's neutral greys (`--background` oklch 0.145,
-  `--primary` oklch 0.922 = near white, etc.). **No Terra `--color-*` token is overridden.**
-  So: V1 stays light in dark mode; any V2 element that uses `var(--color-primary)` or a
-  `hover:bg-[var(--color-primary-dark)]` escape keeps its light value; `variant="primary"`
-  buttons go white-on-white (TASKS T-018).
-- No blocking theme script → light flash for dark users on every load.
-- When fixing dark mode: override tokens in `.dark`, do not sprinkle `dark:` classes per
-  component. Verify contrast in both themes on the actual surface colour.
+- Mechanism: `next-themes` is mounted in `app/[locale]/layout.tsx` via
+  `components/theme-provider.tsx` — `attribute="class"`, `defaultTheme="system"`,
+  `storageKey="theme"`. Its blocking script sets the class before hydration, so there is no
+  light flash; `<html>` carries `suppressHydrationWarning` for that reason.
+  `components/v2/theme-toggle.tsx` cycles light → dark → system → light, with a polite live
+  region. `sonner` reads the real theme.
+- Character: a cool deep petrol field in the `--color-accent` water-teal family, carrying the
+  warm terracotta accent — the atlas reading the site already uses for water. It is
+  deliberately NOT shadcn's stock ramp, which was `oklch(x 0 0)`: chroma zero, i.e. a
+  different brand from light mode's warmth.
+- Every value in `.dark` is measured, and the table lives in `app/globals.css` beside it.
+  `lib/theme/contrast.ts` is what produces those figures — use it rather than recalling a
+  ratio. `blendOver` matters as much as `contrastRatio`: a tinted chip's real contrast is
+  against the BLEND, and measuring against the untinted token hides failures.
+- **Colour in a component comes from a bridge token.** No `bg-[var(--color-x,#hex)]` escape,
+  no raw Tailwind palette class, no brand hex, and no hand-written `dark:`. A component that
+  needs a `dark:` is bound to the wrong token. `components/ui/token-binding.test.ts` enforces
+  all four; two exemptions are listed there with reasons (a `mix-blend-mode`, and one
+  per-theme alpha), and a further assertion fails if an exemption goes stale.
+- Semantic families have two members. The base is the FILL; the `-strong` member is text on a
+  tint of that fill. They are not interchangeable — the base measures 2.62:1 as text on its
+  own 15% tint for warning, and 3.98-4.17:1 for the others.
+- Not yet themed, and known: the categorical accent system in 34 V2 files (T-031c) and map
+  surfaces (T-031d). `--chart-*` and `--sidebar-*` remain shadcn's achromatic stock; nothing
+  reads them.
+- The showcase at `/design-system` shows every component in both themes side by side. A
+  component is not done until its specimen renders there, and
+  `components/showcase/registry.test.ts` fails if one is missing.
 
 ## Accessibility floor (WCAG 2.1 AA)
 
