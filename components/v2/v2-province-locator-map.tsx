@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
+import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
 
 interface V2ProvinceLocatorMapProps {
   plateCode: string;
@@ -21,16 +22,19 @@ interface V2ProvinceLocatorMapProps {
  * at the V2 province page, where it had been guarding `LocatorMap`'s `<figcaption>` all along.
  * The V2 rewrite swapped the component and the obligation went with it.
  *
- * The string is read HERE rather than taken as a prop, for the reason `LocatorMap`'s own test
- * records: a caller-supplied credit can be dropped at one call site, and the chip stops
- * travelling with the figure. Same for the accessible name — this component hardcoded a Turkish
+ * The credit itself lives in `V2MapAttribution`, which every V2 map surface shares — the eight
+ * of them each drew the JRC inland-water layer and the Natural Earth context with no credit at
+ * all, and this one credited only OSM. Reading it from a shared component rather than passing it
+ * in is the point `LocatorMap`'s own test records: a caller-supplied credit can be dropped at one
+ * call site, and the chip stops travelling with the figure.
+ *
+ * The accessible name is read here for the same reason — this component hardcoded a Turkish
  * sentence, so the EN page announced the map in Turkish while `ProvinceDetail.locationAlt` sat
  * unused in both catalogues.
  *
  * The composite carries ONE accessible name (`role="img"` + `aria-label`), like `LocatorMap`.
  */
 export async function V2ProvinceLocatorMap({ plateCode, provinceName }: V2ProvinceLocatorMapProps) {
-  const t = await getTranslations("Map");
   const tProvince = await getTranslations("ProvinceDetail");
   const targetShape = PROVINCE_SHAPES.find((s) => s.plateCode === plateCode);
   const trCasing = CONTEXT_SHAPES.find((c) => c.iso === "TR");
@@ -83,9 +87,14 @@ export async function V2ProvinceLocatorMap({ plateCode, provinceName }: V2Provin
           )}
         </svg>
       </div>
-      {/* The ODbL credit. Visible on the page, beside the figure — the layer that survives the
-          shapes failing to render, and the one a reader actually sees. */}
-      <figcaption className="text-[11px] text-muted-foreground">{t("attribution")}</figcaption>
+      {/* The credit. Visible on the page, beside the figure — the layer that survives the shapes
+          failing to render, and the one a reader actually sees. Scoped to what this map actually
+          draws: OSM boundaries, the JRC inland-water layer, and Natural Earth context. It said
+          only `attribution` until the JRC guard was re-derived from the imports; the lakes and
+          the neighbouring countries were uncredited. */}
+      <figcaption>
+        <V2MapAttribution inlandWater context />
+      </figcaption>
     </figure>
   );
 }

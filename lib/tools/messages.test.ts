@@ -257,10 +257,9 @@ const CONSUMER_ROOTS = [
   // The homepage's tools band (`components/home/tool-cards.tsx`, plan §5.5) — a second,
   // independent consumer of `Tools.hub`'s already-bilingual name/body strings.
   { label: "components/home", url: new URL("../../components/home/", import.meta.url) },
-  // The header nav's "Araçlar" dropdown group (`components/site-nav/tools-nav-group.tsx`,
-  // plan §5.7b, PR-2) — a THIRD independent consumer of the same three tool names, kept in a
-  // namespace-pure file of its own for the reason that file's own docblock gives.
-  { label: "components/site-nav", url: new URL("../../components/site-nav/", import.meta.url) },
+  // The V1 header nav's "Araçlar" dropdown group was a third consumer of the same three tool
+  // names. `components/site-nav/` was deleted in T-032 PR4 — the V2 header does not carry a
+  // tools dropdown — so there is no root to scan. The other two remain.
 ] as const;
 
 interface ToolsBinding {
@@ -398,7 +397,15 @@ describe("every Tools key the code asks for exists", () => {
      * FOURTH orphan fails here, and so does re-adopting one of these three without shortening
      * the list. It cannot quietly become the new normal.
      */
-    const ORPHANED_BY_V2_REWRITE = ["Tools.alan", "Tools.koordinat", "Tools.mesafe"];
+    const ORPHANED_BY_V2_REWRITE = [
+      "Tools.alan",
+      "Tools.koordinat",
+      // `Tools.map` joined the list in T-032 PR4: its only consumer was `components/tools/tool-map.tsx`,
+      // the V1 map the tool pages embedded. V2 embeds `V2ToolWorkbench`, which draws its own map
+      // and writes its labels inline — the same inline-copy pattern as the three prose namespaces.
+      "Tools.map",
+      "Tools.mesafe",
+    ];
     const consumed = [...new Set(bindings.map((entry) => entry.namespace))].sort();
     expect(consumed).toEqual(declared.filter((ns) => !ORPHANED_BY_V2_REWRITE.includes(ns)));
     // Every name on the debt list is really declared — a typo would silently excuse a namespace

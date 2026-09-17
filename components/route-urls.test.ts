@@ -30,7 +30,12 @@ function tsxCode(url: URL): string {
 }
 
 const locator = tsxCode(new URL("./map/locator-map.tsx", import.meta.url));
-const flagCard = tsxCode(new URL("./country/country-flag.tsx", import.meta.url));
+/**
+ * The flag `<img>` moved out of `components/country/country-flag.tsx` — the V2 country page
+ * inlines it, and T-032 PR4 deleted that component. The URL template is what this file is about,
+ * so it reads the page that now builds it.
+ */
+const flagCard = tsxCode(new URL("../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url));
 const flagRouteUrl = new URL("../app/flags/[flag]/route.ts", import.meta.url);
 const flagAdapterUrl = new URL("../lib/geo/flag-route.server.ts", import.meta.url);
 const countriesUrl = new URL("../lib/api/countries.ts", import.meta.url);
@@ -195,7 +200,9 @@ describe("flag route URL", () => {
   it("builds its src from the /flags/{ISO}.svg template the route serves", () => {
     // The route's param carries the extension (see its docblock), and the handler's runtime
     // corpus gate consumes this normalized value — so the case and suffix are load-bearing.
-    expect(flagCard).toMatch(/src=\{`\/flags\/\$\{isoCode\.trim\(\)\.toUpperCase\(\)\}\.svg`\}/);
+    // The page holds the whole row, so the expression reads `country.isoCode` rather than a
+    // bare `isoCode` prop. Case and suffix are what the route's corpus gate consumes.
+    expect(flagCard).toMatch(/src=\{`\/flags\/\$\{country\.isoCode\.toUpperCase\(\)\}\.svg`\}/);
   });
 
   it("has the dynamic route directory behind it", () => {

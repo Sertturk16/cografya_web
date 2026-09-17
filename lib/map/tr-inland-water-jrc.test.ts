@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import enMessages from "../../messages/en.json";
 import trMessages from "../../messages/tr.json";
@@ -293,10 +294,11 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
     // file cannot assert it. Read the render sites as SOURCE — the repo runs a single `node`
     // vitest environment with no jsdom, the same constraint `tr-inland-water.test.ts`
     // documents. `marine-attribution.tsx` is the pattern being matched.
+    // The three V1 map components that used to be named here are gone (T-032 PR4). Every V2 map
+    // surface renders the credit through ONE shared component, so there is one render site for
+    // the map half of this rule instead of a list that a new map can silently miss.
     const sites: [string, string][] = [
-      ["../../components/map/turkey-map-section.tsx", "attributionJrcEnglish"],
-      ["../../components/game/game-map.tsx", "attributionJrcEnglish"],
-      ["../../components/marine/marine-map.tsx", "attributionJrcEnglish"],
+      ["../../components/v2/v2-map-attribution.tsx", "attributionJrcEnglish"],
       ["../../app/[locale]/(site)/hakkimizda/page.tsx", "dataJrcEnglish"],
       ["../../app/[locale]/(site)/hakkimizda/page.tsx", "dataJrcCitation"],
     ];
@@ -315,21 +317,57 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
   });
 
   it("renders the JRC credit on exactly the surfaces that draw the JRC geometry", () => {
-    // The licence obligation travels WITH the material. A surface that gains the layer but
-    // not the credit is a licence breach; a surface that gains the credit without the layer
-    // claims a source it does not use. Both directions are asserted from source.
-    const surfaces = [
-      "../../components/map/turkey-map-section.tsx",
-      "../../components/game/game-map.tsx",
-      "../../components/marine/marine-map.tsx",
-      "../../components/map/world-map-section.tsx",
+    /**
+     * The licence obligation travels WITH the material: a surface that draws the layer but not
+     * the credit is a breach, and a surface that credits it without drawing it claims a source it
+     * does not use. Both directions, as before.
+     *
+     * WHAT CHANGED, AND WHY IT IS STRICTLY STRONGER. This used to name four V1 component files by
+     * hand. That list is precisely why the rule did not fire through the whole V2 rewrite: eight
+     * new components each imported the generated shapes and drew the layer directly, and nobody
+     * added them here. Seven live surfaces shipped the JRC geometry with no credit at all.
+     *
+     * The surface list is now DERIVED — every `.tsx` under `components/` and `app/` that imports
+     * `INLAND_WATER_SHAPES` is a surface, whatever it is called and whenever it was added. A
+     * ninth map cannot be written without this test seeing it.
+     */
+    const roots = [
+      fileURLToPath(new URL("../../components/", import.meta.url)),
+      fileURLToPath(new URL("../../app/", import.meta.url)),
     ];
-    for (const relative of surfaces) {
-      const source = readFileSync(fileURLToPath(new URL(relative, import.meta.url)), "utf8");
-      const drawsLayer = source.includes("InlandWaterLayer");
-      const credits = source.includes("attributionJrcEnglish");
-      expect(credits, `${relative}: draws=${drawsLayer} credits=${credits}`).toBe(drawsLayer);
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) return walk(full);
+        return entry.name.endsWith(".tsx") && !entry.name.includes(".test.") ? [full] : [];
+      });
+
+    const surfaces = roots
+      .flatMap(walk)
+      .map((file) => ({ file, source: readFileSync(file, "utf8") }))
+      .filter(({ source }) => source.includes("INLAND_WATER_SHAPES"));
+
+    // Anti-vacuity: a walk that found nothing would pass this test for free, and finding the
+    // surfaces is the entire point of deriving them.
+    expect(surfaces.length, "components drawing the JRC inland-water layer").toBeGreaterThan(4);
+
+    for (const { file, source } of surfaces) {
+      const name = file.slice(file.lastIndexOf("/") + 1);
+      expect(source, `${name} draws the JRC layer without <V2MapAttribution>`).toContain(
+        "<V2MapAttribution",
+      );
+      expect(source, `${name} draws the JRC layer but does not declare inlandWater`).toMatch(
+        /<V2MapAttribution[^>]*\binlandWater\b/,
+      );
     }
+
+    // The other direction: the shared component is the only thing that renders the string, and it
+    // renders it only when the caller says the layer is drawn.
+    const attribution = readFileSync(
+      fileURLToPath(new URL("../../components/v2/v2-map-attribution.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(attribution).toMatch(/inlandWater && \(/);
   });
 });
 

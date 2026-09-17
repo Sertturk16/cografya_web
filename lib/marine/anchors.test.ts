@@ -54,10 +54,18 @@ describe("anchor ids are deterministic and unique", () => {
 });
 
 describe("both sides of the anchor contract call this module", () => {
-  const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+  /**
+   * Source with COMMENTS REMOVED. The absence check below is about CODE: `v2-marine-map-explorer.tsx`
+   * documents the drift it just paid for by quoting the very constant under test, and a raw scan
+   * would fail on the prose explaining the rule. The inverse is the dangerous half — a constant
+   * named only in a comment would satisfy a presence check after the real one was deleted.
+   */
+  const read = (path: string) =>
+    readFileSync(new URL(path, import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^[ \t]*\/\/.*$/gm, " ");
 
-  const emitter = read("../../components/marine/basin-values-table.tsx");
-  const fallbackEmitter = read("../../components/marine/reference-points.tsx");
+  const emitter = read("../../components/v2/v2-marine-map-explorer.tsx");
   const linker = read("../../components/marine/province-marine-section.tsx");
 
   it("the hub row EMITS its id through marinePointAnchorId", () => {
@@ -70,7 +78,9 @@ describe("both sides of the anchor contract call this module", () => {
 
   it("neither side rebuilds the id from the section constant by hand", () => {
     // A template literal on either side is what drift looks like before it happens.
-    for (const source of [emitter, linker, fallbackEmitter]) {
+    // `reference-points.tsx` was the third side of this contract and was deleted with the
+    // rest of V1 in T-032 PR4; the V2 hub emits its ids from `v2-marine-basin-cards.tsx`.
+    for (const source of [emitter, linker]) {
       expect(source).not.toContain("deniz-reference-points");
     }
   });
@@ -90,16 +100,11 @@ describe("both sides of the anchor contract call this module", () => {
    * this module was written to prevent. Both branches list every point, so both name it, and
    * this is the assertion that keeps it that way.
    */
-  it("emits the per-point id in the value-less fallback branch too", () => {
-    expect(fallbackEmitter).toMatch(
-      /<li key=\{point\.slugTr\} id=\{marinePointAnchorId\(point\)\}/,
-    );
-  });
-
-  it("makes both fragment targets programmatically focusable", () => {
+  it("makes the fragment target programmatically focusable", () => {
     // A fragment target that is not focusable is followed VISUALLY but not by Safari/VoiceOver
-    // (ENGINEERING.md §5, the climate-chart precedent). Both branches, one rule.
-    expect(emitter).toMatch(/id=\{marinePointAnchorId\(point\)\} tabIndex=\{-1\}/);
-    expect(fallbackEmitter).toMatch(/id=\{marinePointAnchorId\(point\)\} tabIndex=\{-1\}/);
+    // (ENGINEERING.md §5, the climate-chart precedent). V1 had two branches (a values list and a
+    // value-less fallback) and this pinned `tabIndex={-1}` on both; the V2 hub renders one
+    // station table whose rows are already interactive, so the row is in the tab order outright.
+    expect(emitter).toMatch(/id=\{marinePointAnchorId\(point\)\}[\s\S]{0,80}tabIndex=\{0\}/);
   });
 });

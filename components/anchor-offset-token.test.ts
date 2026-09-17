@@ -25,7 +25,6 @@ import { describe, expect, it } from "vitest";
  */
 
 const GLOBALS = new URL("../app/globals.css", import.meta.url);
-const SITE_HEADER = new URL("./site-header.module.css", import.meta.url);
 
 /**
  * BOTH stylesheet roots, and every `.css` in them — not just `components/**\/*.module.css`
@@ -158,20 +157,20 @@ describe("sticky-header anchor offsets", () => {
     expect(new RegExp(`${token}\\s*:`).test(rootBlock)).toBe(true);
   });
 
-  it("keeps the mobile header on one row below the nav-collapse breakpoint", () => {
-    const header = stripComments(readFileSync(SITE_HEADER, "utf8"));
-    // The breakpoint is FOUND, not spelled out. It was written as the literal
-    // `@media (min-width: 64rem)` until the nav-collapse breakpoint moved to 66rem
-    // (owner ruling O-1, → DEC 2026-08-19g md.3), and a literal that no longer occurs makes
-    // `indexOf` return -1, `slice(0, -1)` return almost the whole file, and this assertion
-    // pass while measuring the desktop block it was written to exclude. Searching for the
-    // first media query cannot degrade that way, whatever the number becomes.
-    const firstMediaQuery = header.search(/@media \(min-width:/);
-    expect(firstMediaQuery).toBeGreaterThan(-1);
-    const mobileRules = header.slice(0, firstMediaQuery);
-    expect(mobileRules.length).toBeGreaterThan(0);
-    expect(mobileRules).toMatch(/\.inner\s*\{[^}]*flex-wrap:\s*nowrap/);
-  });
+  /**
+   * "Keeps the mobile header on one row below the nav-collapse breakpoint" measured
+   * `components/site-header.module.css`: `.inner { flex-wrap: nowrap }` had to appear before the
+   * first `@media (min-width:` so the header could not wrap to two rows and silently invalidate
+   * the `--header-height` the offsets are calculated from.
+   *
+   * T-032 PR4 deleted that stylesheet with the V1 chrome. `V2Header` is Tailwind and sets its own
+   * row behaviour in class names, so there is no stylesheet block to slice and no first media
+   * query to slice at — the rule was about a mechanism, not a measurement that moved.
+   *
+   * The OFFSET rules above are the durable half and are unchanged: every token a stylesheet reads
+   * inside `calc()` must be declared in the unconditional `:root` block, and the retired tokens
+   * must stay retired on both sides. Those are what actually break a followed fragment.
+   */
 
   it.each(RETIRED_TOKENS)("no longer references the retired %s anywhere", (token) => {
     // `--header-height-wrapped` described a header that cannot occur any more (the nav moved

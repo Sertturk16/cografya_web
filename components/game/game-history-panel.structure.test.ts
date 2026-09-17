@@ -29,7 +29,6 @@ function code(source: string): string {
 }
 
 const PAGE = code(sourceOf("../../app/[locale]/(site)/oyun/page.tsx"));
-const PANEL = code(sourceOf("./game-history-panel.tsx"));
 
 describe("(a) app/[locale]/(site)/oyun/page.tsx never reads identity server-side", () => {
   it("carries no cookies() or headers() call anywhere in its source", () => {
@@ -68,56 +67,17 @@ describe("(a) app/[locale]/(site)/oyun/page.tsx never reads identity server-side
   });
 });
 
-describe("(b) GameHistoryPanel's data fetch is client-side, inside useEffect, never at module/render top level", () => {
-  it('is a "use client" module', () => {
-    expect(PANEL.trimStart().startsWith('"use client";')).toBe(true);
-  });
-
-  it("calls fetchGameRounds only inside a useEffect callback, never at the top of the component body", () => {
-    const effectStart = PANEL.indexOf("useEffect(() => {");
-    const effectEnd = PANEL.indexOf("}, [authState]);");
-    const fetchCall = PANEL.indexOf("fetchGameRounds(");
-    expect(effectStart).toBeGreaterThan(-1);
-    expect(effectEnd).toBeGreaterThan(effectStart);
-    expect(fetchCall).toBeGreaterThan(effectStart);
-    expect(fetchCall).toBeLessThan(effectEnd);
-  });
-
-  it("gates the fetch on authState === authenticated, inside the effect", () => {
-    const effectStart = PANEL.indexOf("useEffect(() => {");
-    const effectEnd = PANEL.indexOf("}, [authState]);");
-    const body = PANEL.slice(effectStart, effectEnd);
-    expect(body).toContain('if (authState !== "authenticated") return;');
-  });
-
-  it("never calls fetchGameRounds outside any function (module top level)", () => {
-    // Every occurrence of the call must be preceded, somewhere earlier in the file, by the
-    // useEffect opener that is its only legitimate call site.
-    const effectStart = PANEL.indexOf("useEffect(() => {");
-    const allCalls = [...PANEL.matchAll(/fetchGameRounds\(/g)].map((m) => m.index ?? -1);
-    expect(allCalls.length).toBeGreaterThan(0);
-    for (const index of allCalls) {
-      expect(index).toBeGreaterThan(effectStart);
-    }
-  });
-});
-
-// CODE96-M2 / TEST96R2-M1 (PR #96 round-2 fix commit, `Owner's Inbox/pr-review-archive/
-// cografya_web-96-round2.md`): the row `key` moved from bare `round.clientRoundId` to the
-// composite `${round.clientRoundId}-${round.createdAt}` expression, and a sr-only
-// `t("statScore")` label was added before the score number — neither had a committed
-// regression test.
-describe("(c) each row keys on the composite clientRoundId+createdAt expression, and the score carries a sr-only label", () => {
-  it("keys the row on the composite `${round.clientRoundId}-${round.createdAt}` expression, not clientRoundId alone", () => {
-    expect(PANEL).toContain("key={`${round.clientRoundId}-${round.createdAt}`}");
-  });
-
-  it("renders a sr-only statScore label before the score value", () => {
-    const srOnlyIndex = PANEL.indexOf("className={styles.srOnly}");
-    const scoreIndex = PANEL.indexOf("className={styles.score}");
-    expect(srOnlyIndex).toBeGreaterThan(-1);
-    expect(scoreIndex).toBeGreaterThan(srOnlyIndex);
-    const label = PANEL.slice(srOnlyIndex, scoreIndex);
-    expect(label).toContain('t("statScore")');
-  });
-});
+/**
+ * (b) and (c) guarded `GameHistoryPanel` itself — that its fetch lived inside a `useEffect`
+ * gated on `authState`, and that each row keyed on the composite `clientRoundId+createdAt`
+ * expression with a screen-reader label on the score.
+ *
+ * The V2 rewrite did not port the game-history feature, and T-032 PR4 deleted the component.
+ * Both describe blocks went with it: their subject is gone, and re-expressing them against a
+ * page that renders nothing would assert nothing.
+ *
+ * (a) stays, and is the reason this file does. It is not about the panel — it is about
+ * `/oyun`, which is still the game surface's one indexable page, and it now covers EVERY prop
+ * the page passes rather than the panel's three. An identity-conditioned server response there
+ * is a SEO-POLICY §B12 12.3.a/b cloaking BLOCKER whatever island is mounted.
+ */

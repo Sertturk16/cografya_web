@@ -59,19 +59,28 @@ import { describe, expect, it } from "vitest";
  * why `describe.each` reads `lineCount` per row instead of a single module-level constant.
  */
 
-/** Every component that stacks two-or-more licence notices in one `<p>`, and how many. */
+/**
+ * ONE component now, not three.
+ *
+ * V1 stacked its licence notices inline in `turkey-map-section.tsx`, `game-map.tsx` and
+ * `tool-map.tsx`, so this file named all three and counted their lines. T-032 PR4 deleted them
+ * and gave every V2 map surface a single shared `V2MapAttribution` — a stronger position for this
+ * rule, because there is now one place to get it wrong instead of three (and, before PR4, eight
+ * surfaces with no credit at all).
+ *
+ * The rule is unchanged and it caught a live regression on the way: the first draft of
+ * `V2MapAttribution` separated its lines with a flex `gap-x-2` and no whitespace expression. That
+ * looks right on screen and is wrong everywhere else — `textContent` re-welds the runs into
+ * "…ODbLMevsimlik göl sınırları:…" for a screen reader, a copy-paste and a crawler alike, which is
+ * precisely the `<br>` defect this file was written for, arriving by a new route.
+ */
 const CASES = [
   {
-    name: "turkey-map-section.tsx",
-    url: new URL("./turkey-map-section.tsx", import.meta.url),
+    name: "v2-map-attribution.tsx",
+    url: new URL("./v2-map-attribution.tsx", import.meta.url),
     lineCount: 3,
   },
-  { name: "game-map.tsx", url: new URL("../game/game-map.tsx", import.meta.url), lineCount: 2 },
-  { name: "tool-map.tsx", url: new URL("../tools/tool-map.tsx", import.meta.url), lineCount: 2 },
 ] as const;
-
-/** `{styles.attributionLine}` / `{mapStyles.attributionLine}` — any local module binding. */
-const ATTRIBUTION_LINE_CLASS = String.raw`\{[A-Za-z_$][\w$]*\.attributionLine\}`;
 
 /**
  * The component's source with every COMMENT removed — and that is not a detail.
@@ -103,10 +112,9 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url, li
     // one `.test()` call would already pass on the FIRST pair alone and say nothing about
     // whether the second line-to-line join re-welds two runs the same way the original `<br>`
     // defect did.
-    const separatorPattern = new RegExp(
-      String.raw`</span>\s*\{" "\}\s*<span className=${ATTRIBUTION_LINE_CLASS}>`,
-      "g",
-    );
+    // `)}{" "}` — the separator sits between the conditional line blocks, which is exactly where
+    // a flex gap would silently replace it.
+    const separatorPattern = /\)\}\s*\{" "\}/g;
     const separatorCount = source.match(separatorPattern)?.length ?? 0;
 
     expect(
@@ -123,9 +131,10 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url, li
   });
 
   it("still renders every notice as its own separate block span", () => {
-    const lineSpans =
-      source.match(new RegExp(String.raw`<span className=${ATTRIBUTION_LINE_CLASS}>`, "g")) ?? [];
-    expect(lineSpans).toHaveLength(lineCount);
+    // Three conditional blocks, one per source, each its own element: boundaries, the JRC
+    // inland-water layer, and the Natural Earth context.
+    const lineBlocks = source.match(/\{(?:boundaries|inlandWater|context) && \(?/g) ?? [];
+    expect(lineBlocks).toHaveLength(lineCount);
   });
 });
 
@@ -149,17 +158,17 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url, li
  * fix (the scope label silently dropping back to a bare, unscoped credit), not the whole
  * paragraph's markup.
  */
-describe("marine-map.tsx — the OSM/ODbL credit line carries its own scope label", () => {
-  const source = codeOnly(new URL("../marine/marine-map.tsx", import.meta.url));
+describe("the OSM/ODbL credit line carries its own scope label (FEN121-I1)", () => {
+  const source = codeOnly(new URL("./v2-map-attribution.tsx", import.meta.url));
+  const SCOPED = /\(inlandWater \|\| context\) &&[\s\S]{0,60}attributionProvinceLabel/;
 
-  it("prefixes the province-boundary credit with its own scope label (FEN121-I1)", () => {
-    expect(source).toMatch(/\{tMap\("attributionProvinceLabel"\)\}\s*\{tMap\("attribution"\)\}/);
+  it("labels the boundary credit whenever another scoped line stands beside it", () => {
+    // A bare "© OpenStreetMap katkıcıları, ODbL" next to "Mevsimlik göl sınırları: …" reads as
+    // covering the lakes too — it claims OSM as the source of JRC and Natural Earth geometry.
+    expect(source).toMatch(SCOPED);
   });
 
   it("positive control: the pre-fix, unscoped shape fails the pattern above", () => {
-    const preFixControl = '{tMap("attribution")}';
-    expect(
-      /\{tMap\("attributionProvinceLabel"\)\}\s*\{tMap\("attribution"\)\}/.test(preFixControl),
-    ).toBe(false);
+    expect(SCOPED.test('{t("attribution")}')).toBe(false);
   });
 });

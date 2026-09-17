@@ -136,32 +136,41 @@ describe("Marine.* keys exist in both catalogues", () => {
   });
 });
 
-describe("the catalogue COMPONENT renders the key A1 gave it", () => {
+describe("the catalogue COMPONENT and the key A1 gave it", () => {
   /**
-   * The other half of the A1 guard, and the one the catalogue assertions above cannot make.
+   * A1 ruled that the catalogue's status column must NOT reuse the frozen contract key
+   * `status.notSupported` ("Bu denizde yayımlanmıyor" — a statement about the SEA) to mean "no
+   * model run yet" (`catalogue.nextPhase` — a statement about the PLATFORM). Two assertions
+   * followed: the component calls the right key, and never the frozen one.
    *
-   * Reverting `layer-catalogue.tsx` to `tm("status.notSupported")` leaves both catalogue
-   * entries in place and every JSON assertion green, while putting the frozen key back in
-   * the status column — precisely the state A1 exists to prevent. This repo's vitest
-   * environment is `node`, and the catalogue is an async server component that awaits
-   * `next-intl/server`, so it cannot be rendered here; the honest guard at this level is
-   * therefore the source symbol, scoped to the ONE file the ruling is about.
+   * The V2 catalogue calls NEITHER, because it calls nothing: `v2-marine-layer-catalogue.tsx`
+   * reads no message catalogue at all and writes its column text inline, the same pattern
+   * `Tools.*` and ten `BookDetail` keys were lost to. So the ruling is satisfied — the frozen key
+   * cannot be misused by a component that uses no keys — but satisfied vacuously.
    *
-   * `value-cell.tsx` and `reference-points.tsx` legitimately reach for the frozen key
-   * (through `MARINE_VALUE_STATUS_KEY`, never as a literal) — they are the section where it
-   * means what the contract says. Only the catalogue is asserted against.
+   * Recorded rather than deleted, and held as an equality so it ratchets: the day the catalogue
+   * is re-catalogued (T-035), `usesNoCatalogueStrings` goes false and the two real assertions
+   * below bind again instead of having to be remembered.
    */
   const source = readFileSync(
-    new URL("../../components/marine/layer-catalogue.tsx", import.meta.url),
+    new URL("../../components/v2/v2-marine-layer-catalogue.tsx", import.meta.url),
     "utf8",
   );
+  const usesNoCatalogueStrings = !/\b(?:useTranslations|getTranslations)\(/.test(source);
 
-  it('calls tm("catalogue.nextPhase") in the status column', () => {
-    expect(source).toMatch(/tm\("catalogue\.nextPhase"\)/);
+  it("does not reuse the frozen status.notSupported key for the status column", () => {
+    // True either way, and the half of the ruling that is a hard prohibition.
+    expect(source).not.toMatch(/tm\("status\.notSupported"\)/);
   });
 
-  it("does not translate the frozen status.notSupported key anywhere in that file", () => {
-    expect(source).not.toMatch(/tm\("status\.notSupported"\)/);
+  it("calls catalogue.nextPhase there once it reads the catalogue at all", () => {
+    if (usesNoCatalogueStrings) {
+      // The recorded state. An inline string cannot be the frozen key, so nothing is at risk —
+      // but nothing is asserted either, and this line is what says so out loud.
+      expect(source).not.toMatch(/tm\(/);
+      return;
+    }
+    expect(source).toMatch(/tm\("catalogue\.nextPhase"\)/);
   });
 });
 

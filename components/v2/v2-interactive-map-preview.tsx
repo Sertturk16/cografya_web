@@ -7,6 +7,7 @@ import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generat
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { Badge } from "@/components/ui/badge";
 import { Compass, Waves, ArrowRight } from "lucide-react";
+import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
 
 // Exact geographic context labels aligned with Natural Earth shape centers
 const COUNTRY_NAMES_TR: Record<string, string> = {
@@ -383,6 +384,7 @@ export function V2InteractiveMapPreview() {
             })}
           </g>
         </svg>
+        <V2MapAttribution inlandWater context />
 
         {/* Dynamic Offset Hover Popover (Cleanly below the mouse cursor) */}
         {hoveredShape && mousePos && (

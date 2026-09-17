@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -47,17 +47,31 @@ describe("V2 A11y and navigation invariants", () => {
     expect(content).toMatch(/<TableRow[^>]*aria-label=\{`\$\{point\.nameTr\} istasyonunu seç`\}/);
   });
 
-  it("cleans up V2 route guard in AuthMount without impure DOM queries (SEC125-M2)", () => {
-    const url = new URL("../auth/auth-mount.tsx", import.meta.url);
-    const content = readFileSync(url, "utf8");
+  it("has no AuthMount to guard — the V1 auth tree is gone (SEC125-M2)", () => {
+    /**
+     * SEC125-M2 was about `components/auth/auth-mount.tsx` querying the DOM during render to
+     * decide whether it was on a V2 route. T-032 PR3 retired the `/v2` prefix, which made the
+     * path test meaningless, and PR4 deleted `components/auth/` outright — the V2 auth surface is
+     * `V2AuthDialog`, mounted once by the `(site)` layout.
+     *
+     * The defect class outlives the component, so the assertion becomes its absence: nothing may
+     * reintroduce a render-phase DOM query to find out which tree it is in.
+     */
+    const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) return walk(full);
+        return /\.tsx?$/.test(entry.name) && !entry.name.includes(".test.") ? [full] : [];
+      });
 
-    // The guard is unconditional now: T-032 PR3 retired the `/v2` prefix, so the path test
-    // that used to distinguish the two trees would read `startsWith("/")` and be true for
-    // everything. Nothing mounts this component any more either.
-    expect(content).toContain("return null;");
-    expect(content).not.toMatch(/pathStr\.startsWith\("\/"\)/);
-    // No render-phase DOM querying — the original point of SEC125-M2.
-    expect(content).not.toContain('document.querySelector(".v2-app")');
+    expect(existsSync(join(repoRoot, "components/auth")), "components/auth is back").toBe(false);
+
+    const offenders = ["components", "app"]
+      .flatMap((r) => walk(join(repoRoot, r)))
+      .filter((file) => readFileSync(file, "utf8").includes('document.querySelector(".v2-app")'))
+      .map((file) => file.slice(repoRoot.length));
+    expect(offenders, "render-phase DOM query for the app tree").toEqual([]);
   });
 
   it("ensures exactly one id=main-content landmark exists across the entire app (CODE125-I2)", () => {
