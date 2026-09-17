@@ -1054,12 +1054,45 @@ body:has(.v2-app) > footer {
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  /* ===========================================================================
+     NIGHT SEA — the dark neutral field (T-034 phase C, owner direction 2026-09-17).
+
+     What this replaces: shadcn's stock ramp, `oklch(x 0 0)`, chroma exactly ZERO. Light
+     mode's whole identity is warmth — terracotta, olive, parchment — so an achromatic dark
+     mode was, by definition, a different brand. The owner chose a cool deep petrol in the
+     `--color-accent` water-teal family: warm terracotta accents on a night-sea field, the
+     atlas reading the site already uses for water.
+
+     MEASURED, not chosen by eye. `lib/theme/contrast.ts` produced every figure below; the
+     brand values were read back out of the browser rather than assumed, because they are
+     authored in oklch and the ratios depend on what that actually resolves to.
+
+     Text, WCAG 4.5:1 floor          Brand as text on the field
+       fg        /bg    16.13          primary     /bg   5.47  /card 4.99
+       fg        /card  14.73          secondary   /bg   5.94  /card 5.42
+       fg        /muted 12.67          accent      /bg   5.96  /card 5.44
+       muted-fg  /bg     8.53          destructive /bg   6.46  /card 5.89
+       muted-fg  /card   7.79
+       muted-fg  /muted  6.70        Brand as FILL, --color-ink-dark on top
+                                        primary 4.94 · secondary 5.37
+                                        accent  5.39 · destructive 5.84
+
+     Surface separation is held to the LIGHT palette's own standard rather than an invented
+     one — those steps are decorative, not graphical objects that carry meaning, which is why
+     the 3:1 floor does not apply and why light mode has always sat below it too:
+       card/bg     1.10  (light: 1.06)      border/card 1.53  (light: 1.45)
+       muted/card  1.16                     border/bg   1.68  (light: 1.37)
+
+     `--primary`, `--secondary` and `--accent` keep the hues T-018 measured; only the
+     neutrals and surfaces move. Their ratios above are better than T-018 recorded (5.25-6.31)
+     because the field they sit on is no longer flat grey.
+     =========================================================================== */
+  --background: #0b1416;
+  --foreground: #e8f0f1;
+  --card: #121e21;
+  --card-foreground: #e8f0f1;
+  --popover: #121e21;
+  --popover-foreground: #e8f0f1;
   /* T-018: the three Terra-mapped bridge tokens (primary/secondary/accent) were still
      shadcn's stock neutral greys here, so `bg-primary` buttons and every `text-primary` /
      `text-secondary` / `text-accent` use rendered near-invisible or brand-less in dark mode
@@ -1080,37 +1113,52 @@ body:has(.v2-app) > footer {
   --primary-foreground: var(--color-ink-dark);
   --secondary: oklch(0.65 0.095 130.85);
   --secondary-foreground: var(--color-ink-dark);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --muted: #1b2b2f;
+  /* Lifted from the first candidate (#93a8ac, 6.84 on card) to land on light mode's own
+     secondary-text standard: --color-slate measures 7.92 on white, this measures 7.79. */
+  --muted-foreground: #9fb3b7;
   --accent: oklch(0.65 0.0675 202);
   --accent-foreground: var(--color-ink-dark);
   --destructive: oklch(0.704 0.191 22.216);
-  /* T-034 phase A2 placeholders. Phase C replaces these with measured night-sea values; they
-     exist now so the bridge is complete and the six rebound primitives have something to
-     resolve against in dark mode instead of staying at their light value. Lifting lightness
-     while keeping the brand hue is the same move T-018 made for primary/secondary/accent, and
-     the foreground flips to the warm near-black for the same reason it did there: a value
-     light enough to read on a near-black surface is too light to carry white text. */
+  /* Semantic fills on the night-sea field. Lifted in lightness while keeping the brand hue —
+     the same move T-018 made for primary/secondary/accent — and the foreground flips to the
+     warm near-black for the same reason it did there: a value light enough to read on a dark
+     surface is too light to carry white text.
+     MEASURED (lib/theme/contrast.ts), --color-ink-dark on each fill:
+       success 7.25 · warning 8.74 · info 7.95 · destructive 6.64 */
   --success: oklch(0.65 0.095 140);
   --success-foreground: var(--color-ink-dark);
   --warning: oklch(0.75 0.13 75);
   --warning-foreground: var(--color-ink-dark);
   --info: oklch(0.65 0.0675 202);
   --info-foreground: var(--color-ink-dark);
-  --chip: oklch(0.269 0 0);
+  /* The chip surface was the last achromatic value in this block; it now sits in the same
+     cool family as --muted so a chip does not read as a grey patch on a petrol field. */
+  --chip: #23353a;
   --chip-foreground: oklch(0.85 0.04 40);
   /* In dark mode the high-contrast member is LIGHTER than its base, not darker — text sits on
      a dark tint here. That is why the bridge name is `-strong` rather than `-dark`: a token
      called dark holding a light value would be a lie in half the themes. Terra's own
      `--color-*-dark` literals keep their name because they are light-mode values that the
-     `.dark` block never redefines. Phase C measures these. */
+     `.dark` block never redefines.
+     MEASURED as text on a tint of their own base over --card, the job they exist for:
+                    10% tint   15% tint
+       success        7.61       7.05
+       warning        8.18       7.36
+       info           7.50       6.95
+       destructive    7.11       6.56 */
   --success-strong: oklch(0.78 0.09 140);
   --warning-strong: oklch(0.82 0.11 75);
   --info-strong: oklch(0.78 0.06 202);
   --destructive-strong: oklch(0.78 0.13 22);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* Opaque, not a white alpha. A translucent border picks up whatever sits behind it, so the
+     same token drew a different line on --card than on --background; on a tinted field that
+     reads as the border changing colour between panels. */
+  --border: #2a3f44;
+  --input: #334c52;
+  /* The focus ring follows the brand's water teal, as it does in light mode, instead of the
+     neutral grey shadcn shipped. */
+  --ring: oklch(0.65 0.0675 202);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
