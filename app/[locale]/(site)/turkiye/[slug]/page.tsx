@@ -348,186 +348,179 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
       {/* HERO BANNER SECTION */}
       <section
-        className={`relative border-b border-border bg-gradient-to-b ${regionTheme.gradient} pt-8 pb-12 overflow-hidden`}
+        className={`relative isolate border-b border-border bg-gradient-to-b ${regionTheme.gradient} pt-8 pb-12 overflow-hidden`}
       >
         {/* Glow backdrop */}
-        <div className="absolute top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10">
-          <PageContainer space="band">
-            {/* Breadcrumb Bar */}
-            <nav
-              aria-label="Breadcrumb"
-              className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
+        <PageContainer space="band">
+          {/* Breadcrumb Bar */}
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
+          >
+            <Link
+              href="/"
+              className="hover:text-foreground transition-colors flex items-center gap-1"
             >
-              <Link
-                href="/"
-                className="hover:text-foreground transition-colors flex items-center gap-1"
-              >
-                <Home className="size-3.5" />
-                <span>Ana Sayfa</span>
-              </Link>
-              <ChevronRight className="size-3 text-muted-foreground/60" />
-              <Link href="/turkiye" className="hover:text-foreground transition-colors">
-                Türkiye Atlası
-              </Link>
-              <ChevronRight className="size-3 text-muted-foreground/60" />
-              <Link
-                href={{
-                  pathname: "/turkiye/bolge/[slug]",
-                  params: { slug: regionTheme.slug },
-                }}
-                className="hover:text-foreground transition-colors"
-              >
-                {region}
-              </Link>
-              <ChevronRight className="size-3 text-muted-foreground/60" />
-              <span className="text-foreground font-semibold flex items-center gap-1">
-                <span>{name}</span>
-                <span className="font-mono text-[11px] opacity-75">({province.plateCode})</span>
-              </span>
-            </nav>
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
+            <Link href="/turkiye" className="hover:text-foreground transition-colors">
+              Türkiye Atlası
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
+            <Link
+              href={{
+                pathname: "/turkiye/bolge/[slug]",
+                params: { slug: regionTheme.slug },
+              }}
+              className="hover:text-foreground transition-colors"
+            >
+              {region}
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
+            <span className="text-foreground font-semibold flex items-center gap-1">
+              <span>{name}</span>
+              <span className="font-mono text-[11px] opacity-75">({province.plateCode})</span>
+            </span>
+          </nav>
 
-            {/* Main Title & Action Row */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Link
-                    href={{
-                      pathname: "/turkiye/bolge/[slug]",
-                      params: { slug: regionTheme.slug },
-                    }}
-                    className="hover:opacity-80 transition-opacity"
-                  >
-                    <Badge variant="outline" className={`${regionTheme.badgeClass} cursor-pointer`}>
-                      {region}
-                    </Badge>
-                  </Link>
-                  <Badge variant="primary" className="font-mono font-bold tracking-wider">
-                    TR-{province.plateCode}
+          {/* Main Title & Action Row */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link
+                  href={{
+                    pathname: "/turkiye/bolge/[slug]",
+                    params: { slug: regionTheme.slug },
+                  }}
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <Badge variant="outline" className={`${regionTheme.badgeClass} cursor-pointer`}>
+                    {region}
                   </Badge>
-                  {isCoastal ? (
-                    <Badge
-                      variant="outline"
-                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
-                    >
-                      <Waves className="size-3" /> Kıyı İli
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-muted text-muted-foreground">
-                      🌾 İç Kara
-                    </Badge>
-                  )}
-                  {climate.showClass && (
-                    <Badge
-                      variant="outline"
-                      className="bg-primary/10 text-primary border-primary/20"
-                    >
-                      <CloudSun className="size-3 mr-1" />{" "}
-                      {province.climateCurriculumNameTr || province.climateClassTr}
-                    </Badge>
-                  )}
-                </div>
-
-                <h1 className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
-                  {name}
-                </h1>
-
-                <V2EnWorkInProgressNotice locale={locale} />
-
-                <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
-                  {introText}
-                </p>
-              </div>
-
-              {/* Top Quick Actions */}
-              <div className="flex items-center gap-3 shrink-0">
-                <V2FavoriteButton target={{ kind: "province", plateCode: province.plateCode }} />
-                <Link href={`/turkiye`}>
-                  <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
-                    Tüm İller
-                  </Button>
                 </Link>
-              </div>
-            </div>
-
-            {/* 4 BIG KEY STATS CARDS */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-              {/* 1. Nüfus */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Toplam Nüfus</span>
-                  <Users className="size-4 text-primary" />
-                </div>
-                <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
-                  {province.population ? `${format.number(province.population)}` : "—"}
-                </div>
-                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>Yoğunluk:</span>
-                  <span className="font-mono font-semibold text-foreground">
-                    {province.populationDensity ? `${province.populationDensity} kişi/km²` : "—"}
-                  </span>
-                </div>
-              </div>
-
-              {/* 2. Yüzölçümü */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Yüzölçümü</span>
-                  <Maximize2 className="size-4 text-teal-600" />
-                </div>
-                <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
-                  {province.areaKm2 ? `${format.number(province.areaKm2)} km²` : "—"}
-                </div>
-                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>İlçe Sayısı:</span>
-                  <span className="font-mono font-semibold text-foreground">
-                    {province.districtCount ? `${province.districtCount} İlçe` : "—"}
-                  </span>
-                </div>
-              </div>
-
-              {/* 3. Rakım & Fiziki */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Ortalama Rakım</span>
-                  <Mountain className="size-4 text-amber-600" />
-                </div>
-                <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
-                  {province.elevationM !== null ? `${province.elevationM} m` : "—"}
-                </div>
-                {/* Dropped, not dashed: an em dash here would still be a classification row on a
-                  page that carries no caveat for it. */}
+                <Badge variant="primary" className="font-mono font-bold tracking-wider">
+                  TR-{province.plateCode}
+                </Badge>
+                {isCoastal ? (
+                  <Badge
+                    variant="outline"
+                    className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+                  >
+                    <Waves className="size-3" /> Kıyı İli
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-muted text-muted-foreground">
+                    🌾 İç Kara
+                  </Badge>
+                )}
                 {climate.showClass && (
-                  <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                    <span>Köppen:</span>
-                    <span className="font-mono font-semibold text-primary">
-                      {province.climateKoppen}
-                    </span>
-                  </div>
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                    <CloudSun className="size-3 mr-1" />{" "}
+                    {province.climateCurriculumNameTr || province.climateClassTr}
+                  </Badge>
                 )}
               </div>
 
-              {/* 4. Koordinatlar */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Coğrafi Konum</span>
-                  <MapPin className="size-4 text-rose-600" />
-                </div>
-                <div className="font-mono font-bold text-sm sm:text-base text-foreground pt-1">
-                  {province.latitude ? `${province.latitude.toFixed(2)}°K` : "—"},{" "}
-                  {province.longitude ? `${province.longitude.toFixed(2)}°D` : "—"}
-                </div>
-                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>Plaka Kodu:</span>
-                  <span className="font-mono font-bold text-foreground">
-                    TR-{province.plateCode}
-                  </span>
-                </div>
+              <h1 className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
+                {name}
+              </h1>
+
+              <V2EnWorkInProgressNotice locale={locale} />
+
+              <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
+                {introText}
+              </p>
+            </div>
+
+            {/* Top Quick Actions */}
+            <div className="flex items-center gap-3 shrink-0">
+              <V2FavoriteButton target={{ kind: "province", plateCode: province.plateCode }} />
+              <Link href={`/turkiye`}>
+                <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
+                  Tüm İller
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* 4 BIG KEY STATS CARDS */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+            {/* 1. Nüfus */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Toplam Nüfus</span>
+                <Users className="size-4 text-primary" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {province.population ? `${format.number(province.population)}` : "—"}
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Yoğunluk:</span>
+                <span className="font-mono font-semibold text-foreground">
+                  {province.populationDensity ? `${province.populationDensity} kişi/km²` : "—"}
+                </span>
               </div>
             </div>
-          </PageContainer>
-        </div>
+
+            {/* 2. Yüzölçümü */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Yüzölçümü</span>
+                <Maximize2 className="size-4 text-teal-600" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {province.areaKm2 ? `${format.number(province.areaKm2)} km²` : "—"}
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>İlçe Sayısı:</span>
+                <span className="font-mono font-semibold text-foreground">
+                  {province.districtCount ? `${province.districtCount} İlçe` : "—"}
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Rakım & Fiziki */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Ortalama Rakım</span>
+                <Mountain className="size-4 text-amber-600" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {province.elevationM !== null ? `${province.elevationM} m` : "—"}
+              </div>
+              {/* Dropped, not dashed: an em dash here would still be a classification row on a
+                  page that carries no caveat for it. */}
+              {climate.showClass && (
+                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                  <span>Köppen:</span>
+                  <span className="font-mono font-semibold text-primary">
+                    {province.climateKoppen}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Koordinatlar */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Coğrafi Konum</span>
+                <MapPin className="size-4 text-rose-600" />
+              </div>
+              <div className="font-mono font-bold text-sm sm:text-base text-foreground pt-1">
+                {province.latitude ? `${province.latitude.toFixed(2)}°K` : "—"},{" "}
+                {province.longitude ? `${province.longitude.toFixed(2)}°D` : "—"}
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Plaka Kodu:</span>
+                <span className="font-mono font-bold text-foreground">TR-{province.plateCode}</span>
+              </div>
+            </div>
+          </div>
+        </PageContainer>
       </section>
 
       {/* BODY CONTENT CONTAINER */}

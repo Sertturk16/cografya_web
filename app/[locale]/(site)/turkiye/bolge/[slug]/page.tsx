@@ -437,155 +437,151 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
       {/* HERO BANNER SECTION */}
       <section
-        className={`relative border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-12 overflow-hidden`}
+        className={`relative isolate border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-12 overflow-hidden`}
       >
         {/* Glow backdrop */}
-        <div className="absolute top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10">
-          <PageContainer space="band">
-            {/* Breadcrumb Bar */}
-            <nav
-              aria-label="Breadcrumb"
-              className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
+        <PageContainer space="band">
+          {/* Breadcrumb Bar */}
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap"
+          >
+            <Link
+              href="/"
+              className="hover:text-foreground transition-colors flex items-center gap-1"
             >
-              <Link
-                href="/"
-                className="hover:text-foreground transition-colors flex items-center gap-1"
-              >
-                <Home className="size-3.5" />
-                <span>Ana Sayfa</span>
-              </Link>
-              <ChevronRight className="size-3 text-muted-foreground/60" />
-              <Link href="/turkiye" className="hover:text-foreground transition-colors">
-                Türkiye Atlası
-              </Link>
-              <ChevronRight className="size-3 text-muted-foreground/60" />
-              <span className="text-foreground font-semibold flex items-center gap-1">
-                <span>{region.nameTr}</span>
-              </span>
-            </nav>
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
+            <Link href="/turkiye" className="hover:text-foreground transition-colors">
+              Türkiye Atlası
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
+            <span className="text-foreground font-semibold flex items-center gap-1">
+              <span>{region.nameTr}</span>
+            </span>
+          </nav>
 
-            {/* Main Title & Action Row */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className={theme.badgeClass}>
-                    {theme.nameTr}
+          {/* Main Title & Action Row */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className={theme.badgeClass}>
+                  {theme.nameTr}
+                </Badge>
+                <Badge variant="secondary" className="font-mono font-medium tracking-wide">
+                  1941 Coğrafya Kongresi
+                </Badge>
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  <Building2 className="size-3 mr-1" /> {region.provinceCount} İl
+                </Badge>
+                <Badge variant="outline" className="bg-muted text-muted-foreground">
+                  <Boxes className="size-3 mr-1" /> {region.subregionCount} Bölüm
+                </Badge>
+                {isCoastal ? (
+                  <Badge
+                    variant="outline"
+                    className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+                  >
+                    <Waves className="size-3" /> {region.coastalSeas.length} Denize Kıyı
                   </Badge>
-                  <Badge variant="secondary" className="font-mono font-medium tracking-wide">
-                    1941 Coğrafya Kongresi
-                  </Badge>
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                    <Building2 className="size-3 mr-1" /> {region.provinceCount} İl
-                  </Badge>
+                ) : (
                   <Badge variant="outline" className="bg-muted text-muted-foreground">
-                    <Boxes className="size-3 mr-1" /> {region.subregionCount} Bölüm
+                    🌾 İç Bölge
                   </Badge>
-                  {isCoastal ? (
-                    <Badge
-                      variant="outline"
-                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
-                    >
-                      <Waves className="size-3" /> {region.coastalSeas.length} Denize Kıyı
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-muted text-muted-foreground">
-                      🌾 İç Bölge
-                    </Badge>
-                  )}
-                </div>
-
-                <h1 className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
-                  {region.nameTr}
-                </h1>
-
-                <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
-                  {region.introTr}
-                </p>
+                )}
               </div>
 
-              {/* Top Quick Actions */}
-              <div className="flex items-center gap-3 shrink-0">
-                <V2FavoriteButton target={{ kind: "region", slug: region.slug }} />
-                <Link href="/turkiye">
-                  <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
-                    Tüm İller &amp; Atlas
-                  </Button>
-                </Link>
+              <h1 className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
+                {region.nameTr}
+              </h1>
+
+              <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
+                {region.introTr}
+              </p>
+            </div>
+
+            {/* Top Quick Actions */}
+            <div className="flex items-center gap-3 shrink-0">
+              <V2FavoriteButton target={{ kind: "region", slug: region.slug }} />
+              <Link href="/turkiye">
+                <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
+                  Tüm İller &amp; Atlas
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* 4 BIG KEY STATS CARDS */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+            {/* 1. Nüfus */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Toplam Nüfus</span>
+                <Users className="size-4 text-primary" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {format.number(region.population)}
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Türkiye Payı:</span>
+                <span className="font-mono font-semibold text-foreground">
+                  %{region.populationSharePercent.toFixed(2)}
+                </span>
               </div>
             </div>
 
-            {/* 4 BIG KEY STATS CARDS */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-              {/* 1. Nüfus */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Toplam Nüfus</span>
-                  <Users className="size-4 text-primary" />
-                </div>
-                <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
-                  {format.number(region.population)}
-                </div>
-                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>Türkiye Payı:</span>
-                  <span className="font-mono font-semibold text-foreground">
-                    %{region.populationSharePercent.toFixed(2)}
-                  </span>
-                </div>
+            {/* 2. Yüzölçümü */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Yüzölçümü</span>
+                <Maximize2 className="size-4 text-teal-600" />
               </div>
-
-              {/* 2. Yüzölçümü */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Yüzölçümü</span>
-                  <Maximize2 className="size-4 text-teal-600" />
-                </div>
-                <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
-                  {format.number(region.areaKm2)} km²
-                </div>
-                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>Alan Payı:</span>
-                  <span className="font-mono font-semibold text-foreground">
-                    %{region.areaSharePercent.toFixed(2)}
-                  </span>
-                </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {format.number(region.areaKm2)} km²
               </div>
-
-              {/* 3. Nüfus Yoğunluğu */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Nüfus Yoğunluğu</span>
-                  <Mountain className="size-4 text-amber-600" />
-                </div>
-                <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
-                  {region.populationDensity} kişi/km²
-                </div>
-                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>TR Ortalaması:</span>
-                  <span className="font-mono font-semibold text-foreground">110 kişi/km²</span>
-                </div>
-              </div>
-
-              {/* 4. GSYH Ağırlığı */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">GSYH Ağırlığı (2024)</span>
-                  <TrendingUp className="size-4 text-rose-600" />
-                </div>
-                <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
-                  {region.gdpShareApproxPercent !== null
-                    ? `~%${region.gdpShareApproxPercent}`
-                    : "—"}
-                </div>
-                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>Kaynak:</span>
-                  <span className="font-semibold text-foreground">TÜİK İl GSYH</span>
-                </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Alan Payı:</span>
+                <span className="font-mono font-semibold text-foreground">
+                  %{region.areaSharePercent.toFixed(2)}
+                </span>
               </div>
             </div>
-          </PageContainer>
-        </div>
+
+            {/* 3. Nüfus Yoğunluğu */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Nüfus Yoğunluğu</span>
+                <Mountain className="size-4 text-amber-600" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {region.populationDensity} kişi/km²
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>TR Ortalaması:</span>
+                <span className="font-mono font-semibold text-foreground">110 kişi/km²</span>
+              </div>
+            </div>
+
+            {/* 4. GSYH Ağırlığı */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">GSYH Ağırlığı (2024)</span>
+                <TrendingUp className="size-4 text-rose-600" />
+              </div>
+              <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                {region.gdpShareApproxPercent !== null ? `~%${region.gdpShareApproxPercent}` : "—"}
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                <span>Kaynak:</span>
+                <span className="font-semibold text-foreground">TÜİK İl GSYH</span>
+              </div>
+            </div>
+          </div>
+        </PageContainer>
       </section>
 
       {/* QUICKNAV / JUMP NAVIGATION BAR (SCROLLBAR HIDDEN) */}
@@ -593,7 +589,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         aria-label="Bölüm İndeksi"
         className="sticky top-14 z-30 bg-background/90 backdrop-blur-md border-b border-border py-2.5 overflow-x-auto scrollbar-none"
       >
-        <div className="container mx-auto px-4 max-w-7xl flex items-center gap-2 text-xs whitespace-nowrap">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs whitespace-nowrap">
           <span className="text-muted-foreground font-semibold flex items-center gap-1 shrink-0 mr-1">
             <Layers className="size-3.5" /> Bölümler:
           </span>

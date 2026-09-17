@@ -57,12 +57,14 @@ import { describe, expect, it } from "vitest";
  * renders the same three structural properties from inside a component, so a page that calls it
  * spells no container `className` of its own — the literal-string scan below would otherwise
  * read that page as regressing to edge-to-edge content. The detector below treats a real
- * `<PageContainer` JSX element (AST-matched by tag name, the same rigor as the className scan,
- * not a text search) as an equally valid proof. This is the rewrite the block below already
- * called for: PageContainer did not land on the layout's `<main>` — each page still opts in by
- * calling it — so the test still asserts a per-page container, just through a second idiom.
+ * `<PageContainer` JSX element as an equally valid proof, but ONLY when the file also imports
+ * that exact name from `@/components/patterns/page-container` — tag-name matching alone would
+ * accept a locally-defined or differently-sourced `PageContainer` that renders nothing of the
+ * kind, which is a hole the className path does not have (the string itself carries the proof
+ * there; a JSX tag name by itself does not). This is the rewrite the block below already called
+ * for: PageContainer did not land on the layout's `<main>` — each page still opts in by calling
+ * it — so the test still asserts a per-page container, just through a second idiom.
  *
-
  * ## Scope
  *
  * Every `page.tsx`, `error.tsx` and `not-found.tsx` under `app/[locale]/(site)`. The two
@@ -133,29 +135,67 @@ function classNames(file: string): string[] {
   return found;
 }
 
+/** The module the real `PageContainer` component is exported from. */
+const PAGE_CONTAINER_MODULE = "@/components/patterns/page-container";
+
 /**
  * Whether a route file renders a `<PageContainer>` element — the fourth container idiom (see
- * the docblock above). AST tag-name matching, same as `classNames` above: a comment or a string
- * that happens to contain the word "PageContainer" cannot satisfy this, only a real JSX element.
+ * the docblock above). Two AST conditions, both required:
+ *
+ *   1. an `ImportDeclaration` from `PAGE_CONTAINER_MODULE` with a named `PageContainer` binding
+ *   2. a JSX element using that binding's local name
+ *
+ * Tag-name matching alone would accept a page that shadows the name — a local
+ * `function PageContainer({ children }) { return <div className="space-y-6">{children}</div> }`
+ * or an import of some other, differently-shaped component that merely happens to share the
+ * name — and such a page renders edge-to-edge while this detector waved it through. Requiring
+ * the import ties the JSX match back to the one component whose `className` is actually known,
+ * the same way `classNames` above is only ever trusted because the string IS the proof; a bare
+ * tag name is not.
  */
-function usesPageContainer(file: string): boolean {
+function usesPageContainerInSource(fileName: string, sourceText: string): boolean {
   const source = ts.createSourceFile(
-    file,
-    readFileSync(file, "utf8"),
+    fileName,
+    sourceText,
     ts.ScriptTarget.Latest,
     true,
     ts.ScriptKind.TSX,
   );
+  let localName: string | null = null;
+  const findImport = (node: ts.Node) => {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === PAGE_CONTAINER_MODULE &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    ) {
+      for (const element of node.importClause.namedBindings.elements) {
+        const importedName = (element.propertyName ?? element.name).text;
+        if (importedName === "PageContainer") localName = element.name.text;
+      }
+    }
+    ts.forEachChild(node, findImport);
+  };
+  ts.forEachChild(source, findImport);
+  if (localName === null) return false;
+  const boundName = localName;
+
   let found = false;
   const visit = (node: ts.Node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const tag = node.tagName;
-      if (ts.isIdentifier(tag) && tag.text === "PageContainer") found = true;
+      if (ts.isIdentifier(tag) && tag.text === boundName) found = true;
     }
     ts.forEachChild(node, visit);
   };
   ts.forEachChild(source, visit);
   return found;
+}
+
+/** Whether a route FILE renders a real `<PageContainer>` — see `usesPageContainerInSource`. */
+function usesPageContainer(file: string): boolean {
+  return usesPageContainerInSource(file, readFileSync(file, "utf8"));
 }
 
 /**
@@ -208,6 +248,59 @@ describe("the container detector", () => {
     "mx-auto px-4 flex items-center justify-center",
   ])("rejects %s", (className) => {
     expect(isLayoutContainer(className)).toBe(false);
+  });
+});
+
+describe("usesPageContainer — the fourth idiom's own anti-vacuity", () => {
+  /**
+   * ANTI-VACUITY for `usesPageContainerInSource`, same standard as `isLayoutContainer` above:
+   * real accept cases, and reject cases that specifically probe the hole Finding 2 named — a
+   * JSX tag name that matches with no real import behind it.
+   */
+  it.each([
+    [
+      "the real import, self-closing",
+      'import { PageContainer } from "@/components/patterns/page-container";\n' +
+        'export default function Page() { return <PageContainer space="band" />; }',
+    ],
+    [
+      "the real import, with children",
+      'import { PageContainer } from "@/components/patterns/page-container";\n' +
+        "export default function Page() { return <PageContainer>{children}</PageContainer>; }",
+    ],
+    [
+      "the real import, aliased on the way in",
+      'import { PageContainer as PC } from "@/components/patterns/page-container";\n' +
+        "export default function Page() { return <PC>{children}</PC>; }",
+    ],
+  ])("accepts %s", (_label, source) => {
+    expect(usesPageContainerInSource("fixture.tsx", source)).toBe(true);
+  });
+
+  it.each([
+    [
+      "a locally-defined component that merely shares the name — Finding 2's hole",
+      "function PageContainer({ children }: { children: React.ReactNode }) {\n" +
+        '  return <div className="space-y-6">{children}</div>;\n' +
+        "}\n" +
+        "export default function Page() { return <PageContainer>{children}</PageContainer>; }",
+    ],
+    [
+      "the same name imported from somewhere else entirely — Finding 2's hole",
+      'import { PageContainer } from "@/components/some-other-file";\n' +
+        "export default function Page() { return <PageContainer>{children}</PageContainer>; }",
+    ],
+    [
+      "the real import, never rendered",
+      'import { PageContainer } from "@/components/patterns/page-container";\n' +
+        'export default function Page() { return <div className="space-y-4" />; }',
+    ],
+    [
+      "no import, no element at all",
+      'export default function Page() { return <div className="space-y-4" />; }',
+    ],
+  ])("rejects %s", (_label, source) => {
+    expect(usesPageContainerInSource("fixture.tsx", source)).toBe(false);
   });
 });
 

@@ -472,7 +472,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         aria-label="Sayfa içi hızlı gezinme"
         className="sticky top-16 z-30 w-full border-b border-border bg-background/90 backdrop-blur-md transition-all shadow-2xs"
       >
-        <div className="container mx-auto px-4 max-w-7xl flex items-center gap-2 overflow-x-auto py-2.5 text-xs font-semibold scrollbar-none">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto py-2.5 text-xs font-semibold scrollbar-none">
           <a
             href="#bolgeler"
             className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"

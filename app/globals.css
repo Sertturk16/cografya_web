@@ -666,12 +666,15 @@ html {
   }
 
   /* Site-wide text-selection tint (T-035 override B). Five pages carried their own
-     `selection:bg-primary/20`; the other thirty-two had none, so selected text read
-     differently depending on which page you were on. One rule, `--primary` so it tracks the
-     bridge token in both themes, replaces all five.
+     `selection:bg-primary/20`; most of the rest had none, so selected text read differently
+     depending on which page you were on. One rule, `--primary` so it tracks the bridge token
+     in both themes, replaces the five this task touched. NOT all thirty-two: `dunya/kita/
+     page.tsx` and `dunya/kita/[slug]/page.tsx` still carry their own `selection:bg-primary/20`
+     — out of scope here (family A, Task 4's territory) and now redundant with this rule rather
+     than wrong; Task 4 removes the now-duplicate class when it migrates those two.
      MEASURED (`lib/theme/contrast.ts`, `blendOver` against every surface selected text can
      sit on, not the untinted token): `--foreground` on the 20%-primary blend over
-     `--background`/`--card`/`--muted` — light 9.66:1 / 11.31:1 / 9.66:1, dark 12.55:1 /
+     `--background`/`--card`/`--muted` — light 10.80:1 / 11.31:1 / 9.66:1, dark 12.55:1 /
      11.30:1 / 9.83:1. All clear the 4.5:1 text floor with wide margin in both themes. */
   ::selection {
     background-color: color-mix(in srgb, var(--primary) 20%, transparent);
