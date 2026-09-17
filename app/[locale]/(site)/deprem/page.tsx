@@ -31,6 +31,17 @@ export async function generateMetadata({ params }: V2DepremPageProps): Promise<M
     // counterpart did — `app/sitemap.ts` already publishes this URL, and a `noindex`
     // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
     hrefForLocale: () => "/deprem",
+    // `trOnly`, declared rather than defaulted. Without it `buildMetadata` falls to
+    // `"localized"`, which puts `/en/earthquakes` in the hreflang set and in `app/sitemap.ts`
+    // as an English page. It is not one: this file makes ZERO `getTranslations` calls and has
+    // no `locale` branch anywhere, so the English URL served forty-three lines of Turkish under
+    // an English `<html lang>`. `lib/seo/indexing.ts` exists to keep exactly that out of the
+    // index, and the surface was the one thing never set.
+    //
+    // This is a statement of fact, not a decision to de-scope EN. `messages/en.json` already
+    // carries an `Earthquake` namespace; wiring this page to it and moving the surface back to
+    // `"localized"` is the real fix, and it is a content task rather than a metadata one.
+    surface: "trOnly",
     title: "Canlı Deprem Takip & Sismik Monitör — AFAD TDVMS Verileri",
     description:
       "Türkiye ve çevre coğrafyadaki son depremler, merkez üsleri ve odak derinlikleri canlı harita üzerinde.",

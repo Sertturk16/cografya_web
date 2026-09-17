@@ -1,7 +1,9 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { TOOLS_SURFACE } from "@/lib/tools/tool-registry";
+import { AUTH_SURFACE } from "@/lib/auth/auth-metadata";
 
 /**
  * A PAGE IN THE SITEMAP IS NOT `noindex`, AND IT CARRIES THE SURFACE ITS ROW WAS BUILT WITH.
@@ -62,6 +64,14 @@ const PAGE_FOR: Record<string, string> = {
   "/deprem": "app/[locale]/(site)/deprem/page.tsx",
   "/dunya/kita": "app/[locale]/(site)/dunya/kita/page.tsx",
   "/hakkimizda": "app/[locale]/(site)/hakkimizda/page.tsx",
+  "/turkiye/bolge": "app/[locale]/(site)/turkiye/bolge/page.tsx",
+  "/deniz/marmara": "app/[locale]/(site)/deniz/marmara/page.tsx",
+  "/deniz/ege": "app/[locale]/(site)/deniz/ege/page.tsx",
+  "/deniz/akdeniz": "app/[locale]/(site)/deniz/akdeniz/page.tsx",
+  "/deniz/karadeniz": "app/[locale]/(site)/deniz/karadeniz/page.tsx",
+  "/deniz/kiyi-tipleri": "app/[locale]/(site)/deniz/kiyi-tipleri/page.tsx",
+  "/deprem/fay-hatlari": "app/[locale]/(site)/deprem/fay-hatlari/page.tsx",
+  "/deprem/hazirlik": "app/[locale]/(site)/deprem/hazirlik/page.tsx",
 };
 
 /**
@@ -72,7 +82,64 @@ const declaredSurface = (source: string): string => {
   const literal = /surface: "([^"]+)"/.exec(source);
   if (literal !== null) return literal[1]!;
   if (/surface: TOOLS_SURFACE/.test(source)) return TOOLS_SURFACE;
+  // The seven auth shells never call `buildMetadata` directly — `lib/auth/auth-metadata.ts`
+  // gate G1 pins that — so they carry no `surface:` literal of their own and would otherwise
+  // read as the default `"localized"`, i.e. as nine indexable pages missing from the sitemap.
+  if (/buildAuthMetadata\(/.test(source)) return AUTH_SURFACE;
   return "localized";
+};
+
+/**
+ * THE OTHER DIRECTION: a page that is indexable and NOT in the sitemap.
+ *
+ * Everything above walks sitemap-row → page. That direction cannot see a page which is
+ * crawlable, in the hreflang set, linked from the nav — and simply never advertised. Nine were:
+ * `/turkiye/bolge` and its seven regions, the four sea basins, `/deniz/kiyi-tipleri`,
+ * `/deprem/fay-hatlari` and `/deprem/hazirlik`, each declaring `"trOnly"` in its own
+ * `generateMetadata` while `app/sitemap.ts` listed none of them.
+ *
+ * What made it invisible rather than merely wrong: `PAGE_FOR` is the test's whole notion of
+ * which pages exist, and it held twelve of the tree's thirty-nine. A page absent from BOTH the
+ * sitemap and `PAGE_FOR` was absent from the test. So this half does not consult `PAGE_FOR` at
+ * all — it walks the route tree.
+ */
+const ROUTE_ROOT = fileURLToPath(new URL("app/[locale]/", repoRoot));
+
+const walkPages = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) return walkPages(full);
+    return entry.name === "page.tsx" ? [full] : [];
+  });
+
+/** `app/[locale]/(site)/deniz/ege/page.tsx` → `/deniz/ege`; route groups are not URL segments. */
+const pathnameOf = (file: string): string => {
+  const segments = file
+    .slice(ROUTE_ROOT.length)
+    .replace(/\/page\.tsx$/, "")
+    .split("/")
+    .filter((segment) => segment !== "" && !segment.startsWith("("));
+  return `/${segments.join("/")}`;
+};
+
+const pages = walkPages(ROUTE_ROOT).map((file) => ({
+  file: file.slice(fileURLToPath(repoRoot).length),
+  pathname: pathnameOf(file),
+  surface: declaredSurface(readFileSync(file, "utf8")),
+}));
+
+/**
+ * Indexable pathnames that legitimately have no STATIC sitemap row, each with the tier that
+ * builds its rows instead. Exact in both directions: a new dynamic route must be named here, and
+ * a route that stops being dynamic must be removed.
+ */
+const DYNAMIC_TIERS: Record<string, string> = {
+  "/turkiye/[slug]": "provinceEntries()",
+  "/dunya/[slug]": "countryEntries()",
+  "/kitaplar/[slug]": "bookSitemapEntries()",
+  "/dunya/kita/[slug]": "continentEntries()",
+  "/turkiye/bolge/[slug]": "regionEntries()",
+  "/kitaplar": "bookSitemapEntries() — the hub row ships with its tier",
 };
 
 describe("the static sitemap rows and the pages they point at", () => {
@@ -108,5 +175,41 @@ describe("the static sitemap rows and the pages they point at", () => {
         `${row.pathname}: page and sitemap row disagree`,
       ).toBe(row.surface);
     }
+  });
+});
+
+describe("every indexable page is advertised somewhere", () => {
+  it("walks the whole route tree, not a hand-kept subset", () => {
+    // Anti-vacuity, and the specific failure this half exists for: `PAGE_FOR` held twelve of
+    // thirty-nine pages, so a page missing from both it and the sitemap was outside the test.
+    expect(pages.length, "page.tsx files under app/[locale]").toBeGreaterThan(35);
+    expect(pages.length).toBeGreaterThan(Object.keys(PAGE_FOR).length);
+    expect(pages.map((page) => page.pathname)).toContain("/turkiye/bolge");
+  });
+
+  it("classifies the surfaces it finds, rather than defaulting everything", () => {
+    // If `declaredSurface` silently stopped matching, every page would read `"localized"` and
+    // the assertion below would demand a sitemap row for all thirty-nine — loud, but for the
+    // wrong reason. Pinning the spread keeps the parser honest.
+    const bySurface = new Set(pages.map((page) => page.surface));
+    expect([...bySurface].sort()).toEqual(["localized", "noindex", "trNarrative", "trOnly"]);
+  });
+
+  it("has a sitemap row, a dynamic tier, or a noindex surface — never nothing", () => {
+    const advertised = new Set(rows.map((row) => row.pathname));
+    const unadvertised = pages
+      .filter((page) => page.surface !== "noindex")
+      .filter((page) => !advertised.has(page.pathname))
+      .filter((page) => !(page.pathname in DYNAMIC_TIERS))
+      .map((page) => `${page.pathname} (${page.surface}) — ${page.file}`);
+    expect(unadvertised, "indexable, linked, and in no sitemap").toEqual([]);
+  });
+
+  it("names no dynamic tier that has stopped being a route", () => {
+    // The ratchet's other direction: a tier entry that no longer matches a real page would let
+    // a future route inherit the exemption by sharing its pathname.
+    const real = new Set(pages.map((page) => page.pathname));
+    const phantom = Object.keys(DYNAMIC_TIERS).filter((pathname) => !real.has(pathname));
+    expect(phantom, "DYNAMIC_TIERS names a route that does not exist").toEqual([]);
   });
 });
