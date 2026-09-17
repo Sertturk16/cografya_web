@@ -39,15 +39,10 @@ describe("showcase coverage", () => {
     expect(missing, `no showcase category lists: ${missing.join(", ")}`).toEqual([]);
   });
 
-  // DISABLED UNTIL T-034 PHASE D — re-enable in the phase's final task.
-  //
-  // The registry deliberately lists the fifteen components Phase D builds, because the
-  // registry IS the worklist; this assertion is what turns it into one. Running it now
-  // fails on every unbuilt name, which is true but not actionable per-task.
-  //
-  // Do not "fix" this by trimming the registry — that would delete the plan. Re-enable the
-  // assertion once Phase D is complete and it must pass unaided.
-  it.skip("every listed component exists on disk", () => {
+  // Re-enabled at the end of phase D, as planned. It was skipped while the registry listed
+  // components nobody had built yet — the registry IS the worklist, so it named all fifteen
+  // from the start and this assertion is what turned it into one.
+  it("every listed component exists on disk", () => {
     const phantom = LISTED.filter((name) => !ON_DISK.includes(name));
     expect(phantom, `listed but no file: ${phantom.join(", ")}`).toEqual([]);
   });

@@ -6,6 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { FormField, FormErrorSummary } from "@/components/patterns/form-field";
+import * as React from "react";
 import { Specimen, SpecimenRow } from "../specimen";
 
 export function FormlarSpecimens() {
@@ -105,6 +107,51 @@ export function FormlarSpecimens() {
           </Select>
         </div>
       </Specimen>
+
+      <Specimen
+        name="FormField"
+        description="Etiket, kontrol, yardımcı metin ve hata bir arada — bağlantı unutulamayacak şekilde. Yardımcı ve hata BİRBİRİNİ DIŞLAR: ikisini birden göstermek okura hangisinin geçerli olduğunu çözdürür, ekran okuyucu ise ikisini peş peşe okur ve birinin diğerini geçersiz kıldığını hiç belirtmez."
+      >
+        <div className="max-w-sm space-y-4">
+          <FormField id="ds-ff-1" label="E-posta" type="email" placeholder="ornek@site.com" />
+          <FormField
+            id="ds-ff-2"
+            label="Rakım"
+            type="number"
+            helper="Metre cinsinden, deniz seviyesinden."
+          />
+          <FormField
+            id="ds-ff-3"
+            label="E-posta"
+            type="email"
+            defaultValue="gecersiz"
+            error="Geçerli bir e-posta adresi girin."
+          />
+          <FormField id="ds-ff-4" label="Devre dışı" defaultValue="Değiştirilemez" disabled />
+        </div>
+      </Specimen>
+
+      <Specimen
+        name="FormErrorSummary"
+        description="Callout'un aksine bu GERÇEKTEN bir olay: okurun az önce yaptığı şey çalışmadı. role=alert doğru, ve tabIndex=-1 formun odağı buraya taşımasını sağlar — Tab hiç buraya inmez ama gönderim başarısız olunca form odağı getirir."
+      >
+        <FormErrorSummaryDemo />
+      </Specimen>
     </>
+  );
+}
+function FormErrorSummaryDemo() {
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+  return (
+    <div className="max-w-sm">
+      <FormErrorSummary
+        headingRef={headingRef}
+        summary="Formda 2 hata var"
+        fieldErrors={[
+          { id: "ds-ff-3", label: "E-posta" },
+          { id: "ds-ff-2", label: "Rakım" },
+        ]}
+      />
+    </div>
   );
 }
