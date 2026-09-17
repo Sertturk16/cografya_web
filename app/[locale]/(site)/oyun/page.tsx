@@ -27,6 +27,11 @@ export async function generateMetadata({ params }: V2OyunPageProps): Promise<Met
     // counterpart did — `app/sitemap.ts` already publishes this URL, and a `noindex`
     // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
     hrefForLocale: () => "/oyun",
+    // `trOnly` for the same reason as `/deprem`: zero `getTranslations` calls, no `locale`
+    // branch, seventeen lines of Turkish — and, until now, an English URL in the sitemap
+    // claiming to be the English version of it. See that page's note; `messages/en.json`'s
+    // `Game` namespace is the larger of the two and the wiring is the real fix.
+    surface: "trOnly",
     title: "Harita Oyunları & Sınavlar — 81 İl ve Bölge Bulma",
     description:
       "Dilsiz harita üzerinde Türkiye illerini ve coğrafi bölgelerini bularak harita hafızanızı geliştirin.",

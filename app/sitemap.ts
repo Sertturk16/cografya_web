@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getBooksResilient } from "@/lib/api/books";
 import { getCountryBySlug, getCountriesResilient } from "@/lib/api/countries";
 import { getProvinceBySlug, getProvincesResilient, isProductionBuild } from "@/lib/api/provinces";
+import { getRegionsResilient } from "@/lib/api/regions";
 import type { CountryDetail, ProvinceDetail } from "@/lib/api/types";
 import { bookSitemapEntries } from "@/lib/seo/book-sitemap";
 import { sitemapEntriesFor } from "@/lib/seo/sitemap-entries";
@@ -49,10 +50,11 @@ function staticEntries(): MetadataRoute.Sitemap {
     ...sitemapEntriesFor(() => "/", now, 1),
     ...sitemapEntriesFor(() => "/turkiye", now, 0.8),
     ...sitemapEntriesFor(() => "/dunya", now, 0.8),
-    // The map game hub. `"localized"` surface → one entry per locale (/oyun + /en/game),
-    // each carrying the full tr/en/x-default alternates set, both resolved through
-    // `getPathname` from the single `pathnames` entry in `i18n/routing.ts`.
-    ...sitemapEntriesFor(() => "/oyun", now, 0.7),
+    // The map game hub. `"trOnly"` → ONE entry (`/oyun`). It was `"localized"`, which published
+    // `/en/game` as the English version of a page that makes zero `getTranslations` calls and
+    // has no `locale` branch: seventeen lines of Turkish under an English `lang`. The surface
+    // now states what the page is; see its `generateMetadata` for the route back to `localized`.
+    ...sitemapEntriesFor(() => "/oyun", now, 0.7, "trOnly"),
     // The marine hub. `"trNarrative"` surface → ONE entry (`/deniz`), because `/en/sea` is
     // `noindex` while the seven explainer blocks exist only in Turkish. The alternates set
     // on that single entry is therefore `tr` + `x-default`, mirroring exactly what
@@ -72,14 +74,36 @@ function staticEntries(): MetadataRoute.Sitemap {
     ...sitemapEntriesFor(() => "/araclar/mesafe-olcme", now, 0.6, "trNarrative"),
     ...sitemapEntriesFor(() => "/araclar/koordinat-bulma", now, 0.6, "trNarrative"),
     ...sitemapEntriesFor(() => "/araclar/alan-hesaplama", now, 0.6, "trNarrative"),
-    // The earthquake hub (PR-A, `deprem-sayfalari` plan §5.14). `"localized"` (the default
-    // surface) → ONE entry per locale (/deprem + /en/earthquakes), each carrying the full
-    // tr/en/x-default alternates set — unlike `/deniz`, this page's substance is data
-    // (events, coordinates, magnitudes, timestamps, place names), not a Turkish-only
-    // narrative, so both locales are indexable from day one.
-    ...sitemapEntriesFor(() => "/deprem", now, 0.7),
+    // The earthquake hub (PR-A, `deprem-sayfalari` plan §5.14). `"trOnly"` → ONE entry.
+    //
+    // This row used to argue the opposite: that the page's substance is data (events,
+    // coordinates, magnitudes, timestamps) rather than Turkish narrative, "so both locales are
+    // indexable from day one". The reasoning is sound and the page does not implement it — it
+    // has zero `getTranslations` calls and forty-three lines of Turkish, headings and meta
+    // title included. `/en/earthquakes` was advertised as an English page and served a Turkish
+    // one. When the page is wired to `messages/en.json`'s `Earthquake` namespace the original
+    // argument applies again and this goes back to the default.
+    ...sitemapEntriesFor(() => "/deprem", now, 0.7, "trOnly"),
     ...sitemapEntriesFor(() => "/dunya/kita", now, 0.8, "trOnly"),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
+    // NINE ROUTES THAT WERE INDEXABLE AND UNADVERTISED.
+    //
+    // Each declares `"trOnly"` in its own `generateMetadata` — so each was crawlable, in the
+    // hreflang set, and reachable from two to four internal links — while this file did not list
+    // it. The asymmetry was invisible because `sitemap-surface-symmetry.test.ts` only walked
+    // sitemap-row → page, never page → sitemap; that direction is now covered there.
+    //
+    // The contradiction that makes the omission plainly unintentional rather than a ruling: the
+    // `/dunya/kita` hub and its seven children are the SAME shape — a `trOnly` hub over `trOnly`
+    // detail pages — and both tiers were published, immediately above.
+    ...sitemapEntriesFor(() => "/turkiye/bolge", now, 0.8, "trOnly"),
+    ...sitemapEntriesFor(() => "/deniz/marmara", now, 0.6, "trOnly"),
+    ...sitemapEntriesFor(() => "/deniz/ege", now, 0.6, "trOnly"),
+    ...sitemapEntriesFor(() => "/deniz/akdeniz", now, 0.6, "trOnly"),
+    ...sitemapEntriesFor(() => "/deniz/karadeniz", now, 0.6, "trOnly"),
+    ...sitemapEntriesFor(() => "/deniz/kiyi-tipleri", now, 0.6, "trOnly"),
+    ...sitemapEntriesFor(() => "/deprem/fay-hatlari", now, 0.6, "trOnly"),
+    ...sitemapEntriesFor(() => "/deprem/hazirlik", now, 0.6, "trOnly"),
   ];
 }
 
@@ -171,6 +195,31 @@ async function countryEntries(): Promise<MetadataRoute.Sitemap> {
   );
 }
 
+/**
+ * Geographic-region detail pages (7 regions).
+ *
+ * The mirror of {@link continentEntries}, and the ninth of the indexable routes this file was
+ * not advertising. `/dunya/kita/[slug]` and `/turkiye/bolge/[slug]` are the same shape — a
+ * `trOnly` hub over seven `trOnly` children, both built from a seven-item list — and only one of
+ * them was published.
+ *
+ * Fetched rather than read from `lib/game/region-slug.ts` so the rows track the same source the
+ * page's own `generateStaticParams` uses: a slug in the sitemap that `generateStaticParams` did
+ * not build is a 404 in the urlset, which is the §B6 6.8 blocker pointing the other way.
+ */
+async function regionEntries(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date();
+  const regions = await getRegionsResilient();
+  return regions.flatMap((region) =>
+    sitemapEntriesFor(
+      () => ({ pathname: "/turkiye/bolge/[slug]", params: { slug: region.slug } }),
+      now,
+      0.7,
+      "trOnly",
+    ),
+  );
+}
+
 /** Continents detail pages (7 continents). */
 function continentEntries(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -192,10 +241,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Per-hub builders concatenated into one flat urlset. Provinces, countries and books fetch
   // in parallel (independent hubs); a build-time api outage degrades each to empty per its
   // own resilience, never failing the sitemap.
-  const [provinces, countries, books] = await Promise.all([
+  const [provinces, countries, books, regions] = await Promise.all([
     provinceEntries(),
     countryEntries(),
     bookEntries(),
+    regionEntries(),
   ]);
-  return [...staticEntries(), ...provinces, ...countries, ...books, ...continentEntries()];
+  return [
+    ...staticEntries(),
+    ...provinces,
+    ...countries,
+    ...books,
+    ...regions,
+    ...continentEntries(),
+  ];
 }
