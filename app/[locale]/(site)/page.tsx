@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
 import {
-  getMarineLayersSafe,
   getMarineOverviewSafe,
   getMarinePointsSafe,
   MARINE_VALUES_REVALIDATE_SECONDS,
@@ -24,7 +23,7 @@ import {
 } from "@/lib/home/marine-summary";
 import { MARINE_VALUE_FRACTION_DIGITS } from "@/lib/marine/units";
 import { VintageLine } from "@/components/marine/vintage-line";
-import { MarineAttribution } from "@/components/marine/marine-attribution";
+import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { Button } from "@/components/ui/button";
@@ -77,14 +76,14 @@ export default async function V2HomePage({ params }: V2PageProps) {
   const format = await getFormatter();
 
   // Four parallel reads matching resilient architecture
-  const [provinces, countries, marinePoints, marineOverview, marineLayers] = await Promise.all([
+  // No layer catalogue read any more. It was fetched for one reason — `MarineAttribution`
+  // derives ECMWF's required copyright YEAR from the ingested cycle's künye — and that block
+  // now renders on `/hakkimizda`, which does the read itself.
+  const [provinces, countries, marinePoints, marineOverview] = await Promise.all([
     getMapSummaryResilient(),
     getCountryMapSummaryResilient(),
     getMarinePointsSafe(),
     getMarineOverviewSafe(),
-    // The catalogue, for `MarineAttribution` below: it is where the ECMWF copyright year is
-    // derived from, and there is no other way to state that year without inventing it.
-    getMarineLayersSafe(),
   ]);
 
   // NO `|| 81` and NO `|| 199`. PR #171 removed both of these expressions from `/turkiye` and
@@ -397,22 +396,22 @@ export default async function V2HomePage({ params }: V2PageProps) {
                   <VintageLine values={marine.values} />
                 </div>
 
-                {/* ECMWF + Copernicus Marine attribution, licence and educational-use notice —
-                    the SAME component and the SAME verbatim strings `/deniz`, the four basin
-                    pages and the 27 coastal province pages render.
+                {/* The marine safety disclaimer and the link to the licence text — the SAME
+                    component `/deniz`, the four basin pages and the 27 coastal province pages
+                    render.
 
-                    THIS PAGE OWED IT AND DID NOT CARRY IT. The four cards above publish each
-                    basin's median sea-surface temperature and wave height, which are
-                    CMEMS/ECMWF-derived values; the only credit on the page was the
-                    bibliography's `copernicus-marine` card, whose "legal quote" was a BROKEN
-                    second copy of the Copernicus Marine notice with a year the licence does not
-                    carry, inside a closed <details>.
+                    The four cards above publish each basin's median sea-surface temperature and
+                    wave height, which are CMEMS/ECMWF-derived values. ECMWF's and Copernicus
+                    Marine's required wording is published once, on `/hakkimizda`, reached from
+                    the link in this block (CC BY 4.0 §3(a)(2)); the sentence that must be beside
+                    the numbers rather than a click away — "eğitim amaçlıdır… can güvenliği
+                    kararlarında kullanılamaz" — is the body of the block itself.
 
                     GATED on `showMarineValues`, the same expression the cards themselves are
                     gated on — so the notice can neither go missing where a value appears nor
                     appear where none does. The `else` branch below renders an "on its way"
                     alert and no derived value, and owes nothing. */}
-                <MarineAttribution layers={marineLayers} headingId="home-marine-sources" />
+                <MarineDataNotice />
               </div>
             ) : (
               <Alert variant="info">

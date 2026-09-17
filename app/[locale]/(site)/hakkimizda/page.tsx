@@ -13,6 +13,9 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { H1, H2, Lede } from "@/components/patterns/typography";
+import { MarineAttribution } from "@/components/marine/marine-attribution";
+import { getMarineLayersSafe } from "@/lib/api/marine";
+import { MARINE_SOURCES_FRAGMENT } from "@/lib/marine/attribution-anchor";
 
 interface V2AboutPageProps {
   params: Promise<{ locale: Locale }>;
@@ -50,6 +53,26 @@ export async function generateMetadata({ params }: V2AboutPageProps): Promise<Me
  *    climate, marine and statistical sources; a heading promising them would be a
  *    completeness claim this section cannot honour.
  *
+ * THIS PAGE IS NOW THE CENTRAL ATTRIBUTION SURFACE FOR THE MARINE LICENCES. ECMWF Open Data is
+ * CC BY 4.0, and §3(a)(2) permits the required information to be carried by "a URI or hyperlink
+ * to a resource that includes" it; the owner took that option. So the full ECMWF and Copernicus
+ * Marine notices are published HERE, exactly once, and the seven surfaces that publish a derived
+ * value carry `MarineDataNotice` — the safety disclaimer plus a link to this section — instead of
+ * a second copy of the licence text. The licence blocks themselves are still
+ * `MarineAttribution`, reading the same single-sourced `Marine.attribution.*` keys: there is one
+ * copy of each verbatim string in the repository and that has not changed.
+ *
+ * The anchor `#veri-kaynaklari` is load-bearing in the licence sense — it is the hyperlink that
+ * DISCHARGES the attribution — so the fragment is the shared constant
+ * `MARINE_SOURCES_FRAGMENT`, not a string written out here, and
+ * `components/marine/marine-attribution-coverage.test.ts` checks that this page still renders it.
+ *
+ * The marine block is a SIBLING of the map/flag colophon rather than more bullets inside it, and
+ * deliberately so: rationale 3 above is that `dataHeading` names MAPS and FLAGS and nothing else
+ * because a heading may not promise more than its section carries. Marine sources under that
+ * heading would break exactly that rule, and broadening the heading would then promise the
+ * climate and statistical sources this page still does not list.
+ *
  * The V1 markup used `.wrap-long-tokens`, a one-declaration global utility added so the
  * repository address in the ODbL §4.6 offer could break at 320 px instead of widening the
  * document. T-032 PR4 deletes that class along with the rest of the V1 CSS, so the same job
@@ -61,6 +84,13 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
   setRequestLocale(locale);
   const t = await getTranslations("About");
   const tb = await getTranslations("Breadcrumb");
+
+  // The catalogue, for `MarineAttribution` below: it is where ECMWF's required copyright YEAR is
+  // derived from (the ingested cycle's own year — `lib/marine/attribution.ts`). `…Safe` returns
+  // `[]` when the API is unreachable or `MARINE_ENABLED` is off, and the component then omits the
+  // copyright LINE and still publishes the notice, which is the only correct behaviour: a year
+  // invented to fill a template is the one thing an attribution may not do.
+  const marineLayers = await getMarineLayersSafe();
 
   return (
     <>
@@ -112,39 +142,57 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
             </a>
           </section>
 
-          {/* The licence colophon. A muted surface rather than a card: it is a legal
+          {/* THE SITE'S DATA-SOURCE COLOPHON, and the target of the footer's source badges and
+                of every marine value surface's notice. `scroll-mt-*` so the sticky header does
+                not cover the heading the reader was sent to. */}
+          <div id={MARINE_SOURCES_FRAGMENT} className="scroll-mt-24 space-y-6">
+            {/* The licence colophon. A muted surface rather than a card: it is a legal
                 obligation the page carries, not a feature it advertises, and the visual
                 separation is what stops it reading as more editorial prose. */}
-          <section className="space-y-4 rounded-2xl border border-border bg-muted p-5 sm:p-6">
-            <H2 className="text-xl">{t("dataHeading")}</H2>
-            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-              {t("dataIntro")}
-            </p>
-            <ul role="list" className="space-y-2 text-sm wrap-break-word text-muted-foreground">
-              <li>{t("dataOsm")}</li>
-              <li>{t("dataOsmOffer")}</li>
-              <li>{t("dataNaturalEarth")}</li>
-              <li>
-                {t("dataJrcLabel")} <span lang="en">{t("dataJrcEnglish")}</span>.
-              </li>
-              <li>
-                {t("dataFlagsLabel")} <span lang="en">{t("dataFlagsCredit")}</span>.
-              </li>
-            </ul>
-            <p className="text-sm leading-relaxed wrap-break-word text-muted-foreground">
-              {t("dataJrcCitationIntro")}{" "}
-              <span lang="en">
-                {t("dataJrcCitation")}{" "}
-                <a
-                  href={t("dataJrcDoi")}
-                  rel="noopener noreferrer"
-                  className="text-primary-strong underline underline-offset-2"
-                >
-                  {t("dataJrcDoi")}
-                </a>
-              </span>
-            </p>
-          </section>
+            <section className="space-y-4 rounded-2xl border border-border bg-muted p-5 sm:p-6">
+              <H2 className="text-xl">{t("dataHeading")}</H2>
+              <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+                {t("dataIntro")}
+              </p>
+              <ul role="list" className="space-y-2 text-sm wrap-break-word text-muted-foreground">
+                <li>{t("dataOsm")}</li>
+                <li>{t("dataOsmOffer")}</li>
+                <li>{t("dataNaturalEarth")}</li>
+                <li>
+                  {t("dataJrcLabel")} <span lang="en">{t("dataJrcEnglish")}</span>.
+                </li>
+                <li>
+                  {t("dataFlagsLabel")} <span lang="en">{t("dataFlagsCredit")}</span>.
+                </li>
+              </ul>
+              <p className="text-sm leading-relaxed wrap-break-word text-muted-foreground">
+                {t("dataJrcCitationIntro")}{" "}
+                <span lang="en">
+                  {t("dataJrcCitation")}{" "}
+                  <a
+                    href={t("dataJrcDoi")}
+                    rel="noopener noreferrer"
+                    className="text-primary-strong underline underline-offset-2"
+                  >
+                    {t("dataJrcDoi")}
+                  </a>
+                </span>
+              </p>
+            </section>
+
+            {/* THE MARINE LICENCE TEXT, IN ITS ONE PLACE. Same component and the same
+                single-sourced `Marine.attribution.*` keys the value surfaces used to render
+                inline — only the number of render sites changed, from seven to one. Its
+                `lang="en"` blocks are what keep a Turkish-voice screen reader from reading the
+                English notices with Turkish phonetics (WCAG 3.1.2), exactly as the JRC citation
+                above does. The heading is this page's own, not `/deniz`'s "Kaynaklar ve
+                kullanım": it sits under a colophon that already names other sources. */}
+            <MarineAttribution
+              layers={marineLayers}
+              headingId="veri-kaynaklari-deniz"
+              heading={t("marineDataHeading")}
+            />
+          </div>
         </article>
       </div>
     </>

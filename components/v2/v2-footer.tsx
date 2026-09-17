@@ -2,7 +2,48 @@ import * as React from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { Map, Layers, BookOpen } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { badgeVariants } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { MARINE_SOURCES_ANCHOR } from "@/lib/marine/attribution-anchor";
+
+/**
+ * The source badges are the FOOTER HALF of the central-attribution decision.
+ *
+ * They used to be four `Badge` chips: institution names, styled like affiliations, pointing
+ * nowhere. Now that the ECMWF and Copernicus Marine licence notices are published once on
+ * `/hakkimizda` rather than repeated on every value surface, the hyperlink to that page is part
+ * of how the attribution is discharged (CC BY 4.0 §3(a)(2)) — so a chip that names a provider
+ * and goes nowhere is the one thing these may not be.
+ *
+ * `Button` has no `asChild` in this repo and `Badge` renders a `<span>`, so a link that looks
+ * like a badge is `<Link className={cn(badgeVariants({…}))}>` — the same pattern `CLAUDE.md`
+ * prescribes for `buttonVariants`. `badgeVariants` is exported from `components/ui/badge.tsx`
+ * for exactly this.
+ *
+ * ## Each chip points at a page that actually names it
+ *
+ * Making the chips links turned a cosmetic question into a factual one: a link is a claim about
+ * where the attribution is, so it has to land somewhere that carries it. Measured against the
+ * anchor section, which names OpenStreetMap/ODbL, Natural Earth, JRC Global Surface Water and —
+ * through `MarineAttribution`, reading `Marine.attribution.*` rather than a second copy —
+ * Copernicus Marine and ECMWF.
+ *
+ * - **TÜİK was on a chip and is on no page.** The population and area figures it supplies are
+ *   already sourced where they are shown, next to the number (`sourcesMessage`, the province and
+ *   hub pages). Naming it in the footer and linking to a page that does not mention it made the
+ *   chip a pointer to nothing; the chip now names what the destination carries.
+ * - **AFAD's notice is payload-driven** (`EarthquakeAttribution`, from the earthquake meta), so
+ *   it cannot live on a static About section without someone writing AFAD copy by hand — which
+ *   is inventing attribution, the thing this repo guards hardest. Its chip points at `/deprem`,
+ *   which renders the real notice and the real disclaimer.
+ */
+const SOURCE_BADGE = cn(
+  badgeVariants({ variant: "outline", size: "sm" }),
+  // `min-h-6`: the `sm` badge is 22px tall, which was fine for a `<span>` and is not fine for a
+  // TAP TARGET — WCAG 2.2 SC 2.5.8 asks for 24×24 CSS px. The chips keep the badge's look and
+  // gain the two pixels; `gap-y-2` keeps the rows 24px apart when they wrap at 320px.
+  "min-h-6 text-[10px] font-mono border-border transition-colors hover:border-primary/50 hover:text-primary",
+);
 
 export function V2Footer() {
   const currentYear = new Date().getFullYear();
@@ -39,20 +80,23 @@ export function V2Footer() {
               platformu.
             </p>
 
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <Badge variant="outline" size="sm" className="text-[10px] font-mono border-border">
-                TÜİK &amp; OSM
-              </Badge>
-              <Badge variant="outline" size="sm" className="text-[10px] font-mono border-border">
+            <nav
+              aria-label="Veri kaynakları"
+              className="flex flex-wrap items-center gap-x-1.5 gap-y-2 pt-1"
+            >
+              <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
+                OpenStreetMap
+              </Link>
+              <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
                 Copernicus
-              </Badge>
-              <Badge variant="outline" size="sm" className="text-[10px] font-mono border-border">
+              </Link>
+              <Link href={MARINE_SOURCES_ANCHOR} className={SOURCE_BADGE}>
                 ECMWF
-              </Badge>
-              <Badge variant="outline" size="sm" className="text-[10px] font-mono border-border">
+              </Link>
+              <Link href="/deprem" className={SOURCE_BADGE}>
                 AFAD
-              </Badge>
-            </div>
+              </Link>
+            </nav>
           </div>
 
           {/* Col 3: Atlas & Haritalar */}

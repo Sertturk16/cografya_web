@@ -16,6 +16,26 @@ describe("gatesGoverning", () => {
     ]);
   });
 
+  it("reads it when the branch body needs no parentheses", () => {
+    // `{signal && <Tag />}` is what Prettier writes as soon as the branch fits on one line, and
+    // it is the SAME gate as the parenthesised form. Before this case existed the probe skipped
+    // such a site and reported the gate of whatever `&& (` came earlier IN THE FILE — so a guard
+    // asking about one component silently answered about another. The province page's
+    // `{showMarine && <MarineDataNotice />}` reported the earthquake section's gate.
+    const source = [
+      "{provinceEarthquakes !== null && earthquakeMeta !== null && (",
+      "  <EarthquakeAttribution />",
+      ")}",
+      "{showMarine && <MarineDataNotice />}",
+    ].join("\n");
+
+    expect(gatesGoverning(source, "<MarineDataNotice")).toEqual([
+      expect.stringContaining("showMarine"),
+    ]);
+    expect(ungatedRenderSite(source, "<MarineDataNotice", "showMarine")).toBeNull();
+    expect(gatesGoverning(source, "<MarineDataNotice")[0]).not.toContain("earthquakeMeta");
+  });
+
   it("reads the condition above each branch of a chained ternary", () => {
     // The V2 shape that broke the old spelling-pinned guards: one component, two render sites,
     // each under a different arm of the same chain.

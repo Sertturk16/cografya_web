@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getFormatter, setRequestLocale } from "next-intl/server";
-import { getMarinePointsSafe, getMarineOverviewSafe, getMarineLayersSafe } from "@/lib/api/marine";
+import { getMarinePointsSafe, getMarineOverviewSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import type { Locale } from "@/i18n/routing";
 import type { MarineOverviewPoint } from "@/lib/api/types";
@@ -9,7 +9,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SeaBasinDetailView } from "@/components/v2/v2-sea-basin-detail-view";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
-import { MarineAttribution } from "@/components/marine/marine-attribution";
+import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
 import { SEA_BASINS_DETAIL } from "@/lib/marine/sea-basins-detail";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
@@ -38,11 +38,13 @@ export default async function V2KaradenizPage({ params }: PageProps) {
   const format = await getFormatter();
   const basinData = SEA_BASINS_DETAIL.karadeniz;
 
-  const [rawPoints, rawOverview, rawProvinces, rawLayers] = await Promise.all([
+  // No layer catalogue read any more. It was fetched for one reason — `MarineAttribution`
+  // derives ECMWF's required copyright YEAR from the ingested cycle's künye — and that block
+  // now renders on `/hakkimizda`, which does the read itself.
+  const [rawPoints, rawOverview, rawProvinces] = await Promise.all([
     getMarinePointsSafe(),
     getMarineOverviewSafe(),
     getProvincesResilient(),
-    getMarineLayersSafe(),
   ]);
 
   const provinceByPlate = new Map<string, { name: string; slug: string }>();
@@ -141,25 +143,28 @@ export default async function V2KaradenizPage({ params }: PageProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-14">
         <V2SeaBasinDetailView data={basinData} marinePoints={marinePoints} locale={locale} />
 
-        {/* ECMWF + Copernicus Marine attribution, licence and educational-use notice — the SAME
-            component and the SAME verbatim strings `/deniz` and the province pages render, never
-            a second copy (`components/marine/marine-attribution.tsx`).
+        {/* THE SAFETY DISCLAIMER, BESIDE THE VALUES — plus a link to the licence text.
 
-            THIS PAGE OWED IT AND DID NOT CARRY IT. The telemetry table above publishes
-            `sst`, `waveHeight` and `windSpeed10m` under a heading that names "CMEMS & ECMWF
-            Açık Deniz Modelleri", and the only credit on the page was the bibliography card
-            below — whose `cmems` and `ecmwf-marine` entries deliberately carry NO `legalQuote`,
-            because "the licence lives in the attribution block". The block was on no basin page,
-            so ECMWF's required notice was rendered nowhere in the product for these values.
+            The telemetry table above publishes `sst`, `waveHeight` and `windSpeed10m` under a
+            heading that names "CMEMS & ECMWF Açık Deniz Modelleri". The ECMWF and Copernicus
+            Marine LICENCE notices for those values are now published once, on `/hakkimizda`,
+            and reached from the link in this block — CC BY 4.0 §3(a)(2) allows the required
+            information to be carried by a hyperlink, and ECMWF Open Data is CC BY 4.0.
+
+            What is NOT a licence notice, and therefore did not move, is
+            `Marine.disclaimer.educationalOnly`: a reader looking at a sea temperature and a
+            wave height on this page has to see "not for maritime, navigational or
+            safety-of-life decisions" on this page. That sentence is the body of this block.
 
             UNGATED, like `/deniz`'s and unlike the province page's: the heading and the table
             describe the derived material on every render, including the render where the API
             published nothing and the cells read "—". The notice is owed to the claim as much as
             to the numbers. */}
-        <MarineAttribution layers={rawLayers} headingId="basin-marine-sources" />
+        <MarineDataNotice />
 
         {/* The bibliography — what this page is built on, in our words. It sits AFTER the
-            attribution block and never in place of it. */}
+            notice above and never in place of it, and its `cmems` / `ecmwf-marine` cards carry
+            no `legalQuote`: the licence text lives on `/hakkimizda`, linked from that notice. */}
         <V2SourcesSection scope="deniz" />
       </div>
     </>

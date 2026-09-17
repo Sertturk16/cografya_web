@@ -118,32 +118,53 @@ describe("Copernicus Marine attribution is verbatim", () => {
 });
 
 /**
- * THE NOTICE TRAVELS WITH THE MATERIAL (W2b).
+ * THE NOTICE REACHES THE READER OF THE MATERIAL.
  *
- * The byte pins above prove the strings are intact. They cannot prove the strings are on the
- * page that carries the values, and from W2b that page is 27 province pages as well as
- * `/deniz` — the exact obligation CC BY 4.0 and ECMWF's "shall be attached" wording impose
- * (→ DEC 2026-08-02c). Deleting the block from `/turkiye/[slug]` would leave every assertion
- * in this file green while publishing derived ECMWF and Copernicus material with no
- * attribution at all.
+ * The byte pins above prove the strings are intact. They cannot prove the strings REACH the
+ * reader of a value, and that is the half a copy pass cannot break but a refactor can.
+ *
+ * This block used to assert that `<MarineAttribution>` itself was on `/deniz` and on the
+ * province page, on the reading that "CC BY 4.0 and ECMWF's 'shall be attached' wording"
+ * required the notice to travel with the material. CC BY 4.0 §3(a)(2) says otherwise in terms:
+ * the conditions may be satisfied "by providing a URI or hyperlink to a resource that includes
+ * the required information". On the owner's decision the licence text is now published once, on
+ * `/hakkimizda`, and each value surface carries `MarineDataNotice` — the safety disclaimer,
+ * which is NOT a licence notice and did not move, plus the hyperlink that discharges the
+ * licence. So the assertions moved from one component name to the other; deleting the notice
+ * from `/turkiye/[slug]` would still leave every byte pin above green while publishing derived
+ * ECMWF and Copernicus material with nothing pointing at the licence, which is what these
+ * catch.
+ *
+ * `components/marine/marine-attribution-coverage.test.ts` owns the DERIVED half — which pages
+ * owe a notice at all, and that the licence text has exactly one home. This file keeps the two
+ * named surfaces the obligation was first written about, and the gating invariant, because the
+ * province page's gate is a property of that page and not of the page list.
  *
  * This repo's vitest environment is `node` and both pages are async server components, so
  * they cannot be rendered here; the honest guard at this level is the source symbol, scoped
- * to the two files the obligation is about.
+ * to the files the obligation is about.
  */
-describe("the attribution block is rendered on every surface that shows derived values", () => {
+describe("the notice is rendered on every surface that shows derived values", () => {
   const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
   const hub = read("../../app/[locale]/(site)/deniz/page.tsx");
   const province = read("../../app/[locale]/(site)/turkiye/[slug]/page.tsx");
+  const about = read("../../app/[locale]/(site)/hakkimizda/page.tsx");
   const section = read("../../components/marine/province-marine-section.tsx");
 
   it("renders it on the /deniz hub", () => {
-    expect(hub).toMatch(/<MarineAttribution\b/);
+    expect(hub).toMatch(/<MarineDataNotice\b/);
   });
 
   it("renders it on the province page", () => {
-    expect(province).toMatch(/<MarineAttribution\b/);
+    expect(province).toMatch(/<MarineDataNotice\b/);
+  });
+
+  it("publishes the full licence text on the page the notice links to", () => {
+    // The other end of the hyperlink. A link is only an attribution if what it points at
+    // carries the required information, so the central page's render site is asserted with the
+    // same force the value surfaces' used to be.
+    expect(about).toMatch(/<MarineAttribution\b/);
   });
 
   it("gates the province block on the SAME signal as the province's values", () => {
@@ -170,13 +191,13 @@ describe("the attribution block is rendered on every surface that shows derived 
     // Anti-vacuity: no render site means no gate to check, which would pass silently. The probe
     // itself is tested in `lib/testing/jsx-gate.test.ts`, including that it can say NO.
     expect(gatesGoverning(province, "<ProvinceMarineSection").length).toBeGreaterThan(0);
-    expect(gatesGoverning(province, "<MarineAttribution").length).toBeGreaterThan(0);
+    expect(gatesGoverning(province, "<MarineDataNotice").length).toBeGreaterThan(0);
 
     expect(ungatedRenderSite(province, "<ProvinceMarineSection", "showMarine")).toBeNull();
-    expect(ungatedRenderSite(province, "<MarineAttribution", "showMarine")).toBeNull();
+    expect(ungatedRenderSite(province, "<MarineDataNotice", "showMarine")).toBeNull();
   });
 
-  it("keeps the licence text out of the section component — one copy, two render sites", () => {
+  it("keeps the licence text out of the section component — one copy, one render site", () => {
     // A second copy of a verbatim licence is a breach waiting for the day someone edits one
     // of them. The section renders values; the notice stays in its own single-sourced block.
     // Asserted against the licence TEXT and against a second translation call site — not

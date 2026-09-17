@@ -141,7 +141,8 @@
     "dataJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
     "dataOsmOffer": "The provincial boundary layer of Türkiye is derived from OpenStreetMap; under ODbL 4.6 the derivative dataset and the script that produces it are offered in the project's open source repository: github.com/Sertturk16/cografya_web (data/tr-il-boundaries.geojson, scripts/generate-map-paths.mjs, lib/map/tr-provinces.generated.ts).",
     "dataFlagsLabel": "Most country flags:",
-    "dataFlagsCredit": "flag-icons — Copyright (c) 2013 Panayiotis Lipiridis, MIT License"
+    "dataFlagsCredit": "flag-icons — Copyright (c) 2013 Panayiotis Lipiridis, MIT License",
+    "marineDataHeading": "Marine data sources and licence notices"
   },
   "Turkiye": {
     "metaTitle": "Map of Türkiye — 81 Provinces",
@@ -309,7 +310,6 @@
     "sourcesPm25": "long-term PM2.5 ACAG ({version})",
     "backToMap": "Back to the map of Türkiye",
     "marineHeading": "Sea state off {name}",
-    "marineSourcesHeading": "Sea data: sources and use",
     "earthquakeHeading": "Recent earthquakes near {name}",
     "earthquakeEmptyState": "No earthquakes recorded near {name} in the last 7 days.",
     "earthquakeSourcesHeading": "Earthquake data: sources and use",
@@ -578,6 +578,10 @@
     "basinPointCount": "{count, plural, one {# point} other {# points}}",
     "disclaimer": {
       "educationalOnly": "The information on this page is for educational purposes only and must not be used for maritime, navigational or safety-of-life decisions. Official marine forecasts and warnings are published by the Turkish State Meteorological Service."
+    },
+    "notice": {
+      "label": "Marine data use notice",
+      "licenceLink": "Full Copernicus Marine and ECMWF licence notices: data sources and licences"
     },
     "attribution": {
       "ecmwfCopyright": "Copyright © {year} European Centre for Medium-Range Weather Forecasts (ECMWF).",

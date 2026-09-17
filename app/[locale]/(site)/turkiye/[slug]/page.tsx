@@ -6,7 +6,7 @@ import { ClimateSection } from "@/components/climate/climate-section";
 import { ProvinceEarthquakeSection } from "@/components/earthquake/province-earthquake-section";
 import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
 import { ProvinceMarineSection } from "@/components/marine/province-marine-section";
-import { MarineAttribution } from "@/components/marine/marine-attribution";
+import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { EarthquakeAttribution } from "@/components/earthquake/earthquake-attribution";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ProvinceLocatorMap } from "@/components/v2/v2-province-locator-map";
@@ -890,23 +890,20 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* ECMWF + Copernicus Marine attribution, licence and educational-use notice — the SAME
-            component and the SAME verbatim strings `/deniz` renders, never a second copy
-            (`components/marine/marine-attribution.tsx`). It travels with the derived values
-            because CC BY 4.0 and ECMWF's "shall be attached" wording require it to, and it is
-            gated on the same `showMarine` signal as the values themselves, so the two cannot
-            come apart in either direction.
+      {/* The marine safety disclaimer, beside this province's values, plus a link to the
+            licence text — the SAME component `/deniz`, the four basin pages and the home page
+            render (`components/marine/marine-data-notice.tsx`).
 
-            It carries its OWN heading rather than "Kaynaklar ve kullanım": the bibliography
-            below belongs to the province's own facts, and two identically titled sources
-            surfaces on one page would leave the reader guessing which licence covers what. */}
-      {showMarine && (
-        <MarineAttribution
-          layers={marineLayers}
-          headingId="province-marine-sources"
-          heading={t("marineSourcesHeading")}
-        />
-      )}
+            ECMWF's and Copernicus Marine's required wording no longer renders here: it is
+            published once, on `/hakkimizda`, and CC BY 4.0 §3(a)(2) lets a hyperlink carry the
+            required information. What could NOT be centralized is
+            `Marine.disclaimer.educationalOnly` — it is not a licence notice, and a reader
+            looking at this province's sea temperature has to read "can güvenliği kararlarında
+            kullanılamaz" on this page, not one click away. That sentence is this block.
+
+            Still gated on the same `showMarine` signal as the values themselves, so the two
+            cannot come apart in either direction. */}
+      {showMarine && <MarineDataNotice />}
 
       {/* AFAD's own required notice, from the PROVINCE payload's attributions — not the
             global meta's — because this section shows this province's events. The disclaimer

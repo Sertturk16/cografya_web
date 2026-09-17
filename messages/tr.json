@@ -141,7 +141,8 @@
     "dataJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
     "dataOsmOffer": "Türkiye il sınırları katmanı OpenStreetMap türevidir; ODbL 4.6 uyarınca türev veri kümesi ve onu üreten betik projenin açık kaynak deposunda sunulur: github.com/Sertturk16/cografya_web (data/tr-il-boundaries.geojson, scripts/generate-map-paths.mjs, lib/map/tr-provinces.generated.ts).",
     "dataFlagsLabel": "Ülke bayraklarının çoğu:",
-    "dataFlagsCredit": "flag-icons — Copyright (c) 2013 Panayiotis Lipiridis, MIT License"
+    "dataFlagsCredit": "flag-icons — Copyright (c) 2013 Panayiotis Lipiridis, MIT License",
+    "marineDataHeading": "Deniz verisi kaynakları ve lisans metinleri"
   },
   "Turkiye": {
     "metaTitle": "Türkiye Haritası — 81 İl",
@@ -309,7 +310,6 @@
     "sourcesPm25": "uzun dönem PM2.5 ACAG ({version})",
     "backToMap": "Türkiye haritasına dön",
     "marineHeading": "{name} açıklarında deniz durumu",
-    "marineSourcesHeading": "Deniz verisi: kaynaklar ve kullanım",
     "earthquakeHeading": "{name} yakınında son depremler",
     "earthquakeEmptyState": "{name} yakınında son 7 günde kaydedilmiş deprem yok.",
     "earthquakeSourcesHeading": "Deprem verisi: kaynaklar ve kullanım",
@@ -594,6 +594,10 @@
     "basinPointCount": "{count} nokta",
     "disclaimer": {
       "educationalOnly": "Bu sayfadaki bilgiler eğitim amaçlıdır; denizcilik, seyir veya can güvenliği kararlarında kullanılamaz. Resmî deniz durumu tahminleri ve uyarıları için Meteoroloji Genel Müdürlüğü'nün yayınları esas alınmalıdır."
+    },
+    "notice": {
+      "label": "Deniz verisi kullanım uyarısı",
+      "licenceLink": "Copernicus Marine ve ECMWF lisans metinlerinin tamamı: veri kaynakları ve lisanslar"
     },
     "attribution": {
       "ecmwfCopyright": "Copyright © {year} European Centre for Medium-Range Weather Forecasts (ECMWF).",
