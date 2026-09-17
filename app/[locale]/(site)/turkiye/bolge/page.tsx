@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2TurkeyRegions } from "@/components/v2/v2-turkey-regions";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -326,7 +327,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
 
       {/* HERO SECTION */}
       <header className="border-b border-border bg-gradient-to-b from-muted/30 via-background to-background py-10 sm:py-14">
-        <div className="container mx-auto px-4 max-w-7xl space-y-6">
+        <PageContainer space="band">
           {/* Breadcrumbs */}
           <nav
             aria-label="Breadcrumb"
@@ -463,7 +464,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-        </div>
+        </PageContainer>
       </header>
 
       {/* QUICKNAV BAR */}
@@ -471,7 +472,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         aria-label="Sayfa içi hızlı gezinme"
         className="sticky top-16 z-30 w-full border-b border-border bg-background/90 backdrop-blur-md transition-all shadow-2xs"
       >
-        <div className="container mx-auto px-4 max-w-7xl flex items-center gap-2 overflow-x-auto py-2.5 text-xs font-semibold scrollbar-none">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto py-2.5 text-xs font-semibold scrollbar-none">
           <a
             href="#bolgeler"
             className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"

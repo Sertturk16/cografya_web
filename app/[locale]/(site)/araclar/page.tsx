@@ -9,6 +9,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ToolsHub } from "@/components/v2/v2-tools-hub";
 import { V2GisMethodologyGuide } from "@/components/v2/v2-gis-methodology-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Compass, Home, ChevronRight } from "lucide-react";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
@@ -61,104 +62,97 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
         ]}
       />
 
-      <div>
-        {/* V2 Header */}
+      <V2LiveTicker />
 
-        {/* Live Telemetry Ticker */}
-        <V2LiveTicker />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14">
-          {/* Breadcrumb & Header Hero */}
-          <div className="space-y-4">
-            <nav
-              aria-label="Breadcrumb"
-              className="flex items-center gap-2 text-xs text-muted-foreground"
+      <PageContainer>
+        {/* Breadcrumb & Header Hero */}
+        <div className="space-y-4">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Link
+              href="/"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
             >
-              <Link
-                href="/"
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                <Home className="size-3.5" />
-                <span>Ana Sayfa</span>
-              </Link>
-              <ChevronRight className="size-3.5" />
-              <span className="text-foreground font-semibold">CBS Araçları</span>
-            </nav>
+              <Home className="size-3.5" />
+              <span>Ana Sayfa</span>
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <span className="text-foreground font-semibold">CBS Araçları</span>
+          </nav>
 
-            <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-              <div className="relative z-10 max-w-3xl space-y-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                    Coğrafi Bilgi Sistemleri
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    3&apos;ü 1 Arada Ölçüm Stüdyosu
-                  </Badge>
-                </div>
-
-                <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                  CBS Harita &amp; Jeodezik Ölçüm Laboratuvarı
-                </h1>
-
-                <V2EnWorkInProgressNotice locale={locale} />
-
-                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                  Harita üzerinde dilediğiniz noktaları işaretleyerek gerçek jeodezik mesafeyi,
-                  enlem/boylam koordinatlarını ve küresel çokgen yüzölçümünü WGS84 hassasiyetiyle
-                  anında hesaplayın.
-                </p>
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+            <div className="relative z-10 max-w-3xl space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
+                  Coğrafi Bilgi Sistemleri
+                </Badge>
+                <Badge variant="secondary" size="sm">
+                  3&apos;ü 1 Arada Ölçüm Stüdyosu
+                </Badge>
               </div>
 
-              {/* Metric Strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-                <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                    WGS84
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Küresel Elipsoid Modeli
-                  </span>
-                </div>
-                <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                    Haversine
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Büyük Daire Eğrilik Hesabı
-                  </span>
-                </div>
-                <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                    3 Birim
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    km², Hektar, Dönüm Çıktısı
-                  </span>
-                </div>
-                <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                    UTM + DMS
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Çift Projeksiyon Desteği
-                  </span>
-                </div>
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
+                CBS Harita &amp; Jeodezik Ölçüm Laboratuvarı
+              </h1>
+
+              <V2EnWorkInProgressNotice locale={locale} />
+
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                Harita üzerinde dilediğiniz noktaları işaretleyerek gerçek jeodezik mesafeyi,
+                enlem/boylam koordinatlarını ve küresel çokgen yüzölçümünü WGS84 hassasiyetiyle
+                anında hesaplayın.
+              </p>
+            </div>
+
+            {/* Metric Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  WGS84
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Küresel Elipsoid Modeli
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
+                  Haversine
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Büyük Daire Eğrilik Hesabı
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
+                  3 Birim
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  km², Hektar, Dönüm Çıktısı
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  UTM + DMS
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Çift Projeksiyon Desteği
+                </span>
               </div>
             </div>
           </div>
-
-          {/* SECTION 1: INTERACTIVE 3-IN-1 GIS WORKBENCH */}
-          <V2ToolsHub />
-
-          {/* SECTION 2: GIS & GEODESY METHODOLOGY GUIDE */}
-          <V2GisMethodologyGuide />
-
-          {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
-          <V2SourcesSection scope="araclar" />
         </div>
-      </div>
 
-      {/* Modern V2 Footer */}
+        {/* SECTION 1: INTERACTIVE 3-IN-1 GIS WORKBENCH */}
+        <V2ToolsHub />
+
+        {/* SECTION 2: GIS & GEODESY METHODOLOGY GUIDE */}
+        <V2GisMethodologyGuide />
+
+        {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
+        <V2SourcesSection scope="araclar" />
+      </PageContainer>
     </>
   );
 }

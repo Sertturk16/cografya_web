@@ -9,6 +9,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SeaBasinDetailView } from "@/components/v2/v2-sea-basin-detail-view";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { PageContainer } from "@/components/patterns/page-container";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
 import { SEA_BASINS_DETAIL } from "@/lib/marine/sea-basins-detail";
@@ -140,7 +141,7 @@ export default async function V2KaradenizPage({ params }: PageProps) {
 
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-14">
+      <PageContainer>
         <V2SeaBasinDetailView data={basinData} marinePoints={marinePoints} locale={locale} />
 
         {/* THE SAFETY DISCLAIMER, BESIDE THE VALUES — plus a link to the licence text.
@@ -166,7 +167,7 @@ export default async function V2KaradenizPage({ params }: PageProps) {
             notice above and never in place of it, and its `cmems` / `ecmwf-marine` cards carry
             no `legalQuote`: the licence text lives on `/hakkimizda`, linked from that notice. */}
         <V2SourcesSection scope="deniz" />
-      </div>
+      </PageContainer>
     </>
   );
 }

@@ -8,6 +8,7 @@ import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { readProfileForPage } from "@/lib/profile/profile.server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ProfileForm } from "@/components/v2/v2-profile-form";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ export default async function V2ProfilePage({ params }: V2ProfilePageProps) {
     <>
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-10">
+      <PageContainer space="tight">
         {/* Breadcrumb Navigation */}
         <nav
           aria-label="Breadcrumb"
@@ -108,7 +109,7 @@ export default async function V2ProfilePage({ params }: V2ProfilePageProps) {
             </div>
           )}
         </div>
-      </div>
+      </PageContainer>
     </>
   );
 }

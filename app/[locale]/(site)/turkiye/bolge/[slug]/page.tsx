@@ -5,6 +5,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { V2RegionLocatorMap } from "@/components/v2/v2-region-locator-map";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
@@ -413,7 +414,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
   const disasterProfile = REGION_DISASTER_PROFILES[region.region] ?? null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
+    <>
       <JsonLd
         schema={breadcrumbJsonLd([
           { name: "Ana Sayfa", path: "/" },
@@ -436,12 +437,12 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
       {/* HERO BANNER SECTION */}
       <section
-        className={`relative border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-12 overflow-hidden`}
+        className={`relative isolate border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-12 overflow-hidden`}
       >
         {/* Glow backdrop */}
-        <div className="absolute top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="container mx-auto px-4 max-w-7xl relative z-10 space-y-6">
+        <PageContainer space="band">
           {/* Breadcrumb Bar */}
           <nav
             aria-label="Breadcrumb"
@@ -580,7 +581,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-        </div>
+        </PageContainer>
       </section>
 
       {/* QUICKNAV / JUMP NAVIGATION BAR (SCROLLBAR HIDDEN) */}
@@ -588,7 +589,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         aria-label="Bölüm İndeksi"
         className="sticky top-14 z-30 bg-background/90 backdrop-blur-md border-b border-border py-2.5 overflow-x-auto scrollbar-none"
       >
-        <div className="container mx-auto px-4 max-w-7xl flex items-center gap-2 text-xs whitespace-nowrap">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs whitespace-nowrap">
           <span className="text-muted-foreground font-semibold flex items-center gap-1 shrink-0 mr-1">
             <Layers className="size-3.5" /> Bölümler:
           </span>
@@ -1539,6 +1540,6 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           }
         />
       </div>
-    </div>
+    </>
   );
 }

@@ -11,6 +11,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2EarthquakeExplorer, type ProvinceMeta } from "@/components/v2/v2-earthquake-explorer";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -93,12 +94,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
         ]}
       />
 
-      {/* V2 Header */}
-
-      {/* Live Telemetry Ticker */}
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-14">
+      <PageContainer>
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
           <nav
@@ -351,8 +349,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
         {/* `omit` the preparedness card: "afet çantası", "Çök-Kapan-Tutun" and the 72-hour
             protocol are `/deprem/hazirlik`'s content, and AKUT supplied nothing to this page. */}
         <V2SourcesSection scope="deprem" omit={["afad-hazirlik"]} />
-      </div>
-      {/* V2 Footer */}
+      </PageContainer>
     </>
   );
 }

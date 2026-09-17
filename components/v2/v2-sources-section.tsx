@@ -607,7 +607,12 @@ export function V2SourcesSection({
       {/* Official Data Section */}
       {officialSources.length > 0 && (
         <div className="space-y-3.5">
-          <div className="flex items-center gap-2">
+          {/* `flex-wrap`, matching the regional-methodology row above (line 586): without it,
+              this badge (`shrink-0`) claims its full width at 320px and leaves the sibling span
+              too little to hold even one word, which then overflows the row instead of wrapping
+              — the row itself needs to drop the span to its own line, not just let the text wrap
+              inside an impossibly narrow box. */}
+          <div className="flex flex-wrap items-center gap-2">
             <Badge
               variant="outline"
               size="sm"
@@ -632,7 +637,11 @@ export function V2SourcesSection({
       {/* Academic / Pedagogical Section */}
       {academicSources.length > 0 && (
         <div className="space-y-3.5 pt-4 border-t border-border/60">
-          <div className="flex items-center gap-2">
+          {/* `flex-wrap`, same reason as the official-data row above: the badge is `shrink-0`
+              and longer here ("Pedagojik ve Akademik Referanslar"), which left the sibling span
+              a 54px-wide sliver at 320px — too narrow for one word, so the text overflowed the
+              row instead of dropping to its own line. */}
+          <div className="flex flex-wrap items-center gap-2">
             <Badge
               variant="outline"
               size="sm"

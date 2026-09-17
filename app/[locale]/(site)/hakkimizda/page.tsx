@@ -13,6 +13,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { H1, H2, Lede } from "@/components/patterns/typography";
+import { PageContainer } from "@/components/patterns/page-container";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { getMarineLayersSafe } from "@/lib/api/marine";
 import { MARINE_SOURCES_FRAGMENT } from "@/lib/marine/attribution-anchor";
@@ -93,108 +94,106 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
   const marineLayers = await getMarineLayersSafe();
 
   return (
-    <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20">
-        <Breadcrumb className="text-xs">
-          <BreadcrumbList className="text-xs">
-            <BreadcrumbItem>
-              <BreadcrumbLink render={<Link href="/" />}>
-                <Home className="size-3.5" aria-hidden="true" />
-                <span>{tb("home")}</span>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="font-semibold">{t("heading")}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+    <PageContainer space="tight">
+      <Breadcrumb className="text-xs">
+        <BreadcrumbList className="text-xs">
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link href="/" />}>
+              <Home className="size-3.5" aria-hidden="true" />
+              <span>{tb("home")}</span>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-semibold">{t("heading")}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
-        <article className="mt-8 max-w-3xl space-y-12">
-          <header className="space-y-4">
-            <H1>{t("heading")}</H1>
-            <Lede>{t("body1")}</Lede>
-            <p className="max-w-prose text-muted-foreground">{t("sourcing")}</p>
-          </header>
+      <article className="mt-8 max-w-3xl space-y-12">
+        <header className="space-y-4">
+          <H1>{t("heading")}</H1>
+          <Lede>{t("body1")}</Lede>
+          <p className="max-w-prose text-muted-foreground">{t("sourcing")}</p>
+        </header>
 
-          <section className="space-y-4">
-            <H2>{t("aboutHeading")}</H2>
-            <p className="max-w-prose leading-relaxed">{t("aboutBody1")}</p>
-            <p className="max-w-prose leading-relaxed">{t("aboutBody2")}</p>
-            <p className="max-w-prose leading-relaxed">{t("aboutCurriculum")}</p>
+        <section className="space-y-4">
+          <H2>{t("aboutHeading")}</H2>
+          <p className="max-w-prose leading-relaxed">{t("aboutBody1")}</p>
+          <p className="max-w-prose leading-relaxed">{t("aboutBody2")}</p>
+          <p className="max-w-prose leading-relaxed">{t("aboutCurriculum")}</p>
+        </section>
+
+        <section className="space-y-4">
+          <H2>{t("contactHeading")}</H2>
+          <p className="max-w-prose leading-relaxed">{t("contactBody")}</p>
+          {/* A real `mailto:`, so it stays a plain anchor rather than a routed Link. It
+              is the page's one action, which is why it gets a surface of its own. */}
+          {/* `max-w-full` plus a breakable span, not `wrap-break-word` on the anchor.
+              An `inline-flex` box sizes to its content and does not shrink, so the
+              overflow-wrap never got a chance: at 320px this address pushed the document
+              to 318px against a 305px viewport. The span is what is allowed to break. */}
+          <a
+            href="mailto:info.cografyagurmesi@gmail.com"
+            className="inline-flex max-w-full items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-muted"
+          >
+            <Mail className="size-4 shrink-0" aria-hidden="true" />
+            <span className="min-w-0 break-all">info.cografyagurmesi@gmail.com</span>
+          </a>
+        </section>
+
+        {/* THE SITE'S DATA-SOURCE COLOPHON, and the target of the footer's source badges and
+            of every marine value surface's notice. `scroll-mt-*` so the sticky header does
+            not cover the heading the reader was sent to. */}
+        <div id={MARINE_SOURCES_FRAGMENT} className="scroll-mt-24 space-y-6">
+          {/* The licence colophon. A muted surface rather than a card: it is a legal
+              obligation the page carries, not a feature it advertises, and the visual
+              separation is what stops it reading as more editorial prose. */}
+          <section className="space-y-4 rounded-2xl border border-border bg-muted p-5 sm:p-6">
+            <H2 className="text-xl">{t("dataHeading")}</H2>
+            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+              {t("dataIntro")}
+            </p>
+            <ul role="list" className="space-y-2 text-sm wrap-break-word text-muted-foreground">
+              <li>{t("dataOsm")}</li>
+              <li>{t("dataOsmOffer")}</li>
+              <li>{t("dataNaturalEarth")}</li>
+              <li>
+                {t("dataJrcLabel")} <span lang="en">{t("dataJrcEnglish")}</span>.
+              </li>
+              <li>
+                {t("dataFlagsLabel")} <span lang="en">{t("dataFlagsCredit")}</span>.
+              </li>
+            </ul>
+            <p className="text-sm leading-relaxed wrap-break-word text-muted-foreground">
+              {t("dataJrcCitationIntro")}{" "}
+              <span lang="en">
+                {t("dataJrcCitation")}{" "}
+                <a
+                  href={t("dataJrcDoi")}
+                  rel="noopener noreferrer"
+                  className="text-primary-strong underline underline-offset-2"
+                >
+                  {t("dataJrcDoi")}
+                </a>
+              </span>
+            </p>
           </section>
 
-          <section className="space-y-4">
-            <H2>{t("contactHeading")}</H2>
-            <p className="max-w-prose leading-relaxed">{t("contactBody")}</p>
-            {/* A real `mailto:`, so it stays a plain anchor rather than a routed Link. It
-                  is the page's one action, which is why it gets a surface of its own. */}
-            {/* `max-w-full` plus a breakable span, not `wrap-break-word` on the anchor.
-                  An `inline-flex` box sizes to its content and does not shrink, so the
-                  overflow-wrap never got a chance: at 320px this address pushed the document
-                  to 318px against a 305px viewport. The span is what is allowed to break. */}
-            <a
-              href="mailto:info.cografyagurmesi@gmail.com"
-              className="inline-flex max-w-full items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-muted"
-            >
-              <Mail className="size-4 shrink-0" aria-hidden="true" />
-              <span className="min-w-0 break-all">info.cografyagurmesi@gmail.com</span>
-            </a>
-          </section>
-
-          {/* THE SITE'S DATA-SOURCE COLOPHON, and the target of the footer's source badges and
-                of every marine value surface's notice. `scroll-mt-*` so the sticky header does
-                not cover the heading the reader was sent to. */}
-          <div id={MARINE_SOURCES_FRAGMENT} className="scroll-mt-24 space-y-6">
-            {/* The licence colophon. A muted surface rather than a card: it is a legal
-                obligation the page carries, not a feature it advertises, and the visual
-                separation is what stops it reading as more editorial prose. */}
-            <section className="space-y-4 rounded-2xl border border-border bg-muted p-5 sm:p-6">
-              <H2 className="text-xl">{t("dataHeading")}</H2>
-              <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-                {t("dataIntro")}
-              </p>
-              <ul role="list" className="space-y-2 text-sm wrap-break-word text-muted-foreground">
-                <li>{t("dataOsm")}</li>
-                <li>{t("dataOsmOffer")}</li>
-                <li>{t("dataNaturalEarth")}</li>
-                <li>
-                  {t("dataJrcLabel")} <span lang="en">{t("dataJrcEnglish")}</span>.
-                </li>
-                <li>
-                  {t("dataFlagsLabel")} <span lang="en">{t("dataFlagsCredit")}</span>.
-                </li>
-              </ul>
-              <p className="text-sm leading-relaxed wrap-break-word text-muted-foreground">
-                {t("dataJrcCitationIntro")}{" "}
-                <span lang="en">
-                  {t("dataJrcCitation")}{" "}
-                  <a
-                    href={t("dataJrcDoi")}
-                    rel="noopener noreferrer"
-                    className="text-primary-strong underline underline-offset-2"
-                  >
-                    {t("dataJrcDoi")}
-                  </a>
-                </span>
-              </p>
-            </section>
-
-            {/* THE MARINE LICENCE TEXT, IN ITS ONE PLACE. Same component and the same
-                single-sourced `Marine.attribution.*` keys the value surfaces used to render
-                inline — only the number of render sites changed, from seven to one. Its
-                `lang="en"` blocks are what keep a Turkish-voice screen reader from reading the
-                English notices with Turkish phonetics (WCAG 3.1.2), exactly as the JRC citation
-                above does. The heading is this page's own, not `/deniz`'s "Kaynaklar ve
-                kullanım": it sits under a colophon that already names other sources. */}
-            <MarineAttribution
-              layers={marineLayers}
-              headingId="veri-kaynaklari-deniz"
-              heading={t("marineDataHeading")}
-            />
-          </div>
-        </article>
-      </div>
-    </>
+          {/* THE MARINE LICENCE TEXT, IN ITS ONE PLACE. Same component and the same
+              single-sourced `Marine.attribution.*` keys the value surfaces used to render
+              inline — only the number of render sites changed, from seven to one. Its
+              `lang="en"` blocks are what keep a Turkish-voice screen reader from reading the
+              English notices with Turkish phonetics (WCAG 3.1.2), exactly as the JRC citation
+              above does. The heading is this page's own, not `/deniz`'s "Kaynaklar ve
+              kullanım": it sits under a colophon that already names other sources. */}
+          <MarineAttribution
+            layers={marineLayers}
+            headingId="veri-kaynaklari-deniz"
+            heading={t("marineDataHeading")}
+          />
+        </div>
+      </article>
+    </PageContainer>
   );
 }

@@ -10,6 +10,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2BooksHub } from "@/components/v2/v2-books-hub";
 import { V2StudyStrategyGuide } from "@/components/v2/v2-study-strategy-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Home, ChevronRight } from "lucide-react";
 
@@ -94,10 +95,9 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
         ]}
       />
 
-      {/* V2 Header & Telemetry */}
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-12">
+      <PageContainer>
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
           <nav
@@ -169,8 +169,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
 
         {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
         <V2SourcesSection scope="kitaplar" />
-      </div>
-      {/* Modern V2 Footer */}
+      </PageContainer>
     </>
   );
 }

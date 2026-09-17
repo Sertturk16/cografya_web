@@ -14,6 +14,7 @@ import { V2MarineOceanographyGuide } from "@/components/v2/v2-marine-oceanograph
 import { V2MarineLayerCatalogue } from "@/components/v2/v2-marine-layer-catalogue";
 import { V2MarineFaqAccordion } from "@/components/v2/v2-marine-faq-accordion";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { PageContainer } from "@/components/patterns/page-container";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -157,12 +158,9 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         ]}
       />
 
-      {/* V2 Header */}
-
-      {/* Live Telemetry Ticker */}
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-16">
+      <PageContainer space="loose">
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
           <nav
@@ -309,8 +307,7 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         {/* SECTION 7: SOURCES (KAYNAKÇA) — the bibliography, in our words. It sits alongside the
             notice above and never in place of it. */}
         <V2SourcesSection scope="deniz" />
-      </div>
-      {/* V2 Footer */}
+      </PageContainer>
     </>
   );
 }

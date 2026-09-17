@@ -6,6 +6,7 @@ import { breadcrumbJsonLd, learningResourceJsonLd, JsonLd } from "@/lib/seo/json
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -69,7 +70,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
 
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-12">
+      <PageContainer>
         {/* Breadcrumb & Hero */}
         <div className="space-y-4">
           <nav
@@ -372,7 +373,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             it owes one (see `components/marine/marine-attribution-coverage.test.ts`). Answering
             it here and nowhere else would split one decision across 33 pages. */}
         <V2SourcesSection scope="deprem" omit={["afad-hazirlik"]} />
-      </div>
+      </PageContainer>
     </>
   );
 }

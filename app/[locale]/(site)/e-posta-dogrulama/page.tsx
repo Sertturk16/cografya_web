@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2VerifyEmailCard } from "@/components/v2/v2-verify-email-card";
+import { PageContainer } from "@/components/patterns/page-container";
 
 interface V2VerifyEmailPageProps {
   params: Promise<{ locale: Locale }>;
@@ -39,7 +40,7 @@ export default async function V2VerifyEmailPage({ params }: V2VerifyEmailPagePro
     <>
       <V2LiveTicker />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20 space-y-14">
+      <PageContainer>
         <Breadcrumb className="text-xs">
           <BreadcrumbList className="text-xs">
             <BreadcrumbItem>
@@ -64,7 +65,7 @@ export default async function V2VerifyEmailPage({ params }: V2VerifyEmailPagePro
             <V2VerifyEmailCard locale={locale} />
           </div>
         </div>
-      </div>
+      </PageContainer>
     </>
   );
 }

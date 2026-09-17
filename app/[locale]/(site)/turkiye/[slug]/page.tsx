@@ -11,6 +11,7 @@ import { EarthquakeAttribution } from "@/components/earthquake/earthquake-attrib
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ProvinceLocatorMap } from "@/components/v2/v2-province-locator-map";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
+import { PageContainer } from "@/components/patterns/page-container";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -331,7 +332,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
     headingName(locale, name, PROVINCE_HEADING_CASE[slot]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
+    <>
       <JsonLd
         schema={administrativeAreaJsonLd({
           name,
@@ -347,12 +348,12 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
       {/* HERO BANNER SECTION */}
       <section
-        className={`relative border-b border-border bg-gradient-to-b ${regionTheme.gradient} pt-8 pb-12 overflow-hidden`}
+        className={`relative isolate border-b border-border bg-gradient-to-b ${regionTheme.gradient} pt-8 pb-12 overflow-hidden`}
       >
         {/* Glow backdrop */}
-        <div className="absolute top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="container mx-auto px-4 max-w-7xl relative z-10 space-y-6">
+        <PageContainer space="band">
           {/* Breadcrumb Bar */}
           <nav
             aria-label="Breadcrumb"
@@ -519,7 +520,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-        </div>
+        </PageContainer>
       </section>
 
       {/* BODY CONTENT CONTAINER */}
@@ -939,6 +940,6 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
         include={showMarine ? ["cmems", "ecmwf-marine"] : []}
         omit={[...(pm25Annual ? [] : ["acag-pm25"]), ...(climateSeries ? [] : ["era5"])]}
       />
-    </div>
+    </>
   );
 }

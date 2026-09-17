@@ -57,7 +57,16 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
     slug: "duzen",
     title: "Düzen",
     blurb: "Kartlar, katmanlar, sekmeler ve gezinme.",
-    components: ["card", "dialog", "sheet", "tabs", "accordion", "breadcrumb", "badge"],
+    components: [
+      "card",
+      "dialog",
+      "sheet",
+      "tabs",
+      "accordion",
+      "breadcrumb",
+      "badge",
+      "page-container",
+    ],
   },
   {
     slug: "harita",

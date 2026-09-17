@@ -5,6 +5,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
 import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { LocatorMap } from "@/components/map/locator-map";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -274,7 +275,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
     !(country.neighborCount > 0 && neighbors.length === 0);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
+    <>
       <JsonLd
         schema={countryJsonLd({
           name,
@@ -291,14 +292,14 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
       {/* HERO BANNER SECTION */}
       <section
-        className={`relative border-b border-border bg-gradient-to-b ${continentTheme.gradient} pt-8 pb-12 overflow-hidden`}
+        className={`relative isolate border-b border-border bg-gradient-to-b ${continentTheme.gradient} pt-8 pb-12 overflow-hidden`}
       >
         {/* Glow backdrop with continent accent */}
         <div
-          className={`absolute top-0 right-1/4 size-96 ${continentTheme.glowColor} rounded-full blur-3xl pointer-events-none`}
+          className={`absolute -z-10 top-0 right-1/4 size-96 ${continentTheme.glowColor} rounded-full blur-3xl pointer-events-none`}
         />
 
-        <div className="container mx-auto px-4 max-w-7xl relative z-10 space-y-6">
+        <PageContainer space="band">
           {/* Breadcrumb Bar */}
           <nav
             aria-label="Breadcrumb"
@@ -533,7 +534,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-        </div>
+        </PageContainer>
       </section>
 
       {/* QUICKNAV / JUMP NAVIGATION BAR (STICKY, SCROLLBAR HIDDEN) */}
@@ -541,7 +542,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
         aria-label={t("sectionNavAriaLabel")}
         className="sticky top-14 z-30 bg-background/90 backdrop-blur-md border-b border-border py-2.5 overflow-x-auto scrollbar-none"
       >
-        <div className="container mx-auto px-4 max-w-7xl flex items-center gap-2 text-xs whitespace-nowrap">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs whitespace-nowrap">
           <span className="text-muted-foreground font-semibold flex items-center gap-1 shrink-0 mr-1">
             <Layers className="size-3.5" /> {t("sectionNavLabel")}
           </span>
@@ -1216,6 +1217,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
           less precisely. The "Kaynakça" chip is gone from the section nav with the anchor it
           pointed at — a nav entry for a section that does not exist is a broken link, and there
           is no honest replacement target: the credits are now where the numbers are. */}
-    </div>
+    </>
   );
 }
