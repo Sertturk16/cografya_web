@@ -19,7 +19,9 @@ export function Specimen({ name, description, portals, children }: SpecimenProps
   return (
     <section className="scroll-mt-24 space-y-3" id={id}>
       <div className="space-y-1">
-        <h3 className="font-heading text-lg font-bold text-foreground">{name}</h3>
+        {/* `h2`, not `h3`: the category page carries the only `h1` and every specimen is its
+            direct child, so h3 left a gap in the outline for no reason. */}
+        <h2 className="font-heading text-lg font-bold text-foreground">{name}</h2>
         {description !== undefined ? (
           <p className="max-w-prose text-sm text-muted-foreground">{description}</p>
         ) : null}

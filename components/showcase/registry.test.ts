@@ -117,3 +117,49 @@ describe("showcase coverage", () => {
     },
   );
 });
+
+/**
+ * The showcase's own page-level guarantees.
+ *
+ * Both are cheap and both were wrong: eight routes shared one generic `<title>`, in a tool
+ * whose whole purpose is comparing things across tabs; and the `noindex` came only from the
+ * parent layout, which is fragile in one specific way — T-032 PR3 removes the V2 layout's
+ * blanket `noindex` and replaces it with "a route that must stay out of the index carries its
+ * own `surface: noindex`". Internal tooling is not public content.
+ */
+describe("showcase routes", () => {
+  const page = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8");
+
+  const INDEX = "../../app/[locale]/v2/design-system/page.tsx";
+  const CATEGORY = "../../app/[locale]/v2/design-system/[category]/page.tsx";
+
+  it("positive control — both page files were read", () => {
+    expect(page(INDEX)).toContain("DesignSystemIndexPage");
+    expect(page(CATEGORY)).toContain("DesignSystemCategoryPage");
+  });
+
+  it.each([INDEX, CATEGORY])("%s declares its own noindex surface", (rel) => {
+    expect(page(rel)).toContain('surface: "noindex"');
+  });
+
+  it("the category title is derived from the registry, not hand-maintained", () => {
+    expect(page(CATEGORY)).toContain("category.title");
+  });
+
+  it("each route builds a title of its own", () => {
+    for (const rel of [INDEX, CATEGORY]) {
+      expect(page(rel)).toContain("generateMetadata");
+      expect(page(rel)).toContain("Terra tasarım sistemi");
+    }
+  });
+
+  it("the specimen heading does not skip a level below the page h1", () => {
+    // The category page carries the only h1 and every specimen is its direct child.
+    const specimen = readFileSync(
+      fileURLToPath(new URL("./specimen.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(specimen).toContain("<h2");
+    expect(specimen).not.toMatch(/<h[3-6]\b/);
+  });
+});

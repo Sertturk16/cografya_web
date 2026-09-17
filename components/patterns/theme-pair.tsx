@@ -25,8 +25,25 @@ interface ThemePairProps {
  * The mechanism is ordinary CSS custom-property cascade, plus Tailwind's
  * `@custom-variant dark (&:is(.dark *))` for the dark half. No second page, no iframe.
  *
- * Each panel paints `bg-background`/`text-foreground` itself: those normally come from
- * `body`, which this wrapper is not.
+ * Each panel paints its own surface and `text-foreground`: those normally come from `body`,
+ * which this wrapper is not.
+ *
+ * ## Why the panels are `bg-card` and not `bg-background`
+ *
+ * They used to paint `bg-background` — the literal page colour — which meant that whichever
+ * panel matched the current theme had no visible boundary at all: its fill equalled the page
+ * behind it, and the frame was `--border` at 1.37:1. On a light page the "Aydinlik" panel
+ * dissolved; on a dark page the "Karanlik" one did. A comparison instrument whose frames are
+ * invisible is showing the reader one specimen, not two.
+ *
+ * `bg-card` is the more honest backdrop — most V2 surfaces sit on a card rather than directly
+ * on the page — but measurement says it is not the fix on its own: light mode's `--card` is
+ * #ffffff against a #fbf8f3 page, which is 1.06:1. The fill cannot carry the boundary, so the
+ * FRAME does. `--muted-foreground` is solid rather than an alpha, for the reason the `.dark`
+ * block records about `--border`: a translucent line picks up whatever sits behind it and so
+ * draws differently on the two panels, which is the one thing a comparison instrument must
+ * not do. It is the same token, chosen for the same "make this shape visible" reason, as the
+ * legend swatch outline.
  */
 export function ThemePair({ children, portals = false, className }: ThemePairProps) {
   return (
@@ -36,7 +53,7 @@ export function ThemePair({ children, portals = false, className }: ThemePairPro
           <figcaption className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             Aydınlık
           </figcaption>
-          <div className="light rounded-xl border border-border bg-background p-5 text-foreground">
+          <div className="light rounded-xl border border-muted-foreground bg-card p-5 text-foreground">
             {children}
           </div>
         </figure>
@@ -45,7 +62,7 @@ export function ThemePair({ children, portals = false, className }: ThemePairPro
           <figcaption className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             Karanlık
           </figcaption>
-          <div className="dark rounded-xl border border-border bg-background p-5 text-foreground">
+          <div className="dark rounded-xl border border-muted-foreground bg-card p-5 text-foreground">
             {children}
           </div>
         </figure>
