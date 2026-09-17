@@ -18,7 +18,8 @@ Read before writing a component, a test, or a commit.
 ## Building a V2 page
 
 1. Add TR + EN entries to `pathnames` in `i18n/routing.ts`.
-2. `app/[locale]/v2/<route>/page.tsx`: server component, `setRequestLocale(locale)`,
+2. `app/[locale]/(site)/<route>/page.tsx` — or `(play)/` for a fullscreen game screen;
+   the group decides which chrome the page gets. Server component, `setRequestLocale(locale)`,
    `generateMetadata` via `buildMetadata()`, data via `apiGet` or a `lib/<domain>` loader,
    `notFound()` on unknown slug.
 3. Presentational pieces in `components/v2/v2-<name>.tsx`; interactive parts as small

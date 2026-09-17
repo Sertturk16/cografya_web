@@ -4,24 +4,32 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
 
 ## Routing
 
-- No root `app/layout.tsx`. `app/[locale]/layout.tsx` renders `<html>`/`<body>` and is the
-  root layout. Consequence: a URL that matches no segment falls to Next's unstyled 404, not
-  `app/[locale]/not-found.tsx`. Only `/araclar/[...rest]` has a catch-all to fix that.
-- No route groups. Unlocalized: `app/api/**` (BFF), `app/flags/[flag]`, `app/maps/*.svg`,
-  `app/llms.txt`, `robots.ts`, `sitemap.ts`, `manifest.ts`.
-- **V1** (`/`, `/turkiye`, `/dunya`, `/deniz`, `/deprem`, `/oyun`, `/kitaplar`, `/araclar`,
-  auth pages): CSS Modules + global `.btn`/`.card` classes, `components/site-*`. Frozen.
-- **V2** (`app/[locale]/v2/**`, 33 pages): mirrors V1 plus `profil`, `hesabim`, sea basins,
-  continents. Tailwind + shadcn. `v2/layout.tsx` sets `robots { index: false }` and wraps
-  in `<div class="v2-app">`; a CSS rule `body:has(.v2-app) > header, > footer { display:none }`
-  hides V1 chrome, which still renders. Keep the `.v2-app` wrapper.
-- `app/[locale]/design-system/page.tsx` is a 1200-line client component gallery.
+- No root `app/layout.tsx`. `app/[locale]/layout.tsx` is the root layout and is now only the
+  document shell: `<html>`/`<body>`, `ThemeProvider`, `NextIntlClientProvider`, `<Toaster />`.
+  Consequence: a URL that matches no segment falls to Next's unstyled 404, so `app/not-found.tsx`
+  exists for that case.
+- **Two route groups, and they are load-bearing.** `(site)` holds the 34 reading surfaces and its
+  layout owns the chrome — skip link, `V2Header`, ONE `<main id="main-content">`, `V2Footer`,
+  `V2AuthDialog`. `(play)` holds the three fullscreen game screens and gives them the bare
+  minimum. A page gets the chrome by WHERE IT LIVES, never by importing it: before T-032 PR3,
+  `V2Header` was copied into 37 pages, two had lost the footer, and 24 nested a second `<main>`
+  inside the root layout's. `components/v2/v2-a11y-navigation-polish.test.ts` walks the tree and
+  fails if any page carries its own `id="main-content"`.
+- `app/[locale]/design-system/**` is in NEITHER group: internal tooling that brings its own
+  full-page chrome, and it carries its own `noindex` (both in `buildMetadata` and the layout's
+  `robots`) — the blanket `/v2` de-indexing that used to cover it is gone.
+- Unlocalized: `app/api/**` (BFF), `app/flags/[flag]`, `app/maps/*.svg`, `app/llms.txt`,
+  `robots.ts`, `sitemap.ts`, `manifest.ts`.
+- **V1 IS DELETED** (T-032). There is no `/v2` prefix, no `.v2-app` wrapper and no chrome
+  suppression rule. Eleven `*.module.css` files remain, each with live consumers; they are not
+  frozen — see `CLAUDE.md` on why "do not touch" was itself a defect.
 
 ## i18n (next-intl 4)
 
 - `i18n/routing.ts`: locales `tr` (default, unprefixed) / `en` (`/en`),
-  `localePrefix: "as-needed"`, `localeDetection: false`, 69 `pathnames` entries including
-  every `/v2/*` route with an EN twin. `type AppPathname` derives from it.
+  `localePrefix: "as-needed"`, `localeDetection: false`, **39** `pathnames` entries, none of
+  which says `v2`. `type AppPathname` derives from it. English segments are `/turkiye/...`, not
+  `/turkey/...` — the table's own recorded decision, which the V2 entries had contradicted.
 - `i18n/request.ts` pins `timeZone: "UTC"` (the API publishes instants in UTC).
 - `i18n/navigation.ts` is the only source of `Link`/`redirect`/`getPathname`.
 - `proxy.ts` (Next 16 name for middleware) wraps `createMiddleware(routing)`; the matcher
@@ -29,9 +37,14 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
 - `messages/{tr,en}.json`, 30 namespaces each. `lib/seo/indexing.ts` has
   `EN_CONTENT_READY = false` and a `ContentSurface` type (`localized | trNarrative |
 noindex | trOnly`) that decides which locales a page is indexable in.
-- V2 copy is mostly hardcoded Turkish (13 of 81 V2 files use translations). `/en/v2/*`
-  resolves but renders Turkish. Do not add a new hardcoded string to a file that already
-  uses `useTranslations`.
+- Much of the V2 copy is hardcoded Turkish, so `/en/*` resolves and renders Turkish in places.
+  Do not add a new hardcoded string to a file that already uses `useTranslations`. The cost is
+  tracked, not tolerated: `Tools.{alan,koordinat,map,mesafe}`, ten `BookDetail` keys and the
+  marine layer catalogue lost their only consumer to inline copy, and each sits on an EXACT
+  orphan list in its own messages test, so an eleventh orphan fails and re-adopting one without
+  shortening the list fails too. `lib/i18n/key-existence.test.ts` catches the other direction —
+  a key the code asks for that no catalogue has (next-intl renders the dotted string rather than
+  throwing, so a build used to be the first thing that noticed).
 
 ## Data access
 
@@ -92,14 +105,24 @@ noindex | trOnly`) that decides which locales a page is indexable in.
 
 ## Styling stack
 
-`app/globals.css` (~1040 lines): `@import "tailwindcss"`, `tw-animate-css`,
+`app/globals.css` (~1060 lines): `@import "tailwindcss"`, `tw-animate-css`,
 `shadcn/tailwind.css`; `@custom-variant dark (&:is(.dark *))`; `:root` Terra tokens plus
 shadcn bridge tokens; `@theme inline` re-exports them as Tailwind keys; `.dark` block;
-`@layer base`; then V1 global classes. `components.json`: style `base-nova`, base colour
-neutral, CSS variables on, aliases `@/components`, `@/lib`, `@/hooks` (the last does not
-exist). Dark mode is hand-rolled in `components/v2/theme-toggle.tsx` (class on `<html>` +
-`localStorage`); `next-themes` is installed but no provider is mounted. Details and the
-open dark-mode bugs: `docs/design.md`.
+`@layer base`; then eight global classes (`.btn*`, `.card`, `.container`, `.section`,
+`.scrollbar-none`) — T-032 PR4 removed the twenty V1-only rules, including a
+`.placeholder-note` that had carried a rejected `border-left: 4px` side-tab for months with
+zero consumers to review it. `components.json`: style `base-nova`, base colour neutral, CSS
+variables on, aliases `@/components`, `@/lib`, `@/hooks` (the last does not exist).
+
+**Dark mode is `next-themes`, mounted.** `app/[locale]/layout.tsx` renders `<ThemeProvider>`
+(`attribute="class"`, `storageKey="theme"`, `defaultTheme="system"`), which is why `<html>`
+carries `suppressHydrationWarning` — the library's blocking script sets the class before
+paint. The earlier note here claimed the opposite ("installed but no provider is mounted",
+"hand-rolled in `theme-toggle.tsx`") and it cost real time: forcing `.dark` onto
+`documentElement` after load is silently undone when next-themes re-applies its own class,
+which turned a whole browser contrast sweep into artifacts. To test a theme, set
+`localStorage.theme` BEFORE navigation (Playwright's `addInitScript`), never after load.
+Details and the open dark-mode bugs: `docs/design.md`.
 
 ## Build, CI, deploy
 
@@ -117,11 +140,23 @@ open dark-mode bugs: `docs/design.md`.
   a 307-URL sitemap all carry the real origin) because `lib/env.ts` parses `process.env` as
   an object at runtime instead of referencing `process.env.NEXT_PUBLIC_*` directly, which
   Next would inline at build. Keep it that way, or add build `ARG`s before changing it.
-- `/v2/**` is `noindex` but `/v2/dunya/kita/*` is emitted into the sitemap.
+- ~~`/v2/**` is `noindex` but `/v2/dunya/kita/*` is emitted into the sitemap.~~ CLOSED by
+  T-032 PR3 — and it was the smaller half of the problem. Moving V2 onto the canonical URLs
+  carried the `/v2` layout's blanket `noindex` with it, so twelve routes `app/sitemap.ts`
+  publishes were advertising themselves as de-indexed (SEO-POLICY §B6 6.8). Each is back on the
+  surface its V1 counterpart had; `lib/seo/sitemap-surface-symmetry.test.ts` now fails if a
+  statically-listed sitemap row and its page disagree, and all 307 sitemap URLs were verified
+  200-and-indexable against a production build.
 - `--radius-lg` is `16px` in `:root` and `var(--radius)` (10px) in `@theme inline`.
 - `lib/map/tr-context.generated.ts` is Prettier-ignored but missing from ESLint ignores.
-- Dark users get a light-theme flash (no blocking theme script); `.dark` overrides only
-  shadcn greys, no Terra token (TASKS T-016 / T-018).
+- ~~Dark users get a light-theme flash (no blocking theme script); `.dark` overrides only
+  shadcn greys, no Terra token.~~ CLOSED (T-016 / T-018). `next-themes` ships the blocking
+  script, and `.dark` redefines the bridge tokens with a measured contrast table beside it in
+  `app/globals.css`. What is still true, and is the trap: the RAW Terra tokens
+  (`--color-slate`, `--color-ink`, …) are frozen at their light values and never redefine, so
+  any CSS Module reading one directly is a dark-mode defect waiting to be found — that is how a
+  mandated licence notice shipped at 2.34:1 (T-032 PR3). Bridge tokens (`text-foreground`,
+  `text-muted-foreground`, `border-border`) redefine per theme; prefer them.
 - `components.json` `aliases.hooks` points to a non-existent `@/hooks`.
 - `.env.example` lacks `INTERNAL_REQUEST_TOKEN`.
 - `scripts/` mixes durable generators with ad-hoc Playwright audits; `scripts/verify_*.mjs`

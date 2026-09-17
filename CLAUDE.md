@@ -16,7 +16,7 @@ Read on demand, not every session:
 ## Commands
 
 ```bash
-pnpm dev                                  # http://localhost:3000/v2 (needs the API on :3001)
+pnpm dev                                  # http://localhost:3000 (needs the API on :3001)
 pnpm typecheck && pnpm lint && pnpm test  # gate before every commit
 pnpm build                                # needs the API on :3001 (prerenders flags + district routes)
 pnpm codegen                              # after replacing openapi/openapi.json from the API repo
@@ -25,9 +25,16 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
 
 ## Hard rules
 
-- **V2 only.** New work lives under `app/[locale]/v2/**` and `components/v2/**`, styled with
-  Tailwind + `components/ui/*`. V1 routes, `components/site-*`, and every `*.module.css` are
-  frozen. Do not touch them, do not port V1 patterns into V2.
+- **There is one tree.** T-032 deleted V1: the `/v2` prefix is gone, `i18n/routing.ts` has 39
+  entries and none of them says `v2`. Reading surfaces live in `app/[locale]/(site)/**` and share
+  that group's layout (header, footer, skip link, ONE `<main>`); the three fullscreen game screens
+  opt out by living in `(play)`. A page gets the chrome by its directory, never by importing it.
+- New UI is Tailwind + `components/ui/*`. Eleven `*.module.css` files survive, each with live
+  consumers (`earthquake`, `marine`, `climate`, `air-pollution`, `book-video`, `tools`, `map`,
+  `locator-map`, `home`, `site-search`, `book-detail`). They are NOT frozen — "do not touch"
+  is what kept `marine-attribution.module.css` shipping a mandated licence notice at 2.34:1 in
+  dark mode. Their raw Terra tokens (`--color-slate`, `--color-ink`) do not redefine under
+  `.dark`; converting one to bridge tokens when you touch it is a fix, not a violation.
 - `Button` has no `asChild`. A link that looks like a button is
   `<Link className={cn(buttonVariants({ variant, size }))}>`. Do not add `asChild` or a Slot.
 - Href typing: never `as any`. When next-intl's typed `Link` rejects a computed href, use
