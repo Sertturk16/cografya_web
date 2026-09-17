@@ -58,17 +58,22 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
 - Semantic families have two members. The base is the FILL; the `-strong` member is text on a
   tint of that fill. They are not interchangeable — the base measures 2.62:1 as text on its
   own 15% tint for warning, and 3.98-4.17:1 for the others.
-- Not yet themed, and known: the categorical accent system in 34 V2 files (T-031c) and map
-  surfaces (T-031d). `--chart-*` and `--sidebar-*` remain shadcn's achromatic stock; nothing
-  reads them.
+- Not yet themed, and known: the categorical accent system (T-031c) and map surfaces (T-031d).
+  Measured 2026-09-17: **895 raw palette classes across 42 files**, not the 34 recorded earlier —
+  and nothing holds that number, so it moved without anyone noticing. `--chart-*` and
+  `--sidebar-*` remain shadcn's achromatic stock (chroma exactly 0, unlike the rest of the dark
+  palette) and nothing reads them.
 - The showcase at `/design-system` shows every component in both themes side by side. A
   component is not done until its specimen renders there, and
   `components/showcase/registry.test.ts` fails if one is missing.
 
 ## Accessibility floor (WCAG 2.1 AA)
 
-- Focus visible everywhere: `:focus-visible` = 3px `--color-accent` outline, 2px offset.
+- Focus visible everywhere: `:focus-visible` = 3px `var(--ring)` outline, 2px offset.
   Never remove without a compliant replacement. Elements with `tabindex="-1"` are exempt.
+  It is `--ring` and not a raw Terra token on purpose: raw tokens are frozen at their light
+  values, so `--color-accent` measured 3.04:1 in dark mode. `app/globals.css` records the
+  working against the alternatives beside the rule.
 - Skip link exists; `<main>` is focusable.
 - Text contrast 4.5:1 measured on **`--color-surface`** (the darkest light-mode panel),
   not only on `--color-bg`. Taupe is 3.9:1 on white: placeholder / decorative only, never
@@ -102,9 +107,13 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 ### Rules that hold across every component
 
 - Colour comes from a bridge token. No `bg-[var(--color-x,#hex)]` escape, no brand hex, no raw
-  Tailwind palette class, no hand-written `dark:`. `components/ui/token-binding.test.ts`
-  enforces all four across `ui`, `patterns`, `components/v2` and the V2 pages; its two
-  exemptions are listed there with reasons.
+  Tailwind palette class, no hand-written `dark:`. Know which of those is actually enforced
+  where, because it is not uniform: `components/ui/token-binding.test.ts` applies **all four**
+  to `components/ui`, `components/patterns` and `components/showcase/specimens`, but across
+  `components/v2` and the pages it checks **only the escape rule**. Raw palette classes and
+  hand-written `dark:` on that surface are the categorical accent system, which T-034 scoped out
+  and T-031c owns. Its exemption lists are named in the file with a reason each, and every one is
+  paired with an assertion that the exemption is still needed.
 - A semantic family has two members: the base is the FILL, the `-strong` member is text on a
   tint of that fill. Not interchangeable — the base measures 2.62:1 as text on its own 15%
   tint for warning, 3.98–4.17:1 for the others.
@@ -137,7 +146,11 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 ### Known warts
 
 - `Button`'s `emerald`, `sky`, `teal` and `amber` are colour-named variants in an otherwise
-  semantic set. 34 files call them, so renaming is its own change.
+  semantic set. This used to say "34 files call them, so renaming is its own change"; the real
+  count is **three calls in two files** (`v2-tools-hub.tsx` ×2, `v2-tool-workbench.tsx` ×1), and
+  `teal` and `amber` have no callers at all. The variants are already token-bound internally
+  (`bg-secondary` / `bg-info` / `bg-accent` / `bg-warning`), so renaming them is cheap — the
+  reason to leave them alone was a number that was never checked.
 - `--chart-*` and `--sidebar-*` remain shadcn's achromatic stock. Nothing reads them.
 - Row selection and multi-select were dropped from the T-034 scope: measured, zero consumers.
   Add them when one appears.
