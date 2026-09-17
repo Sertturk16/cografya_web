@@ -5,14 +5,6 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverDescription,
-} from "@/components/ui/popover";
 import { Callout } from "@/components/patterns/callout";
 import { EmptyState } from "@/components/patterns/empty-state";
 import { MapPinOff } from "lucide-react";
@@ -104,30 +96,6 @@ export function GeriBildirimSpecimens() {
             </Tooltip>
           </SpecimenRow>
         </TooltipProvider>
-      </Specimen>
-
-      <Specimen
-        name="Popover"
-        portals
-        description="Tooltip'ten farkı içeriğin zengin ve odaklanabilir olabilmesi: harita üzerinde bir noktanın künyesi, bir lejant açıklaması."
-      >
-        <Popover>
-          <PopoverTrigger
-            render={
-              <Button variant="outline" size="sm">
-                Kaynak künyesi
-              </Button>
-            }
-          />
-          <PopoverContent className="max-w-xs">
-            <PopoverHeader>
-              <PopoverTitle>ERA5-Land</PopoverTitle>
-              <PopoverDescription>
-                Copernicus İklim Değişikliği Servisi tarafından üretilen yeniden analiz verisi.
-              </PopoverDescription>
-            </PopoverHeader>
-          </PopoverContent>
-        </Popover>
       </Specimen>
 
       <Specimen

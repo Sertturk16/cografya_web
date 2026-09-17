@@ -53,10 +53,22 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
   });
 
   it("rephrases fault line descriptions without unverified numerical figures (FU125SEO-I2)", () => {
-    const guideUrl = new URL("./v2-fault-lines-guide.tsx", import.meta.url);
-    const guideContent = readFileSync(guideUrl, "utf8");
-    expect(guideContent).not.toContain("yaklaşık 1.500 km");
-    expect(guideContent).not.toContain("yaklaşık 550 km");
+    // RE-POINTED, not weakened (T-036). The rule — no unverified fault-length figures in the
+    // fault-line copy — was pinned on `v2-fault-lines-guide.tsx`, which no Next.js entry point
+    // ever reached; `/deprem/fay-hatlari` renders the same subject from `FAULT_LINES_DATA`
+    // inline. The copy lives in the data module and the page now, so the assertion runs there.
+    const sources = [
+      new URL("../../lib/earthquake/fault-lines-data.ts", import.meta.url),
+      new URL("../../app/[locale]/(site)/deprem/fay-hatlari/page.tsx", import.meta.url),
+    ];
+    // Anti-vacuity: both sources must exist and carry the fault-line vocabulary at all,
+    // otherwise two `not.toContain` checks would pass against an empty read.
+    for (const url of sources) {
+      const content = readFileSync(url, "utf8");
+      expect(content).toContain("Fay");
+      expect(content).not.toContain("yaklaşık 1.500 km");
+      expect(content).not.toContain("yaklaşık 550 km");
+    }
   });
 
   it("ensures dead lib/map/fault-lines.ts module is pruned (CODE125-M2)", () => {

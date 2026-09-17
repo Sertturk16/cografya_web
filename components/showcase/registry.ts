@@ -16,13 +16,18 @@ export interface ShowcaseCategory {
  *
  * Entries for components T-034 has not built yet are present on purpose — the registry is
  * the plan, and the "listed but missing" assertion is what turns it into a worklist.
+ *
+ * It is a worklist in one direction only. A primitive with no product call site is DELETED,
+ * not kept alive so this registry has something to list (T-036, `components/ui/orphan.test.ts`
+ * and `docs/design.md`). Eight entries left here for that reason; the showcase describes the
+ * code, so it shrinks when the code does.
  */
 export const CATEGORIES: readonly ShowcaseCategory[] = [
   {
     slug: "temeller",
     title: "Temeller",
-    blurb: "Renk token'ları, tipografi ölçeği, ayırıcılar ve klavye tuşları.",
-    components: ["typography", "separator"],
+    blurb: "Renk token'ları, tipografi ölçeği ve klavye tuşları.",
+    components: ["typography"],
   },
   {
     slug: "aksiyonlar",
@@ -34,44 +39,25 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
     slug: "formlar",
     title: "Formlar",
     blurb: "Alan sarmalayıcısı ve girdi kontrolleri.",
-    components: [
-      "form-field",
-      "input",
-      "textarea",
-      "checkbox",
-      "switch",
-      "select",
-      "custom-select",
-      "label",
-    ],
+    components: ["form-field", "input", "select", "custom-select", "label"],
   },
   {
     slug: "veri",
     title: "Veri",
-    blurb: "Tablolar, sayısal göstergeler ve sayfalama.",
-    components: ["table", "stat-tile", "metric-value", "pagination", "progress"],
+    blurb: "Tablolar ve sayısal göstergeler.",
+    components: ["table", "stat-tile", "metric-value", "progress"],
   },
   {
     slug: "geri-bildirim",
     title: "Geri Bildirim",
     blurb: "Sistem durumu, editoryal not, boş durum ve ipuçları.",
-    components: ["alert", "callout", "sonner", "empty-state", "tooltip", "popover", "skeleton"],
+    components: ["alert", "callout", "sonner", "empty-state", "tooltip", "skeleton"],
   },
   {
     slug: "duzen",
     title: "Düzen",
     blurb: "Kartlar, katmanlar, sekmeler ve gezinme.",
-    components: [
-      "card",
-      "dialog",
-      "sheet",
-      "tabs",
-      "accordion",
-      "breadcrumb",
-      "avatar",
-      "badge",
-      "dropdown-menu",
-    ],
+    components: ["card", "dialog", "sheet", "tabs", "accordion", "breadcrumb", "badge"],
   },
   {
     slug: "harita",

@@ -15,6 +15,7 @@ import {
   type VideoProgressValue,
 } from "@/lib/video-progress/client";
 import { watchUrl } from "@/lib/youtube/embed";
+import { Progress } from "@/components/ui/progress";
 import { openVideo, resetBench, selectVideo, useBenchState } from "./active-video";
 import { BenchStage, type BenchVideo } from "./bench-stage";
 
@@ -430,14 +431,18 @@ export function VideoBench({
                 Kitap İlerlemesi: {bookProgress.watchedCount} / {bookProgress.videoCount} video
                 izlendi
               </div>
-              <div className="w-36 sm:w-48 h-1.5 bg-muted rounded-full overflow-hidden mt-1.5">
-                <div
-                  className="h-full bg-primary rounded-full transition-all duration-300"
-                  style={{
-                    width: `${Math.min(100, Math.round((bookProgress.watchedCount / bookProgress.videoCount) * 100))}%`,
-                  }}
-                />
-              </div>
+              {/* `Progress` rather than two nested divs (T-036): the hand-drawn bar carried
+                  no `role="progressbar"` and no `aria-valuenow`. The percentage IS on screen
+                  beside it, but only as text a sighted reader can pair with the bar; the bar
+                  itself was a decorative rectangle to assistive technology. */}
+              <Progress
+                value={Math.min(
+                  100,
+                  Math.round((bookProgress.watchedCount / bookProgress.videoCount) * 100),
+                )}
+                aria-label="Kitap ilerlemesi"
+                className="w-36 sm:w-48 mt-1.5"
+              />
             </div>
           </div>
 

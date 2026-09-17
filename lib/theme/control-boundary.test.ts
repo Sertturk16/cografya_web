@@ -79,16 +79,18 @@ describe("every control actually binds --input", () => {
   const UI = fileURLToPath(new URL("../../components/ui/", import.meta.url));
   const read = (name: string) => readFileSync(`${UI}${name}`, "utf8");
 
-  const CONTROLS = [
-    "input.tsx",
-    "textarea.tsx",
-    "select.tsx",
-    "custom-select.tsx",
-    "progress.tsx",
-  ] as const;
+  // `textarea.tsx` was here until T-036 deleted it: the product contains zero `<textarea>`,
+  // so the primitive had no call site to hold to this floor. The rule is unchanged for the
+  // four controls that do render.
+  const CONTROLS = ["input.tsx", "select.tsx", "custom-select.tsx", "progress.tsx"] as const;
 
   it("positive control — the directory was read", () => {
-    expect(readdirSync(UI).length).toBeGreaterThan(20);
+    // An anti-vacuity floor, not a target. T-036 took `components/ui` from 29 files to 21 by
+    // deleting eight primitives with no product call site, which left the old `> 20` passing
+    // by exactly one — a threshold that close to the real count fails on the next correct
+    // deletion instead of on a broken read. Lowered deliberately to something a genuinely
+    // unread directory (0 or 1) still cannot reach.
+    expect(readdirSync(UI).length).toBeGreaterThan(10);
   });
 
   it.each(CONTROLS)("%s draws its boundary with border-input", (file) => {

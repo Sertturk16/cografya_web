@@ -28,6 +28,7 @@ import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { V2LeaderboardButton } from "./v2-leaderboard-modal";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
 import {
@@ -61,7 +62,6 @@ import {
   Home,
   ChevronRight,
   BookOpen,
-  Loader2,
   ShieldCheck,
   Star,
 } from "lucide-react";
@@ -765,7 +765,6 @@ export function V2GameScreen({
               onClick={landscape.toggle}
               aria-pressed={landscape.active}
               aria-label={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda oyna"}
-              title={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda oyna"}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
             >
               {landscape.active ? (
@@ -988,7 +987,6 @@ export function V2GameScreen({
                 type="button"
                 onClick={() => setZoom((z) => Math.min(z + 0.3, 2.5))}
                 className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                title="Yakınlaştır"
                 aria-label="Yakınlaştır"
               >
                 <ZoomIn className="size-4" />
@@ -997,7 +995,6 @@ export function V2GameScreen({
                 type="button"
                 onClick={() => setZoom((z) => Math.max(z - 0.3, 0.8))}
                 className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                title="Uzaklaştır"
                 aria-label="Uzaklaştır"
               >
                 <ZoomOut className="size-4" />
@@ -1009,7 +1006,6 @@ export function V2GameScreen({
                   setPan({ x: 0, y: 0 });
                 }}
                 className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                title="Sıfırla"
                 aria-label="Görünümü Sıfırla"
               >
                 <Maximize2 className="size-3.5" />
@@ -1283,8 +1279,11 @@ export function V2GameScreen({
                 {/* Auto-Save Status Strip */}
                 <div className="pt-1 flex items-center justify-center">
                   {saveStatus === "pending" && (
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
-                      <Loader2 className="size-3.5 animate-spin text-primary" />
+                    <div
+                      role="status"
+                      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium"
+                    >
+                      <Spinner size="sm" decorative className="text-primary" />
                       <span>Skorunuz profilinize kaydediliyor...</span>
                     </div>
                   )}

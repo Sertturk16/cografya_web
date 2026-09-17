@@ -48,13 +48,10 @@ const RAW_ACHROMATIC = /\b(bg|text|border|ring|fill|stroke|from|to|via)-(white|b
 const ACHROMATIC_EXEMPTIONS: ReadonlyArray<readonly [string, string, string]> = [
   ["dialog.tsx", "bg-black/50", "The modal scrim. Identical in both themes by design."],
   ["sheet.tsx", "bg-black/50", "The modal scrim. Identical in both themes by design."],
-  [
-    "switch.tsx",
-    "bg-white",
-    "The switch thumb. A physical control's knob reads as a fixed object that moves across " +
-      "a track that changes, not as a themed surface; both Material and HIG keep it constant. " +
-      "Its boundary is carried by `shadow-sm` plus the track, not by the fill.",
-  ],
+  // A third row covered `switch.tsx`'s `bg-white` thumb. T-036 deleted that primitive — the
+  // two places in the product that want a toggle want switch SEMANTICS, not a rail and a
+  // thumb, and both already write `role="switch"` by hand — so the exemption went with the
+  // file it exempted rather than outliving it.
 ];
 
 const BRAND_HEX = /#(b0522e|7e3a1e|4f6d30|276b70|496f35|c9860f|b23b2e|ede3d5|2b2622|211c19)/i;
@@ -115,49 +112,33 @@ describe("components bind colour through the token bridge", () => {
   });
 
   /**
-   * Two `dark:` utilities survive, and both are exempt because they express something a
-   * colour token cannot. Listed by file and by the exact utility, never by a loose pattern —
-   * an exemption nobody wrote down is how a tripwire quietly stops tripping.
+   * The `dark:` rule now runs with NO exemptions at all, which is the strongest form it has
+   * had — and it got there by deletion, not by loosening.
    *
-   * A third was NOT exempted: `custom-select.tsx` had `bg-white dark:bg-card`, which is a
+   * Two utilities used to be exempt, each because it expressed something a colour token
+   * cannot: `avatar.tsx`'s `dark:after:mix-blend-lighten` (a blend MODE — no custom property
+   * carries `mix-blend-mode`) and `dropdown-menu.tsx`'s
+   * `dark:data-[variant=destructive]:focus:bg-destructive/20` (an ALPHA — the same token at
+   * 10% on light and 20% on dark). T-036 deleted both primitives for having no product call
+   * site, so both exemptions went with the files they exempted.
+   *
+   * A third was never exempted: `custom-select.tsx` had `bg-white dark:bg-card`, which is a
    * hard-coded colour with a theme patch bolted on. It now reads `bg-popover`, which is what
    * the bridge has a token for.
+   *
+   * If a real blend-mode or alpha case comes back, restore the list-by-file-and-exact-utility
+   * shape above — an exemption nobody wrote down is how a tripwire quietly stops tripping.
    */
-  const DARK_VARIANT_EXEMPTIONS: ReadonlyArray<readonly [string, string, string]> = [
-    [
-      "avatar.tsx",
-      "dark:after:mix-blend-lighten",
-      "A blend MODE, not a colour. The ring is drawn by blending against whatever sits " +
-        "behind it, so it must darken on light and lighten on dark. No custom property can " +
-        "carry `mix-blend-mode`.",
-    ],
-    [
-      "dropdown-menu.tsx",
-      "dark:data-[variant=destructive]:focus:bg-destructive/20",
-      "An ALPHA, not a colour: the same token at 10% on light and 20% on dark, because a " +
-        "tint that reads as a wash on white disappears on near-black. Tokenising one call " +
-        "site's opacity would cost more than it explains.",
-    ],
-  ];
-
-  it.each(FILES)("%s writes no hand-rolled dark: class", (path, source) => {
+  it.each(FILES)("%s writes no hand-rolled dark: class", (_path, source) => {
     // `components/patterns/theme-pair.tsx` carries the bare class names `dark` and `light`
     // on a wrapper, which is a different thing from a `dark:` variant and passes this.
-    let scanned = source;
-    for (const [file, utility] of DARK_VARIANT_EXEMPTIONS) {
-      if (path.endsWith(file)) scanned = scanned.split(utility).join(" ");
-    }
-    expect(scanned).not.toMatch(/\bdark:/);
+    expect(source).not.toMatch(/\bdark:/);
   });
 
-  it("every exemption is still present — a stale one would hide a real regression", () => {
-    for (const [file, utility] of DARK_VARIANT_EXEMPTIONS) {
-      const entry = FILES.find(([path]) => path.endsWith(file));
-      expect(entry, `${file} is no longer scanned`).toBeDefined();
-      expect(entry?.[1], `${file} no longer contains ${utility}; drop the exemption`).toContain(
-        utility,
-      );
-    }
+  it("the dark: pattern fires on source that does carry one — positive control", () => {
+    // With no exemption rows left there is nothing else proving the regex still works; an
+    // absence-only rule with a broken pattern is green and worthless.
+    expect("dark:bg-card").toMatch(/\bdark:/);
   });
 });
 

@@ -2,10 +2,15 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 /**
- * This repo's vitest environment is `node`, and the map/list/badge are plain, hook-free
- * components while the attribution block is an async server component — none of them can be
- * RENDERED here. The honest guard at this level is the source symbol, scoped to the
- * obligations `deprem-sayfalari` plan §5.6/§5.7/§5.8/§5.13 name explicitly.
+ * This repo's vitest environment is `node`, and the list/badge are plain, hook-free components
+ * while the attribution block is an async server component — none of them can be RENDERED
+ * here. The honest guard at this level is the source symbol, scoped to the obligations
+ * `deprem-sayfalari` plan §5.6/§5.7/§5.8/§5.13 name explicitly.
+ *
+ * T-036 deleted `earthquake-map.tsx` and `earthquake-filters.tsx` (the V1 `/deprem` island —
+ * no Next.js entry point reached either; `/deprem` renders `V2EarthquakeExplorer`). The §5.6
+ * map assertions and the map half of the `lang="tr"` pair went with the files they described;
+ * every rule below still has a live subject.
  *
  * Every assertion below is about STRUCTURE — an absence, a wrapper, a reference to a shared
  * token/helper. None is about a fact or a wording choice.
@@ -18,58 +23,36 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
 const code = (source: string) =>
   source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/.*$/gm, "");
 
-const map = read("./earthquake-map.tsx");
 const list = read("./earthquake-list.tsx");
 const badge = read("./magnitude-badge.tsx");
 const attribution = read("./earthquake-attribution.tsx");
-const filters = read("./earthquake-filters.tsx");
-const mapCode = code(map);
 const listCode = code(list);
 const badgeCode = code(badge);
 const attributionCode = code(attribution);
 
-describe("EarthquakeMap / EarthquakeList / MagnitudeBadge are hook-free (§5.5's dual-context requirement)", () => {
-  it('ships no "use client" in the map, list or badge', () => {
-    for (const source of [mapCode, listCode, badgeCode]) {
+describe("EarthquakeList / MagnitudeBadge are hook-free (§5.5's dual-context requirement)", () => {
+  it('ships no "use client" in the list or badge', () => {
+    for (const source of [listCode, badgeCode]) {
       expect(source).not.toMatch(/["']use client["']/);
     }
   });
 
-  it("calls no server-only next-intl hook — the presentational split that lets the client filter island reuse them", () => {
-    for (const source of [mapCode, listCode, badgeCode]) {
+  it("calls no server-only next-intl hook — the presentational split that lets a client caller reuse them", () => {
+    for (const source of [listCode, badgeCode]) {
       expect(source).not.toMatch(/getTranslations|next-intl\/server/);
       expect(source).not.toMatch(/useTranslations/);
     }
   });
 
-  it("EarthquakeFilters IS the client island — positive control for the check above", () => {
-    // Without this, the three absence checks report clean for free if the regex itself were
-    // broken; asserting the pattern DOES fire on the one file that should carry it proves the
-    // pattern can see what it is looking for.
-    expect(filters).toMatch(/["']use client["']/);
-  });
-});
-
-describe("EarthquakeMap draws magnitude via the shared token set, never a raw hex (§5.6)", () => {
-  it("references the magnitude bucket helper rather than inventing its own thresholds", () => {
-    expect(mapCode).toMatch(/magnitudeBucket\(/);
-    expect(mapCode).toMatch(/MAGNITUDE_MARKER_RADIUS/);
-  });
-
-  it("carries no raw hex colour literal — every fill comes from a CSS Module class", () => {
-    expect(mapCode).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
-  });
-
-  it("draws no per-marker text label — up to 200 events would recreate the word-cloud MarineMap rejects", () => {
-    expect(mapCode).not.toMatch(/placePointLabels|frameForLabelledPoints|<text\b/);
-  });
-
-  it("gives each marker exactly one accessible <title>, with the single-em-dash shape (§17 density limit)", () => {
-    expect(mapCode).toMatch(/<title lang="tr">\{marker\.accessibleName\}<\/title>/);
-    const match = /accessibleName: `([^`]*)`/.exec(map);
-    expect(match).not.toBeNull();
-    const emDashCount = (match?.[1]?.match(/—/g) ?? []).length;
-    expect(emDashCount).toBe(1);
+  it("the directive regex fires on source that does carry it — positive control", () => {
+    // Without this, the absence checks above report clean for free if the regex itself were
+    // broken. The control used to be `earthquake-filters.tsx`, the real client island; T-036
+    // deleted it, so the control moves to fabricated source (the POSITIVE CONTROL pattern
+    // `lib/tools/messages.test.ts` already uses) rather than being dropped — a positive
+    // control pinned to a file is a liability the moment that file goes away.
+    expect(code('"use client";\nexport function X() { return null; }')).toMatch(
+      /["']use client["']/,
+    );
   });
 });
 
@@ -98,22 +81,15 @@ describe("EarthquakeList's bindingKind sentence is gated, never printed for ever
   });
 });
 
-describe('EarthquakeList / EarthquakeMap mark placeNameTr lang="tr" too (WCAG 3.1.2, review VAL104-M1)', () => {
+describe('EarthquakeList marks placeNameTr lang="tr" too (WCAG 3.1.2, review VAL104-M1)', () => {
   // `event.placeNameTr` is Turkish in BOTH locales (§5.7's own docblock) and prints once per
-  // row (up to 200 per page) and once per map marker — the exact "TR-only string" class the
-  // attribution test below already names, just on a different pair of files. Previously only
-  // the two attribution strings were covered here, though the attribution test's own name
-  // claimed "every TR-only string" — this describe block closes that gap directly rather than
-  // widening the attribution test's scope.
+  // row (up to 200 per page) — the exact "TR-only string" class the attribution test below
+  // already names, just on a different file. Previously only the two attribution strings were
+  // covered here, though the attribution test's own name claimed "every TR-only string" —
+  // this describe block closes that gap directly rather than widening the attribution test's
+  // scope. (The `EarthquakeMap` half went with the file itself in T-036.)
   it('EarthquakeList wraps the visible placeNameTr span in lang="tr"', () => {
     expect(listCode).toMatch(/lang="tr"[\s\S]{0,40}\{event\.placeNameTr\}/);
-  });
-
-  it('EarthquakeMap marks its per-marker <title> lang="tr" (mixed-language node, whole-title fallback)', () => {
-    // SVG `<title>` is text-only (no child elements), so — unlike the list's `<span>` — the
-    // Turkish place name cannot be marked independently of the trailing magnitude/time
-    // fragment; the whole node is marked instead (see the component's own comment).
-    expect(mapCode).toMatch(/<title lang="tr">\{marker\.accessibleName\}<\/title>/);
   });
 });
 
@@ -154,7 +130,7 @@ describe("EarthquakeAttribution renders API strings verbatim, never re-authors t
     }
   });
 
-  it("carries no client directive — attribution never changes with the filter island's re-fetch", () => {
+  it("carries no client directive — attribution is server-rendered with the page", () => {
     expect(attributionCode).not.toMatch(/["']use client["']/);
   });
 });

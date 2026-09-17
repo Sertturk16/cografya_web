@@ -10,7 +10,8 @@ import {
 } from "@/lib/game-rounds/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, Award, Flame, Zap, ShieldCheck, Lock, Loader2, Calendar } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { Trophy, Award, Flame, Zap, ShieldCheck, Lock, Calendar } from "lucide-react";
 import { getGameRoundModeTitle } from "@/lib/game/round-mode-tag";
 
 export function V2GameHistoryStats() {
@@ -185,8 +186,11 @@ export function V2GameHistoryStats() {
           </h4>
 
           {loading ? (
-            <div className="p-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-              <Loader2 className="size-4 animate-spin text-primary" />
+            <div
+              role="status"
+              className="p-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
+            >
+              <Spinner decorative className="text-primary" />
               <span>Skor geçmişiniz yükleniyor...</span>
             </div>
           ) : records && records.length > 0 ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
 import { Badge } from "@/components/ui/badge";
@@ -134,6 +135,13 @@ export function V2WorldMapExplorer({
   locale = "tr",
   middleSections,
 }: V2WorldMapExplorerProps) {
+  /**
+   * The view-mode toolbar buttons have no accessible name of their own — the first loses its
+   * visible label under `sm:`, the other two never had one — and this page is reached in EN
+   * too, so the name goes through the catalogue rather than shipping as a Turkish literal
+   * (T-036).
+   */
+  const t = useTranslations("MapExplorer");
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const [selectedContinent, setSelectedContinent] = React.useState<string>("ALL");
@@ -534,7 +542,7 @@ export function V2WorldMapExplorer({
             <button
               type="button"
               onClick={handleZoomIn}
-              title={isEn ? "Zoom In (+)" : "Yakınlaştır (+)"}
+              aria-label={t("zoomIn")}
               className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <ZoomIn className="size-4" />
@@ -543,7 +551,7 @@ export function V2WorldMapExplorer({
               type="button"
               onClick={handleZoomOut}
               disabled={zoom <= 1}
-              title={isEn ? "Zoom Out (-)" : "Uzaklaştır (-)"}
+              aria-label={t("zoomOut")}
               className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors cursor-pointer"
             >
               <ZoomOut className="size-4" />
@@ -552,7 +560,7 @@ export function V2WorldMapExplorer({
               <button
                 type="button"
                 onClick={handleResetZoom}
-                title={isEn ? "Reset View" : "Haritayı Sıfırla"}
+                aria-label={t("resetView")}
                 className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer text-xs font-mono"
               >
                 <RotateCcw className="size-3.5" />
@@ -929,7 +937,7 @@ export function V2WorldMapExplorer({
                     ? "bg-card text-primary shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Kıta Gruplu Görünüm"
+                aria-label={t("continentGroupedView")}
               >
                 <Layers className="size-3.5" />
                 <span className="hidden sm:inline">Kıta Gruplu</span>
@@ -942,7 +950,7 @@ export function V2WorldMapExplorer({
                     ? "bg-card text-primary shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Detaylı Tablo (Table)"
+                aria-label={t("tableView")}
               >
                 <List className="size-4" />
               </button>
@@ -954,7 +962,7 @@ export function V2WorldMapExplorer({
                     ? "bg-card text-primary shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Alfabetik Fihrist (A-Z Bloklar)"
+                aria-label={t("indexView")}
               >
                 <AlignLeft className="size-4" />
               </button>

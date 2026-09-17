@@ -106,6 +106,17 @@
     "seaMediterranean": "Mediterranean Sea",
     "attributionContextLabel": "Neighbouring-country boundaries: Natural Earth (public domain)"
   },
+  "MapExplorer": {
+    "zoomIn": "Zoom in (+)",
+    "zoomOut": "Zoom out (-)",
+    "resetView": "Reset the map",
+    "tableView": "Detailed table",
+    "indexView": "Alphabetical index (A-Z blocks)",
+    "regionGroupedView": "Grouped by region",
+    "continentGroupedView": "Grouped by continent",
+    "regionColorsShow": "Colour the regions (legend mode)",
+    "regionColorsReset": "Default colours"
+  },
   "About": {
     "metaTitle": "About",
     "metaDescription": "Coğrafya Gurmesi is an education project that presents the geography of Türkiye and the world through free, sourced and accessible content.",

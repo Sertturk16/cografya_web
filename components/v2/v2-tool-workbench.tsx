@@ -32,6 +32,7 @@ import type { ProvinceArea } from "@/components/tools/tool-island";
 import type { MeasurementType } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { Link } from "@/i18n/navigation";
@@ -1099,16 +1100,34 @@ export function V2ToolWorkbench({
             )}
 
             {/* PNG Export Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportPng}
-              disabled={points.length === 0}
-              leftIcon={<Download className="size-3.5 text-primary" />}
-              title="Harita ve ölçüm sonucunu yüksek çözünürlüklü PNG olarak indirin"
-            >
-              PNG İndir
-            </Button>
+            {/* The one place in this repo a Tooltip is the right answer (T-036). The button
+                already has a visible name ("PNG İndir"); the `title` was an EXPLANATION of
+                what it does, which is `aria-describedby` semantics — exactly what Tooltip
+                wires. `title` never appears on keyboard focus and never on touch, so that
+                explanation reached a mouse user only. Everywhere else in this sweep a `title`
+                WAS the accessible name, and those got `aria-label` instead: Tooltip wires
+                `aria-describedby`, not `aria-labelledby`, so using it there would have left
+                an unnamed button unnamed. */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportPng}
+                      disabled={points.length === 0}
+                      leftIcon={<Download className="size-3.5 text-primary" />}
+                    >
+                      PNG İndir
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  Harita ve ölçüm sonucunu yüksek çözünürlüklü PNG olarak indirin
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
@@ -1174,7 +1193,6 @@ export function V2ToolWorkbench({
               aria-label={
                 landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda görüntüle"
               }
-              title={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay mod"}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
             >
               {landscape.active ? (
@@ -1237,7 +1255,6 @@ export function V2ToolWorkbench({
               onClick={handleZoomIn}
               disabled={zoomLevel >= 8}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-              title="Yakınlaştır (+)"
               aria-label="Haritayı Yakınlaştır"
             >
               <ZoomIn className="size-4" />
@@ -1247,7 +1264,6 @@ export function V2ToolWorkbench({
               onClick={handleZoomOut}
               disabled={zoomLevel <= 1}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-              title="Uzaklaştır (-)"
               aria-label="Haritayı Uzaklaştır"
             >
               <ZoomOut className="size-4" />
@@ -1257,7 +1273,6 @@ export function V2ToolWorkbench({
               onClick={handleResetZoom}
               disabled={zoomLevel === 1 && panOffset.x === 0 && panOffset.y === 0}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-              title="Görünümü Sıfırla"
               aria-label="Harita Görünümünü Sıfırla"
             >
               <RotateCcw className="size-4" />
@@ -1586,7 +1601,6 @@ export function V2ToolWorkbench({
                         e.stopPropagation();
                       }}
                       className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                      title="Sil"
                       aria-label="Ölçümü sil"
                     >
                       <Trash2 className="size-3.5" />

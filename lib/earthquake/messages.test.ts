@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
-import { WINDOW_OPTIONS } from "@/components/earthquake/earthquake-filters";
+import { WINDOW_OPTIONS } from "./query";
 import { bindingSentenceKey, type EarthquakeBindingKind } from "./binding-sentence";
 
 /**
@@ -155,7 +155,7 @@ describe("bindingKind sentence keys — all three states, derived from the sourc
 });
 
 describe("filter control options — derived from the component's own offered values", () => {
-  // Derived from `WINDOW_OPTIONS` (`earthquake-filters.tsx`) rather than hand-listed, so
+  // Derived from `WINDOW_OPTIONS` (`lib/earthquake/query.ts`) rather than hand-listed, so
   // adding a sixth time-window option without writing its copy fails here.
   for (const days of WINDOW_OPTIONS) {
     it(`Earthquake.filters.window${days} resolves in tr and en`, () => {
@@ -258,4 +258,82 @@ describe("every static Earthquake.* key the code asks for exists", () => {
       }
     },
   );
+});
+
+describe("declared-but-unconsumed keys — a recorded debt on an exact-list ratchet", () => {
+  /**
+   * ORPHANS — RECORDED, DELIBERATELY NOT DELETED (the `lib/tools/messages.test.ts` ratchet).
+   *
+   * The scan above can only prove that a key the code ASKS FOR resolves. This closes the
+   * other direction: a key the catalogue DECLARES that no file opens. Both catalogues are
+   * fully symmetric (the first describe block asserts that), so measuring TR measures EN.
+   *
+   * WHY THESE ARE KEPT RATHER THAN DELETED. `EARTHQUAKE_SURFACE` is `"localized"` (§5.14),
+   * `/deprem` is in the sitemap, and the page that serves it today — `V2EarthquakeExplorer`
+   * plus `app/[locale]/(site)/deprem/page.tsx` — writes ALL of its prose inline, in Turkish,
+   * for both locales. So the EN half of this namespace is not dead weight: it is most of the
+   * translation a real, still-open localisation defect needs. Deleting it would delete the
+   * fix, quietly, and leave nothing recording that the surface is untranslated.
+   *
+   * TWO ORIGINS, one list:
+   *   - The V2 rewrite of `/deprem` stranded the page's own copy (`metaTitle`, `heading`,
+   *     `lede.*`, `meta.scopeBuffer*`, `meta.freshness*`) — these were already orphaned
+   *     before T-036 and nothing measured them.
+   *   - T-036 stranded the rest (`map.*`, `list.emptyState`, `filters.*`) by deleting
+   *     `earthquake-map.tsx`/`earthquake-filters.tsx`, the V1 client island no Next.js entry
+   *     point reached. `filters.window*` still resolve through `WINDOW_OPTIONS` above; that
+   *     block asserts they EXIST, which is a different question from whether anything reads
+   *     them, and is why the two can disagree without either being wrong.
+   *
+   * The list is exact and the assertion is an equality against it, so it ratchets in BOTH
+   * directions: a 28th orphan fails here, and so does re-adopting one of these 27 without
+   * shortening the list. It cannot quietly become the new normal.
+   */
+  const ORPHANED_BY_THE_V2_REWRITE_AND_T036 = [
+    "filters.apply",
+    "filters.loadFailed",
+    "filters.loadMore",
+    "filters.loading",
+    "filters.magnitudeLabel",
+    "filters.magnitudeOption",
+    "filters.resultsFound",
+    "filters.window1",
+    "filters.window30",
+    "filters.window7",
+    "filters.window90",
+    "filters.windowLabel",
+    "heading",
+    "lede.ok",
+    "lede.stale",
+    "lede.unavailable",
+    "list.emptyState",
+    "map.description",
+    "map.title",
+    "meta.freshness.ok",
+    "meta.freshness.stale",
+    "meta.freshness.unavailable",
+    "meta.freshnessLabel",
+    "meta.scopeBufferLabel",
+    "meta.scopeBufferValue",
+    "metaDescription",
+    "metaTitle",
+  ];
+
+  it("every declared key is either asked for by a real consumer or on the recorded list", () => {
+    const requested = new Set(earthquakeBindings.flatMap((entry) => entry.requested));
+    // Anti-vacuity: a scan that found nothing would report the whole namespace orphaned and
+    // make the equality below meaningless the moment someone pasted the output back in.
+    expect(requested.size).toBeGreaterThan(0);
+
+    const unconsumed = [...trEarthquake.keys()].filter((key) => !requested.has(key)).sort();
+    expect(unconsumed).toEqual([...ORPHANED_BY_THE_V2_REWRITE_AND_T036].sort());
+  });
+
+  it("every name on the recorded list is really a declared key", () => {
+    // A typo here would silently excuse a key that was never in the catalogue, and — because
+    // the assertion above is an equality — would take a real orphan down with it.
+    for (const key of ORPHANED_BY_THE_V2_REWRITE_AND_T036) {
+      expect([...trEarthquake.keys()], `Earthquake.${key} is not a declared key`).toContain(key);
+    }
+  });
 });

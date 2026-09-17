@@ -10,22 +10,7 @@ import {
   TableSkeleton,
   TableSortButton,
 } from "@/components/ui/table";
-import {
-  Progress,
-  ProgressTrack,
-  ProgressIndicator,
-  ProgressLabel,
-  ProgressValue,
-} from "@/components/ui/progress";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
+import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { MetricValue } from "@/components/patterns/metric-value";
 import { Specimen } from "../specimen";
@@ -103,53 +88,18 @@ export function VeriSpecimens() {
         description="Belirli ilerleme role=progressbar ve aria-valuenow taşır. Belirsiz olan aria-valuenow'u ATLAR — 0 göndermek 'hiç ilerlemedi' demek olurdu, oysa kastedilen 'ne kadar ilerlediği bilinmiyor'."
       >
         <div className="max-w-sm space-y-6">
+          {/* `Progress` appends its own ProgressTrack/ProgressIndicator after `children`, so
+              passing them here too rendered TWO tracks per bar — visible in the showcase and
+              nowhere else. Found while adopting the component at its first real call sites
+              (T-036). Children are for the label and the value only. */}
           <Progress value={64}>
             <ProgressLabel>Tur ilerlemesi</ProgressLabel>
             <ProgressValue />
-            <ProgressTrack>
-              <ProgressIndicator />
-            </ProgressTrack>
           </Progress>
           <Progress value={null}>
             <ProgressLabel>Veri çekiliyor</ProgressLabel>
-            <ProgressTrack>
-              <ProgressIndicator />
-            </ProgressTrack>
           </Progress>
         </div>
-      </Specimen>
-
-      <Specimen
-        name="Pagination"
-        description="Gerçek <a> elemanları: bir sayfa bağlantısı bir konumdur, orta tık ve yeni sekmede aç çalışmalı. Aktif sayfa aria-current='page' taşır, yalnızca renkle değil."
-      >
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious href="#" />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#">1</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#" isActive>
-                2
-              </PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#">3</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#">9</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext href="#" />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
       </Specimen>
 
       <Specimen

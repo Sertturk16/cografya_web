@@ -7,9 +7,13 @@ import type { EarthquakeAttribution as EarthquakeAttributionRow } from "@/lib/ap
  * mandated AFAD notice at roughly 2.3:1 against the dark page. The bridge tokens used below
  * redefine per theme, which is what they are for.
  *
- * The stylesheet is left in place for its five other consumers (the map, the list, the filters,
- * the magnitude badge, the province section) — they have the same latent problem and it is
- * T-035/T-033's to fix, not this component's to fix on their behalf.
+ * The stylesheet is left in place for its three remaining consumers (the list, the magnitude
+ * badge, the province section) — they have the same latent problem and it is T-035/T-033's to
+ * fix, not this component's to fix on their behalf. It used to have five; T-036 deleted the
+ * map and the filter island, and the rules that only they used went with them. The three
+ * classes this block itself abandoned (`.sources`, `.regulationReference`, `.disclaimer`) are
+ * still in the file: they predate T-036 and removing them is this note's own debt to settle,
+ * not a side effect of deleting someone else's component.
  */
 
 interface EarthquakeAttributionProps {

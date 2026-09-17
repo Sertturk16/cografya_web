@@ -49,7 +49,6 @@ export function MagnitudeBadge({ magnitude, magnitudeType, locale }: MagnitudeBa
       // The accessible name states the unit in words — a bare number is ambiguous to a
       // screen-reader user who has not seen the page's own "magnitude" heading.
       aria-label={accessibleLabel}
-      title={accessibleLabel}
     >
       M {label}
     </span>

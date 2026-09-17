@@ -14,6 +14,22 @@
  * `components/earthquake/earthquake-filters.tsx` (`"use client"`) both import it.
  */
 
+/**
+ * The magnitude-floor options the `/deprem` filter control offers. `2.5` matches the api's
+ * own default.
+ *
+ * Lives here, next to the query builder that serialises it, rather than in a component:
+ * these are facts about the filter CONTRACT, not about any one control's markup. T-036
+ * moved them out of `components/earthquake/earthquake-filters.tsx` when that (unreachable)
+ * component was deleted, so `lib/earthquake/messages.test.ts` can keep deriving its
+ * `Earthquake.filters.window*` totality check from the real offered set instead of a
+ * hand-maintained list.
+ */
+export const MAGNITUDE_OPTIONS = [1, 2, 2.5, 3, 4, 5] as const;
+
+/** The time-window options, in days. `7` matches the api's own default. */
+export const WINDOW_OPTIONS = [1, 7, 30, 90] as const;
+
 export interface EarthquakeFilter {
   minMagnitude?: number;
   fromUtc?: string;

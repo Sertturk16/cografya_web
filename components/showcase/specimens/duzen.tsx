@@ -11,8 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -22,17 +20,6 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { Avatar, AvatarFallback, AvatarBadge, AvatarGroup } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuItem,
-  DropdownMenuCheckboxItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogTrigger,
@@ -74,6 +61,32 @@ const BADGE_VARIANTS = [
   "info",
   "chip",
 ] as const;
+
+/**
+ * The Sheet specimen's layer toggles.
+ *
+ * Local to this file on purpose. T-036 deleted `components/ui/switch.tsx` because the two
+ * places in the product that want a toggle want switch SEMANTICS, not a rail and a thumb, and
+ * both already write them by hand — `components/book/video-progress-controls.tsx` and
+ * `components/v2/v2-favorite-button.tsx`. This is the same shape, so the Sheet demo shows the
+ * pattern the repo actually uses instead of advertising a primitive nothing imports.
+ */
+function LayerToggle({ id, defaultOn }: { readonly id: string; readonly defaultOn: boolean }) {
+  const [on, setOn] = React.useState(defaultOn);
+  return (
+    <button
+      type="button"
+      id={id}
+      role="switch"
+      aria-checked={on}
+      aria-labelledby={`${id}-label`}
+      onClick={() => setOn((value) => !value)}
+      className="rounded-md border border-input bg-card px-2.5 py-1 text-xs font-bold text-foreground transition-colors hover:bg-muted aria-checked:border-primary aria-checked:bg-primary aria-checked:text-primary-foreground"
+    >
+      {on ? "Açık" : "Kapalı"}
+    </button>
+  );
+}
 
 export function DuzenSpecimens() {
   return (
@@ -180,29 +193,6 @@ export function DuzenSpecimens() {
         </Accordion>
       </Specimen>
 
-      <Specimen name="Avatar">
-        <SpecimenRow>
-          <Avatar>
-            <AvatarFallback>MÇ</AvatarFallback>
-          </Avatar>
-          <Avatar>
-            <AvatarFallback>MK</AvatarFallback>
-            <AvatarBadge />
-          </Avatar>
-          <AvatarGroup>
-            <Avatar>
-              <AvatarFallback>A</AvatarFallback>
-            </Avatar>
-            <Avatar>
-              <AvatarFallback>B</AvatarFallback>
-            </Avatar>
-            <Avatar>
-              <AvatarFallback>C</AvatarFallback>
-            </Avatar>
-          </AvatarGroup>
-        </SpecimenRow>
-      </Specimen>
-
       <Specimen
         name="Dialog"
         portals
@@ -249,17 +239,18 @@ export function DuzenSpecimens() {
                   ["sheet-layer-relief", "Yükselti gölgelemesi", false],
                 ].map(([id, label, on]) => (
                   <div key={id as string} className="flex items-center justify-between gap-3">
-                    <Label htmlFor={id as string} className="text-sm font-normal">
+                    <span id={`${id as string}-label`} className="text-sm text-foreground">
                       {label as string}
-                    </Label>
-                    <Switch id={id as string} defaultChecked={on as boolean} />
+                    </span>
+                    <LayerToggle id={id as string} defaultOn={on as boolean} />
                   </div>
                 ))}
               </div>
 
-              <Separator />
-
-              <div className="space-y-2">
+              {/* A border ON the next group, not a standalone rule between two of them
+                  (T-036): this is what `border-t border-border` is for, and it is why the
+                  Separator primitive had nothing to replace in this repo. */}
+              <div className="space-y-2 border-t border-border pt-5">
                 <Label htmlFor="sheet-magnitude" className="text-xs font-bold">
                   En düşük büyüklük
                 </Label>
@@ -297,29 +288,6 @@ export function DuzenSpecimens() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-      </Specimen>
-
-      <Specimen
-        name="DropdownMenu"
-        description="Bir menü, bir seçim listesi değil: her satır bir EYLEM. Seçenek seçtirmek için CustomSelect ya da Select kullanılır. Portal ile açıldığı için sayfanın temasını izler, panelin değil."
-        portals
-      >
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="outline">İl işlemleri</Button>} />
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Çanakkale</DropdownMenuLabel>
-            <DropdownMenuItem>
-              Favorilere ekle
-              <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuItem>Haritada göster</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem checked>Komşu iller</DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem>Deprem katmanı</DropdownMenuCheckboxItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">Karşılaştırmadan çıkar</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </Specimen>
     </>
   );

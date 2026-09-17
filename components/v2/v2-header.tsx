@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -21,7 +22,6 @@ import {
   LogIn,
   UserPlus,
   LogOut,
-  Loader2,
   ChevronDown,
   Menu,
   Search,
@@ -430,7 +430,7 @@ export function V2Header() {
                 aria-label="Çıkış Yap"
               >
                 {signingOut ? (
-                  <Loader2 className="size-3.5 animate-spin" />
+                  <Spinner size="sm" label="Çıkış yapılıyor" />
                 ) : (
                   <LogOut className="size-3.5" />
                 )}
@@ -725,7 +725,7 @@ export function V2Header() {
                         disabled={signingOut}
                         leftIcon={
                           signingOut ? (
-                            <Loader2 className="size-4 animate-spin" />
+                            <Spinner size="default" label="Çıkış yapılıyor" />
                           ) : (
                             <LogOut className="size-4" />
                           )

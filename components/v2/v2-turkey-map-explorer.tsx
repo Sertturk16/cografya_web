@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
@@ -195,6 +196,14 @@ interface V2TurkeyMapExplorerProps {
 }
 
 export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapExplorerProps) {
+  /**
+   * The toolbar's icon buttons carry NO visible text (two of them lose theirs under `sm:`),
+   * so their `aria-label` is their only accessible name — and this page is reached in EN too.
+   * A Turkish literal in an `aria-label` is a name half the readers cannot read, which is why
+   * these six strings go through the catalogue while the rest of this component's inline
+   * Turkish prose does not (T-036).
+   */
+  const t = useTranslations("MapExplorer");
   const [hoveredPlate, setHoveredPlate] = React.useState<string | null>(null);
   const [selectedPlate, setSelectedPlate] = React.useState<string | null>(null);
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number } | null>(null);
@@ -578,7 +587,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             <button
               type="button"
               onClick={() => setShowRegionColors(!showRegionColors)}
-              title={showRegionColors ? "Varsayılan Renkler" : "Bölgeleri Renklendir (Lejant Modu)"}
+              aria-label={showRegionColors ? t("regionColorsReset") : t("regionColorsShow")}
               className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                 showRegionColors
                   ? "bg-primary text-primary-foreground shadow-xs"
@@ -589,12 +598,15 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               <span className="hidden sm:inline">Bölge Renkleri</span>
             </button>
 
-            <div className="h-4 w-px bg-border my-auto mx-0.5" />
+            {/* The product's ONE standalone rule (T-036 measured it). It stays a <div>: it
+                groups toolbar buttons visually and carries no meaning a screen reader needs,
+                so it is hidden from the accessibility tree rather than announced. */}
+            <div aria-hidden="true" className="h-4 w-px bg-border my-auto mx-0.5" />
 
             <button
               type="button"
               onClick={handleZoomIn}
-              title="Yakınlaştır (+)"
+              aria-label={t("zoomIn")}
               className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <ZoomIn className="size-4" />
@@ -603,7 +615,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               type="button"
               onClick={handleZoomOut}
               disabled={zoomLevel <= 1}
-              title="Uzaklaştır (-)"
+              aria-label={t("zoomOut")}
               className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors cursor-pointer"
             >
               <ZoomOut className="size-4" />
@@ -612,7 +624,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               <button
                 type="button"
                 onClick={handleResetZoom}
-                title="Haritayı Sıfırla"
+                aria-label={t("resetView")}
                 className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer text-xs font-mono"
               >
                 <RotateCcw className="size-3.5" />
@@ -982,7 +994,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                     ? "bg-card text-primary shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Bölge Gruplu Görünüm"
+                aria-label={t("regionGroupedView")}
               >
                 <Layers className="size-3.5" />
                 <span className="hidden sm:inline">Bölge Gruplu</span>
@@ -995,7 +1007,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                     ? "bg-card text-primary shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Detaylı Tablo (Table)"
+                aria-label={t("tableView")}
               >
                 <List className="size-4" />
               </button>
@@ -1007,7 +1019,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                     ? "bg-card text-primary shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Alfabetik Fihrist (A-Z Bloklar)"
+                aria-label={t("indexView")}
               >
                 <AlignLeft className="size-4" />
               </button>
@@ -1153,11 +1165,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                           {province.plateCode}
                         </span>
                         {province.coastal && (
-                          <span
-                            title="Kıyı İli (Deniz Telemetrisi Var)"
-                            className="size-5 rounded-md bg-accent/10 text-accent flex items-center justify-center"
-                          >
-                            <Waves className="size-3" />
+                          <span className="size-5 rounded-md bg-accent/10 text-accent flex items-center justify-center">
+                            <Waves className="size-3" aria-hidden="true" />
+                            <span className="sr-only">Kıyı İli (Deniz Telemetrisi Var)</span>
                           </span>
                         )}
                       </div>
