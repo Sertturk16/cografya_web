@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
-import { WINDOW_OPTIONS } from "@/components/earthquake/earthquake-filters";
+import { WINDOW_OPTIONS } from "./query";
 import { bindingSentenceKey, type EarthquakeBindingKind } from "./binding-sentence";
 
 /**
@@ -155,7 +155,7 @@ describe("bindingKind sentence keys — all three states, derived from the sourc
 });
 
 describe("filter control options — derived from the component's own offered values", () => {
-  // Derived from `WINDOW_OPTIONS` (`earthquake-filters.tsx`) rather than hand-listed, so
+  // Derived from `WINDOW_OPTIONS` (`lib/earthquake/query.ts`) rather than hand-listed, so
   // adding a sixth time-window option without writing its copy fails here.
   for (const days of WINDOW_OPTIONS) {
     it(`Earthquake.filters.window${days} resolves in tr and en`, () => {

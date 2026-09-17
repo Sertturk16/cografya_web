@@ -3,16 +3,11 @@
 import { type FormEvent, type ReactNode, useCallback, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { EarthquakeEvent } from "@/lib/api/types";
-import { buildEarthquakeQuery } from "@/lib/earthquake/query";
+import { buildEarthquakeQuery, MAGNITUDE_OPTIONS, WINDOW_OPTIONS } from "@/lib/earthquake/query";
 import { EarthquakeList } from "./earthquake-list";
 import { EarthquakeMap } from "./earthquake-map";
 import styles from "./earthquake.module.css";
 
-/** The magnitude-floor options the control offers. `2.5` matches the api's own default. */
-export const MAGNITUDE_OPTIONS = [1, 2, 2.5, 3, 4, 5] as const;
-
-/** The time-window options, in days. `7` matches the api's own default. */
-export const WINDOW_OPTIONS = [1, 7, 30, 90] as const;
 type WindowDays = (typeof WINDOW_OPTIONS)[number];
 
 /** How many rows one page fetches — the api's own default `pageSize`. */
