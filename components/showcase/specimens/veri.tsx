@@ -25,6 +25,8 @@ import {
   PaginationNext,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { StatTile } from "@/components/patterns/stat-tile";
+import { MetricValue } from "@/components/patterns/metric-value";
 import { Specimen } from "../specimen";
 
 export function VeriSpecimens() {
@@ -147,6 +149,44 @@ export function VeriSpecimens() {
             </PaginationItem>
           </PaginationContent>
         </Pagination>
+      </Specimen>
+
+      <Specimen
+        name="MetricValue"
+        description="absent prop'u ZORUNLU. T-024, veri yokken 'canlı saatlik telemetri' vaat eden bir sayfa sevk etmişti; düzeltme sayfa sayfa koşullu kopyaydı ve bir sonraki sayfa unutana kadar çalışır. Zorunlu kılmak garantiyi tip sistemine taşıyor: çağıran, veri yokken ne görüneceğine karar vermeyi atlayamıyor. Asla 0 basmaz, asla çıplak tire basmaz — tire sayının oturduğu yere oturur ve bakışta ölçüm gibi okunur."
+      >
+        <div className="flex flex-wrap items-end gap-8">
+          <MetricValue value={18.2} unit="°C" precision={1} absent={{ label: "Okuma yok" }} />
+          <MetricValue value={1214} unit="m" absent={{ label: "Okuma yok" }} />
+          <MetricValue
+            value={null}
+            unit="°C"
+            absent={{ label: "Veri bağlı değil", hint: "Kaynak henüz açılmadı" }}
+          />
+        </div>
+      </Specimen>
+
+      <Specimen
+        name="StatTile"
+        description="48 V2 dosyasının elle yazdığı desen. Etiket DOM'da önce gelir — ekran okuyucuya '18,2 °C' deyip neyi ölçtüğünü söylememek hiçbir şey söylememektir; görsel hiyerarşiyi punto taşır, kaynak sırası değil."
+      >
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatTile
+            label="Yıllık ortalama"
+            value={18.2}
+            unit="°C"
+            precision={1}
+            hint="ERA5-Land, 1991-2020"
+            absent={{ label: "Okuma yok" }}
+          />
+          <StatTile label="Rakım" value={23} unit="m" absent={{ label: "Okuma yok" }} />
+          <StatTile
+            label="Deniz suyu sıcaklığı"
+            value={undefined}
+            unit="°C"
+            absent={{ label: "Veri bağlı değil", hint: "MARINE_ENABLED kapalı" }}
+          />
+        </div>
       </Specimen>
     </>
   );

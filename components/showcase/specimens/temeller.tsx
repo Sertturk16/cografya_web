@@ -1,4 +1,5 @@
 import { Separator } from "@/components/ui/separator";
+import { H1, H2, H3, H4, Lede, Muted, Kbd } from "@/components/patterns/typography";
 import { Specimen } from "../specimen";
 
 /**
@@ -102,24 +103,28 @@ export function TemellerSpecimens() {
 
       <Specimen
         name="Tipografi ölçeği"
-        description="Başlıklar Fraunces, gövde Nunito Sans. h1 alt sınırı 1.9rem ve docs/design.md'ye göre hiçbir yerde düşürülmez."
+        description="docs/design.md ölçeğin sahibi; bu bileşenler onu yeniden üretiyor, yenisini icat etmiyor. h1'in 1.9rem alt sınırı hiçbir genişlikte düşürülmez — bir düzeltme turu bunu bir kez düşürmüş ve o düşürme bir sonraki incelemenin yakaladığı kusur olmuştu."
       >
         <div className="space-y-3">
-          <h1 className="font-heading text-[clamp(1.9rem,1.2rem+2.6vw,2.6rem)] font-bold leading-tight text-foreground">
-            h1 — Türkiye&apos;nin coğrafyası
-          </h1>
-          <h2 className="font-heading text-[clamp(1.4rem,1rem+1.4vw,1.8rem)] font-semibold text-primary">
-            h2 — Coğrafi bölgeler
-          </h2>
-          <h3 className="font-heading text-xl font-bold text-foreground">h3 — Marmara Bölgesi</h3>
-          <p className="max-w-prose text-foreground">
-            Gövde metni 16px ve 1.6 satır yüksekliğinde. Uzun bir paragraf okunurken satır
-            uzunluğunun 60-75 karakteri aşmaması hedeflenir.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Küçük metin — kaynak künyesi, yardımcı açıklama.
-          </p>
+          <H1>Türkiye&apos;nin coğrafyası</H1>
+          <H2>Coğrafi bölgeler</H2>
+          <H3>Marmara Bölgesi</H3>
+          <H4>İklim özellikleri</H4>
+          <Lede>
+            Gövde metni 16px ve 1.6 satır yüksekliğinde; lede max-w-prose ile sınırlı, çünkü
+            masaüstü genişliğinde tam satır uzunluğu iyi metni bile okunmaz yapar.
+          </Lede>
+          <Muted>Küçük metin — kaynak künyesi, yardımcı açıklama.</Muted>
         </div>
+      </Specimen>
+
+      <Specimen
+        name="Kbd"
+        description="Ctrl+K ipucunu 3 V2 dosyası elle çiziyordu. <kbd> doğru eleman ve anlamı kendi taşıyor."
+      >
+        <p className="text-sm text-foreground">
+          Aramayı açmak için <Kbd>Ctrl</Kbd> <Kbd>K</Kbd> tuşlayın.
+        </p>
       </Specimen>
     </>
   );
