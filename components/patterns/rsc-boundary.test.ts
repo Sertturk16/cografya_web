@@ -88,7 +88,29 @@ const PRODUCT_ROOTS = [
 
 const SHOWCASE_ROOTS = ["app/[locale]/design-system", "components/showcase"] as const;
 
-const SCAN_ROOTS = [...PRODUCT_ROOTS, ...SHOWCASE_ROOTS] as const;
+/**
+ * `components/ui/orphan.test.ts`'s `PRODUCT_ROOTS` (borrowed above) excludes `components/ui`
+ * on purpose too — it's the TARGET of that test's question ("is a primitive reachable"), not a
+ * root to walk outward from. That exclusion is correct there and wrong here: a `"use client"`
+ * file that lives IN `components/ui` reaching `server-only` is exactly as fatal to `pnpm build`
+ * as one under `components/v2`, and nine of `components/ui`'s files carry the directive today
+ * (`accordion`, `custom-select`, `dialog`, `progress`, `sheet`, `sonner`, `table`, `tabs`,
+ * `tooltip`). Found by review round 1 walking all 12 files this list closes the gap on by
+ * hand and confirming them clean — this list is what makes that a standing guarantee instead of
+ * a one-time check. `components/theme-provider.tsx`, `app/global-error.tsx` and
+ * `app/not-found.tsx` are the other three: real, always-mounted files with no home in either
+ * `PRODUCT_ROOTS` or `SHOWCASE_ROOTS` (the app-root special files sit ABOVE
+ * `app/[locale]`, the same reason `orphan.test.ts` roots `app/[locale]/layout.tsx` explicitly
+ * rather than relying on a root that would miss it).
+ */
+const ROOT_LEVEL_ROOTS = [
+  "components/ui",
+  "components/theme-provider.tsx",
+  "app/global-error.tsx",
+  "app/not-found.tsx",
+] as const;
+
+const SCAN_ROOTS = [...PRODUCT_ROOTS, ...SHOWCASE_ROOTS, ...ROOT_LEVEL_ROOTS] as const;
 
 const label = (path: string) => relative(repoRoot, path);
 const sourceOf = (path: string) => stripComments(readFileSync(path, "utf8"));
@@ -160,11 +182,15 @@ describe("the RSC-boundary scanner itself", () => {
   // tree, before the silence below is trusted.
 
   it("walked a real, non-trivial slice of the surface", () => {
-    expect(surfaceFiles().length).toBeGreaterThan(100);
+    expect(surfaceFiles().length).toBeGreaterThan(150);
   });
 
-  it('found real "use client" files on it', () => {
-    expect(clientFilesOnSurface().length).toBeGreaterThan(10);
+  it('found real "use client" files on it, components/ui/ included', () => {
+    // Measured against the live tree after `ROOT_LEVEL_ROOTS` closed the gap review round 1
+    // found: 60 today (up from the ~40 `PRODUCT_ROOTS` + `SHOWCASE_ROOTS` alone would find),
+    // components/ui/'s 9 included.
+    expect(clientFilesOnSurface().length).toBeGreaterThan(40);
+    expect(clientFilesOnSurface().map(label)).toContain("components/ui/dialog.tsx");
   });
 
   it("recognizes a real client file — positive control", () => {
@@ -232,6 +258,15 @@ describe("the RSC-boundary scanner itself", () => {
   });
 });
 
+/**
+ * "The surface" here is `SCAN_ROOTS`: `PRODUCT_ROOTS` + `SHOWCASE_ROOTS` + `ROOT_LEVEL_ROOTS`.
+ * That is every directory Next.js actually compiles into the app except `app/api/**` (BFF route
+ * handlers, which run server-only by construction and carry no `"use client"` files) and the
+ * five generated artifacts (`lib/api/schema.ts`, `lib/map/*.generated.ts` — not components, and
+ * excluded from lint/prettier the same way, `CLAUDE.md`). The describe title says "no client
+ * file on the surface" rather than "in the repo" for that reason — a real, named boundary, not
+ * an unstated one.
+ */
 describe("no client file on the surface transitively reaches a server-only module", () => {
   it('every "use client" file\'s import closure is free of server-only', () => {
     const offenders = clientFilesOnSurface()

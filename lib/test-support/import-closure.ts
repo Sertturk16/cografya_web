@@ -85,13 +85,34 @@ export function closureFrom(roots: readonly string[]): Set<string> {
 /**
  * Full `import …/export …` clauses ending `from "specifier"`, captured whole so
  * {@link isRuntimeClause} can inspect what is actually bound — not just the fact that a
- * specifier follows `from`. Non-greedy up to the nearest `from "…"`, which is the same
- * "scanner, not a parser" posture `SPECIFIER` above and `lib/test-support/strip-comments.ts`
- * already take: it can misattribute a clause across two adjacent statements where the first
- * has no `from` of its own (a bare `import "x";` immediately followed by `import {…} from
- * "y";`), but only in the SAFE direction — see {@link isRuntimeClause}'s own note.
+ * specifier follows `from`.
+ *
+ * The clause is `[^;]*?`, NOT `[\s\S]*?` — anchored so it cannot cross a `;`. An earlier
+ * version used `[\s\S]*?` and was WRONG, not merely imprecise in a safe direction as its own
+ * docblock used to claim: `export type { X };` has no `from` of its own, so on
+ *
+ *     export type { X };
+ *     import { b } from "./real";
+ *
+ * the unanchored version matched starting at `export`, and — finding no `from` before the
+ * `import` keyword — kept consuming across the statement boundary until the NEXT `from`,
+ * capturing the merged clause `"type { X };\nimport { b }"`. That clause starts with `type\b`,
+ * so {@link isRuntimeClause} called it type-only and `"./real"` vanished from the runtime graph
+ * — a FALSE NEGATIVE, the one direction this scanner cannot afford, on exactly the shape
+ * `components/patterns/breadcrumbs.tsx` carries today (`export type { BreadcrumbTrailItem };`
+ * followed, eventually, by more code). Anchoring at `;` instead: `export type { X };` no longer
+ * matches this pattern AT ALL (no `from` appears before its own semicolon), so it is correctly
+ * invisible to it, and `import { b } from "./real";` is left to match on its own, independently,
+ * starting fresh at its own `import` keyword. `lib/test-support/import-closure.test.ts` pins
+ * this exact two-line shape as a regression fixture.
+ *
+ * Semicolons are not valid inside an import/export clause's own syntax (specifiers, braces,
+ * `as` aliases, `* as ns`), so this anchor costs nothing there — the one thing it does give up,
+ * a source file with automatic-semicolon-insertion omitting a statement's `;` entirely, does not
+ * occur anywhere in this codebase (Prettier enforces `semi: true` — `docs/conventions.md`) and
+ * is out of scope the same way `strip-comments.ts` calls itself a scanner, not a parser.
  */
-const IMPORT_OR_EXPORT_FROM = /\b(?:import|export)\s+([\s\S]*?)\s+from\s*["']([^"']+)["']/g;
+const IMPORT_OR_EXPORT_FROM = /\b(?:import|export)\s+([^;]*?)\s+from\s*["']([^"']+)["']/g;
 
 /**
  * Whether an `import`/`export …from` clause (the text between the keyword and `from`, e.g.
@@ -109,10 +130,12 @@ const IMPORT_OR_EXPORT_FROM = /\b(?:import|export)\s+([\s\S]*?)\s+from\s*["']([^
  * set and can never hide a real orphan) would make `components/patterns/rsc-boundary.test.ts`
  * flag it as a violation that `pnpm build` disagrees with.
  *
- * SCOPE, in the safe direction only: a clause this cannot classify (the merge described on
- * {@link IMPORT_OR_EXPORT_FROM}, or any clause not shaped like `type …` / `{ …members… }` /
- * `Default[, { … }]` / `* as ns`) is treated as a REAL edge, never dropped — a false positive
- * here costs a review, a false negative would hide the exact bug this test exists to catch.
+ * SCOPE: {@link IMPORT_OR_EXPORT_FROM} no longer merges clauses across a `;` (see its own
+ * docblock for the false-negative that used to produce), so `clause` here is always exactly one
+ * statement's own text. Any shape this function does not recognise as `type …` or a pure
+ * `{ …members… }` block — a default import, `* as ns`, `Default, { … }` — is treated as a REAL
+ * edge, never dropped: a false positive there costs a review, a false negative would hide the
+ * exact bug this test exists to catch.
  */
 function isRuntimeClause(clause: string): boolean {
   const trimmed = clause.trim();
