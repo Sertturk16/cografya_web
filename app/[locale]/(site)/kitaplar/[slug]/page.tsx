@@ -9,6 +9,7 @@ import type { BenchVideo } from "@/components/book/bench-stage";
 import { DenemeMeta } from "@/components/book/deneme-meta";
 import { VideoBench } from "@/components/book/video-bench";
 import { ProseNote } from "@/components/prose-note";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -178,7 +179,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
 
       {/* HERO BANNER SECTION */}
       <section className="relative border-b border-border bg-gradient-to-b from-primary/5 via-background to-background pt-6 sm:pt-10 pb-10 overflow-hidden">
-        <div className="container mx-auto px-4 max-w-7xl relative z-10 space-y-6">
+        <PageContainer space="band">
           {/* Breadcrumb Navigation */}
           <nav
             aria-label="Breadcrumb"
@@ -300,7 +301,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
               </span>
             </div>
           </div>
-        </div>
+        </PageContainer>
       </section>
 
       {/* MAIN WORKBENCH SECTION */}

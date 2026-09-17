@@ -70,8 +70,15 @@ function bodySpellings(): Map<string, string[]> {
  * width — including the sticky quicknav/tab-strip wrappers in `turkiye/bolge/[slug]`,
  * `turkiye/bolge` and `dunya/[slug]`, which align to the same edges as the body content and
  * carry the same `container`/`max-w-7xl` tokens, not just the primary content wrapper.
+ *
+ * Task 3 (2026-09-17) moved the five family-B pages (`container mx-auto px-4 max-w-7xl …`) onto
+ * `PageContainer`, which renders as a component call rather than a literal `className` — those
+ * five wrapper elements simply stop matching this scanner, taking 2 spellings and 5 elements
+ * with them: 15 distinct spellings across 34 elements. The three sticky quicknav/tab-strip bars
+ * named above are UNCHANGED (out of scope — they are not page body wrappers) and still count
+ * toward this total. See task-3-report.md for the full before/after list.
  */
-export const PAGE_BODY_SPELLINGS = 17;
+export const PAGE_BODY_SPELLINGS = 15;
 
 describe("the scanner itself", () => {
   it("walked the product surface and nothing else", () => {

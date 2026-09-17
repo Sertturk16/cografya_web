@@ -53,6 +53,16 @@ import { describe, expect, it } from "vitest";
  * Comments are stripped by parsing — only real `className` attributes are read — so a docblock
  * that quotes a container spelling (this one does, twice) cannot satisfy the check.
  *
+ * T-035 added a fourth idiom: `<PageContainer>` (`components/patterns/page-container.tsx`)
+ * renders the same three structural properties from inside a component, so a page that calls it
+ * spells no container `className` of its own — the literal-string scan below would otherwise
+ * read that page as regressing to edge-to-edge content. The detector below treats a real
+ * `<PageContainer` JSX element (AST-matched by tag name, the same rigor as the className scan,
+ * not a text search) as an equally valid proof. This is the rewrite the block below already
+ * called for: PageContainer did not land on the layout's `<main>` — each page still opts in by
+ * calling it — so the test still asserts a per-page container, just through a second idiom.
+ *
+
  * ## Scope
  *
  * Every `page.tsx`, `error.tsx` and `not-found.tsx` under `app/[locale]/(site)`. The two
@@ -116,6 +126,31 @@ function classNames(file: string): string[] {
           found.push(expr.text);
         }
       }
+    }
+    ts.forEachChild(node, visit);
+  };
+  ts.forEachChild(source, visit);
+  return found;
+}
+
+/**
+ * Whether a route file renders a `<PageContainer>` element — the fourth container idiom (see
+ * the docblock above). AST tag-name matching, same as `classNames` above: a comment or a string
+ * that happens to contain the word "PageContainer" cannot satisfy this, only a real JSX element.
+ */
+function usesPageContainer(file: string): boolean {
+  const source = ts.createSourceFile(
+    file,
+    readFileSync(file, "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  let found = false;
+  const visit = (node: ts.Node) => {
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+      const tag = node.tagName;
+      if (ts.isIdentifier(tag) && tag.text === "PageContainer") found = true;
     }
     ts.forEachChild(node, visit);
   };
@@ -206,15 +241,16 @@ describe("(site) route files", () => {
    * design.
    *
    * Note what this does NOT settle. Hoisting the container onto the layout's `<main>` — so pages
-   * stop spelling it at all — is a legitimate composition decision (T-035), and the five detail
-   * pages that keep theirs inside a full-bleed hero section are the reason it is not a one-liner.
-   * If that lands, this test does not become wrong; it becomes a test of the wrong layer, and
-   * should be rewritten to assert the container on the layout, not softened to accommodate it.
+   * stop spelling it at all — would still be a bigger move than T-035 makes: `<PageContainer>`
+   * is called PER PAGE, so each route file still opts in, and `usesPageContainer` above is what
+   * lets this test see that opt-in once the className moves off the page and into the component.
    */
   const CONTAINERLESS_BY_DESIGN: readonly string[] = [];
 
   it("each carry a layout container", () => {
-    const missing = routeFiles.filter((file) => !classNames(file).some(isLayoutContainer)).map(rel);
+    const missing = routeFiles
+      .filter((file) => !classNames(file).some(isLayoutContainer) && !usesPageContainer(file))
+      .map(rel);
     expect(missing).toEqual([...CONTAINERLESS_BY_DESIGN]);
 
     // A typo on the exemption list would silently excuse a file that is not even scanned.

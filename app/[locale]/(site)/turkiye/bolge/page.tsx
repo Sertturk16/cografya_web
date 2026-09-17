@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2TurkeyRegions } from "@/components/v2/v2-turkey-regions";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -326,7 +327,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
 
       {/* HERO SECTION */}
       <header className="border-b border-border bg-gradient-to-b from-muted/30 via-background to-background py-10 sm:py-14">
-        <div className="container mx-auto px-4 max-w-7xl space-y-6">
+        <PageContainer space="band">
           {/* Breadcrumbs */}
           <nav
             aria-label="Breadcrumb"
@@ -463,7 +464,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-        </div>
+        </PageContainer>
       </header>
 
       {/* QUICKNAV BAR */}

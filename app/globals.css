@@ -664,6 +664,18 @@ html {
   a:hover {
     color: var(--primary);
   }
+
+  /* Site-wide text-selection tint (T-035 override B). Five pages carried their own
+     `selection:bg-primary/20`; the other thirty-two had none, so selected text read
+     differently depending on which page you were on. One rule, `--primary` so it tracks the
+     bridge token in both themes, replaces all five.
+     MEASURED (`lib/theme/contrast.ts`, `blendOver` against every surface selected text can
+     sit on, not the untinted token): `--foreground` on the 20%-primary blend over
+     `--background`/`--card`/`--muted` — light 9.66:1 / 11.31:1 / 9.66:1, dark 12.55:1 /
+     11.30:1 / 9.83:1. All clear the 4.5:1 text floor with wide margin in both themes. */
+  ::selection {
+    background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  }
 }
 
 /* Visible keyboard focus everywhere (a11y).
