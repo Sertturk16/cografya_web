@@ -24,8 +24,6 @@ import {
   CloudRain,
   Mountain,
 } from "lucide-react";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
-
 type LinkHref = React.ComponentProps<typeof Link>["href"];
 
 interface V2SeaBasinDetailViewProps {
@@ -545,8 +543,15 @@ export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailVie
         </div>
       </section>
 
-      {/* Sources Section */}
-      <V2SourcesSection scope="deniz" />
+      {/* NO SOURCES SECTION HERE, AND NO ATTRIBUTION BLOCK EITHER — both are the PAGE's.
+          This view is a client component, and `MarineAttribution` (the block carrying ECMWF's
+          and Copernicus Marine's required wording for the SST / wave / wind values the table
+          above publishes) is an async server component that cannot be rendered from inside one.
+          While the bibliography lived here and the attribution lived nowhere, the four basin
+          pages published CMEMS/ECMWF-derived values under a heading naming both providers with
+          the mandated notice rendered on no page at all. Each basin page now renders
+          `MarineAttribution` and then `V2SourcesSection`, in that order — the same order
+          `/deniz` uses, the notice before the bibliography that echoes it. */}
     </div>
   );
 }
