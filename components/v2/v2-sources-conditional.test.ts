@@ -84,11 +84,16 @@ describe("V2SourcesSection's conditional citations", () => {
       "utf8",
     );
 
-    // Both sections and both citations read the SAME two booleans. Bound this way the
+    // Every section and every citation reads the SAME expressions. Bound this way the
     // bibliography cannot drift from the page: there is no second condition to forget.
     expect(province).toMatch(/include=\{showMarine \?/);
-    expect(province).toMatch(/omit=\{pm25Annual \?/);
+    expect(province).toMatch(/omit=\{\[\.\.\.\(pm25Annual \?/);
     expect(province).toMatch(/showMarine \? \(/);
+    // `era5` had no `omit` counterpart at all. `climateSeries` is `isTr ? province.climate :
+    // null`, so the climate block renders on no English province page while the ERA5-Land card
+    // and its verbatim ECMWF quote were cited on all 81 of them.
+    expect(province).toMatch(/\.\.\.\(climateSeries \? \[\] : \["era5"\]\)/);
+    expect(province).toMatch(/\{climateSeries && \(/);
   });
 
   it("carries the verbatim licence text for the marine sources it now cites", () => {
