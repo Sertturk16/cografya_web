@@ -853,6 +853,9 @@
     }
   },
   "Auth": {
+    "breadcrumb": {
+      "home": "Home"
+    },
     "login": {
       "metaTitle": "Log in",
       "metaDescription": "Log in to your Coğrafya Gurmesi account.",

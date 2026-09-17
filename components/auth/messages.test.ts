@@ -18,6 +18,9 @@ import trMessages from "@/messages/tr.json";
  */
 
 const AUTH_KEYS = [
+  // T-032 PR1 — the ported V2 auth pages render a breadcrumb rather than inlining the
+  // hard-coded Turkish "Ana Sayfa" the V1 login shell used.
+  "breadcrumb.home",
   "login.metaTitle",
   "login.metaDescription",
   "login.heading",
