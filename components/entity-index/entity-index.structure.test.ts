@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
  * guard (review A11Y109-M1) — removed along with the bridge paragraph itself (owner report,
  * turkiye-editor-notlari md.4: a same-page anchor restating a count the meta description and
  * the index's own heading already carried, immediately above content it pointed at). See
- * `app/[locale]/turkiye/page.tsx`'s own docblock for that removal's reasoning.
+ * `app/[locale]/(site)/turkiye/page.tsx`'s own docblock for that removal's reasoning.
  */
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");

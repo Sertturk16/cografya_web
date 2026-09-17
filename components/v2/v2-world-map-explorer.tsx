@@ -1088,7 +1088,7 @@ export function V2WorldMapExplorer({
                 {/* Compact Mini-Card Grid */}
                 <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
                   {group.items.map((country) => {
-                    const v2Path = country.path.startsWith("/v2")
+                    const v2Path = country.path.startsWith("/")
                       ? country.path
                       : `/v2${country.path}`;
                     return (
@@ -1169,9 +1169,7 @@ export function V2WorldMapExplorer({
               <TableBody>
                 {filteredCountries.map((country) => {
                   const continentMeta = CONTINENT_META[country.continent];
-                  const v2Path = country.path.startsWith("/v2")
-                    ? country.path
-                    : `/v2${country.path}`;
+                  const v2Path = country.path.startsWith("/") ? country.path : `/v2${country.path}`;
                   return (
                     <TableRow key={country.isoCode} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
@@ -1254,7 +1252,7 @@ export function V2WorldMapExplorer({
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 items-start">
                   {groupList.map((c) => {
-                    const v2Path = c.path.startsWith("/v2") ? c.path : `/v2${c.path}`;
+                    const v2Path = c.path.startsWith("/") ? c.path : `/v2${c.path}`;
                     return (
                       <Link
                         key={c.isoCode}

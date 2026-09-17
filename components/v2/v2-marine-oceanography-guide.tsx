@@ -32,7 +32,7 @@ export function V2MarineOceanographyGuide() {
         </div>
 
         <Link
-          href="/v2/deniz/kiyi-tipleri"
+          href="/deniz/kiyi-tipleri"
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
             "shrink-0 group font-bold text-xs gap-1.5",

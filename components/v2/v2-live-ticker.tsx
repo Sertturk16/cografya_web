@@ -161,7 +161,7 @@ export function V2LiveTicker() {
           {earthquake && (
             <>
               <Link
-                href="/v2/deprem"
+                href="/deprem"
                 className="flex items-center gap-1.5 hover:text-foreground shrink-0 transition-colors"
               >
                 <Flame className="size-3.5 text-destructive animate-pulse" />
@@ -180,7 +180,7 @@ export function V2LiveTicker() {
           {marmara && (
             <>
               <Link
-                href="/v2/deniz"
+                href="/deniz"
                 className="flex items-center gap-1.5 hover:text-foreground shrink-0 transition-colors"
               >
                 <Waves className="size-3.5 text-accent" />
@@ -196,7 +196,7 @@ export function V2LiveTicker() {
           {akdeniz && (
             <>
               <Link
-                href="/v2/deniz"
+                href="/deniz"
                 className="flex items-center gap-1.5 hover:text-foreground shrink-0 transition-colors"
               >
                 <Waves className="size-3.5 text-accent" />
@@ -210,7 +210,7 @@ export function V2LiveTicker() {
           )}
 
           <Link
-            href="/v2/turkiye"
+            href="/turkiye"
             className="flex items-center gap-1.5 hover:text-foreground shrink-0 transition-colors"
           >
             <MapPin className="size-3.5 text-secondary" />
@@ -221,7 +221,7 @@ export function V2LiveTicker() {
           <span className="text-border">|</span>
 
           <Link
-            href="/v2/araclar"
+            href="/araclar"
             className="flex items-center gap-1.5 hover:text-foreground shrink-0 transition-colors"
           >
             <Layers className="size-3.5 text-primary" />

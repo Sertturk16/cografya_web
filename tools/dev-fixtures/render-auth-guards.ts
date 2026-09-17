@@ -202,7 +202,7 @@ export function assertSameOrigin(url: URL, verifiedBase: URL, context: string): 
 // -------------------------------------------------------------------------------------------
 // Register-path guard — a semantic terminator class, not a spelling blocklist. Matches
 // "kayit"/"register" as a whole path SEGMENT (bounded by "/", the string edges, or a
-// query/fragment separator), so "/kayit", "/kayit/", "/en/register", "/v2/kayit", "/kayit?x=1"
+// query/fragment separator), so "/kayit", "/kayit/", "/en/register", "/kayit?x=1"
 // and "/kayit#a" all match, while "/kayitli-varliklar", "/registered" and "/giris" do not.
 // Known, non-blocking limit: a percent-encoded spelling such as "/%6Bayit" evades this — left
 // open deliberately, at MINOR weight, on a measured accident (not attacker) surface.

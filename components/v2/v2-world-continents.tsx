@@ -213,7 +213,7 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
           </p>
         </div>
         <Link
-          href="/v2/dunya/kita"
+          href="/dunya/kita"
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all shadow-2xs group/btn shrink-0"
         >
           <span>Tüm Kıtaları Karşılaştır</span>
@@ -305,7 +305,7 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
                 <div className="pt-2 flex flex-col gap-2">
                   <Link
                     href={{
-                      pathname: "/v2/dunya/kita/[slug]",
+                      pathname: "/dunya/kita/[slug]",
                       params: { slug: CONTINENT_KEY_TO_SLUG[continent.id] ?? "afrika" },
                     }}
                     className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity shadow-2xs"

@@ -51,7 +51,7 @@ const VIDEO = flatCode(sourceOf("./deneme-video.tsx"));
 const BENCH = flatCode(sourceOf("./video-bench.tsx"));
 const STAGE = flatCode(sourceOf("./bench-stage.tsx"));
 const TIMELINE = flatCode(sourceOf("./bench-timeline.tsx"));
-const PAGE = flatCode(sourceOf("../../app/[locale]/kitaplar/[slug]/page.tsx"));
+const PAGE = flatCode(sourceOf("../../app/[locale]/(site)/kitaplar/[slug]/page.tsx"));
 
 /** The `playerEmbedSrc({ … })` argument object, as written. Everything asserted about the
  *  `src` is asserted about THIS slice rather than the whole file, so a `seekSecond` that is

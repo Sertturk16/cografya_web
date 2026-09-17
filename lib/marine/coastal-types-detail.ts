@@ -35,8 +35,8 @@ export const COASTAL_TYPES_DATA: CoastalTypeItem[] = [
       "Batı ve Orta Toroslar kıyı şeridi (Antalya falezleri, Alanya, Anamur)",
     ],
     seaLinks: [
-      { label: "Karadeniz Coğrafyası & Telemetrisi", href: "/v2/deniz/karadeniz" },
-      { label: "Akdeniz Havzası & Telemetrisi", href: "/v2/deniz/akdeniz" },
+      { label: "Karadeniz Coğrafyası & Telemetrisi", href: "/deniz/karadeniz" },
+      { label: "Akdeniz Havzası & Telemetrisi", href: "/deniz/akdeniz" },
     ],
   },
   {
@@ -57,7 +57,7 @@ export const COASTAL_TYPES_DATA: CoastalTypeItem[] = [
       "Edremit Körfezi, Çandarlı Körfezi, İzmir Körfezi, Kuşadası Körfezi",
       "Karaburun Yarımadası, Çeşme Yarımadası, Dilek Yarımadası",
     ],
-    seaLinks: [{ label: "Ege Denizi Coğrafyası & Telemetrisi", href: "/v2/deniz/ege" }],
+    seaLinks: [{ label: "Ege Denizi Coğrafyası & Telemetrisi", href: "/deniz/ege" }],
   },
   {
     id: "ria",
@@ -78,8 +78,8 @@ export const COASTAL_TYPES_DATA: CoastalTypeItem[] = [
       "Muğla Gökova Körfezi kıyı girintileri",
     ],
     seaLinks: [
-      { label: "Marmara Denizi Coğrafyası & Telemetrisi", href: "/v2/deniz/marmara" },
-      { label: "Ege Denizi Coğrafyası & Telemetrisi", href: "/v2/deniz/ege" },
+      { label: "Marmara Denizi Coğrafyası & Telemetrisi", href: "/deniz/marmara" },
+      { label: "Ege Denizi Coğrafyası & Telemetrisi", href: "/deniz/ege" },
     ],
   },
   {
@@ -99,7 +99,7 @@ export const COASTAL_TYPES_DATA: CoastalTypeItem[] = [
       "Kekova Batık Şehir ve çevresindeki paralel adacıklar kümesi",
       "Finike açıkları",
     ],
-    seaLinks: [{ label: "Akdeniz Havzası & Telemetrisi", href: "/v2/deniz/akdeniz" }],
+    seaLinks: [{ label: "Akdeniz Havzası & Telemetrisi", href: "/deniz/akdeniz" }],
   },
   {
     id: "lagun_limanli",
@@ -120,8 +120,8 @@ export const COASTAL_TYPES_DATA: CoastalTypeItem[] = [
       "Kapıdağ Yarımadası (Balıkesir) ve Sinop İnceburun (Tombolo / Saplı Ada örnekleri)",
     ],
     seaLinks: [
-      { label: "Marmara Denizi Coğrafyası & Telemetrisi", href: "/v2/deniz/marmara" },
-      { label: "Karadeniz Coğrafyası & Telemetrisi", href: "/v2/deniz/karadeniz" },
+      { label: "Marmara Denizi Coğrafyası & Telemetrisi", href: "/deniz/marmara" },
+      { label: "Karadeniz Coğrafyası & Telemetrisi", href: "/deniz/karadeniz" },
     ],
   },
   {
@@ -140,7 +140,7 @@ export const COASTAL_TYPES_DATA: CoastalTypeItem[] = [
       "Mersin Silifke kıyı kuşağı",
       "Narlıkuyu Koyu (Cennet-Cehennem obruklarının deniz çıkışı)",
     ],
-    seaLinks: [{ label: "Akdeniz Havzası & Telemetrisi", href: "/v2/deniz/akdeniz" }],
+    seaLinks: [{ label: "Akdeniz Havzası & Telemetrisi", href: "/deniz/akdeniz" }],
   },
 ];
 

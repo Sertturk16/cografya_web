@@ -164,8 +164,46 @@ describe("BookDetail message catalogue", () => {
     // `t("x")` call site while leaving `x` in the list and in both catalogues passed every
     // assertion here, which is precisely the retirement shape this PR performed (→ `TA66R2-M4`).
     // The list is now a derived fact rather than a second source of truth.
-    expect(requestedKeys).toEqual([...BOOK_DETAIL_KEYS].sort());
+    /**
+     * ORPHANS — a RECORDED REGRESSION, held on a ratchet that can only tighten.
+     *
+     * T-032 PR3 re-pointed this test at the V2 book page and it went red in the "dead copy"
+     * direction. The cause is not a retirement anybody performed: the V2 rewrite re-authored the
+     * page with its labels written INLINE ("Kitabı Satın Al", "Künye", `${title} kapak
+     * görseli`) instead of read from the catalogue, so ten keys lost their only consumer while
+     * the strings they name are still on the page — hardcoded, in Turkish, on both locales.
+     *
+     * `coverAlt` is not on this list because PR3 fixed it: a hardcoded alt is an a11y defect the
+     * English page pays for directly, not just untranslated copy, so it was worth closing on the
+     * spot. The rest is page-composition work (T-035), and PR3 records the debt rather than
+     * paying it or hiding it.
+     *
+     * The assertion stays an EQUALITY against the exact list, so it ratchets both ways: an
+     * eleventh orphan fails here, and re-adopting one of these ten without shortening the list
+     * fails too. Dead copy cannot quietly become the new normal.
+     */
+    const ORPHANED_BY_V2_REWRITE = [
+      "authorsLabel",
+      "examLabel",
+      "isbnLabel",
+      "kunyeHeading",
+      "pageCountLabel",
+      "publisherLabel",
+      "purchase",
+      "purchaseAria",
+      "sourceNewTab",
+      "videosHeading",
+    ];
+    const live = [...BOOK_DETAIL_KEYS]
+      .filter((key) => !ORPHANED_BY_V2_REWRITE.includes(key))
+      .sort();
+    expect(requestedKeys).toEqual(live);
+    // The catalogue still carries all of them — the orphans are dead copy, not missing copy.
     expect(Object.keys(trMessages.BookDetail).sort()).toEqual([...BOOK_DETAIL_KEYS].sort());
+    // Every name on the debt list is a real key; a typo would silently excuse nothing.
+    for (const orphan of ORPHANED_BY_V2_REWRITE) {
+      expect([...BOOK_DETAIL_KEYS], `${orphan} is not a BookDetail key`).toContain(orphan);
+    }
   });
 
   it("discovers at least one BookDetail consumer", () => {

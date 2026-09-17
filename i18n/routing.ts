@@ -34,6 +34,21 @@ export const routing = defineRouting({
     },
     "/turkiye": "/turkiye",
     "/turkiye/[slug]": "/turkiye/[slug]",
+    // The region tier, which arrived with the V2 build and lost its prefix in T-032.
+    // ENGLISH SEGMENTS ARE `/turkiye/...`, NOT `/turkey/...`. The V2 entries used `/turkey`,
+    // which contradicts this table's own recorded decision (DEC 2026-07-13, the docblock at
+    // the top): `/turkiye` is a SINGLE segment for both locales because "Türkiye" is a proper
+    // noun the site already uses verbatim in its English copy. A hub at `/en/turkiye` with
+    // children at `/en/turkey/...` is not an information architecture, it is two of them.
+    // Only the leaf is translated.
+    "/turkiye/bolge": {
+      tr: "/turkiye/bolge",
+      en: "/turkiye/regions",
+    },
+    "/turkiye/bolge/[slug]": {
+      tr: "/turkiye/bolge/[slug]",
+      en: "/turkiye/region/[slug]",
+    },
     // `/dunya` + `/dunya/[slug]` (the world map hub + country detail, → DEC 2026-07-13)
     // mirror `/turkiye` one level up. Like "Türkiye", "dünya" reads correctly in the
     // English copy too, so a SINGLE segment serves both locales (no "world"/"harita"
@@ -41,6 +56,17 @@ export const routing = defineRouting({
     // dynamic `[slug]` VALUE is still the localized slug (`slug_tr` / `slug_en`).
     "/dunya": "/dunya",
     "/dunya/[slug]": "/dunya/[slug]",
+    // The continent tier. Same reasoning as `/turkiye/bolge` above: the parent `/dunya` is a
+    // single segment in both locales, so the children stay under it and only the leaf is
+    // translated. The V2 entries said `/world/continents`.
+    "/dunya/kita": {
+      tr: "/dunya/kita",
+      en: "/dunya/continents",
+    },
+    "/dunya/kita/[slug]": {
+      tr: "/dunya/kita/[slug]",
+      en: "/dunya/continent/[slug]",
+    },
     // The marine hub (→ DEC 2026-08-01, owner answer S2). LOCALIZED segment for the same
     // reason as `/oyun` below and NOT for the reason `/turkiye`/`/dunya` stay single: the
     // word "deniz" does not read as English at all, so the governing precedent is
@@ -52,6 +78,28 @@ export const routing = defineRouting({
     "/deniz": {
       tr: "/deniz",
       en: "/sea",
+    },
+    // The five sea sub-pages. `/deniz` IS localized to `/sea`, so unlike the two tiers above
+    // these children translate all the way down — the parent's own decision, followed.
+    "/deniz/karadeniz": {
+      tr: "/deniz/karadeniz",
+      en: "/sea/black-sea",
+    },
+    "/deniz/marmara": {
+      tr: "/deniz/marmara",
+      en: "/sea/marmara",
+    },
+    "/deniz/ege": {
+      tr: "/deniz/ege",
+      en: "/sea/aegean",
+    },
+    "/deniz/akdeniz": {
+      tr: "/deniz/akdeniz",
+      en: "/sea/mediterranean",
+    },
+    "/deniz/kiyi-tipleri": {
+      tr: "/deniz/kiyi-tipleri",
+      en: "/sea/coastal-types",
     },
     // The map game hub (→ DEC 2026-07-30c, owner answer S1). LOCALIZED segment, unlike
     // `/turkiye` and `/dunya`: those two survive untranslated because "Türkiye" and
@@ -159,17 +207,6 @@ export const routing = defineRouting({
       tr: "/araclar/alan-hesaplama",
       en: "/tools/area",
     },
-    // The tool tier's 404 BOUNDARY, not a fourth tool (fix round, İRİS post-merge live-audit
-    // finding A1 — `app/[locale]/araclar/[...rest]/page.tsx`'s own docblock has the full
-    // diagnosis). Declared here, symmetric in both locales, so next-intl's middleware can
-    // reverse-map an unknown EN path (`/en/tools/anything`) back to this canonical
-    // `/araclar/…` segment before Next's router matches it — without this entry the EN alias
-    // alone (undeclared) would stay untranslated and never reach the catch-all page at all,
-    // verified empirically (curl) both ways during this fix.
-    "/araclar/[...rest]": {
-      tr: "/araclar/[...rest]",
-      en: "/tools/[...rest]",
-    },
     // The auth page shell — login, password reset, registration and e-mail verification
     // (UYELIK-04, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md` §4.1;
     // PR-1 shipped the first three, PR-2 added the last two). LOCALIZED segments, on the
@@ -213,6 +250,17 @@ export const routing = defineRouting({
       tr: "/e-posta-dogrulama",
       en: "/verify-email",
     },
+    // The post-registration profile step and the member hub. Both `surface: "noindex"`
+    // (`lib/auth/auth-metadata.ts`) — authenticated personal-data pages — which is why they
+    // sit with the auth group rather than with the reading surfaces.
+    "/profil": {
+      tr: "/profil",
+      en: "/profile",
+    },
+    "/hesabim": {
+      tr: "/hesabim",
+      en: "/account",
+    },
     // The earthquake hub (AFAD, → DEC 2026-08-29a; `SEO-POLICY.md` §B4's own IA row). LOCALIZED
     // segment, on the `/hakkimizda ↔ /en/about` / `/deniz ↔ /en/sea` precedent: "deprem" does
     // not read as English at all. `/en/earthquakes` is plain and descriptive — no `ş`/`ğ`/`ı`/
@@ -225,183 +273,21 @@ export const routing = defineRouting({
       tr: "/deprem",
       en: "/earthquakes",
     },
-    "/v2": {
-      tr: "/v2",
-      en: "/v2",
+    "/deprem/fay-hatlari": {
+      tr: "/deprem/fay-hatlari",
+      en: "/earthquakes/fault-lines",
     },
-    // T-034 design system showcase. Same segment in both locales: it is internal
-    // tooling, not editorial copy. `noindex` is set on its layout.
-    "/v2/design-system": {
-      tr: "/v2/design-system",
-      en: "/v2/design-system",
-    },
-    "/v2/design-system/[category]": {
-      tr: "/v2/design-system/[category]",
-      en: "/v2/design-system/[category]",
-    },
-    "/v2/turkiye": {
-      tr: "/v2/turkiye",
-      en: "/v2/turkey",
-    },
-    "/v2/turkiye/[slug]": {
-      tr: "/v2/turkiye/[slug]",
-      en: "/v2/turkey/[slug]",
-    },
-    "/v2/turkiye/bolge": {
-      tr: "/v2/turkiye/bolge",
-      en: "/v2/turkey/regions",
-    },
-    "/v2/turkiye/bolge/[slug]": {
-      tr: "/v2/turkiye/bolge/[slug]",
-      en: "/v2/turkey/region/[slug]",
-    },
-    "/v2/dunya": {
-      tr: "/v2/dunya",
-      en: "/v2/world",
-    },
-    "/v2/dunya/[slug]": {
-      tr: "/v2/dunya/[slug]",
-      en: "/v2/world/[slug]",
-    },
-    "/v2/dunya/kita": {
-      tr: "/v2/dunya/kita",
-      en: "/v2/world/continents",
-    },
-    "/v2/dunya/kita/[slug]": {
-      tr: "/v2/dunya/kita/[slug]",
-      en: "/v2/world/continent/[slug]",
-    },
-    "/v2/deniz": {
-      tr: "/v2/deniz",
-      en: "/v2/sea",
-    },
-    "/v2/deniz/karadeniz": {
-      tr: "/v2/deniz/karadeniz",
-      en: "/v2/sea/black-sea",
-    },
-    "/v2/deniz/marmara": {
-      tr: "/v2/deniz/marmara",
-      en: "/v2/sea/marmara",
-    },
-    "/v2/deniz/ege": {
-      tr: "/v2/deniz/ege",
-      en: "/v2/sea/aegean",
-    },
-    "/v2/deniz/akdeniz": {
-      tr: "/v2/deniz/akdeniz",
-      en: "/v2/sea/mediterranean",
-    },
-    "/v2/deniz/kiyi-tipleri": {
-      tr: "/v2/deniz/kiyi-tipleri",
-      en: "/v2/sea/coastal-types",
-    },
-    "/v2/oyun": {
-      tr: "/v2/oyun",
-      en: "/v2/game",
-    },
-    "/v2/oyun/bolge-bulma": {
-      tr: "/v2/oyun/bolge-bulma",
-      en: "/v2/game/find-the-region",
-    },
-    "/v2/oyun/81-il": {
-      tr: "/v2/oyun/81-il",
-      en: "/v2/game/81-provinces",
-    },
-    "/v2/oyun/bolge-bolge-il": {
-      tr: "/v2/oyun/bolge-bolge-il",
-      en: "/v2/game/provinces-by-region",
-    },
-    "/v2/oyun/bolge-bolge-il/[bolge]": {
-      tr: "/v2/oyun/bolge-bolge-il/[bolge]",
-      en: "/v2/game/provinces-by-region/[bolge]",
-    },
-    "/v2/deprem": {
-      tr: "/v2/deprem",
-      en: "/v2/earthquakes",
-    },
-    "/v2/deprem/fay-hatlari": {
-      tr: "/v2/deprem/fay-hatlari",
-      en: "/v2/earthquakes/fault-lines",
-    },
-    "/v2/deprem/hazirlik": {
-      tr: "/v2/deprem/hazirlik",
-      en: "/v2/earthquakes/preparedness",
-    },
-    "/v2/araclar": {
-      tr: "/v2/araclar",
-      en: "/v2/tools",
-    },
-    "/v2/araclar/mesafe-olcme": {
-      tr: "/v2/araclar/mesafe-olcme",
-      en: "/v2/tools/distance",
-    },
-    "/v2/araclar/koordinat-bulma": {
-      tr: "/v2/araclar/koordinat-bulma",
-      en: "/v2/tools/coordinates",
-    },
-    "/v2/araclar/alan-hesaplama": {
-      tr: "/v2/araclar/alan-hesaplama",
-      en: "/v2/tools/area",
-    },
-    "/v2/kitaplar": {
-      tr: "/v2/kitaplar",
-      en: "/v2/books",
-    },
-    "/v2/kitaplar/[slug]": {
-      tr: "/v2/kitaplar/[slug]",
-      en: "/v2/books/[slug]",
-    },
-    "/v2/giris": {
-      tr: "/v2/giris",
-      en: "/v2/login",
-    },
-    "/v2/kayit": {
-      tr: "/v2/kayit",
-      en: "/v2/register",
-    },
-    // T-032 PR1 — the three V1 auth screens that had no V2 counterpart, ported under the
-    // prefix like every other V2 route. Their EN segments deliberately MIRROR the V1 ones
-    // (`/en/reset-password`, `/en/reset-password/new`, `/en/verify-email`), because PR3
-    // strips the `/v2` prefix and the result must land exactly on the paths
-    // `cografya_api`'s `src/auth/mail/mail-copy.ts` hard-codes into outbound mail. Nothing in
-    // either CI compares route names across the two repos; PR3 adds the tripwire that does.
-    "/v2/sifre-sifirlama": {
-      tr: "/v2/sifre-sifirlama",
-      en: "/v2/reset-password",
-    },
-    "/v2/sifre-sifirlama/yeni": {
-      tr: "/v2/sifre-sifirlama/yeni",
-      en: "/v2/reset-password/new",
-    },
-    "/v2/e-posta-dogrulama": {
-      tr: "/v2/e-posta-dogrulama",
-      en: "/v2/verify-email",
-    },
-    // T-032 PR1 — the V2 rebuild of the editorial `/hakkimizda` page. Same localized-segment
-    // rule as its V1 twin (`/hakkimizda ↔ /en/about`).
-    "/v2/hakkimizda": {
-      tr: "/v2/hakkimizda",
-      en: "/v2/about",
-    },
-    // The v2 post-registration profile-completion step (`DEC 2026-09-03a` md.1's destination
-    // half). LOCALIZED segment on the `/v2/giris ↔ /v2/login` · `/v2/kayit ↔ /v2/register`
-    // precedent: "profil" is a Turkish word that does not read as English, so the governing
-    // rule is `/hakkimizda ↔ /en/about`, not `/turkiye`'s shared segment.
-    //
-    // `surface: "noindex"` in BOTH locales (`lib/auth/auth-metadata.ts`'s `AUTH_SURFACE`) —
-    // this is an authenticated personal-data page. A `noindex` page still must resolve to
-    // exactly ONE correct URL per locale, which is why the segment is declared here.
-    "/v2/profil": {
-      tr: "/v2/profil",
-      en: "/v2/profile",
-    },
-    "/v2/hesabim": {
-      tr: "/v2/hesabim",
-      en: "/v2/account",
+    "/deprem/hazirlik": {
+      tr: "/deprem/hazirlik",
+      en: "/earthquakes/preparedness",
     },
     "/design-system": {
       tr: "/design-system",
       en: "/design-system",
+    },
+    "/design-system/[category]": {
+      tr: "/design-system/[category]",
+      en: "/design-system/[category]",
     },
   },
 });

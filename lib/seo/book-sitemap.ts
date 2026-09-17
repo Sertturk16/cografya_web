@@ -16,7 +16,7 @@ import { sitemapEntriesFor } from "./sitemap-entries";
  * already said entry-building rules belong in `lib/seo/`; this is that split, applied to the
  * one builder that had grown a conditional.
  *
- * The predicate is now stated ONCE for the sitemap. `app/[locale]/kitaplar/page.tsx` states
+ * The predicate is now stated ONCE for the sitemap. `app/[locale]/(site)/kitaplar/page.tsx` states
  * the same `books.length === 0` condition for the page's own 404, which is deliberate rather
  * than duplicated: one decides a page's status code and the other decides a URL's presence,
  * and they are joined by reading the SAME list, not by sharing a helper.

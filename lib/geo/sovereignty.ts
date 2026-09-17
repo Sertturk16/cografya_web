@@ -55,7 +55,29 @@ export function isSpecialStatusRow(sovereigntyNoteTr: string | null): boolean {
  * divergent third rule invented here would be worse than the state it guards against.
  */
 export function showsSovereigntyNote(locale: Locale, sovereigntyNoteTr: string | null): boolean {
-  return locale === "tr" && isSpecialStatusRow(sovereigntyNoteTr);
+  return showsSovereigntyNoteForStatus(locale, isSpecialStatusRow(sovereigntyNoteTr));
+}
+
+/**
+ * The same two decisions, taken from an ALREADY-RESOLVED special-status boolean.
+ *
+ * Some surfaces cannot reach the marker. `sovereigntyNoteTr` is published on
+ * `CountryDetailDto` only — the world hub and the neighbours grid consume
+ * `CountryListItemDto`, which does not carry it, so those two resolve membership from the
+ * hand-maintained `lib/geo/special-status-isos.ts` set instead (that module's own comment
+ * explains why no test can reconcile it with the seed).
+ *
+ * Membership was the only part they could not share. The CONSEQUENCE is shareable, and until
+ * T-032 PR3 it was not shared: `/dunya` wrote `hasFlagAsset && (!isSpecialStatus || locale ===
+ * "tr")` and the neighbours grid wrote `hasFlag(nb.iso) && (isTr || !nbIsSpecialStatus)` — two
+ * hand-rolled restatements of a politically load-bearing rule that agreed with this module by
+ * coincidence rather than by construction. The docblock above `showsCountryFlag` had already
+ * ruled on exactly this shape: the coupling is written as a dependency, "rather than as a
+ * second condition that merely happens to agree today". These two entry points are how a
+ * caller holding a boolean obeys that ruling instead of re-deriving it.
+ */
+export function showsSovereigntyNoteForStatus(locale: Locale, isSpecialStatus: boolean): boolean {
+  return locale === "tr" && isSpecialStatus;
 }
 
 /**
@@ -82,5 +104,10 @@ export function showsSovereigntyNote(locale: Locale, sovereigntyNoteTr: string |
  * agree today. `lib/geo/sovereignty.test.ts` pins that they can never diverge.
  */
 export function showsCountryFlag(locale: Locale, sovereigntyNoteTr: string | null): boolean {
-  return !isSpecialStatusRow(sovereigntyNoteTr) || showsSovereigntyNote(locale, sovereigntyNoteTr);
+  return showsCountryFlagForStatus(locale, isSpecialStatusRow(sovereigntyNoteTr));
+}
+
+/** `showsCountryFlag` for a caller that already knows the row's status — see `showsSovereigntyNoteForStatus`. */
+export function showsCountryFlagForStatus(locale: Locale, isSpecialStatus: boolean): boolean {
+  return !isSpecialStatus || showsSovereigntyNoteForStatus(locale, isSpecialStatus);
 }

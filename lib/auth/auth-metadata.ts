@@ -22,20 +22,16 @@ export const AUTH_PATHNAMES = [
   "/sifre-sifirlama/yeni",
   "/kayit",
   "/e-posta-dogrulama",
-  // The v2 post-registration profile-completion route (DEC 2026-09-03a md.1).
-  // Joined to AUTH_PATHNAMES so the personal-data route receives audited
-  // noindex/canonical/hreflang test coverage in lib/seo/auth-routes.test.ts.
-  // Note: /v2/giris and /v2/kayit remain outside AUTH_PATHNAMES today (D-4)
-  // because their v2 shells were introduced before this centralization.
-  "/v2/profil",
-  // The v2 dedicated member area / hub (UYE-P3).
-  "/v2/hesabim",
-  // T-032 PR1 — the V2 shells of the V1 routes of the same name. Each pair serves the same
-  // screen under two prefixes until PR3 collapses them, so both members are listed and the
-  // conformance gate in `lib/seo/auth-routes.test.ts` covers the new pages automatically.
-  "/v2/sifre-sifirlama",
-  "/v2/sifre-sifirlama/yeni",
-  "/v2/e-posta-dogrulama",
+  // The post-registration profile-completion route (DEC 2026-09-03a md.1). Joined to
+  // AUTH_PATHNAMES so the personal-data route receives audited noindex/canonical/hreflang
+  // coverage in lib/seo/auth-routes.test.ts.
+  "/profil",
+  // The dedicated member area / hub (UYE-P3).
+  "/hesabim",
+  // T-032 PR3 retired the version prefix, so each route appears here exactly once. The old
+  // D-4 note — that the prefixed login and register shells sat outside this array because
+  // they predated the centralization — is resolved rather than carried: those shells now
+  // serve `/giris` and `/kayit`, which were already members.
 ] as const satisfies readonly AppPathname[];
 
 export type AuthPathname = (typeof AUTH_PATHNAMES)[number];

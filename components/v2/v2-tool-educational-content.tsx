@@ -227,7 +227,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
                 hesaplamaları.
               </p>
               <Link
-                href="/v2/araclar/mesafe-olcme"
+                href="/araclar/mesafe-olcme"
                 className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1 pt-1"
               >
                 <span>Mesafe Aracına Git</span>
@@ -245,7 +245,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
                 düştüğünün tespiti.
               </p>
               <Link
-                href="/v2/araclar/koordinat-bulma"
+                href="/araclar/koordinat-bulma"
                 className="text-xs text-secondary font-semibold hover:underline inline-flex items-center gap-1 pt-1"
               >
                 <span>Koordinat Aracına Git</span>
@@ -263,7 +263,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
                 uzunluğu hesabı.
               </p>
               <Link
-                href="/v2/araclar/alan-hesaplama"
+                href="/araclar/alan-hesaplama"
                 className="text-xs text-accent font-semibold hover:underline inline-flex items-center gap-1 pt-1"
               >
                 <span>Alan Aracına Git</span>
@@ -335,7 +335,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {mode !== "distance" && (
               <Link
-                href="/v2/araclar/mesafe-olcme"
+                href="/araclar/mesafe-olcme"
                 className="p-3.5 rounded-2xl bg-muted/40 border border-border hover:bg-primary/10 hover:border-primary/40 transition-all flex items-center justify-between group"
               >
                 <div className="flex items-center gap-2.5">
@@ -352,7 +352,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
 
             {mode !== "coordinates" && (
               <Link
-                href="/v2/araclar/koordinat-bulma"
+                href="/araclar/koordinat-bulma"
                 className="p-3.5 rounded-2xl bg-muted/40 border border-border hover:bg-secondary/10 hover:border-secondary/40 transition-all flex items-center justify-between group"
               >
                 <div className="flex items-center gap-2.5">
@@ -369,7 +369,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
 
             {mode !== "area" && (
               <Link
-                href="/v2/araclar/alan-hesaplama"
+                href="/araclar/alan-hesaplama"
                 className="p-3.5 rounded-2xl bg-muted/40 border border-border hover:bg-accent/10 hover:border-accent/40 transition-all flex items-center justify-between group"
               >
                 <div className="flex items-center gap-2.5">
@@ -385,7 +385,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
             )}
 
             <Link
-              href="/v2/araclar"
+              href="/araclar"
               className="p-3.5 rounded-2xl bg-muted/40 border border-border hover:bg-muted/80 transition-all flex items-center justify-between group"
             >
               <div className="flex items-center gap-2.5">

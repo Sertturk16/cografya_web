@@ -84,23 +84,23 @@ export function V2Header() {
     };
   }, [activeDropdown]);
 
-  const isHome = pathStr === "/v2";
+  const isHome = pathStr === "/";
   const isAtlasActive =
-    pathStr.startsWith("/v2/turkiye") ||
     pathStr.startsWith("/turkiye") ||
-    pathStr.startsWith("/v2/dunya") ||
+    pathStr.startsWith("/turkiye") ||
+    pathStr.startsWith("/dunya") ||
     pathStr.startsWith("/dunya");
   const isTelemetryActive =
-    pathStr.startsWith("/v2/deniz") ||
     pathStr.startsWith("/deniz") ||
-    pathStr.startsWith("/v2/deprem") ||
+    pathStr.startsWith("/deniz") ||
+    pathStr.startsWith("/deprem") ||
     pathStr.startsWith("/deprem");
   const isInteractiveActive =
-    pathStr.startsWith("/v2/oyun") ||
     pathStr.startsWith("/oyun") ||
-    pathStr.startsWith("/v2/araclar") ||
+    pathStr.startsWith("/oyun") ||
+    pathStr.startsWith("/araclar") ||
     pathStr.startsWith("/araclar");
-  const isKitaplarActive = pathStr.startsWith("/v2/kitaplar") || pathStr.startsWith("/kitaplar");
+  const isKitaplarActive = pathStr.startsWith("/kitaplar") || pathStr.startsWith("/kitaplar");
 
   const toggleDropdown = (name: "atlas" | "telemetry" | "interactive") => {
     setActiveDropdown((prev) => (prev === name ? null : name));
@@ -111,8 +111,8 @@ export function V2Header() {
     try {
       await submitAuth("logout", {});
       setAuthState("anonymous");
-      if (pathStr.startsWith("/v2/hesabim") || pathStr.startsWith("/v2/profil")) {
-        router.push("/v2");
+      if (pathStr.startsWith("/hesabim") || pathStr.startsWith("/profil")) {
+        router.push("/");
       }
     } finally {
       setSigningOut(false);
@@ -125,7 +125,7 @@ export function V2Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         {/* Brand / Logo */}
         <div className="flex items-center gap-3 min-w-0 lg:shrink-0">
-          <Link href="/v2" className="flex items-center gap-2.5 group min-w-0">
+          <Link href="/" className="flex items-center gap-2.5 group min-w-0">
             <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
               <Image
                 src="/brand/logo.png"
@@ -177,7 +177,7 @@ export function V2Header() {
                   Coğrafi Atlaslar
                 </div>
                 <Link
-                  href="/v2/turkiye"
+                  href="/turkiye"
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
@@ -194,7 +194,7 @@ export function V2Header() {
                   </div>
                 </Link>
                 <Link
-                  href="/v2/turkiye/bolge"
+                  href="/turkiye/bolge"
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
@@ -211,7 +211,7 @@ export function V2Header() {
                   </div>
                 </Link>
                 <Link
-                  href="/v2/dunya"
+                  href="/dunya"
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
@@ -228,7 +228,7 @@ export function V2Header() {
                   </div>
                 </Link>
                 <Link
-                  href="/v2/dunya/kita"
+                  href="/dunya/kita"
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
@@ -276,7 +276,7 @@ export function V2Header() {
                   Gerçek Zamanlı Gözlemler
                 </div>
                 <Link
-                  href="/v2/deniz"
+                  href="/deniz"
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
@@ -293,7 +293,7 @@ export function V2Header() {
                   </div>
                 </Link>
                 <Link
-                  href="/v2/deprem"
+                  href="/deprem"
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
@@ -341,7 +341,7 @@ export function V2Header() {
                   Oyunlar & CBS Laboratuvarı
                 </div>
                 <Link
-                  href="/v2/oyun"
+                  href="/oyun"
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
@@ -358,7 +358,7 @@ export function V2Header() {
                   </div>
                 </Link>
                 <Link
-                  href="/v2/araclar"
+                  href="/araclar"
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
@@ -380,7 +380,7 @@ export function V2Header() {
 
           {/* Kitaplar (Kütüphane) Direct Link with Dedicated Badge */}
           <Link
-            href="/v2/kitaplar"
+            href="/kitaplar"
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
               isKitaplarActive
                 ? "bg-amber-600/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30"
@@ -400,10 +400,10 @@ export function V2Header() {
           {/* Global Search Combobox (Ctrl+K) */}
           <SearchCombobox
             variant="v2"
-            pathPrefix="/v2"
+            pathPrefix="/"
             enableGlobalShortcut={true}
-            provinceIndexHref="/v2/turkiye"
-            countryIndexHref="/v2/dunya"
+            provinceIndexHref="/turkiye"
+            countryIndexHref="/dunya"
             indexUrl={`/api/search-index/${locale}`}
           />
 
@@ -413,7 +413,7 @@ export function V2Header() {
           {authState === "authenticated" ? (
             <div className="hidden lg:flex items-center gap-1.5">
               <Link
-                href="/v2/hesabim"
+                href="/hesabim"
                 aria-label="Hesabım"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold shadow-2xs hover:bg-muted/50 transition-colors"
               >
@@ -526,7 +526,7 @@ export function V2Header() {
                     </span>
                     <div className="space-y-1">
                       <Link
-                        href="/v2/turkiye"
+                        href="/turkiye"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
@@ -539,7 +539,7 @@ export function V2Header() {
                         <span className="text-xs text-muted-foreground">81 İl</span>
                       </Link>
                       <Link
-                        href="/v2/turkiye/bolge"
+                        href="/turkiye/bolge"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
@@ -552,7 +552,7 @@ export function V2Header() {
                         <span className="text-xs text-muted-foreground">7 Bölge</span>
                       </Link>
                       <Link
-                        href="/v2/dunya"
+                        href="/dunya"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
@@ -565,7 +565,7 @@ export function V2Header() {
                         <span className="text-xs text-muted-foreground">199 Ülke</span>
                       </Link>
                       <Link
-                        href="/v2/dunya/kita"
+                        href="/dunya/kita"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
@@ -587,7 +587,7 @@ export function V2Header() {
                     </span>
                     <div className="space-y-1">
                       <Link
-                        href="/v2/deniz"
+                        href="/deniz"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
@@ -600,7 +600,7 @@ export function V2Header() {
                         <span className="text-xs text-muted-foreground">Canlı Dalga/Isı</span>
                       </Link>
                       <Link
-                        href="/v2/deprem"
+                        href="/deprem"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
@@ -622,7 +622,7 @@ export function V2Header() {
                     </span>
                     <div className="space-y-1">
                       <Link
-                        href="/v2/oyun"
+                        href="/oyun"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
@@ -635,7 +635,7 @@ export function V2Header() {
                         <span className="text-xs text-muted-foreground">İl Bulma</span>
                       </Link>
                       <Link
-                        href="/v2/araclar"
+                        href="/araclar"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
@@ -648,7 +648,7 @@ export function V2Header() {
                         <span className="text-xs text-muted-foreground">Mesafe/Alan</span>
                       </Link>
                       <Link
-                        href="/v2/kitaplar"
+                        href="/kitaplar"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 font-semibold"
                       >
@@ -700,7 +700,7 @@ export function V2Header() {
                   ) : (
                     <div className="space-y-2">
                       <Link
-                        href="/v2/hesabim"
+                        href="/hesabim"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-3 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors"
                       >

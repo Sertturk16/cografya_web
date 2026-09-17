@@ -1,7 +1,40 @@
 import { getTranslations } from "next-intl/server";
 import type { MarineLayer } from "@/lib/api/types";
 import { ecmwfAttributionYear } from "@/lib/marine/attribution";
-import styles from "./marine-attribution.module.css";
+
+/**
+ * TAILWIND, NOT THE V1 STYLESHEET — and the reason is a contrast defect, not tidiness.
+ *
+ * `marine-attribution.module.css` set every paragraph to `var(--color-slate)`, a RAW Terra token.
+ * Raw Terra tokens are frozen at their light values and do not redefine under `.dark`, so on the
+ * V2 pages this block now renders on, the mandated licence text measured **2.34:1** against the
+ * dark page (`#57504a` on `#0b1416`) — below even the 3:1 large-text floor, at 13.6px. The text a
+ * licence requires to be published "prominently" was the least readable thing on the page.
+ *
+ * The bridge tokens (`text-foreground`, `text-muted-foreground`, `border-border`) redefine per
+ * theme, which is the whole reason they exist. The V1 stylesheet also carried `className="section"`
+ * — a global V1 utility on T-032 PR4's deletion list — and its `max-width: 70ch` sat on a block
+ * with no page padding of its own, so the licence text ran flush to the viewport edge inside the
+ * V2 layout. All three problems have the same fix.
+ */
+const BODY = "text-sm leading-relaxed text-muted-foreground";
+
+/**
+ * The provider's own required wording, published verbatim in English (→ DEC 2026-08-02c). Set in
+ * a quieter, indented block so a Turkish reader can see where the platform's prose stops and the
+ * licence text begins — still full-size body text on the page, never hidden behind a disclosure
+ * ("prominently", per the licence).
+ */
+const LICENCE =
+  "my-3 border-l-2 border-border py-0.5 pl-3.5 text-[0.85rem] leading-relaxed text-muted-foreground space-y-2";
+
+/**
+ * The licence / educational-use notice is an UNTOUCHABLE copy class (CONTENT-STYLE §22): it stays
+ * formal and complete. Set apart visually so it reads as a notice rather than as another
+ * paragraph of body copy.
+ */
+const DISCLAIMER =
+  "mt-3.5 rounded-xl border border-border bg-muted/40 px-3.5 py-3 text-sm leading-relaxed text-foreground";
 
 interface MarineAttributionProps {
   /** The catalogue, which carries the ingested cycle the copyright year is derived from. */
@@ -75,12 +108,17 @@ export async function MarineAttribution({
   const attributionYear = ecmwfAttributionYear(layers);
 
   return (
-    <section className="section" aria-labelledby={headingId}>
-      <div className={styles.sources}>
-        <h2 id={headingId}>{heading ?? t("sourcesHeading")}</h2>
-        <p>{t("sourceEcmwf")}</p>
-        <p>{t("sourceEcmwfNoticeIntro")}</p>
-        <div className={styles.licenceNotice} lang="en">
+    <section
+      aria-labelledby={headingId}
+      className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3"
+    >
+      <div className="max-w-[70ch] space-y-3">
+        <h2 id={headingId} className="font-heading text-xl font-bold text-foreground">
+          {heading ?? t("sourcesHeading")}
+        </h2>
+        <p className={BODY}>{t("sourceEcmwf")}</p>
+        <p className={BODY}>{t("sourceEcmwfNoticeIntro")}</p>
+        <div className={LICENCE} lang="en">
           {/* The copyright line is omitted — not faked — when no ECMWF cycle has been
               ingested and there is therefore no data year to state. The mandatory
               "this service is based on…" sentence carries no year and always shows. */}
@@ -90,16 +128,16 @@ export async function MarineAttribution({
           <p>{tm("attribution.ecmwfNotice")}</p>
           <p>{tm("attribution.ecmwfDisclaimer")}</p>
         </div>
-        <p>{t("sourceCmems")}</p>
-        <p>{t("sourceCmemsNoticeIntro")}</p>
-        <div className={styles.licenceNotice} lang="en">
+        <p className={BODY}>{t("sourceCmems")}</p>
+        <p className={BODY}>{t("sourceCmemsNoticeIntro")}</p>
+        <div className={LICENCE} lang="en">
           {/* One sentence, and it is the whole obligation. No copyright year: the Copernicus
               Marine licence attaches its notice to the SERVICE, not to a data year, so there
               is nothing here to derive from an ingested cycle and nothing to omit when there
               is none. */}
           <p>{tm("attribution.cmemsNotice")}</p>
         </div>
-        <p className={styles.disclaimer}>{tm("disclaimer.educationalOnly")}</p>
+        <p className={DISCLAIMER}>{tm("disclaimer.educationalOnly")}</p>
       </div>
     </section>
   );

@@ -23,7 +23,7 @@ export function V2LearningPaths() {
         "Konu Özeti ve Kritik Harita Notları",
         "Akıllı Tahta ve Dijital Entegrasyon",
       ],
-      href: "/v2/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri",
+      href: "/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri",
       cta: "Kitabı İncele",
     },
     {
@@ -40,7 +40,7 @@ export function V2LearningPaths() {
         "Zamana Karşı Hızlı Sınav Simülatörü",
         "Bölgesel ve Küresel Harita Dağılımı",
       ],
-      href: "/v2/oyun",
+      href: "/oyun",
       cta: "Harita Oyunu",
     },
     {
@@ -57,7 +57,7 @@ export function V2LearningPaths() {
         "Enlem / Boylam Format Dönüştürücü",
         "Çokgen Poligon Yüzölçümü Aracı",
       ],
-      href: "/v2/araclar",
+      href: "/araclar",
       cta: "Araçları Aç",
     },
   ];
@@ -78,7 +78,7 @@ export function V2LearningPaths() {
             Coğrafya Yayınları &amp; Öğrenme Modülleri
           </h2>
         </div>
-        <Link href="/v2/kitaplar">
+        <Link href="/kitaplar">
           <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
             Tüm Kitap &amp; Yayınlar
           </Button>

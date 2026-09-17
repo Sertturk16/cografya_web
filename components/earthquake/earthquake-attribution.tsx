@@ -1,6 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import type { EarthquakeAttribution as EarthquakeAttributionRow } from "@/lib/api/types";
-import styles from "./earthquake.module.css";
+/**
+ * NO STYLESHEET IMPORT. `earthquake.module.css` styles this block's paragraphs with
+ * `var(--color-slate)` and `var(--color-ink)` — RAW Terra tokens, frozen at their light values
+ * and never redefined under `.dark`. On the V2 pages this component now renders on, that put the
+ * mandated AFAD notice at roughly 2.3:1 against the dark page. The bridge tokens used below
+ * redefine per theme, which is what they are for.
+ *
+ * The stylesheet is left in place for its five other consumers (the map, the list, the filters,
+ * the magnitude badge, the province section) — they have the same latent problem and it is
+ * T-035/T-033's to fix, not this component's to fix on their behalf.
+ */
 
 interface EarthquakeAttributionProps {
   attributions: readonly EarthquakeAttributionRow[];
@@ -60,7 +70,7 @@ interface EarthquakeAttributionProps {
  * event window, never the source), so this block stays outside that island and keeps its
  * server-only `getTranslations` call.
  *
- * SECOND CONSUMER (PR-B): the province pages (`app/[locale]/turkiye/[slug]/page.tsx`) render
+ * SECOND CONSUMER (PR-B): the province pages (`app/[locale]/(site)/turkiye/[slug]/page.tsx`) render
  * this same component for the mandatory AFAD attribution that travels with the province
  * section's own events — `heading`/`disclaimerTr` above are what changed to support that.
  */
@@ -73,21 +83,30 @@ export async function EarthquakeAttribution({
   const t = await getTranslations("Earthquake");
 
   return (
-    <section className="section" aria-labelledby={headingId}>
-      <div className={styles.sources}>
-        <h2 id={headingId}>{heading ?? t("sourcesHeading")}</h2>
+    <section
+      aria-labelledby={headingId}
+      className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm"
+    >
+      <div className="max-w-[70ch] space-y-3">
+        <h2 id={headingId} className="font-heading text-xl font-bold text-foreground">
+          {heading ?? t("sourcesHeading")}
+        </h2>
         {attributions.map((attribution) => (
-          <p key={attribution.providerId} lang="tr">
+          <p
+            key={attribution.providerId}
+            lang="tr"
+            className="text-sm leading-relaxed text-muted-foreground"
+          >
             {attribution.requiredNoticeTr}
             {attribution.regulationReference !== "" && (
-              <span className={styles.regulationReference}>
-                {" "}
-                ({attribution.regulationReference})
-              </span>
+              <span className="text-muted-foreground"> ({attribution.regulationReference})</span>
             )}
           </p>
         ))}
-        <p className={styles.disclaimer} lang="tr">
+        <p
+          lang="tr"
+          className="mt-3.5 rounded-xl border border-border bg-muted/40 px-3.5 py-3 text-sm leading-relaxed text-foreground"
+        >
           {disclaimerTr}
         </p>
       </div>

@@ -4,9 +4,9 @@ import "./globals.css";
  * ROOT 404 — the boundary for a URL that matches no route at all.
  *
  * Next resolves an unmatched URL against the ROOT not-found only; a nested
- * `app/[locale]/not-found.tsx` fires exclusively when `notFound()` is thrown from inside a
+ * `app/[locale]/(site)/not-found.tsx` fires exclusively when `notFound()` is thrown from inside a
  * MATCHED segment. Without this file such a URL falls to Next's own unstyled, unlocalized
- * default page — the defect `app/[locale]/araclar/[...rest]/page.tsx` was added to work
+ * default page — the defect `app/[locale]/(site)/araclar/[...rest]/page.tsx` was added to work
  * around for one subtree. This file replaces that pattern for every subtree at once.
  *
  * It renders outside `app/[locale]/layout.tsx`, so it supplies its own `<html>`/`<body>`.
@@ -14,7 +14,7 @@ import "./globals.css";
  * DELIBERATELY BILINGUAL AND STATIC. Resolving a locale here means a request read, which in
  * this SSG setup flips the statically-prerendered route that threw `notFound()` from static
  * to dynamic at runtime and 500s instead of returning 404 — the regression
- * `app/[locale]/not-found.tsx` already documents. Showing both languages is the honest
+ * `app/[locale]/(site)/not-found.tsx` already documents. Showing both languages is the honest
  * alternative and costs nothing at build time.
  *
  * The fonts are NOT loaded here. `lib/fonts.ts` attaches its CSS variables through the locale

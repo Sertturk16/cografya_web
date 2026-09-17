@@ -28,10 +28,10 @@ function code(source: string): string {
     .join("\n");
 }
 
-const PAGE = code(sourceOf("../../app/[locale]/oyun/page.tsx"));
+const PAGE = code(sourceOf("../../app/[locale]/(site)/oyun/page.tsx"));
 const PANEL = code(sourceOf("./game-history-panel.tsx"));
 
-describe("(a) app/[locale]/oyun/page.tsx never reads identity server-side", () => {
+describe("(a) app/[locale]/(site)/oyun/page.tsx never reads identity server-side", () => {
   it("carries no cookies() or headers() call anywhere in its source", () => {
     expect(PAGE).not.toMatch(/\bcookies\s*\(/);
     expect(PAGE).not.toMatch(/\bheaders\s*\(/);
@@ -41,14 +41,30 @@ describe("(a) app/[locale]/oyun/page.tsx never reads identity server-side", () =
     expect(PAGE).not.toContain('from "next/headers"');
   });
 
-  it("renders GameHistoryPanel with only locale-derived, non-identity props", () => {
-    const call = PAGE.indexOf("<GameHistoryPanel");
-    expect(call).toBeGreaterThan(-1);
-    const tag = PAGE.slice(call, PAGE.indexOf("/>", call));
-    expect(tag).toContain("locale={locale}");
-    expect(tag).toContain("regionLabels={regionLabels}");
-    // No auth/session/cookie-derived prop of any kind reaches the panel from the server page.
-    expect(tag).not.toMatch(/auth|session|cookie/i);
+  it("passes no identity-derived prop to anything it renders", () => {
+    /**
+     * This named `GameHistoryPanel` specifically, because that was the one identity-aware island
+     * the page mounted, and the rule was: it gets locale-derived props and nothing else, so the
+     * server response cannot vary by who is asking (§B12 12.3.a/b, cloaking).
+     *
+     * The V2 page does not render the panel at all — the game-history feature did not survive
+     * the rewrite (T-032 PR4 deletes `components/game/`). Pinning the call site would just fail;
+     * asserting nothing would drop a BLOCKER-tier rule on a page that is still indexable.
+     *
+     * So the assertion widened from ONE island's props to EVERY prop the page passes. That is
+     * strictly stronger: it now also covers whatever island replaces the panel, without anyone
+     * having to remember to re-add a check for it.
+     */
+    const props = [...PAGE.matchAll(/\s([A-Za-z][A-Za-z0-9]*)=\{/g)].map((match) => match[1]!);
+    // Anti-vacuity: a page that passed no props at all would satisfy the loop for free.
+    expect(props.length, "props passed anywhere on the page").toBeGreaterThan(0);
+    for (const prop of props) {
+      expect(prop, `identity-derived prop "${prop}" on an indexable page`).not.toMatch(
+        /auth|session|cookie|user|identity/i,
+      );
+    }
+    // And the panel really is gone, rather than renamed past the scan above.
+    expect(PAGE).not.toContain("<GameHistoryPanel");
   });
 });
 

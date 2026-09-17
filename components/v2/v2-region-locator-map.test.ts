@@ -21,11 +21,14 @@ describe("V2 Region locator map and page design invariants", () => {
     expect(content).toContain("INLAND_WATER_SHAPES");
     expect(content).toContain("hoveredPlate");
     expect(content).toContain("setHoveredPlate");
-    expect(content).toContain("/v2/turkiye/[slug]");
+    expect(content).toContain("/turkiye/[slug]");
   });
 
   it("integrates V2RegionLocatorMap in region detail page with 12-column asymmetric layout", () => {
-    const pageUrl = new URL("../../app/[locale]/v2/turkiye/bolge/[slug]/page.tsx", import.meta.url);
+    const pageUrl = new URL(
+      "../../app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx",
+      import.meta.url,
+    );
     const content = readFileSync(pageUrl, "utf8");
 
     expect(content).toContain("V2RegionLocatorMap");
@@ -39,17 +42,18 @@ describe("V2 Region locator map and page design invariants", () => {
 
   it("provides cross-links from province detail page to region detail page", () => {
     const provincePageUrl = new URL(
-      "../../app/[locale]/v2/turkiye/[slug]/page.tsx",
+      "../../app/[locale]/(site)/turkiye/[slug]/page.tsx",
       import.meta.url,
     );
     const content = readFileSync(provincePageUrl, "utf8");
 
-    // Breadcrumb has region link
+    // Breadcrumb has region link. T-032 PR3 retired the `/v2` prefix: the route is now
+    // `/turkiye/bolge/[slug]`, and `i18n/routing.ts` is the one table that decides that.
     expect(content).toMatch(
-      /href=\{\{\s*pathname:\s*"\/v2\/turkiye\/bolge\/\[slug\]",\s*params:\s*\{\s*slug:\s*regionTheme\.slug\s*\},?\s*\}\}/,
+      /href=\{\{\s*pathname:\s*"\/turkiye\/bolge\/\[slug\]",\s*params:\s*\{\s*slug:\s*regionTheme\.slug\s*\},?\s*\}\}/,
     );
     // Hero badge has clickable link to region
-    expect(content).toContain('pathname: "/v2/turkiye/bolge/[slug]"');
+    expect(content).toContain('pathname: "/turkiye/bolge/[slug]"');
     expect(content).toContain("Bağlı Olduğu Coğrafi Bölge:");
   });
 });

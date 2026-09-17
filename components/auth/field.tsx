@@ -120,7 +120,7 @@ export function SelectField({ id, label, error, hint, children, ...control }: Se
  * errors and a server-side failure (any code in plan §6.1) both render here, never in two
  * different places. `role="alert"` announces the region the instant it mounts;
  * `tabIndex={-1}` (paired with the caller's `headingRef.current?.focus()`, the same
- * `LocaleError` pattern `app/[locale]/error.tsx` already uses) moves keyboard/AT focus to it
+ * `LocaleError` pattern `app/[locale]/(site)/error.tsx` already uses) moves keyboard/AT focus to it
  * without adding a new stop to the normal tab order.
  *
  * `summary` is either the single server-error sentence, or a short lead-in for the list of

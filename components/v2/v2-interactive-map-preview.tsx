@@ -329,10 +329,10 @@ export function V2InteractiveMapPreview() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      router.push(`/v2/turkiye/${getSlug(shape.geoName)}`);
+                      router.push(`/turkiye/${getSlug(shape.geoName)}`);
                     }
                   }}
-                  onClick={() => router.push(`/v2/turkiye/${getSlug(shape.geoName)}`)}
+                  onClick={() => router.push(`/turkiye/${getSlug(shape.geoName)}`)}
                   className={`${fillColor} transition-all duration-150 cursor-pointer outline-none hover:stroke-foreground/60 focus-visible:stroke-primary focus-visible:stroke-[2]`}
                 />
               );

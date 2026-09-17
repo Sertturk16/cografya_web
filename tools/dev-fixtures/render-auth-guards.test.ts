@@ -189,7 +189,7 @@ describe("REGISTER_PATH_PATTERN / assertNoRegisterPath", () => {
     ["/kayit", true],
     ["/kayit/", true],
     ["/en/register", true],
-    ["/v2/kayit", true],
+    ["/kayit", true],
     ["/kayit?x=1", true], // VAL131SEC-M1 — the old pattern missed this
     ["/kayit#a", true], // VAL131SEC-M1 — and this
     ["/kayitli-varliklar", false], // negative control — no false positive
@@ -215,8 +215,8 @@ describe("REGISTER_PATH_PATTERN / assertNoRegisterPath", () => {
 describe("originKey / assertSameOrigin", () => {
   const base = new URL("http://localhost:3000");
 
-  it("accepts /v2/profil (same origin)", () => {
-    const url = new URL("/v2/profil", base);
+  it("accepts /profil (same origin)", () => {
+    const url = new URL("/profil", base);
     expect(() => assertSameOrigin(url, base, "test")).not.toThrow();
   });
 

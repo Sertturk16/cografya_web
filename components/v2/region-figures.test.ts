@@ -10,12 +10,12 @@ import { TURKEY_REGIONS } from "./v2-turkey-regions";
  * again.
  *
  * PLACEMENT NOTE (`VALB75R2-NEW-C1`): this file previously lived at
- * `app/[locale]/v2/turkiye/bolge/region-figures.test.ts`, a path `vitest.config.ts`'s
+ * `app/[locale]/(site)/turkiye/bolge/region-figures.test.ts`, a path `vitest.config.ts`'s
  * `include` globs (`lib/**\/*.test.ts`, `components/**\/*.test.{ts,tsx}`, `tools/**\/*.test.ts`)
  * do not collect — the guard could never have gone red. It lives here instead, matching
  * every other structural page-file assertion in this repo.
  *
- * The two page files (`app/[locale]/v2/turkiye/bolge/page.tsx` and its `[slug]/page.tsx`
+ * The two page files (`app/[locale]/(site)/turkiye/bolge/page.tsx` and its `[slug]/page.tsx`
  * sibling) import server-only modules (`next-intl/server`, `next/navigation`) and cannot be
  * imported directly into a Vitest run, so they are read as text — the same `readFileSync`
  * form `./v2-map-pan-bounds.test.ts` already uses for this repo's other page-adjacent
@@ -23,11 +23,11 @@ import { TURKEY_REGIONS } from "./v2-turkey-regions";
  */
 
 const hubPage = readFileSync(
-  resolve(__dirname, "../../app/[locale]/v2/turkiye/bolge/page.tsx"),
+  resolve(__dirname, "../../app/[locale]/(site)/turkiye/bolge/page.tsx"),
   "utf-8",
 );
 const detailPage = readFileSync(
-  resolve(__dirname, "../../app/[locale]/v2/turkiye/bolge/[slug]/page.tsx"),
+  resolve(__dirname, "../../app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx"),
   "utf-8",
 );
 const deckFile = readFileSync(resolve(__dirname, "./v2-turkey-regions.tsx"), "utf-8");

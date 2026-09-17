@@ -29,8 +29,12 @@ function code(url: URL): string {
 }
 
 const locator = code(new URL("./locator-map.tsx", import.meta.url));
-const provincePage = code(new URL("../../app/[locale]/turkiye/[slug]/page.tsx", import.meta.url));
-const countryPage = code(new URL("../../app/[locale]/dunya/[slug]/page.tsx", import.meta.url));
+const provincePage = code(
+  new URL("../../app/[locale]/(site)/turkiye/[slug]/page.tsx", import.meta.url),
+);
+const countryPage = code(
+  new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url),
+);
 
 describe("LocatorMap carries its own credit", () => {
   it("renders the attribution string in a figcaption", () => {
@@ -78,10 +82,30 @@ describe("LocatorMap carries its own credit", () => {
   });
 });
 
-describe("both detail pages render the locator", () => {
+/**
+ * THE PROVINCE PAGE USES A DIFFERENT COMPONENT NOW.
+ *
+ * V1 rendered `LocatorMap` on both detail pages. The V2 province page draws its own inline SVG
+ * (`V2ProvinceLocatorMap`) from the same generated shapes; the country page still uses
+ * `LocatorMap`. That is a legitimate design choice and not this file's business.
+ *
+ * What IS this file's business is that the obligation did not travel with the swap. The new
+ * component shipped with no credit at all, over `tr-provinces.generated.ts` / `tr-context.generated.ts`
+ * — both projected from `data/tr-il-boundaries.geojson`, © OpenStreetMap contributors, ODbL,
+ * per their own generated headers. It also hardcoded a Turkish accessible name while
+ * `ProvinceDetail.locationAlt` sat unused in both catalogues, so the EN page announced the map
+ * in Turkish. Both were restored in T-032 PR3 and are pinned here.
+ *
+ * So the assertions below moved from "does this page contain `<LocatorMap`" to "does whatever
+ * this page uses to draw OSM geometry carry the credit and a catalogue alt" — which is the
+ * obligation, and is what the old assertion was a proxy for.
+ */
+const v2Locator = code(new URL("../v2/v2-province-locator-map.tsx", import.meta.url));
+
+describe("both detail pages render a locator that carries its obligations", () => {
   it("is on the province page", () => {
-    expect(provincePage).toContain("<LocatorMap");
-    expect(provincePage).toMatch(/kind="province"/);
+    expect(provincePage).toContain("<V2ProvinceLocatorMap");
+    expect(provincePage).toContain('from "@/components/v2/v2-province-locator-map"');
   });
 
   it("is on the country page", () => {
@@ -90,7 +114,26 @@ describe("both detail pages render the locator", () => {
   });
 
   it("passes an alt text from the catalogue, never a literal", () => {
-    expect(provincePage).toMatch(/alt=\{t\("locationAlt"/);
+    // The country page passes it in; the province component reads it itself. Either is fine —
+    // what is not fine is a literal, which is what the V2 component shipped with.
     expect(countryPage).toMatch(/alt=\{t\("locationAlt"/);
+    expect(v2Locator).toMatch(
+      /aria-label=\{tProvince\("locationAlt", \{ name: provinceName \}\)\}/,
+    );
+    expect(v2Locator).not.toMatch(/aria-label=\{`/);
+  });
+
+  it("credits OSM on the province locator, in the markup and not only in a comment", () => {
+    // `code()` has already stripped comments — this component's docblock argues the credit at
+    // length, so a naive scan would pass on the prose after someone deleted the <figcaption>.
+    expect(v2Locator).toMatch(/<figcaption[^>]*>\{t\("attribution"\)\}<\/figcaption>/);
+    // Read in the component, not accepted as a prop: a caller-supplied credit can be dropped at
+    // the call site and stops travelling with the figure (the same rule `LocatorMap` follows).
+    expect(v2Locator).toMatch(/getTranslations\("Map"\)/);
+  });
+
+  it("names the province composite once for assistive tech and hides the drawing", () => {
+    expect(v2Locator).toMatch(/role="img"/);
+    expect(v2Locator).toMatch(/<svg[^>]*aria-hidden="true"|aria-hidden="true"/);
   });
 });

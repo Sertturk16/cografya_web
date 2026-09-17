@@ -11,13 +11,13 @@ const SOURCE = read("./v2-en-work-in-progress-notice.tsx");
  * pages that already carry `EnWorkInProgressNotice`; it is the same promise, moved.
  */
 const SURFACES = [
-  "../../app/[locale]/v2/araclar/page.tsx",
-  "../../app/[locale]/v2/araclar/alan-hesaplama/page.tsx",
-  "../../app/[locale]/v2/araclar/koordinat-bulma/page.tsx",
-  "../../app/[locale]/v2/araclar/mesafe-olcme/page.tsx",
-  "../../app/[locale]/v2/deniz/page.tsx",
-  "../../app/[locale]/v2/dunya/[slug]/page.tsx",
-  "../../app/[locale]/v2/turkiye/[slug]/page.tsx",
+  "../../app/[locale]/(site)/araclar/page.tsx",
+  "../../app/[locale]/(site)/araclar/alan-hesaplama/page.tsx",
+  "../../app/[locale]/(site)/araclar/koordinat-bulma/page.tsx",
+  "../../app/[locale]/(site)/araclar/mesafe-olcme/page.tsx",
+  "../../app/[locale]/(site)/deniz/page.tsx",
+  "../../app/[locale]/(site)/dunya/[slug]/page.tsx",
+  "../../app/[locale]/(site)/turkiye/[slug]/page.tsx",
 ] as const;
 
 describe("V2 EN work-in-progress notice", () => {
@@ -45,13 +45,13 @@ describe("V2 EN work-in-progress notice", () => {
     // The V1 list is the specification. If a V1 page carries the notice and its V2
     // counterpart does not, the port lost a promise to the reader rather than moved it.
     const v1 = [
-      "../../app/[locale]/araclar/page.tsx",
-      "../../app/[locale]/araclar/alan-hesaplama/page.tsx",
-      "../../app/[locale]/araclar/koordinat-bulma/page.tsx",
-      "../../app/[locale]/araclar/mesafe-olcme/page.tsx",
-      "../../app/[locale]/deniz/page.tsx",
-      "../../app/[locale]/dunya/[slug]/page.tsx",
-      "../../app/[locale]/turkiye/[slug]/page.tsx",
+      "../../app/[locale]/(site)/araclar/page.tsx",
+      "../../app/[locale]/(site)/araclar/alan-hesaplama/page.tsx",
+      "../../app/[locale]/(site)/araclar/koordinat-bulma/page.tsx",
+      "../../app/[locale]/(site)/araclar/mesafe-olcme/page.tsx",
+      "../../app/[locale]/(site)/deniz/page.tsx",
+      "../../app/[locale]/(site)/dunya/[slug]/page.tsx",
+      "../../app/[locale]/(site)/turkiye/[slug]/page.tsx",
     ];
     for (const page of v1) {
       expect(read(page), `${page} lost its notice`).toContain("EnWorkInProgressNotice");

@@ -27,12 +27,12 @@ const stripComments = (source: string) =>
   source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
 
 const AUTH_PAGES = [
-  "../../app/[locale]/v2/sifre-sifirlama/page.tsx",
-  "../../app/[locale]/v2/sifre-sifirlama/yeni/page.tsx",
-  "../../app/[locale]/v2/e-posta-dogrulama/page.tsx",
+  "../../app/[locale]/(site)/sifre-sifirlama/page.tsx",
+  "../../app/[locale]/(site)/sifre-sifirlama/yeni/page.tsx",
+  "../../app/[locale]/(site)/e-posta-dogrulama/page.tsx",
 ] as const;
 
-const ALL_PAGES = [...AUTH_PAGES, "../../app/[locale]/v2/hakkimizda/page.tsx"] as const;
+const ALL_PAGES = [...AUTH_PAGES, "../../app/[locale]/(site)/hakkimizda/page.tsx"] as const;
 
 const CARDS = [
   "./v2-password-reset-request-card.tsx",
@@ -41,10 +41,30 @@ const CARDS = [
 ] as const;
 
 describe("the ported pages wear V2 chrome", () => {
-  it.each(ALL_PAGES)("%s renders the V2 header and footer", (page) => {
-    const source = read(page);
-    expect(source).toContain("V2Header");
-    expect(source).toContain("V2Footer");
+  it.each(ALL_PAGES)("%s gets the V2 header and footer from the (site) layout", (page) => {
+    /**
+     * This used to assert that each page rendered `<V2Header />` and `<V2Footer />` itself.
+     * T-032 PR3 moved both into `app/[locale]/(site)/layout.tsx`, because copying chrome into
+     * every page is how two pages ended up without a footer and twenty-four ended up nesting a
+     * second `<main>` inside the root layout's.
+     *
+     * So the guarantee moved from "this page renders the chrome" to "this page cannot render
+     * WITHOUT it": membership of the `(site)` group is what supplies it, and a page in that
+     * group that also renders its own would ship two headers. Both halves are asserted, because
+     * the second is now the live failure mode.
+     */
+    expect(page, "page is outside the (site) group").toContain("/(site)/");
+    const source = stripComments(read(page));
+    expect(source, "page renders a second V2Header").not.toContain("<V2Header");
+    expect(source, "page renders a second V2Footer").not.toContain("<V2Footer");
+  });
+
+  it("the (site) layout every one of them sits under renders that chrome exactly once", () => {
+    // Anti-vacuity for the assertion above: it only means anything if the layout really does
+    // supply the chrome. Counted, not just present — a duplicate here duplicates it everywhere.
+    const layout = stripComments(read("../../app/[locale]/(site)/layout.tsx"));
+    expect(layout.match(/<V2Header\b/g), "V2Header in the (site) layout").toHaveLength(1);
+    expect(layout.match(/<V2Footer\b/g), "V2Footer in the (site) layout").toHaveLength(1);
   });
 
   it.each(ALL_PAGES)("%s reaches for no V1 component", (page) => {
@@ -65,7 +85,7 @@ describe("the ported pages wear V2 chrome", () => {
 
   it("the about page keeps its indexable surface rather than inheriting noindex", () => {
     // `/hakkimizda` is a `localized` surface; it is editorial content, not an auth screen.
-    const source = stripComments(read("../../app/[locale]/v2/hakkimizda/page.tsx"));
+    const source = stripComments(read("../../app/[locale]/(site)/hakkimizda/page.tsx"));
     expect(source).toMatch(/\bbuildMetadata\s*\(/);
     expect(source).not.toContain("buildAuthMetadata");
     expect(source).not.toContain('surface: "noindex"');

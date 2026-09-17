@@ -49,13 +49,13 @@ import { routing, type Locale } from "@/i18n/routing";
  * h.4 rewrote it; the wiring gap this paragraph describes is unchanged.)
  *
  * The call sites, so the EN content wave does not have to hunt for them:
- *   · `app/[locale]/turkiye/[slug]/page.tsx`
- *   · `app/[locale]/dunya/[slug]/page.tsx`
- *   · `app/[locale]/deniz/page.tsx`
- *   · `app/[locale]/araclar/page.tsx`
- *   · `app/[locale]/araclar/mesafe-olcme/page.tsx`
- *   · `app/[locale]/araclar/koordinat-bulma/page.tsx`
- *   · `app/[locale]/araclar/alan-hesaplama/page.tsx`
+ *   · `app/[locale]/(site)/turkiye/[slug]/page.tsx`
+ *   · `app/[locale]/(site)/dunya/[slug]/page.tsx`
+ *   · `app/[locale]/(site)/deniz/page.tsx`
+ *   · `app/[locale]/(site)/araclar/page.tsx`
+ *   · `app/[locale]/(site)/araclar/mesafe-olcme/page.tsx`
+ *   · `app/[locale]/(site)/araclar/koordinat-bulma/page.tsx`
+ *   · `app/[locale]/(site)/araclar/alan-hesaplama/page.tsx`
  *
  * They are exactly today's `"trNarrative"` members. If a future surface joins or leaves that
  * set, the notice list moves with it — the CBS tool tier is the surface that joined
@@ -93,7 +93,7 @@ import { routing, type Locale } from "@/i18n/routing";
  *     tripwire that fails the moment this switch flips;
  *   · `lib/seo/country-description.test.ts` — the same list applied to the meta-description
  *     templates, which must not PROMISE those sections either;
- *   · the `isTr` fact-sheet gates in `app/[locale]/dunya/[slug]/page.tsx` themselves.
+ *   · the `isTr` fact-sheet gates in `app/[locale]/(site)/dunya/[slug]/page.tsx` themselves.
  *
  * NOT a mechanical "restore the deleted words" (→ PR #55 `SG55-N1`). What came out included
  * the UN M49 SUBREGION credit, and M49 attribution is not uniformly supportable across this

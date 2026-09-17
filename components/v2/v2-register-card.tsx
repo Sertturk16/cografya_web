@@ -277,7 +277,7 @@ export function V2RegisterCard({
 
     setLoading(true);
     try {
-      const profilePath = getPathname({ locale, href: "/v2/profil" });
+      const profilePath = getPathname({ locale, href: "/profil" });
       const result = await submitAuth(
         "verify-email",
         {
@@ -672,7 +672,7 @@ export function V2RegisterCard({
                   Giriş Yap
                 </button>
               ) : (
-                <Link href="/v2/giris" className="font-bold text-primary hover:underline">
+                <Link href="/giris" className="font-bold text-primary hover:underline">
                   Giriş Yap
                 </Link>
               )}

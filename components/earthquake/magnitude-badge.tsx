@@ -29,7 +29,7 @@ const BUCKET_CLASS: Record<1 | 2 | 3 | 4 | 5, string> = {
  * (`MAGNITUDE_MARKER_RADIUS`) — so the encoding survives with colour removed entirely.
  *
  * A plain, hook-free presentational component on purpose: it renders identically from the
- * server-rendered default view (`app/[locale]/deprem/page.tsx`) and the client filter
+ * server-rendered default view (`app/[locale]/(site)/deprem/page.tsx`) and the client filter
  * island's re-render (`components/earthquake/earthquake-filters.tsx`, `"use client"`),
  * neither of which it needs to know about.
  */

@@ -211,7 +211,11 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       license: "E.U. Copernicus (CC BY 4.0)",
       description:
         "Karadeniz, Marmara, Ege ve Akdeniz'in 30 kıyı noktasında saatlik yüzey deniz suyu sıcaklığı (SST) ve dalga boyu modelleri.",
-      legalQuote: "Generated using E.U. Copernicus Marine Service Information 2026",
+      // NO `legalQuote`. The Copernicus Marine notice is single-sourced in `messages/*.json`
+      // and rendered by `MarineAttribution` on every page that carries CMEMS-derived values.
+      // A near-copy here — this one used to read "…Information 2026" — is a second version of
+      // a verbatim licence string, which is a breach waiting for the day someone edits one of
+      // them. This card is a bibliography entry; the licence lives in the attribution block.
       sourceUrl: "marine.copernicus.eu",
     },
     {
@@ -221,7 +225,10 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       license: "CC BY 4.0",
       description:
         "10 metre deniz yüzeyi rüzgâr hız vektörleri, rüzgâr dalgası ve açık deniz dalga yön simülasyonları.",
-      legalQuote: "Generated using ECMWF Open Data information 2026",
+      // NO `legalQuote`. This field used to read "Generated using ECMWF Open Data information
+      // 2026", which is not ECMWF's required wording and not traceable to any licence text —
+      // an invented sentence presented to the reader under "Atıf şartı & yasal metin". ECMWF's
+      // actual notice is long, single-sourced, and rendered verbatim by `MarineAttribution`.
       sourceUrl: "ecmwf.int",
     },
     {
@@ -435,18 +442,62 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
   ],
 };
 
+/**
+ * Flat `id` → item index across every scope list.
+ *
+ * A page sometimes shows data whose source lives in another page's list. The province page is
+ * scoped `turkiye`, whose list carries no marine source at all, yet 27 coastal provinces render
+ * CMEMS-derived sea-surface temperature. Copying the CMEMS entry into the `turkiye` list would
+ * cite it on the 54 landlocked provinces too — the same defect with the sign flipped. `include`
+ * resolves against this index instead, so a page can cite a source it actually renders without
+ * the whole scope inheriting the claim.
+ *
+ * First definition wins. A handful of ids appear in several scopes (`tuik`, `natural-earth`,
+ * `afad`); they describe the same body, differing only in how the blurb is worded for that page.
+ */
+const SOURCE_BY_ID: ReadonlyMap<string, SourceItem> = (() => {
+  const index = new Map<string, SourceItem>();
+  for (const item of Object.values(SOURCES_BY_PAGE).flat()) {
+    if (!index.has(item.id)) index.set(item.id, item);
+  }
+  return index;
+})();
+
 interface V2SourcesSectionProps {
   scope?: V2PageScope;
   className?: string;
   regionalNote?: React.ReactNode;
+  /**
+   * Ids to cite in addition to the scope's own list, for data this page renders conditionally.
+   * Unknown ids are dropped rather than thrown on: a citation list is not worth a 500, and
+   * `v2-sources-conditional.test.ts` fails the build if a call site names an id that does not
+   * resolve, which is the check that actually catches the typo.
+   */
+  include?: readonly string[];
+  /**
+   * Ids from the scope's own list to drop, for data this page did NOT render. The province
+   * page cites `acag-pm25` only when a PM2.5 figure is on the page; without this it cited the
+   * source on every province, including those the API publishes no air-quality series for.
+   */
+  omit?: readonly string[];
 }
 
 export function V2SourcesSection({
   scope = "home",
   className = "",
   regionalNote,
+  include,
+  omit,
 }: V2SourcesSectionProps) {
-  const allSources = SOURCES_BY_PAGE[scope] || SOURCES_BY_PAGE.home;
+  const scoped = SOURCES_BY_PAGE[scope] || SOURCES_BY_PAGE.home;
+  const omitted = new Set(omit ?? []);
+  const kept = scoped.filter((s) => !omitted.has(s.id));
+  const keptIds = new Set(kept.map((s) => s.id));
+  const extra = (include ?? [])
+    .filter((id) => !keptIds.has(id))
+    .map((id) => SOURCE_BY_ID.get(id))
+    .filter((item): item is SourceItem => item !== undefined);
+  const allSources = [...kept, ...extra];
   const officialSources = allSources.filter((s) => s.category !== "academic");
   const academicSources = allSources.filter((s) => s.category === "academic");
 

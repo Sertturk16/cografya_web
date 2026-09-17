@@ -144,7 +144,7 @@ export function V2RegionLocatorMap({
                 <Link
                   key={shape.plateCode}
                   href={{
-                    pathname: "/v2/turkiye/[slug]",
+                    pathname: "/turkiye/[slug]",
                     params: { slug: prov?.slugTr ?? shape.plateCode },
                   }}
                   onMouseEnter={() => setHoveredPlate(shape.plateCode)}
@@ -182,7 +182,7 @@ export function V2RegionLocatorMap({
               <Link
                 key={prov.plateCode}
                 href={{
-                  pathname: "/v2/turkiye/[slug]",
+                  pathname: "/turkiye/[slug]",
                   params: { slug: prov.slugTr },
                 }}
                 onMouseEnter={() => setHoveredPlate(prov.plateCode)}

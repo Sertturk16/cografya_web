@@ -15,7 +15,7 @@ describe("root not-found boundary", () => {
 
   it("is static — it must not read the request", () => {
     // Resolving a locale here would force dynamic rendering on every route that can throw
-    // notFound(), which is the regression app/[locale]/not-found.tsx documents.
+    // notFound(), which is the regression app/[locale]/(site)/not-found.tsx documents.
     expect(SOURCE).not.toContain("getTranslations");
     expect(SOURCE).not.toContain("setRequestLocale");
     expect(SOURCE).not.toContain("headers(");

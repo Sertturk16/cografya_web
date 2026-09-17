@@ -1,77 +1,82 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { TOOL_REGISTRY } from "@/lib/tools/tool-registry";
 
 /**
- * Regression guard for the `/araclar` hub's stretched-anchor card (PR #111 fix round,
- * TEST111-M1). The click-target geometry rests on three pieces moving together:
- *   1. `.toolCard` is `position: relative` — the containing block the stretch below needs.
- *   2. `.toolName a::after` is the empty, absolutely-positioned, edge-to-edge pseudo-element
- *      that actually stretches the click target to the whole card.
- *   3. The focus ring is scoped with `:has(.toolName a:focus-visible)`, not `:focus-within`
- *      (A11Y111-M1) — naming the specific link, not "any focused descendant", the exact
- *      defect class this repo already paid for once on a different component
- *      (`components/auth/auth-form.module.css`, `CODE88-M1`/`TEST88-I1`).
+ * The `/araclar` hub's tool cards: every registered tool is reachable from the hub, through a
+ * visible affordance, with a focus ring that belongs to the thing being focused.
  *
- * None of this is renderable here — this repo's vitest environment is `node`, no jsdom
- * (`FU-WEB-JSDOM`) — so, following the pattern `auth-a11y.structure.test.ts` and
- * `air-pollution.structure.test.ts` already use for the sibling defect class, this is a
- * source-level guard: a future edit that drops `position: relative` from `.toolCard`, removes
- * the `::after` stretch rule, or widens the focus selector back to `:focus-within` fails HERE
- * instead of the click-target geometry or the focus ring silently regressing.
+ * ## What changed under this test, and why it is not a loosening
+ *
+ * V1 built each card as a stretched anchor: `.toolCard { position: relative }` plus an empty,
+ * edge-to-edge `.toolName a::after` that grew the ~16-character link's click target to the whole
+ * card, plus a `:has(.toolName a:focus-visible)` ring scoped to that specific link rather than
+ * `:focus-within` (which had already cost this repo a defect once, on
+ * `components/auth/auth-form.module.css`). Those three pieces only work together, so this file
+ * pinned all three in `araclar/tools.module.css`.
+ *
+ * V2 does not use a stretched anchor. Each card ends in a real CTA button inside a `<Link>`
+ * ("Mesafe Aracını Başlat"), which is an explicit affordance rather than an invisible pseudo-
+ * element, and it carries the focus ring natively — there is nothing to scope and nothing to
+ * suppress. `tools.module.css` was deleted with the V1 page in T-032 PR3, so the three CSS pins
+ * have no file to read.
+ *
+ * What was never really about the CSS is the reachability: a tool in the register that the hub
+ * does not link is a page only the sitemap knows about. V1 got that for free because the cards
+ * were generated from `TOOL_REGISTRY`; V2 hand-writes three cards, so it can silently fall behind
+ * the register — which is the failure this file now guards, against the register itself.
+ *
+ * Source-read rather than rendered: node env, no jsdom (`FU-WEB-JSDOM`), async server components.
  */
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 /**
- * Source with comments removed. Every "this string must be absent" assertion below runs
- * against this — the CSS file's own docblocks discuss the removed `:focus-within` selector by
- * name (recording why it was replaced), so an absence check against the raw source would fail
- * on the prose that explains the fix rather than on a real regression
- * (`air-pollution.structure.test.ts` names the same trap for its own file).
+ * Source with comments removed. Every absence check below runs against this: the component's
+ * docblocks name the identifiers under test, and prose about a rule is not the rule.
  */
-const code = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, "");
+const code = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, " ");
 
-const css = read("../../app/[locale]/araclar/tools.module.css");
-const page = read("../../app/[locale]/araclar/page.tsx");
-const cssCode = code(css);
-const pageCode = code(page);
+const hubHtml = code(read("../v2/v2-tools-hub.tsx"));
 
-describe("the stretched-anchor's positioning context", () => {
-  it("`.toolCard`'s own rule sets `position: relative`", () => {
-    // The selector must be anchored so it cannot also match `.toolCard:hover` or
-    // `.toolCard:has(...)` — both share the `.toolCard` prefix but are different rules.
-    expect(cssCode).toMatch(/\.toolCard\s*\{[^}]*position\s*:\s*relative/);
+describe("the hub reaches every registered tool", () => {
+  it("links each tool in TOOL_REGISTRY", () => {
+    // Anti-vacuity: an empty register would satisfy the loop for free.
+    expect(TOOL_REGISTRY.length, "TOOL_REGISTRY entries").toBeGreaterThan(0);
+    for (const tool of TOOL_REGISTRY) {
+      expect(hubHtml, `hub does not link ${tool.pathname}`).toContain(`href="${tool.pathname}"`);
+    }
   });
 
-  it("`.toolCard` is the class actually applied to the rendered card (positive control — the selector under test corresponds to a real DOM hook, not an orphaned rule)", () => {
-    expect(pageCode).toContain("className={`card ${styles.toolCard}`}");
-  });
-});
-
-describe("the stretched anchor itself", () => {
-  it("`.toolName a::after` is the empty, absolutely-positioned, edge-to-edge pseudo-element", () => {
-    expect(cssCode).toMatch(
-      /\.toolName a::after\s*\{[^}]*content\s*:\s*""[^}]*position\s*:\s*absolute[^}]*inset\s*:\s*0/,
-    );
+  it("links each one exactly once, so a card is not silently duplicated or orphaned", () => {
+    for (const tool of TOOL_REGISTRY) {
+      const hits = hubHtml.match(new RegExp(`href="${tool.pathname}"`, "g")) ?? [];
+      expect(hits, `${tool.pathname} link count`).toHaveLength(1);
+    }
   });
 
-  it("`.toolName` actually wraps the `<Link>` the stretch rule targets (positive control)", () => {
-    expect(pageCode).toMatch(/className=\{styles\.toolName\}[\s\S]{0,100}<Link/);
+  it("uses the typed Link, never a bare anchor", () => {
+    // `@/i18n/navigation`, per the repo's hard rule — a raw <a> skips the locale prefix.
+    expect(hubHtml).toContain('from "@/i18n/navigation"');
+    expect(hubHtml).not.toMatch(/<a\s+href="\/araclar/);
   });
 });
 
-describe("the focus ring targets the specific link, not any focused descendant (A11Y111-M1 regression class)", () => {
-  it("`.toolCard:has(.toolName a:focus-visible)` carries the accent ring", () => {
-    expect(cssCode).toMatch(
-      /\.toolCard:has\(\.toolName a:focus-visible\)\s*\{[^}]*outline\s*:\s*3px solid var\(--color-accent\)[^}]*outline-offset\s*:\s*2px/,
-    );
+describe("the card's affordance is visible, not an invisible stretched target", () => {
+  it("each tool link wraps a real CTA control", () => {
+    // The V2 replacement for the stretched anchor. If a card's link ever shrinks back to a bare
+    // text run with no visible control, that is the geometry regression the V1 `::after` rule
+    // existed to prevent, arriving from the other direction.
+    const links = hubHtml.match(/<Link\s+href="\/araclar\/[^"]+"[\s\S]{0,800}?<\/Link>/g) ?? [];
+    expect(links.length, "tool CTA links").toBe(TOOL_REGISTRY.length);
+    for (const link of links) {
+      expect(link, "tool link with no visible control inside").toContain("<Button");
+    }
   });
 
-  it("the old broad `:focus-within` selector is gone — it is the exact defect this fix corrects", () => {
-    expect(cssCode).not.toMatch(/\.toolCard:focus-within/);
-  });
-
-  it("the inner link's own focus ring stays suppressed — the ring lives on the card, not duplicated on the ~16-character text run", () => {
-    expect(cssCode).toMatch(/\.toolName a:focus-visible\s*\{[^}]*outline\s*:\s*none/);
+  it("does not suppress the focus ring on those links", () => {
+    // V1 moved the ring onto the card and suppressed it on the inner link. V2's ring is the
+    // button's own, so suppressing it here would leave the card unreachable by keyboard sight.
+    expect(hubHtml).not.toMatch(/focus-visible:outline-none|outline-none[^"]*focus/);
   });
 });

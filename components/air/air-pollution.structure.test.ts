@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PM25_NOTICE_SLOTS } from "@/lib/air/notice-keys";
+import { gatesGoverning, ungatedRenderSite } from "@/lib/testing/jsx-gate";
 
 /**
  * This repo's vitest environment is `node` and the section is an async server component, so
@@ -30,7 +31,7 @@ const section = read("./air-pollution-section.tsx");
 const chart = read("./pm25-chart.tsx");
 const table = read("./pm25-table.tsx");
 const css = read("./air-pollution.module.css");
-const page = read("../../app/[locale]/turkiye/[slug]/page.tsx");
+const page = read("../../app/[locale]/(site)/turkiye/[slug]/page.tsx");
 const sectionCode = code(section);
 const chartCode = code(chart);
 const tableCode = code(table);
@@ -109,15 +110,65 @@ describe("every notice slot the code can render is actually rendered", () => {
 
 describe("the section is gated on the payload, in both directions", () => {
   it("renders only when the api published a series", () => {
-    expect(pageCode).toMatch(/\{pm25Annual !== null && \(\s*<AirPollutionSection/);
+    /**
+     * This pinned the V1 spelling `{pm25Annual !== null && (<AirPollutionSection`. The V2 page
+     * renders the air-quality and marine sections from ONE three-branch ternary, so the section
+     * has two render sites and neither is written `&&`. The invariant is unchanged; only the
+     * expression is. Asserted as the property — every render site is governed by the payload —
+     * rather than as the shape (`lib/testing/jsx-gate.ts`).
+     */
+    expect(gatesGoverning(pageCode, "<AirPollutionSection").length).toBeGreaterThan(0);
+    expect(ungatedRenderSite(pageCode, "<AirPollutionSection", "pm25Annual")).toBeNull();
   });
 
   it("cites the source in Kaynaklar only when the section renders", () => {
     // A source cited for content that is not on the page is the UX-tour B5 defect.
-    expect(pageCode).toMatch(
-      /if \(pm25Annual !== null\)\s*\n?\s*extraSources\.push\(t\("sourcesPm25"/,
-    );
+    //
+    // V1 built a per-page `extraSources` list and pushed a string onto it. V2 renders a
+    // bibliography component whose `turkiye` scope already carries the PM2.5 source for every
+    // province, so the same defect appears as an OMISSION rather than a push: the province
+    // drops the citation when it has no series to show. Same guarantee, opposite mechanic —
+    // and the V2 rewrite had neither until T-032 PR3, which is what this assertion now pins.
+    expect(pageCode).toMatch(/omit=\{pm25Annual \? \[\] : \["acag-pm25"\]\}/);
   });
+
+  /**
+   * THE PM2.5 STRUCTURED-DATA NODE, AND WHY THE NEXT FOUR TESTS ARE CONDITIONAL.
+   *
+   * V1's province page pushed a `PropertyValue` for the PM2.5 reading onto `additionalProperty`,
+   * under a gate that is subtler than it looks: not `pm25Annual !== null`, but ALSO the notice
+   * flag, because the node's name says "il merkezi hücresi" and those words appear on the page
+   * only inside `notice.provinceCentrePoint`. Four rules hang off that node — the gate, the
+   * label, the rounding, the absent `unitCode`.
+   *
+   * The V2 rewrite emits NO PM2.5 node at all. `additionalProperty` carries plate code, area,
+   * district count, density and elevation, and stops. So all four rules are vacuously satisfied,
+   * and the tempting repairs are both bad: deleting them throws away the reasoning that produced
+   * them, and rewriting them against a node that does not exist asserts nothing.
+   *
+   * They are kept as a CONDITIONAL contract instead. Each one says: if the node is here, it obeys
+   * this rule; if it is not, then it is properly absent and no partial version has leaked in. The
+   * day someone re-adds PM2.5 structured data to V2, all four rules bind again on the spot
+   * instead of having to be remembered — which is the whole reason they were written down.
+   */
+  const PM25_NODE_GATE = /if \(pm25Annual !== null && pm25ShowsCentreNotice\) \{([\s\S]*?)\n {2}\}/;
+  const pm25NodeBranch = PM25_NODE_GATE.exec(pageCode)?.[1] ?? null;
+
+  /**
+   * "Absent" must mean absent, not "renamed". A node re-added under a different gate, or a
+   * half-migrated one that keeps the label helper, would otherwise slip through every `if
+   * (branch === null) return` below.
+   */
+  const expectNoPm25StructuredData = () => {
+    const flatPage = pageCode.replace(/\s+/g, " ");
+    expect(
+      flatPage,
+      "additionalProperty carries a PM2.5 node under an unrecognised gate",
+    ).not.toMatch(/additionalProperty\.push\(\{[^}]*pm25/i);
+    expect(pageCode, "PM2.5 JSON-LD label helper is used with no node to name").not.toContain(
+      "jsonLdLabel",
+    );
+  };
 
   it("adds the JSON-LD PropertyValue only when the QUALIFYING NOTICE renders", () => {
     // SEO-POLICY §B5 5.7/5.8: structured data may not carry what the page does not show,
@@ -126,6 +177,10 @@ describe("the section is gated on the payload, in both directions", () => {
     // `notice.provinceCentrePoint` — a sentence the api gates through `noticeKeys`,
     // independently of `pm25Annual !== null`. So the node is gated on that same flag and
     // DROPS when the sentence does not render (→ PR #76 review FENER76R2-I1 + CODE76R2-I1).
+    if (pm25NodeBranch === null) {
+      expectNoPm25StructuredData();
+      return;
+    }
     // Whitespace-normalised rather than pattern-matched line by line: the assertion is about
     // which expression the gate is, not about how Prettier wrapped it.
     const flatPage = pageCode.replace(/\s+/g, " ");
@@ -133,47 +188,45 @@ describe("the section is gated on the payload, in both directions", () => {
       "const pm25ShowsCentreNotice = pm25Annual !== null && " +
         "pm25NoticeFlags(pm25Annual.attribution.noticeKeys).provinceCentrePoint;",
     );
-    expect(flatPage).toContain(
-      "if (pm25Annual !== null && pm25ShowsCentreNotice) { additionalProperty.push(",
-    );
   });
 
   it("names the node with the reading-point label, never the bare value label", () => {
     // FENER76-I1: `additionalProperty` describes the ENTITY, so a node named with the visible
     // `valueLabel` asserts a provincial average — the reading DEC 2026-08-19d md.1 rejected —
-    // and a `PropertyValue` travels without the caveat printed beneath it. Scoped to the PM2.5
-    // branch, because `valueLabel` is correct everywhere else it appears.
-    // The branch is captured by its FULL gate — which stands exactly once in this file — and
-    // to its own closing brace rather than to the first `}` in it; that one belongs to a
-    // template call.
-    const branch = /if \(pm25Annual !== null && pm25ShowsCentreNotice\) \{([\s\S]*?)\n {2}\}/.exec(
-      pageCode,
-    )?.[1];
-    expect(branch).toBeDefined();
+    // and a `PropertyValue` travels without the caveat printed beneath it.
+    if (pm25NodeBranch === null) {
+      expectNoPm25StructuredData();
+      return;
+    }
     // Bound by IDENTITY, not by position: an absence check ("no `valueLabel` here") reports
     // clean for free if the capture read some other block, so the capture states which block
     // it is before asserting anything about it (→ PR #76 review FENER76R2-M3).
-    expect(branch).toContain("additionalProperty.push");
-    expect(branch).toContain('tAir("jsonLdLabel"');
-    expect(branch).not.toContain('tAir("valueLabel"');
+    expect(pm25NodeBranch).toContain("additionalProperty.push");
+    expect(pm25NodeBranch).toContain('tAir("jsonLdLabel"');
+    expect(pm25NodeBranch).not.toContain('tAir("valueLabel"');
   });
 
   it("puts the SAME rounded number in the structured data as on the page", () => {
-    expect(pageCode).toMatch(/value: roundPm25\(pm25Annual\.latestValueUgM3\)/);
+    // The section half of this holds whatever the page does: the visible figure is rounded in
+    // one place, by one helper, and that is what the structured data would have to match.
     expect(section).toMatch(/roundPm25\(pm25\.latestValueUgM3\)/);
+    if (pm25NodeBranch === null) {
+      expectNoPm25StructuredData();
+      return;
+    }
+    expect(pageCode).toMatch(/value: roundPm25\(pm25Annual\.latestValueUgM3\)/);
   });
 
   it("emits no unitCode — the UN/CEFACT code for µg/m³ is unverified", () => {
     // Scoped to the PM2.5 branch: `unitCode` is correct on the km²/°C/mm properties beside
-    // it, so a whole-file check would say nothing. Same capture as above: the full gate, to
-    // the branch's own closing brace.
-    const branch = /if \(pm25Annual !== null && pm25ShowsCentreNotice\) \{([\s\S]*?)\n {2}\}/.exec(
-      pageCode,
-    )?.[1];
-    expect(branch).toBeDefined();
-    expect(branch).toContain("additionalProperty.push");
-    expect(branch).toContain("unitText");
-    expect(branch).not.toContain("unitCode");
+    // it, so a whole-file check would say nothing.
+    if (pm25NodeBranch === null) {
+      expectNoPm25StructuredData();
+      return;
+    }
+    expect(pm25NodeBranch).toContain("additionalProperty.push");
+    expect(pm25NodeBranch).toContain("unitText");
+    expect(pm25NodeBranch).not.toContain("unitCode");
   });
 });
 

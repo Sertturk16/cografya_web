@@ -172,11 +172,14 @@ describe("filter control options — derived from the component's own offered va
  * `/deprem` surface makes and ties it back to the catalogue, so a renamed/typo'd key goes red
  * HERE instead of rendering `Earthquake.meta.freshnessLabel` in production. Caught for real
  * during this build's own render-sample pass — `meta.freshnessLabel` was called from
- * `app/[locale]/deprem/page.tsx` but never declared in either catalogue, and no assertion
+ * `app/[locale]/(site)/deprem/page.tsx` but never declared in either catalogue, and no assertion
  * above it would have failed on that, because none of them read the PAGE's source at all.
  */
 const CONSUMER_ROOTS = [
-  { label: "app/[locale]/deprem", url: new URL("../../app/[locale]/deprem/", import.meta.url) },
+  {
+    label: "app/[locale]/(site)/deprem",
+    url: new URL("../../app/[locale]/(site)/deprem/", import.meta.url),
+  },
   { label: "components/earthquake", url: new URL("../../components/earthquake/", import.meta.url) },
 ] as const;
 

@@ -13,7 +13,7 @@ export function V2Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
           {/* Col 1 & 2: Brand and Mission */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/v2" className="flex items-center gap-2.5 group inline-flex">
+            <Link href="/" className="flex items-center gap-2.5 group inline-flex">
               <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Image
                   src="/brand/logo.png"
@@ -63,35 +63,32 @@ export function V2Footer() {
             </h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li>
-                <Link href="/v2/turkiye" className="hover:text-primary transition-colors block">
+                <Link href="/turkiye" className="hover:text-primary transition-colors block">
                   Türkiye İlleri (81 İl)
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/v2/turkiye/bolge"
-                  className="hover:text-primary transition-colors block"
-                >
+                <Link href="/turkiye/bolge" className="hover:text-primary transition-colors block">
                   Coğrafi Bölgeler (7 Bölge)
                 </Link>
               </li>
               <li>
-                <Link href="/v2/dunya" className="hover:text-primary transition-colors block">
+                <Link href="/dunya" className="hover:text-primary transition-colors block">
                   Dünya Atlası (199 Ülke)
                 </Link>
               </li>
               <li>
-                <Link href="/v2/dunya/kita" className="hover:text-primary transition-colors block">
+                <Link href="/dunya/kita" className="hover:text-primary transition-colors block">
                   Kıtalar Atlası (7 Kıta)
                 </Link>
               </li>
               <li>
-                <Link href="/v2/deniz" className="hover:text-primary transition-colors block">
+                <Link href="/deniz" className="hover:text-primary transition-colors block">
                   Canlı Deniz Telemetrisi
                 </Link>
               </li>
               <li>
-                <Link href="/v2/deprem" className="hover:text-primary transition-colors block">
+                <Link href="/deprem" className="hover:text-primary transition-colors block">
                   Canlı Deprem Radarı
                 </Link>
               </li>
@@ -106,13 +103,13 @@ export function V2Footer() {
             </h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li>
-                <Link href="/v2/oyun" className="hover:text-secondary transition-colors block">
+                <Link href="/oyun" className="hover:text-secondary transition-colors block">
                   Harita Oyunu (3 Mod)
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/v2/araclar/mesafe-olcme"
+                  href="/araclar/mesafe-olcme"
                   className="hover:text-secondary transition-colors block"
                 >
                   Kuş Uçuşu Mesafe Ölçme
@@ -120,7 +117,7 @@ export function V2Footer() {
               </li>
               <li>
                 <Link
-                  href="/v2/araclar/koordinat-bulma"
+                  href="/araclar/koordinat-bulma"
                   className="hover:text-secondary transition-colors block"
                 >
                   Koordinat Bulma &amp; Dönüştürme
@@ -128,7 +125,7 @@ export function V2Footer() {
               </li>
               <li>
                 <Link
-                  href="/v2/araclar/alan-hesaplama"
+                  href="/araclar/alan-hesaplama"
                   className="hover:text-secondary transition-colors block"
                 >
                   Poligon Alan Hesaplama
@@ -145,7 +142,7 @@ export function V2Footer() {
             </h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li>
-                <Link href="/v2/kitaplar" className="hover:text-accent transition-colors block">
+                <Link href="/kitaplar" className="hover:text-accent transition-colors block">
                   Video Çözümlü Kitaplar
                 </Link>
               </li>
@@ -155,12 +152,12 @@ export function V2Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/v2/giris" className="hover:text-accent transition-colors block">
+                <Link href="/giris" className="hover:text-accent transition-colors block">
                   Kullanıcı Girişi
                 </Link>
               </li>
               <li>
-                <Link href="/v2/kayit" className="hover:text-accent transition-colors block">
+                <Link href="/kayit" className="hover:text-accent transition-colors block">
                   Ücretsiz Kayıt Ol
                 </Link>
               </li>
@@ -172,15 +169,15 @@ export function V2Footer() {
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <p>© {currentYear} Coğrafya Gurmesi. Açık, bilimsel ve kaynaklı coğrafya eğitimi.</p>
           <div className="flex items-center gap-4 text-[11px]">
-            <Link href="/v2/turkiye" className="hover:underline">
+            <Link href="/turkiye" className="hover:underline">
               81 İl Atlası
             </Link>
             <span className="text-border">·</span>
-            <Link href="/v2/dunya" className="hover:underline">
+            <Link href="/dunya" className="hover:underline">
               199 Ülke Atlası
             </Link>
             <span className="text-border">·</span>
-            <Link href="/v2/deniz" className="hover:underline">
+            <Link href="/deniz" className="hover:underline">
               Deniz Durumu
             </Link>
             <span className="text-border">·</span>

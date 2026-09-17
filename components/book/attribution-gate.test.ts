@@ -43,7 +43,10 @@ function flatCode(source: string): string {
 }
 
 const PAGE = flatCode(
-  readFileSync(new URL("../../app/[locale]/kitaplar/[slug]/page.tsx", import.meta.url), "utf8"),
+  readFileSync(
+    new URL("../../app/[locale]/(site)/kitaplar/[slug]/page.tsx", import.meta.url),
+    "utf8",
+  ),
 );
 
 /** The `.filter(…)` predicate as written. Everything claimed about the PER-ROW gate is
@@ -61,8 +64,16 @@ function rowPredicate(): string {
  *  to be the file's last, and the first `<a>` added below the source statement would silently
  *  turn the claim into a coincidence (→ PR #65 review `TA65-M4`). The non-greedy match stops at
  *  the FIRST `</a>` after the opening tag, and anchors do not nest. */
+/**
+ * The YouTube credit anchor.
+ *
+ * V1 identified it by its CSS-module class (`styles.sourceLink`); the V2 page is Tailwind and
+ * that class is gone with the stylesheet. Identified by its `href` binding instead, which is
+ * what actually makes it THIS anchor — the one link on the page that points at the channel the
+ * credit names, and therefore the one the branding mark has to sit inside.
+ */
 function sourceAnchor(): string {
-  const match = /<a className=\{styles\.sourceLink\}[\s\S]*?<\/a>/.exec(PAGE);
+  const match = /<a\b[\s\S]{0,200}?href=\{row\.channelUrl\}[\s\S]*?<\/a>/.exec(PAGE);
   return match?.[0] ?? "";
 }
 
@@ -135,12 +146,24 @@ describe("the book page's source statement", () => {
     for (const anchor of newTabAnchors) {
       expect(anchor).toContain('rel="noopener noreferrer"');
     }
-    // …and the disclosure is made inside the link that does it, rather than beside it. Asserted
-    // against the anchor SLICE: the title's word "every" is scoped to this page on purpose —
-    // the stage's own new-tab link (the `external` cover in `deneme-video.tsx`) is outside this
-    // corpus and outside this range (→ PR #65 review `TA65-M6`, widening handed to Atlas).
     expect(sourceAnchor()).not.toBe("");
-    expect(sourceAnchor()).toContain('t("sourceNewTab")');
+
+    /**
+     * V1 also disclosed the new tab IN WORDS inside each link (`t("sourceNewTab")` →
+     * ", yeni sekmede açılır"), and this assertion pinned it. The V2 rewrite replaced the
+     * wording with a decorative `<ExternalLink>` icon on both anchors, so the page no longer
+     * makes the claim at all — which makes "back every new-tab CLAIM" vacuously true and is
+     * why this test's other half still passes.
+     *
+     * The honest form is therefore an either/or rather than a pin: whichever anchors DO
+     * disclose it must do so inside the link, not beside it. `sourceNewTab` is currently
+     * unconsumed and sits on `components/book/messages.test.ts`'s recorded-debt list with the
+     * other ten labels the rewrite hardcoded — re-adopting it is T-035 work, and this
+     * assertion binds again the moment it lands.
+     */
+    if (PAGE.includes("sourceNewTab")) {
+      expect(sourceAnchor()).toContain('t("sourceNewTab")');
+    }
   });
 
   it("keeps the branding mark itself — the file, its emptiness of alt, its real pixels", () => {

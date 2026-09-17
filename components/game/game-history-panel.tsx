@@ -11,7 +11,7 @@ import styles from "./game-history-panel.module.css";
 
 /**
  * The current-user's recent-rounds view (UYELIK-10 plan §5.7) — rendered on `/oyun`
- * (`app/[locale]/oyun/page.tsx`), the game surface's ONE indexable page. Imported directly
+ * (`app/[locale]/(site)/oyun/page.tsx`), the game surface's ONE indexable page. Imported directly
  * into the server page component (no `dynamic(() => …, { ssr: false })`) — a small
  * hydrated island with no heavy library, the same treatment `FavoriteButton` already gets.
  *

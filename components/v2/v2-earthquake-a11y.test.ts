@@ -39,7 +39,7 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
     expect(explorerContent).toContain("Eşzamanlı Merkez Üsleri &amp; Odak Derinlikleri");
     expect(explorerContent).not.toContain("Eşzamanlı Merkez Üsleri &amp; Aktif Fay Hatları");
 
-    const pageUrl = new URL("../../app/[locale]/v2/deprem/page.tsx", import.meta.url);
+    const pageUrl = new URL("../../app/[locale]/(site)/deprem/page.tsx", import.meta.url);
     const pageContent = readFileSync(pageUrl, "utf8");
     expect(pageContent).toContain("Canlı Deprem Takip & Sismik Monitör");
     expect(pageContent).not.toContain("Sismik Fay Monitörü");

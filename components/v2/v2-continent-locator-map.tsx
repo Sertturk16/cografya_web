@@ -158,7 +158,7 @@ export function V2ContinentLocatorMap({
 
             <Link
               href={{
-                pathname: "/v2/dunya/[slug]",
+                pathname: "/dunya/[slug]",
                 params: { slug: hoveredCountry.slugTr },
               }}
               className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"

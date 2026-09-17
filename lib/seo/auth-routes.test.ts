@@ -24,12 +24,16 @@ function fileSource(relativePath: string): string {
  * DERIVED from `AUTH_PATHNAMES`, not hand-maintained (review `TEST85-M1`/`C3`; plan header
  * item 5, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`). This mapping
  * is exact, not a heuristic: `i18n/routing.ts`'s own rule is "the App Router directory is
- * the TR (key) path in every case" (plan §4.1), so `/kayit` → `app/[locale]/kayit/page.tsx`
+ * the TR (key) path in every case" (plan §4.1), so `/kayit` → `app/[locale]/(site)/kayit/page.tsx`
  * always holds. A hand list silently stopped covering a new auth route the moment one
  * shipped without a matching edit here — this can no longer happen: an entry added to
  * `AUTH_PATHNAMES` produces its own scan target automatically.
  */
-const AUTH_PAGE_FILES = AUTH_PATHNAMES.map((pathname) => `../../app/[locale]${pathname}/page.tsx`);
+// T-032 PR3 put every reading surface in the `(site)` route group. Route groups do not appear
+// in URLs, so `AUTH_PATHNAMES` is unchanged and only the file path gains the segment.
+const AUTH_PAGE_FILES = AUTH_PATHNAMES.map(
+  (pathname) => `../../app/[locale]/(site)${pathname}/page.tsx`,
+);
 
 describe("AUTH_PATHNAMES", () => {
   it("is non-empty", () => {

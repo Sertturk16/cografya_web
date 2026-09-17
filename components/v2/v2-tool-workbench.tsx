@@ -1708,7 +1708,7 @@ export function V2ToolWorkbench({
                       {detectedProvince && (
                         <Link
                           href={{
-                            pathname: "/v2/turkiye/[slug]",
+                            pathname: "/turkiye/[slug]",
                             params: { slug: detectedProvince.slug },
                           }}
                         >

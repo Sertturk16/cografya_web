@@ -35,63 +35,63 @@ interface SearchEntry {
 const STATIC_SHORTCUTS: SearchEntry[] = [
   {
     name: "Türkiye İller Haritası",
-    path: "/v2/turkiye",
+    path: "/turkiye",
     kind: "module",
     subtitle: "81 İl ve 7 Coğrafi Bölge",
     folded: "turkiye iller haritasi",
   },
   {
     name: "Dünya Ülkeleri Atlası",
-    path: "/v2/dunya",
+    path: "/dunya",
     kind: "module",
     subtitle: "199 Ülke ve Kıtalar",
     folded: "dunya ulkeleri atlasi",
   },
   {
     name: "Canlı Deniz Telemetrisi",
-    path: "/v2/deniz",
+    path: "/deniz",
     kind: "module",
     subtitle: "Copernicus & ECMWF 4 Deniz",
     folded: "canli deniz telemetrisi",
   },
   {
     name: "Harita Oyunu (81 İl & Dünya)",
-    path: "/v2/oyun",
+    path: "/oyun",
     kind: "module",
     subtitle: "3 İnteraktif Oyun Modu",
     folded: "harita oyunu 81 il dunya",
   },
   {
     name: "Canlı Deprem Takip Portalı",
-    path: "/v2/deprem",
+    path: "/deprem",
     kind: "module",
     subtitle: "AFAD TDVMS Son Sarsıntılar",
     folded: "canli deprem takip portali",
   },
   {
     name: "Kuş Uçuşu Mesafe Ölçme",
-    path: "/v2/araclar/mesafe-olcme",
+    path: "/araclar/mesafe-olcme",
     kind: "tool",
     subtitle: "CBS Jeodezik Mesafe Aracı",
     folded: "kus ucusu mesafe olcme",
   },
   {
     name: "Koordinat Bulma & Dönüştürme",
-    path: "/v2/araclar/koordinat-bulma",
+    path: "/araclar/koordinat-bulma",
     kind: "tool",
     subtitle: "WGS84 Enlem / Boylam Aracı",
     folded: "koordinat bulma donusturme",
   },
   {
     name: "Alan & Yüzölçümü Hesaplama",
-    path: "/v2/araclar/alan-hesaplama",
+    path: "/araclar/alan-hesaplama",
     kind: "tool",
     subtitle: "Poligon Jeodezik Alan Aracı",
     folded: "alan yuzolcumu hesaplama",
   },
   {
     name: "Coğrafya Kitapları & Denemeler",
-    path: "/v2/kitaplar",
+    path: "/kitaplar",
     kind: "module",
     subtitle: "Soru Bankası & Video Çözümler",
     folded: "cografya kitaplari denemeler",
@@ -263,11 +263,11 @@ export function V2Hero({
 
   // Curated top quick access targets
   const QUICK_TAGS = [
-    { label: "📍 İstanbul", path: "/v2/turkiye/istanbul" },
-    { label: "🌍 Japonya", path: "/v2/dunya/japonya" },
-    { label: "🌊 Marmara Denizi", path: "/v2/deniz" },
-    { label: "🎮 81 İl Oyunu", path: "/v2/oyun" },
-    { label: "📐 Mesafe Ölçme", path: "/v2/araclar/mesafe-olcme" },
+    { label: "📍 İstanbul", path: "/turkiye/istanbul" },
+    { label: "🌍 Japonya", path: "/dunya/japonya" },
+    { label: "🌊 Marmara Denizi", path: "/deniz" },
+    { label: "🎮 81 İl Oyunu", path: "/oyun" },
+    { label: "📐 Mesafe Ölçme", path: "/araclar/mesafe-olcme" },
   ];
 
   return (
@@ -454,7 +454,7 @@ export function V2Hero({
 
         {/* Primary Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-          <Link href="/v2/turkiye">
+          <Link href="/turkiye">
             <Button
               variant="primary"
               size="lg"
@@ -464,7 +464,7 @@ export function V2Hero({
               Türkiye Haritası (81 İl)
             </Button>
           </Link>
-          <Link href="/v2/dunya">
+          <Link href="/dunya">
             <Button
               variant="outline"
               size="lg"
@@ -474,7 +474,7 @@ export function V2Hero({
               Dünya Atlası (199 Ülke)
             </Button>
           </Link>
-          <Link href="/v2/oyun">
+          <Link href="/oyun">
             <Button
               variant="secondary"
               size="lg"

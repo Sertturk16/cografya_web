@@ -297,8 +297,8 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
       ["../../components/map/turkey-map-section.tsx", "attributionJrcEnglish"],
       ["../../components/game/game-map.tsx", "attributionJrcEnglish"],
       ["../../components/marine/marine-map.tsx", "attributionJrcEnglish"],
-      ["../../app/[locale]/hakkimizda/page.tsx", "dataJrcEnglish"],
-      ["../../app/[locale]/hakkimizda/page.tsx", "dataJrcCitation"],
+      ["../../app/[locale]/(site)/hakkimizda/page.tsx", "dataJrcEnglish"],
+      ["../../app/[locale]/(site)/hakkimizda/page.tsx", "dataJrcCitation"],
     ];
     for (const [relative, key] of sites) {
       const source = readFileSync(fileURLToPath(new URL(relative, import.meta.url)), "utf8");

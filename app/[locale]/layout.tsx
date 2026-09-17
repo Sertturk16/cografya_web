@@ -3,9 +3,6 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { AuthMount } from "@/components/auth/auth-mount";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { routing } from "@/i18n/routing";
 import { fraunces, nunitoSans } from "@/lib/fonts";
 import { getSiteUrl, siteConfig } from "@/lib/seo/site";
@@ -62,7 +59,6 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   }
   // Enables static rendering for this request's locale.
   setRequestLocale(locale);
-  const t = await getTranslations("Common");
 
   return (
     /* `suppressHydrationWarning`: next-themes' blocking script sets the theme class on
@@ -79,21 +75,11 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             switcher). v4 auto-inherits the request config; the message catalogue
             is small, so it is not scoped further yet. */}
           <NextIntlClientProvider>
-            <a href="#main-content" className="skip-link">
-              {t("skipToContent")}
-            </a>
-            <SiteHeader locale={locale} />
-            {/* tabIndex={-1} makes the skip-link target programmatically focusable so
-              AT focus actually moves here on activation — Safari/VoiceOver do not
-              focus a plain id target otherwise (a11y). */}
-            <main id="main-content" tabIndex={-1}>
-              {children}
-            </main>
-            <SiteFooter />
-            {/* Mounted once, site-wide (uyelik-auth-redesign plan §5.7) — renders nothing until
-              a gated action first opens it; see `AuthMount`'s own docblock for the SEO/CWV
-              reasoning. */}
-            <AuthMount locale={locale} />
+            {/* T-032 PR3: the document shell only. Header, footer, the skip link and the
+              single `<main>` moved into `(site)/layout.tsx`, so a reading page cannot ship
+              without them and the three fullscreen play screens opt out by living in a
+              sibling group rather than by omitting an import somebody has to remember. */}
+            {children}
             <Toaster />
           </NextIntlClientProvider>
         </ThemeProvider>

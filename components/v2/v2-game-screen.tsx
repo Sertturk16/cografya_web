@@ -653,14 +653,14 @@ export function V2GameScreen({
             className="flex items-center gap-2 text-xs text-muted-foreground"
           >
             <Link
-              href="/v2"
+              href="/"
               className="flex items-center gap-1 hover:text-foreground transition-colors"
             >
               <Home className="size-3.5" />
               <span>Ana Sayfa</span>
             </Link>
             <ChevronRight className="size-3.5" />
-            <Link href="/v2/oyun" className="hover:text-foreground transition-colors">
+            <Link href="/oyun" className="hover:text-foreground transition-colors">
               Harita Oyunları
             </Link>
             <ChevronRight className="size-3.5" />
@@ -668,7 +668,7 @@ export function V2GameScreen({
           </nav>
 
           <div className="flex items-center gap-2">
-            <Link href={region ? "/v2/oyun/bolge-bolge-il" : "/v2/oyun"}>
+            <Link href={region ? "/oyun/bolge-bolge-il" : "/oyun"}>
               <Button variant="outline" size="sm" leftIcon={<RotateCcw className="size-3.5" />}>
                 Oyun Hub&apos;ına Dön
               </Button>
@@ -1258,7 +1258,7 @@ export function V2GameScreen({
                           href={
                             item.slug
                               ? provinceUrlTemplate.replace(SLUG_PLACEHOLDER, item.slug)
-                              : "/v2/oyun"
+                              : "/oyun"
                           }
                           target="_blank"
                           rel="noopener noreferrer"
@@ -1315,7 +1315,7 @@ export function V2GameScreen({
                     Tekrar Oyna
                   </Button>
                   <V2LeaderboardButton mode={submitModeTag} size="lg" />
-                  <Link href={region ? "/v2/oyun/bolge-bolge-il" : "/v2/oyun"}>
+                  <Link href={region ? "/oyun/bolge-bolge-il" : "/oyun"}>
                     <Button variant="outline" size="lg">
                       Mod Seçimine Dön
                     </Button>

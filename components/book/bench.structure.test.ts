@@ -52,7 +52,7 @@ const stripComments = (source: string) =>
     .filter((line) => !line.trimStart().startsWith("//"))
     .join("\n");
 
-const PAGE = stripComments(sourceOf("../../app/[locale]/kitaplar/[slug]/page.tsx"));
+const PAGE = stripComments(sourceOf("../../app/[locale]/(site)/kitaplar/[slug]/page.tsx"));
 const BENCH = stripComments(sourceOf("./video-bench.tsx"));
 const STAGE = stripComments(sourceOf("./bench-stage.tsx"));
 const TIMELINE = stripComments(sourceOf("./bench-timeline.tsx"));

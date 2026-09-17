@@ -208,12 +208,12 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
                 <Link
                   href={
                     basin.id === "black_sea"
-                      ? "/v2/deniz/karadeniz"
+                      ? "/deniz/karadeniz"
                       : basin.id === "marmara"
-                        ? "/v2/deniz/marmara"
+                        ? "/deniz/marmara"
                         : basin.id === "aegean"
-                          ? "/v2/deniz/ege"
-                          : "/v2/deniz/akdeniz"
+                          ? "/deniz/ege"
+                          : "/deniz/akdeniz"
                   }
                   className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-white hover:bg-primary text-xs font-bold shadow-xs transition-all w-full"
                 >

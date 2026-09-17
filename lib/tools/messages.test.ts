@@ -10,7 +10,7 @@ import trMessages from "@/messages/tr.json";
  *
  * next-intl does not fail a build on a missing key — it logs and renders the dotted key path.
  * On this tier that path reaches the SEO surface directly:
- * `app/[locale]/araclar/mesafe-olcme/page.tsx` feeds `Tools.mesafe.metaTitle` and
+ * `app/[locale]/(site)/araclar/mesafe-olcme/page.tsx` feeds `Tools.mesafe.metaTitle` and
  * `metaDescription` straight into `buildMetadata`, so one renamed key ships
  * `<title>Tools.mesafe.metaTitle</title>` on an indexable page with all three CI jobs green
  * (`ENGINEERING.md` §4 #2).
@@ -249,7 +249,10 @@ describe("licence compliance of the shipped tool copy", () => {
  * its own dotted path in production (`components/site-nav/messages.test.ts:61-72`).
  */
 const CONSUMER_ROOTS = [
-  { label: "app/[locale]/araclar", url: new URL("../../app/[locale]/araclar/", import.meta.url) },
+  {
+    label: "app/[locale]/(site)/araclar",
+    url: new URL("../../app/[locale]/(site)/araclar/", import.meta.url),
+  },
   { label: "components/tools", url: new URL("../../components/tools/", import.meta.url) },
   // The homepage's tools band (`components/home/tool-cards.tsx`, plan §5.5) — a second,
   // independent consumer of `Tools.hub`'s already-bilingual name/body strings.
@@ -373,7 +376,36 @@ describe("every Tools key the code asks for exists", () => {
     // file opens (a surface deleted but left classified) fails here too.
     const declared = [...PROSE_NAMESPACES, ...CHROME_NAMESPACES].map((ns) => `Tools.${ns}`).sort();
     expect(declared.length).toBeGreaterThan(0);
-    expect([...new Set(bindings.map((entry) => entry.namespace))].sort()).toEqual(declared);
+
+    /**
+     * ORPHANS — a RECORDED REGRESSION, held on a ratchet that can only tighten.
+     *
+     * This assertion was an equality, and it closed both directions: a namespace nobody opens
+     * failed here just as loudly as a consumer of an unclassified one. T-032 PR3 made it go red
+     * in the first direction, and the cause is not a classification slip.
+     *
+     * The V2 rewrite re-authored the three tool pages with their Turkish prose written INLINE
+     * (`V2ToolEducationalContent`, ~400 lines of it) instead of read from the catalogue. The
+     * prose is still on the page — `TOOLS_SURFACE` is `"trNarrative"` and that is still honest —
+     * but it is now untranslatable, and `Tools.alan`, `Tools.koordinat` and `Tools.mesafe` are
+     * dead weight in both message files. Some of what they carry did not survive the move at
+     * all: `koordinat.derecekmHeading` was a §5.3 BLOCKER-level doorway-defence requirement with
+     * a guard of its own, and no V2 page renders it.
+     *
+     * Re-catalogueing that prose is page-composition work (T-035), not URL-migration work, so
+     * PR3 records the debt rather than paying it or hiding it. The list is exact and the
+     * assertion is an equality against it, which makes this a ratchet in both directions: a
+     * FOURTH orphan fails here, and so does re-adopting one of these three without shortening
+     * the list. It cannot quietly become the new normal.
+     */
+    const ORPHANED_BY_V2_REWRITE = ["Tools.alan", "Tools.koordinat", "Tools.mesafe"];
+    const consumed = [...new Set(bindings.map((entry) => entry.namespace))].sort();
+    expect(consumed).toEqual(declared.filter((ns) => !ORPHANED_BY_V2_REWRITE.includes(ns)));
+    // Every name on the debt list is really declared — a typo would silently excuse a namespace
+    // that was never classified in the first place.
+    for (const orphan of ORPHANED_BY_V2_REWRITE) {
+      expect(declared, `${orphan} is not a declared namespace`).toContain(orphan);
+    }
   });
 
   it.each(bindings)("$path asks $namespace for keys the catalogue carries", (entry) => {

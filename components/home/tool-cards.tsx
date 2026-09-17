@@ -11,7 +11,7 @@ import styles from "./home.module.css";
  *
  * Every name/body pair is reused verbatim from `Tools.hub` — already bilingual, already
  * classified `BOTH_LOCALE_KEYS` in `lib/tools/messages.test.ts` and already rendered as the
- * SAME three cards on `/araclar` (`app/[locale]/araclar/page.tsx`). This component authors no
+ * SAME three cards on `/araclar` (`app/[locale]/(site)/araclar/page.tsx`). This component authors no
  * string of its own.
  *
  * ## Why a new, homepage-owned component rather than editing `/araclar`

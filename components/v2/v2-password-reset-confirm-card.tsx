@@ -214,7 +214,7 @@ export function V2PasswordResetConfirmCard() {
           summary={t(AUTH_ERROR_MESSAGE_KEYS["errors.password.resetTokenInvalid"])}
         />
         <Link
-          href="/v2/sifre-sifirlama"
+          href="/sifre-sifirlama"
           className={cn(buttonVariants({ variant: "primary", size: "md" }))}
         >
           {t("resetNew.deadLinkCta")}
@@ -234,7 +234,7 @@ export function V2PasswordResetConfirmCard() {
           <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success-strong" aria-hidden="true" />
           {t("resetNew.done")}
         </h2>
-        <Link href="/v2/giris" className={cn(buttonVariants({ variant: "primary", size: "md" }))}>
+        <Link href="/giris" className={cn(buttonVariants({ variant: "primary", size: "md" }))}>
           {t("login.submit")}
         </Link>
       </div>

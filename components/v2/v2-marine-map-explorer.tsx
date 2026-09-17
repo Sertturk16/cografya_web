@@ -633,7 +633,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               {selectedPoint.provinceSlug && (
                 <Link
                   href={{
-                    pathname: "/v2/turkiye/[slug]",
+                    pathname: "/turkiye/[slug]",
                     params: { slug: selectedPoint.provinceSlug },
                   }}
                   className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-8 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-primary shadow-xs"
@@ -931,7 +931,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                         {point.provinceSlug ? (
                           <Link
                             href={{
-                              pathname: "/v2/turkiye/[slug]",
+                              pathname: "/turkiye/[slug]",
                               params: { slug: point.provinceSlug },
                             }}
                             className="font-medium text-foreground hover:text-primary hover:underline transition-colors"

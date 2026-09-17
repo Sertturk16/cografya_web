@@ -104,7 +104,7 @@ describe("Marine.* keys exist in both catalogues", () => {
   it("carries the seven SPEC §7.14 frozen keys the marine surfaces render", () => {
     // The SPEC freezes these strings by name. The eighth — `series.sourceDiffersNotice` — is
     // born with the chart it explains (W2c), per the mapping block in
-    // `app/[locale]/deniz/page.tsx`. `straits.lowConfidence` joined the list in W2b, with the
+    // `app/[locale]/(site)/deniz/page.tsx`. `straits.lowConfidence` joined the list in W2b, with the
     // province section that renders it.
     const frozen = [
       "disclaimer.educationalOnly",

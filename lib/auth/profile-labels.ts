@@ -10,7 +10,7 @@ import type { UserType } from "./form-rules";
  * here is minted.
  *
  * A row with no `en` renders `tr` with `lang="tr"` on the EN page (WCAG 3.1.2) — the same
- * treatment `app/[locale]/hakkimizda/page.tsx` and `components/marine/marine-attribution.tsx`
+ * treatment `app/[locale]/(site)/hakkimizda/page.tsx` and `components/marine/marine-attribution.tsx`
  * already give untranslated strings, and the one `GLOSSARY.md` §4.4 asks for explicitly:
  * "**Her iki tablonun EN karşılıkları `[TEYİT GEREK]`'tir** … EN sütunu bu yüzden açılmadı."
  * `renderLabel` is the ONE place that decision is made — a caller never re-implements it.

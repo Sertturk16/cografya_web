@@ -7,7 +7,7 @@ import trMessages from "@/messages/tr.json";
  * `lib/home/messages.test.ts` pattern — small static namespace, hand-list only, per PR #134
  * review `TEST134-NEW-I1`'s own Fix note).
  *
- * Lives here, not beside its one consumer under `app/[locale]/kitaplar/`: `vitest.config.ts`'s
+ * Lives here, not beside its one consumer under `app/[locale]/(site)/kitaplar/`: `vitest.config.ts`'s
  * `test.include` is `lib/**\/*.test.ts` + `components/**\/*.test.{ts,tsx}` +
  * `tools/**\/*.test.ts` — no `app/**` pattern, so a test placed under `app/` never runs.
  *
@@ -41,7 +41,7 @@ describe("Kitaplar message catalogue", () => {
   });
 
   it("has no key the code stopped asking for", () => {
-    // Ties the hand list to the one known consumer (app/[locale]/kitaplar/page.tsx) rather than
+    // Ties the hand list to the one known consumer (app/[locale]/(site)/kitaplar/page.tsx) rather than
     // to itself, so a retired key left in both catalogues does not read as live copy.
     expect([...KITAPLAR_KEYS].sort()).toEqual(Object.keys(trMessages.Kitaplar).sort());
   });

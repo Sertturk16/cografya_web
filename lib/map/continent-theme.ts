@@ -1,7 +1,7 @@
 /**
- * The one continent colour/label palette for the `/v2/dunya` surface — a plain, boundary-free
+ * The one continent colour/label palette for the `/dunya` surface — a plain, boundary-free
  * module (no `"use client"`) so both `components/v2/v2-world-map-explorer.tsx` (a client
- * component) and `app/[locale]/v2/dunya/[slug]/page.tsx` (a server component) can import it
+ * component) and `app/[locale]/(site)/dunya/[slug]/page.tsx` (a server component) can import it
  * without either crossing an RSC/client boundary. Previously `CONTINENT_META` lived only in the
  * explorer and the `[slug]` page kept an independently-chosen second palette
  * (`CONTINENT_THEMES`) whose hues did not match it on 6 of 7 continents (`DES133-I1`). Moving
@@ -24,7 +24,7 @@ export const CONTINENT_META: Record<
     // Hand-maintained, NOT derived from the corpus. Measured stale on 2026-09-11: the seven
     // values below sum to 196 against a 199-row seed (Asia is 2 short, North America 1).
     // Not dropped here — `v2-world-map-explorer.tsx`'s own legend renders this field, so
-    // removing it would change a rendered pixel on `/v2/dunya`. Deriving it from the corpus
+    // removing it would change a rendered pixel on `/dunya`. Deriving it from the corpus
     // is a separate, tracked follow-up (`VALB133R2-P1`).
     count: number;
     /** Hero section background gradient on `/dunya/[slug]` — derived from the hue above. */
