@@ -57,7 +57,15 @@ Six V1 routes have no V2 counterpart:
 | `/sifre-sifirlama`      | Port to V2. Path is hard-coded in the API.                                                                                                          |
 | `/sifre-sifirlama/yeni` | Port to V2. Reads `?token=`; path hard-coded in the API.                                                                                            |
 | `/araclar/[...rest]`    | **Delete.** Superseded by a root `not-found` — see §7.                                                                                              |
-| `/design-system`        | **Delete.** Internal; `docs/design.md` is the source of truth.                                                                                      |
+| `/design-system`        | **Superseded by T-034, then deleted with the other V1 routes.** See the correction below.                                                           |
+
+**Correction (T-034, 2026-09-17).** An earlier version of this table listed `/design-system`
+as "delete, internal". That was wrong on inspection. The page is not V1 cruft: it is a
+1,235-line showcase of the V2 `components/ui` primitives — the right idea with the wrong
+implementation, binding colour through escapes like `text-[var(--color-primary-dark,#7e3a1e)]`
+that are light-only and bypass the token bridge. T-034 rebuilds it properly at
+`/v2/design-system` and ports its specimens; this task then deletes the V1 file along with
+every other V1 route, and the path keeps serving from the V2 side. Superseded, not discarded.
 
 V2's login and registration are already built (`v2-login-card`, `v2-register-card`), so only
 the three mail-driven auth flows need porting.
@@ -78,7 +86,8 @@ Redirects:
   entries, kept only because the owner and QA have bookmarks from the V2 build. There is no
   SEO argument here and none should be written into the code comment.
 - No redirect for the twenty paths V2 inherits — the URL does not change, only what serves it.
-- `/design-system` gets no redirect. Nothing links to it; a 404 is the honest answer.
+- `/design-system` needs no redirect: T-034 builds its replacement at that same path, so the
+  URL keeps working and there is nothing to redirect to.
 
 `next.config.ts` already carries a `redirects()` table (one entry) guarded by
 `lib/seo/redirects.test.ts`, whose docblock states that its `toHaveLength(1)` assertion must

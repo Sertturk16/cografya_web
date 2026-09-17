@@ -1277,11 +1277,13 @@ Branch: `feature/t032-pr3-url-migration`. Depends on PR1 and PR2. Tasks 12–15 
 
 - [ ] **Step 1: Delete the V1-only pathname entries**
 
-Remove the `pathnames` entries for the V1 routes that are going away entirely: `/design-system` and the `/araclar/[...rest]` catch-all. Leave every other key — those are the paths V2 is about to inherit.
+Remove the `pathnames` entry for the `/araclar/[...rest]` catch-all, which is the only V1 route going away with nothing taking its place (a root `not-found` supersedes it). Leave every other key — those are the paths V2 is about to inherit.
+
+`/design-system` is NOT removed here. T-034 builds its V2 replacement at `/v2/design-system`, so the entry survives and simply loses its prefix with the other 99 in Step 2. If T-034 has not landed when this task runs, that one file is the exception to Step 1's deletion: leave `app/[locale]/design-system/` in place until it has, rather than deleting a showcase with no successor.
 
 - [ ] **Step 2: Strip the prefix from the 99 V2 entries**
 
-For each `"/v2/..."` key, remove the `/v2` prefix from the key and from both locale values. Where the result collides with an existing V1 entry of the same name (`/turkiye`, `/dunya`, `/giris`, `/kayit`, `/deniz`, `/deprem`, `/kitaplar`, `/araclar`, `/oyun`, `/hakkimizda`, `/sifre-sifirlama`, `/sifre-sifirlama/yeni`, `/e-posta-dogrulama`), delete the V1 entry and keep the V2 one — **preserving the V1 entry's localized EN segment**. For the three auth routes that is load-bearing: `cografya_api`'s `mail-copy.ts` hard-codes `/en/reset-password`, `/en/reset-password/new` and `/en/login`. For the rest it is simply the segment that already reads correctly in English; there is no SEO reason, since none of these URLs is indexed.
+For each `"/v2/..."` key, remove the `/v2` prefix from the key and from both locale values. Where the result collides with an existing V1 entry of the same name (`/turkiye`, `/dunya`, `/giris`, `/kayit`, `/deniz`, `/deprem`, `/kitaplar`, `/araclar`, `/oyun`, `/hakkimizda`, `/sifre-sifirlama`, `/sifre-sifirlama/yeni`, `/e-posta-dogrulama`, `/design-system`), delete the V1 entry and keep the V2 one — **preserving the V1 entry's localized EN segment**. For the three auth routes that is load-bearing: `cografya_api`'s `mail-copy.ts` hard-codes `/en/reset-password`, `/en/reset-password/new` and `/en/login`. For the rest it is simply the segment that already reads correctly in English; there is no SEO reason, since none of these URLs is indexed.
 
 Verify none was lost:
 
