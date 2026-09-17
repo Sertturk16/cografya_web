@@ -332,22 +332,22 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       legalQuote: "AFAD TDVMS Yönetmeliği, RG 28.08.2015/29459, m.9/4",
       sourceUrl: "deprem.afad.gov.tr",
     },
-    {
-      id: "mta-diri-fay",
-      icon: "🗺️",
-      title: "MTA Genel Müdürlüğü — Türkiye Diri Fay Haritası",
-      license: "T.C. Resmî Jeoloji Verisi",
-      category: "official",
-      // NARROWED. This read "diri fay geometrileri, segmentasyon modelleri ve sismotektonik
-      // hatlar" — three things the site does not publish. `/deprem/fay-hatlari` renders
-      // `lib/earthquake/fault-lines-data.ts`, a hand-written registry of fault-zone names,
-      // types, lengths and segment descriptions; there is no MTA geometry, no segmentation
-      // model and no fault vector anywhere in the repo. What is left is what MTA's published
-      // map is to that page: the reference classification for the zones it names.
-      description:
-        "Kuzey Anadolu Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS) adlandırma ve tasnifi için referans diri fay haritası.",
-      sourceUrl: "yerbilimleri.mta.gov.tr",
-    },
+    // NO MTA CARD, AND NOTHING IN ITS PLACE. It claimed `license: "T.C. Resmî Jeoloji Verisi"`
+    // — official geology data — for `/deprem/fay-hatlari`, which renders
+    // `lib/earthquake/fault-lines-data.ts`: three fault-zone names, approximate lengths, the
+    // formation and movement mechanism written out as prose, segments named after the towns they
+    // pass, province lists and historical earthquakes. No coordinates, no geometry, no
+    // segmentation-model parameters, and no provenance recorded in the file. It is
+    // school-textbook content in the author's own words, so the card asserted we had used a
+    // published dataset we never read.
+    //
+    // It was NARROWED once already, to "adlandırma ve tasnifi için referans" — a reference for
+    // naming and classification. That is still an unearned claim, and it is not one worth
+    // rescuing: citing a source for "the North Anatolian Fault is about 1200 km" is citing one
+    // for "Türkiye has 81 provinces". A number a reader can check in any textbook does not need
+    // an institution's name attached to it, and attaching one costs the reader attention that
+    // the page's real citations — AFAD's, below — need.
+    //
     // NO KRDAE / KANDİLLİ CARD. The contract states it in as many words — "AFAD is the sole
     // Faz-1 provider" (`openapi/openapi.json`) — and this site publishes no historical or
     // instrumental catalogue, no focal-mechanism solution and no depth record from Kandilli.
@@ -448,8 +448,9 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
  * resolves against this index instead, so a page can cite a source it actually renders without
  * the whole scope inheriting the claim.
  *
- * First definition wins. A handful of ids appear in several scopes (`tuik`, `natural-earth`,
- * `afad`); they describe the same body, differing only in how the blurb is worded for that page.
+ * First definition wins if an id is ever declared twice. None is today — the near-pairs
+ * (`tuik`/`tuik-osm`, `afad`/`afad-deprem`, `osm`/`osm-game`) are distinct ids because the blurb
+ * differs by page, so each resolves to exactly one entry.
  */
 const SOURCE_BY_ID: ReadonlyMap<string, SourceItem> = (() => {
   const index = new Map<string, SourceItem>();

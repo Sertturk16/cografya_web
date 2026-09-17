@@ -192,9 +192,11 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 <Badge variant="destructive" size="sm" icon={<Layers className="size-3.5" />}>
                   Sismotektonik Yapı
                 </Badge>
-                <span className="text-xs text-muted-foreground font-semibold">
-                  MTA Diri Fay Ağı
-                </span>
+                {/* NO "MTA Diri Fay Ağı" EYEBROW. It labelled this section as MTA's published
+                    active-fault network, which is a stronger claim than the bibliography card it
+                    matched — and the card went for lack of anything to back it. `/deprem/fay-hatlari`
+                    renders `lib/earthquake/fault-lines-data.ts`: names, prose and province lists,
+                    no MTA geometry. The heading below says what the section is. */}
               </div>
               <h2
                 id="v2-fault-lines-nav-heading"
