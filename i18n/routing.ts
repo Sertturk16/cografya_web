@@ -229,6 +229,16 @@ export const routing = defineRouting({
       tr: "/v2",
       en: "/v2",
     },
+    // T-034 design system showcase. Same segment in both locales: it is internal
+    // tooling, not editorial copy. `noindex` is set on its layout.
+    "/v2/design-system": {
+      tr: "/v2/design-system",
+      en: "/v2/design-system",
+    },
+    "/v2/design-system/[category]": {
+      tr: "/v2/design-system/[category]",
+      en: "/v2/design-system/[category]",
+    },
     "/v2/turkiye": {
       tr: "/v2/turkiye",
       en: "/v2/turkey",
