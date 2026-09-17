@@ -3,13 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Info, Lightbulb, TriangleAlert, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const calloutVariants = cva("rounded-2xl border-l-4 px-4 py-3.5 [&>svg]:shrink-0", {
+/**
+ * A FULL hairline border, not a thick tab down one side.
+ *
+ * The side-tab is the most template-looking version of this component and Terra's identity is
+ * explicitly "not generic SaaS" (`docs/design.md`). It was also inconsistent inside this
+ * system: `components/ui/alert.tsx` already uses an even border at `/30` for the same job.
+ *
+ * The variant is still legible without the slab — it is carried three ways: the tinted
+ * surface, the border's hue, and the icon. Three signals, none of them a chunk of colour
+ * demanding attention a quiet editorial aside has not earned.
+ */
+const calloutVariants = cva("rounded-2xl border px-4 py-3.5 [&>svg]:shrink-0", {
   variants: {
     variant: {
-      note: "border-l-info bg-info/8 [&>svg]:text-info-strong",
-      tip: "border-l-success bg-success/8 [&>svg]:text-success-strong",
-      caution: "border-l-warning bg-warning/8 [&>svg]:text-warning-strong",
-      source: "border-l-border bg-muted [&>svg]:text-muted-foreground",
+      note: "border-info/25 bg-info/8 [&>svg]:text-info-strong",
+      tip: "border-success/25 bg-success/8 [&>svg]:text-success-strong",
+      caution: "border-warning/30 bg-warning/8 [&>svg]:text-warning-strong",
+      source: "border-border bg-muted [&>svg]:text-muted-foreground",
     },
   },
   defaultVariants: { variant: "note" },
