@@ -956,7 +956,7 @@ export function V2GameScreen({
                   ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
                   : lastFeedback.type === "revealed"
                     ? "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300"
-                    : "bg-destructive/15 border-destructive/30 text-destructive"
+                    : "bg-destructive/15 border-destructive/30 text-destructive-strong"
               }`}
             >
               {lastFeedback.type === "correct" ? (
@@ -1287,7 +1287,7 @@ export function V2GameScreen({
                     </div>
                   )}
                   {saveStatus === "failed" && (
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive text-xs font-semibold">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive-strong text-xs font-semibold">
                       <XCircle className="size-3.5" />
                       <span>Skor kaydedilemedi</span>
                       <button

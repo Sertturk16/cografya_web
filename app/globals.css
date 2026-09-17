@@ -501,6 +501,10 @@
   --accent: #276b70;
   --accent-foreground: #ffffff;
   --destructive: #b23b2e;
+  /* Re-exported by `@theme inline` since T-034 but never declared, so `text-destructive-
+     foreground` resolved to nothing and `button.tsx` reached for a literal `text-white`
+     instead. White on #b23b2e measures 5.90:1. */
+  --destructive-foreground: #ffffff;
 
   /* Semantic bridge tokens (T-034). Terra has carried --color-success/-warning/-info and the
      chip pair since the start, but the BRIDGE never did — so components reached for the raw
@@ -525,6 +529,23 @@
   --warning-strong: var(--color-warning-dark);
   --info-strong: var(--color-info-dark);
   --destructive-strong: var(--color-danger-dark);
+  /* The brand pair needed the same treatment and did not get it in T-034, because the four
+     semantic families were the ones being fixed and primary/secondary look like chrome rather
+     than like status. They are used the same way — as TEXT on a tint of themselves — and they
+     failed for the same reason:
+       badge `default`   #b0522e on primary/12   → 4.12:1  ✗
+       badge `secondary` #4f6d30 on secondary/15 → 4.54:1  (passes by 0.04, no margin)
+       tabs `line`       #b0522e on --muted      → 4.26:1  ✗   (both themes)
+     MEASURED as text over each tint and over --muted, the jobs they exist for:
+       --primary-strong   #7e3a1e → 6.91 on primary/12   · 6.95 on muted · 8.36 on white
+       --secondary-strong #3d5d2c → 5.92 on secondary/15 · 6.23 on muted · 7.50 on white */
+  --primary-strong: var(--color-primary-dark);
+  --secondary-strong: var(--color-success-dark);
+  /* The colour a bare `<a>` takes from the base layer below. It exists so that rule can stop
+     reading `--color-primary-dark` directly: that is a raw Terra token the `.dark` block never
+     redefines, so every anchor in the app that ships without its own colour class froze at the
+     light value — measured at 2.23:1 on the dark background. */
+  --link: var(--color-primary-dark);
   --chip-foreground: var(--color-chip-ink);
   --border: var(--color-border);
   --input: var(--color-border);
@@ -584,10 +605,16 @@ html {
     font-weight: 700;
   }
 
+  /* `--link`, not `--color-primary-dark`. Both of these rules used to read that raw Terra
+     token, which the `.dark` block never redefines, so ANY element that reaches the base layer
+     without its own colour class froze at the light value. It is not a hypothetical: three
+     shipped components had no colour class of their own and were measured at 2.23:1, 2.04:1
+     and 1.99:1 on the dark background. `components/ui/token-binding.test.ts` could not catch
+     it either — the components have no colour class, so there is nothing for it to scan. */
   h2 {
     font-size: clamp(1.4rem, 1rem + 1.4vw, 1.8rem);
     font-weight: 600;
-    color: var(--color-primary-dark);
+    color: var(--link);
   }
 
   p {
@@ -595,19 +622,25 @@ html {
   }
 
   a {
-    color: var(--color-primary-dark);
+    color: var(--link);
     text-decoration-thickness: 1px;
     text-underline-offset: 2px;
   }
 
   a:hover {
-    color: var(--color-primary);
+    color: var(--primary);
   }
 }
 
-/* Visible keyboard focus everywhere (a11y). */
+/* Visible keyboard focus everywhere (a11y).
+
+   `--ring`, not `--color-accent`: the raw Terra token is a light-mode value the `.dark` block
+   never redefines, so the ring was the same #276b70 in both themes — 5.79:1 in light but
+   3.04:1 in dark, clearing 1.4.11 by 0.04. `--ring` IS redefined in `.dark`, and was lifted
+   there for exactly this purpose. Verified by sampling rendered pixels, not computed style:
+   `@layer base`'s `outline-ring/50` makes the computed value misleading here. */
 :focus-visible {
-  outline: 3px solid var(--color-accent);
+  outline: 3px solid var(--ring);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -1039,6 +1072,9 @@ body:has(.v2-app) > footer {
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-primary-strong: var(--primary-strong);
+  --color-secondary-strong: var(--secondary-strong);
+  --color-link: var(--link);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -1128,7 +1164,13 @@ body:has(.v2-app) > footer {
   --muted-foreground: #9fb3b7;
   --accent: oklch(0.65 0.0675 202);
   --accent-foreground: var(--color-ink-dark);
-  --destructive: oklch(0.704 0.191 22.216);
+  /* Every other semantic fill in this block was lifted into the Terra hue and measured; this
+     one was left at shadcn's stock value, and it is the one that failed. White on it measured
+     2.89:1 — the worst text contrast on the site. Lifted to match its siblings, with the same
+     warm near-black foreground for the same reason: a value light enough to read on a dark
+     surface is too light to carry white text. */
+  --destructive: oklch(0.65 0.16 25);
+  --destructive-foreground: var(--color-ink-dark);
   /* Semantic fills on the night-sea field. Lifted in lightness while keeping the brand hue —
      the same move T-018 made for primary/secondary/accent — and the foreground flips to the
      warm near-black for the same reason it did there: a value light enough to read on a dark
@@ -1160,6 +1202,14 @@ body:has(.v2-app) > footer {
   --warning-strong: oklch(0.82 0.11 75);
   --info-strong: oklch(0.78 0.06 202);
   --destructive-strong: oklch(0.78 0.13 22);
+  /* The brand pair, given the same strong members for the same job — see the light block's
+     note for the three call sites that failed without them. Same lightness as the four above,
+     so a `-strong` member reads as one family whatever its hue. */
+  --primary-strong: oklch(0.78 0.11 40.65);
+  --secondary-strong: oklch(0.78 0.085 130.85);
+  /* A bare `<a>`. Light mode's link colour is a Terra token the `.dark` block cannot reach, so
+     the base rule reads `--link` and this is the value it gets here. */
+  --link: oklch(0.78 0.11 40.65);
   /* Opaque, not a white alpha. A translucent border picks up whatever sits behind it, so the
      same token drew a different line on --card than on --background; on a tinted field that
      reads as the border changing colour between panels. */

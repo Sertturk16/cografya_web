@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { Label } from "@/components/ui/label";
 import { FormField, FormErrorSummary } from "@/components/patterns/form-field";
 import * as React from "react";
@@ -137,7 +138,39 @@ export function FormlarSpecimens() {
       >
         <FormErrorSummaryDemo />
       </Specimen>
+
+      <Specimen
+        name="CustomSelect"
+        description="Select DEĞİL: aranabilir, ve her seçeneğin altına bir açıklama satırı alabilir. 81 il arasından seçim yaptıran yerlerde yerli Select'in yapamadığı iş bu. Aramayı kapatınca sade bir listeye döner."
+        portals
+      >
+        <CustomSelectDemo />
+      </Specimen>
     </>
+  );
+}
+
+function CustomSelectDemo() {
+  const [value, setValue] = React.useState("marmara");
+  return (
+    <div className="max-w-sm">
+      <Label htmlFor="ds-custom-select" className="mb-1.5 block text-xs font-bold">
+        Bölge
+      </Label>
+      <CustomSelect
+        id="ds-custom-select"
+        searchable
+        value={value}
+        onChange={setValue}
+        options={[
+          { value: "marmara", label: "Marmara", description: "11 il · 67.000 km²" },
+          { value: "ege", label: "Ege", description: "8 il · 79.000 km²" },
+          { value: "akdeniz", label: "Akdeniz", description: "8 il · 122.000 km²" },
+          { value: "ic-anadolu", label: "İç Anadolu", description: "13 il · 151.000 km²" },
+          { value: "karadeniz", label: "Karadeniz", description: "18 il · 141.000 km²" },
+        ]}
+      />
+    </div>
   );
 }
 function FormErrorSummaryDemo() {

@@ -70,6 +70,60 @@ describe("semantic bridge tokens", () => {
     expect(dark).toContain(`--${name}:`);
     expect(dark).toContain(`--${name}-foreground:`);
   });
+
+  /**
+   * `--destructive` is declared in both blocks but its FOREGROUND was only ever re-exported,
+   * never declared — so `text-destructive-foreground` resolved to nothing and `button.tsx`
+   * used a literal `text-white` instead. That read fine in light mode and measured 2.89:1
+   * once `.dark` lifted the fill. An exported half-pair is worse than a missing one: the
+   * utility exists, so nothing errors.
+   */
+  it("--destructive carries a declared foreground in both blocks, not just an export", () => {
+    expect(theme).toContain("--color-destructive-foreground: var(--destructive-foreground)");
+    expect(root).toContain("--destructive-foreground:");
+    expect(dark).toContain("--destructive-foreground:");
+  });
+
+  /**
+   * The `-strong` members exist for one shape: text on a tint of its own colour. The four
+   * semantic families got them in T-034; `primary` and `secondary` were skipped because they
+   * read as chrome rather than as status, and both then failed the same way — Badge `default`
+   * at 4.12:1, Badge `secondary` at 4.54:1, Tabs `line` at 4.26:1 in BOTH themes.
+   */
+  const STRONG = ["success", "warning", "info", "destructive", "primary", "secondary"] as const;
+
+  it.each(STRONG)("--%s-strong exists in both themes and is exported", (name) => {
+    expect(root).toContain(`--${name}-strong:`);
+    expect(dark).toContain(`--${name}-strong:`);
+    expect(theme).toContain(`--color-${name}-strong: var(--${name}-strong)`);
+  });
+
+  /**
+   * `@layer base` styles a bare `<a>` and a bare `<h2>`. Both used to read
+   * `--color-primary-dark` — a raw Terra token `.dark` never redefines — so every element
+   * reaching the base layer without its own colour class froze at the light value. Three
+   * shipped components did exactly that, measured at 2.23:1, 2.04:1 and 1.99:1 on the dark
+   * background. `components/ui/token-binding.test.ts` cannot catch this class of defect: the
+   * components have no colour class, so there is nothing for it to scan. This is where it
+   * gets caught instead.
+   */
+  it("--link is theme-aware, so a bare anchor is not frozen at the light value", () => {
+    expect(root).toContain("--link:");
+    expect(dark).toContain("--link:");
+  });
+
+  it("the base layer reads --link, never the raw Terra token", () => {
+    const base = section("@layer base");
+    expect(base).toContain("color: var(--link)");
+    expect(base).not.toContain("color: var(--color-primary-dark)");
+  });
+
+  it("the focus ring reads --ring, which .dark redefines", () => {
+    // --color-accent is a light-mode Terra token, so the ring was identical in both themes:
+    // 5.79:1 in light, 3.04:1 in dark — clearing WCAG 1.4.11 by 0.04.
+    expect(CSS).toContain("outline: 3px solid var(--ring)");
+    expect(CSS).not.toContain("outline: 3px solid var(--color-accent)");
+  });
 });
 
 /**

@@ -3,7 +3,12 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const DIRS = ["../ui", "../patterns"] as const;
+/**
+ * `../showcase/specimens` is scanned for the same reason the other two are. It was left out
+ * originally as "just demo code", and a `text-white` promptly landed there — reproducing, in
+ * the one place meant to demonstrate correct usage, the exact defect `button.tsx` had.
+ */
+const DIRS = ["../ui", "../patterns", "../showcase/specimens"] as const;
 
 /**
  * Comments and docblocks are stripped before scanning.
@@ -26,6 +31,31 @@ const FILES = DIRS.flatMap((rel) => {
 
 const RAW_PALETTE =
   /\b(bg|text|border|ring|fill|stroke|from|to|via)-(slate|gray|zinc|neutral|stone|amber|emerald|sky|teal|rose|red|green|blue|orange|yellow|indigo|violet|purple|pink|cyan|lime)-\d{2,3}\b/;
+
+/**
+ * `white` and `black` take no numeric suffix, so `RAW_PALETTE` never matched them — and they
+ * are the two most tempting literals of the lot. `button.tsx` carried `text-white` on the
+ * destructive variant from the day it was written; it read correctly in light mode and
+ * measured 2.89:1 once `.dark` lifted the fill. Nothing failed, because nothing was looking.
+ *
+ * Two scrims are exempt, listed by file and exact utility like the `dark:` exemptions below:
+ * a modal scrim is not a themed surface. It is the same black veil over whatever the page is
+ * showing in both themes, and a token that resolved lighter in dark mode would make the
+ * dialog behind it harder to separate, not easier.
+ */
+const RAW_ACHROMATIC = /\b(bg|text|border|ring|fill|stroke|from|to|via)-(white|black)\b/;
+
+const ACHROMATIC_EXEMPTIONS: ReadonlyArray<readonly [string, string, string]> = [
+  ["dialog.tsx", "bg-black/50", "The modal scrim. Identical in both themes by design."],
+  ["sheet.tsx", "bg-black/50", "The modal scrim. Identical in both themes by design."],
+  [
+    "switch.tsx",
+    "bg-white",
+    "The switch thumb. A physical control's knob reads as a fixed object that moves across " +
+      "a track that changes, not as a themed surface; both Material and HIG keep it constant. " +
+      "Its boundary is carried by `shadow-sm` plus the track, not by the fill.",
+  ],
+];
 
 const BRAND_HEX = /#(b0522e|7e3a1e|4f6d30|276b70|496f35|c9860f|b23b2e|ede3d5|2b2622|211c19)/i;
 
@@ -63,6 +93,25 @@ describe("components bind colour through the token bridge", () => {
 
   it.each(FILES)("%s has no brand hex literal", (_path, source) => {
     expect(source).not.toMatch(BRAND_HEX);
+  });
+
+  it.each(FILES)("%s uses no bare white/black utility", (path, source) => {
+    let scanned = source;
+    for (const [file, utility] of ACHROMATIC_EXEMPTIONS) {
+      if (path.endsWith(file)) scanned = scanned.split(utility).join(" ");
+    }
+    expect(scanned).not.toMatch(RAW_ACHROMATIC);
+  });
+
+  it("every achromatic exemption is still present", () => {
+    // A stale exemption hides a real regression just as effectively as a missing rule.
+    for (const [file, utility] of ACHROMATIC_EXEMPTIONS) {
+      const entry = FILES.find(([p]) => p.endsWith(file));
+      expect(entry, `${file} is no longer scanned`).toBeDefined();
+      expect(entry?.[1], `${file} no longer contains ${utility}; drop the exemption`).toContain(
+        utility,
+      );
+    }
   });
 
   /**

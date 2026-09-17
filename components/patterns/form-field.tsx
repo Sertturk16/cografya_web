@@ -93,19 +93,28 @@ export function FormErrorSummary({ headingRef, summary, fieldErrors }: FormError
       role="alert"
       className="space-y-2 rounded-2xl border border-destructive/40 bg-destructive/10 p-4"
     >
+      {/* `-strong` throughout, not the base member: this is text on a tint of its own colour,
+          the shape `components/ui/badge.tsx` documents. The heading also states its own size,
+          because `@layer base` gives a bare `h2` a fluid `clamp(1.4rem, …)`. */}
       <h2
         ref={headingRef}
         tabIndex={-1}
-        className="flex items-center gap-2 text-sm font-bold text-destructive"
+        className="flex items-center gap-2 text-sm font-bold text-destructive-strong"
       >
         <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
         {summary}
       </h2>
       {fieldErrors !== undefined && fieldErrors.length > 0 ? (
-        <ul role="list" className="list-disc space-y-1 pl-5 text-xs text-destructive">
+        <ul role="list" className="list-disc space-y-1 pl-5 text-xs text-destructive-strong">
           {fieldErrors.map((fieldError) => (
             <li key={fieldError.id}>
-              <a href={`#${fieldError.id}`} className="underline underline-offset-2">
+              {/* The colour is stated here rather than inherited: `@layer base`'s `a` rule
+                  beats inherited colour, so these links froze at the light-mode link colour —
+                  measured at 1.99:1 on the dark error tint. */}
+              <a
+                href={`#${fieldError.id}`}
+                className="text-destructive-strong underline underline-offset-2"
+              >
                 {fieldError.label}
               </a>
             </li>
