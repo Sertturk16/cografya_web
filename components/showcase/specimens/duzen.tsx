@@ -49,6 +49,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { PageContainer } from "@/components/patterns/page-container";
+import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Specimen, SpecimenRow } from "../specimen";
 
 const RHYTHMS = ["band", "tight", "default", "loose"] as const;
@@ -292,6 +293,21 @@ export function DuzenSpecimens() {
           </BreadcrumbList>
         </Breadcrumb>
       </Specimen>
+      <Specimen
+        name="Breadcrumbs"
+        description="`Breadcrumb` üstünde: aynı diziden hem `aria-current` taşıyan son kırıntıyı hem de eşleşen `BreadcrumbList` JSON-LD'sini üretir. Bu vitrin sayfası kendi `surface: noindex` yüzeyini taşıdığından JSON-LD'yi burada emitmez."
+      >
+        <Breadcrumbs
+          items={[
+            { label: "Ana Sayfa", href: "/", path: "/" },
+            { label: "Türkiye", href: "/turkiye", path: "/turkiye" },
+            { label: "Çanakkale", path: "/turkiye/canakkale" },
+          ]}
+          locale="tr"
+          surface="noindex"
+        />
+      </Specimen>
+
       <Specimen
         name="PageContainer — ritimler"
         description="`band` sayfa dikey dolgusu taşımaz; sayfanın kendi `py-10 sm:py-14` bandının içine oturur. Diğer üçü `pt-6 pb-20 sm:pt-10` üstüne kendi `space-y` değerini ekler."

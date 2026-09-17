@@ -286,17 +286,20 @@ describe("the sticky navs stay aligned to PageContainer's base", () => {
 const BREADCRUMB_NAV = /aria-label="[Bb]readcrumb"/;
 
 /**
- * The primitive, and the pattern component Task 6 builds on top of it, are where this nav is
- * SUPPOSED to be written — both are excluded from the surface a "hand-written nav" counter
- * scans. `components/patterns/breadcrumbs.tsx` does not exist yet; it is named here so Task 6
- * does not have to come back and edit this exemption list to add it. The liveness check below
- * (`"every owner still writes the nav, or does not exist yet"`) tolerates that absence rather
- * than failing red before Task 6 lands — it only asserts something about a file that exists.
+ * The primitive is where this nav is SUPPOSED to be written, so it is excluded from the
+ * surface a "hand-written nav" counter scans.
+ *
+ * `components/patterns/breadcrumbs.tsx` (Task 6) is deliberately NOT listed here, though it
+ * was reserved as a placeholder before that task existed. This exemption exists for files
+ * that legitimately WRITE the `<nav aria-label="…">` markup themselves; `Breadcrumbs`
+ * delegates that entirely to `Breadcrumb` (`components/ui/breadcrumb.tsx:9`), which already
+ * owns the exemption above. Its own source contains no `aria-label` literal at all — adding
+ * one there would be markup written only to keep this list's liveness check green, not
+ * because the component needs it. Since `components/patterns/breadcrumbs.tsx` sits outside
+ * `SURFACE_ROOTS` (`PAGE_ROOTS` + `components/v2`) anyway, leaving it off this list changes
+ * nothing about what the counters below scan.
  */
-const BREADCRUMB_OWNERS = [
-  "components/ui/breadcrumb.tsx",
-  "components/patterns/breadcrumbs.tsx",
-] as const;
+const BREADCRUMB_OWNERS = ["components/ui/breadcrumb.tsx"] as const;
 
 /**
  * The reading/play page roots plus every `components/v2` file — a wider walk than
@@ -476,9 +479,10 @@ describe("visible breadcrumbs carry matching JSON-LD", () => {
 describe("the breadcrumb owner exemptions", () => {
   it.each(BREADCRUMB_OWNERS)("%s still writes the nav, or does not exist yet", (owner) => {
     // Same liveness idea as "every exemption is still live" above: a stale exemption hides a
-    // real regression. The difference is `components/patterns/breadcrumbs.tsx` is named ahead
-    // of Task 6 creating it, so this tolerates the file not existing yet rather than going red
-    // before that task lands — it only asserts something about a file that is actually there.
+    // real regression. The existsSync tolerance is kept generic (rather than asserting the
+    // primitive is always present) so this describe block still means the same thing if a
+    // future owner is ever added ahead of the file that creates it, the way
+    // `components/patterns/breadcrumbs.tsx` once was here.
     const path = join(repoRoot, owner);
     if (!existsSync(path)) return;
     expect(

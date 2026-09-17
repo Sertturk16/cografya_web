@@ -64,6 +64,7 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
       "tabs",
       "accordion",
       "breadcrumb",
+      "breadcrumbs",
       "badge",
       "page-container",
     ],
