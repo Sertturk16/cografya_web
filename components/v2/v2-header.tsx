@@ -158,7 +158,7 @@ export function V2Header() {
               aria-expanded={activeDropdown === "atlas"}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
                 isAtlasActive && !isHome
-                  ? "bg-primary/10 text-primary font-bold border border-primary/20"
+                  ? "bg-primary/10 text-primary-strong font-bold border border-primary/20"
                   : activeDropdown === "atlas"
                     ? "bg-muted text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
@@ -389,10 +389,7 @@ export function V2Header() {
           >
             <BookOpen className="size-3.5 text-amber-600 dark:text-amber-400" />
             <span>Kitaplar</span>
-            <Badge
-              variant="outline"
-              className="text-[9px] py-0 px-1 font-bold bg-amber-500/10 text-amber-600 border-amber-500/20"
-            >
+            <Badge variant="warning" className="text-[9px] py-0 px-1 font-bold">
               Video Çözümlü
             </Badge>
           </Link>

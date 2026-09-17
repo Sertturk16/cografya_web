@@ -62,7 +62,7 @@ export function V2ContinentLocatorMap({
         <div className="flex items-center gap-1.5">
           <Badge
             variant="outline"
-            className="font-mono text-xs bg-primary/10 text-primary border-primary/30"
+            className="font-mono text-xs bg-primary/10 text-primary-strong border-primary/30"
           >
             {countries.length} Ülke
           </Badge>

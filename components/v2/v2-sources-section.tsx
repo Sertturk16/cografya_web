@@ -568,7 +568,7 @@ export function V2SourcesSection({
             <Badge
               variant="outline"
               size="sm"
-              className="bg-primary/10 text-primary border-primary/30 shrink-0 flex items-center gap-1 font-semibold text-xs"
+              className="shrink-0 flex items-center gap-1 font-semibold text-xs"
             >
               <ShieldCheck className="size-3.5" /> Doğrulanmış Resmî Veri
             </Badge>
