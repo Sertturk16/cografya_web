@@ -668,10 +668,9 @@ html {
   /* Site-wide text-selection tint (T-035 override B). Five pages carried their own
      `selection:bg-primary/20`; most of the rest had none, so selected text read differently
      depending on which page you were on. One rule, `--primary` so it tracks the bridge token
-     in both themes, replaces the five this task touched. NOT all thirty-two: `dunya/kita/
-     page.tsx` and `dunya/kita/[slug]/page.tsx` still carry their own `selection:bg-primary/20`
-     — out of scope here (family A, Task 4's territory) and now redundant with this rule rather
-     than wrong; Task 4 removes the now-duplicate class when it migrates those two.
+     in both themes, replaces the five this task touched — including `dunya/kita/page.tsx` and
+     `dunya/kita/[slug]/page.tsx`, whose own copy of the class (redundant with this rule, not
+     wrong) Task 4b dropped along with the duplicate root wrapper it sat on.
      MEASURED (`lib/theme/contrast.ts`, `blendOver` against every surface selected text can
      sit on, not the untinted token): `--foreground` on the 20%-primary blend over
      `--background`/`--card`/`--muted` — light 10.80:1 / 11.31:1 / 9.66:1, dark 12.55:1 /

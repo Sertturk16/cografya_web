@@ -147,10 +147,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
         ]}
       />
 
-      {/* Top Bars */}
-      <div>
-        <V2LiveTicker />
-      </div>
+      <V2LiveTicker />
 
       <PageContainer>
         {/* Breadcrumb & Header Hero */}

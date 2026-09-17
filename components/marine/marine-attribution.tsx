@@ -24,9 +24,16 @@ const BODY = "text-sm leading-relaxed text-muted-foreground";
  * a quieter, indented block so a Turkish reader can see where the platform's prose stops and the
  * licence text begins — still full-size body text on the page, never hidden behind a disclosure
  * ("prominently", per the licence).
+ *
+ * `wrap-break-word` — the same `overflow-wrap: break-word` its neighbours on `/hakkimizda`
+ * already carry for the same reason (the JRC citation's DOI link, the ODbL repo address). The
+ * ECMWF notice's own unbreakable URL (`https://creativecommons.org/licenses/by/4.0/`) pushed the
+ * document to 328px against a 305px viewport at 320px width; `overflow-wrap` is an inherited
+ * property, so setting it here on the wrapping `<div>` covers all three `<p>` children without
+ * touching any of them individually — the licence text itself is untouched.
  */
 const LICENCE =
-  "my-3 border-l-2 border-border py-0.5 pl-3.5 text-[0.85rem] leading-relaxed text-muted-foreground space-y-2";
+  "my-3 border-l-2 border-border py-0.5 pl-3.5 text-[0.85rem] leading-relaxed text-muted-foreground space-y-2 wrap-break-word";
 
 /**
  * The licence / educational-use notice is an UNTOUCHABLE copy class (CONTENT-STYLE §22): it stays
