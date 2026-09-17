@@ -10,7 +10,21 @@
    only var(--token). Do not hardcode brand hex values anywhere else.
    ============================================================================= */
 
-:root {
+/* `.light` is listed alongside `:root` so a SUBTREE can be forced back to the light
+   palette, which `.dark` alone cannot do: `.dark` only ever moves a subtree darker, so on a
+   page whose <html> already carries `.dark` there was no way to show a light specimen.
+   `components/patterns/theme-pair.tsx` needs exactly that to render both themes at once.
+
+   Listed rather than duplicated: every value below stays declared once, so the two selectors
+   cannot drift apart.
+
+   CAVEAT, true until T-034 phase A2 lands: a hand-written `dark:` utility inside a `.light`
+   subtree still matches, because Tailwind's variant is `&:is(.dark *)` and that ancestor is
+   still there. Six files in components/ui carry such utilities today and A2 removes them;
+   after that the caveat is empty, which is why the fix is A2 rather than a cleverer
+   selector here. */
+:root,
+.light {
   /* ---- Brand ---- */
   --color-primary: #b0522e; /* terracotta */
   --color-primary-dark: #7e3a1e;

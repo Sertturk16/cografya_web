@@ -55,8 +55,15 @@ const globals = stripComments(readFileSync(GLOBALS, "utf8"));
  * the offset silently zero — on every viewport outside that query.
  */
 const rootBlock = (() => {
-  const start = globals.indexOf(":root {");
-  if (start === -1) return "";
+  // Matches `:root {` and also a SELECTOR LIST that starts with it, e.g. `:root, .light {`
+  // (T-034: `.light` was joined to the light token block so a subtree can be forced back to
+  // the light palette, which `.dark` alone cannot do — see
+  // `components/patterns/theme-pair.tsx`). The `[^{}@]` class is what keeps the guarantee
+  // this block is about: the match cannot span a `{`, a `}` or an at-rule, so a `:root`
+  // nested inside `@media` still does not qualify.
+  const match = /:root[^{}@]*\{/.exec(globals);
+  if (match === null) return "";
+  const start = match.index;
   const end = globals.indexOf("}", start);
   return end === -1 ? "" : globals.slice(start, end);
 })();
