@@ -1202,9 +1202,24 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* DATA SOURCES & CITATIONS (KAYNAKÇA) */}
+      {/* DATA SOURCES & CITATIONS (KAYNAKÇA)
+          `omit` the two cards this page renders nothing for. `iho-gebco` is cited for "Mariana
+          Çukuru, okyanus tabanı batimetrisi ve derinlik ölçümleri" and `usgs-nasa` for the
+          global land area and "yeryüzü topografyası ekstremleri" — a country page publishes
+          neither. What it does publish (`areaKm2`, the fact sheet, the Natural Earth locator
+          map) earns the rest.
+
+          A LARGER QUESTION IS DELIBERATELY LEFT FOR THE OWNER, because it is an architecture
+          decision rather than a defect: this page runs TWO sources systems. The careful one is
+          `sourcesMessage()` from `lib/geo/country-sources.ts` — guarded by ~15 assertions
+          including the `EN_CONTENT_READY` tripwire, and precise enough to drop the population
+          clause entirely for the one country whose population is null rather than name a
+          source that did not supply it. The loose one is this component, whose `dunya` list is
+          hand-written and whose heading, "Bu Sayfada Kullanılan Veri Setleri & Bilimsel
+          Künye", is a stronger claim than the careful system ever makes. Narrowing the list
+          does not resolve which of the two owns the page. */}
       <div id="kaynakca" className="scroll-mt-28">
-        <V2SourcesSection scope="dunya" />
+        <V2SourcesSection scope="dunya" omit={["iho-gebco", "usgs-nasa"]} />
       </div>
     </div>
   );
