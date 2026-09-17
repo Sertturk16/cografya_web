@@ -321,8 +321,8 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                     </div>
                     <CardTitle className="text-xl">Canlı Deprem Radarı</CardTitle>
                     <CardDescription className="text-xs leading-relaxed">
-                      81 ilimizi etkileyen Kuzey, Doğu ve Batı Anadolu aktif fay hatları ve
-                      AFAD/Kandilli son sarsıntılar.
+                      81 ilimizi etkileyen Kuzey, Doğu ve Batı Anadolu aktif fay hatları ve AFAD son
+                      sarsıntılar.
                     </CardDescription>
                     <div className="pt-3 flex items-center text-xs font-semibold text-destructive group-hover:translate-x-1 transition-transform">
                       <span>Radarı Aç</span>

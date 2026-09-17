@@ -346,7 +346,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
             disclaimerTr={earthquakeMeta.disclaimerTr}
           />
         )}
-        <V2SourcesSection scope="deprem" />
+        {/* `omit` the preparedness card: "afet çantası", "Çök-Kapan-Tutun" and the 72-hour
+            protocol are `/deprem/hazirlik`'s content, and AKUT supplied nothing to this page. */}
+        <V2SourcesSection scope="deprem" omit={["afad-hazirlik"]} />
       </div>
       {/* V2 Footer */}
     </>

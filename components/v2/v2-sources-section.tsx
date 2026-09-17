@@ -332,20 +332,22 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       title: "MTA Genel Müdürlüğü — Türkiye Diri Fay Haritası",
       license: "T.C. Resmî Jeoloji Verisi",
       category: "official",
+      // NARROWED. This read "diri fay geometrileri, segmentasyon modelleri ve sismotektonik
+      // hatlar" — three things the site does not publish. `/deprem/fay-hatlari` renders
+      // `lib/earthquake/fault-lines-data.ts`, a hand-written registry of fault-zone names,
+      // types, lengths and segment descriptions; there is no MTA geometry, no segmentation
+      // model and no fault vector anywhere in the repo. What is left is what MTA's published
+      // map is to that page: the reference classification for the zones it names.
       description:
-        "Kuzey Anadolu Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS) diri fay geometrileri, segmentasyon modelleri ve sismotektonik hatlar.",
+        "Kuzey Anadolu Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS) adlandırma ve tasnifi için referans diri fay haritası.",
       sourceUrl: "yerbilimleri.mta.gov.tr",
     },
-    {
-      id: "boun-kandilli",
-      icon: "🏛️",
-      title: "Boğaziçi Üniv. Kandilli Rasathanesi ve DAE (KRDAE)",
-      license: "Akademik Sismoloji",
-      category: "academic",
-      description:
-        "Türkiye ve çevresinin tarihsel ve aletsel dönem deprem katalogları, odak mekanizması çözümleri ve derinlik kayıtları.",
-      sourceUrl: "koeri.boun.edu.tr",
-    },
+    // NO KRDAE / KANDİLLİ CARD. The contract states it in as many words — "AFAD is the sole
+    // Faz-1 provider" (`openapi/openapi.json`) — and this site publishes no historical or
+    // instrumental catalogue, no focal-mechanism solution and no depth record from Kandilli.
+    // The card claimed all three. Crediting an institution for data it did not supply is the
+    // same class of false statement as the invented `licenseUrl` the same contract forbids
+    // ("Inventing a plausible URL would be a false statement about the terms").
     {
       id: "afad-hazirlik",
       icon: "🎒",
