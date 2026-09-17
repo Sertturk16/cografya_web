@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { TOOL_HUB_PATHNAME, TOOL_REGISTRY, TOOLS_SURFACE } from "./tool-registry";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * THE FOURTH SIDE OF THE TOOL TIER: the sitemap (→ PR #73 review `TEST73-I4` / `FENER73-M3`).
@@ -31,14 +32,13 @@ import { TOOL_HUB_PATHNAME, TOOL_REGISTRY, TOOLS_SURFACE } from "./tool-registry
  */
 
 function codeOnly(relativePath: string): string {
-  return (
-    readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8")
-      .replace(/\r\n/g, "\n")
-      // Block comments first, so the `//` inside any URL they carry is gone before line comments
-      // are stripped. The sitemap's docblock names `/araclar` in prose; a scan that counted that
-      // would report a row nobody ships.
-      .replace(/\/\*[\s\S]*?\*\//g, " ")
-      .replace(/^[ \t]*\/\/.*$/gm, " ")
+  // The sitemap's docblock names `/araclar` in prose; a scan that counted that would report a
+  // row nobody ships. The shared scanner knows a `//` inside a URL literal from a comment.
+  return stripComments(
+    readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8").replace(
+      /\r\n/g,
+      "\n",
+    ),
   );
 }
 

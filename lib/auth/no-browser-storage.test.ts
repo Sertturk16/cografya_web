@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * G5 (plan §9, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md`): no
@@ -43,14 +44,6 @@ const LIB_AUTH_DIR = new URL("./", import.meta.url);
  * own docblock argues against two paragraphs down.
  */
 const isTest = (name: string) => /\.test\.tsx?$/.test(name);
-
-function stripComments(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join("\n");
-}
 
 function componentFiles(): { path: string; code: string }[] {
   const names = readdirSync(COMPONENT_DIR, { recursive: true, encoding: "utf8" }).filter(

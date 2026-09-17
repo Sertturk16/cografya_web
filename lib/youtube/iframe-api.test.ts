@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * The loader's retry semantics, held structurally.
@@ -29,12 +30,7 @@ import { describe, expect, it } from "vitest";
 /** Comments out, whitespace collapsed. The file docblock says "clear the memo" in prose and
  *  must not be able to satisfy an assertion about the code. */
 function flatCode(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join(" ")
-    .replace(/\s+/g, " ");
+  return stripComments(source).replace(/\s+/g, " ");
 }
 
 const LOADER = flatCode(readFileSync(new URL("./iframe-api.ts", import.meta.url), "utf8"));

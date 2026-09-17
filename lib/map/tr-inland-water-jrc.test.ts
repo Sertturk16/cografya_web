@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import enMessages from "../../messages/en.json";
 import trMessages from "../../messages/tr.json";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Invariants of the SECOND water source — the JRC Global Surface Water derivative — and of
@@ -346,9 +347,6 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
     // bibliography card explaining that the home page imports no map geometry, say — does not
     // draw the layer, and failing it for saying so would teach the next person to delete the
     // explanation. The derived list is about imports, so it reads code only.
-    const stripComments = (source: string) =>
-      source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
-
     const surfaces = roots
       .flatMap(walk)
       .map((file) => ({ file, source: stripComments(readFileSync(file, "utf8")) }))

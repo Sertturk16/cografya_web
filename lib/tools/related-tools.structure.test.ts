@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { AREA_TOOL, COORDINATE_TOOL, DISTANCE_TOOL, TOOL_REGISTRY } from "./tool-registry";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Regression guard for the "Diğer araçlar" exit on the three tool detail pages
@@ -40,9 +41,7 @@ import { AREA_TOOL, COORDINATE_TOOL, DISTANCE_TOOL, TOOL_REGISTRY } from "./tool
  * both carry docblocks that mention the identifiers under test.
  */
 function codeOnly(path: string): string {
-  return readFileSync(new URL(path, import.meta.url), "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/^[ \t]*\/\/.*$/gm, " ");
+  return stripComments(readFileSync(new URL(path, import.meta.url), "utf8"));
 }
 
 const PAGES = [

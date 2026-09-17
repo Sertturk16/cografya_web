@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { GRAPHICAL_MIN, ratio } from "./contrast";
+import { stripComments, stripCssComments } from "@/lib/test-support/strip-comments";
 
 /**
  * WCAG 1.4.11 for the boundary that identifies a control.
@@ -25,10 +26,9 @@ import { GRAPHICAL_MIN, ratio } from "./contrast";
  * it is the state this repo was already in.
  */
 
-const CSS = readFileSync(
-  fileURLToPath(new URL("../../app/globals.css", import.meta.url)),
-  "utf8",
-).replace(/\/\*[\s\S]*?\*\//g, " ");
+const CSS = stripCssComments(
+  readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8"),
+);
 
 /**
  * The surfaces a control can sit on. A field lives on a card or on the page; a Progress track
@@ -105,7 +105,7 @@ describe("every control actually binds --input", () => {
 
   it("no control has been left on the decorative token", () => {
     for (const file of CONTROLS) {
-      const source = read(file).replace(/\/\*[\s\S]*?\*\//g, " ");
+      const source = stripComments(read(file));
       // `border-border` may still appear for genuine surfaces inside these files — the
       // custom-select popover panel and its internal divider are surfaces, not boundaries —
       // so this asserts the CONTROL's own class list, not the whole file.

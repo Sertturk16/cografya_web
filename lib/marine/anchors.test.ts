@@ -4,6 +4,7 @@ import type { MarineOverview, MarineProvinceConditions } from "@/lib/api/types";
 import overviewFixture from "@/test/fixtures/marine/overview.json";
 import twoPointFixture from "@/test/fixtures/marine/province-conditions-two-point.json";
 import { MARINE_POINTS_SECTION_ID, marineBasinAnchorId, marinePointAnchorId } from "./anchors";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * The `/deniz` row anchors — a contract between two routes, and the reason it needs a test at
@@ -61,9 +62,7 @@ describe("both sides of the anchor contract call this module", () => {
    * named only in a comment would satisfy a presence check after the real one was deleted.
    */
   const read = (path: string) =>
-    readFileSync(new URL(path, import.meta.url), "utf8")
-      .replace(/\/\*[\s\S]*?\*\//g, " ")
-      .replace(/^[ \t]*\/\/.*$/gm, " ");
+    stripComments(readFileSync(new URL(path, import.meta.url), "utf8"));
 
   const emitter = read("../../components/v2/v2-marine-map-explorer.tsx");
   const linker = read("../../components/marine/province-marine-section.tsx");

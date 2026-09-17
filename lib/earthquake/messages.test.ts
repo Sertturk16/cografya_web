@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
+import { stripComments } from "@/lib/test-support/strip-comments";
 import { WINDOW_OPTIONS } from "./query";
 import { bindingSentenceKey, type EarthquakeBindingKind } from "./binding-sentence";
 
@@ -188,11 +189,6 @@ const DIRECT_NAMESPACE =
   /const\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?(?:use|get)Translations\(\s*"(Earthquake)"\s*\)/g;
 const OBJECT_NAMESPACE =
   /const\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?(?:use|get)Translations\(\s*\{[^}]*namespace:\s*"(Earthquake)"[^}]*\}\s*\)/g;
-
-/** Comments out, so a docblock naming a key is not a request. */
-function stripComments(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
-}
 
 interface EarthquakeBinding {
   readonly path: string;

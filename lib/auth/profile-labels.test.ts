@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 import {
   EDUCATION_LEVEL_LABELS,
   GRADE_LEVEL_LABELS,
@@ -85,11 +86,7 @@ describe("UNIVERSITY_GROUP_LABELS — the KKTC group rule (gate G8's revert-to-r
       fileURLToPath(new URL("./profile-labels.ts", import.meta.url)),
       "utf8",
     );
-    const source = raw
-      .replace(/\/\*[\s\S]*?\*\//g, " ")
-      .split("\n")
-      .filter((line) => !line.trimStart().startsWith("//"))
-      .join("\n");
+    const source = stripComments(raw);
     expect(source).not.toContain("Yurt dışı");
   });
 });
