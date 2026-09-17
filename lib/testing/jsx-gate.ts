@@ -40,6 +40,17 @@
  */
 const WINDOW = 80;
 
+/**
+ * The paren-less branch body: `{signal && <Tag />}`, which Prettier writes whenever the whole
+ * expression fits on one line. It is the SAME shape as `{signal && (<Tag />)}` — the parentheses
+ * are formatting, not structure — and the probe used to see only the parenthesised one. That is
+ * not a harmless gap: a guard asking "is this site gated on `showMarine`?" would walk past the
+ * one-line site to whatever `&& (` came before it in the file and answer about a different
+ * component. `components/marine/marine-data-notice.tsx` is rendered `{showMarine && <… />}` on
+ * the province page and hit exactly that, reporting the earthquake section's gate.
+ */
+const DIRECT_BRANCH = /(\?|&&)\s*$/;
+
 /** Where a condition starts: the `{` opening a JSX expression, or the `) :` closing the arm before. */
 const trimToBranch = (window: string): string => {
   const brace = window.lastIndexOf("{");
@@ -60,8 +71,13 @@ export function gatesGoverning(source: string, tag: string): string[] {
   const gates: string[] = [];
   for (let idx = source.indexOf(tag); idx !== -1; idx = source.indexOf(tag, idx + 1)) {
     const prefix = source.slice(0, idx);
-    // The nearest opening of a JSX conditional branch: `cond ? (` or `cond && (`.
-    const opener = Math.max(prefix.lastIndexOf("? ("), prefix.lastIndexOf("&& ("));
+    // The nearest opening of a JSX conditional branch: `cond ? (`, `cond && (`, or — when the
+    // branch body needs no parentheses — the `?`/`&&` sitting immediately before the tag.
+    const direct = DIRECT_BRANCH.exec(prefix);
+    const opener =
+      direct !== null
+        ? direct.index
+        : Math.max(prefix.lastIndexOf("? ("), prefix.lastIndexOf("&& ("));
     if (opener === -1) {
       throw new Error(`${tag} at offset ${idx} is not inside a conditional branch`);
     }
