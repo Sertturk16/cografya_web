@@ -207,7 +207,14 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 space-y-16">
+      {/* `w-full min-w-0` IS LOAD-BEARING. This div is a flex item of the page root
+          (`min-h-screen … flex flex-col`), so its default `min-width: auto` let it grow to its
+          widest child's MIN-CONTENT width — 831 px, set by the comparison table — instead of the
+          viewport's. The table's own `overflow-x-auto` never engaged, so at 320/360/390 px the
+          whole PAGE scrolled sideways and every paragraph on it, the methodology note included,
+          wrapped at 797 px with most of each line off-screen. Measured at 320 px: 831 px document
+          width before, 305 px after, with the table scrolling inside its own box as intended. */}
+      <div className="max-w-7xl w-full min-w-0 mx-auto px-4 sm:px-6 lg:px-8 pt-10 space-y-16">
         {/* SECTION 1: 7 CONTINENTS RICH CARDS GRID */}
         <section id="kitalar-listesi" className="space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
