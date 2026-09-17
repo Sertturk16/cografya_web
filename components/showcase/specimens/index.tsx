@@ -5,6 +5,7 @@ import { FormlarSpecimens } from "./formlar";
 import { VeriSpecimens } from "./veri";
 import { GeriBildirimSpecimens } from "./geri-bildirim";
 import { DuzenSpecimens } from "./duzen";
+import { HaritaSpecimens } from "./harita";
 
 /**
  * Maps a category slug to its specimens.
@@ -27,6 +28,8 @@ export function specimensFor(slug: string): ReactNode {
       return <GeriBildirimSpecimens />;
     case "duzen":
       return <DuzenSpecimens />;
+    case "harita":
+      return <HaritaSpecimens />;
     default:
       return (
         <p className="text-sm text-muted-foreground">
