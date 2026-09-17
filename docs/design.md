@@ -111,7 +111,10 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 - `Button` has no `asChild`. A link styled as a button is
   `<Link className={cn(buttonVariants({ variant, size }))}>`.
 - A component is not done until its specimen renders at `/design-system`;
-  `components/showcase/registry.test.ts` fails if one is missing.
+  `components/showcase/registry.test.ts` fails if one is missing. The converse holds too: a
+  primitive whose only consumer is the showcase is DELETED, not maintained for the showcase's
+  sake — `components/ui/orphan.test.ts` walks the import closure from the product surface and
+  fails on one (T-036 deleted eight).
 
 ### Boundaries worth knowing before reaching for the wrong one
 
