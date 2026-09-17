@@ -12,7 +12,9 @@ describe("V2 sovereignty and naming invariants", () => {
       "./v2-earthquake-explorer.tsx",
       "./v2-marine-map-explorer.tsx",
       "./v2-turkey-map-explorer.tsx",
-      "./v2-interactive-map-preview.tsx",
+      // `v2-interactive-map-preview.tsx` carried the same dictionary and was on this list until
+      // T-036 deleted it — no Next.js entry point reached it. The rule below is unchanged; it
+      // now runs against the three neighbour dictionaries that actually render.
     ];
 
     for (const relPath of files) {

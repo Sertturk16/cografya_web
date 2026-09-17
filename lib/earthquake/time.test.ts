@@ -4,9 +4,10 @@ import { formatEarthquakeOccurredAt } from "./time";
 /**
  * `formatEarthquakeOccurredAt` locks the UTC→Türkiye-time conversion the module's own docblock
  * names the stakes of: "reading the field as anything other than UTC-then-converted-once
- * publishes every earthquake three hours wrong." It is the single function both the map marker
- * (`earthquake-map.tsx:74`) and the list's time column (`earthquake-list.tsx`) call for every
- * rendered event, and had no test before this file (review TEST104-I2).
+ * publishes every earthquake three hours wrong." It is the single function the list's time
+ * column (`earthquake-list.tsx`) calls for every rendered event, and had no test before this
+ * file (review TEST104-I2). (T-036 deleted the second caller, `earthquake-map.tsx`, with the
+ * rest of the unreachable `/deprem` V1 island.)
  *
  * Türkiye has held a fixed, non-DST UTC+3 offset since 2016, so a plain instant→wall-clock
  * comparison is sufficient — no timezone-transition edge case exists for this contract to hit.
