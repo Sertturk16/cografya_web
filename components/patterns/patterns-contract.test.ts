@@ -89,9 +89,61 @@ describe("Callout is an editorial aside, not a system alert", () => {
     }
   });
 
-  it("binds through the -strong members, since its fills are tints", () => {
+  it("binds through the -strong members for its icon tones", () => {
     expect(source).toContain("text-info-strong");
     expect(source).toContain("text-warning-strong");
+  });
+
+  /**
+   * THE STRUCTURAL LINE between Callout and Alert, asserted rather than left to taste.
+   *
+   * Two earlier attempts distinguished them by ADDING something to Callout — a side-tab, then
+   * a hairline plus a tint. The second landed the two components 2px of radius and 2 points of
+   * tint apart, which measured side by side is the same component twice. The rule now runs the
+   * other way: Alert is a state object and HAS a box; Callout is typeset prose and has none.
+   *
+   * These assertions are what stop the next well-meaning round from re-adding a fill.
+   */
+  it("has no fill of its own — the box belongs to Alert", () => {
+    expect(source).not.toMatch(/\bbg-(?:info|success|warning|muted|card)\b/);
+    expect(source).not.toMatch(/\bbg-[a-z-]+\/\d+/);
+  });
+
+  it("is separated by a rule above, never a tab down one side", () => {
+    // `border-l-4` was rejected once as the most template-looking version of this component;
+    // a 1px left rule is its neighbour and reopens the same argument.
+    expect(source).toContain("border-t");
+    expect(source).not.toMatch(/\bborder-l/);
+  });
+
+  it("gives its body the text colour, not a tinted one", () => {
+    expect(source).toContain("leading-relaxed text-foreground");
+  });
+
+  it("colours the icon on the icon, not through a selector that matches nothing", () => {
+    // The previous version wrote `[&>svg]:text-info-strong` on the root while the icon sat
+    // three elements deep, so the child combinator matched nothing and the variant's colour
+    // was never applied at all.
+    expect(source).toContain("ICON_TONE");
+    expect(source).not.toMatch(/\[&>svg\]:text-/);
+  });
+});
+
+describe("Alert is the one with a box", () => {
+  const source = readFileSync(
+    fileURLToPath(new URL("../ui/alert.tsx", import.meta.url)),
+    "utf8",
+  ).replace(/\/\*[\s\S]*?\*\//g, " ");
+
+  it("tints the whole box including the body text", () => {
+    for (const variant of ["success", "warning", "destructive", "info"]) {
+      expect(source).toContain(`bg-${variant}/10 text-${variant}-strong`);
+    }
+  });
+
+  it("gives the hueless variant a surface that is not the card it sits on", () => {
+    // bg-card measured 1.06:1 against the surface an alert normally sits on — no box at all.
+    expect(source).toContain('default: "bg-muted');
   });
 });
 

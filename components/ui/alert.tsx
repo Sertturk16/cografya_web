@@ -19,7 +19,12 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-card text-foreground border-border [&>svg]:text-primary",
+        /* `bg-muted`, not `bg-card`. Alert is the component that HAS a box — that is now the
+           structural line between it and `Callout`, which has none — and `bg-card` was the
+           same colour as the surface an alert normally sits on, measuring 1.06:1. The four
+           coloured variants get their box from their own tint; this one has no hue to tint,
+           so it takes the neutral surface that is not the card. */
+        default: "bg-muted text-foreground border-border [&>svg]:text-primary",
         success: "bg-success/10 text-success-strong border-success/30 [&>svg]:text-success-strong",
         warning: "bg-warning/10 text-warning-strong border-warning/30 [&>svg]:text-warning-strong",
         destructive:
