@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isSpecialStatusRow, showsCountryFlag, showsSovereigntyNote } from "./sovereignty";
 import { gatesGoverning, ungatedRenderSite } from "@/lib/testing/jsx-gate";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * The "Egemenlik ve Tanınma" section's GATE, and the weld between that gate and the flag
@@ -107,14 +108,12 @@ describe("the pair falls together", () => {
  * Comments are stripped first, because this page documents the coupling at length and a scan
  * of the raw text would be satisfied by the prose after someone deleted the code.
  */
-const countryPage = readFileSync(
-  new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url),
-  "utf8",
-)
-  .replace(/\r\n/g, "\n")
-  .replace(/\/\*[\s\S]*?\*\//g, " ")
-  .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
-  .replace(/^[ \t]*\/\/.*$/gm, " ");
+const countryPage = stripComments(
+  readFileSync(
+    new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url),
+    "utf8",
+  ).replace(/\r\n/g, "\n"),
+);
 
 describe("country page reads both gates from the single decision module", () => {
   it("derives the note from showsSovereigntyNote over the api field", () => {

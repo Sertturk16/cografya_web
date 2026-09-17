@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { climateBlockGates, type ClimateBlockInput } from "./climate-block-gates";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * The climate block's gating rules (→ PR #47 review TA47-M1; `citeCurriculumSource` →
@@ -201,7 +202,7 @@ describe("the province page reads its climate gates from this module", () => {
     "utf8",
   );
   /** Comments stripped: the page's own prose names every identifier under test. */
-  const code = page.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
+  const code = stripComments(page);
 
   it("derives them once, from the api's own fields", () => {
     expect(code).toContain('from "@/lib/climate/climate-block-gates"');

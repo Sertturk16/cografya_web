@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { baseMapResponse } from "@/lib/map/base-map-svg";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Every URL these components hard-code must have a route behind it.
@@ -23,10 +24,7 @@ import { baseMapResponse } from "@/lib/map/base-map-svg";
  */
 
 function tsxCode(url: URL): string {
-  return readFileSync(url, "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
-    .replace(/^[ \t]*\/\/.*$/gm, " ");
+  return stripComments(readFileSync(url, "utf8"));
 }
 
 const locator = tsxCode(new URL("./map/locator-map.tsx", import.meta.url));

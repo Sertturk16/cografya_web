@@ -7,6 +7,7 @@ import { TR_GATED_FIELD_LEXEMES } from "@/lib/seo/en-gated-lexemes";
 import { EN_CONTENT_READY } from "@/lib/seo/indexing";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * STRUCTURAL GUARD for the country page's Kaynaklar line (→ PR #47 review TA47-M3; the
@@ -304,7 +305,7 @@ describe("the country page takes the credit from this module, not from a literal
     "utf8",
   );
   /** Comments stripped: the page documents the banned default by quoting it. */
-  const code = page.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
+  const code = stripComments(page);
 
   it("calls sourcesMessage with the locale's own field", () => {
     expect(code).toContain('from "@/lib/geo/country-sources"');

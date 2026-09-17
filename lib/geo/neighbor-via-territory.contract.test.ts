@@ -5,6 +5,7 @@ import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
 import { ungatedRenderSite } from "@/lib/testing/jsx-gate";
 import { NEIGHBOR_VIA_TERRITORY, neighborViaTerritory } from "./neighbor-via-territory";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * REGRESSION SHIELD — the WIRING between the pair table and the rendered card.
@@ -38,11 +39,7 @@ function sourceOf(relativePath: string): string {
 /** Strip block comments and whole-line `//`, so this file's own prose about the swapped-arg
  *  bug — quoted verbatim above — is never mistaken for the code it warns about. */
 function code(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("//"))
-    .join("\n");
+  return stripComments(source);
 }
 
 const PAGE = code(sourceOf("../../app/[locale]/(site)/dunya/[slug]/page.tsx"));

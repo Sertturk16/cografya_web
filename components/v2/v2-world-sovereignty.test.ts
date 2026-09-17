@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Invariant tests for sovereignty rules and naming across V2 components
@@ -333,11 +334,7 @@ describe("V2 sovereignty and naming invariants", () => {
     // sites too, in the idiom lib/geo/sovereignty.test.ts:96-103/118-121 already established for
     // the v1 page: a call-site COUNT plus a gated-use pattern, comments stripped first so a
     // left-behind comment cannot satisfy a raw-text scan after the real code is deleted.
-    const strippedPageContent = pageContent
-      .replace(/\r\n/g, "\n")
-      .replace(/\/\*[\s\S]*?\*\//g, " ")
-      .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
-      .replace(/^[ \t]*\/\/.*$/gm, " ");
+    const strippedPageContent = stripComments(pageContent.replace(/\r\n/g, "\n"));
 
     // The neighbour-card special-status badge must never be gated on locale again
     // (SOV133R2-NEW-I1's regression). Checked before the count below so a re-added `isTr &&`

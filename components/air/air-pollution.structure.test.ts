@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PM25_NOTICE_SLOTS } from "@/lib/air/notice-keys";
 import { gatesGoverning, ungatedRenderSite } from "@/lib/testing/jsx-gate";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * This repo's vitest environment is `node` and the section is an async server component, so
@@ -23,9 +24,10 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
  * and five absence checks failed on the prose that documents the rule they enforce. Prose
  * about a rule is not the rule. JSX comments (`{/* … *\/}`) are block comments, so the same
  * strip covers them.
+ *
+ * The strip is the shared scanner, not a pair of `String.replace` calls: `docs/conventions.md`.
  */
-const code = (source: string) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/.*$/gm, "");
+const code = stripComments;
 
 const section = read("./air-pollution-section.tsx");
 const chart = read("./pm25-chart.tsx");
