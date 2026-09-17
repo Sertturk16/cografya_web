@@ -14,7 +14,6 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2WorldMapExplorer, type WorldCountryItem } from "@/components/v2/v2-world-map-explorer";
 import { V2WorldContinents } from "@/components/v2/v2-world-continents";
 import { V2WorldStatsSpotlight } from "@/components/v2/v2-world-stats-spotlight";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Globe, Gamepad2, ArrowRight, Home, ChevronRight } from "lucide-react";
@@ -274,8 +273,11 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
           </div>
         </section>
 
-        {/* SECTION 5: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
-        <V2SourcesSection scope="dunya" />
+        {/* NO SOURCES SECTION. The `dunya` scope is gone (`V2SourcesSection`'s own docblock has
+            the reasoning): this hub draws no map and reads five api fields, none of which
+            carries a source this page could name. The block listed the UN, the World Bank, the
+            CIA World Factbook, USGS/NASA and IHO GEBCO under "Bu Sayfada Kullanılan Veri
+            Setleri" — five institutions whose data is traceable to nothing here. */}
       </div>
       {/* V2 Footer */}
     </>

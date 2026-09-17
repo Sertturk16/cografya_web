@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
@@ -431,6 +430,18 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                 </tfoot>
               </table>
             </div>
+
+            {/* THE METHODOLOGY NOTE, RE-HOMED. It used to ride into `V2SourcesSection` as
+                `regionalNote`, under a "Bölgesel Metodoloji & Yasal Dayanak" badge, inside a
+                block that also named five institutions this page cannot trace a figure to. The
+                block is gone; the note is not a citation and never was. It says the figures are
+                ours, rounded for teaching, and will not match any one institution — the single
+                most useful sentence on this page for a student, and useless three screens away
+                from the numbers it describes. It sits under the table it is about, inside the
+                same card, so the caption reads with the figures. */}
+            <p className="border-t border-border/60 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground sm:px-6">
+              {t("continentFiguresNote")}
+            </p>
           </div>
         </section>
 
@@ -507,23 +518,18 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* SECTION 5: KAYNAKLAR & METODOLOJİ */}
-        {/* The `regionalNote` used to assert these figures had been "UN M49, Dünya
-            Bankası, Encyclopædia Britannica ... ile çapraz doğrulanmıştır". That is a PROCESS
-            claim, not a source statement, and it is not verifiable: the figures come from
-            `lib/geo/continents.ts`, a hand-written local registry, and no cross-validation
-            record exists anywhere in either repo. It also closed a question that is
-            deliberately OPEN — `lib/seo/indexing.ts`'s docblock records that UN M49 credit was
-            NOT restored, because M49 attribution is not uniformly supportable across this
-            corpus (QN and XK are not enumerated in UNSD's country-or-area list; TW's entry
-            carries a name contradicting the owner-ruled entity name). These two pages were
-            answering it unilaterally, in reader-facing copy.
+        {/* NO SOURCES SECTION. This page reads NO api at all — the figures come from
+            `lib/geo/continents.ts`, a hand-written registry — and draws no map, so every one of
+            the five institutions the `dunya` list named (Natural Earth, the UN & World Bank, the
+            CIA World Factbook, USGS/NASA, IHO GEBCO) was traceable to nothing here. The scope is
+            gone; `V2SourcesSection`'s docblock carries the reasoning.
 
-            What replaces it says what is true and nothing more: the figures are the
-            platform's own compiled record, rounded for teaching, and continent extents differ
-            between sources. It is read from the catalogue rather than written inline, because
-            the old string was a Turkish literal on a surface `/en/` reaches. */}
-        <V2SourcesSection scope="dunya" regionalNote={t("continentFiguresNote")} />
+            What that block DID carry that was worth keeping is `Dunya.continentFiguresNote`, and
+            it is not a citation: it is the methodology note that replaced a false "UN M49, Dünya
+            Bankası, Encyclopædia Britannica ... ile çapraz doğrulanmıştır" cross-validation
+            claim. It now renders as a caption under the comparison table, beside the figures it
+            describes. Still read from the catalogue, never written inline, because `/en/` reaches
+            this surface and the string it replaced was a Turkish literal. */}
       </div>
 
       {/* Structured Data JSON-LD */}

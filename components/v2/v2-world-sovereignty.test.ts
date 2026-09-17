@@ -25,12 +25,26 @@ describe("V2 sovereignty and naming invariants", () => {
     }
   });
 
-  it("does not claim egemenlik statüleri or egemen ülke in v2-sources-section (SOV122-I1, SOV124-P2)", () => {
-    const url = new URL("./v2-sources-section.tsx", import.meta.url);
+  it("does not call the 199 world rows sovereign countries, on the surface that labels them (SOV122-I1, SOV124-P2)", () => {
+    /**
+     * RE-POINTED, not weakened. The rule — the site does not describe the 199 seeded world rows
+     * as sovereign states, because 199 of them are not — was pinned on `v2-sources-section.tsx`,
+     * whose `natural-earth` card said "199 ülke ve özerk bölgenin sınır vektörleri". That card
+     * and the whole `dunya` scope are gone: the list credited four institutions this repo cannot
+     * trace a figure to, and Natural Earth is credited by every map that draws it.
+     *
+     * So the positive anchor moves to the surface that still labels those rows for a reader —
+     * `V2WorldMapExplorer`, on `/dunya`, in both locales — which is a better home for it than a
+     * bibliography blurb ever was: it is the text beside the map and the catalogue. Without the
+     * anchor the two `not.toContain`s would be satisfiable by an empty file.
+     */
+    const url = new URL("./v2-world-map-explorer.tsx", import.meta.url);
     const content = readFileSync(url, "utf8");
     expect(content).not.toContain("egemenlik statüleri");
     expect(content).not.toContain("199 egemen ülke");
-    expect(content).toContain("199 ülke ve özerk bölge");
+    expect(content).not.toContain("199 Sovereign");
+    expect(content).toContain('"199 Ülke ve Bölge + 7 Kıta"');
+    expect(content).toContain('"199 Countries & Territories + 7 Continents"');
   });
 
   it("enforces locale-aware flag gating and synchronizes special status set in v2/dunya (SOV125-C1, SOV124-I1, RV133R4-NEW-I1)", () => {
@@ -181,7 +195,10 @@ describe("V2 sovereignty and naming invariants", () => {
       "sectionNavClimateHydrography",
       "sectionNavGovernance",
       "sectionNavBorders",
-      "sectionNavSources",
+      // NO `sectionNavSources`. The chip it labelled pointed at `#kaynakca`, the anchor around
+      // `<V2SourcesSection scope="dunya">`; the block is gone, so the chip is gone and the key
+      // with it. Moved to the deleted-key assertion at the foot of this test rather than merely
+      // dropped from the list, so a key with nothing to label cannot drift back in.
       "physicalGeographyBadge",
       "quickFactContinentRegion",
       "quickFactCapitalCoordinates",
@@ -257,8 +274,9 @@ describe("V2 sovereignty and naming invariants", () => {
       "kpiGovernmentFormTitle",
     ];
     const allKeys = [...inventoryKeys, ...introKeys, ...restoredKeys, ...keptKeys, ...round2Keys];
-    expect(allKeys.length).toBe(79);
-    expect(new Set(allKeys).size).toBe(79);
+    // 79 until the section-nav "Kaynakça" chip went with the `dunya` sources block it linked to.
+    expect(allKeys.length).toBe(78);
+    expect(new Set(allKeys).size).toBe(78);
 
     for (const [locale, messages] of Object.entries(catalogues)) {
       const countryDetail = messages.CountryDetail as Record<string, unknown>;
@@ -269,8 +287,9 @@ describe("V2 sovereignty and naming invariants", () => {
           `${locale}.json CountryDetail.${key} is empty`,
         ).toBeGreaterThan(0);
       }
-      // The deleted key must not silently regress back in.
+      // The deleted keys must not silently regress back in.
       expect(countryDetail.neighborsGroupHeading).toBeUndefined();
+      expect(countryDetail.sectionNavSources).toBeUndefined();
     }
   });
 

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { V2ContinentLocatorMap } from "@/components/v2/v2-continent-locator-map";
 import { Badge } from "@/components/ui/badge";
@@ -257,6 +256,17 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
               </div>
             </div>
           </div>
+
+          {/* THE METHODOLOGY NOTE, RE-HOMED. It used to ride into `V2SourcesSection` as
+              `regionalNote`, under a "Bölgesel Metodoloji & Yasal Dayanak" badge, in a block that
+              also named five institutions this page cannot trace a figure to. The block is gone;
+              the note is not a citation and never was. It says the figures are ours, rounded for
+              teaching, and will not match any one institution — which is only useful where the
+              reader can see the figures, so it sits directly under the künye grid whose area,
+              population, summit and river values it describes, not thirteen sections below it. */}
+          <p className="max-w-3xl text-[11px] leading-relaxed text-muted-foreground">
+            {t("continentFiguresNoteNamed", { name: continent.nameTr })}
+          </p>
         </div>
       </section>
 
@@ -635,26 +645,16 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* SECTION 13: KAYNAKLAR & METODOLOJİ */}
-        {/* The `regionalNote` used to assert these figures had been "UN M49, Dünya
-            Bankası, Encyclopædia Britannica ... ile çapraz doğrulanmıştır". That is a PROCESS
-            claim, not a source statement, and it is not verifiable: the figures come from
-            `lib/geo/continents.ts`, a hand-written local registry, and no cross-validation
-            record exists anywhere in either repo. It also closed a question that is
-            deliberately OPEN — `lib/seo/indexing.ts`'s docblock records that UN M49 credit was
-            NOT restored, because M49 attribution is not uniformly supportable across this
-            corpus (QN and XK are not enumerated in UNSD's country-or-area list; TW's entry
-            carries a name contradicting the owner-ruled entity name). These two pages were
-            answering it unilaterally, in reader-facing copy.
+        {/* NO SOURCES SECTION. The continent figures come from `lib/geo/continents.ts`, a
+            hand-written registry; this page reads no api and the one map it draws
+            (`V2ContinentLocatorMap`) credits Natural Earth itself, in the line under the map,
+            more precisely than a card at the foot of the page could. The other four entries in
+            the `dunya` list — the UN & World Bank, the CIA World Factbook, USGS/NASA, IHO
+            GEBCO — were traceable to nothing here. `V2SourcesSection`'s docblock has the rule.
 
-            What replaces it says what is true and nothing more: the figures are the
-            platform's own compiled record, rounded for teaching, and continent extents differ
-            between sources. It is read from the catalogue rather than written inline, because
-            the old string was a Turkish literal on a surface `/en/` reaches. */}
-        <V2SourcesSection
-          scope="dunya"
-          regionalNote={t("continentFiguresNoteNamed", { name: continent.nameTr })}
-        />
+            `Dunya.continentFiguresNoteNamed` was the one thing in that block worth keeping and
+            was never a citation; it now renders under the künye grid in the hero, beside the
+            figures it is about. Still from the catalogue, because `/en/` reaches this surface. */}
       </div>
 
       {/* Structured Data JSON-LD */}

@@ -16,8 +16,30 @@ import { Database, ShieldCheck, BookOpen, ExternalLink, Scale, ChevronDown } fro
  * in `components/marine/marine-attribution-coverage.test.ts`; half-answering it on seven pages
  * with a card at the foot of a login form would have made it harder to see, not easier.)
  */
-export type V2PageScope =
-  "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar";
+/**
+ * NO `dunya` SCOPE EITHER, and the reason above is now a rule.
+ *
+ * A dataset is cited here only where the page draws from it TRACEABLY — a committed generated
+ * artifact with a provenance header, or an api field whose own source travels with it. Not
+ * because the page happens to display the KIND of thing that institution publishes.
+ *
+ * The `dunya` list failed that on every entry. `un-data`, `cia-factbook`, `usgs-nasa` and
+ * `iho-gebco` are traceable to nothing in this repo: the continent figures come from
+ * `lib/geo/continents.ts`, a hand-written registry, and the country figures come from the api,
+ * whose per-field credit `/dunya/[slug]` already prints BESIDE the number through
+ * `sourcesMessage()`. `natural-earth` IS used — but only where a map is drawn, and every such map
+ * already credits it itself, through `V2MapAttribution`'s `world` variant or `LocatorMap`'s
+ * `<figcaption>`, more precisely than a card at the foot of the page can. No entry carried a
+ * `legalQuote`, so removing the list orphaned no licence text.
+ *
+ * The owner's ruling this follows: saying where a number came from, beside the number, is
+ * information; listing an institution's name in a bibliography block is noise wherever the page
+ * cannot trace its data to that institution. The one thing in that block that was never a
+ * citation — the methodology note saying the continent figures are the platform's own and rounded
+ * for teaching — survives on `/dunya/kita` and `/dunya/kita/[slug]` as standalone prose beside the
+ * figures it describes.
+ */
+export type V2PageScope = "home" | "turkiye" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar";
 
 /**
  * `legalQuote` IS AN ECHO, NEVER THE SOLE CARRIER OF A MANDATED NOTICE.
@@ -176,49 +198,6 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       description:
         "Türkiye'nin 7 Coğrafi Bölgesi ve 21 Coğrafi Bölümü resmî sınır ve morfolojik taksonomisi.",
       sourceUrl: "cografya.org.tr • Türk Coğrafya Kurumu",
-    },
-  ],
-  dunya: [
-    {
-      id: "natural-earth",
-      icon: "🌍",
-      title: "Natural Earth Vector Data (1:50m)",
-      license: "Kamu Malı (Public Domain)",
-      description: "199 ülke ve özerk bölgenin sınır vektörleri ve başkent konumları.",
-      sourceUrl: "naturalearthdata.com",
-    },
-    {
-      id: "un-data",
-      icon: "🏛️",
-      title: "Birleşmiş Milletler (UN) & Dünya Bankası",
-      license: "Açık Veri",
-      description: "Ülke nüfusları, kıta kodlamaları ve resmî diller.",
-      sourceUrl: "un.org • data.worldbank.org",
-    },
-    {
-      id: "cia-factbook",
-      icon: "📚",
-      title: "CIA World Factbook & ISO 3166",
-      license: "Kamu Malı",
-      description: "Ülke ISO alfa-2/alfa-3 kodları, başkentler ve coğrafi koordinatlar.",
-      sourceUrl: "cia.gov/the-world-factbook",
-    },
-    {
-      id: "usgs-nasa",
-      icon: "🛰️",
-      title: "USGS & NASA Earth Observatory",
-      license: "Kamu Malı (US Gov)",
-      description:
-        "Küresel kara alanı (148.9M km²), kıta jeomorfolojisi ve yeryüzü topografyası ekstremleri.",
-      sourceUrl: "earthobservatory.nasa.gov • usgs.gov",
-    },
-    {
-      id: "iho-gebco",
-      icon: "🌊",
-      title: "IHO GEBCO (General Bathymetric Chart of the Oceans)",
-      license: "Açık Veri",
-      description: "Mariana Çukuru, okyanus tabanı batimetrisi ve derinlik ölçümleri.",
-      sourceUrl: "gebco.net • iho.int",
     },
   ],
   deniz: [
