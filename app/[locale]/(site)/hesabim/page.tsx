@@ -13,7 +13,6 @@ import { getRegionsResilient } from "@/lib/api/regions";
 import { getBooksResilient } from "@/lib/api/books";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2MemberHub } from "@/components/v2/v2-member-hub";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -104,8 +103,6 @@ export default async function V2MemberHubPage({ params }: V2MemberHubPageProps) 
           regions={regions}
           books={books}
         />
-
-        <V2SourcesSection scope="general" />
       </div>
     </>
   );

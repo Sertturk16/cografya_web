@@ -334,8 +334,12 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
             </div>
           </section>
 
-          {/* SECTION 4: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
-          <V2SourcesSection scope="turkiye" />
+          {/* SECTION 4: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA)
+              `omit` the two the `turkiye` scope carries for the PROVINCE page and this hub does
+              not show: there are no monthly climate normals here (and the `era5` card carries
+              the verbatim ECMWF quote with them) and no PM2.5 figure. The map, its inland-water
+              layer and the province index earn the rest. */}
+          <V2SourcesSection scope="turkiye" omit={["era5", "acag-pm25"]} />
         </div>
       </div>
 

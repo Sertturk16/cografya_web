@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2VerifyEmailCard } from "@/components/v2/v2-verify-email-card";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 
 interface V2VerifyEmailPageProps {
   params: Promise<{ locale: Locale }>;
@@ -65,8 +64,6 @@ export default async function V2VerifyEmailPage({ params }: V2VerifyEmailPagePro
             <V2VerifyEmailCard locale={locale} />
           </div>
         </div>
-
-        <V2SourcesSection scope="general" />
       </div>
     </>
   );

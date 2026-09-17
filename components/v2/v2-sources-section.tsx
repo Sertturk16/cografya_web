@@ -2,8 +2,22 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Database, ShieldCheck, BookOpen, ExternalLink, Scale, ChevronDown } from "lucide-react";
 
+/**
+ * NO `general` SCOPE. It existed for the seven auth pages — `/giris`, `/kayit`, `/profil`,
+ * `/hesabim`, `/sifre-sifirlama`, `/sifre-sifirlama/yeni`, `/e-posta-dogrulama` — and claimed
+ * TÜİK demographics, OSM administrative boundaries, Copernicus and AFAD under the heading
+ * "Bu Sayfada Kullanılan Veri Setleri". A sign-in form renders none of them. The pages no
+ * longer render this component at all, which is the only honest answer for a page that
+ * publishes no data: the fix for an over-cited bibliography on a page with no sources is not
+ * a shorter bibliography.
+ *
+ * (The live ticker DOES publish AFAD and CMEMS values in the chrome of those seven pages and
+ * of 26 others. That is one question with one answer, recorded as an open item for the owner
+ * in `components/marine/marine-attribution-coverage.test.ts`; half-answering it on seven pages
+ * with a card at the foot of a login form would have made it harder to see, not easier.)
+ */
 export type V2PageScope =
-  "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar" | "general";
+  "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar";
 
 /**
  * `legalQuote` IS AN ECHO, NEVER THE SOLE CARRIER OF A MANDATED NOTICE.
@@ -41,23 +55,18 @@ interface SourceItem {
 const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
   home: [
     {
+      // TÜİK ALONE. This card used to be "TÜİK & OpenStreetMap" and carried ODbL's credit as
+      // its `legalQuote`. The home page draws NO MAP — no `PROVINCE_SHAPES`, no
+      // `COUNTRY_SHAPES`, no `INLAND_WATER_SHAPES` — so the OSM half credited a source the
+      // page does not use. The population facts in the featured cards are the TÜİK half, and
+      // they are real. Every surface that DOES draw OSM geometry carries the credit inline,
+      // through `V2MapAttribution` (`lib/map/tr-inland-water-jrc.test.ts` derives that list).
       id: "tuik-osm",
-      icon: "🗺️",
-      title: "TÜİK & OpenStreetMap",
-      license: "ODbL / TÜİK ADNKS",
-      description: "Türkiye 81 il demografisi, nüfus sayımları ve idari sınır vektörleri.",
-      legalQuote: "© OpenStreetMap katkıcıları, Open Database License (ODbL)",
-      sourceUrl: "tuik.gov.tr • openstreetmap.org",
-    },
-    {
-      id: "natural-earth",
-      icon: "🌍",
-      title: "Natural Earth Data 1:50m",
-      license: "Kamu Malı (Public Domain)",
-      description:
-        "199 dünya ülkesi sınır geometrileri, başkent koordinatları ve kıta jeomorfolojisi.",
-      legalQuote: "Natural Earth Vector & Raster Map Data 2026",
-      sourceUrl: "naturalearthdata.com",
+      icon: "📊",
+      title: "TÜİK Adrese Dayalı Nüfus Kayıt Sistemi (ADNKS)",
+      license: "TÜİK ADNKS",
+      description: "Türkiye 81 il demografisi ve nüfus sayımı göstergeleri.",
+      sourceUrl: "tuik.gov.tr",
     },
     {
       id: "copernicus-marine",
@@ -76,17 +85,6 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       sourceUrl: "marine.copernicus.eu",
     },
     {
-      id: "era5-land",
-      icon: "🌡️",
-      title: "Copernicus ERA5-Land (ECMWF)",
-      license: "CC-BY-4.0",
-      description:
-        "1991–2020 dönemi 12 aylık sıcaklık ve yağış normalleri reanaliz iklim modelleri.",
-      legalQuote: "Generated using Copernicus Climate Change Service information 2026",
-      sourceUrl: "cds.climate.copernicus.eu",
-      doi: "10.24381/cds.68d2bb30",
-    },
-    {
       id: "afad",
       icon: "⚡",
       title: "AFAD Deprem Dairesi Başkanlığı",
@@ -94,16 +92,6 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       description:
         "Türkiye ve çevre havzadaki eşzamanlı deprem sarsıntıları ve merkez üssü derinlik verileri.",
       sourceUrl: "deprem.afad.gov.tr",
-    },
-    {
-      id: "cams-pm25",
-      icon: "💨",
-      title: "Copernicus CAMS & ACAG SatPM2.5",
-      license: "Açık Veri",
-      description:
-        "Uydu tabanlı yıllık ortalama yüzey PM2.5 hava kirliliği konsantrasyonu ve hava kalitesi.",
-      legalQuote: "Contains modified Copernicus Atmosphere Monitoring Service information 2026",
-      sourceUrl: "ads.atmosphere.copernicus.eu",
     },
   ],
   turkiye: [
@@ -440,32 +428,6 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       sourceUrl: "mufredat.meb.gov.tr • osym.gov.tr",
     },
   ],
-  general: [
-    {
-      id: "tuik",
-      icon: "🗺️",
-      title: "TÜİK & OpenStreetMap",
-      license: "ODbL / TÜİK",
-      description: "Türkiye demografik verileri ve idari sınır vektörleri.",
-      sourceUrl: "tuik.gov.tr • openstreetmap.org",
-    },
-    {
-      id: "copernicus",
-      icon: "🌡️",
-      title: "Copernicus ERA5 & Marine",
-      license: "E.U. Copernicus",
-      description: "Sıcaklık, iklim normalleri ve canlı deniz telemetrisi modelleri.",
-      sourceUrl: "copernicus.eu",
-    },
-    {
-      id: "afad",
-      icon: "⚡",
-      title: "AFAD Deprem Dairesi Başkanlığı",
-      license: "T.C. Resmî",
-      description: "Sismik deprem gözlemleri ve odak derinliği verileri.",
-      sourceUrl: "deprem.afad.gov.tr",
-    },
-  ],
 };
 
 /**
@@ -490,7 +452,19 @@ const SOURCE_BY_ID: ReadonlyMap<string, SourceItem> = (() => {
 })();
 
 interface V2SourcesSectionProps {
-  scope?: V2PageScope;
+  /**
+   * REQUIRED, and it used to be optional with a `home` default.
+   *
+   * `/oyun/bolge-bolge-il` rendered `<V2SourcesSection />` with no props at all and therefore
+   * claimed CMEMS marine telemetry, ERA5-Land climate normals, AFAD seismic records and PM2.5
+   * — on a page that is a region picker. The correct `oyun` scope already existed and `/oyun`
+   * was already using it; nothing failed, because a default cannot be wrong.
+   *
+   * Required is a stronger guard than a test for this: the compiler sees every call site,
+   * including the one someone adds next year, and there is no value a forgotten prop can
+   * silently fall to.
+   */
+  scope: V2PageScope;
   className?: string;
   regionalNote?: React.ReactNode;
   /**
@@ -509,13 +483,17 @@ interface V2SourcesSectionProps {
 }
 
 export function V2SourcesSection({
-  scope = "home",
+  scope,
   className = "",
   regionalNote,
   include,
   omit,
 }: V2SourcesSectionProps) {
-  const scoped = SOURCES_BY_PAGE[scope] || SOURCES_BY_PAGE.home;
+  // No `|| SOURCES_BY_PAGE.home` fallback either: `SOURCES_BY_PAGE` is a `Record` over the
+  // closed scope union, so every key resolves and the fallback could only ever fire for a
+  // value the type system says cannot exist — while silently citing the home page's sources
+  // if it somehow did.
+  const scoped = SOURCES_BY_PAGE[scope];
   const omitted = new Set(omit ?? []);
   const kept = scoped.filter((s) => !omitted.has(s.id));
   const keptIds = new Set(kept.map((s) => s.id));
