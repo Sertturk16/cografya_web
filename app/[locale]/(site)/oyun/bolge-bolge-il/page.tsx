@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import { getMapSummaryResilient } from "@/lib/api/provinces";
 import { buildGameShapes } from "@/lib/game/map-shapes";
 import { getRegionLabels } from "@/components/game/region-labels";
+import { PageContainer } from "@/components/patterns/page-container";
 import { REGION_KEYS, regionSlug } from "@/lib/game/region-slug";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -67,15 +68,13 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
 
   return (
     <>
-      {/* V2 Header */}
-
       {/* Live Telemetry Ticker */}
       <V2LiveTicker />
 
       {/* SVG Defs for mini-thumbnails */}
       {hasThumbs ? <V2RegionThumbDefs shapes={allShapes} /> : null}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-8">
+      <PageContainer space="tight">
         {/* Top Navigation & Breadcrumbs */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <nav
@@ -183,7 +182,7 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
             seismic records and PM2.5 — on a page that is a region picker. `oyun` is the scope
             this page's content actually belongs to, and `/oyun` was already using it. */}
         <V2SourcesSection scope="oyun" />
-      </div>
+      </PageContainer>
     </>
   );
 }

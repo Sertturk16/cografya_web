@@ -10,6 +10,7 @@ import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { pickHubDescription } from "@/lib/seo/hub-description";
+import { PageContainer } from "@/components/patterns/page-container";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2WorldMapExplorer, type WorldCountryItem } from "@/components/v2/v2-world-map-explorer";
 import { V2WorldContinents } from "@/components/v2/v2-world-continents";
@@ -151,7 +152,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
         <V2LiveTicker />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-14 flex-1 w-full pb-16">
+      <PageContainer>
         {/* Breadcrumb & Header Hero */}
         <div className="space-y-4">
           <nav
@@ -278,8 +279,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
             carries a source this page could name. The block listed the UN, the World Bank, the
             CIA World Factbook, USGS/NASA and IHO GEBCO under "Bu Sayfada Kullanılan Veri
             Setleri" — five institutions whose data is traceable to nothing here. */}
-      </div>
-      {/* V2 Footer */}
+      </PageContainer>
     </>
   );
 }

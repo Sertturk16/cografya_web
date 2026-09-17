@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
+import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
@@ -93,15 +94,15 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
+    <>
       <V2LiveTicker />
 
       {/* HERO SECTION */}
-      <section className="relative border-b border-border bg-gradient-to-b from-primary/10 via-background to-background pt-8 pb-14 overflow-hidden">
-        <div className="absolute top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 left-1/4 size-80 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+      <section className="relative isolate border-b border-border bg-gradient-to-b from-primary/10 via-background to-background pt-8 pb-14 overflow-hidden">
+        <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -z-10 top-1/2 left-1/4 size-80 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 relative z-10">
+        <PageContainer space="band">
           {/* Breadcrumb */}
           <nav
             aria-label="Breadcrumb"
@@ -204,17 +205,19 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-        </div>
+        </PageContainer>
       </section>
 
-      {/* `w-full min-w-0` IS LOAD-BEARING. This div is a flex item of the page root
-          (`min-h-screen … flex flex-col`), so its default `min-width: auto` let it grow to its
-          widest child's MIN-CONTENT width — 831 px, set by the comparison table — instead of the
-          viewport's. The table's own `overflow-x-auto` never engaged, so at 320/360/390 px the
-          whole PAGE scrolled sideways and every paragraph on it, the methodology note included,
-          wrapped at 797 px with most of each line off-screen. Measured at 320 px: 831 px document
-          width before, 305 px after, with the table scrolling inside its own box as intended. */}
-      <div className="max-w-7xl w-full min-w-0 mx-auto px-4 sm:px-6 lg:px-8 pt-10 space-y-16">
+      {/* `w-full min-w-0` is GONE, not just renamed. It fixed a flex-item bug: this div used to
+          be a child of `min-h-screen … flex flex-col` (the page's own copy of the root layout's
+          shell), so its default `min-width: auto` let it grow to its widest child's MIN-CONTENT
+          width — 831 px, set by the comparison table — instead of the viewport's, and the
+          table's own `overflow-x-auto` never engaged. That flex wrapper is deleted (it duplicated
+          `(site)/layout.tsx`); `<main>` there is a plain block box, so a block child is never
+          stretched to a flex sibling's min-content width in the first place — the bug's
+          precondition is gone with the wrapper that caused it. Re-verified at 320 px after the
+          change: 305 px document width, table still scrolling inside its own box. */}
+      <PageContainer space="loose">
         {/* SECTION 1: 7 CONTINENTS RICH CARDS GRID */}
         <section id="kitalar-listesi" className="space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -537,11 +540,11 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
             claim. It now renders as a caption under the comparison table, beside the figures it
             describes. Still read from the catalogue, never written inline, because `/en/` reaches
             this surface and the string it replaced was a Turkish literal. */}
-      </div>
+      </PageContainer>
 
       {/* Structured Data JSON-LD */}
       <JsonLd schema={breadcrumbJsonLd(breadcrumbs)} />
       <JsonLd schema={faqPageJsonLd(HUB_FAQS)} />
-    </div>
+    </>
   );
 }

@@ -57,6 +57,50 @@ function bodySpellings(): Map<string, string[]> {
 }
 
 /**
+ * The three sticky in-page section-index bars, permanently exempt — named by file and EXACT
+ * spelling, in the idiom `components/ui/token-binding.test.ts` uses for `ACHROMATIC_EXEMPTIONS`.
+ * Their own className is layout (a horizontally scrolling pill row: `flex items-center gap-2
+ * text-xs whitespace-nowrap`, one of them also `overflow-x-auto py-2.5 font-semibold
+ * scrollbar-none`), not rhythm — `PageContainer`'s closed `space` union has no member for it and
+ * is not getting one for three bars. They align to the body's edges and so still carry
+ * `max-w-7xl`/`mx-auto`, which is why the scanner still sees them; that is scope, not a defect
+ * in the exemption.
+ */
+const BODY_WRAPPER_EXEMPTIONS: ReadonlyArray<readonly [string, string, string]> = [
+  [
+    "app/[locale]/(site)/turkiye/bolge/page.tsx",
+    "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto py-2.5 text-xs font-semibold scrollbar-none",
+    "Sticky quicknav bar (scrolling pill row). Layout, not rhythm.",
+  ],
+  [
+    "app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx",
+    "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs whitespace-nowrap",
+    "Sticky section-index bar. Layout, not rhythm.",
+  ],
+  [
+    "app/[locale]/(site)/dunya/[slug]/page.tsx",
+    "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs whitespace-nowrap",
+    "Sticky section-index bar. Layout, not rhythm.",
+  ],
+];
+
+/** `bodySpellings()` minus the exemptions above — one file/spelling pair removed per row, so a
+ * spelling with other (non-exempt) files still reports them. */
+function nonExemptBodySpellings(): Map<string, string[]> {
+  const found = bodySpellings();
+  for (const [file, spelling] of BODY_WRAPPER_EXEMPTIONS) {
+    const files = found.get(spelling);
+    if (!files) continue;
+    const idx = files.indexOf(file);
+    if (idx === -1) continue;
+    const remaining = [...files.slice(0, idx), ...files.slice(idx + 1)];
+    if (remaining.length > 0) found.set(spelling, remaining);
+    else found.delete(spelling);
+  }
+  return found;
+}
+
+/**
  * EXACT, not a ceiling. `docs/design.md` records what a ceiling is worth here: a raw-palette
  * count "moved without anyone noticing" from 749 to 895 because it lived only in a comment.
  * An exact number makes raising it and lowering it equally deliberate, and equally visible in
@@ -86,8 +130,29 @@ function bodySpellings(): Map<string, string[]> {
  * pb-16`), `dunya/kita` and `dunya/kita/[slug]` (two spellings each, nested inside their own
  * `min-h-screen` wrapper) for task 4b, plus the three sticky quicknav/tab-strip bars from task 3
  * that are never migrated. See task-4a-report.md for the full before/after list.
+ *
+ * Task 4b (2026-09-17) moved the remaining five onto `PageContainer` too: `hakkimizda` took
+ * `space="tight"` (it had no `space-y-*` to map from), `oyun/bolge-bolge-il` took `space="tight"`
+ * accepting the `sm:pt-8` → `sm:pt-10` 8px difference, `dunya` took the `default` rhythm after
+ * `flex-1 w-full` turned out to be dead weight (see task-4b-report.md — neither `<main>` in
+ * `(site)/layout.tsx` nor any ancestor between it and this element is a flex container, so
+ * `flex-1` had no flex parent to size against, and a block box is already 100% of its
+ * containing block's width without `w-full`), and `dunya/kita` + `dunya/kita/[slug]` split into
+ * two `PageContainer`s each — `space="band"` for the hero (which owns `pt-8 pb-14` itself,
+ * matching `turkiye/[slug]`'s shape) and `space="loose"` for the body (`space-y-16`), with their
+ * duplicate `min-h-screen … flex flex-col selection:bg-primary/20` root wrapper deleted (T-032
+ * PR3 shell, already in `(site)/layout.tsx`; `selection:bg-primary/20` also redundant with the
+ * site-wide `::selection` rule `app/globals.css` added). That deletion removed the flex
+ * ancestor the body wrapper's `w-full min-w-0` comment said was load-bearing, so `min-w-0` is
+ * gone with it — re-verified at 320px, still 305px, no regression. The two hero `relative z-10`
+ * wrappers became `isolate` on the `<section>` plus `-z-10` on the glow div(s), the same shape
+ * Task 3 used on `turkiye/[slug]` and `turkiye/bolge/[slug]`.
+ *
+ * That leaves ONLY the three sticky quicknav/tab-strip bars, now named and reasoned about in
+ * `BODY_WRAPPER_EXEMPTIONS` above rather than carried in this docblock — the counter itself
+ * reads 0. See task-4b-report.md for the full before/after list.
  */
-export const PAGE_BODY_SPELLINGS = 7;
+export const PAGE_BODY_SPELLINGS = 0;
 
 describe("the scanner itself", () => {
   it("walked the product surface and nothing else", () => {
@@ -109,11 +174,29 @@ describe("the scanner itself", () => {
 });
 
 describe("page body wrappers converge on one spelling", () => {
-  it("has exactly the recorded number of spellings", () => {
-    const spellings = bodySpellings();
+  it("has exactly the recorded number of spellings, sticky-nav exemptions aside", () => {
+    const spellings = nonExemptBodySpellings();
     expect(
       spellings.size,
       `spellings:\n${[...spellings].map(([s, f]) => `  ${f.length}x ${s}`).join("\n")}`,
     ).toBe(PAGE_BODY_SPELLINGS);
+  });
+});
+
+describe("the sticky-nav body-wrapper exemptions", () => {
+  it("every exemption is still live", () => {
+    // A stale exemption hides a real regression just as effectively as a missing rule — the
+    // same guard `token-binding.test.ts` runs for `ACHROMATIC_EXEMPTIONS`.
+    for (const [file, spelling] of BODY_WRAPPER_EXEMPTIONS) {
+      const path = join(repoRoot, file);
+      expect(existsSync(path), `${file} no longer exists; drop the exemption`).toBe(true);
+      const matches = [...sourceOf(path).matchAll(BODY_WRAPPER)].map((m) =>
+        m[1]!.trim().replace(/\s+/g, " "),
+      );
+      expect(
+        matches,
+        `${file} no longer contains the exempted spelling; drop the exemption`,
+      ).toContain(spelling);
+    }
   });
 });
