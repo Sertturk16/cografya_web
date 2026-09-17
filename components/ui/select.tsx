@@ -15,14 +15,15 @@ const selectVariants = cva(
       },
       hasError: {
         true: "border-destructive text-destructive focus-visible:border-destructive focus-visible:ring-3 focus-visible:ring-destructive/20",
-        false: "border-border hover:border-primary/50 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
+        false:
+          "border-input hover:border-primary/50 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
       },
     },
     defaultVariants: {
       selectSize: "default",
       hasError: false,
     },
-  }
+  },
 );
 
 export interface SelectOption {
@@ -32,7 +33,8 @@ export interface SelectOption {
 }
 
 export interface SelectProps
-  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size">,
+  extends
+    Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size">,
     Omit<VariantProps<typeof selectVariants>, "hasError"> {
   options?: SelectOption[];
   placeholder?: string;
@@ -53,7 +55,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       value,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <div className={cn("relative flex items-center w-full", disabled && "opacity-50")}>
@@ -85,7 +87,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         />
       </div>
     );
-  }
+  },
 );
 Select.displayName = "Select";
 

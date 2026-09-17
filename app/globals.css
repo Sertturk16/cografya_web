@@ -548,7 +548,23 @@
   --link: var(--color-primary-dark);
   --chip-foreground: var(--color-chip-ink);
   --border: var(--color-border);
-  --input: var(--color-border);
+  /* TWO TOKENS, TWO JOBS — and until now only one of them did any work.
+     `--input` was declared from the start and read by nothing: `grep border-input components/`
+     was empty, so every control bound `--border` instead and the shadcn architecture sat
+     half-written. That is why the boundary identifying a text field measured 1.45:1 in light
+     and 1.53:1 in dark — identical in both themes, which is why it never read as a dark-mode
+     oversight. It is a token choice, and WCAG 1.4.11 asks 3:1 of the boundary that identifies
+     a control.
+     `--border` is unchanged and stays low-contrast on purpose: a card edge, a divider and a
+     table rule are DECORATIVE grouping. 1.4.11 does not ask 3:1 of them, and lifting every
+     card edge to 3:1 turns the interface into a wireframe.
+     The value is Terra's own `--color-taupe`, not a new hex — the token's own comment already
+     reads "secondary UI / placeholder only", which is what a control boundary is. It stays off
+     TEXT for the documented reason (3.86:1 on white misses the 4.5:1 body floor); 1.4.11's
+     floor for a graphical object is 3:1.
+     MEASURED against every surface a control sits on:
+       on --card #ffffff 3.86 · on --background #fbf8f3 3.64 · on --muted #f1e9de 3.21 */
+  --input: var(--color-taupe);
   --ring: #276b70;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -1214,7 +1230,12 @@ body:has(.v2-app) > footer {
      same token drew a different line on --card than on --background; on a tinted field that
      reads as the border changing colour between panels. */
   --border: #2a3f44;
-  --input: #334c52;
+  /* The control boundary, lifted out of the `--border` family for the reason the light block
+     records. The old value was the same petrol one step up from `--border` and measured
+     1.86:1 on --card — below the 3:1 WCAG 1.4.11 asks of the line that identifies a control.
+     Same hue family, enough lightness to be a boundary rather than a suggestion.
+     MEASURED: on --card #121e21 4.02 · on --background #0b1416 4.40 · on --muted #1b2b2f 3.46 */
+  --input: #5c8189;
   /* The focus ring follows the brand's water teal, as it does in light mode, instead of the
      neutral grey shadcn shipped. */
   --ring: oklch(0.65 0.0675 202);

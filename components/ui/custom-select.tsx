@@ -182,7 +182,7 @@ export function CustomSelect({
           "w-full h-10 px-3.5 rounded-xl border bg-card text-xs text-left transition-all duration-150 flex items-center justify-between gap-2 select-none shadow-2xs cursor-pointer focus-visible:outline-none",
           isOpen
             ? "border-primary ring-3 ring-primary/20"
-            : "border-border hover:border-primary/50 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
+            : "border-input hover:border-primary/50 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
           disabled && "opacity-50 cursor-not-allowed pointer-events-none",
         )}
       >
@@ -226,7 +226,7 @@ export function CustomSelect({
                   aria-label={searchPlaceholder || "Seçeneklerde ara"}
                   aria-controls={listboxId}
                   aria-activedescendant={activeDescendantId}
-                  className="w-full h-8 pl-8 pr-3 rounded-lg bg-muted/60 border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-150"
+                  className="w-full h-8 pl-8 pr-3 rounded-lg bg-muted/60 border border-input text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-150"
                 />
               </div>
             </div>

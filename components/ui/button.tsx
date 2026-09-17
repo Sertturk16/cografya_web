@@ -18,7 +18,7 @@ const buttonVariants = cva(
         teal: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm hover:shadow",
         amber: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm hover:shadow",
         outline:
-          "border border-border bg-card text-foreground hover:bg-muted hover:border-primary/50 shadow-xs",
+          "border border-input bg-card text-foreground hover:bg-muted hover:border-primary/50 shadow-xs",
         ghost: "text-foreground hover:bg-muted hover:text-foreground",
         /* `text-destructive-foreground`, not `text-white`. The token was re-exported by
            `@theme inline` but never declared, so the utility resolved to nothing and a raw

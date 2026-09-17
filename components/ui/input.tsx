@@ -14,18 +14,20 @@ const inputVariants = cva(
       },
       hasError: {
         true: "border-destructive text-destructive focus-visible:border-destructive focus-visible:ring-3 focus-visible:ring-destructive/20 aria-invalid:ring-destructive/20",
-        false: "border-border hover:border-primary/50 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
+        false:
+          "border-input hover:border-primary/50 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
       },
     },
     defaultVariants: {
       inputSize: "default",
       hasError: false,
     },
-  }
+  },
 );
 
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size" | "prefix">,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, "size" | "prefix">,
     Omit<VariantProps<typeof inputVariants>, "hasError"> {
   isError?: boolean;
   leftIcon?: React.ReactNode;
@@ -48,7 +50,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     const hasAddons = Boolean(leftIcon || rightIcon || prefix || suffix);
 
@@ -68,7 +70,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={cn("relative flex items-center w-full", disabled && "opacity-50")}>
         {prefix && (
-          <span className="inline-flex items-center px-3 border border-r-0 border-border rounded-l-lg bg-muted text-muted-foreground text-sm self-stretch shrink-0">
+          <span className="inline-flex items-center px-3 border border-r-0 border-input rounded-l-lg bg-muted text-muted-foreground text-sm self-stretch shrink-0">
             {prefix}
           </span>
         )}
@@ -87,7 +89,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             leftIcon && "pl-9",
             rightIcon && "pr-9",
             prefix && "rounded-l-none",
-            suffix && "rounded-r-none"
+            suffix && "rounded-r-none",
           )}
           {...props}
         />
@@ -97,13 +99,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           </div>
         )}
         {suffix && (
-          <span className="inline-flex items-center px-3 border border-l-0 border-border rounded-r-lg bg-muted text-muted-foreground text-sm self-stretch shrink-0">
+          <span className="inline-flex items-center px-3 border border-l-0 border-input rounded-r-lg bg-muted text-muted-foreground text-sm self-stretch shrink-0">
             {suffix}
           </span>
         )}
       </div>
     );
-  }
+  },
 );
 Input.displayName = "Input";
 
