@@ -400,7 +400,9 @@
     "intro": "Haritada bir ülkeye tıkla, detaylarını gör.",
     "indexHeading": "Alfabetik Ülke Listesi",
     "indexDescription": "{count} ülke, adlarının baş harfine göre gruplanmış halde.",
-    "indexLetterNavLabel": "Baş harfe göre atla"
+    "indexLetterNavLabel": "Baş harfe göre atla",
+    "continentFiguresNote": "Bu sayfadaki kıta yüzölçümü, nüfus, zirve ve nehir değerleri platformun kendi derlediği referans kaydından gelir ve eğitim amacıyla yuvarlanmıştır. Kıtaların sınırları ve hangi ülkeleri kapsadıkları kaynaktan kaynağa değiştiği için bu değerler tek bir kurumun yayımladığı rakamlarla birebir örtüşmeyebilir.",
+    "continentFiguresNoteNamed": "{name} için bu sayfada verilen yüzölçümü, nüfus, zirve ve nehir değerleri platformun kendi derlediği referans kaydından gelir ve eğitim amacıyla yuvarlanmıştır. Kıta sınırları ve ülke kapsamları kaynaktan kaynağa değiştiği için bu değerler tek bir kurumun yayımladığı rakamlarla birebir örtüşmeyebilir."
   },
   "WorldMap": {
     "mapTitle": "Dünya ülkeleri haritası (bölgesel)",
