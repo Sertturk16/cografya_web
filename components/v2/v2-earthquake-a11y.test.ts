@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "../../lib/test-support/strip-comments";
 
 /**
  * Invariant tests for earthquake explorer keyboard a11y, fault line copy clean-up,
@@ -46,10 +47,55 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
     expect(pageContent).not.toContain("ve fay hatlarıyla anlık takip edin");
   });
 
-  it("removes mta-fay card from earthquake sources section (FU125SEO-I1)", () => {
-    const sourcesUrl = new URL("./v2-sources-section.tsx", import.meta.url);
-    const sourcesContent = readFileSync(sourcesUrl, "utf8");
-    expect(sourcesContent).not.toContain('id: "mta-fay"');
+  it("names MTA nowhere the earthquake pages cannot trace data to it (FU125SEO-I1)", () => {
+    /**
+     * RE-POINTED AND UN-VACUUMED, not weakened.
+     *
+     * This asserted `not.toContain('id: "mta-fay"')`. The card's id was `mta-diri-fay`, so the
+     * substring never appeared and the assertion could not fail — it was green while the card
+     * it was named after sat in the `deprem` list.
+     *
+     * The rule it now carries is the owner's: a source card naming an institution belongs only
+     * where the page can trace its data to that institution. `/deprem/fay-hatlari` renders
+     * `lib/earthquake/fault-lines-data.ts` — fault-zone names, approximate lengths, prose
+     * mechanisms, town-named segments, province lists, historical earthquakes. The first
+     * assertion below is what makes that true and keeps it true.
+     *
+     * COMMENTS ARE STRIPPED FIRST (`docs/conventions.md`). All three files now explain in a
+     * docblock why the MTA claim is not earned, and a naive search matches the explanation — the
+     * exact failure mode that has shipped four times in this repo. Mutation-checked: restoring
+     * `id: "mta-diri-fay"` to the `deprem` list turns the first pair red, restoring the eyebrow
+     * to `/deprem` turns the last red, and adding a `lat`/`lon` pair to the fault data turns the
+     * middle one red.
+     *
+     * The strip is `lib/test-support/strip-comments.ts`, not the two-`replace` form used
+     * elsewhere here: that form reads the `messages/*.json` inside a line comment in
+     * `v2-sources-section.tsx` as a block-comment opener and deletes the `deprem` scope outright,
+     * so `not.toMatch(/MTA/)` would pass against a file with the card still in it.
+     */
+    const sources = stripComments(
+      readFileSync(new URL("./v2-sources-section.tsx", import.meta.url), "utf8"),
+    );
+    // Anti-vacuity: the bibliography must still BE a bibliography, or `not.toMatch` below
+    // would pass against a file that no longer declares any source at all.
+    expect(sources).toMatch(/id: "afad-deprem"/);
+    expect(sources).not.toMatch(/MTA/);
+
+    // …and the data behind the page still carries no MTA-derived material. A coordinate or a
+    // path would be geometry, and geometry IS traceable to a published fault map — at which
+    // point the citation becomes earned and this assertion must be revisited, not deleted.
+    const faultData = stripComments(
+      readFileSync(new URL("../../lib/earthquake/fault-lines-data.ts", import.meta.url), "utf8"),
+    );
+    expect(faultData).toContain("FAULT_LINES_DATA");
+    expect(faultData).not.toMatch(/\b(lat|lon|lng|latitude|longitude|coordinates|geometry)\b/i);
+
+    // The page chrome may not carry the claim the card was removed for either.
+    const deprem = stripComments(
+      readFileSync(new URL("../../app/[locale]/(site)/deprem/page.tsx", import.meta.url), "utf8"),
+    );
+    expect(deprem).toContain("Sismotektonik Yapı");
+    expect(deprem).not.toMatch(/MTA/);
   });
 
   it("rephrases fault line descriptions without unverified numerical figures (FU125SEO-I2)", () => {

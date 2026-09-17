@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "../../lib/test-support/strip-comments";
 import enMessages from "../../messages/en.json";
 import trMessages from "../../messages/tr.json";
 
@@ -51,8 +52,15 @@ interface CallSite {
   ids: string[];
 }
 
-const callSites: CallSite[] = walkPages(appDir).flatMap((page) => {
-  const code = readFileSync(page, "utf8");
+/** Pages rendering the component at all, whether or not they pass `include`/`omit`. */
+const renderingPages: string[] = walkPages(appDir).filter((page) =>
+  // Comments stripped: four `/dunya` pages now explain in a block comment why they render NO
+  // sources section, and the component's name is in every one of those explanations.
+  stripComments(readFileSync(page, "utf8")).includes("<V2SourcesSection"),
+);
+
+const callSites: CallSite[] = renderingPages.flatMap((page) => {
+  const code = stripComments(readFileSync(page, "utf8"));
   return [...code.matchAll(/<V2SourcesSection\b[\s\S]*?\/>/g)].flatMap((element) =>
     (["include", "omit"] as const).flatMap((prop) => {
       const propMatch = new RegExp(`${prop}=\\{([^}]*)\\}`).exec(element[0]);
@@ -65,9 +73,17 @@ const callSites: CallSite[] = walkPages(appDir).flatMap((page) => {
 
 describe("V2SourcesSection's conditional citations", () => {
   it("names only source ids that actually resolve", () => {
-    // Anti-vacuity: a scan that matched nothing would satisfy the loop below trivially, and
-    // this test's whole subject is call sites.
-    expect(callSites.length, "V2SourcesSection include/omit call sites").toBeGreaterThan(0);
+    /**
+     * ANTI-VACUITY, WITH TEETH. This was `toBeGreaterThan(0)`, which a walk that found one page
+     * out of twenty-two satisfies — and the walk is the part most likely to break silently, since
+     * a renamed directory or a reformatted call site costs it matches without costing it a
+     * failure. Exact counts instead: 22 pages render the component and 7 of their call sites pass
+     * `include`/`omit`. Both are load-bearing, so adding or removing a sources section is a
+     * deliberate edit here, which is the point — the numbers moved for this task because four
+     * `/dunya` pages stopped citing a bibliography they could not trace.
+     */
+    expect(renderingPages.length, "pages rendering <V2SourcesSection>").toBe(22);
+    expect(callSites.length, "V2SourcesSection include/omit call sites").toBe(7);
     expect(KNOWN_IDS.size, "source ids declared in v2-sources-section.tsx").toBeGreaterThan(20);
 
     for (const { page, prop, ids } of callSites) {
@@ -135,5 +151,69 @@ describe("V2SourcesSection's conditional citations", () => {
 
     expect(componentSource).toMatch(/id: "ecmwf-marine"/);
     expect(componentSource).toMatch(/id: "cmems"/);
+  });
+
+  /**
+   * THE OWNER'S RULING, in the only form a test can hold it.
+   *
+   * The rule itself — "a source card naming an institution appears only in a scope whose pages
+   * can trace their data to it" — is not mechanically checkable: whether a page traces a figure
+   * to the UN is a judgement about provenance, not a property of the source text, and a guard
+   * that tried would either pass on everything or hard-code the answer it claims to derive.
+   *
+   * What IS checkable is the specific outcome of applying it: the `dunya` scope does not exist,
+   * no page asks for it, and the note that used to ride inside that block still renders on both
+   * pages that carry continent figures. Small, but each assertion can fail, and together they are
+   * the thing that would silently come back — the block was easy to re-add precisely because it
+   * looked like diligence.
+   *
+   * `scope` being a required prop of a closed union is the stronger half of this guard and is
+   * not duplicated here: the compiler rejects `scope="dunya"` at every call site, including the
+   * one someone writes next year. This covers what the compiler cannot see — the message keys and
+   * the four pages' markup.
+   */
+  it("keeps the dunya bibliography gone and its methodology note rendering", () => {
+    const component = stripComments(componentSource);
+    // The scope and all five cards, not just the key. Comments stripped: the component documents
+    // why each of them went, by name.
+    expect(component).not.toMatch(/"dunya"/);
+    expect(component).not.toMatch(/\bdunya: \[/);
+    for (const id of ["natural-earth", "un-data", "cia-factbook", "usgs-nasa", "iho-gebco"]) {
+      expect(component, `orphaned source card ${id}`).not.toContain(`id: "${id}"`);
+    }
+    // Anti-vacuity for the five above: the file must still declare source cards at all.
+    expect(component).toContain('id: "tuik"');
+
+    const pageSource = (relative: string) =>
+      stripComments(readFileSync(fileURLToPath(new URL(relative, import.meta.url)), "utf8"));
+    const dunyaPages = {
+      hub: "../../app/[locale]/(site)/dunya/page.tsx",
+      continents: "../../app/[locale]/(site)/dunya/kita/page.tsx",
+      continent: "../../app/[locale]/(site)/dunya/kita/[slug]/page.tsx",
+      country: "../../app/[locale]/(site)/dunya/[slug]/page.tsx",
+    } as const;
+
+    for (const [name, relative] of Object.entries(dunyaPages)) {
+      const code = pageSource(relative);
+      // Anti-vacuity: each read must be a real page before `not.toContain` means anything.
+      expect(code, `${name} page body`).toContain("export default async function");
+      expect(code, `${name} renders a sources section`).not.toContain("<V2SourcesSection");
+    }
+
+    // THE ONE THING THAT HAD TO SURVIVE. Not a citation — a methodology note saying the figures
+    // are the platform's own, rounded for teaching, and will not match any one institution. It is
+    // the most useful sentence on these two pages for a student, and it replaced a false
+    // "cross-validated with UN M49, the World Bank and Britannica" claim, so losing it with the
+    // block would have been a regression dressed as a cleanup.
+    expect(pageSource(dunyaPages.continents)).toContain('t("continentFiguresNote")');
+    expect(pageSource(dunyaPages.continent)).toContain('t("continentFiguresNoteNamed"');
+
+    for (const [locale, messages] of Object.entries({ tr: trMessages, en: enMessages })) {
+      for (const key of ["continentFiguresNote", "continentFiguresNoteNamed"] as const) {
+        const value = (messages.Dunya as Record<string, unknown>)[key];
+        expect(typeof value, `${locale}.json Dunya.${key}`).toBe("string");
+        expect((value as string).length, `${locale}.json Dunya.${key} is empty`).toBeGreaterThan(0);
+      }
+    }
   });
 });

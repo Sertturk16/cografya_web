@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { LocatorMap } from "@/components/map/locator-map";
 import { Badge } from "@/components/ui/badge";
@@ -570,12 +569,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
               {t("sectionNavBorders")}
             </a>
           )}
-          <a
-            href="#kaynakca"
-            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
-          >
-            {t("sectionNavSources")}
-          </a>
         </div>
       </nav>
 
@@ -1202,25 +1195,23 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* DATA SOURCES & CITATIONS (KAYNAKÇA)
-          `omit` the two cards this page renders nothing for. `iho-gebco` is cited for "Mariana
-          Çukuru, okyanus tabanı batimetrisi ve derinlik ölçümleri" and `usgs-nasa` for the
-          global land area and "yeryüzü topografyası ekstremleri" — a country page publishes
-          neither. What it does publish (`areaKm2`, the fact sheet, the Natural Earth locator
-          map) earns the rest.
+      {/* NO SOURCES SECTION, AND THE OWNER'S QUESTION IS ANSWERED.
+          This page ran TWO sources systems. The careful one is `sourcesMessage()` from
+          `lib/geo/country-sources.ts` — guarded by ~15 assertions including the
+          `EN_CONTENT_READY` tripwire, precise enough to drop the population clause entirely for
+          the one country whose population is null rather than name a source that did not supply
+          it, and rendered BESIDE the number it credits, in the population KPI above. The loose
+          one was `V2SourcesSection`'s hand-written `dunya` list under the heading "Bu Sayfada
+          Kullanılan Veri Setleri & Bilimsel Künye" — a stronger claim than the careful system
+          ever makes, about institutions (the UN, the World Bank, the CIA World Factbook) whose
+          data is traceable to nothing in this repo. The narrowing this page already did, by
+          omitting `iho-gebco` and `usgs-nasa`, could not fix that.
 
-          A LARGER QUESTION IS DELIBERATELY LEFT FOR THE OWNER, because it is an architecture
-          decision rather than a defect: this page runs TWO sources systems. The careful one is
-          `sourcesMessage()` from `lib/geo/country-sources.ts` — guarded by ~15 assertions
-          including the `EN_CONTENT_READY` tripwire, and precise enough to drop the population
-          clause entirely for the one country whose population is null rather than name a
-          source that did not supply it. The loose one is this component, whose `dunya` list is
-          hand-written and whose heading, "Bu Sayfada Kullanılan Veri Setleri & Bilimsel
-          Künye", is a stronger claim than the careful system ever makes. Narrowing the list
-          does not resolve which of the two owns the page. */}
-      <div id="kaynakca" className="scroll-mt-28">
-        <V2SourcesSection scope="dunya" omit={["iho-gebco", "usgs-nasa"]} />
-      </div>
+          The careful one owns the page. The Natural Earth locator map keeps its own credit in
+          `LocatorMap`'s `<figcaption>`, which names the layer it covers; the block repeated it
+          less precisely. The "Kaynakça" chip is gone from the section nav with the anchor it
+          pointed at — a nav entry for a section that does not exist is a broken link, and there
+          is no honest replacement target: the credits are now where the numbers are. */}
     </div>
   );
 }

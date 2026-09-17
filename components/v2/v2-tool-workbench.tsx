@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
@@ -144,6 +145,9 @@ export function V2ToolWorkbench({
   provinceAreas = [],
   downloadName = "cografya-olcum",
 }: V2ToolWorkbenchProps) {
+  // Read from the same namespace `V2MapAttribution` does, so the exported image and the on-screen
+  // credit cannot drift apart — see `handleExportPng`.
+  const tMap = useTranslations("Map");
   const [activeTool, setActiveTool] = React.useState<ToolMode>(initialMode);
   const [points, setPoints] = React.useState<PointWithSvg[]>([]);
   const [hoveredPos, setHoveredPos] = React.useState<{
@@ -881,10 +885,28 @@ export function V2ToolWorkbench({
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // Attribution watermarking
+      // ATTRIBUTION, and it has to be the real one.
+      //
+      // This line used to read "Coğrafya Gurmesi · WGS84 / MEB & MTA Tabanlı Ölçüm". Neither MEB
+      // nor MTA supplies anything here — the measurement is WGS84 haversine/L'Huilier arithmetic
+      // in `lib/map/`, and `grep -rn 'MEB\|MTA' lib/map lib/tools` finds nothing. So it credited
+      // two institutions that contributed no data, while omitting the two whose licences ask to
+      // be credited: this canvas rasterises `PROVINCE_SHAPES` (OpenStreetMap, ODbL) and
+      // `INLAND_WATER_SHAPES` (OSM plus JRC Global Surface Water).
+      //
+      // The export is the case that matters most for ODbL, not least: the PNG leaves the site.
+      // A credit that is only on the page does not travel with the file a student puts in a
+      // homework folder or a slide.
+      //
+      // Strings come from the `Map` namespace that `V2MapAttribution` renders on screen, so the
+      // two cannot drift; the JRC citation stays in English because it is published verbatim.
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.font = "14px sans-serif";
-      ctx.fillText("Coğrafya Gurmesi · WGS84 / MEB & MTA Tabanlı Ölçüm", 20, canvas.height - 20);
+      ctx.fillText(
+        `Coğrafya Gurmesi · ${tMap("attributionProvinceLabel")} ${tMap("attribution")} · ${tMap("attributionJrcEnglish")}`,
+        20,
+        canvas.height - 20,
+      );
 
       const link = document.createElement("a");
       link.download = `${downloadName}-${Date.now()}.png`;

@@ -16,8 +16,30 @@ import { Database, ShieldCheck, BookOpen, ExternalLink, Scale, ChevronDown } fro
  * in `components/marine/marine-attribution-coverage.test.ts`; half-answering it on seven pages
  * with a card at the foot of a login form would have made it harder to see, not easier.)
  */
-export type V2PageScope =
-  "home" | "turkiye" | "dunya" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar";
+/**
+ * NO `dunya` SCOPE EITHER, and the reason above is now a rule.
+ *
+ * A dataset is cited here only where the page draws from it TRACEABLY — a committed generated
+ * artifact with a provenance header, or an api field whose own source travels with it. Not
+ * because the page happens to display the KIND of thing that institution publishes.
+ *
+ * The `dunya` list failed that on every entry. `un-data`, `cia-factbook`, `usgs-nasa` and
+ * `iho-gebco` are traceable to nothing in this repo: the continent figures come from
+ * `lib/geo/continents.ts`, a hand-written registry, and the country figures come from the api,
+ * whose per-field credit `/dunya/[slug]` already prints BESIDE the number through
+ * `sourcesMessage()`. `natural-earth` IS used — but only where a map is drawn, and every such map
+ * already credits it itself, through `V2MapAttribution`'s `world` variant or `LocatorMap`'s
+ * `<figcaption>`, more precisely than a card at the foot of the page can. No entry carried a
+ * `legalQuote`, so removing the list orphaned no licence text.
+ *
+ * The owner's ruling this follows: saying where a number came from, beside the number, is
+ * information; listing an institution's name in a bibliography block is noise wherever the page
+ * cannot trace its data to that institution. The one thing in that block that was never a
+ * citation — the methodology note saying the continent figures are the platform's own and rounded
+ * for teaching — survives on `/dunya/kita` and `/dunya/kita/[slug]` as standalone prose beside the
+ * figures it describes.
+ */
+export type V2PageScope = "home" | "turkiye" | "deniz" | "oyun" | "deprem" | "araclar" | "kitaplar";
 
 /**
  * `legalQuote` IS AN ECHO, NEVER THE SOLE CARRIER OF A MANDATED NOTICE.
@@ -178,49 +200,6 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       sourceUrl: "cografya.org.tr • Türk Coğrafya Kurumu",
     },
   ],
-  dunya: [
-    {
-      id: "natural-earth",
-      icon: "🌍",
-      title: "Natural Earth Vector Data (1:50m)",
-      license: "Kamu Malı (Public Domain)",
-      description: "199 ülke ve özerk bölgenin sınır vektörleri ve başkent konumları.",
-      sourceUrl: "naturalearthdata.com",
-    },
-    {
-      id: "un-data",
-      icon: "🏛️",
-      title: "Birleşmiş Milletler (UN) & Dünya Bankası",
-      license: "Açık Veri",
-      description: "Ülke nüfusları, kıta kodlamaları ve resmî diller.",
-      sourceUrl: "un.org • data.worldbank.org",
-    },
-    {
-      id: "cia-factbook",
-      icon: "📚",
-      title: "CIA World Factbook & ISO 3166",
-      license: "Kamu Malı",
-      description: "Ülke ISO alfa-2/alfa-3 kodları, başkentler ve coğrafi koordinatlar.",
-      sourceUrl: "cia.gov/the-world-factbook",
-    },
-    {
-      id: "usgs-nasa",
-      icon: "🛰️",
-      title: "USGS & NASA Earth Observatory",
-      license: "Kamu Malı (US Gov)",
-      description:
-        "Küresel kara alanı (148.9M km²), kıta jeomorfolojisi ve yeryüzü topografyası ekstremleri.",
-      sourceUrl: "earthobservatory.nasa.gov • usgs.gov",
-    },
-    {
-      id: "iho-gebco",
-      icon: "🌊",
-      title: "IHO GEBCO (General Bathymetric Chart of the Oceans)",
-      license: "Açık Veri",
-      description: "Mariana Çukuru, okyanus tabanı batimetrisi ve derinlik ölçümleri.",
-      sourceUrl: "gebco.net • iho.int",
-    },
-  ],
   deniz: [
     {
       id: "cmems",
@@ -332,22 +311,22 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       legalQuote: "AFAD TDVMS Yönetmeliği, RG 28.08.2015/29459, m.9/4",
       sourceUrl: "deprem.afad.gov.tr",
     },
-    {
-      id: "mta-diri-fay",
-      icon: "🗺️",
-      title: "MTA Genel Müdürlüğü — Türkiye Diri Fay Haritası",
-      license: "T.C. Resmî Jeoloji Verisi",
-      category: "official",
-      // NARROWED. This read "diri fay geometrileri, segmentasyon modelleri ve sismotektonik
-      // hatlar" — three things the site does not publish. `/deprem/fay-hatlari` renders
-      // `lib/earthquake/fault-lines-data.ts`, a hand-written registry of fault-zone names,
-      // types, lengths and segment descriptions; there is no MTA geometry, no segmentation
-      // model and no fault vector anywhere in the repo. What is left is what MTA's published
-      // map is to that page: the reference classification for the zones it names.
-      description:
-        "Kuzey Anadolu Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS) adlandırma ve tasnifi için referans diri fay haritası.",
-      sourceUrl: "yerbilimleri.mta.gov.tr",
-    },
+    // NO MTA CARD, AND NOTHING IN ITS PLACE. It claimed `license: "T.C. Resmî Jeoloji Verisi"`
+    // — official geology data — for `/deprem/fay-hatlari`, which renders
+    // `lib/earthquake/fault-lines-data.ts`: three fault-zone names, approximate lengths, the
+    // formation and movement mechanism written out as prose, segments named after the towns they
+    // pass, province lists and historical earthquakes. No coordinates, no geometry, no
+    // segmentation-model parameters, and no provenance recorded in the file. It is
+    // school-textbook content in the author's own words, so the card asserted we had used a
+    // published dataset we never read.
+    //
+    // It was NARROWED once already, to "adlandırma ve tasnifi için referans" — a reference for
+    // naming and classification. That is still an unearned claim, and it is not one worth
+    // rescuing: citing a source for "the North Anatolian Fault is about 1200 km" is citing one
+    // for "Türkiye has 81 provinces". A number a reader can check in any textbook does not need
+    // an institution's name attached to it, and attaching one costs the reader attention that
+    // the page's real citations — AFAD's, below — need.
+    //
     // NO KRDAE / KANDİLLİ CARD. The contract states it in as many words — "AFAD is the sole
     // Faz-1 provider" (`openapi/openapi.json`) — and this site publishes no historical or
     // instrumental catalogue, no focal-mechanism solution and no depth record from Kandilli.
@@ -448,8 +427,9 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
  * resolves against this index instead, so a page can cite a source it actually renders without
  * the whole scope inheriting the claim.
  *
- * First definition wins. A handful of ids appear in several scopes (`tuik`, `natural-earth`,
- * `afad`); they describe the same body, differing only in how the blurb is worded for that page.
+ * First definition wins if an id is ever declared twice. None is today — the near-pairs
+ * (`tuik`/`tuik-osm`, `afad`/`afad-deprem`, `osm`/`osm-game`) are distinct ids because the blurb
+ * differs by page, so each resolves to exactly one entry.
  */
 const SOURCE_BY_ID: ReadonlyMap<string, SourceItem> = (() => {
   const index = new Map<string, SourceItem>();

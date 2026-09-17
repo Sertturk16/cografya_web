@@ -46,10 +46,13 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   independently four times (`locator-attribution.test.ts`, `orphan-stylesheets.test.ts`,
   `lib/map/tr-inland-water-jrc.test.ts`, `components/v2/footer-source-badges.test.ts`), the last
   of which shipped green against a comment in `i18n/routing.ts` — a module reachable from every
-  page through `Link` and rendering nothing. Strip `/* */`, `{/* */}` and `//`; exclude routing
-  and config modules from an import-graph walk; then **mutation-check it** — break the thing the
-  test exists to catch and watch it go red, because a source-text assertion that has never failed
-  has not been shown to work.
+  page through `Link` and rendering nothing. Strip with `lib/test-support/strip-comments.ts`, not
+  a pair of `String.replace` calls: a `/*` inside a line comment (`messages/*.json`) makes the
+  block-comment regex eat everything to the next delimiter — 220 lines of `v2-sources-section.tsx`,
+  including the scope a `not.toContain` was asserting about — and swapping the two replaces only
+  moves the hole. Exclude routing and config modules from an import-graph walk; then
+  **mutation-check it** — break the thing the test exists to catch and watch it go red, because a
+  source-text assertion that has never failed has not been shown to work.
 - Fixtures: `test/fixtures/{marine,books}`. Do not add network calls to tests.
 - Playwright is a library here, not a runner: no `playwright.config`, no e2e suite. Ad-hoc
   audits live in `scripts/` and `tools/dev-fixtures/`; do not wire them into CI.
