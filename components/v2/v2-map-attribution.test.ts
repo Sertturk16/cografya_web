@@ -78,7 +78,11 @@ const CASES = [
   {
     name: "v2-map-attribution.tsx",
     url: new URL("./v2-map-attribution.tsx", import.meta.url),
-    lineCount: 3,
+    // Four: OSM boundaries, the JRC inland-water layer, the Natural Earth CONTEXT shapes a map
+    // of Türkiye draws around its subject, and the Natural Earth WORLD-country layer. The last
+    // is a separate line and not a reuse of `context`, because "Komşu ülke sınırları" is false
+    // on a map of the whole world.
+    lineCount: 4,
   },
 ] as const;
 
@@ -112,9 +116,12 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url, li
     // one `.test()` call would already pass on the FIRST pair alone and say nothing about
     // whether the second line-to-line join re-welds two runs the same way the original `<br>`
     // defect did.
-    // `)}{" "}` — the separator sits between the conditional line blocks, which is exactly where
-    // a flex gap would silently replace it.
-    const separatorPattern = /\)\}\s*\{" "\}/g;
+    // `}{" "}` — the separator sits between the conditional line blocks, which is exactly where
+    // a flex gap would silently replace it. It matches the CLOSING BRACE of a block rather than
+    // `)}` specifically: Prettier keeps a one-line block as `{world && <span>…</span>}` and
+    // wraps a multi-line one as `…)}`, and which shape a line has is a formatting accident
+    // while the separator after it is the rule.
+    const separatorPattern = /\}\s*\{" "\}/g;
     const separatorCount = source.match(separatorPattern)?.length ?? 0;
 
     expect(
@@ -131,9 +138,9 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url, li
   });
 
   it("still renders every notice as its own separate block span", () => {
-    // Three conditional blocks, one per source, each its own element: boundaries, the JRC
-    // inland-water layer, and the Natural Earth context.
-    const lineBlocks = source.match(/\{(?:boundaries|inlandWater|context) && \(?/g) ?? [];
+    // One conditional block per source, each its own element: boundaries, the JRC inland-water
+    // layer, the Natural Earth context shapes and the Natural Earth world-country layer.
+    const lineBlocks = source.match(/\{(?:boundaries|inlandWater|context|world) && \(?/g) ?? [];
     expect(lineBlocks).toHaveLength(lineCount);
   });
 });
@@ -160,7 +167,7 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url, li
  */
 describe("the OSM/ODbL credit line carries its own scope label (FEN121-I1)", () => {
   const source = codeOnly(new URL("./v2-map-attribution.tsx", import.meta.url));
-  const SCOPED = /\(inlandWater \|\| context\) &&[\s\S]{0,60}attributionProvinceLabel/;
+  const SCOPED = /\(inlandWater \|\| context \|\| world\) &&[\s\S]{0,60}attributionProvinceLabel/;
 
   it("labels the boundary credit whenever another scoped line stands beside it", () => {
     // A bare "© OpenStreetMap katkıcıları, ODbL" next to "Mevsimlik göl sınırları: …" reads as

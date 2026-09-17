@@ -104,7 +104,8 @@
     "seaMarmara": "Sea of Marmara",
     "seaAegean": "Aegean Sea",
     "seaMediterranean": "Mediterranean Sea",
-    "attributionContextLabel": "Neighbouring-country boundaries: Natural Earth (public domain)"
+    "attributionContextLabel": "Neighbouring-country boundaries: Natural Earth (public domain)",
+    "attributionWorldLabel": "Country boundaries: Natural Earth (public domain)"
   },
   "MapExplorer": {
     "zoomIn": "Zoom in (+)",

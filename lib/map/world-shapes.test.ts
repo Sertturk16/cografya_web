@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { COUNTRY_SHAPES } from "./world-countries.generated";
 
@@ -277,5 +280,108 @@ describe("world map geometry", () => {
       }
     }
     expect(gaps).toEqual([]);
+  });
+});
+
+/**
+ * The Natural Earth credit travels with the Natural Earth geometry.
+ *
+ * ## Why this is here and not left to the JRC guard
+ *
+ * `lib/map/tr-inland-water-jrc.test.ts` derives its surface list from the `INLAND_WATER_SHAPES`
+ * import, which is the right shape for a rule and the reason the eight uncredited V2 map
+ * surfaces were found at all. But it only sees surfaces that draw the inland-water layer.
+ * Three surfaces draw `COUNTRY_SHAPES` — 199 Natural Earth country polygons — and no water,
+ * so they were invisible to it and shipped with no credit: `V2WorldMapExplorer`,
+ * `V2ContinentLocatorMap` (whose "Projeksiyon: Natural Earth 1" line names a projection, not a
+ * source) and `V2MarineMapExplorer` (which draws water too and was already covered).
+ *
+ * Natural Earth is public domain, so this is not a licence breach the way the JRC and ECMWF
+ * cases are. It is the OTHER half of the same rule, which this repo states in
+ * `V2MapAttribution`'s own docblock: the obligation travels with the material, and a surface
+ * that uses a source the reader cannot trace has told them less than it knows.
+ *
+ * Structural only (`CONVENTIONS.md` §2): imports and props, never copy.
+ */
+describe("the Natural Earth world-country credit", () => {
+  const roots = [
+    fileURLToPath(new URL("../../components/", import.meta.url)),
+    fileURLToPath(new URL("../../app/", import.meta.url)),
+  ];
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) return walk(full);
+      return entry.name.endsWith(".tsx") && !entry.name.includes(".test.") ? [full] : [];
+    });
+
+  // Comments stripped first, for the reason the JRC guard records: a file that MENTIONS the
+  // import in prose does not draw the layer, and failing it for explaining itself teaches the
+  // next person to delete the explanation.
+  const stripComments = (source: string) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+
+  const surfaces = roots
+    .flatMap(walk)
+    .map((file) => ({
+      name: file.slice(file.lastIndexOf("/") + 1),
+      source: stripComments(readFileSync(file, "utf8")),
+    }))
+    // `COUNTRY_SHAPES` is imported both for DRAWING and for lookups that touch no pixel (the
+    // game pages read it for bounding boxes). A surface draws the layer when it maps over the
+    // shapes into elements, which is what the credit is owed for.
+    .filter(({ source }) => /COUNTRY_SHAPES\.map\(/.test(source));
+
+  it("finds the surfaces that draw the layer", () => {
+    // Anti-vacuity: an empty derivation passes the loop below for free.
+    expect(surfaces.length, "surfaces drawing COUNTRY_SHAPES").toBeGreaterThan(2);
+  });
+
+  it("credits Natural Earth on each of them", () => {
+    /**
+     * TWO mechanisms are accepted, because the repo genuinely has two and both are correct.
+     *
+     *  - `V2MapAttribution ... world` — the inline-SVG surfaces, which draw the polygons
+     *    themselves and own the credit line under the map box.
+     *  - `LocatorMap` — the one surface that hands its geometry to a shared figure component.
+     *    `/dunya/[slug]` looks up ONE country's `d` out of `COUNTRY_SHAPES` and passes it in;
+     *    the `<figcaption>` is rendered there, not here, and deliberately so (see that
+     *    component's "why the credit is fetched HERE" docblock — a caller-supplied string can
+     *    be dropped by an edit, a component-fetched one cannot).
+     *
+     * What is NOT accepted is neither, which is what three surfaces shipped.
+     */
+    const DRAWS_ITS_OWN = /<V2MapAttribution[^>]*\bworld\b/;
+    const DELEGATES_TO_FIGURE = /<LocatorMap\b/;
+
+    for (const { name, source } of surfaces) {
+      const credited = DRAWS_ITS_OWN.test(source) || DELEGATES_TO_FIGURE.test(source);
+      expect(
+        credited,
+        `${name} uses COUNTRY_SHAPES but names Natural Earth nowhere — ` +
+          "render <V2MapAttribution world /> under the map, or delegate to <LocatorMap>",
+      ).toBe(true);
+    }
+  });
+
+  it("keeps LocatorMap's credit keyed to the layer it actually draws", () => {
+    // The delegation above is only sound while `LocatorMap` reads the RIGHT namespace: a
+    // country locator draws Natural Earth world geometry and a province locator draws the
+    // OSM-derived Türkiye artifact, and one `t("attribution")` serves both. If that ternary
+    // ever collapses to a single namespace, 199 country pages would credit OpenStreetMap for
+    // geometry it did not supply — and the delegation branch above would still be green.
+    const locator = readFileSync(
+      fileURLToPath(new URL("../../components/map/locator-map.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(locator).toMatch(/getTranslations\(kind === "province" \? "Map" : "WorldMap"\)/);
+  });
+
+  it("renders the line only when the caller says the layer is drawn", () => {
+    const attribution = readFileSync(
+      fileURLToPath(new URL("../../components/v2/v2-map-attribution.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(attribution).toMatch(/world && </);
   });
 });

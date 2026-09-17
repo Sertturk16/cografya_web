@@ -104,7 +104,8 @@
     "seaMarmara": "Marmara Denizi",
     "seaAegean": "Ege Denizi",
     "seaMediterranean": "Akdeniz",
-    "attributionContextLabel": "Komşu ülke sınırları: Natural Earth (kamu malı)"
+    "attributionContextLabel": "Komşu ülke sınırları: Natural Earth (kamu malı)",
+    "attributionWorldLabel": "Ülke sınırları: Natural Earth (kamu malı)"
   },
   "MapExplorer": {
     "zoomIn": "Yakınlaştır (+)",
