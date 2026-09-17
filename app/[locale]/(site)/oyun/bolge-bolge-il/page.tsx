@@ -165,8 +165,12 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
           ))}
         </div>
 
-        {/* Sources & Pedagogy Footer Section */}
-        <V2SourcesSection />
+        {/* Sources & Pedagogy Footer Section.
+            EXPLICIT `scope`. This call had no props at all, so it fell through to the default
+            `home` scope and claimed CMEMS marine telemetry, ERA5-Land climate normals, AFAD
+            seismic records and PM2.5 — on a page that is a region picker. `oyun` is the scope
+            this page's content actually belongs to, and `/oyun` was already using it. */}
+        <V2SourcesSection scope="oyun" />
       </div>
     </>
   );

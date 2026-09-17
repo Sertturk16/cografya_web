@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2PasswordResetConfirmCard } from "@/components/v2/v2-password-reset-confirm-card";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 
 interface V2PasswordResetConfirmPageProps {
   params: Promise<{ locale: Locale }>;
@@ -75,8 +74,6 @@ export default async function V2PasswordResetConfirmPage({
             <V2PasswordResetConfirmCard />
           </div>
         </div>
-
-        <V2SourcesSection scope="general" />
       </div>
     </>
   );

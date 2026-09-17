@@ -6,7 +6,6 @@ import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2RegisterCard } from "@/components/v2/v2-register-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { getProvinces } from "@/lib/api/provinces";
 import { Home, ChevronRight } from "lucide-react";
 
@@ -80,9 +79,6 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
             <V2AuthBenefitsPlate mode="register" />
           </div>
         </div>
-
-        {/* SECTION: ACADEMIC & SCIENTIFIC DATA SOURCES (KAYNAKÇA) */}
-        <V2SourcesSection scope="general" />
       </div>
 
       {/* Modern V2 Footer */}
