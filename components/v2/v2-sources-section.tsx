@@ -46,7 +46,13 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       license: "E.U. Copernicus",
       description:
         "30 kıyı istasyonunda saatlik deniz suyu sıcaklığı (SST), dalga boyu ve akıntı telemetrisi.",
-      legalQuote: "Generated using E.U. Copernicus Marine Service Information 2026",
+      // NO `legalQuote`, for the reason already recorded on the `deniz` scope's `cmems` entry —
+      // this was the surviving copy of the same defect. The Copernicus Marine notice is
+      // single-sourced as `Marine.attribution.cmemsNotice` in `messages/{tr,en}.json` and
+      // rendered verbatim by `MarineAttribution` on every page carrying a CMEMS-derived value,
+      // the home page included. This copy read "…Information 2026": the notice attaches to the
+      // SERVICE and not to a data year, so the year was not merely a second version of a
+      // verbatim licence string, it was a WRONG one.
       sourceUrl: "marine.copernicus.eu",
     },
     {
