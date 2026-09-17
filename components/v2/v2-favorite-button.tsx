@@ -12,7 +12,8 @@ import {
   type FavoriteTargetParam,
 } from "@/lib/favorites/client";
 import { Button } from "@/components/ui/button";
-import { Heart, Loader2, Sparkles, Lock } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { Heart, Sparkles, Lock } from "lucide-react";
 
 interface V2FavoriteButtonProps {
   readonly target: FavoriteTargetParam;
@@ -124,7 +125,7 @@ export function V2FavoriteButton({
         } ${className}`}
       >
         {pending ? (
-          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          <Spinner size="default" label="Kaydediliyor" className="text-muted-foreground" />
         ) : (
           <Heart
             className={`size-4 transition-transform duration-200 ${
@@ -160,7 +161,7 @@ export function V2FavoriteButton({
         } ${className}`}
       >
         {pending ? (
-          <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+          <Spinner size="sm" label="Kaydediliyor" className="text-muted-foreground" />
         ) : favorited ? (
           <Heart className="size-3.5 fill-white text-white animate-in zoom-in-50 duration-200" />
         ) : authState === "authenticated" ? (

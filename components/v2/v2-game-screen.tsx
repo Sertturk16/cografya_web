@@ -28,6 +28,7 @@ import { V2Header } from "@/components/v2/v2-header";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { V2LeaderboardButton } from "./v2-leaderboard-modal";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
 import {
@@ -61,7 +62,6 @@ import {
   Home,
   ChevronRight,
   BookOpen,
-  Loader2,
   ShieldCheck,
   Star,
 } from "lucide-react";
@@ -1283,8 +1283,11 @@ export function V2GameScreen({
                 {/* Auto-Save Status Strip */}
                 <div className="pt-1 flex items-center justify-center">
                   {saveStatus === "pending" && (
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
-                      <Loader2 className="size-3.5 animate-spin text-primary" />
+                    <div
+                      role="status"
+                      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium"
+                    >
+                      <Spinner size="sm" decorative className="text-primary" />
                       <span>Skorunuz profilinize kaydediliyor...</span>
                     </div>
                   )}

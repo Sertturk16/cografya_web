@@ -32,6 +32,7 @@ import type { ProvinceArea } from "@/components/tools/tool-island";
 import type { MeasurementType } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { Link } from "@/i18n/navigation";
@@ -1099,16 +1100,34 @@ export function V2ToolWorkbench({
             )}
 
             {/* PNG Export Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportPng}
-              disabled={points.length === 0}
-              leftIcon={<Download className="size-3.5 text-primary" />}
-              title="Harita ve ölçüm sonucunu yüksek çözünürlüklü PNG olarak indirin"
-            >
-              PNG İndir
-            </Button>
+            {/* The one place in this repo a Tooltip is the right answer (T-036). The button
+                already has a visible name ("PNG İndir"); the `title` was an EXPLANATION of
+                what it does, which is `aria-describedby` semantics — exactly what Tooltip
+                wires. `title` never appears on keyboard focus and never on touch, so that
+                explanation reached a mouse user only. Everywhere else in this sweep a `title`
+                WAS the accessible name, and those got `aria-label` instead: Tooltip wires
+                `aria-describedby`, not `aria-labelledby`, so using it there would have left
+                an unnamed button unnamed. */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportPng}
+                      disabled={points.length === 0}
+                      leftIcon={<Download className="size-3.5 text-primary" />}
+                    >
+                      PNG İndir
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  Harita ve ölçüm sonucunu yüksek çözünürlüklü PNG olarak indirin
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 

@@ -37,6 +37,8 @@ import {
 import { V2GameHistoryStats } from "@/components/v2/v2-game-history-stats";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Progress } from "@/components/ui/progress";
 import {
   User,
   GraduationCap,
@@ -56,7 +58,6 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
-  Loader2,
   Calendar,
   BookOpen,
 } from "lucide-react";
@@ -415,10 +416,10 @@ export function V2MemberHub({
               aria-label="Güvenli Çıkış Yap"
             >
               {signingOut ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin" />
+                <span role="status" className="inline-flex items-center gap-1.5">
+                  <Spinner size="sm" decorative />
                   Çıkış Yapılıyor…
-                </>
+                </span>
               ) : (
                 <>
                   <LogOut className="size-3.5" />
@@ -659,8 +660,11 @@ export function V2MemberHub({
         </div>
 
         {favoritesStatus === "loading" ? (
-          <div className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-            <Loader2 className="size-5 animate-spin text-primary" />
+          <div
+            role="status"
+            className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
+          >
+            <Spinner size="lg" decorative className="text-primary" />
             <span>Favorileriniz yükleniyor...</span>
           </div>
         ) : filteredFavorites.length > 0 ? (
@@ -768,8 +772,11 @@ export function V2MemberHub({
         </div>
 
         {videosStatus === "loading" ? (
-          <div className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-            <Loader2 className="size-5 animate-spin text-primary" />
+          <div
+            role="status"
+            className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
+          >
+            <Spinner size="lg" decorative className="text-primary" />
             <span>Video ilerlemeniz kontrol ediliyor...</span>
           </div>
         ) : books.length > 0 ? (
@@ -807,14 +814,16 @@ export function V2MemberHub({
                       </Badge>
                     </div>
 
-                    {/* Progress Bar */}
+                    {/* Progress Bar.
+                        `Progress` rather than two nested divs (T-036): the hand-drawn bar
+                        carried no `role="progressbar"` and no `aria-valuenow`, so the
+                        percentage next to it was the only place the number existed and a
+                        screen reader got a decorative rectangle. The floor that kept an
+                        empty bar at 2% is gone with it — `aria-valuenow` has to be the real
+                        value, and a bar that says 2% when nothing is watched is the same
+                        lie in pixels. */}
                     <div className="space-y-1.5">
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full bg-primary transition-all duration-500 rounded-full"
-                          style={{ width: `${Math.max(percentage, 2)}%` }}
-                        />
-                      </div>
+                      <Progress value={percentage} aria-label={`${book.titleTr} ilerlemesi`} />
                       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                         <span>
                           {watched} / {total > 0 ? total : "—"} Video Çözümü Tamamlandı
@@ -951,8 +960,11 @@ export function V2MemberHub({
         </div>
 
         {measurementsStatus === "loading" ? (
-          <div className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-            <Loader2 className="size-5 animate-spin text-primary" />
+          <div
+            role="status"
+            className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
+          >
+            <Spinner size="lg" decorative className="text-primary" />
             <span>Kayıtlı ölçümleriniz yükleniyor...</span>
           </div>
         ) : measurements && measurements.length > 0 ? (

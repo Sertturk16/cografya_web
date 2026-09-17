@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import {
   fetchLeaderboard,
   formatLeaderboardDisplayName,
@@ -18,7 +19,7 @@ import {
 import { getGameRoundModeTitle } from "@/lib/game/round-mode-tag";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth } from "@/lib/auth/auth-modal.client";
-import { Trophy, ChevronLeft, ChevronRight, Loader2, Lock, Sparkles } from "lucide-react";
+import { Trophy, ChevronLeft, ChevronRight, Lock, Sparkles } from "lucide-react";
 
 interface V2LeaderboardModalProps {
   readonly mode: string;
@@ -127,8 +128,11 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
               </Button>
             </div>
           ) : loading ? (
-            <div className="h-full min-h-[280px] flex flex-col items-center justify-center gap-3 text-muted-foreground">
-              <Loader2 className="size-6 animate-spin text-primary" />
+            <div
+              role="status"
+              className="h-full min-h-[280px] flex flex-col items-center justify-center gap-3 text-muted-foreground"
+            >
+              <Spinner size="lg" decorative className="text-primary" />
               <span className="text-sm font-medium">Liderlik tablosu yükleniyor...</span>
             </div>
           ) : displayError === "failed" ? (

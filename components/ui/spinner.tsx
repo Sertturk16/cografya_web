@@ -24,6 +24,17 @@ export interface SpinnerProps
    * spinning icon and no idea anything is happening.
    */
   readonly label?: string;
+  /**
+   * The caller already owns the live region and the wording — a block that renders
+   * "Favorileriniz yükleniyor…" as visible text inside its own `role="status"`.
+   *
+   * Then this renders the ICON ALONE: no second `role="status"` to nest inside the first
+   * (nested live regions are unreliable), and no `sr-only` label repeating a sentence the
+   * reader is already being read. T-036 adopted Spinner at eleven call sites and seven of
+   * them were of this shape, so the alternative was seven hand-rolled `<Loader2 animate-spin
+   * aria-hidden>` — which is the thing this component exists to stop.
+   */
+  readonly decorative?: boolean;
 }
 
 /**
@@ -37,7 +48,16 @@ export interface SpinnerProps
  * `animate-spin` stops under `prefers-reduced-motion`, which `app/globals.css` disables
  * animation globally for — the label still announces, so nothing is lost.
  */
-function Spinner({ className, size, label = "Yükleniyor", ...props }: SpinnerProps) {
+function Spinner({
+  className,
+  size,
+  label = "Yükleniyor",
+  decorative = false,
+  ...props
+}: SpinnerProps) {
+  if (decorative) {
+    return <Loader2 className={cn(spinnerVariants({ size }), className)} aria-hidden="true" />;
+  }
   return (
     <span role="status" className={cn("inline-flex items-center gap-2", className)} {...props}>
       <Loader2 className={cn(spinnerVariants({ size }))} aria-hidden="true" />
