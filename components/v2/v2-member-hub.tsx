@@ -701,7 +701,6 @@ export function V2MemberHub({
                       onClick={() => handleRemoveFavorite(item)}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                       aria-label={`${meta.title} favorilerden kaldır`}
-                      title="Favorilerden kaldır"
                     >
                       <Trash2 className="size-4" />
                     </button>
@@ -1016,7 +1015,6 @@ export function V2MemberHub({
                       onClick={() => handleRemoveMeasurement(meas.id)}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                       aria-label="Ölçümü sil"
-                      title="Ölçümü sil"
                     >
                       <Trash2 className="size-4" />
                     </button>

@@ -765,7 +765,6 @@ export function V2GameScreen({
               onClick={landscape.toggle}
               aria-pressed={landscape.active}
               aria-label={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda oyna"}
-              title={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda oyna"}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
             >
               {landscape.active ? (
@@ -988,7 +987,6 @@ export function V2GameScreen({
                 type="button"
                 onClick={() => setZoom((z) => Math.min(z + 0.3, 2.5))}
                 className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                title="Yakınlaştır"
                 aria-label="Yakınlaştır"
               >
                 <ZoomIn className="size-4" />
@@ -997,7 +995,6 @@ export function V2GameScreen({
                 type="button"
                 onClick={() => setZoom((z) => Math.max(z - 0.3, 0.8))}
                 className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                title="Uzaklaştır"
                 aria-label="Uzaklaştır"
               >
                 <ZoomOut className="size-4" />
@@ -1009,7 +1006,6 @@ export function V2GameScreen({
                   setPan({ x: 0, y: 0 });
                 }}
                 className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                title="Sıfırla"
                 aria-label="Görünümü Sıfırla"
               >
                 <Maximize2 className="size-3.5" />

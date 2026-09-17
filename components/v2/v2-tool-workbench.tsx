@@ -1193,7 +1193,6 @@ export function V2ToolWorkbench({
               aria-label={
                 landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda görüntüle"
               }
-              title={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay mod"}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
             >
               {landscape.active ? (
@@ -1256,7 +1255,6 @@ export function V2ToolWorkbench({
               onClick={handleZoomIn}
               disabled={zoomLevel >= 8}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-              title="Yakınlaştır (+)"
               aria-label="Haritayı Yakınlaştır"
             >
               <ZoomIn className="size-4" />
@@ -1266,7 +1264,6 @@ export function V2ToolWorkbench({
               onClick={handleZoomOut}
               disabled={zoomLevel <= 1}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-              title="Uzaklaştır (-)"
               aria-label="Haritayı Uzaklaştır"
             >
               <ZoomOut className="size-4" />
@@ -1276,7 +1273,6 @@ export function V2ToolWorkbench({
               onClick={handleResetZoom}
               disabled={zoomLevel === 1 && panOffset.x === 0 && panOffset.y === 0}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-              title="Görünümü Sıfırla"
               aria-label="Harita Görünümünü Sıfırla"
             >
               <RotateCcw className="size-4" />
@@ -1605,7 +1601,6 @@ export function V2ToolWorkbench({
                         e.stopPropagation();
                       }}
                       className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                      title="Sil"
                       aria-label="Ölçümü sil"
                     >
                       <Trash2 className="size-3.5" />

@@ -638,7 +638,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                       {r.isCoastal === true ? (
                         <span className="inline-flex items-center gap-1 shrink-0">
                           <span
-                            title="Kıyı Bölgesi"
+                            aria-hidden="true"
                             className="inline-flex size-2 rounded-full bg-teal-500 shrink-0"
                           />
                           <span className="text-[10px] text-muted-foreground">Kıyı</span>
@@ -646,7 +646,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                       ) : r.isCoastal === false ? (
                         <span className="inline-flex items-center gap-1 shrink-0">
                           <span
-                            title="İç Kara Bölgesi"
+                            aria-hidden="true"
                             className="inline-flex size-2 rounded-full bg-amber-500 shrink-0"
                           />
                           <span className="text-[10px] text-muted-foreground">İç</span>
@@ -654,7 +654,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                       ) : (
                         <span className="inline-flex items-center gap-1 shrink-0">
                           <span
-                            title="Bilinmiyor"
+                            aria-hidden="true"
                             className="inline-flex size-2 rounded-full bg-muted-foreground/40 shrink-0"
                           />
                           <span className="text-[10px] text-muted-foreground">Bilinmiyor</span>

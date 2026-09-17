@@ -106,6 +106,17 @@
     "seaMediterranean": "Akdeniz",
     "attributionContextLabel": "Komşu ülke sınırları: Natural Earth (kamu malı)"
   },
+  "MapExplorer": {
+    "zoomIn": "Yakınlaştır (+)",
+    "zoomOut": "Uzaklaştır (-)",
+    "resetView": "Haritayı Sıfırla",
+    "tableView": "Detaylı Tablo",
+    "indexView": "Alfabetik Fihrist (A-Z Bloklar)",
+    "regionGroupedView": "Bölge Gruplu Görünüm",
+    "continentGroupedView": "Kıta Gruplu Görünüm",
+    "regionColorsShow": "Bölgeleri Renklendir (Lejant Modu)",
+    "regionColorsReset": "Varsayılan Renkler"
+  },
   "About": {
     "metaTitle": "Hakkımızda",
     "metaDescription": "Coğrafya Gurmesi; Türkiye ve dünya coğrafyasını ücretsiz, kaynaklı ve erişilebilir içeriklerle anlatmayı amaçlayan bir eğitim projesidir.",

@@ -87,7 +87,6 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         type="button"
         onClick={toggleTheme}
         aria-label={current.label}
-        title={current.label}
         className={cn(
           "size-9 rounded-xl border border-border/80 bg-card text-foreground",
           "flex items-center justify-center shadow-2xs transition-colors",
