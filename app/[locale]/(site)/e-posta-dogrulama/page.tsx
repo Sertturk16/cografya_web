@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Home } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
@@ -28,7 +29,7 @@ export default async function V2VerifyEmailPage({ params }: V2VerifyEmailPagePro
   const t = await getTranslations("Auth");
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [
-    { label: t("breadcrumb.home"), href: "/", path: "/" },
+    { label: t("breadcrumb.home"), href: "/", path: "/", icon: <Home className="size-3.5" /> },
     { label: t("verify.heading"), path: "/e-posta-dogrulama" },
   ];
 

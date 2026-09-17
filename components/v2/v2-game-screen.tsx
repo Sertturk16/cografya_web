@@ -62,6 +62,7 @@ import {
   Minimize2,
   Eye,
   Flag,
+  Home,
   BookOpen,
   ShieldCheck,
   Star,
@@ -674,7 +675,12 @@ export function V2GameScreen({
           <Breadcrumbs
             items={
               [
-                { label: "Ana Sayfa", href: "/", path: "/" },
+                {
+                  label: "Ana Sayfa",
+                  href: "/",
+                  path: "/",
+                  icon: <Home className="size-3.5" />,
+                },
                 { label: "Harita Oyunları", href: "/oyun", path: "/oyun" },
                 { label: modeName, path: currentPath },
               ] satisfies BreadcrumbTrailItem[]

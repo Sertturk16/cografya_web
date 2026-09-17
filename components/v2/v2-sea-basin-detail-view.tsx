@@ -12,6 +12,7 @@ import type { ContentSurface } from "@/lib/seo/indexing";
 import { cn } from "@/lib/utils";
 import {
   Waves,
+  Home,
   Droplets,
   Compass,
   MapPin,
@@ -55,7 +56,7 @@ export function V2SeaBasinDetailView({
   ].filter((b) => b.slug !== data.slug);
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [
-    { label: "Ana Sayfa", href: "/", path: "/" },
+    { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
     { label: "Denizler & Kıyılar Atlası", href: "/deniz", path: "/deniz" },
     { label: data.fullNameTr, path: `/deniz/${data.slug}` },
   ];

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Mail } from "lucide-react";
+import { Home, Mail } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
@@ -86,7 +86,7 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
   const marineLayers = await getMarineLayersSafe();
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [
-    { label: tb("home"), href: "/", path: "/" },
+    { label: tb("home"), href: "/", path: "/", icon: <Home className="size-3.5" /> },
     { label: t("heading"), path: "/hakkimizda" },
   ];
 

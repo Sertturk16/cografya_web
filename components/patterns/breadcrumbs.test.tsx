@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
 import type { Locale } from "@/i18n/routing";
-import { Breadcrumbs } from "./breadcrumbs";
+import { absoluteUrl } from "@/lib/seo/site";
+import { Breadcrumbs, type BreadcrumbTrailItem } from "./breadcrumbs";
 
 const TRAIL = [
   { label: "Ana Sayfa", href: "/" as const, path: "/" },
@@ -90,5 +91,47 @@ describe("Breadcrumbs", () => {
     // 24 files ended up with a visible trail and no structured data.
     const html = renderWithIntl("en", <Breadcrumbs items={TRAIL} locale="en" surface="trOnly" />);
     expect(html).not.toContain("BreadcrumbList");
+  });
+
+  it("renders an item's icon and marks it aria-hidden", () => {
+    // The owner ruling: the Home icon that preceded "Ana Sayfa" on all 31 hand-written trails
+    // stays. It must never be announced on its own — a screen reader that hears the icon AND
+    // "Ana Sayfa" is told the same thing twice, on the one component whose job is closing an
+    // accessibility gap, not opening one.
+    const trailWithIcon: BreadcrumbTrailItem[] = [
+      { label: "Ana Sayfa", href: "/", path: "/", icon: <svg data-testid="home-icon" /> },
+      { label: "CBS Araçları", path: "/araclar" },
+    ];
+    const html = renderWithIntl(
+      "tr",
+      <Breadcrumbs items={trailWithIcon} locale="tr" surface="localized" />,
+    );
+    expect(html).toContain('data-testid="home-icon"');
+    expect(html).toContain('aria-hidden="true"');
+  });
+
+  it("never lets the icon reach the JSON-LD", () => {
+    // `breadcrumbJsonLd` takes `{ name, path }` — a ReactNode has no business near structured
+    // data. Asserts the emitted BreadcrumbList carries only the icon-less item's `name`/`item`
+    // pair, never a serialised trace of the icon element itself.
+    const trailWithIcon: BreadcrumbTrailItem[] = [
+      { label: "Ana Sayfa", href: "/", path: "/", icon: <svg data-testid="home-icon" /> },
+      { label: "CBS Araçları", path: "/araclar" },
+    ];
+    const html = renderWithIntl(
+      "tr",
+      <Breadcrumbs items={trailWithIcon} locale="tr" surface="localized" />,
+    );
+    const scriptMatch = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/);
+    expect(scriptMatch).not.toBeNull();
+    const schema = JSON.parse(scriptMatch![1]!);
+    expect(schema.itemListElement).toEqual([
+      { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "CBS Araçları", item: absoluteUrl("/araclar") },
+    ]);
+    // Belt and braces against the exact origin above ever drifting: no trace of the icon's own
+    // element shape (its data-testid, its tag name) leaks into the JSON-LD payload at all.
+    expect(scriptMatch![1]).not.toContain("home-icon");
+    expect(scriptMatch![1]).not.toContain("svg");
   });
 });

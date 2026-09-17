@@ -48,6 +48,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Home } from "lucide-react";
 import { PageContainer } from "@/components/patterns/page-container";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Specimen, SpecimenRow } from "../specimen";
@@ -295,11 +296,11 @@ export function DuzenSpecimens() {
       </Specimen>
       <Specimen
         name="Breadcrumbs"
-        description="`Breadcrumb` üstünde: aynı diziden hem `aria-current` taşıyan son kırıntıyı hem de eşleşen `BreadcrumbList` JSON-LD'sini üretir. Bu vitrin sayfası kendi `surface: noindex` yüzeyini taşıdığından JSON-LD'yi burada emitmez."
+        description="`Breadcrumb` üstünde: aynı diziden hem `aria-current` taşıyan son kırıntıyı hem de eşleşen `BreadcrumbList` JSON-LD'sini üretir. İlk kırıntının `icon`'u `aria-hidden` sarmalanır, JSON-LD'ye hiç taşınmaz. Bu vitrin sayfası kendi `surface: noindex` yüzeyini taşıdığından JSON-LD'yi burada emitmez."
       >
         <Breadcrumbs
           items={[
-            { label: "Ana Sayfa", href: "/", path: "/" },
+            { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
             { label: "Türkiye", href: "/turkiye", path: "/turkiye" },
             { label: "Çanakkale", path: "/turkiye/canakkale" },
           ]}
