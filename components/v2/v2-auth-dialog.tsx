@@ -54,7 +54,7 @@ export function V2AuthDialog() {
         {/* Custom Header Bar with Clean Terra Styling & Close Button (shrink-0) */}
         <div className="relative px-5 pt-4.5 pb-3 sm:px-5.5 sm:pt-5 sm:pb-3 bg-card border-b border-border/80 space-y-3 shrink-0">
           <div className="flex items-center justify-between">
-            <span className="font-heading font-bold text-base text-[var(--color-primary-dark,#7e3a1e)]">
+            <span className="font-heading font-bold text-base text-primary">
               Coğrafya <span className="text-primary">Gurmesi</span>
             </span>
             <button

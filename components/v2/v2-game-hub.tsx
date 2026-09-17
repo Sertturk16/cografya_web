@@ -32,7 +32,7 @@ export function V2GameHub() {
                 İnteraktif Sınav &amp; Hafıza Motoru
               </span>
             </div>
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
               Coğrafya Kâşifi — Türkiye Harita Oyunları
             </h2>
           </div>

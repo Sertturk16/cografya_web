@@ -31,7 +31,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
               Temel Kavramlar ve Bilimsel Esaslar
             </span>
           </div>
-          <h3 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
+          <h3 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
             {mode === "distance" && "Kuş Uçuşu Mesafe ve Harita Ölçeği Rehberi"}
             {mode === "coordinates" && "Coğrafi Koordinat Sistemi ve Projeksiyon Rehberi"}
             {mode === "area" && "Küresel Çokgen Alanı ve Yüzölçümü Rehberi"}

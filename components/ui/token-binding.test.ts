@@ -111,3 +111,74 @@ describe("components bind colour through the token bridge", () => {
     }
   });
 });
+
+/**
+ * The same escape rule, extended to the V2 surface.
+ *
+ * Phase A2 fixed 44 escapes in `components/ui` and scoped its audit there. That scoping was
+ * a gap: `components/v2` and the V2 pages carried 103 more of the same defect, so the
+ * night-sea palette reached the primitives but not most of the pages built on them. 87 were
+ * swept in phase D; the rest are exempt below.
+ *
+ * ONLY the escape rule is checked here. Raw palette classes (749) and hand-written `dark:`
+ * (203) across this surface are the categorical accent system, which the T-034 spec scoped
+ * out explicitly and T-031c owns. Asserting them now would fail on work nobody has started.
+ */
+describe("the V2 surface binds chrome colour through the bridge too", () => {
+  const V2_DIRS = [
+    fileURLToPath(new URL("../v2", import.meta.url)),
+    fileURLToPath(new URL("../../app/[locale]/v2", import.meta.url)),
+  ];
+
+  function walk(dir: string): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) return walk(full);
+      return entry.name.endsWith(".tsx") && !entry.name.includes(".test.") ? [full] : [];
+    });
+  }
+
+  /**
+   * Map surfaces, and they stay escaped on purpose.
+   *
+   * Every one is an SVG `fill` or `stroke` drawn onto a map, where the contrast was measured
+   * against surfaces that do NOT follow the theme — white land and the seven Okabe-Ito region
+   * tints. `--color-ink-dark` in particular is documented in `app/globals.css` as the single
+   * neutral clearing WCAG 1.4.11's 3:1 floor over every one of those tints. Binding these to
+   * a bridge token would move a line whose whole justification is a measurement against a
+   * fixed backdrop. Dark maps are T-031d, and re-measuring that table is its first task.
+   */
+  const MAP_SURFACE_FILES = [
+    "v2-continent-locator-map.tsx",
+    "v2-region-locator-map.tsx",
+    "v2-tool-workbench.tsx",
+    join("bolge", "[slug]", "page.tsx"),
+  ] as const;
+
+  const FILES_V2 = V2_DIRS.flatMap(walk).filter(
+    (path) => !MAP_SURFACE_FILES.some((exempt) => path.endsWith(exempt)),
+  );
+
+  it("positive control — the V2 surface was actually walked", () => {
+    expect(FILES_V2.length).toBeGreaterThan(60);
+  });
+
+  it.each(FILES_V2.map((f) => [f.split("/").slice(-2).join("/"), f] as const))(
+    "%s has no var(--color-*, #hex) escape",
+    (_label, path) => {
+      const source = stripComments(readFileSync(path, "utf8"));
+      expect(source).not.toMatch(/var\(--color-[a-z-]+,\s*#[0-9a-fA-F]{3,8}\)/);
+    },
+  );
+
+  it("every exempt file still contains what it is exempt for", () => {
+    for (const exempt of MAP_SURFACE_FILES) {
+      const match = V2_DIRS.flatMap(walk).find((p) => p.endsWith(exempt));
+      expect(match, `${exempt} no longer exists; drop the exemption`).toBeDefined();
+      expect(
+        stripComments(readFileSync(match!, "utf8")),
+        `${exempt} no longer escapes; drop the exemption`,
+      ).toMatch(/var\(--color-[a-z-]+,\s*#[0-9a-fA-F]{3,8}\)/);
+    }
+  });
+});

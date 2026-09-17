@@ -86,7 +86,7 @@ export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailVie
               </Badge>
             </div>
 
-            <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
+            <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
               {data.fullNameTr}
             </h1>
 
@@ -132,7 +132,7 @@ export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailVie
               <span className="text-[10px] text-muted-foreground font-medium block">
                 Türkiye Kıyı Şeridi
               </span>
-              <span className="font-heading text-lg sm:text-xl font-bold text-[var(--color-primary-dark,#7e3a1e)] block mt-0.5">
+              <span className="font-heading text-lg sm:text-xl font-bold text-primary block mt-0.5">
                 {data.metrics.coastalLengthTr}
               </span>
             </div>

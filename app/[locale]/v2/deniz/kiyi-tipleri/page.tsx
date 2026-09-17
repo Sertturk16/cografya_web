@@ -104,7 +104,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 </Badge>
               </div>
 
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
                 Türkiye&apos;nin Kıyı Tipleri &amp; Jeomorfolojisi
               </h1>
 

@@ -74,7 +74,7 @@ export function V2LearningPaths() {
               Video Çözümlü Denemeler ve İnteraktif Araçlar
             </span>
           </div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
             Coğrafya Yayınları &amp; Öğrenme Modülleri
           </h2>
         </div>

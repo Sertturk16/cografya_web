@@ -48,7 +48,7 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
             <span className="text-xs text-muted-foreground font-medium">Tamamen Ücretsiz</span>
           </div>
 
-          <h3 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] leading-snug">
+          <h3 className="font-heading text-2xl sm:text-3xl font-bold text-primary leading-snug">
             {mode === "register"
               ? "Yeni Nesil Coğrafya Dünyasına Adım At"
               : "Kişisel Coğrafya Merkezine Hoş Geldin"}

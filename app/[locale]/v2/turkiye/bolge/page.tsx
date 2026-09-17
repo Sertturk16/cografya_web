@@ -359,7 +359,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 )}
               </div>
 
-              <h1 className="font-heading text-3xl sm:text-5xl font-extrabold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
+              <h1 className="font-heading text-3xl sm:text-5xl font-extrabold tracking-tight text-primary leading-tight">
                 {locale === "tr"
                   ? "Türkiye'nin 7 Coğrafi Bölgesi Rehberi"
                   : "Türkiye's 7 Geographic Regions Guide"}
@@ -431,10 +431,10 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
 
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
                 <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                  <Maximize2 className="size-3.5 text-[var(--color-primary-dark,#7e3a1e)]" />{" "}
+                  <Maximize2 className="size-3.5 text-primary" />{" "}
                   {locale === "tr" ? "Yüzölçümü" : "Area"}
                 </span>
-                <span className="font-heading text-2xl sm:text-3xl font-extrabold text-[var(--color-primary-dark,#7e3a1e)] block">
+                <span className="font-heading text-2xl sm:text-3xl font-extrabold text-primary block">
                   {totalArea.toLocaleString("tr-TR")} km²
                 </span>
                 <span className="text-[11px] text-muted-foreground/80 block">

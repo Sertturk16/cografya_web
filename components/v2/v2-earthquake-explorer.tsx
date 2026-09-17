@@ -337,7 +337,7 @@ export function V2EarthquakeExplorer({
                 Türkiye Deprem Veri Merkezi (TDVMS)
               </span>
             </div>
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)]">
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
               Türkiye Canlı Sismik Aktivite Monitörü
             </h2>
           </div>
@@ -391,7 +391,7 @@ export function V2EarthquakeExplorer({
                     onClick={() => setWindowDays(p.days)}
                     className={`px-1.5 py-1.5 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center truncate ${
                       isSelected
-                        ? "bg-[var(--color-primary,#b0522e)] text-white shadow-xs font-bold scale-[1.02]"
+                        ? "bg-primary text-white shadow-xs font-bold scale-[1.02]"
                         : "bg-card hover:bg-muted text-muted-foreground border border-border"
                     }`}
                   >
@@ -872,7 +872,7 @@ export function V2EarthquakeExplorer({
                     pathname: "/v2/turkiye/[slug]",
                     params: { slug: selectedEvent.provinceSlug },
                   }}
-                  className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-9 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs"
+                  className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-9 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-primary shadow-xs"
                 >
                   <span className="text-white">İl Detayı</span>
                   <ArrowRight className="size-3.5 ml-1 text-white" />

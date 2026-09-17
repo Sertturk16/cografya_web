@@ -734,7 +734,7 @@ export function V2MemberHub({
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
               <Link
                 href="/v2/turkiye"
-                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs"
+                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
               >
                 Türkiye Haritası
               </Link>
@@ -842,7 +842,7 @@ export function V2MemberHub({
                           href={
                             `/v2/kitaplar/${book.slugTr}?v=${resume.bookVideoId}` as unknown as AppNavigationHref
                           }
-                          className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs gap-1.5 cursor-pointer"
+                          className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
                         >
                           <PlayCircle className="size-3.5" />
                           Kaldığın Yerden Devam Et
@@ -883,7 +883,7 @@ export function V2MemberHub({
             </div>
             <Link
               href="/v2/kitaplar"
-              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs"
+              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
             >
               Kitap Video Çözümlerini İncele
             </Link>
@@ -912,7 +912,7 @@ export function V2MemberHub({
 
           <Link
             href="/v2/oyun"
-            className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs gap-1.5 cursor-pointer"
+            className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
           >
             <Trophy className="size-3.5" />
             Yeni Harita Sınavı Başlat
@@ -943,7 +943,7 @@ export function V2MemberHub({
 
           <Link
             href="/v2/araclar"
-            className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs gap-1.5 cursor-pointer"
+            className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
           >
             <Ruler className="size-3.5" />
             Harita Araçlarını Aç
@@ -1048,7 +1048,7 @@ export function V2MemberHub({
             </div>
             <Link
               href="/v2/araclar"
-              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs"
+              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
             >
               Harita Araçlarını Başlat
             </Link>
@@ -1170,7 +1170,7 @@ export function V2MemberHub({
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-border">
             <Link
               href="/v2/profil"
-              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] shadow-xs gap-1.5 cursor-pointer"
+              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
             >
               <CheckCircle2 className="size-3.5" />
               Profil Formuna Git

@@ -204,7 +204,7 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
               Küresel Jeomorfoloji
             </span>
           </div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)]">
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-primary">
             Dünyanın 7 Kıtası &amp; Coğrafi Karakteristikleri
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">

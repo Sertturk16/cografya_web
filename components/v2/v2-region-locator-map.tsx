@@ -116,7 +116,7 @@ export function V2RegionLocatorMap({
           </g>
 
           {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#152228] stroke-[var(--color-accent,#276b70)]/40 stroke-[0.5] pointer-events-none">
+          <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
             {INLAND_WATER_SHAPES.map((lake) => (
               <path key={lake.id} d={lake.d} />
             ))}
@@ -156,7 +156,7 @@ export function V2RegionLocatorMap({
                   <path
                     d={shape.d}
                     style={{
-                      fill: isHovered ? "var(--color-primary-hover, #c8633c)" : fillColor,
+                      fill: isHovered ? "var(--color-primary-hover)" : fillColor,
                       stroke: isHovered ? "#ffffff" : strokeColor,
                       strokeWidth: isHovered ? 2.2 : 1.2,
                     }}

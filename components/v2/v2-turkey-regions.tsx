@@ -179,7 +179,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
             </Badge>
             <span className="text-xs text-muted-foreground">7 Coğrafi Bölge Rehberi</span>
           </div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
             Türkiye&apos;nin 7 Coğrafi Bölgesi &amp; Karakteristik Özellikleri
           </h2>
         </div>

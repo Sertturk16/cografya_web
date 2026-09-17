@@ -133,7 +133,7 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
           </div>
           <h2
             id="v2-marine-basins-heading"
-            className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)]"
+            className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-primary"
           >
             Türkiye&apos;yi Çevreleyen 4 Denizin Hidrografik Yapısı
           </h2>
@@ -215,7 +215,7 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
                           ? "/v2/deniz/ege"
                           : "/v2/deniz/akdeniz"
                   }
-                  className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-white hover:bg-[var(--color-primary-dark,#7e3a1e)] text-xs font-bold shadow-xs transition-all w-full"
+                  className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-white hover:bg-primary text-xs font-bold shadow-xs transition-all w-full"
                 >
                   <span>{basin.nameTr} Atlası</span>
                   <ArrowRight className="size-3.5 ml-1" />

@@ -314,7 +314,7 @@ export function V2InteractiveMapPreview() {
               }
 
               if (isHovered) {
-                fillColor = "fill-[var(--color-primary,#b0522e)] filter drop-shadow-md opacity-100";
+                fillColor = "fill-primary filter drop-shadow-md opacity-100";
               }
 
               return (
@@ -340,14 +340,14 @@ export function V2InteractiveMapPreview() {
           </g>
 
           {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#1a2529] stroke-[var(--color-accent,#276b70)]/40 stroke-[0.5] pointer-events-none">
+          <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#1a2529] stroke-accent/40 stroke-[0.5] pointer-events-none">
             {INLAND_WATER_SHAPES.map((lake) => (
               <path key={lake.id} d={lake.d} />
             ))}
           </g>
 
           {/* 5. Surrounding Sea Water Labels */}
-          <g className="fill-[var(--color-accent,#276b70)] dark:fill-[#6ec7d1] font-heading font-bold tracking-wider pointer-events-none select-none">
+          <g className="fill-accent dark:fill-[#6ec7d1] font-heading font-bold tracking-wider pointer-events-none select-none">
             {SEA_LABELS.map((sea, i) => (
               <text
                 key={i}
