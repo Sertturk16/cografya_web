@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +84,7 @@ const HUB_FAQS = [
 export default async function V2ContinentsHubPage({ params }: PageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations("Dunya");
 
   const continents = getAllContinents();
 
@@ -507,10 +508,22 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 5: KAYNAKLAR & METODOLOJİ */}
-        <V2SourcesSection
-          scope="dunya"
-          regionalNote="Kıta yüzölçümleri ve nüfus istatistikleri Birleşmiş Milletler İstatistik Bölümü (UN M49), Dünya Bankası (World Bank) ve Encyclopædia Britannica coğrafya korpusu ile çapraz doğrulanmıştır. En yüksek zirveler ve nehir uzunlukları uluslararası jeodezik ölçüm verilerine dayanır."
-        />
+        {/* The `regionalNote` used to assert these figures had been "UN M49, Dünya
+            Bankası, Encyclopædia Britannica ... ile çapraz doğrulanmıştır". That is a PROCESS
+            claim, not a source statement, and it is not verifiable: the figures come from
+            `lib/geo/continents.ts`, a hand-written local registry, and no cross-validation
+            record exists anywhere in either repo. It also closed a question that is
+            deliberately OPEN — `lib/seo/indexing.ts`'s docblock records that UN M49 credit was
+            NOT restored, because M49 attribution is not uniformly supportable across this
+            corpus (QN and XK are not enumerated in UNSD's country-or-area list; TW's entry
+            carries a name contradicting the owner-ruled entity name). These two pages were
+            answering it unilaterally, in reader-facing copy.
+
+            What replaces it says what is true and nothing more: the figures are the
+            platform's own compiled record, rounded for teaching, and continent extents differ
+            between sources. It is read from the catalogue rather than written inline, because
+            the old string was a Turkish literal on a surface `/en/` reaches. */}
+        <V2SourcesSection scope="dunya" regionalNote={t("continentFiguresNote")} />
       </div>
 
       {/* Structured Data JSON-LD */}
