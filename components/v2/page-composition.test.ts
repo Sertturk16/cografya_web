@@ -274,3 +274,216 @@ describe("the sticky navs stay aligned to PageContainer's base", () => {
     }
   });
 });
+
+/**
+ * Both capitalisations, on purpose. The hand-written navs write `aria-label="Breadcrumb"`; the
+ * primitive in `components/ui/breadcrumb.tsx` writes `aria-label="breadcrumb"`. A counter
+ * matching only the capital spelling would read zero the moment every page migrated to the
+ * primitive AND would have read zero if someone had merely lowercased their own hand-written
+ * nav without adopting the primitive, so it could not tell the real fix from the typo that
+ * looks like one.
+ */
+const BREADCRUMB_NAV = /aria-label="[Bb]readcrumb"/;
+
+/**
+ * The primitive, and the pattern component Task 6 builds on top of it, are where this nav is
+ * SUPPOSED to be written — both are excluded from the surface a "hand-written nav" counter
+ * scans. `components/patterns/breadcrumbs.tsx` does not exist yet; it is named here so Task 6
+ * does not have to come back and edit this exemption list to add it. The liveness check below
+ * (`"every owner still writes the nav, or does not exist yet"`) tolerates that absence rather
+ * than failing red before Task 6 lands — it only asserts something about a file that exists.
+ */
+const BREADCRUMB_OWNERS = [
+  "components/ui/breadcrumb.tsx",
+  "components/patterns/breadcrumbs.tsx",
+] as const;
+
+/**
+ * The reading/play page roots plus every `components/v2` file — a wider walk than
+ * `walkPages()`, which visits only `page.tsx`. Two `components/v2` files render the breadcrumb
+ * nav on behalf of seven pages that never write it themselves: `v2-sea-basin-detail-view.tsx`
+ * (the four `deniz/{akdeniz,karadeniz,marmara,ege}` basin pages) and `v2-game-screen.tsx` (the
+ * three `(play)/oyun/*` screens). A scan limited to `page.tsx` would silently miss the nav on
+ * all seven of those pages; walking `components/v2` too is how it is still seen.
+ */
+const SURFACE_ROOTS = [...PAGE_ROOTS, "components/v2"] as const;
+
+function surfaceFiles(): string[] {
+  return SURFACE_ROOTS.flatMap((rel) => walk(join(repoRoot, rel)))
+    .filter((path) => !BREADCRUMB_OWNERS.some((owner) => path.endsWith(owner)))
+    .sort();
+}
+
+/** Every surface file whose stripped source writes the nav, in either capitalisation. */
+function breadcrumbNavFiles(): string[] {
+  return surfaceFiles().filter((path) => BREADCRUMB_NAV.test(sourceOf(path)));
+}
+
+/**
+ * SCOPE. All three counters below are built on `breadcrumbNavFiles()`, i.e. on `BREADCRUMB_NAV`
+ * matched against `sourceOf()` (comment-stripped literal source, not rendered DOM). That scan
+ * cannot see:
+ *
+ *   - a breadcrumb nav built without an `aria-label` at all, or with a different string
+ *     (`aria-label="Yol izi"`, `aria-label="Sayfa konumu"`) — it would carry none of the
+ *     three gaps this file measures and also never be counted as a hand-written nav needing
+ *     fixing, because the pattern never fires on it in the first place;
+ *   - `aria-current` applied through a variable, a spread, or a conditional expression rather
+ *     than the literal token `aria-current` appearing in the source text — e.g.
+ *     `{...(isLast ? currentPageProps : {})}` where `currentPageProps` is defined elsewhere and
+ *     holds `{ "aria-current": "page" }` — the literal token `aria-current` never appears in
+ *     the file that renders the crumb. Counter 2 would count that file as missing `aria-current`
+ *     even though the rendered DOM carries it;
+ *   - the same indirection on `breadcrumbJsonLd`: a page that imports it under an alias
+ *     (`import { breadcrumbJsonLd as crumbSchema } from "@/lib/seo/json-ld"`) or re-exports a
+ *     wrapper around it would not contain the literal substring `breadcrumbJsonLd` and would be
+ *     counted by counter 3 as lacking the schema even though it emits it;
+ *   - the split this file's own tree already contains between where the nav is WRITTEN and
+ *     where a page's JSON-LD is EMITTED. `v2-sea-basin-detail-view.tsx` and `v2-game-screen.tsx`
+ *     are where `BREADCRUMB_NAV` fires — they are the files `breadcrumbNavFiles()` returns — but
+ *     `breadcrumbJsonLd` is called from the *page.tsx* files that compose those components, not
+ *     from the components themselves (confirmed by reading both component files: neither
+ *     contains the string). So counter 3 flags `v2-sea-basin-detail-view.tsx` as lacking
+ *     JSON-LD even on the four `deniz/*` pages that DO emit `breadcrumbJsonLd` today — the
+ *     counter is right about `v2-game-screen.tsx` (none of its three pages emit it either) and
+ *     wrong, in the conservative direction, about `v2-sea-basin-detail-view.tsx`. A per-page
+ *     check would need to follow the import graph from `page.tsx` to the component it renders;
+ *     this file does not, and a file-level match is the honest limit of what it can claim.
+ *
+ * All three counters also inherit `walk()`'s own scope: it visits `.tsx` files only (no `.ts`
+ * helpers), and `SURFACE_ROOTS` visits `PAGE_ROOTS` plus `components/v2` only — a breadcrumb
+ * rendered from `components/patterns/**`, `components/ui/**` (other than the primitive itself,
+ * which is deliberately excluded as an owner) or any other directory is outside this walk
+ * entirely.
+ *
+ * Measured 2026-09-17 against the real tree, not the brief's pre-dispatch guess (the brief was
+ * written before PR1 touched 34 page files, and says so): 27 files hand-write the nav — 25
+ * `page.tsx` files plus `v2-sea-basin-detail-view.tsx` and `v2-game-screen.tsx`, which write it
+ * on behalf of seven pages that never write their own. All 27 of those files are ALSO missing
+ * `aria-current` — the brief's claim that the attribute occurs nowhere on the product surface
+ * (its only two repo-wide occurrences being `components/ui/breadcrumb.tsx` and the showcase
+ * specimen `components/showcase/specimens/duzen.tsx`, neither in `SURFACE_ROOTS`) checks out
+ * exactly, so this counter and the nav counter above read the same number for a real reason, not
+ * a coincidence. The JSON-LD counter differs from the brief's stale 24: 7 of the 27 nav files
+ * (`deniz/kiyi-tipleri`, `deprem/fay-hatlari`, `deprem/hazirlik`, `turkiye/bolge`,
+ * `turkiye/bolge/[slug]`, `dunya/kita`, `dunya/kita/[slug]`) already call `breadcrumbJsonLd`
+ * themselves, so the real count is 20, not 24 — see the scope note above for why the four
+ * `deniz/{akdeniz,karadeniz,marmara,ege}` pages that also call it do NOT subtract from this
+ * counter: their call lives in their own `page.tsx`, but their nav lives in
+ * `v2-sea-basin-detail-view.tsx`, a different file, and this counter is per-file.
+ */
+const HAND_WRITTEN_BREADCRUMBS = 27;
+
+describe("breadcrumbs are rendered by one component", () => {
+  it("the hand-written nav count is exactly the recorded number", () => {
+    const files = breadcrumbNavFiles().map(label).sort();
+    expect(
+      files,
+      `files still writing their own breadcrumb nav:\n${files.map((f) => `  ${f}`).join("\n")}`,
+    ).toHaveLength(HAND_WRITTEN_BREADCRUMBS);
+  });
+
+  it("the pattern fires on source that carries one — positive control", () => {
+    expect(BREADCRUMB_NAV.test('<nav aria-label="Breadcrumb">')).toBe(true);
+    expect(BREADCRUMB_NAV.test('<nav aria-label="breadcrumb">')).toBe(true);
+  });
+
+  it("the pattern does not fire on an unrelated aria-label — negative control", () => {
+    expect(BREADCRUMB_NAV.test('<nav aria-label="Site navigation">')).toBe(false);
+  });
+
+  it("a docblock quoting the attribute does not count — comment stripping applied", () => {
+    const stripped = stripComments('// aria-label="Breadcrumb" — legacy note, not live markup');
+    expect(BREADCRUMB_NAV.test(stripped)).toBe(false);
+  });
+});
+
+/**
+ * Files that write the nav but never tell assistive technology which crumb is the current
+ * page. `aria-current` is checked as a bare token, not `aria-current="page"` specifically,
+ * because any value (`"page"`, `"location"`, `"true"`) answers the accessibility gap this
+ * counts; see the SCOPE note above for what a variable- or spread-applied `aria-current` still
+ * misses.
+ */
+const ARIA_CURRENT = /aria-current/;
+
+const BREADCRUMBS_WITHOUT_ARIA_CURRENT = 27;
+
+function breadcrumbsWithoutAriaCurrent(): string[] {
+  return breadcrumbNavFiles().filter((path) => !ARIA_CURRENT.test(sourceOf(path)));
+}
+
+describe("breadcrumbs mark the current page for assistive technology", () => {
+  it("the count of navs missing aria-current is exactly the recorded number", () => {
+    const files = breadcrumbsWithoutAriaCurrent().map(label).sort();
+    expect(
+      files,
+      `hand-written navs with no aria-current anywhere in the file:\n${files.map((f) => `  ${f}`).join("\n")}`,
+    ).toHaveLength(BREADCRUMBS_WITHOUT_ARIA_CURRENT);
+  });
+
+  it("the pattern fires on source that carries aria-current — positive control", () => {
+    expect(ARIA_CURRENT.test('<span aria-current="page">Turkiye</span>')).toBe(true);
+  });
+
+  it("the primitive is the file that actually carries aria-current today", () => {
+    // Independent of the counter above: proves aria-current exists SOMEWHERE in the tree, so a
+    // bug that made ARIA_CURRENT never match anything would not read as "zero gaps everywhere".
+    const primitive = sourceOf(join(repoRoot, "components/ui/breadcrumb.tsx"));
+    expect(ARIA_CURRENT.test(primitive)).toBe(true);
+  });
+});
+
+/**
+ * Files that render a visible breadcrumb trail but never emit the matching `BreadcrumbList`
+ * structured data, so a search engine sees the trail a user sees but not the machine-readable
+ * one. `breadcrumbJsonLd` is `lib/seo/json-ld.tsx`'s real exported symbol name (confirmed by
+ * reading the file, not assumed) — checked as a literal substring, so an aliased import defeats
+ * it; see the SCOPE note above.
+ */
+const BREADCRUMB_JSONLD_SYMBOL = "breadcrumbJsonLd";
+
+const BREADCRUMBS_WITHOUT_JSONLD = 20;
+
+function breadcrumbsWithoutJsonLd(): string[] {
+  return breadcrumbNavFiles().filter((path) => !sourceOf(path).includes(BREADCRUMB_JSONLD_SYMBOL));
+}
+
+describe("visible breadcrumbs carry matching JSON-LD", () => {
+  it("the count of navs with no breadcrumbJsonLd call is exactly the recorded number", () => {
+    const files = breadcrumbsWithoutJsonLd().map(label).sort();
+    expect(
+      files,
+      `hand-written navs with no breadcrumbJsonLd anywhere in the file:\n${files.map((f) => `  ${f}`).join("\n")}`,
+    ).toHaveLength(BREADCRUMBS_WITHOUT_JSONLD);
+  });
+
+  it("the pattern fires on source that calls breadcrumbJsonLd — positive control", () => {
+    expect("const schema = breadcrumbJsonLd(items);".includes(BREADCRUMB_JSONLD_SYMBOL)).toBe(true);
+  });
+
+  it("a docblock mentioning the symbol does not count — comment stripping applied", () => {
+    const stripped = stripComments("// TODO: call breadcrumbJsonLd here once designed");
+    expect(stripped.includes(BREADCRUMB_JSONLD_SYMBOL)).toBe(false);
+  });
+
+  it("at least one real page already calls it — positive control against the live tree", () => {
+    const withJsonLd = sourceOf(join(repoRoot, "app/[locale]/(site)/deniz/akdeniz/page.tsx"));
+    expect(withJsonLd.includes(BREADCRUMB_JSONLD_SYMBOL)).toBe(true);
+  });
+});
+
+describe("the breadcrumb owner exemptions", () => {
+  it.each(BREADCRUMB_OWNERS)("%s still writes the nav, or does not exist yet", (owner) => {
+    // Same liveness idea as "every exemption is still live" above: a stale exemption hides a
+    // real regression. The difference is `components/patterns/breadcrumbs.tsx` is named ahead
+    // of Task 6 creating it, so this tolerates the file not existing yet rather than going red
+    // before that task lands — it only asserts something about a file that is actually there.
+    const path = join(repoRoot, owner);
+    if (!existsSync(path)) return;
+    expect(
+      BREADCRUMB_NAV.test(sourceOf(path)),
+      `${owner} no longer writes the breadcrumb nav; drop the exemption`,
+    ).toBe(true);
+  });
+});
