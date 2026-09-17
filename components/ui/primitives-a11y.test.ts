@@ -113,3 +113,55 @@ describe("the generated primitives were read before they were committed", () => 
     },
   );
 });
+
+describe("Table sorting is an action, announced as one", () => {
+  const source = read("table");
+
+  it("sorts with a real button, not a clickable cell", () => {
+    // A clickable <th> is neither keyboard-reachable nor announced as pressable.
+    expect(source).toContain('type="button"');
+    expect(source).toContain("TableSortButton");
+  });
+
+  it("puts aria-sort on the header, not on the button", () => {
+    // aria-sort describes the COLUMN's state; the button only changes it. Putting it on the
+    // button is a common mistake that reads as the button itself being sorted.
+    const headStart = source.indexOf("function TableHead");
+    const buttonStart = source.indexOf("function TableSortButton");
+    const ariaSort = source.indexOf("aria-sort");
+    expect(ariaSort).toBeGreaterThan(headStart);
+    expect(ariaSort).toBeLessThan(buttonStart > headStart ? Infinity : headStart);
+    expect(
+      source.slice(buttonStart, headStart > buttonStart ? headStart : source.length),
+    ).not.toContain("aria-sort");
+  });
+
+  it("gives the unsorted state its own glyph", () => {
+    // So a sortable column is distinguishable from a fixed one without clicking to find out.
+    expect(source).toContain("ChevronsUpDown");
+  });
+
+  it("still wraps in an overflow container", () => {
+    // docs/design.md: a wide table scrolls inside its own box, never the page body.
+    expect(source).toContain("overflow-x-auto");
+  });
+});
+
+describe("Tabs carries its variant on context", () => {
+  const source = read("tabs");
+
+  it("offers both looks", () => {
+    expect(source).toContain("pills");
+    expect(source).toContain("line");
+  });
+
+  it("does not ask each part to be told which variant it is in", () => {
+    // Passing it to TabsList and TabsTrigger separately is how the two drift apart.
+    expect(source).toContain("TabsVariantContext");
+    expect(source).toContain("React.useContext(TabsVariantContext)");
+  });
+
+  it("underlines with an inset shadow, so selecting does not shift the tab", () => {
+    expect(source).toContain("inset_0_-2px_0_0_currentColor");
+  });
+});

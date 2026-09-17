@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Inbox } from "lucide-react";
+import { Inbox, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
@@ -46,7 +46,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
       data-slot="table-footer"
       className={cn(
         "border-t border-border bg-muted/60 font-medium [&>tr]:last:border-b-0",
-        className
+        className,
       )}
       {...props}
     />
@@ -59,23 +59,76 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
       data-slot="table-row"
       className={cn(
         "transition-colors hover:bg-muted/40 data-[state=selected]:bg-muted",
-        className
+        className,
       )}
       {...props}
     />
   );
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+function TableHead({
+  className,
+  sort,
+  ...props
+}: React.ComponentProps<"th"> & { readonly sort?: SortDirection }) {
   return (
     <th
       data-slot="table-head"
+      aria-sort={sort}
       className={cn(
         "h-11 px-4 text-left align-middle font-semibold text-xs uppercase tracking-wider text-muted-foreground whitespace-nowrap",
-        className
+        className,
       )}
       {...props}
     />
+  );
+}
+
+export type SortDirection = "ascending" | "descending" | "none";
+
+interface TableSortButtonProps extends React.ComponentProps<"button"> {
+  readonly direction: SortDirection;
+}
+
+/**
+ * The sorting control inside a `<th>`.
+ *
+ * A real `<button>`, not a click handler on the cell: sorting is an action, it has to be
+ * reachable by keyboard and announced as something that can be pressed. A clickable `<th>`
+ * is neither.
+ *
+ * `aria-sort` belongs on the `<th>`, NOT here — it describes the column's state, and the
+ * button is only what changes it. `TableHead` takes a `sort` prop for that; the two are kept
+ * separate because putting `aria-sort` on the button is a common mistake that reads as the
+ * button itself being sorted.
+ *
+ * The icon shows the direction in shape as well as position, and the unsorted state gets its
+ * own glyph rather than an absent one, so a column that CAN be sorted is distinguishable
+ * from one that cannot without clicking to find out.
+ */
+function TableSortButton({ direction, children, className, ...props }: TableSortButtonProps) {
+  const Icon =
+    direction === "ascending"
+      ? ChevronUp
+      : direction === "descending"
+        ? ChevronDown
+        : ChevronsUpDown;
+
+  return (
+    <button
+      type="button"
+      data-slot="table-sort-button"
+      className={cn(
+        "inline-flex items-center gap-1 rounded-sm font-inherit",
+        "cursor-pointer transition-colors hover:text-foreground",
+        direction === "none" ? "text-muted-foreground" : "text-primary",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      <Icon className="size-3.5 shrink-0" aria-hidden="true" />
+    </button>
   );
 }
 
@@ -85,17 +138,14 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
       data-slot="table-cell"
       className={cn(
         "px-4 py-3 align-middle text-foreground whitespace-nowrap [font-variant-numeric:tabular-nums]",
-        className
+        className,
       )}
       {...props}
     />
   );
 }
 
-function TableCaption({
-  className,
-  ...props
-}: React.ComponentProps<"caption">) {
+function TableCaption({ className, ...props }: React.ComponentProps<"caption">) {
   return (
     <caption
       data-slot="table-caption"
@@ -132,13 +182,7 @@ function TableEmpty({
   );
 }
 
-function TableSkeleton({
-  colSpan,
-  rowCount = 4,
-}: {
-  colSpan: number;
-  rowCount?: number;
-}) {
+function TableSkeleton({ colSpan, rowCount = 4 }: { colSpan: number; rowCount?: number }) {
   return (
     <>
       {Array.from({ length: rowCount }).map((_, i) => (
@@ -168,4 +212,5 @@ export {
   TableCaption,
   TableEmpty,
   TableSkeleton,
+  TableSortButton,
 };

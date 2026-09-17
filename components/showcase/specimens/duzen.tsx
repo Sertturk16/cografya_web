@@ -102,7 +102,10 @@ export function DuzenSpecimens() {
         </SpecimenRow>
       </Specimen>
 
-      <Specimen name="Tabs">
+      <Specimen
+        name="Tabs — pills"
+        description="Varyant context üzerinden taşınıyor: TabsList ve TabsTrigger'a ayrı ayrı geçirmek, ikisinin birbirinden sapmasının yoludur."
+      >
         <Tabs defaultValue="iklim">
           <TabsList>
             <TabsTrigger value="iklim">İklim</TabsTrigger>
@@ -111,6 +114,28 @@ export function DuzenSpecimens() {
           </TabsList>
           <TabsContent value="iklim" className="pt-4 text-sm text-muted-foreground">
             Akdeniz iklimi; yazlar sıcak ve kurak, kışlar ılık ve yağışlı.
+          </TabsContent>
+          <TabsContent value="nufus" className="pt-4 text-sm text-muted-foreground">
+            TÜİK ADNKS verisi.
+          </TabsContent>
+          <TabsContent value="deprem" className="pt-4 text-sm text-muted-foreground">
+            AFAD son olaylar.
+          </TabsContent>
+        </Tabs>
+      </Specimen>
+
+      <Specimen
+        name="Tabs — line"
+        description="Alt çizgi border değil, iç gölge: tab seçildiğinde bir piksel kaymasın diye."
+      >
+        <Tabs defaultValue="iklim" variant="line">
+          <TabsList>
+            <TabsTrigger value="iklim">İklim</TabsTrigger>
+            <TabsTrigger value="nufus">Nüfus</TabsTrigger>
+            <TabsTrigger value="deprem">Deprem</TabsTrigger>
+          </TabsList>
+          <TabsContent value="iklim" className="pt-4 text-sm text-muted-foreground">
+            Sayfa içi gezinme için; pill grubu bir kontrol gibi okunur, alt çizgi gezinme gibi.
           </TabsContent>
           <TabsContent value="nufus" className="pt-4 text-sm text-muted-foreground">
             TÜİK ADNKS verisi.
