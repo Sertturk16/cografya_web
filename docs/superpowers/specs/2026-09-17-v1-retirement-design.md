@@ -13,26 +13,40 @@ the per-component `.dark` scoping machinery none of us want to build twice.
 
 ## 2. Why this comes first
 
-T-031 (dark mode) was the original request. Investigation found that doing it while V1 lives
-costs work that V1's removal immediately throws away:
+T-031 (dark mode) was the original request. It is sequenced behind this task for one reason:
+doing it while V1 lives means building scaffolding with a known expiry date.
 
-- `.dark` today lands on `<html>` globally. Mounting a real `ThemeProvider` with
-  `defaultTheme: "system"` would hand every V1 visitor whose OS prefers dark a **broken**
-  V1 page: `body` picks up `--background` from the `.dark` block while V1's frozen CSS
-  modules keep their light values. V1 is the live indexed site, so that is a production
-  regression, not a cosmetic one.
-- Avoiding that regression means a theme boundary — a `/v2` route marker, or split root
-  layouts, or a `:has(.v2-app)` scope — plus a `.v1-scope` custom-property shim applied to
-  every V1 component rendered inside a V2 page. All of it is scaffolding with a known
-  expiry date.
+`.dark` today lands on `<html>` globally. Mounting a real `ThemeProvider` with
+`defaultTheme: "system"` makes every V1 page render half-dark — `body` picks up
+`--background` from the `.dark` block while V1's CSS modules keep their light values.
+Avoiding that means a theme boundary (a `/v2` route marker, split root layouts, or a
+`:has(.v2-app)` scope) plus a `.v1-scope` custom-property shim on all thirteen V1 components
+that render inside V2 pages. Every line of it is deleted again a few weeks later.
 
 With V1 gone, T-031's mechanism work reduces to "mount the provider, put `.dark` on
 `<html>`".
+
+**This is an argument about wasted work, not about risk.** Nothing is riding on the current
+deployment: the site is on a bare IP, has not been announced, and has no audience (owner,
+2026-09-17). Breaking V1 costs nothing, and this task deletes it outright. What would cost
+something is writing a theme boundary twice.
+
+The same applies throughout this document. Where a step below asks for a check, it is because
+the failure would be silent or expensive to undo later — not because production is precious.
+Steps whose only justification was protecting live users have been removed.
 
 ## 3. Route inventory
 
 V1 has 26 routes; V2 has 33. Twenty of V1's routes already have a V2 counterpart **at the
 same path**, so the migration is mostly a move rather than a redirect.
+
+A correction to an earlier draft of this document: it called these "26 indexed URLs" and
+argued for preserving them on SEO grounds. That premise was never checked and is almost
+certainly false. `app/robots.ts` allows crawling, but the deployment is a bare IP with no
+domain, so there is no Search Console property, no submitted sitemap and no inbound link —
+the three ways a crawler finds anything. Treat the SEO value of the current URLs as zero.
+Paths are preserved below where something concrete depends on them, which in practice means
+the three the API hard-codes (§5), and nowhere else.
 
 Six V1 routes have no V2 counterpart:
 
@@ -60,12 +74,11 @@ chance of preserving blame.
 
 Redirects:
 
-- `/v2/:path*` → `/:path*` and `/en/v2/:path*` → `/en/:path*`, permanent (308). The prefix
-  was `noindex`, but it is in the sitemap twice today and is bookmarked by the owner and by
-  QA. A permanent redirect costs one table entry and avoids dead links.
+- `/v2/:path*` → `/:path*` and `/en/v2/:path*` → `/en/:path*`, permanent (308). Two table
+  entries, kept only because the owner and QA have bookmarks from the V2 build. There is no
+  SEO argument here and none should be written into the code comment.
 - No redirect for the twenty paths V2 inherits — the URL does not change, only what serves it.
-- `/design-system` gets no redirect. It was never linked publicly or listed in the sitemap;
-  a 404 is the honest answer.
+- `/design-system` gets no redirect. Nothing links to it; a 404 is the honest answer.
 
 `next.config.ts` already carries a `redirects()` table (one entry) guarded by
 `lib/seo/redirects.test.ts`, whose docblock states that its `toHaveLength(1)` assertion must
@@ -238,18 +251,27 @@ keyless deployment with the leg off must still boot". `.env.prod` carries eight 
 `REDIS_PASSWORD`, `SITE_URL`) and `ADS_API_KEY` is not among them; the local `.env` has it,
 which is why air quality works in development.
 
-Setting `AIR_QUALITY_ENABLED=true` in production without first placing `ADS_API_KEY` in
-`.env.prod` fails env validation **at boot**. The API container then crashloops, and because
-`web` depends on `api` the entire site goes down — not just the air-quality pages. The key
-must land first; the flag second.
+Setting `AIR_QUALITY_ENABLED=true` without first placing `ADS_API_KEY` in `.env.prod` fails
+env validation **at boot**, so the API container crashloops and `web` goes with it. Nobody is
+watching, so this is an annoyance rather than an incident — but it is an annoyance that looks
+like a mysterious deploy failure if you have forgotten why. Key first, flag second, and the
+container health check in the plan tells you immediately which one bit.
 
-**The conditional copy still gets written.** With the flags on it becomes the degraded path
-rather than the normal one, and that is exactly when it matters: the `*Safe`/`*Resilient`
-wrappers answer an upstream outage with an empty payload rather than an error, so without
-the branch a Copernicus or AFAD outage silently returns the site to T-024's defect —
-prose promising live hourly telemetry over nothing. Same rule either way: a page may
-describe the geography it is about; it may not claim a reading it does not have, and it
-never fabricates a number or paints an absent value with the magnitude ramp.
+**The conditional copy is cut from this task.** An earlier draft had the four sea pages and
+`/deprem` grow a degraded-state branch for when upstream returns an empty payload. With the
+flags on, that branch is dead code except during a Copernicus or AFAD outage — and an outage
+on an unannounced playground costs nothing. Writing it now is speculative work against a
+state nobody will see.
+
+It is worth doing eventually, because `getMarineOverviewSafe` and
+`getEarthquakeListResilient` answer an outage with an empty payload rather than an error, so
+the pages would promise live hourly telemetry over nothing — T-024's defect, returning by a
+different route. That belongs to whoever next touches those pages, most likely T-033.
+Recorded here so it is a deferral rather than an oversight.
+
+One rule stays in force whenever those pages are touched, flags or no flags: a page may
+describe the geography it is about, but it may not claim a reading it does not have, never
+fabricates a number, and never paints an absent value with the magnitude ramp.
 
 `/deniz/kiyi-tipleri`, `/deprem/fay-hatlari`, `/deprem/hazirlik`, `/dunya/kita` and
 `/turkiye/bolge` are purely editorial and need nothing either way.
@@ -297,9 +319,14 @@ PR4  Dead-code removal                    (site-*, auth, country, entity-index, 
                                            province, map, Group A remnants, V1 CSS)
 ```
 
-PR3 must be atomic: the prefix removal, the V1 route deletion and the redirect table land
-together or the site is briefly inconsistent. PR4 is deliberately separate so PR3's diff
-stays reviewable.
+Keep PR3 to one commit — the prefix removal, the V1 route deletion and the redirect table
+only make sense together, and a half-applied routing table is a confusing thing to bisect
+later. That is a working-comfort argument, not an uptime one. PR4 is separate so a
+758-occurrence rename diff does not arrive mixed with a mass deletion; both are easier to
+read apart than together.
+
+The split exists for reviewability. Collapse two of them if that turns out to be faster in
+practice.
 
 **One piece of work belongs to no PR: switching the production feature flags on.**
 `docker-compose.prod.yml` lives on the Hetzner host, not in either repository — both

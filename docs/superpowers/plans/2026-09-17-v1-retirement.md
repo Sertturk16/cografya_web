@@ -4,7 +4,7 @@
 
 **Goal:** Delete V1 entirely, drop V2's `/v2` prefix and `noindex`, and make V2 the public indexed site.
 
-**Architecture:** Four sequential PRs. PR1 ports the six V1 routes that have no V2 counterpart (still under `/v2`). PR2 adds the missing error boundaries and the pre-launch product work. PR3 performs the atomic URL migration and consolidates page chrome into `(site)`/`(play)` route groups. PR4 removes the now-unreferenced V1 code. PR1 and PR2 are independent of each other; PR3 depends on both; PR4 depends on PR3.
+**Architecture:** Four sequential PRs. PR1 ports the six V1 routes that have no V2 counterpart (still under `/v2`). PR2 adds the missing error boundaries and the EN honesty notice. PR3 performs the URL migration in one commit and consolidates page chrome into `(site)`/`(play)` route groups. PR4 removes the now-unreferenced V1 code. PR1 and PR2 are independent of each other; PR3 depends on both; PR4 depends on PR3.
 
 **Tech Stack:** Next.js 16 App Router, React 19, TypeScript strict + `noUncheckedIndexedAccess`, Tailwind v4 (CSS-first, no config file), shadcn `base-nova` on Base UI, next-intl 4, vitest (node env, **no jsdom**), Node 24, pnpm.
 
@@ -54,10 +54,9 @@
 | `components/v2/v2-error-boundaries.test.ts`       | Structure test over the three boundary files.                                  |
 | `components/v2/v2-en-notice.test.ts`              | Asserts the notice is flag-driven and covers the intended surfaces.            |
 
-No new marine module is needed: `lib/marine/overview.ts` already exports
-`marineShowsValues(overview: MarineOverview | null): boolean`, built on
-`marinePublishableBlocks`, and `/v2/deniz` already consumes it. PR2 extends its reach rather
-than duplicating it.
+No marine module appears here. An earlier draft created one; it would have duplicated
+`marineShowsValues` in `lib/marine/overview.ts`, and the work that consumed it is now
+deferred to T-033 — see "Tasks 10 and 11: CUT".
 
 **PR3 — modified**
 
@@ -719,9 +718,12 @@ git commit -m "feat(v2): port hakkimizda page and add PR1 port coverage"
 
 ---
 
-# PR2 — Error boundaries and pre-launch product work
+# PR2 — Error boundaries and the EN notice
 
-Branch: `feature/t032-pr2-boundaries-and-copy`. Independent of PR1; can be developed in parallel.
+Branch: `feature/t032-pr2-boundaries`. Independent of PR1; can be developed in parallel.
+
+Three tasks, not five: Tasks 10 and 11 were cut when the production flags were switched on
+(see "Tasks 10 and 11: CUT" below for what was deferred and why).
 
 ## Task 7: Root `not-found.tsx`
 
@@ -1142,111 +1144,33 @@ git add components/v2/v2-en-work-in-progress-notice.tsx components/v2/v2-en-noti
 git commit -m "feat(v2): port EN work-in-progress notice, gated on EN_CONTENT_READY"
 ```
 
-## Task 10: Confirm the existing marine predicate reaches the sub-pages
+## Tasks 10 and 11: CUT — degraded-state copy is deferred
 
-`MARINE_ENABLED` is `false` in production. T-024 already solved this class of defect on
-`/v2/deniz`, and the predicate it used **already exists and is already shared**:
+An earlier draft of this plan had two tasks here: confirm the shared marine predicate reaches
+the four sea sub-pages, then branch their copy (and `/deprem`'s) on it so an empty payload
+never renders as a live-telemetry claim.
 
-```ts
-// lib/marine/overview.ts
-export function marineShowsValues(overview: MarineOverview | null): boolean {
-  return marinePublishableBlocks(overview).length > 0;
-}
-```
+**Both are cut.** Task 11a switches the production flags on, so those pages carry real data.
+The branch would then be dead code except during a Copernicus or AFAD outage — a state nobody
+will see on an unannounced deployment with no audience. Writing it now is speculative work.
 
-Its docblock records why it is `blocks.length > 0` rather than the `dataAvailable` flag alone:
-a publishable payload that carries no blocks renders no table, and a lede announcing values
-over an empty section is the same broken promise by a different route.
+It stays worth doing eventually, because `getMarineOverviewSafe` and
+`getEarthquakeListResilient` answer an outage with an empty payload rather than an error, so
+without the branch an outage silently reproduces T-024's defect. **Deferred to T-033**, which
+touches those pages anyway. This is a deferral, not an oversight.
 
-Do not write a second predicate. This task only establishes that the four sea sub-pages can
-consume this one; Task 11 does the copy work.
+Two facts worth keeping where the next person will find them:
 
-**Files:**
+- The predicate already exists and is already shared — `marineShowsValues(overview)` in
+  `lib/marine/overview.ts`, built on `marinePublishableBlocks` and consumed by `/v2/deniz`.
+  Do not write a second one. Its docblock records why it is `blocks.length > 0` rather than
+  the `dataAvailable` flag alone.
+- `lib/home/marine-summary.test.ts` already exercises it against both the values-present and
+  values-absent payloads, so it needs no new unit test — only new callers.
 
-- Read: `lib/marine/overview.ts`, `app/[locale]/v2/deniz/page.tsx`, `app/[locale]/v2/deniz/karadeniz/page.tsx`
-
-- [ ] **Step 1: Confirm the sub-pages already hold the right payload**
-
-Run: `grep -n "getMarineOverviewSafe\|getMarinePointsSafe" "app/[locale]/v2/deniz"/*/page.tsx`
-
-The four sub-pages call `getMarineOverviewSafe()`, which returns the same `MarineOverview`
-that `marineShowsValues` takes. Confirm that is true for all four; if one of them only has
-`getMarinePointsSafe()` output in scope, note which, because that page needs the overview
-fetched too rather than a new predicate invented for the points shape.
-
-- [ ] **Step 2: Confirm the existing unit coverage**
-
-Run: `pnpm vitest run lib/home/marine-summary.test.ts`
-Expected: PASS. That file already exercises `marineShowsValues` against both the
-values-present and values-absent payloads, so the predicate itself needs no new test —
-only new callers.
-
-- [ ] **Step 3: No commit**
-
-Nothing changed. This is a read-only gate before Task 11.
-
-## Task 11: Condition the five data-gated pages
-
-**Files:**
-
-- Modify: `app/[locale]/v2/deniz/karadeniz/page.tsx`
-- Modify: `app/[locale]/v2/deniz/ege/page.tsx`
-- Modify: `app/[locale]/v2/deniz/marmara/page.tsx`
-- Modify: `app/[locale]/v2/deniz/akdeniz/page.tsx`
-- Modify: `app/[locale]/v2/deprem/page.tsx`
-- Modify: `app/[locale]/v2/deniz/page.tsx` (switch it to the extracted predicate)
-
-**Owner decision, 2026-09-17: the production feature flags are being switched on** (Task 11a).
-So these pages launch with real data, and the conditional branch below becomes the _degraded_
-path rather than the normal one. Write it anyway — that is precisely when it earns its keep.
-`getMarineOverviewSafe` and `getEarthquakeListResilient` answer an upstream outage with an
-empty payload rather than an error, so without the branch a Copernicus or AFAD outage
-silently reproduces T-024's defect: prose promising live hourly telemetry over nothing.
-
-- [ ] **Step 1: Audit what each page currently claims**
-
-For each of the five pages, list every sentence that asserts something about live data — "canlı", "saatlik", "güncel", "son 24 saat", a timestamp, a unit, an empty table with headers. Run:
-
-```bash
-grep -rn "canlı\|saatlik\|güncel\|telemetri\|son 24" "app/[locale]/v2/deniz" "app/[locale]/v2/deprem"
-```
-
-Write the list down before editing. This is the product decision being implemented: **a page may describe the geography it is about; it may not claim a reading it does not have.**
-
-- [ ] **Step 2: Apply the T-024 pattern to the four sea pages**
-
-Import the existing predicate — `import { marineShowsValues } from "@/lib/marine/overview";` —
-and branch the copy on it. When it is `false`:
-
-- Drop every live-telemetry claim from the prose.
-- Replace value tables and stat tiles with a single neutral line stating the source is not connected yet — not an empty table, not a zero, not a dash that reads as a measurement.
-- Keep all editorial and geographic content; that is what the page is for and it is true either way.
-
-Do not gate the whole page behind the flag. The editorial substance is the reason these pages are worth publishing; only the claims about readings are conditional.
-
-- [ ] **Step 3: Apply the same treatment to `/deprem`**
-
-`/deprem` uses `getEarthquakeListResilient`. The resilient wrapper means an absent upstream returns an empty list rather than throwing, so the page needs the same "no data yet" state instead of rendering an empty list under a heading that promises recent events.
-
-**Never fabricate a magnitude, a depth or a timestamp**, and do not paint an absent value with the magnitude ramp. `docs/design.md`'s data-viz doctrine is explicit that a colour band claims a standing the number must actually have.
-
-- [ ] **Step 4: Leave `/v2/deniz` alone**
-
-It already imports `marineShowsValues` from `@/lib/marine/overview` and already conditions its
-copy (T-024). Do not touch it. It is the reference implementation the four sub-pages are being
-brought in line with, and a gratuitous edit here risks the one page that is already correct.
-
-- [ ] **Step 5: Verify both states**
-
-With the flags off (the default locally), screenshot all five pages: none may claim a reading. Then set `MARINE_ENABLED=true` and `EARTHQUAKE_ENABLED=true` in the local API env, restart it, and re-screenshot: values appear and the copy reads correctly with no further change.
-
-- [ ] **Step 6: Run the gate and commit**
-
-```bash
-pnpm typecheck && pnpm lint && pnpm test && pnpm build
-git add "app/[locale]/v2/deniz" "app/[locale]/v2/deprem"
-git commit -m "fix(v2): keep sea and earthquake copy honest when upstream is empty"
-```
+The standing rule for whoever picks this up: a page may describe the geography it is about,
+but it may not claim a reading it does not have, never fabricates a number, and never paints
+an absent value with the magnitude ramp.
 
 ## Task 11a: Switch the production feature flags on — OPS, NOT A PR
 
@@ -1318,7 +1242,7 @@ curl -s http://localhost:3001/api/earthquakes?limit=3 | head -c 400
 
 Expected: real values, and `dataAvailable` true on the marine payload. Then load
 `/deniz/karadeniz` and `/deprem` in a browser and confirm the pages render values rather than
-the Task 11 degraded copy. If they still show the degraded state, the flag is on but ingest
+an empty state. If the pages still render empty, the flag is on but ingest
 has not completed or is failing — check the API logs before assuming the page is wrong.
 
 - [ ] **Step 5: Watch the host for a day**
@@ -1342,7 +1266,7 @@ place this is written down — the compose file is not in version control.
 
 # PR3 — URL migration
 
-Branch: `feature/t032-pr3-url-migration`. Depends on PR1 and PR2. **This PR must land atomically** — the prefix removal, the V1 route deletion and the redirect table are one change or the site is briefly inconsistent.
+Branch: `feature/t032-pr3-url-migration`. Depends on PR1 and PR2. Tasks 12–15 land as **one commit** — the prefix removal, the V1 route deletion and the redirect table only typecheck together, and a half-applied routing table is a miserable thing to bisect later. That is a working-comfort argument, not an uptime one; nothing is riding on the deployment.
 
 ## Task 12: Strip `/v2` from the routing table
 
@@ -1357,7 +1281,7 @@ Remove the `pathnames` entries for the V1 routes that are going away entirely: `
 
 - [ ] **Step 2: Strip the prefix from the 99 V2 entries**
 
-For each `"/v2/..."` key, remove the `/v2` prefix from the key and from both locale values. Where the result collides with an existing V1 entry of the same name (`/turkiye`, `/dunya`, `/giris`, `/kayit`, `/deniz`, `/deprem`, `/kitaplar`, `/araclar`, `/oyun`, `/hakkimizda`, `/sifre-sifirlama`, `/sifre-sifirlama/yeni`, `/e-posta-dogrulama`), delete the V1 entry and keep the V2 one — **preserving the V1 entry's localized EN segment**, which is the segment already indexed and, for the three auth routes, hard-coded in the API.
+For each `"/v2/..."` key, remove the `/v2` prefix from the key and from both locale values. Where the result collides with an existing V1 entry of the same name (`/turkiye`, `/dunya`, `/giris`, `/kayit`, `/deniz`, `/deprem`, `/kitaplar`, `/araclar`, `/oyun`, `/hakkimizda`, `/sifre-sifirlama`, `/sifre-sifirlama/yeni`, `/e-posta-dogrulama`), delete the V1 entry and keep the V2 one — **preserving the V1 entry's localized EN segment**. For the three auth routes that is load-bearing: `cografya_api`'s `mail-copy.ts` hard-codes `/en/reset-password`, `/en/reset-password/new` and `/en/login`. For the rest it is simply the segment that already reads correctly in English; there is no SEO reason, since none of these URLs is indexed.
 
 Verify none was lost:
 
@@ -1650,7 +1574,7 @@ Screenshot `/oyun/81-il` and `/oyun/bolge-bulma` at 390 px landscape. No header,
 
 - [ ] **Step 9: Do not commit yet** — lands with Task 15.
 
-## Task 15: Redirects, the cross-repo tripwire, and the atomic commit
+## Task 15: Redirects, the cross-repo tripwire, and the single migration commit
 
 **Files:**
 
@@ -1669,10 +1593,11 @@ Screenshot `/oyun/81-il` and `/oyun/bolge-bulma` at 390 px landscape. No header,
         destination: "/dunya/guney-kibris-rum-yonetimi",
         permanent: true,
       },
-      // T-032: the `/v2` prefix is retired. The prefix was `noindex`, so this is not an SEO
-      // migration — it is for the links that exist anyway: two sitemap entries carried
-      // `/v2/dunya/kita`, and the owner and QA have bookmarks from the whole V2 build.
-      // Permanent (308, method-preserving) because the prefix is never coming back.
+      // T-032: the `/v2` prefix is retired. NOT an SEO migration — the deployment is a bare
+      // IP with no domain, no Search Console property and no inbound links, so none of these
+      // URLs is indexed. These two entries exist only so the bookmarks accumulated during the
+      // V2 build keep working. Permanent (308, method-preserving) because the prefix is never
+      // coming back.
       { source: "/v2/:path*", destination: "/:path*", permanent: true },
       { source: "/en/v2/:path*", destination: "/en/:path*", permanent: true },
     ];
@@ -1772,7 +1697,7 @@ Measure at 320, 390 and desktop. If the value differs from 56 px, update the tok
 
 Run: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`
 
-- [ ] **Step 9: Commit Tasks 12–15 as one atomic change**
+- [ ] **Step 9: Commit Tasks 12–15 as one commit**
 
 ```bash
 git add -A
@@ -2073,21 +1998,34 @@ today, so it is a limitation the launch inherits, not a regression it introduces
 
 **Two corrections made during this review, both from checking the source rather than trusting the draft:**
 
-1. The first draft had Task 10 _create_ `lib/marine/data-availability.ts`. That module would have been a duplicate: `marineShowsValues` already exists in `lib/marine/overview.ts`, is already consumed by `/v2/deniz` and V1 `/deniz`, and is already unit-tested through `lib/home/marine-summary.test.ts`. Task 10 is now a read-only gate and Task 11 imports the existing function.
+1. The first draft had Task 10 _create_ `lib/marine/data-availability.ts`. That module would have been a duplicate: `marineShowsValues` already exists in `lib/marine/overview.ts`, is already consumed by `/v2/deniz` and V1 `/deniz`, and is already unit-tested through `lib/home/marine-summary.test.ts`. Both tasks were subsequently cut altogether (revision 4 below); the duplicate module was never written.
 2. That draft also guessed `MarineOverviewPoint.seaSurfaceTemperatureC`. The real field is `seaSurfaceTemperature: MarineValueDto` (`lib/api/schema.ts:2226`), and the payload carries its own `dataAvailable` flag. The guess is gone with the module that held it.
 
-**Owner revisions, 2026-09-17 (after the first review pass):**
+**Owner revisions, 2026-09-17 (two rounds after the first review pass):**
 
-1. **Feature flags go on in production**, so Task 11's conditional copy is now the degraded
-   path rather than the launch state. It is still written, because the `*Safe`/`*Resilient`
-   wrappers turn an upstream outage into an empty payload and the branch is what keeps that
-   honest. New Task 11a covers the flip — as an ops action, not a PR, since the compose file
-   lives on the host. The `ADS_API_KEY`-before-`AIR_QUALITY_ENABLED` ordering in that task is
-   load-bearing: the reverse order crashloops the API at boot and takes `web` down with it.
+1. **Feature flags go on in production.** New Task 11a covers the flip as an ops action, not
+   a PR, since `docker-compose.prod.yml` lives on the host rather than in either repo. The
+   `ADS_API_KEY`-before-`AIR_QUALITY_ENABLED` ordering there is load-bearing: the reverse
+   order fails env validation at boot and crashloops the API.
 2. **`/hakkimizda` gets a real V2 design pass** (Task 6 Step 2), not a transcription. Copy
    still moves verbatim.
-3. **Launch timing is no longer a documented gate.** Task 20 Step 4 still says to target
-   `dev` and not to merge to `main`, and still records the TLS limitation as a fact to carry
-   forward rather than a blocker on this work.
+3. **Launch timing is no longer a documented gate.**
+4. **Nothing is riding on the current deployment.** The site is on a bare IP, unannounced,
+   with no audience. Steps whose only justification was protecting live users are cut:
+   - Tasks 10 and 11 (degraded-state copy) — deferred to T-033.
+   - PR3's "must be atomic or the site breaks" framing — it is one commit for bisect sanity,
+     not for uptime.
+   - The `ADS_API_KEY` warning keeps the fact and drops the alarm.
+5. **A premise correction.** Earlier drafts argued for preserving URLs because 26 of them
+   were indexed. That was never checked and is almost certainly false: `app/robots.ts` allows
+   crawling, but a bare IP with no domain has no Search Console property, no submitted
+   sitemap and no inbound links. Paths are now preserved only where something concrete
+   depends on them — in practice the three the API hard-codes (Task 15 Step 3).
+
+**What survives the cut, and why** — these are quality, not caution. The cross-repo mail
+tripwire (Task 15 Step 3): the failure is invisible and the test is four lines. The
+`--header-height` re-measurement (Task 15 Step 7): silent breakage, no existing test catches
+it. The root 404, the chrome consolidation and the flag-driven EN notice: each removes a
+class of future mistake rather than guarding today's traffic.
 
 **Verified against source, not assumed:** the `Button` API (Task 2), `Common.skipToContent` and `Common.enWorkInProgress` (Tasks 9, 14), the `NotFound` namespace keys `heading`/`body` (Tasks 7, 8), and `Auth.reset` / `Auth.verify` (Task 5). `Auth.breadcrumb.home` does **not** exist — Task 5 Step 3 says to add it to both message files rather than copy the hard-coded Turkish string that `v2/giris/page.tsx` currently inlines.
