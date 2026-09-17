@@ -24,7 +24,7 @@ export function V2Footer() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="font-heading text-lg font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-none">
+                <span className="font-heading text-lg font-bold tracking-tight text-primary leading-none">
                   Coğrafya <span className="text-primary">Gurmesi</span>
                 </span>
                 <span className="text-[10px] text-muted-foreground font-medium">

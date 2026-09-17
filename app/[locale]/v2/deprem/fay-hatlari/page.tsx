@@ -105,7 +105,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 </Badge>
               </div>
 
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)] leading-tight">
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
                 Türkiye&apos;nin Ana Fay Hatları: KAF, DAF ve BAFS
               </h1>
 

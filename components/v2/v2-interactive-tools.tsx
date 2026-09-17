@@ -62,7 +62,7 @@ export function V2InteractiveTools() {
             </Badge>
             <span className="text-xs text-muted-foreground">WGS84 Jeodezik Hesaplama</span>
           </div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
             Canlı Jeodezik Mesafe &amp; Harita Araçları
           </h2>
         </div>

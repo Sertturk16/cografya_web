@@ -28,25 +28,18 @@ export function V2ProvinceLocatorMap({ plateCode, provinceName }: V2ProvinceLoca
 
         {/* 2. Türkiye Casing Base Land */}
         {trCasing && (
-          <path
-            d={trCasing.d}
-            className="fill-card dark:fill-[#201c18] pointer-events-none"
-          />
+          <path d={trCasing.d} className="fill-card dark:fill-[#201c18] pointer-events-none" />
         )}
 
         {/* 3. All 81 Provinces (Background) */}
         <g className="stroke-border/70 stroke-[0.6] fill-card dark:fill-[#201c18]">
           {PROVINCE_SHAPES.map((shape) => (
-            <path
-              key={shape.plateCode}
-              d={shape.d}
-              className="opacity-70"
-            />
+            <path key={shape.plateCode} d={shape.d} className="opacity-70" />
           ))}
         </g>
 
         {/* 4. Inland Lakes */}
-        <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#152228] stroke-[var(--color-accent,#276b70)]/40 stroke-[0.5] pointer-events-none">
+        <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
           {INLAND_WATER_SHAPES.map((lake) => (
             <path key={lake.id} d={lake.d} />
           ))}
@@ -56,14 +49,11 @@ export function V2ProvinceLocatorMap({ plateCode, provinceName }: V2ProvinceLoca
         {targetShape && (
           <g>
             {/* Soft Glow Underlay */}
-            <path
-              d={targetShape.d}
-              className="fill-[var(--color-primary,#b0522e)] opacity-40 blur-xs"
-            />
+            <path d={targetShape.d} className="fill-primary opacity-40 blur-xs" />
             {/* Sharp Highlight Shape */}
             <path
               d={targetShape.d}
-              className="fill-[var(--color-primary,#b0522e)] stroke-[var(--color-primary-dark,#7e3a1e)] dark:stroke-primary stroke-[1.8] opacity-100 filter drop-shadow-md"
+              className="fill-primary stroke-primary dark:stroke-primary stroke-[1.8] opacity-100 filter drop-shadow-md"
             />
           </g>
         )}

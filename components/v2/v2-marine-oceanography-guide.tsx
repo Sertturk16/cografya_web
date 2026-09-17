@@ -21,7 +21,7 @@ export function V2MarineOceanographyGuide() {
           </div>
           <h2
             id="v2-marine-coastal-guide-heading"
-            className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-primary-dark,#7e3a1e)]"
+            className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-primary"
           >
             Türkiye&apos;nin Kıyı Tipleri &amp; Denizel Jeomorfolojisi
           </h2>

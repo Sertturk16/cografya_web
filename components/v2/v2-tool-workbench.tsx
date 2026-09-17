@@ -908,7 +908,7 @@ export function V2ToolWorkbench({
                   Jeodezik Büyük Daire &amp; Küresel Alan Hesabı
                 </span>
               </div>
-              <h2 className="font-heading text-xl sm:text-2xl font-bold text-[var(--color-primary-dark,#7e3a1e)] mt-1">
+              <h2 className="font-heading text-xl sm:text-2xl font-bold text-primary mt-1">
                 Coğrafi Bilgi Sistemleri (CBS) Ölçüm Araçları
               </h2>
             </div>
