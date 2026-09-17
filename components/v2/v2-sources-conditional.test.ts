@@ -2,6 +2,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import enMessages from "../../messages/en.json";
+import trMessages from "../../messages/tr.json";
 
 /**
  * BINDING GUARD for `V2SourcesSection`'s conditional citation props.
@@ -91,11 +93,38 @@ describe("V2SourcesSection's conditional citations", () => {
 
   it("carries the verbatim licence text for the marine sources it now cites", () => {
     /**
-     * The citation is only worth anything if the required wording travels with it. Both
-     * strings are quoted from the licences; `V2SourcesSection` renders `legalQuote` inside a
-     * <details> on the card, so asserting the field's presence asserts the page shows it.
+     * The citation is only worth anything if the required wording travels with it — the rule
+     * this assertion has always encoded, and it is still real. What changed is WHERE it is
+     * asserted, because the old form asserted it of the wrong file and passed for the wrong
+     * reason.
+     *
+     * It used to read `expect(componentSource).toContain("Generated using E.U. Copernicus
+     * Marine Service Information")` — green only because the `home` scope's card carried a
+     * SECOND copy of the notice, and a broken one: "…Information 2026". The Copernicus Marine
+     * licence attaches its notice to the SERVICE, not to a data year, which is exactly why the
+     * `deniz` scope's `cmems` entry had its near-copy removed. So the assertion was propping up
+     * the defect it looked like it was guarding, and fixing the string would have turned it red.
+     *
+     * It now points at the SINGLE SOURCE OF TRUTH — the message catalogue, verbatim and
+     * identical in both locales, rendered by `MarineAttribution` — and at the absence of any
+     * second copy in this component. The bibliography card names the source; the licence lives
+     * in the attribution block, visible without a click on the page carrying the values.
      */
-    expect(componentSource).toContain("Generated using E.U. Copernicus Marine Service Information");
+    const REQUIRED = "Generated using E.U. Copernicus Marine Service Information";
+
+    expect(trMessages.Marine.attribution.cmemsNotice).toBe(REQUIRED);
+    expect(enMessages.Marine.attribution.cmemsNotice).toBe(REQUIRED);
+
+    const attribution = readFileSync(
+      fileURLToPath(new URL("../marine/marine-attribution.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(attribution).toContain('tm("attribution.cmemsNotice")');
+
+    // No second copy anywhere in the bibliography — a verbatim licence string with two homes is
+    // a breach waiting for the day someone edits one of them, and this one already was one.
+    expect(componentSource).not.toContain(REQUIRED);
+
     expect(componentSource).toMatch(/id: "ecmwf-marine"/);
     expect(componentSource).toMatch(/id: "cmems"/);
   });
