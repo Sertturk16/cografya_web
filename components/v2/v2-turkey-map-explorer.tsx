@@ -589,7 +589,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               <span className="hidden sm:inline">Bölge Renkleri</span>
             </button>
 
-            <div className="h-4 w-px bg-border my-auto mx-0.5" />
+            {/* The product's ONE standalone rule (T-036 measured it). It stays a <div>: it
+                groups toolbar buttons visually and carries no meaning a screen reader needs,
+                so it is hidden from the accessibility tree rather than announced. */}
+            <div aria-hidden="true" className="h-4 w-px bg-border my-auto mx-0.5" />
 
             <button
               type="button"

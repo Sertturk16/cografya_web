@@ -1,4 +1,3 @@
-import { Separator } from "@/components/ui/separator";
 import { H1, H2, H3, H4, Lede, Muted, Kbd } from "@/components/patterns/typography";
 import { Specimen } from "../specimen";
 
@@ -79,25 +78,6 @@ export function TemellerSpecimens() {
               {t.name} — Coğrafya, yeryüzünü ve insanın onunla ilişkisini inceler.
             </p>
           ))}
-        </div>
-      </Specimen>
-
-      <Specimen
-        name="Separator"
-        description="24 V2 dosyası bunu elle `border-t border-border` olarak çiziyordu. Anlam taşımayan ayırıcılar decorative alır; taşıyanlar role=separator ile duyurulur."
-      >
-        <div className="max-w-sm space-y-4">
-          <p className="text-sm text-foreground">Yatay, anlamlı</p>
-          <Separator />
-          <p className="text-sm text-foreground">Yatay, dekoratif</p>
-          <Separator decorative />
-          <div className="flex h-10 items-center gap-3 text-sm text-foreground">
-            <span>Marmara</span>
-            <Separator orientation="vertical" />
-            <span>Ege</span>
-            <Separator orientation="vertical" />
-            <span>Akdeniz</span>
-          </div>
         </div>
       </Specimen>
 

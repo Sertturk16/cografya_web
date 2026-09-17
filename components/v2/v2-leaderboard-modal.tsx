@@ -255,10 +255,22 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                 </table>
               </div>
 
-              {/* Pagination controls */}
+              {/* Pagination controls.
+                  Hand-rolled on purpose (T-036). `components/ui/pagination.tsx` was built
+                  around real `<a href>` anchors, "so middle-click and open-in-new-tab work" —
+                  the right call for a paginated URL, and the wrong shape here: this list pages
+                  CLIENT STATE inside a modal and has no URL of its own to link to. The two
+                  things the primitive would have brought that this was missing are added
+                  directly instead: a named landmark, and an announcement when the page
+                  changes. `aria-live="polite"` sits on the page counter because that text IS
+                  the change; a screen-reader user pressing "Sonraki Sayfa" otherwise heard
+                  nothing at all. */}
               {(displayData.page > 1 || displayData.hasMore) && (
-                <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
-                  <span>
+                <nav
+                  aria-label="Sayfalama"
+                  className="flex items-center justify-between pt-2 text-xs text-muted-foreground"
+                >
+                  <span aria-live="polite">
                     Sayfa {displayData.page} ({displayData.total} kayıt)
                   </span>
                   <div className="flex items-center gap-1">
@@ -281,7 +293,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                       <ChevronRight className="size-3.5" />
                     </Button>
                   </div>
-                </div>
+                </nav>
               )}
             </div>
           )}

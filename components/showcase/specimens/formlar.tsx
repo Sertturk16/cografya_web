@@ -1,15 +1,12 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { Label } from "@/components/ui/label";
 import { FormField, FormErrorSummary } from "@/components/patterns/form-field";
 import * as React from "react";
-import { Specimen, SpecimenRow } from "../specimen";
+import { Specimen } from "../specimen";
 
 export function FormlarSpecimens() {
   return (
@@ -47,54 +44,6 @@ export function FormlarSpecimens() {
             <Input id="ds-input-off" defaultValue="Değiştirilemez" disabled />
           </div>
         </div>
-      </Specimen>
-
-      <Specimen name="Textarea">
-        <div className="max-w-sm space-y-1.5">
-          <Label htmlFor="ds-textarea">Not</Label>
-          <Textarea id="ds-textarea" placeholder="Gözlem notunuz…" rows={3} />
-        </div>
-      </Specimen>
-
-      <Specimen
-        name="Checkbox"
-        description="İşaretli, işaretsiz, belirsiz (indeterminate) ve devre dışı."
-      >
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Checkbox id="ds-cb-1" />
-            <Label htmlFor="ds-cb-1">İşaretsiz</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox id="ds-cb-2" defaultChecked />
-            <Label htmlFor="ds-cb-2">İşaretli</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox id="ds-cb-3" indeterminate />
-            <Label htmlFor="ds-cb-3">Belirsiz</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox id="ds-cb-4" disabled />
-            <Label htmlFor="ds-cb-4">Devre dışı</Label>
-          </div>
-        </div>
-      </Specimen>
-
-      <Specimen name="Switch">
-        <SpecimenRow>
-          <div className="flex items-center gap-2">
-            <Switch id="ds-sw-1" />
-            <Label htmlFor="ds-sw-1">Kapalı</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch id="ds-sw-2" defaultChecked />
-            <Label htmlFor="ds-sw-2">Açık</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch id="ds-sw-3" disabled />
-            <Label htmlFor="ds-sw-3">Devre dışı</Label>
-          </div>
-        </SpecimenRow>
       </Specimen>
 
       <Specimen name="Select">

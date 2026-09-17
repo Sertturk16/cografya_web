@@ -61,49 +61,23 @@ describe("Spinner announces what is loading", () => {
   });
 });
 
-describe("Pagination is navigation made of links", () => {
-  const source = read("pagination");
-
-  it("marks the current page programmatically, not only by colour", () => {
-    expect(source).toContain('aria-current={isActive ? "page" : undefined}');
-  });
-
-  it("names its landmark", () => {
-    // A page can carry several <nav>s; an unnamed one tells a screen-reader user nothing.
-    expect(source).toContain('aria-label="Sayfalama"');
-  });
-
-  it("uses real anchors so middle-click and open-in-new-tab work", () => {
-    expect(source).toMatch(/<a\b/);
-  });
-
-  it("keeps list semantics on a markerless list", () => {
-    // Safari and VoiceOver drop them otherwise, taking "list, 7 items" with them — the same
-    // note app/globals.css writes against .province-grid.
-    expect(source).toContain('role="list"');
-  });
-
-  it("composes our Button rather than the registry's", () => {
-    // `shadcn add pagination` asked to overwrite components/ui/button.tsx, which carries
-    // Terra's variants and the phase A2 token rebinding. It was declined.
-    expect(source).toContain('from "@/components/ui/button"');
-    expect(source).toContain("buttonVariants");
-  });
-});
-
-describe("Separator can opt out of the accessibility tree", () => {
-  const source = read("separator");
-
-  it("supports a decorative mode Base UI does not ship", () => {
-    // 24 V2 files hand-rolled `border-t border-border`. Announcing "separator" once per
-    // decorative rule is noise.
-    expect(source).toContain("decorative");
-    expect(source).toContain('role={decorative ? "none" : undefined}');
-  });
-});
-
+/**
+ * The Pagination and Separator blocks stood here.
+ *
+ * T-036 deleted both primitives, so their contracts have no subject left to hold. Neither
+ * RULE was dropped, though — each moved to the one place in the product it actually applies:
+ *
+ *   - Pagination's landmark and live-page rules now sit on the repo's only paginated list,
+ *     `components/v2/v2-leaderboard-modal.tsx`, which pages client state inside a modal with
+ *     no URL. The primitive's own core decision — real `<a href>` anchors, "so middle-click
+ *     and open-in-new-tab work" — is exactly what does not fit there.
+ *   - Separator had nothing to hold. Its docblock claimed it was "the shape 24 V2 files were
+ *     hand-rolling as `border-t border-border`", and that was a category error: all 63 of
+ *     those occurrences are a border ON a content element. See `components/ui/orphan.test.ts`
+ *     for the measurement.
+ */
 describe("the generated primitives were read before they were committed", () => {
-  it.each(["separator", "progress", "tooltip", "popover", "breadcrumb"])(
+  it.each(["progress", "tooltip", "breadcrumb"])(
     "%s imports cn from the repo, not the npm package the CLI reached for",
     (name) => {
       // `shadcn add` wrote `import { cn } from "cn"` and installed an unrelated package.

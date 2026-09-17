@@ -17,15 +17,6 @@ import {
   ProgressLabel,
   ProgressValue,
 } from "@/components/ui/progress";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { MetricValue } from "@/components/patterns/metric-value";
 import { Specimen } from "../specimen";
@@ -117,39 +108,6 @@ export function VeriSpecimens() {
             </ProgressTrack>
           </Progress>
         </div>
-      </Specimen>
-
-      <Specimen
-        name="Pagination"
-        description="Gerçek <a> elemanları: bir sayfa bağlantısı bir konumdur, orta tık ve yeni sekmede aç çalışmalı. Aktif sayfa aria-current='page' taşır, yalnızca renkle değil."
-      >
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious href="#" />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#">1</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#" isActive>
-                2
-              </PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#">3</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#">9</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext href="#" />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
       </Specimen>
 
       <Specimen
