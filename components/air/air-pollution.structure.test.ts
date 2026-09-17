@@ -129,7 +129,11 @@ describe("the section is gated on the payload, in both directions", () => {
     // province, so the same defect appears as an OMISSION rather than a push: the province
     // drops the citation when it has no series to show. Same guarantee, opposite mechanic —
     // and the V2 rewrite had neither until T-032 PR3, which is what this assertion now pins.
-    expect(pageCode).toMatch(/omit=\{pm25Annual \? \[\] : \["acag-pm25"\]\}/);
+    // The prop is a spread of per-source clauses since `era5` gained the counterpart it
+    // never had (the climate block renders on no English province page while ERA5-Land was
+    // cited on all 81). This assertion owns the PM2.5 clause and nothing else, so a third
+    // conditional source cannot break it.
+    expect(pageCode).toMatch(/\.\.\.\(pm25Annual \? \[\] : \["acag-pm25"\]\)/);
   });
 
   /**
