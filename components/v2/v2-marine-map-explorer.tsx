@@ -616,7 +616,14 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   <Clock className="size-3.5 text-muted-foreground" /> Model Zamanı
                 </span>
                 <div className="font-mono font-medium text-[11px] text-foreground">
-                  {selectedPoint.validAt ?? "Canlı Analiz"}
+                  {/* "—", never "Canlı Analiz". The label above this value reads "Model
+                      Zamanı", so a fallback string here is read as an ANSWER to it: the page
+                      states a freshness it does not have. `validAt` is null exactly when no
+                      cycle has been ingested for this point, which is the case where the
+                      platform knows least about how current the numbers are. Every other cell
+                      in this panel already uses the neutral dash for a missing value; this one
+                      was the exception. */}
+                  {selectedPoint.validAt ?? "—"}
                 </div>
                 {selectedPoint.gridDistanceKm && (
                   <span className="text-[10px] text-muted-foreground block">
@@ -1012,7 +1019,9 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       </TableCell>
                       <TableCell className="text-right font-mono text-[11px] text-muted-foreground">
                         <div>
-                          <span>{point.validAt ?? "Canlı"}</span>
+                          {/* "—", never "Canlı" — see the detail panel above. This column's
+                              other cells already use the dash for a missing value. */}
+                          <span>{point.validAt ?? "—"}</span>
                           {point.gridDistanceKm !== undefined && point.gridDistanceKm !== null && (
                             <span className="block text-[10px] text-muted-foreground/80">
                               &le; {point.gridDistanceKm.toFixed(1)} km
