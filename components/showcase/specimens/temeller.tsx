@@ -18,7 +18,7 @@ const BRAND = [
   { name: "primary", className: "bg-primary", fg: "text-primary-foreground" },
   { name: "secondary", className: "bg-secondary", fg: "text-secondary-foreground" },
   { name: "accent", className: "bg-accent", fg: "text-accent-foreground" },
-  { name: "destructive", className: "bg-destructive", fg: "text-white" },
+  { name: "destructive", className: "bg-destructive", fg: "text-destructive-foreground" },
 ] as const;
 
 const TEXT = [

@@ -20,7 +20,11 @@ const buttonVariants = cva(
         outline:
           "border border-border bg-card text-foreground hover:bg-muted hover:border-primary/50 shadow-xs",
         ghost: "text-foreground hover:bg-muted hover:text-foreground",
-        destructive: "bg-destructive text-white hover:bg-destructive/90 shadow-sm",
+        /* `text-destructive-foreground`, not `text-white`. The token was re-exported by
+           `@theme inline` but never declared, so the utility resolved to nothing and a raw
+           literal was used instead — which then measured 2.89:1 once dark mode lifted the
+           fill. Both halves are now declared and measured in `app/globals.css`. */
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
         link: "text-primary underline-offset-4 hover:underline p-0 h-auto font-medium shadow-none active:scale-100",
       },
       size: {

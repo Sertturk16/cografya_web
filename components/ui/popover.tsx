@@ -57,7 +57,11 @@ function PopoverTitle({ className, ...props }: PopoverPrimitive.Title.Props) {
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
-      className={cn("font-medium", className)}
+      /* Base UI renders this as an `<h2>`, so with only `font-medium` it inherited BOTH the
+         colour and the fluid `clamp(1.4rem, …)` size from `@layer base` — 28.8px of frozen
+         light-mode terracotta inside a 12-14px popover. `DialogTitle` states its own size and
+         colour and was therefore always correct; this is the same statement. */
+      className={cn("text-sm font-semibold text-foreground", className)}
       {...props}
     />
   );

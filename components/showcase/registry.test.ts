@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { CATEGORIES, EXEMPT_FILES } from "./registry";
@@ -27,6 +27,14 @@ const LISTED = CATEGORIES.flatMap((category) => category.components);
  * What this does NOT claim: that a specimen exercises every variant. Proving that needs
  * rendering, which this suite has no jsdom for. The gap is accepted and written down here
  * rather than left implied.
+ *
+ * What it USED to not claim, and now does: that a listed component is actually rendered
+ * anywhere. "Every component has a specimen" only reconciled the registry against the
+ * FILESYSTEM — a name in the registry and a file in `components/ui` were enough to satisfy
+ * it. `dropdown-menu` and `custom-select` passed every assertion here while appearing in no
+ * specimen at all; the index cards counted them, so two categories advertised one more
+ * component than they showed. `docs/design.md` claimed this file already caught that. It did
+ * not, so the claim is now true instead of the documentation being wrong.
  */
 describe("showcase coverage", () => {
   it("positive control — both directories were actually read", () => {
@@ -60,4 +68,52 @@ describe("showcase coverage", () => {
   it("category slugs are unique", () => {
     expect(new Set(CATEGORIES.map((c) => c.slug)).size).toBe(CATEGORIES.length);
   });
+
+  /**
+   * The assertion the docs already promised. A registry entry is a claim that the showcase
+   * SHOWS the component, and the index card turns that claim into a number the reader can
+   * count against what is on screen.
+   *
+   * Matching on the PascalCase symbol rather than the slug is what makes it real: the slug
+   * appears in the registry and in the file path, so a slug search would pass on a component
+   * nobody imported. The symbol only appears where the component is actually used.
+   */
+  const SPECIMENS = readdirSync(fileURLToPath(new URL("./specimens/", import.meta.url)))
+    .filter((f) => f.endsWith(".tsx"))
+    .map((f) => readFileSync(fileURLToPath(new URL(`./specimens/${f}`, import.meta.url)), "utf8"))
+    .join("\n");
+
+  /**
+   * Two files export something other than the PascalCase of their own name, and both are real
+   * rather than sloppy: `sonner.tsx` exports the `Toaster` mount and is DEMONSTRATED by the
+   * imperative `toast()` call that raises one, and `typography.tsx` is a module of several
+   * small components with no single wrapper. Named here so the rule stays strict; a guess
+   * dressed up as a convention would just move the blind spot.
+   */
+  const SYMBOL_OVERRIDES: Readonly<Record<string, readonly string[]>> = {
+    sonner: ["toast.success(", "toast.info(", "toast.error("],
+    typography: ["<H1", "<H2", "<Lede", "<Kbd"],
+  };
+
+  const pascal = (slug: string) =>
+    slug
+      .split("-")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join("");
+
+  it("positive control — the specimen sources were actually read", () => {
+    expect(SPECIMENS.length).toBeGreaterThan(5000);
+    expect(SPECIMENS).toContain("<Specimen");
+  });
+
+  it.each(LISTED.filter((name) => !EXEMPT_FILES.includes(name)))(
+    "%s is rendered by a specimen, not merely listed",
+    (name) => {
+      const needles = SYMBOL_OVERRIDES[name] ?? [`<${pascal(name)}`];
+      expect(
+        needles.some((needle) => SPECIMENS.includes(needle)),
+        `${name} is in the registry but no specimen uses ${needles.join(" or ")}`,
+      ).toBe(true);
+    },
+  );
 });

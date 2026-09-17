@@ -38,7 +38,12 @@ function BreadcrumbLink({ className, render, ...props }: useRender.ComponentProp
     defaultTagName: "a",
     props: mergeProps<"a">(
       {
-        className: cn("transition-colors hover:text-foreground", className),
+        /* `text-muted-foreground` is not decoration: without an explicit colour this `<a>`
+           falls through to `@layer base`'s `a` rule, which is a link colour meant for prose.
+           It measured 2.23:1 on the dark background before this. The list already sets the
+           same token, but a BreadcrumbLink used outside a BreadcrumbList would not inherit
+           it, so the component states it rather than relying on where it is placed. */
+        className: cn("text-muted-foreground transition-colors hover:text-foreground", className),
       },
       props,
     ),

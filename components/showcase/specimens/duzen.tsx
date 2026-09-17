@@ -20,6 +20,16 @@ import {
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarBadge, AvatarGroup } from "@/components/ui/avatar";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+} from "@/components/ui/dropdown-menu";
+import {
   Dialog,
   DialogTrigger,
   DialogContent,
@@ -244,6 +254,29 @@ export function DuzenSpecimens() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+      </Specimen>
+
+      <Specimen
+        name="DropdownMenu"
+        description="Bir menü, bir seçim listesi değil: her satır bir EYLEM. Seçenek seçtirmek için CustomSelect ya da Select kullanılır. Portal ile açıldığı için sayfanın temasını izler, panelin değil."
+        portals
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button variant="outline">İl işlemleri</Button>} />
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuLabel>Çanakkale</DropdownMenuLabel>
+            <DropdownMenuItem>
+              Favorilere ekle
+              <DropdownMenuShortcut>⌘F</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem>Haritada göster</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem checked>Komşu iller</DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem>Deprem katmanı</DropdownMenuCheckboxItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive">Karşılaştırmadan çıkar</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </Specimen>
     </>
   );

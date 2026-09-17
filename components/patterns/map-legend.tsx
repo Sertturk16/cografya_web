@@ -49,8 +49,25 @@ export type MapLegendProps = ClassedProps | CategoricalProps;
  * NOT redefined under `.dark`, because their contrast was measured against fixed map
  * surfaces. The caller passes the same token the map drew with, so the two cannot drift.
  *
- * Every swatch carries a border: several of these scales include a pale member, and a pale
- * square on a pale card is invisible without one.
+ * ## Why the swatch border is `--muted-foreground`, and why it must follow the theme
+ *
+ * Every swatch carries a border, because these scales include members that vanish against the
+ * card at either end — a pale yellow on white, a near-black magnitude class on the night-sea
+ * card. The first version used `--border`, which cannot do that job: it measures 1.45:1 in
+ * light and 1.53:1 in dark, so the mitigation was decorative. Measured against `--card`, three
+ * of the seven region colours and the top three earthquake classes came out under the 3:1 that
+ * WCAG 1.4.11 asks of a graphical object — the darkest at 1.01:1.
+ *
+ * The obvious next move is wrong, and was measured before it was believed: binding the border
+ * to Terra's fixed `--color-ink-dark` gives 16.87:1 on the white card and **1.01:1 on the dark
+ * one**, which is the same defect with the themes swapped. `docs/design.md`'s line about
+ * ink-dark is about a line drawn over a data FILL, on a map surface that does not change. This
+ * border has a different job: it separates the swatch from the CARD, and the card does change.
+ *
+ * So the border is theme-aware even though the fills are not. `--muted-foreground` measures
+ * 7.92:1 against the light card and 7.79:1 against the dark one — verified across all 24
+ * swatches the showcase renders, not derived — so the swatch is identifiable as a shape in
+ * both panels whatever its fill happens to be.
  */
 export function MapLegend(props: MapLegendProps) {
   const { title, className } = props;
@@ -87,7 +104,7 @@ function ClassedBody({ bins, locale }: { bins: readonly LegendBin[]; locale: str
           <li key={`${bin.from}-${bin.to ?? "up"}`} className="flex items-center gap-2">
             <span
               aria-hidden="true"
-              className="size-3.5 shrink-0 rounded-[3px] border border-border"
+              className="size-3.5 shrink-0 rounded-[3px] border border-muted-foreground"
               style={{ backgroundColor: bin.color }}
             />
             <span className="text-xs tabular-nums text-foreground">{label}</span>
@@ -105,7 +122,7 @@ function CategoricalBody({ categories }: { categories: readonly LegendCategory[]
         <li key={category.label} className="flex items-center gap-1.5">
           <span
             aria-hidden="true"
-            className="size-3 shrink-0 rounded-[3px] border border-border"
+            className="size-3 shrink-0 rounded-[3px] border border-muted-foreground"
             style={{ backgroundColor: category.color }}
           />
           <span className="text-xs text-foreground">{category.label}</span>

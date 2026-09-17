@@ -32,7 +32,7 @@ export function ThemePair({ children, portals = false, className }: ThemePairPro
   return (
     <div className="space-y-2">
       <div className={cn("grid gap-3 sm:grid-cols-2", className)}>
-        <figure className="space-y-2">
+        <figure className="min-w-0 space-y-2">
           <figcaption className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             Aydınlık
           </figcaption>
@@ -41,7 +41,7 @@ export function ThemePair({ children, portals = false, className }: ThemePairPro
           </div>
         </figure>
 
-        <figure className="space-y-2">
+        <figure className="min-w-0 space-y-2">
           <figcaption className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             Karanlık
           </figcaption>

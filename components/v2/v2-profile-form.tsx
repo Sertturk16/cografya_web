@@ -250,7 +250,7 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
       {submitError && (
         <div
           role="alert"
-          className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200"
+          className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive-strong animate-in fade-in-50 duration-200"
         >
           <AlertCircle className="size-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed font-medium">
@@ -263,7 +263,7 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
       {Object.values(fieldErrors).some(Boolean) && !submitError && (
         <div
           role="alert"
-          className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50 duration-200"
+          className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive-strong animate-in fade-in-50 duration-200"
         >
           <AlertCircle className="size-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed font-medium">{t("formErrors.summary")}</span>

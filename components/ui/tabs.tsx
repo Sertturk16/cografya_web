@@ -24,7 +24,10 @@ const triggerVariants = {
     "rounded-lg px-3.5 py-1.5 aria-selected:bg-card aria-selected:text-primary aria-selected:font-bold aria-selected:shadow-xs",
   /* The underline is an inset box-shadow rather than a border, so the tab does not shift by a
      pixel when it becomes selected. */
-  line: "px-1 py-2.5 aria-selected:text-primary aria-selected:font-bold aria-selected:shadow-[inset_0_-2px_0_0_currentColor]",
+  /* `-strong`, because this variant has no card under it: the selected label sits directly on
+     `--muted`, where the base member measures 4.26:1 light and 4.29:1 dark. The `pills`
+     variant sets `aria-selected:bg-card` first and so clears the floor on the base member. */
+  line: "px-1 py-2.5 aria-selected:text-primary-strong aria-selected:font-bold aria-selected:shadow-[inset_0_-2px_0_0_currentColor]",
 } as const;
 
 function Tabs({
