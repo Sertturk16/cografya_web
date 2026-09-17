@@ -132,13 +132,20 @@ function nonExemptBodySpellings(): Map<string, string[]> {
  * a diff.
  *
  * Measured 2026-09-17 against the real tree, not predicted: 17 distinct spellings across 39
- * body-width elements in the 37 pages (three `(play)` screens carry none, by design — they are
- * fullscreen game screens that opt out of the reading-surface chrome). Not the 8 guessed before
- * the scan ran. See task-1-report.md for the full list; every entry was checked by hand against
- * its source line to confirm it is a real `className` on an element carrying the container
- * width — including the sticky quicknav/tab-strip wrappers in `turkiye/bolge/[slug]`,
- * `turkiye/bolge` and `dunya/[slug]`, which align to the same edges as the body content and
- * carry the same `container`/`max-w-7xl` tokens, not just the primary content wrapper.
+ * body-width elements in the 37 pages (three `(play)` `page.tsx` files carry none THEMSELVES —
+ * not because the play surface has no body wrapper, but because `walkPages()` reads `page.tsx`
+ * only, and all three compose `V2GameScreen` instead of writing the wrapper inline. That
+ * component's own `<main>` (`components/v2/v2-game-screen.tsx:665`) carries the identical
+ * `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6` spelling for all three
+ * `(play)` pages — invisible to this scanner for the `components/v2` reason the SCOPE note
+ * above already names, not because it is absent. `PAGE_BODY_SPELLINGS` reading 0 is a claim
+ * about `page.tsx` files only, never about whether the play surface carries a body wrapper).
+ * Not the 8 guessed before the scan ran. See task-1-report.md for the full list; every entry
+ * was checked by hand against its source line to confirm it is a real `className` on an
+ * element carrying the container width — including the sticky quicknav/tab-strip wrappers in
+ * `turkiye/bolge/[slug]`, `turkiye/bolge` and `dunya/[slug]`, which align to the same edges as
+ * the body content and carry the same `container`/`max-w-7xl` tokens, not just the primary
+ * content wrapper.
  *
  * Task 3 (2026-09-17) moved the five family-B pages (`container mx-auto px-4 max-w-7xl …`) onto
  * `PageContainer`, which renders as a component call rather than a literal `className` — those
@@ -352,6 +359,19 @@ function breadcrumbNavFiles(): string[] {
  *     wrong, in the conservative direction, about `v2-sea-basin-detail-view.tsx`. A per-page
  *     check would need to follow the import graph from `page.tsx` to the component it renders;
  *     this file does not, and a file-level match is the honest limit of what it can claim.
+ *   - a server `page.tsx` that imports `BreadcrumbsNav` from
+ *     `components/patterns/breadcrumbs-nav.tsx` directly instead of `Breadcrumbs` from
+ *     `components/patterns/breadcrumbs.tsx` (added after Task 6/7's split gave a server page a
+ *     way to do that — see that split's own docblocks). It renders the exact same `<nav
+ *     aria-label="breadcrumb">` markup `BREADCRUMB_NAV` matches, but the literal string lives in
+ *     `components/ui/breadcrumb.tsx` — the file `BREADCRUMB_OWNERS` exempts — not in the page
+ *     that imports `BreadcrumbsNav`, so the page's own source is invisible to all three counters
+ *     below regardless of whether it emits `BreadcrumbList` JSON-LD or `aria-current`. Proven by
+ *     adding a probe page under `(site)` that rendered `BreadcrumbsNav`: every assertion in this
+ *     file stayed green. Not closed by widening `BREADCRUMB_NAV` — the markup is correct, the
+ *     PROBLEM is which half of the split a server file reaches for — so it is closed separately,
+ *     by an IMPORT scan rather than a markup scan: see "no server page imports the client-only
+ *     breadcrumb nav" below.
  *
  * All three counters also inherit `walk()`'s own scope: it visits `.tsx` files only (no `.ts`
  * helpers), and `SURFACE_ROOTS` visits `PAGE_ROOTS` plus `components/v2` only — a breadcrumb
@@ -442,11 +462,96 @@ describe("breadcrumbs are rendered by one component", () => {
 });
 
 /**
+ * FINDING (PR2 final review). The three counters above all filter `breadcrumbNavFiles()`, i.e.
+ * files whose OWN source matches `BREADCRUMB_NAV`. A server `page.tsx` that imports
+ * `BreadcrumbsNav` from `components/patterns/breadcrumbs-nav.tsx` — the client-safe half of the
+ * Task 6/7 split — never matches that pattern itself: the literal `aria-label="breadcrumb"`
+ * lives inside `components/ui/breadcrumb.tsx`, an exempted owner, not in the page. Proven, not
+ * assumed: a probe page under `(site)` rendering `BreadcrumbsNav` directly left every assertion
+ * above green. That page would ship a visible trail with NO `BreadcrumbList` JSON-LD — the exact
+ * 20-file defect `BREADCRUMBS_WITHOUT_JSONLD` was built to close — through the one door the
+ * counters above cannot see, because it is a markup scan and this bypass produces no distinctive
+ * markup of its own on the page that has the bug.
+ *
+ * The fix is an IMPORT scan instead of a markup scan. `components/patterns/breadcrumbs-nav.tsx`
+ * exists for Client Components that structurally cannot render `Breadcrumbs` (it reaches
+ * `server-only`, see that file's own docblock and `components/patterns/rsc-boundary.test.ts`).
+ * Every file under `PAGE_ROOTS` is a Server Component by default and can always reach
+ * `Breadcrumbs` instead, so it has no legitimate reason to import the nav-only half directly —
+ * doing so is either a mistake (this bypass) or dead code, never a case this scanner should
+ * tolerate silently. `components/v2` is deliberately OUT of this scan, unlike `SURFACE_ROOTS`
+ * above: `v2-sea-basin-detail-view.tsx` and `v2-game-screen.tsx` are genuine Client Components
+ * and their `BreadcrumbsNav` import is the legitimate case this check exists to distinguish
+ * from the illegitimate one — a `page.tsx` reaching for it when `Breadcrumbs` was always
+ * available.
+ */
+const BREADCRUMBS_NAV_IMPORT = "@/components/patterns/breadcrumbs-nav";
+
+const PAGE_ROOT_FILES_IMPORTING_BREADCRUMBS_NAV = 0;
+
+function pageRootFiles(): string[] {
+  return PAGE_ROOTS.flatMap((rel) => walk(join(repoRoot, rel))).sort();
+}
+
+function pageRootFilesImportingBreadcrumbsNav(): string[] {
+  return pageRootFiles().filter((path) => sourceOf(path).includes(BREADCRUMBS_NAV_IMPORT));
+}
+
+describe("no file under PAGE_ROOTS imports the client-only breadcrumb nav", () => {
+  it("the count of PAGE_ROOTS files importing breadcrumbs-nav is exactly the recorded number", () => {
+    const files = pageRootFilesImportingBreadcrumbsNav().map(label).sort();
+    expect(
+      files,
+      `PAGE_ROOTS files importing components/patterns/breadcrumbs-nav directly (use Breadcrumbs instead — it renders the same nav plus the JSON-LD a server file can always emit):\n${files.map((f) => `  ${f}`).join("\n")}`,
+    ).toHaveLength(PAGE_ROOT_FILES_IMPORTING_BREADCRUMBS_NAV);
+  });
+
+  it("the walk found a real, non-trivial slice of PAGE_ROOTS — positive control against the live tree", () => {
+    // Guards against a broken `pageRootFiles()` (an empty walk, a bad join) reading as "zero
+    // offenders" for the wrong reason.
+    expect(pageRootFiles().length).toBeGreaterThan(30);
+  });
+
+  it("the check fires on source that imports breadcrumbs-nav — positive control", () => {
+    const source = 'import { BreadcrumbsNav } from "@/components/patterns/breadcrumbs-nav";';
+    expect(source.includes(BREADCRUMBS_NAV_IMPORT)).toBe(true);
+  });
+
+  it("does not fire on an import of the server Breadcrumbs component — negative control", () => {
+    const source = 'import { Breadcrumbs } from "@/components/patterns/breadcrumbs";';
+    expect(source.includes(BREADCRUMBS_NAV_IMPORT)).toBe(false);
+  });
+
+  it("a docblock mentioning the import does not count — comment stripping applied", () => {
+    const stripped = stripComments(
+      '// import { BreadcrumbsNav } from "@/components/patterns/breadcrumbs-nav";',
+    );
+    expect(stripped.includes(BREADCRUMBS_NAV_IMPORT)).toBe(false);
+  });
+});
+
+/**
  * Files that write the nav but never tell assistive technology which crumb is the current
  * page. `aria-current` is checked as a bare token, not `aria-current="page"` specifically,
  * because any value (`"page"`, `"location"`, `"true"`) answers the accessibility gap this
  * counts; see the SCOPE note above for what a variable- or spread-applied `aria-current` still
  * misses.
+ *
+ * NOT A CLAIM ABOUT THE SURFACE. This counter, like counter 1 above, is filtered from
+ * `breadcrumbNavFiles()` — the hand-written subset, currently empty. Its title says "breadcrumbs
+ * mark the current page" but what it actually measures is "hand-written breadcrumb navs mark the
+ * current page"; with `HAND_WRITTEN_BREADCRUMBS` at 0, it filters an empty list and passes
+ * vacuously for every file on the reading/play surface that reaches `aria-current` through
+ * `Breadcrumbs`/`BreadcrumbsNav` instead of writing its own nav. MUTATION-CHECKED alongside
+ * counter 1's own zero-target check (reintroducing `max-w-7xl mx-auto` on `araclar/page.tsx`,
+ * see `PAGE_BODY_SPELLINGS`'s docblock — a different mutation, the breadcrumb one is this file's
+ * own "the hand-written nav count is exactly the recorded number" going non-zero the moment a
+ * hand-written nav exists): a newly hand-written nav is caught by COUNTER 1
+ * (`HAND_WRITTEN_BREADCRUMBS`), which goes red naming that file; if it also lacks
+ * `aria-current`, this counter goes red on the SAME file, but has never once caught a case
+ * counter 1 did not already catch first. This counter and counter 3 below exist to keep the two
+ * gaps individually visible and individually regression-proof once a hand-written nav exists
+ * again, not because either can detect a regression counter 1 misses.
  */
 const ARIA_CURRENT = /aria-current/;
 
@@ -456,7 +561,7 @@ function breadcrumbsWithoutAriaCurrent(): string[] {
   return breadcrumbNavFiles().filter((path) => !ARIA_CURRENT.test(sourceOf(path)));
 }
 
-describe("breadcrumbs mark the current page for assistive technology", () => {
+describe("hand-written breadcrumb navs mark the current page for assistive technology", () => {
   it("the count of navs missing aria-current is exactly the recorded number", () => {
     const files = breadcrumbsWithoutAriaCurrent().map(label).sort();
     expect(
@@ -483,6 +588,18 @@ describe("breadcrumbs mark the current page for assistive technology", () => {
  * one. `breadcrumbJsonLd` is `lib/seo/json-ld.tsx`'s real exported symbol name (confirmed by
  * reading the file, not assumed) — checked as a literal substring, so an aliased import defeats
  * it; see the SCOPE note above.
+ *
+ * NOT A CLAIM ABOUT THE SURFACE, same limit as `BREADCRUMBS_WITHOUT_ARIA_CURRENT` immediately
+ * above and for the identical reason: this filters `breadcrumbNavFiles()`, the hand-written
+ * subset. Its title says "visible breadcrumbs carry matching JSON-LD" but it only ever inspects
+ * whatever still hand-writes a nav — today nothing, so it filters an empty list and passes
+ * vacuously. A page rendering `Breadcrumbs` (which emits the JSON-LD itself, gated by
+ * `breadcrumbListSchema`) or a server page that reaches for `BreadcrumbsNav` directly (Finding 1
+ * above, closed by the import scan below, not by this counter) never enters this filter either
+ * way. Counter 1 (`HAND_WRITTEN_BREADCRUMBS`) is what actually catches a newly hand-written nav;
+ * this counter, mutation-checked the same way, has never caught a regression counter 1 did not
+ * already catch first — it exists to keep the JSON-LD gap individually visible and individually
+ * regression-proof if a hand-written nav ever returns, not as an independent detector.
  */
 const BREADCRUMB_JSONLD_SYMBOL = "breadcrumbJsonLd";
 
@@ -492,7 +609,7 @@ function breadcrumbsWithoutJsonLd(): string[] {
   return breadcrumbNavFiles().filter((path) => !sourceOf(path).includes(BREADCRUMB_JSONLD_SYMBOL));
 }
 
-describe("visible breadcrumbs carry matching JSON-LD", () => {
+describe("hand-written breadcrumb navs that render a trail carry matching JSON-LD", () => {
   it("the count of navs with no breadcrumbJsonLd call is exactly the recorded number", () => {
     const files = breadcrumbsWithoutJsonLd().map(label).sort();
     expect(
