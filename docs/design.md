@@ -119,6 +119,12 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   for that reason. `Callout` is an editorial aside and carries NO role — typesetting a
   pedagogical note as an Alert interrupts assistive technology for something that is not an
   event. `FormErrorSummary` does carry `role="alert"`: a failed submission genuinely is one.
+  **The visual rule follows the semantic one, and is structural rather than cosmetic: Alert
+  HAS a box** — the whole surface tinted, body text included — **and Callout has none**, just a
+  rule above it, the text's own colour, and its variant in the icon. Two earlier rounds tried
+  to separate them by adding decoration to Callout (a side-tab, then a hairline plus a tint)
+  and left them 2px of radius apart. Do not re-add a fill; `patterns-contract.test.ts` fails
+  if you do.
 - **`MetricValue.absent` is required.** There is no safe default. It never renders `0` and
   never a bare dash — a dash sits in the same slot a number would and reads as a measurement.
   This is T-024's defect made impossible rather than re-fixed per page.
