@@ -504,7 +504,7 @@ export function V2SeaBasinDetailView({ data, marinePoints }: V2SeaBasinDetailVie
               className="p-5 rounded-2xl border border-border bg-card space-y-2 text-xs sm:text-sm"
             >
               <h3 className="font-heading font-bold text-foreground flex items-center gap-2">
-                <span className="size-5 rounded-full bg-primary/10 text-primary font-mono text-xs flex items-center justify-center shrink-0">
+                <span className="size-5 rounded-full bg-primary/10 text-primary-strong font-mono text-xs flex items-center justify-center shrink-0">
                   ?
                 </span>
                 <span>{item.question}</span>

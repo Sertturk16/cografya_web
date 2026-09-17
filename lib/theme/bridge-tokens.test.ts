@@ -118,6 +118,26 @@ describe("semantic bridge tokens", () => {
     expect(base).not.toContain("color: var(--color-primary-dark)");
   });
 
+  /**
+   * The same defect, one rule further up, and it survived the round that fixed `a` and `h2`.
+   * `h1,h2,h3,h4` set `color: var(--color-ink)` — a raw Terra token `.dark` redefines only
+   * inside `.climate-dark-scope`. The `h2` rule below it overrode that for h2 alone, so h2
+   * looked correct while h1, h3 and h4 stayed frozen at the light value. It was invisible on
+   * ordinary pages, whose content sets explicit colours, and showed up on `app/not-found.tsx`,
+   * which deliberately carries almost none: measured at 1.25:1.
+   */
+  it("bare headings take a theme-aware colour, not the raw ink token", () => {
+    const base = section("@layer base");
+    expect(base).toContain("color: var(--foreground)");
+    expect(base).not.toContain("color: var(--color-ink)");
+  });
+
+  it("h2 keeps Terra's terracotta through the strong member", () => {
+    // Identical to the old value in light (#7e3a1e); the strong member is what survives a
+    // tinted surface in dark, where --link measured 4.29:1 on --muted.
+    expect(section("@layer base")).toContain("color: var(--primary-strong)");
+  });
+
   it("the focus ring reads --ring, which .dark redefines", () => {
     // --color-accent is a light-mode Terra token, so the ring was identical in both themes:
     // 5.79:1 in light, 3.04:1 in dark — clearing WCAG 1.4.11 by 0.04.

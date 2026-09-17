@@ -104,12 +104,16 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
               <p className="max-w-prose leading-relaxed">{t("contactBody")}</p>
               {/* A real `mailto:`, so it stays a plain anchor rather than a routed Link. It
                   is the page's one action, which is why it gets a surface of its own. */}
+              {/* `max-w-full` plus a breakable span, not `wrap-break-word` on the anchor.
+                  An `inline-flex` box sizes to its content and does not shrink, so the
+                  overflow-wrap never got a chance: at 320px this address pushed the document
+                  to 318px against a 305px viewport. The span is what is allowed to break. */}
               <a
                 href="mailto:info.cografyagurmesi@gmail.com"
-                className="inline-flex items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 font-semibold wrap-break-word text-primary transition-colors hover:border-primary/50 hover:bg-muted"
+                className="inline-flex max-w-full items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-muted"
               >
                 <Mail className="size-4 shrink-0" aria-hidden="true" />
-                info.cografyagurmesi@gmail.com
+                <span className="min-w-0 break-all">info.cografyagurmesi@gmail.com</span>
               </a>
             </section>
 
@@ -139,7 +143,7 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
                   <a
                     href={t("dataJrcDoi")}
                     rel="noopener noreferrer"
-                    className="text-primary underline underline-offset-2"
+                    className="text-primary-strong underline underline-offset-2"
                   >
                     {t("dataJrcDoi")}
                   </a>

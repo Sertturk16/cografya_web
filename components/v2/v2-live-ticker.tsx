@@ -148,12 +148,7 @@ export function V2LiveTicker() {
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Left Status Tag */}
         <div className="flex items-center gap-2 shrink-0">
-          <Badge
-            variant="primary"
-            size="sm"
-            dot
-            className="bg-primary text-white shadow-2xs font-mono text-[10px] px-2"
-          >
+          <Badge variant="primary" size="sm" dot className="shadow-2xs font-mono text-[10px] px-2">
             CANLI TELEMETRİ
           </Badge>
           <span className="hidden md:inline-flex text-muted-foreground text-[11px]">

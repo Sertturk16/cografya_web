@@ -594,8 +594,13 @@ html {
 @layer base {
   body {
     margin: 0;
-    background: var(--color-bg);
-    color: var(--color-ink);
+    /* Theme-aware, like every other colour in this layer. These two declarations are in fact
+       dead — a second `body` rule at the end of this file applies `bg-background`/
+       `text-foreground` and wins by order — but they were the raw light-only tokens, so the
+       day that later rule moves or is removed the whole document goes light-on-dark. A dead
+       declaration that would be a defect if it ever woke up is worth correcting, not keeping. */
+    background: var(--background);
+    color: var(--foreground);
     font-family: var(--font-body);
     font-size: 16px;
     line-height: 1.6;
@@ -605,12 +610,20 @@ html {
     min-height: 100dvh;
   }
 
+  /* `--foreground`, not `--color-ink`. Same defect as the `a` rule below and found the same
+     way: `--color-ink` is a raw Terra token the `.dark` block never redefines globally — only
+     inside `.climate-dark-scope` — so every heading that reaches the base layer without its own
+     colour class froze at the light value. Measured on `app/not-found.tsx`, which deliberately
+     carries almost no classes: #2b2622 on #0b1416, **1.25:1**.
+     It hid on ordinary pages because their content sets explicit colours, and it survived the
+     round that fixed `a` and `h2` because the `h2` rule further down overrode it for h2 alone
+     — leaving h1, h3 and h4 frozen while h2 looked fine. */
   h1,
   h2,
   h3,
   h4 {
     font-family: var(--font-heading);
-    color: var(--color-ink);
+    color: var(--foreground);
     line-height: 1.15;
     letter-spacing: -0.01em;
     margin: 0 0 0.5em;
@@ -627,10 +640,15 @@ html {
      shipped components had no colour class of their own and were measured at 2.23:1, 2.04:1
      and 1.99:1 on the dark background. `components/ui/token-binding.test.ts` could not catch
      it either — the components have no colour class, so there is nothing for it to scan. */
+  /* Terra sets h2 in terracotta, which is a deliberate part of the look and is kept. It reads
+     `--primary-strong` rather than `--link`: a heading is not an anchor, and the strong member
+     is the one that survives a tinted surface. In light mode the two resolve to the same
+     #7e3a1e, so nothing moves; in dark the strong member clears 4.5:1 on `--muted`, where
+     `--link` measured 4.29:1 — the `/hakkimizda` colophon heading is exactly that case. */
   h2 {
     font-size: clamp(1.4rem, 1rem + 1.4vw, 1.8rem);
     font-weight: 600;
-    color: var(--link);
+    color: var(--primary-strong);
   }
 
   p {

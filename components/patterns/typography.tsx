@@ -35,7 +35,7 @@ export function H2({ className, ...props }: HeadingProps) {
   return (
     <h2
       className={cn(
-        "font-heading text-[clamp(1.4rem,1rem+1.4vw,1.8rem)] font-semibold leading-[1.15] tracking-[-0.01em] text-primary",
+        "font-heading text-[clamp(1.4rem,1rem+1.4vw,1.8rem)] font-semibold leading-[1.15] tracking-[-0.01em] text-primary-strong",
         className,
       )}
       {...props}

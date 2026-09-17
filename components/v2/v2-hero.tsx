@@ -393,7 +393,7 @@ export function V2Hero({
                     onMouseEnter={() => setActiveIndex(index)}
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
                       activeIndex === index
-                        ? "bg-primary/10 text-primary font-bold"
+                        ? "bg-primary/10 text-primary-strong font-bold"
                         : "hover:bg-muted text-foreground"
                     }`}
                   >

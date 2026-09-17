@@ -71,7 +71,7 @@ const BASIN_FILTER_META: Record<
     title: "Tüm Kıyı İstasyonları",
     icon: "Waves",
     color: "fill-primary",
-    badgeClass: "bg-primary/10 text-primary border-primary/30",
+    badgeClass: "bg-primary/10 text-primary-strong border-primary/30",
   },
   black_sea: {
     name: "Karadeniz",
