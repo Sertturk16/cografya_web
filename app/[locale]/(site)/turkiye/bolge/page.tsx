@@ -273,8 +273,27 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         })
       : REGIONS_STATIC_FALLBACK;
 
-  const totalPop = regionsList.reduce((acc, r) => acc + r.population, 0) || 86092168;
-  const totalArea = regionsList.reduce((acc, r) => acc + r.areaKm2, 0) || 780040;
+  /**
+   * Whether the figures on this page came from the API or from `REGIONS_STATIC_FALLBACK`.
+   *
+   * The seven regions themselves are a 1941 classification and do not move, so falling back to a
+   * static list of NAMES, peaks, climates and subregion counts is honest editorial content. Their
+   * POPULATION and AREA figures are not that: they are hand-written numbers that this page prints
+   * beneath "TÜİK ADNKS 31 Aralık 2025". Printing them unlabelled when the fetch degraded credits
+   * TÜİK with a number TÜİK did not supply on the date claimed — the `|| "Dünya Bankası"` defect,
+   * one field over.
+   *
+   * Gating the provenance rather than the figures follows the pattern already used for
+   * `showMarine` on the province page and `earthquakeMeta !== null` on `/deprem`: the page keeps
+   * working, and only the claim it can no longer support goes away.
+   */
+  const figuresAreLive = apiRegions.length === 7;
+
+  // NO `|| 86092168` / `|| 780040`. `.reduce()` over the static list is never 0, so those arms
+  // were unreachable — but unreachable invention is still invention, and the day the list is
+  // emptied they would have fired silently. The totals are now whatever the rows actually sum to.
+  const totalPop = regionsList.reduce((acc, r) => acc + r.population, 0);
+  const totalArea = regionsList.reduce((acc, r) => acc + r.areaKm2, 0);
   const bolgelerFaqs = buildBolgelerFaqs(regionsList);
 
   return (
@@ -349,7 +368,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 <Badge variant="secondary" size="sm" icon={<Boxes className="size-3.5" />}>
                   {locale === "tr" ? "7 Coğrafi Bölge & 21 Bölüm" : "7 Regions & 21 Subregions"}
                 </Badge>
-                {locale === "tr" && (
+                {locale === "tr" && figuresAreLive && (
                   <Badge variant="outline" size="sm" className="font-mono text-xs">
                     TÜİK ADNKS 2025 Tabanlı
                   </Badge>
@@ -421,9 +440,11 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 <span className="font-heading text-2xl sm:text-3xl font-extrabold text-accent block">
                   {totalPop.toLocaleString("tr-TR")}
                 </span>
-                <span className="text-[11px] text-muted-foreground/80 block">
-                  {locale === "tr" ? "TÜİK 31 Aralık 2025" : "TÜİK, 31 December 2025"}
-                </span>
+                {figuresAreLive && (
+                  <span className="text-[11px] text-muted-foreground/80 block">
+                    {locale === "tr" ? "TÜİK 31 Aralık 2025" : "TÜİK, 31 December 2025"}
+                  </span>
+                )}
               </div>
 
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
@@ -592,7 +613,9 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               <Badge variant="primary" size="sm">
                 Karşılaştırmalı Veri Matrisi
               </Badge>
-              <span className="text-xs text-muted-foreground">TÜİK ADNKS 2025 &amp; HGM</span>
+              {figuresAreLive && (
+                <span className="text-xs text-muted-foreground">TÜİK ADNKS 2025 &amp; HGM</span>
+              )}
             </div>
             <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
               <Table className="size-6 text-primary shrink-0" />
@@ -704,10 +727,16 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               </tbody>
             </table>
           </div>
+          {/* The totals are interpolated, not spelled out. They were written as "86.092.168 nüfus
+              ve 780.040 km²" — the same two numbers that sat in `|| 86092168` / `|| 780040` above,
+              restated as prose, so correcting the code left the sentence still claiming them.
+              A share is computed FROM these totals, so the sentence has to read them too. */}
           <p className="text-[11px] text-muted-foreground/80 italic">
-            * Nüfus verileri TÜİK ADNKS 31 Aralık 2025; yüzölçümü değerleri Harita Genel Müdürlüğü
-            (HGM) resmi tescilleridir. Paylar Türkiye toplamı (86.092.168 nüfus ve 780.040 km² 81 il
-            yüzölçümü) üzerinden hesaplanmıştır.
+            {figuresAreLive
+              ? "* Nüfus verileri TÜİK ADNKS 31 Aralık 2025; yüzölçümü değerleri Harita Genel Müdürlüğü (HGM) resmi tescilleridir. "
+              : "* Bölge künyeleri yayın arşivinden gelmektedir; güncel TÜİK/HGM kayıtlarıyla doğrulanmamıştır. "}
+            Paylar Türkiye toplamı ({totalPop.toLocaleString("tr-TR")} nüfus ve{" "}
+            {totalArea.toLocaleString("tr-TR")} km² 81 il yüzölçümü) üzerinden hesaplanmıştır.
           </p>
         </div>
       </section>

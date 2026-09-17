@@ -70,9 +70,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // `metaTitleTr`/`metaDescriptionTr` render verbatim on BOTH locales on purpose (API
     // contract docblock, `lib/api/schema.ts`): a Turkish exam-prep book's own title/description
     // has no EN counterpart by owner ruling, so the EN page renders the TR book content rather
-    // than inventing a translation. Only the trailing site-chrome label is locale text, and it
-    // was hardcoded Turkish regardless of locale (T-026) — that part alone is localized here.
-    title: `${book.metaTitleTr} | ${locale === "en" ? "Books" : "V2 Kitaplar"}`,
+    // than inventing a translation.
+    //
+    // The trailing chrome label is gone rather than localized: it said "V2 Kitaplar", naming a
+    // route prefix T-032 PR3 retired, and it sat in front of the root layout's own
+    // `%s · Coğrafya Gurmesi` template — two brand suffixes for one title.
+    title: book.metaTitleTr,
     description: book.metaDescriptionTr,
     openGraphType: "article",
     // T-032 PR3: this page lived under `/v2`, whose layout marked the whole tree
@@ -262,12 +265,22 @@ export default async function V2BookDetailPage({ params }: PageProps) {
 
           {/* Book Metadata Facts Sheet */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="text-[11px] text-muted-foreground font-medium block">Yazarlar</span>
-              <span className="font-heading font-bold text-sm text-foreground block truncate mt-0.5">
-                {book.authorNames.join(", ") || "Murat Karagöz, Murat Çakır"}
-              </span>
-            </div>
+            {/* NO `|| "Murat Karagöz, Murat Çakır"`. That fallback printed two real people as the
+                authors of whichever book arrived without an author list — the same invention as
+                `|| "Dünya Bankası"` on the country page, except the subject is a person. An em
+                dash would be no better: a "Yazarlar" cell is itself the claim, so the cell goes.
+                Its siblings already render raw values with no fallback, and the 2/4-column grid
+                reflows. Same reasoning as the province page's Köppen row. */}
+            {book.authorNames.length > 0 && (
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="text-[11px] text-muted-foreground font-medium block">
+                  Yazarlar
+                </span>
+                <span className="font-heading font-bold text-sm text-foreground block truncate mt-0.5">
+                  {book.authorNames.join(", ")}
+                </span>
+              </div>
+            )}
             <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
               <span className="text-[11px] text-muted-foreground font-medium block">Yayınevi</span>
               <span className="font-heading font-bold text-sm text-foreground block truncate mt-0.5">

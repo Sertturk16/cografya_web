@@ -2,12 +2,20 @@
 
 Files under `public/kitaplar/` are served from the site root, so
 `public/kitaplar/x.webp` answers `/kitaplar/x.webp`. It was the repo's first `public/`
-directory and is no longer the only one: `public/marka/` carries the YouTube branding mark
-(PR #65). **The trap below belongs to `public/`, not to this directory** — everything under
-it is served ahead of the router, so each directory shadows whatever route shares its
-prefix. `kitaplar/` shares one and `marka/` shares none today, which is why the rules are
-written out here rather than in a second note; check the collision before adding the next
-directory, not after.
+directory and is no longer the only one. Today there are three:
+
+| Directory          | Holds                                         | Shadows a route?     |
+| ------------------ | --------------------------------------------- | -------------------- |
+| `public/kitaplar/` | book cover images                             | **yes**, `/kitaplar` |
+| `public/marka/`    | the YouTube branding mark (PR #65)            | no                   |
+| `public/brand/`    | `logo.png`, used by `V2Header` and `V2Footer` | no                   |
+
+`brand/` was added without this note being updated, which is worth stating plainly because the
+note exists to be read before adding a directory. It also means the same idea is spelled in two
+languages one level apart; neither name is wrong, but do not assume an asset is under the one you
+expect. **The trap below belongs to `public/`, not to this directory** — everything under it is
+served ahead of the router, so each directory shadows whatever route shares its prefix. Check the
+collision before adding the next directory, not after.
 
 **This file lives in `docs/` and not beside the assets it describes, on purpose.**
 Everything under `public/` is served verbatim, so a README kept there answered

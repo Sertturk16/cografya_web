@@ -21,8 +21,10 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
 - Unlocalized: `app/api/**` (BFF), `app/flags/[flag]`, `app/maps/*.svg`, `app/llms.txt`,
   `robots.ts`, `sitemap.ts`, `manifest.ts`.
 - **V1 IS DELETED** (T-032). There is no `/v2` prefix, no `.v2-app` wrapper and no chrome
-  suppression rule. Eleven `*.module.css` files remain, each with live consumers; they are not
-  frozen — see `CLAUDE.md` on why "do not touch" was itself a defect.
+  suppression rule. Ten `*.module.css` files remain, each with live consumers; they are not
+  frozen — see `CLAUDE.md` on why "do not touch" was itself a defect. The eleventh,
+  `components/map/map.module.css`, was 876 lines whose four consumers PR4 deleted; its own orphan
+  test could not see it, because a substring match let `locator-map.module.css` answer for it.
 
 ## i18n (next-intl 4)
 
@@ -55,8 +57,12 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   `CONTENT_REVALIDATE_SECONDS = 3600`, 15 s abort budget, sends `x-internal-request-token`
   (throttle exemption on the API, GET only), throws `ApiError(status)`. `*Resilient` /
   `*Safe` wrappers degrade build-time failures to empty so `next build` stays green.
-- Mutations / auth: `app/api/**/route.ts` (22 routes, all `force-dynamic` +
-  `force-no-store` + `runtime: nodejs`) delegate to `lib/<domain>/transport.server.ts`.
+- Mutations / auth: `app/api/**/route.ts` (21 routes) delegate to
+  `lib/<domain>/transport.server.ts`. Most carry `force-dynamic` (18) + `force-no-store` (13) +
+  `runtime: nodejs` (15), but "all" is not true and reading it as a rule will mislead you:
+  `earthquakes/route.ts` and `marine/overview/route.ts` export none of the three, and
+  `reference/districts/[plateCode]/route.ts` deliberately does the opposite (`revalidate = 3600`).
+  Check the route you are editing rather than assuming the directive is already there.
   Helpers in `lib/http/bff-helpers.server.ts`, `lib/http/same-origin.ts`.
 - Contract: `openapi/openapi.json` is a manual copy of the API repo's spec; `pnpm codegen`
   emits `lib/api/schema.ts` (committed, ESLint/Prettier ignored). Alias types in
@@ -83,7 +89,8 @@ noindex | trOnly`) that decides which locales a page is indexable in.
 - `site.ts` (`siteConfig`, `getSiteUrl`, `absoluteUrl`), `metadata.ts` (`buildMetadata`,
   `buildAlternates` → canonical + hreflang tr/en/x-default), `json-ld.tsx` (typed builders,
   server-rendered), `indexing.ts` (surface → indexable locales), `sitemap-entries.ts` +
-  `book-sitemap.ts` (per-hub entry builders), `redirects.ts`.
+  `book-sitemap.ts` (per-hub entry builders). There is no `redirects.ts`: the redirect table is
+  the `redirects()` block in `next.config.ts`, and `lib/seo/redirects.test.ts` reads it there.
 - `app/robots.ts`: allow-all + `Disallow: /api/`. `next.config.ts`: `trailingSlash: false`,
   `output: "standalone"`, one permanent redirect, no `images.remotePatterns` by policy (the
   single remote image is hotlinked), no `typedRoutes`.
@@ -148,7 +155,6 @@ Details and the open dark-mode bugs: `docs/design.md`.
   statically-listed sitemap row and its page disagree, and all 307 sitemap URLs were verified
   200-and-indexable against a production build.
 - `--radius-lg` is `16px` in `:root` and `var(--radius)` (10px) in `@theme inline`.
-- `lib/map/tr-context.generated.ts` is Prettier-ignored but missing from ESLint ignores.
 - ~~Dark users get a light-theme flash (no blocking theme script); `.dark` overrides only
   shadcn greys, no Terra token.~~ CLOSED (T-016 / T-018). `next-themes` ships the blocking
   script, and `.dark` redefines the bridge tokens with a measured contrast table beside it in
@@ -158,7 +164,6 @@ Details and the open dark-mode bugs: `docs/design.md`.
   mandated licence notice shipped at 2.34:1 (T-032 PR3). Bridge tokens (`text-foreground`,
   `text-muted-foreground`, `border-border`) redefine per theme; prefer them.
 - `components.json` `aliases.hooks` points to a non-existent `@/hooks`.
-- `.env.example` lacks `INTERNAL_REQUEST_TOKEN`.
 - `scripts/` mixes durable generators with ad-hoc Playwright audits; `scripts/verify_*.mjs`
   is gitignored yet two such files are tracked.
 - Prod is plain HTTP on a bare IP; the internal token rides every web→api call in clear.

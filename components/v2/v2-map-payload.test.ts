@@ -28,16 +28,31 @@ import { describe, expect, it } from "vitest";
  *
  * The surface list is DERIVED, for the reason `lib/map/tr-inland-water-jrc.test.ts` records: a
  * hand-kept list is exactly how eight V2 map surfaces went unnoticed for a whole rewrite.
+ *
+ * ## The array names are derived too, because this file made that same mistake
+ *
+ * They used to be a hand-written four, and one of them — `"WORLD_SHAPES"` — named no export
+ * anywhere in the tree; the world map's array is `COUNTRY_SHAPES`. The surface list is built by
+ * asking which files iterate one of these names, so a name that matches nothing simply contributes
+ * no surfaces, and the anti-vacuity guard below stayed satisfied by the other three. The world map
+ * (`v2-world-map-explorer.tsx`), the continent locator (`v2-continent-locator-map.tsx`) and the
+ * country page's inline map were outside the check entirely, for as long as the typo existed.
+ *
+ * Reading the names out of the generated files removes the possibility: a fifth generated map
+ * joins this check by existing, and a renamed array cannot silently empty it.
  */
 
-const GENERATED_ARRAYS = [
-  "PROVINCE_SHAPES",
-  "INLAND_WATER_SHAPES",
-  "CONTEXT_SHAPES",
-  "WORLD_SHAPES",
-] as const;
-
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+
+/** Every `X_SHAPES` array exported by a committed generated map artifact. */
+const GENERATED_ARRAYS: readonly string[] = readdirSync(join(repoRoot, "lib/map"))
+  .filter((name) => name.endsWith(".generated.ts"))
+  .flatMap((name) => {
+    const source = readFileSync(join(repoRoot, "lib/map", name), "utf8");
+    return [...source.matchAll(/^export const ([A-Z][A-Z0-9_]*_SHAPES)\b/gm)].map(
+      (match) => match[1] as string,
+    );
+  });
 const walk = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = join(dir, entry.name);
@@ -64,6 +79,25 @@ function geometryEmittingLoops(source: string, array: string): number {
 }
 
 describe("V2 map surfaces do not duplicate generated geometry", () => {
+  it("derives every generated shape array, and each one names a real export", () => {
+    // The four committed artifacts in `CLAUDE.md`'s generated-file list. Pinning the set here
+    // rather than the spellings means a renamed array still has to be a real export, while a
+    // fifth generated map only has to exist to be covered.
+    expect([...GENERATED_ARRAYS].sort()).toEqual([
+      "CONTEXT_SHAPES",
+      "COUNTRY_SHAPES",
+      "INLAND_WATER_SHAPES",
+      "PROVINCE_SHAPES",
+    ]);
+  });
+
+  it("checks the world map, which the hand-written list missed entirely", () => {
+    // The regression this file shipped: `COUNTRY_SHAPES` was spelled `WORLD_SHAPES`, so every
+    // surface drawing the world was filtered out before the assertions ran. Named explicitly so
+    // that losing world coverage fails here rather than quietly shrinking the list above.
+    expect(surfaces.map(({ name }) => name)).toContain("components/v2/v2-world-map-explorer.tsx");
+  });
+
   it("finds the surfaces to check", () => {
     // Anti-vacuity: an empty list passes every assertion below for free, and deriving the list
     // is the whole reason this rule survived the rewrite.

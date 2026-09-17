@@ -27,6 +27,16 @@ const eslintConfig = defineConfig([
     "lib/map/tr-provinces.generated.ts",
     "lib/map/world-countries.generated.ts",
     "lib/map/tr-inland-water.generated.ts",
+    // The fifth generated artifact. `.prettierignore` has carried it since it was generated;
+    // this list did not, so `CLAUDE.md`'s "listed in BOTH" rule was half-true and the half that
+    // was false is the one that runs in CI. `docs/architecture.md` had it recorded as a known
+    // gap — a gap nothing prevented anyone from simply closing.
+    "lib/map/tr-context.generated.ts",
+    // Subagent worktrees. The agent harness creates full checkouts under `.claude/worktrees/`,
+    // inside the repo, so a lint run scans every file two or three more times and reports
+    // findings against paths that are copies. One such run produced 1,744 errors, all of them
+    // from copies and none from this tree.
+    ".claude/**",
   ]),
 ]);
 

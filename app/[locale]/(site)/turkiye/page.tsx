@@ -110,10 +110,14 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
     };
   });
 
-  // NO `|| 81`. A degraded fetch lists nothing; claiming 81 anyway is the same invention as a
-  // hardcoded meta description, one layer down.
+  // NO `|| 81`, and — since 2026-09-17 — no `|| 973` either. The district total carried one for a
+  // while directly beneath the comment forbidding it, which is how the rule reads when it is
+  // enforced by a guard that opens one other file: `lib/geo/country-sources.test.ts` checks the
+  // country page and nothing else, so this line was never in scope.
+  //
+  // `.reduce()` over an empty list is already 0, and 0 is the truth when the fetch degraded.
   const totalProvinces = provinces.length;
-  const totalDistricts = rawSummary.reduce((acc, s) => acc + (s.districtCount || 0), 0) || 973;
+  const totalDistricts = rawSummary.reduce((acc, s) => acc + (s.districtCount ?? 0), 0);
 
   return (
     <>
