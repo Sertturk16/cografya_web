@@ -38,6 +38,18 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
 - Included globs: `lib/**`, `components/**`, `tools/**`. Nothing under `app/` runs.
 - No jsdom; component tests render with React and assert on the tree/markup. `server-only`
   is stubbed via `test/stubs/server-only.ts`; `next-intl` is inlined so `getPathname` is real.
+- **A test that greps source text strips comments first.** Nothing under `app/` runs, so page
+  guarantees are asserted by reading source — and prose is the thing most likely to contain the
+  string you are searching for. A docblock explaining why a credit is required satisfies a naive
+  search for that credit, so the test passes on the explanation after someone deletes the markup,
+  and the "fix" for a false positive is to delete the explanation. This has now been arrived at
+  independently four times (`locator-attribution.test.ts`, `orphan-stylesheets.test.ts`,
+  `lib/map/tr-inland-water-jrc.test.ts`, `components/v2/footer-source-badges.test.ts`), the last
+  of which shipped green against a comment in `i18n/routing.ts` — a module reachable from every
+  page through `Link` and rendering nothing. Strip `/* */`, `{/* */}` and `//`; exclude routing
+  and config modules from an import-graph walk; then **mutation-check it** — break the thing the
+  test exists to catch and watch it go red, because a source-text assertion that has never failed
+  has not been shown to work.
 - Fixtures: `test/fixtures/{marine,books}`. Do not add network calls to tests.
 - Playwright is a library here, not a runner: no `playwright.config`, no e2e suite. Ad-hoc
   audits live in `scripts/` and `tools/dev-fixtures/`; do not wire them into CI.
