@@ -10,6 +10,7 @@ import { routing } from "@/i18n/routing";
 import { fraunces, nunitoSans } from "@/lib/fonts";
 import { getSiteUrl, siteConfig } from "@/lib/seo/site";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 import "../globals.css";
 
 interface LocaleLayoutProps {
@@ -25,7 +26,15 @@ export function generateStaticParams() {
 // `themeColor` tints mobile browser chrome; the hex mirrors the Terra
 // `--color-primary` token (globals.css) — the metadata layer cannot read CSS vars.
 export const viewport: Viewport = {
-  themeColor: "#b0522e",
+  // A pair, so mobile browser chrome follows the theme instead of staying terracotta on a
+  // dark page. The light value is `--color-primary`; the dark value is the near-black the
+  // `.dark` block currently paints, and it is PROVISIONAL — T-034 phase C replaces the whole
+  // dark palette, and this hex has to move with it. The metadata layer cannot read CSS
+  // variables, which is why both are written out here.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#b0522e" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 export async function generateMetadata({
@@ -56,29 +65,38 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const t = await getTranslations("Common");
 
   return (
-    <html lang={locale} className={`${fraunces.variable} ${nunitoSans.variable}`}>
+    /* `suppressHydrationWarning`: next-themes' blocking script sets the theme class on
+       <html> before React hydrates, so server and client markup differ by design. Without
+       it React logs a mismatch on every load. */
+    <html
+      lang={locale}
+      className={`${fraunces.variable} ${nunitoSans.variable}`}
+      suppressHydrationWarning
+    >
       <body>
-        {/* Supplies locale + messages to client components (e.g. the locale
+        <ThemeProvider>
+          {/* Supplies locale + messages to client components (e.g. the locale
             switcher). v4 auto-inherits the request config; the message catalogue
             is small, so it is not scoped further yet. */}
-        <NextIntlClientProvider>
-          <a href="#main-content" className="skip-link">
-            {t("skipToContent")}
-          </a>
-          <SiteHeader locale={locale} />
-          {/* tabIndex={-1} makes the skip-link target programmatically focusable so
+          <NextIntlClientProvider>
+            <a href="#main-content" className="skip-link">
+              {t("skipToContent")}
+            </a>
+            <SiteHeader locale={locale} />
+            {/* tabIndex={-1} makes the skip-link target programmatically focusable so
               AT focus actually moves here on activation — Safari/VoiceOver do not
               focus a plain id target otherwise (a11y). */}
-          <main id="main-content" tabIndex={-1}>
-            {children}
-          </main>
-          <SiteFooter />
-          {/* Mounted once, site-wide (uyelik-auth-redesign plan §5.7) — renders nothing until
+            <main id="main-content" tabIndex={-1}>
+              {children}
+            </main>
+            <SiteFooter />
+            {/* Mounted once, site-wide (uyelik-auth-redesign plan §5.7) — renders nothing until
               a gated action first opens it; see `AuthMount`'s own docblock for the SEO/CWV
               reasoning. */}
-          <AuthMount locale={locale} />
-          <Toaster />
-        </NextIntlClientProvider>
+            <AuthMount locale={locale} />
+            <Toaster />
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
