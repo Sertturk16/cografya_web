@@ -94,7 +94,7 @@ Two directories, and the boundary is operational rather than taxonomic:
 - **`components/ui/`** — output of `shadcn add` (`base-nova` style), Terra-themed. CLI-managed.
 - **`components/patterns/`** — written here: `typography` (with `Kbd`), `stat-tile`,
   `metric-value`, `empty-state`, `callout`, `form-field`, `map-attribution`, `map-legend`,
-  `theme-pair`.
+  `theme-pair`, `page-container`.
 
 The reason is concrete: `shadcn add` **overwrites** files in the configured `ui` alias — it
 asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living

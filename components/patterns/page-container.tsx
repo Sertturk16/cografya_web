@@ -27,7 +27,7 @@ const RHYTHM = {
   loose: "pt-6 pb-20 sm:pt-10 space-y-16",
 } as const;
 
-interface PageContainerProps {
+export interface PageContainerProps {
   children: ReactNode;
   space?: keyof typeof RHYTHM;
   /** No escape hatch. See the note above. */
