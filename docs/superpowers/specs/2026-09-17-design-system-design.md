@@ -17,7 +17,9 @@ The original request was T-031, dark mode. Two things fall out of doing this fir
 
 **A showcase is the only practical way to verify a dark palette.** T-031b redefines every
 neutral and surface token. Checking that across 33 routes by hand is not verification, it is
-sampling. One page showing 25 components in both themes side by side is.
+sampling. One surface showing every component in both themes side by side is. The finished
+system is around thirty-five specimens: the twenty already in `components/ui` plus the
+fifteen this task adds.
 
 **Components built before the palette get judged against a palette we have already decided
 to discard.** `.dark` today is shadcn's stock achromatic grey — `oklch(x 0 0)`, chroma
@@ -27,11 +29,16 @@ T-031). Building fifteen components against the grey means designing their dark 
 So the theme layer lands between the showcase shell and the components:
 
 ```
-A  Showcase shell + existing demos rebound to tokens
-B  T-031a — theme mechanism (next-themes, three states, no flash)
-C  T-031b — the "night sea" token layer, verified on A
-D  Fifteen new components + five extensions, each verified in both themes as it lands
+A   Showcase shell + existing specimens ported
+A2  Rebind components/ui to the token bridge   ← prerequisite for C, see §3
+B   T-031a — theme mechanism (next-themes, three states, no flash)
+C   T-031b — the "night sea" token layer, verified on A
+D   Fifteen new components + three extensions, each verified in both themes as it lands
 ```
+
+A2 is not in the original sketch of this work. It was added once the inventory showed that
+six of the twenty existing primitives cannot respond to a theme change at all (§3). Without
+it, C is unverifiable and D would be built on top of a broken bridge.
 
 T-031c (categorical palette) and T-031d (dark maps) stay out of scope, as does T-032.
 
@@ -60,11 +67,37 @@ accessibility fix, not a nicety.
 `components/map/turkey-map-section.tsx` has it. This is ODbL licence compliance, not a style
 rule — OSM requires attribution on derived maps. `MapAttribution` exists to close it.
 
-**`docs/design.md` is stale about `Button`.** It documents variants
-`secondary | emerald | amber | outline` and sizes `icon-sm | icon-lg` that the `cva` does not
-define. The real set is `default | primary | sky | teal | ghost | destructive | link` and
-`sm | md | default | lg | icon`. Correct the doc in this task rather than leaving a spec
-readers will trust.
+**The primitives themselves bypass the token bridge.** This is the finding that matters most
+to the whole dark-mode programme, and it was nearly missed.
+
+Six of the twenty files in `components/ui` carry **44 colour escapes** of the form
+`bg-[var(--color-success,#496f35)]` — a raw Terra token read with a hard-coded light hex as
+its fallback — plus twelve raw Tailwind amber classes with hand-patched `dark:` variants:
+
+| File                                  | Escapes |
+| ------------------------------------- | ------- |
+| `badge.tsx`                           | 5       |
+| `button.tsx`                          | 4       |
+| `alert.tsx`                           | 3       |
+| `sheet.tsx`, `tabs.tsx`, `dialog.tsx` | 1 each  |
+
+Why it breaks T-031b: those escapes read `--color-*`, the **Terra** tokens, which the `.dark`
+block never redefines — only the shadcn bridge tokens (`--background`, `--primary`, …) are
+redefined there. So a night-sea palette written into `.dark` would not reach `Badge`'s
+success, warning, destructive and info variants, `Alert`'s variants, `Button`'s emerald, sky,
+teal and amber, or the `Tabs`, `Dialog` and `Sheet` accents. They would stay at their light
+values on a dark surface.
+
+**Rebinding them is therefore a prerequisite for C, not a tidy-up.** It becomes its own step
+between the showcase shell and the theme work. Verifying a dark palette against primitives
+that cannot respond to it is not verification.
+
+**A correction to an earlier draft of this spec.** It claimed `docs/design.md` was stale about
+`Button`, listing `secondary | emerald | amber | outline` and `icon-sm | icon-lg` as
+documented but absent. That was wrong — all of them exist. The grep behind the claim matched
+only single-line `cva` entries and missed every key whose value wrapped to the next line, plus
+the two quoted keys. The doc is accurate; the audit was not. `Button` and `Badge` need no new
+variants, only their escapes rebound.
 
 ## 4. Scope: what is built, what is not
 
@@ -107,11 +140,18 @@ Terra's character:
 14. `MapAttribution` — the licence line
 15. `MapLegend` — classed and categorical variants
 
-### Extended: five existing
+### Rebound: six existing
 
-- `Button` — add `secondary` and `outline` (the doc already claims them)
-- `Badge` — semantic `success` / `danger` naming alongside the existing set
-- `Tabs` — `line` and `pills` variants
+`badge`, `button`, `alert`, `sheet`, `tabs`, `dialog` — the 44 escapes and 12 raw amber
+classes above are replaced with bridge tokens, so the `.dark` block reaches them. No visual
+change is intended in light mode; any difference means a token was mapped wrong.
+
+`Button` and `Badge` need **no new variants** — both sets are already complete.
+
+### Extended: three existing
+
+- `Tabs` — `line` and `pills` variants. It has no `cva` at all today, so this adds the
+  variant layer as well as the two styles.
 - `Table` — sorting affordance, row selection, and the `overflow-x: auto` wrapper
   `docs/design.md` mandates for narrow viewports
 - `Select` — multi-select (the existing `custom-select` is searchable but single)
@@ -190,8 +230,8 @@ So: its specimens are ported into the new showcase in step A, and the V1 route i
 T-032 along with every other V1 route — superseded, not discarded. T-032's spec and
 `TASKS.md` are corrected to say so.
 
-An index page plus one route per category, rather than one page carrying twenty-five
-components:
+An index page plus one route per category, rather than a single page carrying all
+thirty-five specimens:
 
 | Route             | Contents                                                             |
 | ----------------- | -------------------------------------------------------------------- |

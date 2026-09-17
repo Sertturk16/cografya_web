@@ -89,6 +89,15 @@ Branch: `feature/t032-pr1-route-ports`. These pages live under `/v2` for now; PR
 
 ## Task 1: V2 auth form primitives
 
+**⚠ Cross-plan collision — read before starting.** T-034's plan (Task 18) builds
+`components/patterns/form-field.tsx` for exactly this job. The two plans must not both ship a
+form-field abstraction:
+
+- **If T-034 has already landed**, delete this task. Import `FormField` from
+  `@/components/patterns/form-field` in Tasks 2–4 instead and skip to Task 2.
+- **If it has not**, build `V2TextField`/`V2FormErrorRegion` as written here; T-034's Task 18
+  then absorbs them and updates the three call sites.
+
 `components/auth/field.tsx` supplies `TextField` and `FormErrorRegion` to the three flows being ported. It uses `auth-form.module.css` and the global `.btn` classes, both of which PR4 deletes. Build the V2 equivalents on `components/ui` first, so the three card ports have something to consume.
 
 **Files:**
