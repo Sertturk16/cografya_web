@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { join, relative } from "node:path";
+import { basename, join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
 import { runtimeImportsOf } from "@/lib/test-support/import-closure";
@@ -28,6 +28,44 @@ function walk(dir: string): string[] {
 export function walkPages(): string[] {
   return PAGE_ROOTS.flatMap((rel) => walk(join(repoRoot, rel)))
     .filter((path) => path.endsWith("page.tsx"))
+    .sort();
+}
+
+/**
+ * EVERY FILE UNDER `PAGE_ROOTS` THAT RENDERS A FULL SCREEN TO A READER — `page.tsx` plus the two
+ * Next.js special files that take over the viewport in its place, `error.tsx` and `not-found.tsx`.
+ *
+ * A SECOND walker rather than a wider `walkPages()`, deliberately. Three counters from PR1 and
+ * PR2 (`PAGE_BODY_SPELLINGS`, `HAND_WRITTEN_BREADCRUMBS` and the two derived from it) are pinned
+ * at values measured over `page.tsx` ONLY; widening that function would move their scope silently,
+ * which is the exact failure mode this whole programme exists to stop. `walkPages()` is untouched
+ * and still returns 37 — asserted below, so this split cannot rot.
+ *
+ * Used ONLY by the three heading counters at the bottom of this file, for a reason specific to
+ * them: a reader who lands on a thrown error or an unknown slug sees a real page with a real
+ * `<h1>`, so a counter named `PAGES_WITHOUT_H1` that cannot see those two files would claim more
+ * than it measures. `app/[locale]/(site)/error.tsx` and `app/[locale]/(site)/not-found.tsx` are
+ * the only two in the tree today; there is no `(play)` equivalent and no `loading.tsx` or
+ * `template.tsx` anywhere.
+ *
+ * NOT WIDENED PAST `PAGE_ROOTS`. `app/global-error.tsx` and `app/not-found.tsx` are app-ROOT
+ * special files that sit ABOVE `app/[locale]`, outside both roots — the same placement
+ * `components/patterns/rsc-boundary.test.ts` handles with a separate `ROOT_LEVEL_ROOTS` list
+ * rather than by stretching a root. Reaching them would take a third root, and would add two more
+ * spellings that no locale-scoped surface shares: `app/not-found.tsx`'s
+ * `font-heading text-3xl font-bold` (no `text-foreground` — it renders outside the locale layout
+ * and its providers) and `app/global-error.tsx`'s `<h1>` with an inline `style` and NO `className`
+ * at all, which would enter the count as the `(no className)` marker. Both are chrome-less
+ * last-resort shells with different constraints from a reading page, so folding them into a
+ * "converge the page heading" counter would give the adoption task two targets it cannot
+ * legitimately move onto the hub/detail tiers. Left out on purpose, named here so the omission is
+ * a decision and not an oversight.
+ */
+const RENDER_ROOT_FILENAMES = ["page.tsx", "error.tsx", "not-found.tsx"] as const;
+
+export function walkRenderRoots(): string[] {
+  return PAGE_ROOTS.flatMap((rel) => walk(join(repoRoot, rel)))
+    .filter((path) => RENDER_ROOT_FILENAMES.some((name) => basename(path) === name))
     .sort();
 }
 
@@ -847,11 +885,11 @@ function h1SitesOf(page: string): H1Site[] {
   );
 }
 
-/** Every distinct `<h1>` element reachable from any page, grouped by spelling. */
+/** Every distinct `<h1>` element reachable from any render root, grouped by spelling. */
 function h1SitesBySpelling(): Map<string, string[]> {
   const seen = new Set<string>();
   const bySpelling = new Map<string, string[]>();
-  for (const page of walkPages()) {
+  for (const page of walkRenderRoots()) {
     for (const site of h1SitesOf(page)) {
       if (seen.has(site.key)) continue;
       seen.add(site.key);
@@ -862,17 +900,60 @@ function h1SitesBySpelling(): Map<string, string[]> {
 }
 
 function pagesWithNoH1(): string[] {
-  return walkPages()
+  return walkRenderRoots()
     .filter((page) => h1SitesOf(page).length === 0)
     .map(label)
     .sort();
 }
 
-/** `page — n: file, file` for each page whose closure holds more than one `<h1>` element. */
+/**
+ * Render roots that reach more than one `<h1>` and are NOT exempt, in the same named-with-a-reason
+ * shape `BODY_WRAPPER_EXEMPTIONS` above uses for the three sticky nav bars: path, the two source
+ * conditions that make it legitimate, and a liveness assertion so the exemption cannot outlive its
+ * reason.
+ *
+ * ONE member, VERIFIED IN THE SOURCE rather than asserted. `app/[locale]/(site)/profil/page.tsx`
+ * reaches two `<h1>` elements, and they can never render together:
+ *
+ *   line  82  {result.kind === "ok" && result.profile.accountRole === "TEACHER" && (
+ *   line  89      <h1 className="text-xl font-bold tracking-tight text-foreground">   <- the page's own
+ *   line 103  {result.kind === "ok" && result.profile.accountRole === "STUDENT" && (
+ *   line 105      <V2ProfileForm locale={locale} profile={result.profile} />
+ *
+ * and `components/v2/v2-profile-form.tsx:220` renders the second `<h1>` unconditionally inside
+ * that component. One `accountRole` cannot be both `"TEACHER"` and `"STUDENT"`, `V2ProfileForm` is
+ * rendered from exactly one place in the file (line 105, inside the STUDENT branch — the only
+ * other reference is its import on line 11), and the page's own `<h1>` occurs exactly once, inside
+ * the TEACHER branch. So the rendered DOM carries exactly ONE `<h1>` on every request. The
+ * reachability scan cannot evaluate a condition (SCOPE note 4) and sees two; the exemption is
+ * where that difference is recorded, so `PAGES_WITH_MULTIPLE_H1` can be pinned at the number of
+ * pages that really ship two, which is 0.
+ *
+ * The liveness check below fails if either guard disappears from the source, which is exactly what
+ * would happen if someone unified the two branches — at which point the exemption is wrong and
+ * must be dropped rather than carried.
+ */
+const MULTIPLE_H1_EXEMPTIONS: ReadonlyArray<{
+  readonly file: string;
+  readonly guards: readonly [string, string];
+  readonly why: string;
+}> = [
+  {
+    file: "app/[locale]/(site)/profil/page.tsx",
+    guards: [
+      'result.profile.accountRole === "TEACHER"',
+      'result.profile.accountRole === "STUDENT"',
+    ],
+    why: "Mutually exclusive accountRole branches: the page's own h1 (:89) renders only for TEACHER, V2ProfileForm's (v2-profile-form.tsx:220) only for STUDENT. One h1 ever reaches the DOM.",
+  },
+];
+
+/** `page — n: file, file` for each non-exempt render root whose closure holds >1 `<h1>`. */
 function pagesWithMultipleH1(): string[] {
-  return walkPages()
+  const exempt = new Set(MULTIPLE_H1_EXEMPTIONS.map((exemption) => exemption.file));
+  return walkRenderRoots()
     .map((page) => ({ page, sites: h1SitesOf(page) }))
-    .filter(({ sites }) => sites.length > 1)
+    .filter(({ page, sites }) => sites.length > 1 && !exempt.has(label(page)))
     .map(
       ({ page, sites }) =>
         `${label(page)} — ${sites.length}: ${sites.map((s) => s.file).join(", ")}`,
@@ -910,23 +991,28 @@ function pagesWithMultipleH1(): string[] {
  *      that differ ONLY in what the caller passes read as one spelling here.
  *
  *   4. WHICH BRANCH ACTUALLY RENDERS. This is a REACHABILITY count, not an occurrence count, and
- *      `PAGES_WITH_MULTIPLE_H1` is where that bites. `/profil` is the single page with two today,
- *      and its two `<h1>`s are MUTUALLY EXCLUSIVE at runtime: `app/[locale]/(site)/profil/page.tsx`
- *      renders its own only when `accountRole === "TEACHER"`, and `components/v2/v2-profile-form.tsx`
- *      renders the other only when `accountRole === "STUDENT"`. The rendered DOM therefore carries
- *      exactly one. The counter reads 1 anyway, because both are reachable from that page's source,
- *      and that is the honest limit — it cannot evaluate a condition. A page that genuinely ships
- *      two `<h1>`s in one DOM and a page that merely holds two branches look identical from here.
+ *      `PAGES_WITH_MULTIPLE_H1` is where that bites. `/profil` is the only render root reaching
+ *      two, and its two `<h1>`s are MUTUALLY EXCLUSIVE at runtime (`accountRole === "TEACHER"` vs
+ *      `=== "STUDENT"`, both verified in the source — see `MULTIPLE_H1_EXEMPTIONS` above for the
+ *      line-by-line reading). The rendered DOM carries exactly one. The scan sees two, because it
+ *      cannot evaluate a condition, so the difference is recorded as a NAMED EXEMPTION with a
+ *      liveness check rather than folded into the number: a page that genuinely ships two `<h1>`s
+ *      in one DOM and a page that merely holds two branches look identical from here, and the
+ *      exemption is where a human tells them apart once. Any OTHER page reaching two goes red.
  *      The mirror of this is `PAGES_WITHOUT_H1`: a page with a conditionally-rendered heading that
  *      is absent on every real request still counts as HAVING one.
  *
- *   5. ANYTHING `walkPages()` DOES NOT VISIT. It returns `page.tsx` files under `PAGE_ROOTS`.
- *      `app/[locale]/(site)/error.tsx` and `app/[locale]/(site)/not-found.tsx` each carry their
- *      own `<h1 className="font-heading text-3xl font-bold text-foreground">`, a THIRTEENTH
- *      spelling that appears nowhere in the numbers below; `app/not-found.tsx` carries a
- *      fourteenth (`font-heading text-3xl font-bold`) and `app/global-error.tsx` an `<h1>` with an
- *      inline `style` and no `className` at all. `layout.tsx`, `loading.tsx` and `template.tsx` are
- *      likewise never read, so a heading that moved into one would leave its page reading "no h1".
+ *   5. ANYTHING `walkRenderRoots()` DOES NOT VISIT. It returns `page.tsx`, `error.tsx` and
+ *      `not-found.tsx` under `PAGE_ROOTS` — the three counters below use it, NOT `walkPages()`.
+ *      Still outside: `app/not-found.tsx` (spelling `font-heading text-3xl font-bold`, no
+ *      `text-foreground` — it renders outside the locale layout) and `app/global-error.tsx` (an
+ *      `<h1>` with an inline `style` and no `className` at all), both app-ROOT files above
+ *      `app/[locale]`; see `walkRenderRoots()`'s own docblock for why folding those two
+ *      chrome-less shells into a page-heading counter would give the adoption task targets it
+ *      cannot legitimately move onto the hub/detail tiers. `layout.tsx` is likewise never read,
+ *      so a heading that moved into one would leave its page reading "no h1". There is no
+ *      `loading.tsx` or `template.tsx` anywhere in the tree today, and no `(play)` `error.tsx` or
+ *      `not-found.tsx`; the walk would pick them up automatically if any were added.
  *
  *   6. A LITERAL `<h1` IN A STRING. `sourceOf()` strips comments — a docblock quoting an `<h1>` is
  *      already handled — but it copies string and template literals through verbatim, by design.
@@ -942,32 +1028,39 @@ function pagesWithMultipleH1(): string[] {
  * EXACT, not a ceiling — the same doctrine `PAGE_BODY_SPELLINGS` above records, and for the same
  * reason: a ceiling drifts upward unnoticed, an exact number makes both directions a visible diff.
  *
- * Measured 2026-09-18 against the real tree: **12** distinct spellings across **30** distinct
- * `<h1>` elements, reachable from the 37 `page.tsx` files. NOT the 13-across-32 the PR3 plan
- * carried, and the gap is fully accounted for, not waved at: the plan's extra spelling and two
- * extra elements are `app/[locale]/(site)/error.tsx` and `app/[locale]/(site)/not-found.tsx`,
- * which share one spelling (`font-heading text-3xl font-bold text-foreground`) that no `page.tsx`
- * closure reaches. 12 + that one = 13; 30 + those two = 32, exactly. `walkPages()` visits
- * `page.tsx` only (scope note 5 above), so this counter reads 12 and the plan's 13 was measured
- * over a slightly wider surface. Widening the walk is a decision for the adoption task, not a
- * silent adjustment here.
+ * Measured 2026-09-18 against the real tree: **13** distinct spellings across **32** distinct
+ * `<h1>` elements, reachable from the 39 render roots `walkRenderRoots()` returns (37 `page.tsx`
+ * plus `(site)/error.tsx` and `(site)/not-found.tsx`).
  *
- * The distribution, which is the point of pinning it: ONE spelling covers 14 of the 30 elements
+ * That number moved during this task, and the history is the point rather than noise. The first
+ * scan used `walkPages()` and read 12 across 30, against a plan that said 13 across 32. The gap
+ * was not an error in either: `(site)/error.tsx:41` and `(site)/not-found.tsx:28` share one
+ * spelling (`font-heading text-3xl font-bold text-foreground`) that no `page.tsx` closure reaches,
+ * so 12 + that one = 13 and 30 + those two = 32, exactly. A reader who lands on a thrown error or
+ * an unknown slug sees a real page with a real heading, so the counters were widened onto
+ * `walkRenderRoots()` and RE-MUTATION-CHECKED at the new value — `walkPages()` itself untouched,
+ * because PR1's and PR2's counters are pinned against it (see `walkRenderRoots()`'s docblock).
+ *
+ * The distribution, which is the point of pinning it: ONE spelling covers 14 of the 32 elements
  * (`font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight`, the
  * terracotta hub tier) and a second covers 3 (`font-heading text-4xl sm:text-6xl font-extrabold
  * tracking-tight text-foreground`, the neutral detail tier). Those two are the RULED end state —
- * both tiers survive, so this counter's floor is 2, never 1. The other 10 spellings cover 13
+ * both tiers survive, so this counter's floor is 2, never 1. The other 11 spellings cover 15
  * elements between them and are the drift a later task removes.
  *
- * MUTATION-CHECKED 2026-09-18 at this value: a thirteenth spelling introduced on
- * `app/[locale]/(site)/araclar/page.tsx` took it RED with the spelling AND its file printed;
- * reverted, GREEN. See `task-1-report.md` for the verbatim output.
+ * MUTATION-CHECKED 2026-09-18 AT THIS VALUE, not at the 12 it was first pinned to: a fourteenth
+ * spelling introduced on `app/[locale]/(site)/araclar/page.tsx` took it RED with the spelling AND
+ * its file printed; reverted, GREEN. Re-run after the widening rather than carried over, because
+ * a counter re-pinned without a re-check has not been shown to work at its new value. See
+ * `task-1-report.md` for the verbatim output of both rounds.
  */
-export const H1_SPELLINGS = 12;
+export const H1_SPELLINGS = 13;
 
 /**
- * Pages whose entire render closure holds no `<h1>` element. Measured 2026-09-18: **5**, matching
- * the plan's number, though it is worth naming WHICH five because two different defects are mixed
+ * Render roots whose entire closure holds no `<h1>` element. Measured 2026-09-18 over
+ * `walkRenderRoots()`: **5**, matching the plan's number and UNCHANGED by the widening —
+ * `(site)/error.tsx` and `(site)/not-found.tsx` both carry their own heading, so adding them to
+ * the walk added no offenders. Worth naming WHICH five, because two different defects are mixed
  * in this list:
  *
  *   - the three `(play)/oyun/*` screens, which compose `components/v2/v2-game-screen.tsx`; that
@@ -985,15 +1078,19 @@ export const H1_SPELLINGS = 12;
 export const PAGES_WITHOUT_H1 = 5;
 
 /**
- * Pages whose closure holds more than one `<h1>` element. Measured 2026-09-18: **1**, matching the
- * plan — `app/[locale]/(site)/profil/page.tsx`. Read scope note 4 above before treating that as a
- * live accessibility bug: the two headings are on mutually exclusive `accountRole` branches, so the
- * rendered page has one. The counter cannot tell that apart from a page that really ships two, and
- * pinning it at 1 is what makes a genuine second heading anywhere else immediately visible.
+ * NON-EXEMPT render roots whose closure holds more than one `<h1>` element. Measured 2026-09-18:
+ * **0**.
+ *
+ * Exactly one render root reaches two — `app/[locale]/(site)/profil/page.tsx` — and it is a NAMED
+ * EXEMPTION (`MULTIPLE_H1_EXEMPTIONS` above), not a defect: its two headings sit on mutually
+ * exclusive `accountRole` branches, read line by line out of the source there, so the rendered DOM
+ * carries one. Pinning at 0 rather than at 1 is what makes the counter mean "no page ships two
+ * headings" instead of "the number of pages that happen to contain two `<h1>` literals" — and the
+ * exemption's own liveness test is what stops that reasoning outliving the code it describes.
  *
  * MUTATION-CHECKED 2026-09-18 at this value — see `task-1-report.md`.
  */
-export const PAGES_WITH_MULTIPLE_H1 = 1;
+export const PAGES_WITH_MULTIPLE_H1 = 0;
 
 describe("the heading scanner itself", () => {
   // ANTI-VACUITY. Every assertion in the three describe blocks below would also pass against a
@@ -1027,7 +1124,27 @@ describe("the heading scanner itself", () => {
 
   it("found a real, non-trivial number of h1 elements", () => {
     const total = [...h1SitesBySpelling().values()].reduce((sum, files) => sum + files.length, 0);
-    expect(total).toBe(30);
+    expect(total).toBe(32);
+  });
+
+  it("walkRenderRoots() adds the two special files and nothing else", () => {
+    const roots = walkRenderRoots().map(label);
+    expect(roots).toHaveLength(39);
+    expect(roots).toContain("app/[locale]/(site)/error.tsx");
+    expect(roots).toContain("app/[locale]/(site)/not-found.tsx");
+    // Never reaches the app-ROOT shells above `app/[locale]` — see its docblock for the cost.
+    expect(roots).not.toContain("app/not-found.tsx");
+    expect(roots).not.toContain("app/global-error.tsx");
+    // A `my-page.tsx` must not be mistaken for a render root: matched by basename, not suffix.
+    expect(roots.every((r) => RENDER_ROOT_FILENAMES.some((n) => r.endsWith(`/${n}`)))).toBe(true);
+  });
+
+  it("walkPages() is UNCHANGED by the widening — PR1/PR2's counters keep their scope", () => {
+    // The whole reason `walkRenderRoots()` is a second function. If these two ever read the same
+    // number, the split has been collapsed and three landed counters have silently moved.
+    expect(walkPages()).toHaveLength(37);
+    expect(walkRenderRoots().length).toBeGreaterThan(walkPages().length);
+    expect(walkPages().map(label)).not.toContain("app/[locale]/(site)/error.tsx");
   });
 
   it("reads a double-quoted className — real file, app/[locale]/(site)/araclar/page.tsx", () => {
@@ -1076,7 +1193,7 @@ describe("the heading scanner itself", () => {
 describe("page headings converge on the two ruled tiers", () => {
   it("the number of distinct h1 spellings is exactly the recorded number", () => {
     const bySpelling = [...h1SitesBySpelling()].sort(([a], [b]) => a.localeCompare(b));
-    const message = `distinct h1 classNames reachable from a page.tsx:\n${bySpelling
+    const message = `distinct h1 classNames reachable from a render root (page/error/not-found):\n${bySpelling
       .map(
         ([spelling, files]) =>
           `  ${files.length}x ${spelling}\n${files.map((f) => `      ${f}`).join("\n")}`,
@@ -1104,7 +1221,49 @@ describe("no page reaches more than one h1", () => {
     const pages = pagesWithMultipleH1();
     expect(
       pages,
-      `pages whose render closure holds more than one <h1>:\n${pages.map((p) => `  ${p}`).join("\n")}`,
+      `render roots holding more than one <h1> and not named in MULTIPLE_H1_EXEMPTIONS:\n${pages.map((p) => `  ${p}`).join("\n")}`,
     ).toHaveLength(PAGES_WITH_MULTIPLE_H1);
+  });
+});
+
+describe("the multiple-h1 exemptions", () => {
+  // Same liveness idea as "every exemption is still live" above: a stale exemption hides a real
+  // regression just as effectively as a missing rule. Here the stakes are higher than for the
+  // sticky nav bars, because this exemption is the ONLY thing holding PAGES_WITH_MULTIPLE_H1 at 0.
+
+  it.each(MULTIPLE_H1_EXEMPTIONS.map((e) => [e.file, e] as const))(
+    "%s still reaches two h1 elements",
+    (file, exemption) => {
+      const path = join(repoRoot, file);
+      expect(existsSync(path), `${file} no longer exists; drop the exemption`).toBe(true);
+      expect(
+        h1SitesOf(path).length,
+        `${file} no longer reaches two <h1> elements; drop the exemption — ${exemption.why}`,
+      ).toBeGreaterThan(1);
+    },
+  );
+
+  it.each(MULTIPLE_H1_EXEMPTIONS.map((e) => [e.file, e] as const))(
+    "%s still guards them with the two mutually exclusive conditions",
+    (file, exemption) => {
+      // The reason, not just the symptom. If the branches are ever unified — which is exactly what
+      // would make the page really ship two headings — these literals vanish and this goes red,
+      // so the exemption cannot survive the condition that justified it.
+      const source = sourceOf(join(repoRoot, file));
+      for (const guard of exemption.guards) {
+        expect(
+          source,
+          `${file}: guard \`${guard}\` is gone; re-verify or drop the exemption`,
+        ).toContain(guard);
+      }
+    },
+  );
+
+  it("an exemption only silences its own file — negative control", () => {
+    // `pagesWithMultipleH1()` filters by exact label, so a second offender elsewhere is still
+    // reported. Proven by asking for the unfiltered list and confirming profil is really in it.
+    const allWithTwo = walkRenderRoots().filter((page) => h1SitesOf(page).length > 1);
+    expect(allWithTwo.map(label)).toEqual(["app/[locale]/(site)/profil/page.tsx"]);
+    expect(pagesWithMultipleH1()).toEqual([]);
   });
 });
