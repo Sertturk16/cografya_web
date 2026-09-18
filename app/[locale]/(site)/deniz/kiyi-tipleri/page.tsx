@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -78,7 +79,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
             surface="trOnly"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Türkiye'nin Kıyı Tipleri & Jeomorfolojisi"
@@ -148,7 +149,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* 6 COASTAL TYPES DETAILED SECTIONS */}

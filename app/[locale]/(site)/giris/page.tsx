@@ -9,6 +9,7 @@ import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { Home } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -64,9 +65,9 @@ export default async function V2LoginPage({ params }: V2LoginPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Form Container */}
           <div className="lg:col-span-6 xl:col-span-5 w-full">
-            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl">
+            <Card variant="panel" elevation="xl">
               <V2LoginCard locale={locale} />
-            </div>
+            </Card>
           </div>
 
           {/* Value Proposition & Feature Showcase */}

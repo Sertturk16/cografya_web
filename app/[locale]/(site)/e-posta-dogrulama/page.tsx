@@ -7,6 +7,7 @@ import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/bre
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2VerifyEmailCard } from "@/components/v2/v2-verify-email-card";
 import { PageContainer } from "@/components/patterns/page-container";
+import { Card } from "@/components/ui/card";
 
 interface V2VerifyEmailPageProps {
   params: Promise<{ locale: Locale }>;
@@ -45,9 +46,9 @@ export default async function V2VerifyEmailPage({ params }: V2VerifyEmailPagePro
             {t("verify.heading")}
           </h1>
           <p className="text-sm text-muted-foreground mb-6">{t("verify.metaDescription")}</p>
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl">
+          <Card variant="panel" elevation="xl">
             <V2VerifyEmailCard locale={locale} />
-          </div>
+          </Card>
         </div>
       </PageContainer>
     </>

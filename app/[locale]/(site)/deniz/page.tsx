@@ -25,6 +25,7 @@ import { Waves, Home, Layers, ArrowRight } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
 import { marineShowsValues } from "@/lib/marine/overview";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 900;
 
@@ -174,7 +175,7 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
             surface="trNarrative"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Denizler & Kıyılar Atlası"
@@ -241,7 +242,7 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* SECTION 1: INTERACTIVE REALISTIC TURKEY & SEA MAP EXPLORER */}

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Compass, Home } from "lucide-react";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -77,7 +78,7 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
             surface={TOOLS_SURFACE}
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="CBS Harita & Jeodezik Ölçüm Laboratuvarı"
@@ -136,7 +137,7 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* SECTION 1: INTERACTIVE 3-IN-1 GIS WORKBENCH */}

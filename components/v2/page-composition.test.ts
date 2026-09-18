@@ -2868,9 +2868,9 @@ describe("the PageHero tier switch", () => {
  * THE SURFACE THIS SECTION SCANS — wider than `PAGE_ROOTS` on purpose, and a THIRD walker rather
  * than a widening of either existing one.
  *
- * A card is not a page-level thing. 265 of the 486 elements counted below live under
- * `components/`, 221 under `app/[locale]/`; `components/v2/v2-member-hub.tsx` alone holds 29 and
- * `components/v2/v2-tool-educational-content.tsx` 27, neither of them reachable by a `page.tsx`
+ * A card is not a page-level thing. 253 of the 410 elements counted below live under
+ * `components/`, 157 under `app/[locale]/`; `components/v2/v2-member-hub.tsx` alone holds 29 and
+ * `components/v2/v2-tool-educational-content.tsx` 26, neither of them reachable by a `page.tsx`
  * scan. Widening `walkPages()` or `walkRenderRoots()` to reach them would move PR1/PR2/PR3's
  * pinned counters, which is the failure this file exists to prevent — so this is its own
  * function and the two above are untouched.
@@ -2888,8 +2888,8 @@ describe("the PageHero tier switch", () => {
  *     77 → 74 files. The eight primitives named in {@link CARD_SHAPED_PRIMITIVES} are counted at
  *     their USE sites in `components/v2` and are unaffected.
  *   - `components/showcase/**` — specimen markup answering for product markup. Including it,
- *     `design-system` and `components/ui` together reads 492 / 79 files / 256 spellings against
- *     this section's 486 / 74 / 250.
+ *     `design-system` and `components/ui` together read 492 / 79 files / 256 spellings against
+ *     that section's 486 / 74 / 250 — both measured at Task 4, before Task 5's adoption.
  *   - `app/[locale]/design-system/**` — the same argument, internal tooling.
  *   - `*.test.tsx` and `*.generated.*` — `walk()` already drops the first; there is no generated
  *     `.tsx` under either root today, and the filter is here so the first one cannot enter.
@@ -3274,14 +3274,17 @@ function tokensOf(spelling: string | null): string[] {
   return spelling.split(/\s+/).filter(Boolean).map(baseToken);
 }
 
-/** The seven exports of `components/ui/card.tsx`. An element wearing one of these tags is the
- * primitive doing its job, never a hand-drawn card, whatever its className says. */
+/** The six exports of `components/ui/card.tsx`. An element wearing one of these tags is the
+ * primitive doing its job, never a hand-drawn card, whatever its className says.
+ *
+ * Was seven. Task 5 deleted `CardAction`: it was exported and rendered nowhere in the tree, and
+ * `docs/design.md`'s T-036 rule is that a component with no product call site is deleted rather
+ * than kept alive for the showcase. */
 const CARD_PRIMITIVE_TAGS = new Set([
   "Card",
   "CardHeader",
   "CardFooter",
   "CardTitle",
-  "CardAction",
   "CardDescription",
   "CardContent",
 ]);
@@ -3348,32 +3351,33 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * element written `cn("rounded-2xl bg-card", condition && "border-border")` is one card whose
  * spelling is the ordered join of its literal fragments.
  *
- * 486 elements across 74 files (250 distinct spellings) satisfy that predicate today, and that
+ * 410 elements across 69 files (240 distinct spellings) satisfy that predicate today, and that
  * single number hides two different design problems, so it is pinned as two:
  *
  * | population                                                      | n       |
  * | --------------------------------------------------------------- | ------- |
- * | {@link HAND_DRAWN_CARDS} — a real `bg-card` surface              | **305** |
- * | {@link HAND_DRAWN_WELLS} — no `bg-card`, qualifying via the edge | **181** |
+ * | {@link HAND_DRAWN_CARDS} — a real `bg-card` surface              | **242** |
+ * | {@link HAND_DRAWN_WELLS} — no `bg-card`, qualifying via the edge | **168** |
  *
- * Of the 181: 124 are `bg-muted*`, 33 `bg-gradient-to-b`, 7 carry no background token at all, and
+ * Of the 168: 124 are `bg-muted*`, 20 `bg-gradient-to-b`, 7 carry no background token at all, and
  * 17 carry something else (5 `bg-background`, 5 other gradient directions, 7 arbitrary map colours
  * such as `bg-[var(--map-sea,#dbe7e8)]`). They read as insets and wells, not as cards, and a
  * `Card` variant sized for them would be the wrong variant.
  *
- * **The 181 are counted, not excluded, and that is the whole point of the split.** Dropping them
- * would let PR4 report "305 hand-drawn cards, all migrated" while 181 elements still hand-draw a
+ * **The 168 are counted, not excluded, and that is the whole point of the split.** Dropping them
+ * would let PR4 report "242 hand-drawn cards, all migrated" while 168 elements still hand-draw a
  * panel — duplication hidden behind a definition, which is exactly the defect PR1 shipped and PR3
  * spent four review rounds removing. Two ratchets keep both visible; one number would not.
  *
  * ## WHAT THESE TWO NUMBERS ARE, AND WHAT THEY ARE NOT
  *
  * They are **ratchets that can only fall**. Neither will ever read zero, and neither is trying
- * to: 182 of the 250 spellings occur exactly once, and a one-off panel written inline is not a
- * defect. What is a defect is 21 spellings carrying 197 of the 486 occurrences — rows 3, 6, 8 and
- * 15 of the spelling table are ONE panel at four `space-y-*` settings (37 occurrences), and rows
- * 1 and 13 are ONE tile at two paddings (58). That is what a variant is for, and that is what
- * these numbers are here to make visible when it lands.
+ * to: 182 of the 240 spellings occur exactly once, and a one-off panel written inline is not a
+ * defect. What is a defect is a handful of spellings carrying a large share of the occurrences.
+ * That was 21 spellings carrying 197 of 486 when Task 4 pinned these; Task 5 took 76 of them
+ * (see below) and it is now 13 spellings carrying 126 of the 410, the largest being the Metric
+ * Strip tile at 52 — which is Task 6's, not a `Card` variant's. That is what a variant is for,
+ * and that is what these numbers are here to make visible when it lands.
  *
  * So: lower is progress, a rise is a regression that has to be argued for, and "0" is not the
  * target. A counter whose name implies an end state it cannot reach is the defect PR3 spent four
@@ -3381,7 +3385,7 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *
  * ## THE THREE POPULATIONS PR4 MUST NOT TOUCH
  *
- * All three are inside the 486 — they are cards by the predicate — and each is pinned below by
+ * All three are inside the 410 — they are cards by the predicate — and each is pinned below by
  * MEMBERSHIP, `file <tag>` per element, never by a count. A count is gameable in exactly the way
  * these populations invite: ~16 of the 37 interactive carriers live in files the adoption task
  * opens, so migrating one card-shaped `<Link>` while adding another elsewhere in the same PR
@@ -3418,12 +3422,15 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *      `components/ui/**` was excluded from the walk, as were `accordion.tsx`'s item shell and
  *      `card.tsx`'s own root `<div>`. The directory exclusion, not the `cva()` idiom, is what
  *      keeps design-system internals out; the 8 primitives below are counted at their USE sites.
- *   4. **The `<Card*>` tag exclusion is inert today.** 93 `<Card*>` elements exist across 9
- *      importers and NONE of them writes a rounding token with a card surface, so excluding them
- *      removes nothing right now — measured, not assumed: neutering the tag set fails its own
- *      control and moves no counter. It is here for PR4's own output: a
- *      `<Card className="rounded-2xl bg-card …">` override must not re-enter the count it was
- *      supposed to reduce. The 93/9 figure is itself prose, not an assertion; Task 5 will move it.
+ *   4. **The `<Card*>` tag exclusion is inert, and stayed inert through the adoption.** 169
+ *      `<Card*>` elements now exist across 36 importers (93 across 9 before Task 5 converted 76
+ *      sites), and NONE of them writes a rounding token with a card surface, so excluding them
+ *      removes nothing — measured after the adoption, not assumed: neutering the tag set fails its
+ *      own control and moves no counter. The reason it stays inert is that a variant card writes
+ *      NO `className` at all (`className?: never`), so it is invisible to this scanner by the
+ *      no-classes rule, not by the tag rule. The tag rule is what stops a
+ *      `<Card className="rounded-2xl bg-card …">` override re-entering the count — which
+ *      `components/ui/card.tsx`'s type now forbids on the variant form anyway.
  *   5. **The token list is closed, and the residue has a number.** `rounded-lg` is not a card
  *      rounding (admitting it reads 496 / 79 files over the pre-exclusion surface), and
  *      `bg-muted`, `bg-background` and `bg-popover` are not card surfaces unless a `border-border`
@@ -3448,14 +3455,31 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * four `components/ui` internals named above plus `app/[locale]/design-system/page.tsx` and
  * `components/showcase/specimens/harita.tsx`. No card-shaped class string lives anywhere else.
  *
+ * TASK 5 (2026-09-18) adopted three `Card` variants at every site whose spelling they were derived
+ * from — 76 elements across 28 files: `panel` 51 (the `rounded-3xl border border-border bg-card
+ * p-6 sm:p-8` surface at 8 spellings differing only in `shadow-*` and `space-y-*`), `glass` 12 (the
+ * `bg-card/85 backdrop-blur-md` hero strip) and `feature` 13 (the gradient hero plate, one per hub
+ * page). 63 of the 76 carried a real `bg-card` token and 13 did not — the gradient plate writes
+ * `from-card via-card`, so it was a WELL by this predicate all along: `HAND_DRAWN_CARDS` 305 → 242
+ * (−63) and `HAND_DRAWN_WELLS` 181 → 168 (−13), with the file count 74 → 69 (five files — the four
+ * auth pages and `components/marine/marine-attribution.tsx` — held nothing else) and the spelling
+ * count 250 → 240. The stat-grid trio did NOT move (62 / 35 / 159): no converted element was a
+ * direct child of a qualifying grid, checked by simulation before the edit and re-read after. A
+ * fourth measured surface, `rounded-2xl bg-card p-4 shadow-2xs`, was deliberately NOT built —
+ * every one of its 56 occurrences (52 + the 4 in `turkiye/bolge/page.tsx` that add `space-y-1`) is
+ * a Metric Strip tile, and every other `rounded-2xl bg-card` spelling with 3+ occurrences is a
+ * stat-grid tile, so the variant would have had no consumer that is not Task 6's.
+ *
  * MUTATION-CHECKED 2026-09-18, each counter at the value it is pinned at, each reverted. The
  * probes deliberately avoid files Task 5 or Task 6 is contracted to rewrite, so a reader can
- * still reproduce them after the adoption lands:
+ * still reproduce them after the adoption lands. The first two were re-run at the POST-adoption
+ * values, because a target that moved 305 → 242 was never shown to fail at 242 by a check that
+ * ran at 305:
  *
  *   - one `rounded-2xl bg-card border border-border` probe added to `hakkimizda/page.tsx` — RED,
- *     `expected 306 to be 305`, the message naming `2x app/[locale]/(site)/hakkimizda/page.tsx`
- *     among the files it lists;
- *   - the same probe spelled `bg-muted/30` instead — RED, `expected 182 to be 181`, same file
+ *     `expected 243 to be 242`, the message naming `2x app/[locale]/(site)/hakkimizda/page.tsx`
+ *     among the files it lists (it read `expected 306 to be 305` before the adoption);
+ *   - the same probe spelled `bg-muted/30` instead — RED, `expected 169 to be 168`, same file
  *     named, and `HAND_DRAWN_CARDS` unmoved, which is the split doing its job;
  *   - a card moved from children into an attribute expression on the fixture — the counters see
  *     it either way, so a codemod that pushes cards into props cannot make this number fall;
@@ -3465,9 +3489,9 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *   - `CARD_PRIMITIVE_TAGS` neutered — RED on its control only, every counter unmoved, which is
  *     SCOPE note 4 measured rather than asserted.
  */
-export const HAND_DRAWN_CARDS = 305;
+export const HAND_DRAWN_CARDS = 242;
 
-export const HAND_DRAWN_WELLS = 181;
+export const HAND_DRAWN_WELLS = 168;
 
 /**
  * The size of SCOPE note 1's hole, in the ONE shape that can actually hide a card.
@@ -3934,7 +3958,7 @@ describe("the file's two JSX scanners still agree about what an element writes",
    *
    * The live-tree half survives only as a floor the adoption cannot cross. 1850 `<div>`s today;
    * the migration removes tile markup, not layout, and even deleting EVERY counted card element
-   * (486, of which 413 are `<div>`s) leaves >1400. 500 is under a third of that, so it can only
+   * (410, of which 353 are `<div>`s) leaves >1400. 500 is under a third of that, so it can only
    * fail if the walk or the scanner has stopped working — which is what it is for.
    */
   it("the comparison is not vacuous — both extractors see every div in a known source", () => {
@@ -4021,7 +4045,7 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
       }
     }
     expect(strict).toBe(HAND_DRAWN_CARDS + HAND_DRAWN_WELLS);
-    expect(handDrawnTotals().files).toBe(74);
+    expect(handDrawnTotals().files).toBe(69);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {

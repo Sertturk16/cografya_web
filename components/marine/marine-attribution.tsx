@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { MarineLayer } from "@/lib/api/types";
 import { ecmwfAttributionYear } from "@/lib/marine/attribution";
+import { Card } from "@/components/ui/card";
 
 /**
  * TAILWIND, NOT THE V1 STYLESHEET — and the reason is a contrast defect, not tidiness.
@@ -146,10 +147,7 @@ export async function MarineAttribution({
   const attributionYear = ecmwfAttributionYear(layers);
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3"
-    >
+    <Card as="section" variant="panel" space="3" aria-labelledby={headingId}>
       <div className="max-w-[70ch] space-y-3">
         <h2 id={headingId} className="font-heading text-xl font-bold text-foreground">
           {heading ?? t("sourcesHeading")}
@@ -177,6 +175,6 @@ export async function MarineAttribution({
         </div>
         <p className={DISCLAIMER}>{tm("disclaimer.educationalOnly")}</p>
       </div>
-    </section>
+    </Card>
   );
 }

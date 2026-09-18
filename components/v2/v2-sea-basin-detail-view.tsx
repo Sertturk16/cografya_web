@@ -25,6 +25,7 @@ import {
   CloudRain,
   Mountain,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 type LinkHref = React.ComponentProps<typeof Link>["href"];
 
 interface V2SeaBasinDetailViewProps {
@@ -264,7 +265,7 @@ export function V2SeaBasinDetailView({
       {/* 8 CORE CURRICULUM GEOGRAPHICAL SECTIONS */}
       <div className="space-y-10">
         {/* 1. PHYSICAL GEOGRAPHY */}
-        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+        <Card as="article" variant="panel" space="4">
           <div className="flex items-center gap-2 text-primary font-bold text-sm">
             <Mountain className="size-4.5" />
             <span>Fiziki Coğrafya &amp; Havza Morfolojisi</span>
@@ -286,10 +287,10 @@ export function V2SeaBasinDetailView({
               </div>
             ))}
           </div>
-        </article>
+        </Card>
 
         {/* 2. CLIMATE IMPACT */}
-        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+        <Card as="article" variant="panel" space="4">
           <div className="flex items-center gap-2 text-secondary font-bold text-sm">
             <CloudRain className="size-4.5" />
             <span>İklim Dinamikleri</span>
@@ -311,10 +312,10 @@ export function V2SeaBasinDetailView({
               </div>
             ))}
           </div>
-        </article>
+        </Card>
 
         {/* 3. COASTAL GEOMORPHOLOGY & TYPES */}
-        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+        <Card as="article" variant="panel" space="4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
             <div className="flex items-center gap-2 text-teal-600 font-bold text-sm">
               <Compass className="size-4.5" />
@@ -347,10 +348,10 @@ export function V2SeaBasinDetailView({
               </span>
             ))}
           </div>
-        </article>
+        </Card>
 
         {/* 4. CURRENTS & WATER MOVEMENT */}
-        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+        <Card as="article" variant="panel" space="4">
           <div className="flex items-center gap-2 text-cyan-600 font-bold text-sm">
             <Waves className="size-4.5" />
             <span>Hidrodinami &amp; Akıntı Rejimi</span>
@@ -372,10 +373,10 @@ export function V2SeaBasinDetailView({
               </div>
             ))}
           </div>
-        </article>
+        </Card>
 
         {/* 5. HYDROGRAPHIC BALANCE & RIVERS */}
-        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+        <Card as="article" variant="panel" space="4">
           <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
             <Droplets className="size-4.5" />
             <span>Beslenme Kaynakları &amp; Akarsular</span>
@@ -401,10 +402,10 @@ export function V2SeaBasinDetailView({
               ))}
             </div>
           </div>
-        </article>
+        </Card>
 
         {/* 6. ECONOMIC GEOGRAPHY */}
-        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+        <Card as="article" variant="panel" space="4">
           <div className="flex items-center gap-2 text-primary font-bold text-sm">
             <Anchor className="size-4.5" />
             <span>Ekonomik Coğrafya</span>
@@ -426,10 +427,10 @@ export function V2SeaBasinDetailView({
               </div>
             ))}
           </div>
-        </article>
+        </Card>
 
         {/* 7. HUMAN GEOGRAPHY & COASTAL PROVINCES */}
-        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+        <Card as="article" variant="panel" space="4">
           <div className="flex items-center gap-2 text-secondary font-bold text-sm">
             <MapPin className="size-4.5" />
             <span>Nüfus &amp; Kıyı Şehirleri</span>
@@ -459,10 +460,10 @@ export function V2SeaBasinDetailView({
               ))}
             </div>
           </div>
-        </article>
+        </Card>
 
         {/* 8. ENVIRONMENTAL ISSUES */}
-        <article className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+        <Card as="article" variant="panel" space="4">
           <div className="flex items-center gap-2 text-destructive font-bold text-sm">
             <AlertTriangle className="size-4.5" />
             <span>Çevre Sorunları &amp; Ekolojik Tehditler</span>
@@ -484,7 +485,7 @@ export function V2SeaBasinDetailView({
               </div>
             ))}
           </div>
-        </article>
+        </Card>
       </div>
 
       {/* SSS / FAQ ACCORDION-FREE CARDS */}

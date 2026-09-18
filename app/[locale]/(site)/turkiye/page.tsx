@@ -154,7 +154,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
             surface="localized"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Türkiye İlleri & Coğrafi Bölgeler Atlası"
@@ -211,7 +211,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* SECTION 1: INTERACTIVE REALISTIC VECTOR MAP EXPLORER & REGIONS HUB BANNER */}

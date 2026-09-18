@@ -20,6 +20,7 @@ import { V2WorldStatsSpotlight } from "@/components/v2/v2-world-stats-spotlight"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Globe, Gamepad2, ArrowRight, Home } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 /**
  * `force-dynamic`: same reasoning as the V1 `/dunya` twin — a build-time api outage would
@@ -163,7 +164,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
             surface="localized"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Dünya Ülkeleri & Kıtalar Atlası"
@@ -218,7 +219,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* SECTION 1: INTERACTIVE VECTOR WORLD MAP WITH INTEGRATED MIDDLE SECTIONS & 199 COUNTRIES CATALOGUE */}

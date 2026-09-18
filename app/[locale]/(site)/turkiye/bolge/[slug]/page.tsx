@@ -38,6 +38,7 @@ import {
   BarChart3,
   Landmark,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -498,7 +499,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           {/* 4 BIG KEY STATS CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
             {/* 1. Nüfus */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Toplam Nüfus</span>
                 <Users className="size-4 text-primary" />
@@ -512,10 +513,10 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   %{region.populationSharePercent.toFixed(2)}
                 </span>
               </div>
-            </div>
+            </Card>
 
             {/* 2. Yüzölçümü */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Yüzölçümü</span>
                 <Maximize2 className="size-4 text-teal-600" />
@@ -529,10 +530,10 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   %{region.areaSharePercent.toFixed(2)}
                 </span>
               </div>
-            </div>
+            </Card>
 
             {/* 3. Nüfus Yoğunluğu */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Nüfus Yoğunluğu</span>
                 <Mountain className="size-4 text-amber-600" />
@@ -544,10 +545,10 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 <span>TR Ortalaması:</span>
                 <span className="font-mono font-semibold text-foreground">110 kişi/km²</span>
               </div>
-            </div>
+            </Card>
 
             {/* 4. GSYH Ağırlığı */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">GSYH Ağırlığı (2024)</span>
                 <TrendingUp className="size-4 text-rose-600" />
@@ -559,7 +560,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 <span>Kaynak:</span>
                 <span className="font-semibold text-foreground">TÜİK İl GSYH</span>
               </div>
-            </div>
+            </Card>
           </div>
         </PageContainer>
       </section>
@@ -636,7 +637,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left 7 Columns: Prose & Boundaries Card */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-5">
+            <Card variant="panel" space="5">
               <div className="space-y-2 border-b border-border/70 pb-4">
                 <div className="flex items-center gap-2">
                   <Badge variant="primary" size="sm">
@@ -742,7 +743,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Right 5 Columns: Interactive Region Locator Map + Regional Facts */}
@@ -811,7 +812,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
       {/* SECTION 2: FİZİKİ COĞRAFYA & DOĞAL ÇEVRE */}
       <section id="fiziki-cografya" className="scroll-mt-28" tabIndex={-1}>
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+        <Card variant="panel" space="6">
           {/* Header INSIDE the Card */}
           <div className="space-y-2 border-b border-border/70 pb-5">
             <div className="flex items-center gap-2">
@@ -920,12 +921,12 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </section>
 
       {/* SECTION 3: SOSYO-EKONOMİK DİNAMİKLER */}
       <section id="sosyo-ekonomi" className="scroll-mt-28" tabIndex={-1}>
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+        <Card variant="panel" space="6">
           {/* Header INSIDE the Card */}
           <div className="space-y-2 border-b border-border/70 pb-5">
             <div className="flex items-center gap-2">
@@ -1021,12 +1022,12 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </section>
 
       {/* SECTION 4: 1941 BİRİNCİ COĞRAFYA KONGRESİ BÖLÜMLERİ */}
       <section id="bolumler" className="scroll-mt-28" tabIndex={-1}>
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+        <Card variant="panel" space="6">
           {/* Header INSIDE the Card */}
           <div className="space-y-2 border-b border-border/70 pb-5">
             <div className="flex items-center gap-2">
@@ -1093,12 +1094,12 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               </div>
             </div>
           )}
-        </div>
+        </Card>
       </section>
 
       {/* SECTION 5: BÖLGEDEKİ İLLER REHBERİ & CANLI VERİ TABLOSU */}
       <section id="iller" className="scroll-mt-28" tabIndex={-1}>
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+        <Card variant="panel" space="6">
           {/* Header INSIDE the Card */}
           <div className="space-y-2 border-b border-border/70 pb-5">
             <div className="flex items-center gap-2">
@@ -1246,7 +1247,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       </section>
 
       {/* SECTION 6: DOĞAL AFET VE DEPREM RİSKİ */}
@@ -1346,7 +1347,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
       {/* SECTION 7: 7 BÖLGE KARŞILAŞTIRMASI */}
       <section id="kiyaslama" className="scroll-mt-28" tabIndex={-1}>
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+        <Card variant="panel" space="6">
           {/* Header INSIDE the Card */}
           <div className="space-y-2 border-b border-border/70 pb-5">
             <div className="flex items-center gap-2">
@@ -1449,13 +1450,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             toplamlarıdır. Paylar 86.092.168 kişilik ülke nüfusu ve 780.040 km²&apos;lik 81 il
             yüzölçümü tabanından hesaplanmıştır.
           </p>
-        </div>
+        </Card>
       </section>
 
       {/* SECTION 8: SIKÇA SORULAN SORULAR */}
       {region.faqs?.length > 0 && (
         <section id="sss" className="scroll-mt-28" tabIndex={-1}>
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+          <Card variant="panel" space="6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
               <div className="flex items-center gap-2">
@@ -1489,7 +1490,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         </section>
       )}
 

@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Route, Home } from "lucide-react";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -81,7 +82,7 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
             surface={TOOLS_SURFACE}
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Haritada Kuş Uçuşu Mesafe Ölçme"
@@ -140,7 +141,7 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* SECTION 1: STANDALONE DISTANCE WORKBENCH */}

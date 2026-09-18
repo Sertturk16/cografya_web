@@ -13,6 +13,7 @@ import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { Gamepad2, Home } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -74,7 +75,7 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
             surface="trOnly"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Harita Oyunları & Coğrafya Sınavları"
@@ -131,7 +132,7 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* SECTION 1: FULL INTERACTIVE VECTOR MAP GAME ENGINE */}

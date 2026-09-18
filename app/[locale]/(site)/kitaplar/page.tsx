@@ -14,6 +14,7 @@ import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Home } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 /**
  * 3600s, not the previous 86400: the fix round that dropped this page's `notFound()` on an
@@ -110,7 +111,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
             surface="trOnly"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Video Çözümlü Coğrafya Kitapları"
@@ -154,7 +155,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
                 <span className="text-xs text-muted-foreground font-medium">Müfredat Uyumu</span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* SECTION 1: DYNAMIC BOOKS CATALOGUE */}

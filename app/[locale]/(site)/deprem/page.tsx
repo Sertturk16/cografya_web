@@ -18,6 +18,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { Flame, Home, Layers, ShieldCheck, ArrowRight } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 120;
 
@@ -110,7 +111,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
             surface="trOnly"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Canlı Deprem Takip & Sismik Monitör"
@@ -165,7 +166,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* SECTION 1: INTERACTIVE REAL-TIME EARTHQUAKE MAP & DATA TABLE */}

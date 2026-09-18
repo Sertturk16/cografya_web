@@ -24,6 +24,7 @@ import {
   ArrowLeft,
   Info,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -79,7 +80,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             surface="trOnly"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Türkiye'nin Ana Fay Hatları: KAF, DAF ve BAFS"
@@ -148,7 +149,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* 3 FAULT SYSTEMS DETAILED CARDS */}
