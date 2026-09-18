@@ -117,7 +117,16 @@ Two directories, and the boundary is operational rather than taxonomic:
 
 The reason is concrete: `shadcn add` **overwrites** files in the configured `ui` alias — it
 asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living
-there is one CLI run away from being silently clobbered.
+there is one CLI run away from being silently clobbered. Two files now carry hand-added variants
+and must survive a CLI run: `button.tsx` and `card.tsx`. Card's are guarded by
+`components/ui/card-variants.test.ts`, which asserts the exact class strings, because an overwrite
+would revert 76 adopted sites to the stock `rounded-xl ring-1` card and nothing else would see it.
+
+`Card` has two forms. Without `variant` it is the CLI's card, `className` and all. With one it is
+the site's measured card language and `className` is `never`: `variant` (`panel` | `glass` |
+`feature`) is the surface, `elevation` the shadow, `space` the vertical rhythm, `as` the element
+(`div` | `section` | `article`) — closed unions, the shape `PageContainer` set. Reach for a new
+card spelling only after checking whether it is one of these at a different setting.
 
 Read every CLI import before committing it. The T-034 batch arrived with `import { cn } from
 "cn"`, an unrelated npm package the CLI also installed, and with a `Tooltip` that had no
