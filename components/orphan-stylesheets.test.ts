@@ -64,6 +64,14 @@ import {
  *
  * So the question is now reachability, from the same {@link PRODUCT_ROOTS} the component orphan
  * test walks — one surface, two questions, so the two cannot answer from different trees.
+ *
+ * `SHOWCASE_ROUTE` is deliberately NOT unioned in, and that is a measurement rather than a
+ * preference: no surviving stylesheet has a showcase importer at all, let alone only one, and the
+ * control below executes that rather than remembering it. A showcase-only stylesheet would be the
+ * same defect a showcase-only component is, so counting `/design-system` as a consumer here would
+ * excuse exactly the thing this file exists to find. The code and the sentence above now say the
+ * same thing; for a while the code unioned the showcase closure while the sentence claimed one
+ * surface.
  */
 
 const walk = (dir: string, match: (name: string) => boolean): string[] =>
@@ -99,7 +107,10 @@ for (const file of sourceFiles) {
   }
 }
 
-const reachable = new Set([...closureFrom(PRODUCT_ROOTS), ...closureFrom(SHOWCASE_ROUTE)]);
+const reachable = closureFrom(PRODUCT_ROOTS);
+
+/** Kept only to prove, below, that unioning it in would change no verdict. */
+const showcaseReachable = closureFrom(SHOWCASE_ROUTE);
 
 /**
  * A PURE function of one stylesheet's importer list and a reachability set, so the controls can
@@ -134,6 +145,33 @@ const orphansAmong = (sheets: readonly string[]): string[] =>
 const KNOWN_ORPHAN_STYLESHEETS: readonly string[] = [];
 
 describe("CSS Modules", () => {
+  /**
+   * THE MATCHER IS KEYED BY BASENAME, so two stylesheets sharing one would merge their importer
+   * lists and each would answer for the other — a dead sheet certified by a live namesake, which
+   * is a hair's breadth from the `map.module.css` / `locator-map.module.css` accident this file's
+   * docblock is mostly about. Measured: all 8 basenames are distinct today
+   * (`air-pollution`, `book-detail`, `book-video`, `climate`, `earthquake`, `locator-map`,
+   * `marine`, `site-search`). Asserted rather than resolved to full paths because a
+   * `*.module.css` specifier is not resolvable by `resolveSpecifier` (its extension list is
+   * TS/JS only), so the honest fix is to keep the cheap key and fail loudly the day it stops
+   * being unique.
+   */
+  it("no two stylesheets share a basename — the key this matcher uses", () => {
+    const names = stylesheets.map(basename);
+    const duplicated = names.filter((name, index) => names.indexOf(name) !== index);
+    expect(duplicated, "basenames claimed by more than one stylesheet").toEqual([]);
+  });
+
+  it("no stylesheet is reachable only from the showcase — why the route is not a root here", () => {
+    const showcaseOnly = stylesheets
+      .filter((sheet) => {
+        const importers = importersByStylesheet.get(basename(sheet)) ?? [];
+        return isOrphan(importers, reachable) && !isOrphan(importers, showcaseReachable);
+      })
+      .map(label);
+    expect(showcaseOnly, "stylesheets the showcase would excuse").toEqual([]);
+  });
+
   it("finds the stylesheets, the code that could import them, and the routes", () => {
     // Anti-vacuity in three directions: no stylesheets means nothing is checked, no parsed
     // specifiers means every stylesheet fails, and an empty closure means every importer is

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
@@ -80,7 +80,6 @@ const PRODUCT_ROOTS = [
   "components/climate",
   "components/earthquake",
   "components/game",
-  "components/home",
   "components/map",
   "components/marine",
   "components/site-search",
@@ -183,6 +182,20 @@ describe("the RSC-boundary scanner itself", () => {
 
   it("walked a real, non-trivial slice of the surface", () => {
     expect(surfaceFiles().length).toBeGreaterThan(150);
+  });
+
+  /**
+   * A ROOT THAT NO LONGER EXISTS IS A SILENT SHRINK OF THE WALK.
+   *
+   * `walk()` answers `[]` for a missing path — deliberately, so a root may name a file or a
+   * directory — which means a deleted directory left on this list costs coverage and fails
+   * nothing. It had already happened: `components/home` sat here after T-042 deleted it, and
+   * `components/tools` before that. The surface-size control above cannot catch it either, since
+   * one directory's worth of files is well inside its margin.
+   */
+  it("every scan root still exists on disk", () => {
+    const missing = SCAN_ROOTS.filter((rel) => !existsSync(join(repoRoot, rel)));
+    expect(missing, "scan roots that name nothing — the walk shrank silently").toEqual([]);
   });
 
   it('found real "use client" files on it, components/ui/ included', () => {

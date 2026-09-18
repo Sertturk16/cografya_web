@@ -31,16 +31,35 @@ export const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
  * product page gets by its directory — it sits ABOVE the two route groups and is where `Toaster`
  * is mounted, the only thing that makes `sonner.tsx` reachable at all), and the two route groups.
  *
- * NOT WIDENED to `app/`, `app/api`, `app/maps`, `app/sitemap.ts` or `middleware.ts`, and that is
- * a measurement rather than an omission: adding all six changes the verdict of ZERO audited
- * files. They reach data and route handlers, never components. Every extra root is also one more
- * directory that can no longer be audited — {@link closureFrom} seeds its queue with every file
- * under a root, so a root is reachable by definition.
+ * NOT WIDENED to the other Next.js entry points — `app/api`, `app/maps`, `app/sitemap.ts`,
+ * `app/robots.ts`, `app/not-found.tsx`, `app/global-error.tsx`, `app/layout.tsx`,
+ * `middleware.ts` — and that is a measurement rather than an omission: adding all eight changes
+ * the verdict of ZERO audited files, because they reach data and route handlers rather than
+ * components. {@link WIDER_ENTRY_ROOTS} holds that list and `components/orphan.test.ts` executes
+ * the comparison, so the claim is a test rather than a memory.
+ *
+ * Every extra root is also one more directory that can no longer be audited — {@link closureFrom}
+ * seeds its queue with every file under a root, so a root is reachable by definition.
  */
 export const PRODUCT_ROOTS = [
   "app/[locale]/layout.tsx",
   "app/[locale]/(site)",
   "app/[locale]/(play)",
+] as const;
+
+/**
+ * The OTHER entry points Next.js compiles, kept so the "not widened" claim above can be executed
+ * instead of remembered. Not roots: see {@link PRODUCT_ROOTS}.
+ */
+export const WIDER_ENTRY_ROOTS = [
+  "app/api",
+  "app/maps",
+  "app/sitemap.ts",
+  "app/robots.ts",
+  "app/not-found.tsx",
+  "app/global-error.tsx",
+  "app/layout.tsx",
+  "middleware.ts",
 ] as const;
 
 /**
@@ -106,6 +125,16 @@ export function resolveSpecifier(fromFile: string, specifier: string): string | 
  * So the walk follows {@link runtimeImportsOf} — the same type erasure
  * `components/patterns/rsc-boundary.test.ts` needs for the opposite question — and a type-only
  * import no longer counts as a call site.
+ *
+ * THE TWO CONSUMERS FAIL IN OPPOSITE DIRECTIONS, and {@link isRuntimeClause}'s fallback is right
+ * for both, which is worth saying because the two docblocks otherwise read as contradicting each
+ * other. Here, a WIDER set is the silent pass: one extra edge certifies one more file as live.
+ * In `rsc-boundary.test.ts` a wider set is the LOUD direction — an extra edge is a `server-only`
+ * reach reported that `pnpm build` disagrees with, i.e. a review, not a miss. So an unrecognised
+ * clause shape must be treated as a real edge: that costs this walk a possible over-certification
+ * of ONE file whose only importer writes an exotic clause (no such file exists — every shape in
+ * the tree is covered by a fixture in `import-closure.test.ts`), and it costs the boundary test
+ * nothing but a look. The reverse default would make a new syntax silently invisible to both.
  */
 export function closureFrom(roots: readonly string[]): Set<string> {
   const seen = new Set<string>();
@@ -177,8 +206,16 @@ const IMPORT_OR_EXPORT_FROM = /\b(?:import|export)\s+([^;]*?)\s+from\s*["']([^"'
  * docblock for the false-negative that used to produce), so `clause` here is always exactly one
  * statement's own text. Any shape this function does not recognise as `type …` or a pure
  * `{ …members… }` block — a default import, `* as ns`, `Default, { … }` — is treated as a REAL
- * edge, never dropped: a false positive there costs a review, a false negative would hide the
- * exact bug this test exists to catch.
+ * edge, never dropped.
+ *
+ * TWO CONSUMERS, and that default is the right one for both. For
+ * `components/patterns/rsc-boundary.test.ts` a false positive costs a review and a false
+ * negative hides the exact `server-only` reach it exists to catch. For {@link closureFrom} the
+ * asymmetry runs the other way — a spurious edge certifies a file as reachable — so the fallback
+ * is the risky direction THERE, and it is still right: a default or namespace import genuinely
+ * always survives erasure (only a `{ … }` block or a leading `type` can be erased), so the
+ * fallback fires on shapes that ARE real edges rather than on unknowns. `import-closure.test.ts`
+ * carries a fixture per branch so "unrecognised" stays a small, named set.
  */
 function isRuntimeClause(clause: string): boolean {
   const trimmed = clause.trim();

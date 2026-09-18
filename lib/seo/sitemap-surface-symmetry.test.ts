@@ -9,7 +9,9 @@ import {
   declarationRegions,
   importBindingsOf,
   jsxElementsOf,
+  maskedSource,
   readSource,
+  resolvesTo,
   withInjectedSource,
 } from "@/lib/test-support/composition-scan";
 
@@ -92,6 +94,16 @@ const KNOWN_SURFACES = ["localized", "noindex", "trNarrative", "trOnly"] as cons
  * COMMENTS ARE STRIPPED FIRST (`docs/conventions.md`). A docblock explaining why a page is
  * `surface: "noindex"` is prose that satisfies the pattern, and this function's answer feeds the
  * pair check below, where a wrong answer reads as agreement rather than as a parse failure.
+ *
+ * THE `"localized"` FALLBACK IS LOAD-BEARING AND POINTS THE SILENT WAY. It is `buildMetadata`'s
+ * own default, so it is the right answer for a page that calls `buildMetadata` and passes no
+ * `surface` — and it is also what a page with NO metadata call at all would get, and what a
+ * regression in either pattern above would give every page. In the breadcrumb half that reads as
+ * AGREEMENT wherever the trail also says `"localized"`. Two things keep it honest: the spread pin
+ * ("classifies the surfaces it finds, rather than defaulting everything") fails if every page
+ * collapses onto one value, and the control below asserts that all 34 `(site)` pages really do
+ * call `buildMetadata`/`buildAuthMetadata`, so the fallback can only ever mean "defaulted", never
+ * "not declared".
  */
 const declaredSurface = (raw: string): string => {
   const source = stripComments(raw);
@@ -271,6 +283,9 @@ describe("every indexable page is advertised somewhere", () => {
  */
 const SITE_ROOT = join(ROUTE_ROOT, "(site)");
 
+/** The one module a `<Breadcrumbs>` tag must resolve to. */
+const BREADCRUMBS_MODULE = fileURLToPath(new URL("components/patterns/breadcrumbs.tsx", repoRoot));
+
 const sitePages = walkPages(SITE_ROOT).sort();
 
 const relative = (file: string) => file.slice(fileURLToPath(repoRoot).length);
@@ -304,7 +319,26 @@ type SurfacePair = { readonly file: string; readonly jsx: string; readonly metad
  * Read through `readSource`/`jsxElementsOf` rather than `readFileSync` so the injection harness
  * can put a disagreeing page in front of it — see the control below.
  */
-const SCHEMA_CALL = /breadcrumbListSchema\([^()]*,\s*([A-Za-z0-9_$]+|"[^"]*")\s*\)/g;
+/**
+ * The surface argument of a `breadcrumbListSchema(…)` call — THE LAST ONE, by the closing paren,
+ * not the third by position. `\)` anchors the capture to the end of the argument list, so the
+ * pattern does not have to know how many arguments precede it and does not silently read the
+ * wrong one if a fourth is ever added; it would stop matching instead, which the pinned
+ * {@link SCHEMA_SURFACE_PAIRS} count turns into a failure.
+ *
+ * RUN OVER {@link maskedSource} to decide WHERE a call is, then read the argument out of the RAW
+ * source over the same span (`maskLiterals` preserves length, so the two are index-identical).
+ * Masking is what stops a string literal that merely CONTAINS the call text — a docblock is
+ * already stripped, but a `const USAGE = 'breadcrumbListSchema(items, locale, "noindex")'` would
+ * not be — from contributing a pair. The raw read-back is necessary because all four live call
+ * sites pass a string LITERAL (`"trOnly"`), whose contents masking blanks to spaces; a capture
+ * taken from the masked text would come back as six spaces. Two patterns rather than one with the
+ * `d` flag, which this repo's compile target predates.
+ */
+const SCHEMA_CALL = /breadcrumbListSchema\([^()]*,\s*(?:[A-Za-z0-9_$]+|"[^"]*")\s*\)/g;
+
+/** The same last argument, re-read from the raw text of one matched call. */
+const SCHEMA_LAST_ARG = /,\s*([A-Za-z0-9_$]+|"[^"]*")\s*\)$/;
 
 const pairsIn = (file: string): SurfacePair[] => {
   const source = readSource(file);
@@ -312,7 +346,13 @@ const pairsIn = (file: string): SurfacePair[] => {
   const jsxProps = jsxElementsOf(file)
     .filter((element) => element.tag === "Breadcrumbs")
     .map((element) => element.attributes.get("surface"));
-  const schemaArgs = [...source.matchAll(SCHEMA_CALL)].map((match) => match[1]!.replace(/"/g, ""));
+  const schemaArgs = [...maskedSource(file).matchAll(SCHEMA_CALL)].map((match) => {
+    const raw = source.slice(match.index, match.index + match[0].length);
+    const argument = SCHEMA_LAST_ARG.exec(raw);
+    // Never dropped silently: an unreadable call becomes a token no surface classifier knows, so
+    // "never reads a surface it cannot classify" fails on it instead of the pair vanishing.
+    return argument === null ? "(unreadable schema argument)" : argument[1]!.replace(/"/g, "");
+  });
   return [...jsxProps, ...schemaArgs].map((token) => ({
     file,
     jsx: token === undefined ? "(no surface prop)" : surfaceOfToken(file, token),
@@ -352,6 +392,45 @@ describe("the page's metadata surface and its breadcrumb surface", () => {
     expect(silent, "a (site) page that declares no breadcrumb surface").toEqual([
       "app/[locale]/(site)/page.tsx",
     ]);
+  });
+
+  it("the tag name really is the shared Breadcrumbs — resolved, not matched as text", () => {
+    // The JSX side is collected by `element.tag === "Breadcrumbs"`, a TEXT match, while the
+    // constant side is resolved through the binding resolver. Left unguarded, that asymmetry is
+    // wrong in both directions: a page-local component named `Breadcrumbs` would be counted as
+    // the shared one, and `import { Breadcrumbs as Crumbs }` would drop a real trail out of the
+    // population with the pinned count falling by one and nothing saying why. Both are closed
+    // here rather than in the matcher, so the matcher stays the cheap thing it is.
+    const notTheRealOne = sitePages
+      .filter((file) => jsxElementsOf(file).some((element) => element.tag === "Breadcrumbs"))
+      .filter((file) => {
+        const binding = importBindingsOf(file).get("Breadcrumbs");
+        return binding === undefined || !resolvesTo(binding, BREADCRUMBS_MODULE, "Breadcrumbs");
+      })
+      .map(relative);
+    expect(notTheRealOne, "a <Breadcrumbs> tag that is not the shared component").toEqual([]);
+
+    const aliased = sitePages.flatMap((file) =>
+      [...importBindingsOf(file)]
+        .filter(
+          ([name, binding]) =>
+            name !== "Breadcrumbs" && resolvesTo(binding, BREADCRUMBS_MODULE, "Breadcrumbs"),
+        )
+        .map(([name]) => `${relative(file)}: ${name}`),
+    );
+    expect(
+      aliased,
+      "the shared Breadcrumbs imported under another name — invisible to the tag match",
+    ).toEqual([]);
+  });
+
+  it("every (site) page declares metadata, so the surface default never means 'absent'", () => {
+    // What makes `declaredSurface`'s `"localized"` fallback safe to read as agreement: it can
+    // only ever mean "called buildMetadata and passed no surface", never "declared nothing".
+    const silent = sitePages
+      .filter((file) => !/build(?:Auth)?Metadata\(/.test(readSource(file)))
+      .map(relative);
+    expect(silent, "a (site) page with no metadata call at all").toEqual([]);
   });
 
   it("never reads a surface it cannot classify", () => {

@@ -93,3 +93,79 @@ describe("runtimeImportsOf: the export-type-then-import merge is fixed", () => {
     expect(runtimeSpecifiersOf(realPath)).toContain("server-only");
   });
 });
+
+/**
+ * {@link isRuntimeClause}'s OTHER branches, each with a fixture rather than a reading of the
+ * regex. The merged-clause block above covers the anchor; these cover the classifier, whose
+ * whole job is to decide what TypeScript's erasure leaves behind — and every wrong answer here
+ * is silent in one of two opposite ways. A missed edge hides an orphan from
+ * `components/orphan.test.ts` and a `server-only` reach from
+ * `components/patterns/rsc-boundary.test.ts`; a phantom edge certifies a dead file as live.
+ *
+ * Disk fixtures, for the reason the block above gives: these functions read files and resolve
+ * specifiers against the calling file's own directory, which is the path production takes.
+ */
+describe("isRuntimeClause: what survives type erasure, branch by branch", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "import-closure-branch-"));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const withTarget = (name: string, source: string): [string, string] => {
+    writeFileSync(join(dir, `${name}.ts`), source);
+    writeFileSync(join(dir, "real.ts"), "export const A = 1;\nexport type B = string;\n");
+    const from = join(dir, `${name}.ts`);
+    return [from, resolveSpecifier(from, "./real")!];
+  };
+
+  it("a brace block with ONE value member among type members is a real edge", () => {
+    // `{ A, type B }` compiles to `import { A }` — the module is still evaluated at runtime.
+    const [from, target] = withTarget("mixed", 'import { A, type B } from "./real";\nvoid A;\n');
+    expect(target).not.toBeNull();
+    expect(runtimeImportsOf(from)).toContain(target);
+  });
+
+  it("a brace block whose every member is type-prefixed is erased", () => {
+    const [from, target] = withTarget("alltype", 'import { type B } from "./real";\n');
+    expect(runtimeImportsOf(from)).not.toContain(target);
+  });
+
+  it("`export { X, type Y } from` is a real edge — the live shape in lib/game/target.ts", () => {
+    // `lib/game/target.ts` writes `export { GAME_MODE_IDS, isGameModeId, type GameModeId } from
+    // "./config"`. Read as type-only, `lib/game/config.ts` would drop out of every closure that
+    // reaches the game through this barrel.
+    const [from, target] = withTarget("barrel", 'export { A, type B } from "./real";\n');
+    expect(runtimeImportsOf(from)).toContain(target);
+  });
+
+  it("`export type * from` is erased", () => {
+    const [from, target] = withTarget("startype", 'export type * from "./real";\n');
+    expect(runtimeImportsOf(from)).not.toContain(target);
+  });
+
+  it("`export * from` — no `type` keyword — is a real edge, the other half of that pair", () => {
+    const [from, target] = withTarget("star", 'export * from "./real";\n');
+    expect(runtimeImportsOf(from)).toContain(target);
+  });
+
+  it("a dynamic import() is a real edge", () => {
+    // Never a `from` clause, so it reaches the graph through its own pattern rather than through
+    // `isRuntimeClause` at all — which is exactly why it needs its own fixture.
+    const [from, target] = withTarget(
+      "dynamic",
+      'export async function load() {\n  return import("./real");\n}\n',
+    );
+    expect(runtimeImportsOf(from)).toContain(target);
+    expect(runtimeSpecifiersOf(from)).toContain("./real");
+  });
+
+  it("a side-effect import with no bindings at all is a real edge", () => {
+    const [from, target] = withTarget("sideeffect", 'import "./real";\n');
+    expect(runtimeImportsOf(from)).toContain(target);
+  });
+});

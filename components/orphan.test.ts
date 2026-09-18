@@ -6,6 +6,7 @@ import {
   closureFrom,
   PRODUCT_ROOTS,
   SHOWCASE_ROUTE,
+  WIDER_ENTRY_ROOTS,
 } from "@/lib/test-support/import-closure";
 
 /**
@@ -115,7 +116,14 @@ import {
  * button whose explanatory `title` is `aria-describedby` semantics).
  */
 
-/** Everything under here is audited. Never a root — see hole 1. */
+/**
+ * Everything under here is audited. Never a root — see hole 1.
+ *
+ * `components/**` AND NOTHING ELSE, which is what an empty {@link KNOWN_UNREACHABLE} does and
+ * does not say: `lib/**` and `app/**` are not audited, so an unreachable helper under `lib/`
+ * or an unrendered file under `app/` is outside this test's claim entirely. It says every
+ * COMPONENT has a call site a reader can reach, not that the repo holds no dead code.
+ */
 const AUDITED_ROOT = "components";
 
 /** Showcase infrastructure: audited, but answerable by the design-system route. */
@@ -266,6 +274,21 @@ describe("the import closure itself", () => {
     expect([...showcaseClosure].map(label)).toContain("components/showcase/registry.ts");
     expect(showcaseClosure.has(join(repoRoot, "components/showcase/specimen.tsx"))).toBe(true);
     expect(productClosure.has(join(repoRoot, "components/showcase/specimen.tsx"))).toBe(false);
+  });
+
+  it("the other Next.js entry points reach no audited file the three roots miss", () => {
+    // The "not widened" claim in `PRODUCT_ROOTS`'s own docblock, executed. `app/api`, `app/maps`,
+    // the sitemap/robots handlers, the app-root special files and `middleware.ts` reach data and
+    // route handlers rather than components, so adding them as roots must move no verdict — and
+    // each one added would be a directory that could no longer be audited. If this ever goes red,
+    // a component became reachable ONLY through one of them and the roots list owes it an entry.
+    const widened = closureFrom([...PRODUCT_ROOTS, ...WIDER_ENTRY_ROOTS]);
+    const moved = AUDITED.filter(
+      (file) =>
+        classify(file, widened, showcaseClosure) !==
+        classify(file, productClosure, showcaseClosure),
+    ).map(label);
+    expect(moved, "audited files whose verdict a wider root list would change").toEqual([]);
   });
 
   it("no audited file is also a root — hole 1, asserted rather than remembered", () => {
