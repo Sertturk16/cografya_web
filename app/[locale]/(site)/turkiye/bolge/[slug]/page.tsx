@@ -604,12 +604,12 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           >
             7 Bölge Kıyaslama
           </a>
-          {/* Gated on the SAME emptiness the section is. `FaqSection` returns null for an empty
-              `items`, so a region with no `faqs` renders no `#sss` at all and this pill would
-              scroll to nothing — the dead-anchor shape the sibling `turkiye/bolge` page gates its
-              own pill against, there for the locale reason and here for the data one. Pre-existing;
-              the two pages now agree. */}
-          {(region.faqs?.length ?? 0) > 0 && (
+          {/* Gated on BOTH conditions the section is, because the section now has two. `FaqSection`
+              returns null for an empty `items`, and the block is TR-only until T-040 — either way
+              there is no `#sss` on the page and this pill would scroll to nothing. The sibling
+              `turkiye/bolge` page gates its own pill for the locale reason alone; this one needs
+              the data reason too, so it carries both. */}
+          {locale === "tr" && (region.faqs?.length ?? 0) > 0 && (
             <a
               href="#sss"
               className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
@@ -1470,14 +1470,23 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             once instead of in two spellings (and one of those spellings was `?.length` on a field
             that is not optional). `?? []` because the API type allows the field to be absent;
             `"trOnly"` is this page's own surface constant, the one `generateMetadata` passes to
-            `buildMetadata`. */}
-        <FaqSection
-          heading={`${region.nameTr} Hakkında Sıkça Sorulan Sorular`}
-          lede="Bölgenin coğrafi yapısı, nüfusu, illeri, bölümleri ve iklimi hakkında merak edilen temel sorular ve yanıtları."
-          locale={locale}
-          items={region.faqs ?? []}
-          structuredData="trOnly"
-        />
+            `buildMetadata`.
+
+            TR-ONLY UNTIL T-040 (owner, 2026-09-19). `region.faqs` is Turkish prose from the API
+            with no English counterpart, so the EN twin was rendering Turkish questions under
+            English chrome. `structuredData="trOnly"` already withheld the FAQPage schema there —
+            that was never the gap; the MARKUP was. The gate wraps the whole component, so both
+            halves still move together: no component, no schema. Same shape as `turkiye/bolge` and
+            `/deniz`, which carried it already. */}
+        {locale === "tr" && (
+          <FaqSection
+            heading={`${region.nameTr} Hakkında Sıkça Sorulan Sorular`}
+            lede="Bölgenin coğrafi yapısı, nüfusu, illeri, bölümleri ve iklimi hakkında merak edilen temel sorular ve yanıtları."
+            locale={locale}
+            items={region.faqs ?? []}
+            structuredData="trOnly"
+          />
+        )}
 
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex items-center justify-between pt-2">

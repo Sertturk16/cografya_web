@@ -169,14 +169,24 @@ export default async function V2MarmaraPage({ params }: PageProps) {
              `V2SeaBasinDetailView` — that is a Client Component and `FaqSection` reaches
              `server-only` (see the view's `faq` prop docblock). `"trOnly"` is this page's own
              surface constant, the one `generateMetadata` and `breadcrumbListSchema` already
-             pass. */
+             pass.
+
+             TR-ONLY UNTIL T-040 (owner, 2026-09-19). `basinData.faq` is Turkish prose with no
+             English counterpart, so the EN twin was rendering Turkish questions under English
+             chrome. `structuredData="trOnly"` already withheld the FAQPage schema — the markup
+             was the gap. The gate sits HERE, where the element is built, rather than inside the
+             view: the view is a Client Component that only renders whatever node it is handed, so
+             passing `null` is what "no FAQ" means to it. `faq` is typed `React.ReactNode`, which
+             already admits `null`, so nothing had to be widened. */
           faq={
-            <FaqSection
-              heading={`${basinData.nameTr} Hakkında Sıkça Sorulan Sorular`}
-              locale={locale}
-              items={basinData.faq}
-              structuredData="trOnly"
-            />
+            locale === "tr" ? (
+              <FaqSection
+                heading={`${basinData.nameTr} Hakkında Sıkça Sorulan Sorular`}
+                locale={locale}
+                items={basinData.faq}
+                structuredData="trOnly"
+              />
+            ) : null
           }
         />
 

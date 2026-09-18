@@ -459,13 +459,21 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
         {/* SECTION 4: SIKÇA SORULAN SORULAR (FAQ). The `<JsonLd>` that used to sit at the very
             bottom of this file, six hundred lines from the markup it described, is now emitted by
             the component that renders the questions — from the same `HUB_FAQS` array, so the two
-            cannot drift. `"trOnly"` is this page's own surface constant. */}
-        <FaqSection
-          heading="Kıtalar Hakkında Sıkça Sorulan Sorular"
-          locale={locale}
-          items={CONTINENT_HUB_FAQS}
-          structuredData="trOnly"
-        />
+            cannot drift. `"trOnly"` is this page's own surface constant.
+
+            TR-ONLY UNTIL T-040 (owner, 2026-09-19). These questions are Turkish literals with no
+            English counterpart, so the EN twin was rendering Turkish prose under English chrome.
+            `structuredData="trOnly"` already withheld the FAQPage schema there — the markup was
+            the gap. Gating the whole component keeps both halves moving together: no component,
+            no schema. */}
+        {locale === "tr" && (
+          <FaqSection
+            heading="Kıtalar Hakkında Sıkça Sorulan Sorular"
+            locale={locale}
+            items={CONTINENT_HUB_FAQS}
+            structuredData="trOnly"
+          />
+        )}
 
         {/* NO SOURCES SECTION. This page reads NO api at all — the figures come from
             `lib/geo/continents.ts`, a hand-written registry — and draws no map, so every one of
