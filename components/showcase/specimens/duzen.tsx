@@ -8,6 +8,9 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
+  type CardVariant,
+  type CardSpace,
+  type CardElevation,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -55,6 +58,19 @@ import { BreadcrumbsNav } from "@/components/patterns/breadcrumbs-nav";
 import { Specimen, SpecimenRow } from "../specimen";
 
 const RHYTHMS = ["band", "tight", "default", "loose"] as const;
+
+/**
+ * Every `Card` surface at a representative rhythm, plus the elevations the panel actually ships
+ * at. The pairs are the ones the product writes: `panel`/`space="4"` is 13 adopted sites,
+ * `glass`/`space="1"` all 12, `feature` with no rhythm all 13.
+ */
+const CARD_SURFACE_SPECIMENS = [
+  ["panel", "4", "Bölüm paneli — 51 site."],
+  ["glass", "1", "Hero şeridi, kendi degrade bandının üstünde — 12 site."],
+  ["feature", "none", "Hub hero levhası, PageHero'yu taşır — 13 site."],
+] as const satisfies ReadonlyArray<readonly [CardVariant, CardSpace, string]>;
+
+const CARD_ELEVATION_SPECIMENS = ["xs", "sm", "xl"] as const satisfies readonly CardElevation[];
 
 const BADGE_VARIANTS = [
   "default",
@@ -114,6 +130,32 @@ export function DuzenSpecimens() {
             </Button>
           </CardFooter>
         </Card>
+      </Specimen>
+
+      <Specimen
+        name="Card — yüzeyler, gölge ve ritim"
+        description="Sitenin ölçülen kart dili: yüzey (variant), gölge (elevation) ve dikey ritim (space) ayrı eksenler. className kapalı — her site aynı sarmalayıcıyı yazmak yerine bu eksenleri seçer."
+      >
+        <div className="space-y-4">
+          {CARD_SURFACE_SPECIMENS.map(([variant, space, note]) => (
+            <Card key={`${variant}-${space}`} variant={variant} space={space}>
+              <p className="font-heading text-sm font-bold text-foreground">
+                variant=&quot;{variant}&quot; space=&quot;{space}&quot;
+              </p>
+              <p className="text-sm text-muted-foreground">{note}</p>
+            </Card>
+          ))}
+          {CARD_ELEVATION_SPECIMENS.map((elevation) => (
+            <Card key={elevation} variant="panel" elevation={elevation} space="3">
+              <p className="font-heading text-sm font-bold text-foreground">
+                variant=&quot;panel&quot; elevation=&quot;{elevation}&quot; space=&quot;3&quot;
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Aynı yüzey, ölçülen farklı yükseklik ayarı.
+              </p>
+            </Card>
+          ))}
+        </div>
       </Specimen>
 
       <Specimen name="Badge — varyantlar">
