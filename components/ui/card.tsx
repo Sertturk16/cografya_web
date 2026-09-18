@@ -79,10 +79,12 @@ export type CardSpace = keyof typeof CARD_SPACE;
 /**
  * The element a variant card renders.
  *
- * Closed, and it exists because the adoption could not be honest without it: 8 of the 76 sites are
- * `<section>` (six of them carrying an `aria-labelledby`) and 8 more are `<article>` in
- * `v2-sea-basin-detail-view.tsx`. Rewriting those as `<div>` to fit the primitive would have
- * deleted document structure to make a counter fall.
+ * Closed, and it exists because the adoption could not be honest without it: 8 of the 77 sites are
+ * `<section>` — three carrying an `aria-labelledby` (`earthquake-attribution`,
+ * `marine-attribution`, `v2-related-tools`), one an `id` a quicknav links to (`dunya/kita`), four
+ * with no ARIA (`turkiye/[slug]`) — and 8 more are `<article>` in `v2-sea-basin-detail-view.tsx`.
+ * Rewriting those as `<div>` to fit the primitive would have deleted document structure to make a
+ * counter fall; it is a landmark and a heading outline, not an attribute tally, that is preserved.
  */
 export type CardElement = "div" | "section" | "article";
 
@@ -114,7 +116,19 @@ export function cardVariants({
     .join(" ");
 }
 
-/** The CLI's own card, unchanged: 93 `<Card*>` elements across 9 importers still render it. */
+/**
+ * The CLI's own card, unchanged: 93 `<Card*>` elements across 9 importers rendered it before the
+ * adoption and still do.
+ *
+ * **This branch is still an open `className` passthrough, and that is inherited, not introduced.**
+ * The two guards in the variant branch below do NOT cover it: `<Card className="rounded-2xl
+ * bg-card border-border">` compiles, merges, and renders a hand-drawn card wearing a primitive's
+ * tag. It differs from the hole those guards close only in that nothing here ever promised
+ * otherwise — the counter does not see it either, because `cardKind` returns `null` for every
+ * `<Card*>` tag (`page-composition.test.ts` SCOPE note 4, which pins that exclusion as inert and
+ * re-measures it). So: do not reach for the stock branch as an escape hatch from the closed
+ * unions. A variant card that needs width or layout gets a wrapper element, not a `className`.
+ */
 type StockCardProps = React.ComponentProps<"div"> & {
   size?: "default" | "sm";
   variant?: never;
@@ -149,13 +163,36 @@ function Card(props: StockCardProps | VariantCardProps) {
     );
   }
 
-  const { variant, elevation, space, as: Element = "div", ...rest } = props;
+  /**
+   * TWO GUARDS, BECAUSE `className?: never` IS NOT ONE.
+   *
+   * The type rejects `className="zz"` and every typed spread — 15 smuggles were checked — but an
+   * INDEX-SIGNATURE spread walks straight through it: `const bag: Record<string, unknown> =
+   * { className: "zz" }; <Card variant="panel" {...bag} />` typechecks with zero errors, because
+   * TypeScript does not check a `Record<string, unknown>` spread against `never`. And it was worse
+   * than a merge: `{...rest}` used to come AFTER `className`, so the smuggled class REPLACED the
+   * surface while the element still advertised `data-variant="panel"`. Invisible to both nets —
+   * the type system passes it, and `cardKind` returns `null` for every `<Card>` tag, so a caller
+   * could re-spell `rounded-2xl bg-card border-border` through a spread and no counter would move.
+   * That is the load-bearing invariant of the whole PR4 counting programme.
+   *
+   * So: `className` is destructured OUT of `rest`, so it can never reach the element whatever its
+   * declared type says; and `{...rest}` is spread FIRST, so the computed surface and the two data
+   * attributes win even if someone reintroduces the hole. Either fix alone closes today's case;
+   * both together mean the next edit to this line cannot silently reopen it. Pinned at runtime by
+   * `card-variants.test.tsx` — a type-level guard with an unpinned runtime hole is worth exactly
+   * what the runtime behaviour is worth.
+   *
+   * Latent, not live, when this was found: no call site spreads into `Card` today.
+   */
+  const { variant, elevation, space, as: Element = "div", className, ...rest } = props;
+  void className;
   return (
     <Element
+      {...rest}
       data-slot="card"
       data-variant={variant}
       className={cardVariants({ variant, space, elevation })}
-      {...rest}
     />
   );
 }

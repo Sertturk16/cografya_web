@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
-import { cardVariants, type CardVariant } from "./card";
+import { Card, cardVariants, type CardVariant } from "./card";
 
 /**
  * THE CLI TRIPWIRE.
@@ -19,10 +20,17 @@ import { cardVariants, type CardVariant } from "./card";
  * So the assertions are on the exact CLASS STRINGS, not on "a variant exists". A rewrite that
  * kept the prop names and changed the tokens is the same failure as a rewrite that deleted them.
  *
- * `.ts`, not the `.tsx` the brief named: there is no jsdom in this suite (`vitest.config.ts`,
- * `docs/conventions.md`), so nothing renders. `cardVariants` is a pure function, which is why it
- * is exported — this checks what the component will actually put on the element, one call away
- * from the element itself, rather than grepping the file for a substring.
+ * **What this file uniquely catches, stated narrowly because the broad claim is false.** A
+ * WHOLESALE overwrite cannot land silently in any case: `pnpm typecheck` exits 2 with 83 errors
+ * across the 77 adoption sites (`Property 'variant' does not exist…`), and the suite reds here
+ * too. What nothing else in the repo catches is a **token-level re-theme** — `rounded-3xl` to
+ * `rounded-2xl`, `shadow-sm` to `shadow-md`, `to-muted/30` to `to-muted/20` — which keeps the prop
+ * names, typechecks clean, passes every other test, and silently re-spells 77 live surfaces.
+ * `page-composition.test.ts` cannot see it: `CARD_SCAN_EXCLUSIONS` excludes `components/ui/`.
+ *
+ * `cardVariants` is exported so this can assert what the component will actually put on the
+ * element rather than grepping the file for a substring; `renderToStaticMarkup` (no jsdom in this
+ * suite — `docs/conventions.md`) is what pins the half a pure function cannot express.
  *
  * MUTATION-CHECKED 2026-09-18, four ways, each reverted:
  *
@@ -103,12 +111,72 @@ describe("the Card variants survive a CLI overwrite", () => {
     const source = stripComments(
       readFileSync(fileURLToPath(new URL("./card.tsx", import.meta.url)), "utf8"),
     );
-    expect(source).toContain("ring-1 ring-foreground/10");
-    expect(source).toContain("[--card-spacing:--spacing(4)]");
-    // `className?: never` is the half of the contract `cardVariants` cannot express: it is what
-    // stops a caller re-introducing the spelling the variant replaced. A CLI overwrite deletes it.
-    expect(source).toContain("className?: never");
+    // ORDER MATTERS HERE, and it was wrong once. Under the scenario this file exists for — the
+    // whole file replaced by the CLI's — a hard `expect` on `className?: never` aborts the test
+    // and everything below it reports nothing, so the `CardAction` guard contributed nothing
+    // under the exact case it was written for. `expect.soft` makes every fact reportable in one
+    // run instead of one fact per run.
+    expect.soft(source).toContain("ring-1 ring-foreground/10");
+    expect.soft(source).toContain("[--card-spacing:--spacing(4)]");
+    // `className?: never` is half the contract `cardVariants` cannot express. The OTHER half is
+    // runtime and is asserted below, because the type alone does not hold — see the spread tests.
+    expect.soft(source).toContain("className?: never");
     // Deleted by Task 5 for having no product call site; a CLI overwrite brings it straight back.
-    expect(source).not.toContain("CardAction");
+    expect.soft(source).not.toContain("CardAction");
+  });
+});
+
+/**
+ * RULING AS. `className?: never` is a claim about the TYPE, and the type is not the guard.
+ *
+ * `const bag: Record<string, unknown> = { className: "zz-evil" }; <Card variant="panel" {...bag} />`
+ * typechecks with zero errors — TypeScript does not check an index-signature spread against
+ * `never` — and before this fix the smuggled class did not merge with the surface, it REPLACED it,
+ * because `{...rest}` was spread after `className`. The element rendered `class="zz-evil"` while
+ * still advertising `data-variant="panel"`: invisible to the type system AND to `cardKind`, which
+ * returns `null` for every `<Card>` tag. A caller could have re-spelled a hand-drawn card through
+ * a spread and no counter in the PR4 programme would have moved.
+ *
+ * So the runtime behaviour is pinned here rather than inferred from the declaration. Both halves
+ * of the fix are exercised: that the surface survives (ordering) and that `zz-evil` never reaches
+ * the element at all (the explicit strip). MUTATION-CHECKED 2026-09-18, each reverted:
+ *
+ *   - `className` put back into `rest` AND `{...rest}` moved back after `className` (the exact
+ *     pre-fix code) — RED on all three variants, `expected '<div data-slot="card"
+ *     data-variant="p…' not to contain 'zz-evil'`, i.e. the smuggled class on the element beside
+ *     an intact `data-variant`, which is the shape Ruling AS names;
+ *   - only the ordering reverted, with the strip kept — GREEN, which is the point of keeping both:
+ *     each closes the case alone, and the pair means the next edit to that line cannot reopen it.
+ */
+describe("a variant Card cannot be made to wear a smuggled className", () => {
+  const smuggle = (): Record<string, unknown> => ({ className: "zz-evil" });
+
+  it.each(SURFACES)("%s keeps its surface when a Record spread carries a className", (variant) => {
+    const html = renderToStaticMarkup(<Card variant={variant} space="4" {...smuggle()} />);
+    expect(html).not.toContain("zz-evil");
+    for (const token of cardVariants({ variant, space: "4" }).split(" ")) {
+      expect(html).toContain(token);
+    }
+    expect(html).toContain(`data-variant="${variant}"`);
+  });
+
+  it("the probe is a real smuggle — positive control on the stock branch", () => {
+    // The same spread DOES reach the stock card, which never promised otherwise. Without this,
+    // a `smuggle()` that had quietly stopped producing a `className` would leave the three
+    // assertions above passing vacuously.
+    const html = renderToStaticMarkup(<Card {...smuggle()} />);
+    expect(html).toContain("zz-evil");
+  });
+
+  it("a spread that carries no className still reaches the element", () => {
+    // The strip must remove `className` and nothing else: `id`, ARIA and the rest still pass
+    // through, which is what the eight `as="section"` adoption sites depend on.
+    const html = renderToStaticMarkup(
+      <Card as="section" variant="panel" id="zz-id" aria-labelledby="zz-heading" />,
+    );
+    expect(html).toContain("<section");
+    expect(html).toContain('id="zz-id"');
+    expect(html).toContain('aria-labelledby="zz-heading"');
+    expect(html).toContain("rounded-3xl");
   });
 });

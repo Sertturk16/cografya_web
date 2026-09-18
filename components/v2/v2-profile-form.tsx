@@ -26,6 +26,7 @@ import type { ProfileBffCode } from "@/lib/profile/transport.server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 export interface V2ProfileFormProps {
   readonly locale: Locale;
@@ -210,7 +211,7 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
     "w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150 disabled:opacity-50";
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl space-y-6">
+    <Card variant="panel" space="6" elevation="xl">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-5">
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-xl bg-primary/10 text-primary">
@@ -538,6 +539,6 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
           </Button>
         </div>
       </form>
-    </div>
+    </Card>
   );
 }
