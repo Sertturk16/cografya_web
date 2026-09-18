@@ -4465,8 +4465,11 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  * Task 6 migrated the metric-strip FAMILY and nothing else, and the reason is a measurement, not
  * a budget. The strip was the one population on this surface with a single repeated tile: 56
  * occurrences of `p-4 rounded-2xl bg-card border border-border shadow-2xs`, identical character
- * for character across 13 files. 50 are now `<StatTile>`; `grep` finds the exact spelling at
- * FOUR remaining sites, all of them `kitaplar/[slug]`'s facts sheet.
+ * for character across 13 files. 50 are now `<StatTile>`; `grep` finds the exact spelling at EIGHT
+ * remaining sites, and the split matters: FOUR write it alone (`kitaplar/[slug]`'s facts sheet, the
+ * inverted tile deliberately left) and FOUR write it plus `space-y-1` (`turkiye/bolge`, the
+ * fourteenth strip, listed below with its geometric reason). An earlier version of this sentence
+ * claimed four, all `kitaplar/[slug]`; review counted eight.
  *
  * The other 49 grids write TWENTY-PLUS distinct tile spellings between them, and the divergence
  * is geometric rather than cosmetic:
@@ -4648,15 +4651,49 @@ function statGrids(): { file: string; tiles: number }[] {
  * a HALF migration — the shell adopted, the tiles left — and it lowers the total and goes red,
  * which is the correct answer for it.
  *
- * The tag is not a free pass either. `StatGrid` writes `className?: never` and
- * `components/patterns/patterns-contract.test.ts` pins that it still spells `grid grid-cols-*`,
- * so the shell cannot quietly stop being one.
+ * ## THE TAG IS NOT A FREE PASS, AND TWO SEPARATE THINGS HAD TO BE TRUE FOR THAT
+ *
+ * This docblock used to claim the tag was safe because `patterns-contract.test.ts` "pins that it
+ * still spells `grid grid-cols-*`, so the shell cannot quietly stop being one". **That was false
+ * and review proved it.** The pin was two SOURCE-SUBSTRING checks, and
+ *
+ *     const unused = cn("grid", COLUMNS[columns]);
+ *     void unused;
+ *     return <div className={cn("flex flex-col", …)}>{children}</div>;
+ *
+ * satisfies both while collapsing thirteen live metric strips to one column at every viewport —
+ * with the entire suite green. Third occurrence of that shape in this programme (PR3's Ruling Z/AB,
+ * Task 4's `.map()` blind spot), and the same fix each time: assert the RENDERED output, not the
+ * source that is supposed to produce it. `patterns-contract.test.ts` now renders `StatGrid` through
+ * `renderToStaticMarkup` and asserts the exact class string for every `columns` member, the way
+ * `components/ui/card-variants.test.tsx` already does next door.
+ *
+ * RULING BB. The second half: the tag is resolved to a BINDING, not matched as a string. A locally
+ * declared `function StatGrid({ children }) { return <section>{children}</section>; }` used to
+ * count as a migrated shell and push {@link STAT_GRIDS_TOTAL} to 63 for an element that renders no
+ * grid at all. Safe on its own — it ADDS a phantom and the counter is pinned exact — but it nets
+ * against a real removal, which is precisely the hiding this invariant exists to stop. Ruling AB's
+ * class, and `importBindingsOf` was already in this module for it.
+ *
+ * Aliasing is covered by the same lookup: `import { StatGrid as Grid }` binds `Grid` to
+ * (`stat-grid.tsx`, `StatGrid`) and qualifies, while a local `StatGrid` binds nothing and falls
+ * through to the className rule — where a `<section>` correctly reads as no grid.
  */
-function isGridShell(element: ScannedElement): boolean {
-  if (element.tag === "StatGrid") return true;
+const STAT_GRID_MODULE = join(repoRoot, "components/patterns/stat-grid.tsx");
+
+function isGridShell(element: ScannedElement, bindings: Map<string, RenderNode>): boolean {
+  const bound = bindings.get(element.tag);
+  if (bound !== undefined && bound.file === STAT_GRID_MODULE && bound.name === "StatGrid") {
+    return true;
+  }
   const tokens = tokensOf(element.spelling);
   return tokens.includes("grid") && tokens.some((token) => token.startsWith("grid-cols-"));
 }
+
+/** What a file that really imports `StatGrid` binds. The fixtures below pass it explicitly. */
+const STAT_GRID_BINDING: Map<string, RenderNode> = new Map([
+  ["StatGrid", { file: STAT_GRID_MODULE, name: "StatGrid" }],
+]);
 
 /**
  * The other bucket: a grid shell whose direct children include a `<StatTile>`.
@@ -4670,13 +4707,48 @@ function statGridsUsingStatTile(): { file: string; tiles: number }[] {
   const grids: { file: string; tiles: number }[] = [];
   for (const file of walkCardSurface()) {
     const elements = jsxElementsOf(file);
+    const bindings = importBindingsOf(file);
     elements.forEach((element, index) => {
-      if (!isGridShell(element)) return;
+      if (!isGridShell(element, bindings)) return;
       const tiles = elements[index]!.children.filter((i) => elements[i]!.tag === "StatTile");
       if (tiles.length > 0) grids.push({ file: label(file), tiles: tiles.length });
     });
   }
   return grids;
+}
+
+/**
+ * RULING BC. The one door the `fact`/`value` union leaves open, watched.
+ *
+ * `StatTile.fact` is typed `string`, and the TYPE cannot say "a compile-time literal". So
+ * `fact={String(book.pageCount)}` typechecks, renders a runtime reading, and asks no `absent`
+ * question anywhere — T-024's defect walking through the branch built to exclude it. The type
+ * relationship is pinned thoroughly in `components/patterns/patterns-contract.test.ts`
+ * (`fact?: never` / `value?: never` / `absent?: never`, all three); what it cannot express is this
+ * USAGE rule, so it is pinned here as a counter, the way {@link STOCK_CARD_SURFACE_OVERRIDES}
+ * watches the stock-`Card` door.
+ *
+ * Zero today — every one of the 46 `fact` props on the surface is a quoted literal.
+ *
+ * A brace expression is not automatically a defect (`fact={"WGS84"}` is a literal the long way
+ * round), which is why this is a RATCHET and not a ban: a future `fact={…}` has to come here,
+ * raise the number on purpose, and say why the expression cannot be absent.
+ *
+ * MUTATION-CHECKED 2026-09-18 at 0: `kitaplar/page.tsx`'s `fact="ÖSYM / MEB"` rewritten as
+ * `fact={String(books.length)}` — RED, `expected [ Array(1) ] to have a length of +0 but got 1`,
+ * the message naming the file. Reverted.
+ */
+export const FACT_PROPS_WITH_EXPRESSION = 0;
+
+function factPropsWithExpression(): string[] {
+  const hits: string[] = [];
+  for (const file of walkCardSurface()) {
+    // Masked, not raw: comments are stripped and string bodies are blanked, so neither this
+    // docblock nor a prose string quoting `fact={` can put itself in the count.
+    const found = [...maskedSource(file).matchAll(/\bfact=\{/g)].length;
+    for (let i = 0; i < found; i += 1) hits.push(label(file));
+  }
+  return hits.sort();
 }
 
 function statGridReport(grids: readonly { file: string; tiles: number }[]): string {
@@ -4741,7 +4813,7 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
       const elements = scanJsx(source);
       const hand = statGridTiles(elements, 0) === null ? 0 : 1;
       const uses =
-        isGridShell(elements[0]!) &&
+        isGridShell(elements[0]!, STAT_GRID_BINDING) &&
         elements[0]!.children.some((i) => elements[i]!.tag === "StatTile")
           ? 1
           : 0;
@@ -4772,7 +4844,7 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
       const elements = scanJsx(source);
       const hand = statGridTiles(elements, 0) === null ? 0 : 1;
       const uses =
-        isGridShell(elements[0]!) &&
+        isGridShell(elements[0]!, STAT_GRID_BINDING) &&
         elements[0]!.children.some((i) => elements[i]!.tag === "StatTile")
           ? 1
           : 0;
@@ -4796,6 +4868,55 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
     });
   });
 
+  /**
+   * RULING BB's second half, on a fixture. The shell is a BINDING, not a spelling.
+   *
+   * Review declared a local `function StatGrid({ children }) { return <section>…</section>; }` in a
+   * page and it counted as a migrated shell, pushing the TOTAL to 63 for an element that renders no
+   * grid. The direction was safe — a phantom ADDS, and the counter is pinned exact — but it nets
+   * against a real removal, and netting is the hiding this invariant exists to stop.
+   */
+  it("a locally declared StatGrid is not the shell — the binding is resolved, not the name", () => {
+    const tile = '<StatTile fact="1" label="x" />';
+    const shell = (bindings: Map<string, RenderNode>) =>
+      isGridShell(scanJsx(`<StatGrid>${tile}${tile}</StatGrid>`)[0]!, bindings) ? 1 : 0;
+
+    // Imported from the real module: a shell.
+    expect(shell(STAT_GRID_BINDING)).toBe(1);
+    // Declared locally — no import binding at all: NOT a shell, and the `<StatGrid>` element
+    // carries no grid className to fall back on.
+    expect(shell(new Map())).toBe(0);
+    // Imported from somewhere else under the same name: NOT a shell.
+    expect(
+      shell(
+        new Map([
+          ["StatGrid", { file: join(repoRoot, "components/v2/v2-hero.tsx"), name: "StatGrid" }],
+        ]),
+      ),
+    ).toBe(0);
+    // ALIASED from the real module: still a shell — `import { StatGrid as Grid }` is the natural
+    // way to write it beside a local grid helper, and it must not fall out of the count.
+    const aliased = scanJsx(`<Grid>${tile}${tile}</Grid>`)[0]!;
+    expect(
+      isGridShell(aliased, new Map([["Grid", { file: STAT_GRID_MODULE, name: "StatGrid" }]])),
+    ).toBe(true);
+    // …but an alias pointing at a DIFFERENT export of the same module is not.
+    expect(
+      isGridShell(aliased, new Map([["Grid", { file: STAT_GRID_MODULE, name: "StatGridProps" }]])),
+    ).toBe(false);
+  });
+
+  it("the real migrated pages resolve their StatGrid binding — anti-vacuity for the rule above", () => {
+    // Without this, a `resolveSpecifier` that quietly returned null for every `@/components/...`
+    // specifier would make `isGridShell` reject every real shell, the migrated bucket would empty,
+    // and the TOTAL would fall — loudly, but only after someone re-pinned it. Assert the premise.
+    const page = join(repoRoot, "app/[locale]/(site)/araclar/page.tsx");
+    const bound = importBindingsOf(page).get("StatGrid");
+    expect(bound, "araclar/page.tsx no longer binds StatGrid").toBeDefined();
+    expect(bound!.file).toBe(STAT_GRID_MODULE);
+    expect(bound!.name).toBe("StatGrid");
+  });
+
   it("no product surface renders StatTile at all — the adoption floor", () => {
     // Expected to RISE, unlike every other number in this section, so it is pinned exactly:
     // the first real consumer has to come and change it on purpose. `stat-tile.tsx` itself is
@@ -4809,6 +4930,31 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
       SURFACE_FILES_RENDERING_STATTILE,
     );
     expect(existsSync(primitive)).toBe(true);
+  });
+
+  it("every fact prop on the surface is a literal, never an expression", () => {
+    const hits = factPropsWithExpression();
+    expect(
+      hits,
+      `fact={…} — a runtime reading in the branch that asks no absent question:\n${hits.join("\n")}`,
+    ).toHaveLength(FACT_PROPS_WITH_EXPRESSION);
+  });
+
+  it("the fact scan looked at real fact props — anti-vacuity", () => {
+    // A counter reading 0 because it found nothing to look at is worthless. 46 quoted `fact`
+    // props landed in this task, so assert the population exists before trusting the zero.
+    const quoted = walkCardSurface().reduce(
+      (n, file) => n + [...maskedSource(file).matchAll(/\bfact="/g)].length,
+      0,
+    );
+    expect(quoted).toBeGreaterThan(40);
+  });
+
+  it("the fact pattern fires on an expression and not on a literal — both ways", () => {
+    expect(/\bfact=\{/.test('<StatTile fact={String(x)} label="y" />')).toBe(true);
+    expect(/\bfact=\{/.test('<StatTile fact="WGS84" label="y" />')).toBe(false);
+    // Not a substring match on some other prop ending in "fact".
+    expect(/\bfact=\{/.test("<X artefact={1} />")).toBe(false);
   });
 
   it("the tile predicate needs BOTH a value and a muted label — negative controls", () => {

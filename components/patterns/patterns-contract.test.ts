@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
+import { StatGrid, type StatGridProps } from "./stat-grid";
 
 /** Comments stripped — a docblock explaining why something is NOT `role="alert"` contains it. */
 const read = (name: string) =>
@@ -132,12 +135,89 @@ describe("StatGrid is the shell and nothing else", () => {
     expect(source).toMatch(/className\?: never/);
   });
 
-  it("writes the grid tokens the scanner recognises", () => {
-    // `statGridsUsingStatTile()` finds a migrated grid by `grid` + `grid-cols-*`. If this
-    // component stopped writing them the grids would leave BOTH buckets and STAT_GRIDS_TOTAL
-    // would fall — the signature of a grid refactored out of sight.
-    expect(source).toContain('cn("grid"');
-    expect(source).toMatch(/grid-cols-2 sm:grid-cols-4/);
+  /**
+   * RULING BB. THE RENDERED CLASS STRING, NOT THE SOURCE THAT IS SUPPOSED TO PRODUCE IT.
+   *
+   * This assertion used to be `toContain('cn("grid"')` plus a `/grid-cols-2 sm:grid-cols-4/`
+   * match on the file's text, and `components/v2/page-composition.test.ts` leaned on it: the tag
+   * `<StatGrid>` counts as a grid shell for `STAT_GRIDS_TOTAL`, "so the shell cannot quietly stop
+   * being one". Review demonstrated that it can. Replacing the render with
+   *
+   *     const unused = cn("grid", COLUMNS[columns]);
+   *     void unused;
+   *     return <div className={cn("flex flex-col", GAP[gap], GUTTER[gutter])}>{children}</div>;
+   *
+   * satisfies BOTH substrings from a dead reference while collapsing thirteen live metric strips
+   * to a single column at every viewport — with 217 files / 4800 tests green. A source substring
+   * is evidence that a string exists in a file, never that an element wears it.
+   *
+   * So: render it. `StatGrid` is a pure function of props and `renderToStaticMarkup` needs no
+   * jsdom (`docs/conventions.md` — this suite has none), which is the same instrument
+   * `components/ui/card-variants.test.tsx` uses one directory over for the same reason. Asserted
+   * as the WHOLE string in emission order, not "contains the right tokens", because a re-theme
+   * that kept `grid` and changed the breakpoints would pass the weaker form.
+   *
+   * MUTATION-CHECKED at these values, reverted after each:
+   *
+   *   - the exact `flex flex-col` + `void unused` rewrite above — RED on every `columns` row,
+   *     `expected 'flex flex-col gap-3 sm:gap-4' to be 'grid grid-cols-2 sm:grid-cols-4 gap-3
+   *     sm:gap-4'`, which is the mutation the old pin could not see;
+   *   - `"2-4"` re-spelled `grid-cols-2 md:grid-cols-4` — RED on that row alone;
+   *   - `gutter="hero"` changed from `mt-8` to `mt-6` — RED on the gutter row.
+   */
+  /**
+   * Render once, read the class off the element.
+   *
+   * `children` goes in the props bag rather than as `createElement`'s third argument because
+   * `StatGridProps.children` is REQUIRED, and the third-argument form leaves it missing from the
+   * props type and fails `tsc`. `react/no-children-prop` is a rule about JSX authoring ergonomics
+   * and this file is `.ts` with no JSX in it, so the disable is scoped to this one line with its
+   * reason rather than repeated at four call sites.
+   */
+  const gridClass = (props: Omit<StatGridProps, "children"> = {}) => {
+    // eslint-disable-next-line react/no-children-prop
+    const markup = renderToStaticMarkup(createElement(StatGrid, { ...props, children: "x" }));
+    return /class="([^"]*)"/.exec(markup)?.[1] ?? "(no class attribute rendered)";
+  };
+
+  it.each([
+    ["2-4", "grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"],
+    ["2", "grid grid-cols-2 gap-3 sm:gap-4"],
+  ] as const)("renders columns=%s as exactly its measured spelling", (columns, expected) => {
+    expect(gridClass({ columns })).toBe(expected);
+  });
+
+  it("renders the hero gutter, and nothing for none", () => {
+    expect(gridClass({ gutter: "hero" })).toBe(
+      "grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8",
+    );
+    expect(gridClass({ gutter: "none" })).toBe("grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4");
+  });
+
+  it("the rendered element really is what the scanner reads as a grid shell", () => {
+    // The bridge between this file and the counter, stated once: the class string above must
+    // satisfy the `grid` + `grid-cols-*` rule `isGridShell` falls back on. Without this the two
+    // files could drift apart while each stayed internally green.
+    const tokens = gridClass().split(" ");
+    expect(tokens).toContain("grid");
+    expect(tokens.some((token) => token.startsWith("grid-cols-"))).toBe(true);
+  });
+
+  it("every union member has a product consumer — T-036's rule, applied to itself", () => {
+    // Six members shipped with zero product consumers in the first round (`2-3-6`, `2-lg-4`,
+    // `2-md-4`, `gutter` body/section, `gap` wide), two of them justified by a showcase specimen
+    // added in the same commit. A member justified by its own demo is not a member with a
+    // consumer. The measured spellings survive as prose in the docblock; the API does not.
+    expect(source).toMatch(/"2-4": "grid-cols-2 sm:grid-cols-4"/);
+    expect(source).toMatch(/"2": "grid-cols-2"/);
+    // Asserted on the KEYS, not on class substrings: `wide: "gap-4"` and the surviving
+    // `strip: "gap-3 sm:gap-4"` share the token `gap-4`, so a class-level ban fires on the member
+    // that is supposed to be here. The member is the key.
+    for (const cut of [`"2-3-6"`, `"2-lg-4"`, `"2-md-4"`, "body", "section", "wide", "tight"]) {
+      expect(source, `${cut} is back as a union member with no product consumer`).not.toMatch(
+        new RegExp(`^\\s*${cut.replace(/["-]/g, "\\$&")}:\\s`, "m"),
+      );
+    }
   });
 
   it("carries no tile styling of its own", () => {

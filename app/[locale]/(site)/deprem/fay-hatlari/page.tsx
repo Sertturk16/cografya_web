@@ -121,13 +121,31 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 all frozen — identical hex in both themes — and the blue reads 5.25:1 on the
                 light card but 3.25:1 on the dark one, the lowest figure in the strip family.
 
-                They are not a legend: nothing else on this page or its map draws KAF, DAF or
-                BAFS in those hues, so nothing is severed by re-toning them, and
-                `docs/design.md`'s "brand tokens never encode data" is not engaged. What the
-                hues DO carry is three distinguishable fault systems, so the mapping keeps
-                three distinct ones rather than collapsing onto the sibling strips' rotation:
-                red → destructive (the hazard reading), blue → accent (the water teal, the
-                coolest brand hue), emerald → secondary (the olive, the only green). */}
+                They are not a legend HERE: nothing else on this page or its map draws KAF, DAF
+                or BAFS in those hues, so nothing is severed by re-toning them. What the hues DO
+                carry is three distinguishable fault systems, so the mapping keeps three distinct
+                ones rather than collapsing onto the sibling strips' rotation: red → destructive
+                (the hazard reading), blue → accent (the water teal, the coolest brand hue),
+                emerald → secondary (the olive, the only green).
+
+                RULING BD — AND THE REAL LEGEND ONE ROUTE OVER MUST NOT FOLLOW.
+                `app/[locale]/(site)/deprem/page.tsx` carries a KAF/DAF/BAFS legend in
+                `text-red-700 dark:text-red-300` / `blue` / `emerald`, so after this change
+                /deprem says DAF-is-blue while this page renders DAF in accent-teal. That reads
+                like an unfinished job and it is not one. The two are different KINDS of colour:
+
+                  - THIS strip's hues were DECORATION on a value — three figures that happened to
+                    be tinted, with nothing keying off the tint, and no `dark:` pair, so they were
+                    frozen at their light appearance on a night-sea card. Decoration belongs on
+                    bridge tokens, and that is why it moved.
+                  - /deprem's legend is CATEGORICAL DATA ENCODING: the swatch IS the claim, and
+                    `docs/design.md` is explicit that brand tokens never encode data on maps and
+                    charts. Re-toning it would push three data categories onto three brand hues,
+                    which is the rule running the other way. It also already carries `dark:`
+                    pairs, so it is not frozen. It belongs to T-031c's categorical palette work.
+
+                So: do NOT "finish the job" by converting the legend. One moved because it was
+                decoration without a dark pair; the other stays because it is data with one. */}
             <StatGrid gutter="hero">
               <StatTile label="KAF Toplam Uzunluk" fact="1.200 km" tone="destructive" />
               <StatTile label="DAF Toplam Uzunluk" fact="550 km" tone="accent" />

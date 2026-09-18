@@ -177,6 +177,14 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 - **`StatGrid` is the shell, `StatTile` the tile, and a grid needs both.** Half-migrating —
   `StatGrid` around hand-drawn tiles — drops the grid out of BOTH buckets in
   `components/v2/page-composition.test.ts` and fails `STAT_GRIDS_TOTAL`. That is deliberate.
+- **Decoration on a value vs categorical data encoding — the line that decides whether a raw
+  palette class gets converted.** T-035 PR4 re-toned `/deprem/fay-hatlari`'s strip off
+  `text-red-600`/`-blue-600`/`-emerald-600` and left `/deprem`'s KAF/DAF/BAFS legend on
+  `text-red-700 dark:text-red-300` and its siblings, which looks inconsistent and is not. The
+  strip's hues were decoration with **no `dark:` pair** — frozen at one hex in both themes — and
+  decoration belongs on bridge tokens. The legend's swatch **is** the claim, so converting it
+  would put three data categories on three brand hues, which the data-viz rule below forbids; it
+  also already has its `dark:` pairs. Do not "finish the job" by converting a legend.
 - **`MapLegend` requires `bins` on the classed variant**, so an unlabelled classed legend
   cannot be built (data-viz rule 5 below).
 - **`MapAttribution` beside every map** is ODbL compliance, not house style.

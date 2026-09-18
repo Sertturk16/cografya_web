@@ -38,19 +38,33 @@ interface StatTileMeasurement extends StatTileBase, Omit<MetricValueProps, "clas
 }
 
 /**
- * A LITERAL, and the reason this union exists.
+ * A COMPILE-TIME LITERAL, and the reason this union exists.
  *
- * `MetricValue` takes `value: number`. The metric strips do not hold numbers: they hold
- * `"WGS84"`, `"Haversine"`, `"L'Huilier"`, `"M 1.0 - 7.0+"`, `"ÖSYM / MEB"`, `"%28 Eğim"`. Those
- * are named constants and specification facts, not readings, and there is no honest
- * `Intl.NumberFormat` call for any of them. Widening `MetricValue.value` to `string` was the
- * other option and it is the wrong one: it would let a page print `"—"` or `"0"` as a value and
- * satisfy every assertion T-024 left behind.
+ * ## THE BOUNDARY IS NOT "NUMBER VERSUS NAME"
  *
- * So the split is the guarantee, not a hole in it. `absent` stays REQUIRED wherever a number is
- * rendered, and a caller that reaches for `fact` is saying, in the type, that this tile is not
- * reporting a measurement — which is checkable, and which `absent={{ label: "—" }}` on a widened
- * `value` would not have been.
+ * This docblock used to say "the metric strips do not hold numbers", and review measured that
+ * against the 46 `fact` values: it is true of about sixteen. **Around thirty ARE numbers**, written
+ * as pre-formatted strings — `"8.333 km"`, `"783.562 km²"`, `"1.200 km"`, `"~8.1 Milyar"`,
+ * `"%50"`, `"120 sn"`, `"7 Bölge"`, `"28 İl"`. A reader of the old sentence would conclude no
+ * `fact` tile holds a number, and thirty of them do.
+ *
+ * The real line is **compile-time literal versus runtime reading**:
+ *
+ *   - `value` is a READING — something that arrives at request time and may not arrive at all.
+ *     `provinces.length`, a summed district count, `books.length`. `absent` is required there
+ *     because "what if it is not there" is a real question the caller must answer.
+ *   - `fact` is a CONSTANT typed into the copy — HGM's published 8.333 km of coastline, WGS84,
+ *     the 6.371 km mean earth radius. It is always present, by construction. `absent` would be
+ *     decorative, and a decorative `absent={{ label: "—" }}` is exactly the dash `MetricValue`
+ *     forbids, smuggled in through ceremony.
+ *
+ * On that boundary every call site on the surface is correct, and it is the line the contract test
+ * below pins: `fact` must receive a string LITERAL, never `fact={String(x)}`, because a brace
+ * expression is how a runtime reading would cross into the branch that asks no absent question.
+ *
+ * Widening `MetricValue.value` to `string` was the other option and it is the wrong one: it would
+ * let a page print `"—"` or `"0"` as a value and satisfy every assertion T-024 left behind. So the
+ * split is the guarantee, not a hole in it.
  */
 interface StatTileFact extends StatTileBase {
   readonly fact: string;
@@ -102,7 +116,15 @@ export function StatTile(props: StatTileProps) {
             {icon}
           </span>
         ) : null}
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        {/*
+          `leading-5` is DELIBERATE, and it is the point of writing it down. The strips' labels
+          were `text-xs` spans sitting inline in the tile's block context, so they took the body
+          strut — `app/globals.css` sets `body { font-size: 16px; line-height: 1.6 }`, i.e. 25.6px
+          of leading on 12px text, a ratio of 2.13 that broke a four-word Turkish label into four
+          list items. Nobody chose that. Nobody chose `text-xs`'s bundled 16px either; this says
+          20px out loud, which is a caption's leading for a caption that wraps.
+        */}
+        <span className="text-xs font-medium leading-5 text-muted-foreground">{label}</span>
       </div>
       {props.fact !== undefined ? (
         <span

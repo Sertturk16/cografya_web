@@ -148,7 +148,7 @@ export function VeriSpecimens() {
         {/* `columns="2"`, not the strips' `2-4`: ThemePair renders two half-width panes, so a
             four-across grid gives each tile ~100px here and clips a `text-3xl` value. The real
             pages give the strip the full page width — measured down to 320px. */}
-        <StatGrid columns="2" gap="tight">
+        <StatGrid columns="2">
           <StatTile label="Küresel Elipsoid Modeli" fact="WGS84" tone="primary" />
           <StatTile label="Büyük Daire Eğrilik Hesabı" fact="Haversine" tone="secondary" />
           <StatTile label="Morfogenetik Çeşitlilik" fact="6 Kıyı Tipi" tone="accent" />
@@ -158,16 +158,15 @@ export function VeriSpecimens() {
 
       <Specimen
         name="StatGrid"
-        description="Yalnızca duyarlı ızgara kabuğu — sütunlar, boşluk ve üstteki ayrım. className yok: PageContainer ile aynı gerekçe, geçirgen bir prop dağınıklığı tekrar içeri alır ve sayaçlar kaynak yazımını okuduğu için bunu göremez."
+        description="Yalnızca duyarlı ızgara kabuğu — sütunlar ve üstteki ayrım. className yok: PageContainer ile aynı gerekçe, geçirgen bir prop dağınıklığı tekrar içeri alır ve sayaçlar kaynak yazımını okuduğu için bunu göremez. Birleşimin yalnızca gerçek tüketicisi olan üyeleri var; ölçülmüş ama henüz kullanılmayan yazımlar bileşenin docblock'unda düzyazı olarak duruyor — kendi demosuyla gerekçelendirilen üye, tüketicisi olan üye değildir."
       >
-        {/* Short values, so the six-across spelling is legible even at pane width. */}
-        <StatGrid columns="2-3-6" gap="tight">
+        {/* The real member, at the real default: `2-4`, which 13 strips write. Short values so it
+            stays legible at pane width, where the product pages have the full page. */}
+        <StatGrid>
           <StatTile label="İl" fact="81" tone="primary" />
           <StatTile label="Bölge" fact="7" tone="secondary" />
           <StatTile label="İlçe" fact="973" tone="accent" />
           <StatTile label="Deniz" fact="4" />
-          <StatTile label="Kıyı ili" fact="28" tone="primary" />
-          <StatTile label="Kıta" fact="7" tone="secondary" />
         </StatGrid>
       </Specimen>
 

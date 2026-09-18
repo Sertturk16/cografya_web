@@ -4,10 +4,21 @@ import { cn } from "@/lib/utils";
 /**
  * The responsive shell a stat strip sits in — columns, gutter, and nothing else.
  *
- * Every spelling below was MEASURED off the surface rather than designed. Thirteen files write
- * `grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4` character for character, twelve of them with
- * `mt-8` on the end; that is the whole vocabulary this component started with, and a member is
- * added here only when a real grid is migrated onto it.
+ * Every spelling below was MEASURED off the surface rather than designed, and **a member is added
+ * here only when a real grid is migrated onto it.** That sentence was in this docblock from the
+ * first commit while six members contradicted it; review called it and the six are gone. What the
+ * surface writes today, and what each would become, is recorded below as PROSE — the knowledge is
+ * free, the API surface is not:
+ *
+ *   - `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6` — `v2-sea-basin-detail-view`'s 6-across strip;
+ *   - `grid-cols-2 lg:grid-cols-4` — `turkiye/bolge`'s fourteenth strip;
+ *   - `grid-cols-2 md:grid-cols-4` — `turkiye/bolge/[slug]`;
+ *   - `gap-3` flat, `gap-4` flat, `pt-2`, `pt-4` — the gaps and gutters those three carry.
+ *
+ * Each is one line to add when its grid actually arrives; `columns: "2"` proves the path, having
+ * been added in this very task because `kitaplar` needed it. An unused member is never exercised
+ * by a real render, so it cannot be known to fit the geometry it was measured from — which is
+ * exactly what `components/ui/orphan.test.ts` and T-036 refuse.
  *
  * `className` is `never`, for `PageContainer`'s reason: the six vertical rhythms that component
  * replaced grew because every page could write its own. A passthrough would let the same
@@ -21,31 +32,27 @@ import { cn } from "@/lib/utils";
  * buckets and lower `STAT_GRIDS_TOTAL` — the signature of a grid refactored out of sight, which
  * is exactly what that invariant exists to catch. So the scanner was taught that a `<StatGrid>`
  * element IS a grid shell, in the same commit that created this file. Neither half works alone.
+ *
+ * That teaching is what makes this component's RENDERED OUTPUT load-bearing, not merely its
+ * source. `components/patterns/patterns-contract.test.ts` renders it and asserts the exact class
+ * string per `columns` member, because review demonstrated that the source-substring pin it
+ * replaced was satisfied by a dead `cn("grid", …)` reference behind a `void` while the element
+ * itself rendered `flex flex-col` — thirteen strips collapsed to one column, whole suite green.
  */
 const COLUMNS = {
   /** The metric strip: two up on a phone, four across from `sm`. 13 files write it. */
   "2-4": "grid-cols-2 sm:grid-cols-4",
   /**
-   * Two tracks at every width. `kitaplar` reaches this shape today by writing the 2-4 strip and
-   * then `sm:col-span-2` on each of its two surviving tiles, which renders identically and
-   * needs a per-tile escape hatch to say so.
+   * Two tracks at every width. `kitaplar` reached this shape by writing the 2-4 strip and then
+   * `sm:col-span-2` on each of its two surviving tiles, which renders identically and needs a
+   * per-tile escape hatch to say so.
    */
   "2": "grid-cols-2",
-  /** The sea-basin strip: two, three, then six. */
-  "2-3-6": "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6",
-  /** The region hub strip: two up until `lg`. */
-  "2-lg-4": "grid-cols-2 lg:grid-cols-4",
-  /** The region detail strip: two up until `md`. */
-  "2-md-4": "grid-cols-2 md:grid-cols-4",
 } as const;
 
 const GAP = {
-  /** `gap-3 sm:gap-4` — the strip's spelling. */
+  /** `gap-3 sm:gap-4` — the strip's spelling, and the only one on the surface. */
   strip: "gap-3 sm:gap-4",
-  /** A single step, for grids whose tiles are short enough not to need the `sm` bump. */
-  tight: "gap-3",
-  /** `gap-4` flat. */
-  wide: "gap-4",
 } as const;
 
 /**
@@ -57,10 +64,6 @@ const GUTTER = {
   none: "",
   /** `mt-8` — clear of the hero above. */
   hero: "mt-8",
-  /** `pt-2` — a hairline of breathing room where the strip follows body copy, not a hero. */
-  body: "pt-2",
-  /** `pt-4` — the region detail page's spelling. */
-  section: "pt-4",
 } as const;
 
 export interface StatGridProps {
