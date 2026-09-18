@@ -2930,6 +2930,13 @@ function walkCardSurface(): string[] {
 type ScannedElement = {
   readonly tag: string;
   readonly spelling: string | null;
+  /**
+   * The raw attribute expression, kept ONLY where `spelling` is {@link COMPUTED_CLASSNAME}. Which
+   * shape an unreadable className has decides whether it could ever hide a card: a `styles.x`
+   * member lookup is the surviving CSS-Modules surface and never will, a bare identifier is the
+   * module-constant hoist {@link COMPUTED_CARD_CLASSNAMES} exists to watch for.
+   */
+  readonly computed: string | null;
   readonly parent: number | null;
   readonly children: number[];
   readonly inProp: boolean;
@@ -3028,8 +3035,14 @@ function scanJsx(source: string): ScannedElement[] {
   /** The `className` of the tag whose name ends at `i`, plus where its header ends. */
   const readHeader = (
     i: number,
-  ): { spelling: string | null; end: number; selfClosing: boolean } => {
+  ): {
+    spelling: string | null;
+    computed: string | null;
+    end: number;
+    selfClosing: boolean;
+  } => {
     let spelling: string | null = null;
+    let computed: string | null = null;
     let j = i;
     while (j < source.length) {
       const ch = source[j]!;
@@ -3041,7 +3054,9 @@ function scanJsx(source: string): ScannedElement[] {
         j = skipBraced(j);
         continue;
       }
-      if (ch === ">") return { spelling, end: j + 1, selfClosing: source[j - 1] === "/" };
+      if (ch === ">") {
+        return { spelling, computed, end: j + 1, selfClosing: source[j - 1] === "/" };
+      }
       if (source.startsWith("className", j) && !/[A-Za-z0-9_$]/.test(source[j - 1] ?? " ")) {
         let k = j + "className".length;
         while (k < source.length && /\s/.test(source[k]!)) k += 1;
@@ -3057,8 +3072,10 @@ function scanJsx(source: string): ScannedElement[] {
           }
           if (opener === "{") {
             const end = skipBraced(k);
-            const literals = literalsOf(source.slice(k + 1, end - 1));
+            const expression = source.slice(k + 1, end - 1);
+            const literals = literalsOf(expression);
             spelling = literals.length > 0 ? literals.join(" ") : COMPUTED_CLASSNAME;
+            computed = literals.length > 0 ? null : expression.trim().replace(/\s+/g, " ");
             j = end;
             continue;
           }
@@ -3068,7 +3085,7 @@ function scanJsx(source: string): ScannedElement[] {
       }
       j += 1;
     }
-    return { spelling, end: source.length, selfClosing: false };
+    return { spelling, computed, end: source.length, selfClosing: false };
   };
 
   /** Scans `[i, end)` as JSX children of `parent`; returns where it stopped. */
@@ -3112,7 +3129,14 @@ function scanJsx(source: string): ScannedElement[] {
         const tag = fragment ? "" : source.slice(i + 1, nameEnd);
         const header = readHeader(nameEnd);
         const index = elements.length;
-        elements.push({ tag, spelling: header.spelling, parent, children: [], inProp });
+        elements.push({
+          tag,
+          spelling: header.spelling,
+          computed: header.computed,
+          parent,
+          children: [],
+          inProp,
+        });
         if (parent !== null && !inProp) elements[parent]!.children.push(index);
         scanRange(nameEnd, header.end, index, true, depth + 1);
         if (header.selfClosing) {
@@ -3446,23 +3470,78 @@ export const HAND_DRAWN_CARDS = 305;
 export const HAND_DRAWN_WELLS = 181;
 
 /**
- * The size of SCOPE note 1's hole: elements on the card surface whose `className` is an expression
- * with no string literal in it at all, so this scanner cannot tell whether they are cards.
+ * The size of SCOPE note 1's hole, in the ONE shape that can actually hide a card.
  *
- * Pinned because it is the only blind spot that can SUBTRACT from a ratchet with nothing migrated
- * — move a card's tokens into a module constant and `HAND_DRAWN_CARDS` falls while the markup is
- * unchanged. A rise here beside a fall there is the signature of that move, and neither number
- * alone shows it.
+ * This is the only blind spot that can SUBTRACT from a ratchet with nothing migrated: move a
+ * card's tokens into a module constant and `HAND_DRAWN_CARDS` falls while the markup is unchanged.
+ * A rise here beside a fall there is the signature of that move, and neither number alone shows it.
  *
- * Deliberately NOT restricted to card-shaped elements, because it cannot be: the whole point is
- * that the scanner cannot read these. So it counts every unreadable `className` on the surface,
- * `className={styles.x}` and `className={props.className}` included, and it is noisy.
+ * ## Why 25 and not 278
  *
- * MUTATION-CHECKED 2026-09-18: `const Probe = () => <div className={cardShell} />` added to
- * `components/patterns/theme-pair.tsx` — RED, `expected 279 to be 278`, the message listing the
- * unreadable classNames by file. Reverted.
+ * 278 elements on the surface write a `className` this scanner cannot read. Broken down by the
+ * shape of the expression:
+ *
+ * | shape                                            | n       | can it hide a card?                |
+ * | ------------------------------------------------ | ------- | ---------------------------------- |
+ * | member expression (`styles.x`, `continentMeta?.badgeClass`) | 250 | no — the CSS-Modules surface   |
+ * | **single identifier** (`subregionsGridClass`)     | **25**  | **yes — the module-constant hoist** |
+ * | ternary (`x ? styles.a : styles.b`)              | 2       | in principle; neither is card-shaped |
+ * | call (`cn(calloutVariants({…}))`)                | 1       | in principle                       |
+ *
+ * The 247 are the ten surviving `*.module.css` consumers. A `styles.x` lookup resolves to a CSS
+ * module class, not to Tailwind tokens, so it cannot become the hoist SCOPE note 1 describes —
+ * and it churns whenever any of those ten files is touched. Pinning the total would put a +1 hoist
+ * inside 278 units of unrelated noise: a smoke alarm in the wrong room. Pinned at the
+ * single-identifier shape, the counter moves VISIBLY by exactly +1 the day `card.tsx`'s classes
+ * are hoisted into a constant.
+ *
+ * The other three shapes are watched too, one door over: {@link UNREADABLE_CLASSNAME_SHAPES} pins
+ * the whole breakdown and the buckets are asserted to SUM to the population, so narrowing this
+ * counter did not discard the other 253 — it filed them, and a new shape cannot slip between the
+ * buckets. ({@link computedShape} draws the member/ternary line at optional chaining, which is why
+ * the split reads 250/2 where a hand tally read 247/3; the buckets here sum to 278 exactly.)
+ *
+ * MUTATION-CHECKED 2026-09-18, both halves of the narrowing:
+ *
+ *   - `<div className={cardShell} />` added to `components/patterns/theme-pair.tsx` — RED,
+ *     `expected 26 to be 25`, the message listing the bare-identifier classNames by file. That is
+ *     the hoist SCOPE note 1 describes, caught at +1 in 25.
+ *   - `<div className={styles.probe} />` in the same place — this counter stays GREEN at 25 and
+ *     only the shape breakdown moves (`member` 250 → 251). CSS-module churn no longer reaches the
+ *     hoist counter, which is exactly what narrowing 278 → 25 bought.
+ *
+ * Both reverted.
  */
-export const COMPUTED_CARD_CLASSNAMES = 278;
+export const COMPUTED_CARD_CLASSNAMES = 25;
+
+/** The whole unreadable-className population by expression shape — the 253 the counter above
+ * deliberately does not watch, kept visible rather than dropped. */
+const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
+  ["call", 1],
+  ["identifier", 25],
+  ["member", 250],
+  ["ternary", 2],
+];
+
+/** Which of {@link UNREADABLE_CLASSNAME_SHAPES} an unreadable `className` expression has. */
+function computedShape(expression: string): string {
+  if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(expression)) return "identifier";
+  if (
+    /^[A-Za-z_$][A-Za-z0-9_$]*(\??\.[A-Za-z_$][A-Za-z0-9_$]*|\??\[[^[\]]*\])+$/.test(expression)
+  ) {
+    return "member";
+  }
+  if (expression.includes("?") && expression.includes(":")) return "ternary";
+  return "call";
+}
+
+function unreadableClassNames(): { file: string; shape: string }[] {
+  return walkCardSurface().flatMap((file) =>
+    jsxElementsOf(file)
+      .filter((element) => element.computed !== null)
+      .map((element) => ({ file: label(file), shape: computedShape(element.computed!) })),
+  );
+}
 
 describe("the card scanner itself", () => {
   it("scanned a real, non-trivial surface — anti-vacuity", () => {
@@ -3688,21 +3767,30 @@ describe("the card scanner itself", () => {
     ).toEqual([]);
   });
 
-  it("the size of the unreadable-className population is exactly the recorded number", () => {
-    const computed = walkCardSurface().flatMap((file) =>
-      jsxElementsOf(file)
-        .filter((el) => el.spelling === COMPUTED_CLASSNAME)
-        .map(() => label(file)),
-    );
+  it("the module-constant-hoist population is exactly the recorded number", () => {
+    const hoists = unreadableClassNames().filter((row) => row.shape === "identifier");
     const byFile = new Map<string, number>();
-    for (const file of computed) byFile.set(file, (byFile.get(file) ?? 0) + 1);
+    for (const row of hoists) byFile.set(row.file, (byFile.get(row.file) ?? 0) + 1);
     expect(
-      computed.length,
-      `elements whose className holds no string literal, by file:\n${[...byFile]
+      hoists.length,
+      `elements whose className is a bare identifier, by file:\n${[...byFile]
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([file, n]) => `  ${n}x ${file}`)
         .join("\n")}`,
     ).toBe(COMPUTED_CARD_CLASSNAMES);
+  });
+
+  it("the rest of the unreadable population is filed by shape, not discarded", () => {
+    const tally = new Map<string, number>();
+    for (const row of unreadableClassNames()) tally.set(row.shape, (tally.get(row.shape) ?? 0) + 1);
+    expect(
+      [...tally].sort(),
+      `unreadable classNames by shape: ${JSON.stringify([...tally].sort())}`,
+    ).toEqual([...UNREADABLE_CLASSNAME_SHAPES].sort());
+    expect(
+      unreadableClassNames().length,
+      "every unreadable className is in exactly one shape bucket",
+    ).toBe(UNREADABLE_CLASSNAME_SHAPES.reduce((total, [, n]) => total + n, 0));
   });
 
   it("separates the two populations on the surface token alone", () => {
@@ -3835,14 +3923,73 @@ describe("the file's two JSX scanners still agree about what an element writes",
     expect(rows.every((row) => row.includes("${"))).toBe(true);
   });
 
-  it("the comparison is not vacuous — it read a real, non-trivial number of elements", () => {
+  /**
+   * ANTI-VACUITY ON A FIXTURE, not on a live-tree floor.
+   *
+   * The first version asserted `>1500` `<div>`s on the live surface against 1850 today. Replacing
+   * ~159 tile templates with `<StatTile/>` plausibly removes several hundred, so that floor sat
+   * inside the adoption task's blast radius — the same "fails when the next task succeeds" trap
+   * the card fixture exists to avoid, in its last hiding place. The deterministic half moved here:
+   * a known source with a known number of `<div>`s, where both extractors must see all of them.
+   *
+   * The live-tree half survives only as a floor the adoption cannot cross. 1850 `<div>`s today;
+   * the migration removes tile markup, not layout, and even deleting EVERY counted card element
+   * (486, of which 413 are `<div>`s) leaves >1400. 500 is under a third of that, so it can only
+   * fail if the walk or the scanner has stopped working — which is what it is for.
+   */
+  it("the comparison is not vacuous — both extractors see every div in a known source", () => {
+    const source = [
+      '<div className="a">',
+      '  <div className={cn("b", x)}>',
+      "    <span />",
+      "    <div />",
+      "  </div>",
+      "  <div>{items.map((i) => (",
+      '    <div key={i} className="c" />',
+      "  ))}</div>",
+      "</div>",
+    ].join("\n");
+    const scanned = scanJsx(source).filter((element) => element.tag === "div");
+    expect(scanned).toHaveLength(5);
+    expect(classNamesOf(source, "div")).toEqual(
+      scanned.map((element) => (element.spelling ?? NO_CLASSNAME).trim().replace(/\s+/g, " ")),
+    );
+  });
+
+  it("the live comparison ran on the real surface at all — a floor Task 6 cannot cross", () => {
     const divs = walkCardSurface().flatMap((file) =>
       jsxElementsOf(file).filter((element) => element.tag === "div"),
     );
-    expect(divs.length).toBeGreaterThan(1500);
-    const hub = divSpellings(join(repoRoot, "components/v2/v2-member-hub.tsx"));
-    expect(hub.legacy.length).toBeGreaterThan(50);
-    expect(hub.scanned.length).toBe(hub.legacy.length);
+    expect(divs.length).toBeGreaterThan(500);
+  });
+
+  /**
+   * RULING AM. PR3's mangling is harmless ONLY because no `<h1>` on this surface carries a
+   * template hole — and nothing asserted that, which is the same latency shape as the
+   * `bg-card-foreground` trap, minus the measuring control. Here it is.
+   *
+   * It also records the direction the split task should take, while it is still free: adopt PR4's
+   * `${…}` marker and DELETE `classNameLiteralsIn`'s hole handling rather than port it. Zero of
+   * the 13 `H1_SPELLINGS` rows contain a hole, so no PR3 counter moves — and PR3's own docblock
+   * already states PR4's rule ("a computed class reads as its own distinct, obviously-unconverged
+   * spelling rather than collapsing into a neighbouring one") while its implementation achieves
+   * neither half: it strips the hole's quotes, welds both branches of a ternary together, drops a
+   * branch entirely in `v2-game-history-stats.tsx`, and in `v2-sources-section.tsx` welds a
+   * CONDITIONAL `lg:grid-cols-3` in as unconditional — a `grid-cols-*` token, which is exactly
+   * what the stat-grid predicate keys on. PR4's marker is the implementation of PR3's contract,
+   * not a rival to it. The day this assertion fails, that migration stops being free.
+   *
+   * MUTATION-CHECKED 2026-09-18: `typography.tsx`'s detail-tier `<h1>` given a template hole
+   * (`` `… tracking-tight ${tone}` ``) — RED, `h1 spellings containing a template hole; PR3's
+   * extractor mangles these: expected [ Array(1) ] to deeply equal []`. Reverted.
+   */
+  it("no h1 on the surface carries a template hole — what the harmlessness rests on", () => {
+    const holed = [...h1SitesBySpelling()].filter(([spelling]) => spelling.includes("${"));
+    expect(
+      holed.map(([spelling, files]) => `${spelling} — ${files.join(", ")}`),
+      "h1 spellings containing a template hole; PR3's extractor mangles these",
+    ).toEqual([]);
+    expect(h1SitesBySpelling().size).toBe(H1_SPELLINGS);
   });
 });
 
@@ -4106,10 +4253,31 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  *   4. **Relaxing the value+label requirement** to "any grid with ≥1 card child" sweeps in every
  *      panel layout on the site; the requirement is what keeps this a tile counter.
  *
- * Like the two counters above this is a RATCHET, not a target: it falls as grids adopt
- * `StatTile`, it will not reach zero (blind spot 1 is a permanent residue), and a rise is a
- * regression to be argued for. {@link SURFACE_FILES_RENDERING_STATTILE} is the one number here
- * that should RISE, which is why it is pinned exactly rather than as a floor.
+ *   5. **A grid is counted only where its tiles are its DIRECT JSX children.** A fragment between
+ *      the grid and its tiles, a hoisted `const TILES = [...]` spread back in, or the tile
+ *      extracted into a local `<Tile />` component all break that edge and remove the grid from
+ *      the count. Measured on `araclar/page.tsx`'s real 4-tile strip: wrapping its tiles in
+ *      `<>…</>` reads 61 / 34 / 155 with `HAND_DRAWN_CARDS` unchanged at 305 and
+ *      `SURFACE_FILES_RENDERING_STATTILE` still 0. That is the `.map()` vector's whole CLASS, and
+ *      extracting a repeated tile into a component is the normal FIRST STEP of the migration the
+ *      adoption task is doing — so the fall would arrive looking like progress.
+ *      {@link STAT_GRIDS_TOTAL} is the structural answer: see below.
+ *
+ * ## THE INVARIANT — read this before reading any number above
+ *
+ * **Progress is {@link SURFACE_FILES_RENDERING_STATTILE} RISING. A fall in the trio without it is
+ * a refactor, not a migration.**
+ *
+ * {@link STAT_GRIDS_TOTAL} makes that checkable rather than merely stated: it is the sum of the
+ * grids that hand-roll their tiles and the grids that render `<StatTile>`, and it is pinned. A
+ * real migration moves a grid from one bucket to the other and leaves the total UNTOUCHED. Any
+ * refactor that breaks the grid→tile edge — fragment, hoisted array, extracted component — lowers
+ * the total and goes red on a counter that cannot be read as progress, because nothing arrived in
+ * the other bucket. That closes the class, not the one vector.
+ *
+ * Like the two counters above, `STAT_GRIDS_WITHOUT_STATTILE` is a RATCHET, not a target: it falls
+ * as grids adopt `StatTile`, it will not reach zero (blind spot 1 is a permanent residue), and a
+ * rise is a regression to be argued for.
  *
  * MUTATION-CHECKED 2026-09-18 at the values above, reverted after each:
  *
@@ -4125,6 +4293,13 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  *   - a `<StatTile label="x" value="1" />` added to `v2-game-history-stats.tsx` — RED,
  *     `files rendering <StatTile>: components/v2/v2-game-history-stats.tsx: expected [ Array(1) ]
  *     to have a length of +0 but got 1`.
+ *   - **the invariant, both ways, on `araclar/page.tsx`'s real 4-tile strip.** Tiles wrapped in a
+ *     fragment (a refactor, nothing migrated): RED on all four — `expected 61 to be 62` on the
+ *     TOTAL, plus 61 / 34 / 155 on the trio, with `HAND_DRAWN_CARDS` unmoved at 305 and
+ *     `SURFACE_FILES_RENDERING_STATTILE` still 0. The same four tiles replaced by `<StatTile>`
+ *     (a real migration): the trio and the adoption floor go red as they must — they have to be
+ *     re-pinned — and **`STAT_GRIDS_TOTAL` does NOT appear in the failure list at all.** That
+ *     difference is the whole ruling: a migration trades buckets, a refactor loses a grid.
  *
  * The tile and file counts are separate `it`s for a reason the first run showed: asserted
  * together, the file count failed first and the tile number — the figure the adoption tasks
@@ -4137,6 +4312,14 @@ export const STAT_GRID_FILES = 35;
 export const STAT_TILES_WITHOUT_STATTILE = 159;
 
 export const SURFACE_FILES_RENDERING_STATTILE = 0;
+
+/**
+ * Every tile grid on the surface, migrated or not: {@link STAT_GRIDS_WITHOUT_STATTILE} plus the
+ * grids whose tiles are `<StatTile>` elements. **This number must not move when a grid is
+ * migrated** — the grid leaves one bucket and arrives in the other. It moves only when a grid is
+ * created, deleted, or REFACTORED OUT OF SIGHT, which is the whole point.
+ */
+export const STAT_GRIDS_TOTAL = 62;
 
 const TILE_VALUE_SIZE = /^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[)/;
 
@@ -4196,6 +4379,30 @@ function statGrids(): { file: string; tiles: number }[] {
   return grids;
 }
 
+/**
+ * The other bucket: a `grid` + `grid-cols-*` element whose direct children include a `<StatTile>`.
+ *
+ * No value/label check, and none is possible — the tile's content lives inside the component, not
+ * in the grid's markup, which is the entire benefit of migrating. So a migrated grid qualifies on
+ * the same structural evidence its hand-rolled form did: the grid shell, and tiles as its direct
+ * children.
+ */
+function statGridsUsingStatTile(): { file: string; tiles: number }[] {
+  const grids: { file: string; tiles: number }[] = [];
+  for (const file of walkCardSurface()) {
+    const elements = jsxElementsOf(file);
+    elements.forEach((element, index) => {
+      const tokens = tokensOf(element.spelling);
+      if (!tokens.includes("grid") || !tokens.some((token) => token.startsWith("grid-cols-"))) {
+        return;
+      }
+      const tiles = elements[index]!.children.filter((i) => elements[i]!.tag === "StatTile");
+      if (tiles.length > 0) grids.push({ file: label(file), tiles: tiles.length });
+    });
+  }
+  return grids;
+}
+
 function statGridReport(grids: readonly { file: string; tiles: number }[]): string {
   const byFile = new Map<string, number>();
   for (const grid of grids) byFile.set(grid.file, (byFile.get(grid.file) ?? 0) + grid.tiles);
@@ -4230,6 +4437,44 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
     expect(tiles, `hand-rolled stat tiles, by file:\n${statGridReport(grids)}`).toBe(
       STAT_TILES_WITHOUT_STATTILE,
     );
+  });
+
+  /**
+   * RULING AJ. The one assertion a migration must NOT move, and the one a refactor cannot avoid
+   * moving. Pinned as a sum so the buckets can trade freely: 62 = 62 hand-rolled + 0 migrated
+   * today, and after Task 6 it should still read 62, with the split having shifted.
+   */
+  it("the total number of tile grids, migrated or not, is exactly the recorded number", () => {
+    const handRolled = statGrids();
+    const migrated = statGridsUsingStatTile();
+    expect(
+      handRolled.length + migrated.length,
+      `hand-rolled:\n${statGridReport(handRolled)}\nusing StatTile:\n${statGridReport(migrated)}`,
+    ).toBe(STAT_GRIDS_TOTAL);
+  });
+
+  it("a migrated grid moves between buckets and leaves the total alone", () => {
+    // The invariant, on a fixture: the same grid shell hand-rolled and migrated. One counts in
+    // `statGrids()`, the other in `statGridsUsingStatTile()`, and the sum is 1 either way — so a
+    // real migration cannot lower the total, and a refactor that hides the grid cannot hide in it.
+    const shell = (tiles: string) => `<div className="grid grid-cols-2 gap-3">${tiles}</div>`;
+    const handRolled =
+      '<div className="rounded-2xl bg-card border-border"><span className="text-2xl font-bold">1</span><span className="text-xs text-muted-foreground">x</span></div>';
+    const migrated = '<StatTile value="1" label="x" />';
+    const buckets = (source: string) => {
+      const elements = scanJsx(source);
+      const hand = statGridTiles(elements, 0) === null ? 0 : 1;
+      const uses = elements[0]!.children.some((i) => elements[i]!.tag === "StatTile") ? 1 : 0;
+      return { hand, uses, total: hand + uses };
+    };
+    expect(buckets(shell(handRolled + handRolled))).toEqual({ hand: 1, uses: 0, total: 1 });
+    expect(buckets(shell(migrated + migrated))).toEqual({ hand: 0, uses: 1, total: 1 });
+    // …and the refactor that reads as progress: tiles wrapped in a fragment, nothing migrated.
+    expect(buckets(shell(`<>${handRolled}${handRolled}</>`))).toEqual({
+      hand: 0,
+      uses: 0,
+      total: 0,
+    });
   });
 
   it("no product surface renders StatTile at all — the adoption floor", () => {
