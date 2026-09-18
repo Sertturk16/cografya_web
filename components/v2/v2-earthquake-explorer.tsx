@@ -33,7 +33,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
-import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { MapAttribution } from "@/components/patterns/map-attribution";
 
 export interface V2EarthquakeItem {
   id: string;
@@ -727,7 +727,7 @@ export function V2EarthquakeExplorer({
               );
             })}
           </svg>
-          <V2MapAttribution inlandWater context />
+          <MapAttribution inlandWater context />
 
           {/* FLOATING TOOLTIP ON PIN HOVER */}
           {hoveredEvent && mousePos && (

@@ -7,7 +7,7 @@ import { stripComments } from "./strip-comments";
  * The real import graph, walked from a set of roots — shared by every test that needs to know
  * what a file actually reaches, not just what directly imports it.
  *
- * Extracted from `components/ui/orphan.test.ts` (T-036), which measured "does a primitive have
+ * Extracted from `components/orphan.test.ts` (T-036), which measured "does a primitive have
  * a product call site" by walking `PRODUCT_ROOTS` outward through every `import`/`export …
  * from`/dynamic `import()`. `components/patterns/rsc-boundary.test.ts` (Task 9) needed the
  * identical walk for a different question — "does a `\"use client\"` file transitively reach a
@@ -15,12 +15,63 @@ import { stripComments } from "./strip-comments";
  * kind of drift this repo's own conventions doc warns against. One resolver, two questions.
  *
  * `repoRoot` is computed HERE, from this file's own location (`lib/test-support/` is two
- * directories below the repo root, same depth `components/ui/orphan.test.ts` used to compute
+ * directories below the repo root, same depth `components/orphan.test.ts` used to compute
  * its own), so every caller gets the same absolute root regardless of where it sits in the tree.
  */
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 
 export const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
+
+/**
+ * THE SURFACE A READER CAN ACTUALLY REACH — the roots every reachability question in this repo
+ * is asked from, so `components/orphan.test.ts` and `components/orphan-stylesheets.test.ts`
+ * cannot answer the same question from two different surfaces.
+ *
+ * Three entries, all of them things Next.js itself renders: the locale layout (the chrome every
+ * product page gets by its directory — it sits ABOVE the two route groups and is where `Toaster`
+ * is mounted, the only thing that makes `sonner.tsx` reachable at all), and the two route groups.
+ *
+ * NOT WIDENED to the other Next.js entry points — `app/api`, `app/maps`, `app/sitemap.ts`,
+ * `app/robots.ts`, `app/not-found.tsx`, `app/global-error.tsx`, `app/layout.tsx`,
+ * `middleware.ts` — and that is a measurement rather than an omission: adding all eight changes
+ * the verdict of ZERO audited files, because they reach data and route handlers rather than
+ * components. {@link WIDER_ENTRY_ROOTS} holds that list and `components/orphan.test.ts` executes
+ * the comparison, so the claim is a test rather than a memory.
+ *
+ * Every extra root is also one more directory that can no longer be audited — {@link closureFrom}
+ * seeds its queue with every file under a root, so a root is reachable by definition.
+ */
+export const PRODUCT_ROOTS = [
+  "app/[locale]/layout.tsx",
+  "app/[locale]/(site)",
+  "app/[locale]/(play)",
+] as const;
+
+/**
+ * The OTHER entry points Next.js compiles, kept so the "not widened" claim above can be executed
+ * instead of remembered. Not roots: see {@link PRODUCT_ROOTS}.
+ */
+export const WIDER_ENTRY_ROOTS = [
+  "app/api",
+  "app/maps",
+  "app/sitemap.ts",
+  "app/robots.ts",
+  "app/not-found.tsx",
+  "app/global-error.tsx",
+  "app/layout.tsx",
+  "middleware.ts",
+] as const;
+
+/**
+ * THE SHOWCASE ROUTE, not the showcase directory.
+ *
+ * `components/showcase` used to be a root beside it, which made every specimen reachable by
+ * being walked rather than by being imported — and meant the directory could not be audited at
+ * all. Rooting at the route alone audits the showcase as showcase: a file under
+ * `components/showcase/` that `/design-system` reaches is LIVE BY THAT ROUTE, and a file
+ * anywhere else that only this closure reaches is showcase-only, which is the defect.
+ */
+export const SHOWCASE_ROUTE = ["app/[locale]/design-system"] as const;
 
 /** A root may name a directory or a single file. Test files (`*.test.*`) are never walked. */
 export function walk(dir: string): string[] {
@@ -51,29 +102,46 @@ export function resolveSpecifier(fromFile: string, specifier: string): string | 
   return null;
 }
 
-/** Static `import`/`export … from` and dynamic `import()`. Comments stripped first. */
-const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*)["']([^"']+)["']/g;
-
-/** Every bare import specifier `file` writes, in source order (duplicates included). */
-export function specifiersOf(file: string): string[] {
-  const source = stripComments(readFileSync(file, "utf8"));
-  return [...source.matchAll(SPECIFIER)].map((match) => match[1]!);
-}
-
-/** Every specifier in `file` that resolves to a file on disk (i.e. not a package). */
-export function importsOf(file: string): string[] {
-  return specifiersOf(file)
-    .map((specifier) => resolveSpecifier(file, specifier))
-    .filter((path): path is string => path !== null);
-}
-
-/** Every file reachable from `roots`, following the import graph transitively. */
+/**
+ * Every file reachable from `roots`, following the RUNTIME import graph transitively.
+ *
+ * ## Why the edges are type-erased, and why that is not a refinement
+ *
+ * This walk used to follow every `from "…"` specifier, type-only clauses included, and
+ * {@link isRuntimeClause}'s own docblock defended that: over-following a type-only edge "only
+ * widens a reachability set and can never hide a real orphan". **That is exactly backwards, and
+ * T-042 measured the cost.** An orphan test asks "is this file reachable", so a WIDER set is the
+ * silent-pass direction: every extra edge certifies one more file as live.
+ *
+ * `components/tools/` is the recorded case. `tool-island.tsx` (1226 lines) had exactly two
+ * importers left on the whole tree, both `import type { ProvinceArea } from
+ * "@/components/tools/tool-island"` — a clause that compiles to nothing, builds no bundler edge
+ * and renders no markup. Following it made the island reachable, and through it
+ * `tool-measurement-list.tsx`, `tool-measurement-save.tsx`, `tool-png.ts` and `tools.module.css`,
+ * 2447 lines in total, none of which any page could ever load. `components/home/featured-cards.tsx`
+ * and its `home.module.css` were alive on the same one clause, and `components/lock-icon.tsx`
+ * behind them; all three are gone and `components/orphan.test.ts`'s orphan list is now empty.
+ *
+ * So the walk follows {@link runtimeImportsOf} — the same type erasure
+ * `components/patterns/rsc-boundary.test.ts` needs for the opposite question — and a type-only
+ * import no longer counts as a call site.
+ *
+ * THE TWO CONSUMERS FAIL IN OPPOSITE DIRECTIONS, and {@link isRuntimeClause}'s fallback is right
+ * for both, which is worth saying because the two docblocks otherwise read as contradicting each
+ * other. Here, a WIDER set is the silent pass: one extra edge certifies one more file as live.
+ * In `rsc-boundary.test.ts` a wider set is the LOUD direction — an extra edge is a `server-only`
+ * reach reported that `pnpm build` disagrees with, i.e. a review, not a miss. So an unrecognised
+ * clause shape must be treated as a real edge: that costs this walk a possible over-certification
+ * of ONE file whose only importer writes an exotic clause (no such file exists — every shape in
+ * the tree is covered by a fixture in `import-closure.test.ts`), and it costs the boundary test
+ * nothing but a look. The reverse default would make a new syntax silently invisible to both.
+ */
 export function closureFrom(roots: readonly string[]): Set<string> {
   const seen = new Set<string>();
   const queue = roots.flatMap((rel) => walk(join(repoRoot, rel)));
   for (const file of queue) seen.add(file);
   while (queue.length > 0) {
-    for (const next of importsOf(queue.pop()!)) {
+    for (const next of runtimeImportsOf(queue.pop()!)) {
       if (seen.has(next)) continue;
       seen.add(next);
       queue.push(next);
@@ -122,20 +190,32 @@ const IMPORT_OR_EXPORT_FROM = /\b(?:import|export)\s+([^;]*?)\s+from\s*["']([^"'
  * bundler-graph edge.
  *
  * This is what `lib/auth/submit.client.ts`'s `import type { AuthBffCode } from
- * "./transport.server"` needs and the plain {@link importsOf} above does not give: that file is
- * `"use client"` and `./transport.server` carries `import "server-only"`, yet `pnpm build`
- * passes, because a type-only import compiles to NOTHING — no runtime specifier, no module
- * evaluation, no edge. Treating it as a real edge (what {@link importsOf} does, correctly, for
+ * "./transport.server"` needs: that file is `"use client"` and `./transport.server` carries
+ * `import "server-only"`, yet `pnpm build` passes, because a type-only import compiles to
+ * NOTHING — no runtime specifier, no module evaluation, no edge. Treating it as a real edge would
+ * make `components/patterns/rsc-boundary.test.ts` flag it as a violation that `pnpm build`
+ * disagrees with.
+ *
+ * An earlier version of this docblock added that a type-blind reader was still fine "for
  * `orphan.test.ts`'s purpose, where over-following a type-only edge only widens a reachability
- * set and can never hide a real orphan) would make `components/patterns/rsc-boundary.test.ts`
- * flag it as a violation that `pnpm build` disagrees with.
+ * set and can never hide a real orphan". Widening the set is PRECISELY how an orphan hides, and
+ * T-042 measured 2447 lines that hid that way — see {@link closureFrom}, which is why there is
+ * now one reader of this graph rather than two.
  *
  * SCOPE: {@link IMPORT_OR_EXPORT_FROM} no longer merges clauses across a `;` (see its own
  * docblock for the false-negative that used to produce), so `clause` here is always exactly one
  * statement's own text. Any shape this function does not recognise as `type …` or a pure
  * `{ …members… }` block — a default import, `* as ns`, `Default, { … }` — is treated as a REAL
- * edge, never dropped: a false positive there costs a review, a false negative would hide the
- * exact bug this test exists to catch.
+ * edge, never dropped.
+ *
+ * TWO CONSUMERS, and that default is the right one for both. For
+ * `components/patterns/rsc-boundary.test.ts` a false positive costs a review and a false
+ * negative hides the exact `server-only` reach it exists to catch. For {@link closureFrom} the
+ * asymmetry runs the other way — a spurious edge certifies a file as reachable — so the fallback
+ * is the risky direction THERE, and it is still right: a default or namespace import genuinely
+ * always survives erasure (only a `{ … }` block or a leading `type` can be erased), so the
+ * fallback fires on shapes that ARE real edges rather than on unknowns. `import-closure.test.ts`
+ * carries a fixture per branch so "unrecognised" stays a small, named set.
  */
 function isRuntimeClause(clause: string): boolean {
   const trimmed = clause.trim();

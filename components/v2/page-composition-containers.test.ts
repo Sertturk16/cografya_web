@@ -52,12 +52,20 @@ import {
  *   - any width token other than `max-w-7xl` / `container` — `max-w-6xl`, `max-w-screen-xl`,
  *     `max-w-[1280px]` would all carry a page body past this scanner unnoticed.
  *
- * Not hypothetical: 14 template-literal classNames already exist on these exact pages today
- * (`turkiye/[slug]/page.tsx:351`, `dunya/[slug]/page.tsx:295`, and twelve more across
- * `deprem/fay-hatlari`, `dunya/kita` and `dunya/kita/[slug]`) — the idiom that evades this
- * scanner is one the surface it scans already writes, there for a theme/gradient hole rather
- * than a width one, but the shape is identical and nothing here would catch it wearing a width
- * token instead.
+ * Not hypothetical: 14 template-literal classNames exist on these exact pages today, by file and
+ * count — `deprem/fay-hatlari/page.tsx` 4, `dunya/[slug]/page.tsx` 3, `dunya/kita/[slug]/page.tsx`
+ * 3, `turkiye/[slug]/page.tsx` 2, `dunya/kita/page.tsx` 1, `turkiye/bolge/[slug]/page.tsx` 1, all
+ * under `app/[locale]/(site)/`. The idiom that evades this scanner is one the surface it scans
+ * already writes, there for a theme/gradient hole rather than a width one, but the shape is
+ * identical and nothing here would catch it wearing a width token instead.
+ *
+ * FILE AND COUNT, NEVER A LINE NUMBER — the form `label()` already prints, for the reason T-043
+ * exists. That list used to name two files with a line number each and say "and twelve more".
+ * Both numbers came from `stripComments` output, which drops the body of every multi-line comment
+ * and shifts every line after it, so both pointed a couple of lines short of the thing they named
+ * in the file a reader actually opens — and the distribution had moved underneath them as well:
+ * `turkiye/bolge/[slug]` carries one and was named nowhere. **Never derive a line number from
+ * stripped output**, and prefer the file-and-count form above, which cannot rot that way.
  *
  * `walkPages()` below adds a second, independent scope limit: it visits files named `page.tsx`
  * only. `loading.tsx`, `layout.tsx`, `error.tsx` and `not-found.tsx` in these same route groups,
@@ -133,7 +141,7 @@ function nonExemptBodySpellings(): Map<string, string[]> {
  * body-width elements in the 37 pages (three `(play)` `page.tsx` files carry none THEMSELVES —
  * not because the play surface has no body wrapper, but because `walkPages()` reads `page.tsx`
  * only, and all three compose `V2GameScreen` instead of writing the wrapper inline. That
- * component's own `<main>` (`components/v2/v2-game-screen.tsx:665`) carries the identical
+ * component's own `<main>` (`components/v2/v2-game-screen.tsx`) carries the identical
  * `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6` spelling for all three
  * `(play)` pages — invisible to this scanner for the `components/v2` reason the SCOPE note
  * above already names, not because it is absent. `PAGE_BODY_SPELLINGS` reading 0 is a claim

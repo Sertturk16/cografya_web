@@ -39,6 +39,12 @@ export type AuthPathname = (typeof AUTH_PATHNAMES)[number];
 /**
  * De-indexed in BOTH locales, `noindex,follow`, self-canonical, no hreflang cluster, no
  * sitemap entry — `roadmap.md` UYELIK-04's SEO line and `DEC 2026-08-20i` md.5 (plan §4.2).
+ *
+ * EXPORTED, not private to {@link buildAuthMetadata}, because each of the seven auth pages types
+ * the surface a SECOND time as `<Breadcrumbs surface={…}>` — the prop the breadcrumb JSON-LD's
+ * indexability gate is computed from. They import this constant rather than writing `"noindex"`
+ * there, the shape `TOOLS_SURFACE` (`lib/tools/tool-registry.ts`) already uses on `araclar/**`,
+ * and `lib/seo/sitemap-surface-symmetry.test.ts` compares the two sides on every page.
  */
 export const AUTH_SURFACE = "noindex" as const satisfies ContentSurface;
 

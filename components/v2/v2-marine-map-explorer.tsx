@@ -30,7 +30,7 @@ import {
   Clock,
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
-import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { MapAttribution } from "@/components/patterns/map-attribution";
 import { marinePointAnchorId } from "@/lib/marine/anchors";
 
 export interface MarinePointData {
@@ -514,7 +514,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             })}
           </g>
         </svg>
-        <V2MapAttribution inlandWater context />
+        <MapAttribution inlandWater context />
 
         {/* SELECTED STATION SPOTLIGHT MODAL / CARD OVERLAY */}
         {selectedPoint && (

@@ -65,20 +65,20 @@ import { stripComments } from "@/lib/test-support/strip-comments";
  *
  * V1 stacked its licence notices inline in `turkey-map-section.tsx`, `game-map.tsx` and
  * `tool-map.tsx`, so this file named all three and counted their lines. T-032 PR4 deleted them
- * and gave every V2 map surface a single shared `V2MapAttribution` — a stronger position for this
+ * and gave every V2 map surface a single shared `MapAttribution` — a stronger position for this
  * rule, because there is now one place to get it wrong instead of three (and, before PR4, eight
  * surfaces with no credit at all).
  *
  * The rule is unchanged and it caught a live regression on the way: the first draft of
- * `V2MapAttribution` separated its lines with a flex `gap-x-2` and no whitespace expression. That
+ * `MapAttribution` separated its lines with a flex `gap-x-2` and no whitespace expression. That
  * looks right on screen and is wrong everywhere else — `textContent` re-welds the runs into
  * "…ODbLMevsimlik göl sınırları:…" for a screen reader, a copy-paste and a crawler alike, which is
  * precisely the `<br>` defect this file was written for, arriving by a new route.
  */
 const CASES = [
   {
-    name: "v2-map-attribution.tsx",
-    url: new URL("./v2-map-attribution.tsx", import.meta.url),
+    name: "map-attribution.tsx",
+    url: new URL("./map-attribution.tsx", import.meta.url),
     // Four: OSM boundaries, the JRC inland-water layer, the Natural Earth CONTEXT shapes a map
     // of Türkiye draws around its subject, and the Natural Earth WORLD-country layer. The last
     // is a separate line and not a reuse of `context`, because "Komşu ülke sınırları" is false
@@ -164,7 +164,7 @@ describe.each(CASES)("map attribution text-run separation — $name", ({ url, li
  * paragraph's markup.
  */
 describe("the OSM/ODbL credit line carries its own scope label (FEN121-I1)", () => {
-  const source = codeOnly(new URL("./v2-map-attribution.tsx", import.meta.url));
+  const source = codeOnly(new URL("./map-attribution.tsx", import.meta.url));
   const SCOPED = /\(inlandWater \|\| context \|\| world\) &&[\s\S]{0,60}attributionProvinceLabel/;
 
   it("labels the boundary credit whenever another scoped line stands beside it", () => {

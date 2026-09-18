@@ -119,7 +119,7 @@ import {
  * ## What is reused and what is new
  *
  * `resolveSpecifier` — the `@/`-alias-and-relative-path half of
- * `lib/test-support/import-closure.ts`, shared with `components/ui/orphan.test.ts` and
+ * `lib/test-support/import-closure.ts`, shared with `components/orphan.test.ts` and
  * `components/patterns/rsc-boundary.test.ts` — is imported, not re-implemented. What is new here
  * is the layer ABOVE it: that module answers "which FILES does this file import", and this walk
  * needs "which NAME is bound to which module, and is it rendered". No shared helper answers that,

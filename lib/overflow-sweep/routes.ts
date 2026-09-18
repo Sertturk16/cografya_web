@@ -58,11 +58,14 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "home",
     pathname: "/",
     locales: ["tr", "en"],
-    modules: ["home.module.css", "site-search.module.css", "marine.module.css"],
+    modules: ["site-search.module.css", "marine.module.css"],
     why:
       "The homepage: the densest single composition on the site (hero, live ticker, card " +
-      "grids) and the only consumer of `home.module.css`. Both locales — every string on it " +
-      "is translated, and TR and EN copy differ in length on the same fixed-width cards. " +
+      "grids). It claimed `home.module.css` too, and that claim was the clearest thing this " +
+      "map got wrong — the stylesheet's only importer was `components/home/featured-cards.tsx`, " +
+      "a component the homepage stopped rendering when it took the card grids inline, so the " +
+      "route reached the file through nothing. T-042 deleted both. Both locales — every string " +
+      "on it is translated, and TR and EN copy differ in length on the same fixed-width cards. " +
       "`marine.module.css` is listed here because `VintageLine` renders it on this page; the " +
       "`/deniz` routes used to claim it and never imported it. Flag-gated (`MARINE_ENABLED`), " +
       "so the measurement is real only on a render where the marine block appears — which is " +
@@ -102,7 +105,7 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     why:
       "The detail page with the climate table, and the recorded scene of two of the three " +
       "defects this sweep exists for (T-038's licence notice, T-046's `.chartFrame` " +
-      "`min-width`). It renders FOUR of the ten CSS Modules — `marine.module.css` among them, " +
+      "`min-width`). It renders FOUR of the eight CSS Modules — `marine.module.css` among them, " +
       "through `ProvinceMarineSection`, which is where that stylesheet actually reaches a " +
       "swept route rather than on `/deniz`. Both locales: the EN column headers of the " +
       "climate table are materially longer than the TR ones.",
@@ -211,11 +214,13 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "tool",
     pathname: "/araclar/mesafe-olcme",
     locales: ["tr", "en"],
-    modules: ["tools.module.css"],
+    modules: [],
     why:
-      "`tools.module.css`: an interactive map tool that wants all the width it can get, " +
-      "inside site chrome that will not give it any. Both locales: the EN twin omits the " +
-      "narrative blocks, leaving the tool panel alone on the page.",
+      "An interactive map tool that wants all the width it can get, inside site chrome that " +
+      "will not give it any. It claimed `tools.module.css` until T-042 deleted that file with " +
+      "the four dead components that imported it; the live workbench is Tailwind throughout, so " +
+      "the route is swept for its SHAPE rather than for a stylesheet. Both locales: the EN twin " +
+      "omits the narrative blocks, leaving the tool panel alone on the page.",
   },
   {
     id: "game",

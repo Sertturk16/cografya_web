@@ -112,8 +112,19 @@ Two directories, and the boundary is operational rather than taxonomic:
 
 - **`components/ui/`** — output of `shadcn add` (`base-nova` style), Terra-themed. CLI-managed.
 - **`components/patterns/`** — written here: `typography` (with `Kbd`), `stat-tile`, `stat-grid`,
-  `metric-value`, `empty-state`, `callout`, `form-field`, `map-attribution`, `map-legend`,
-  `theme-pair`, `page-container`, `page-hero`, `breadcrumbs`, `breadcrumbs-nav`, `faq-section`.
+  `metric-value`, `form-field`, `map-attribution`, `page-container`, `page-hero`, `breadcrumbs`,
+  `breadcrumbs-nav`, `faq-section`.
+- **`components/showcase/`** — the `/design-system` route's own machinery, audited as such and
+  never as patterns: `specimen`, `registry`, the specimen files, and `theme-pair`, which wraps
+  every specimen in its light/dark panel pair.
+
+`map-attribution` is the component TEN map surfaces render, moved into `patterns/` by T-042. The
+66-line file that used to hold that name had no product consumer at all and this list pointed at
+it, which is the failure mode `components/orphan.test.ts` now measures rather than describes.
+
+The patterns list above is reconciled against the directory in both directions by
+`components/showcase/registry.test.ts`: a file it omits and a name with no file both fail
+`pnpm test`.
 
 The reason is concrete: `shadcn add` **overwrites** files in the configured `ui` alias — it
 asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living
@@ -150,21 +161,19 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 - A component is not done until its specimen renders at `/design-system`;
   `components/showcase/registry.test.ts` fails if one is missing. The converse holds too: a
   primitive whose only consumer is the showcase is DELETED, not maintained for the showcase's
-  sake — `components/ui/orphan.test.ts` walks the import closure from the product surface and
+  sake — `components/orphan.test.ts` walks the import closure from the product surface and
   fails on one (T-036 deleted eight).
 
 ### Boundaries worth knowing before reaching for the wrong one
 
-- **`Alert` vs `Callout`.** `Alert` reports SYSTEM STATE and resolves `role="alert"`/`"status"`
-  for that reason. `Callout` is an editorial aside and carries NO role — typesetting a
-  pedagogical note as an Alert interrupts assistive technology for something that is not an
-  event. `FormErrorSummary` does carry `role="alert"`: a failed submission genuinely is one.
-  **The visual rule follows the semantic one, and is structural rather than cosmetic: Alert
-  HAS a box** — the whole surface tinted, body text included — **and Callout has none**, just a
-  rule above it, the text's own colour, and its variant in the icon. Two earlier rounds tried
-  to separate them by adding decoration to Callout (a side-tab, then a hairline plus a tint)
-  and left them 2px of radius apart. Do not re-add a fill; `patterns-contract.test.ts` fails
-  if you do.
+- **`Alert` is for SYSTEM STATE**, and resolves `role="alert"`/`"status"` for that reason;
+  `FormErrorSummary` carries `role="alert"` because a failed submission genuinely is an event.
+  A pedagogical aside is NOT one: typesetting it as an Alert interrupts assistive technology
+  for nothing, so an aside is ordinary prose. There was a `Callout` component for this, argued
+  over across two rounds that kept separating it from `Alert` by DECORATING it (a side-tab, then
+  a hairline plus a tint) until the two sat 2px of radius apart. T-042 deleted it: measured, no
+  page had ever rendered one. Alert keeps the box — the whole surface tinted, body text included
+  — and `patterns-contract.test.ts` still asserts that.
 - **`Accordion`: a closed panel STAYS in the DOM.** It is hidden with the `hidden` attribute —
   `hidden=""` on the server, swapped to `hidden="until-found"` after hydration — so the answer is
   in the document, findable by Ctrl+F, and honest to carry `FAQPage` markup. The Base UI rebuild
@@ -216,9 +225,11 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   the same page-scoped sentence, which is also false: teal _is_ on `deniz/kiyi-tipleri`. Right
   answer, wrong test, twice. **A page-scoped check gets this wrong in both directions; only the
   entity question decides it.**
-- **`MapLegend` requires `bins` on the classed variant**, so an unlabelled classed legend
-  cannot be built (data-viz rule 5 below).
-- **`MapAttribution` beside every map** is ODbL compliance, not house style.
+- **`MapAttribution` beside every map** is ODbL compliance, not house style, and the component
+  is `components/patterns/map-attribution.tsx` — the one ten map surfaces render. There is no
+  `MapLegend` component: the one that carried that name was reachable only from `/design-system`
+  and T-042 deleted it. A classed legend still owes its reader the class boundaries (data-viz
+  rule 5 below); a map that needs one draws it where it is used.
 - **`Separator` takes `decorative`** for a rule that carries no meaning; Base UI announces
   every separator otherwise.
 

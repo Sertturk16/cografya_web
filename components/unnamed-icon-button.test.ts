@@ -27,10 +27,13 @@ import { describe, expect, it } from "vitest";
  *
  *   - `components/book/deneme-video.tsx` has `<iframe title={title}>`. That one is MANDATORY
  *     (WCAG H64); a test that flagged it would be asking for a violation.
- *   - `<Callout title=`, `<EmptyState title=`, `<MapLegend title=`, `<DenemeVideo title=` and
- *     `<BenchStage title=` are PROPS of our own components. They never reach the DOM as an
- *     attribute, and no regex over source text can tell them from one that does — except by
- *     only looking at tags it knows are real DOM elements.
+ *   - `<Specimen title=`, `<DenemeVideo title=` and `<BenchStage title=` are PROPS of our own
+ *     components. They never reach the DOM as an attribute, and no regex over source text can
+ *     tell them from one that does — except by only looking at tags it knows are real DOM
+ *     elements. The control below keeps using `<Callout title=`, a component T-042 deleted,
+ *     because it is SYNTHETIC source: the shape it proves the scanner ignores is any
+ *     capitalised tag, and pinning it to a component that exists today would make the control
+ *     die the next time that component does.
  *
  * So the scan reads `<button …>` opening tags and nothing else. It says nothing about `title`
  * on a `<span>`, an `<a>` or an `<abbr>`; those are separate judgements (a decorative span
@@ -103,6 +106,7 @@ describe("the scan itself", () => {
 
   it("is not flagging the mandatory iframe title or our own components' title props", () => {
     expect(scan("<iframe title={title} src={src} />")).toBe(0);
+    // Synthetic, and deliberately a component that no longer exists — see the docblock.
     expect(scan('<Callout variant="note" title="Tanım">')).toBe(0);
   });
 

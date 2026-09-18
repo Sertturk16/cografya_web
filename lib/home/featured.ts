@@ -206,6 +206,34 @@ export function featuredPopulationFact(
 }
 
 /**
+ * ONE CARD IN EITHER HOMEPAGE ROW, already localized and formatted — the row's view model.
+ *
+ * `label`/`value` are strings rather than a {@link FeaturedFact}: translation and number
+ * formatting need the request's locale, so they happen at the call site and what lands here is
+ * the finished pair. A card with no fact carries no `fact` at all and prints no fact row —
+ * never a dash, for the reason `featuredPopulationFact` states above.
+ *
+ * DECLARED HERE, beside the two functions that feed it, and that placement is T-042 fix round 1's
+ * doing. It used to live in `components/home/featured-cards.tsx`, and one `import type
+ * { FeaturedCardItem }` clause in `app/[locale]/(site)/page.tsx` was the ONLY thing left
+ * importing that file — a clause TypeScript erases, so it built no bundler edge and rendered
+ * nothing. The component drew a card grid the homepage had long since replaced with its own
+ * inline markup; only the shape survived the rewrite, so only the shape is kept.
+ */
+export interface FeaturedCardItem {
+  /** Stable React key (plaka kodu / ISO code). */
+  readonly id: string;
+  /** Fully-built localized pathname (via `getPathname` at the call site, never assembled here). */
+  readonly href: string;
+  /** The entity's display name in the render locale. */
+  readonly name: string;
+  /** One line of context: bölge for a province, kıta for a country. */
+  readonly meta: string;
+  /** The single fact, pre-formatted, or `undefined` — see the docblock above. */
+  readonly fact?: { readonly label: string; readonly value: string };
+}
+
+/**
  * The countries the daily draw may reach: real COUNTRY rows only — dalga-1's territory rows
  * (the AQ/GL class) are held out (→ DEC 2026-08-05a §2).
  *

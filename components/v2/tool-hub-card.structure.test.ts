@@ -19,7 +19,7 @@ import { stripComments } from "@/lib/test-support/strip-comments";
  * V2 does not use a stretched anchor. Each card ends in a real CTA button inside a `<Link>`
  * ("Mesafe Aracını Başlat"), which is an explicit affordance rather than an invisible pseudo-
  * element, and it carries the focus ring natively — there is nothing to scope and nothing to
- * suppress. `tools.module.css` was deleted with the V1 page in T-032 PR3, so the three CSS pins
+ * suppress. `tools.module.css` outlived that claim and was deleted by T-042, so the three CSS pins
  * have no file to read.
  *
  * What was never really about the CSS is the reachability: a tool in the register that the hub
@@ -38,7 +38,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
  */
 const code = stripComments;
 
-const hubHtml = code(read("../v2/v2-tools-hub.tsx"));
+const hubHtml = code(read("./v2-tools-hub.tsx"));
 
 describe("the hub reaches every registered tool", () => {
   it("links each tool in TOOL_REGISTRY", () => {

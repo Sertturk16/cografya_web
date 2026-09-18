@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
-import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { MapAttribution } from "@/components/patterns/map-attribution";
 import type { CountryListItem, CountryMapSummary } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Compass, ArrowUpRight, Globe2 } from "lucide-react";
@@ -184,7 +184,7 @@ export function V2ContinentLocatorMap({
         <span className="font-mono text-[11px]">Projeksiyon: Natural Earth 1</span>
       </div>
 
-      <V2MapAttribution boundaries={false} world />
+      <MapAttribution boundaries={false} world />
     </div>
   );
 }

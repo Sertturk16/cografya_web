@@ -176,6 +176,121 @@ describe("showcase coverage", () => {
   );
 });
 
+/* ---------------------------------------------------------------------------------------------
+ * THE ROSTER IN `docs/design.md`
+ * ------------------------------------------------------------------------------------------ */
+
+/**
+ * `docs/design.md` NAMES EXACTLY THE FILES UNDER `components/patterns/`.
+ *
+ * That roster is a hand-written list sitting beside a directory that declares the set, which is
+ * the shape this repo has already paid for twice in the same paragraph: the list pointed at a
+ * `map-attribution` with no product consumer at all (T-042), and it went on naming `callout`,
+ * `empty-state`, `map-legend` and `theme-pair` after they were deleted or moved. A roster that
+ * can be wrong without anything failing is documentation of a tree that does not exist — the
+ * exact defect class `components/orphan.test.ts` and `orphan-stylesheets.test.ts` measure one
+ * level down.
+ *
+ * Both directions, because they fail differently. A file the roster omits is a component nobody
+ * reading the docs knows exists; a name with no file is a reader sent to a path that 404s.
+ *
+ * Located by HEADING and by the bullet's own label, never by line number: a paragraph added above
+ * it must not move the check onto some other list. Everything outside the `## Components` section
+ * is out of range, as is the `components/ui/` bullet beside it (CLI-managed, a different rule) and
+ * the `components/showcase/` one below it (the `/design-system` route's own machinery, which is
+ * where `theme-pair` legitimately lives).
+ */
+const DESIGN_MD = readFileSync(
+  fileURLToPath(new URL("../../docs/design.md", import.meta.url)),
+  "utf8",
+);
+
+const COMPONENTS_HEADING = "## Components";
+const PATTERNS_BULLET = "- **`components/patterns/`**";
+
+/**
+ * The backticked names in the patterns bullet, from any markdown — a PURE function of its
+ * argument, so the controls below can ask it about a document nobody wrote. A reader that can only
+ * be run over the real file cannot be shown to work: every answer it gives is the answer that file
+ * happens to want.
+ *
+ * A parenthetical names an EXPORT rather than a file (`typography` ships `Kbd`), so parenthesised
+ * spans are dropped before the names are read; continuation lines are indented, so the bullet is
+ * taken to the first line that is not.
+ */
+function rosterIn(markdown: string): string[] {
+  const heading = markdown.indexOf(`\n${COMPONENTS_HEADING}\n`);
+  if (heading === -1) return [];
+  const rest = markdown.slice(heading + 1);
+  const next = rest.search(/\n## /);
+  const lines = (next === -1 ? rest : rest.slice(0, next)).split("\n");
+  const at = lines.findIndex((line) => line.startsWith(PATTERNS_BULLET));
+  if (at === -1) return [];
+  const bullet = [lines[at]!];
+  for (let i = at + 1; i < lines.length && /^\s{2,}\S/.test(lines[i]!); i += 1) {
+    bullet.push(lines[i]!);
+  }
+  const text = bullet
+    .join(" ")
+    .slice(PATTERNS_BULLET.length)
+    .replace(/\([^)]*\)/g, "");
+  return [...text.matchAll(/`([a-z0-9-]+)`/g)].map((match) => match[1]!);
+}
+
+const ROSTER = rosterIn(DESIGN_MD);
+const PATTERN_FILES = basenamesIn("../patterns");
+
+/**
+ * A document with the same SHAPE as `docs/design.md` and none of its content. Every structural
+ * decision above is asserted against it: the `## Components` boundary (`delta` is outside it), the
+ * bullet label (`theme-pair` belongs to the showcase bullet), the parenthetical rule (`Kbd`), and
+ * the indented continuation (`gamma`).
+ */
+const SYNTHETIC_DOC = [
+  "# doc",
+  "",
+  "## Components",
+  "",
+  "- **`components/ui/`** — CLI-managed: `button`.",
+  "- **`components/patterns/`** — written here: `alpha` (with `Kbd`), `beta`,",
+  "  `gamma`.",
+  "- **`components/showcase/`** — `specimen`, `theme-pair`.",
+  "",
+  "## Next section",
+  "",
+  "- `delta` lives outside the section.",
+].join("\n");
+
+describe("docs/design.md's components/patterns/ roster", () => {
+  it("positive control — the roster was located and parsed", () => {
+    expect(ROSTER.length, "names read out of the patterns bullet").toBeGreaterThan(5);
+    expect(ROSTER).toContain("typography");
+    expect(PATTERN_FILES.length, "files under components/patterns/").toBeGreaterThan(5);
+  });
+
+  it("reads the patterns bullet and nothing around it", () => {
+    expect(rosterIn(SYNTHETIC_DOC)).toEqual(["alpha", "beta", "gamma"]);
+  });
+
+  it("a name dropped from the roster stops being read — the control", () => {
+    expect(rosterIn(SYNTHETIC_DOC.replace(" `beta`,", ""))).toEqual(["alpha", "gamma"]);
+  });
+
+  it("a name with no file is still read, so it can be reported — the control", () => {
+    expect(rosterIn(SYNTHETIC_DOC.replace("`gamma`.", "`gamma`, `ghost`."))).toContain("ghost");
+  });
+
+  it("names every file under components/patterns/", () => {
+    const missing = PATTERN_FILES.filter((name) => !ROSTER.includes(name));
+    expect(missing, `components/patterns/ file absent from docs/design.md: ${missing}`).toEqual([]);
+  });
+
+  it("names nothing that is not a file under components/patterns/", () => {
+    const phantom = ROSTER.filter((name) => !PATTERN_FILES.includes(name));
+    expect(phantom, `docs/design.md names a pattern with no file: ${phantom}`).toEqual([]);
+  });
+});
+
 /**
  * The showcase's own page-level guarantees.
  *

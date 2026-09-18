@@ -265,10 +265,10 @@ export type LeaderboardList = components["schemas"]["LeaderboardDto"];
  *  page — the same posture `Favorite`/`GameRound` above state for their own domains. */
 export type Measurement = components["schemas"]["MeasurementDto"];
 /** One point of a saved measurement's geometry — field-name-identical to
- *  `components/tools/tool-island.tsx`'s own `GeoPoint`. */
+ *  `lib/map/measure.ts`'s own `GeoPoint`. */
 export type MeasurementPoint = components["schemas"]["MeasurementPointDto"];
 /** The three geometry kinds the contract's own `type` enum carries — structurally
- *  identical to (but independent of) `components/tools/tool-island.tsx`'s own `ToolMode`;
+ *  identical to (but independent of) `components/v2/v2-tool-workbench.tsx`'s own `ToolMode`;
  *  see that file's docblock for why the two are not merged into one alias. */
 export type MeasurementType = Measurement["type"];
 /** `POST /api/measurements`'s request body — see

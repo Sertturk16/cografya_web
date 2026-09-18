@@ -23,10 +23,17 @@ import { stripCssComments } from "@/lib/test-support/strip-comments";
  * ## What it deliberately does NOT assert
  *
  * Directories that survived with live members are absent from the list below — `components/game`
- * still holds `region-labels.ts`, `components/map` still holds `locator-map.tsx`,
- * `components/home` still holds `featured-cards.tsx`, `components/tools` still holds
- * `tool-island.tsx`. Pinning those as empty would fail on correct code, which is the failure mode
- * this repo has paid for before.
+ * still holds `region-labels.ts`, `components/map` still holds `locator-map.tsx`. Pinning those
+ * as empty would fail on correct code, which is the failure mode this repo has paid for before.
+ *
+ * Two of those survivors did NOT survive the next look, and T-042 deleted both directories whole
+ * for the same reason V1's went: every member was reachable from no route at all.
+ * `components/tools` held `tool-island.tsx` and three helpers, kept alive by two `import type`
+ * clauses that compile to nothing. `components/home` held `featured-cards.tsx` and its
+ * `home.module.css` — the homepage binds `FeaturedCardItem` with `import type` and draws the card
+ * grids in its own inline markup, so `<FeaturedCards` was rendered nowhere; the TYPE moved to
+ * `lib/home/featured.ts` and the component did not survive the move. `components/lock-icon.tsx`
+ * followed them, its last runtime importer having been one of the tools files.
  */
 
 const repoRoot = fileURLToPath(new URL("../", import.meta.url));
@@ -39,6 +46,15 @@ const DELETED_DIRECTORIES = [
   "components/favorites",
   "components/province",
   "components/site-nav",
+  // T-042, not T-032: `components/tools` outlived V1 by one task. Its four files — the
+  // measurement island, its two panels and the PNG exporter — were held up only by two
+  // `import type` clauses, which compile to nothing. The live tool is
+  // `components/v2/v2-tool-workbench.tsx`.
+  "components/tools",
+  // T-042 as well: `featured-cards.tsx` plus `home.module.css`, the last importer of which was
+  // that component. The homepage draws its own card grids inline and always did after the V2
+  // rewrite; only the row's TYPE survived, in `lib/home/featured.ts`.
+  "components/home",
 ] as const;
 
 /** Individual V1 files deleted out of directories that still have live members. */

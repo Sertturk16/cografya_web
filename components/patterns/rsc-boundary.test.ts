@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
@@ -29,7 +29,7 @@ import { repoRoot, walk, runtimeImportsOf } from "@/lib/test-support/import-clos
  * even on the exact regression above: no client FILE ever wrote that import literally. The
  * chain was always indirect — `v2-sea-basin-detail-view.tsx` (client) imported `Breadcrumbs`
  * from `breadcrumbs.tsx`, and `breadcrumbs.tsx` imported `breadcrumbJsonLd`/`JsonLd` from
- * `json-ld.tsx`, which is where the literal import lives. `components/ui/orphan.test.ts`
+ * `json-ld.tsx`, which is where the literal import lives. `components/orphan.test.ts`
  * already solved the general form of this problem — "what does a file really reach, through
  * however many intermediate modules" — for a different question (does a primitive have a
  * product call site). Its resolver (`walk`/`resolveSpecifier`) is extracted to
@@ -37,16 +37,17 @@ import { repoRoot, walk, runtimeImportsOf } from "@/lib/test-support/import-clos
  * principle that resolver embodies: one graph walk, not a second copy that can drift from the
  * first.
  *
- * One piece is NOT shared, on purpose: `orphan.test.ts` walks every `import`/`export … from`
- * specifier, `type`-only ones included, because over-following a type import only widens a
- * reachability set and can never hide a real orphan there. This test needs the opposite
- * precision — `lib/auth/submit.client.ts` (`"use client"`) writes `import type { AuthBffCode }
- * from "./transport.server"`, and `transport.server.ts` carries `import "server-only"`, yet
+ * The type-erasure rule this test needed is now the resolver's only rule, and T-042 is why.
+ * `lib/auth/submit.client.ts` (`"use client"`) writes `import type { AuthBffCode } from
+ * "./transport.server"`, and `transport.server.ts` carries `import "server-only"`, yet
  * `pnpm build` passes: a type-only import compiles to nothing, so it is not a real edge in the
- * graph a bundler actually builds. `runtimeImportsOf` (same module) is the type-erasure-aware
- * variant this test uses instead of the plain `importsOf` — measured against the live tree
- * before this existed: swapping it in dropped 21 files this scanner had wrongly flagged, every
- * one of them a type-only `…transport.server` import, none of them a real `pnpm build` failure.
+ * graph a bundler actually builds. `runtimeImportsOf` is the type-erasure-aware reader this test
+ * uses — measured against the live tree before it existed: swapping it in dropped 21 files this
+ * scanner had wrongly flagged, every one of them a type-only `…transport.server` import, none of
+ * them a real `pnpm build` failure. `orphan.test.ts` used to walk type edges too, on the
+ * reasoning that over-following one "only widens a reachability set and can never hide a real
+ * orphan"; that is exactly backwards for a reachability question, and `closureFrom` now walks
+ * the same runtime edges this file does.
  *
  * ## Why the split fix is TWO FILES, not two exports in one
  *
@@ -61,7 +62,7 @@ import { repoRoot, walk, runtimeImportsOf } from "@/lib/test-support/import-clos
 
 /**
  * The product surface, PLUS the showcase — deliberately wider than
- * `components/ui/orphan.test.ts`'s `PRODUCT_ROOTS`. That file excludes `/design-system` on
+ * `components/orphan.test.ts`'s `PRODUCT_ROOTS`. That file excludes `/design-system` on
  * purpose, for a question where showcase-only reachability is the thing being measured. This
  * scanner asks a different question — "does `pnpm build` break" — and `/design-system` is a
  * real route Next.js actually compiles: one of the THREE original offenders,
@@ -79,19 +80,17 @@ const PRODUCT_ROOTS = [
   "components/climate",
   "components/earthquake",
   "components/game",
-  "components/home",
   "components/map",
   "components/marine",
   "components/site-search",
-  "components/tools",
 ] as const;
 
 const SHOWCASE_ROOTS = ["app/[locale]/design-system", "components/showcase"] as const;
 
 /**
- * `components/ui/orphan.test.ts`'s `PRODUCT_ROOTS` (borrowed above) excludes `components/ui`
- * on purpose too — it's the TARGET of that test's question ("is a primitive reachable"), not a
- * root to walk outward from. That exclusion is correct there and wrong here: a `"use client"`
+ * `components/orphan.test.ts` audits `components/**` rather than rooting at it — every file
+ * there is the TARGET of that test's question ("is this component reachable"), never a root to
+ * walk outward from. That is correct there and wrong here: a `"use client"`
  * file that lives IN `components/ui` reaching `server-only` is exactly as fatal to `pnpm build`
  * as one under `components/v2`, and nine of `components/ui`'s files carry the directive today
  * (`accordion`, `custom-select`, `dialog`, `progress`, `sheet`, `sonner`, `table`, `tabs`,
@@ -183,6 +182,20 @@ describe("the RSC-boundary scanner itself", () => {
 
   it("walked a real, non-trivial slice of the surface", () => {
     expect(surfaceFiles().length).toBeGreaterThan(150);
+  });
+
+  /**
+   * A ROOT THAT NO LONGER EXISTS IS A SILENT SHRINK OF THE WALK.
+   *
+   * `walk()` answers `[]` for a missing path — deliberately, so a root may name a file or a
+   * directory — which means a deleted directory left on this list costs coverage and fails
+   * nothing. It had already happened: `components/home` sat here after T-042 deleted it, and
+   * `components/tools` before that. The surface-size control above cannot catch it either, since
+   * one directory's worth of files is well inside its margin.
+   */
+  it("every scan root still exists on disk", () => {
+    const missing = SCAN_ROOTS.filter((rel) => !existsSync(join(repoRoot, rel)));
+    expect(missing, "scan roots that name nothing — the walk shrank silently").toEqual([]);
   });
 
   it('found real "use client" files on it, components/ui/ included', () => {

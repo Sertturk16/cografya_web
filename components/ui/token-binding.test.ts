@@ -128,7 +128,7 @@ describe("components bind colour through the token bridge", () => {
    * shape above — an exemption nobody wrote down is how a tripwire quietly stops tripping.
    */
   it.each(FILES)("%s writes no hand-rolled dark: class", (_path, source) => {
-    // `components/patterns/theme-pair.tsx` carries the bare class names `dark` and `light`
+    // `components/showcase/theme-pair.tsx` carries the bare class names `dark` and `light`
     // on a wrapper, which is a different thing from a `dark:` variant and passes this.
     expect(source).not.toMatch(/\bdark:/);
   });

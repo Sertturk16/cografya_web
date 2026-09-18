@@ -143,15 +143,6 @@ const EXPECTED: Record<string, string[]> = {
     "min-width: 280px",
   ],
   "components/earthquake/earthquake.module.css": ["min-width: 520px"],
-  "components/home/home.module.css": [
-    "width: 320px",
-    "width: 5px",
-    "grid-template-columns: repeat(auto-fit, minmax(120px, 1fr))",
-    "grid-template-columns: repeat(2, minmax(120px, 150px))",
-    "grid-template-columns: repeat(3, minmax(120px, 150px))",
-    "grid-template-columns: repeat(auto-fit, minmax(158px, 1fr))",
-    "grid-template-columns: repeat(auto-fit, minmax(220px, 260px))",
-  ],
   "components/map/locator-map.module.css": ["width: min(100%, 460px)", "width: min(100%, 560px)"],
   "components/marine/marine.module.css": [
     "grid-template-columns: repeat(auto-fit, minmax(240px, 1fr))",
@@ -169,13 +160,12 @@ const EXPECTED: Record<string, string[]> = {
     "width: 1px",
     "width: 420px",
   ],
-  "components/tools/tools.module.css": ["min-width: 44px", "width: 1px"],
 };
 
 describe("fixed-px inline-axis declarations in the surviving CSS Modules", () => {
   it("scans every module, and only modules", () => {
     // Anti-vacuity: a scan that found no files would agree with any expectation.
-    expect(stylesheets.length).toBe(10);
+    expect(stylesheets.length).toBe(8);
     expect(Object.keys(census).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -183,9 +173,16 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
     expect(census).toEqual(EXPECTED);
   });
 
-  it("counts 46 declarations in total", () => {
+  /**
+   * 46 across ten modules when this was pinned; 44 across nine after T-042 deleted
+   * `tools.module.css` (`min-width: 44px`, `width: 1px`), and 37 across EIGHT after fix round 1
+   * deleted `home.module.css` — seven of its own, the largest single block in the census. Every
+   * step down is a DELETION of a stylesheet no route reached, not a narrowing that was fixed;
+   * the population is what it measures, so it is re-measured rather than carried.
+   */
+  it("counts 37 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(46);
+    expect(total).toBe(37);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {

@@ -62,6 +62,8 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   the older one mangling every template hole it read; a second extractor is where a counter hides.
   Memos go through that module's `perFileCache()` / `graphCache()` so the harness invalidates them —
   a bare `new Map()` cache fails `composition-scan.test.ts`.
+- Re-pointing a citation after a deletion: check the cited IDENTIFIER still exists, not just the
+  filename — `git grep <symbol>` before writing the new sentence.
 - Fixtures: `test/fixtures/{marine,books}`. Do not add network calls to tests.
 - Playwright is a library here, not a runner: no `playwright.config`, no e2e suite. Ad-hoc
   audits live in `scripts/` and `tools/dev-fixtures/`. One of them is not ad-hoc —
@@ -103,7 +105,7 @@ comparison run by hand.
   from going INCOMPLETE: **a new route lands in the "not swept" footer and nothing fails.** If
   you add a route, decide out loud whether it is a variant of a listed shape or a new one.
 - `components/css-module-fixed-widths.test.ts` is the half of this that needs no browser: it
-  pins the 46 fixed-`px` inline-axis declarations across the ten CSS Modules by file and by
+  pins the 37 fixed-`px` inline-axis declarations across the eight CSS Modules by file and by
   text, so changing `min-width: min(300px, 100%)` back to `min-width: 300px` reds `pnpm test`.
   It covers one of the three recorded defects, not all three — the other two are a text node
   with no wrapping opportunity and a Tailwind class in JSX.

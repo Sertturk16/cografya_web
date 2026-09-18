@@ -28,7 +28,7 @@ import { Database, ShieldCheck, BookOpen, ExternalLink, Scale, ChevronDown } fro
  * `lib/geo/continents.ts`, a hand-written registry, and the country figures come from the api,
  * whose per-field credit `/dunya/[slug]` already prints BESIDE the number through
  * `sourcesMessage()`. `natural-earth` IS used — but only where a map is drawn, and every such map
- * already credits it itself, through `V2MapAttribution`'s `world` variant or `LocatorMap`'s
+ * already credits it itself, through `MapAttribution`'s `world` variant or `LocatorMap`'s
  * `<figcaption>`, more precisely than a card at the foot of the page can. No entry carried a
  * `legalQuote`, so removing the list orphaned no licence text.
  *
@@ -86,7 +86,7 @@ const SOURCES_BY_PAGE: Record<V2PageScope, SourceItem[]> = {
       // `COUNTRY_SHAPES`, no `INLAND_WATER_SHAPES` — so the OSM half credited a source the
       // page does not use. The population facts in the featured cards are the TÜİK half, and
       // they are real. Every surface that DOES draw OSM geometry carries the credit inline,
-      // through `V2MapAttribution` (`lib/map/tr-inland-water-jrc.test.ts` derives that list).
+      // through `MapAttribution` (`lib/map/tr-inland-water-jrc.test.ts` derives that list).
       id: "tuik-osm",
       icon: "📊",
       title: "TÜİK Adrese Dayalı Nüfus Kayıt Sistemi (ADNKS)",

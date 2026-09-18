@@ -14,8 +14,8 @@ import {
   featuredPopulationFact,
   pickDailyCountries,
   pickDailyProvinces,
+  type FeaturedCardItem,
 } from "@/lib/home/featured";
-import type { FeaturedCardItem } from "@/components/home/featured-cards";
 import {
   buildMarineHomeSummary,
   marineScope,

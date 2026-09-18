@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
-import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { MapAttribution } from "@/components/patterns/map-attribution";
 
 export interface ProvinceItem {
   id: string;
@@ -812,7 +812,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 })}
               </g>
             </svg>
-            <V2MapAttribution inlandWater context />
+            <MapAttribution inlandWater context />
           </div>
 
           {/* DYNAMIC FLOATING TOOLTIP */}

@@ -370,72 +370,17 @@ describe("StatGrid is the shell and nothing else", () => {
   });
 });
 
-describe("Callout is an editorial aside, not a system alert", () => {
-  const source = read("callout");
-
-  /**
-   * The boundary this asserts is the whole reason the component exists separately from
-   * `Alert`. Typesetting a pedagogical note as an Alert gives it alert/status semantics, so
-   * assistive technology interrupts the reader for something that is not an event — and the
-   * visual language of "something broke" gets attached to ordinary teaching material.
-   */
-  it("carries no role at all", () => {
-    expect(source).not.toMatch(/role=/);
-  });
-
-  it("uses a paragraph for its heading, not an h-level", () => {
-    // A callout sits inside a section that already has a heading; a real heading here would
-    // put a rung in the document outline the page structure does not have.
-    expect(source).not.toMatch(/<h[1-6]\b/);
-  });
-
-  it("offers the four editorial kinds", () => {
-    for (const variant of ["note", "tip", "caution", "source"]) {
-      expect(source).toContain(`${variant}:`);
-    }
-  });
-
-  it("binds through the -strong members for its icon tones", () => {
-    expect(source).toContain("text-info-strong");
-    expect(source).toContain("text-warning-strong");
-  });
-
-  /**
-   * THE STRUCTURAL LINE between Callout and Alert, asserted rather than left to taste.
-   *
-   * Two earlier attempts distinguished them by ADDING something to Callout — a side-tab, then
-   * a hairline plus a tint. The second landed the two components 2px of radius and 2 points of
-   * tint apart, which measured side by side is the same component twice. The rule now runs the
-   * other way: Alert is a state object and HAS a box; Callout is typeset prose and has none.
-   *
-   * These assertions are what stop the next well-meaning round from re-adding a fill.
-   */
-  it("has no fill of its own — the box belongs to Alert", () => {
-    expect(source).not.toMatch(/\bbg-(?:info|success|warning|muted|card)\b/);
-    expect(source).not.toMatch(/\bbg-[a-z-]+\/\d+/);
-  });
-
-  it("is separated by a rule above, never a tab down one side", () => {
-    // `border-l-4` was rejected once as the most template-looking version of this component;
-    // a 1px left rule is its neighbour and reopens the same argument.
-    expect(source).toContain("border-t");
-    expect(source).not.toMatch(/\bborder-l/);
-  });
-
-  it("gives its body the text colour, not a tinted one", () => {
-    expect(source).toContain("leading-relaxed text-foreground");
-  });
-
-  it("colours the icon on the icon, not through a selector that matches nothing", () => {
-    // The previous version wrote `[&>svg]:text-info-strong` on the root while the icon sat
-    // three elements deep, so the child combinator matched nothing and the variant's colour
-    // was never applied at all.
-    expect(source).toContain("ICON_TONE");
-    expect(source).not.toMatch(/\[&>svg\]:text-/);
-  });
-});
-
-describe("Alert is the one with a box", () => {
+/**
+ * ALERT HAS A BOX, and the contrast that rule was written against is gone.
+ *
+ * The line used to be drawn against `Callout` — Alert is a state object and HAS a box, Callout is
+ * typeset prose and has none — after two rounds landed the two components 2px of radius and 2
+ * points of tint apart. T-042 deleted `Callout`: it had four showcase consumers and no product
+ * one, so the editorial aside this repo argued about twice was never typeset on a page. What
+ * survives is the half that is about Alert itself, and it is asserted here rather than left to
+ * the deleted component's docblock.
+ */
+describe("Alert carries its own box", () => {
   const source = stripComments(
     readFileSync(fileURLToPath(new URL("../ui/alert.tsx", import.meta.url)), "utf8"),
   );
@@ -449,22 +394,6 @@ describe("Alert is the one with a box", () => {
   it("gives the hueless variant a surface that is not the card it sits on", () => {
     // bg-card measured 1.06:1 against the surface an alert normally sits on — no box at all.
     expect(source).toContain('default: "bg-muted');
-  });
-});
-
-describe("EmptyState", () => {
-  const source = read("empty-state");
-
-  it("requires a title and not a description", () => {
-    // A title alone is a complete empty state; a description alone is not.
-    expect(source).toMatch(/readonly title: string/);
-    expect(source).toMatch(/description\?:/);
-  });
-
-  it("does not announce itself", () => {
-    // It is the page's ordinary content for the current filter, present on first paint.
-    expect(source).not.toMatch(/role="status"/);
-    expect(source).not.toMatch(/aria-live/);
   });
 });
 

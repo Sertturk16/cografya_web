@@ -28,8 +28,7 @@ import {
   type ViewBox,
 } from "@/lib/map/zoom-pan";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
-import type { ProvincePoint } from "@/lib/tools/province-points";
-import type { ProvinceArea } from "@/components/tools/tool-island";
+import type { ProvincePoint, ProvinceArea } from "@/lib/tools/province-points";
 import type { MeasurementType } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ import {
   Maximize2,
   Minimize2,
 } from "lucide-react";
-import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { MapAttribution } from "@/components/patterns/map-attribution";
 
 export type ToolMode = "distance" | "coordinates" | "area";
 
@@ -145,7 +144,7 @@ export function V2ToolWorkbench({
   provinceAreas = [],
   downloadName = "cografya-olcum",
 }: V2ToolWorkbenchProps) {
-  // Read from the same namespace `V2MapAttribution` does, so the exported image and the on-screen
+  // Read from the same namespace `MapAttribution` does, so the exported image and the on-screen
   // credit cannot drift apart — see `handleExportPng`.
   const tMap = useTranslations("Map");
   const [activeTool, setActiveTool] = React.useState<ToolMode>(initialMode);
@@ -898,7 +897,7 @@ export function V2ToolWorkbench({
       // A credit that is only on the page does not travel with the file a student puts in a
       // homework folder or a slide.
       //
-      // Strings come from the `Map` namespace that `V2MapAttribution` renders on screen, so the
+      // Strings come from the `Map` namespace that `MapAttribution` renders on screen, so the
       // two cannot drift; the JRC citation stays in English because it is published verbatim.
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.font = "14px sans-serif";
@@ -1427,7 +1426,7 @@ export function V2ToolWorkbench({
               );
             })}
           </svg>
-          <V2MapAttribution inlandWater context />
+          <MapAttribution inlandWater context />
         </div>
       </div>
 

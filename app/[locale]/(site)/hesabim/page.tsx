@@ -4,7 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { Home } from "lucide-react";
 import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
+import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { getSession } from "@/lib/auth/session";
 import { readProfileForPage } from "@/lib/profile/profile.server";
 import { getProvincesResilient } from "@/lib/api/provinces";
@@ -85,7 +85,7 @@ export default async function V2MemberHubPage({ params }: V2MemberHubPageProps) 
       <V2LiveTicker />
 
       <PageContainer space="tight">
-        <Breadcrumbs items={breadcrumbItems} locale={locale} surface="noindex" />
+        <Breadcrumbs items={breadcrumbItems} locale={locale} surface={AUTH_SURFACE} />
 
         {/* Member Hub Island */}
         <V2MemberHub

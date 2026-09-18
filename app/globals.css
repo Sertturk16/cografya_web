@@ -13,7 +13,7 @@
 /* `.light` is listed alongside `:root` so a SUBTREE can be forced back to the light
    palette, which `.dark` alone cannot do: `.dark` only ever moves a subtree darker, so on a
    page whose <html> already carries `.dark` there was no way to show a light specimen.
-   `components/patterns/theme-pair.tsx` needs exactly that to render both themes at once.
+   `components/showcase/theme-pair.tsx` needs exactly that to render both themes at once.
 
    Listed rather than duplicated: every value below stays declared once, so the two selectors
    cannot drift apart.

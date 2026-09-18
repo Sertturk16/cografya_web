@@ -15,7 +15,7 @@ import { join } from "node:path";
  * class was deleted rather than left warm for another surface to pick up.
  *
  * T-032 PR4 deleted `turkey-map-section.tsx` and `map.module.css` with the rest of V1. The V2
- * surfaces draw their own inline SVG and render the shared `V2MapAttribution` after it, so the
+ * surfaces draw their own inline SVG and render the shared `MapAttribution` after it, so the
  * plate rule has no stylesheet to police and the `[data-map-root]` hook no longer exists.
  *
  * What survives is the part that was never about V1: a credit nested INSIDE the map box is a
@@ -41,7 +41,7 @@ const surfaces = roots
     source: readFileSync(file, "utf8"),
   }))
   .filter(
-    ({ source, name }) => source.includes("<V2MapAttribution") && name !== "v2-map-attribution.tsx",
+    ({ source, name }) => source.includes("<MapAttribution") && name !== "map-attribution.tsx",
   )
   // A surface that draws NO inline `<svg>` has no map box for the credit to be nested inside,
   // so this rule is vacuous there and asserting it would be a false failure.
@@ -55,11 +55,11 @@ describe("the map credit sits under the map box, never on it", () => {
   it("finds the surfaces to check", () => {
     // Anti-vacuity: an empty list would pass every assertion below for free, and the whole point
     // of deriving the list is that a new map surface joins it without anyone remembering.
-    expect(surfaces.length, "surfaces rendering V2MapAttribution").toBeGreaterThan(4);
+    expect(surfaces.length, "surfaces rendering MapAttribution").toBeGreaterThan(4);
   });
 
   it.each(surfaces)("$name emits the credit after the map closes", ({ source }) => {
-    const credit = source.indexOf("<V2MapAttribution");
+    const credit = source.indexOf("<MapAttribution");
     const lastSvgClose = source.lastIndexOf("</svg>", credit);
     expect(lastSvgClose, "no </svg> before the credit").toBeGreaterThan(-1);
 

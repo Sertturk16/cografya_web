@@ -18,7 +18,7 @@ export interface ShowcaseCategory {
  * the plan, and the "listed but missing" assertion is what turns it into a worklist.
  *
  * It is a worklist in one direction only. A primitive with no product call site is DELETED,
- * not kept alive so this registry has something to list (T-036, `components/ui/orphan.test.ts`
+ * not kept alive so this registry has something to list (T-036, `components/orphan.test.ts`
  * and `docs/design.md`). Eight entries left here for that reason; the showcase describes the
  * code, so it shrinks when the code does.
  */
@@ -50,8 +50,8 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
   {
     slug: "geri-bildirim",
     title: "Geri Bildirim",
-    blurb: "Sistem durumu, editoryal not, boş durum ve ipuçları.",
-    components: ["alert", "callout", "sonner", "empty-state", "tooltip", "skeleton"],
+    blurb: "Sistem durumu, geçici yükleme ve ipuçları.",
+    components: ["alert", "sonner", "tooltip", "skeleton"],
   },
   {
     slug: "duzen",
@@ -75,8 +75,8 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
   {
     slug: "harita",
     title: "Harita",
-    blurb: "Harita yanına giren atıf ve lejant bileşenleri.",
-    components: ["map-attribution", "map-legend"],
+    blurb: "Her haritanın yanına giren lisans atfı.",
+    components: ["map-attribution"],
   },
 ] as const;
 
@@ -85,11 +85,15 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
  *
  * An explicit list rather than a pattern: an exemption nobody wrote down is how a coverage
  * test quietly stops covering things. Add to it deliberately, with a reason.
+ *
+ * EMPTY SINCE T-042, and the emptiness is the point. Its one entry was `theme-pair`, exempted
+ * because it is showcase machinery rather than a pattern — which was the right reason to give it
+ * the right home instead. It now lives at `components/showcase/theme-pair.tsx`, beside the
+ * `Specimen` that renders it, so the coverage walk over `components/ui` and `components/patterns`
+ * never sees it and no exemption is needed. An exemption that moves the file is better than one
+ * that describes it.
  */
-export const EXEMPT_FILES: readonly string[] = [
-  // Showcase machinery — it renders the specimens, it is not one.
-  "theme-pair",
-] as const;
+export const EXEMPT_FILES: readonly string[] = [] as const;
 
 export function categoryBySlug(slug: string): ShowcaseCategory | undefined {
   return CATEGORIES.find((category) => category.slug === slug);
