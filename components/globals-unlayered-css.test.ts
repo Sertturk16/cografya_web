@@ -53,6 +53,13 @@ import { stripCssComments } from "@/lib/test-support/strip-comments";
  *   - `@theme inline`'s body is treated as one leaf rule because Tailwind's `@theme` grammar
  *     does not support nested selectors; if that ever changed, a nested rule inside it would
  *     be invisible to this scanner for the same reason native nesting is.
+ *   - EXEMPTIONS MATCH BY EXACT LABEL STRING, not by position or count. A SECOND unlayered rule
+ *     that happened to share an exempted label verbatim (a second `.dark { … }` block, say)
+ *     would be silently exempted too, and `it.each(EXEMPTIONS)`'s liveness check only inspects
+ *     `ALL_RULES.find(...)` — the FIRST match — so a duplicate's own body is never re-checked.
+ *     Not a problem this file's exemption list has today (every label is unique in
+ *     `app/globals.css`), but a real blind spot: nothing here asserts each exempted label is
+ *     unique among `ALL_RULES`.
  */
 
 const GLOBALS_PATH = fileURLToPath(new URL("../app/globals.css", import.meta.url));
@@ -159,12 +166,19 @@ const EXEMPTIONS: readonly UnlayeredExemption[] = [
   {
     label: ".dark .climate-dark-scope",
     reason:
-      "Same shape and same reason as .dark: it exists ONLY to shadow four raw Terra custom " +
-      "properties (--color-ink/-slate/-surface/-border) for climate.module.css's frozen table, " +
-      "one consumer (app/[locale]/(site)/turkiye/[slug]/page.tsx). Those raw tokens are declared " +
-      "in the unlayered :root block, so an override of them must ALSO be unlayered to win — " +
-      "moving this into a layer would silently revert that table to its light-mode ink colour " +
-      "in dark mode (the exact 1.20:1 contrast defect this scope was written to fix).",
+      "Kept unlayered to preserve the status quo, NOT because a layer would lose to :root — " +
+      "it would not. This selector targets a <div> " +
+      "(app/[locale]/(site)/turkiye/[slug]/page.tsx, one consumer), while `:root`/`.light` " +
+      "targets <html>. Cascade layers only arbitrate between declarations that target the SAME " +
+      "element; the div receives --color-ink/-slate/-surface/-border from :root purely by " +
+      "INHERITANCE, which is the weakest source in the cascade and always loses to any " +
+      "declaration specified directly on the element itself, layered or not. So a `@layer base` " +
+      "version of this rule would have worked exactly as well. (Contrast `.dark` immediately " +
+      "above: that one genuinely does need to stay unlayered, because `.dark` and `:root` both " +
+      "match the SAME element, <html>, so there IS a real same-element cascade competition " +
+      "there.) Left unlayered here only because there is no reason to move it — same custom- " +
+      "property-only shape as :root/.dark, harmless either way, and moving it would be a change " +
+      "for its own sake.",
     liveness: (rule) => expect(isOnlyCustomProperties(rule.body)).toBe(true),
   },
   {

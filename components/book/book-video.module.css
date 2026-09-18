@@ -1,8 +1,16 @@
 /* Tezgâhın sahnesi ve dizin satırının video künyesi — kapak (facade), oynatıcı kabı,
    sahne künyesi ve zaman şeridi.
    Terra tokens only (DESIGN.md §2); no hardcoded brand hex. Contrast per DESIGN §5:
-   slate on white 7.92:1 (AAA); the İzle button is the global `.btn-primary`, white on
-   terracotta 5.13:1 (AA). */
+   slate on white 7.92:1 (AAA); the İzle button is `Button` (`variant="primary"`, T-041 —
+   the global `.btn-primary` class it used to read is gone). In light mode this is the same
+   5.13:1 white-on-terracotta pair `.btn-primary` measured, because `variant="primary"`
+   resolves to `--primary`/`--primary-foreground`, which equal the raw `--color-primary`/
+   `--color-on-primary` `.btn-primary` read directly in light mode. In dark mode the two are
+   NOT the same any more, on purpose: `--color-primary` is a raw Terra token `.dark` never
+   redefines (the old `.btn-primary` was frozen at its light value there), while `--primary`
+   IS redefined under `.dark` (T-018/T-034) to a lightness-adjusted terracotta — 5.80:1 per
+   `app/globals.css`'s own dark-mode measurements. Verified live via Playwright (both themes,
+   320–1280px): see `.superpowers/sdd/t-041-unlayered-css-report.md`. */
 
 /* ── Sahne ────────────────────────────────────────────────────────────────────────────── */
 
@@ -400,16 +408,17 @@
    back, or the control's own reason for existing (self-declaring a state) is unmet for them.
 
    OLIVE, NOT TERRACOTTA (İRİS idea B2/video-wall, iris-ideas-small-fix-bundle plan §5.2):
-   `BenchStage` renders the "İzle" overlay button (`.btn-primary`, terracotta) immediately
-   above this toggle in the same `.stage` column — both on-screen at once whenever an
-   authenticated reader has a saved `watched: true` row for the video currently on the stage
-   and has not yet pressed "İzle" in the current page load. The two controls are genuinely
-   different weight — a primary call-to-action vs. a secondary self-declaration toggle — so
-   sharing one fill made them read as equally important. `--color-secondary` (`DESIGN.md` §2,
-   "secondary brand accents" — the exact stated purpose here) still mirrors `.btn-primary`'s
-   filled look (never encoding the state by colour alone — the visible label and the fill both
-   change together), just in the token that reads as secondary rather than primary. White on
-   secondary is 5.89:1 (AA, `DESIGN.md` §5's own measured pair for this exact fill). */
+   `BenchStage` renders the "İzle" overlay button (`Button` `variant="primary"`, terracotta;
+   the global `.btn-primary` class it used to read is gone as of T-041) immediately above this
+   toggle in the same `.stage` column — both on-screen at once whenever an authenticated reader
+   has a saved `watched: true` row for the video currently on the stage and has not yet pressed
+   "İzle" in the current page load. The two controls are genuinely different weight — a primary
+   call-to-action vs. a secondary self-declaration toggle — so sharing one fill made them read
+   as equally important. `--color-secondary` (`DESIGN.md` §2, "secondary brand accents" — the
+   exact stated purpose here) still mirrors that primary button's filled look (never encoding
+   the state by colour alone — the visible label and the fill both change together), just in
+   the token that reads as secondary rather than primary. White on secondary is 5.89:1 (AA,
+   `DESIGN.md` §5's own measured pair for this exact fill). */
 .watchedToggle[aria-checked="true"] {
   background: var(--color-secondary);
   color: var(--color-on-primary);
