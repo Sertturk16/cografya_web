@@ -4574,6 +4574,14 @@ export const SURFACE_FILES_RENDERING_STATTILE = 13;
  * grids whose tiles are `<StatTile>` elements. **This number must not move when a grid is
  * migrated** — the grid leaves one bucket and arrives in the other. It moves only when a grid is
  * created, deleted, or REFACTORED OUT OF SIGHT, which is the whole point.
+ *
+ * **HALF OF WHAT MAKES THIS NUMBER TRUSTWORTHY LIVES IN ANOTHER FILE.** Since a `<StatGrid>` tag
+ * counts as a grid shell here (Rulings BA/BB/BF, on {@link isGridShell}), this counter is only as
+ * good as the guarantee that `StatGrid` still RENDERS a grid — and that is asserted in
+ * `components/patterns/patterns-contract.test.ts`, which renders the component and pins its exact
+ * class string. It lives there because that is where the component can be rendered; importing
+ * `isGridShell` into it would push a scanner internal out of this 4800-test module, a worse trade.
+ * If you are auditing this number, read both.
  */
 export const STAT_GRIDS_TOTAL = 62;
 
@@ -4678,14 +4686,52 @@ function statGrids(): { file: string; tiles: number }[] {
  * Aliasing is covered by the same lookup: `import { StatGrid as Grid }` binds `Grid` to
  * (`stat-grid.tsx`, `StatGrid`) and qualifies, while a local `StatGrid` binds nothing and falls
  * through to the className rule — where a `<section>` correctly reads as no grid.
+ *
+ * RULING BF. The binding is chased THROUGH RE-EXPORTS, not matched one hop deep.
+ *
+ * `importBindingsOf` resolves the immediate specifier only, so a genuine `StatGrid` reached
+ * through a barrel binds to the BARREL and failed the identity test. Re-review measured all three
+ * shapes holding the total at 62 where it should read 63: a plain name through a barrel, an
+ * alias-of-alias through two barrels, and `export { StatGrid as default }`.
+ *
+ * The direction is safe — under-recognition LOWERS the total, which is the exact signature this
+ * invariant shouts about, so such a grid goes red and gets investigated rather than hiding a loss
+ * — and it is latent, because no `components/patterns` barrel exists today. It is fixed anyway,
+ * for precedent: PR3's Ruling AB kept {@link reexportTargetsOf} alive *specifically* so a
+ * barrel-exported component could not drop silently out of a count, and the scanner written after
+ * it did not chase re-exports. Leaving that door ajar in each new scanner is how this programme
+ * keeps paying for the same bug.
+ *
+ * NOTE ON THE OTHER HALF OF THIS PIN, because a reader arriving at {@link STAT_GRIDS_TOTAL} needs
+ * to know where to look. The identity test answers "is this tag really the component"; it does not
+ * answer "does that component still render a grid". THAT lives in
+ * `components/patterns/patterns-contract.test.ts`, which renders `StatGrid` and asserts the exact
+ * class string, including one assertion that the rendered tokens satisfy the className rule below.
+ * It has to live there because that is where the component can be rendered; importing
+ * `isGridShell` into it would export a scanner internal out of a 4800-test module, which trades a
+ * small coupling risk for a larger one. So the guard is deliberately two files, and this is the
+ * signpost to the other one.
  */
 const STAT_GRID_MODULE = join(repoRoot, "components/patterns/stat-grid.tsx");
 
+/**
+ * Does this binding lead to `stat-grid.tsx`'s `StatGrid`, through however many re-export hops?
+ *
+ * `seen` is a cycle guard: two barrels re-exporting each other is a legal thing to write and an
+ * infinite walk otherwise. The depth cap is belt-and-braces on the same hazard.
+ */
+function resolvesToStatGrid(node: RenderNode, seen: Set<string> = new Set()): boolean {
+  if (node.file === STAT_GRID_MODULE) return node.name === "StatGrid";
+  if (node.name === null) return false;
+  const key = `${node.file}#${node.name}`;
+  if (seen.has(key) || seen.size > 8) return false;
+  seen.add(key);
+  return reexportTargetsOf(node.file, node.name).some((target) => resolvesToStatGrid(target, seen));
+}
+
 function isGridShell(element: ScannedElement, bindings: Map<string, RenderNode>): boolean {
   const bound = bindings.get(element.tag);
-  if (bound !== undefined && bound.file === STAT_GRID_MODULE && bound.name === "StatGrid") {
-    return true;
-  }
+  if (bound !== undefined && resolvesToStatGrid(bound)) return true;
   const tokens = tokensOf(element.spelling);
   return tokens.includes("grid") && tokens.some((token) => token.startsWith("grid-cols-"));
 }
@@ -4904,6 +4950,66 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
     expect(
       isGridShell(aliased, new Map([["Grid", { file: STAT_GRID_MODULE, name: "StatGridProps" }]])),
     ).toBe(false);
+  });
+
+  /**
+   * RULING BF, all three shapes. A genuine `StatGrid` reached through a barrel is still the shell.
+   *
+   * The two hosts are borrowed PATHS in the same directory — `withInjectedSource` replaces their
+   * source entirely for the duration, so nothing here depends on what either file contains, which
+   * is Ruling AY's requirement: no control anchored on markup a later task can delete. They have
+   * to be real paths rather than notional ones only because the last assertion reads them back
+   * after the injection is gone, to prove it was temporary.
+   */
+  it("a StatGrid reached through a re-export barrel is still the shell", () => {
+    const outer = join(repoRoot, "components/patterns/empty-state.tsx");
+    const middle = join(repoRoot, "components/patterns/theme-pair.tsx");
+    const chase = (
+      source: string,
+      name: string,
+      extra: ReadonlyArray<readonly [string, string]> = [],
+    ) =>
+      withInjectedSource([[outer, source], ...extra], () =>
+        resolvesToStatGrid({ file: outer, name }),
+      );
+
+    // A plain named re-export.
+    expect(chase('export { StatGrid } from "./stat-grid";\n', "StatGrid")).toBe(true);
+    // `export { StatGrid as default }`, imported as a default binding.
+    expect(chase('export { StatGrid as default } from "./stat-grid";\n', "default")).toBe(true);
+    // `export * from`.
+    expect(chase('export * from "./stat-grid";\n', "StatGrid")).toBe(true);
+    // An alias-of-alias through TWO hops.
+    expect(
+      chase('export { Grid as G2 } from "./theme-pair";\n', "G2", [
+        [middle, 'export { StatGrid as Grid } from "./stat-grid";\n'],
+      ]),
+    ).toBe(true);
+
+    // NEGATIVE CONTROLS — the chase must not turn into "anything reachable".
+    // A barrel that re-exports a DIFFERENT symbol of the real module.
+    expect(chase('export { StatGridProps } from "./stat-grid";\n', "StatGridProps")).toBe(false);
+    // A barrel that re-exports a same-named symbol from somewhere else entirely.
+    expect(chase('export { StatGrid } from "./page-hero";\n', "StatGrid")).toBe(false);
+    // A barrel exporting nothing relevant.
+    expect(chase('export { Callout } from "./callout";\n', "StatGrid")).toBe(false);
+    // A CYCLE terminates rather than recursing forever — two barrels re-exporting each other.
+    expect(
+      chase('export { StatGrid } from "./theme-pair";\n', "StatGrid", [
+        [middle, 'export { StatGrid } from "./empty-state";\n'],
+      ]),
+    ).toBe(false);
+
+    // The injection really was temporary: the borrowed path resolves nothing once it is gone.
+    expect(resolvesToStatGrid({ file: outer, name: "StatGrid" })).toBe(false);
+  });
+
+  it("the direct binding still short-circuits without touching the re-export walk", () => {
+    // The common path — 13 files import `StatGrid` directly — must not depend on `readSource`
+    // being able to open anything. Asserted on a node that names a file with no source at all.
+    expect(resolvesToStatGrid({ file: STAT_GRID_MODULE, name: "StatGrid" })).toBe(true);
+    expect(resolvesToStatGrid({ file: STAT_GRID_MODULE, name: "StatGridProps" })).toBe(false);
+    expect(resolvesToStatGrid({ file: STAT_GRID_MODULE, name: null })).toBe(false);
   });
 
   it("the real migrated pages resolve their StatGrid binding — anti-vacuity for the rule above", () => {

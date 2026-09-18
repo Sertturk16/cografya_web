@@ -157,6 +157,13 @@ describe("StatGrid is the shell and nothing else", () => {
    * as the WHOLE string in emission order, not "contains the right tokens", because a re-theme
    * that kept `grid` and changed the breakpoints would pass the weaker form.
    *
+   * THE RENDERED PIN IS BETTER IN BOTH DIRECTIONS, NOT MERELY STRICTER — worth stating, because
+   * "assert the output" usually reads as "assert more". Re-review built the component's `grid`
+   * token at runtime (`["g","r","i","d"].join("")`): this pin stays GREEN, correctly, because the
+   * element still wears exactly `grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4` and the component
+   * is right. The source-substring pin it replaced would have gone RED on that same correct
+   * component. So the swap removes a false negative AND a false positive.
+   *
    * MUTATION-CHECKED at these values, reverted after each:
    *
    *   - the exact `flex flex-col` + `void unused` rewrite above — RED on every `columns` row,
@@ -164,6 +171,11 @@ describe("StatGrid is the shell and nothing else", () => {
    *     sm:gap-4'`, which is the mutation the old pin could not see;
    *   - `"2-4"` re-spelled `grid-cols-2 md:grid-cols-4` — RED on that row alone;
    *   - `gutter="hero"` changed from `mt-8` to `mt-6` — RED on the gutter row.
+   *
+   * Re-review added three more, all RED on 4 assertions: the same `flex flex-col` + `void unused`
+   * rewrite, a conditional rendering `grid` only when `gutter === "hero"` (the `it.each` rows run
+   * at the default gutter), and the grid moved into a CHILD element with the root keeping only the
+   * gutter — caught because `gridClass` reads the ROOT element's class.
    */
   /**
    * Render once, read the class off the element.
