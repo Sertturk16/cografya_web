@@ -88,14 +88,12 @@ export function FaqSection(props: FaqSectionProps) {
   const headingId = `${id}-baslik`;
   const schema = structuredData !== false && isIndexable(locale, structuredData);
 
-  // THE DEFAULT BRANCH IS WRITTEN FIRST, and that is load-bearing rather than stylistic.
-  // `components/v2/page-composition-faq.test.ts` attributes a block's question and answer
-  // spellings to the nearest enclosing element that carries a `className`, starting from the FIRST
-  // `.question` and `.answer` read in the map body. The accordion branch styles nothing itself —
-  // the primitive owns its look — so with that branch first the reads land in unstyled elements,
-  // no spelling can be attributed, and the whole block stops being a FAQ block: the schema below
-  // then reads as structured data with no markup behind it. `list` first is also the plain reading
-  // order, `mechanism` defaulting to `"list"`. Do not swap these two arms.
+  // The default branch first, which is simply the plain reading order — `mechanism` defaults to
+  // `"list"`. This used to carry a "do not swap these two arms" warning, because the FAQ block
+  // scanner attributed a spelling from the FIRST `.question` read and the accordion arm writes no
+  // classes of its own, so the arms' order decided whether this component counted as a FAQ block
+  // at all. That was a property of the scanner, not of this component, and T-035 PR5 fixed it
+  // there: any read in any arm now qualifies the block. Nothing here depends on the order.
   const entries = items.map((item, index) =>
     mechanism === "list" ? (
       /* THE PRIMITIVE, not a hand-drawn card. All four live item spellings draw their own surface

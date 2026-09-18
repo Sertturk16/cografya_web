@@ -541,7 +541,12 @@ export function tagTextAt(source: string, start: number): string {
 }
 
 export function classNameOfTag(tag: string): string {
-  const at = tag.indexOf("className=");
+  // THE SAME NAME BOUNDARY `readHeader` USES. A bare `indexOf("className=")` also matches the tail
+  // of `data-className=`, and PR5's `data-className` control caught the two entry points
+  // disagreeing about exactly that the moment `readHeader` learned to read whole attribute names —
+  // which is the cross-scanner guard in `composition-scan.test.ts` doing the job it was built for.
+  // Inert on today's tree, and asserted to be.
+  const at = tag.search(/(?<![A-Za-z0-9_$:.-])className=/);
   if (at === -1) return NO_CLASSNAME;
   let i = at + "className=".length;
   while (i < tag.length && /\s/.test(tag[i]!)) i += 1;
@@ -618,12 +623,41 @@ export type ScannedElement = {
    * scans a SLICE, so spans from that path are slice-relative; a caller that needs file offsets
    * scans the whole file (what {@link jsxElementsOf} does) or adds the slice's own start itself.
    *
-   * An element whose closing tag is missing or mismatched ends where the scan stopped looking,
-   * never past the end of the source, so `end` is always `>= start` and a containment test is
-   * always well defined. See {@link innermostElementAt} for the containment rule itself.
+   * `end > start` always, and never past the end of the source: an element whose closing tag is
+   * missing or mismatched ends where the scan stopped looking. See {@link innermostElementAt} for
+   * the containment rule built on that.
+   *
+   * ONE CASE WHERE `end` DOES NOT COVER THE CHILDREN, stated rather than glossed. `scanRange`
+   * returns early when it meets a closing tag belonging to an ancestor (`depth > 0`), and the
+   * element it was scanning keeps the `end` its own header gave it — so an element whose closing
+   * tag is absent from a NESTED position spans its opening tag only, and
+   * {@link innermostElementAt} would answer with something shallower than the truth for a position
+   * inside it. That needs mismatched JSX, which `tsc` rejects before any test here runs, so it is
+   * unreachable on a tree that typechecks; it is written down because "always well defined" was
+   * more than the code promises.
    */
   readonly start: number;
   readonly end: number;
+  /**
+   * EVERY ATTRIBUTE WRITTEN AT THE TOP LEVEL OF THE OPENING TAG, name → value text: the contents
+   * for `name="…"`, the expression for `name={…}` (whitespace collapsed), and `""` for a bare
+   * `name` with no value. An attribute written inside a nested element passed as a prop belongs to
+   * that element, not to this one, because {@link scanJsx} skips braced values whole.
+   *
+   * ONE PARSER, which is the whole reason this field exists. The FAQ counters needed the labelling
+   * attributes of a `<section>` (`aria-labelledby` vs `id` vs `id`+`tabIndex`) and the value of a
+   * `data={…}` prop, and the first version of them re-walked the opening tag in the consumer — a
+   * SECOND attribute reader with its own semantics, one module over from this one. That is the
+   * T-045 shape exactly. `readHeader` now reads every attribute in the pass it was already making
+   * and `className` is one of them: `spelling` is still derived from this attribute's value by the
+   * one literal extractor, so the two cannot disagree.
+   *
+   * `spelling` is NOT `attributes.get("className")`: the former is the class string as a SPELLING
+   * (literals joined, template holes reduced to {@link HOLE_MARKER}, {@link COMPUTED_CLASSNAME}
+   * where no literal is written), the latter the raw source of the attribute. Both are wanted, and
+   * `composition-scan.test.ts` pins the relationship between them.
+   */
+  readonly attributes: ReadonlyMap<string, string>;
   /**
    * The raw attribute expression, kept ONLY where `spelling` is {@link COMPUTED_CLASSNAME}. Which
    * shape an unreadable className has decides whether it could ever hide a card: a `styles.x`
@@ -746,17 +780,36 @@ export function scanJsx(source: string): ScannedElement[] {
     return j;
   };
 
-  /** The `className` of the tag whose name ends at `i`, plus where its header ends. */
+  /**
+   * EVERY top-level attribute of the tag whose name ends at `i`, plus where its header ends.
+   *
+   * ONE WALK, ONE SET OF SEMANTICS. This used to look for the literal string `className` and skip
+   * everything else a character at a time; a consumer that needed any OTHER attribute had to walk
+   * the same opening tag again with its own rules, which is how two readers of the same text end
+   * up disagreeing (T-045). It now reads NAMES — so `aria-labelledby` is one attribute rather than
+   * the fragment `label` preceded by noise — and `className` is simply the name whose value also
+   * feeds `spelling` and `computed` through {@link literalsIn}.
+   *
+   * The name character class includes `-` and `:` (`aria-label`, `xlink:href`) and so does the
+   * boundary test before a name, which is what stops `data-className` being read as a `className`
+   * — the one behaviour the old pattern got wrong. Inert on today's tree: no tag anywhere writes
+   * `className` immediately after a `-`, `.` or `:`, and `composition-scan.test.ts` pins both the
+   * inertness and the rule.
+   */
+  const ATTRIBUTE_NAME = /[A-Za-z0-9_$:.-]/;
+
   const readHeader = (
     i: number,
   ): {
     spelling: string | null;
     computed: string | null;
+    attributes: Map<string, string>;
     end: number;
     selfClosing: boolean;
   } => {
     let spelling: string | null = null;
     let computed: string | null = null;
+    const attributes = new Map<string, string>();
     let j = i;
     while (j < source.length) {
       const ch = source[j]!;
@@ -769,37 +822,55 @@ export function scanJsx(source: string): ScannedElement[] {
         continue;
       }
       if (ch === ">") {
-        return { spelling, computed, end: j + 1, selfClosing: source[j - 1] === "/" };
+        return { spelling, computed, attributes, end: j + 1, selfClosing: source[j - 1] === "/" };
       }
-      if (source.startsWith("className", j) && !/[A-Za-z0-9_$]/.test(source[j - 1] ?? " ")) {
-        let k = j + "className".length;
-        while (k < source.length && /\s/.test(source[k]!)) k += 1;
-        if (source[k] === "=") {
-          k += 1;
-          while (k < source.length && /\s/.test(source[k]!)) k += 1;
-          const opener = source[k];
-          if (opener === '"' || opener === "'") {
-            const end = skipLiteral(k);
-            spelling = source.slice(k + 1, end - 1);
-            j = end;
-            continue;
-          }
-          if (opener === "{") {
-            const end = skipBraced(k);
-            const expression = source.slice(k + 1, end - 1);
-            const literals = literalsIn(expression, true);
-            spelling = literals.length > 0 ? literals.join(" ") : COMPUTED_CLASSNAME;
-            computed = literals.length > 0 ? null : expression.trim().replace(/\s+/g, " ");
-            j = end;
-            continue;
-          }
-        }
-        j = k;
+      // A name starts here only if this character could begin one AND the previous character
+      // could not be part of one — the same boundary rule the old `className` test used, widened
+      // to the characters a JSX attribute name may actually contain.
+      if (!/[A-Za-z_]/.test(ch) || ATTRIBUTE_NAME.test(source[j - 1] ?? " ")) {
+        j += 1;
         continue;
       }
-      j += 1;
+      let nameEnd = j;
+      while (nameEnd < source.length && ATTRIBUTE_NAME.test(source[nameEnd]!)) nameEnd += 1;
+      const name = source.slice(j, nameEnd);
+
+      let k = nameEnd;
+      while (k < source.length && /\s/.test(source[k]!)) k += 1;
+      if (source[k] !== "=") {
+        // A bare attribute (`disabled`, `hidden`) — or the `/` of a self-closing tag reached
+        // through a name. Resume at the name's end so `>` is still seen by the loop.
+        attributes.set(name, "");
+        j = nameEnd;
+        continue;
+      }
+      k += 1;
+      while (k < source.length && /\s/.test(source[k]!)) k += 1;
+      const opener = source[k];
+      if (opener === '"' || opener === "'") {
+        const end = skipLiteral(k);
+        const value = source.slice(k + 1, end - 1);
+        attributes.set(name, value);
+        if (name === "className") spelling = value;
+        j = end;
+        continue;
+      }
+      if (opener === "{") {
+        const end = skipBraced(k);
+        const expression = source.slice(k + 1, end - 1);
+        attributes.set(name, expression.trim().replace(/\s+/g, " "));
+        if (name === "className") {
+          const literals = literalsIn(expression, true);
+          spelling = literals.length > 0 ? literals.join(" ") : COMPUTED_CLASSNAME;
+          computed = literals.length > 0 ? null : expression.trim().replace(/\s+/g, " ");
+        }
+        j = end;
+        continue;
+      }
+      attributes.set(name, "");
+      j = k;
     }
-    return { spelling, computed, end: source.length, selfClosing: false };
+    return { spelling, computed, attributes, end: source.length, selfClosing: false };
   };
 
   /** Scans `[i, end)` as JSX children of `parent`; returns where it stopped. */
@@ -869,6 +940,7 @@ export function scanJsx(source: string): ScannedElement[] {
           inExpression: braces > 0,
           start: i,
           end: header.end,
+          attributes: header.attributes,
         });
         if (parent !== null && !inProp) elements[parent]!.children.push(index);
         scanRange(nameEnd, header.end, index, true, depth + 1);

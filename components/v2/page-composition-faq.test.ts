@@ -10,14 +10,11 @@ import {
   innermostElementAt,
   jsxElementsOf,
   label,
-  maskLiterals,
   maskedSource,
   readSource,
   repoRoot,
   resolvesTo,
-  scanJsx,
   surfaceFiles,
-  tagTextAt,
   walk,
   withInjectedSource,
 } from "@/lib/test-support/composition-scan";
@@ -27,21 +24,42 @@ import {
  * answer, plus the one pairing that matters: a `faqPageJsonLd(X)` call and whether the page that
  * makes it also renders `X`.
  *
- * Built on `lib/test-support/composition-scan.ts` like its three siblings, and it adds nothing of
- * its own that walks source. What is imported from there: `surfaceFiles` and `walk`, `readSource`
- * and `maskedSource`, the ONE literal extractor behind `jsxElementsOf`, `innermostElementAt` and
- * the element spans it reads, `tagTextAt`, and the binding resolver `importBindingsOf` /
- * `resolvesTo`. What stays here: the FAQ predicate, the six counters, their docblocks, their
- * mutation records and the one delegation exemption.
+ * Built on `lib/test-support/composition-scan.ts` like its three siblings. What is imported from
+ * there: `surfaceFiles` and `walk`, `readSource` and `maskedSource`, the ONE literal extractor
+ * behind `jsxElementsOf`, `innermostElementAt` and the element spans and ATTRIBUTES it reads, and
+ * the binding resolver `importBindingsOf` / `resolvesTo`. What stays here: the FAQ predicate, the
+ * six counters, their docblocks, their mutation records and the one delegation exemption.
  *
- * WHAT THIS FILE ADDED TO THE SHARED SCANNER, and why it was not a fourth scanner. Every counter
- * below is a POSITION-TO-ELEMENT question — "which element writes `{faq.question}`", "which
- * `<section>` encloses this `.map(`", "is the element holding this `faqPageJsonLd(` call written
- * under a condition" — and `ScannedElement` carried no source span, so there was no way to ask one
- * without walking the text a second time. `ScannedElement.start` / `.end` and
+ * WHAT THIS FILE ADDED TO THE SHARED SCANNER, and why none of it was a fourth scanner. Every
+ * counter below is a POSITION-TO-ELEMENT question — "which element writes `{faq.question}`",
+ * "which `<section>` encloses this `.map(`", "is the element holding this `faqPageJsonLd(` call
+ * written under a condition" — and `ScannedElement` carried no source span, so there was no way to
+ * ask one without walking the text a second time. `ScannedElement.start` / `.end` and
  * `innermostElementAt()` are that gap closed in the shared module, where the other three counters
- * can use them too. T-045 exists because two scanners with different semantics disagreed silently
- * for months; adding a field to the one scanner is the opposite of that mistake.
+ * can use them too.
+ *
+ * `ScannedElement.attributes` is the SAME LESSON, learned once more in review. The shell counter
+ * needs a `<section>`'s labelling attributes and the delegation exemption needs the value of a
+ * `data={…}` prop, and the first version of this file read both by re-walking the opening tag here
+ * — a second attribute parser with its own boundary rules, one module over from `readHeader`,
+ * which was already walking every one of those tags to find `className`. That is the T-045 shape:
+ * two readers of the same text, each right on its own, drifting silently. `readHeader` now records
+ * every top-level attribute in the pass it was already making, `className` among them, and this
+ * file reads that map.
+ *
+ * WHAT STILL WALKS TEXT HERE, and why each is FAQ-specific rather than general:
+ *
+ *   - {@link matchingParen} — balances a CALL's parentheses over masked text, to find the extent of
+ *     a `.map(` callback and of a `faqPageJsonLd(` argument list. The shared scanner balances
+ *     braces and tags; nothing in it reads a call, because nothing else here needs to.
+ *   - {@link arrayPathOf} and the `mapped` read in {@link faqBlocksIn} — reduce an EXPRESSION to
+ *     the array identifier it names (`bolgelerFaqs.map(…)` → `bolgelerFaqs`). That reduction is
+ *     the FAQ pairing rule itself, not a fact about JSX.
+ *   - {@link memberRead} — locates `.question` / `.answer` reads. Field names are this counter's
+ *     subject and no other counter's.
+ *
+ * None of the three reads a tag, an attribute or an element boundary; all three run over
+ * {@link maskedSource}, so a literal or a comment cannot answer for code.
  * ---------------------------------------------------------------------------------------- */
 
 /** The module that DECLARES `faqPageJsonLd`, never a caller of it. */
@@ -82,40 +100,6 @@ function matchingParen(masked: string, open: number): number {
   return masked.length;
 }
 
-/**
- * The names of the attributes written at the TOP LEVEL of one JSX opening tag.
- *
- * Literals are masked and braced values are skipped whole, so `id` is read out of
- * `<section id="sss" tabIndex={-1}>` and nothing is read out of `className={cn("a=b")}` or out of
- * a nested element passed as a prop. The tag's own name is not an attribute: it is not followed
- * by `=`.
- */
-function attributeNamesOf(tagText: string): string[] {
-  const masked = maskLiterals(tagText);
-  const names: string[] = [];
-  let depth = 0;
-  for (let i = 0; i < masked.length; i += 1) {
-    const ch = masked[i]!;
-    if (ch === "{") {
-      depth += 1;
-      continue;
-    }
-    if (ch === "}") {
-      depth -= 1;
-      continue;
-    }
-    if (depth !== 0 || !/[A-Za-z]/.test(ch)) continue;
-    if (/[A-Za-z0-9_$:.-]/.test(masked[i - 1] ?? " ")) continue;
-    let j = i;
-    while (j < masked.length && /[A-Za-z0-9_$:.-]/.test(masked[j]!)) j += 1;
-    let k = j;
-    while (k < masked.length && /\s/.test(masked[k]!)) k += 1;
-    if (masked[k] === "=") names.push(masked.slice(i, j));
-    i = j - 1;
-  }
-  return names;
-}
-
 /** The nearest ancestor of `from` (itself included) satisfying `ok`, or `null`. */
 function ancestorWhere(
   elements: readonly ScannedElement[],
@@ -153,13 +137,17 @@ function arrayPathOf(expression: string): string {
   return path[0].endsWith(".map") ? path[0].slice(0, -".map".length) : path[0];
 }
 
+/** A `.question` / `.answer` MEMBER READ, never a prefix of a longer name — `item.questionId` is
+ * not a question. See SCOPE note 2 for what the member-name rule still cannot see. */
+const memberRead = (field: string) => new RegExp(`\\.${field}(?![A-Za-z0-9_$])`, "g");
+
 /**
  * ONE FAQ BLOCK — a `.map(` over an array of question/answer pairs whose callback renders JSX.
  *
  * `mapped` is the receiver of the `.map(`, i.e. the array identifier or member path the block
- * renders. `item` is the element the callback opens first; `question` and `answer` are the nearest
- * enclosing elements of the `.question` and `.answer` reads that carry a `className` at all;
- * `shell` is the nearest enclosing `<section>`.
+ * renders. `item` is the element the callback opens first; `question` and `answer` are the
+ * elements the block's question and answer spellings are attributed to (see {@link faqBlocksIn}
+ * for the rule and why it is order-independent); `shell` is the nearest enclosing `<section>`.
  */
 type FaqBlock = {
   readonly file: string;
@@ -174,11 +162,10 @@ type FaqBlock = {
 /**
  * WHAT A FAQ BLOCK IS, decided by CONTENT, never by a written file list and never by a line number.
  *
- * A `.map(` on the scanned file qualifies when all three hold:
+ * A `.map(` on the scanned file qualifies when both hold:
  *
  *   1. its callback reads a `.question` member AND an `.answer` member;
- *   2. at least one JSX element opens inside the callback;
- *   3. the `.question` and `.answer` reads each sit inside some element that carries a `className`.
+ *   2. at least ONE `.question` read and at least ONE `.answer` read sit inside a JSX element.
  *
  * (2) IS THE CLAUSE THAT DOES THE WORK, and it is not defensive programming. Both `turkiye/bolge`
  * pages write a SECOND `.map(` that satisfies (1) exactly — `bolgelerFaqs.map((faq) => ({ question:
@@ -188,35 +175,78 @@ type FaqBlock = {
  * not a FAQ block" control below asserts that both of those maps are still there and still
  * excluded, so clause (2) cannot quietly become inert.
  *
- * CLAUSE (3) REMOVES NOTHING TODAY, stated rather than implied: the surface holds exactly 8 maps
- * satisfying clause (1), clause (2) drops the 2 projections, and all 6 survivors write both reads
- * inside a styled element. It is there because the alternative to a guard is a crash — a question
- * written directly into a fragment has no element to attribute a spelling to — and because a block
- * that trips it would otherwise vanish from all six counters instead of failing the six-block
- * anti-vacuity assertion, which is what it does now.
+ * ## "AT LEAST ONE", and why the word matters — Ruling CA
+ *
+ * The first version of this asked whether the FIRST `.question` read sat inside an element that
+ * carries a `className`, which made the predicate depend on the ORDER of the arms of a ternary.
+ * `components/patterns/faq-section.tsx` renders two mechanisms from one `.map(`: a `list` arm that
+ * writes its own `<h3 className=…>` and an `accordion` arm that delegates every class to
+ * `components/ui/accordion.tsx` and writes none. With the accordion arm FIRST, the first read had
+ * no styled ancestor, the block was rejected, and the component's own `faqPageJsonLd(items)` read
+ * as structured data with no markup — so Task 8's implementer had to order the arms and leave a
+ * "do not swap these two arms" comment in a product file. That was a property of this scanner
+ * being written back into the component, which is exactly backwards.
+ *
+ * So qualification is now a question about the WHOLE body: any read inside any element qualifies,
+ * in any arm, in any order. The `swapping the arms of a two-mechanism block changes nothing`
+ * control pins it with both orders of the real component.
+ *
+ * ## Where a spelling is attributed, stated because it is a choice
+ *
+ * A block has ONE question spelling and ONE answer spelling even where it writes several arms. The
+ * element credited is **the first read, in source order, that has an ancestor carrying a
+ * `className`** — and where NO read has one, the innermost element of the first read itself, whose
+ * spelling is then the {@link NO_CLASSNAME} marker rather than nothing at all. Two consequences,
+ * both intended:
+ *
+ *   - a block that styles one arm and delegates the other is counted at the spelling it actually
+ *     WRITES, which is the thing a convergence counter is for. The delegating arm is not a
+ *     spelling of this surface; it is the primitive's.
+ *   - a block that styles NEITHER arm is still a block, and enters
+ *     {@link FAQ_ITEM_SPELLINGS}/{@link FAQ_QUESTION_SPELLINGS} as `(no className attribute)` —
+ *     the same marker the `/deniz` accordion's item wrapper already carries — instead of
+ *     disappearing from all six counters.
+ *
+ * All six blocks on {@link surfaceFiles}'s surface write exactly one `.question` and one `.answer`
+ * read, so the attribution rule is inert there today and the six counters are unchanged by it;
+ * it exists for the shape Task 9 is about to introduce at all six.
  */
 function faqBlocksIn(file: string): FaqBlock[] {
   const masked = maskedSource(file);
   const elements = jsxElementsOf(file);
   const blocks: FaqBlock[] = [];
 
+  /**
+   * The element a `field` spelling is credited to across `[open, close)`: the first read, in
+   * source order, that has an ancestor carrying a `className`, else the innermost element of the
+   * first read. `null` only when NO read of `field` is inside a JSX element — clause (2) failing.
+   */
+  const attribute = (field: string, open: number, close: number): ScannedElement | null => {
+    const hosts: number[] = [];
+    for (const read of masked.slice(open, close).matchAll(memberRead(field))) {
+      const host = innermostElementAt(elements, open + read.index);
+      if (host !== null) hosts.push(host);
+    }
+    for (const host of hosts) {
+      const styled = ancestorWhere(elements, host, (e) => e.spelling !== null);
+      if (styled !== null) return styled;
+    }
+    const first = hosts[0];
+    return first === undefined ? null : elements[first]!;
+  };
+
   for (const match of masked.matchAll(/\.map\s*\(/g)) {
     const open = match.index + match[0].length - 1;
     const close = matchingParen(masked, open);
     const body = masked.slice(open, close);
-    const questionAt = body.indexOf(".question");
-    const answerAt = body.indexOf(".answer");
-    if (questionAt === -1 || answerAt === -1) continue;
+    if (!memberRead("question").test(body) || !memberRead("answer").test(body)) continue;
 
     const opened = elements.filter((element) => element.start > open && element.start < close);
     const item = opened[0];
     if (item === undefined) continue;
 
-    const questionHost = innermostElementAt(elements, open + questionAt);
-    const answerHost = innermostElementAt(elements, open + answerAt);
-    if (questionHost === null || answerHost === null) continue;
-    const question = ancestorWhere(elements, questionHost, (e) => e.spelling !== null);
-    const answer = ancestorWhere(elements, answerHost, (e) => e.spelling !== null);
+    const question = attribute("question", open, close);
+    const answer = attribute("answer", open, close);
     if (question === null || answer === null) continue;
 
     const mapHost = innermostElementAt(elements, match.index);
@@ -254,10 +284,10 @@ const SHELL_LABELLING_ATTRIBUTES = ["aria-label", "aria-labelledby", "id", "role
 
 function labellingStrategyOf(block: FaqBlock): string {
   if (block.shell === null) return "(no <section> ancestor)";
-  // The OPENING TAG only. Slicing the element's whole span would read the `id` off the `<h2>`
-  // inside it and report every shell as `aria-labelledby+id`.
-  const names = attributeNamesOf(tagTextAt(readSource(block.file), block.shell.start));
-  const labelling = SHELL_LABELLING_ATTRIBUTES.filter((name) => names.includes(name));
+  // `ScannedElement.attributes` is the shell's OWN opening tag, read by the one walk in
+  // `readHeader`. The `id` on the `<h2>` inside the section belongs to the `<h2>`'s record, so
+  // there is nothing to slice carefully around and no second parser to drift from the first.
+  const labelling = SHELL_LABELLING_ATTRIBUTES.filter((name) => block.shell!.attributes.has(name));
   return labelling.length === 0 ? "(unlabelled)" : labelling.join("+");
 }
 
@@ -351,23 +381,6 @@ const DELEGATED_FAQ_MARKUP = {
   prop: "data",
 } as const;
 
-/** The value written for `name={…}` or `name="…"` on one opening tag, or `null`. */
-function propValueOf(tagText: string, name: string): string | null {
-  const masked = maskLiterals(tagText);
-  const at = masked.search(new RegExp(`(?<![A-Za-z0-9_$:.-])${name}\\s*=`));
-  if (at === -1) return null;
-  let i = masked.indexOf("=", at) + 1;
-  while (i < masked.length && /\s/.test(masked[i]!)) i += 1;
-  if (masked[i] !== "{") return tagText.slice(i, i + 1) === '"' ? "(string literal)" : null;
-  let depth = 0;
-  let j = i;
-  for (; j < masked.length; j += 1) {
-    if (masked[j] === "{") depth += 1;
-    else if (masked[j] === "}" && (depth -= 1) === 0) break;
-  }
-  return tagText.slice(i + 1, j).trim();
-}
-
 /** Is this call's markup written by {@link DELEGATED_FAQ_MARKUP}'s delegate, in that delegate? */
 function isDelegated(call: FaqJsonLdCall): boolean {
   const root = call.array.split(".")[0]!;
@@ -378,12 +391,13 @@ function isDelegated(call: FaqJsonLdCall): boolean {
     return false;
 
   const elements = jsxElementsOf(call.file);
-  const source = readSource(call.file);
   const rendered = elements.filter((element) => element.tag === DELEGATED_FAQ_MARKUP.export);
   const passes = rendered.some((element) => {
     const index = elements.indexOf(element);
     if (writtenUnderCondition(elements, index)) return false;
-    return propValueOf(tagTextAt(source, element.start), DELEGATED_FAQ_MARKUP.prop) === root;
+    // The prop's own recorded value — `data={basinData}` is `basinData`, `data={{ ...basinData }}`
+    // is `{ ...basinData }`, and `data="x"` is `x`. Only a bare identifier can equal `root`.
+    return element.attributes.get(DELEGATED_FAQ_MARKUP.prop) === root;
   });
   if (!passes) return false;
 
@@ -445,14 +459,23 @@ function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
  *   2. **The question and the answer are located by a MEMBER NAME.** `.question` and `.answer` are
  *      what all six blocks happen to call their fields. A block whose type spells them `soru` and
  *      `cevap`, or which destructures `const { question, answer } = item` and writes a bare
- *      `{question}`, is invisible to every counter here. This is the blind spot most likely to open
- *      during Task 8: a `FaqSection` that takes `items` and destructures inside its own `.map(`
- *      would keep the member read, but one that renders `<FaqItem {...entry} />` would not.
+ *      `{question}`, is invisible to every counter here. That is what Task 8 had to respect:
+ *      `FaqSection` reads `item.question` inside its own `.map(`, and a version rendering
+ *      `<FaqItem {...entry} />` would have dropped out of every counter silently.
+ *
+ *      The read is matched with a right-hand word boundary ({@link memberRead}), so `.questionId`
+ *      and `.answerHtml` are NOT question and answer reads. There is no LEFT boundary and there
+ *      cannot usefully be one: `item.question` and `faq.question` must both match, so the rule is
+ *      "a `.question` member of anything". A field named `question` on an object that is not a FAQ
+ *      entry, mapped beside an `.answer` in the same callback, would qualify. Nothing on this
+ *      surface writes one.
  *   3. **"Nearest element with a className" skips an unstyled wrapper.** Five of six blocks write
  *      `<span>{faq.question}</span>` with no classes inside a styled `<h3>`, and the counter files
  *      the spelling under the `<h3>`. That is the intent — a bare span is not a treatment — but it
  *      means moving the classes from the `<h3>` onto that span re-spells the block without changing
- *      a pixel, and {@link FAQ_QUESTION_SPELLINGS} would move.
+ *      a pixel, and {@link FAQ_QUESTION_SPELLINGS} would move. Where a block writes SEVERAL reads
+ *      (a two-mechanism `.map(`), only the first styled one is credited — {@link faqBlocksIn}
+ *      states that rule and why it is order-independent.
  *   4. **No gate is evaluated, anywhere.** `inExpression` records that an element is written inside
  *      a `{…}`, never what the expression is or whether it is true. The three gates on this surface
  *      — `locale === "tr"`, `region.faqs?.length > 0`, and none — are the same fact to this file.
@@ -480,11 +503,26 @@ function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
  *      the two spellings identical rather than introduce a local alias.
  *   8. **No line numbers, anywhere.** {@link readSource} collapses each comment to one space, so an
  *      index into it is not a source line (T-043). Every failure message names FILES.
- *   9. **Outside the walks nothing is seen.** Blocks are scanned over {@link surfaceFiles} (the
- *      reading and play page roots plus `components/v2`); `faqPageJsonLd` CALLS are scanned over
- *      the wider `app/`, `components/` and `lib/`, so a call from outside the block surface is a
- *      failure rather than an omission, and the "every caller is on the block surface" control
- *      pins that the two populations coincide today.
+ *   9. **Outside the walks nothing is seen, and both walks are `.tsx`-only.** Blocks are scanned
+ *      over {@link surfaceFiles} (the reading and play page roots plus `components/v2`);
+ *      `faqPageJsonLd` CALLS are scanned over the wider `app/`, `components/` and `lib/`, so a call
+ *      from a file on neither surface is a failure rather than an omission — the "nine calls"
+ *      control pins the whole population and names the one off-surface caller.
+ *
+ *      But `walk()` returns `.tsx` files only (`composition-scan.ts`), so **a `faqPageJsonLd` call
+ *      written in a `.ts` module is invisible to this file entirely** — it is not counted, not
+ *      paired and not reported as an orphan. That is not hypothetical-only: a helper that builds a
+ *      schema array and hands it to a page would naturally be a `.ts` file. It is left as it is
+ *      because widening the walk to `.ts` would change what THREE other counter files scan through
+ *      a shared walker; the honest statement is that this counter's caller population is the
+ *      `.tsx` one.
+ *   10. **Markup with NO structured data is not a defect here, and is not counted.** Every counter
+ *      runs from the schema side or from the block side separately; nothing asks "does this FAQ
+ *      block emit a schema?". `components/v2/v2-marine-faq-accordion.tsx` is exactly that shape
+ *      today — seven questions on `/deniz`, no `FAQPage` — and it is the one block the plan says
+ *      must stay able to decline structured data, which is why `FaqSection`'s `structuredData`
+ *      defaults to `false`. So the asymmetry is deliberate: schema without markup is a violation
+ *      and is pinned at 0; markup without schema is a choice and is pinned nowhere.
  *
  * MUTATION-CHECKED 2026-09-18, each counter AT THE VALUE IT IS PINNED AT — never at some earlier
  * number — each edit reverted from a copy and the suite re-run green. Seven breakages on the real
@@ -526,6 +564,16 @@ export const FAQ_ITEM_SPELLINGS = 4;
  * `<h3>` ×5 and `<span>` ×1 — which is {@link FAQ_BLOCKS_WITHOUT_HEADINGS}'s whole subject. */
 export const FAQ_QUESTION_SPELLINGS = 3;
 
+/**
+ * Distinct spellings of the element that carries the answer text. ONE element type — every block
+ * writes a `<p>`, asserted beside the count, so the six blocks already agree about the answer's
+ * tag and disagree only about its treatment.
+ *
+ * FOUR rather than three because the four static grids differ only in their left indent
+ * (`pl-4`, `pl-5`, `pl-7`) — the gutter under a question marker each block draws differently —
+ * plus the accordion's `pt-2 pl-11`. That is the cheapest convergence on this surface and the
+ * reason this figure is worth its own pin: it moves the moment one indent is chosen.
+ */
 export const FAQ_ANSWER_SPELLINGS = 4;
 
 /** Distinct `(treatment, identity strategy)` pairs across the six enclosing `<section>`s. Both
@@ -626,47 +674,75 @@ describe("the FAQ block scanner", () => {
     }
   });
 
-  it("every element span contains its children and opens after its parent", () => {
-    // The premise `innermostElementAt` reads: elements arrive in pre-order, so the containing
-    // element that opens LAST is the deepest one. Asserted over the real surface, not a fixture.
-    for (const file of surfaceFiles()) {
-      const elements = jsxElementsOf(file);
-      let previous = -1;
-      for (const element of elements) {
-        expect(element.start, `${label(file)}: elements are not in source order`).toBeGreaterThan(
-          previous,
-        );
-        previous = element.start;
-        expect(
-          element.end,
-          `${label(file)}: <${element.tag}> ends before it starts`,
-        ).toBeGreaterThan(element.start);
-        if (element.parent === null) continue;
-        const parent = elements[element.parent]!;
-        expect(
-          element.start >= parent.start && element.end <= parent.end,
-          `${label(file)}: <${element.tag}> is not inside its parent <${parent.tag}>`,
-        ).toBe(true);
-      }
-    }
+  /**
+   * RULING CA — THE PREDICATE MUST NOT DEPEND ON THE ORDER OF A TERNARY'S ARMS.
+   *
+   * `components/patterns/faq-section.tsx` renders two mechanisms from one `.map(`: a `list` arm
+   * that writes its own `<h3 className=…>` and an `accordion` arm that writes no classes at all
+   * (`components/ui/accordion.tsx` owns that look). The first version of {@link faqBlocksIn} asked
+   * whether the FIRST `.question` read had a styled ancestor, so with the accordion arm first the
+   * block was REJECTED and the component's own `faqPageJsonLd(items)` read as a schema with no
+   * markup — and Task 8's implementer had to order the arms and leave a "do not swap these two
+   * arms" comment in a product file to keep this suite green. A scanner's internals leaking into a
+   * component's source is the defect; this is the fix, pinned.
+   *
+   * Driven on the REAL component with its two arms swapped, not on a fixture, because the shape
+   * that broke is the real one. The swap is textual and mechanical — the two arms of the ternary
+   * exchanged — and the assertion is that everything the counters read stays identical.
+   */
+  it("swapping the arms of a two-mechanism block changes nothing", () => {
+    const source = readFileSync(FAQ_SECTION_COMPONENT, "utf8");
+    const listArm = source.slice(
+      source.indexOf("      <Card key={index}"),
+      source.indexOf("    ) : ("),
+    );
+    const accordionArm = source.slice(
+      source.indexOf("      <AccordionItem key={index}"),
+      source.indexOf("    ),\n  );"),
+    );
+    // Anti-vacuity: the two arms were really found, and they really differ in the way that matters
+    // — one writes a className and the other writes none.
+    expect(listArm, "the list arm was not located").toContain("className=");
+    expect(accordionArm, "the accordion arm was not located").not.toContain("className=");
+
+    const swapped = source
+      .replace(listArm, " LIST ")
+      .replace(accordionArm, listArm)
+      .replace(" LIST ", accordionArm)
+      .replace('mechanism === "list" ? (', 'mechanism !== "list" ? (');
+
+    // The swap really happened, and in the direction that used to break: the unstyled arm now comes
+    // first. Without this the whole control could pass on a no-op replacement.
+    expect(source.indexOf("<AccordionItem")).toBeGreaterThan(source.indexOf("<Card key={index}"));
+    expect(swapped.indexOf("<AccordionItem")).toBeLessThan(swapped.indexOf("<Card key={index}"));
+
+    const read = () =>
+      faqBlocksIn(FAQ_SECTION_COMPONENT).map((block) => ({
+        mapped: block.mapped,
+        question: `<${block.question.tag}> ${spellingOf(block.question)}`,
+        answer: `<${block.answer.tag}> ${spellingOf(block.answer)}`,
+        conditional: block.conditional,
+      }));
+
+    const before = read();
+    expect(before, "FaqSection is not being read as a FAQ block at all").toHaveLength(1);
+    expect(withInjectedSource([[FAQ_SECTION_COMPONENT, swapped]], read)).toEqual(before);
+    // And the pairing the whole counter turns on survives the swap, which is what actually broke.
+    expect(
+      withInjectedSource([[FAQ_SECTION_COMPONENT, swapped]], () =>
+        jsonLdWithoutMarkup().map((call) => label(call.file)),
+      ),
+    ).toEqual([]);
+    expect(read()).toEqual(before);
   });
 
-  it("innermostElementAt picks the deepest element, and nothing outside one", () => {
-    const source =
-      '<section className="a"><div className="b"><p className="c">x</p></div></section>';
-    const elements = scanJsx(source);
-    const at = (needle: string) => innermostElementAt(elements, source.indexOf(needle));
-    expect(elements[at(">x<")!]!.spelling).toBe("c");
-    expect(elements[at('className="b"')!]!.spelling).toBe("b");
-    expect(innermostElementAt(elements, source.length + 5)).toBeNull();
-    // An element passed as a prop lives inside its holder's header; the position inside it must
-    // resolve to the prop-borne element, not to the holder.
-    const withProp = '<Explorer panel={<aside className="p">x</aside>} className="holder" />';
-    const propElements = scanJsx(withProp);
-    expect(propElements[innermostElementAt(propElements, withProp.indexOf(">x<"))!]!.spelling).toBe(
-      "p",
-    );
-  });
+  // THE SPAN, CONTAINMENT AND ATTRIBUTE INVARIANTS ARE NOT TESTED HERE ANY MORE. They belong to
+  // the shared module, which has four consumers, and a counter file's tests answer for that
+  // counter's USES of an API rather than for the API — so `lib/test-support/composition-scan.test.ts`
+  // now owns them, over the wider `walkCardSurface()` population this file's `surfaceFiles()` sits
+  // inside. Nothing was dropped: pre-order, nesting, `innermostElementAt`'s deepest-wins rule and
+  // the prop-borne case are all asserted there, plus the attribute walk this file no longer
+  // duplicates.
 
   it("a docblock quoting a FAQ block is prose, not markup — comment stripping applied", () => {
     const commented = `/** {faqs.map((faq) => <div className="x"><h3 className="y">{faq.question}</h3><p className="z">{faq.answer}</p></div>)} */\n`;
@@ -836,6 +912,23 @@ describe("every faqPageJsonLd call has visible markup for the same array", () =>
         .map((row) => `  ${row}`)
         .join("\n")}`,
     ).toBe(FAQ_JSONLD_WITHOUT_MARKUP);
+
+    // HOW THE ZERO IS REACHED, stated rather than entailed. Zero orphans is true of a tree with
+    // nine paired calls and equally true of a tree with none, so the split is pinned at its
+    // measured value: 5 calls pair in their own file by the identifier rule, 4 are the `deniz`
+    // delegation, and 5 + 4 is the whole caller population. Without this, deleting every
+    // `faqPageJsonLd` call in the repo would leave this `it` green.
+    const calls = faqJsonLdCalls();
+    const inFile = calls.filter((call) =>
+      faqBlocksIn(call.file).some((block) => block.mapped === call.array),
+    );
+    const delegated = calls.filter((call) => !inFile.includes(call) && isDelegated(call));
+    expect(
+      inFile.map((call) => label(call.file)),
+      "calls paired by the same-file identifier rule",
+    ).toHaveLength(5);
+    expect(delegated, "calls paired only through DELEGATED_FAQ_MARKUP").toHaveLength(4);
+    expect(inFile.length + delegated.length + orphans.length).toBe(calls.length);
   });
 
   /**
@@ -878,12 +971,21 @@ describe("every faqPageJsonLd call has visible markup for the same array", () =>
     // Every call is written inside a `<JsonLd>` element, which is what makes the conditional test
     // below meaningful: it reads the gate on the element that emits the script tag.
     expect(new Set(calls.map((call) => call.holder))).toEqual(new Set(["JsonLd"]));
-    // LIVENESS, not decoration: the component's own emission is what the clause below tolerates,
-    // so the clause must not be able to pass on a component that no longer emits anything.
+    // WHY THE COMPONENT NEEDS NO EXEMPTION — the docblock's actual claim, and the one thing here
+    // the exact list above does not already entail. That list says FaqSection emits a schema; it
+    // says nothing about whether the schema PAIRS. This does: the ordinary same-file rule resolves
+    // it, and the delegation exemption is not consulted. If `items` ever became `[...items]` or the
+    // markup moved into a child component, the list above would still pass and this would not.
+    const own = calls.filter((call) => call.file === FAQ_SECTION_COMPONENT);
+    expect(own, "FaqSection no longer emits FAQPage at all").toHaveLength(1);
     expect(
-      calls.map((call) => call.file),
-      "FaqSection no longer emits FAQPage — the pattern component is the general case, not optional",
-    ).toContain(FAQ_SECTION_COMPONENT);
+      faqBlocksIn(FAQ_SECTION_COMPONENT).map((block) => block.mapped),
+      "FaqSection's schema and its markup are no longer one identifier in one file",
+    ).toContain(own[0]!.array);
+    expect(
+      isDelegated(own[0]!),
+      "FaqSection is the general case of the same-file rule, never an exemption",
+    ).toBe(false);
     // The caller walk is wider than the block walk, so this also says no call hides in `lib/` or
     // outside `components/v2` (SCOPE note 9) — bar the one pattern component above, which pairs in
     // its own file and is named here rather than discovered.
@@ -1018,11 +1120,10 @@ describe("the delegated-markup exemption", () => {
         `${label(call.file)}'s ${DELEGATED_FAQ_MARKUP.export} is not the one the exemption names`,
       ).toBe(true);
       const elements = jsxElementsOf(call.file);
-      const source = readSource(call.file);
       const rendered = elements.filter((e) => e.tag === DELEGATED_FAQ_MARKUP.export);
       expect(rendered, `${label(call.file)} no longer renders the delegate`).toHaveLength(1);
       expect(
-        propValueOf(tagTextAt(source, rendered[0]!.start), DELEGATED_FAQ_MARKUP.prop),
+        rendered[0]!.attributes.get(DELEGATED_FAQ_MARKUP.prop),
         `${label(call.file)} no longer hands the published array to the delegate`,
       ).toBe(call.array.split(".")[0]);
     }
