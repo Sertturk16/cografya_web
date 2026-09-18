@@ -1107,7 +1107,31 @@ function nodeSpan(node: RenderNode): NodeSpan {
   if (node.name === null) return whole;
 
   const region = declarationRegions(node.file).get(node.name);
-  if (region) return { kind: "span", from: region[0], to: region[1] };
+  if (region) {
+    // A region that is nothing but `export default Identifier;` is a FORWARD, not a body. Final
+    // review found this shape degrading SILENTLY: `const Page = () => (…); export default Page;`
+    // produced a `default` region holding only the export statement, so the walk entered, found no
+    // JSX, returned no sites — and, because a region HAD been found, never reached
+    // `recordFallback`. That is a hole in the one guarantee the recorder exists to make, which is
+    // why it is closed in code rather than described more accurately in SCOPE note 8. Follow the
+    // identifier to its own declaration (or to the module it is imported from); if it resolves to
+    // neither, fall back to module scope AND record it. Never neither.
+    const bare = readSource(node.file)
+      .slice(region[0], region[1])
+      .trim()
+      .match(/^export\s+default\s+([A-Za-z0-9_$]+)\s*;?$/);
+    if (bare) {
+      const target = bare[1]!;
+      if (target !== node.name && declarationRegions(node.file).has(target)) {
+        return { kind: "forward", nodes: [{ file: node.file, name: target }] };
+      }
+      const imported = importBindingsOf(node.file).get(target);
+      if (imported) return { kind: "forward", nodes: [imported] };
+      recordFallback(node.file, node.name);
+      return whole;
+    }
+    return { kind: "span", from: region[0], to: region[1] };
+  }
 
   const forwarded = reexportTargetsOf(node.file, node.name);
   if (forwarded.length > 0) return { kind: "forward", nodes: forwarded };
@@ -1350,12 +1374,35 @@ function h1SitesOf(root: string, onVisit?: (node: RenderNode) => void): H1Site[]
 }
 
 /** How many distinct render nodes the walk visits across the whole surface — anti-vacuity. */
-function renderNodesVisited(): number {
-  const nodes = new Set<string>();
-  for (const page of walkRenderRoots()) {
+/**
+ * Per render root: the component names its entry declaration WRITES as JSX, and how many nodes the
+ * walk actually RESOLVED beyond that entry.
+ *
+ * The entry node itself is excluded from the resolved count — every root trivially visits
+ * `{root, "default"}`, so counting it would make the property below true by construction.
+ *
+ * The names are what make the property honest in the other direction. A root that renders no
+ * component at all resolves nothing and is RIGHT to: `app/[locale]/(site)/not-found.tsx` writes
+ * only `<div>`, `<p>` and its own `<h1>`, and its docblock says why it deliberately has no link.
+ * Comparing resolved-count against names-written exempts that case by construction rather than by
+ * a named exemption that would go stale.
+ */
+function rootResolution(): { root: string; names: string[]; resolved: number }[] {
+  return walkRenderRoots().map((page) => {
+    const nodes = new Set<string>();
     h1SitesOf(page, (node) => nodes.add(`${node.file}::${node.name ?? "*whole*"}`));
-  }
-  return nodes.size;
+
+    let span = nodeSpan({ file: page, name: "default" });
+    if (span.kind === "forward" && span.nodes[0]) span = nodeSpan(span.nodes[0]);
+    const masked = maskedSource(page);
+    const text = span.kind === "span" ? masked.slice(span.from, span.to) : masked;
+
+    return {
+      root: label(page),
+      names: [...new Set([...text.matchAll(JSX_ELEMENT)].map((match) => match[1]!))].sort(),
+      resolved: nodes.size - 1,
+    };
+  });
 }
 
 /** Every distinct `<h1>` element rendered by any render root, grouped by spelling. */
@@ -1515,16 +1562,23 @@ function pagesWithMultipleH1(): string[] {
  *      "Has exactly one `h1`" is not "has a correct heading outline".
  *
  *   8. WHERE A DECLARATION CANNOT BE ISOLATED. Crediting a heading to the declaration that writes
- *      it needs that declaration's span. `import * as Ns`, a `default` export that is not a named
- *      `function`/`class`, and any shape {@link declarationRegions} does not recognise fall back
- *      to the WHOLE module — the old module-granularity behaviour, for that one module.
- *      Conservative (it over-credits, never under-credits) and never silent: every fallback is
- *      recorded and pinned by {@link MODULE_SCOPE_FALLBACKS}, which is EMPTY on today's tree.
- *      A render root is NO LONGER an exception to this: it is entered at its `default` export, not
- *      as a whole file, so an unrendered helper declared beside the page component contributes
- *      nothing. That was the last place the graph degraded to module scope, and it degraded in the
- *      five files Task 3 will edit; it was documented here for one round and is now removed
- *      instead, because a documented false positive is still a false positive.
+ *      it needs that declaration's span. `import * as Ns` and any shape
+ *      {@link declarationRegions} does not recognise fall back to the WHOLE module — the old
+ *      module-granularity behaviour, for that one module. Conservative (it over-credits, never
+ *      under-credits) and NEVER SILENT: every fallback is recorded and pinned by
+ *      {@link MODULE_SCOPE_FALLBACKS}, which is EMPTY on today's tree.
+ *
+ *      "Never silent" is a guarantee, so the two ways it was leaking are closed rather than
+ *      described. A render root is no longer entered as a whole file but at its `default` export,
+ *      so an unrendered helper declared beside the page component contributes nothing; that was
+ *      the last place the graph degraded to module scope, and it degraded in the five files Task 3
+ *      will edit. And a `default` region that holds nothing but `export default Identifier;` is
+ *      now FOLLOWED to that identifier's own declaration (or to the module it is imported from)
+ *      rather than entered and found empty — `const Page = () => (…); export default Page;`
+ *      previously returned no sites AND recorded no fallback, which is the one combination this
+ *      mechanism exists to make impossible. If the identifier resolves to neither, the fallback is
+ *      recorded. Both halves are pinned by controls: one asserting the arrow form resolves, one
+ *      asserting an unresolvable default is recorded. Never neither.
  *
  *   9. A LOCAL SHADOW OF AN IMPORTED NAME. `h1SitesOf` checks import bindings before local
  *      declarations, so `import { V2Hero }` plus a function-body `const V2Hero = () => null` plus
@@ -1640,15 +1694,31 @@ describe("the heading scanner itself", () => {
       h1SitesOf(root).some((site) => site.file !== label(root)),
     );
     expect(crossing.length).toBeGreaterThan(0);
-  });
+  }, 20000);
 
-  it("the walk visits a non-trivial number of render nodes — anti-vacuity", () => {
+  it("every render root resolves at least one node beyond its own entry — anti-vacuity", () => {
     // Every counter below reports a SMALL number, which a walk that never got anywhere would also
-    // report. 183 distinct `{file, declaration}` nodes are visited across the 39 roots today; the
-    // floor is deliberately loose so ordinary refactoring does not trip it, but a walk that
-    // stalled at the roots would read 39 and a broken one 0.
-    expect(renderNodesVisited()).toBeGreaterThan(120);
-  });
+    // report. This was a global floor (`> 120` against 183) until final review measured that 176
+    // nodes would still be visited with all five `<h1>`-bearing modules unreached — so it caught
+    // only a fully collapsed walk. A tighter global number would be worse: it would drift on every
+    // adoption task and teach the next implementer to re-pin it without thinking.
+    //
+    // The PER-ROOT property is what was actually wanted. It cannot pass on a collapsed walk, it
+    // cannot pass on a walk that resolves for some roots and not others, and it does not move when
+    // pages change what they render.
+    const resolution = rootResolution();
+    const stalled = resolution.filter(({ names, resolved }) => names.length > 0 && resolved === 0);
+    expect(
+      stalled.map(({ root }) => root),
+      `render roots that write a component but resolved none of it:\n${stalled
+        .map(({ root, names }) => `  ${root} — writes ${names.join(", ")}`)
+        .join("\n")}`,
+    ).toEqual([]);
+
+    // Anti-vacuity for the property itself: it would also pass if NO root wrote any component.
+    expect(resolution).toHaveLength(39);
+    expect(resolution.filter(({ names }) => names.length > 0).length).toBeGreaterThan(30);
+  }, 20000);
 
   it("drops `import type` edges — a type-only import renders nothing, on the real tree", () => {
     // `lib/auth/submit.client.ts:5` writes `import type { AuthBffCode } from "./transport.server"`
@@ -1773,6 +1843,40 @@ describe("the heading scanner itself", () => {
     expect(fixtureSites(fixture("      <p>nothing</p>", helper))).toEqual([]);
   });
 
+  it("an arrow-assigned `export default` resolves rather than degrading silently", () => {
+    // `const Page = () => (…); export default Page;` used to produce a `default` region holding
+    // only the export STATEMENT: the walk entered, found no JSX, returned nothing — and recorded
+    // no fallback, because a region HAD been found. Silent degradation in the exact mechanism
+    // built so degradation cannot be silent. Next's page convention means no real root is written
+    // this way today, which is why it went unnoticed; it resolves now.
+    const source =
+      'import { V2Hero } from "@/components/v2/v2-hero";\n' +
+      "const Page = () => (\n  <main>\n    <V2Hero />\n  </main>\n);\nexport default Page;\n";
+    const result = withInjectedSource([[FIXTURE_ROOT, source]], () => ({
+      keys: h1SitesOf(FIXTURE_ROOT).map((site) => site.key),
+      fallbacks: [...fallbacksSeen.keys()],
+    }));
+    expect(result.keys).toEqual(["components/v2/v2-hero.tsx#0"]);
+    expect(result.fallbacks).toEqual([]);
+  });
+
+  it("an unresolvable `export default` is RECORDED — never resolves-nor-records", () => {
+    // The other half of the same guarantee, and the one that matters: whatever the shape, a
+    // `default` the walk cannot follow must appear in `MODULE_SCOPE_FALLBACKS`. Neither-nor is the
+    // failure mode; it is what LOW 1 actually was.
+    const result = withInjectedSource(
+      [[FIXTURE_ROOT, "export default SomethingUndeclared;\n"]],
+      () => ({
+        keys: h1SitesOf(FIXTURE_ROOT).map((site) => site.key),
+        fallbacks: [...fallbacksSeen.keys()],
+      }),
+    );
+    expect(result.keys).toEqual([]);
+    expect(result.fallbacks).toEqual([
+      "app/[locale]/(site)/__scanner-fixture__/page.tsx — default",
+    ]);
+  });
+
   it("a RENDERED local helper in the root's own file still counts — positive control", () => {
     const helper = 'function UsedHeading() {\n  return <h1 className="zz-used">x</h1>;\n}';
     expect(fixtureSites(fixture("      <UsedHeading />", helper))).toEqual([
@@ -1864,7 +1968,7 @@ describe("the heading scanner itself", () => {
     ]) {
       expect(withInjectedSource([[target, `${prefix}\n${raw}`]], snapshot)).toEqual(before);
     }
-  });
+  }, 20000);
 
   it("isolates one declaration inside a multi-export module — H2's region holds no h1", () => {
     const typography = join(repoRoot, "components/patterns/typography.tsx");
@@ -1887,7 +1991,7 @@ describe("the heading scanner itself", () => {
       seen,
       `module-scope fallbacks the walk hit:\n${seen.map((f) => `  ${f}`).join("\n")}`,
     ).toEqual(MODULE_SCOPE_FALLBACKS.map(([file, name]) => `${file} — ${name}`));
-  });
+  }, 20000);
 
   it("walkPages() is UNCHANGED by the widening — PR1/PR2's counters keep their scope", () => {
     // The whole reason `walkRenderRoots()` is a second function. If these two ever read the same
