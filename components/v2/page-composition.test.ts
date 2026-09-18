@@ -888,6 +888,7 @@ const fallbacksSeen = new Map<string, string>();
 function resetScannerCaches(): void {
   sitesCache.clear();
   tierWriterCache.clear();
+  cardElementCache.clear();
   maskedCache.clear();
   bindingCache.clear();
   declarationCache.clear();
@@ -919,6 +920,7 @@ function withInjectedSource<T>(
       bindingCache.delete(file);
       declarationCache.delete(file);
       h1Cache.delete(file);
+      cardElementCache.delete(file);
     }
     sitesCache.clear();
     tierWriterCache.clear();
@@ -2855,4 +2857,1057 @@ describe("the PageHero tier switch", () => {
     expect(offenders).toHaveLength(1);
     expect(offenders[0]).toContain("app/[locale]/(site)/turkiye/page.tsx");
   }, 20000);
+});
+
+/* -------------------------------------------------------------------------------------------
+ * PR4 — the card surface. Two ratchets, a stat-grid counter, and the three populations PR4 is
+ * forbidden to touch, each pinned rather than merely described.
+ * ---------------------------------------------------------------------------------------- */
+
+/**
+ * THE SURFACE THIS SECTION SCANS — wider than `PAGE_ROOTS` on purpose, and a THIRD walker rather
+ * than a widening of either existing one.
+ *
+ * A card is not a page-level thing. 269 of the 490 elements counted below live under
+ * `components/`, 221 under `app/[locale]/`; `components/v2/v2-member-hub.tsx` alone holds 29 and
+ * `components/v2/v2-tool-educational-content.tsx` 27, neither of them reachable by a `page.tsx`
+ * scan. Widening `walkPages()` or `walkRenderRoots()` to reach them would move PR1/PR2/PR3's
+ * pinned counters, which is the failure this file exists to prevent — so this is its own
+ * function and the two above are untouched.
+ *
+ * Excluded, and each exclusion is a number a later task can check:
+ *
+ *   - `components/showcase/**` — specimen markup answering for product markup. Including it and
+ *     `design-system` together reads 492 / 79 files / 256 spellings against this section's
+ *     490 / 77 / 254.
+ *   - `app/[locale]/design-system/**` — the same argument, internal tooling. Adds nothing today.
+ *   - `*.test.tsx` and `*.generated.*` — `walk()` already drops the first; there is no generated
+ *     `.tsx` under either root today, and the filter is here so the first one cannot enter.
+ *
+ * `.tsx` only: a `.ts` file cannot hold JSX, so a `.ts` scan would read class strings out of
+ * helpers and constants and credit them to no element at all.
+ */
+const CARD_SCAN_ROOTS = ["app/[locale]", "components"] as const;
+
+const CARD_SCAN_EXCLUSIONS = ["components/showcase/", "app/[locale]/design-system/"] as const;
+
+function walkCardSurface(): string[] {
+  const excluded = CARD_SCAN_EXCLUSIONS.map((rel) => join(repoRoot, rel));
+  return CARD_SCAN_ROOTS.flatMap((rel) => walk(join(repoRoot, rel)))
+    .filter((path) => !path.includes(".generated."))
+    .filter((path) => !excluded.some((prefix) => path.startsWith(prefix)))
+    .sort();
+}
+
+/**
+ * ONE JSX ELEMENT, as this scanner sees it.
+ *
+ * `spelling` is `null` for an element with no `className` attribute and
+ * {@link COMPUTED_CLASSNAME} for one whose attribute holds no string literal at all — the same
+ * two markers PR3's heading scanner keeps apart, for the same reason: "no classes" and "classes
+ * this scanner cannot read" are different facts and neither is a card.
+ *
+ * `children` holds the element indices nested in this element's CHILDREN. Elements written
+ * inside an attribute expression are NOT children — they are recorded with `inProp: true` and
+ * the enclosing element as `parent`, because `<V2TurkeyMapExplorer regionsSection={<div …/>}>`
+ * passes a sibling panel, not a child of the explorer. They still count as cards (see the
+ * attribute-expression note in the SCOPE paragraph); they must not count as grid tiles.
+ */
+type ScannedElement = {
+  readonly tag: string;
+  readonly spelling: string | null;
+  readonly parent: number | null;
+  readonly children: number[];
+  readonly inProp: boolean;
+};
+
+/**
+ * A JSX scanner that BALANCES rather than matches.
+ *
+ * Three counting errors in this programme were the same mistake wearing different clothes: a
+ * `className` pattern that only matched double-quoted literals, a substring test that fired on a
+ * Tailwind `group/x` modifier name, and a docblock read as if it were markup. A regex cannot
+ * avoid the first (all three className forms below are live on this surface), and a naive
+ * recursion cannot avoid mis-attributing a nested element's classes to its parent. So:
+ *
+ *   1. Comments are gone before this runs — the caller passes {@link readSource} output.
+ *   2. Outside a tag, string, template and regex literals are SKIPPED whole, so `<div` inside a
+ *      string is prose and a backtick inside a regex (`v2-rich-prose.tsx` has one) does not flip
+ *      the scanner into template mode.
+ *   3. `<` opens an element only when the next character is a letter (or `>`, a fragment) AND the
+ *      previous character is not an identifier character, `)` or `]` — `useState<Foo>` and
+ *      `Map<string, X>` are type arguments, not elements. Without this rule the type argument
+ *      pushes a node nothing ever closes and every element after it lands at the wrong depth.
+ *   4. The attribute header is read with string-, template- and brace-awareness to the `>` that
+ *      actually closes it, and `className` is captured ONLY at header top level: a `className`
+ *      inside a braced prop belongs to the nested element, not to the element holding the prop.
+ *   5. The scan then re-enters the header as code, so an element passed as a prop is found.
+ *
+ * Verified against the live tree rather than asserted: of the 5225 `className=` occurrences in
+ * the comment-stripped surface, 5216 attach to an element and the remaining 9 are
+ * `className = ""` destructuring defaults, pinned by file in "every className attaches to an
+ * element" below. Nothing is silently dropped.
+ */
+function scanJsx(source: string): ScannedElement[] {
+  const elements: ScannedElement[] = [];
+  const REGEX_OPENERS = new Set("(,=:[!&|?;{+-*%^~".split(""));
+
+  const skipLiteral = (i: number): number => {
+    const quote = source[i]!;
+    let j = i + 1;
+    while (j < source.length) {
+      const inner = source[j]!;
+      if (inner === "\\") {
+        j += 2;
+        continue;
+      }
+      if (quote === "`" && inner === "$" && source[j + 1] === "{") {
+        j = skipBraced(j + 1);
+        continue;
+      }
+      j += 1;
+      if (inner === quote) break;
+    }
+    return j;
+  };
+
+  const skipBraced = (i: number): number => {
+    let depth = 0;
+    let j = i;
+    while (j < source.length) {
+      const inner = source[j]!;
+      if (inner === '"' || inner === "'" || inner === "`") {
+        j = skipLiteral(j);
+        continue;
+      }
+      if (inner === "{") depth += 1;
+      else if (inner === "}") {
+        depth -= 1;
+        if (depth === 0) return j + 1;
+      }
+      j += 1;
+    }
+    return source.length;
+  };
+
+  const skipRegex = (i: number): number => {
+    let j = i + 1;
+    let inClass = false;
+    while (j < source.length) {
+      const inner = source[j]!;
+      j += 1;
+      if (inner === "\\") {
+        j += 1;
+        continue;
+      }
+      if (inner === "\n") break;
+      if (inClass) {
+        if (inner === "]") inClass = false;
+        continue;
+      }
+      if (inner === "[") inClass = true;
+      else if (inner === "/") break;
+    }
+    return j;
+  };
+
+  /** The `className` of the tag whose name ends at `i`, plus where its header ends. */
+  const readHeader = (
+    i: number,
+  ): { spelling: string | null; end: number; selfClosing: boolean } => {
+    let spelling: string | null = null;
+    let j = i;
+    while (j < source.length) {
+      const ch = source[j]!;
+      if (ch === '"' || ch === "'" || ch === "`") {
+        j = skipLiteral(j);
+        continue;
+      }
+      if (ch === "{") {
+        j = skipBraced(j);
+        continue;
+      }
+      if (ch === ">") return { spelling, end: j + 1, selfClosing: source[j - 1] === "/" };
+      if (source.startsWith("className", j) && !/[A-Za-z0-9_$]/.test(source[j - 1] ?? " ")) {
+        let k = j + "className".length;
+        while (k < source.length && /\s/.test(source[k]!)) k += 1;
+        if (source[k] === "=") {
+          k += 1;
+          while (k < source.length && /\s/.test(source[k]!)) k += 1;
+          const opener = source[k];
+          if (opener === '"' || opener === "'") {
+            const end = skipLiteral(k);
+            spelling = source.slice(k + 1, end - 1);
+            j = end;
+            continue;
+          }
+          if (opener === "{") {
+            const end = skipBraced(k);
+            const literals = literalsOf(source.slice(k + 1, end - 1));
+            spelling = literals.length > 0 ? literals.join(" ") : COMPUTED_CLASSNAME;
+            j = end;
+            continue;
+          }
+        }
+        j = k;
+        continue;
+      }
+      j += 1;
+    }
+    return { spelling, end: source.length, selfClosing: false };
+  };
+
+  /** Scans `[i, end)` as JSX children of `parent`; returns where it stopped. */
+  const scanRange = (
+    i: number,
+    end: number,
+    parent: number | null,
+    inProp: boolean,
+    depth: number,
+  ): number => {
+    let previous = "";
+    while (i < end) {
+      const ch = source[i]!;
+      if (ch === '"' || ch === "'" || ch === "`") {
+        i = skipLiteral(i);
+        previous = ch;
+        continue;
+      }
+      if (
+        ch === "/" &&
+        source[i + 1] !== "/" &&
+        source[i + 1] !== "*" &&
+        REGEX_OPENERS.has(previous)
+      ) {
+        i = skipRegex(i);
+        previous = "/";
+        continue;
+      }
+      if (ch === "<" && source[i + 1] === "/") {
+        if (depth > 0) return i;
+        while (i < end && source[i] !== ">") i += 1;
+        i += 1;
+        continue;
+      }
+      if (ch === "<" && opensElement(source, i)) {
+        const fragment = source[i + 1] === ">";
+        let nameEnd = i + 1;
+        while (!fragment && nameEnd < source.length && /[A-Za-z0-9._:-]/.test(source[nameEnd]!)) {
+          nameEnd += 1;
+        }
+        const tag = fragment ? "" : source.slice(i + 1, nameEnd);
+        const header = readHeader(nameEnd);
+        const index = elements.length;
+        elements.push({ tag, spelling: header.spelling, parent, children: [], inProp });
+        if (parent !== null && !inProp) elements[parent]!.children.push(index);
+        scanRange(nameEnd, header.end, index, true, depth + 1);
+        if (header.selfClosing) {
+          i = header.end;
+          previous = ">";
+          continue;
+        }
+        let k = scanRange(header.end, end, index, false, depth + 1);
+        if (source[k] === "<" && source[k + 1] === "/") {
+          let m = k + 2;
+          while (m < source.length && /\s/.test(source[m]!)) m += 1;
+          let n = m;
+          while (n < source.length && /[A-Za-z0-9._:-]/.test(source[n]!)) n += 1;
+          if (source.slice(m, n) === tag) {
+            while (n < source.length && source[n] !== ">") n += 1;
+            k = n + 1;
+          } else if (depth > 0) {
+            return k;
+          } else {
+            while (k < source.length && source[k] !== ">") k += 1;
+            k += 1;
+          }
+        }
+        i = k;
+        previous = ">";
+        continue;
+      }
+      if (!/\s/.test(ch)) previous = ch;
+      i += 1;
+    }
+    return i;
+  };
+
+  scanRange(0, source.length, null, false, 0);
+  return elements;
+}
+
+/** Whether the `<` at `i` opens a JSX element rather than a type-argument list. */
+function opensElement(source: string, i: number): boolean {
+  const next = source[i + 1];
+  if (next === undefined) return false;
+  if (next !== ">" && !/[A-Za-z]/.test(next)) return false;
+  const previous = source[i - 1];
+  return previous === undefined || !/[A-Za-z0-9_$)\]]/.test(previous);
+}
+
+/**
+ * Every string/template literal's CONTENTS inside an attribute expression.
+ *
+ * A template hole becomes the literal marker `${…}` rather than disappearing, so a computed class
+ * reads as its own obviously-unconverged spelling instead of welding its neighbours together —
+ * `deprem/fay-hatlari/page.tsx` writes `` `rounded-3xl border ${fault.borderClass} bg-card …` ``
+ * and must not be credited with a `border-border` it may not have. Same rule
+ * {@link classNameLiteralsIn} follows one section up; this one is separate only because it has to
+ * balance the hole rather than stop at the first backtick inside it.
+ */
+function literalsOf(expression: string): string[] {
+  const literals: string[] = [];
+  let i = 0;
+  while (i < expression.length) {
+    const ch = expression[i]!;
+    if (ch !== '"' && ch !== "'" && ch !== "`") {
+      i += 1;
+      continue;
+    }
+    let j = i + 1;
+    let buffer = "";
+    while (j < expression.length) {
+      const inner = expression[j]!;
+      if (inner === "\\") {
+        buffer += inner + (expression[j + 1] ?? "");
+        j += 2;
+        continue;
+      }
+      if (ch === "`" && inner === "$" && expression[j + 1] === "{") {
+        let depth = 0;
+        let k = j + 1;
+        while (k < expression.length) {
+          const c = expression[k]!;
+          if (c === "{") depth += 1;
+          else if (c === "}") {
+            depth -= 1;
+            if (depth === 0) break;
+          }
+          k += 1;
+        }
+        buffer += "${…}";
+        j = k + 1;
+        continue;
+      }
+      if (inner === ch) break;
+      buffer += inner;
+      j += 1;
+    }
+    literals.push(buffer);
+    i = j + 1;
+  }
+  return literals;
+}
+
+const cardElementCache = new Map<string, ScannedElement[]>();
+
+function jsxElementsOf(file: string): ScannedElement[] {
+  const hit = cardElementCache.get(file);
+  if (hit) return hit;
+  const scanned = scanJsx(readSource(file));
+  cardElementCache.set(file, scanned);
+  return scanned;
+}
+
+/**
+ * ONE TAILWIND TOKEN, reduced to what it names.
+ *
+ * Variant prefixes (`sm:`, `dark:`, `hover:`) and an `/opacity` suffix are stripped, then the
+ * comparison is EQUALITY on the reduced token, never a substring test. Both halves are
+ * load-bearing:
+ *
+ *   - equality is what stops the `group/btn` family of false positives that has already produced
+ *     one wrong figure in this programme — `bg-card-foreground` contains `bg-card` and is a text
+ *     colour, not a surface;
+ *   - stripping `/NN` is what makes `bg-card/85` and `border-border/80` count, which they must:
+ *     `dunya/[slug]/page.tsx`'s 12 backdrop panels (`bg-card/85`) and
+ *     `v2-tool-educational-content.tsx`'s 12 panels (`border-border/80`) are the same surface at
+ *     reduced opacity. Requiring a bare token instead reads 406 / 73 files, so 84 of the 490
+ *     hold their surface or their edge at reduced opacity and nothing else.
+ */
+function baseToken(token: string): string {
+  const withoutVariants = token.slice(token.lastIndexOf(":") + 1).replace(/^[-!]/, "");
+  const slash = withoutVariants.indexOf("/");
+  return slash === -1 ? withoutVariants : withoutVariants.slice(0, slash);
+}
+
+function tokensOf(spelling: string | null): string[] {
+  if (spelling === null || spelling === COMPUTED_CLASSNAME) return [];
+  return spelling.split(/\s+/).filter(Boolean).map(baseToken);
+}
+
+/** The seven exports of `components/ui/card.tsx`. An element wearing one of these tags is the
+ * primitive doing its job, never a hand-drawn card, whatever its className says. */
+const CARD_PRIMITIVE_TAGS = new Set([
+  "Card",
+  "CardHeader",
+  "CardFooter",
+  "CardTitle",
+  "CardAction",
+  "CardDescription",
+  "CardContent",
+]);
+
+const CARD_ROUNDING = new Set(["rounded-xl", "rounded-2xl", "rounded-3xl"]);
+
+type CardKind = "card" | "well";
+
+function cardKind(element: ScannedElement): CardKind | null {
+  if (CARD_PRIMITIVE_TAGS.has(element.tag)) return null;
+  const tokens = tokensOf(element.spelling);
+  if (!tokens.some((token) => CARD_ROUNDING.has(token))) return null;
+  const surface = tokens.includes("bg-card");
+  const edge = tokens.includes("border-border");
+  if (!surface && !edge) return null;
+  return surface ? "card" : "well";
+}
+
+function handDrawnByFile(): Map<string, { cards: number; wells: number }> {
+  const byFile = new Map<string, { cards: number; wells: number }>();
+  for (const file of walkCardSurface()) {
+    let cards = 0;
+    let wells = 0;
+    for (const element of jsxElementsOf(file)) {
+      const kind = cardKind(element);
+      if (kind === "card") cards += 1;
+      else if (kind === "well") wells += 1;
+    }
+    if (cards + wells > 0) byFile.set(file, { cards, wells });
+  }
+  return byFile;
+}
+
+function handDrawnTotals(): { cards: number; wells: number; files: number } {
+  const byFile = handDrawnByFile();
+  let cards = 0;
+  let wells = 0;
+  for (const counts of byFile.values()) {
+    cards += counts.cards;
+    wells += counts.wells;
+  }
+  return { cards, wells, files: byFile.size };
+}
+
+function handDrawnReport(pick: (counts: { cards: number; wells: number }) => number): string {
+  return [...handDrawnByFile()]
+    .map(([file, counts]) => [label(file), pick(counts)] as const)
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([file, n]) => `  ${n}x ${file}`)
+    .join("\n");
+}
+
+/**
+ * WHAT A CARD IS, BEFORE ANYTHING IS COUNTED.
+ *
+ * A **hand-drawn card** is a JSX element on the surface {@link walkCardSurface} scans whose tag is
+ * not one of `components/ui/card.tsx`'s seven exports, and whose readable `className` carries
+ *
+ *   a rounding token — `rounded-xl` | `rounded-2xl` | `rounded-3xl` — together with
+ *   a card surface (`bg-card`, any opacity) and/or a `border-border` edge (any opacity).
+ *
+ * The counting unit is ONE ELEMENT, never one class string and never one `cn()` fragment. An
+ * element written `cn("rounded-2xl bg-card", condition && "border-border")` is one card whose
+ * spelling is the ordered join of its literal fragments.
+ *
+ * 490 elements across 77 files (254 distinct spellings) satisfy that predicate today, and that
+ * single number hides two different design problems, so it is pinned as two:
+ *
+ * | population                                                      | n       |
+ * | --------------------------------------------------------------- | ------- |
+ * | {@link HAND_DRAWN_CARDS} — a real `bg-card` surface              | **308** |
+ * | {@link HAND_DRAWN_WELLS} — no `bg-card`, qualifying via the edge | **182** |
+ *
+ * Of the 182: 124 are `bg-muted*`, 33 `bg-gradient-to-b`, 7 carry no background token at all, and
+ * 18 carry something else (5 `bg-background`, 5 other gradient directions, 1 `bg-popover`, 7
+ * arbitrary map colours such as `bg-[var(--map-sea,#dbe7e8)]`). They read as insets and wells,
+ * not as cards, and a `Card` variant sized for them would be the wrong variant.
+ *
+ * **The 182 are counted, not excluded, and that is the whole point of the split.** Dropping them
+ * would let PR4 report "308 hand-drawn cards, all migrated" while 182 elements still hand-draw a
+ * panel — duplication hidden behind a definition, which is exactly the defect PR1 shipped and PR3
+ * spent four review rounds removing. Two ratchets keep both visible; one number would not.
+ *
+ * ## WHAT THESE TWO NUMBERS ARE, AND WHAT THEY ARE NOT
+ *
+ * They are **ratchets that can only fall**. Neither will ever read zero, and neither is trying
+ * to: 186 of the 254 spellings occur exactly once, and a one-off panel written inline is not a
+ * defect. What is a defect is 21 spellings carrying 197 of the 490 occurrences — rows 3, 6, 8 and
+ * 15 of the spelling table are ONE panel at four `space-y-*` settings (37 occurrences), and rows
+ * 1 and 13 are ONE tile at two paddings (58). That is what a variant is for, and that is what
+ * these numbers are here to make visible when it lands.
+ *
+ * So: lower is progress, a rise is a regression that has to be argued for, and "0" is not the
+ * target. A counter whose name implies an end state it cannot reach is the defect PR3 spent four
+ * review rounds removing; these two are named for what they hold, not for a finish line.
+ *
+ * ## THE THREE POPULATIONS PR4 MUST NOT TOUCH
+ *
+ * All three are inside the 490 — they are cards by the predicate — and each is pinned below by
+ * an exact list rather than described, so a task that migrates one goes red instead of being
+ * congratulated for a falling number:
+ *
+ *   - {@link CARD_SHAPED_PRIMITIVES} (8) — design-system primitives wearing card chrome.
+ *   - {@link MAP_VIEWPORTS} (11) — a rounded, bordered box around an `aspect-[…]` canvas.
+ *   - {@link INTERACTIVE_CARD_CARRIERS} (38) — `<Link>` ×28, `<a>` ×5, `<button>` ×5.
+ *
+ * ## SCOPE — what this scanner cannot see
+ *
+ * Every claim above is a claim about SOURCE TEXT read by {@link scanJsx}, never about a rendered
+ * DOM or a computed style. Specifically:
+ *
+ *   1. **A className assembled out of identifiers is invisible.** Only string and template
+ *      literals written inside the attribute are read. `className={CARD_SHELL}`, where
+ *      `CARD_SHELL` is a module constant holding the card tokens, reads as
+ *      `(className with no string literal)` and counts as nothing. Zero elements in the tree do
+ *      this today — every one of the 490 writes its tokens inline — which is precisely why the
+ *      first one would drop out silently.
+ *   2. **A ternary className is credited with BOTH branches.**
+ *      `components/v2/v2-register-card.tsx` writes
+ *      `className={inModal ? "w-full" : "relative w-full rounded-3xl … bg-card/95 …"}`; the
+ *      scanner joins both literals, so that element counts as one card even in the render where
+ *      it is a bare `w-full` wrapper. It is the only such element on the surface today, and it
+ *      is counted once, not twice.
+ *   3. **`cva()` bases are not counted.** `components/ui/{input,select,tabs,dialog,custom-select}`
+ *      carry these exact class strings inside `cva()` calls, which are not a JSX `className`, so
+ *      re-spelling a primitive's base moves neither counter. The 8 primitives below are counted
+ *      at their USE sites only.
+ *   4. **The `<Card*>` tag exclusion is inert today.** 93 `<Card*>` elements exist across 9
+ *      importers and NONE of them writes a rounding token with a card surface, so excluding them
+ *      removes nothing right now. It is here for PR4's own output: a `<Card className="rounded-2xl
+ *      bg-card …">` override must not re-enter the count it was supposed to reduce.
+ *   5. **The token list is closed.** `rounded-lg` is not a card rounding (admitting it reads
+ *      496 / 79 files), and `bg-muted`, `bg-background` and `bg-popover` are not card surfaces
+ *      unless a `border-border` edge is also present.
+ *   6. **No line numbers, anywhere.** {@link readSource} collapses each comment to a single
+ *      space, so an index into it is not a source line — the mistake that reported one strip at
+ *      126 when it is at 141 during the measurement, boarded as T-043. Every failure message
+ *      below names FILES.
+ *   7. **Outside the two roots nothing is seen at all.** A card written in `components/showcase`,
+ *      `app/[locale]/design-system`, `app/global-error.tsx` or `app/not-found.tsx` moves nothing.
+ *
+ * MEASURED 2026-09-18 against the tree at `b7649a6`, not predicted, and identical at `a2b3d61`
+ * (`dev` before PR3): PR3 changed 29 files under `app/` and `components/` — the hero block and 34
+ * new lines in `v2-game-screen.tsx` among them — and moved no figure in this section. Re-run over
+ * every tracked `.tsx` in the repo rather than these two roots: 492 / 79, the two extras being
+ * `app/[locale]/design-system/page.tsx` and `components/showcase/specimens/harita.tsx`. No
+ * card-shaped class string lives anywhere else.
+ *
+ * MUTATION-CHECKED 2026-09-18, each counter at the value it is pinned at, each reverted:
+ *
+ *   - one `rounded-2xl bg-card border border-border` probe added to `hakkimizda/page.tsx` — RED,
+ *     `expected 309 to be 308`, the message naming `2x app/[locale]/(site)/hakkimizda/page.tsx`
+ *     among the 70 files it lists;
+ *   - the same probe spelled `bg-muted/30` instead — RED, `expected 183 to be 182`, same file
+ *     named, and `HAND_DRAWN_CARDS` unmoved, which is the split doing its job;
+ *   - deleting the card the explorer takes as a prop (`turkiye/page.tsx`) — RED on the
+ *     attribute-expression control AND `expected 181 to be 182`: that card is really inside the
+ *     490, and a children-only walk would have reported a falling number for a card that moved;
+ *   - `token.includes("bg-card")` in place of the equality test — RED on the substring control
+ *     ONLY, every counter unmoved. The `group/x` trap is LATENT on this tree, not absent: no
+ *     element pairs a rounding token with `bg-card-foreground` today, so that control is the
+ *     whole defence and deleting it would cost nothing visible until it cost a figure.
+ *   - `CARD_PRIMITIVE_TAGS` neutered — RED on its control only, every counter unmoved, which is
+ *     SCOPE note 4 measured rather than asserted.
+ */
+export const HAND_DRAWN_CARDS = 308;
+
+export const HAND_DRAWN_WELLS = 182;
+
+describe("the card scanner itself", () => {
+  it("scanned a real, non-trivial surface — anti-vacuity", () => {
+    const files = walkCardSurface();
+    expect(files.length).toBeGreaterThan(140);
+    expect(files.map(label)).toContain("components/v2/v2-member-hub.tsx");
+    expect(files.map(label)).toContain("app/[locale]/(site)/turkiye/page.tsx");
+    expect(files.some((file) => label(file).startsWith("components/showcase/"))).toBe(false);
+  });
+
+  /**
+   * THE RECONCILIATION. Every `className=` in the scanned surface is either attached to an
+   * element or is one of nine `className = ""` destructuring defaults — pinned by file, so a
+   * parser regression that starts losing markup fails HERE, with the file named, rather than
+   * showing up as a quietly falling card count that the next task reads as progress.
+   *
+   * MUTATION-CHECKED 2026-09-18: a tenth `{ className = "" }` default added to
+   * `components/patterns/theme-pair.tsx` — RED, the message listing
+   * `1x components/patterns/theme-pair.tsx` at the head of the nine. Reverted.
+   */
+  it("every className attaches to an element, bar the nine destructuring defaults", () => {
+    const unattached = new Map<string, number>();
+    for (const file of walkCardSurface()) {
+      const source = readSource(file);
+      const written = [...source.matchAll(/className\s*=/g)].length;
+      const attached = jsxElementsOf(file).filter((el) => el.spelling !== null).length;
+      if (written !== attached) unattached.set(label(file), written - attached);
+    }
+    const rows = [...unattached].sort((a, b) => a[0].localeCompare(b[0]));
+    expect(
+      rows,
+      `className= occurrences the scanner did not attach to an element:\n${rows
+        .map(([file, n]) => `  ${n}x ${file}`)
+        .join("\n")}`,
+    ).toEqual([
+      ["components/ui/accordion.tsx", 4],
+      ["components/v2/v2-favorite-button.tsx", 1],
+      ["components/v2/v2-leaderboard-modal.tsx", 1],
+      ["components/v2/v2-marine-map-explorer.tsx", 1],
+      ["components/v2/v2-rich-prose.tsx", 1],
+      ["components/v2/v2-sources-section.tsx", 1],
+    ]);
+  });
+
+  it("reads a double-quoted className — real file, app/[locale]/(site)/araclar/page.tsx", () => {
+    const file = join(repoRoot, "app/[locale]/(site)/araclar/page.tsx");
+    const spellings = jsxElementsOf(file).map((el) => el.spelling);
+    expect(spellings).toContain("p-4 rounded-2xl bg-card border border-border shadow-2xs");
+  });
+
+  it("reads a cn() className — real file, components/patterns/empty-state.tsx", () => {
+    const file = join(repoRoot, "components/patterns/empty-state.tsx");
+    const card = jsxElementsOf(file).find((el) => cardKind(el) !== null);
+    expect(card?.spelling).toContain("rounded-2xl");
+    expect(card?.spelling).toContain("border-border");
+  });
+
+  it("reads a template-literal className, hole and all — real file, deprem/fay-hatlari", () => {
+    // The `${…}` marker is the point: the element is credited with what it literally writes and
+    // never with whatever `fault.borderClass` may interpolate.
+    const file = join(repoRoot, "app/[locale]/(site)/deprem/fay-hatlari/page.tsx");
+    const spellings = jsxElementsOf(file).map((el) => el.spelling);
+    expect(spellings).toContain("rounded-3xl border ${…} bg-card p-6 sm:p-10 shadow-lg space-y-8");
+  });
+
+  it("scans attribute expressions — the card turkiye/page.tsx passes as a prop", () => {
+    // `<V2TurkeyMapExplorer regionsSection={<div className="rounded-3xl … bg-gradient-to-r …">}`.
+    // A children-only walk misses it entirely, and would report a FALLING card count while cards
+    // moved into props. It is a card; it is not a child of the explorer.
+    const file = join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx");
+    const elements = jsxElementsOf(file);
+    const passed = elements.filter((el) => el.inProp && cardKind(el) !== null);
+    expect(passed).toHaveLength(1);
+    expect(passed[0]!.spelling).toContain("bg-gradient-to-r");
+    const explorer = elements.find((el) => el.tag === "V2TurkeyMapExplorer");
+    expect(explorer).toBeDefined();
+    expect(explorer!.children).toHaveLength(0);
+  });
+
+  it("balances nested cn() calls rather than matching them", () => {
+    const [element] = scanJsx(
+      '<div className={cn("rounded-2xl", cn("bg-card", active && "border-border"))}>x</div>',
+    );
+    expect(element!.spelling).toBe("rounded-2xl bg-card border-border");
+    expect(cardKind(element!)).toBe("card");
+  });
+
+  it("a `>` inside a brace expression does not end the tag early", () => {
+    const [element] = scanJsx('<div onClick={() => go(a > b)} className="rounded-2xl bg-card" />');
+    expect(element!.spelling).toBe("rounded-2xl bg-card");
+  });
+
+  it("a className inside a braced prop belongs to the nested element, not its holder", () => {
+    const elements = scanJsx(
+      '<Widget slot={<div className="rounded-2xl bg-card" />} className="p-4">x</Widget>',
+    );
+    expect(elements[0]!.tag).toBe("Widget");
+    expect(elements[0]!.spelling).toBe("p-4");
+    expect(elements[1]!.spelling).toBe("rounded-2xl bg-card");
+  });
+
+  it("matches whole tokens, never substrings — the group/x trap, one door over", () => {
+    // `bg-card-foreground` CONTAINS `bg-card` and is a text colour. A substring test counts it;
+    // this programme has already shipped one wrong figure to a `group/btn` of exactly this shape.
+    expect(cardKind(scanJsx('<div className="rounded-2xl bg-card-foreground" />')[0]!)).toBe(null);
+    expect(cardKind(scanJsx('<div className="rounded-2xl group/card bg-muted" />')[0]!)).toBe(null);
+    expect(cardKind(scanJsx('<div className="rounded-2xl bg-card/85" />')[0]!)).toBe("card");
+    expect(cardKind(scanJsx('<div className="sm:rounded-2xl dark:border-border/80" />')[0]!)).toBe(
+      "well",
+    );
+  });
+
+  it("separates the two populations on the surface token alone", () => {
+    expect(cardKind(scanJsx('<div className="rounded-2xl bg-card border-border" />')[0]!)).toBe(
+      "card",
+    );
+    expect(cardKind(scanJsx('<div className="rounded-2xl bg-muted/30 border-border" />')[0]!)).toBe(
+      "well",
+    );
+    expect(cardKind(scanJsx('<div className="rounded-2xl bg-muted/30" />')[0]!)).toBe(null);
+    expect(cardKind(scanJsx('<div className="rounded-lg bg-card border-border" />')[0]!)).toBe(
+      null,
+    );
+  });
+
+  it("a <Card> from the primitive is never a hand-drawn card, whatever it wears", () => {
+    expect(cardKind(scanJsx('<Card className="rounded-2xl bg-card border-border" />')[0]!)).toBe(
+      null,
+    );
+    expect(cardKind(scanJsx('<CardContent className="rounded-2xl bg-card" />')[0]!)).toBe(null);
+  });
+
+  it("a docblock quoting a card className does not count — comment stripping applied", () => {
+    const source = stripComments(
+      '/** Panels are `rounded-2xl bg-card border border-border`. */\n<div className="p-4" />',
+    );
+    const elements = scanJsx(source);
+    expect(elements).toHaveLength(1);
+    expect(elements[0]!.spelling).toBe("p-4");
+  });
+
+  it("a card inside a string literal is prose, not markup", () => {
+    const elements = scanJsx(
+      'const USAGE = "<div className=\\"rounded-2xl bg-card border-border\\" />";\n<p className="x" />',
+    );
+    expect(elements.map((el) => el.tag)).toEqual(["p"]);
+  });
+
+  it("a type-argument list is not an element — <Record …> does not open a node", () => {
+    const elements = scanJsx(
+      'const m = new Map<string, Foo>();\nreturn <div className="rounded-2xl bg-card">x</div>;',
+    );
+    expect(elements.map((el) => el.tag)).toEqual(["div"]);
+  });
+});
+
+describe("hand-drawn card surfaces are counted, split by what they actually draw", () => {
+  it("the number of elements with a bg-card surface is exactly the recorded number", () => {
+    const { cards } = handDrawnTotals();
+    expect(
+      cards,
+      `hand-drawn card surfaces (rounded + bg-card), by file:\n${handDrawnReport((c) => c.cards)}`,
+    ).toBe(HAND_DRAWN_CARDS);
+  });
+
+  it("the number of elements qualifying only through border-border is exactly the recorded number", () => {
+    const { wells } = handDrawnTotals();
+    expect(
+      wells,
+      `hand-drawn wells (rounded + border-border, no bg-card), by file:\n${handDrawnReport(
+        (c) => c.wells,
+      )}`,
+    ).toBe(HAND_DRAWN_WELLS);
+  });
+
+  it("the two populations are disjoint and cover the whole predicate", () => {
+    // The split is the claim; this is what stops it drifting into two overlapping counters.
+    let strict = 0;
+    for (const file of walkCardSurface()) {
+      for (const element of jsxElementsOf(file)) {
+        if (cardKind(element) !== null) strict += 1;
+      }
+    }
+    expect(strict).toBe(HAND_DRAWN_CARDS + HAND_DRAWN_WELLS);
+    expect(handDrawnTotals().files).toBe(77);
+  });
+
+  it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
+    // Asserted RELATIVELY, on purpose: the host file's own contents may change freely without
+    // touching this control, and the control still proves the whole path from walk to total.
+    const file = join(repoRoot, "components/patterns/page-container.tsx");
+    const before = handDrawnTotals();
+    const injected = `${readFileSync(file, "utf8")}\nconst Probe = () => <div className="rounded-2xl bg-card border border-border" />;\n`;
+    const after = withInjectedSource([[file, injected]], () => handDrawnTotals());
+    expect(after.cards).toBe(before.cards + 1);
+    expect(after.wells).toBe(before.wells);
+    expect(handDrawnTotals().cards).toBe(before.cards);
+  });
+});
+
+/**
+ * Design-system primitives wearing card chrome. They are cards by the predicate and they are NOT
+ * cards: `components/ui/{input,select,tabs,dialog,custom-select}.tsx` carry these same strings in
+ * their `cva()` bases, so converting a use site to a `Card` variant would fight the primitive
+ * that owns the spelling. PR4 must not touch them.
+ *
+ * Pinned by `[file, tag]` so the list cannot rot into prose. Line numbers are deliberately absent
+ * — see SCOPE note 6.
+ *
+ * MUTATION-CHECKED 2026-09-18: `v2-books-hub.tsx`'s search `<input>` re-spelled `rounded-xl` →
+ * `rounded-lg` — RED, `expected [ …(7) ] to deeply equal [ …(8) ]`, the message listing the seven
+ * survivors with `components/v2/v2-books-hub.tsx <input>` gone from it. Reverted.
+ */
+const CARD_SHAPED_PRIMITIVES: ReadonlyArray<readonly [string, string]> = [
+  ["components/v2/v2-auth-dialog.tsx", "DialogContent"],
+  ["components/v2/v2-books-hub.tsx", "input"],
+  ["components/v2/v2-earthquake-explorer.tsx", "Input"],
+  ["components/v2/v2-header.tsx", "SheetTrigger"],
+  ["components/v2/v2-hero.tsx", "Button"],
+  ["components/v2/v2-marine-map-explorer.tsx", "Input"],
+  ["components/v2/v2-register-card.tsx", "select"],
+  ["components/v2/v2-register-card.tsx", "select"],
+];
+
+/**
+ * Map viewports: a rounded, bordered box around an `aspect-[…]` canvas is a VIEWPORT, not a
+ * surface, and several set their own background (`bg-[var(--map-sea,#dbe7e8)]`, `bg-[#0d1b2a]`,
+ * `bg-[#dbe8ee]`) that a `Card` variant would fight. Two of those backgrounds are raw hex on an
+ * element this predicate calls a card — `v2-game-screen.tsx` and `v2-world-map-explorer.tsx` —
+ * which is a `docs/design.md` violation in its own right, recorded here rather than fixed by a
+ * counting task.
+ *
+ * Identified by SHAPE (an `aspect-*` token on the element itself), not by a hand-written list, so
+ * a twelfth viewport enters the count rather than hiding behind an exemption.
+ *
+ * MUTATION-CHECKED 2026-09-18: `v2-region-thumb.tsx`'s `aspect-[2.33/1]` replaced with `h-40` —
+ * RED, `expected [ …(10) ] to have a length of 11 but got 10`, the ten survivors listed by file.
+ * Reverted.
+ */
+const MAP_VIEWPORTS = 11;
+
+/**
+ * Interactive carriers. Card-shaped, but they need focus-visible, hover and `group` behaviour a
+ * static panel must not carry, so they are out of PR4's scope; if they ever get a variant it is a
+ * distinct `interactive` one, and it stays `<Link className={…}>` because `Button` has no
+ * `asChild` in this repo (`CLAUDE.md`).
+ *
+ * MUTATION-CHECKED 2026-09-18: one of `v2-related-tools.tsx`'s two `<Link>` tiles re-spelled
+ * `rounded-2xl` → `rounded-lg` — RED, `expected [ [ 'Link', 27 ], [ 'a', 5 ], …(1) ] to deeply
+ * equal [ [ 'Link', 28 ], [ 'a', 5 ], …(1) ]`, the message listing every carrier by file.
+ * Reverted.
+ */
+const INTERACTIVE_CARD_CARRIERS: ReadonlyArray<readonly [string, number]> = [
+  ["Link", 28],
+  ["a", 5],
+  ["button", 5],
+];
+
+function cardsMatching(predicate: (element: ScannedElement) => boolean): string[] {
+  const hits: string[] = [];
+  for (const file of walkCardSurface()) {
+    for (const element of jsxElementsOf(file)) {
+      if (cardKind(element) !== null && predicate(element))
+        hits.push(`${label(file)} <${element.tag}>`);
+    }
+  }
+  return hits.sort();
+}
+
+describe("the three card-shaped populations PR4 must not touch", () => {
+  it("the design-system primitives are exactly the recorded eight", () => {
+    const tags = new Set(CARD_SHAPED_PRIMITIVES.map(([, tag]) => tag));
+    const found = cardsMatching((element) => tags.has(element.tag));
+    expect(
+      found,
+      `primitives wearing card chrome:\n${found.map((row) => `  ${row}`).join("\n")}`,
+    ).toEqual(CARD_SHAPED_PRIMITIVES.map(([file, tag]) => `${file} <${tag}>`).sort());
+  });
+
+  it("the map viewports are exactly the recorded eleven", () => {
+    const found = cardsMatching((element) =>
+      tokensOf(element.spelling).some((token) => token.startsWith("aspect-")),
+    );
+    expect(
+      found,
+      `card-shaped map viewports:\n${found.map((row) => `  ${row}`).join("\n")}`,
+    ).toHaveLength(MAP_VIEWPORTS);
+    expect(found).toContain("components/v2/v2-world-map-explorer.tsx <div>");
+  });
+
+  it("the interactive carriers are exactly the recorded 28/5/5", () => {
+    const tally = new Map<string, number>();
+    for (const [tag] of INTERACTIVE_CARD_CARRIERS) tally.set(tag, 0);
+    const found = cardsMatching((element) => tally.has(element.tag));
+    for (const row of found) {
+      const tag = row.slice(row.lastIndexOf("<") + 1, -1);
+      tally.set(tag, (tally.get(tag) ?? 0) + 1);
+    }
+    expect(
+      [...tally].sort(),
+      `card-shaped interactive carriers:\n${found.map((row) => `  ${row}`).join("\n")}`,
+    ).toEqual([...INTERACTIVE_CARD_CARRIERS].sort());
+  });
+});
+
+/**
+ * THE STAT GRID — the thing `components/patterns/stat-tile.tsx` was written for and has never
+ * been used by.
+ *
+ * Operational definition, stated before the number so the number can be checked:
+ *
+ *   an element whose classes include `grid` AND a `grid-cols-*` token, having **≥2 direct child
+ *   elements that are hand-drawn cards** (prop-borne elements are not children — see
+ *   {@link ScannedElement}), where **every** one of those card children holds, somewhere in its
+ *   subtree, both a display VALUE (an element whose classes include `font-bold` and a `text-<size>`
+ *   token) and a muted LABEL (an element whose classes include `text-muted-foreground`).
+ *
+ * That reads **37 grids / 26 files / 134 tiles**, and **0** of them render `<StatTile>`. In every
+ * one of the 37, all direct child elements are cards, so the stricter reading ("every direct
+ * child is a tile") is the same number on this tree.
+ *
+ * `StatTile` exists, has a contract test (`components/patterns/patterns-contract.test.ts`) and has
+ * exactly one consumer in the whole repo: `components/showcase/specimens/veri.tsx`, a showcase
+ * specimen this section does not scan. On the product surface its consumer count is
+ * {@link SURFACE_FILES_RENDERING_STATTILE} — zero. 134 tiles are hand-rolled beside it.
+ *
+ * ## SCOPE — this is a SHAPE test, so it over-counts in one direction and under-counts in another
+ *
+ *   1. **It admits feature cards whose "value" is a bold heading and whose "label" is a muted
+ *      description.** Concretely: `components/v2/v2-tools-hub.tsx` (2 grids, 6 tiles — hover-lit
+ *      tool cards), `components/v2/v2-tool-educational-content.tsx` (6 grids, 22 tiles — prose
+ *      panels) and `components/v2/v2-game-hub.tsx` (1 grid, 3 tiles). Those are not metrics, and a
+ *      `StatTile` is the wrong component for them. **134 is therefore an upper bound on the
+ *      population `StatTile` can actually absorb**; the hand-audit in the PR4 measurement put the
+ *      metric-shaped subset at 108 across 29 grids (see the disagreement recorded in
+ *      task-4-report.md — the tree is identical, the predicate is not).
+ *   2. **It misses a stat grid whose tiles are not hand-drawn cards.** A grid of bare `<div>`s
+ *      with no rounding or surface token holds no card children and never qualifies, however
+ *      metric-shaped its content.
+ *   3. **It misses a tile grid built with flex rather than `grid`**, and one whose columns come
+ *      from an arbitrary `grid-cols-[…]`-free utility.
+ *   4. **Relaxing the value+label requirement** to "any grid with ≥2 card children" reads
+ *      51 grids / 29 files — the number this counter deliberately does not use, because it sweeps
+ *      in every two-column panel layout on the site.
+ *
+ * Like the two counters above this is a RATCHET, not a target: it falls as grids adopt
+ * `StatTile`, it will not reach zero (blind spot 1 is a permanent residue), and a rise is a
+ * regression to be argued for. {@link SURFACE_FILES_RENDERING_STATTILE} is the one number here
+ * that should RISE, which is why it is pinned exactly rather than as a floor.
+ *
+ * MUTATION-CHECKED 2026-09-18, all four at the values above, reverted after each:
+ *
+ *   - `oyun/page.tsx`'s metric strip re-spelled `grid grid-cols-2 sm:grid-cols-4 …` → `flex
+ *     flex-wrap …` — RED three times over, `expected … to have a length of 37 but got 36`,
+ *     `expected 25 to be 26` and `expected 130 to be 134`, each message listing the grids by file;
+ *   - a `<StatTile label="x" value="1" />` added to `v2-game-history-stats.tsx` — RED,
+ *     `files rendering <StatTile>: components/v2/v2-game-history-stats.tsx: expected [ Array(1) ]
+ *     to have a length of +0 but got 1`.
+ *
+ * The tile and file counts are separate `it`s for a reason the first run showed: asserted
+ * together, the file count failed first and the tile number — the figure the adoption tasks
+ * actually drive — never printed.
+ */
+export const STAT_GRIDS_WITHOUT_STATTILE = 37;
+
+export const STAT_GRID_FILES = 26;
+
+export const STAT_TILES_WITHOUT_STATTILE = 134;
+
+export const SURFACE_FILES_RENDERING_STATTILE = 0;
+
+const TILE_VALUE_SIZE = /^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[)/;
+
+function subtreeOf(
+  elements: readonly ScannedElement[],
+  index: number,
+  into: number[] = [],
+): number[] {
+  for (const child of elements[index]!.children) {
+    into.push(child);
+    subtreeOf(elements, child, into);
+  }
+  return into;
+}
+
+function isStatTile(elements: readonly ScannedElement[], index: number): boolean {
+  const subtree = subtreeOf(elements, index);
+  const hasValue = subtree.some((i) => {
+    const tokens = tokensOf(elements[i]!.spelling);
+    return tokens.includes("font-bold") && tokens.some((token) => TILE_VALUE_SIZE.test(token));
+  });
+  const hasLabel = subtree.some((i) =>
+    tokensOf(elements[i]!.spelling).includes("text-muted-foreground"),
+  );
+  return hasValue && hasLabel;
+}
+
+/** How many tiles the element at `index` holds as a stat grid, or `null` if it is not one. */
+function statGridTiles(elements: readonly ScannedElement[], index: number): number | null {
+  const tokens = tokensOf(elements[index]!.spelling);
+  if (!tokens.includes("grid") || !tokens.some((token) => token.startsWith("grid-cols-"))) {
+    return null;
+  }
+  const tiles = elements[index]!.children.filter((i) => cardKind(elements[i]!) !== null);
+  if (tiles.length < 2) return null;
+  if (!tiles.every((i) => isStatTile(elements, i))) return null;
+  return tiles.length;
+}
+
+/** One qualifying grid: the file that writes it and how many tiles it holds. */
+function statGrids(): { file: string; tiles: number }[] {
+  const grids: { file: string; tiles: number }[] = [];
+  for (const file of walkCardSurface()) {
+    const elements = jsxElementsOf(file);
+    elements.forEach((_, index) => {
+      const tiles = statGridTiles(elements, index);
+      if (tiles !== null) grids.push({ file: label(file), tiles });
+    });
+  }
+  return grids;
+}
+
+function statGridReport(grids: readonly { file: string; tiles: number }[]): string {
+  const byFile = new Map<string, number>();
+  for (const grid of grids) byFile.set(grid.file, (byFile.get(grid.file) ?? 0) + grid.tiles);
+  return [...byFile]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([file, tiles]) => `  ${tiles} tiles ${file}`)
+    .join("\n");
+}
+
+describe("stat grids hand-roll the tile StatTile was written for", () => {
+  it("the number of hand-rolled stat grids is exactly the recorded number", () => {
+    const grids = statGrids();
+    expect(grids, `hand-rolled stat grids, by file:\n${statGridReport(grids)}`).toHaveLength(
+      STAT_GRIDS_WITHOUT_STATTILE,
+    );
+  });
+
+  it("the number of files holding one is exactly the recorded number", () => {
+    const grids = statGrids();
+    const files = new Set(grids.map((grid) => grid.file));
+    expect(files.size, `files holding a hand-rolled stat grid:\n${statGridReport(grids)}`).toBe(
+      STAT_GRID_FILES,
+    );
+  });
+
+  // Its own `it`, not a second assertion beside the file count: a task that deletes one grid
+  // moves both, and the first `expect` to fail would otherwise hide the tile number — the figure
+  // the adoption tasks are actually driving.
+  it("the number of hand-rolled tiles is exactly the recorded number", () => {
+    const grids = statGrids();
+    const tiles = grids.reduce((total, grid) => total + grid.tiles, 0);
+    expect(tiles, `hand-rolled stat tiles, by file:\n${statGridReport(grids)}`).toBe(
+      STAT_TILES_WITHOUT_STATTILE,
+    );
+  });
+
+  it("no product surface renders StatTile at all — the adoption floor", () => {
+    // Expected to RISE, unlike every other number in this section, so it is pinned exactly:
+    // the first real consumer has to come and change it on purpose. `stat-tile.tsx` itself is
+    // excluded — a component naming its own export proves nothing about adoption.
+    const primitive = join(repoRoot, "components/patterns/stat-tile.tsx");
+    const consumers = walkCardSurface()
+      .filter((file) => file !== primitive)
+      .filter((file) => jsxElementsOf(file).some((element) => element.tag === "StatTile"))
+      .map(label);
+    expect(consumers, `files rendering <StatTile>:\n${consumers.join("\n")}`).toHaveLength(
+      SURFACE_FILES_RENDERING_STATTILE,
+    );
+    expect(existsSync(primitive)).toBe(true);
+  });
+
+  it("the tile predicate needs BOTH a value and a muted label — negative controls", () => {
+    const grid = (tile: string) => `<div className="grid grid-cols-2 gap-3">${tile}${tile}</div>`;
+    const valueAndLabel =
+      '<div className="rounded-2xl bg-card border-border"><span className="text-2xl font-bold">12</span><span className="text-xs text-muted-foreground">il</span></div>';
+    const valueOnly =
+      '<div className="rounded-2xl bg-card border-border"><span className="text-2xl font-bold">12</span></div>';
+    const qualifies = (source: string) => statGridTiles(scanJsx(source), 0);
+    expect(qualifies(grid(valueAndLabel))).toBe(2);
+    expect(qualifies(grid(valueOnly))).toBe(null);
+    expect(qualifies(`<div className="flex gap-3">${valueAndLabel}${valueAndLabel}</div>`)).toBe(
+      null,
+    );
+    expect(qualifies(grid(valueAndLabel.replace("rounded-2xl bg-card border-border", "p-3")))).toBe(
+      null,
+    );
+  });
+
+  it("a grid one tile short does not qualify — the ≥2 rule", () => {
+    const tile =
+      '<div className="rounded-2xl bg-card border-border"><span className="text-2xl font-bold">12</span><span className="text-muted-foreground">il</span></div>';
+    expect(statGridTiles(scanJsx(`<div className="grid grid-cols-2 gap-3">${tile}</div>`), 0)).toBe(
+      null,
+    );
+  });
 });
