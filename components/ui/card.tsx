@@ -178,15 +178,38 @@ function Card(props: StockCardProps | VariantCardProps) {
    *
    * So: `className` is destructured OUT of `rest`, so it can never reach the element whatever its
    * declared type says; and `{...rest}` is spread FIRST, so the computed surface and the two data
-   * attributes win even if someone reintroduces the hole. Either fix alone closes today's case;
-   * both together mean the next edit to this line cannot silently reopen it. Pinned at runtime by
+   * attributes win even if someone reintroduces the hole. Pinned at runtime by
    * `card-variants.test.tsx` — a type-level guard with an unpinned runtime hole is worth exactly
    * what the runtime behaviour is worth.
    *
+   * **Each half is pinned SEPARATELY, by source assertion, and that is not belt-and-braces
+   * pedantry.** Either fix alone closes today's case, so a behavioural test only reds when BOTH
+   * are gone: one edit could delete either half with the suite green, and a second edit would
+   * reopen the hole with nothing having failed in between. Disclosure is not a pin. The two soft
+   * source assertions in `card-variants.test.tsx` red on each half individually.
+   *
+   * The RAW `class` key is stripped too. React passes an unknown `class` prop through as a DOM
+   * attribute, so a bag carrying it emits two `class` attributes and the HTML parser keeps the
+   * FIRST — the smuggled one — losing the surface. That is not a `Card` defect (every component
+   * spreading unknown props does it, and React dev-warns), but it is one token to filter in the
+   * place the filtering already happens, and "somebody else's bug" is not a reason to leave a known
+   * vector open in the one component this PR closed the others on. A `className` on the bag's
+   * PROTOTYPE does not leak — spread copies own enumerable properties only — and `CLASSNAME` in
+   * another case is emitted as an inert bogus attribute, so neither needs a guard.
+   *
    * Latent, not live, when this was found: no call site spreads into `Card` today.
    */
-  const { variant, elevation, space, as: Element = "div", className, ...rest } = props;
+  const {
+    variant,
+    elevation,
+    space,
+    as: Element = "div",
+    className,
+    class: rawClass,
+    ...rest
+  } = props as VariantCardProps & { class?: unknown };
   void className;
+  void rawClass;
   return (
     <Element
       {...rest}

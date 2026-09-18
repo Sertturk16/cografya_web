@@ -145,8 +145,11 @@ describe("the Card variants survive a CLI overwrite", () => {
  *     pre-fix code) — RED on all three variants, `expected '<div data-slot="card"
  *     data-variant="p…' not to contain 'zz-evil'`, i.e. the smuggled class on the element beside
  *     an intact `data-variant`, which is the shape Ruling AS names;
- *   - only the ordering reverted, with the strip kept — GREEN, which is the point of keeping both:
- *     each closes the case alone, and the pair means the next edit to that line cannot reopen it.
+ *   - only the ordering reverted, with the strip kept — GREEN **behaviourally**, and RED on the
+ *     source pin below. That asymmetry is RULING AW and the reason the source pins exist: either
+ *     fix alone closes today's case, so a behavioural test can only red when BOTH are gone. One
+ *     edit could delete either half with the suite green and a second edit would reopen the hole
+ *     with nothing having failed in between. Disclosure is not a pin.
  */
 describe("a variant Card cannot be made to wear a smuggled className", () => {
   const smuggle = (): Record<string, unknown> => ({ className: "zz-evil" });
@@ -178,5 +181,83 @@ describe("a variant Card cannot be made to wear a smuggled className", () => {
     expect(html).toContain('id="zz-id"');
     expect(html).toContain('aria-labelledby="zz-heading"');
     expect(html).toContain("rounded-3xl");
+  });
+
+  /**
+   * RULING AW — the raw `class` key, which is one token away from the one above.
+   *
+   * React passes an unknown `class` prop straight through as a DOM attribute, so a bag carrying it
+   * emitted TWO `class` attributes and the HTML parser keeps the FIRST — the smuggled one — losing
+   * the surface with no counter moving, exactly like the `className` case. Not a `Card` defect
+   * (every component that spreads unknown props does this, and React dev-warns), which is why it
+   * is closed by one more token in the same destructure rather than by a third mechanism.
+   *
+   * MUTATION-CHECKED 2026-09-18: `class: rawClass` removed from the destructure — RED here,
+   * `expected '<div class="zz-lowercase" data-slot=…' not to contain 'zz-lowercase'`. Reverted.
+   */
+  it("a raw `class` key in a spread is filtered too, and the surface survives", () => {
+    const bag: Record<string, unknown> = { class: "zz-lowercase" };
+    const html = renderToStaticMarkup(<Card variant="panel" space="4" {...bag} />);
+    expect(html).not.toContain("zz-lowercase");
+    expect(html).toContain("rounded-3xl");
+    expect((html.match(/ class=/g) ?? []).length).toBe(1);
+  });
+});
+
+/**
+ * RULING AW. The two halves of the spread fix, pinned SEPARATELY — in source, because that is the
+ * only place they are separable.
+ *
+ * The behavioural tests above red only when both halves are gone, since either closes today's
+ * case. These two read the component's own source for each half, so deleting one reds immediately
+ * instead of silently spending the defence in depth. `expect.soft` so one deletion does not hide
+ * the other, the same reason the CLI tripwire's source guard uses it.
+ *
+ * Source assertions, with this file's own eyes open about what that is worth: a source pattern is
+ * a proxy for behaviour and can rot into a spelling check. Both are written against the SEMANTIC
+ * shape rather than an exact line — "`className` is named in the variant destructure", "`{...rest}`
+ * appears before `className={cardVariants(`" — and each is mutation-checked below. The positive
+ * control asserts the extracted region is non-empty first, so a refactor that moves the variant
+ * branch out of this shape fails loudly rather than passing vacuously.
+ *
+ * MUTATION-CHECKED 2026-09-18, each reverted, each RED here and GREEN in every behavioural test:
+ *
+ *   - `className` (and `class`) removed from the destructure, ordering kept — RED on "strips
+ *     className out of the props", and RED on the raw-`class` runtime test too, since the ordering
+ *     half cannot help there: two `class` attributes, first one wins. The three `className`
+ *     smuggle tests stayed GREEN, which is the whole of Ruling AW in one line;
+ *   - `{...rest}` moved back below `className={cardVariants(…)}`, strip kept — RED on "spreads
+ *     rest before className" and on NOTHING else. Before this pin existed, that edit was green
+ *     across the entire suite.
+ */
+describe("both halves of the spread fix are individually pinned", () => {
+  const SOURCE = stripComments(
+    readFileSync(fileURLToPath(new URL("./card.tsx", import.meta.url)), "utf8"),
+  );
+
+  /** From the variant branch's destructure to the end of the element it returns. */
+  const VARIANT_BRANCH = SOURCE.slice(SOURCE.indexOf("as: Element"));
+
+  it("the source region this pins was actually found — anti-vacuity", () => {
+    expect(SOURCE).toContain("as: Element");
+    expect(VARIANT_BRANCH).toContain("cardVariants({ variant, space, elevation })");
+  });
+
+  it("strips className — and the raw class key — out of the props before they reach the element", () => {
+    const destructure = VARIANT_BRANCH.slice(0, VARIANT_BRANCH.indexOf("} = props"));
+    expect.soft(destructure, "className must be destructured out of rest").toContain("className");
+    expect
+      .soft(destructure, "the raw `class` key must be destructured out too")
+      .toContain("class:");
+  });
+
+  it("spreads rest BEFORE className, so the computed surface always wins", () => {
+    const restAt = VARIANT_BRANCH.indexOf("{...rest}");
+    const classNameAt = VARIANT_BRANCH.indexOf("className={cardVariants(");
+    expect.soft(restAt, "{...rest} not found in the variant branch").toBeGreaterThan(-1);
+    expect.soft(classNameAt, "the computed className not found").toBeGreaterThan(-1);
+    expect
+      .soft(restAt, "{...rest} must precede className, or a smuggled class would replace it")
+      .toBeLessThan(classNameAt);
   });
 });
