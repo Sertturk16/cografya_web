@@ -13,6 +13,7 @@ import { V2ToolWorkbench } from "@/components/v2/v2-tool-workbench";
 import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-content";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { MapPin, Home } from "lucide-react";
@@ -83,28 +84,28 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<MapPin className="size-3.5" />}>
-                  Coğrafi Koordinat Tespit &amp; GPS
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  WGS84 (EPSG:4326)
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Haritada Koordinat Bulma &amp; Dönüştürme
-              </h1>
-
-              <V2EnWorkInProgressNotice locale={locale} />
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Harita üzerinde tıkladığınız herhangi bir noktanın veya seçtiğiniz il merkezinin
-                Ondalık Derece (DD), Derece Dakika Saniye (DMS) ve UTM izdüşüm koordinatlarını
-                anında görüntüleyin.
-              </p>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="Haritada Koordinat Bulma & Dönüştürme"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<MapPin className="size-3.5" />}>
+                    Coğrafi Koordinat Tespit &amp; GPS
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    WGS84 (EPSG:4326)
+                  </Badge>
+                </>
+              }
+              notice={<V2EnWorkInProgressNotice locale={locale} />}
+              lede={
+                <>
+                  Harita üzerinde tıkladığınız herhangi bir noktanın veya seçtiğiniz il merkezinin
+                  Ondalık Derece (DD), Derece Dakika Saniye (DMS) ve UTM izdüşüm koordinatlarını
+                  anında görüntüleyin.
+                </>
+              }
+            />
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">

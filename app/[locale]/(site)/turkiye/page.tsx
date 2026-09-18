@@ -14,6 +14,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2TurkeyMapExplorer, type ProvinceItem } from "@/components/v2/v2-turkey-map-explorer";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -154,25 +155,26 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<MapIcon className="size-3.5" />}>
-                  Coğrafya Atlası
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  {totalProvinces} İl &amp; 7 Bölge
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Türkiye İlleri &amp; Coğrafi Bölgeler Atlası
-              </h1>
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                81 ilin jeomorfolojik yapısı, demografik dağılımı, iklim normalleri, canlı deniz
-                suyu sıcaklıkları ve aktif fay hatları tek ekranda.
-              </p>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="Türkiye İlleri & Coğrafi Bölgeler Atlası"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<MapIcon className="size-3.5" />}>
+                    Coğrafya Atlası
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    {totalProvinces} İl &amp; 7 Bölge
+                  </Badge>
+                </>
+              }
+              lede={
+                <>
+                  81 ilin jeomorfolojik yapısı, demografik dağılımı, iklim normalleri, canlı deniz
+                  suyu sıcaklıkları ve aktif fay hatları tek ekranda.
+                </>
+              }
+            />
 
             {/* Verified Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">

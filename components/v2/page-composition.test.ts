@@ -1434,6 +1434,56 @@ function moduleScopeFallbacks(): string[] {
 }
 
 /**
+ * THE TIER SWITCH — ONE component-level ambiguity, recorded once instead of on 17 pages.
+ *
+ * `components/patterns/page-hero.tsx` picks its heading with
+ * `tier === "hub" ? <H1>…</H1> : <H1Display>…</H1Display>`. Both names are written as JSX, so the
+ * walk reaches BOTH `<h1>` elements in `typography.tsx`; it cannot evaluate `tier` (SCOPE note 4),
+ * so every page adopting `PageHero` reads as reaching two headings while rendering exactly one.
+ *
+ * WHY THE TERNARY IS WRITTEN OUT RATHER THAN HIDDEN. The component shipped as
+ * `const Heading = tier === "hub" ? H1 : H1Display;` + `<Heading>`, which is invisible to this
+ * walk — `Heading` is neither an import binding nor a top-level declaration — and measured
+ * `PAGES_WITHOUT_H1` UP, 5 → 6, on the first page converted, with the heading rendering perfectly
+ * well in a browser. That direction is the one this programme cannot afford in reverse: 17 pages
+ * would have read "no h1" while shipping one. Naming both components makes the heading countable,
+ * and trades an under-count the walk cannot see for an OVER-count it can, which is then resolved
+ * here, in the open.
+ *
+ * NOT A PER-PAGE EXEMPTION. `MULTIPLE_H1_EXEMPTIONS` below names a FILE whose own two branches are
+ * mutually exclusive; listing 17 files here would make the counter mean nothing and would grow by
+ * one line per page adopted. This names the MECHANISM: the two alternatives are always the same two
+ * elements, and the check below proves that `page-hero.tsx` is the only file on the scanned surface
+ * that renders `<H1` and `<H1Display` together — so "a root reaching both tiers reaches them
+ * through this switch" is measured, not assumed. A root reaching the two tiers PLUS any third
+ * `<h1>` still reports as an offender, which is the property the collapse must not destroy.
+ *
+ * The runtime half is asserted where it can actually be rendered:
+ * `components/patterns/page-hero.test.tsx` renders both tiers and pins `<h1>` at exactly one each.
+ */
+const TIER_SWITCH = {
+  component: "components/patterns/page-hero.tsx",
+  guard: 'tier === "hub" ? <H1>{heading}</H1> : <H1Display>{heading}</H1Display>',
+  /** `H1` and `H1Display`, in `typography.tsx` source order. */
+  sites: ["components/patterns/typography.tsx#0", "components/patterns/typography.tsx#1"],
+  why: "PageHero's `tier` prop selects one of the two heading tiers; the walk cannot evaluate it and reaches both.",
+} as const;
+
+/**
+ * A root's `<h1>` sites with the tier switch's two alternatives collapsed to the ONE it renders.
+ *
+ * Used ONLY by `pagesWithMultipleH1()`. `H1_ELEMENTS` deliberately keeps both: each tier really is
+ * rendered by some page on the surface, so dropping one from the whole-surface element count would
+ * hide a real element rather than a counting artefact.
+ */
+function effectiveH1Sites(root: string): H1Site[] {
+  const sites = h1SitesOf(root);
+  const present = TIER_SWITCH.sites.filter((key) => sites.some((site) => site.key === key));
+  if (present.length < TIER_SWITCH.sites.length) return sites;
+  return sites.filter((site) => site.key !== TIER_SWITCH.sites[1]);
+}
+
+/**
  * Render roots that reach more than one `<h1>` and are NOT exempt, in the same named-with-a-reason
  * shape `BODY_WRAPPER_EXEMPTIONS` above uses for the three sticky nav bars: path, the two source
  * conditions that make it legitimate, and a liveness assertion so the exemption cannot outlive its
@@ -1479,7 +1529,7 @@ const MULTIPLE_H1_EXEMPTIONS: ReadonlyArray<{
 function pagesWithMultipleH1(): string[] {
   const exempt = new Set(MULTIPLE_H1_EXEMPTIONS.map((exemption) => exemption.file));
   return walkRenderRoots()
-    .map((page) => ({ page, sites: h1SitesOf(page) }))
+    .map((page) => ({ page, sites: effectiveH1Sites(page) }))
     .filter(({ page, sites }) => sites.length > 1 && !exempt.has(label(page)))
     .map(
       ({ page, sites }) =>
@@ -1624,8 +1674,17 @@ function pagesWithMultipleH1(): string[] {
  * after the render-graph rebuild rather than carried over: a fourteenth spelling introduced on
  * `app/[locale]/(site)/araclar/page.tsx` takes it RED with the spelling AND its file printed;
  * reverted, GREEN. See `task-1-report.md` for the verbatim output of all three rounds.
+ *
+ * TASK 3 (2026-09-18) moved the 14 hub heroes onto `PageHero tier="hub"`, deleting all 14 of their
+ * literal `<h1>`s: 13 → **12**. The spelling they carried
+ * (`font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight`) is the
+ * one that left; it is REPLACED by `H1`'s, which differs by 0.4px below `sm` (`text-[1.9rem]` vs
+ * `text-3xl`) and is identical everywhere else — the 1.9rem floor `typography.tsx` records, kept in
+ * the one place it is sub-perceptual. That spelling was already counted, from `/hakkimizda`, so the
+ * distribution changed from "one spelling covering 14 elements" to "one spelling covering the ONE
+ * element those 14 pages share".
  */
-export const H1_SPELLINGS = 13;
+export const H1_SPELLINGS = 12;
 
 /**
  * The denominator: how many distinct `<h1>` ELEMENTS those spellings cover. Pinned separately so
@@ -1633,8 +1692,15 @@ export const H1_SPELLINGS = 13;
  * still visible, and so the anti-vacuity control has something exact to assert. Its failure
  * message prints every element as `file#ordinal`, one per line — it is usually the FIRST thing to
  * go red on a heading change, so a bare number there would be the papercut PR1's review recorded.
+ *
+ * TASK 3 (2026-09-18): 32 → **19**. The 14 hub heroes' own `<h1>` elements are gone (−14), and
+ * `typography.tsx#1` — `H1Display`, which nothing rendered before — becomes reachable (+1), because
+ * `PageHero` writes both tiers as JSX and the walk cannot evaluate `tier`. See `TIER_SWITCH` below
+ * for why that over-count is resolved at the multiplicity counter and NOT here: both tier elements
+ * really do render on this surface, so removing one from a whole-surface element count would hide
+ * an element rather than a counting artefact.
  */
-export const H1_ELEMENTS = 32;
+export const H1_ELEMENTS = 19;
 
 /**
  * Render roots whose entire closure holds no `<h1>` element. Measured 2026-09-18 over
@@ -2017,10 +2083,17 @@ describe("the heading scanner itself", () => {
     expect(walkPages().map(label)).not.toContain("app/[locale]/(site)/error.tsx");
   });
 
-  it("reads a double-quoted className — real file, app/[locale]/(site)/araclar/page.tsx", () => {
-    const araclar = sourceOf(join(repoRoot, "app/[locale]/(site)/araclar/page.tsx"));
-    expect(classNamesOf(araclar, "h1")).toEqual([
-      "font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight",
+  it("reads a double-quoted className — real file, app/[locale]/(site)/not-found.tsx", () => {
+    // RE-ANCHORED, not deleted. This control was taken on `araclar/page.tsx`, whose literal
+    // `<h1 className="…">` the adoption task replaced with `<PageHero tier="hub">` — the control
+    // would have read `[]` and the cheapest green would have been to drop it. It is a control on
+    // the EXTRACTOR ("reads a double-quoted className off a real file"), not on araclar, so it
+    // moves to the one render root this programme has RULED keeps its own literal heading:
+    // `(site)/not-found.tsx`, which with `(site)/error.tsx` shares the shells' spelling and is
+    // deliberately not a hub or detail tier (see `H1_SPELLINGS`).
+    const notFound = sourceOf(join(repoRoot, "app/[locale]/(site)/not-found.tsx"));
+    expect(classNamesOf(notFound, "h1")).toEqual([
+      "font-heading text-3xl font-bold text-foreground",
     ]);
   });
 
@@ -2156,8 +2229,72 @@ describe("the multiple-h1 exemptions", () => {
   it("an exemption only silences its own file — negative control", () => {
     // `pagesWithMultipleH1()` filters by exact label, so a second offender elsewhere is still
     // reported. Proven by asking for the unfiltered list and confirming profil is really in it.
-    const allWithTwo = walkRenderRoots().filter((page) => h1SitesOf(page).length > 1);
+    //
+    // Read off `effectiveH1Sites`, not `h1SitesOf`: since the adoption task, 17 roots reach
+    // BOTH heading tiers through `PageHero`'s one `tier` switch, which the tier-switch block
+    // below collapses and separately proves. The property this control exists for is unchanged
+    // and is about the FILE exemption — that naming `profil` silences `profil` and nothing else.
+    const allWithTwo = walkRenderRoots().filter((page) => effectiveH1Sites(page).length > 1);
     expect(allWithTwo.map(label)).toEqual(["app/[locale]/(site)/profil/page.tsx"]);
     expect(pagesWithMultipleH1()).toEqual([]);
   });
+});
+
+describe("the PageHero tier switch", () => {
+  it("still writes both tiers as JSX in the one component that owns the choice", () => {
+    // The liveness half. If the ternary is ever refactored back to a `const Heading = …` alias,
+    // the walk stops seeing ANY heading through this component and 17 pages silently rejoin
+    // `PAGES_WITHOUT_H1`; if it is refactored to render one tier, this collapse is wrong and
+    // must be dropped rather than carried.
+    const source = sourceOf(join(repoRoot, TIER_SWITCH.component));
+    expect(
+      source,
+      `${TIER_SWITCH.component}: the tier ternary is gone — ${TIER_SWITCH.why}`,
+    ).toContain(TIER_SWITCH.guard);
+  });
+
+  it("the two collapsed sites really are typography.tsx's two h1 elements", () => {
+    // Pins the keys against the file rather than trusting two hand-typed strings: if a third
+    // `<h1>` were added to `typography.tsx`, or the two were reordered, `#1` would name a
+    // different element and the collapse would silence the wrong one.
+    const typography = join(repoRoot, "components/patterns/typography.tsx");
+    const occurrences = h1OccurrencesOf(typography);
+    expect(occurrences).toHaveLength(2);
+    expect(occurrences.map((o) => `components/patterns/typography.tsx#${o.ordinal}`)).toEqual([
+      ...TIER_SWITCH.sites,
+    ]);
+  });
+
+  it("PageHero is the ONLY surface file rendering both tiers — the collapse's premise, measured", () => {
+    // Turns "a root reaching both tiers reached them through PageHero" from an assumption into
+    // a checked fact. If any other file starts writing `<H1` and `<H1Display` together, its
+    // pages would be collapsed by a rule that says nothing about them, so this goes red first.
+    const both = surfaceFiles()
+      .concat(walk(join(repoRoot, "components/patterns")))
+      .filter((path) => {
+        const masked = maskLiterals(sourceOf(path));
+        return /<H1[\s/>]/.test(masked) && /<H1Display[\s/>]/.test(masked);
+      })
+      .map(label)
+      .sort();
+    expect(
+      both,
+      `files rendering BOTH heading tiers:\n${both.map((f) => `  ${f}`).join("\n")}`,
+    ).toEqual([TIER_SWITCH.component]);
+  });
+
+  it("collapses only the pair, never a third heading — negative control", () => {
+    // The property the collapse must not destroy. A page that renders PageHero AND ships another
+    // `<h1>` of its own is still an offender; only the pair itself is an artefact.
+    const target = join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx");
+    const raw = readFileSync(target, "utf8");
+    const withExtra = raw.replace(
+      "<PageHero",
+      '<h1 className="zz-second-heading">x</h1>\n            <PageHero',
+    );
+    expect(withExtra).not.toBe(raw);
+    const offenders = withInjectedSource([[target, withExtra]], () => pagesWithMultipleH1());
+    expect(offenders).toHaveLength(1);
+    expect(offenders[0]).toContain("app/[locale]/(site)/turkiye/page.tsx");
+  }, 20000);
 });

@@ -72,12 +72,19 @@ describe("PageHero", () => {
   it("gives the badges and the tail their measured wrappers, not the caller", () => {
     // The 14 heroes write `flex items-center gap-2` around the badges and `pt-2` around the
     // CTA. Adopting this component is meant to be a deletion at the call site, not a rewrite.
+    //
+    // `flex-wrap` was added in the adoption task, and it is a correction to the MEASUREMENT
+    // rather than a preference: the row above was counted over the 14 HUB heroes only, and all
+    // three DETAIL heroes (`turkiye/[slug]:379`, `turkiye/bolge/[slug]:453`, `dunya/[slug]:326`)
+    // write `flex items-center gap-2 flex-wrap`, carrying up to 6 badges. A component that could
+    // not wrap would have clipped them against the hero section's `overflow-hidden` at 320px, and
+    // the only alternative was the `className` escape hatch this component exists to refuse.
     const html = renderToStaticMarkup(
       <PageHero tier="hub" heading="x" badges={<span>b</span>}>
         <span>c</span>
       </PageHero>,
     );
-    expect(html).toContain('<div class="flex items-center gap-2"><span>b</span></div>');
+    expect(html).toContain('<div class="flex items-center gap-2 flex-wrap"><span>b</span></div>');
     expect(html).toContain('<div class="pt-2"><span>c</span></div>');
   });
 

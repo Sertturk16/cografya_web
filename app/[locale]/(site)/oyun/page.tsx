@@ -9,6 +9,7 @@ import { V2GameHistoryStats } from "@/components/v2/v2-game-history-stats";
 import { V2GamePedagogyGuide } from "@/components/v2/v2-game-pedagogy-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { Gamepad2, Home } from "lucide-react";
@@ -74,25 +75,26 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
-                  Oyunlaştırılmış Coğrafya
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  3 İnteraktif Sınav Modu
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Harita Oyunları &amp; Coğrafya Sınavları
-              </h1>
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Dilsiz Türkiye haritası üzerinde illeri doğru bularak puan toplayın, bölge bazlı
-                sınavlara katılın ve mekânsal hafızanızı en üst seviyeye çıkarın.
-              </p>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="Harita Oyunları & Coğrafya Sınavları"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
+                    Oyunlaştırılmış Coğrafya
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    3 İnteraktif Sınav Modu
+                  </Badge>
+                </>
+              }
+              lede={
+                <>
+                  Dilsiz Türkiye haritası üzerinde illeri doğru bularak puan toplayın, bölge bazlı
+                  sınavlara katılın ve mekânsal hafızanızı en üst seviyeye çıkarın.
+                </>
+              }
+            />
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">

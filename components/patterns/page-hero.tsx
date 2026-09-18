@@ -10,7 +10,8 @@ import { H1, H1Display } from "./typography";
  * The prop list is a measurement, not a design. Counting the direct children of all 14 hub
  * hero wrappers on the live tree gives exactly five slots, always in this order:
  *
- *   `<div className="flex items-center gap-2">` … badges      14 / 14
+ *   `<div className="flex items-center gap-2">` … badges      14 / 14  (+ `flex-wrap`, 3 / 3
+ *                                                                      on the detail heroes)
  *   `<h1 …>`                                                  14 / 14
  *   `<V2EnWorkInProgressNotice locale={locale} />`             5 / 14
  *   `<p className="text-muted-foreground …">` … lede          14 / 14
@@ -56,13 +57,28 @@ export interface PageHeroProps {
 }
 
 export function PageHero({ tier, heading, badges, notice, lede, children }: PageHeroProps) {
-  const Heading = tier === "hub" ? H1 : H1Display;
-
   return (
     <div className="relative z-10 max-w-3xl space-y-4">
-      {badges !== undefined ? <div className="flex items-center gap-2">{badges}</div> : null}
+      {/* `flex-wrap` is the one token the hub measurement did not see, because it was taken over
+          the 14 hub heroes and all three DETAIL heroes write `flex items-center gap-2 flex-wrap`
+          — `turkiye/[slug]` carries up to 4 badges and `turkiye/bolge/[slug]` up to 6, which
+          cannot sit on one 320px line. Dropping it would clip them against the hero section's
+          own `overflow-hidden`. On the 14 hub rows it can only prevent the clipping that two
+          long `size="sm"` badges already produce at 320px; it never moves a row that fits. */}
+      {badges !== undefined ? (
+        <div className="flex items-center gap-2 flex-wrap">{badges}</div>
+      ) : null}
 
-      <Heading>{heading}</Heading>
+      {/* WRITTEN AS TWO JSX ELEMENTS, NOT `const Heading = tier === "hub" ? H1 : H1Display`.
+          That indirection reads identically to React and is INVISIBLE to the render walk in
+          `components/v2/page-composition.test.ts`: `Heading` is neither an import binding nor a
+          top-level declaration, so the walk resolved it to nothing and every page adopting this
+          component reported NO `<h1>` at all (measured — `PAGES_WITHOUT_H1` went 5 → 6 on the
+          first page converted). That is SCOPE note 1 of that file arriving on the very component
+          this PR shipped to close the counter. Naming both components in JSX is what makes the
+          heading countable where it renders; the walk then reaches BOTH tiers and cannot evaluate
+          `tier`, which is recorded once as `TIER_SWITCH` there rather than per page. */}
+      {tier === "hub" ? <H1>{heading}</H1> : <H1Display>{heading}</H1Display>}
 
       {notice}
 

@@ -7,6 +7,9 @@ import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { BreadcrumbsNav, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs-nav";
+// Safe from a Client Component: `PageHero` reaches only `typography.tsx` and `lib/utils`, and
+// neither imports `server-only` — the boundary `components/patterns/rsc-boundary.test.ts` enforces.
+import { PageHero } from "@/components/patterns/page-hero";
 import { cn } from "@/lib/utils";
 import {
   Waves,
@@ -68,25 +71,26 @@ export function V2SeaBasinDetailView({
         <div
           className={`relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b ${data.gradientClass} p-6 sm:p-10 shadow-lg`}
         >
-          <div className="relative z-10 max-w-3xl space-y-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
-                Mavi Vatan Havza Atlası
-              </Badge>
-              <Badge variant="secondary" size="sm">
-                {data.badge}
-              </Badge>
-            </div>
-
-            <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-              {data.fullNameTr}
-            </h1>
-
-            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-              Fiziki coğrafyası, derinlik profili, akıntı rejimleri, kıyı yer şekilleri, canlı
-              telemetri istasyonları ve çevre sorunlarıyla kapsamlı {data.nameTr} rehberi.
-            </p>
-          </div>
+          <PageHero
+            tier="hub"
+            heading={data.fullNameTr}
+            badges={
+              <>
+                <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
+                  Mavi Vatan Havza Atlası
+                </Badge>
+                <Badge variant="secondary" size="sm">
+                  {data.badge}
+                </Badge>
+              </>
+            }
+            lede={
+              <>
+                Fiziki coğrafyası, derinlik profili, akıntı rejimleri, kıyı yer şekilleri, canlı
+                telemetri istasyonları ve çevre sorunlarıyla kapsamlı {data.nameTr} rehberi.
+              </>
+            }
+          />
 
           {/* Metric Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mt-8">
