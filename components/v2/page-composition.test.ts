@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { basename, join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
-import { runtimeImportsOf } from "@/lib/test-support/import-closure";
+import { resolveSpecifier, runtimeImportsOf } from "@/lib/test-support/import-closure";
 
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -55,7 +55,7 @@ export function walkPages(): string[] {
  * spellings that no locale-scoped surface shares: `app/not-found.tsx`'s
  * `font-heading text-3xl font-bold` (no `text-foreground` — it renders outside the locale layout
  * and its providers) and `app/global-error.tsx`'s `<h1>` with an inline `style` and NO `className`
- * at all, which would enter the count as the `(no className)` marker. Both are chrome-less
+ * at all, which would enter the count as the `(no className attribute)` marker. Both are
  * last-resort shells with different constraints from a reading page, so folding them into a
  * "converge the page heading" counter would give the adoption task two targets it cannot
  * legitimately move onto the hub/detail tiers. Left out on purpose, named here so the omission is
@@ -63,9 +63,19 @@ export function walkPages(): string[] {
  */
 const RENDER_ROOT_FILENAMES = ["page.tsx", "error.tsx", "not-found.tsx"] as const;
 
+/**
+ * WHOLE BASENAME, never a suffix. `endsWith("page.tsx")` would swallow a `my-page.tsx` helper and
+ * `endsWith("not-found.tsx")` a `shared-not-found.tsx`, silently moving every counter below. Its
+ * own test runs on synthetic paths rather than on the walk's output, because an assertion made
+ * over files that already passed this filter re-derives the filter and cannot fail.
+ */
+export function isRenderRootPath(path: string): boolean {
+  return RENDER_ROOT_FILENAMES.some((name) => basename(path) === name);
+}
+
 export function walkRenderRoots(): string[] {
   return PAGE_ROOTS.flatMap((rel) => walk(join(repoRoot, rel)))
-    .filter((path) => RENDER_ROOT_FILENAMES.some((name) => basename(path) === name))
+    .filter(isRenderRootPath)
     .sort();
 }
 
@@ -702,45 +712,281 @@ describe("the breadcrumb owner exemptions", () => {
  * ---------------------------------------------------------------------------------------- */
 
 /**
- * A page's RENDER CLOSURE: the page file plus every repo file it transitively reaches through
- * the real runtime import graph.
+ * THE RENDER GRAPH. A heading is credited to a render root only where it is RENDERED, never
+ * merely where its module is reachable.
  *
- * This is not optional decoration on a `page.tsx` scan. Seven of the 37 pages are thin wrappers
- * that never write an `<h1>` themselves — `hesabim` takes its heading from
- * `components/v2/v2-member-hub.tsx`, the four `deniz/{akdeniz,karadeniz,marmara,ege}` basin pages
- * from `components/v2/v2-sea-basin-detail-view.tsx`, `/` from `components/v2/v2-hero.tsx`, and
- * `hakkimizda` from `components/patterns/typography.tsx`'s `H1`. A `page.tsx`-only scan reports
- * all seven as "no h1", which is the false number PR2's own walk produced and this file's
- * `PAGE_BODY_SPELLINGS` docblock already records as a scope hole for the body wrapper.
+ * ## The false positive this shape exists to close
  *
- * `runtimeImportsOf` comes from `lib/test-support/import-closure.ts` — the resolver
- * `components/ui/orphan.test.ts` and `components/patterns/rsc-boundary.test.ts` already share.
- * It is reused, never re-implemented: it resolves `@/` aliases and relative specifiers to real
- * paths on disk and, critically, DROPS `import type` edges, which do not exist in the compiled
- * output and so cannot put a heading on a page. One graph walk in this repo, not a third copy.
+ * The first version of this walk was a plain transitive import closure and it was WRONG in the
+ * one direction this task cannot afford. PR3's review proved it in two lines: an UNUSED
+ * `import { H2 } from "@/components/patterns/typography"` added to `giris/page.tsx`, no markup
+ * changed, dropped `PAGES_WITHOUT_H1` from 5 to 4. `typography.tsx` exports `H1`, `H2`, `H3`,
+ * `H4`, `Lede`, `Muted` and `Kbd` from one module, so importing ANY of them credited the page
+ * with `H1`'s `<h1>`.
+ *
+ * That is not a blind spot a SCOPE note can carry. Task 3 adopts a heading component by IMPORTING
+ * it into the very pages these counters measure: under a module-granularity closure,
+ * `PAGES_WITHOUT_H1` would fall to 0 because imports landed, not because headings landed, and
+ * `H1_SPELLINGS` would start crediting spellings to pages that never render them. The counter
+ * would read "fixed" while the three `(play)` screens still start their outline at `<h3>` — the
+ * exact "claim a win it did not make" this whole task exists to prevent.
+ *
+ * ## The rule
+ *
+ * Walk NODES, not files. A node is a file plus the name of one declaration inside it (`null` for
+ * the whole file, which is what a render root itself is). From a node's own source span:
+ *
+ *   1. count the `<h1>` elements that lie inside that span, and no others;
+ *   2. collect the JSX element names actually written in it (`<X`, `<X.Y`, `<X/>`) — an
+ *      identifier that is imported and never rendered contributes NOTHING;
+ *   3. for each such name, resolve it to a node: an import binding (following `as` aliases and
+ *      skipping `import type`) gives `{ that module, the imported name }`; a local declaration
+ *      gives `{ this file, that name }`;
+ *   4. a `dynamic(() => import("…"))` literal in the span enqueues that module's `default`,
+ *      because the heavy-widget idiom is how several of these pages mount a component at all.
+ *
+ * So `hakkimizda/page.tsx:99` writing `<H1>` reaches `typography.tsx`'s `H1` declaration and its
+ * `<h1>`; a page importing `H2` from the same module reaches `H2`'s declaration, which contains an
+ * `<h2>` and no `<h1>`, and stays on the offender list where it belongs.
+ *
+ * ## What is reused and what is new
+ *
+ * `resolveSpecifier` — the `@/`-alias-and-relative-path half of
+ * `lib/test-support/import-closure.ts`, shared with `components/ui/orphan.test.ts` and
+ * `components/patterns/rsc-boundary.test.ts` — is imported, not re-implemented. What is new here
+ * is the layer ABOVE it: that module answers "which FILES does this file import", and this walk
+ * needs "which NAME is bound to which module, and is it rendered". No shared helper answers that,
+ * and the module-level answer is precisely the one that produced the false positive above.
+ *
+ * Seven of the 39 render roots are thin wrappers that never write an `<h1>` themselves (all
+ * seven are `page.tsx`; `(site)/error.tsx` and `(site)/not-found.tsx` each write their own) —
+ * `hesabim` takes its heading from `components/v2/v2-member-hub.tsx`, the four
+ * `deniz/{akdeniz,karadeniz,marmara,ege}` basin pages from
+ * `components/v2/v2-sea-basin-detail-view.tsx`, `/` from `components/v2/v2-hero.tsx`, and
+ * `hakkimizda` from `components/patterns/typography.tsx`'s `H1`. Following into components is
+ * therefore not optional; following into them at MODULE granularity is what was wrong.
  */
-const importsCache = new Map<string, string[]>();
+type RenderNode = { readonly file: string; readonly name: string | null };
 
-function importsOfCached(file: string): string[] {
-  const hit = importsCache.get(file);
-  if (hit) return hit;
-  const imports = runtimeImportsOf(file);
-  importsCache.set(file, imports);
-  return imports;
+/**
+ * Source as every scanner below sees it: comment-stripped, and overridable so a test can ask
+ * "what would the counters read if this page had one more import" without touching the tree.
+ * {@link withInjectedSource} is the only writer.
+ */
+let sourceOverrides: ReadonlyMap<string, string> | null = null;
+
+function readSource(file: string): string {
+  const override = sourceOverrides?.get(file);
+  return override === undefined ? sourceOf(file) : stripComments(override);
 }
 
-function renderClosureOf(page: string): string[] {
-  const seen = new Set<string>([page]);
-  const queue = [page];
-  while (queue.length > 0) {
-    for (const next of importsOfCached(queue.pop()!)) {
-      if (seen.has(next)) continue;
-      seen.add(next);
-      queue.push(next);
+const bindingCache = new Map<string, Map<string, RenderNode>>();
+const declarationCache = new Map<string, Map<string, readonly [number, number]>>();
+const h1Cache = new Map<string, readonly H1Occurrence[]>();
+const fallbacksSeen = new Map<string, string>();
+
+function resetScannerCaches(): void {
+  bindingCache.clear();
+  declarationCache.clear();
+  h1Cache.clear();
+  fallbacksSeen.clear();
+}
+
+/** Runs `fn` with each named file's source replaced. Caches are cleared either side. */
+function withInjectedSource<T>(
+  overrides: ReadonlyArray<readonly [string, string]>,
+  fn: () => T,
+): T {
+  resetScannerCaches();
+  sourceOverrides = new Map(overrides);
+  try {
+    return fn();
+  } finally {
+    sourceOverrides = null;
+    resetScannerCaches();
+  }
+}
+
+/**
+ * Every name a file binds from another FILE in this repo, mapped to the node it names.
+ *
+ * `import type …` clauses and `type`-prefixed members are dropped — they compile to nothing and
+ * so cannot render a heading, the same erasure `runtimeImportsOf` performs one level down.
+ * Package specifiers resolve to `null` and never enter the map. `import * as Ns` binds `Ns` to the
+ * whole module (name `"*"`), which {@link nodeSpan} then cannot isolate — see
+ * {@link MODULE_SCOPE_FALLBACKS}.
+ */
+const IMPORT_CLAUSE = /^import\s+([^;]*?)\s+from\s*["']([^"']+)["']/gm;
+
+function importBindingsOf(file: string): Map<string, RenderNode> {
+  const hit = bindingCache.get(file);
+  if (hit) return hit;
+
+  const bindings = new Map<string, RenderNode>();
+  const source = readSource(file);
+  for (const match of source.matchAll(IMPORT_CLAUSE)) {
+    const clause = match[1]!.trim();
+    if (/^type\b/.test(clause)) continue;
+    const target = resolveSpecifier(file, match[2]!);
+    if (target === null) continue;
+
+    const braceAt = clause.indexOf("{");
+    const head = (braceAt === -1 ? clause : clause.slice(0, braceAt)).replace(/,\s*$/, "").trim();
+    if (head.length > 0) {
+      const namespace = head.match(/^\*\s+as\s+([A-Za-z0-9_$]+)$/);
+      if (namespace) bindings.set(namespace[1]!, { file: target, name: "*" });
+      else if (/^[A-Za-z0-9_$]+$/.test(head)) bindings.set(head, { file: target, name: "default" });
+    }
+    if (braceAt !== -1) {
+      const inner = clause.slice(braceAt + 1, clause.lastIndexOf("}"));
+      for (const raw of inner.split(",")) {
+        const member = raw.trim();
+        if (member.length === 0 || /^type\b/.test(member)) continue;
+        const aliased = member.match(/^([A-Za-z0-9_$]+)\s+as\s+([A-Za-z0-9_$]+)$/);
+        if (aliased) bindings.set(aliased[2]!, { file: target, name: aliased[1]! });
+        else if (/^[A-Za-z0-9_$]+$/.test(member))
+          bindings.set(member, { file: target, name: member });
+      }
     }
   }
-  return [...seen];
+  bindingCache.set(file, bindings);
+  return bindings;
 }
+
+/**
+ * Top-level declarations in a module, name → `[start, end)` in its source.
+ *
+ * A SCANNER, NOT A PARSER — the same contract `lib/test-support/strip-comments.ts` states for
+ * itself. Boundaries are lines that BEGIN AT COLUMN 0 with a declaration keyword, which is exact
+ * in this repo because Prettier is enforced (`docs/conventions.md`): a nested `const` inside a
+ * function body is indented and so is never mistaken for a top-level one. A declaration's region
+ * runs to the next such boundary, so `typography.tsx`'s `export function H1` region ends exactly
+ * where `export function H2` begins. That is what makes "crediting an `H2` importer with `H1`'s
+ * markup" — the same bug one level down from the module-granularity one — impossible here.
+ */
+const TOP_LEVEL_BOUNDARY =
+  /^(?:export|import|function|async|const|let|var|class|type|interface|declare|enum)\b/gm;
+
+function declarationRegions(file: string): Map<string, readonly [number, number]> {
+  const hit = declarationCache.get(file);
+  if (hit) return hit;
+
+  const source = readSource(file);
+  const boundaries = [...source.matchAll(TOP_LEVEL_BOUNDARY)].map((match) => match.index);
+  const regions = new Map<string, readonly [number, number]>();
+
+  boundaries.forEach((start, position) => {
+    const end = boundaries[position + 1] ?? source.length;
+    const head = source.slice(start, Math.min(end, start + 200));
+    const span = [start, end] as const;
+
+    if (/^export\s+default\b/.test(head)) {
+      regions.set("default", span);
+      const named = head.match(
+        /^export\s+default\s+(?:async\s+)?(?:function|class)\s+([A-Za-z0-9_$]+)/,
+      );
+      if (named) regions.set(named[1]!, span);
+      return;
+    }
+    const destructured = head.match(/^export\s+(?:const|let|var)\s*\{([^}]*)\}/);
+    if (destructured) {
+      for (const raw of destructured[1]!.split(",")) {
+        const name = raw
+          .trim()
+          .split(/\s*:\s*/)
+          .pop()
+          ?.trim();
+        if (name && /^[A-Za-z0-9_$]+$/.test(name)) regions.set(name, span);
+      }
+      return;
+    }
+    const declared = head.match(
+      /^(?:export\s+)?(?:async\s+)?(?:function|const|let|var|class)\s+([A-Za-z0-9_$]+)/,
+    );
+    if (declared) regions.set(declared[1]!, span);
+  });
+
+  declarationCache.set(file, regions);
+  return regions;
+}
+
+/** `export { A, B as C } from "…"` and `export * from "…"` — the forwarding a name can hide behind. */
+const REEXPORT_NAMED = /^export\s+\{([^}]*)\}\s*from\s*["']([^"']+)["']/gm;
+const REEXPORT_STAR = /^export\s*\*\s*from\s*["']([^"']+)["']/gm;
+
+function reexportTargetsOf(file: string, name: string): RenderNode[] {
+  const source = readSource(file);
+  const targets: RenderNode[] = [];
+  for (const match of source.matchAll(REEXPORT_NAMED)) {
+    const target = resolveSpecifier(file, match[2]!);
+    if (target === null) continue;
+    for (const raw of match[1]!.split(",")) {
+      const member = raw.trim();
+      if (member.length === 0 || /^type\b/.test(member)) continue;
+      const aliased = member.match(/^([A-Za-z0-9_$]+)\s+as\s+([A-Za-z0-9_$]+)$/);
+      if (aliased) {
+        if (aliased[2] === name) targets.push({ file: target, name: aliased[1]! });
+      } else if (member === name) {
+        targets.push({ file: target, name });
+      }
+    }
+  }
+  for (const match of source.matchAll(REEXPORT_STAR)) {
+    const target = resolveSpecifier(file, match[1]!);
+    if (target !== null) targets.push({ file: target, name });
+  }
+  return targets;
+}
+
+/**
+ * The modules this walk could NOT isolate a declaration in, and so scanned WHOLE — the honest
+ * residue of the render-granularity rule, given a number so a reviewer can watch it instead of
+ * it being invisible.
+ *
+ * A fallback is not a defect on its own: it means the walk is being conservative, crediting a
+ * render root with every `<h1>` in the module rather than risking a false negative. It IS the
+ * shape that produced the original HIGH, though, so the list is pinned to an exact length and an
+ * exact membership below. If it ever grows long, the isolation rule is too weak and needs another
+ * pass — the fallback must never become the common path.
+ *
+ * Measured 2026-09-18 over all 39 render roots. Each entry is `file — name`, the node that could
+ * not be isolated.
+ */
+const MODULE_SCOPE_FALLBACKS: ReadonlyArray<readonly [string, string]> = [];
+
+function recordFallback(file: string, name: string): void {
+  fallbacksSeen.set(`${label(file)} — ${name}`, name);
+}
+
+/**
+ * The source span a node contributes. `null` name = the whole file (a render root, or a module
+ * scanned as a fallback). A named node whose declaration cannot be found is first chased through
+ * re-exports; only if that fails does it fall back to module scope, RECORDED.
+ */
+type NodeSpan =
+  | { readonly kind: "span"; readonly from: number; readonly to: number }
+  | { readonly kind: "forward"; readonly nodes: readonly RenderNode[] };
+
+function nodeSpan(node: RenderNode): NodeSpan {
+  const source = readSource(node.file);
+  const whole = { kind: "span", from: 0, to: source.length } as const;
+  if (node.name === null) return whole;
+
+  const region = declarationRegions(node.file).get(node.name);
+  if (region) return { kind: "span", from: region[0], to: region[1] };
+
+  const forwarded = reexportTargetsOf(node.file, node.name);
+  if (forwarded.length > 0) return { kind: "forward", nodes: forwarded };
+
+  recordFallback(node.file, node.name);
+  return whole;
+}
+
+/** Component names actually WRITTEN as JSX in a span. `<Ns.Thing>` yields `Ns`. */
+const JSX_ELEMENT = /<([A-Z][A-Za-z0-9_$]*)(?:\.[A-Za-z0-9_$]+)*(?=[\s/>])/g;
+
+/** `dynamic(() => import("…"))` and any other literal dynamic import inside a span. */
+const DYNAMIC_IMPORT = /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g;
 
 /**
  * Reads the `className` off every `<tag …>` in a file, in ALL THREE forms this surface writes.
@@ -817,8 +1063,16 @@ function classNameLiteralsIn(expression: string): string[] {
   return literals;
 }
 
-/** The marker used for an element that carries no `className` at all, so it is never invisible. */
-const NO_CLASSNAME = "(no className)";
+/**
+ * Two markers, not one, so an element with no class list and an element with a FULLY COMPUTED one
+ * never merge into a single "spelling". They are different defects with different fixes — the
+ * first is an unstyled heading, the second is a heading whose treatment this scanner cannot read
+ * at all — and collapsing them would let a computed `<h1 className={headingClass}>` hide inside
+ * the same bucket as a genuinely bare one, so `H1_SPELLINGS` would report one where the real
+ * answer is two distinct treatments.
+ */
+const NO_CLASSNAME = "(no className attribute)";
+const COMPUTED_CLASSNAME = "(className with no string literal)";
 
 function classNameOfTag(tag: string): string {
   const at = tag.indexOf("className=");
@@ -848,10 +1102,10 @@ function classNameOfTag(tag: string): string {
       else if (ch === "}" && (depth -= 1) === 0) break;
     }
     const literals = classNameLiteralsIn(tag.slice(i + 1, j));
-    return literals.length > 0 ? literals.join(" ") : NO_CLASSNAME;
+    return literals.length > 0 ? literals.join(" ") : COMPUTED_CLASSNAME;
   }
 
-  return NO_CLASSNAME;
+  return COMPUTED_CLASSNAME;
 }
 
 /** One normalised spelling per `<tag>` element in `source`, in source order. */
@@ -862,30 +1116,87 @@ export function classNamesOf(source: string, tag: string): string[] {
   );
 }
 
-const h1Cache = new Map<string, string[]>();
+/**
+ * One `<h1>` element in one file: where it starts in the source (so a declaration region can say
+ * whether it is inside it), its ordinal within the file (so the same element reached from two
+ * render roots is ONE element) and its normalised spelling.
+ */
+type H1Occurrence = { readonly index: number; readonly ordinal: number; readonly spelling: string };
 
-function h1ClassNamesOf(file: string): string[] {
+function h1OccurrencesOf(file: string): readonly H1Occurrence[] {
   const hit = h1Cache.get(file);
   if (hit) return hit;
-  const spellings = file.endsWith(".tsx") ? classNamesOf(sourceOf(file), "h1") : [];
-  h1Cache.set(file, spellings);
-  return spellings;
+  const occurrences: H1Occurrence[] = [];
+  if (file.endsWith(".tsx")) {
+    const source = readSource(file);
+    [...source.matchAll(/<h1[\s>]/g)].forEach((match, ordinal) => {
+      occurrences.push({
+        index: match.index,
+        ordinal,
+        spelling: classNameOfTag(tagTextAt(source, match.index)).trim().replace(/\s+/g, " "),
+      });
+    });
+  }
+  h1Cache.set(file, occurrences);
+  return occurrences;
 }
 
 /** A single `<h1>` element in the tree: the file that writes it and its ordinal within that file. */
 type H1Site = { readonly key: string; readonly file: string; readonly spelling: string };
 
-function h1SitesOf(page: string): H1Site[] {
-  return renderClosureOf(page).flatMap((file) =>
-    h1ClassNamesOf(file).map((spelling, index) => ({
-      key: `${label(file)}#${index}`,
-      file: label(file),
-      spelling,
-    })),
-  );
+/**
+ * Every `<h1>` element a render root actually RENDERS, found by walking the render graph described
+ * above. The `key` is `file#ordinal`, so one element reached from four pages stays one element.
+ */
+function h1SitesOf(root: string): H1Site[] {
+  const sites = new Map<string, H1Site>();
+  const visited = new Set<string>();
+  const queue: RenderNode[] = [{ file: root, name: null }];
+
+  while (queue.length > 0) {
+    const node = queue.shift()!;
+    const visitKey = `${node.file}::${node.name ?? "*whole*"}`;
+    if (visited.has(visitKey)) continue;
+    visited.add(visitKey);
+
+    const span = nodeSpan(node);
+    if (span.kind === "forward") {
+      queue.push(...span.nodes);
+      continue;
+    }
+    const { from, to } = span;
+
+    for (const occurrence of h1OccurrencesOf(node.file)) {
+      if (occurrence.index < from || occurrence.index >= to) continue;
+      const key = `${label(node.file)}#${occurrence.ordinal}`;
+      sites.set(key, { key, file: label(node.file), spelling: occurrence.spelling });
+    }
+
+    const slice = readSource(node.file).slice(from, to);
+    const bindings = importBindingsOf(node.file);
+    const locals = declarationRegions(node.file);
+    for (const match of slice.matchAll(JSX_ELEMENT)) {
+      const tag = match[1]!;
+      const imported = bindings.get(tag);
+      if (imported) queue.push(imported);
+      else if (locals.has(tag)) queue.push({ file: node.file, name: tag });
+    }
+    // Dynamic imports are followed only from a NAMED node's span, never from a render root's
+    // whole file. `const Heavy = dynamic(() => import("…"))` is reached because `<Heavy>` is
+    // rendered, which puts the walk inside `Heavy`'s own declaration region; a `dynamic()` call
+    // sitting unrendered at module level is therefore gated exactly like an unused import.
+    if (node.name !== null) {
+      for (const match of slice.matchAll(DYNAMIC_IMPORT)) {
+        const target = resolveSpecifier(node.file, match[1]!);
+        if (target !== null) queue.push({ file: target, name: "default" });
+      }
+    }
+  }
+
+  return [...sites.values()];
 }
 
-/** Every distinct `<h1>` element reachable from any render root, grouped by spelling. */
+/** Every distinct `<h1>` element rendered by any render root, grouped by spelling. */
 function h1SitesBySpelling(): Map<string, string[]> {
   const seen = new Set<string>();
   const bySpelling = new Map<string, string[]>();
@@ -893,7 +1204,7 @@ function h1SitesBySpelling(): Map<string, string[]> {
     for (const site of h1SitesOf(page)) {
       if (seen.has(site.key)) continue;
       seen.add(site.key);
-      bySpelling.set(site.spelling, [...(bySpelling.get(site.spelling) ?? []), site.file]);
+      bySpelling.set(site.spelling, [...(bySpelling.get(site.spelling) ?? []), site.key]);
     }
   }
   return bySpelling;
@@ -904,6 +1215,13 @@ function pagesWithNoH1(): string[] {
     .filter((page) => h1SitesOf(page).length === 0)
     .map(label)
     .sort();
+}
+
+/** Every module-scope fallback the walk hit over the whole surface, as `file — name`. */
+function moduleScopeFallbacks(): string[] {
+  resetScannerCaches();
+  for (const page of walkRenderRoots()) h1SitesOf(page);
+  return [...fallbacksSeen.keys()].sort();
 }
 
 /**
@@ -956,7 +1274,7 @@ function pagesWithMultipleH1(): string[] {
     .filter(({ page, sites }) => sites.length > 1 && !exempt.has(label(page)))
     .map(
       ({ page, sites }) =>
-        `${label(page)} — ${sites.length}: ${sites.map((s) => s.file).join(", ")}`,
+        `${label(page)} — ${sites.length}: ${sites.map((s) => s.key).join(", ")}`,
     )
     .sort();
 }
@@ -964,31 +1282,38 @@ function pagesWithMultipleH1(): string[] {
 /**
  * SCOPE — what the three counters below CANNOT see.
  *
- * They are a source-text scan over a static import graph. They are not a render, not a DOM, and
- * not a route. Every number they print is a claim about `<h1` literals in files reachable from a
- * `page.tsx` through `runtimeImportsOf`, and nothing more. Specifically:
+ * They are a source-text scan over a static RENDER graph — see the walk's own docblock for why
+ * "render" and not "import": a plain import closure is the HIGH this file already shipped once.
+ * They are not a render, not a DOM, and not a route. Every number they print is a claim about
+ * `<h1` literals lying inside declaration spans a render root actually writes as JSX, and nothing
+ * more. Specifically:
  *
- *   1. AN `h1` FROM A COMPONENT THE WALK CANNOT REACH. The closure follows static `import` /
- *      `export … from` and literal `import("…")` specifiers only. A heading rendered through
- *      `children` passed from a layout, through `React.lazy` on a computed path, or through a
- *      `dynamic(() => import(someVariable))` whose specifier is not a string literal is invisible.
- *      `import type` edges are dropped on purpose (they compile to nothing), so a component
- *      imported ONLY as a type — and therefore never rendered — correctly contributes no heading.
+ *   1. AN `h1` FROM A COMPONENT THE WALK CANNOT REACH. A name is followed only when it is written
+ *      as a JSX element, so anything that renders a component WITHOUT naming it in JSX is
+ *      invisible: a heading passed as `children` from a layout, `React.createElement(Heading)`,
+ *      `{slots.map((C) => <C/>)}` over a component array, a render prop, or a
+ *      `dynamic(() => import(someVariable))` whose specifier is not a string literal. `import
+ *      type` edges are dropped on purpose (they compile to nothing), so a component imported ONLY
+ *      as a type — and therefore never rendered — correctly contributes no heading.
  *
  *   2. A COMPUTED HEADING LEVEL. `const Tag = level === 1 ? "h1" : "h2"; return <Tag …>` renders
  *      an `h1` whose source contains no `<h1` at all. So does `React.createElement("h1", …)` and
  *      any `as`/`asChild`-style level prop. `components/ui/*` primitives that take a heading level
- *      as a prop would land here. None of the 30 sites found today is of this shape — every one is
- *      a literal `<h1` — but nothing below would notice the first one that is.
+ *      as a prop would land here. None of the 32 elements found today is of this shape — every one
+ *      is a literal `<h1` — but nothing below would notice the first one that is.
  *
  *   3. A className ASSEMBLED FROM VARIABLES. {@link classNameOfTag} reads the LITERAL parts of an
  *      attribute value. `className={headingClass}`, `className={cn(tierClass, className)}` and
- *      `className={styles.title}` all contribute no literal, so they report as
- *      `"(no className)"` — visibly wrong rather than silently absent, but still not the real
- *      class list. A template literal's `${…}` holes are kept verbatim in the spelling for the
- *      same reason: the counter can show you that a spelling is computed; it cannot resolve it.
- *      Conversely `cn("a b", extra)` reports `"a b"` — the fixed part only — so two call sites
- *      that differ ONLY in what the caller passes read as one spelling here.
+ *      `className={styles.title}` contribute no literal and report as
+ *      `"(className with no string literal)"` — a SEPARATE marker from `"(no className
+ *      attribute)"`, so a genuinely unstyled heading and a fully computed one never merge into one
+ *      spelling. A template literal's `${…}` holes are kept verbatim in the spelling for the same
+ *      reason: the counter can show that a spelling is computed; it cannot resolve it. In the
+ *      other direction the reading is a UNION, not the first argument: every string literal in the
+ *      expression is joined, so `cn("a b", extra)` reports `"a b"` (a caller's variable
+ *      contributes nothing, so two call sites differing only in what the caller passes read as one
+ *      spelling) but `cn("a b", isActive && "c")` reports `"a b c"` — a class list no single
+ *      render necessarily produces. No live `<h1>` is of that second shape today.
  *
  *   4. WHICH BRANCH ACTUALLY RENDERS. This is a REACHABILITY count, not an occurrence count, and
  *      `PAGES_WITH_MULTIPLE_H1` is where that bites. `/profil` is the only render root reaching
@@ -1022,6 +1347,15 @@ function pagesWithMultipleH1(): string[] {
  *   7. WHETHER THE HEADING IS CORRECT. Nothing here reads the heading's TEXT, its position in the
  *      document, whether it precedes an `h2`, or whether the page's `<title>` agrees with it.
  *      "Has exactly one `h1`" is not "has a correct heading outline".
+ *
+ *   8. WHERE A DECLARATION CANNOT BE ISOLATED. Crediting a heading to the declaration that writes
+ *      it needs that declaration's span. `import * as Ns`, a `default` export that is not a named
+ *      `function`/`class`, and any shape {@link declarationRegions} does not recognise fall back
+ *      to the WHOLE module — the old module-granularity behaviour, for that one module.
+ *      Conservative (it over-credits, never under-credits) and never silent: every fallback is
+ *      recorded and pinned by {@link MODULE_SCOPE_FALLBACKS}, which is EMPTY on today's tree.
+ *      Related: a render root's own file is always scanned whole, so a helper component defined in
+ *      a `page.tsx` and never rendered still contributes its `<h1>` to that page.
  */
 
 /**
@@ -1048,13 +1382,29 @@ function pagesWithMultipleH1(): string[] {
  * both tiers survive, so this counter's floor is 2, never 1. The other 11 spellings cover 15
  * elements between them and are the drift a later task removes.
  *
- * MUTATION-CHECKED 2026-09-18 AT THIS VALUE, not at the 12 it was first pinned to: a fourteenth
- * spelling introduced on `app/[locale]/(site)/araclar/page.tsx` took it RED with the spelling AND
- * its file printed; reverted, GREEN. Re-run after the widening rather than carried over, because
- * a counter re-pinned without a re-check has not been shown to work at its new value. See
- * `task-1-report.md` for the verbatim output of both rounds.
+ * UNCHANGED BY THE RENDER-GRANULARITY FIX. The walk underneath these counters was rebuilt in fix
+ * round 2 — from a transitive import closure to the JSX-gated render graph above, after review
+ * proved an UNUSED import could move `PAGES_WITHOUT_H1` — and every number came back identical:
+ * 13 spellings, 32 elements, the same 5 with none, the same one with two. Not a coincidence:
+ * every heading on this surface is rendered by the module that reaches it, at depth 0 or 1, with
+ * zero module-scope fallbacks. The old walk was right by luck about today's tree and wrong by
+ * construction about the tree Task 3 will create.
+ *
+ * MUTATION-CHECKED 2026-09-18 AT THIS VALUE, not at the 12 it was first pinned to, and re-checked
+ * after the render-graph rebuild rather than carried over: a fourteenth spelling introduced on
+ * `app/[locale]/(site)/araclar/page.tsx` takes it RED with the spelling AND its file printed;
+ * reverted, GREEN. See `task-1-report.md` for the verbatim output of all three rounds.
  */
 export const H1_SPELLINGS = 13;
+
+/**
+ * The denominator: how many distinct `<h1>` ELEMENTS those spellings cover. Pinned separately so
+ * a change that swaps one heading for another (element count steady, spelling count steady) is
+ * still visible, and so the anti-vacuity control has something exact to assert. Its failure
+ * message prints every element as `file#ordinal`, one per line — it is usually the FIRST thing to
+ * go red on a heading change, so a bare number there would be the papercut PR1's review recorded.
+ */
+export const H1_ELEMENTS = 32;
 
 /**
  * Render roots whose entire closure holds no `<h1>` element. Measured 2026-09-18 over
@@ -1073,7 +1423,15 @@ export const H1_SPELLINGS = 13;
  * Recorded, not fixed: this task is the counter. The list is printed one path per line on failure
  * so the adoption task can act on it without re-deriving it.
  *
- * MUTATION-CHECKED 2026-09-18 at this value — see `task-1-report.md`.
+ * THE COUNTER TASK 3 WILL PUSH ON, and therefore the one the render-granularity rule exists for.
+ * Adopting a heading component means IMPORTING it into these five files; under the import closure
+ * this file first shipped, that import ALONE would have emptied this list. "An import that renders
+ * nothing changes no counter" below is the standing regression test for exactly that, and it must
+ * survive this number finally moving.
+ *
+ * MUTATION-CHECKED 2026-09-18 at this value, including once on `(site)/not-found.tsx` — a file the
+ * pre-Ruling-F walk could not see — and re-checked after the render-graph rebuild. See
+ * `task-1-report.md`.
  */
 export const PAGES_WITHOUT_H1 = 5;
 
@@ -1097,34 +1455,43 @@ describe("the heading scanner itself", () => {
   // closure that never crossed a file boundary, an extractor that never matched, or a walk that
   // returned nothing. These run against the live tree and prove otherwise first.
 
-  it("the render closure crosses into components — the thin-wrapper case, on the real tree", () => {
+  it("the render graph crosses into components — the thin-wrapper case, on the real tree", () => {
     const home = join(repoRoot, "app/[locale]/(site)/page.tsx");
-    expect(renderClosureOf(home).map(label)).toContain("components/v2/v2-hero.tsx");
+    expect(h1SitesOf(home).map((s) => s.file)).toContain("components/v2/v2-hero.tsx");
     const hesabim = join(repoRoot, "app/[locale]/(site)/hesabim/page.tsx");
-    expect(renderClosureOf(hesabim).map(label)).toContain("components/v2/v2-member-hub.tsx");
+    expect(h1SitesOf(hesabim).map((s) => s.file)).toContain("components/v2/v2-member-hub.tsx");
+    // Two hops and a `cn()` className: `hakkimizda` writes `<H1>`, typography.tsx's H1 writes <h1>.
+    const hakkimizda = join(repoRoot, "app/[locale]/(site)/hakkimizda/page.tsx");
+    expect(h1SitesOf(hakkimizda).map((s) => s.file)).toEqual([
+      "components/patterns/typography.tsx",
+    ]);
   });
 
-  it("the closure is per page, not a union of the whole surface — negative control", () => {
-    // If `renderClosureOf` leaked between pages, every page would inherit the homepage hero's
-    // heading and `PAGES_WITHOUT_H1` would read 0 for a reason that has nothing to do with the
-    // tree. `araclar` does not reach the hero.
+  it("the graph is per page, not a union of the whole surface — negative control", () => {
+    // If it leaked between pages, every page would inherit the homepage hero's heading and
+    // `PAGES_WITHOUT_H1` would read 0 for a reason that has nothing to do with the tree.
     const araclar = join(repoRoot, "app/[locale]/(site)/araclar/page.tsx");
-    expect(renderClosureOf(araclar).map(label)).not.toContain("components/v2/v2-hero.tsx");
+    expect(h1SitesOf(araclar).map((s) => s.file)).toEqual(["app/[locale]/(site)/araclar/page.tsx"]);
   });
 
   it("drops `import type` edges — a type-only import renders nothing, on the real tree", () => {
-    // `runtimeImportsOf`'s contract, relied on above: a module imported ONLY as a type is not in
-    // the compiled graph and so cannot put a heading on a page. `lib/auth/submit.client.ts:5`
-    // writes `import type { AuthBffCode } from "./transport.server"` and nothing else from it —
-    // the live fixture `components/patterns/rsc-boundary.test.ts` depends on too.
+    // `lib/auth/submit.client.ts:5` writes `import type { AuthBffCode } from "./transport.server"`
+    // and nothing else from it — the live fixture `components/patterns/rsc-boundary.test.ts`
+    // depends on too. Both the shared resolver and this file's binding parser must erase it.
     const submit = join(repoRoot, "lib/auth/submit.client.ts");
     expect(readFileSync(submit, "utf8")).toContain('import type { AuthBffCode } from "./transport');
     expect(runtimeImportsOf(submit).map(label)).not.toContain("lib/auth/transport.server.ts");
+    expect([...importBindingsOf(submit).keys()]).not.toContain("AuthBffCode");
   });
 
   it("found a real, non-trivial number of h1 elements", () => {
-    const total = [...h1SitesBySpelling().values()].reduce((sum, files) => sum + files.length, 0);
-    expect(total).toBe(32);
+    const sites = [...h1SitesBySpelling().values()].flat().sort();
+    expect(
+      sites,
+      `every <h1> element rendered by a render root, as file#ordinal:\n${sites
+        .map((s) => `  ${s}`)
+        .join("\n")}`,
+    ).toHaveLength(H1_ELEMENTS);
   });
 
   it("walkRenderRoots() adds the two special files and nothing else", () => {
@@ -1135,8 +1502,166 @@ describe("the heading scanner itself", () => {
     // Never reaches the app-ROOT shells above `app/[locale]` — see its docblock for the cost.
     expect(roots).not.toContain("app/not-found.tsx");
     expect(roots).not.toContain("app/global-error.tsx");
-    // A `my-page.tsx` must not be mistaken for a render root: matched by basename, not suffix.
-    expect(roots.every((r) => RENDER_ROOT_FILENAMES.some((n) => r.endsWith(`/${n}`)))).toBe(true);
+  });
+
+  it("isRenderRootPath matches a whole basename, never a suffix — the mechanism, not its output", () => {
+    // NOT `expect(roots.every(...))`: every path that survives the filter trivially satisfies any
+    // predicate weaker than the filter, so such an assertion re-derives the filter's own output and
+    // cannot fail whatever the filter does. Proven during review: degrading the filter to
+    // `path.endsWith(name)` left all 45 tests green. These run on synthetic paths, so they hold
+    // regardless of what happens to be in the tree.
+    expect(isRenderRootPath("/a/b/page.tsx")).toBe(true);
+    expect(isRenderRootPath("/a/b/error.tsx")).toBe(true);
+    expect(isRenderRootPath("/a/b/not-found.tsx")).toBe(true);
+    expect(isRenderRootPath("/a/b/my-page.tsx")).toBe(false);
+    expect(isRenderRootPath("/a/b/shared-not-found.tsx")).toBe(false);
+    expect(isRenderRootPath("/a/b/zz-error.tsx")).toBe(false);
+  });
+
+  it("an import that renders nothing changes no counter — the render-granularity guarantee", () => {
+    // THE REGRESSION TEST FOR THE HIGH. PR3's review added an unused
+    // `import { H2 } from "@/components/patterns/typography"` to `giris/page.tsx` — a page with no
+    // heading anywhere — changed no markup, and watched `PAGES_WITHOUT_H1` fall 5 -> 4, because the
+    // closure was module-granular and `typography.tsx` also exports `H1`. Task 3 adopts a heading
+    // component by importing it into these very pages, so a counter that cannot survive this is
+    // not measuring rendering. Run against the real file with one real line injected.
+    const giris = join(repoRoot, "app/[locale]/(site)/giris/page.tsx");
+    const withUnusedImport = `import { H1, H2 } from "@/components/patterns/typography";\n${readFileSync(giris, "utf8")}`;
+    const after = withInjectedSource([[giris, withUnusedImport]], () => ({
+      spellings: h1SitesBySpelling().size,
+      without: pagesWithNoH1(),
+      multiple: pagesWithMultipleH1(),
+    }));
+    expect(after.spellings).toBe(H1_SPELLINGS);
+    expect(
+      after.without,
+      "an unused import must not remove a page from the offender list",
+    ).toContain("app/[locale]/(site)/giris/page.tsx");
+    expect(after.without).toHaveLength(PAGES_WITHOUT_H1);
+    expect(after.multiple).toHaveLength(PAGES_WITH_MULTIPLE_H1);
+  });
+
+  it("the same import RENDERED does change the counters — positive control for the gate above", () => {
+    // The other half: if the gate rejected everything, the test above would pass vacuously. Same
+    // page, same import, but the component is actually written as JSX.
+    const giris = join(repoRoot, "app/[locale]/(site)/giris/page.tsx");
+    const raw = readFileSync(giris, "utf8");
+    const rendered = `import { H1 } from "@/components/patterns/typography";\n${raw.replace(
+      "<PageContainer",
+      "<H1>probe</H1>\n      <PageContainer",
+    )}`;
+    const after = withInjectedSource([[giris, rendered]], () => pagesWithNoH1());
+    expect(raw).toContain("<PageContainer");
+    expect(after).not.toContain("app/[locale]/(site)/giris/page.tsx");
+    expect(after).toHaveLength(PAGES_WITHOUT_H1 - 1);
+  });
+
+  it("follows a rendered component through a re-export barrel", () => {
+    // `reexportTargetsOf` fires on NO file in the tree today — `lib/game/target.ts` is the only
+    // `export … from` and it forwards values, not components — so without this it would be
+    // untested code inside a counter, the shape this repo keeps getting burned by. Injected: a
+    // real barrel forwarding a real component into a real page.
+    const giris = join(repoRoot, "app/[locale]/(site)/giris/page.tsx");
+    const barrel = join(repoRoot, "lib/game/target.ts");
+    const raw = readFileSync(giris, "utf8");
+    const sites = withInjectedSource(
+      [
+        [
+          giris,
+          `import { Hero } from "@/lib/game/target";\n${raw.replace("<PageContainer", "<Hero />\n      <PageContainer")}`,
+        ],
+        [
+          barrel,
+          `${readFileSync(barrel, "utf8")}\nexport { V2Hero as Hero } from "@/components/v2/v2-hero";\n`,
+        ],
+      ],
+      () => h1SitesOf(giris).map((site) => site.key),
+    );
+    expect(sites).toEqual(["components/v2/v2-hero.tsx#0"]);
+  });
+
+  it("follows a rendered dynamic() component, and records the module-scope fallback", () => {
+    // `next/dynamic` appears nowhere in the tree today, so this path is likewise untested
+    // otherwise. It also exercises the fallback recorder end to end: `v2-hero.tsx` has no
+    // `export default`, so `{ v2-hero.tsx, default }` cannot be isolated and the walk falls back
+    // to module scope — conservative, and NAMED rather than silent.
+    const giris = join(repoRoot, "app/[locale]/(site)/giris/page.tsx");
+    const raw = readFileSync(giris, "utf8");
+    const injected = [
+      [
+        giris,
+        `import dynamic from "next/dynamic";\nconst Heavy = dynamic(() => import("@/components/v2/v2-hero"));\n${raw.replace("<PageContainer", "<Heavy />\n      <PageContainer")}`,
+      ],
+    ] as const;
+
+    expect(withInjectedSource(injected, () => h1SitesOf(giris).map((s) => s.key))).toEqual([
+      "components/v2/v2-hero.tsx#0",
+    ]);
+    expect(
+      withInjectedSource(injected, () => {
+        h1SitesOf(giris);
+        return [...fallbacksSeen.keys()];
+      }),
+    ).toEqual(["components/v2/v2-hero.tsx — default"]);
+  });
+
+  it("an UNRENDERED dynamic() at module level is gated too — negative control", () => {
+    const giris = join(repoRoot, "app/[locale]/(site)/giris/page.tsx");
+    const raw = readFileSync(giris, "utf8");
+    const sites = withInjectedSource(
+      [
+        [
+          giris,
+          `import dynamic from "next/dynamic";\nconst Heavy = dynamic(() => import("@/components/v2/v2-hero"));\nvoid Heavy;\n${raw}`,
+        ],
+      ],
+      () => h1SitesOf(giris).map((site) => site.key),
+    );
+    expect(sites).toEqual([]);
+  });
+
+  it("a namespace import rendered as JSX falls back to module scope, recorded", () => {
+    // `import * as Typo` binds one name to a whole module, so no declaration can be isolated. The
+    // walk stays conservative (credits every <h1> in the module) and RECORDS the imprecision,
+    // which is what `MODULE_SCOPE_FALLBACKS` exists to keep countable. Proof the recorder is not
+    // dead code sitting behind an empty pinned list.
+    const giris = join(repoRoot, "app/[locale]/(site)/giris/page.tsx");
+    const raw = readFileSync(giris, "utf8");
+    const injected = [
+      [
+        giris,
+        `import * as Typo from "@/components/patterns/typography";\n${raw.replace("<PageContainer", "<Typo.H1 />\n      <PageContainer")}`,
+      ],
+    ] as const;
+    const result = withInjectedSource(injected, () => {
+      const keys = h1SitesOf(giris).map((site) => site.key);
+      return { keys, fallbacks: [...fallbacksSeen.keys()] };
+    });
+    expect(result.keys).toEqual(["components/patterns/typography.tsx#0"]);
+    expect(result.fallbacks).toEqual(["components/patterns/typography.tsx — *"]);
+  });
+
+  it("isolates one declaration inside a multi-export module — H2's region holds no h1", () => {
+    const typography = join(repoRoot, "components/patterns/typography.tsx");
+    const regions = declarationRegions(typography);
+    expect([...regions.keys()]).toEqual(["H1", "H2", "H3", "H4", "Lede", "Muted", "Kbd"]);
+    const source = readSource(typography);
+    const [h1From, h1To] = regions.get("H1")!;
+    const [h2From, h2To] = regions.get("H2")!;
+    expect(source.slice(h1From, h1To)).toContain("<h1");
+    expect(source.slice(h2From, h2To)).not.toContain("<h1");
+    expect(source.slice(h2From, h2To)).toContain("<h2");
+  });
+
+  it("the module-scope fallback list is exactly the recorded one", () => {
+    // The honest residue of the isolation rule: modules the walk could not resolve a declaration
+    // in and therefore scanned whole. Pinned by membership AND length so a new one is a failure,
+    // not a silent widening back toward the module granularity that caused the HIGH.
+    const seen = moduleScopeFallbacks();
+    expect(
+      seen,
+      `module-scope fallbacks the walk hit:\n${seen.map((f) => `  ${f}`).join("\n")}`,
+    ).toEqual(MODULE_SCOPE_FALLBACKS.map(([file, name]) => `${file} — ${name}`));
   });
 
   it("walkPages() is UNCHANGED by the widening — PR1/PR2's counters keep their scope", () => {
@@ -1178,6 +1703,25 @@ describe("the heading scanner itself", () => {
 
   it("an h1 with no className reports as such rather than vanishing", () => {
     expect(classNamesOf("<h1>Plain</h1>", "h1")).toEqual([NO_CLASSNAME]);
+  });
+
+  it("a fully computed className gets its OWN marker, not the bare-heading one", () => {
+    // Two different defects with different fixes; merging them would let a computed
+    // `<h1 className={headingClass}>` hide inside the same "spelling" as a genuinely unstyled
+    // heading, so `H1_SPELLINGS` would read one where the real answer is two treatments.
+    expect(classNamesOf("<h1 className={headingClass}>x</h1>", "h1")).toEqual([COMPUTED_CLASSNAME]);
+    expect(classNamesOf("<h1 className={cn(tierClass, extra)}>x</h1>", "h1")).toEqual([
+      COMPUTED_CLASSNAME,
+    ]);
+    expect(NO_CLASSNAME).not.toBe(COMPUTED_CLASSNAME);
+  });
+
+  it("reads EVERY literal in the expression, not just the first — SCOPE note 3's union clause", () => {
+    // `cn("a b", isActive && "c")` reports `a b c`, a class list no single render necessarily
+    // produces. No live <h1> is of this shape; pinned so the note stays true of the code.
+    expect(classNamesOf('<h1 className={cn("a b", isActive && "c")}>x</h1>', "h1")).toEqual([
+      "a b c",
+    ]);
   });
 
   it("does not fire on h2/h3 — negative control", () => {
