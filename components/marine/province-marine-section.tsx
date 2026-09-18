@@ -76,7 +76,7 @@ export async function ProvinceMarineSection({
   const labelled = blocks.length > 1;
 
   return (
-    <section className="section" aria-labelledby={headingId}>
+    <section className="mt-10" aria-labelledby={headingId}>
       <h2 id={headingId}>{t("marineHeading", { name: provinceName })}</h2>
 
       <div className={styles.provinceBlocks}>

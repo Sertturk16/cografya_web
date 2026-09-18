@@ -472,9 +472,15 @@
   min-width: 0;
 }
 
-/* The Yükle/Sil button pair — plain `.btn.btn-ghost` (already ≥44px tall by its own
-   padding/line-height, DESIGN.md §5) inside a small gap, the same shape `.actions` uses
-   for its own button row. */
+/* The Yükle/Sil button pair — `Button` (`variant="outline"`, T-041; the unlayered global
+   `.btn`/`.btn-ghost` classes this used to read are gone) inside a small gap, the same shape
+   `.actions` uses for its own button row. NOT ≥44px any more: `Button`'s default size is a
+   fixed 40px (`h-10`), where the old `.btn` was ~49px by its own padding/line-height — still
+   clear of DESIGN.md §5's 24px floor, and the row that holds it (`.measurementRow`) keeps its
+   own 44px `min-height` regardless, so the button is simply centred a little shorter inside it.
+   This whole component tree (`ToolIsland`/`ToolMeasurementSave`/`ToolMeasurementList`) has zero
+   render call sites in the product today — `V2ToolWorkbench` replaced it — so this is a
+   correctness note for whoever next revives or deletes the file, not a live-UI concern. */
 .measurementActions {
   display: flex;
   flex: none;

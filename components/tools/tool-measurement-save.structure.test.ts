@@ -159,10 +159,13 @@ describe("the resume mechanism (uyelik-auth-redesign plan §5.6.3) — the case 
 });
 
 describe("the checking branch renders in the SAME interactive shape as authenticated-unsaved, never the lock-icon shape", () => {
-  it("uses btn-primary and aria-disabled, carries no LockIcon or sign-in aria-label", () => {
+  it("uses the primary Button variant and aria-disabled, carries no LockIcon or sign-in aria-label", () => {
+    // T-041 moved this control off the unlayered `.btn`/`.btn-primary` globals.css classes and
+    // onto `Button`/`variant="primary"` (`components/ui/button.tsx`) — being outside any
+    // `@layer` meant no Tailwind utility could ever win against those classes.
     const body = checkingBranchBody();
     expect(body).not.toBe("");
-    expect(body).toContain("btn-primary");
+    expect(body).toContain('variant="primary"');
     expect(body).toContain("aria-disabled={true}");
     expect(body).not.toContain("LockIcon");
     expect(body).not.toContain("signInRequiredAria");
@@ -185,7 +188,10 @@ describe("the saved branch — a genuine, permanent outcome", () => {
     const body = savedBranchBody();
     expect(body).not.toBe("");
     expect(body).toContain("aria-disabled={true}");
-    expect(body).not.toMatch(/<button[^>]*[\s"]disabled(?:[\s>]|=\{)/);
+    // Case-insensitive tag match: T-041 moved this control from a bare `<button>` onto
+    // `<Button>` (`components/ui/button.tsx`), and the invariant this guards — no REAL
+    // `disabled` attribute, only `aria-disabled` — is unchanged by that rename.
+    expect(body).not.toMatch(/<button[^>]*[\s"]disabled(?:[\s>]|=\{)/i);
   });
 
   it("announces the plain save-succeeded fact via a dedicated sr-only role=status region ONLY when the title matches (CODE100-M1 splits this from the mismatch case below)", () => {

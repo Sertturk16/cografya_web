@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { AuthSessionState } from "@/lib/auth/use-session.client";
 import { formatDuration } from "@/lib/book/duration";
 import type { VideoProgressValue } from "@/lib/video-progress/client";
+import { Button } from "@/components/ui/button";
 import styles from "./book-video.module.css";
 
 /**
@@ -68,11 +69,12 @@ export function VideoProgressControls({
           {t("resumeLine", { time: formatDuration(known.lastPositionSeconds) })}
         </p>
       )}
-      <button
+      <Button
         type="button"
+        variant="outline"
         role="switch"
         aria-checked={watched}
-        className={`btn btn-ghost ${styles.watchedToggle}`}
+        className={styles.watchedToggle}
         onClick={() => void handleToggle()}
         // `aria-disabled`, NOT `disabled` (PR #90 review `A11Y90-I3`) — a truly `disabled` button
         // is dropped from the Tab sequence and blurred by the browser the instant this attribute
@@ -84,7 +86,7 @@ export function VideoProgressControls({
         aria-label={watched ? t("watchedToggleAriaOn") : t("watchedToggleAriaOff")}
       >
         {t("watchedToggle")}
-      </button>
+      </Button>
     </div>
   );
 }

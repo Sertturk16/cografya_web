@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import type { MeasurementType } from "@/lib/api/types";
 import { removeMeasurement, type MeasurementRecord } from "@/lib/measurements/client";
+import { Button } from "@/components/ui/button";
 import styles from "./tools.module.css";
 
 type FetchStatus = "idle" | "pending" | "settled";
@@ -128,22 +129,22 @@ export function ToolMeasurementList({
                   </time>
                 </span>
                 <span className={styles.measurementActions}>
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-ghost"
+                    variant="outline"
                     aria-label={t("recallAria", { label })}
                     onClick={() => onRecall(measurement)}
                   >
                     {t("recallLabel")}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="btn btn-ghost"
+                    variant="outline"
                     aria-label={t("deleteAria", { label })}
                     onClick={() => void handleDelete(measurement)}
                   >
                     {t("deleteLabel")}
-                  </button>
+                  </Button>
                 </span>
                 {failedDeleteIds.has(measurement.id) && (
                   <p role="status" className={styles.error}>
