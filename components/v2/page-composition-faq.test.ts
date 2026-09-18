@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SEA_BASINS_DETAIL } from "@/lib/marine/sea-basins-detail";
+import { getAllContinents, CONTINENT_HUB_FAQS } from "@/lib/geo/continents";
 import { faqPageJsonLd } from "@/lib/seo/json-ld";
 import {
   NO_CLASSNAME,
@@ -20,9 +21,23 @@ import {
 } from "@/lib/test-support/composition-scan";
 
 /* -------------------------------------------------------------------------------------------
- * T-035 PR5 — the FAQ surface. Six counters over the six blocks that render a question and an
- * answer, plus the one pairing that matters: a `faqPageJsonLd(X)` call and whether the page that
- * makes it also renders `X`.
+ * T-035 PR5 — the FAQ surface, AFTER CONVERGENCE. Six counters over the hand-written blocks that
+ * render a question and an answer, plus the one pairing that matters: a `faqPageJsonLd(X)` call
+ * and whether the file that makes it also renders `X`.
+ *
+ * FIVE OF THE SIX NOW READ ZERO, and that is the end state Task 9 drove them to rather than a
+ * scanner that stopped working. The six blocks this file was built to count are gone: every FAQ on
+ * the surface is `components/patterns/faq-section.tsx` now, and that component lives OUTSIDE
+ * `SURFACE_ROOTS`, so its one `.map(` is deliberately not on this scan's surface.
+ *
+ * A ZERO PIN IS BLIND ON ITS OWN. Five counters reading 0 is equally true of a converged tree and
+ * of a tree where the walk broke, the predicate stopped matching, or someone deleted every FAQ on
+ * the site. {@link SURFACE_FILES_RENDERING_FAQSECTION} is the derived liveness half that makes the
+ * zeros mean something: it counts the surface files that WRITE `<FaqSection` as JSX **and** whose
+ * binding for that name resolves to the real module through the shared resolver. The two move
+ * together in opposite directions — a page that regresses to hand-written markup raises a spelling
+ * counter and lowers the liveness one, and a broken walk lowers BOTH. Neither number is readable
+ * without the other, which is the point.
  *
  * Built on `lib/test-support/composition-scan.ts` like its three siblings. What is imported from
  * there: `surfaceFiles` and `walk`, `readSource` and `maskedSource`, the ONE literal extractor
@@ -65,16 +80,19 @@ import {
 /** The module that DECLARES `faqPageJsonLd`, never a caller of it. */
 const FAQ_JSONLD_MODULE = join(repoRoot, "lib/seo/json-ld.tsx");
 
-/** Where the delegated-markup exemption's other half lives. See {@link DELEGATED_FAQ_MARKUP}. */
-const SEA_BASIN_VIEW = join(repoRoot, "components/v2/v2-sea-basin-detail-view.tsx");
-
 /**
  * The shared pattern component that renders a FAQ block AND emits its schema, from one `items`
- * array. The ONE `faqPageJsonLd` caller that is not a page on {@link surfaceFiles}'s surface — and
- * not an exemption: it pairs in its own file by the ordinary same-file rule. See the "nine calls"
- * test below.
+ * array. After Task 9 it is the ONLY `faqPageJsonLd` caller in the repo — and not an exemption: it
+ * pairs in its own file by the ordinary same-file rule. See the "one call" test below.
+ *
+ * It sits in `components/patterns`, which is NOT in `SURFACE_ROOTS`, so its own `.map(` is not a
+ * block on this scan's surface. That is what makes the five spelling counters' zero readable as
+ * "no hand-written FAQ remains" rather than "no FAQ remains".
  */
 const FAQ_SECTION_COMPONENT = join(repoRoot, "components/patterns/faq-section.tsx");
+
+/** The export the surface renders. Resolved through the binding resolver, never grepped for. */
+const FAQ_SECTION_EXPORT = "FaqSection";
 
 /** The roots the `faqPageJsonLd` CALLER walk visits — wider than {@link surfaceFiles} on purpose,
  * so a call made from outside the FAQ surface is a failure rather than an omission. */
@@ -350,77 +368,69 @@ function faqJsonLdCalls(): FaqJsonLdCall[] {
 }
 
 /**
- * THE ONE EXEMPTION — four pages whose FAQ markup is written in a component they render.
+ * THE EXEMPTION IS GONE, AND THAT IS THE FINDING.
  *
- * The four `deniz/{akdeniz,ege,karadeniz,marmara}` pages each emit `faqPageJsonLd(basinData.faq)`
- * and render no FAQ markup of their own: `V2SeaBasinDetailView` does it, over the SAME object,
- * handed to it as `data`. The same-file rule {@link FAQ_JSONLD_WITHOUT_MARKUP} decides cannot see
- * across that hop, so the pair is exempted — but exempted through a rule with four decidable
- * halves rather than a written list of four paths:
+ * `DELEGATED_FAQ_MARKUP` used to live here: a four-halved rule exempting the four
+ * `deniz/{akdeniz,ege,karadeniz,marmara}` pages, which each emitted `faqPageJsonLd(basinData.faq)`
+ * for markup written one file away in `V2SeaBasinDetailView`. It was a careful rule and it worked;
+ * it was also a standing tolerance for the exact shape {@link FAQ_JSONLD_WITHOUT_MARKUP} exists to
+ * forbid, kept only because that split was real.
  *
- *   - the page renders the `delegate` export, resolved through `importBindingsOf` + `resolvesTo`
- *     (so a barrel, an alias or a local shadow cannot pose as it), and renders it unconditionally;
- *   - the page passes the ROOT of its JSON-LD array (`basinData` out of `basinData.faq`) as the
- *     `prop` named here, read off the real JSX attribute rather than grepped for;
- *   - the tail of the page's array path (`.faq`) equals the tail of the path the delegate maps
- *     (`data.faq` minus the prop name);
- *   - the delegate really has a FAQ block over that path, by the same predicate as everything else
- *     in this file.
+ * Task 9 removed the split rather than the rule's teeth. The four pages now build
+ * `<FaqSection items={basinData.faq} …/>` themselves and hand it to the view as a `ReactNode`
+ * prop, so schema and markup are one array inside one component and pair by the ORDINARY same-file
+ * rule. With no page left to exempt, the rule and its four liveness halves describe nothing — and
+ * a control with no subject is not kept as documentation, because a reader cannot tell it from one
+ * that is still load-bearing. Deleted, with the reason recorded here and the mutation history in
+ * the counter docblock below.
  *
- * Break any half and the page falls straight back into the counter, which goes to 1. The EXEMPT
- * PAGES ARE DERIVED, never written: a fifth page adopting this delegation is exempt by arriving,
- * and the "exactly these four" assertion below is what makes that visible instead of silent.
- *
- * WHAT THE EXEMPTION DOES NOT CLAIM: that the two sides are reachable together. Both are
- * unconditional today and that is asserted, but "unconditional" is a shape, not an evaluation —
- * see SCOPE note 4.
+ * WHY THE VIEW TAKES A PROP rather than importing `FaqSection`: it is a Client Component, and
+ * `FaqSection` reaches `lib/seo/json-ld`, which is `server-only`. That boundary is
+ * `components/patterns/rsc-boundary.test.ts`'s subject, not this file's.
  */
-const DELEGATED_FAQ_MARKUP = {
-  delegate: SEA_BASIN_VIEW,
-  export: "V2SeaBasinDetailView",
-  prop: "data",
-} as const;
-
-/** Is this call's markup written by {@link DELEGATED_FAQ_MARKUP}'s delegate, in that delegate? */
-function isDelegated(call: FaqJsonLdCall): boolean {
-  const root = call.array.split(".")[0]!;
-  const tail = call.array.slice(root.length);
-  const binding = importBindingsOf(call.file).get(DELEGATED_FAQ_MARKUP.export);
-  if (binding === undefined) return false;
-  if (!resolvesTo(binding, DELEGATED_FAQ_MARKUP.delegate, DELEGATED_FAQ_MARKUP.export))
-    return false;
-
-  const elements = jsxElementsOf(call.file);
-  const rendered = elements.filter((element) => element.tag === DELEGATED_FAQ_MARKUP.export);
-  const passes = rendered.some((element) => {
-    const index = elements.indexOf(element);
-    if (writtenUnderCondition(elements, index)) return false;
-    // The prop's own recorded value — `data={basinData}` is `basinData` and
-    // `data={{ ...basinData }}` is `{ ...basinData }`, so a wrapped or rebuilt object does not
-    // match. `ScannedElement.attributes` does NOT distinguish a braced identifier from the STRING
-    // `data="basinData"`, which records the same `basinData`; what rules that out is `tsc`, since
-    // the prop is typed `SeaBasinDetailData` and a string does not compile. Stated because this
-    // used to claim "only a bare identifier can equal root", which the attribute map alone does
-    // not give.
-    return element.attributes.get(DELEGATED_FAQ_MARKUP.prop) === root;
-  });
-  if (!passes) return false;
-
-  return faqBlocksIn(DELEGATED_FAQ_MARKUP.delegate).some(
-    (block) => block.mapped === `${DELEGATED_FAQ_MARKUP.prop}${tail}` && !block.conditional,
+function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
+  return faqJsonLdCalls().filter(
+    (call) => !faqBlocksIn(call.file).some((block) => block.mapped === call.array),
   );
 }
 
-function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
-  return faqJsonLdCalls().filter((call) => {
-    if (faqBlocksIn(call.file).some((block) => block.mapped === call.array)) return false;
-    return !isDelegated(call);
-  });
+/* ---------------------------------------------------------------------------------------------
+ * THE LIVENESS HALF — what the five zeros are read against
+ * ------------------------------------------------------------------------------------------ */
+
+/**
+ * The surface files that really RENDER {@link FAQ_SECTION_EXPORT}: they write it as a JSX tag AND
+ * their binding for that name resolves to `components/patterns/faq-section.tsx` through the shared
+ * resolver — the same shape `SURFACE_FILES_RENDERING_STATTILE` uses in `page-composition-cards.ts`.
+ *
+ * BOTH HALVES ARE LOAD-BEARING, and the mutation record below drives each on its own:
+ *
+ *   - JSX without the import — a local `function FaqSection()` shadowing the name, or a
+ *     `<FaqSection>` left behind after the import was dropped — resolves to nothing and is NOT
+ *     counted. A substring scan for `<FaqSection` would count it and read a converged surface
+ *     where there is a build error.
+ *   - the import without JSX — a file that imports the component and renders nothing — is NOT
+ *     counted either, which is the dead-reference shape that makes an adoption counter lie.
+ */
+function surfaceFilesRenderingFaqSection(): string[] {
+  return surfaceFiles()
+    .filter((file) => {
+      const bindings = importBindingsOf(file);
+      return jsxElementsOf(file).some((element) => {
+        const bound = bindings.get(element.tag);
+        return bound !== undefined && resolvesTo(bound, FAQ_SECTION_COMPONENT, FAQ_SECTION_EXPORT);
+      });
+    })
+    .map(label)
+    .sort();
 }
 
 /**
- * THE SIX FAQ BLOCKS AND WHAT THEY SPELL — measured 2026-09-18 on `feature/t-035-pr5-faq` at
- * `ea65d42` (`dev` after PR4), by the predicate {@link faqBlocksIn} states, not predicted.
+ * THE HAND-WRITTEN FAQ SURFACE IS EMPTY — measured 2026-09-18 on `feature/t-035-pr5-faq` after
+ * Task 9, by the predicate {@link faqBlocksIn} states, not predicted.
+ *
+ * WHAT WAS HERE BEFORE, kept as the thing the zeros are a delta from (measured at `ea65d42`,
+ * `dev` after PR4, and unchanged from the plan's own Measurements section — 4 / 3 / 4 / 4 / 1 / 0):
  *
  * | file                                                | item wrapper            | question   | answer  | shell                          |
  * | --------------------------------------------------- | ----------------------- | ---------- | ------- | ------------------------------ |
@@ -431,36 +441,43 @@ function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
  * | `app/[locale]/(site)/dunya/kita/page.tsx`           | `rounded-2xl border …` D| `<h3>` C   | `<p>` D | `space-y-6` + `id`             |
  * | `app/[locale]/(site)/dunya/kita/[slug]/page.tsx`    | `rounded-2xl border …` D| `<h3>` C   | `<p>` D | `space-y-6` + `id`             |
  *
- * Reading the table: four item spellings (A–D), three question spellings (the two `turkiye` and the
- * two `dunya` blocks share C, character for character), four answer spellings, four shells. The
- * plan's Measurements section states 4 / 3 / 4 / 4 / 1 / 0 and every one of them reproduced —
- * nothing has moved since the measurement, which is itself the first finding.
+ * Four item spellings, three question spellings, four answer spellings, four shells, one block
+ * whose question was not a heading at all. All six rows are now `<FaqSection>` and every one of
+ * those counters is **0**, against {@link SURFACE_FILES_RENDERING_FAQSECTION} = 9.
  *
- * ONE FIGURE IN THE PLAN IS WRONG, and it is not one of the six. The Measurements section calls
- * the sea-basin data "4 basins, 13 questions"; it is **12**, 3 per basin. 13 is the number of
- * `question:` occurrences in `lib/marine/sea-basins-detail.ts`, one of which is the `SeaBasinFAQ`
- * interface's own field declaration — the grep-counts-the-declaration mistake, one door over from
- * the grep-counts-the-docblock one this repo has recorded four times. Asserted below rather than
- * corrected in prose only.
+ * Nine rather than six, and the three extra are not a surprise: the four `deniz` basin pages build
+ * the component and pass it INTO `V2SeaBasinDetailView` as a prop (that view is a Client Component
+ * and `FaqSection` reaches `server-only`), so the four pages count and the one view does not —
+ * four where the old table had one row. Five pages + four basin pages = 9.
  *
- * TWO MECHANISMS, NOT THREE, and the second row is where the two questions differ: the accordion
- * puts its question in a `<span>` inside a `<button>` and the five static grids put theirs in an
- * `<h3>`. That is {@link FAQ_BLOCKS_WITHOUT_HEADINGS} = 1, and it is a document-outline defect, not
- * a styling one — `/deniz`'s seven questions contribute nothing between the page's `<h2>` and the
- * next section.
+ * TWO FIGURES IN THE PLAN ARE WRONG, BY THE SAME MISTAKE, and neither is one of the six.
  *
- * ## SCOPE — what these six counters cannot see
+ *   - the sea-basin data is called "4 basins, 13 questions"; it is **12**, 3 per basin. 13 is the
+ *     number of `question:` occurrences in `lib/marine/sea-basins-detail.ts`, one of which is the
+ *     `SeaBasinFAQ` interface's own field declaration.
+ *   - the continent data is called "7 continents, 29 questions"; it is **28**, 4 per continent. 29
+ *     is the `question:` count in `lib/geo/continents.ts`, one of which is that file's own
+ *     interface field declaration.
+ *
+ * That is the grep-counts-the-declaration mistake **three times now** — one door over from the
+ * grep-counts-the-docblock one this repo has recorded four times. Both are asserted below, from
+ * the DATA rather than from a grep, which is the only reason the second one was found: Ruling BX
+ * said re-measure instead of quoting, and the quoted figure was wrong again.
+ *
+ * ## SCOPE — what these counters cannot see
  *
  * Every claim below is a claim about SOURCE TEXT read by `scanJsx`, never about a rendered DOM, a
  * computed style or a page that was actually requested. Specifically:
  *
  *   1. **A FAQ block that does not `.map()` is not a block here at all.** The population is derived
  *      from `.map(` calls, so seven hand-copied `<div>` pairs, a `for…of` push into an array, or a
- *      `<details>`/`<summary>` list would contribute to none of the six counters — including
+ *      `<details>`/`<summary>` list would contribute to none of the spelling counters — including
  *      {@link FAQ_JSONLD_WITHOUT_MARKUP}, where it would read as markup MISSING and fail loudly,
- *      which is the safe direction. No such block exists today: the six below are every `.map(` on
- *      {@link surfaceFiles}'s surface that reads both a `.question` and an `.answer`, minus the two
- *      JSON-LD projections named in {@link faqBlocksIn}.
+ *      which is the safe direction. There is nothing left to miss on this surface today: the
+ *      population is empty, and a regression ARRIVING as a `.map(` is the shape these counters
+ *      catch. One that arrives as seven copied `<div>`s is caught by
+ *      {@link SURFACE_FILES_RENDERING_FAQSECTION} falling instead, which is precisely why a zero
+ *      pin needed a liveness half rather than more scanner.
  *   2. **The question and the answer are located by a MEMBER NAME.** `.question` and `.answer` are
  *      what all six blocks happen to call their fields. A block whose type spells them `soru` and
  *      `cevap`, or which destructures `const { question, answer } = item` and writes a bare
@@ -482,37 +499,51 @@ function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
  *      (a two-mechanism `.map(`), only the first styled one is credited — {@link faqBlocksIn}
  *      states that rule and why it is order-independent.
  *   4. **No gate is evaluated, anywhere.** `inExpression` records that an element is written inside
- *      a `{…}`, never what the expression is or whether it is true. The three gates on this surface
- *      — `locale === "tr"`, `region.faqs?.length > 0`, and none — are the same fact to this file.
- *      So the shape this CANNOT see is exactly: **a page whose JSON-LD gate and markup gate are
- *      both present but DIFFER.** `{locale === "tr" && <JsonLd …/>}` beside
- *      `{region.faqs?.length > 0 && <section>…</section>}` reads as "both conditional", agrees, and
- *      publishes FAQPage data for questions an `/en` reader cannot see. What IS caught is a gate on
- *      one side and not the other, which is the shape the plan's finding 2 describes and which the
- *      "both sides of every pair agree about being conditional" control pins at zero mismatches.
+ *      a `{…}`, never what the expression is or whether it is true.
+ *
+ *      THIS BLIND SPOT IS LARGELY GONE, and not because the scanner got better. The shape it could
+ *      not see was **a page whose JSON-LD gate and markup gate are both present but DIFFER** —
+ *      `{locale === "tr" && <JsonLd …/>}` beside `{region.faqs?.length > 0 && <section>…</section>}`
+ *      reads as "both conditional", agrees, and publishes FAQPage data an `/en` reader cannot see.
+ *      Task 9 removed the two-gate shape itself: there is exactly ONE gate now, `FaqSection`'s own
+ *      `structuredData !== false && isIndexable(locale, structuredData)`, computed inside the
+ *      component from props the caller cannot spell inconsistently, over the same `items` the
+ *      markup maps. Two gates cannot disagree when there is one. A counter that cannot decide a
+ *      property is weaker than a design where the property cannot fail; this is the second.
+ *
+ *      What remains unevaluated is the callers' own `{locale === "tr" && <FaqSection …/>}` — the
+ *      `/deniz` block, gated at page level because `messages/en.json` has no `Deniz.q*`. That is a
+ *      gate on BOTH halves at once (the component emits nothing at all when not rendered), so it
+ *      cannot produce the asymmetry this note is about.
  *   5. **A root element reads as unconditional.** `jsxElementsOf` scans the whole module, so the
  *      top-level brace counter also counts the `{` of every function body above the JSX and the
  *      returned `<>` of every page reads `inExpression: true`. {@link writtenUnderCondition}
  *      therefore ignores elements with no parent, which means a conditional wrapped around a whole
  *      module-scope element — `const Block = cond ? <section …/> : null` — is invisible. Nothing on
  *      this surface writes one.
- *   6. **Pairing is same-file, plus one named delegation.** {@link FAQ_JSONLD_WITHOUT_MARKUP} asks
- *      whether the identifier passed to `faqPageJsonLd` is the identifier a FAQ block in the same
- *      file maps, and {@link DELEGATED_FAQ_MARKUP} is the single rule that crosses a file boundary.
- *      A second delegation to a different component is a failure, by design: it must be reasoned
- *      about and named, not absorbed.
+ *   6. **Pairing is same-file, with NO exemption at all any more.** {@link FAQ_JSONLD_WITHOUT_MARKUP}
+ *      asks whether the identifier passed to `faqPageJsonLd` is the identifier a FAQ block in the
+ *      same file maps, and that is now the whole rule: the `DELEGATED_FAQ_MARKUP` exemption that
+ *      used to cross one file boundary for the four `deniz` basin pages is deleted, because those
+ *      pages stopped emitting a schema for markup written elsewhere. A delegation arriving again
+ *      is a FAILURE, by design — it must be reasoned about and named, not absorbed.
  *   7. **Identifier identity is TEXTUAL.** `faqPageJsonLd(region.faqs)` beside a
  *      `region.faqs.map(…)` pairs; `faqPageJsonLd(faqs)` beside `region.faqs.map(…)` does not, even
  *      where `const faqs = region.faqs` sits between them. The direction is safe — an alias reads
- *      as markup missing and fails — but it is a false alarm waiting for Task 9, which should keep
- *      the two spellings identical rather than introduce a local alias.
+ *      as markup missing and fails. Task 9 kept the two spellings identical rather than introducing
+ *      a local alias, which is why the single surviving caller pairs.
  *   8. **No line numbers, anywhere.** {@link readSource} collapses each comment to one space, so an
  *      index into it is not a source line (T-043). Every failure message names FILES.
  *   9. **Outside the walks nothing is seen, and both walks are `.tsx`-only.** Blocks are scanned
  *      over {@link surfaceFiles} (the reading and play page roots plus `components/v2`);
  *      `faqPageJsonLd` CALLS are scanned over the wider `app/`, `components/` and `lib/`, so a call
- *      from a file on neither surface is a failure rather than an omission — the "nine calls"
- *      control pins the whole population and names the one off-surface caller.
+ *      from a file on neither surface is a failure rather than an omission — the "one call"
+ *      control pins the whole population as an exact identity.
+ *
+ *      `components/patterns` is on the CALLER walk and NOT on the block walk, which is the asymmetry
+ *      the whole end state rests on: `FaqSection`'s schema is seen and pinned, its markup `.map(`
+ *      is not a block on this surface, and so the five spelling counters read the HAND-WRITTEN
+ *      surface exactly. That was true before Task 9 too; it only became load-bearing after.
  *
  *      But `walk()` returns `.tsx` files only (`composition-scan.ts`), so **a `faqPageJsonLd` call
  *      written in a `.ts` module is invisible to this file entirely** — it is not counted, not
@@ -523,15 +554,62 @@ function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
  *      `.tsx` one.
  *   10. **Markup with NO structured data is not a defect here, and is not counted.** Every counter
  *      runs from the schema side or from the block side separately; nothing asks "does this FAQ
- *      block emit a schema?". `components/v2/v2-marine-faq-accordion.tsx` is exactly that shape
- *      today — seven questions on `/deniz`, no `FAQPage` — and it is the one block the plan says
- *      must stay able to decline structured data, which is why `FaqSection`'s `structuredData`
- *      defaults to `false`. So the asymmetry is deliberate: schema without markup is a violation
- *      and is pinned at 0; markup without schema is a choice and is pinned nowhere.
+ *      block emit a schema?". `/deniz` is still exactly that shape — eight questions, no `FAQPage`,
+ *      now spelled `structuredData={false}` on a `FaqSection` rather than by a component that could
+ *      not emit one if it tried — and it is the block the plan says must stay able to decline
+ *      structured data, which is why that prop defaults to `false`. So the asymmetry is deliberate:
+ *      schema without markup is a violation and is pinned at 0; markup without schema is a choice
+ *      and is pinned nowhere.
+ *   11. **A JSX tag is counted, an evaluation is not.** {@link SURFACE_FILES_RENDERING_FAQSECTION}
+ *      proves a file WRITES `<FaqSection>` with the real import bound — not that the element is
+ *      reachable, that its `items` is non-empty, or that a reader ever sees it. `/deniz`'s block
+ *      sits behind a `locale === "tr"` gate and counts exactly like an ungated one. The counter is
+ *      an adoption floor, not a rendering proof; the visual round is what checked rendering.
  *
- * MUTATION-CHECKED 2026-09-18, each counter AT THE VALUE IT IS PINNED AT — never at some earlier
- * number — each edit reverted from a copy and the suite re-run green. Seven breakages on the real
- * tree in the first round, each RED naming the files:
+ * ## MUTATION RECORD
+ *
+ * Each counter driven AT THE VALUE IT IS PINNED AT — never at some earlier number — each edit
+ * reverted from a copy and the suite re-run green.
+ *
+ * ### Round 3, 2026-09-18, Task 9 — at the NEW values (0 / 0 / 0 / 0 / 0 / 0 / 9 / 1)
+ *
+ * A zero cannot be raised by breaking something; it is driven by ADDING the shape it forbids. Each
+ * of these re-spells or un-adopts one real block and watches the pair of counters move oppositely:
+ *
+ *   - `dunya/kita/page.tsx` reverted to its pre-Task-9 hand-written FAQ block (the `<section
+ *     id="sss">` with its own item/question/answer spellings, `<FaqSection>` removed) — RED on
+ *     FIVE counters at once, each naming the file: `expected 1 to be 0` on item wrappers, on
+ *     question elements, on answer elements and on section shells, AND `expected 8 to be 9` on
+ *     {@link SURFACE_FILES_RENDERING_FAQSECTION}. That opposite motion is the whole design: a
+ *     spelling counter rising while the liveness counter falls is un-adoption, and neither number
+ *     says it alone.
+ *   - the same revert with the question written as a `<p>` instead of an `<h3>` — RED additionally
+ *     on {@link FAQ_BLOCKS_WITHOUT_HEADINGS}, `expected 1 to be 0`, naming the file.
+ *   - `<FaqSection>`'s import removed from `deniz/akdeniz/page.tsx` while the JSX stays (the
+ *     shadowed/dangling shape) — RED, `expected 8 to be 9`, and the file is absent from the listed
+ *     population. A substring scan for `<FaqSection` would have counted it and read 9.
+ *   - the JSX removed from `deniz/akdeniz/page.tsx` while the IMPORT stays (the dead-reference
+ *     shape) — RED, `expected 8 to be 9`. Both halves of the predicate are therefore live.
+ *   - `items.map(` → `items.slice().map(` in `faq-section.tsx` — the caller list is untouched and
+ *     RED lands only on the claim it does not entail: `FaqSection's schema and its markup are no
+ *     longer one identifier in one file: expected [ '(not an identifier)' ] to include 'items'`.
+ *   - `faqPageJsonLd(basinData.faq)` restored to `deniz/akdeniz/page.tsx`'s schema array (the
+ *     delegation shape, now that nothing exempts it) — RED on {@link FAQ_JSONLD_WITHOUT_MARKUP},
+ *     `expected 1 to be 0`, naming `deniz/akdeniz/page.tsx — faqPageJsonLd(basinData.faq)`, and
+ *     RED on the exact-identity assertion below. This is the mutation that proves deleting
+ *     `DELEGATED_FAQ_MARKUP` removed a tolerance rather than a guard.
+ *   - one `Deniz.q4` edited to duplicate `Deniz.q3` — RED on Ruling CE's uniqueness assertion
+ *     (`lib/marine/deniz-faq.test.ts`), which matters because `FaqSection` keys its items and
+ *     tracks accordion panel state BY the question string.
+ *   - `lib/geo/continents.ts`'s `avrupa.faqs` cut from 4 entries to 3 — RED, `expected 27 to be
+ *     28`, with the per-continent breakdown in the message. The same drive on
+ *     `SEA_BASINS_DETAIL.ege.faq` — RED, `expected 11 to be 12`.
+ *
+ * ### Rounds 1–2, 2026-09-18, Task 7 — at the PRE-ADOPTION values (4 / 3 / 4 / 4 / 1 / 0)
+ *
+ * History. Every subject below is gone from the tree; the record is kept because it is what those
+ * counters were shown to catch while they still had one, and a counter's past is how a reader
+ * judges the zero that replaced it.
  *
  *   - `dunya/kita/page.tsx`'s item wrapper re-spelled `p-5 space-y-2` → `p-6 space-y-3` — RED,
  *     `expected 5 to be 4`, the message listing all five spellings with their files;
@@ -542,88 +620,88 @@ function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
  *     shells with NO change of className, which is the (treatment, identity) pair earning its keep;
  *   - `v2-sea-basin-detail-view.tsx`'s question `<h3>` rewritten as a `<div>` — RED, `expected 2 to
  *     be 1`, naming the accordion and the sea-basin view;
- *   - `HUB_FAQS.map(` rewritten `HUB_FAQS.slice().map(` so the JSON-LD's array is no longer the one
- *     the page maps — RED on {@link FAQ_JSONLD_WITHOUT_MARKUP}, `expected 1 to be 0`, naming
- *     `dunya/kita/page.tsx — faqPageJsonLd(HUB_FAQS)`, with every other counter unmoved;
+ *   - `HUB_FAQS.map(` rewritten `HUB_FAQS.slice().map(` — RED on {@link FAQ_JSONLD_WITHOUT_MARKUP},
+ *     `expected 1 to be 0`, naming `dunya/kita/page.tsx — faqPageJsonLd(HUB_FAQS)`;
  *   - the `locale === "tr" &&` gate removed from `turkiye/bolge/page.tsx`'s `<JsonLd>` while its
  *     markup stayed gated — RED on the pair-agreement control, `JSON-LD conditional=false, markup
- *     conditional=true`. That is the plan's finding 2 exactly: FAQPage data on `/en` for questions
- *     the English page does not render.
- *
- * And the exemption, one half at a time: `data={basinData}` on `deniz/akdeniz` changed to
- * `data={{ ...basinData }}` — RED, the page dropping out of the exempt four and into the counter;
- * `data.faq.map(` in the delegate changed to `data.faqs.map(` — RED on all four pages at once
- * (`expected 4 to be 0`) plus the delegate's own liveness row.
- *
- * TWO MORE ROUNDS, each control driven at the value it guards:
- *
- *   - ROUND 1, Ruling CA. The attribution rule reverted to "the FIRST `.question` read" — RED on
- *     `swapping the arms of a two-mechanism block changes nothing`, `expected [] to deeply equal
- *     [ { mapped: 'items', …(3) } ]`: with the old rule the swapped component is not a FAQ block at
- *     all, which is the defect that put an ordering comment in a product file.
- *   - ROUND 1, the zero pin's split. `dunya/kita/[slug]`'s `<JsonLd schema={faqPageJsonLd(
- *     continent.faqs)} />` DELETED — orphans stay 0, so the old pin stayed green, and the split
- *     went RED: `calls paired by the same-file identifier rule: expected [ …(4) ] to have a length
- *     of 5 but got 4`. That is the whole reason the split is asserted.
- *   - ROUND 1, FaqSection's own pairing. `items.map(` → `items.slice().map(` — the caller list is
- *     untouched and RED lands only on the claim it does not entail: `FaqSection's schema and its
- *     markup are no longer one identifier in one file: expected [ '(not an identifier)' ] to
- *     include 'items'`.
- *   - ROUND 2, Ruling CD. The arms are now located by balanced parentheses rather than by the
- *     literals `<Card key={index}` / `<AccordionItem key={index}`, and the product change that
- *     lock forbade was made: both React keys are `item.question`. Re-running round 1's Ruling CA
- *     mutation against the NEW component shows the old rule failing on the UNSWAPPED file too
- *     (`FaqSection is not being read as a FAQ block at all`) — the key rename alone would have
- *     broken it, one door over from the swap.
+ *     conditional=true`. That is the plan's finding 2 exactly. **Task 9 dissolved that shape**: one
+ *     gate, computed inside the component, over the same array as the markup (SCOPE note 4).
+ *   - the exemption, one half at a time: `data={basinData}` on `deniz/akdeniz` → `data={{
+ *     ...basinData }}` — RED, the page dropping out of the exempt four and into the counter;
+ *     `data.faq.map(` in the delegate → `data.faqs.map(` — RED on all four pages at once
+ *     (`expected 4 to be 0`) plus the delegate's own liveness row.
+ *   - Ruling CA: the attribution rule reverted to "the FIRST `.question` read" — RED on `swapping
+ *     the arms of a two-mechanism block changes nothing`, `expected [] to deeply equal [ { mapped:
+ *     'items', …(3) } ]`.
+ *   - the zero pin's split: `dunya/kita/[slug]`'s `<JsonLd schema={faqPageJsonLd(continent.faqs)}
+ *     />` DELETED — orphans stayed 0 so the pin stayed green, and the split went RED: `calls paired
+ *     by the same-file identifier rule: expected [ …(4) ] to have a length of 5 but got 4`.
+ *   - Ruling CD: the arms located by balanced parentheses rather than by the literals `<Card
+ *     key={index}` / `<AccordionItem key={index}`, and the product change that lock forbade made —
+ *     both React keys are `item.question`.
  *
  * WHERE THE PROBES LIVE. Every control that adds markup rather than breaking it injects into
  * `app/[locale]/(site)/hakkimizda/page.tsx`, which renders no FAQ and which neither Task 8 nor
- * Task 9 touches — so no control here depends on markup those tasks are contracted to rewrite,
- * the rule PR3 paid for five times and PR4 three. The counters themselves are SUPPOSED to move
- * when Task 9 converges the six blocks; their controls are not.
+ * Task 9 touched — so no control here depended on markup those tasks were contracted to rewrite,
+ * the rule PR3 paid for five times and PR4 three. That rule is why this file's CONTROLS all
+ * survived Task 9 untouched while its COUNTERS all moved, which is exactly the intended split.
  *
- * The verbatim RED is in `.superpowers/sdd/2026-09-18-page-composition-pr5-pr6/task-7-report.md`.
+ * The verbatim RED is in `.superpowers/sdd/2026-09-18-page-composition-pr5-pr6/task-7-report.md`
+ * (rounds 1–2) and `task-9-report.md` (round 3).
  */
-export const FAQ_ITEM_SPELLINGS = 4;
+export const FAQ_ITEM_SPELLINGS = 0;
 
-/** Distinct spellings of the element that carries the question text. In TWO element types —
- * `<h3>` ×5 and `<span>` ×1 — which is {@link FAQ_BLOCKS_WITHOUT_HEADINGS}'s whole subject. */
-export const FAQ_QUESTION_SPELLINGS = 3;
+/** Distinct spellings of the element that carries the question text, across hand-written blocks.
+ * Was 3, in two element types (`<h3>` ×5, `<span>` ×1); the `<span>` was the `/deniz` accordion and
+ * {@link FAQ_BLOCKS_WITHOUT_HEADINGS}'s whole subject. */
+export const FAQ_QUESTION_SPELLINGS = 0;
 
 /**
- * Distinct spellings of the element that carries the answer text. ONE element type — every block
- * writes a `<p>`, asserted beside the count, so the six blocks already agree about the answer's
- * tag and disagree only about its treatment.
+ * Distinct spellings of the element that carries the answer text, across hand-written blocks.
  *
- * FOUR rather than three because the four static grids differ only in their left indent
- * (`pl-4`, `pl-5`, `pl-7`) — the gutter under a question marker each block draws differently —
- * plus the accordion's `pt-2 pl-11`. That is the cheapest convergence on this surface and the
- * reason this figure is worth its own pin: it moves the moment one indent is chosen.
+ * Was 4: the four static grids differed only in their left indent (`pl-4`, `pl-5`, `pl-7`) — the
+ * gutter under a question marker each block drew differently — plus the accordion's `pt-2 pl-11`.
+ * That was called the cheapest convergence on this surface, and it is the one that landed: there
+ * is one indent now because there is one component.
  */
-export const FAQ_ANSWER_SPELLINGS = 4;
+export const FAQ_ANSWER_SPELLINGS = 0;
 
-/** Distinct `(treatment, identity strategy)` pairs across the six enclosing `<section>`s. Both
- * halves are load-bearing: `space-y-6` is written by two shells that are labelled differently
- * (`aria-labelledby` on `/deniz`, an `id` anchor on `/dunya/kita`), so treatment alone reads 3 and
- * hides the fact that the two sections are not the same thing. Three strategies across four
- * shells: `aria-labelledby`, `id`, `id`+`tabIndex`. */
-export const FAQ_SECTION_SHELLS = 4;
+/** Distinct `(treatment, identity strategy)` pairs across the enclosing `<section>`s. Was 4 across
+ * three identity strategies (`aria-labelledby`, `id`, `id`+`tabIndex`) — `FaqSection` writes one
+ * `<section id aria-labelledby tabIndex className="scroll-mt-28 …">` for every caller, so all
+ * three collapsed together with the treatment. */
+export const FAQ_SECTION_SHELLS = 0;
 
-/** Blocks whose question element is not an `<h1>`…`<h6>`. One: the `/deniz` accordion. */
-export const FAQ_BLOCKS_WITHOUT_HEADINGS = 1;
+/** Blocks whose question element is not an `<h1>`…`<h6>`. Was 1 — the `/deniz` accordion, whose
+ * questions sat in a `<span>` inside a `<button>` and contributed nothing to the document outline.
+ * `FaqSection`'s accordion arm takes its `<h3>` from `Accordion.Header`, which is why
+ * `components/ui/accordion.tsx` had to be rebuilt on Base UI before Task 9 could run. */
+export const FAQ_BLOCKS_WITHOUT_HEADINGS = 0;
 
 /**
- * `faqPageJsonLd(X)` calls where no FAQ block in the same file maps `X`, after
- * {@link DELEGATED_FAQ_MARKUP}. **This is the counter that matters, and 0 is the only correct
- * value on a shipped tree**: anything above it is structured data published for questions no
- * reader can see, which is Google's own definition of a violation and what `faqPageJsonLd`'s
- * docblock already required of its callers with nothing enforcing it.
+ * Surface files that render `<FaqSection>` with the real import bound — the LIVENESS half the five
+ * zeros above are read against. Nine: five pages that render it directly
+ * (`turkiye/bolge`, `turkiye/bolge/[slug]`, `dunya/kita`, `dunya/kita/[slug]`, `deniz`) plus the
+ * four `deniz/*` basin pages, which build it and pass it to `V2SeaBasinDetailView` as a prop
+ * because that view is a Client Component and `FaqSection` reaches `server-only`.
+ *
+ * Expected to RISE. A new reading page with questions on it adds one; nothing legitimately removes
+ * one except deleting a page, so a FALL is the signal — un-adoption, a dropped import, or a walk
+ * that stopped seeing the surface.
+ */
+export const SURFACE_FILES_RENDERING_FAQSECTION = 9;
+
+/**
+ * `faqPageJsonLd(X)` calls where no FAQ block in the same file maps `X`. **This is the counter that
+ * matters, and 0 is the only correct value on a shipped tree**: anything above it is structured
+ * data published for questions no reader can see, which is Google's own definition of a violation
+ * and what `faqPageJsonLd`'s docblock already required of its callers with nothing enforcing it.
  *
  * It asserts the WEAKER, DECIDABLE property, deliberately. PR3 spent four review rounds learning
- * that a reachability counter cannot evaluate a condition; the eight calls on this surface are
- * gated three different ways and none of those gates is read here. What is decided is identifier
- * identity in one file, plus one named delegation with four liveness halves. SCOPE note 4 states
- * precisely what that leaves invisible.
+ * that a reachability counter cannot evaluate a condition. What is decided is identifier identity
+ * in one file — and after Task 9 that is the WHOLE rule, with no exemption beside it: the single
+ * surviving call and the markup it describes are the same `items` identifier in the same
+ * component. SCOPE notes 4 and 6 state what remains invisible, which is much less than it was.
  */
 export const FAQ_JSONLD_WITHOUT_MARKUP = 0;
 
@@ -664,40 +742,91 @@ function withProbe<T>(probe: string, fn: () => T): T {
 }
 
 describe("the FAQ block scanner", () => {
-  it("found six blocks, one per renderer — anti-vacuity", () => {
+  it("finds no hand-written FAQ block on the surface — and nine files rendering FaqSection", () => {
+    // THE ZERO AND ITS LIVENESS HALF, IN ONE TEST, because neither is readable alone. An empty
+    // block population is what convergence looks like AND what a broken walk looks like; the
+    // second assertion is what tells them apart, and it is derived from the real import graph
+    // rather than from a list of paths.
     const blocks = faqBlocks();
     expect(
       blocks.map((block) => label(block.file)).sort(),
-      `FAQ blocks found:\n${blocks.map((b) => `  ${label(b.file)} over ${b.mapped}`).join("\n")}`,
-    ).toEqual([
+      `hand-written FAQ blocks found:\n${blocks
+        .map((b) => `  ${label(b.file)} over ${b.mapped}`)
+        .join("\n")}`,
+    ).toEqual([]);
+
+    const rendering = surfaceFilesRenderingFaqSection();
+    expect(rendering, `files rendering <FaqSection>:\n${rendering.join("\n")}`).toEqual([
+      "app/[locale]/(site)/deniz/akdeniz/page.tsx",
+      "app/[locale]/(site)/deniz/ege/page.tsx",
+      "app/[locale]/(site)/deniz/karadeniz/page.tsx",
+      "app/[locale]/(site)/deniz/marmara/page.tsx",
+      "app/[locale]/(site)/deniz/page.tsx",
       "app/[locale]/(site)/dunya/kita/[slug]/page.tsx",
       "app/[locale]/(site)/dunya/kita/page.tsx",
       "app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx",
       "app/[locale]/(site)/turkiye/bolge/page.tsx",
-      "components/v2/v2-marine-faq-accordion.tsx",
-      "components/v2/v2-sea-basin-detail-view.tsx",
     ]);
-    // The walk really is wide enough to reach a `components/v2` renderer as well as a page: two of
-    // the six are components, and a `page.tsx`-only walk would see four.
-    expect(blocks.filter((block) => block.file.endsWith("page.tsx"))).toHaveLength(4);
+    expect(rendering).toHaveLength(SURFACE_FILES_RENDERING_FAQSECTION);
+
+    // The walk is still wide enough to reach `components/v2`, where two of the six old blocks
+    // lived — otherwise the empty population above would be a statement about `app/` only.
+    expect(
+      surfaceFiles().filter((file) => file.includes("/components/v2/")).length,
+    ).toBeGreaterThan(20);
+  });
+
+  it("the liveness counter needs BOTH the import and the JSX — negative controls", () => {
+    // Driven on the probe host, so nothing here depends on a real page's markup. Each half is
+    // removed on its own and the file must NOT be counted either way.
+    const real = `import { FaqSection } from "@/components/patterns/faq-section";\n`;
+    const jsx = `function FaqProbe2() {\n  return <FaqSection heading="h" locale="tr" items={[]} />;\n}\n`;
+    const counted = (probe: string) =>
+      withProbe(probe, surfaceFilesRenderingFaqSection).includes(label(PROBE_HOST));
+
+    expect(counted(`${real}${jsx}`), "import + JSX must be counted").toBe(true);
+    // JSX with no import — a dangling tag or a local shadow. A substring scan would count this.
+    expect(counted(jsx), "JSX with no resolvable import must not be counted").toBe(false);
+    // The import with no JSX — the dead-reference shape.
+    expect(counted(real), "an unused import must not be counted").toBe(false);
+    // An import of the same NAME from somewhere else does not qualify.
+    expect(
+      counted(`import { FaqSection } from "@/components/ui/card";\n${jsx}`),
+      "a FaqSection bound to another module must not be counted",
+    ).toBe(false);
   });
 
   it("a FAQ projection is not a FAQ block — clause (2) is still live", () => {
-    // Both `turkiye/bolge` pages write a `.map(` that reads `.question` and `.answer` and renders
-    // nothing. If this stops being true the JSX clause is inert and nobody would notice.
-    for (const rel of ["turkiye/bolge/page.tsx", "turkiye/bolge/[slug]/page.tsx"]) {
-      const file = join(repoRoot, "app/[locale]/(site)", rel);
-      const masked = maskedSource(file);
-      const qualifying = [...masked.matchAll(/\.map\s*\(/g)].filter((match) => {
-        const open = match.index + match[0].length - 1;
-        const body = masked.slice(open, matchingParen(masked, open));
-        return memberRead("question").test(body) && memberRead("answer").test(body);
-      });
-      expect(qualifying, `${label(file)}: expected a projection map and a markup map`).toHaveLength(
-        2,
-      );
-      expect(faqBlocksIn(file)).toHaveLength(1);
-    }
+    // The two `turkiye/bolge` projections are gone with the hand-written markup, so this is driven
+    // on the PROBE instead of on a page: a `.map(` that reads `.question` and `.answer` and renders
+    // nothing must not be a block, and clause (2) must be what says so.
+    const projection = [
+      `const PROJECTED_FAQS = [{ question: "q", answer: "a" }];`,
+      `const projected = PROJECTED_FAQS.map((faq) => ({`,
+      `  question: faq.question,`,
+      `  answer: faq.answer,`,
+      `}));`,
+    ].join("\n");
+
+    const masked = withProbe(projection, () => maskedSource(PROBE_HOST));
+    const qualifying = [...masked.matchAll(/\.map\s*\(/g)].filter((match) => {
+      const open = match.index + match[0].length - 1;
+      const body = masked.slice(open, matchingParen(masked, open));
+      return memberRead("question").test(body) && memberRead("answer").test(body);
+    });
+    expect(qualifying, "the projection map was not injected").toHaveLength(1);
+    expect(
+      withProbe(projection, () => faqBlocksIn(PROBE_HOST)),
+      "a map that renders no JSX is not a FAQ block",
+    ).toHaveLength(0);
+
+    // …and the SAME array with a rendering callback IS one, so the discrimination is live rather
+    // than a scan that rejects everything.
+    expect(
+      withProbe(`${projection}\n${probeBlock({ array: "OTHER_FAQS", questionTag: "h3" })}`, () =>
+        faqBlocksIn(PROBE_HOST),
+      ),
+    ).toHaveLength(1);
   });
 
   /**
@@ -859,29 +988,20 @@ describe("the FAQ block scanner", () => {
  * THE FOUR SPELLING COUNTERS
  * ------------------------------------------------------------------------------------------ */
 
-describe("the six FAQ blocks are counted by what they spell", () => {
+describe("the hand-written FAQ blocks are counted by what they spell", () => {
   it("the number of distinct item-wrapper spellings is exactly the recorded number", () => {
     const spellings = new Set(faqBlocks().map((block) => spellingOf(block.item)));
     expect(spellings.size, `FAQ item wrappers:\n${spellingReport((b) => spellingOf(b.item))}`).toBe(
       FAQ_ITEM_SPELLINGS,
     );
-    // The accordion's item wrapper carries NO className at all, and that is its own spelling rather
-    // than a merge with a computed one — the two-marker rule the shared extractor states.
-    expect(spellings).toContain(NO_CLASSNAME);
   });
 
   it("the number of distinct question-element spellings is exactly the recorded number", () => {
-    const blocks = faqBlocks();
-    const spellings = new Set(blocks.map((block) => spellingOf(block.question)));
+    const spellings = new Set(faqBlocks().map((block) => spellingOf(block.question)));
     expect(
       spellings.size,
       `FAQ question elements:\n${spellingReport((b) => `<${b.question.tag}> ${spellingOf(b.question)}`)}`,
     ).toBe(FAQ_QUESTION_SPELLINGS);
-    // Three spellings across TWO element types, which is the fact that makes the next counter
-    // worth having: five `<h3>` and one `<span>`.
-    const tags = blocks.map((block) => block.question.tag);
-    expect(tags.filter((tag) => tag === "h3")).toHaveLength(5);
-    expect(tags.filter((tag) => tag === "span")).toHaveLength(1);
   });
 
   it("the number of distinct answer-element spellings is exactly the recorded number", () => {
@@ -890,25 +1010,13 @@ describe("the six FAQ blocks are counted by what they spell", () => {
       spellings.size,
       `FAQ answer elements:\n${spellingReport((b) => `<${b.answer.tag}> ${spellingOf(b.answer)}`)}`,
     ).toBe(FAQ_ANSWER_SPELLINGS);
-    // Every answer is a `<p>` — the one thing the six blocks already agree on.
-    expect(new Set(faqBlocks().map((block) => block.answer.tag))).toEqual(new Set(["p"]));
   });
 
   it("the number of distinct section shells is exactly the recorded number", () => {
-    const blocks = faqBlocks();
     expect(
-      new Set(blocks.map(shellSignatureOf)).size,
+      new Set(faqBlocks().map(shellSignatureOf)).size,
       `FAQ section shells:\n${spellingReport(shellSignatureOf)}`,
     ).toBe(FAQ_SECTION_SHELLS);
-    // Three labelling strategies across those four shells, and the reason the signature is a PAIR:
-    // treatment alone reads 3, because `space-y-6` is written by two differently labelled shells.
-    expect(new Set(blocks.map(labellingStrategyOf))).toEqual(
-      new Set(["aria-labelledby", "id", "id+tabIndex"]),
-    );
-    expect(new Set(blocks.map((block) => spellingOf(block.shell))).size).toBe(3);
-    // Every block is inside a `<section>`; a block that was not would sign as the null marker and
-    // quietly become a fifth shell.
-    expect(blocks.filter((block) => block.shell === null)).toEqual([]);
   });
 
   it("the number of blocks with no per-question heading is exactly the recorded number", () => {
@@ -922,9 +1030,47 @@ describe("the six FAQ blocks are counted by what they spell", () => {
         .map((block) => label(block.file))
         .join(", ")}`,
     ).toBe(FAQ_BLOCKS_WITHOUT_HEADINGS);
-    expect(headless.map((block) => label(block.file))).toEqual([
-      "components/v2/v2-marine-faq-accordion.tsx",
-    ]);
+  });
+
+  it("the shared component still writes the ONE spelling the five zeros replaced", () => {
+    // The five counters above say the hand-written surface is empty. They do NOT say anything is
+    // rendered — `components/patterns` is off this scan's surface by design (SCOPE note 9). So the
+    // component's own block is read HERE, explicitly, by the same predicate: one `.map(` over
+    // `items`, its question in an `<h3>`, its answer in a `<p>`, both styled. This is the row the
+    // table in the docblock above collapsed to.
+    const blocks = faqBlocksIn(FAQ_SECTION_COMPONENT);
+    expect(blocks, "FaqSection is no longer read as a FAQ block").toHaveLength(1);
+    const block = blocks[0]!;
+    expect(block.mapped).toBe("items");
+    expect(block.question.tag).toBe("h3");
+    expect(block.answer.tag).toBe("p");
+    expect(spellingOf(block.question)).not.toBe(NO_CLASSNAME);
+    expect(spellingOf(block.answer)).not.toBe(NO_CLASSNAME);
+
+    // THE SHELL IS `null` HERE, AND THAT IS A FACT ABOUT THE SCANNER, NOT A DEFECT IN THE
+    // COMPONENT. `FaqSection` hoists its `.map(` into `const entries = items.map(…)` ABOVE the
+    // returned JSX, so the map call has no enclosing element at all and `shell` resolves to the
+    // null marker — even though the component very much does render one `<section id
+    // aria-labelledby tabIndex className="scroll-mt-28 …">` around `{entries}`.
+    //
+    // Recorded rather than worked around, because it says exactly what {@link FAQ_SECTION_SHELLS}
+    // would and would not have seen if `components/patterns` were on this surface: a block whose
+    // map is hoisted signs as `(no <section> ancestor)` and would have become its own "shell"
+    // spelling. No block on the real surface was ever written that way, which is why the counter
+    // was sound for the population it had. It is stated here so the next person to widen
+    // `SURFACE_ROOTS` knows what moves.
+    expect(spellingOf(block.shell)).toBe("(no <section> ancestor)");
+
+    // The section really is written, with all three identity attributes the four old shells split
+    // between them — asserted on the element directly, since the block's `shell` cannot reach it.
+    const section = jsxElementsOf(FAQ_SECTION_COMPONENT).find(
+      (element) => element.tag === "section",
+    );
+    expect(section, "FaqSection no longer renders a <section>").toBeDefined();
+    for (const attribute of ["id", "aria-labelledby", "tabIndex"]) {
+      expect(section!.attributes.has(attribute), `the section dropped ${attribute}`).toBe(true);
+    }
+    expect(section!.spelling).toContain("scroll-mt-28");
   });
 
   it("a new spelling raises each counter — the counters, not just the scanner", () => {
@@ -988,86 +1134,68 @@ describe("every faqPageJsonLd call has visible markup for the same array", () =>
     ).toBe(FAQ_JSONLD_WITHOUT_MARKUP);
 
     // HOW THE ZERO IS REACHED, stated rather than entailed. Zero orphans is true of a tree with
-    // nine paired calls and equally true of a tree with none, so the split is pinned at its
-    // measured value: 5 calls pair in their own file by the identifier rule, 4 are the `deniz`
-    // delegation, and 5 + 4 is the whole caller population. Without this, deleting every
-    // `faqPageJsonLd` call in the repo would leave this `it` green.
+    // one paired call and equally true of a tree with none, so the split is pinned at its measured
+    // value: 1 call pairs in its own file by the identifier rule, and that is the whole caller
+    // population. Without this, deleting every `faqPageJsonLd` call in the repo would leave this
+    // `it` green. The delegated bucket that used to sit beside this one is gone — there is nothing
+    // left for it to hold, which is Task 9's actual result and not a weakening.
     const calls = faqJsonLdCalls();
     const inFile = calls.filter((call) =>
       faqBlocksIn(call.file).some((block) => block.mapped === call.array),
     );
-    const delegated = calls.filter((call) => !inFile.includes(call) && isDelegated(call));
     expect(
       inFile.map((call) => label(call.file)),
       "calls paired by the same-file identifier rule",
-    ).toHaveLength(5);
-    expect(delegated, "calls paired only through DELEGATED_FAQ_MARKUP").toHaveLength(4);
-    expect(inFile.length + delegated.length + orphans.length).toBe(calls.length);
+    ).toEqual(["components/patterns/faq-section.tsx"]);
+    expect(inFile.length + orphans.length).toBe(calls.length);
   });
 
   /**
-   * NINE CALLS, AND THE NINTH IS NOT AN EXEMPTION.
+   * ONE CALL, AND IT IS THE COMPONENT.
    *
    * This listed eight while every `faqPageJsonLd` caller was a page that also wrote its own FAQ
-   * markup, and asserted that every caller sits on {@link surfaceFiles}'s surface. T-035 PR5 Task 8
-   * made that second clause false on purpose: `components/patterns/faq-section.tsx` is a shared
-   * pattern component that takes `items` and emits BOTH the markup and the schema from it.
+   * markup, then nine when Task 8 added `components/patterns/faq-section.tsx`. Task 9 took the
+   * eight pages away: the FAQPage schema for every FAQ on this site is now emitted from exactly
+   * one place, from the same `items` array that renders the questions.
+   *
+   * THE POPULATION IS ASSERTED AS AN EXACT IDENTITY, not a length. A page that starts calling
+   * `faqPageJsonLd` again — the regression this whole file exists to prevent — is a new row here
+   * and goes red by name, whether or not it happens to pair in its own file. Pairing is a weaker
+   * question than "who is allowed to publish structured data about questions", and after
+   * convergence the answer to the second is a single file.
    *
    * It needs no exemption, which is the point. The same-file pairing rule
    * {@link FAQ_JSONLD_WITHOUT_MARKUP} decides reaches it unchanged — `faqPageJsonLd(items)` beside
    * a `.map(` over the same `items` identifier in the same file — so the component is the GENERAL
    * CASE of that rule rather than a hole in it. (`faqPageJsonLd` takes `readonly FaqEntry[]` so the
    * component can hand over the array it renders instead of a `[...items]` copy, which would read
-   * as "(not an identifier)" here and pair with nothing.) Compare {@link DELEGATED_FAQ_MARKUP},
-   * which IS an exemption, and is one precisely because those four pages emit a schema for markup
-   * written in ANOTHER file.
-   *
-   * The surface clause is kept, narrowed to the one component, and paired with a LIVENESS
-   * assertion: if `FaqSection` ever stops emitting the schema, this test goes red rather than
-   * quietly shrinking back to eight.
+   * as "(not an identifier)" here and pair with nothing.)
    */
-  it("the nine calls are exactly the pages that emit FAQPage, plus FaqSection — anti-vacuity", () => {
+  it("the one call is FaqSection's own, and nothing else publishes FAQPage — anti-vacuity", () => {
     const calls = faqJsonLdCalls();
     expect(
       calls.map((call) => `${label(call.file)} ${call.array}`),
       "faqPageJsonLd calls found",
-    ).toEqual([
-      "app/[locale]/(site)/deniz/akdeniz/page.tsx basinData.faq",
-      "app/[locale]/(site)/deniz/ege/page.tsx basinData.faq",
-      "app/[locale]/(site)/deniz/karadeniz/page.tsx basinData.faq",
-      "app/[locale]/(site)/deniz/marmara/page.tsx basinData.faq",
-      "app/[locale]/(site)/dunya/kita/[slug]/page.tsx continent.faqs",
-      "app/[locale]/(site)/dunya/kita/page.tsx HUB_FAQS",
-      "app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx region.faqs",
-      "app/[locale]/(site)/turkiye/bolge/page.tsx bolgelerFaqs",
-      "components/patterns/faq-section.tsx items",
-    ]);
+    ).toEqual(["components/patterns/faq-section.tsx items"]);
     // Every call is written inside a `<JsonLd>` element, which is what makes the conditional test
     // below meaningful: it reads the gate on the element that emits the script tag.
     expect(new Set(calls.map((call) => call.holder))).toEqual(new Set(["JsonLd"]));
-    // WHY THE COMPONENT NEEDS NO EXEMPTION — the docblock's actual claim, and the one thing here
-    // the exact list above does not already entail. That list says FaqSection emits a schema; it
-    // says nothing about whether the schema PAIRS. This does: the ordinary same-file rule resolves
-    // it, and the delegation exemption is not consulted. If `items` ever became `[...items]` or the
-    // markup moved into a child component, the list above would still pass and this would not.
+    // WHY THE COMPONENT NEEDS NO EXEMPTION — the one thing here the exact list above does not
+    // already entail. That list says FaqSection emits a schema; it says nothing about whether the
+    // schema PAIRS. This does. If `items` ever became `[...items]` or the markup moved into a
+    // child component, the list above would still pass and this would not.
     const own = calls.filter((call) => call.file === FAQ_SECTION_COMPONENT);
     expect(own, "FaqSection no longer emits FAQPage at all").toHaveLength(1);
     expect(
       faqBlocksIn(FAQ_SECTION_COMPONENT).map((block) => block.mapped),
       "FaqSection's schema and its markup are no longer one identifier in one file",
     ).toContain(own[0]!.array);
+    // The caller walk is wider than the block walk (`app/`, `components/`, `lib/` against
+    // `SURFACE_ROOTS`), so the exact list above also says no call hides in `lib/` or on a page —
+    // SCOPE note 9, which is now doing all of the work the delegation exemption used to.
     expect(
-      isDelegated(own[0]!),
-      "FaqSection is the general case of the same-file rule, never an exemption",
-    ).toBe(false);
-    // The caller walk is wider than the block walk, so this also says no call hides in `lib/` or
-    // outside `components/v2` (SCOPE note 9) — bar the one pattern component above, which pairs in
-    // its own file and is named here rather than discovered.
-    expect(
-      calls.filter(
-        (call) => !surfaceFiles().includes(call.file) && call.file !== FAQ_SECTION_COMPONENT,
-      ),
-      "a faqPageJsonLd caller that is neither on the FAQ block surface nor FaqSection",
+      calls.filter((call) => call.file !== FAQ_SECTION_COMPONENT),
+      "a faqPageJsonLd caller other than FaqSection",
     ).toEqual([]);
   });
 
@@ -1099,14 +1227,18 @@ describe("every faqPageJsonLd call has visible markup for the same array", () =>
     );
     expect(unsafe, "structured data published for markup the reader may not be shown").toEqual([]);
 
-    // THE PREMISE, so the assertion above is a fact and not a tautology: the discrimination is live
-    // in both directions and on both sides. Measured on this tree — 9 calls, 3 of them gated
-    // (`turkiye/bolge`, `turkiye/bolge/[slug]` and `FaqSection`), 6 not; and of the 5 pairs that
-    // resolve in-file, 2 gate both sides, 2 gate neither, and 1 — `FaqSection` — gates the schema
-    // alone, i.e. the tolerated direction is genuinely exercised rather than merely permitted.
+    // THE PREMISE, so the assertion above is a fact and not a tautology. Measured on this tree:
+    // ONE call, gated, over markup that is not — `gated/open`, the TOLERATED direction, which is
+    // therefore genuinely exercised rather than merely permitted. That is `FaqSection` itself: its
+    // `.map(` over `items` is unconditional and its `<JsonLd>` is gated on `isIndexable`.
+    //
+    // The population shrank from nine pairs to one, so this premise is thinner than it was and
+    // says so. What keeps the test from being vacuous is that the one surviving pair sits in the
+    // arm the rule TOLERATES: a bug that flipped the predicate's sense would make this `it` red
+    // immediately, which is not true of a `forbidden`-arm-only population.
     const calls = faqJsonLdCalls();
-    expect(calls.filter((call) => call.conditional)).toHaveLength(3);
-    expect(calls.filter((call) => !call.conditional)).toHaveLength(6);
+    expect(calls.filter((call) => call.conditional)).toHaveLength(1);
+    expect(calls.filter((call) => !call.conditional)).toHaveLength(0);
     const pairs = calls.flatMap((call) =>
       faqBlocksIn(call.file)
         .filter((block) => block.mapped === call.array)
@@ -1115,12 +1247,46 @@ describe("every faqPageJsonLd call has visible markup for the same array", () =>
             `${call.conditional ? "gated" : "open"}/${block.conditional ? "gated" : "open"}`,
         ),
     );
-    expect(pairs.sort()).toEqual([
-      "gated/gated",
-      "gated/gated",
-      "gated/open",
-      "open/open",
-      "open/open",
+    expect(pairs).toEqual(["gated/open"]);
+
+    // …and the FORBIDDEN direction still fails, driven on the probe because no real file writes it
+    // any more. Without this the assertion above would be a claim about an empty set.
+    const unsafeProbe = [
+      `const UNSAFE_FAQS = [{ question: "q", answer: "a" }];`,
+      `function UnsafeProbe() {`,
+      `  return (`,
+      `    <>`,
+      `      <JsonLd schema={faqPageJsonLd(UNSAFE_FAQS)} />`,
+      `      <section>`,
+      `        <div className="probe-grid">`,
+      `          {show && (`,
+      `            <div className="probe-item">`,
+      `              {UNSAFE_FAQS.map((faq) => (`,
+      `                <article key={faq.question} className="probe-item-spelling">`,
+      `                  <h3 className="probe-question-spelling">{faq.question}</h3>`,
+      `                  <p className="probe-answer-spelling">{faq.answer}</p>`,
+      `                </article>`,
+      `              ))}`,
+      `            </div>`,
+      `          )}`,
+      `        </div>`,
+      `      </section>`,
+      `    </>`,
+      `  );`,
+      `}`,
+    ].join("\n");
+    expect(
+      withProbe(unsafeProbe, () =>
+        faqJsonLdCalls().flatMap((call) =>
+          faqBlocksIn(call.file)
+            .filter((block) => block.mapped === call.array)
+            .filter((block) => !call.conditional && block.conditional)
+            .map(() => `${label(call.file)}: JSON-LD unconditional, markup conditional`),
+        ),
+      ),
+      "an unconditional schema over gated markup must still be caught",
+    ).toEqual([
+      "app/[locale]/(site)/hakkimizda/page.tsx: JSON-LD unconditional, markup conditional",
     ]);
   });
 
@@ -1159,117 +1325,87 @@ describe("every faqPageJsonLd call has visible markup for the same array", () =>
   });
 });
 
-describe("the delegated-markup exemption", () => {
-  it("exempts exactly the four deniz basin pages, derived and not written", () => {
-    const delegated = faqJsonLdCalls().filter(isDelegated);
-    expect(
-      delegated.map((call) => label(call.file)),
-      "pages exempted by DELEGATED_FAQ_MARKUP",
-    ).toEqual([
-      "app/[locale]/(site)/deniz/akdeniz/page.tsx",
-      "app/[locale]/(site)/deniz/ege/page.tsx",
-      "app/[locale]/(site)/deniz/karadeniz/page.tsx",
-      "app/[locale]/(site)/deniz/marmara/page.tsx",
-    ]);
-    // Without the exemption these four ARE the counter's whole population — so the exemption is
-    // load-bearing rather than decorative, and the number it hides is four.
-    expect(faqJsonLdCalls().filter((call) => faqBlocksIn(call.file).length === 0)).toHaveLength(4);
-  });
+/* ---------------------------------------------------------------------------------------------
+ * THE ITEM SOURCES — Rulings BX and CE
+ *
+ * Everything above this line is a claim about SOURCE TEXT. Nothing above it has ever looked at a
+ * question. These read the DATA the six converged blocks actually render, for the two properties
+ * source text cannot decide:
+ *
+ *   - BX, how many questions there are, measured from the arrays rather than from a `grep -c
+ *     "question:"`. That grep has now been wrong twice on this surface, both times by exactly one
+ *     — the interface's own field declaration — and both times the wrong figure reached a written
+ *     plan. Counting the data costs one `.length`.
+ *   - CE, that no block repeats a question. `FaqSection` uses `item.question` as the React key AND,
+ *     in the accordion mechanism, as the Base UI `value` that tracks which panel is open. Two
+ *     identical questions in one array therefore collide twice over: React warns about duplicate
+ *     keys, and opening one panel opens the other. The component cannot defend itself — the array
+ *     is the caller's — so the guarantee has to live with the data.
+ *
+ * `buildBolgelerFaqs()` is NOT here. Its fourth entry is derived from a live `regionsList` fetch,
+ * so reaching it means either an API call from a unit test or a fixture that would prove only that
+ * the fixture is well-formed. `/deniz`'s eight are in `lib/marine/deniz-faq.test.ts` beside the
+ * catalogue they read. What is reachable from a pure module is here.
+ * ------------------------------------------------------------------------------------------ */
 
-  it("the delegate still writes the FAQ markup the exemption says it does", () => {
-    const blocks = faqBlocksIn(DELEGATED_FAQ_MARKUP.delegate);
-    expect(
-      blocks.map((block) => block.mapped),
-      `${label(DELEGATED_FAQ_MARKUP.delegate)} no longer maps data.faq; drop or restate the exemption`,
-    ).toEqual(["data.faq"]);
-    expect(blocks[0]!.conditional, "the delegate's FAQ markup is now behind a gate").toBe(false);
-  });
-
-  it("each exempt page passes the array it publishes to the delegate it names", () => {
-    for (const call of faqJsonLdCalls().filter(isDelegated)) {
-      const binding = importBindingsOf(call.file).get(DELEGATED_FAQ_MARKUP.export);
-      expect(binding, `${label(call.file)} no longer imports the delegate`).toBeDefined();
-      expect(
-        resolvesTo(binding!, DELEGATED_FAQ_MARKUP.delegate, DELEGATED_FAQ_MARKUP.export),
-        `${label(call.file)}'s ${DELEGATED_FAQ_MARKUP.export} is not the one the exemption names`,
-      ).toBe(true);
-      const elements = jsxElementsOf(call.file);
-      const rendered = elements.filter((e) => e.tag === DELEGATED_FAQ_MARKUP.export);
-      expect(rendered, `${label(call.file)} no longer renders the delegate`).toHaveLength(1);
-      expect(
-        rendered[0]!.attributes.get(DELEGATED_FAQ_MARKUP.prop),
-        `${label(call.file)} no longer hands the published array to the delegate`,
-      ).toBe(call.array.split(".")[0]);
-    }
-  });
-
-  it("the published questions are the delegate's own, at the value level", () => {
-    // The one thing here that is a pure function rather than a source shape: `faqPageJsonLd` is
-    // given `basinData.faq` and the delegate renders `data.faq`, so the text the four pages publish
-    // is the text the delegate maps — asserted on the OUTPUT of the function, not on a substring of
-    // a page that mentions it.
-    //
-    // 12 QUESTIONS, NOT 13. The plan's Measurements section calls this "4 basins, 13 questions";
-    // `lib/marine/sea-basins-detail.ts` holds 13 `question:` occurrences and one of them is the
-    // `SeaBasinFAQ` interface's own field declaration. The data is 3 + 3 + 3 + 3.
+describe("the FAQ item sources", () => {
+  it("the four sea basins hold 12 questions, 3 each — not the plan's 13", () => {
     const basins = Object.values(SEA_BASINS_DETAIL);
     expect(basins).toHaveLength(4);
-    let questions = 0;
-    for (const basin of basins) {
-      const schema = faqPageJsonLd(basin.faq) as unknown as {
-        mainEntity: { name: string; acceptedAnswer: { text: string } }[];
-      };
-      expect(schema.mainEntity.map((entry) => entry.name)).toEqual(
-        basin.faq.map((entry) => entry.question),
-      );
-      expect(schema.mainEntity.map((entry) => entry.acceptedAnswer.text)).toEqual(
-        basin.faq.map((entry) => entry.answer),
-      );
-      questions += basin.faq.length;
-    }
-    expect(questions).toBe(12);
     expect(basins.map((basin) => basin.faq.length)).toEqual([3, 3, 3, 3]);
+    expect(basins.reduce((n, basin) => n + basin.faq.length, 0)).toBe(12);
   });
 
-  it("a page that stops delegating falls back into the counter", () => {
-    // The exemption cannot outlive its reason, proved one half at a time. The host is
-    // `hakkimizda`, not a `deniz` page, so nothing here depends on markup a later task may move.
-    const importsDelegate = `import { V2SeaBasinDetailView } from "@/components/v2/v2-sea-basin-detail-view";\n`;
-    const emits = (body: string) =>
-      [
-        importsDelegate,
-        `const probeBasin = { faq: [] };`,
-        `function DelegateProbe() {`,
-        `  return (`,
-        `    <>`,
-        `      <JsonLd schema={faqPageJsonLd(probeBasin.faq)} />`,
-        `      ${body}`,
-        `    </>`,
-        `  );`,
-        `}`,
-      ].join("\n");
+  it("the seven continents hold 28 questions, 4 each — not the plan's 29", () => {
+    // Ruling BX, and the reason it was worth re-measuring: the plan says 29, `grep -c "question:"`
+    // on `lib/geo/continents.ts` says 29, and the data says 28. The 29th is the `ContinentFaq`
+    // interface's own `question: string` field — the SAME mistake as the sea basins' 13-vs-12, in
+    // a second file, found only because the ruling said measure instead of quote.
+    const continents = getAllContinents();
+    expect(continents).toHaveLength(7);
+    const perContinent = continents.map((c) => ({ slug: c.slugTr, count: c.faqs.length }));
+    expect(
+      perContinent.map((row) => row.count),
+      `questions per continent:\n${perContinent.map((r) => `  ${r.slug}: ${r.count}`).join("\n")}`,
+    ).toEqual([4, 4, 4, 4, 4, 4, 4]);
+    expect(continents.reduce((n, c) => n + c.faqs.length, 0)).toBe(28);
+  });
 
-    // Relative: the rows the probe ADDS to whatever the tree already reads.
-    const rows = () => jsonLdWithoutMarkup().map((call) => `${label(call.file)} ${call.array}`);
-    const before = rows();
-    const orphansFor = (body: string) =>
-      withProbe(emits(body), rows).filter((row) => !before.includes(row));
+  it("no block repeats a question — Ruling CE, over every source reachable from a module", () => {
+    const sources: ReadonlyArray<readonly [string, readonly { question: string }[]]> = [
+      ...Object.entries(SEA_BASINS_DETAIL).map(
+        ([slug, basin]) => [`sea basin ${slug}`, basin.faq] as const,
+      ),
+      ...getAllContinents().map((c) => [`continent ${c.slugTr}`, c.faqs] as const),
+      ["dunya/kita CONTINENT_HUB_FAQS", CONTINENT_HUB_FAQS] as const,
+    ];
 
-    // Delegating correctly: exempt, nothing counted.
-    expect(orphansFor(`<V2SeaBasinDetailView data={probeBasin} />`)).toEqual([]);
-    // The delegate rendered, but handed a DIFFERENT object — the array published is not the array
-    // the delegate maps, so the exemption does not apply.
-    expect(orphansFor(`<V2SeaBasinDetailView data={somethingElse} />`)).toEqual([
-      "app/[locale]/(site)/hakkimizda/page.tsx probeBasin.faq",
-    ]);
-    // The delegate rendered under a condition while the JSON-LD is not — no exemption.
-    expect(orphansFor(`{show && <V2SeaBasinDetailView data={probeBasin} />}`)).toEqual([
-      "app/[locale]/(site)/hakkimizda/page.tsx probeBasin.faq",
-    ]);
-    // Not rendered at all, only imported — the dead-reference shape a substring pin would accept.
-    expect(orphansFor(`<div />`)).toEqual([
-      "app/[locale]/(site)/hakkimizda/page.tsx probeBasin.faq",
-    ]);
-    expect(rows()).toEqual(before);
+    // Anti-vacuity: the list really is the whole reachable set, and really has questions in it.
+    expect(sources).toHaveLength(12);
+    expect(sources.every(([, items]) => items.length > 0)).toBe(true);
+
+    const collisions = sources.flatMap(([name, items]) => {
+      const seen = new Map<string, number>();
+      for (const item of items) seen.set(item.question, (seen.get(item.question) ?? 0) + 1);
+      return [...seen]
+        .filter(([, n]) => n > 1)
+        .map(([question, n]) => `${name}: ${n}x ${JSON.stringify(question)}`);
+    });
+    expect(
+      collisions,
+      "FaqSection keys items — and tracks accordion panel state — by the question string, so a " +
+        "repeated question collides on both",
+    ).toEqual([]);
+  });
+
+  it("the uniqueness check would catch a duplicate — the control, not just the scan", () => {
+    const withDuplicate = [
+      { question: "aynı soru", answer: "a" },
+      { question: "başka", answer: "b" },
+      { question: "aynı soru", answer: "c" },
+    ];
+    const seen = new Map<string, number>();
+    for (const item of withDuplicate) seen.set(item.question, (seen.get(item.question) ?? 0) + 1);
+    expect([...seen].filter(([, n]) => n > 1).map(([q]) => q)).toEqual(["aynı soru"]);
   });
 });

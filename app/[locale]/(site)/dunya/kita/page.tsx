@@ -5,7 +5,7 @@ import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
-import { getAllContinents } from "@/lib/geo/continents";
+import { getAllContinents, CONTINENT_HUB_FAQS } from "@/lib/geo/continents";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
 import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -53,34 +53,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         : "Asia, Africa, North America, South America, Antarctica, Europe and Oceania. Analytical comparison guide for area, population, climate and highest peaks.",
   });
 }
-
-const HUB_FAQS = [
-  {
-    question: "Dünyada kaç kıta vardır ve hangi model geçerlidir?",
-    answer:
-      "Türkiye'de MEB müfredatı ve yaygın coğrafya öğretimi 7 kıta modelini (Asya, Afrika, Kuzey Amerika, Güney Amerika, Antarktika, Avrupa, Okyanusya) esas alır. Birleşmiş Milletler istatistik şeması (UN M49) ise Kuzey ve Güney Amerika'yı tek bir 'Americas' üst bölgesinde toplayarak 6'lı kıta sistemini kullanır. Jeolojik açıdan ise Avrupa ve Asya tek parça Avrasya kütlesini oluşturur.",
-  },
-  {
-    question: "Avrupa ile Asya neden iki ayrı kıta kabul edilir?",
-    answer:
-      "Avrupa ile Asya arasında okyanusal bir levha sınırı yoktur; jeolojik olarak tek bir kıtadır (Avrasya). İki bölgenin ayrı kıtalar sayılması, 18. yüzyıldan itibaren şekillenen tarihsel, kültürel ve siyasi bir uzlaşımın (konvansiyon) sonucudur. Ural Dağları, Ural Nehri, Hazar Denizi ve Türk Boğazları geleneksel sınır kabul edilir.",
-  },
-  {
-    question: "Dünyanın en büyük ve en küçük kıtaları hangileridir?",
-    answer:
-      "Yaklaşık 44,6 milyon km² yüzölçümü ve 4,75 milyarı aşan nüfusuyla Asya hem alan hem nüfus bakımından dünyanın en büyük kıtasıdır. Kara yüzölçümü bakımından en küçük kıta yaklaşık 8,5 milyon km² ile Okyanusya'dır (Avustralya anakarası dahil).",
-  },
-  {
-    question: "Antarktika neden bir kıtadır ve üzerinde ülke var mıdır?",
-    answer:
-      "Antarktika, buzulların altında yaklaşık 14,2 milyon km²'lik gerçek bir kıtasal kayaç kalkanına (kraton) sahip olduğu için kıtadır (Kuzey Kutbu gibi sadece donmuş deniz buzu değildir). Üzerinde hiçbir egemen devlet ve kalıcı yerleşim yoktur; 1959 Antarktika Antlaşması ile uluslararası barış ve bilime ayrılmıştır.",
-  },
-  {
-    question: "Okyanusya bir kıta mıdır yoksa bölge midir?",
-    answer:
-      "Fiziki coğrafyada Avustralya anakarası ile Büyük Okyanus'a dağılmış Polinezya, Mikronezya ve Melanezya ada topluluklarının tamamı 'Okyanusya' kıtası çatısı altında toplanır. Kara yüzölçümü 8,5 milyon km² iken, deniz yetki alanı (EEZ) 40 milyon km²'yi aşarak karalarının neredeyse 5 katına ulaşır.",
-  },
-];
 
 export default async function V2ContinentsHubPage({ params }: PageProps) {
   const { locale } = await params;
@@ -491,7 +463,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
         <FaqSection
           heading="Kıtalar Hakkında Sıkça Sorulan Sorular"
           locale={locale}
-          items={HUB_FAQS}
+          items={CONTINENT_HUB_FAQS}
           structuredData="trOnly"
         />
 
