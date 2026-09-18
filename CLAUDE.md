@@ -31,11 +31,10 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   opt out by living in `(play)`. A page gets the chrome by its directory, never by importing it.
 - New UI is Tailwind + `components/ui/*`. Eight `*.module.css` files survive (`earthquake`,
   `marine`, `climate`, `air-pollution`, `book-video`, `locator-map`, `site-search`,
-  `book-detail`), each with an importer a route reaches — `components/orphan-stylesheets.test.ts`
-  is what says so, and its recorded-orphan list is empty. They are NOT frozen — "do not touch"
-  is what kept `marine-attribution.module.css` shipping a mandated licence notice at 2.34:1 in
-  dark mode. Their raw Terra tokens (`--color-slate`, `--color-ink`) do not redefine under
-  `.dark`; converting one to bridge tokens when you touch it is a fix, not a violation.
+  `book-detail`), each with an importer a route reaches (`components/orphan-stylesheets.test.ts`).
+  NOT frozen — "do not touch" is what kept `marine-attribution.module.css` shipping a mandated
+  licence notice at 2.34:1 in dark mode. Their raw Terra tokens (`--color-slate`, `--color-ink`)
+  do not redefine under `.dark`; converting one to bridge tokens when you touch it is a fix.
 - `Button` has no `asChild`. A link that looks like a button is
   `<Link className={cn(buttonVariants({ variant, size }))}>`. Do not add `asChild` or a Slot.
 - Href typing: never `as any`. When next-intl's typed `Link` rejects a computed href, use

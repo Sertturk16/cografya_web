@@ -572,11 +572,15 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * nine more into `home.module.css`, plus the two bare identifiers that took this counter 25 → 23.
  * A ratchet that falls because unreachable code was deleted has not moved on what it measures.
  *
- * The other three shapes are watched too, one door over: {@link UNREADABLE_CLASSNAME_SHAPES} pins
- * the whole breakdown and the buckets are asserted to SUM to the population, so narrowing this
- * counter did not discard the other 253 — it filed them, and a new shape cannot slip between the
- * buckets. ({@link computedShape} draws the member/ternary line at optional chaining, which is why
- * the split reads 250/2 where a hand tally read 247/3; the buckets here sum to 278 exactly.)
+ * The other TWO shapes are watched one door over: {@link UNREADABLE_CLASSNAME_SHAPES} pins the
+ * whole breakdown and the buckets are asserted to SUM to the population, so narrowing this
+ * counter did not discard the other 188 — it filed them, and a new shape cannot slip between the
+ * buckets. Two, not three: the `call` bucket held exactly one element and it died with
+ * `components/patterns/callout.tsx`, so an empty bucket is not listed and a `call` reappearing
+ * fails that pin as a NEW shape rather than as a moved number. {@link computedShape} draws the
+ * member/ternary line at OPTIONAL CHAINING — `a?.b` and `a?.[b]` are member access, not a
+ * conditional — which is why `continentMeta?.badgeClass` is one of the 186 and not one of the 2.
+ * The three buckets sum to 211, which is the assertion below rather than a figure quoted here.
  *
  * MUTATION-CHECKED, both halves of the narrowing, re-run at T-042's values on
  * `components/patterns/page-container.tsx` — the previous host, `theme-pair.tsx`, has left this

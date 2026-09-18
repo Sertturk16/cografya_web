@@ -60,11 +60,12 @@ import {
  * identical and nothing here would catch it wearing a width token instead.
  *
  * FILE AND COUNT, NEVER A LINE NUMBER — the form `label()` already prints, for the reason T-043
- * exists. That list used to read `turkiye/[slug]/page.tsx:351, dunya/[slug]/page.tsx:295, and
- * twelve more`: positions taken from `stripComments` output, which drops the body of every
- * multi-line comment and shifts every line after it. Both were wrong in the file a reader opens
- * (353 and 298), and the distribution had moved underneath them as well — `turkiye/bolge/[slug]`
- * carries one and was named nowhere. **Never derive a line number from stripped output.**
+ * exists. That list used to name two files with a line number each and say "and twelve more".
+ * Both numbers came from `stripComments` output, which drops the body of every multi-line comment
+ * and shifts every line after it, so both pointed a couple of lines short of the thing they named
+ * in the file a reader actually opens — and the distribution had moved underneath them as well:
+ * `turkiye/bolge/[slug]` carries one and was named nowhere. **Never derive a line number from
+ * stripped output**, and prefer the file-and-count form above, which cannot rot that way.
  *
  * `walkPages()` below adds a second, independent scope limit: it visits files named `page.tsx`
  * only. `loading.tsx`, `layout.tsx`, `error.tsx` and `not-found.tsx` in these same route groups,

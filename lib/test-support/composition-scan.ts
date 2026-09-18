@@ -109,8 +109,8 @@ export function walkRenderRoots(): string[] {
  * `components/patterns/breadcrumbs.tsx` (Task 6) is deliberately NOT listed here, though it
  * was reserved as a placeholder before that task existed. This exemption exists for files
  * that legitimately WRITE the `<nav aria-label="…">` markup themselves; `Breadcrumbs`
- * delegates that entirely to `Breadcrumb` (`components/ui/breadcrumb.tsx:9`), which already
- * owns the exemption above. Its own source contains no `aria-label` literal at all — adding
+ * delegates that entirely to `Breadcrumb` — the primitive in `components/ui/breadcrumb.tsx` that
+ * writes the `<nav aria-label>` itself — which already owns the exemption above. Its own source contains no `aria-label` literal at all — adding
  * one there would be markup written only to keep this list's liveness check green, not
  * because the component needs it. Since `components/patterns/breadcrumbs.tsx` sits outside
  * {@link SURFACE_ROOTS} anyway, leaving it off this list changes nothing about what the

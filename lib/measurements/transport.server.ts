@@ -53,13 +53,22 @@ const measurementPointSchema = z.object({
 /**
  * The request-side mirror of `CreateMeasurementRequestDto`'s own FLAT, per-field bounds
  * only (plan §5.2's table) — it deliberately does NOT re-implement the type-dependent
- * minimum-point cross-field rule the api itself owns
- * (`measurement-shape.validator.ts`): every existing request-side mirror in this repo
- * only ever mirrors a DTO's own flat per-field bounds, never a business rule the api
- * enforces server-side, and the UI can never construct an under-count payload by
- * construction (the workbench's own `minExportPoints` gate) — the only caller that
- * could ever reach that cross-field rule is a non-UI client hitting the BFF directly,
- * which the api's own `errors.measurements.invalidShape` 400 already answers correctly.
+ * minimum-point cross-field rule the api itself owns (`measurement-shape.validator.ts`):
+ * every request-side mirror in this repo mirrors a DTO's own flat per-field bounds and
+ * never a business rule the api enforces server-side.
+ *
+ * WHAT THE UI ACTUALLY GUARANTEES, corrected. This used to say the UI "can never construct
+ * an under-count payload by construction", citing a `minExportPoints` gate in
+ * `components/tools/tool-island.tsx`. That component was deleted (T-042, unreachable from any
+ * route) and the identifier died with it; the live save path is `handleSaveMeasurement` in
+ * `components/v2/v2-tool-workbench.tsx`, whose only guard is an empty-list early return. That
+ * enforces ≥ 1 point — exactly what `.min(1)` below already enforces — and NOTHING about the
+ * per-type minimum, so a one-point `distance` or a two-point `area` IS constructible from the
+ * UI today. The cross-field minimum is therefore enforced by the API ALONE, which answers it
+ * with `errors.measurements.invalidShape` as a 400; this schema's job is only to keep a
+ * malformed or oversized body (`.min(1).max(20)`, the per-field bounds) from becoming an
+ * outbound request at all. Stated plainly because the old sentence read as a second line of
+ * defence that does not exist.
  */
 const createMeasurementRequestSchema = z.object({
   type: z.enum(["distance", "area", "coordinate"]),
@@ -190,7 +199,7 @@ async function sendApiRequest(
 /**
  * `GET /api/measurements` — the caller's own saved measurements, every type mixed
  * together (plan §2.2 — the api's own list endpoint carries no `type` filter; the
- * per-tool filter is applied client-side, SPEC §5.4 item 5). No
+ * per-tool filter is applied client-side). No
  * `cg_access` cookie is a short-circuit (401, no api call), mirroring the established
  * posture: a missing cookie is a normal anonymous answer, not a condition worth
  * spending an outbound request on. No Origin check — read-only, not state-changing.

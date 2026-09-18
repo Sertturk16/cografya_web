@@ -64,7 +64,7 @@ export interface AuthSessionStore {
   /** Idempotent: at most one in-flight `/api/auth/session` request exists at a time, no matter
    *  how many consumers call this. */
   ensureFetched(): void;
-  /** Writes straight through — the logout path (`login-form.tsx`'s optimistic
+  /** Writes straight through — the logout path (`v2-login-card.tsx`'s optimistic
    *  `setSessionState("anonymous")`) and the modal's own post-auth success path both use this. */
   set(next: AuthSessionState): void;
   /** Drops to `"checking"` and starts a fresh fetch — exported for a future consumer that needs
@@ -135,15 +135,21 @@ export function createAuthSessionStore(): AuthSessionStore {
 const store = createAuthSessionStore();
 
 /**
- * `useAuthSession()` — the shared session-check hook. Every consumer in the tree
- * (`login-form.tsx`, `video-bench.tsx`, `favorite-button.tsx`, `game-round-save.tsx`,
- * `v2-tool-workbench.tsx`, `v2-game-history-stats.tsx`, the auth dialog) reads the SAME store through
- * this hook, so a successful modal login propagates to all of them without a page reload
+ * `useAuthSession()` — the shared session-check hook. **THIRTEEN consumers** today
+ * (`git grep -l "useAuthSession(" -- '*.ts' '*.tsx'`, tests and this file excluded): three under
+ * `components/book/` and ten under `components/v2/`. All of them read the SAME store through this
+ * hook, so a successful modal login propagates to every one without a page reload
  * (uyelik-auth-redesign plan §5.4/K1).
+ *
+ * A COUNT AND THE COMMAND THAT PRODUCES IT, not a list. The list this replaces had been
+ * half-updated across two rewrites and named three files that no longer existed
+ * (`login-form.tsx`, `favorite-button.tsx`, `game-round-save.tsx` — V1, deleted in T-032 PR4)
+ * while missing most of the ones that did. A hand-maintained roster in a docblock decays exactly
+ * that way, and nothing fails when it does.
  *
  * Returns a `useState`-shaped tuple rather than a bare value, DELIBERATELY departing from an
  * illustrative one-line sketch some plan text uses (`const authState = useAuthSession();`):
- * the signed-in branch of `login-form.tsx`'s existing `handleLogout` optimistically flips the
+ * the signed-in branch of `v2-login-card.tsx`'s `handleLogout` optimistically flips the
  * rendered state to `"anonymous"` the instant a logout succeeds, without waiting for (or
  * forcing) a second network round trip — a real, pre-existing behaviour this store-backed
  * version must not regress. The setter now WRITES THROUGH TO THE STORE, so that same call

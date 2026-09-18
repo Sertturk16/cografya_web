@@ -62,6 +62,8 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   the older one mangling every template hole it read; a second extractor is where a counter hides.
   Memos go through that module's `perFileCache()` / `graphCache()` so the harness invalidates them —
   a bare `new Map()` cache fails `composition-scan.test.ts`.
+- Re-pointing a citation after a deletion: check the cited IDENTIFIER still exists, not just the
+  filename — `git grep <symbol>` before writing the new sentence.
 - Fixtures: `test/fixtures/{marine,books}`. Do not add network calls to tests.
 - Playwright is a library here, not a runner: no `playwright.config`, no e2e suite. Ad-hoc
   audits live in `scripts/` and `tools/dev-fixtures/`. One of them is not ad-hoc —
