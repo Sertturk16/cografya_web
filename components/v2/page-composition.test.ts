@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
+import { runtimeImportsOf } from "@/lib/test-support/import-closure";
 
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -655,5 +656,455 @@ describe("the breadcrumb owner exemptions", () => {
       BREADCRUMB_NAV.test(sourceOf(path)),
       `${owner} no longer writes the breadcrumb nav; drop the exemption`,
     ).toBe(true);
+  });
+});
+
+/* -------------------------------------------------------------------------------------------
+ * PR3 — the page heading. Three counters, pinned at what the scanner below actually found.
+ * ---------------------------------------------------------------------------------------- */
+
+/**
+ * A page's RENDER CLOSURE: the page file plus every repo file it transitively reaches through
+ * the real runtime import graph.
+ *
+ * This is not optional decoration on a `page.tsx` scan. Seven of the 37 pages are thin wrappers
+ * that never write an `<h1>` themselves — `hesabim` takes its heading from
+ * `components/v2/v2-member-hub.tsx`, the four `deniz/{akdeniz,karadeniz,marmara,ege}` basin pages
+ * from `components/v2/v2-sea-basin-detail-view.tsx`, `/` from `components/v2/v2-hero.tsx`, and
+ * `hakkimizda` from `components/patterns/typography.tsx`'s `H1`. A `page.tsx`-only scan reports
+ * all seven as "no h1", which is the false number PR2's own walk produced and this file's
+ * `PAGE_BODY_SPELLINGS` docblock already records as a scope hole for the body wrapper.
+ *
+ * `runtimeImportsOf` comes from `lib/test-support/import-closure.ts` — the resolver
+ * `components/ui/orphan.test.ts` and `components/patterns/rsc-boundary.test.ts` already share.
+ * It is reused, never re-implemented: it resolves `@/` aliases and relative specifiers to real
+ * paths on disk and, critically, DROPS `import type` edges, which do not exist in the compiled
+ * output and so cannot put a heading on a page. One graph walk in this repo, not a third copy.
+ */
+const importsCache = new Map<string, string[]>();
+
+function importsOfCached(file: string): string[] {
+  const hit = importsCache.get(file);
+  if (hit) return hit;
+  const imports = runtimeImportsOf(file);
+  importsCache.set(file, imports);
+  return imports;
+}
+
+function renderClosureOf(page: string): string[] {
+  const seen = new Set<string>([page]);
+  const queue = [page];
+  while (queue.length > 0) {
+    for (const next of importsOfCached(queue.pop()!)) {
+      if (seen.has(next)) continue;
+      seen.add(next);
+      queue.push(next);
+    }
+  }
+  return [...seen];
+}
+
+/**
+ * Reads the `className` off every `<tag …>` in a file, in ALL THREE forms this surface writes.
+ *
+ * A `className="…"` regex is not enough here, and that is not a hypothetical: it is the mistake
+ * that produced a wrong figure twice during PR1 and PR2. All three forms are live on the pages
+ * this walk visits, each provable against a real file (the positive controls below run on these
+ * exact files, not on synthetic strings):
+ *
+ *   - `className="…"`          — `app/[locale]/(site)/araclar/page.tsx:90`, and 25 more `<h1>`s;
+ *   - `className={cn("…", …)}` — `components/patterns/typography.tsx:25`, the `H1` component
+ *                                `app/[locale]/(site)/hakkimizda/page.tsx` renders. This is the
+ *                                page whose heading a literal-only scan cannot see AT ALL;
+ *   - ``className={`…`}``      — `app/[locale]/(site)/dunya/kita/[slug]/page.tsx:108`. No `<h1>`
+ *                                wears this form TODAY (it is on a `<section>` there), which is
+ *                                exactly why the extractor must already handle it: the idiom is
+ *                                native to these files, so the first heading written in it would
+ *                                otherwise drop silently out of every count below.
+ *
+ * Mechanics, in two passes rather than one regex, because a regex cannot balance braces:
+ * {@link tagTextAt} walks from `<tag` to the `>` that closes it, tracking brace depth and string
+ * state so a `>` inside `{…}` (an arrow function, a comparison in a template hole) does not end
+ * the tag early; {@link classNameLiteralsIn} then pulls every string/template literal out of the
+ * attribute value and joins them. For `cn("a b", className)` that yields `"a b"` — the fixed part,
+ * which is the spelling being counted; the caller-supplied `className` argument is a variable and
+ * contributes nothing, correctly. For a template literal the `${…}` hole is kept VERBATIM inside
+ * the spelling, so a computed class reads as its own distinct, obviously-unconverged spelling
+ * rather than collapsing into a neighbouring one.
+ */
+function tagTextAt(source: string, start: number): string {
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = start; i < source.length; i += 1) {
+    const ch = source[i]!;
+    if (quote !== null) {
+      if (ch === "\\") i += 1;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") quote = ch;
+    else if (ch === "{") depth += 1;
+    else if (ch === "}") depth -= 1;
+    else if (ch === ">" && depth === 0) return source.slice(start, i + 1);
+  }
+  return source.slice(start);
+}
+
+/** Every string/template literal inside an attribute expression, contents only. */
+function classNameLiteralsIn(expression: string): string[] {
+  const literals: string[] = [];
+  let i = 0;
+  while (i < expression.length) {
+    const ch = expression[i]!;
+    if (ch !== '"' && ch !== "'" && ch !== "`") {
+      i += 1;
+      continue;
+    }
+    let j = i + 1;
+    let buffer = "";
+    while (j < expression.length) {
+      const inner = expression[j]!;
+      if (inner === "\\") {
+        buffer += inner + (expression[j + 1] ?? "");
+        j += 2;
+        continue;
+      }
+      if (inner === ch) break;
+      buffer += inner;
+      j += 1;
+    }
+    literals.push(buffer);
+    i = j + 1;
+  }
+  return literals;
+}
+
+/** The marker used for an element that carries no `className` at all, so it is never invisible. */
+const NO_CLASSNAME = "(no className)";
+
+function classNameOfTag(tag: string): string {
+  const at = tag.indexOf("className=");
+  if (at === -1) return NO_CLASSNAME;
+  let i = at + "className=".length;
+  while (i < tag.length && /\s/.test(tag[i]!)) i += 1;
+  const opener = tag[i];
+
+  if (opener === '"' || opener === "'") {
+    const end = tag.indexOf(opener, i + 1);
+    return tag.slice(i + 1, end === -1 ? tag.length : end);
+  }
+
+  if (opener === "{") {
+    let depth = 0;
+    let quote: string | null = null;
+    let j = i;
+    for (; j < tag.length; j += 1) {
+      const ch = tag[j]!;
+      if (quote !== null) {
+        if (ch === "\\") j += 1;
+        else if (ch === quote) quote = null;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === "`") quote = ch;
+      else if (ch === "{") depth += 1;
+      else if (ch === "}" && (depth -= 1) === 0) break;
+    }
+    const literals = classNameLiteralsIn(tag.slice(i + 1, j));
+    return literals.length > 0 ? literals.join(" ") : NO_CLASSNAME;
+  }
+
+  return NO_CLASSNAME;
+}
+
+/** One normalised spelling per `<tag>` element in `source`, in source order. */
+export function classNamesOf(source: string, tag: string): string[] {
+  const opener = new RegExp(`<${tag}[\\s>]`, "g");
+  return [...source.matchAll(opener)].map((match) =>
+    classNameOfTag(tagTextAt(source, match.index)).trim().replace(/\s+/g, " "),
+  );
+}
+
+const h1Cache = new Map<string, string[]>();
+
+function h1ClassNamesOf(file: string): string[] {
+  const hit = h1Cache.get(file);
+  if (hit) return hit;
+  const spellings = file.endsWith(".tsx") ? classNamesOf(sourceOf(file), "h1") : [];
+  h1Cache.set(file, spellings);
+  return spellings;
+}
+
+/** A single `<h1>` element in the tree: the file that writes it and its ordinal within that file. */
+type H1Site = { readonly key: string; readonly file: string; readonly spelling: string };
+
+function h1SitesOf(page: string): H1Site[] {
+  return renderClosureOf(page).flatMap((file) =>
+    h1ClassNamesOf(file).map((spelling, index) => ({
+      key: `${label(file)}#${index}`,
+      file: label(file),
+      spelling,
+    })),
+  );
+}
+
+/** Every distinct `<h1>` element reachable from any page, grouped by spelling. */
+function h1SitesBySpelling(): Map<string, string[]> {
+  const seen = new Set<string>();
+  const bySpelling = new Map<string, string[]>();
+  for (const page of walkPages()) {
+    for (const site of h1SitesOf(page)) {
+      if (seen.has(site.key)) continue;
+      seen.add(site.key);
+      bySpelling.set(site.spelling, [...(bySpelling.get(site.spelling) ?? []), site.file]);
+    }
+  }
+  return bySpelling;
+}
+
+function pagesWithNoH1(): string[] {
+  return walkPages()
+    .filter((page) => h1SitesOf(page).length === 0)
+    .map(label)
+    .sort();
+}
+
+/** `page — n: file, file` for each page whose closure holds more than one `<h1>` element. */
+function pagesWithMultipleH1(): string[] {
+  return walkPages()
+    .map((page) => ({ page, sites: h1SitesOf(page) }))
+    .filter(({ sites }) => sites.length > 1)
+    .map(
+      ({ page, sites }) =>
+        `${label(page)} — ${sites.length}: ${sites.map((s) => s.file).join(", ")}`,
+    )
+    .sort();
+}
+
+/**
+ * SCOPE — what the three counters below CANNOT see.
+ *
+ * They are a source-text scan over a static import graph. They are not a render, not a DOM, and
+ * not a route. Every number they print is a claim about `<h1` literals in files reachable from a
+ * `page.tsx` through `runtimeImportsOf`, and nothing more. Specifically:
+ *
+ *   1. AN `h1` FROM A COMPONENT THE WALK CANNOT REACH. The closure follows static `import` /
+ *      `export … from` and literal `import("…")` specifiers only. A heading rendered through
+ *      `children` passed from a layout, through `React.lazy` on a computed path, or through a
+ *      `dynamic(() => import(someVariable))` whose specifier is not a string literal is invisible.
+ *      `import type` edges are dropped on purpose (they compile to nothing), so a component
+ *      imported ONLY as a type — and therefore never rendered — correctly contributes no heading.
+ *
+ *   2. A COMPUTED HEADING LEVEL. `const Tag = level === 1 ? "h1" : "h2"; return <Tag …>` renders
+ *      an `h1` whose source contains no `<h1` at all. So does `React.createElement("h1", …)` and
+ *      any `as`/`asChild`-style level prop. `components/ui/*` primitives that take a heading level
+ *      as a prop would land here. None of the 30 sites found today is of this shape — every one is
+ *      a literal `<h1` — but nothing below would notice the first one that is.
+ *
+ *   3. A className ASSEMBLED FROM VARIABLES. {@link classNameOfTag} reads the LITERAL parts of an
+ *      attribute value. `className={headingClass}`, `className={cn(tierClass, className)}` and
+ *      `className={styles.title}` all contribute no literal, so they report as
+ *      `"(no className)"` — visibly wrong rather than silently absent, but still not the real
+ *      class list. A template literal's `${…}` holes are kept verbatim in the spelling for the
+ *      same reason: the counter can show you that a spelling is computed; it cannot resolve it.
+ *      Conversely `cn("a b", extra)` reports `"a b"` — the fixed part only — so two call sites
+ *      that differ ONLY in what the caller passes read as one spelling here.
+ *
+ *   4. WHICH BRANCH ACTUALLY RENDERS. This is a REACHABILITY count, not an occurrence count, and
+ *      `PAGES_WITH_MULTIPLE_H1` is where that bites. `/profil` is the single page with two today,
+ *      and its two `<h1>`s are MUTUALLY EXCLUSIVE at runtime: `app/[locale]/(site)/profil/page.tsx`
+ *      renders its own only when `accountRole === "TEACHER"`, and `components/v2/v2-profile-form.tsx`
+ *      renders the other only when `accountRole === "STUDENT"`. The rendered DOM therefore carries
+ *      exactly one. The counter reads 1 anyway, because both are reachable from that page's source,
+ *      and that is the honest limit — it cannot evaluate a condition. A page that genuinely ships
+ *      two `<h1>`s in one DOM and a page that merely holds two branches look identical from here.
+ *      The mirror of this is `PAGES_WITHOUT_H1`: a page with a conditionally-rendered heading that
+ *      is absent on every real request still counts as HAVING one.
+ *
+ *   5. ANYTHING `walkPages()` DOES NOT VISIT. It returns `page.tsx` files under `PAGE_ROOTS`.
+ *      `app/[locale]/(site)/error.tsx` and `app/[locale]/(site)/not-found.tsx` each carry their
+ *      own `<h1 className="font-heading text-3xl font-bold text-foreground">`, a THIRTEENTH
+ *      spelling that appears nowhere in the numbers below; `app/not-found.tsx` carries a
+ *      fourteenth (`font-heading text-3xl font-bold`) and `app/global-error.tsx` an `<h1>` with an
+ *      inline `style` and no `className` at all. `layout.tsx`, `loading.tsx` and `template.tsx` are
+ *      likewise never read, so a heading that moved into one would leave its page reading "no h1".
+ *
+ *   6. A LITERAL `<h1` IN A STRING. `sourceOf()` strips comments — a docblock quoting an `<h1>` is
+ *      already handled — but it copies string and template literals through verbatim, by design.
+ *      An `<h1` inside a quoted string (a fixture, a docs snippet, `dangerouslySetInnerHTML`
+ *      markup) would be counted as an element. No such string exists on this surface today.
+ *
+ *   7. WHETHER THE HEADING IS CORRECT. Nothing here reads the heading's TEXT, its position in the
+ *      document, whether it precedes an `h2`, or whether the page's `<title>` agrees with it.
+ *      "Has exactly one `h1`" is not "has a correct heading outline".
+ */
+
+/**
+ * EXACT, not a ceiling — the same doctrine `PAGE_BODY_SPELLINGS` above records, and for the same
+ * reason: a ceiling drifts upward unnoticed, an exact number makes both directions a visible diff.
+ *
+ * Measured 2026-09-18 against the real tree: **12** distinct spellings across **30** distinct
+ * `<h1>` elements, reachable from the 37 `page.tsx` files. NOT the 13-across-32 the PR3 plan
+ * carried, and the gap is fully accounted for, not waved at: the plan's extra spelling and two
+ * extra elements are `app/[locale]/(site)/error.tsx` and `app/[locale]/(site)/not-found.tsx`,
+ * which share one spelling (`font-heading text-3xl font-bold text-foreground`) that no `page.tsx`
+ * closure reaches. 12 + that one = 13; 30 + those two = 32, exactly. `walkPages()` visits
+ * `page.tsx` only (scope note 5 above), so this counter reads 12 and the plan's 13 was measured
+ * over a slightly wider surface. Widening the walk is a decision for the adoption task, not a
+ * silent adjustment here.
+ *
+ * The distribution, which is the point of pinning it: ONE spelling covers 14 of the 30 elements
+ * (`font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight`, the
+ * terracotta hub tier) and a second covers 3 (`font-heading text-4xl sm:text-6xl font-extrabold
+ * tracking-tight text-foreground`, the neutral detail tier). Those two are the RULED end state —
+ * both tiers survive, so this counter's floor is 2, never 1. The other 10 spellings cover 13
+ * elements between them and are the drift a later task removes.
+ *
+ * MUTATION-CHECKED 2026-09-18 at this value: a thirteenth spelling introduced on
+ * `app/[locale]/(site)/araclar/page.tsx` took it RED with the spelling AND its file printed;
+ * reverted, GREEN. See `task-1-report.md` for the verbatim output.
+ */
+export const H1_SPELLINGS = 12;
+
+/**
+ * Pages whose entire render closure holds no `<h1>` element. Measured 2026-09-18: **5**, matching
+ * the plan's number, though it is worth naming WHICH five because two different defects are mixed
+ * in this list:
+ *
+ *   - the three `(play)/oyun/*` screens, which compose `components/v2/v2-game-screen.tsx`; that
+ *     component's highest heading is an `<h3>`. A fullscreen game screen arguably wants no page
+ *     title, but starting the outline at `h3` is a defect either way;
+ *   - `giris` and `kayit`, which start at `<h2>` — `components/v2/v2-login-card.tsx:169` and
+ *     `components/v2/v2-register-card.tsx:359`. Both are ordinary `(site)` reading-surface pages
+ *     with a breadcrumb trail and metadata, and neither has a top-level heading.
+ *
+ * Recorded, not fixed: this task is the counter. The list is printed one path per line on failure
+ * so the adoption task can act on it without re-deriving it.
+ *
+ * MUTATION-CHECKED 2026-09-18 at this value — see `task-1-report.md`.
+ */
+export const PAGES_WITHOUT_H1 = 5;
+
+/**
+ * Pages whose closure holds more than one `<h1>` element. Measured 2026-09-18: **1**, matching the
+ * plan — `app/[locale]/(site)/profil/page.tsx`. Read scope note 4 above before treating that as a
+ * live accessibility bug: the two headings are on mutually exclusive `accountRole` branches, so the
+ * rendered page has one. The counter cannot tell that apart from a page that really ships two, and
+ * pinning it at 1 is what makes a genuine second heading anywhere else immediately visible.
+ *
+ * MUTATION-CHECKED 2026-09-18 at this value — see `task-1-report.md`.
+ */
+export const PAGES_WITH_MULTIPLE_H1 = 1;
+
+describe("the heading scanner itself", () => {
+  // ANTI-VACUITY. Every assertion in the three describe blocks below would also pass against a
+  // closure that never crossed a file boundary, an extractor that never matched, or a walk that
+  // returned nothing. These run against the live tree and prove otherwise first.
+
+  it("the render closure crosses into components — the thin-wrapper case, on the real tree", () => {
+    const home = join(repoRoot, "app/[locale]/(site)/page.tsx");
+    expect(renderClosureOf(home).map(label)).toContain("components/v2/v2-hero.tsx");
+    const hesabim = join(repoRoot, "app/[locale]/(site)/hesabim/page.tsx");
+    expect(renderClosureOf(hesabim).map(label)).toContain("components/v2/v2-member-hub.tsx");
+  });
+
+  it("the closure is per page, not a union of the whole surface — negative control", () => {
+    // If `renderClosureOf` leaked between pages, every page would inherit the homepage hero's
+    // heading and `PAGES_WITHOUT_H1` would read 0 for a reason that has nothing to do with the
+    // tree. `araclar` does not reach the hero.
+    const araclar = join(repoRoot, "app/[locale]/(site)/araclar/page.tsx");
+    expect(renderClosureOf(araclar).map(label)).not.toContain("components/v2/v2-hero.tsx");
+  });
+
+  it("drops `import type` edges — a type-only import renders nothing, on the real tree", () => {
+    // `runtimeImportsOf`'s contract, relied on above: a module imported ONLY as a type is not in
+    // the compiled graph and so cannot put a heading on a page. `lib/auth/submit.client.ts:5`
+    // writes `import type { AuthBffCode } from "./transport.server"` and nothing else from it —
+    // the live fixture `components/patterns/rsc-boundary.test.ts` depends on too.
+    const submit = join(repoRoot, "lib/auth/submit.client.ts");
+    expect(readFileSync(submit, "utf8")).toContain('import type { AuthBffCode } from "./transport');
+    expect(runtimeImportsOf(submit).map(label)).not.toContain("lib/auth/transport.server.ts");
+  });
+
+  it("found a real, non-trivial number of h1 elements", () => {
+    const total = [...h1SitesBySpelling().values()].reduce((sum, files) => sum + files.length, 0);
+    expect(total).toBe(30);
+  });
+
+  it("reads a double-quoted className — real file, app/[locale]/(site)/araclar/page.tsx", () => {
+    const araclar = sourceOf(join(repoRoot, "app/[locale]/(site)/araclar/page.tsx"));
+    expect(classNamesOf(araclar, "h1")).toEqual([
+      "font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight",
+    ]);
+  });
+
+  it("reads a cn() className — real file, components/patterns/typography.tsx", () => {
+    // The `H1` component `hakkimizda` renders. A literal-only scan reads NOTHING here, which is
+    // how a page loses its heading from the count entirely.
+    const typography = sourceOf(join(repoRoot, "components/patterns/typography.tsx"));
+    expect(classNamesOf(typography, "h1")).toEqual([
+      "font-heading text-[clamp(1.9rem,1.2rem+2.6vw,2.6rem)] font-bold leading-[1.15] tracking-[-0.01em] text-foreground",
+    ]);
+  });
+
+  it("reads a template-literal className — real file, app/[locale]/(site)/dunya/kita/[slug]/page.tsx", () => {
+    // No `<h1>` wears this form today, so the proof is taken on the element that does: the hero
+    // `<section>` in a real page file. The extractor is tag-agnostic, so this IS the h1 path.
+    const kita = sourceOf(join(repoRoot, "app/[locale]/(site)/dunya/kita/[slug]/page.tsx"));
+    expect(classNamesOf(kita, "section")).toContain(
+      "relative isolate border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-14 overflow-hidden",
+    );
+  });
+
+  it("a `>` inside a brace expression does not end the tag early", () => {
+    expect(classNamesOf('<h1 onClick={() => go()} className="a b">x</h1>', "h1")).toEqual(["a b"]);
+  });
+
+  it("an h1 with no className reports as such rather than vanishing", () => {
+    expect(classNamesOf("<h1>Plain</h1>", "h1")).toEqual([NO_CLASSNAME]);
+  });
+
+  it("does not fire on h2/h3 — negative control", () => {
+    expect(classNamesOf('<h2 className="a">x</h2><h3 className="b">y</h3>', "h1")).toEqual([]);
+  });
+
+  it("a docblock quoting an h1 does not count — comment stripping applied", () => {
+    const stripped = stripComments('const a = 1; /* <h1 className="text-3xl">old</h1> */');
+    expect(classNamesOf(stripped, "h1")).toEqual([]);
+  });
+});
+
+describe("page headings converge on the two ruled tiers", () => {
+  it("the number of distinct h1 spellings is exactly the recorded number", () => {
+    const bySpelling = [...h1SitesBySpelling()].sort(([a], [b]) => a.localeCompare(b));
+    const message = `distinct h1 classNames reachable from a page.tsx:\n${bySpelling
+      .map(
+        ([spelling, files]) =>
+          `  ${files.length}x ${spelling}\n${files.map((f) => `      ${f}`).join("\n")}`,
+      )
+      .join("\n")}`;
+    expect(
+      bySpelling.map(([spelling]) => spelling),
+      message,
+    ).toHaveLength(H1_SPELLINGS);
+  });
+});
+
+describe("every page has a top-level heading", () => {
+  it("the count of pages with no h1 is exactly the recorded number", () => {
+    const pages = pagesWithNoH1();
+    expect(
+      pages,
+      `pages whose render closure holds no <h1>:\n${pages.map((p) => `  ${p}`).join("\n")}`,
+    ).toHaveLength(PAGES_WITHOUT_H1);
+  });
+});
+
+describe("no page reaches more than one h1", () => {
+  it("the count of pages with multiple h1 elements is exactly the recorded number", () => {
+    const pages = pagesWithMultipleH1();
+    expect(
+      pages,
+      `pages whose render closure holds more than one <h1>:\n${pages.map((p) => `  ${p}`).join("\n")}`,
+    ).toHaveLength(PAGES_WITH_MULTIPLE_H1);
   });
 });
