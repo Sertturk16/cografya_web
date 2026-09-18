@@ -1699,8 +1699,14 @@ export const H1_SPELLINGS = 12;
  * for why that over-count is resolved at the multiplicity counter and NOT here: both tier elements
  * really do render on this surface, so removing one from a whole-surface element count would hide
  * an element rather than a counting artefact.
+ *
+ * Step 2 of the same task: 19 → **16**. The three detail heroes (`turkiye/[slug]`,
+ * `turkiye/bolge/[slug]`, `dunya/[slug]`) moved onto `PageHero tier="detail"`, deleting their own
+ * `<h1>` elements (−3). `H1_SPELLINGS` does NOT move with them: `H1Display`'s spelling is
+ * byte-identical to the one those three pages wrote, so the spelling survives with a new owner
+ * while three elements collapse into the one they now share.
  */
-export const H1_ELEMENTS = 19;
+export const H1_ELEMENTS = 16;
 
 /**
  * Render roots whose entire closure holds no `<h1>` element. Measured 2026-09-18 over

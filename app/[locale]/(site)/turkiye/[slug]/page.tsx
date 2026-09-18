@@ -12,6 +12,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ProvinceLocatorMap } from "@/components/v2/v2-province-locator-map";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 
 import { Badge } from "@/components/ui/badge";
@@ -375,52 +376,51 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
           {/* Main Title & Action Row */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Link
-                  href={{
-                    pathname: "/turkiye/bolge/[slug]",
-                    params: { slug: regionTheme.slug },
-                  }}
-                  className="hover:opacity-80 transition-opacity"
-                >
-                  <Badge variant="outline" className={`${regionTheme.badgeClass} cursor-pointer`}>
-                    {region}
-                  </Badge>
-                </Link>
-                <Badge variant="primary" className="font-mono font-bold tracking-wider">
-                  TR-{province.plateCode}
-                </Badge>
-                {isCoastal ? (
-                  <Badge
-                    variant="outline"
-                    className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+            <PageHero
+              tier="detail"
+              heading={name}
+              notice={<V2EnWorkInProgressNotice locale={locale} />}
+              lede={introText}
+              badges={
+                <>
+                  <Link
+                    href={{
+                      pathname: "/turkiye/bolge/[slug]",
+                      params: { slug: regionTheme.slug },
+                    }}
+                    className="hover:opacity-80 transition-opacity"
                   >
-                    <Waves className="size-3" /> Kıyı İli
+                    <Badge variant="outline" className={`${regionTheme.badgeClass} cursor-pointer`}>
+                      {region}
+                    </Badge>
+                  </Link>
+                  <Badge variant="primary" className="font-mono font-bold tracking-wider">
+                    TR-{province.plateCode}
                   </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-muted text-muted-foreground">
-                    🌾 İç Kara
-                  </Badge>
-                )}
-                {climate.showClass && (
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                    <CloudSun className="size-3 mr-1" />{" "}
-                    {province.climateCurriculumNameTr || province.climateClassTr}
-                  </Badge>
-                )}
-              </div>
-
-              <h1 className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
-                {name}
-              </h1>
-
-              <V2EnWorkInProgressNotice locale={locale} />
-
-              <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
-                {introText}
-              </p>
-            </div>
+                  {isCoastal ? (
+                    <Badge
+                      variant="outline"
+                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+                    >
+                      <Waves className="size-3" /> Kıyı İli
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-muted text-muted-foreground">
+                      🌾 İç Kara
+                    </Badge>
+                  )}
+                  {climate.showClass && (
+                    <Badge
+                      variant="outline"
+                      className="bg-primary/10 text-primary border-primary/20"
+                    >
+                      <CloudSun className="size-3 mr-1" />{" "}
+                      {province.climateCurriculumNameTr || province.climateClassTr}
+                    </Badge>
+                  )}
+                </>
+              }
+            />
 
             {/* Top Quick Actions */}
             <div className="flex items-center gap-3 shrink-0">

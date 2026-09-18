@@ -6,6 +6,7 @@ import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { V2RegionLocatorMap } from "@/components/v2/v2-region-locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
@@ -449,42 +450,39 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
           {/* Main Title & Action Row */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className={theme.badgeClass}>
-                  {theme.nameTr}
-                </Badge>
-                <Badge variant="secondary" className="font-mono font-medium tracking-wide">
-                  1941 Coğrafya Kongresi
-                </Badge>
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                  <Building2 className="size-3 mr-1" /> {region.provinceCount} İl
-                </Badge>
-                <Badge variant="outline" className="bg-muted text-muted-foreground">
-                  <Boxes className="size-3 mr-1" /> {region.subregionCount} Bölüm
-                </Badge>
-                {isCoastal ? (
-                  <Badge
-                    variant="outline"
-                    className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
-                  >
-                    <Waves className="size-3" /> {region.coastalSeas.length} Denize Kıyı
+            <PageHero
+              tier="detail"
+              heading={region.nameTr}
+              lede={region.introTr}
+              badges={
+                <>
+                  <Badge variant="outline" className={theme.badgeClass}>
+                    {theme.nameTr}
                   </Badge>
-                ) : (
+                  <Badge variant="secondary" className="font-mono font-medium tracking-wide">
+                    1941 Coğrafya Kongresi
+                  </Badge>
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                    <Building2 className="size-3 mr-1" /> {region.provinceCount} İl
+                  </Badge>
                   <Badge variant="outline" className="bg-muted text-muted-foreground">
-                    🌾 İç Bölge
+                    <Boxes className="size-3 mr-1" /> {region.subregionCount} Bölüm
                   </Badge>
-                )}
-              </div>
-
-              <h1 className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
-                {region.nameTr}
-              </h1>
-
-              <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
-                {region.introTr}
-              </p>
-            </div>
+                  {isCoastal ? (
+                    <Badge
+                      variant="outline"
+                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+                    >
+                      <Waves className="size-3" /> {region.coastalSeas.length} Denize Kıyı
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-muted text-muted-foreground">
+                      🌾 İç Bölge
+                    </Badge>
+                  )}
+                </>
+              }
+            />
 
             {/* Top Quick Actions */}
             <div className="flex items-center gap-3 shrink-0">
