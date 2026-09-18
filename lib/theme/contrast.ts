@@ -71,8 +71,14 @@ function parseOklch(css: string): readonly [number, number, number] {
   return [encode(linear[0]!), encode(linear[1]!), encode(linear[2]!)] as const;
 }
 
-/** Accepts either syntax this codebase authors colours in. */
-function parseColor(css: string): readonly [number, number, number] {
+/**
+ * Accepts either syntax this codebase authors colours in.
+ *
+ * Exported because `delta-e.ts` and `cvd.ts` need the same contract and a second parser is
+ * exactly the shape this repo has been bitten by: two readers of one notation that nothing
+ * compares.
+ */
+export function parseColor(css: string): readonly [number, number, number] {
   return /^oklch\(/i.test(css.trim()) ? parseOklch(css) : parseHex(css);
 }
 
