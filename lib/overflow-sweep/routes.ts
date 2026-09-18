@@ -155,6 +155,20 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "composition rather than a translation of this one.",
   },
   {
+    id: "sea-hub",
+    pathname: "/deniz",
+    locales: ["tr"],
+    modules: ["marine.module.css"],
+    why:
+      "The FAQ ACCORDION, which `/deniz/karadeniz` does not have. T-035 PR5 moved this block " +
+      'onto `FaqSection`\'s `mechanism="accordion"`, and an accordion trigger is the one FAQ ' +
+      "shape with a horizontal budget: an unbroken Turkish question and a chevron on one row, " +
+      "inside a button that must still fit at 320. The basin route below measures " +
+      "`marine.module.css` and the licence notice; neither of those reaches this page's " +
+      "accordion. `tr` only — the block is gated to Turkish because `messages/en.json` has no " +
+      "`Deniz.q*`, so an EN visit would measure a page with no FAQ on it at all.",
+  },
+  {
     id: "earthquake",
     pathname: "/deprem",
     locales: ["tr"],
@@ -216,12 +230,15 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
   {
     id: "design-system-category",
     pathname: "/design-system/[category]",
-    params: { category: "veri" },
+    params: { category: "duzen" },
     locales: ["tr"],
     modules: [],
     why:
       "Where the primitives actually render, several to a row, at every size they ship in. " +
-      "`/design-system` alone is a list of links and proves nothing about the components.",
+      "`/design-system` alone is a list of links and proves nothing about the components. " +
+      "`duzen` rather than `veri` since T-035 PR5: the accordion and the `FaqSection` specimens " +
+      "live in the layout category, and a FAQ block's overflow risk is a long unbroken question " +
+      "on one row — exactly what a specimen page renders at every width without needing the API.",
   },
 ];
 
