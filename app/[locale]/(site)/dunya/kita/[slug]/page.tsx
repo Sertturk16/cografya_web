@@ -33,6 +33,7 @@ import {
   Coins,
   BookOpen,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -268,7 +269,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 1: INTRO PROSE & LOCATOR MAP */}
         <section id="giris-ve-harita" className="space-y-8">
           {/* Intro Lead */}
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+          <Card variant="panel" elevation="xs">
             <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider mb-2">
               <Compass className="size-4" />
               <span>Kıtanın Genel Karakteri</span>
@@ -276,7 +277,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             <p className="text-base sm:text-lg text-foreground leading-relaxed font-normal">
               {continent.prose.introTr}
             </p>
-          </div>
+          </Card>
 
           {/* Interactive World Locator Map */}
           <V2ContinentLocatorMap
@@ -298,9 +299,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             </h2>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+          <Card variant="panel" elevation="xs">
             <V2RichProse text={continent.prose.locationAndBordersTr} />
-          </div>
+          </Card>
         </section>
 
         {/* SECTION 3: YERYÜZÜ ŞEKİLLERİ VE JEOLOJİK YAPI */}
@@ -315,9 +316,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             </h2>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+          <Card variant="panel" elevation="xs">
             <V2RichProse text={continent.prose.landformsAndGeologyTr} />
-          </div>
+          </Card>
         </section>
 
         {/* SECTION 4: İKLİM VE DOĞAL BİTKİ ÖRTÜSÜ */}
@@ -332,9 +333,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             </h2>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+          <Card variant="panel" elevation="xs">
             <V2RichProse text={continent.prose.climateAndVegetationTr} />
-          </div>
+          </Card>
         </section>
 
         {/* SECTION 5: HİDROGRAFYA (AKARSULAR, GÖLLER VE DENİZLER) */}
@@ -349,9 +350,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             </h2>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+          <Card variant="panel" elevation="xs">
             <V2RichProse text={continent.prose.hydrographyTr} />
-          </div>
+          </Card>
         </section>
 
         {/* SECTION 6: NÜFUS DAĞILIMI VE YERLEŞME */}
@@ -366,9 +367,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             </h2>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+          <Card variant="panel" elevation="xs">
             <V2RichProse text={continent.prose.populationAndSettlementTr} />
-          </div>
+          </Card>
         </section>
 
         {/* SECTION 7: EKONOMİ VE DOĞAL KAYNAKLAR */}
@@ -385,9 +386,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             </h2>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+          <Card variant="panel" elevation="xs">
             <V2RichProse text={continent.prose.economyAndResourcesTr} />
-          </div>
+          </Card>
         </section>
 
         {/* SECTION 8: ALT BÖLGELER VE ÜLKELER DİZİNİ */}
@@ -518,7 +519,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             </h2>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-6 shadow-xs">
+          <Card variant="panel" space="6" elevation="xs">
             <V2RichProse text={continent.prose.disasterAndEnvironmentTr} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border/60">
@@ -552,7 +553,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
                 </ul>
               </div>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* SECTION 10: TARİHİ VE KÜLTÜREL COĞRAFYA */}
@@ -567,9 +568,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             </h2>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+          <Card variant="panel" elevation="xs">
             <V2RichProse text={continent.prose.historicalAndCulturalTr} />
-          </div>
+          </Card>
         </section>
 
         {/* SECTION 11: SIKÇA SORULAN SORULAR (FAQ) */}

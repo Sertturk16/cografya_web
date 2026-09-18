@@ -7,6 +7,7 @@ import {
   TOOL_HUB_PATHNAME,
   TOOL_REGISTRY,
 } from "@/lib/tools/tool-registry";
+import { Card } from "@/components/ui/card";
 
 /**
  * The "other tools" exit every tool page carries.
@@ -51,10 +52,7 @@ export async function V2RelatedTools({ current }: V2RelatedToolsProps) {
   const others = TOOL_REGISTRY.filter((tool) => tool.pathname !== current);
 
   return (
-    <section
-      aria-labelledby="v2-other-tools-heading"
-      className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4"
-    >
+    <Card as="section" variant="panel" space="4" aria-labelledby="v2-other-tools-heading">
       <h2 id="v2-other-tools-heading" className="font-heading text-xl font-bold text-foreground">
         {tHub("otherToolsHeading")}
       </h2>
@@ -78,6 +76,6 @@ export async function V2RelatedTools({ current }: V2RelatedToolsProps) {
           </Link>
         </li>
       </ul>
-    </section>
+    </Card>
   );
 }

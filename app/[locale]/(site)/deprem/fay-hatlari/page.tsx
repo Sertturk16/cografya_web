@@ -24,6 +24,7 @@ import {
   ArrowLeft,
   Info,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -79,7 +80,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             surface="trOnly"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Türkiye'nin Ana Fay Hatları: KAF, DAF ve BAFS"
@@ -114,6 +115,34 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             </PageHero>
 
             {/* Quick Metrics */}
+            {/* DELIBERATELY NOT MIGRATED — RULING BG. The other twelve metric strips render
+                `StatGrid` + `StatTile`; this one stays hand-rolled, for a reason of the same kind
+                that keeps `kitaplar/[slug]` out: it is not the same thing as the other strips.
+
+                Its first three values are coloured `text-red-600`, `text-blue-600` and
+                `text-emerald-600`, and those hues are FAULT IDENTIFIERS, not decoration. The same
+                page renders each fault's own card a few screens below from
+                `lib/earthquake/fault-lines-data.ts` — `borderClass` `border-red-500/40`,
+                `badgeClass` `bg-red-500/15 text-red-700 dark:text-red-300`, `accentColor`
+                `text-red-600 dark:text-red-400`, and the blue and emerald equivalents. The tile
+                colour says WHICH FAULT, and it has to agree with the card below it.
+
+                An earlier round of this task re-toned these three onto `destructive` / `accent` /
+                `secondary` and justified it with the sentence "nothing else on this page or its map
+                draws KAF, DAF or BAFS in those hues". `grep borderClass` falsifies that in one
+                command. The result shipped a teal DAF tile above a blue-bordered DAF card.
+
+                Apply Ruling BD's own test and it decides the other way: the cards key off the tint
+                and DO carry `dark:` pairs, so these tiles are the frozen half of a categorical
+                pair. The correct fix is to give the tile hues their `dark:` counterparts alongside
+                the family in `fault-lines-data.ts` — one change, both halves, still categorical —
+                and that belongs to T-031c with the rest of the categorical palette, exactly like
+                `/deprem`'s KAF/DAF/BAFS legend. Re-toning these onto brand tokens would push three
+                data categories onto three brand hues, which is the data-viz rule running backwards.
+
+                So: the frozen colour here is real and is NOT fixed by this PR. Do not carry it
+                through `StatTile.tone` either — `components/ui/token-binding.test.ts` forbids raw
+                palette in `components/patterns` and is right to. */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
                 <span className="font-heading text-2xl sm:text-3xl font-bold text-red-600 block">
@@ -148,7 +177,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* 3 FAULT SYSTEMS DETAILED CARDS */}

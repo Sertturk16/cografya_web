@@ -37,6 +37,12 @@ const eslintConfig = defineConfig([
     // findings against paths that are copies. One such run produced 1,744 errors, all of them
     // from copies and none from this tree.
     ".claude/**",
+    // Visual-check scratch. `.gitignore` has carried `t035_shots/` since T-035 PR3; eslint did
+    // not, so every gate run in this programme has reported the same four warnings from
+    // throwaway Playwright payloads and every task has had to say "the recorded four" in its
+    // report. The same "listed in BOTH" split as `tr-context.generated.ts` above, one directory
+    // over. Globbed rather than named so the next task's shots directory is covered too.
+    "*_shots/**",
   ]),
 ]);
 

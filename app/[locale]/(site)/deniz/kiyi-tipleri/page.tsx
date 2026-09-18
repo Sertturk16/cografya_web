@@ -8,6 +8,8 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -23,6 +25,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -78,7 +81,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
             surface="trOnly"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Türkiye'nin Kıyı Tipleri & Jeomorfolojisi"
@@ -114,41 +117,27 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
             </PageHero>
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  8.333 km
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Toplam Kıyı Uzunluğu (HGM)
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-teal-600 block">
-                  6 Kıyı Tipi
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Morfogenetik Çeşitlilik
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  28 İl
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Denize Kıyısı Olan Şehir
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-destructive block">
-                  3 Tip Yok
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Fiyort, Skyer &amp; Haliç (Watt)
-                </span>
-              </div>
-            </div>
-          </div>
+            {/* `tone="secondary"` was `text-teal-600`, which is FROZEN: measured #009689 in
+                both themes, 3.67:1 on the light card and 4.64:1 on the dark one, while its
+                three siblings move with the theme and hold ~5-6:1 in each. (Large bold text,
+                3:1 floor, so it passed AA; the defect was the freeze, not the ratio.)
+                `secondary` is the tone the sibling strips write in this slot.
+
+                CONVERTED BECAUSE OF THE ENTITY, NOT THE PAGE — and this page is the proof that
+                the page-scoped question is the wrong one. Teal IS on this page: the Ege Denizi
+                link card ~180 lines below renders `border-teal-500/30 … text-teal-700
+                dark:text-teal-300`, because teal is the site-wide Aegean encoding. What decides
+                it is that COASTAL TYPES carry no colour anywhere —
+                `lib/marine/coastal-types-detail.ts` has no colour field and the six type articles
+                render `border-border bg-card` — so teal on this tile meant nothing, and sitting
+                it above a teal Ege card was a false signal the conversion removes. */}
+            <StatGrid gutter="hero">
+              <StatTile label="Toplam Kıyı Uzunluğu (HGM)" fact="8.333 km" tone="primary" />
+              <StatTile label="Morfogenetik Çeşitlilik" fact="6 Kıyı Tipi" tone="secondary" />
+              <StatTile label="Denize Kıyısı Olan Şehir" fact="28 İl" tone="accent" />
+              <StatTile label="Fiyort, Skyer & Haliç (Watt)" fact="3 Tip Yok" tone="destructive" />
+            </StatGrid>
+          </Card>
         </div>
 
         {/* 6 COASTAL TYPES DETAILED SECTIONS */}

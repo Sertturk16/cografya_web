@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
+import { StatGrid, type StatGridProps } from "./stat-grid";
+import { StatTile, type StatTileProps } from "./stat-tile";
 
 /** Comments stripped — a docblock explaining why something is NOT `role="alert"` contains it. */
 const read = (name: string) =>
@@ -56,10 +60,312 @@ describe("StatTile inherits that guarantee rather than reimplementing it", () =>
   });
 
   it("puts the label before the number in the DOM", () => {
-    // Hearing "18,2 °C" with no idea what it measures is being told nothing; the visual
-    // hierarchy is carried by type size, not by source order.
-    // The JSX render, not the `Omit<MetricValueProps, …>` in the props type above it.
-    expect(source.indexOf("{label}")).toBeLessThan(source.indexOf("<MetricValue {...metric}"));
+    // Hearing "18,2 °C" with no idea what it measures is being told nothing.
+    //
+    // A REAL TAG BOUNDARY, not a substring: `"<MetricValueProps".startsWith("<MetricValue")` is
+    // true, so a bare `indexOf("<MetricValue")` finds the `Omit<MetricValueProps, …>` in the
+    // props type — which sits ABOVE the render and made this assertion fail on correct source.
+    // Same prefix collision `components/showcase/registry.test.ts` documents for `<H1`.
+    const render = /<MetricValue[\s/>]/.exec(source);
+    expect(render, "stat-tile.tsx no longer renders <MetricValue>").not.toBeNull();
+    expect(source.indexOf("{label}")).toBeLessThan(render!.index);
+  });
+
+  /**
+   * The other half of that, and it needs its own assertion because the two pull opposite ways.
+   *
+   * 13 metric strips and the book facts sheet render the VALUE on top. Source order is the
+   * reading order and must stay label-first; screen order is set with `order-*` instead. Without
+   * this, the obvious way to restore the site's look is to move the JSX — which satisfies the
+   * eye, passes every visual check, and silently deletes the guarantee above.
+   */
+  it("flips the two visually with order utilities, never by reordering the DOM", () => {
+    expect(source).toMatch(/order-1/);
+    expect(source).toMatch(/order-2/);
+    // The label carries the LATER order, the value the earlier one — the flip, not just a pair
+    // of utilities sitting in the file.
+    const labelBlock = source.slice(source.indexOf("order-2"), source.indexOf("{label}"));
+    expect(labelBlock).not.toContain("<MetricValue");
+  });
+
+  /**
+   * RULING — why `fact` is not a hole in T-024's guarantee.
+   *
+   * The strips hold `"WGS84"`, `"Haversine"`, `"M 1.0 - 7.0+"`. The alternative to a second
+   * channel was widening `MetricValue.value` to `string`, which would have let any page print
+   * `"—"` or `"0"` through the component built to make exactly that impossible. So: `absent`
+   * stays required on the branch that renders a number, and the literal branch cannot reach
+   * `MetricValue` at all.
+   */
+  it("keeps the measurement branch's absent prop required, and gives the literal branch none", () => {
+    expect(source).toMatch(/interface StatTileMeasurement[^}]*extends[^{]*Omit<MetricValueProps/);
+    expect(source).toMatch(/readonly absent\?: never/);
+    expect(source).not.toMatch(/absent\?:\s*\{/);
+    // The two branches are mutually exclusive in the type, not merely by convention.
+    expect(source).toMatch(/readonly fact\?: never/);
+    expect(source).toMatch(/readonly value\?: never/);
+  });
+
+  it("colours the value through a closed tone union, never a raw class", () => {
+    // Five strips carried `text-teal-600`/`text-cyan-600`/`text-red-600`/`text-blue-600`/
+    // `text-emerald-600`, none with a dark counterpart. `components/ui/token-binding.test.ts`
+    // forbids those here; this pins the thing that replaced them.
+    for (const tone of ["foreground", "primary", "secondary", "accent", "destructive"]) {
+      expect(source).toMatch(new RegExp(`\\b${tone}: "text-${tone}"`));
+    }
+    expect(source).toContain("TONE[tone]");
+  });
+
+  /**
+   * RULING BB, APPLIED TO THE TILE — whole-branch review's M2, and the fourth occurrence of this
+   * shape in the programme (PR3's Ruling Z/AB, Task 4's `.map()` blind spot, Ruling BA on
+   * `StatGrid`). `StatGrid` was taught to prove itself by rendering and `StatTile` was left on
+   * `expect(source).toContain(…)` **in the same commit**, so every guarantee below was satisfiable
+   * by a dead string:
+   *
+   *     const surface = cn("rounded-2xl border border-border bg-card p-4 shadow-2xs");
+   *     void surface;
+   *     const t = TONE[tone]; void t;
+   *     return <div className="flex flex-col p-2"><span className="text-primary">…
+   *
+   * — 50 tiles across 12 pages lose their surface and collapse to one hue, and "wears the site's
+   * card spelling" and "colours the value through a closed tone union" both stay green. A raw
+   * PALETTE hardcode would still be caught by `components/ui/token-binding.test.ts`; a bridge-token
+   * hardcode and a dead surface string are exactly what it cannot see.
+   *
+   * MUTATION-CHECKED at these values, reverted after each: the dead-surface rewrite above — RED on
+   * the surface row; `TONE.accent` re-pointed at `text-primary` — RED on the accent row only;
+   * `order-2` dropped from the label — RED on the DOM/visual order row.
+   */
+  const tileMarkup = (props: Partial<StatTileProps> = {}) =>
+    renderToStaticMarkup(
+      createElement(StatTile, { label: "L", fact: "V", ...props } as StatTileProps),
+    );
+
+  const classesOf = (markup: string) => [...markup.matchAll(/class="([^"]*)"/g)].map((m) => m[1]!);
+
+  const TILE_SURFACE = "flex flex-col rounded-2xl border border-border bg-card p-4 shadow-2xs";
+
+  it("renders the site's card spelling on its root, shadow included", () => {
+    // Asserted as the whole string in emission order, not "contains the right tokens": a re-theme
+    // that kept `bg-card` and changed the radius or dropped the shadow would pass the weaker form,
+    // and flattening 50 tiles is precisely what this component was given `shadow-2xs` to avoid.
+    expect(classesOf(tileMarkup())[0]).toBe(TILE_SURFACE);
+  });
+
+  /**
+   * RULING BI. THE SURFACE IS INVARIANT UNDER EVERY OPTIONAL PROP, not just the ones a test
+   * happens to pass.
+   *
+   * Re-review's MR2, demonstrated rather than argued. The assertions above render through one
+   * helper seeded `{ label, fact }`; the tone rows vary `tone` and the measurement row varies
+   * `fact`/`value`/`absent`. **Nothing ever passed `hint` or `icon`.** So
+   *
+   *     className={cn(hint === undefined ? TILE_SURFACE : "flex flex-col p-2")}
+   *
+   * keys the card surface on a prop no test supplies: every tile carrying a hint loses its surface
+   * entirely, and **217 files / 4823 tests stay green**. `token-binding.test.ts` cannot see it (no
+   * raw palette) and `page-composition.test.ts` cannot see it (the class lives inside the
+   * component). Third round running in which "the assertion covers the case we thought of" is the
+   * finding, and the same lesson Ruling BB taught for `StatGrid` — one prop deeper.
+   *
+   * So the surface is asserted over the CROSS-PRODUCT of the optional props rather than at one
+   * point in it. A prop added later without a row here reopens exactly this hole, which is why the
+   * combinations are generated from a list rather than written out.
+   */
+  it.each(
+    [
+      { hint: undefined, icon: undefined },
+      { hint: "ERA5-Land, 1991-2020", icon: undefined },
+      { hint: undefined, icon: "★" },
+      { hint: "ERA5-Land, 1991-2020", icon: "★" },
+      { hint: "", icon: "" },
+    ].flatMap((optional) =>
+      (["foreground", "primary", "secondary", "accent", "destructive"] as const).map((tone) => [
+        `hint=${JSON.stringify(optional.hint)} icon=${JSON.stringify(optional.icon)} tone=${tone}`,
+        { ...optional, tone },
+      ]),
+    ) as ReadonlyArray<readonly [string, Partial<StatTileProps>]>,
+  )("keeps the root surface identical with %s", (_name, props) => {
+    expect(classesOf(tileMarkup(props))[0]).toBe(TILE_SURFACE);
+  });
+
+  it("the cross-product really varies what it claims to vary — anti-vacuity", () => {
+    // A cross-product that rendered the same markup every time would pass the rows above while
+    // proving nothing. Assert the optional props actually reach the output.
+    expect(tileMarkup({ hint: "ERA5-Land" })).toContain("ERA5-Land");
+    expect(tileMarkup({ hint: "ERA5-Land" })).not.toBe(tileMarkup());
+    expect(tileMarkup({ icon: "★" })).toContain("★");
+    expect(tileMarkup({ icon: "★" })).toContain('aria-hidden="true"');
+    expect(tileMarkup({ icon: "★" })).not.toBe(tileMarkup());
+    // And the measurement branch, whose root must also be the same surface.
+    expect(classesOf(tileMarkup({ fact: undefined, value: 12, absent: { label: "Yok" } }))[0]).toBe(
+      TILE_SURFACE,
+    );
+  });
+
+  it.each([
+    ["foreground", "text-foreground"],
+    ["primary", "text-primary"],
+    ["secondary", "text-secondary"],
+    ["accent", "text-accent"],
+    ["destructive", "text-destructive"],
+  ] as const)("renders tone=%s as %s on the value", (tone, expected) => {
+    const value = classesOf(tileMarkup({ tone })).find((c) => c.includes("font-heading"));
+    expect(value).toBe(`order-1 block font-heading text-2xl font-bold sm:text-3xl ${expected}`);
+  });
+
+  it("defaults to the hueless tone", () => {
+    expect(classesOf(tileMarkup()).find((c) => c.includes("font-heading"))).toContain(
+      "text-foreground",
+    );
+  });
+
+  it("renders the label after the value in the DOM and before it on screen", () => {
+    // Both halves, on the rendered output rather than on source indices. The label's wrapper
+    // carries the LATER order and appears FIRST in the markup; that pair is the whole trick, and
+    // asserting only one of them is how it gets silently undone.
+    const markup = tileMarkup();
+    const labelBlock = markup.indexOf("order-2");
+    const valueBlock = markup.indexOf("order-1");
+    expect(labelBlock).toBeGreaterThan(-1);
+    expect(labelBlock).toBeLessThan(valueBlock);
+    expect(classesOf(markup)).toContain("text-xs font-medium leading-5 text-muted-foreground");
+  });
+
+  it("routes a measurement through MetricValue, and an absent one to words", () => {
+    // The `fact`/`value` split, proved by what comes out rather than by the type alone.
+    expect(tileMarkup({ fact: undefined, value: 1234, absent: { label: "Yok" } })).toContain(
+      "tabular-nums",
+    );
+    expect(tileMarkup({ fact: undefined, value: null, absent: { label: "Okuma yok" } })).toContain(
+      "Okuma yok",
+    );
+    // Never a zero for an absent reading, never a bare dash — T-024, end to end.
+    expect(
+      tileMarkup({ fact: undefined, value: null, absent: { label: "Okuma yok" } }),
+    ).not.toMatch(/>\s*[-–—]\s*</);
+  });
+
+  it("offers no className escape hatch either", () => {
+    // L6: `StatGrid` and the `Card` variant branch both close it, and this component's own
+    // docblock argues at length that a passthrough lets divergence back in. It was open, with no
+    // consumer — `kitaplar`, the one site that wanted a per-tile hatch, took `columns="2"` instead.
+    expect(source).toMatch(/className\?: never/);
+  });
+});
+
+describe("StatGrid is the shell and nothing else", () => {
+  const source = read("stat-grid");
+
+  it("offers no className escape hatch", () => {
+    // PageContainer's reason: the divergence this collapses grew because every page could write
+    // its own spelling, and a passthrough lets it straight back in — invisibly, because the
+    // counters in components/v2/page-composition.test.ts read source spellings.
+    expect(source).toMatch(/className\?: never/);
+  });
+
+  /**
+   * RULING BB. THE RENDERED CLASS STRING, NOT THE SOURCE THAT IS SUPPOSED TO PRODUCE IT.
+   *
+   * This assertion used to be `toContain('cn("grid"')` plus a `/grid-cols-2 sm:grid-cols-4/`
+   * match on the file's text, and `components/v2/page-composition.test.ts` leaned on it: the tag
+   * `<StatGrid>` counts as a grid shell for `STAT_GRIDS_TOTAL`, "so the shell cannot quietly stop
+   * being one". Review demonstrated that it can. Replacing the render with
+   *
+   *     const unused = cn("grid", COLUMNS[columns]);
+   *     void unused;
+   *     return <div className={cn("flex flex-col", GAP[gap], GUTTER[gutter])}>{children}</div>;
+   *
+   * satisfies BOTH substrings from a dead reference while collapsing thirteen live metric strips
+   * to a single column at every viewport — with 217 files / 4800 tests green. A source substring
+   * is evidence that a string exists in a file, never that an element wears it.
+   *
+   * So: render it. `StatGrid` is a pure function of props and `renderToStaticMarkup` needs no
+   * jsdom (`docs/conventions.md` — this suite has none), which is the same instrument
+   * `components/ui/card-variants.test.tsx` uses one directory over for the same reason. Asserted
+   * as the WHOLE string in emission order, not "contains the right tokens", because a re-theme
+   * that kept `grid` and changed the breakpoints would pass the weaker form.
+   *
+   * THE RENDERED PIN IS BETTER IN BOTH DIRECTIONS, NOT MERELY STRICTER — worth stating, because
+   * "assert the output" usually reads as "assert more". Re-review built the component's `grid`
+   * token at runtime (`["g","r","i","d"].join("")`): this pin stays GREEN, correctly, because the
+   * element still wears exactly `grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4` and the component
+   * is right. The source-substring pin it replaced would have gone RED on that same correct
+   * component. So the swap removes a false negative AND a false positive.
+   *
+   * MUTATION-CHECKED at these values, reverted after each:
+   *
+   *   - the exact `flex flex-col` + `void unused` rewrite above — RED on every `columns` row,
+   *     `expected 'flex flex-col gap-3 sm:gap-4' to be 'grid grid-cols-2 sm:grid-cols-4 gap-3
+   *     sm:gap-4'`, which is the mutation the old pin could not see;
+   *   - `"2-4"` re-spelled `grid-cols-2 md:grid-cols-4` — RED on that row alone;
+   *   - `gutter="hero"` changed from `mt-8` to `mt-6` — RED on the gutter row.
+   *
+   * Re-review added three more, all RED on 4 assertions: the same `flex flex-col` + `void unused`
+   * rewrite, a conditional rendering `grid` only when `gutter === "hero"` (the `it.each` rows run
+   * at the default gutter), and the grid moved into a CHILD element with the root keeping only the
+   * gutter — caught because `gridClass` reads the ROOT element's class.
+   */
+  /**
+   * Render once, read the class off the element.
+   *
+   * `children` goes in the props bag rather than as `createElement`'s third argument because
+   * `StatGridProps.children` is REQUIRED, and the third-argument form leaves it missing from the
+   * props type and fails `tsc`. `react/no-children-prop` is a rule about JSX authoring ergonomics
+   * and this file is `.ts` with no JSX in it, so the disable is scoped to this one line with its
+   * reason rather than repeated at four call sites.
+   */
+  const gridClass = (props: Omit<StatGridProps, "children"> = {}) => {
+    // eslint-disable-next-line react/no-children-prop
+    const markup = renderToStaticMarkup(createElement(StatGrid, { ...props, children: "x" }));
+    return /class="([^"]*)"/.exec(markup)?.[1] ?? "(no class attribute rendered)";
+  };
+
+  it.each([
+    ["2-4", "grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"],
+    ["2", "grid grid-cols-2 gap-3 sm:gap-4"],
+  ] as const)("renders columns=%s as exactly its measured spelling", (columns, expected) => {
+    expect(gridClass({ columns })).toBe(expected);
+  });
+
+  it("renders the hero gutter, and nothing for none", () => {
+    expect(gridClass({ gutter: "hero" })).toBe(
+      "grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8",
+    );
+    expect(gridClass({ gutter: "none" })).toBe("grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4");
+  });
+
+  it("the rendered element really is what the scanner reads as a grid shell", () => {
+    // The bridge between this file and the counter, stated once: the class string above must
+    // satisfy the `grid` + `grid-cols-*` rule `isGridShell` falls back on. Without this the two
+    // files could drift apart while each stayed internally green.
+    const tokens = gridClass().split(" ");
+    expect(tokens).toContain("grid");
+    expect(tokens.some((token) => token.startsWith("grid-cols-"))).toBe(true);
+  });
+
+  it("every union member has a product consumer — T-036's rule, applied to itself", () => {
+    // Six members shipped with zero product consumers in the first round (`2-3-6`, `2-lg-4`,
+    // `2-md-4`, `gutter` body/section, `gap` wide), two of them justified by a showcase specimen
+    // added in the same commit. A member justified by its own demo is not a member with a
+    // consumer. The measured spellings survive as prose in the docblock; the API does not.
+    expect(source).toMatch(/"2-4": "grid-cols-2 sm:grid-cols-4"/);
+    expect(source).toMatch(/"2": "grid-cols-2"/);
+    // Asserted on the KEYS, not on class substrings: `wide: "gap-4"` and the surviving
+    // `strip: "gap-3 sm:gap-4"` share the token `gap-4`, so a class-level ban fires on the member
+    // that is supposed to be here. The member is the key.
+    for (const cut of [`"2-3-6"`, `"2-lg-4"`, `"2-md-4"`, "body", "section", "wide", "tight"]) {
+      expect(source, `${cut} is back as a union member with no product consumer`).not.toMatch(
+        new RegExp(`^\\s*${cut.replace(/["-]/g, "\\$&")}:\\s`, "m"),
+      );
+    }
+  });
+
+  it("carries no tile styling of its own", () => {
+    // It is the shell. A surface token here would mean two components drawing one card.
+    expect(source).not.toContain("bg-card");
+    expect(source).not.toContain("rounded-2xl");
   });
 });
 

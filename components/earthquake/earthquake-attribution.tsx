@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { EarthquakeAttribution as EarthquakeAttributionRow } from "@/lib/api/types";
+import { Card } from "@/components/ui/card";
 /**
  * NO STYLESHEET IMPORT. `earthquake.module.css` styles this block's paragraphs with
  * `var(--color-slate)` and `var(--color-ink)` — RAW Terra tokens, frozen at their light values
@@ -87,10 +88,7 @@ export async function EarthquakeAttribution({
   const t = await getTranslations("Earthquake");
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm"
-    >
+    <Card as="section" variant="panel" aria-labelledby={headingId}>
       <div className="max-w-[70ch] space-y-3">
         <h2 id={headingId} className="font-heading text-xl font-bold text-foreground">
           {heading ?? t("sourcesHeading")}
@@ -114,6 +112,6 @@ export async function EarthquakeAttribution({
           {disclaimerTr}
         </p>
       </div>
-    </section>
+    </Card>
   );
 }

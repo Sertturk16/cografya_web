@@ -7,6 +7,7 @@ import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/bre
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2PasswordResetRequestCard } from "@/components/v2/v2-password-reset-request-card";
 import { PageContainer } from "@/components/patterns/page-container";
+import { Card } from "@/components/ui/card";
 
 interface V2PasswordResetRequestPageProps {
   params: Promise<{ locale: Locale }>;
@@ -49,9 +50,9 @@ export default async function V2PasswordResetRequestPage({
             {t("reset.heading")}
           </h1>
           <p className="text-sm text-muted-foreground mb-6">{t("reset.metaDescription")}</p>
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl">
+          <Card variant="panel" elevation="xl">
             <V2PasswordResetRequestCard />
-          </div>
+          </Card>
         </div>
       </PageContainer>
     </>

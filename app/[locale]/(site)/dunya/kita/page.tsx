@@ -24,6 +24,7 @@ import {
   ArrowRight,
   BookOpen,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 3600;
 
@@ -443,10 +444,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 3: EDUCATIONAL CONTEXT — KITA NEDIR? */}
-        <section
-          id="kavramsal-rehber"
-          className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-6 shadow-xs"
-        >
+        <Card as="section" variant="panel" space="6" elevation="xs" id="kavramsal-rehber">
           <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
             <BookOpen className="size-4" />
             <span>Coğrafi Bilgi Rehberi</span>
@@ -485,7 +483,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
               </p>
             </div>
           </div>
-        </section>
+        </Card>
 
         {/* SECTION 4: SIKÇA SORULAN SORULAR (FAQ) */}
         <section id="sss" className="space-y-6">

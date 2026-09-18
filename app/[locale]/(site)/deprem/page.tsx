@@ -13,11 +13,14 @@ import { V2EarthquakeExplorer, type ProvinceMeta } from "@/components/v2/v2-eart
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { Flame, Home, Layers, ShieldCheck, ArrowRight } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 120;
 
@@ -110,7 +113,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
             surface="trOnly"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Canlı Deprem Takip & Sismik Monitör"
@@ -133,39 +136,13 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
             />
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-destructive block">
-                  120 sn
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Veri Yenileme Aralığı
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  Canlı AFAD
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">TDVMS Veri Tabanı</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  M 1.0 - 7.0+
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Hassas Büyüklük Skalası
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  81 İl
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  İl Bazlı Yakınlık Analizi
-                </span>
-              </div>
-            </div>
-          </div>
+            <StatGrid gutter="hero">
+              <StatTile label="Veri Yenileme Aralığı" fact="120 sn" tone="destructive" />
+              <StatTile label="TDVMS Veri Tabanı" fact="Canlı AFAD" tone="primary" />
+              <StatTile label="Hassas Büyüklük Skalası" fact="M 1.0 - 7.0+" tone="secondary" />
+              <StatTile label="İl Bazlı Yakınlık Analizi" fact="81 İl" tone="primary" />
+            </StatGrid>
+          </Card>
         </div>
 
         {/* SECTION 1: INTERACTIVE REAL-TIME EARTHQUAKE MAP & DATA TABLE */}

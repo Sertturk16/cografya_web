@@ -26,6 +26,7 @@ import {
   ArrowRight,
   Layers,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 3600;
 
@@ -505,7 +506,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
 
       {/* SECTION 2: 1941 COĞRAFYA KONGRESİ & TARİHÇE */}
       <section id="tarihce" className="scroll-mt-28" tabIndex={-1}>
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+        <Card variant="panel" space="6">
           <div className="space-y-2 border-b border-border/70 pb-5">
             <div className="flex items-center gap-2">
               <Badge variant="primary" size="sm">
@@ -590,12 +591,12 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               </p>
             </div>
           </div>
-        </div>
+        </Card>
       </section>
 
       {/* SECTION 3: ANALİTİK KIYASLAMA TABLOSU */}
       <section id="kiyaslama" className="scroll-mt-28" tabIndex={-1}>
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+        <Card variant="panel" space="6">
           <div className="space-y-2 border-b border-border/70 pb-5">
             <div className="flex items-center gap-2">
               <Badge variant="primary" size="sm">
@@ -726,14 +727,14 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
             Paylar Türkiye toplamı ({totalPop.toLocaleString("tr-TR")} nüfus ve{" "}
             {totalArea.toLocaleString("tr-TR")} km² 81 il yüzölçümü) üzerinden hesaplanmıştır.
           </p>
-        </div>
+        </Card>
       </section>
 
       {/* SECTION 4: SIKÇA SORULAN SORULAR — trOnly (§9): the FAQ narrative has no English
             counterpart, so the whole section (visible cards + the JsonLd above) is TR-only. */}
       {locale === "tr" && (
         <section id="sss" className="scroll-mt-28" tabIndex={-1}>
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+          <Card variant="panel" space="6">
             <div className="space-y-2 border-b border-border/70 pb-5">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" size="sm">
@@ -766,7 +767,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         </section>
       )}
 

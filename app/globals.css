@@ -905,13 +905,20 @@
      lightness far enough for that also means white foreground text no longer clears 4.5:1
      on top of them, so the foreground pairs with the warm `--color-ink-dark` neutral
      instead (light mode keeps white; only the dark pairing changes).
-     WCAG contrast, measured against this block's own `--background` (oklch .145 / #0a0a0a)
-     and `--card` (oklch .205 / #171717), plus the ink-dark foreground ON each new bg:
-       primary   oklch(0.65 0.13  40.65) → 5.80:1 bg · 5.25:1 card · ink-dark fg 4.94:1
-       secondary oklch(0.65 0.095 130.85) → 6.31:1 bg · 5.71:1 card · ink-dark fg 5.37:1
-       accent    oklch(0.65 0.0675 202)   → 6.32:1 bg · 5.72:1 card · ink-dark fg 5.39:1
-     All clear the 4.5:1 normal-text floor with margin, both as direct text on the page
-     and as a button/badge fill. */
+     WCAG contrast, RE-MEASURED 2026-09-18 against the values this block actually declares.
+     The previous table named `--background` as oklch .145 / #0a0a0a and `--card` as
+     oklch .205 / #171717 — shadcn's stock neutrals, which this block replaced with the
+     night-sea pair below and never re-measured against. The real surfaces are
+     `--background: #0b1416` and `--card: #121e21`, so every "card" figure was optimistic by
+     about 0.3 and `--destructive` was not in the table at all despite being the floor of the
+     whole set (T-035 PR4 Task 6 moved five metric-strip values onto these tokens and measured
+     4.89:1 as its worst case, which is this row):
+       primary     oklch(0.65 0.13   40.65) → 5.47:1 bg · 4.99:1 card · ink-dark fg 4.94:1
+       secondary   oklch(0.65 0.095 130.85) → 5.94:1 bg · 5.42:1 card · ink-dark fg 5.37:1
+       accent      oklch(0.65 0.0675 202)   → 5.96:1 bg · 5.44:1 card · ink-dark fg 5.39:1
+       destructive oklch(0.65 0.16    25)   → 5.36:1 bg · 4.89:1 card · ink-dark fg 4.85:1
+     All still clear the 4.5:1 normal-text floor, both as direct text on the page and on a
+     card, and as a button/badge fill — but the margin on a card is 0.39, not 0.75. */
   --primary: oklch(0.65 0.13 40.65);
   --primary-foreground: var(--color-ink-dark);
   --secondary: oklch(0.65 0.095 130.85);
@@ -1006,8 +1013,8 @@
    would leak into V1's own pages, since V1 depends on their light values), the V2 page wraps
    just that block in `.climate-dark-scope` and only THOSE four custom properties are
    shadowed for that subtree, reusing existing dark-adapted tokens instead of new hex:
-     --color-ink     → var(--color-bg)             16.9:1 vs card (#171717)
-     --color-slate   → var(--muted-foreground)       6.9:1 vs card
+     --color-ink     → var(--color-bg)             16.1:1 vs card (#121e21)
+     --color-slate   → var(--muted-foreground)       7.8:1 vs card
      --color-surface → var(--muted)                 (dark header-row fill, pairs with ink above)
      --color-border  → var(--border)                (existing dark hairline/grid-line token) */
 .dark .climate-dark-scope {

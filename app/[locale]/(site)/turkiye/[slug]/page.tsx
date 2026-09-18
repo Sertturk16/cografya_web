@@ -56,6 +56,7 @@ import {
   Activity,
 } from "lucide-react";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 120;
 
@@ -436,7 +437,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
           {/* 4 BIG KEY STATS CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
             {/* 1. Nüfus */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Toplam Nüfus</span>
                 <Users className="size-4 text-primary" />
@@ -450,10 +451,10 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                   {province.populationDensity ? `${province.populationDensity} kişi/km²` : "—"}
                 </span>
               </div>
-            </div>
+            </Card>
 
             {/* 2. Yüzölçümü */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Yüzölçümü</span>
                 <Maximize2 className="size-4 text-teal-600" />
@@ -467,10 +468,10 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                   {province.districtCount ? `${province.districtCount} İlçe` : "—"}
                 </span>
               </div>
-            </div>
+            </Card>
 
             {/* 3. Rakım & Fiziki */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Ortalama Rakım</span>
                 <Mountain className="size-4 text-amber-600" />
@@ -488,10 +489,10 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                   </span>
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* 4. Koordinatlar */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Coğrafi Konum</span>
                 <MapPin className="size-4 text-rose-600" />
@@ -504,7 +505,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                 <span>Plaka Kodu:</span>
                 <span className="font-mono font-bold text-foreground">TR-{province.plateCode}</span>
               </div>
-            </div>
+            </Card>
           </div>
         </PageContainer>
       </section>
@@ -516,7 +517,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
         <div className="lg:col-span-7 space-y-6">
           {/* Overview Card */}
           {showLandform && (
-            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+            <Card variant="panel" space="4">
               <div className="flex items-center gap-2">
                 <Badge variant="primary" size="sm">
                   Coğrafi Konum &amp; Yapı
@@ -566,12 +567,12 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                   )}
                 </div>
               )}
-            </div>
+            </Card>
           )}
 
           {/* Demographics & Socio-Economic Indicators Card */}
           {(showSettlement || showEconomy) && (
-            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-5">
+            <Card variant="panel" space="5">
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
@@ -633,7 +634,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
           )}
         </div>
 
@@ -744,7 +745,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
       {/* CLIMATE SECTION */}
       {climateSeries && (
-        <section className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+        <Card as="section" variant="panel" space="6">
           <div>
             <h2 className="font-heading text-2xl font-bold text-foreground">
               {`${sectionHeading("climate")} İklim Özellikleri & Yağış Grafiği`}
@@ -800,13 +801,13 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               climate={climateSeries}
             />
           </div>
-        </section>
+        </Card>
       )}
 
       {/* AIR QUALITY & MARINE ENVIRONMENT ROW */}
       {pm25Annual && showMarine ? (
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+          <Card variant="panel">
             <AirPollutionSection
               locale={locale}
               provinceName={name}
@@ -814,8 +815,8 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               plateCode={province.plateCode}
               pm25={pm25Annual}
             />
-          </div>
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+          </Card>
+          <Card variant="panel">
             <ProvinceMarineSection
               locale={locale}
               provinceName={name}
@@ -823,10 +824,10 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               layers={marineLayers}
               headingId="province-marine"
             />
-          </div>
+          </Card>
         </section>
       ) : pm25Annual ? (
-        <section className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+        <Card as="section" variant="panel">
           <AirPollutionSection
             locale={locale}
             provinceName={name}
@@ -834,9 +835,9 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             plateCode={province.plateCode}
             pm25={pm25Annual}
           />
-        </section>
+        </Card>
       ) : showMarine ? (
-        <section className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+        <Card as="section" variant="panel">
           <ProvinceMarineSection
             locale={locale}
             provinceName={name}
@@ -844,12 +845,12 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             layers={marineLayers}
             headingId="province-marine"
           />
-        </section>
+        </Card>
       ) : null}
 
       {/* EARTHQUAKE MONITORING SECTION */}
       {provinceEarthquakes !== null && earthquakeMeta !== null && (
-        <section className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+        <Card as="section" variant="panel" space="4">
           <ProvinceEarthquakeSection
             locale={locale}
             provinceName={name}
@@ -860,7 +861,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
           {/* The disclaimer used to be repeated here as an amber callout. It now renders
                 exactly once, in `EarthquakeAttribution` at the foot of the page, alongside the
                 provider notices it belongs with — one mandated string, one render site. */}
-        </section>
+        </Card>
       )}
 
       {/* BOTTOM NAVIGATION ACTIONS */}

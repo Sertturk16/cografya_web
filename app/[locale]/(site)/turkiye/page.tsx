@@ -15,6 +15,8 @@ import { V2TurkeyMapExplorer, type ProvinceItem } from "@/components/v2/v2-turke
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -154,7 +156,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
             surface="localized"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Türkiye İlleri & Coğrafi Bölgeler Atlası"
@@ -177,41 +179,45 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
             />
 
             {/* Verified Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  {totalProvinces} İl
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Mülki İdare Birimi
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  7 Bölge
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Coğrafi Bölüm &amp; Havza
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  {totalDistricts}
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Toplam İlçe Sayısı
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  783.562 km²
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Resmî Yüzölçümü (HGM)
-                </span>
-              </div>
-            </div>
-          </div>
+            {/* Two of these four are DATA — `provinces.length` and the summed district count —
+                so they take the measurement branch and `absent` becomes a compile-time question
+                the page has to answer.
+
+                ONE RULE FOR ALL FOUR DATA-BACKED TILES IN THIS PR, and it is `MetricValue`'s own
+                first doctrine: ZERO IS A READING. No tile converts a 0 into the absent state.
+                An earlier round guarded this one with `totalDistricts > 0 ? … : null`, which
+                turned a degraded summary's `0` into "İlçe sayısı yok" — a live copy change on a
+                page this PR claims not to change, and inconsistent with the two sibling tiles that
+                had no such guard. `absent` fires only when the value is genuinely `null`/
+                `undefined`/`NaN`.
+
+                AND TODAY THAT NEVER HAPPENS. `provinces.length` and a `reduce` are numbers by
+                construction, so every `absent` string in this PR is TYPE-REQUIRED AND CURRENTLY
+                UNREACHABLE — required copy, not shipped copy, and it renders in no state the app
+                can reach. Do not read them in the diff as new user-facing text, and do not
+                describe them as runtime guards: making them live is an UPSTREAM change, in whether
+                an `apiGet` failure surfaces as `null` rather than `[]`. That is the accepted cost
+                of making the decision compulsory — `MetricValue` requires the caller to answer
+                "what if it is not there" even when the honest answer is "it always arrives" — and
+                it is not a defect to paper over with a `> 0` guard that changes live copy. */}
+            <StatGrid gutter="hero">
+              <StatTile
+                label="Mülki İdare Birimi"
+                value={totalProvinces}
+                unit="İl"
+                tone="primary"
+                absent={{ label: "İl listesi yok", hint: "Katalog yüklenemedi" }}
+              />
+              <StatTile label="Coğrafi Bölüm & Havza" fact="7 Bölge" tone="secondary" />
+              <StatTile
+                label="Toplam İlçe Sayısı"
+                value={totalDistricts}
+                tone="accent"
+                absent={{ label: "İlçe sayısı yok", hint: "Özet verisi gelmedi" }}
+              />
+              <StatTile label="Resmî Yüzölçümü (HGM)" fact="783.562 km²" tone="primary" />
+            </StatGrid>
+          </Card>
         </div>
 
         {/* SECTION 1: INTERACTIVE REALISTIC VECTOR MAP EXPLORER & REGIONS HUB BANNER */}

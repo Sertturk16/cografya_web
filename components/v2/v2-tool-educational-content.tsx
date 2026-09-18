@@ -12,6 +12,7 @@ import {
   Scale,
   Sparkles,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 interface V2ToolEducationalContentProps {
   mode: "hub" | "distance" | "coordinates" | "area";
@@ -275,7 +276,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
       </div>
 
       {/* 2. TARGET AUDIENCES & PRACTICAL APPLICATIONS (HEDEF KİTLE VE KAZANIMLAR) */}
-      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
+      <Card variant="panel" space="6">
         <div className="space-y-1 border-b border-border pb-4">
           <div className="flex items-center gap-2">
             <Badge
@@ -323,7 +324,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
             </p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* 2. RELATED TOOLS ROW (Diğer CBS Araçları) */}
       {mode !== "hub" && (

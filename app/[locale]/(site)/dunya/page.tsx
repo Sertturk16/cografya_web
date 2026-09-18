@@ -12,6 +12,8 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { pickHubDescription } from "@/lib/seo/hub-description";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2WorldMapExplorer, type WorldCountryItem } from "@/components/v2/v2-world-map-explorer";
@@ -20,6 +22,7 @@ import { V2WorldStatsSpotlight } from "@/components/v2/v2-world-stats-spotlight"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Globe, Gamepad2, ArrowRight, Home } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 /**
  * `force-dynamic`: same reasoning as the V1 `/dunya` twin — a build-time api outage would
@@ -163,7 +166,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
             surface="localized"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Dünya Ülkeleri & Kıtalar Atlası"
@@ -186,39 +189,24 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
             />
 
             {/* Verified Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  {totalCountries} Ülke
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">Ülke &amp; Bölge</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  7 Kıta
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Coğrafi Kara Kütlesi
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  ~8.1 Milyar
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Dünya Nüfusu (BM WPP)
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  148.9M km²
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Karasal Alan (USGS/NASA)
-                </span>
-              </div>
-            </div>
-          </div>
+            {/* The first tile is DATA — `countries.length` — so it takes the measurement
+                branch and `absent` becomes a compile-time question the page has to answer.
+                The other three are copy. No `> 0 ? … : null` guard — zero is a reading; see
+                `turkiye/page.tsx` for the one rule all four data-backed tiles in this PR share,
+                and for why the `absent` copy below is type-required but unreachable today. */}
+            <StatGrid gutter="hero">
+              <StatTile
+                label="Ülke & Bölge"
+                value={totalCountries}
+                unit="Ülke"
+                tone="primary"
+                absent={{ label: "Ülke listesi yok", hint: "Katalog yüklenemedi" }}
+              />
+              <StatTile label="Coğrafi Kara Kütlesi" fact="7 Kıta" tone="secondary" />
+              <StatTile label="Dünya Nüfusu (BM WPP)" fact="~8.1 Milyar" tone="accent" />
+              <StatTile label="Karasal Alan (USGS/NASA)" fact="148.9M km²" tone="primary" />
+            </StatGrid>
+          </Card>
         </div>
 
         {/* SECTION 1: INTERACTIVE VECTOR WORLD MAP WITH INTEGRATED MIDDLE SECTIONS & 199 COUNTRIES CATALOGUE */}

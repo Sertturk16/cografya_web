@@ -63,6 +63,7 @@ import {
   FileText,
 } from "lucide-react";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
+import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -426,7 +427,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
           {/* 4 BIG KEY STATS CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
             {/* 1. Nüfus */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">{t("kpiPopulationTitle")}</span>
                 <Users className="size-4 text-primary" />
@@ -461,10 +462,10 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   </span>
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* 2. Yüzölçümü */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">{t("kpiAreaTitle")}</span>
                 <Maximize2 className="size-4 text-teal-600" />
@@ -484,10 +485,10 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     : t("kpiNeighbourCountriesValue", { count: country.neighborCount })}
                 </span>
               </div>
-            </div>
+            </Card>
 
             {/* 3. Başkent ve Konum */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">{t("kpiCapitalTitle")}</span>
                 <Building2 className="size-4 text-amber-600" />
@@ -503,10 +504,10 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     : "—"}
                 </span>
               </div>
-            </div>
+            </Card>
 
             {/* 4. Yönetim & Para Birimi */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1">
+            <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">{t("kpiGovernmentFormTitle")}</span>
                 <Scroll className="size-4 text-rose-600" />
@@ -520,7 +521,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   {currencyNameForLocale || country.currencyCode || "—"}
                 </span>
               </div>
-            </div>
+            </Card>
           </div>
         </PageContainer>
       </section>
@@ -571,7 +572,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left 7 Columns: Landform Prose & Geographical Keyfacts */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-5">
+            <Card variant="panel" space="5">
               <div className="space-y-2 border-b border-border/70 pb-4">
                 <div className="flex items-center gap-2">
                   <Badge variant="primary" size="sm">
@@ -651,7 +652,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   </p>
                 </div>
               )}
-            </div>
+            </Card>
           </div>
 
           {/* Right 5 Columns: World Locator Map Card & Spatial Reference */}
@@ -751,7 +752,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             }
           >
             {climateNote && (
-              <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+              <Card variant="panel" space="4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CloudSun className="size-5 text-amber-500" />
@@ -767,11 +768,11 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   text={climateNote}
                   paragraphClassName="text-sm text-muted-foreground leading-relaxed"
                 />
-              </div>
+              </Card>
             )}
 
             {hydrographyNote && (
-              <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4">
+              <Card variant="panel" space="4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Waves className="size-5 text-cyan-600" />
@@ -791,7 +792,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   text={hydrographyNote}
                   paragraphClassName="text-sm text-muted-foreground leading-relaxed"
                 />
-              </div>
+              </Card>
             )}
           </div>
         </section>
@@ -845,7 +846,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
               {/* Governance & Political Structure Note */}
               {governanceNote ? (
-                <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
+                <Card variant="panel" space="3">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" size="sm">
                       {t("governanceStructureBadge")}
@@ -858,9 +859,9 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     text={governanceNote}
                     paragraphClassName="text-sm text-muted-foreground leading-relaxed"
                   />
-                </div>
+                </Card>
               ) : showsGovernanceFallback ? (
-                <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
+                <Card variant="panel" space="3">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" size="sm">
                       {t("politicalLegalStatusBadge")}
@@ -884,12 +885,12 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                       ? ` ${t("officialLanguagesLabel", { languages: officialLanguages.join(", ") })}`
                       : ""}
                   </p>
-                </div>
+                </Card>
               ) : null}
 
               {/* Settlement / Demographic distribution Note if available */}
               {settlementNote && (
-                <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
+                <Card variant="panel" space="3">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" size="sm">
                       {t("settlementBadge")}
@@ -902,12 +903,12 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     text={settlementNote}
                     paragraphClassName="text-sm text-muted-foreground leading-relaxed"
                   />
-                </div>
+                </Card>
               )}
 
               {/* Economy Note if available */}
               {economyNote && (
-                <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-3">
+                <Card variant="panel" space="3">
                   <div className="flex items-center gap-2">
                     <Badge
                       variant="outline"
@@ -924,7 +925,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     text={economyNote}
                     paragraphClassName="text-sm text-muted-foreground leading-relaxed"
                   />
-                </div>
+                </Card>
               )}
             </div>
           )}

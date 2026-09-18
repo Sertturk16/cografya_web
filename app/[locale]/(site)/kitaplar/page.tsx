@@ -11,9 +11,12 @@ import { V2StudyStrategyGuide } from "@/components/v2/v2-study-strategy-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Home } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 /**
  * 3600s, not the previous 86400: the fix round that dropped this page's `notFound()` on an
@@ -110,7 +113,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
             surface="trOnly"
           />
 
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
+          <Card variant="feature">
             <PageHero
               tier="hub"
               heading="Video Çözümlü Coğrafya Kitapları"
@@ -133,28 +136,42 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
             />
 
             {/* Dynamic Metric Strip from Real Data. Two of the four tiles carried
-                `videoCount`/`questionCount` — DELETED with the fields (P0 generic-catalogue
-                cut-over, `DEC 2026-09-10c` md.1: no book-level count is published any more).
-                The grid stays byte-identical to the 9 sibling metric strips elsewhere in /v2
-                (`DESIGN.md` §4's established-component-pattern precedent, → PR #103 review
-                DF103-I1) — `sm:col-span-2` on each surviving tile fills all four tracks evenly
-                instead of inventing a page-local two-column variant (fix round, PR #134 review
-                DES134-I1). */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  {books.length} Kitap
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">Yayın Kataloğu</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  ÖSYM / MEB
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">Müfredat Uyumu</span>
-              </div>
-            </div>
-          </div>
+                `videoCount`/`questionCount` — DELETED with the fields (no book-level count is
+                published any more).
+
+                The old comment here claimed "9 sibling metric strips". It was wrong, and it
+                was the evidence the whole adoption rested on: there are THIRTEEN, counted, plus
+                the inverted facts sheet on `kitaplar/[slug]`. TWELVE of the thirteen now render
+                `StatGrid` + `StatTile`; `deprem/fay-hatlari`'s is deliberately left hand-rolled
+                under Ruling BG, because its three fault values are colour-coded identifiers that
+                have to agree with the fault cards further down that page. So the claim this
+                comment used to make by assertion is now made by the type, and the one exception
+                is written down in the file that carries it.
+
+                `sm:col-span-2` on each surviving tile is what filled all four tracks evenly
+                with only two tiles. `StatGrid` has no per-tile escape hatch and `StatTile` has
+                no `className` worth spending one on, so this grid takes `columns="2"` — two
+                tracks at every width, which is the same rendering by the honest route. */}
+            <StatGrid columns="2" gutter="hero">
+              {/* NO `books.length > 0 ? … : null`. An earlier round had one, and it was the
+                  clearest case against the whole idea: this page deliberately does NOT
+                  `notFound()` on an empty catalogue, so zero books is a LEGITIMATE READING, and
+                  rendering "Katalog boş / Yayın listesi gelmedi" over it invents a fetch failure
+                  that did not happen — T-024's defect with the sign flipped. `dev` printed
+                  "0 Kitap" and so does this. See `turkiye/page.tsx` for the rule all four
+                  data-backed tiles now share — including that the `absent` copy below is
+                  type-required and currently unreachable (`books.length` is a number by
+                  construction), so it is not shipped user-facing text. */}
+              <StatTile
+                label="Yayın Kataloğu"
+                value={books.length}
+                unit="Kitap"
+                tone="primary"
+                absent={{ label: "Katalog okunamadı", hint: "Yayın listesi gelmedi" }}
+              />
+              <StatTile label="Müfredat Uyumu" fact="ÖSYM / MEB" tone="primary" />
+            </StatGrid>
+          </Card>
         </div>
 
         {/* SECTION 1: DYNAMIC BOOKS CATALOGUE */}

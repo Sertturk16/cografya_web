@@ -117,7 +117,16 @@ Two directories, and the boundary is operational rather than taxonomic:
 
 The reason is concrete: `shadcn add` **overwrites** files in the configured `ui` alias — it
 asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living
-there is one CLI run away from being silently clobbered.
+there is one CLI run away from being silently clobbered. Two files now carry hand-added variants
+and must survive a CLI run: `button.tsx` and `card.tsx`. Card's are guarded by
+`components/ui/card-variants.test.tsx`, which asserts the exact class strings, because an overwrite
+would revert 77 adopted sites to the stock `rounded-xl ring-1` card and nothing else would see it.
+
+`Card` has two forms. Without `variant` it is the CLI's card, `className` and all. With one it is
+the site's measured card language and `className` is `never`: `variant` (`panel` | `glass` |
+`feature`) is the surface, `elevation` the shadow, `space` the vertical rhythm, `as` the element
+(`div` | `section` | `article`) — closed unions, the shape `PageContainer` set. Reach for a new
+card spelling only after checking whether it is one of these at a different setting.
 
 Read every CLI import before committing it. The T-034 batch arrived with `import { cn } from
 "cn"`, an unrelated npm package the CLI also installed, and with a `Tooltip` that had no
@@ -159,6 +168,48 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 - **`MetricValue.absent` is required.** There is no safe default. It never renders `0` and
   never a bare dash — a dash sits in the same slot a number would and reads as a measurement.
   This is T-024's defect made impossible rather than re-fixed per page.
+- **`StatTile.value` vs `StatTile.fact`.** `value` is a READING and goes through `MetricValue`,
+  so `absent` is required with it. `fact` is a literal — `WGS84`, `M 1.0 - 7.0+`, `ÖSYM / MEB` —
+  and reaches `MetricValue` not at all. The union exists because widening `MetricValue.value` to
+  `string` would let a page print `"—"` through the component built to forbid it. Colour is the
+  closed `tone` union, never a class: strips carried `text-teal-600`/`-cyan-600` with no `dark:`
+  pair, measured frozen at one hex in both themes. **This was a theme-freeze fix, not an AA
+  repair** — those values render `text-2xl sm:text-3xl font-bold`, i.e. WCAG LARGE text with a 3:1
+  floor, and every one of them already passed. What was wrong is that they did not follow the
+  theme; the contrast improvement is a consequence, not the defect.
+- **`StatGrid` is the shell, `StatTile` the tile, and a grid needs both.** Half-migrating —
+  `StatGrid` around hand-drawn tiles — drops the grid out of BOTH buckets in
+  `components/v2/page-composition.test.ts` and fails `STAT_GRIDS_TOTAL`. That is deliberate.
+- **Decoration on a value vs categorical data encoding — the line that decides whether a raw
+  palette class gets converted. The test is the ENTITY, not the page and not the hue.** A hue is
+  decoration when nothing encodes _the thing this element names_; it is categorical when the colour
+  says _which one_ and something elsewhere has to agree. Decoration moves to a bridge token;
+  categorical colour stays raw and gets its missing `dark:` half, because putting data categories
+  on brand hues is the data-viz rule below running backwards.
+  **The check is a grep, and this is the command.** Categorical hues are carried as
+  `borderClass` / `badgeClass` / `accentColor` fields on the entity's own record, so
+  `grep -rn "borderClass\|badgeClass\|accentColor" lib components app` finds every encoding on the
+  site — 13 files today: faults (`lib/earthquake/fault-lines-data.ts`), seas
+  (`components/v2/v2-marine-basin-cards.tsx`, `v2-marine-map-explorer.tsx`), regions
+  (`v2-turkey-map-explorer.tsx`, `turkiye/[slug]`, `turkiye/bolge/[slug]`), continents
+  (`lib/map/continent-theme.ts`, `v2-world-continents.tsx`, `v2-world-map-explorer.tsx`,
+  `dunya/[slug]`, `dunya/kita`, `dunya/kita/[slug]`). Then ask whether the entity you are
+  re-colouring is in one of them. Note `app` in that path: an encoding living on a page rather
+  than in `lib/` is exactly what a `lib`-only grep misses.
+  Worked example, both halves of it wrong the first time. T-035 PR4 **converted** `deniz`'s
+  "30 Nokta" and `deniz/kiyi-tipleri`'s "6 Kıyı Tipi": monitoring points and coastal types carry no
+  colour anywhere (`lib/marine/coastal-types-detail.ts` has no colour field), so their cyan and
+  teal were free — even though **cyan and teal are both taken site-wide**, as Karadeniz and Ege,
+  and a teal "6 Kıyı Tipi" tile was sitting 180 lines above a teal "Ege Denizi" card on its own
+  page. The conversion removed that collision. It **deliberately did not convert** `/deprem`'s
+  KAF/DAF/BAFS legend or `/deprem/fay-hatlari`'s strip, whose values name faults that _are_ in a
+  data module. Both belong to T-031c.
+  **An earlier round did convert the fay-hatlari strip**, justified by "nothing else on this page
+  draws those hues" — which `grep borderClass` falsifies in one command — and shipped a teal DAF
+  tile above a blue-bordered DAF card. A later round then defended the two correct conversions with
+  the same page-scoped sentence, which is also false: teal _is_ on `deniz/kiyi-tipleri`. Right
+  answer, wrong test, twice. **A page-scoped check gets this wrong in both directions; only the
+  entity question decides it.**
 - **`MapLegend` requires `bins` on the classed variant**, so an unlabelled classed legend
   cannot be built (data-viz rule 5 below).
 - **`MapAttribution` beside every map** is ODbL compliance, not house style.
