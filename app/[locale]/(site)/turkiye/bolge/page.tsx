@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionsResilient } from "@/lib/api/regions";
-import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { FaqSection } from "@/components/patterns/faq-section";
 import { tr } from "@/lib/text/format-number";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
@@ -20,7 +20,6 @@ import {
   Home,
   Boxes,
   Table,
-  HelpCircle,
   Landmark,
   Scale,
   ArrowRight,
@@ -300,20 +299,6 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
 
   return (
     <>
-      {/* trOnly surface (`FENB75-I2`, → `lib/seo/indexing.ts`): the FAQ narrative has no
-          English counterpart, so the EN twin carries BreadcrumbList JSON-LD only rather than
-          a translated FAQPage block. */}
-      {locale === "tr" && (
-        <JsonLd
-          schema={faqPageJsonLd(
-            bolgelerFaqs.map((faq) => ({
-              question: faq.question,
-              answer: faq.answer,
-            })),
-          )}
-        />
-      )}
-
       <V2LiveTicker />
 
       {/* HERO SECTION */}
@@ -479,8 +464,9 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
           >
             Analitik Kıyaslama
           </a>
-          {/* The FAQ section itself is TR-only (§9) — the quicknav target would be dead on
-              the EN twin, so the link is gated with it rather than left pointing at nothing. */}
+          {/* Gated WITH the section it points at, which is the whole reason this gate exists: the
+              FAQ block below is TR-only, so on the EN twin this link would scroll to nothing.
+              Task 9's first pass ungated both together and had to put both back together. */}
           {locale === "tr" && (
             <a
               href="#sss"
@@ -742,45 +728,30 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
           </Card>
         </section>
 
-        {/* SECTION 4: SIKÇA SORULAN SORULAR — trOnly (§9): the FAQ narrative has no English
-            counterpart, so the whole section (visible cards + the JsonLd above) is TR-only. */}
-        {locale === "tr" && (
-          <section id="sss" className="scroll-mt-28" tabIndex={-1}>
-            <Card variant="panel" space="6">
-              <div className="space-y-2 border-b border-border/70 pb-5">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" size="sm">
-                    Rehber &amp; Soru-Cevap
-                  </Badge>
-                </div>
-                <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                  <HelpCircle className="size-6 text-primary shrink-0" />
-                  <span>Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular</span>
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                  Coğrafya müfredatı, sınav hazırlığı ve genel kültür açısından en çok merak edilen
-                  bölgesel kavramlar.
-                </p>
-              </div>
+        {/* SECTION 4: SIKÇA SORULAN SORULAR.
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {bolgelerFaqs.map((faq, idx) => (
-                  <div
-                    key={idx}
-                    className="p-5 rounded-2xl bg-muted/30 border border-border/80 space-y-2"
-                  >
-                    <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
-                      <span className="text-primary font-bold text-sm">S:</span>
-                      <span>{faq.question}</span>
-                    </h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-5">
-                      {faq.answer}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </section>
+            BOTH HALVES MOVE AS ONE, and the gate is still written here on purpose — Ruling CH.
+            The first pass of Task 9 mapped this page's `locale === "tr"` onto
+            `structuredData="trOnly"` alone, reasoning that de-indexing a surface is no reason to
+            withhold answers from a reader. That is true in general and wrong here: these questions
+            are Turkish literals from `buildBolgelerFaqs`, so it did not give an EN reader the
+            answers, it gave them Turkish prose the EN twin had never shown. `structuredData`
+            withholds the schema; only a gate withholds the markup, and this block needs both.
+
+            So the gate wraps the whole component and `structuredData` carries the page's own
+            surface constant (`generateMetadata` above passes the same `"trOnly"` to
+            `buildMetadata`). The two cannot now disagree: no `<FaqSection>`, no schema, because
+            the schema is emitted from inside it. That is exactly the property the plan asked for
+            — one switch, not two — reached by gating the component rather than by deleting the
+            gate. `/deniz` carries the identical shape for the identical reason. */}
+        {locale === "tr" && (
+          <FaqSection
+            heading="Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular"
+            lede="Coğrafya müfredatı, sınav hazırlığı ve genel kültür açısından en çok merak edilen bölgesel kavramlar."
+            locale={locale}
+            items={bolgelerFaqs}
+            structuredData="trOnly"
+          />
         )}
 
         {/* BOTTOM NAVIGATION ACTIONS */}

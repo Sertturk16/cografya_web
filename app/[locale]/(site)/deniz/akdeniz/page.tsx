@@ -4,7 +4,8 @@ import { getMarinePointsSafe, getMarineOverviewSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import type { Locale } from "@/i18n/routing";
 import type { MarineOverviewPoint } from "@/lib/api/types";
-import { learningResourceJsonLd, faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SeaBasinDetailView } from "@/components/v2/v2-sea-basin-detail-view";
@@ -149,7 +150,6 @@ export default async function V2AkdenizPage({ params }: PageProps) {
             teaches:
               "Akdeniz'in boyuna kıyı morfolojisi, yüksek tuzluluğu, falezleri ve biyolojik yapısı",
           }),
-          faqPageJsonLd(basinData.faq),
         ]}
       />
 
@@ -160,6 +160,23 @@ export default async function V2AkdenizPage({ params }: PageProps) {
           data={basinData}
           marinePoints={marinePoints}
           breadcrumbItems={breadcrumbItems}
+          /* The FAQ block is built HERE and handed to the view as a prop. `FaqSection` emits the
+             `FAQPage` JSON-LD beside the questions from the one `basinData.faq` array, which is
+             why the `faqPageJsonLd(basinData.faq)` line that used to sit in the schema array
+             above is gone: the schema and the markup are now one array in one component, not two
+             halves in two files pairing only by an exemption. It cannot be imported inside
+             `V2SeaBasinDetailView` — that is a Client Component and `FaqSection` reaches
+             `server-only` (see the view's `faq` prop docblock). `"trOnly"` is this page's own
+             surface constant, the one `generateMetadata` and `breadcrumbListSchema` already
+             pass. */
+          faq={
+            <FaqSection
+              heading={`${basinData.nameTr} Hakkında Sıkça Sorulan Sorular`}
+              locale={locale}
+              items={basinData.faq}
+              structuredData="trOnly"
+            />
+          }
         />
 
         {/* THE SAFETY DISCLAIMER, BESIDE THE VALUES — plus a link to the licence text.

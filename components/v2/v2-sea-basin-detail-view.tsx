@@ -19,7 +19,6 @@ import {
   Layers,
   ArrowRight,
   AlertTriangle,
-  HelpCircle,
   CheckCircle2,
   Anchor,
   CloudRain,
@@ -41,12 +40,32 @@ interface V2SeaBasinDetailViewProps {
    * typed out twice.
    */
   breadcrumbItems: readonly BreadcrumbTrailItem[];
+  /**
+   * The FAQ block, BUILT BY THE PAGE and rendered here — a Server Component handed to a Client
+   * Component as a prop, which creates no import edge from this file.
+   *
+   * It has to arrive this way. The block is `components/patterns/faq-section.tsx`, which emits
+   * the `FAQPage` JSON-LD beside the questions from one `items` array; that component imports
+   * `lib/seo/json-ld`, whose first line is `import "server-only"`. Importing it HERE would make
+   * `pnpm build` fail with `'server-only' cannot be imported from a Client Component module` and
+   * would red `components/patterns/rsc-boundary.test.ts` — the same regression this very file
+   * caused once before through `components/patterns/breadcrumbs.tsx`, which is why
+   * `breadcrumbs-nav.tsx` exists and why `breadcrumbItems` above is passed in rather than
+   * computed. Same boundary, same shape, one lesson.
+   *
+   * So the four `deniz/{akdeniz,ege,karadeniz,marmara}` pages build `<FaqSection …/>` and the
+   * markup and the schema stay ONE array (`basinData.faq`) in ONE place. Those pages no longer
+   * call `faqPageJsonLd` themselves, and the delegated-markup exemption that used to pair their
+   * schema with markup written in this file is gone with it.
+   */
+  faq: React.ReactNode;
 }
 
 export function V2SeaBasinDetailView({
   data,
   marinePoints,
   breadcrumbItems,
+  faq,
 }: V2SeaBasinDetailViewProps) {
   // Sort points by displayOrder
   const sortedPoints = [...marinePoints].sort((a, b) => a.displayOrder - b.displayOrder);
@@ -488,35 +507,10 @@ export function V2SeaBasinDetailView({
         </Card>
       </div>
 
-      {/* SSS / FAQ ACCORDION-FREE CARDS */}
-      <section aria-labelledby="basin-faq-heading" className="space-y-5">
-        <div className="border-b border-border pb-3 flex items-center gap-2">
-          <HelpCircle className="size-5 text-primary" />
-          <h2
-            id="basin-faq-heading"
-            className="font-heading text-xl sm:text-2xl font-bold text-foreground"
-          >
-            {data.nameTr} Hakkında Sıkça Sorulan Sorular
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4">
-          {data.faq.map((item, i) => (
-            <div
-              key={i}
-              className="p-5 rounded-2xl border border-border bg-card space-y-2 text-xs sm:text-sm"
-            >
-              <h3 className="font-heading font-bold text-foreground flex items-center gap-2">
-                <span className="size-5 rounded-full bg-primary/10 text-primary-strong font-mono text-xs flex items-center justify-center shrink-0">
-                  ?
-                </span>
-                <span>{item.question}</span>
-              </h3>
-              <p className="text-muted-foreground leading-relaxed pl-7">{item.answer}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* SSS / FAQ — the page's own `<FaqSection>`, rendered exactly where this view's
+          hand-written block used to sit. See the `faq` prop's docblock for why it arrives as a
+          prop instead of being imported here. */}
+      {faq}
 
       {/* OTHER SEAS CROSS-NAVIGATION STRIP */}
       <section className="p-6 sm:p-8 rounded-3xl border border-border bg-gradient-to-r from-card via-muted/30 to-card space-y-4">

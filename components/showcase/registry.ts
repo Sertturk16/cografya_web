@@ -69,6 +69,7 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
       "badge",
       "page-container",
       "page-hero",
+      "faq-section",
     ],
   },
   {

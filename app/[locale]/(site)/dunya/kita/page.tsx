@@ -5,9 +5,9 @@ import { PageContainer } from "@/components/patterns/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
-import { getAllContinents } from "@/lib/geo/continents";
+import { getAllContinents, CONTINENT_HUB_FAQS } from "@/lib/geo/continents";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
-import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
@@ -20,7 +20,6 @@ import {
   ChevronRight,
   Boxes,
   Table,
-  HelpCircle,
   ArrowRight,
   BookOpen,
 } from "lucide-react";
@@ -54,34 +53,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         : "Asia, Africa, North America, South America, Antarctica, Europe and Oceania. Analytical comparison guide for area, population, climate and highest peaks.",
   });
 }
-
-const HUB_FAQS = [
-  {
-    question: "Dünyada kaç kıta vardır ve hangi model geçerlidir?",
-    answer:
-      "Türkiye'de MEB müfredatı ve yaygın coğrafya öğretimi 7 kıta modelini (Asya, Afrika, Kuzey Amerika, Güney Amerika, Antarktika, Avrupa, Okyanusya) esas alır. Birleşmiş Milletler istatistik şeması (UN M49) ise Kuzey ve Güney Amerika'yı tek bir 'Americas' üst bölgesinde toplayarak 6'lı kıta sistemini kullanır. Jeolojik açıdan ise Avrupa ve Asya tek parça Avrasya kütlesini oluşturur.",
-  },
-  {
-    question: "Avrupa ile Asya neden iki ayrı kıta kabul edilir?",
-    answer:
-      "Avrupa ile Asya arasında okyanusal bir levha sınırı yoktur; jeolojik olarak tek bir kıtadır (Avrasya). İki bölgenin ayrı kıtalar sayılması, 18. yüzyıldan itibaren şekillenen tarihsel, kültürel ve siyasi bir uzlaşımın (konvansiyon) sonucudur. Ural Dağları, Ural Nehri, Hazar Denizi ve Türk Boğazları geleneksel sınır kabul edilir.",
-  },
-  {
-    question: "Dünyanın en büyük ve en küçük kıtaları hangileridir?",
-    answer:
-      "Yaklaşık 44,6 milyon km² yüzölçümü ve 4,75 milyarı aşan nüfusuyla Asya hem alan hem nüfus bakımından dünyanın en büyük kıtasıdır. Kara yüzölçümü bakımından en küçük kıta yaklaşık 8,5 milyon km² ile Okyanusya'dır (Avustralya anakarası dahil).",
-  },
-  {
-    question: "Antarktika neden bir kıtadır ve üzerinde ülke var mıdır?",
-    answer:
-      "Antarktika, buzulların altında yaklaşık 14,2 milyon km²'lik gerçek bir kıtasal kayaç kalkanına (kraton) sahip olduğu için kıtadır (Kuzey Kutbu gibi sadece donmuş deniz buzu değildir). Üzerinde hiçbir egemen devlet ve kalıcı yerleşim yoktur; 1959 Antarktika Antlaşması ile uluslararası barış ve bilime ayrılmıştır.",
-  },
-  {
-    question: "Okyanusya bir kıta mıdır yoksa bölge midir?",
-    answer:
-      "Fiziki coğrafyada Avustralya anakarası ile Büyük Okyanus'a dağılmış Polinezya, Mikronezya ve Melanezya ada topluluklarının tamamı 'Okyanusya' kıtası çatısı altında toplanır. Kara yüzölçümü 8,5 milyon km² iken, deniz yetki alanı (EEZ) 40 milyon km²'yi aşarak karalarının neredeyse 5 katına ulaşır.",
-  },
-];
 
 export default async function V2ContinentsHubPage({ params }: PageProps) {
   const { locale } = await params;
@@ -485,33 +456,16 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
           </div>
         </Card>
 
-        {/* SECTION 4: SIKÇA SORULAN SORULAR (FAQ) */}
-        <section id="sss" className="space-y-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <HelpCircle className="size-4" />
-              <span>Merak Edilenler</span>
-            </div>
-            <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
-              Kıtalar Hakkında Sıkça Sorulan Sorular
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {HUB_FAQS.map((faq, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl border border-border bg-card p-5 space-y-2 hover:border-primary/40 transition-colors"
-              >
-                <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
-                  <span className="text-primary font-mono text-xs mt-0.5">{idx + 1}.</span>
-                  <span>{faq.question}</span>
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed pl-4">{faq.answer}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* SECTION 4: SIKÇA SORULAN SORULAR (FAQ). The `<JsonLd>` that used to sit at the very
+            bottom of this file, six hundred lines from the markup it described, is now emitted by
+            the component that renders the questions — from the same `HUB_FAQS` array, so the two
+            cannot drift. `"trOnly"` is this page's own surface constant. */}
+        <FaqSection
+          heading="Kıtalar Hakkında Sıkça Sorulan Sorular"
+          locale={locale}
+          items={CONTINENT_HUB_FAQS}
+          structuredData="trOnly"
+        />
 
         {/* NO SOURCES SECTION. This page reads NO api at all — the figures come from
             `lib/geo/continents.ts`, a hand-written registry — and draws no map, so every one of
@@ -526,9 +480,6 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
             describes. Still read from the catalogue, never written inline, because `/en/` reaches
             this surface and the string it replaced was a Turkish literal. */}
       </PageContainer>
-
-      {/* Structured Data JSON-LD */}
-      <JsonLd schema={faqPageJsonLd(HUB_FAQS)} />
     </>
   );
 }

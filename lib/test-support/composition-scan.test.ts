@@ -12,6 +12,7 @@ import {
   declarationRegions,
   graphCache,
   importBindingsOf,
+  innermostElementAt,
   jsxElementsOf,
   label,
   literalsIn,
@@ -354,6 +355,167 @@ describe("the two entry points read every element the same way", () => {
       jsxElementsOf(file).filter((element) => element.tag === "div"),
     );
     expect(divs.length).toBeGreaterThan(500);
+  });
+});
+
+/* =============================================================================================
+ * SPANS, CONTAINMENT AND ATTRIBUTES
+ * ========================================================================================== */
+
+/**
+ * The position-to-element half of the scanner, pinned HERE rather than in the one counter file
+ * that happens to use it today.
+ *
+ * `ScannedElement.start` / `.end`, {@link innermostElementAt} and `ScannedElement.attributes`
+ * arrived with T-035 PR5's FAQ counters and were tested only there. This module has four
+ * consumers; a counter file's tests answer for that counter's uses of the API, not for the API —
+ * and the attribute walk in particular is now the ONLY one in this module family, so the thing
+ * that used to be checked twice by two disagreeing readers must be checked properly once.
+ *
+ * Two invariants and one relationship:
+ *
+ *   - pre-order with nesting: every element opens after the previous one and lies inside its
+ *     parent's span. That is the premise {@link innermostElementAt} reads when it calls the
+ *     containing element with the LARGEST `start` the deepest one;
+ *   - `attributes` is the opening tag's own, so a nested element's attributes are its own record;
+ *   - `spelling` is DERIVED from `attributes.get("className")` by the one literal extractor, so
+ *     the two views of the same attribute cannot drift.
+ */
+describe("element spans, containment and the attribute walk", () => {
+  const SAMPLE = [
+    '<section id="sss" aria-labelledby="h" tabIndex={-1} className="shell">',
+    '  <h2 id="h" className={cn("title", size)}>t</h2>',
+    '  <Explorer panel={<aside className="p">x</aside>} data={basin} hidden />',
+    "</section>",
+  ].join("\n");
+
+  it("spans nest and arrive in source order, on the real surface", () => {
+    for (const file of walkCardSurface()) {
+      const elements = jsxElementsOf(file);
+      let previous = -1;
+      for (const element of elements) {
+        expect(element.start, `${label(file)}: elements out of source order`).toBeGreaterThan(
+          previous,
+        );
+        previous = element.start;
+        expect(
+          element.end,
+          `${label(file)}: <${element.tag}> ends before it starts`,
+        ).toBeGreaterThan(element.start);
+        if (element.parent === null) continue;
+        const parent = elements[element.parent]!;
+        expect(
+          element.start >= parent.start && element.end <= parent.end,
+          `${label(file)}: <${element.tag}> is not inside its parent <${parent.tag}>`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("innermostElementAt answers with the deepest element, and null outside every one", () => {
+    const elements = scanJsx(SAMPLE);
+    const at = (needle: string) => innermostElementAt(elements, SAMPLE.indexOf(needle));
+    expect(elements[at(">t<")!]!.tag).toBe("h2");
+    expect(elements[at("tabIndex")!]!.tag).toBe("section");
+    expect(innermostElementAt(elements, SAMPLE.length + 10)).toBeNull();
+    // An element written inside an attribute expression lives inside its HOLDER'S header, so a
+    // position inside it resolves to the prop-borne element rather than to the holder.
+    expect(elements[at(">x<")!]!.spelling).toBe("p");
+  });
+
+  it("reads every top-level attribute of the opening tag, and only that tag's", () => {
+    const elements = scanJsx(SAMPLE);
+    const attributesOf = (tag: string) =>
+      elements.find((element) => element.tag === tag)!.attributes;
+    expect([...attributesOf("section").keys()]).toEqual([
+      "id",
+      "aria-labelledby",
+      "tabIndex",
+      "className",
+    ]);
+    expect(attributesOf("section").get("id")).toBe("sss");
+    expect(attributesOf("section").get("tabIndex")).toBe("-1");
+    // A hyphenated name is ONE attribute, not a fragment — the rule that makes `aria-labelledby`
+    // readable at all, and the rule that stops `data-className` being read as a `className`.
+    expect(attributesOf("section").has("aria-labelledby")).toBe(true);
+    expect(attributesOf("section").has("labelledby")).toBe(false);
+    // The `<h2>`'s own `id` belongs to the `<h2>`; the section does not inherit it.
+    expect(attributesOf("h2").get("id")).toBe("h");
+    // A braced value is its expression text; a bare attribute is the empty string.
+    expect(attributesOf("Explorer").get("data")).toBe("basin");
+    expect(attributesOf("Explorer").get("hidden")).toBe("");
+    // A className inside a braced prop belongs to the nested element, not to its holder.
+    expect(attributesOf("Explorer").has("className")).toBe(false);
+    expect(attributesOf("aside").get("className")).toBe("p");
+  });
+
+  it("a data-className is not a className — the boundary rule, and its inertness", () => {
+    const tricky = '<div data-className="not-a-class" className="real" />';
+    const element = scanJsx(tricky)[0]!;
+    expect(element.spelling).toBe("real");
+    expect([...element.attributes.keys()]).toEqual(["data-className", "className"]);
+    // BOTH ENTRY POINTS, because they are two readers of the same text and this is the shape that
+    // splits them: `classNameOfTag` searched for the STRING `className=` and so read the tail of
+    // `data-className=`. The cross-scanner guard above caught the divergence the moment
+    // `readHeader` learned whole names, and the fix was to give both the same boundary rule.
+    expect(classNameOfTag(tricky)).toBe("real");
+    expect(classNamesOf(tricky, "div")).toEqual([element.spelling]);
+    // INERT on today's tree, so the rule is a guard rather than a fix: no element anywhere writes
+    // `className` immediately after a name character. Asserted, because an inert rule that nobody
+    // checks is how a guard quietly starts mattering.
+    //
+    // OVER EVERY `.tsx` IN THE REPO, not over a walker. `walkCardSurface()` excludes
+    // `components/ui/**`, and `components/ui/breadcrumb.tsx` is one of the files the container and
+    // heading counters DO feed to `classNameOfTag` — so a walker-shaped sweep would have declared
+    // the rule inert over a population narrower than the one the rule protects. The hazard is a
+    // byte in a source file; the sweep is every source file.
+    const offenders = walkSources(repoRoot)
+      .filter((file) => file.endsWith(".tsx"))
+      .filter((file) => /[A-Za-z0-9_$:.-]className\s*=/.test(maskedSource(file)));
+    expect(offenders.map(label)).toEqual([]);
+    // Anti-vacuity for the sweep itself: it really visited the excluded directory the narrower
+    // walk would have missed.
+    const swept = walkSources(repoRoot)
+      .filter((file) => file.endsWith(".tsx"))
+      .map(label);
+    expect(swept).toContain("components/ui/breadcrumb.tsx");
+    expect(swept.length).toBeGreaterThan(walkCardSurface().length);
+  });
+
+  it("spelling is the className attribute read by the one extractor — never a second reading", () => {
+    // THE VALUE RELATION, not merely null-ness. `attributes` records the attribute's own source
+    // and `spelling` is what the one extractor makes of it, and the two written forms reduce
+    // differently, so the relation is a disjunction rather than an equality:
+    //
+    //   - `className="a b"` records the CONTENTS `a b`, and the spelling is that string;
+    //   - `className={…}` records the EXPRESSION, and the spelling is `literalsIn`'s join of its
+    //     literals, or `COMPUTED_CLASSNAME` where it writes none.
+    //
+    // Asserting only "not null" would pass on a spelling read by some other rule entirely, which
+    // is exactly the drift this field exists to make impossible.
+    let checked = 0;
+    for (const file of walkCardSurface()) {
+      for (const element of jsxElementsOf(file)) {
+        const written = element.attributes.get("className");
+        if (written === undefined) {
+          expect(element.spelling, `${label(file)}: <${element.tag}>`).toBeNull();
+          continue;
+        }
+        const literals = literalsIn(written, true);
+        const braced = literals.length > 0 ? literals.join(" ") : COMPUTED_CLASSNAME;
+        expect(
+          element.spelling === written || element.spelling === braced,
+          `${label(file)}: <${element.tag}> spelling ${JSON.stringify(
+            element.spelling,
+          )} is neither the quoted contents nor the extractor's reading of ${JSON.stringify(
+            written,
+          )}`,
+        ).toBe(true);
+        checked += 1;
+      }
+    }
+    // The loop really ran over a real population, not over zero elements with a className.
+    expect(checked).toBeGreaterThan(1000);
   });
 });
 

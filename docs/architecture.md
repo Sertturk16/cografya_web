@@ -91,6 +91,9 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   server-rendered), `indexing.ts` (surface → indexable locales), `sitemap-entries.ts` +
   `book-sitemap.ts` (per-hub entry builders). There is no `redirects.ts`: the redirect table is
   the `redirects()` block in `next.config.ts`, and `lib/seo/redirects.test.ts` reads it there.
+- `FAQPage` JSON-LD has exactly ONE emitter: `components/patterns/faq-section.tsx`, from the same
+  `items` array it renders, gated on `isIndexable(locale, structuredData)`. No page calls
+  `faqPageJsonLd` (`components/v2/page-composition-faq.test.ts` pins that as an exact identity).
 - `app/robots.ts`: allow-all + `Disallow: /api/`. `next.config.ts`: `trailingSlash: false`,
   `output: "standalone"`, one permanent redirect, no `images.remotePatterns` by policy (the
   single remote image is hotlinked), no `typedRoutes`.

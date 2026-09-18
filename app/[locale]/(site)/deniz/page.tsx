@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getFormatter, setRequestLocale } from "next-intl/server";
+import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { getMarinePointsSafe, getMarineOverviewSafe, getMarineLayersSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import { Link } from "@/i18n/navigation";
@@ -12,7 +12,8 @@ import { V2MarineMapExplorer, type MarinePointData } from "@/components/v2/v2-ma
 import { V2MarineBasinCards } from "@/components/v2/v2-marine-basin-cards";
 import { V2MarineOceanographyGuide } from "@/components/v2/v2-marine-oceanography-guide";
 import { V2MarineLayerCatalogue } from "@/components/v2/v2-marine-layer-catalogue";
-import { V2MarineFaqAccordion } from "@/components/v2/v2-marine-faq-accordion";
+import { FaqSection } from "@/components/patterns/faq-section";
+import { buildMarineExplainers } from "@/lib/marine/explainers";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
@@ -55,6 +56,39 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
   const format = await getFormatter();
+  const t = await getTranslations("Deniz");
+
+  /**
+   * The eight FAQ pairs, from `lib/marine/explainers.ts` — THE DECLARED SINGLE SOURCE for this
+   * set, not a loop over `q1..q8` written here.
+   *
+   * `V2MarineFaqAccordion` held seven of these as Turkish string literals in a `FAQ_ITEMS`
+   * constant — the only FAQ block in the tree that was not message-driven. The catalogue already
+   * had the eight pairs AND a module declaring which keys they are and in what order, so the
+   * only correct thing to read is that module.
+   *
+   * THE ORDER IS EDITORIAL AND IS NOT `q1…q8`. `MARINE_EXPLAINER_KEYS` is
+   * `q1 q2 q3 q4 q5 q8 q6 q7`: the owner-approved eighth block (`dataFreshness`) sits SIXTH,
+   * immediately after `q5`, because both answer the same fact — each provider's own publication
+   * cadence — from two angles. Its key stayed `q8` rather than being renumbered so the two
+   * entries that shift down keep their copy byte-identical. That module's docblock records all
+   * of it. A hand-written numeric loop cannot express any of it: it ships `dataFreshness` last,
+   * and it would silently drop a ninth block the day one is added.
+   *
+   * `MarineExplainer` carries an `id` alongside `question`/`answer`; `FaqEntry` needs only the
+   * latter two, and a wider object satisfies it, so the array is passed through untouched rather
+   * than projected — a projection here would be a second place for the order to drift.
+   *
+   * THE `tr` GATE IS ON THE DATA, NOT ONLY ON THE MARKUP, and that is the whole reason this is a
+   * conditional rather than a plain call. `messages/en.json` carries none of these sixteen keys,
+   * and next-intl's default handler for a missing key is a `console.error` plus the dotted key
+   * rendered in place of the copy — it does not throw. Building the array unconditionally and
+   * gating only the JSX therefore rendered nothing on `/en/sea` while still resolving all sixteen,
+   * so every prerender and every ISR revalidation of that route logged sixteen `MISSING_MESSAGE`
+   * lines for copy the page had already decided not to show. Invisible to the reader, noisy in the
+   * server log, and paid again on each revalidate. The gate has to sit where the READ is.
+   */
+  const marineFaqs = locale === "tr" ? buildMarineExplainers(t) : [];
 
   // Fetch points, live overview, layers and provinces
   const [rawPoints, rawOverview, rawLayers, rawProvinces] = await Promise.all([
@@ -274,8 +308,31 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         {/* SECTION 4: MEASUREMENT LAYERS CATALOGUE */}
         <V2MarineLayerCatalogue layers={rawLayers} />
 
-        {/* SECTION 5: PEDAGOGICAL FAQ ACCORDION */}
-        <V2MarineFaqAccordion />
+        {/* SECTION 5: PEDAGOGICAL FAQ ACCORDION.
+
+            GATED TO `tr`, AND THAT IS THE HONEST STATE RATHER THAN A PREFERENCE. The eight pairs
+            below are read from `Deniz.q1..q8` / `Deniz.a1..a8`, which exist in `messages/tr.json`
+            and NOT in `messages/en.json`. Until the English copy is written, rendering this block
+            on `/en/sea` would print eight `Deniz.q1`-shaped key strings as visible page text
+            (next-intl does not throw on a missing key). The previous `V2MarineFaqAccordion`
+            hardcoded the same seven questions as Turkish literals and rendered them UNGATED, so
+            `/en/sea` shipped Turkish prose; the gate is what that defect becomes once the strings
+            are message-driven, not a new restriction. The EN gap is boarded beside T-040.
+
+            `structuredData={false}` IS DELIBERATE, NOT AN OMISSION. This block has never emitted
+            `FAQPage` and nothing here asks it to start: `/deniz` is a `trNarrative` surface, and
+            a schema is a claim about a page, not a decoration. `FaqSection`'s own docblock names
+            this block as the reason its `structuredData` defaults to `false`. */}
+        {locale === "tr" && (
+          <FaqSection
+            id="sss"
+            heading={t("faqHeading")}
+            locale={locale}
+            items={marineFaqs}
+            mechanism="accordion"
+            structuredData={false}
+          />
+        )}
 
         {/* SECTION 6: SAFETY DISCLAIMER, AND THE LINK TO THE LICENCE TEXT
             The ECMWF and Copernicus Marine wording is the LICENCE, not copy. It is published

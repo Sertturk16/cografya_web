@@ -179,7 +179,7 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * element written `cn("rounded-2xl bg-card", condition && "border-border")` is one card whose
  * spelling is the ordered join of its literal fragments.
  *
- * **363 elements across 60 files, at 238 distinct spellings**, satisfy that predicate today, and
+ * **358 elements across 60 files, at 235 distinct spellings**, satisfy that predicate today, and
  * that single number hides two different design problems, so it is pinned as two:
  *
  * | population                                                      | n       | pinned by |
@@ -362,13 +362,36 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 239 to be 238` with `HAND_DRAWN_CARDS` RED at
  *     196 alongside. That is the spelling counter's first mutation check; it had none when it was
  *     introduced, which is the gap re-review named.
+ *
+ * SUPERSEDED AGAIN — T-035 PR5 Task 9, and this time the movement is a REMOVAL rather than a
+ * re-classification. The six hand-written FAQ blocks were converged onto
+ * `components/patterns/faq-section.tsx`, whose items are `<Card variant="panel">` rather than a
+ * hand-drawn surface, so their item wrappers left this population outright:
+ * **195 → 192 cards, 168 → 166 wells, 238 → 235 spellings, 363 → 358 total.**
+ *
+ * The stat-grid family moved with them, which was not obvious until it was measured: a FAQ item
+ * is a bold line over a muted line inside a `grid`, so the four static FAQ grids satisfied the
+ * hand-rolled TILE predicate too. **50 → 46 grids, 26 → 25 files, 113 → 109 tiles, 62 → 58
+ * total.** Nothing migrated to `<StatTile>` — four grids stopped existing — which is why
+ * `SURFACE_FILES_RENDERING_STATTILE` is unmoved at 12 and must be read beside these four.
+ *
+ * RE-CHECKED AT 192 / 166 / 235 / 358, Ruling AZ again — a control proved at 195 proves nothing
+ * at 192:
+ *
+ *   - the two-tile `rounded-2xl bg-card border border-border` grid probe on `hakkimizda/page.tsx`
+ *     — RED at `expected 194 to be 192`, RED on {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 236
+ *     to be 235`, and RED on {@link STAT_GRIDS_TOTAL} at `expected 59 to be 58`.
+ *   - the `bg-muted/30` spelling of it — RED on `HAND_DRAWN_WELLS` at `expected 167 to be 166`
+ *     with `HAND_DRAWN_CARDS` unmoved at 192, so the split still splits.
+ *   - a NOVEL SPELLING probe — RED on {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 236 to be
+ *     235` with `HAND_DRAWN_CARDS` RED at 193 alongside.
  */
-export const HAND_DRAWN_CARDS = 195;
+export const HAND_DRAWN_CARDS = 192;
 
-export const HAND_DRAWN_WELLS = 168;
+export const HAND_DRAWN_WELLS = 166;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 238;
+export const HAND_DRAWN_CARD_SPELLINGS = 235;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1295,11 +1318,11 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  * together, the file count failed first and the tile number — the figure the adoption tasks
  * actually drive — never printed.
  */
-export const STAT_GRIDS_WITHOUT_STATTILE = 50;
+export const STAT_GRIDS_WITHOUT_STATTILE = 46;
 
-export const STAT_GRID_FILES = 26;
+export const STAT_GRID_FILES = 25;
 
-export const STAT_TILES_WITHOUT_STATTILE = 113;
+export const STAT_TILES_WITHOUT_STATTILE = 109;
 
 /**
  * The floor that is supposed to RISE. Zero for three tasks; 13 once the metric-strip family
@@ -1321,7 +1344,7 @@ export const SURFACE_FILES_RENDERING_STATTILE = 12;
  * `isGridShell` into it would push a scanner internal out of this 4800-test module, a worse trade.
  * If you are auditing this number, read both.
  */
-export const STAT_GRIDS_TOTAL = 62;
+export const STAT_GRIDS_TOTAL = 58;
 
 const TILE_VALUE_SIZE = /^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[)/;
 

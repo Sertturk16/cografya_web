@@ -30,6 +30,13 @@ import {
  *     part of the tree that must stay covered, and coverage is only meaningful if adding an
  *     eleventh forces someone to say which page renders it.
  *
+ *     WHAT `modules` ACTUALLY CLAIMS is that the route's import graph reaches the stylesheet —
+ *     never that a sweep run renders it. `marine.module.css` is the live example: it is claimed
+ *     by `home` and `province`, which genuinely import it, but both marine blocks are gated on
+ *     `MARINE_ENABLED`, false in production today, so no current run measures those rules. The
+ *     map is honest about reachability and silent about rendering; a flag-gated module is
+ *     covered on paper and unmeasured in fact.
+ *
  * Neither assertion needs a browser, which is the point: the sweep's aim is checkable even on
  * a run where nobody starts a server.
  */

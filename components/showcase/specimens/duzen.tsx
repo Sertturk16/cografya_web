@@ -223,8 +223,11 @@ export function DuzenSpecimens() {
         </Tabs>
       </Specimen>
 
-      <Specimen name="Accordion">
-        <Accordion className="max-w-md">
+      <Specimen
+        name="Accordion"
+        description="Base UI accordion'u. `type`/`collapsible` yoktur; gerçek denetim `multiple` boolean'ı ve dizi biçimli `defaultValue`'dur. Kapalı panel DOM'dan silinmez, `hidden` ile gizlenir — bu yüzden tarayıcı içi arama metni bulup paneli açabilir ve kapalı cevap sunucu HTML'inde kalır."
+      >
+        <Accordion className="max-w-md" defaultValue={["a"]}>
           <AccordionItem value="a">
             <AccordionTrigger>Bölge nedir?</AccordionTrigger>
             <AccordionContent>
