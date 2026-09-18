@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Home } from "lucide-react";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { BreadcrumbsNav } from "@/components/patterns/breadcrumbs-nav";
 import { Specimen, SpecimenRow } from "../specimen";
 
@@ -326,6 +327,52 @@ export function DuzenSpecimens() {
               </PageContainer>
             </div>
           ))}
+        </div>
+      </Specimen>
+
+      <Specimen
+        name="PageHero — iki kademe"
+        description="Sayfa başlığının ölçülmüş biçimi: 14 hub kahramanının beşi de aynı sırayı yazıyor — rozetler, tek h1, yerel uyarı, lede, kuyruk. `tier` yalnızca başlığı seçer: hub kademesi terracotta ve `text-[1.9rem] sm:text-5xl` (1.9rem alt sınırı korunur, sayfaların `text-3xl`'i değil), detay kademesi nötr ve `text-4xl sm:text-6xl`. `className` yok ve `breadcrumbs` prop'u da yok: 17 sayfanın hepsinde kırıntılar kahramanın içinde değil, `PageContainer` düzeyinde kardeş olarak duruyor."
+      >
+        <div className="w-full space-y-6">
+          <div className="overflow-hidden rounded-md border border-dashed border-border p-3">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              tier=&quot;hub&quot;
+            </p>
+            <PageHero
+              tier="hub"
+              heading="CBS Harita & Jeodezik Ölçüm Laboratuvarı"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm">
+                    Coğrafi Bilgi Sistemleri
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    3&apos;ü 1 Arada
+                  </Badge>
+                </>
+              }
+              lede="Harita üzerinde dilediğiniz noktaları işaretleyerek gerçek jeodezik mesafeyi, enlem/boylam koordinatlarını ve küresel çokgen yüzölçümünü anında hesaplayın."
+            >
+              <Button size="sm">Ölçüme başla</Button>
+            </PageHero>
+          </div>
+
+          <div className="overflow-hidden rounded-md border border-dashed border-border p-3">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              tier=&quot;detail&quot;
+            </p>
+            <PageHero
+              tier="detail"
+              heading="Çanakkale"
+              badges={
+                <Badge variant="outline" size="sm">
+                  Marmara Bölgesi
+                </Badge>
+              }
+              lede="İl künyesi, iklim sınıfı ve nüfus göstergeleri; detay kademesi aynı lede biçimini kullanır, farkı yalnızca başlıktadır."
+            />
+          </div>
         </div>
       </Specimen>
     </>

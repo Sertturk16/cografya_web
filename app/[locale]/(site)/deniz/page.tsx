@@ -15,6 +15,7 @@ import { V2MarineLayerCatalogue } from "@/components/v2/v2-marine-layer-catalogu
 import { V2MarineFaqAccordion } from "@/components/v2/v2-marine-faq-accordion";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -174,24 +175,22 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
-                  Mavi Vatan Oşinografi Portalı
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  {showValues ? "30 Canlı Telemetri İstasyonu" : "30 Referans Noktası"}
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Denizler &amp; Kıyılar Atlası
-              </h1>
-
-              <V2EnWorkInProgressNotice locale={locale} />
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                {showValues ? (
+            <PageHero
+              tier="hub"
+              heading="Denizler & Kıyılar Atlası"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
+                    Mavi Vatan Oşinografi Portalı
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    {showValues ? "30 Canlı Telemetri İstasyonu" : "30 Referans Noktası"}
+                  </Badge>
+                </>
+              }
+              notice={<V2EnWorkInProgressNotice locale={locale} />}
+              lede={
+                showValues ? (
                   <>
                     Karadeniz, Marmara, Ege ve Akdeniz havzalarının saatlik deniz suyu sıcaklıkları,
                     dalga boyları, tuzluluk oranları, akıntı rejimleri ve 28 kıyı ilinin oşinografik
@@ -203,9 +202,9 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
                     deniz suyu sıcaklığı, dalga boyu, rüzgâr ve akıntı büyüklükleri; 28 kıyı ilinin
                     oşinografik yapısıyla birlikte. Güncel ölçüm değerleri şu an yayında değil.
                   </>
-                )}
-              </p>
-            </div>
+                )
+              }
+            />
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">

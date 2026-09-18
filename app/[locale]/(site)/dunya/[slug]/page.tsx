@@ -6,6 +6,7 @@ import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
 import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { LocatorMap } from "@/components/map/locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -322,94 +323,94 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
           {/* Title & Flag Row */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                {showsFlag && hasFlag(country.isoCode) && (
-                  /* eslint-disable-next-line @next/next/no-img-element -- ENGINEERING.md §4 #9 */
-                  <img
-                    src={`/flags/${country.isoCode.toUpperCase()}.svg`}
-                    /* From the catalogue, never a literal: the V2 rewrite inlined this image in
+            <PageHero
+              tier="detail"
+              heading={name}
+              notice={<V2EnWorkInProgressNotice locale={locale} />}
+              lede={introText}
+              badges={
+                <>
+                  {showsFlag && hasFlag(country.isoCode) && (
+                    /* eslint-disable-next-line @next/next/no-img-element -- ENGINEERING.md §4 #9 */
+                    <img
+                      src={`/flags/${country.isoCode.toUpperCase()}.svg`}
+                      /* From the catalogue, never a literal: the V2 rewrite inlined this image in
                        place of `CountryFlag` and hardcoded the TR string, so the EN page read
                        "France bayrağı". `CountryDetail.flagAlt` has carried both wordings all
                        along. An informative image, so a real alt — never `alt=""`. */
-                    alt={t("flagAlt", { name })}
-                    width={36}
-                    height={24}
-                    className="w-9 h-6 object-cover rounded-xs border border-border shadow-sm"
-                  />
-                )}
-                <Link
-                  href={{
-                    pathname: "/dunya/kita/[slug]",
-                    params: { slug: CONTINENT_KEY_TO_SLUG[country.continent] ?? "afrika" },
-                  }}
-                  className="hover:opacity-80 transition-opacity"
-                >
-                  <Badge
-                    variant="outline"
-                    className={`${continentTheme.badgeClass} cursor-pointer`}
+                      alt={t("flagAlt", { name })}
+                      width={36}
+                      height={24}
+                      className="w-9 h-6 object-cover rounded-xs border border-border shadow-sm"
+                    />
+                  )}
+                  <Link
+                    href={{
+                      pathname: "/dunya/kita/[slug]",
+                      params: { slug: CONTINENT_KEY_TO_SLUG[country.continent] ?? "afrika" },
+                    }}
+                    className="hover:opacity-80 transition-opacity"
                   >
-                    {continent}
-                  </Badge>
-                </Link>
-                {isTr && showsSubregionCard(continent, country.unSubregionTr) && (
-                  <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
-                    {country.unSubregionTr}
-                  </Badge>
-                )}
-                <Badge variant="secondary" className="font-mono font-bold tracking-wider">
-                  ISO: {country.isoCode} {country.isoCodeAlpha3 ? `/ ${country.isoCodeAlpha3}` : ""}
-                </Badge>
-                {country.entityType !== "country" ? (
-                  localizedStatusLabel ? (
                     <Badge
                       variant="outline"
-                      className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30"
+                      className={`${continentTheme.badgeClass} cursor-pointer`}
                     >
-                      {localizedStatusLabel}
+                      {continent}
                     </Badge>
-                  ) : null
-                ) : isSpecialStatus ? (
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                  >
-                    {t("specialStatusBadge")}
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
-                  >
-                    {t("sovereignEntityBadge")}
-                  </Badge>
-                )}
-                {country.neighborCount === 0 ? (
-                  isSpecialGeography ? null : (
+                  </Link>
+                  {isTr && showsSubregionCard(continent, country.unSubregionTr) && (
                     <Badge
                       variant="outline"
-                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+                      className="bg-muted text-muted-foreground border-border"
                     >
-                      <Waves className="size-3" /> {t("islandChipLabel")}
+                      {country.unSubregionTr}
                     </Badge>
-                  )
-                ) : (
-                  <Badge variant="outline" className="bg-muted text-muted-foreground">
-                    {t("landNeighboursChip", { count: country.neighborCount })}
+                  )}
+                  <Badge variant="secondary" className="font-mono font-bold tracking-wider">
+                    ISO: {country.isoCode}{" "}
+                    {country.isoCodeAlpha3 ? `/ ${country.isoCodeAlpha3}` : ""}
                   </Badge>
-                )}
-              </div>
-
-              <h1 className="font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
-                {name}
-              </h1>
-
-              <V2EnWorkInProgressNotice locale={locale} />
-
-              <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
-                {introText}
-              </p>
-            </div>
+                  {country.entityType !== "country" ? (
+                    localizedStatusLabel ? (
+                      <Badge
+                        variant="outline"
+                        className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30"
+                      >
+                        {localizedStatusLabel}
+                      </Badge>
+                    ) : null
+                  ) : isSpecialStatus ? (
+                    <Badge
+                      variant="outline"
+                      className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                    >
+                      {t("specialStatusBadge")}
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                    >
+                      {t("sovereignEntityBadge")}
+                    </Badge>
+                  )}
+                  {country.neighborCount === 0 ? (
+                    isSpecialGeography ? null : (
+                      <Badge
+                        variant="outline"
+                        className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
+                      >
+                        <Waves className="size-3" /> {t("islandChipLabel")}
+                      </Badge>
+                    )
+                  ) : (
+                    <Badge variant="outline" className="bg-muted text-muted-foreground">
+                      {t("landNeighboursChip", { count: country.neighborCount })}
+                    </Badge>
+                  )}
+                </>
+              }
+            />
 
             {/* Quick Actions */}
             <div className="flex items-center gap-3 shrink-0">

@@ -7,6 +7,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -69,39 +70,38 @@ export default async function V2PreparednessPage({ params }: PageProps) {
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<ShieldCheck className="size-3.5" />}>
-                  Temel Afet Bilinci
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  AFAD &amp; AKUT Standartları
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Deprem Hazırlık &amp; Hayatta Kalma Rehberi
-              </h1>
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Deprem anında panik yerine doğru refleksi sergileyebilmek için bilimsel, pedagojik
-                ve uygulanabilir adımlar. Sarsıntı öncesinde yaşam alanını güvenli kılma, sarsıntı
-                esnasında Çök-Kapan-Tutun disiplini ve sarsıntı sonrasındaki kritik ilk 72 saat.
-              </p>
-
-              <div className="pt-2">
-                <Link
-                  href="/deprem"
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "sm" }),
-                    "inline-flex items-center gap-2 text-xs",
-                  )}
-                >
-                  <ArrowLeft className="size-3.5" />
-                  <span>Canlı Deprem Monitörüne Dön</span>
-                </Link>
-              </div>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="Deprem Hazırlık & Hayatta Kalma Rehberi"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<ShieldCheck className="size-3.5" />}>
+                    Temel Afet Bilinci
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    AFAD &amp; AKUT Standartları
+                  </Badge>
+                </>
+              }
+              lede={
+                <>
+                  Deprem anında panik yerine doğru refleksi sergileyebilmek için bilimsel, pedagojik
+                  ve uygulanabilir adımlar. Sarsıntı öncesinde yaşam alanını güvenli kılma, sarsıntı
+                  esnasında Çök-Kapan-Tutun disiplini ve sarsıntı sonrasındaki kritik ilk 72 saat.
+                </>
+              }
+            >
+              <Link
+                href="/deprem"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "inline-flex items-center gap-2 text-xs",
+                )}
+              >
+                <ArrowLeft className="size-3.5" />
+                <span>Canlı Deprem Monitörüne Dön</span>
+              </Link>
+            </PageHero>
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">

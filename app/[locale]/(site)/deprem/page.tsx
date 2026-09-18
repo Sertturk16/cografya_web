@@ -12,6 +12,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2EarthquakeExplorer, type ProvinceMeta } from "@/components/v2/v2-earthquake-explorer";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -110,25 +111,26 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="destructive" size="sm" icon={<Flame className="size-3.5" />} dot>
-                  Canlı Sismik Telemetri
-                </Badge>
-                <Badge variant="outline" size="sm">
-                  T.C. İçişleri Bakanlığı AFAD (TDVMS)
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Canlı Deprem Takip &amp; Sismik Monitör
-              </h1>
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita
-                üzerinde merkez üssü, odak derinliği ve büyüklük kademesiyle anlık inceleyin.
-              </p>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="Canlı Deprem Takip & Sismik Monitör"
+              badges={
+                <>
+                  <Badge variant="destructive" size="sm" icon={<Flame className="size-3.5" />} dot>
+                    Canlı Sismik Telemetri
+                  </Badge>
+                  <Badge variant="outline" size="sm">
+                    T.C. İçişleri Bakanlığı AFAD (TDVMS)
+                  </Badge>
+                </>
+              }
+              lede={
+                <>
+                  Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita
+                  üzerinde merkez üssü, odak derinliği ve büyüklük kademesiyle anlık inceleyin.
+                </>
+              }
+            />
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">

@@ -664,6 +664,40 @@ export function V2GameScreen({
       <V2LiveTicker />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
+        {/*
+          THE PLAY SURFACE'S `<h1>`, VISUALLY HIDDEN ON PURPOSE — one element serving all three
+          `(play)/oyun/*` screens, which had no heading at ANY level above `<h3>` before this.
+
+          WHY HIDDEN RATHER THAN VISIBLE. All three are `surface: "noindex"` in both locales
+          (`buildMetadata` in each page; DEC 2026-07-30p: "application screens, not documents"),
+          so the SEO half of the usual argument is absent — there is no crawler to give a title
+          to. What remains is the accessibility half, and it is real: a screen-reader user landed
+          on a document whose outline began at level 3 and whose "heading 1" key found nothing.
+          A heading answers that; a VISIBLE heading would additionally take a band of vertical
+          space above the map on a screen whose whole point is the map, at 320px most of all.
+
+          `sr-only` is Tailwind's visually-hidden utility, and what THIS project's Tailwind v4
+          emits is worth quoting exactly, because the point of this note is that someone can go
+          and check it. Computed on `/oyun/81-il` in the browser:
+
+            position: absolute;  width: 1px;  height: 1px;  padding: 0px;  margin: -1px;
+            overflow: hidden;  clip-path: inset(50%);  clip: auto;  white-space: nowrap;
+            border-width: 0px;  display: block;  visibility: visible
+
+          `clip-path: inset(50%)`, NOT the older `clip: rect(0,0,0,0)` — `clip` stays `auto` here.
+          What matters is the last two: `display: block` and `visibility: visible`, with no
+          `aria-hidden` and no `hidden` attribute, so the heading is in the accessibility tree and
+          reachable by heading navigation. That is the whole requirement; `display: none` would
+          have failed it.
+
+          `modeName` is the same string each page already passes to the breadcrumb trail and to
+          its own `<title>`, so the heading cannot drift from either.
+
+          NOT CLOSED HERE: the outline still steps h1 -> h3 (the result panels below are `<h3>`).
+          One defect at a time; this is the one that left the document with no level-1 entry.
+        */}
+        <h1 className="sr-only">{modeName}</h1>
+
         {/* Top Navigation & Breadcrumbs */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <BreadcrumbsNav

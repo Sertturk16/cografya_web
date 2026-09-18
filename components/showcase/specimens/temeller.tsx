@@ -1,4 +1,4 @@
-import { H1, H2, H3, H4, Lede, Muted, Kbd } from "@/components/patterns/typography";
+import { H1, H1Display, H2, H3, H4, Lede, Muted, Kbd } from "@/components/patterns/typography";
 import { Specimen } from "../specimen";
 
 /**
@@ -83,10 +83,11 @@ export function TemellerSpecimens() {
 
       <Specimen
         name="Tipografi ölçeği"
-        description="docs/design.md ölçeğin sahibi; bu bileşenler onu yeniden üretiyor, yenisini icat etmiyor. h1'in 1.9rem alt sınırı hiçbir genişlikte düşürülmez — bir düzeltme turu bunu bir kez düşürmüş ve o düşürme bir sonraki incelemenin yakaladığı kusur olmuştu."
+        description="docs/design.md ölçeğin sahibi; bu bileşenler onu yeniden üretiyor, yenisini icat etmiyor. h1 iki kademe: H1 hub kademesi (14 sayfa, terracotta), H1Display detay kademesi (3 sayfa, daha büyük ve nötr). h1'in 1.9rem alt sınırı hiçbir genişlikte düşürülmez — bir düzeltme turu bunu bir kez düşürmüş ve o düşürme bir sonraki incelemenin yakaladığı kusur olmuştu; bu yüzden hub kademesi mobilde text-3xl değil text-[1.9rem] yazar."
       >
         <div className="space-y-3">
           <H1>Türkiye&apos;nin coğrafyası</H1>
+          <H1Display>İstanbul</H1Display>
           <H2>Coğrafi bölgeler</H2>
           <H3>Marmara Bölgesi</H3>
           <H4>İklim özellikleri</H4>

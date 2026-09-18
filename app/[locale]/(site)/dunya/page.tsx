@@ -11,6 +11,7 @@ import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld"
 import { buildMetadata } from "@/lib/seo/metadata";
 import { pickHubDescription } from "@/lib/seo/hub-description";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2WorldMapExplorer, type WorldCountryItem } from "@/components/v2/v2-world-map-explorer";
@@ -163,25 +164,26 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<Globe className="size-3.5" />}>
-                  Dünya Coğrafya Portalı
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  {totalCountries} Ülke & 7 Kıta
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Dünya Ülkeleri &amp; Kıtalar Atlası
-              </h1>
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Gezegenimizin 7 kıtası, {totalCountries} ülke ve bölgesi, bayrakları, demografik
-                dağılımı, yeryüzü şekilleri ve coğrafi ekstremleri tek ekranda.
-              </p>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="Dünya Ülkeleri & Kıtalar Atlası"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<Globe className="size-3.5" />}>
+                    Dünya Coğrafya Portalı
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    {totalCountries} Ülke & 7 Kıta
+                  </Badge>
+                </>
+              }
+              lede={
+                <>
+                  Gezegenimizin 7 kıtası, {totalCountries} ülke ve bölgesi, bayrakları, demografik
+                  dağılımı, yeryüzü şekilleri ve coğrafi ekstremleri tek ekranda.
+                </>
+              }
+            />
 
             {/* Verified Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">

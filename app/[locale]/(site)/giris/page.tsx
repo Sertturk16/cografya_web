@@ -7,6 +7,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2LoginCard } from "@/components/v2/v2-login-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Home } from "lucide-react";
 
 export const revalidate = 86400;
@@ -34,6 +35,7 @@ export async function generateMetadata({ params }: V2LoginPageProps): Promise<Me
 export default async function V2LoginPage({ params }: V2LoginPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "Auth" });
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [
     { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
@@ -46,6 +48,17 @@ export default async function V2LoginPage({ params }: V2LoginPageProps) {
 
       <PageContainer>
         <Breadcrumbs items={breadcrumbItems} locale={locale} surface="noindex" />
+
+        {/* The page's own heading. `V2LoginCard`'s standalone header starts at `<h2>`
+            (`v2-login-card.tsx:169`) and this page had NO `<h1>` at all, so a screen-reader user
+            landed on a document whose outline began at level 2 and whose "heading 1" key found
+            nothing. The SEO half of that argument does not apply — `/giris` is an `AUTH_PATHNAMES`
+            member and `buildAuthMetadata` ships `noindex` in BOTH locales — but the a11y half
+            stands on its own, and it is why this is a visible `<h1>` rather than a hidden one: a
+            de-indexed page is still a document a person reads, unlike the `(play)` game screens.
+            The string is the one `generateMetadata` already puts in `<title>`, so the heading and
+            the title cannot drift apart. */}
+        <PageHero tier="hub" heading={t("login.heading")} />
 
         {/* 2-Column Auth Workbench: Form on Left/Center, Benefits Showcase on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

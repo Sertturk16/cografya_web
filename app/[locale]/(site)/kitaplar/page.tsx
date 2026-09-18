@@ -10,6 +10,7 @@ import { V2BooksHub } from "@/components/v2/v2-books-hub";
 import { V2StudyStrategyGuide } from "@/components/v2/v2-study-strategy-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Home } from "lucide-react";
@@ -110,25 +111,26 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
-                  Dijital Eğitim Platformu
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  AYT &bull; TYT &bull; YKS
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Video Çözümlü Coğrafya Kitapları
-              </h1>
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Yayımlanan Coğrafya branş denemelerinin soru bazlı ayrıntılı video çözümleri, zaman
-                çizelgesi atlama noktaları ve sınav hazırlık stratejileri.
-              </p>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="Video Çözümlü Coğrafya Kitapları"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
+                    Dijital Eğitim Platformu
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    AYT &bull; TYT &bull; YKS
+                  </Badge>
+                </>
+              }
+              lede={
+                <>
+                  Yayımlanan Coğrafya branş denemelerinin soru bazlı ayrıntılı video çözümleri,
+                  zaman çizelgesi atlama noktaları ve sınav hazırlık stratejileri.
+                </>
+              }
+            />
 
             {/* Dynamic Metric Strip from Real Data. Two of the four tiles carried
                 `videoCount`/`questionCount` — DELETED with the fields (P0 generic-catalogue

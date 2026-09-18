@@ -7,6 +7,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -78,40 +79,39 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                  Kıyı Jeomorfolojisi
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  6 Temel Kıyı Tipi
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Türkiye&apos;nin Kıyı Tipleri &amp; Jeomorfolojisi
-              </h1>
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Dağların kıyı çizgisine göre uzanış doğrultusu, tektonik hareketler ve Dördüncü
-                Zaman deniz seviyesi yükselmeleri (östatizma) sonucunda şekillenen Türkiye kıyıları.
-                Görülen 6 temel tip ile enlem ve iç deniz koşulları nedeniyle ülkemizde rastlanmayan
-                kıyı tipleri.
-              </p>
-
-              <div className="pt-2">
-                <Link
-                  href="/deniz"
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "sm" }),
-                    "inline-flex items-center gap-2 text-xs",
-                  )}
-                >
-                  <Waves className="size-3.5" />
-                  <span>Ana Deniz Atlası &amp; Telemetriye Dön</span>
-                </Link>
-              </div>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="Türkiye'nin Kıyı Tipleri & Jeomorfolojisi"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
+                    Kıyı Jeomorfolojisi
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    6 Temel Kıyı Tipi
+                  </Badge>
+                </>
+              }
+              lede={
+                <>
+                  Dağların kıyı çizgisine göre uzanış doğrultusu, tektonik hareketler ve Dördüncü
+                  Zaman deniz seviyesi yükselmeleri (östatizma) sonucunda şekillenen Türkiye
+                  kıyıları. Görülen 6 temel tip ile enlem ve iç deniz koşulları nedeniyle ülkemizde
+                  rastlanmayan kıyı tipleri.
+                </>
+              }
+            >
+              <Link
+                href="/deniz"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "inline-flex items-center gap-2 text-xs",
+                )}
+              >
+                <Waves className="size-3.5" />
+                <span>Ana Deniz Atlası &amp; Telemetriye Dön</span>
+              </Link>
+            </PageHero>
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">

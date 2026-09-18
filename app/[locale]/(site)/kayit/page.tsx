@@ -7,6 +7,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2RegisterCard } from "@/components/v2/v2-register-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { getProvinces } from "@/lib/api/provinces";
 import { Home } from "lucide-react";
 
@@ -43,6 +44,7 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
   const provinces = await getProvinces();
+  const t = await getTranslations({ locale, namespace: "Auth" });
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [
     { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
@@ -55,6 +57,15 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
 
       <PageContainer>
         <Breadcrumbs items={breadcrumbItems} locale={locale} surface="noindex" />
+
+        {/* Same defect and same fix as `/giris` — see that page for the reasoning. `noindex` in
+            both locales, so this closes an accessibility gap rather than an SEO one.
+            DELIBERATELY NOT the register card's own header, which is `<h2>` at
+            `v2-register-card.tsx:359` and switches between "Hesap Oluştur" and "E-posta Doğrulama"
+            on CLIENT step state this Server Component cannot see. Promoting that one in place
+            would have made the document's only `<h1>` change text mid-flow; the page keeps a
+            stable title above it and the card's header stays the section heading it already is. */}
+        <PageHero tier="hub" heading={t("register.heading")} />
 
         {/* 2-Column Auth Workbench: Form on Left/Center, Benefits Showcase on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

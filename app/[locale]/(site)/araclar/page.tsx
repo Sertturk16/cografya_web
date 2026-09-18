@@ -9,6 +9,7 @@ import { V2ToolsHub } from "@/components/v2/v2-tools-hub";
 import { V2GisMethodologyGuide } from "@/components/v2/v2-gis-methodology-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Compass, Home } from "lucide-react";
@@ -77,28 +78,28 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                  Coğrafi Bilgi Sistemleri
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  3&apos;ü 1 Arada Ölçüm Stüdyosu
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                CBS Harita &amp; Jeodezik Ölçüm Laboratuvarı
-              </h1>
-
-              <V2EnWorkInProgressNotice locale={locale} />
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Harita üzerinde dilediğiniz noktaları işaretleyerek gerçek jeodezik mesafeyi,
-                enlem/boylam koordinatlarını ve küresel çokgen yüzölçümünü WGS84 hassasiyetiyle
-                anında hesaplayın.
-              </p>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="CBS Harita & Jeodezik Ölçüm Laboratuvarı"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
+                    Coğrafi Bilgi Sistemleri
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    3&apos;ü 1 Arada Ölçüm Stüdyosu
+                  </Badge>
+                </>
+              }
+              notice={<V2EnWorkInProgressNotice locale={locale} />}
+              lede={
+                <>
+                  Harita üzerinde dilediğiniz noktaları işaretleyerek gerçek jeodezik mesafeyi,
+                  enlem/boylam koordinatlarını ve küresel çokgen yüzölçümünü WGS84 hassasiyetiyle
+                  anında hesaplayın.
+                </>
+              }
+            />
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">

@@ -12,6 +12,7 @@ import { V2ToolWorkbench } from "@/components/v2/v2-tool-workbench";
 import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-content";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
+import { PageHero } from "@/components/patterns/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Route, Home } from "lucide-react";
@@ -81,28 +82,28 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
           />
 
           <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg">
-            <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<Route className="size-3.5" />}>
-                  Jeodezik Kuş Uçuşu Mesafe
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  WGS84 Haversine Modeli
-                </Badge>
-              </div>
-
-              <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-primary leading-tight">
-                Haritada Kuş Uçuşu Mesafe Ölçme
-              </h1>
-
-              <V2EnWorkInProgressNotice locale={locale} />
-
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Türkiye haritasında dilediğiniz noktaları işaretleyerek ya da 81 il merkezinden
-                seçerek noktalar arası jeodezik mesafeyi, tahmini uçuş süresini ve karayolu farkını
-                anında hesaplayın.
-              </p>
-            </div>
+            <PageHero
+              tier="hub"
+              heading="Haritada Kuş Uçuşu Mesafe Ölçme"
+              badges={
+                <>
+                  <Badge variant="primary" size="sm" icon={<Route className="size-3.5" />}>
+                    Jeodezik Kuş Uçuşu Mesafe
+                  </Badge>
+                  <Badge variant="secondary" size="sm">
+                    WGS84 Haversine Modeli
+                  </Badge>
+                </>
+              }
+              notice={<V2EnWorkInProgressNotice locale={locale} />}
+              lede={
+                <>
+                  Türkiye haritasında dilediğiniz noktaları işaretleyerek ya da 81 il merkezinden
+                  seçerek noktalar arası jeodezik mesafeyi, tahmini uçuş süresini ve karayolu
+                  farkını anında hesaplayın.
+                </>
+              }
+            />
 
             {/* Metric Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
