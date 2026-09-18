@@ -1509,6 +1509,20 @@ function effectiveH1Sites(root: string): H1Site[] {
  * The liveness check below fails if either guard disappears from the source, which is exactly what
  * would happen if someone unified the two branches — at which point the exemption is wrong and
  * must be dropped rather than carried.
+ *
+ * TASK 3 (2026-09-18) WAS BRIEFED TO DEMOTE ONE OF THE TWO AND DID NOT. That instruction was
+ * written before the branches above were read, and it would have made the page's outline WORSE:
+ * a STUDENT would have been left on a document whose only heading is an `<h2>`, which is the exact
+ * defect the same task spent its Step 4 closing on `giris`, `kayit` and the three play screens. The
+ * page ships one `<h1>` per request today; there is nothing here to fix. This paragraph exists so
+ * the next reader of that brief finds the measurement rather than re-deriving it, and so the
+ * withdrawal is a recorded decision rather than an omission.
+ *
+ * `PageHero` was NOT adopted here either, and that is the same judgement rather than a second one:
+ * neither heading is a hero. Both sit inline beside an icon in a card header
+ * (`p-2 rounded-xl bg-primary/10` + `<GraduationCap>`), at `text-xl` inside a `max-w-2xl mx-auto`
+ * card — a component whose whole contract is a badge row, a hero heading, a locale notice and a
+ * lede would have had to be bent around markup that wants none of them.
  */
 const MULTIPLE_H1_EXEMPTIONS: ReadonlyArray<{
   readonly file: string;
