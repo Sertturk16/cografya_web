@@ -208,9 +208,26 @@ before it is allowed to go green, in its own commit, with no other file touched.
 
 ### 5.3 CI
 
-Add `services:` (postgres, redis, api) to the Build job so CI builds what production builds,
-and run the floor guard there. T-047's overflow sweep becomes addable as a fourth job once an
-API exists in CI, but stays out of this task.
+CI builds what production builds, so the Build job stands up a real API.
+
+An earlier draft of this section said "add `services:` (postgres, redis, api)". That was
+wrong and the plan caught it: **`cografya_api` publishes no image anywhere** — its deploy
+builds on the host — so there is nothing for a `services:` entry to pull. What makes this
+feasible instead is that the seed data is committed in-repo (1.7 MB under
+`src/database/seeds/`, with `db:seed:{geography,regions,world,books,reference}` CLIs).
+
+The Build job therefore: runs `postgres` and `redis` as services, checks out
+`Sertturk16/cografya_api` beside the web checkout, runs `migration:run`, runs the five seed
+CLIs, boots the API with `start:prod`, and only then builds the web with the floor guard
+armed. Cost: roughly 3-5 minutes added per PR, growing with the seeds. Accepted deliberately
+(owner, 2026-09-19) over the cheaper alternatives, because a build job that cannot build the
+real thing is the defect this task exists to remove.
+
+CI's API runs with `NODE_ENV=development` and a CI-local `INTERNAL_REQUEST_TOKEN`; the
+production-only secrets are not needed and are not put in web CI.
+
+T-047's overflow sweep becomes addable as a fourth job once this API exists, but stays out of
+this task.
 
 ## 6. T-033 — eight CSS modules
 
