@@ -35,7 +35,7 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
   hierarchy: one `h1` per page, headings in document order.
 - A HERO `h1` has exactly TWO tiers, both in `components/patterns/typography.tsx`; a third HERO
   spelling is a defect. The site as a whole ships more, and they are named and justified one by one
-  in `components/v2/page-composition.test.ts` (`H1_SPELLINGS`, pinned exact): the two tiers, two
+  in `components/v2/page-composition-headings.test.ts` (`H1_SPELLINGS`, pinned exact): the two tiers, two
   deliberate non-tiers — the shared `(site)/error.tsx` + `not-found.tsx` shell spelling, and the
   `sr-only` heading on the three `(play)` game screens — and nine pre-existing spellings on pages
   no adoption has reached yet. An ADDITIONAL spelling that is not named there is the defect; a shell
@@ -179,7 +179,7 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   theme; the contrast improvement is a consequence, not the defect.
 - **`StatGrid` is the shell, `StatTile` the tile, and a grid needs both.** Half-migrating —
   `StatGrid` around hand-drawn tiles — drops the grid out of BOTH buckets in
-  `components/v2/page-composition.test.ts` and fails `STAT_GRIDS_TOTAL`. That is deliberate.
+  `components/v2/page-composition-cards.test.ts` and fails `STAT_GRIDS_TOTAL`. That is deliberate.
 - **Decoration on a value vs categorical data encoding — the line that decides whether a raw
   palette class gets converted. The test is the ENTITY, not the page and not the hue.** A hue is
   decoration when nothing encodes _the thing this element names_; it is categorical when the colour

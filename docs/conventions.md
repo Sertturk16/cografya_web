@@ -55,6 +55,13 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   routing and config modules from an import-graph walk; then **mutation-check it** — break the
   thing the test exists to catch and watch it go red, because a source-text assertion that has
   never failed has not been shown to work.
+- One JSX scanner, not one per suite. `lib/test-support/composition-scan.ts` owns the walkers, the
+  literal extractor, the binding resolver and the source-injection harness that the three
+  `components/v2/page-composition-*.test.ts` suites (containers/breadcrumbs, headings, cards) count
+  with. T-035 shipped two extractors in one module and they disagreed about 22 real elements, with
+  the older one mangling every template hole it read; a second extractor is where a counter hides.
+  Memos go through that module's `perFileCache()` / `graphCache()` so the harness invalidates them —
+  a bare `new Map()` cache fails `composition-scan.test.ts`.
 - Fixtures: `test/fixtures/{marine,books}`. Do not add network calls to tests.
 - Playwright is a library here, not a runner: no `playwright.config`, no e2e suite. Ad-hoc
   audits live in `scripts/` and `tools/dev-fixtures/`; do not wire them into CI.

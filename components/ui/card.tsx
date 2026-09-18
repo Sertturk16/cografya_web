@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  *
  * `Card` shipped from the CLI wearing `rounded-xl` + `ring-1 ring-foreground/10`. The site does
  * not write that anywhere: it writes `rounded-2xl`/`rounded-3xl` + `border border-border` +
- * a `shadow-*`, 486 times, and `components/v2/page-composition.test.ts` counts every one. T-035
+ * a `shadow-*`, 486 times, and `components/v2/page-composition-cards.test.ts` counts every one. T-035
  * PR4's decision is that the site wins and the primitive adapts.
  *
  * The measured spellings (see that file's card section for the pinned totals) are NOT seven card
@@ -129,7 +129,8 @@ export function cardVariants({
  * bg-card border-border">` compiles, merges, and renders a hand-drawn card wearing a primitive's
  * tag. It differs from the hole those guards close only in that nothing here ever promised
  * otherwise — the counter does not see it either, because `cardKind` returns `null` for every
- * `<Card*>` tag (`page-composition.test.ts` SCOPE note 4, which pins that exclusion as inert and
+ * `<Card*>` tag (`page-composition-cards.test.ts` SCOPE note 4, which pins that exclusion as inert
+ * and
  * re-measures it). So: do not reach for the stock branch as an escape hatch from the closed
  * unions. A variant card that needs width or layout gets a wrapper element, not a `className`.
  */

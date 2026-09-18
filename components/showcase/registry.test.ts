@@ -142,7 +142,7 @@ describe("showcase coverage", () => {
 
   it("both typography heading tiers are rendered by a specimen, not just the prefix", () => {
     // The override list carries `"<H1"` only, and `H1Display` is a separate exported tier with its
-    // own `<h1>` spelling — `components/v2/page-composition.test.ts` pins both. A specimen
+    // own `<h1>` spelling — `components/v2/page-composition-headings.test.ts` pins both. A specimen
     // rendering neither would leave the showcase claiming to demonstrate a module it does not.
     expect(rendersJsxTag(SPECIMENS, "H1")).toBe(true);
     expect(rendersJsxTag(SPECIMENS, "H1Display")).toBe(true);
