@@ -51,7 +51,7 @@ interface ThemePairProps {
  * it is the machinery the `/design-system` route is built out of — not a pattern waiting for a
  * product call site. In `components/patterns` it read as the second thing to a reachability
  * audit: a pattern nothing outside the showcase imports, which is the shape that gets deleted.
- * `components/ui/orphan.test.ts` now classifies a file under `components/showcase/` that the
+ * `components/orphan.test.ts` now classifies a file under `components/showcase/` that the
  * design-system route reaches as live BY that route, which is the true statement about this one.
  */
 export function ThemePair({ children, portals = false, className }: ThemePairProps) {

@@ -21,7 +21,8 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
 - Unlocalized: `app/api/**` (BFF), `app/flags/[flag]`, `app/maps/*.svg`, `app/llms.txt`,
   `robots.ts`, `sitemap.ts`, `manifest.ts`.
 - **V1 IS DELETED** (T-032). There is no `/v2` prefix, no `.v2-app` wrapper and no chrome
-  suppression rule. Nine `*.module.css` files remain; they are not
+  suppression rule. Eight `*.module.css` files remain (`earthquake`, `marine`, `climate`, `air-pollution`,
+  `book-video`, `locator-map`, `site-search`, `book-detail`); they are not
   frozen — see `CLAUDE.md` on why "do not touch" was itself a defect. The eleventh,
   `components/map/map.module.css`, was 876 lines whose four consumers PR4 deleted; its own orphan
   test could not see it, because a substring match let `locator-map.module.css` answer for it.

@@ -7,7 +7,7 @@ import { stripComments } from "./strip-comments";
  * The real import graph, walked from a set of roots — shared by every test that needs to know
  * what a file actually reaches, not just what directly imports it.
  *
- * Extracted from `components/ui/orphan.test.ts` (T-036), which measured "does a primitive have
+ * Extracted from `components/orphan.test.ts` (T-036), which measured "does a primitive have
  * a product call site" by walking `PRODUCT_ROOTS` outward through every `import`/`export …
  * from`/dynamic `import()`. `components/patterns/rsc-boundary.test.ts` (Task 9) needed the
  * identical walk for a different question — "does a `\"use client\"` file transitively reach a
@@ -15,7 +15,7 @@ import { stripComments } from "./strip-comments";
  * kind of drift this repo's own conventions doc warns against. One resolver, two questions.
  *
  * `repoRoot` is computed HERE, from this file's own location (`lib/test-support/` is two
- * directories below the repo root, same depth `components/ui/orphan.test.ts` used to compute
+ * directories below the repo root, same depth `components/orphan.test.ts` used to compute
  * its own), so every caller gets the same absolute root regardless of where it sits in the tree.
  */
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -24,7 +24,7 @@ export const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
 /**
  * THE SURFACE A READER CAN ACTUALLY REACH — the roots every reachability question in this repo
- * is asked from, so `components/ui/orphan.test.ts` and `components/orphan-stylesheets.test.ts`
+ * is asked from, so `components/orphan.test.ts` and `components/orphan-stylesheets.test.ts`
  * cannot answer the same question from two different surfaces.
  *
  * Three entries, all of them things Next.js itself renders: the locale layout (the chrome every
@@ -100,7 +100,8 @@ export function resolveSpecifier(fromFile: string, specifier: string): string | 
  * and renders no markup. Following it made the island reachable, and through it
  * `tool-measurement-list.tsx`, `tool-measurement-save.tsx`, `tool-png.ts` and `tools.module.css`,
  * 2447 lines in total, none of which any page could ever load. `components/home/featured-cards.tsx`
- * was alive on the same one clause.
+ * and its `home.module.css` were alive on the same one clause, and `components/lock-icon.tsx`
+ * behind them; all three are gone and `components/orphan.test.ts`'s orphan list is now empty.
  *
  * So the walk follows {@link runtimeImportsOf} — the same type erasure
  * `components/patterns/rsc-boundary.test.ts` needs for the opposite question — and a type-only

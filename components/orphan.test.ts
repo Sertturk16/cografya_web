@@ -216,26 +216,33 @@ const verdictsOf = (files: readonly string[], verdict: Verdict): string[] =>
 const KNOWN_SHOWCASE_ONLY = ["components/ui/tabs.tsx"];
 
 /**
- * REACHED FROM NOTHING AT ALL — not the product, not even the showcase.
+ * REACHED FROM NOTHING AT ALL — not the product, not even the showcase. **EMPTY, AND THE EMPTY
+ * LIST IS THE POINT.**
  *
- * Six files when this closed, and the four `components/tools` ones — the measurement island and
- * its three helpers, 2447 lines held up by two `import type { ProvinceArea }` clauses — are
- * deleted. The two that remain are NOT deleted, and the distinction is the same one T-036 drew
- * over `tabs.tsx`: T-042's ruling names a list, and a file that turns up outside it is a
- * MEASUREMENT. Deleting it is a decision, and a decision belongs to whoever takes it.
+ * Six files when this first ran, every one of them called live by the old walk:
  *
+ *   - the four `components/tools` files — the measurement island and its three helpers, 2447
+ *     lines held up by two `import type { ProvinceArea }` clauses;
  *   - `components/home/featured-cards.tsx` — reached by one clause, `import type
- *     { FeaturedCardItem }` in `app/[locale]/(site)/page.tsx`. That page uses the type to shape
- *     its own two card arrays and renders `<FeaturedCards` nowhere; nothing else in the tree
- *     names either symbol. Its stylesheet, `components/home/home.module.css`, is recorded in
- *     `components/orphan-stylesheets.test.ts` for the same reason and must go with it;
- *   - `components/lock-icon.tsx` — a CASCADE, and the reason this list cannot be read as
- *     finished. Its one runtime importer was `components/tools/tool-measurement-save.tsx`,
- *     deleted above, so it became unreachable through this task rather than before it. It has
- *     its own byte-identity regression test (`components/lock-icon.test.tsx`), which is the kind
- *     of thing that should be read before it is thrown away.
+ *     { FeaturedCardItem }` in `app/[locale]/(site)/page.tsx`. That page shapes its own two card
+ *     arrays with the type and draws the grids in its own inline markup; `<FeaturedCards`
+ *     appeared nowhere in the tree. The TYPE is live and moved to `lib/home/featured.ts`, beside
+ *     the two functions that feed it; the component and `components/home/home.module.css`, whose
+ *     only importer it was, are gone and so is the directory;
+ *   - `components/lock-icon.tsx` — a CASCADE: its one runtime importer was
+ *     `components/tools/tool-measurement-save.tsx`, so it became unreachable through this task
+ *     rather than before it, and it went in the same task's second round.
+ *
+ * Ruling CL settled the question the first round left open, and it is the rule `docs/design.md`
+ * already stated: no product call site means DELETE — never kept alive for the showcase, and
+ * never kept alive because a test imports it. A file is not live because something asserts about
+ * it; `components/lock-icon.test.tsx` was the only thing still naming `LockIcon` and it went with
+ * its subject.
+ *
+ * So the list is empty, and an equality against an empty list is the strictest form this pin can
+ * take: the NEXT file to arrive here fails immediately, with no precedent to be filed under.
  */
-const KNOWN_UNREACHABLE = ["components/home/featured-cards.tsx", "components/lock-icon.tsx"];
+const KNOWN_UNREACHABLE: readonly string[] = [];
 
 describe("the import closure itself", () => {
   // ANTI-VACUITY. Every assertion below is "X is in this set"; a set built from a broken
@@ -268,11 +275,18 @@ describe("the import closure itself", () => {
   });
 
   it("does not count a type-only import as a call site — hole 2", () => {
-    // The live proof, and it outlives the deletion: `app/[locale]/(site)/page.tsx` binds
-    // `FeaturedCardItem` from `components/home/featured-cards.tsx` with `import type`, and that
-    // file is on `KNOWN_UNREACHABLE`. A walk that followed type edges would call it product.
-    const featured = join(repoRoot, "components/home/featured-cards.tsx");
-    expect(classify(featured, productClosure, showcaseClosure)).toBe("unreachable");
+    // THE LIVE PROOF, and it is chosen to outlive every deletion this rule causes: the two files
+    // it names are not orphans and cannot become any, so the control cannot be resolved away.
+    //
+    // `lib/auth/submit.client.ts` is `"use client"` and IS reached from the product surface.
+    // The only thing it binds from `lib/auth/transport.server.ts` is `import type
+    // { AuthBffCode }`, and `transport.server.ts` carries `import "server-only"` — so if this
+    // walk followed type edges, a `server-only` module would enter the product closure through a
+    // client component, which `pnpm build` proves is not a real edge at all.
+    const client = join(repoRoot, "lib/auth/submit.client.ts");
+    const server = join(repoRoot, "lib/auth/transport.server.ts");
+    expect(productClosure.has(client), "the client module is reached").toBe(true);
+    expect(productClosure.has(server), "its type-only target is NOT").toBe(false);
   });
 });
 

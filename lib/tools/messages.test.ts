@@ -260,9 +260,10 @@ const CONSUMER_ROOTS = [
   // `Tools.hub`, and with no root over `components/v2` that live consumer was invisible here —
   // the namespace read as consumed only because a DEAD file also opened it.
   { label: "components/v2", url: new URL("../../components/v2/", import.meta.url) },
-  // The homepage's tools band (`components/home/tool-cards.tsx`, plan §5.5) — a second,
-  // independent consumer of `Tools.hub`'s already-bilingual name/body strings.
-  { label: "components/home", url: new URL("../../components/home/", import.meta.url) },
+  // The homepage's tools band (`components/home/tool-cards.tsx`, plan §5.5) was a second,
+  // independent consumer of `Tools.hub`'s already-bilingual name/body strings. T-032 PR4 deleted
+  // that file and T-042 the directory, so there is no root left to scan there either; the
+  // homepage now links the tools from its own inline markup.
   // The V1 header nav's "Araçlar" dropdown group was a third consumer of the same three tool
   // names. `components/site-nav/` was deleted in T-032 PR4 — the V2 header does not carry a
   // tools dropdown — so there is no root to scan. The other two remain.

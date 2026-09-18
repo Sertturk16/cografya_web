@@ -5,7 +5,7 @@ import { Specimen } from "../specimen";
  * ONE specimen since T-042. `MapLegend` was deleted with `Callout` and `EmptyState`: all three
  * were reachable only from this route, and a component the design system maintains for the
  * design system's sake costs the same review, token audit and dark-mode sweep as one that ships
- * (`components/ui/orphan.test.ts`). The data-token rule its two specimens illustrated —
+ * (`components/orphan.test.ts`). The data-token rule its two specimens illustrated —
  * `docs/design.md`'s brand != data — is stated there and enforced by the data-viz suite, not by
  * a swatch nobody renders.
  *

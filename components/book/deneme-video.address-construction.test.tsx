@@ -44,7 +44,8 @@ import { DenemeVideo } from "./deneme-video";
  * ordering, corrective-scroll math) are DYNAMIC — observable only through interaction, which
  * this repo's jsdom-free `node` vitest environment cannot drive (`FU-WEB-JSDOM`). What THIS
  * guard checks is observable on `DenemeVideo`'s INITIAL render alone — the same static-markup
- * technique `components/lock-icon.test.tsx` already establishes needs no jsdom. `DenemeVideo`
+ * technique `components/patterns/page-hero.test.tsx` also uses, and which needs no jsdom
+ * (`renderToStaticMarkup` is pure string building, not DOM). `DenemeVideo`
  * itself is fully prop-driven (no `useAuthSession()`/`useBenchState()` of its own — see its own
  * prop list), so it renders here with no additional mocking.
  *

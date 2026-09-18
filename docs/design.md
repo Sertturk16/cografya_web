@@ -120,7 +120,7 @@ Two directories, and the boundary is operational rather than taxonomic:
 
 `map-attribution` is the component TEN map surfaces render, moved into `patterns/` by T-042. The
 66-line file that used to hold that name had no product consumer at all and this list pointed at
-it, which is the failure mode `components/ui/orphan.test.ts` now measures rather than describes.
+it, which is the failure mode `components/orphan.test.ts` now measures rather than describes.
 
 The reason is concrete: `shadcn add` **overwrites** files in the configured `ui` alias — it
 asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living
@@ -157,7 +157,7 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 - A component is not done until its specimen renders at `/design-system`;
   `components/showcase/registry.test.ts` fails if one is missing. The converse holds too: a
   primitive whose only consumer is the showcase is DELETED, not maintained for the showcase's
-  sake — `components/ui/orphan.test.ts` walks the import closure from the product surface and
+  sake — `components/orphan.test.ts` walks the import closure from the product surface and
   fails on one (T-036 deleted eight).
 
 ### Boundaries worth knowing before reaching for the wrong one

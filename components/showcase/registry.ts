@@ -18,7 +18,7 @@ export interface ShowcaseCategory {
  * the plan, and the "listed but missing" assertion is what turns it into a worklist.
  *
  * It is a worklist in one direction only. A primitive with no product call site is DELETED,
- * not kept alive so this registry has something to list (T-036, `components/ui/orphan.test.ts`
+ * not kept alive so this registry has something to list (T-036, `components/orphan.test.ts`
  * and `docs/design.md`). Eight entries left here for that reason; the showcase describes the
  * code, so it shrinks when the code does.
  */

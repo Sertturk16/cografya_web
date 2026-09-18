@@ -57,7 +57,7 @@ import {
  * them green under the old assertion — and all three (`tool-island.tsx`,
  * `tool-measurement-list.tsx`, `tool-measurement-save.tsx`) unreachable from any route, because
  * the only thing left importing the island was an `import type` clause TypeScript erases. A
- * stylesheet certified by three corpses. Fixing `components/ui/orphan.test.ts` alone would have
+ * stylesheet certified by three corpses. Fixing `components/orphan.test.ts` alone would have
  * deleted the corpses and left this file green on an empty set of importers, because zero
  * importers is the one shape `!importedStylesheetNames.has(...)` does catch — by accident, one
  * commit later, instead of here.
@@ -117,16 +117,21 @@ const orphansAmong = (sheets: readonly string[]): string[] =>
     .sort();
 
 /**
- * THE MEASURED POPULATION, pinned in its defective state first.
+ * THE MEASURED POPULATION — **EMPTY**, and an equality against an empty list is the strictest
+ * form this pin can take.
  *
- * `tools.module.css` was T-042's find and went with the four `components/tools` files that held
- * it up. `home.module.css` is a SECOND one this fix turned up and it is NOT on T-042's list: its
- * single importer is `components/home/featured-cards.tsx`, which `components/ui/orphan.test.ts`
- * now records as unreachable for the same type-only-import reason. Deleting a component nobody
- * ruled on is a decision, not a measurement, so it is recorded here and left standing — the same
- * treatment `tabs.tsx` got in T-036. It goes when `featured-cards.tsx` goes.
+ * Two stylesheets were on it when the reachability question replaced the existence one, and both
+ * are gone:
+ *
+ *   - `components/tools/tools.module.css` (514 lines) — three importers, all of them unreachable;
+ *   - `components/home/home.module.css` — ONE importer, `components/home/featured-cards.tsx`, a
+ *     component `components/orphan.test.ts` measured as reachable from no route. Ruling CL
+ *     deleted both, and `components/home/` with them.
+ *
+ * Neither had zero importers, which is why the old "is it imported by something" assertion was
+ * green on both. Every surviving stylesheet now has an importer a route reaches.
  */
-const KNOWN_ORPHAN_STYLESHEETS = ["components/home/home.module.css"];
+const KNOWN_ORPHAN_STYLESHEETS: readonly string[] = [];
 
 describe("CSS Modules", () => {
   it("finds the stylesheets, the code that could import them, and the routes", () => {

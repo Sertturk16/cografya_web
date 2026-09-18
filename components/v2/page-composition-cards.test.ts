@@ -548,25 +548,29 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * card's tokens into a module constant and `HAND_DRAWN_CARDS` falls while the markup is unchanged.
  * A rise here beside a fall there is the signature of that move, and neither number alone shows it.
  *
- * ## Why 25 and not 278
+ * ## Why 23 and not 211
  *
- * 222 elements on the surface write a `className` this scanner cannot read. Broken down by the
+ * 211 elements on the surface write a `className` this scanner cannot read. Broken down by the
  * shape of the expression:
  *
  * | shape                                            | n       | can it hide a card?                |
  * | ------------------------------------------------ | ------- | ---------------------------------- |
- * | member expression (`styles.x`, `continentMeta?.badgeClass`) | 195 | no — the CSS-Modules surface   |
- * | **single identifier** (`subregionsGridClass`)     | **25**  | **yes — the module-constant hoist** |
+ * | member expression (`styles.x`, `continentMeta?.badgeClass`) | 186 | no — the CSS-Modules surface   |
+ * | **single identifier** (`subregionsGridClass`)     | **23**  | **yes — the module-constant hoist** |
  * | ternary (`x ? styles.a : styles.b`)              | 2       | in principle; neither is card-shaped |
  *
  * The member bucket is the surviving `*.module.css` consumers. A `styles.x` lookup resolves to a
  * CSS module class, not to Tailwind tokens, so it cannot become the hoist SCOPE note 1 describes
  * — and it churns whenever any of those files is touched. Pinning the total would put a +1 hoist
- * inside 222 units of unrelated noise: a smoke alarm in the wrong room. Pinned at the
+ * inside 211 units of unrelated noise: a smoke alarm in the wrong room. Pinned at the
  * single-identifier shape, the counter moves VISIBLY by exactly +1 the day `card.tsx`'s classes
- * are hoisted into a constant. (278 before T-042 deleted `components/tools`: the measurement
- * island and its two panels held 55 `styles.x` lookups into `tools.module.css`, every one of them
- * unreachable from any route.)
+ * are hoisted into a constant.
+ *
+ * 278 / 25 before T-042, and BOTH numbers fell for the same reason — dead CSS-Module consumers
+ * left the tree, nothing was hoisted or un-hoisted. `components/tools`' island and its two panels
+ * held 55 `styles.x` lookups into `tools.module.css`; `components/home/featured-cards.tsx` held
+ * nine more into `home.module.css`, plus the two bare identifiers that took this counter 25 → 23.
+ * A ratchet that falls because unreachable code was deleted has not moved on what it measures.
  *
  * The other three shapes are watched too, one door over: {@link UNREADABLE_CLASSNAME_SHAPES} pins
  * the whole breakdown and the buckets are asserted to SUM to the population, so narrowing this
@@ -579,25 +583,25 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * surface, which is the hazard this repo already named one level up: no control may be hosted on
  * a file a later task is contracted to remove.
  *
- *   - `<div className={cardShell} />` added there — RED, `expected 26 to be 25`, the message
+ *   - `<div className={cardShell} />` added there — RED, `expected 24 to be 23`, the message
  *     listing the bare-identifier classNames by file. That is the hoist SCOPE note 1 describes,
- *     caught at +1 in 25.
- *   - `<div className={styles.probe} />` in the same place — this counter stays GREEN at 25 and
- *     only the shape breakdown moves (`member` 195 → 196). CSS-module churn no longer reaches the
- *     hoist counter, which is exactly what narrowing the population to 25 bought.
+ *     caught at +1 in 23.
+ *   - `<div className={styles.probe} />` in the same place — this counter stays GREEN at 23 and
+ *     only the shape breakdown moves (`member` 186 → 187). CSS-module churn no longer reaches the
+ *     hoist counter, which is exactly what narrowing the population to 23 bought.
  *
  * Both reverted.
  */
-export const COMPUTED_CARD_CLASSNAMES = 25;
+export const COMPUTED_CARD_CLASSNAMES = 23;
 
-/** The whole unreadable-className population by expression shape — the 197 the counter above
+/** The whole unreadable-className population by expression shape — the 188 the counter above
  * deliberately does not watch, kept visible rather than dropped. The `call` bucket held exactly
  * one element, `components/patterns/callout.tsx`'s `cn(calloutVariants({…}))`, and T-042 deleted
  * that file; an empty bucket is not listed, so a `call` reappearing fails this pin as a NEW
  * shape rather than as a moved number. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
-  ["identifier", 25],
-  ["member", 195],
+  ["identifier", 23],
+  ["member", 186],
   ["ternary", 2],
 ];
 
@@ -1264,7 +1268,7 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  *     (1, 3) are the 31 named prose/feature panels SCOPE note 1 already excludes.
  *
  * Absorbing those would mean a `StatTile` variant per geometry, each with exactly one consumer —
- * which is the thing `components/ui/orphan.test.ts` and T-036 exist to stop — and would change
+ * which is the thing `components/orphan.test.ts` and T-036 exist to stop — and would change
  * six more pages' appearance with no colour defect to justify it, unlike the three that had one.
  * So the remainder is a RATCHET at 49, not a worklist at 49.
  *

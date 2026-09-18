@@ -29,10 +29,10 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   entries and none of them says `v2`. Reading surfaces live in `app/[locale]/(site)/**` and share
   that group's layout (header, footer, skip link, ONE `<main>`); the three fullscreen game screens
   opt out by living in `(play)`. A page gets the chrome by its directory, never by importing it.
-- New UI is Tailwind + `components/ui/*`. Nine `*.module.css` files survive (`earthquake`,
-  `marine`, `climate`, `air-pollution`, `book-video`, `locator-map`, `home`, `site-search`,
-  `book-detail`); all but `home` have a consumer a route reaches, and
-  `components/orphan-stylesheets.test.ts` is what says so. They are NOT frozen — "do not touch"
+- New UI is Tailwind + `components/ui/*`. Eight `*.module.css` files survive (`earthquake`,
+  `marine`, `climate`, `air-pollution`, `book-video`, `locator-map`, `site-search`,
+  `book-detail`), each with an importer a route reaches — `components/orphan-stylesheets.test.ts`
+  is what says so, and its recorded-orphan list is empty. They are NOT frozen — "do not touch"
   is what kept `marine-attribution.module.css` shipping a mandated licence notice at 2.34:1 in
   dark mode. Their raw Terra tokens (`--color-slate`, `--color-ink`) do not redefine under
   `.dark`; converting one to bridge tokens when you touch it is a fix, not a violation.

@@ -72,7 +72,7 @@ describe("Spinner announces what is loading", () => {
  *     and open-in-new-tab work" — is exactly what does not fit there.
  *   - Separator had nothing to hold. Its docblock claimed it was "the shape 24 V2 files were
  *     hand-rolling as `border-t border-border`", and that was a category error: all 63 of
- *     those occurrences are a border ON a content element. See `components/ui/orphan.test.ts`
+ *     those occurrences are a border ON a content element. See `components/orphan.test.ts`
  *     for the measurement.
  */
 describe("the generated primitives were read before they were committed", () => {

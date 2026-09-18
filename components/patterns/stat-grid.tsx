@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
  * Each is one line to add when its grid actually arrives; `columns: "2"` proves the path, having
  * been added in this very task because `kitaplar` needed it. An unused member is never exercised
  * by a real render, so it cannot be known to fit the geometry it was measured from — which is
- * exactly what `components/ui/orphan.test.ts` and T-036 refuse.
+ * exactly what `components/orphan.test.ts` and T-036 refuse.
  *
  * `className` is `never`, for `PageContainer`'s reason: the six vertical rhythms that component
  * replaced grew because every page could write its own. A passthrough would let the same

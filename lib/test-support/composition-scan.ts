@@ -32,7 +32,7 @@ export const label = (path: string) => relative(repoRoot, path);
 /**
  * The reading and play surfaces. `design-system` is deliberately absent: it is internal
  * tooling that brings its own chrome, and including it would let showcase markup answer for
- * product markup — the shape of vacuity `components/ui/orphan.test.ts` guards against by
+ * product markup — the shape of vacuity `components/orphan.test.ts` guards against by
  * naming its roots instead of globbing `app/`.
  */
 export const PAGE_ROOTS = ["app/[locale]/(site)", "app/[locale]/(play)"] as const;
