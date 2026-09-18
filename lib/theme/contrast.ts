@@ -76,13 +76,13 @@ function parseColor(css: string): readonly [number, number, number] {
   return /^oklch\(/i.test(css.trim()) ? parseOklch(css) : parseHex(css);
 }
 
-/** WCAG 2.x relative luminance of an sRGB hex, 0 (black) to 1 (white). */
+/** WCAG 2.x relative luminance of an sRGB hex or oklch colour, 0 (black) to 1 (white). */
 export function relativeLuminance(hex: string): number {
   const [r, g, b] = parseColor(hex);
   return 0.2126 * channelToLinear(r) + 0.7152 * channelToLinear(g) + 0.0722 * channelToLinear(b);
 }
 
-/** WCAG 2.x contrast ratio between two sRGB hexes. Always >= 1, order-independent. */
+/** WCAG 2.x contrast ratio between two sRGB hexes or oklch colours. Always >= 1, order-independent. */
 export function contrastRatio(a: string, b: string): number {
   const la = relativeLuminance(a);
   const lb = relativeLuminance(b);
@@ -105,9 +105,9 @@ export function ratio(a: string, b: string): number {
  * `-strong` members exist to fix. Measuring against the untinted token would have missed it
  * entirely.
  *
- * @param fill   the translucent colour, as an sRGB hex
+ * @param fill   the translucent colour, as an sRGB hex or oklch
  * @param alpha  0-1
- * @param over   the opaque backdrop, as an sRGB hex
+ * @param over   the opaque backdrop, as an sRGB hex or oklch
  */
 export function blendOver(fill: string, alpha: number, over: string): string {
   if (alpha < 0 || alpha > 1) throw new Error(`alpha out of range: ${alpha}`);

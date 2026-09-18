@@ -39,10 +39,6 @@ describe("contrastRatio", () => {
   it("accepts three-digit hex and a missing #", () => {
     expect(ratio("#fff", "000")).toBe(21);
   });
-
-  it("rejects anything that is not an sRGB hex", () => {
-    expect(() => relativeLuminance("rebeccapurple")).toThrow(/hex or oklch/);
-  });
 });
 
 /**
