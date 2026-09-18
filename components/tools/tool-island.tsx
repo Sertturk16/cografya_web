@@ -38,6 +38,7 @@ import { findProvincePoint, type ProvincePoint } from "@/lib/tools/province-poin
 import { downloadToolPng } from "./tool-png";
 import { ToolMeasurementList } from "./tool-measurement-list";
 import { ToolMeasurementSave } from "./tool-measurement-save";
+import { Button } from "@/components/ui/button";
 import styles from "./tools.module.css";
 
 /**
@@ -1047,9 +1048,9 @@ export function ToolIsland({
                 </option>
               ))}
             </select>
-            <button type="submit" className={`btn btn-ghost ${styles.addButton}`}>
+            <Button type="submit" variant="outline" className={styles.addButton}>
               {isCoordinate ? t("showPoint") : t("addPoint")}
-            </button>
+            </Button>
           </div>
         </form>
 
@@ -1076,9 +1077,9 @@ export function ToolIsland({
               aria-describedby={fieldError !== null ? "tool-coordinate-error" : undefined}
               onChange={(event) => setDraft(event.target.value)}
             />
-            <button type="submit" className={`btn btn-ghost ${styles.addButton}`}>
+            <Button type="submit" variant="outline" className={styles.addButton}>
               {isCoordinate ? t("showPoint") : t("addPoint")}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -1163,31 +1164,21 @@ export function ToolIsland({
             does, and two controls for one action is a choice the reader has to make for no
             gain. */}
         {!isCoordinate && (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={undo}
-            disabled={points.length === 0}
-          >
+          <Button type="button" variant="outline" onClick={undo} disabled={points.length === 0}>
             {t("undo")}
-          </button>
+          </Button>
         )}
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={clear}
-          disabled={points.length === 0}
-        >
+        <Button type="button" variant="outline" onClick={clear} disabled={points.length === 0}>
           {t("clear")}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="btn btn-primary"
+          variant="primary"
           onClick={download}
           disabled={points.length < minExportPoints}
         >
           {t("download")}
-        </button>
+        </Button>
       </div>
 
       {/* UYELIK-12 plan §5.4 item 10: both new pieces render inside the SAME component that

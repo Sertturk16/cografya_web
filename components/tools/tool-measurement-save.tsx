@@ -8,6 +8,7 @@ import type { AuthSessionState } from "@/lib/auth/use-session.client";
 import { saveMeasurement, type MeasurementRecord } from "@/lib/measurements/client";
 import type { GeoPoint } from "@/lib/map/measure";
 import { LockIcon } from "@/components/lock-icon";
+import { Button } from "@/components/ui/button";
 import styles from "./tools.module.css";
 
 /**
@@ -186,35 +187,35 @@ export function ToolMeasurementSave({
         // Renders in the SAME interactive shape the authenticated/not-yet-saved branch
         // below does — never the lock-icon shape, which would assert "sign-in required"
         // before the real state is even known.
-        <button type="button" className="btn btn-primary" aria-disabled={true}>
+        <Button type="button" variant="primary" aria-disabled={true}>
           {t("saveLabel")}
-        </button>
+        </Button>
       ) : authState === "anonymous" ? (
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost"
+          variant="outline"
           aria-label={t("signInRequiredAria")}
           onClick={() => void handleClick()}
         >
           <LockIcon variant="compact" />
           {t("saveLabel")}
-        </button>
+        </Button>
       ) : saved ? (
         // A11Y96-I1 posture: NEVER a real `disabled` attribute — this is the SAME DOM node
         // the reader just clicked and is still focused; a real `disabled` yanks focus
         // silently with no AT announcement (WCAG 4.1.3).
-        <button type="button" className="btn btn-primary" aria-disabled={true}>
+        <Button type="button" variant="primary" aria-disabled={true}>
           {t("savedLabel")}
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
           type="button"
-          className="btn btn-primary"
+          variant="primary"
           aria-disabled={pending || belowMinPoints}
           onClick={() => void handleClick()}
         >
           {t("saveLabel")}
-        </button>
+        </Button>
       )}
 
       {saved && !titleMismatch && (

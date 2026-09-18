@@ -8,6 +8,7 @@ import { loadIframeApi, YT_PLAYER_STATE, type YouTubePlayer } from "@/lib/youtub
 import { playerEmbedSrc } from "@/lib/youtube/embed";
 import { failLoad, resolveVideoId, type ActiveVideo } from "./active-video";
 import type { BenchVideo } from "./bench-stage";
+import { Button } from "@/components/ui/button";
 import styles from "./book-video.module.css";
 
 /**
@@ -512,16 +513,17 @@ export function DenemeVideo({
               Name — → PR #63 review `A11Y63-I1`). A name that REPLACES the visible word breaks
               speech input: a Voice Control user says "İzle" and nothing matches. So the
               disambiguation is appended to the visible token rather than substituted for it. */}
-          <button
+          <Button
             type="button"
-            className={`btn btn-ghost ${styles.watchButton}`}
+            variant="outline"
+            className={styles.watchButton}
             data-player-open=""
             aria-busy={watchOnYoutubeLoading}
             aria-disabled={watchOnYoutubeLoading}
             aria-label={watchOnYoutubeLoading ? watchLoadingAriaLabel : watchOnYoutubeAriaLabel}
           >
             {watchOnYoutubeLoading ? watchLoadingLabel : watchOnYoutubeLabel}
-          </button>
+          </Button>
         </span>
       </div>
     );
@@ -567,9 +569,10 @@ export function DenemeVideo({
             attribute flips, and nothing here restores it. The click gate's own idempotence
             (`active-video.ts`'s `open()`) is what actually refuses a duplicate fetch — this
             attribute is the visible/AT-audible signal, not the guard. */}
-        <button
+        <Button
           type="button"
-          className={`btn btn-primary ${styles.watchButton}`}
+          variant="primary"
+          className={styles.watchButton}
           data-player-open=""
           aria-busy={resolving}
           aria-disabled={resolving}
@@ -582,7 +585,7 @@ export function DenemeVideo({
           }
         >
           {resolving ? watchLoadingLabel : watchLabel}
-        </button>
+        </Button>
       </span>
       {/* THE SIGN-IN CTA (§5.3.4) — reserved, never toggled in and out of a laid-out area.
           Absolutely positioned inside `.thumbBox` (see `.signInCta` in the CSS module), so its
