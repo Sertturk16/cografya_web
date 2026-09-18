@@ -27,16 +27,39 @@ well as six `components/patterns/` ones. Fold, do not duplicate.
 Taken after PR1, PR2 and T-041 landed. Every figure below was re-measured on this tree; the
 figures in the spec are from 2026-09-17 and several have moved.
 
-|                                                  | Measured                                                             |
-| ------------------------------------------------ | -------------------------------------------------------------------- |
-| Distinct `h1` classNames                         | **13** across 32 call sites                                          |
-| Pages with no `h1` at all                        | **5** — `giris`, `kayit`, and the 3 `(play)` screens                 |
-| Pages shipping TWO `h1`s                         | **1** — `/profil`                                                    |
-| Hero wrapper `relative z-10 max-w-3xl space-y-4` | **14**, exactly one spelling, no near-variant exists                 |
-| `components/patterns/typography.tsx` consumers   | **1** (`hakkimizda`)                                                 |
-| Hand-drawn cards                                 | **596** occurrences / **80** files / **328** distinct spellings      |
-| `components/ui/card.tsx`                         | 9 importers, 88 `<Card*>` elements                                   |
-| Stat grids                                       | **28** grids / ~**108** tiles / **25** files, **0** using `StatTile` |
+|                                                  | Measured                                                                               |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Distinct `h1` classNames                         | **13** across 32 call sites                                                            |
+| Pages with no `h1` at all                        | **5** — `giris`, `kayit`, and the 3 `(play)` screens                                   |
+| Pages shipping TWO `h1`s                         | **1** — `/profil`                                                                      |
+| Hero wrapper `relative z-10 max-w-3xl space-y-4` | **14**, exactly one spelling, no near-variant exists                                   |
+| `components/patterns/typography.tsx` consumers   | **1** (`hakkimizda`)                                                                   |
+| Hand-drawn cards                                 | ~~596 / 80 / 328~~ → **490** / **77** files / **254** spellings — corrected, see below |
+| `components/ui/card.tsx`                         | 9 importers, ~~88~~ **93** `<Card*>` elements                                          |
+| Stat grids                                       | ~~28 / 25~~ **29** grids / **108** tiles / **24** files, **0** using `StatTile`        |
+
+### ⚠️ The card figures above were wrong and were re-counted independently (2026-09-18)
+
+A second agent re-measured every card claim with a brace-balancing parser that reads
+double-quoted, template-literal and `cn()` classNames, and reconciled to 100% — all 5404 post-mask
+`className` attributes attached to an element except 9, each a `className = ""` destructuring
+default. Three of six claims were wrong.
+
+- **490 occurrences / 77 files / 254 raw spellings** (253 normalised — sorting tokens merges
+  exactly one pair, so class order is not a real duplicate source here). The distinct
+  `(file, spelling)` pair count is **318**, which is most likely where the bogus 328 came from.
+- **596 is unreachable under any rule tried.** Eight predicates, a structure-free "any string
+  literal" method and a whole-repo scope all cap out around 496; the loosest predicate reaches 582
+  but lands on 85 files / 302 spellings, so the published triple is not internally consistent with
+  any single definition.
+- **The 13 Metric Strips are NOT byte-identical.** They are **7 distinct skeletons**. Five vary the
+  value colour and three do it with raw palette tokens that have no dark-mode pair. One of the
+  thirteen is a structurally different component. Details in Task 6.
+- Confirmed exactly: the seven top-spelling counts, 108 tiles, `StatTile` usage 0, and that the
+  `kitaplar/page.tsx` comment claiming "9 sibling metric strips" really has **12**.
+
+**Every number in the PR4 tasks below is from that re-count, and all of them predate PR3 landing.
+Task 4 pins what it measures, not what is written here.**
 
 ### The two heading tiers already exist in the data
 
@@ -49,12 +72,16 @@ page the heading is data.
 
 ### The single biggest card win is not the long tail
 
-13 files render an identical 4-tile "Metric Strip" — `grid-cols-2 sm:grid-cols-4` with tiles
-spelled `p-4 rounded-2xl bg-card border border-border shadow-2xs`. That is 52 of the ~108
-stat tiles and the #1 card spelling at 52 of 596. `kitaplar/page.tsx:141` carries a 2-tile
+13 files render a 4-tile "Metric Strip" — `grid-cols-2 sm:grid-cols-4` with tiles
+spelled `p-4 rounded-2xl bg-card border border-border shadow-2xs`. That is 52 of the 108
+stat tiles and the #1 card spelling at 52 of 490. `kitaplar/page.tsx:141` carries a 2-tile
 variant whose own comment says it is "byte-identical to the 9 sibling metric strips" — there
 are 12 siblings, not 9, which is the problem this task exists to end, written down in the
 codebase by someone who was already trying.
+
+**And "identical" is itself wrong**, which is the more useful half: compared as ordered
+`tag|className` skeletons, the 13 files are **7 distinct shapes**, and only 7 of them share the
+majority skeleton. A zero-prop `<MetricStrip />` would change six pages. See Task 6.
 
 ## Global Constraints
 
@@ -276,44 +303,127 @@ sent back once in this programme and should not be again.
 
 # PR4 — `Card` variants and `StatGrid`
 
-## Task 4: Pin the card and stat-grid counters
+## Task 4: Pin the card, well and stat-grid counters
 
 **Files:** Modify `components/v2/page-composition.test.ts`
 
-- [ ] **Step 1: Add two counters at their measured values**
+**Interfaces:** Consumes `walkRenderRoots()`, `sourceOf()`, `stripComments`. Produces
+`HAND_DRAWN_CARDS`, `HAND_DRAWN_WELLS`, `STAT_GRIDS_WITHOUT_STATTILE`.
 
-Measured: **596** hand-drawn card occurrences across **80** files in **328** distinct
-spellings; **28** stat grids across **25** files, **0** using `StatTile`. The card scan must
-use a brace-balancing parser, not a naive regex — nested `cn()` calls undercount otherwise, a
-mistake made and corrected during the 2026-09-18 measurement.
+- [ ] **Step 1: Write the scanner, and say what a card IS before counting one**
 
-- [ ] **Step 2: SCOPE paragraph, mutation check, gate, commit**
+The strict predicate is: a `className` on an element that is not a `<Card*>` from
+`components/ui/card.tsx`, carrying a rounding token (`rounded-xl` / `rounded-2xl` /
+`rounded-3xl`) together with a card surface (`bg-card`, `bg-card/NN`) and/or a `border-border`
+edge. Under it the tree holds 490 occurrences. **That number is two populations, and they must
+be counted separately or the variant list will be designed from the wrong one:**
 
-Same standard as Task 1. The card counter will never reach zero; say so in the docblock and
-say what it IS for — a ratchet that can only fall.
+|                                                                                             | occurrences |
+| ------------------------------------------------------------------------------------------- | ----------- |
+| Strict predicate                                                                            | **490**     |
+| of which have a real `bg-card` surface → `HAND_DRAWN_CARDS`                                 | **308**     |
+| of which have no `bg-card` at all, qualifying only via `border-border` → `HAND_DRAWN_WELLS` | **182**     |
+
+Of the 182, **124 are `bg-muted*`**, 33 `bg-gradient-to-b`, 7 carry no background token at all.
+They read as insets and wells, not cards. Dropping them from the count entirely would hide real
+duplication behind a definition — which is PR1's defect in a new costume — so they get their own
+ratchet rather than an exclusion.
+
+The scan must use a **brace-balancing parser**, not a regex: nested `cn()` calls undercount
+otherwise. It must read `className="…"`, ``className={`…`}`` and `className={cn(…)}`. And it
+must read **attribute expressions**, not only element children: `turkiye/page.tsx:218` passes a
+complete hand-drawn card into `<V2TurkeyMapExplorer regionsSection={…}>`, and a children-only
+walk reports a falling number while the cards move into props.
+
+- [ ] **Step 2: Name the exclusions, with counts, in the docblock**
+
+Each of these is excluded because it is not a card, and each is a number a reader can check:
+
+- **8 design-system primitives** wearing card chrome — `<Input>` ×2
+  (`v2-earthquake-explorer.tsx:439`, `v2-marine-map-explorer.tsx:765`), `<select>` ×2
+  (`v2-register-card.tsx:539`, `:570`), `<input>` (`v2-books-hub.tsx:60`), `<DialogContent>`
+  (`v2-auth-dialog.tsx:49`), `<SheetTrigger>` (`v2-header.tsx:472`), `<Button>`
+  (`v2-hero.tsx:468`). `components/ui/{input,select,tabs,dialog,custom-select}.tsx` carry these
+  strings in their `cva()` bases. **PR4 must not touch them.**
+- **11 map viewports** — `rounded-2xl … border-border` around an `aspect-[…]` canvas is a
+  viewport, not a surface, and several set their own background
+  (`bg-[var(--map-sea,…)]`, `bg-[#0d1b2a]`). A `Card` variant would fight them.
+- **38 interactive carriers** — `<Link>` ×28, `<a>` ×5, `<button>` ×5. Card-shaped, but they need
+  focus-visible, hover and `group` behaviour a static panel must not carry. Out of scope for PR4;
+  if they ever get a variant it is a distinct `interactive` one, and it stays
+  `<Link className={…}>` because `Button` has no `asChild` here.
+
+- [ ] **Step 3: The stat-grid counter**
+
+**29** grids across **24** files, **108** tiles, **0** using `StatTile`. Pin all three.
+
+- [ ] **Step 4: SCOPE paragraph, mutation check, gate, commit**
+
+Same standard as Task 1, plus two rules this file learned the hard way:
+
+- **Neither card counter will ever reach zero.** Say so in the docblock and say what they ARE:
+  ratchets that can only fall. A counter whose name implies an end state it cannot reach is the
+  defect PR3 spent four review rounds removing.
+- **Do not compute a line number from `stripComments` output.** It collapses every comment to a
+  single space by design, so every line derived from it is shifted after any multi-line
+  `{/* … */}`. It already produced one wrong `file:line` during the measurement (a strip reported
+  at 126 that is at 141). Boarded as T-043; do not be its first live case.
 
 ## Task 5: `Card` variants
 
 **Files:** Modify `components/ui/card.tsx`; create `components/ui/card-variants.test.tsx`; modify the showcase.
 
-- [ ] **Step 1: Derive the variants from the measured spellings, not from taste**
+- [ ] **Step 1: Derive the variants from the measured spellings — and notice the axis**
 
-The owner's decision is that the site wins and the primitive adapts. The top spellings are the
-evidence for which variants exist:
+The owner's decision is that the site wins and the primitive adapts. The measured top spellings
+are the evidence, and all seven counts below reproduced exactly on the re-count:
 
-| Occurrences | Spelling                                                                                                                          |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 52          | `p-4 rounded-2xl bg-card border border-border shadow-2xs`                                                                         |
-| 13          | `relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg` |
-| 13          | `rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4`                                                         |
-| 12          | `p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1`                                     |
-| 12          | `p-6 rounded-2xl bg-card border border-border/80 shadow-xs space-y-3`                                                             |
-| 11          | `rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6`                                                         |
-| 10          | `rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-3.5 shadow-2xs`                                                   |
+| n   | files | Spelling                                                                                                                          |
+| --- | ----- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 52  | 13    | `p-4 rounded-2xl bg-card border border-border shadow-2xs`                                                                         |
+| 13  | 13    | `relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg` |
+| 13  | 4     | `rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4`                                                         |
+| 12  | 3     | `p-4 sm:p-5 rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-xs space-y-1`                                     |
+| 12  | 1     | `p-6 rounded-2xl bg-card border border-border/80 shadow-xs space-y-3`                                                             |
+| 11  | 4     | `rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6`                                                         |
+| 10  | 2     | `rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-3.5 shadow-2xs`                                                   |
+| 8   | 1     | `rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs`                                                                   |
+| 5   | 2     | `rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm`                                                                   |
 
-A spelling that appears once does not earn a variant. Entries 9 and 10 in the top ten
-(`flex items-center p-2 rounded-xl hover:bg-muted …`) are list rows, not cards — do not build a
-variant for them.
+**Read that list as axes, not as names.** Rows 3, 6, 8 and 9 are the _same panel_ at four
+different `space-y` / shadow settings — 37 occurrences of one surface. Rows 1 and the
+`p-3.5 rounded-2xl bg-card … shadow-2xs` entry (6 more) are the _same tile_ at two paddings. A
+list of seven named card types would encode that accident permanently; the axis that actually
+pays is **surface × spacing**.
+
+So the API follows the precedent PR1 already set in this repo rather than inventing one:
+`PageContainer` has a closed four-member rhythm union and `className?: never`. `Card` gets the
+same shape — a closed `variant` for the surface and a closed `space` for the rhythm:
+
+- `variant`: `panel` (`rounded-3xl border-border bg-card p-6 sm:p-8 shadow-sm`), `tile`
+  (`rounded-2xl bg-card border-border p-4 shadow-2xs`), `glass`
+  (`rounded-2xl border-border bg-card/85 backdrop-blur-md shadow-xs`), `feature`
+  (`relative overflow-hidden rounded-3xl border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-10 shadow-lg`).
+- `space`: `none` | `3` | `4` | `6`, mirroring the measured `space-y-*` settings.
+
+**Ruling C applies to the 52-row: it does not become a `Card` variant.** That spelling IS the
+Metric Strip tile, and Task 6 routes all 52 call sites through `StatTile`. A variant built for it
+here would have zero consumers by the end of the PR. `tile` above exists for the other
+`rounded-2xl bg-card` panels, not for the strip.
+
+**Do not chase the tail.** 186 of the 254 spellings occur exactly once; only 21 spellings (197
+occurrences) occur four or more times. Derive from those 21. The singletons are where a premature
+variant becomes a prop explosion.
+
+- [ ] **Step 1b: Two decisions while you are in `card.tsx`**
+
+`CardAction` is exported and used **nowhere** in the tree. Either give it a call site or drop it —
+`docs/design.md`'s rule from T-036 is that a component with no product call site gets deleted, not
+kept alive for the showcase. And `v2-game-screen.tsx:989` (`bg-[#dbe8ee] dark:bg-[#15232d]`) and
+`v2-world-map-explorer.tsx:531` (`bg-[#0d1b2a] dark:bg-[#070e17]`) carry hard-coded hex on
+elements the strict predicate counts as cards — the same rule violation as the palette colours in
+Task 6, in a different place. Record them; fix them only if they fall inside a file you are
+already rewriting.
 
 - [ ] **Step 2: Guard the variants against the CLI**
 
@@ -326,30 +436,78 @@ so an overwrite cannot be silent.
 
 ## Task 6: Migrate the Metric Strip family and adopt `StatGrid`
 
-**Files:** Create `components/patterns/stat-grid.tsx` + test; modify the 13 Metric Strip files and the 12 other stat-grid files; modify the counters.
+**Files:** Create `components/patterns/stat-grid.tsx` + test and a specimen + registry entry; modify `components/patterns/stat-tile.tsx`; modify the 13 Metric Strip files and the rest of the stat-grid files; modify the counters.
 
-- [ ] **Step 1: Build `StatGrid`**
+- [ ] **Step 1: Build `StatGrid`, and give `StatTile` the slot the data demands**
 
-The grid wrapper only. Tiles stay `StatTile`, which already composes `MetricValue` and
-therefore inherits its required `absent` prop — that is deliberate: `MetricValue.absent` is
-T-024's defect made impossible, and routing ~108 tiles through it is how that guarantee finally
-reaches the pages.
+`StatGrid` is the responsive grid wrapper only. Tiles stay `StatTile`, which already composes
+`MetricValue` and therefore inherits its required `absent` prop — that is deliberate:
+`MetricValue.absent` is T-024's defect made impossible, and routing 108 tiles through it is how
+that guarantee finally reaches the pages.
 
-- [ ] **Step 2: Migrate the 13 identical Metric Strips first**
+`StatTile` today renders `flex flex-col gap-1.5 rounded-2xl border border-border bg-card p-4` —
+the strip's spelling minus `shadow-2xs`. Add the `shadow-2xs`; the site wins. This is free:
+`StatTile` has **zero product consumers** today, the only files naming it being its own source and
+`components/showcase/specimens/veri.tsx`.
 
-They share one shell and one tile spelling, so they are one edit repeated 13 times and they
-carry 52 of the ~108 tiles. `kitaplar/page.tsx:141` is a 2-tile variant of the same shape whose
-comment claims 9 siblings; correct that comment as you go — it is wrong, and it is evidence.
+**It also needs a value-tone slot, because the strips are not identical.** Add a closed `tone`
+union over bridge tokens — `primary` | `secondary` | `accent` | `destructive` — never a raw class.
 
-- [ ] **Step 3: Migrate the remaining 12 grids, drive the counter to 0**
+`StatGrid` is a new `components/patterns` component, so it needs a `/design-system` specimen and a
+`components/showcase/registry.ts` entry like every other one. `registry.test.ts` enforces it.
+
+- [ ] **Step 2: Migrate the Metric Strips — 7 shapes, not 1**
+
+The 13 files carrying a 4-tile strip (13 × 4 = 52 tiles):
+
+```
+araclar/alan-hesaplama:109   araclar/koordinat-bulma:110   araclar/mesafe-olcme:108
+araclar/page:104             deniz/kiyi-tipleri:117        deniz/page:211
+deprem/fay-hatlari:117       deprem/hazirlik:107           deprem/page:134
+dunya/page:187               kitaplar/[slug]/page:251      oyun/page:98
+turkiye/page:178
+```
+
+Seven share the majority skeleton: `araclar` ×4, `dunya/page`, `oyun/page`, `turkiye/page`.
+The other six diverge, and how they diverge is what decides the API:
+
+- `deniz/kiyi-tipleri` — tile 5 `text-secondary` → **`text-teal-600`**, tile 11 `text-primary` → `text-destructive`
+- `deniz/page` — tile 5 `text-secondary` → **`text-cyan-600`**
+- `deprem/fay-hatlari` — tile 2 → **`text-red-600`**, tile 5 → **`text-blue-600`**, tile 8 → **`text-emerald-600`**
+- `deprem/hazirlik` — tile 5 → `text-destructive`, tile 8 → `text-secondary`
+- `deprem/page` — tile 2 → `text-destructive`, tile 5 → `text-primary`, tile 8 → `text-secondary`
+- `kitaplar/[slug]/page` — **structurally a different component**: it inverts the pair (small muted
+  label above, bold value below) and drops `mt-8`
+
+**⚠️ Five raw palette tokens with no dark-mode pair.** `text-teal-600`, `text-cyan-600`,
+`text-red-600`, `text-blue-600` and `text-emerald-600` break the repo's colour rule and have no
+`dark:` counterpart — the same class of defect as the `marine-attribution` contrast bug. Mapping
+them onto `tone` bridge tokens is the reason to do this migration now: doing the rewrite without
+fixing them would bake off-token colours into a shared component. **That makes this a visible
+change, not a pure refactor, and this PR may not claim "no card changed appearance."**
+
+**Leave `kitaplar/[slug]/page.tsx` out of this step.** It is a different component and folding it
+in is a visual change with no upside. Say in the report that it is deliberately left; a later task
+can decide whether the inverted pair earns its own tile.
+
+`kitaplar/page.tsx:141` is a 2-tile variant of the same shell (its tiles carry an extra
+`sm:col-span-2`) whose comment claims **9** siblings. It has **12**. Correct the comment as you go
+— it is wrong, and it is the evidence this whole task rests on.
+
+- [ ] **Step 3: Migrate the remaining grids, drive the counter down**
+
+29 grids across 24 files, 108 tiles total. After the strips, what is left is the long tail: report
+where each one lands and justify anything that does not become `StatGrid` + `StatTile` rather than
+quietly leaving it out of the count.
 
 - [ ] **Step 4: Full gate plus the visual round**
 
-`pnpm build` included. Playwright at 320/360/390/desktop in both themes, PNGs persisted. The
-claim this PR will want to make is "no card changed appearance" — that has to be measured
-against before/after screenshots on a representative set, not asserted. Stock `Card` is
-`rounded-xl` + `ring-1 ring-foreground/10`; the site's language is `rounded-2xl` + `border` +
-`shadow`. If the variants are written wrong the difference is visible and no test can see it.
+`pnpm build` included. Playwright at 320/360/390/desktop in both themes, PNGs persisted with their
+paths given. Stock `Card` is `rounded-xl` + `ring-1 ring-foreground/10`; the site's language is
+`rounded-2xl` + `border` + `shadow`. If a variant is written wrong the difference is visible and no
+test can see it, so the before/after has to be measured on a representative set — and the five
+re-toned strips have to be measured deliberately, in both themes, because those are the ones that
+are _supposed_ to change.
 
 ---
 
