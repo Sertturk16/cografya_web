@@ -361,7 +361,8 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *   - a NOVEL SPELLING probe (a card class string occurring nowhere else) — RED on
  *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 239 to be 238` with `HAND_DRAWN_CARDS` RED at
  *     196 alongside. That is the spelling counter's first mutation check; it had none when it was
- *     introduced, which is the gap re-review named. *
+ *     introduced, which is the gap re-review named.
+ *
  * SUPERSEDED AGAIN — T-035 PR5 Task 9, and this time the movement is a REMOVAL rather than a
  * re-classification. The six hand-written FAQ blocks were converged onto
  * `components/patterns/faq-section.tsx`, whose items are `<Card variant="panel">` rather than a

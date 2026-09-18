@@ -44,16 +44,41 @@ const NEVER_WALKED = new Set(["node_modules", ".next", ".git", "coverage", "dist
  * The generated files, DERIVED from `.prettierignore` rather than retyped.
  *
  * They are machine-written and compared byte for byte by their own `generate:*:check` gates, so
- * this test must not be the thing that decides what a generator may emit. Deriving the list also
- * means a sixth generated artifact is skipped by being added there, with no edit here — the same
- * "a guard's population is derived, not written" rule the composition scanner's guards follow.
+ * this test must not be the thing that decides what a generator may emit. Deriving the list means
+ * a sixth generated artifact written as a BARE PATH (`lib/map/foo.generated.ts`) or as a
+ * DIRECTORY (`openapi/`, with or without the trailing slash) is skipped by being added there,
+ * with no edit here.
+ *
+ * GLOBS ARE NOT SUPPORTED, and that is a real limit rather than an oversight. Prettier honours
+ * `**\/*.generated.ts`; this parser would turn that into a literal path prefix matching nothing,
+ * so such an entry would be silently ignored here and the file it protects would be walked as
+ * source. Nothing in `.prettierignore` uses one today. If one is ever added, this function has to
+ * learn about it — the failure mode is a false FAILURE (a generated file scanned and flagged),
+ * which is the safe direction but still a puzzle for whoever hits it.
+ *
+ * THE TRAILING SLASH IS STRIPPED BEFORE `join`, and that line is the whole fix for a bug that
+ * made every directory entry inert. `join(repoRoot, "coverage/")` PRESERVES the trailing
+ * separator, so the prefix was `<repo>/coverage/`; the walker then tested `full === prefix`
+ * (never true, walked paths carry no trailing slash) and ``full.startsWith(`${prefix}/`)``, which
+ * asks for `<repo>/coverage//` and can never match either. Every one of the six directory-style
+ * entries — `.next/`, `out/`, `build/`, `coverage/`, `node_modules/`, `openapi/` — was therefore
+ * doing nothing. Four are saved by {@link NEVER_WALKED} and `openapi/` by not being under a
+ * source root, which is why nothing failed; the guard was simply not the thing providing the
+ * protection it claimed.
  */
+function parsePrettierIgnore(contents: string): string[] {
+  return (
+    contents
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith("#"))
+      // `replace(/\/+$/, "")` BEFORE `join`, not after: see the docblock above.
+      .map((entry) => join(repoRoot, entry.replace(/\/+$/, "")))
+  );
+}
+
 function prettierIgnoredPrefixes(): string[] {
-  return readFileSync(join(repoRoot, ".prettierignore"), "utf8")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith("#"))
-    .map((entry) => join(repoRoot, entry));
+  return parsePrettierIgnore(readFileSync(join(repoRoot, ".prettierignore"), "utf8"));
 }
 
 function walkSource(dir: string, ignored: readonly string[]): string[] {
@@ -86,6 +111,47 @@ function controlBytesIn(bytes: Uint8Array): string[] {
   }
   return found;
 }
+
+describe("the .prettierignore parser", () => {
+  // The seam this block exists for: `parsePrettierIgnore` takes TEXT, so a directory-style entry
+  // can be driven without touching the real `.prettierignore` or the walk.
+
+  it("honours a directory-style entry, trailing slash or not", () => {
+    const withSlash = parsePrettierIgnore("openapi/\n");
+    const without = parsePrettierIgnore("openapi\n");
+    expect(withSlash).toEqual(without);
+    expect(withSlash).toEqual([join(repoRoot, "openapi")]);
+    // The bug, pinned by its consequence rather than by its cause: the walker asks
+    // ``full.startsWith(`${prefix}/`)``, so a prefix that kept its slash tested for `//` and
+    // matched nothing. A file inside the directory must match the prefix the parser returns.
+    const prefix = withSlash[0]!;
+    const inside = join(repoRoot, "openapi", "openapi.json");
+    expect(inside === prefix || inside.startsWith(`${prefix}/`)).toBe(true);
+  });
+
+  it("would NOT have matched before the fix — the control", () => {
+    // The old expression, reproduced: `join` preserves the trailing separator.
+    const unstripped = join(repoRoot, "openapi/");
+    const inside = join(repoRoot, "openapi", "openapi.json");
+    expect(inside === unstripped || inside.startsWith(`${unstripped}/`)).toBe(false);
+  });
+
+  it("keeps bare file paths exactly as written, and drops comments and blanks", () => {
+    expect(parsePrettierIgnore("# a comment\n\nlib/api/schema.ts\n   \n# another\n")).toEqual([
+      join(repoRoot, "lib/api/schema.ts"),
+    ]);
+  });
+
+  it("really is the list the walk uses — anti-vacuity against the live file", () => {
+    // Every directory entry in the real `.prettierignore` is now slash-free, so none of them is
+    // the inert shape above. If someone reverts the strip, this fails on the live file.
+    const prefixes = prettierIgnoredPrefixes();
+    expect(prefixes.length).toBeGreaterThan(5);
+    expect(prefixes.every((prefix) => !prefix.endsWith("/"))).toBe(true);
+    expect(prefixes).toContain(join(repoRoot, "openapi"));
+    expect(prefixes).toContain(join(repoRoot, "lib/api/schema.ts"));
+  });
+});
 
 describe("committed source holds no control characters", () => {
   it("no file under the source roots contains a byte below 0x20 bar tab, LF and CR", () => {

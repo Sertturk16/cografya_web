@@ -179,11 +179,12 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "The FAQ ACCORDION, which `/deniz/karadeniz` does not have. T-035 PR5 moved this block " +
       'onto `FaqSection`\'s `mechanism="accordion"`, and an accordion trigger is the one FAQ ' +
       "shape with a horizontal budget: an unbroken Turkish question and a chevron on one row, " +
-      "inside a button that must still fit at 320. The basin route below measures " +
-      "`marine.module.css` and the licence notice; neither of those reaches this page's " +
-      "accordion. `tr` only — the block is gated to Turkish because `messages/en.json` has no " +
-      "`Deniz.q*`, so an EN visit would measure a page with no FAQ on it at all. No " +
-      "`marine.module.css` here either — see the `sea` entry below for where it really renders.",
+      "inside a button that must still fit at 320. The `sea` route ABOVE measures the licence " +
+      "notice, which does not reach this page's accordion. Neither route measures " +
+      "`marine.module.css`: no `deniz` route imports it — the claim moved to `home` and " +
+      "`province`, which do. `tr` only — the block is gated to Turkish because " +
+      "`messages/en.json` has no `Deniz.q*`, so an EN visit would measure a page with no FAQ " +
+      "on it at all.",
   },
   {
     id: "earthquake",

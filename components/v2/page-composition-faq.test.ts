@@ -475,9 +475,18 @@ function surfaceFilesRenderingFaqSection(): string[] {
  *      {@link FAQ_JSONLD_WITHOUT_MARKUP}, where it would read as markup MISSING and fail loudly,
  *      which is the safe direction. There is nothing left to miss on this surface today: the
  *      population is empty, and a regression ARRIVING as a `.map(` is the shape these counters
- *      catch. One that arrives as seven copied `<div>`s is caught by
- *      {@link SURFACE_FILES_RENDERING_FAQSECTION} falling instead, which is precisely why a zero
- *      pin needed a liveness half rather than more scanner.
+ *      catch.
+ *
+ *      THE LIVENESS HALF COVERS LESS OF THIS THAN IT LOOKS. If one of the nine files stops
+ *      rendering `<FaqSection>` and hand-copies `<div>`s instead,
+ *      {@link SURFACE_FILES_RENDERING_FAQSECTION} falls and that IS caught. But a TENTH page
+ *      arriving with seven hand-copied `<div>` pairs — no `.map(`, no `faqPageJsonLd` call, no
+ *      `<FaqSection>` to lose — raises nothing anywhere in this file: the spelling counters need a
+ *      `.map(`, the pairing counter needs a schema call, and the liveness counter only ever goes
+ *      UP when a page adopts. Such a page is a new hand-written FAQ surface that no counter here
+ *      sees. That is the same limit note 11 states from the other side — an adoption floor, not a
+ *      rendering proof — and closing it would mean a predicate that recognises a FAQ block without
+ *      a `.map(`, which is a different scanner from this one.
  *   2. **The question and the answer are located by a MEMBER NAME.** `.question` and `.answer` are
  *      what all six blocks happen to call their fields. A block whose type spells them `soru` and
  *      `cevap`, or which destructures `const { question, answer } = item` and writes a bare
@@ -872,7 +881,7 @@ describe("the FAQ block scanner", () => {
     const mapOpen = map!.index + map![0].length - 1;
     const mapClose = matchingParen(masked, mapOpen);
 
-    // `(item, index) =>` then the ternary. The arrow ends the parameter list, so the first `?`
+    // `(item) =>` then the ternary. The arrow ends the parameter list, so the first `?`
     // after it is the conditional's.
     const arrow = masked.indexOf("=>", mapOpen);
     const testStart = skipSpace(arrow + 2);

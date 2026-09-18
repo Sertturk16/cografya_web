@@ -111,9 +111,9 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
 Two directories, and the boundary is operational rather than taxonomic:
 
 - **`components/ui/`** — output of `shadcn add` (`base-nova` style), Terra-themed. CLI-managed.
-- **`components/patterns/`** — written here: `typography` (with `Kbd`), `stat-tile`,
+- **`components/patterns/`** — written here: `typography` (with `Kbd`), `stat-tile`, `stat-grid`,
   `metric-value`, `empty-state`, `callout`, `form-field`, `map-attribution`, `map-legend`,
-  `theme-pair`, `page-container`.
+  `theme-pair`, `page-container`, `page-hero`, `breadcrumbs`, `breadcrumbs-nav`, `faq-section`.
 
 The reason is concrete: `shadcn add` **overwrites** files in the configured `ui` alias — it
 asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living
@@ -165,6 +165,12 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   to separate them by adding decoration to Callout (a side-tab, then a hairline plus a tint)
   and left them 2px of radius apart. Do not re-add a fill; `patterns-contract.test.ts` fails
   if you do.
+- **`Accordion`: a closed panel STAYS in the DOM.** It is hidden with the `hidden` attribute —
+  `hidden=""` on the server, swapped to `hidden="until-found"` after hydration — so the answer is
+  in the document, findable by Ctrl+F, and honest to carry `FAQPage` markup. The Base UI rebuild
+  dropped `type`/`collapsible`: the control is `multiple` plus an **array** `defaultValue`. A
+  `className` on `AccordionContent` lands on the INNER wrapper, never on the hidden panel — that is
+  load-bearing, because padding on the panel itself gives a closed item a measurable open height.
 - **`MetricValue.absent` is required.** There is no safe default. It never renders `0` and
   never a bare dash — a dash sits in the same slot a number would and reads as a measurement.
   This is T-024's defect made impossible rather than re-fixed per page.
