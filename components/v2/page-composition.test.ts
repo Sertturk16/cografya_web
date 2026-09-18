@@ -3293,14 +3293,27 @@ const CARD_ROUNDING = new Set(["rounded-xl", "rounded-2xl", "rounded-3xl"]);
 
 type CardKind = "card" | "well";
 
-function cardKind(element: ScannedElement): CardKind | null {
-  if (CARD_PRIMITIVE_TAGS.has(element.tag)) return null;
+/**
+ * The TOKEN half of the predicate, with no opinion about the tag.
+ *
+ * Split out of {@link cardKind} so the tag exclusion is the ONLY difference between the
+ * hand-drawn counters and {@link STOCK_CARD_SURFACE_OVERRIDES} below. Two copies of "rounding plus
+ * `bg-card` and/or `border-border`" would drift, and the second counter exists precisely to watch
+ * the door the first one's tag rule opens — a divergence between them would be the hole reopening
+ * inside the thing built to observe it.
+ */
+function cardSurfaceKind(element: ScannedElement): CardKind | null {
   const tokens = tokensOf(element.spelling);
   if (!tokens.some((token) => CARD_ROUNDING.has(token))) return null;
   const surface = tokens.includes("bg-card");
   const edge = tokens.includes("border-border");
   if (!surface && !edge) return null;
   return surface ? "card" : "well";
+}
+
+function cardKind(element: ScannedElement): CardKind | null {
+  if (CARD_PRIMITIVE_TAGS.has(element.tag)) return null;
+  return cardSurfaceKind(element);
 }
 
 function handDrawnByFile(): Map<string, { cards: number; wells: number }> {
@@ -3428,9 +3441,15 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *      removes nothing — measured after the adoption, not assumed: neutering the tag set fails its
  *      own control and moves no counter. The reason it stays inert is that a variant card writes
  *      NO `className` at all (`className?: never`), so it is invisible to this scanner by the
- *      no-classes rule, not by the tag rule. The tag rule is what stops a
- *      `<Card className="rounded-2xl bg-card …">` override re-entering the count — which
- *      `components/ui/card.tsx`'s type now forbids on the variant form anyway.
+ *      no-classes rule, not by the tag rule.
+ *
+ *      **What the tag rule actually does, stated correctly (Ruling AV).** It keeps a
+ *      `<Card className="rounded-2xl bg-card …">` override from RE-ENTERING the hand-drawn count;
+ *      it does not DETECT one. `cardKind` declines to look at any `<Card*>` element, so such an
+ *      override would move no counter here at all — and since Ruling AS closed the variant form,
+ *      the stock branch is the one remaining way to hand-draw a card surface unobserved. That door
+ *      is watched by {@link STOCK_CARD_SURFACE_OVERRIDES}, which applies this section's own token
+ *      test exactly where this rule declines to: exclusion here, observation there.
  *   5. **The token list is closed, and the residue has a number.** `rounded-lg` is not a card
  *      rounding (admitting it reads 496 / 79 files over the pre-exclusion surface), and
  *      `bg-muted`, `bg-background` and `bg-popover` are not card surfaces unless a `border-border`
@@ -3493,6 +3512,126 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 export const HAND_DRAWN_CARDS = 241;
 
 export const HAND_DRAWN_WELLS = 168;
+
+/**
+ * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
+ *
+ * `cardKind` returns `null` for every `<Card*>` element, whatever its className says (SCOPE note 4
+ * above). That exclusion is right — a primitive doing its job is not a hand-drawn card — but it is
+ * a rule about the TAG, so it says nothing about what the className on that tag contains. Task 5's
+ * Ruling AS closed the variant form (`className?: never`, plus a runtime strip and a spread order
+ * that cannot be defeated — `components/ui/card-variants.test.tsx`), which leaves exactly one way
+ * left to hand-draw a card surface without any counter moving:
+ *
+ *     <Card className="rounded-2xl bg-card border border-border p-4">…</Card>
+ *
+ * That is the STOCK branch of `components/ui/card.tsx`, which still takes
+ * `React.ComponentProps<"div">` and merges whatever it is given. It compiles, it renders a
+ * hand-drawn card wearing a primitive's tag, and before this counter nothing in the repo observed
+ * it: `HAND_DRAWN_CARDS` declines to look because of the tag, and `components/ui/**` is outside
+ * the walk anyway. A documented hole nothing observes is the defect this whole programme keeps
+ * having to re-fix; this is the observation.
+ *
+ * ## What it counts
+ *
+ * Elements on {@link walkCardSurface}'s surface whose tag IS one of {@link CARD_PRIMITIVE_TAGS} and
+ * whose readable className satisfies {@link cardSurfaceKind} — the identical token test the
+ * hand-drawn counters use, applied exactly where they decline to look. Both kinds are counted
+ * together and neither is split out: the split above exists because a `bg-muted` well wants a
+ * different variant from a `bg-card` panel, and a surface override on a primitive is the same
+ * defect either way.
+ *
+ * All six tags, not just `<Card>`: `<CardContent className="rounded-2xl bg-card border-border">`
+ * walks through the same door. And every hit is necessarily a STOCK-branch call — a variant card
+ * cannot carry a `className` at all, so `<Card variant="panel" className="…">` is a type error
+ * before it is a counter error.
+ *
+ * ## Why 0 is the right pin, and what a non-zero reading would mean
+ *
+ * MEASURED 2026-09-18 after the adoption: **0**, across 170 `<Card*>` elements in 37 files. This
+ * is a counter that should stay at 0 rather than a ratchet that falls: unlike `HAND_DRAWN_CARDS`,
+ * which names a real population being worked down, every member of this one is a primitive being
+ * used to re-spell the thing the primitive exists to provide. A rise is not progress to be
+ * re-pinned, it is a call site to convert to a variant — or, if it genuinely needs width or
+ * layout, to wrap.
+ *
+ * SCOPE, inherited from the scanner and worth stating because the counter reads 0: this sees
+ * literal `className` strings only. `<Card className={SHELL}>` with the tokens in a module
+ * constant is invisible here exactly as it is to `HAND_DRAWN_CARDS`, and is watched — as a
+ * population, not per element — by {@link COMPUTED_CARD_CLASSNAMES}.
+ *
+ * MUTATION-CHECKED 2026-09-18, each reverted. All three probes on
+ * `components/patterns/theme-pair.tsx`, a file neither Task 5 nor Task 6 touches:
+ *
+ *   - `<Card className="rounded-2xl bg-card border border-border p-4" />` — RED,
+ *     `expected [ Array(1) ] to have a length of +0 but got 1`, the message printing
+ *     `components/patterns/theme-pair.tsx <Card> :: rounded-2xl bg-card border border-border p-4`,
+ *     i.e. the file, the tag AND the spelling to convert;
+ *   - the same probe with `bg-muted/30` in place of `bg-card` — also RED, same shape: it qualifies
+ *     through `border-border`, which is the "both kinds" rule above doing its job;
+ *   - `<Card className="p-4 max-w-sm" />` — GREEN. A primitive taking an ordinary spacing or width
+ *     override is legitimate and must not be caught, or the counter becomes noise and gets muted.
+ */
+export const STOCK_CARD_SURFACE_OVERRIDES = 0;
+
+function stockCardSurfaceOverrides(): string[] {
+  const hits: string[] = [];
+  for (const file of walkCardSurface()) {
+    for (const element of jsxElementsOf(file)) {
+      if (!CARD_PRIMITIVE_TAGS.has(element.tag)) continue;
+      if (cardSurfaceKind(element) === null) continue;
+      hits.push(`${label(file)} <${element.tag}> :: ${element.spelling}`);
+    }
+  }
+  return hits.sort();
+}
+
+describe("the card primitive is not used to hand-draw a card surface", () => {
+  it("the number of stock-branch surface overrides is exactly the recorded number", () => {
+    const hits = stockCardSurfaceOverrides();
+    expect(
+      hits,
+      `<Card*> elements whose className re-spells a card surface — convert to a variant, or wrap if it needs layout:\n${hits
+        .map((row) => `  ${row}`)
+        .join("\n")}`,
+    ).toHaveLength(STOCK_CARD_SURFACE_OVERRIDES);
+  });
+
+  it("the scan looked at real <Card*> elements — anti-vacuity", () => {
+    // A counter that reads 0 because it found nothing to look at is worthless. The adoption put
+    // 77 variant cards on this surface, so the tag is not going away; asserted as a floor rather
+    // than a total so ordinary call-site churn does not touch it.
+    const cardTags = walkCardSurface().flatMap((file) =>
+      jsxElementsOf(file).filter((element) => CARD_PRIMITIVE_TAGS.has(element.tag)),
+    );
+    expect(cardTags.length).toBeGreaterThan(100);
+  });
+
+  it("fires on a stock override and not on an ordinary one — the predicate, both ways", () => {
+    const override = scanJsx('<Card className="rounded-2xl bg-card border border-border p-4" />');
+    expect(cardSurfaceKind(override[0]!)).toBe("card");
+    expect(cardKind(override[0]!)).toBe(null); // …which is why this counter has to exist.
+
+    const well = scanJsx(
+      '<CardContent className="rounded-2xl bg-muted/30 border border-border" />',
+    );
+    expect(cardSurfaceKind(well[0]!)).toBe("well");
+
+    // Legitimate: a primitive with a spacing or width override is not a re-spelled surface.
+    expect(cardSurfaceKind(scanJsx('<Card className="p-4 max-w-sm" />')[0]!)).toBe(null);
+    expect(cardSurfaceKind(scanJsx('<Card className="rounded-2xl" />')[0]!)).toBe(null);
+  });
+
+  it("the two predicates differ ONLY by the tag rule — the split's own guard", () => {
+    // If `cardKind` ever stops delegating, the hand-drawn counters and this one start disagreeing
+    // about what a card surface is, and the door reopens inside the check built to watch it.
+    const probe = scanJsx('<div className="rounded-2xl bg-card border border-border" />')[0]!;
+    expect(cardKind(probe)).toBe(cardSurfaceKind(probe));
+    const tagged = scanJsx('<Card className="rounded-2xl bg-card border border-border" />')[0]!;
+    expect(cardKind(tagged)).toBe(null);
+    expect(cardSurfaceKind(tagged)).not.toBe(null);
+  });
+});
 
 /**
  * The size of SCOPE note 1's hole, in the ONE shape that can actually hide a card.
