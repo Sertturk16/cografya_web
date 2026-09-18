@@ -78,8 +78,17 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
    * `MarineExplainer` carries an `id` alongside `question`/`answer`; `FaqEntry` needs only the
    * latter two, and a wider object satisfies it, so the array is passed through untouched rather
    * than projected — a projection here would be a second place for the order to drift.
+   *
+   * THE `tr` GATE IS ON THE DATA, NOT ONLY ON THE MARKUP, and that is the whole reason this is a
+   * conditional rather than a plain call. `messages/en.json` carries none of these sixteen keys,
+   * and next-intl's default handler for a missing key is a `console.error` plus the dotted key
+   * rendered in place of the copy — it does not throw. Building the array unconditionally and
+   * gating only the JSX therefore rendered nothing on `/en/sea` while still resolving all sixteen,
+   * so every prerender and every ISR revalidation of that route logged sixteen `MISSING_MESSAGE`
+   * lines for copy the page had already decided not to show. Invisible to the reader, noisy in the
+   * server log, and paid again on each revalidate. The gate has to sit where the READ is.
    */
-  const marineFaqs = buildMarineExplainers(t);
+  const marineFaqs = locale === "tr" ? buildMarineExplainers(t) : [];
 
   // Fetch points, live overview, layers and provinces
   const [rawPoints, rawOverview, rawLayers, rawProvinces] = await Promise.all([
