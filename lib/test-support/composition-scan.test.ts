@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { stripComments } from "@/lib/test-support/strip-comments";
+import { resolveSpecifier } from "@/lib/test-support/import-closure";
 import {
   CARD_FIXTURE,
   COMPUTED_CLASSNAME,
@@ -36,6 +36,114 @@ import {
  * semantics, the binding resolver's re-export chase and cycle guard, and the injection harness's
  * cache invalidation.
  * ---------------------------------------------------------------------------------------- */
+
+/* =============================================================================================
+ * THE GUARDED POPULATION — DERIVED, NOT WRITTEN (RULING BJ)
+ *
+ * Two source guards below grep the scanner's consumers: one for `literalsIn(…, false)`, one for a
+ * module-scope cache built outside the factories. Both first shipped iterating a hand-written
+ * four-file list, and review reproduced the hole in one edit: a FIFTH file importing `literalsIn`
+ * and calling it with `false` left the suite green at 29 passed.
+ *
+ * The exposure was small. The SHAPE is why it is fixed: this is the third appearance in this
+ * programme of a guard whose population is written rather than derived — Task 4 pinned the
+ * exclusion populations by COUNT rather than membership, Task 6's `isGridShell` resolved ONE hop
+ * rather than chasing re-exports, and now this. Each was correct on the day it was written and
+ * blind to the next arrival, and each was found by someone re-deriving what the guard should have
+ * derived itself.
+ *
+ * So the population is computed the way the scanner computes everything else: **every file in the
+ * repo whose import specifiers resolve to `composition-scan.ts`**, plus the module itself. A fifth
+ * suite is covered by the act of importing the scanner, which is the only way it can use it — so
+ * the guards self-extend and there is no list to forget. `readSource` is the reader throughout, so
+ * the derivation and both guards are drivable by injection, and "the guarded population is DERIVED
+ * from the import" below drives exactly the fifth-file case review reproduced.
+ * ========================================================================================== */
+
+const SCANNER_MODULE = join(repoRoot, "lib/test-support/composition-scan.ts");
+
+/** This file: the one legitimate `balanceHoles: false` caller, and the only exemption there is. */
+const THIS_FILE = join(repoRoot, "lib/test-support/composition-scan.test.ts");
+
+/**
+ * Every `.ts`/`.tsx` in the repo, TEST FILES INCLUDED. `import-closure.ts`'s own `walk` drops
+ * anything matching `.test.`, which is exactly wrong here: every consumer of this module is a test
+ * file. Build output and dependencies are skipped by name rather than by a list of roots, so a
+ * consumer added in a directory nobody thought of is still found.
+ */
+const NOT_SOURCE = new Set([".git", ".next", "node_modules", "public", "coverage", "dist"]);
+
+function walkSources(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.isDirectory()) {
+      return NOT_SOURCE.has(entry.name) ? [] : walkSources(join(dir, entry.name));
+    }
+    return entry.name.endsWith(".ts") || entry.name.endsWith(".tsx") ? [join(dir, entry.name)] : [];
+  });
+}
+
+const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*)["']([^"']+)["']/g;
+
+/** Does `file` import the scanner? Read through `readSource`, so a fixture can be injected. */
+function importsScannerModule(file: string): boolean {
+  return [...readSource(file).matchAll(SPECIFIER)].some(
+    (match) => resolveSpecifier(file, match[1]!) === SCANNER_MODULE,
+  );
+}
+
+/**
+ * The scanner plus every file that imports it — what both guards below cover.
+ *
+ * The raw-text prefilter is a speed measure and cannot narrow the answer: any specifier that
+ * resolves to this module must spell `composition-scan` in the specifier itself. It runs on RAW
+ * text while {@link importsScannerModule} runs on comment-stripped text, so a commented-out import
+ * passes the prefilter and is then correctly rejected.
+ */
+function guardedFiles(): string[] {
+  const importers = walkSources(repoRoot)
+    .filter((file) => file !== SCANNER_MODULE)
+    .filter((file) => readFileSync(file, "utf8").includes("composition-scan"))
+    .filter(importsScannerModule)
+    .sort();
+  return [SCANNER_MODULE, ...importers];
+}
+
+/** `literalsIn(expr, false)` — the pre-merge branch, legitimate only in this file. */
+const UNBALANCED_CALL = /literalsIn\([^()]*,\s*false\s*\)/;
+
+function unbalancedCallers(files: readonly string[]): string[] {
+  return files.filter((file) => UNBALANCED_CALL.test(readSource(file))).map(label);
+}
+
+/** Module-scope `const X … = new Map…`, which is what an unregistered memo looks like. */
+const DECLARED_MAP = /^(?:export\s+)?const\s+([A-Za-z0-9_$]+)\s*(?::[^=\n]*)?=\s*new\s+Map\b/gm;
+
+/** Anything whose name says cache, whatever it is assigned. */
+const DECLARED_CACHE =
+  /^(?:export\s+)?const\s+([A-Za-z0-9_$]*[Cc]ache[A-Za-z0-9_$]*)\s*(?::[^=\n]*)?=\s*([A-Za-z0-9_$]+)/gm;
+
+/** Module-scope Maps that are fixtures, not memos. A new one has to be argued for here. */
+const NOT_A_CACHE = new Set(["STAT_GRID_BINDING"]);
+
+function unregisteredCaches(files: readonly string[]): string[] {
+  const offenders: string[] = [];
+  for (const file of files) {
+    const source = readSource(file);
+    for (const match of source.matchAll(DECLARED_MAP)) {
+      const name = match[1]!;
+      if (!NOT_A_CACHE.has(name)) {
+        offenders.push(`${label(file)} — ${name} = new Map(): use perFileCache() or graphCache()`);
+      }
+    }
+    for (const match of source.matchAll(DECLARED_CACHE)) {
+      const factory = match[2]!;
+      if (factory !== "perFileCache" && factory !== "graphCache") {
+        offenders.push(`${label(file)} — ${match[1]!} = ${factory}(…): not a registered cache`);
+      }
+    }
+  }
+  return offenders;
+}
 
 /* =============================================================================================
  * THE ONE EXTRACTOR
@@ -120,32 +228,21 @@ describe("the literal extractor's hole semantics", () => {
    * THE GUARD THAT KEEPS THE MERGE MERGED.
    *
    * `balanceHoles: false` is the pre-merge behaviour, kept only so the three manglings above stay
-   * executable. If a counter ever reaches for it the merge has been undone, so the escape hatch is
-   * pinned to this file by name.
+   * executable. If a counter ever reaches for it the merge has been undone. The population it
+   * checks is DERIVED — see Ruling BJ at the top of this file — so a consumer that does not exist
+   * yet is covered by the act of importing the scanner.
    */
   it("no counter passes `balanceHoles: false` — the pre-merge branch is test-only", () => {
-    const UNBALANCED_CALL = /literalsIn\([^()]*,\s*false\s*\)/;
     // Positive control first: a pattern that fires on nothing proves nothing about the files.
     expect(UNBALANCED_CALL.test("const x = literalsIn(expression, false);")).toBe(true);
     expect(UNBALANCED_CALL.test("const x = literalsIn(expression, true);")).toBe(false);
 
-    const callers = [
-      "lib/test-support/composition-scan.ts",
-      "components/v2/page-composition-containers.test.ts",
-      "components/v2/page-composition-headings.test.ts",
-      "components/v2/page-composition-cards.test.ts",
-    ];
-    const sources = callers.map(
-      (file) => [file, stripComments(readFileSync(join(repoRoot, file), "utf8"))] as const,
-    );
-    // Anti-vacuity: the files really were read and really do call the extractor.
-    expect(sources.filter(([, source]) => source.includes("literalsIn(")).length).toBeGreaterThan(
-      0,
-    );
+    const covered = guardedFiles().filter((file) => file !== THIS_FILE);
+    // Anti-vacuity: the derivation really found the consumers, and they really call the extractor.
+    expect(covered.map(label)).toContain("components/v2/page-composition-headings.test.ts");
+    expect(covered.some((file) => readSource(file).includes("literalsIn("))).toBe(true);
 
-    const usingFalse = sources
-      .filter(([, source]) => UNBALANCED_CALL.test(source))
-      .map(([file]) => file);
+    const usingFalse = unbalancedCallers(covered);
     expect(
       usingFalse,
       `files calling literalsIn(…, false) outside this test — the merge has been undone:\n${usingFalse
@@ -435,40 +532,63 @@ describe("the injection harness invalidates every registered cache", () => {
    * identifier, which is what a reader needs to find it.
    */
   it("no module-scope cache is built outside the two factories", () => {
-    const FILES = [
-      "lib/test-support/composition-scan.ts",
-      "components/v2/page-composition-containers.test.ts",
-      "components/v2/page-composition-headings.test.ts",
-      "components/v2/page-composition-cards.test.ts",
-    ];
-    /** Module-scope `const X … = new Map…`, which is what an unregistered memo looks like. */
-    const DECLARED_MAP = /^(?:export\s+)?const\s+([A-Za-z0-9_$]+)\s*(?::[^=\n]*)?=\s*new\s+Map\b/gm;
-    /** Anything whose name says cache, whatever it is assigned. */
-    const DECLARED_CACHE =
-      /^(?:export\s+)?const\s+([A-Za-z0-9_$]*[Cc]ache[A-Za-z0-9_$]*)\s*(?::[^=\n]*)?=\s*([A-Za-z0-9_$]+)/gm;
-    /** Module-scope Maps that are fixtures, not memos. A new one has to be argued for here. */
-    const NOT_A_CACHE = new Set(["STAT_GRID_BINDING"]);
+    const covered = guardedFiles();
+    // Anti-vacuity: the derivation really found the module and its consumers.
+    expect(covered.map(label)).toContain("lib/test-support/composition-scan.ts");
+    expect(covered.map(label)).toContain("components/v2/page-composition-cards.test.ts");
 
-    const offenders: string[] = [];
-    for (const file of FILES) {
-      const source = stripComments(readFileSync(join(repoRoot, file), "utf8"));
-      for (const match of source.matchAll(DECLARED_MAP)) {
-        const name = match[1]!;
-        if (!NOT_A_CACHE.has(name)) {
-          offenders.push(`${file} — ${name} = new Map(): use perFileCache() or graphCache()`);
-        }
-      }
-      for (const match of source.matchAll(DECLARED_CACHE)) {
-        const factory = match[2]!;
-        if (factory !== "perFileCache" && factory !== "graphCache") {
-          offenders.push(`${file} — ${match[1]!} = ${factory}(…): not a registered cache`);
-        }
-      }
-    }
+    const offenders = unregisteredCaches(covered);
     expect(
       offenders,
       `caches the injection harness cannot see:\n${offenders.map((row) => `  ${row}`).join("\n")}`,
     ).toEqual([]);
+  });
+
+  /**
+   * RULING BJ, PINNED ON A FIXTURE — the derivation itself, not just its output today.
+   *
+   * Review reproduced the written list's hole by adding a FIFTH consumer, so the fifth consumer is
+   * what this drives: a file that imports the scanner is in scope and both guards fire on it; a
+   * file that imports something else is out of scope however it uses the name. The path does not
+   * exist on disk and {@link withInjectedSource} supplies its source, so the real derivation, the
+   * real classifier and both real guard functions execute — nothing here is a re-implementation of
+   * the rule it is checking.
+   */
+  it("the guarded population is DERIVED from the import — a fifth consumer is covered by arriving", () => {
+    const FIFTH = join(repoRoot, "components/v2/page-composition-fifth.test.ts");
+    const importsScanner = 'import { literalsIn } from "@/lib/test-support/composition-scan";\n';
+    const offending = `${importsScanner}const memo = new Map<string, string>();\nconst x = literalsIn(e, false);\n`;
+    const clean = `${importsScanner}const x = literalsIn(e, true);\n`;
+    // Same two offences, but it imports something else entirely — out of scope by derivation.
+    const unrelated = `import { stripComments } from "@/lib/test-support/strip-comments";\nconst memo = new Map<string, string>();\nconst x = literalsIn(e, false);\n`;
+
+    // The classifier: membership follows the import, and nothing else.
+    expect(withInjectedSource([[FIFTH, offending]], () => importsScannerModule(FIFTH))).toBe(true);
+    expect(withInjectedSource([[FIFTH, clean]], () => importsScannerModule(FIFTH))).toBe(true);
+    expect(withInjectedSource([[FIFTH, unrelated]], () => importsScannerModule(FIFTH))).toBe(false);
+
+    // Both guards fire on the fifth file — the case that was green before Ruling BJ.
+    expect(withInjectedSource([[FIFTH, offending]], () => unbalancedCallers([FIFTH]))).toEqual([
+      "components/v2/page-composition-fifth.test.ts",
+    ]);
+    expect(withInjectedSource([[FIFTH, offending]], () => unregisteredCaches([FIFTH]))).toEqual([
+      "components/v2/page-composition-fifth.test.ts — memo = new Map(): use perFileCache() or graphCache()",
+    ]);
+
+    // …and neither fires on a consumer that behaves.
+    expect(withInjectedSource([[FIFTH, clean]], () => unbalancedCallers([FIFTH]))).toEqual([]);
+    expect(withInjectedSource([[FIFTH, clean]], () => unregisteredCaches([FIFTH]))).toEqual([]);
+
+    // Both guards read through `readSource`, so a docblock quoting the offence is prose — the rule
+    // this repo has arrived at four separate times, asserted rather than inherited silently now
+    // that the stripping is implicit in the reader rather than a call at the grep site.
+    const inProse = `${importsScanner}/** const memo = new Map(); literalsIn(e, false) */\nconst x = literalsIn(e, true);\n`;
+    expect(withInjectedSource([[FIFTH, inProse]], () => unbalancedCallers([FIFTH]))).toEqual([]);
+    expect(withInjectedSource([[FIFTH, inProse]], () => unregisteredCaches([FIFTH]))).toEqual([]);
+
+    // The fixture path is synthetic and the real walk never sees it, so nothing here can leak
+    // into the live population above.
+    expect(guardedFiles()).not.toContain(FIFTH);
   });
 
   it("the injected source really reaches the scanners — end to end, through the caches", () => {
