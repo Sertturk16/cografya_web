@@ -603,6 +603,28 @@ export type ScannedElement = {
   readonly tag: string;
   readonly spelling: string | null;
   /**
+   * `[start, end)` in the source {@link scanJsx} was handed — `start` is the `<` that opens the
+   * element, `end` the character after its closing `>` (after the self-closing `/>` for a void
+   * element, after the `>` of `</tag>` otherwise).
+   *
+   * ADDED BY PR5 (T-035 Task 7), because relating a SOURCE POSITION to an ELEMENT was the one
+   * thing this module could not do, and the FAQ counters are all position-to-element questions:
+   * "which element writes `{faq.question}`", "which `<section>` encloses this `.map(`", "is the
+   * element holding this `faqPageJsonLd(` call inside a conditional". The alternative was a
+   * second walk over the same text in the counter file, which is the exact shape T-045 exists to
+   * prevent — two scanners with different semantics that silently disagree.
+   *
+   * OFFSETS ARE INTO THE STRING PASSED TO {@link scanJsx}, not into the file. `topLevelRenderNodes`
+   * scans a SLICE, so spans from that path are slice-relative; a caller that needs file offsets
+   * scans the whole file (what {@link jsxElementsOf} does) or adds the slice's own start itself.
+   *
+   * An element whose closing tag is missing or mismatched ends where the scan stopped looking,
+   * never past the end of the source, so `end` is always `>= start` and a containment test is
+   * always well defined. See {@link innermostElementAt} for the containment rule itself.
+   */
+  readonly start: number;
+  readonly end: number;
+  /**
    * The raw attribute expression, kept ONLY where `spelling` is {@link COMPUTED_CLASSNAME}. Which
    * shape an unreadable className has decides whether it could ever hide a card: a `styles.x`
    * member lookup is the surviving CSS-Modules surface and never will, a bare identifier is the
@@ -659,7 +681,10 @@ export type ScannedElement = {
  * attaches to an element". Nothing is silently dropped.
  */
 export function scanJsx(source: string): ScannedElement[] {
-  const elements: ScannedElement[] = [];
+  // Mutable internally so `end` can be written once the element's children have been walked; the
+  // return type is the readonly `ScannedElement`, so no caller can write through it.
+  type MutableElement = { -readonly [K in keyof ScannedElement]: ScannedElement[K] };
+  const elements: MutableElement[] = [];
   const REGEX_OPENERS = new Set("(,=:[!&|?;{+-*%^~".split(""));
 
   const skipLiteral = (i: number): number => {
@@ -842,6 +867,8 @@ export function scanJsx(source: string): ScannedElement[] {
           children: [],
           inProp,
           inExpression: braces > 0,
+          start: i,
+          end: header.end,
         });
         if (parent !== null && !inProp) elements[parent]!.children.push(index);
         scanRange(nameEnd, header.end, index, true, depth + 1);
@@ -866,6 +893,10 @@ export function scanJsx(source: string): ScannedElement[] {
             k += 1;
           }
         }
+        // `k` is now past the closing tag (or wherever the scan gave up on a mismatched one), so
+        // this is the element's real extent. Written after the children walk, which is why the
+        // record is mutable inside this function.
+        elements[index]!.end = k;
         i = k;
         previous = ">";
         continue;
@@ -887,6 +918,36 @@ export function opensElement(source: string, i: number): boolean {
   if (next !== ">" && !/[A-Za-z]/.test(next)) return false;
   const previous = source[i - 1];
   return previous === undefined || !/[A-Za-z0-9_$)\]]/.test(previous);
+}
+
+/**
+ * THE INNERMOST ELEMENT WHOSE SPAN CONTAINS `at`, or `null` if the position is outside every
+ * element (module-scope code, an import clause, a bare `.map()` in a helper that renders nothing).
+ *
+ * "Innermost" is decided by MAXIMUM `start` among the containing elements, not by span width.
+ * Elements nest, so among the elements containing one position the one that opens LAST is the
+ * deepest — and that holds for an element written inside an attribute expression too
+ * ({@link ScannedElement.inProp}), whose span lies inside its holder's header. Width would be a
+ * different rule only where two elements have the same start, which cannot happen.
+ *
+ * WHAT THIS IS FOR, and why it is not a convenience. A counter that has to relate two things sitting
+ * far apart in a file — `faqPageJsonLd(X)` up in the JSON-LD block and the `.map(` over `X` six
+ * hundred lines down — needs to ask "which element is this position written inside", and the only
+ * alternative is a second walk over the same text. The whole of T-045 is the record of what two
+ * walks cost.
+ *
+ * NOT an evaluation of anything. The element it returns may be inside `{false && …}`; read
+ * {@link ScannedElement.inExpression} on it and its ancestors to learn that a position is written
+ * under SOME condition, never which one.
+ */
+export function innermostElementAt(elements: readonly ScannedElement[], at: number): number | null {
+  let best: number | null = null;
+  for (let index = 0; index < elements.length; index += 1) {
+    const element = elements[index]!;
+    if (element.start > at) break; // pre-order: every later element opens later still
+    if (at < element.end && (best === null || element.start > elements[best]!.start)) best = index;
+  }
+  return best;
 }
 
 const cardElementCache = perFileCache<ScannedElement[]>();
