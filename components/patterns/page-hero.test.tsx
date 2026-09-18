@@ -107,6 +107,24 @@ describe("PageHero", () => {
     expect(hub).not.toContain("text-4xl");
   });
 
+  it("drops a className smuggled past the type by a Record spread", () => {
+    // `className?: never` refuses every honest spelling — a direct prop, an inline-object
+    // spread, a `{ className?: string }` spread — and is defeated SILENTLY by a
+    // `Record<string, unknown>` spread, which is not an exotic shape. Review round 1 compiled
+    // all five forms to establish that.
+    //
+    // What actually saves the component is the implementation: it destructures its six named
+    // props and never spreads a rest object onto the DOM. That half was asserted by nothing,
+    // and it is the half that holds — a future refactor to `{ tier, heading, ...rest }` would
+    // reopen the passthrough with the type still reading `never`, and `H1_SPELLINGS` would
+    // stop meaning anything the same day.
+    // Spread with NO cast — the point is that this compiles, which is the hole itself.
+    const smuggled: Record<string, unknown> = { className: "zz-evil", "data-evil": "zz-evil" };
+    const html = renderToStaticMarkup(<PageHero tier="hub" heading="x" lede="y" {...smuggled} />);
+    expect(html).not.toContain("zz-evil");
+    expect(html).toContain('class="relative z-10 max-w-3xl space-y-4"');
+  });
+
   it("forces no client boundary on its consumers", async () => {
     const { readFileSync } = await import("node:fs");
     const { fileURLToPath } = await import("node:url");

@@ -164,6 +164,40 @@ describe("EmptyState", () => {
 describe("Typography reproduces the documented scale", () => {
   const source = read("typography");
 
+  /**
+   * ONE exported declaration's own source, sliced out of the module.
+   *
+   * `typography.tsx` holds two `<h1>`-bearing components since T-035 PR3, and a whole-file
+   * `toContain` cannot say WHICH of them carries the floor. Review round 1 proved that is not
+   * theoretical: lowering `H1` to `text-[1.5rem]` and parking an inert
+   * `text-[1.9rem] … leading-tight` on `H1Display` — where `text-4xl` overrides it and it
+   * renders nothing — left both floor assertions GREEN. An assertion whose NAME claims a
+   * guarantee it does not check is the exact failure this PR exists to stop, so the floor is
+   * now read off `H1`'s own region.
+   *
+   * A region runs from its `export function` to the next one, which is all the precision this
+   * file needs; `components/v2/page-composition.test.ts`'s `declarationRegions` is the general
+   * version, and it lives there because that scanner walks arbitrary modules. This one walks
+   * exactly one file whose shape it also asserts.
+   */
+  function declarationOf(name: string): string {
+    const start = source.indexOf(`export function ${name}(`);
+    expect(start, `${name} is not declared in typography.tsx`).toBeGreaterThan(-1);
+    const next = source.indexOf("\nexport function ", start + 1);
+    return next === -1 ? source.slice(start) : source.slice(start, next);
+  }
+
+  it("positive control — the slicer returns one declaration, not the module", () => {
+    // Without this, every assertion below would also pass on a slicer that silently returned
+    // the whole file, which is the very thing they exist to stop doing.
+    const h1 = declarationOf("H1");
+    expect(h1).toContain("<h1");
+    expect(h1).not.toContain("H1Display");
+    expect(h1).not.toContain("<h2");
+    expect(h1.length).toBeLessThan(source.length);
+    expect(declarationOf("H1Display")).toContain("text-4xl sm:text-6xl font-extrabold");
+  });
+
   it("keeps the h1 floor docs/design.md pins at 1.9rem", () => {
     // app/globals.css records that a fix round once lowered this to solve a 320px wrap, and
     // that the lowering was itself the defect the next review caught.
@@ -174,8 +208,13 @@ describe("Typography reproduces the documented scale", () => {
     // one place it is sub-perceptual is the mobile size: the pages write `text-3xl` (1.875rem),
     // 0.4px under the floor, so the component writes `text-[1.9rem]` instead. That is what this
     // assertion now holds, and it is the same rule, not a weaker one.
-    expect(source).toContain("text-[1.9rem]");
-    expect(source).not.toContain("text-3xl");
+    //
+    // Read off `H1`'s region, so `text-3xl` is forbidden HERE rather than across the module.
+    // The file-wide ban this replaces would have fired the first time an `H3` or a `Kbd`
+    // legitimately wanted that size — a rule about one component has no business binding six.
+    const h1 = declarationOf("H1");
+    expect(h1).toContain("text-[1.9rem]");
+    expect(h1).not.toContain("text-3xl");
   });
 
   it("ships the two heading tiers and no third", () => {
@@ -188,8 +227,9 @@ describe("Typography reproduces the documented scale", () => {
 
   it("gives the arbitrary-value h1 a line-height, because the size no longer carries one", () => {
     // `text-3xl` ships a paired line-height; `text-[1.9rem]` does not. Without this the hub
-    // heading sets solid and wraps into itself at 320px.
-    expect(source).toMatch(/text-\[1\.9rem\][^"]*leading-tight/);
+    // heading sets solid and wraps into itself at 320px. Region-bound for the same reason as
+    // the floor above: the decoy that defeated this satisfied it from the OTHER component.
+    expect(declarationOf("H1")).toMatch(/text-\[1\.9rem\][^"]*leading-tight/);
   });
 
   it("keeps the h2 clamp too", () => {
