@@ -22,6 +22,7 @@
     "generate:water:check": "pnpm run generate:water && git diff --exit-code -- lib/map/tr-inland-water.generated.ts",
     "generate:tr-context": "node scripts/generate-tr-context.mjs",
     "generate:tr-context:check": "pnpm run generate:tr-context && git diff --exit-code -- lib/map/tr-context.generated.ts",
+    "sweep:overflow": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sweep-overflow.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
