@@ -498,294 +498,306 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         </div>
       </nav>
 
-      {/* MAIN BODY CONTENT */}
-      {/* SECTION 1: 7 BÖLGE VİTRİNİ */}
-      <section id="bolgeler" className="scroll-mt-28" tabIndex={-1}>
-        <V2TurkeyRegions regions={regionsList} />
-      </section>
+      {/* MAIN BODY CONTENT — empty since T-046 filled it in. T-032 (`d2039b6`) de-nested the
+          `<main>` landmark into `(site)/layout.tsx` and deleted the
+          `<main className="container mx-auto px-4 max-w-7xl py-10 space-y-14">` that wrapped
+          everything below, without replacing the width, the padding or the rhythm: only this
+          marker survived, and the body rendered edge-to-edge at viewport width with no gutter.
+          `default` IS the exact restore here — its `space-y-14` is the deleted wrapper's own
+          rhythm, so this page changes width and padding only, not spacing.
 
-      {/* SECTION 2: 1941 COĞRAFYA KONGRESİ & TARİHÇE */}
-      <section id="tarihce" className="scroll-mt-28" tabIndex={-1}>
-        <Card variant="panel" space="6">
-          <div className="space-y-2 border-b border-border/70 pb-5">
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm">
-                Tarihî &amp; Bilimsel Miras
-              </Badge>
-              <span className="text-xs text-muted-foreground">6–21 Haziran 1941, Ankara</span>
-            </div>
-            <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-              <Landmark className="size-6 text-primary shrink-0" />
-              <span>Birinci Türk Coğrafya Kongresi ve Yasal Çerçeve</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-              Cumhuriyet döneminin coğrafi tasnif manifestosu: Türkiye topraklarının fiziki,
-              iklimsel ve beşeri özelliklerine göre ilk kez bilimsel bir konsensüsle bölümlere
-              ayrılışı.
-            </p>
-          </div>
+          It opens AFTER the sticky quicknav `<nav>` above, not before it. That bar is full-bleed
+          and carries its own PageContainer-aligned row inside itself; wrapping it in a padded
+          container would change what it sticks to and would make its entry in
+          `BODY_WRAPPER_EXEMPTIONS` say something false about why it is exempt. */}
+      <PageContainer space="default">
+        {/* SECTION 1: 7 BÖLGE VİTRİNİ */}
+        <section id="bolgeler" className="scroll-mt-28" tabIndex={-1}>
+          <V2TurkeyRegions regions={regionsList} />
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs sm:text-sm">
-            <div className="p-5 rounded-2xl bg-muted/40 border border-border/80 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <div className="size-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                  01
-                </div>
-                <h3 className="font-heading font-bold text-foreground">
-                  Fiziki &amp; Jeomorfolojik Kriterler
-                </h3>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Dağların kıyıya paralel uzandığı Karadeniz ve Akdeniz kıyı kuşakları, dağların
-                kıyıya dik uzanıp graben vadileri açtığı Ege kıyıları ve yüksek engebeli Doğu
-                Anadolu platosu temel sınır hatlarını oluşturmuştur.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-muted/40 border border-border/80 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <div className="size-7 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center font-bold text-xs">
-                  02
-                </div>
-                <h3 className="font-heading font-bold text-foreground">
-                  Klimatolojik &amp; Su Havzaları
-                </h3>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Dört bir yandaki denizlerin ılımanlaştırıcı etkisi, iç kesimlerin deniz etkisinden
-                yalıtılmış step iklimi ve Doğu Anadolu&apos;nun sert karasal yapısı vejetasyon
-                örtüsüyle birlikte sınıflandırılmıştır.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-muted/40 border border-border/80 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <div className="size-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">
-                  03
-                </div>
-                <h3 className="font-heading font-bold text-foreground">
-                  Beşeri, Zirai &amp; İktisadi Çevre
-                </h3>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Nüfus yoğunluğu, tarımsal ürün desenleri (zeytin, fındık, tahıl, çay), sanayi
-                odakları ve tarihî ticaret aksları 7 ana bölgenin kendi içindeki 21 alt bölüme
-                ayrılmasında belirleyici olmuştur.
-              </p>
-            </div>
-          </div>
-
-          {/* Callout: NUTS-1 vs Classic 7 Regions */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-start gap-3 text-xs leading-relaxed">
-            <Scale className="size-5 text-primary shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <span className="font-bold text-foreground block">
-                Metodolojik Ayrım: TÜİK İBBS Düzey-1 ve Klasik Coğrafi Bölgeler
-              </span>
-              <p className="text-muted-foreground">
-                TÜİK, Avrupa Birliği İstatistiki Bölge Birimleri (NUTS) standartları gereğince
-                verilerini 12 Düzey-1 bölgesine göre yayınlar. O sınıflandırma idari sınırları esas
-                alırken; MEB müfredatı, fiziki coğrafya ve morfolojik havza araştırmalarında 1941
-                Kongresi&apos;nin 7 Coğrafi Bölge tasnifi geçerliliğini ve bilimsel temelini
-                korumaktadır.
-              </p>
-            </div>
-          </div>
-        </Card>
-      </section>
-
-      {/* SECTION 3: ANALİTİK KIYASLAMA TABLOSU */}
-      <section id="kiyaslama" className="scroll-mt-28" tabIndex={-1}>
-        <Card variant="panel" space="6">
-          <div className="space-y-2 border-b border-border/70 pb-5">
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm">
-                Karşılaştırmalı Veri Matrisi
-              </Badge>
-              {figuresAreLive && (
-                <span className="text-xs text-muted-foreground">TÜİK ADNKS 2025 &amp; HGM</span>
-              )}
-            </div>
-            <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-              <Table className="size-6 text-primary shrink-0" />
-              <span>Türkiye&apos;nin Yedi Coğrafi Bölgesi Karşılaştırması</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-              Nüfus büyüklüğü, alan payı, nüfus yoğunluğu, zirve yükseklikleri ve idari mülki
-              bölünüş açısından yedi bölgenin analitik kıyaslama tablosu.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-border">
-            <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-muted/60 text-muted-foreground border-b border-border font-heading font-semibold text-xs">
-                <tr>
-                  <th className="p-3.5 sm:p-4">Bölge Adı</th>
-                  <th className="p-3.5 sm:p-4 text-center">İl / Bölüm</th>
-                  <th className="p-3.5 sm:p-4 text-right">Yüzölçümü (km²)</th>
-                  <th className="p-3.5 sm:p-4 text-right">Alan Payı</th>
-                  <th className="p-3.5 sm:p-4 text-right">Nüfus (2025)</th>
-                  <th className="p-3.5 sm:p-4 text-right">Nüfus Payı</th>
-                  <th className="p-3.5 sm:p-4 text-right">Yoğunluk</th>
-                  <th className="p-3.5 sm:p-4">En Yüksek Zirve</th>
-                  <th className="p-3.5 sm:p-4 text-center">Detay</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {regionsList.map((r, idx) => (
-                  <tr key={r.slug} className="hover:bg-muted/30 transition-colors group">
-                    <td className="p-3.5 sm:p-4 font-bold text-foreground flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground font-normal">
-                        0{idx + 1}
-                      </span>
-                      <Link
-                        href={{
-                          pathname: "/turkiye/bolge/[slug]",
-                          params: { slug: r.slug },
-                        }}
-                        className="hover:text-primary transition-colors hover:underline"
-                      >
-                        {r.nameTr}
-                      </Link>
-                      {r.isCoastal === true ? (
-                        <span className="inline-flex items-center gap-1 shrink-0">
-                          <span
-                            aria-hidden="true"
-                            className="inline-flex size-2 rounded-full bg-teal-500 shrink-0"
-                          />
-                          <span className="text-[10px] text-muted-foreground">Kıyı</span>
-                        </span>
-                      ) : r.isCoastal === false ? (
-                        <span className="inline-flex items-center gap-1 shrink-0">
-                          <span
-                            aria-hidden="true"
-                            className="inline-flex size-2 rounded-full bg-amber-500 shrink-0"
-                          />
-                          <span className="text-[10px] text-muted-foreground">İç</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 shrink-0">
-                          <span
-                            aria-hidden="true"
-                            className="inline-flex size-2 rounded-full bg-muted-foreground/40 shrink-0"
-                          />
-                          <span className="text-[10px] text-muted-foreground">Bilinmiyor</span>
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3.5 sm:p-4 text-center text-muted-foreground font-mono">
-                      {r.provinceCount} İl / {r.subregionCount} Bölüm
-                    </td>
-                    <td className="p-3.5 sm:p-4 text-right font-mono">
-                      {r.areaKm2.toLocaleString("tr-TR")}
-                    </td>
-                    <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-primary">
-                      %{tr(r.areaSharePercent, 1)}
-                    </td>
-                    <td className="p-3.5 sm:p-4 text-right font-mono">
-                      {r.population.toLocaleString("tr-TR")}
-                    </td>
-                    <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-secondary">
-                      %{tr(r.populationSharePercent, 1)}
-                    </td>
-                    <td className="p-3.5 sm:p-4 text-right font-mono">
-                      {r.populationDensity} kişi/km²
-                    </td>
-                    <td className="p-3.5 sm:p-4 text-muted-foreground text-xs">
-                      <span className="font-semibold text-foreground block">
-                        {r.highestPeakNameTr}
-                      </span>
-                      <span className="font-mono text-[10px]">
-                        {r.highestPeakElevationM > 0 ? `${r.highestPeakElevationM} m` : "-"}
-                      </span>
-                    </td>
-                    <td className="p-3.5 sm:p-4 text-center">
-                      <Link
-                        href={{
-                          pathname: "/turkiye/bolge/[slug]",
-                          params: { slug: r.slug },
-                        }}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline px-2.5 py-1 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
-                      >
-                        <span>İncele</span>
-                        <ArrowRight className="size-3" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* The totals are interpolated, not spelled out. They were written as "86.092.168 nüfus
-              ve 780.040 km²" — the same two numbers that sat in `|| 86092168` / `|| 780040` above,
-              restated as prose, so correcting the code left the sentence still claiming them.
-              A share is computed FROM these totals, so the sentence has to read them too. */}
-          <p className="text-[11px] text-muted-foreground/80 italic">
-            {figuresAreLive
-              ? "* Nüfus verileri TÜİK ADNKS 31 Aralık 2025; yüzölçümü değerleri Harita Genel Müdürlüğü (HGM) resmi tescilleridir. "
-              : "* Bölge künyeleri yayın arşivinden gelmektedir; güncel TÜİK/HGM kayıtlarıyla doğrulanmamıştır. "}
-            Paylar Türkiye toplamı ({totalPop.toLocaleString("tr-TR")} nüfus ve{" "}
-            {totalArea.toLocaleString("tr-TR")} km² 81 il yüzölçümü) üzerinden hesaplanmıştır.
-          </p>
-        </Card>
-      </section>
-
-      {/* SECTION 4: SIKÇA SORULAN SORULAR — trOnly (§9): the FAQ narrative has no English
-            counterpart, so the whole section (visible cards + the JsonLd above) is TR-only. */}
-      {locale === "tr" && (
-        <section id="sss" className="scroll-mt-28" tabIndex={-1}>
+        {/* SECTION 2: 1941 COĞRAFYA KONGRESİ & TARİHÇE */}
+        <section id="tarihce" className="scroll-mt-28" tabIndex={-1}>
           <Card variant="panel" space="6">
             <div className="space-y-2 border-b border-border/70 pb-5">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" size="sm">
-                  Rehber &amp; Soru-Cevap
+                <Badge variant="primary" size="sm">
+                  Tarihî &amp; Bilimsel Miras
                 </Badge>
+                <span className="text-xs text-muted-foreground">6–21 Haziran 1941, Ankara</span>
               </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                <HelpCircle className="size-6 text-primary shrink-0" />
-                <span>Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular</span>
+                <Landmark className="size-6 text-primary shrink-0" />
+                <span>Birinci Türk Coğrafya Kongresi ve Yasal Çerçeve</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Coğrafya müfredatı, sınav hazırlığı ve genel kültür açısından en çok merak edilen
-                bölgesel kavramlar.
+                Cumhuriyet döneminin coğrafi tasnif manifestosu: Türkiye topraklarının fiziki,
+                iklimsel ve beşeri özelliklerine göre ilk kez bilimsel bir konsensüsle bölümlere
+                ayrılışı.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {bolgelerFaqs.map((faq, idx) => (
-                <div
-                  key={idx}
-                  className="p-5 rounded-2xl bg-muted/30 border border-border/80 space-y-2"
-                >
-                  <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
-                    <span className="text-primary font-bold text-sm">S:</span>
-                    <span>{faq.question}</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs sm:text-sm">
+              <div className="p-5 rounded-2xl bg-muted/40 border border-border/80 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                    01
+                  </div>
+                  <h3 className="font-heading font-bold text-foreground">
+                    Fiziki &amp; Jeomorfolojik Kriterler
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-5">
-                    {faq.answer}
-                  </p>
                 </div>
-              ))}
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Dağların kıyıya paralel uzandığı Karadeniz ve Akdeniz kıyı kuşakları, dağların
+                  kıyıya dik uzanıp graben vadileri açtığı Ege kıyıları ve yüksek engebeli Doğu
+                  Anadolu platosu temel sınır hatlarını oluşturmuştur.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-muted/40 border border-border/80 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center font-bold text-xs">
+                    02
+                  </div>
+                  <h3 className="font-heading font-bold text-foreground">
+                    Klimatolojik &amp; Su Havzaları
+                  </h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Dört bir yandaki denizlerin ılımanlaştırıcı etkisi, iç kesimlerin deniz etkisinden
+                  yalıtılmış step iklimi ve Doğu Anadolu&apos;nun sert karasal yapısı vejetasyon
+                  örtüsüyle birlikte sınıflandırılmıştır.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-muted/40 border border-border/80 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">
+                    03
+                  </div>
+                  <h3 className="font-heading font-bold text-foreground">
+                    Beşeri, Zirai &amp; İktisadi Çevre
+                  </h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Nüfus yoğunluğu, tarımsal ürün desenleri (zeytin, fındık, tahıl, çay), sanayi
+                  odakları ve tarihî ticaret aksları 7 ana bölgenin kendi içindeki 21 alt bölüme
+                  ayrılmasında belirleyici olmuştur.
+                </p>
+              </div>
+            </div>
+
+            {/* Callout: NUTS-1 vs Classic 7 Regions */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-start gap-3 text-xs leading-relaxed">
+              <Scale className="size-5 text-primary shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-bold text-foreground block">
+                  Metodolojik Ayrım: TÜİK İBBS Düzey-1 ve Klasik Coğrafi Bölgeler
+                </span>
+                <p className="text-muted-foreground">
+                  TÜİK, Avrupa Birliği İstatistiki Bölge Birimleri (NUTS) standartları gereğince
+                  verilerini 12 Düzey-1 bölgesine göre yayınlar. O sınıflandırma idari sınırları
+                  esas alırken; MEB müfredatı, fiziki coğrafya ve morfolojik havza araştırmalarında
+                  1941 Kongresi&apos;nin 7 Coğrafi Bölge tasnifi geçerliliğini ve bilimsel temelini
+                  korumaktadır.
+                </p>
+              </div>
             </div>
           </Card>
         </section>
-      )}
 
-      {/* BOTTOM NAVIGATION ACTIONS */}
-      <div className="flex items-center justify-between pt-2">
-        <Link href="/turkiye">
-          <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
-            ← Türkiye İlleri Atlası&apos;na Dön (81 İl)
-          </Button>
-        </Link>
-        <Link href="/">
-          <Button variant="ghost" size="sm" leftIcon={<Home className="size-4" />}>
-            Ana Sayfa
-          </Button>
-        </Link>
-      </div>
+        {/* SECTION 3: ANALİTİK KIYASLAMA TABLOSU */}
+        <section id="kiyaslama" className="scroll-mt-28" tabIndex={-1}>
+          <Card variant="panel" space="6">
+            <div className="space-y-2 border-b border-border/70 pb-5">
+              <div className="flex items-center gap-2">
+                <Badge variant="primary" size="sm">
+                  Karşılaştırmalı Veri Matrisi
+                </Badge>
+                {figuresAreLive && (
+                  <span className="text-xs text-muted-foreground">TÜİK ADNKS 2025 &amp; HGM</span>
+                )}
+              </div>
+              <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
+                <Table className="size-6 text-primary shrink-0" />
+                <span>Türkiye&apos;nin Yedi Coğrafi Bölgesi Karşılaştırması</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
+                Nüfus büyüklüğü, alan payı, nüfus yoğunluğu, zirve yükseklikleri ve idari mülki
+                bölünüş açısından yedi bölgenin analitik kıyaslama tablosu.
+              </p>
+            </div>
 
-      {/* SECTION 5: BİLİMSEL KAYNAKÇA & METODOLOJİ
+            <div className="overflow-x-auto rounded-2xl border border-border">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-muted/60 text-muted-foreground border-b border-border font-heading font-semibold text-xs">
+                  <tr>
+                    <th className="p-3.5 sm:p-4">Bölge Adı</th>
+                    <th className="p-3.5 sm:p-4 text-center">İl / Bölüm</th>
+                    <th className="p-3.5 sm:p-4 text-right">Yüzölçümü (km²)</th>
+                    <th className="p-3.5 sm:p-4 text-right">Alan Payı</th>
+                    <th className="p-3.5 sm:p-4 text-right">Nüfus (2025)</th>
+                    <th className="p-3.5 sm:p-4 text-right">Nüfus Payı</th>
+                    <th className="p-3.5 sm:p-4 text-right">Yoğunluk</th>
+                    <th className="p-3.5 sm:p-4">En Yüksek Zirve</th>
+                    <th className="p-3.5 sm:p-4 text-center">Detay</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {regionsList.map((r, idx) => (
+                    <tr key={r.slug} className="hover:bg-muted/30 transition-colors group">
+                      <td className="p-3.5 sm:p-4 font-bold text-foreground flex items-center gap-2">
+                        <span className="font-mono text-xs text-muted-foreground font-normal">
+                          0{idx + 1}
+                        </span>
+                        <Link
+                          href={{
+                            pathname: "/turkiye/bolge/[slug]",
+                            params: { slug: r.slug },
+                          }}
+                          className="hover:text-primary transition-colors hover:underline"
+                        >
+                          {r.nameTr}
+                        </Link>
+                        {r.isCoastal === true ? (
+                          <span className="inline-flex items-center gap-1 shrink-0">
+                            <span
+                              aria-hidden="true"
+                              className="inline-flex size-2 rounded-full bg-teal-500 shrink-0"
+                            />
+                            <span className="text-[10px] text-muted-foreground">Kıyı</span>
+                          </span>
+                        ) : r.isCoastal === false ? (
+                          <span className="inline-flex items-center gap-1 shrink-0">
+                            <span
+                              aria-hidden="true"
+                              className="inline-flex size-2 rounded-full bg-amber-500 shrink-0"
+                            />
+                            <span className="text-[10px] text-muted-foreground">İç</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 shrink-0">
+                            <span
+                              aria-hidden="true"
+                              className="inline-flex size-2 rounded-full bg-muted-foreground/40 shrink-0"
+                            />
+                            <span className="text-[10px] text-muted-foreground">Bilinmiyor</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3.5 sm:p-4 text-center text-muted-foreground font-mono">
+                        {r.provinceCount} İl / {r.subregionCount} Bölüm
+                      </td>
+                      <td className="p-3.5 sm:p-4 text-right font-mono">
+                        {r.areaKm2.toLocaleString("tr-TR")}
+                      </td>
+                      <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-primary">
+                        %{tr(r.areaSharePercent, 1)}
+                      </td>
+                      <td className="p-3.5 sm:p-4 text-right font-mono">
+                        {r.population.toLocaleString("tr-TR")}
+                      </td>
+                      <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-secondary">
+                        %{tr(r.populationSharePercent, 1)}
+                      </td>
+                      <td className="p-3.5 sm:p-4 text-right font-mono">
+                        {r.populationDensity} kişi/km²
+                      </td>
+                      <td className="p-3.5 sm:p-4 text-muted-foreground text-xs">
+                        <span className="font-semibold text-foreground block">
+                          {r.highestPeakNameTr}
+                        </span>
+                        <span className="font-mono text-[10px]">
+                          {r.highestPeakElevationM > 0 ? `${r.highestPeakElevationM} m` : "-"}
+                        </span>
+                      </td>
+                      <td className="p-3.5 sm:p-4 text-center">
+                        <Link
+                          href={{
+                            pathname: "/turkiye/bolge/[slug]",
+                            params: { slug: r.slug },
+                          }}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline px-2.5 py-1 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
+                        >
+                          <span>İncele</span>
+                          <ArrowRight className="size-3" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* The totals are interpolated, not spelled out. They were written as "86.092.168 nüfus
+              ve 780.040 km²" — the same two numbers that sat in `|| 86092168` / `|| 780040` above,
+              restated as prose, so correcting the code left the sentence still claiming them.
+              A share is computed FROM these totals, so the sentence has to read them too. */}
+            <p className="text-[11px] text-muted-foreground/80 italic">
+              {figuresAreLive
+                ? "* Nüfus verileri TÜİK ADNKS 31 Aralık 2025; yüzölçümü değerleri Harita Genel Müdürlüğü (HGM) resmi tescilleridir. "
+                : "* Bölge künyeleri yayın arşivinden gelmektedir; güncel TÜİK/HGM kayıtlarıyla doğrulanmamıştır. "}
+              Paylar Türkiye toplamı ({totalPop.toLocaleString("tr-TR")} nüfus ve{" "}
+              {totalArea.toLocaleString("tr-TR")} km² 81 il yüzölçümü) üzerinden hesaplanmıştır.
+            </p>
+          </Card>
+        </section>
+
+        {/* SECTION 4: SIKÇA SORULAN SORULAR — trOnly (§9): the FAQ narrative has no English
+            counterpart, so the whole section (visible cards + the JsonLd above) is TR-only. */}
+        {locale === "tr" && (
+          <section id="sss" className="scroll-mt-28" tabIndex={-1}>
+            <Card variant="panel" space="6">
+              <div className="space-y-2 border-b border-border/70 pb-5">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" size="sm">
+                    Rehber &amp; Soru-Cevap
+                  </Badge>
+                </div>
+                <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
+                  <HelpCircle className="size-6 text-primary shrink-0" />
+                  <span>Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
+                  Coğrafya müfredatı, sınav hazırlığı ve genel kültür açısından en çok merak edilen
+                  bölgesel kavramlar.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {bolgelerFaqs.map((faq, idx) => (
+                  <div
+                    key={idx}
+                    className="p-5 rounded-2xl bg-muted/30 border border-border/80 space-y-2"
+                  >
+                    <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
+                      <span className="text-primary font-bold text-sm">S:</span>
+                      <span>{faq.question}</span>
+                    </h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-5">
+                      {faq.answer}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </section>
+        )}
+
+        {/* BOTTOM NAVIGATION ACTIONS */}
+        <div className="flex items-center justify-between pt-2">
+          <Link href="/turkiye">
+            <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
+              ← Türkiye İlleri Atlası&apos;na Dön (81 İl)
+            </Button>
+          </Link>
+          <Link href="/">
+            <Button variant="ghost" size="sm" leftIcon={<Home className="size-4" />}>
+              Ana Sayfa
+            </Button>
+          </Link>
+        </div>
+
+        {/* SECTION 5: BİLİMSEL KAYNAKÇA & METODOLOJİ
           `omit`, because the `turkiye` scope is written for the PROVINCE page and this hub shows
           a strict subset of it. What is on this page: region populations and areas (TÜİK), the
           hand-written climate-classification names and peak elevations in the comparison table
@@ -796,9 +808,10 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
             them. The climate column is seven hand-written classification names.
           - `acag-pm25` — no PM2.5 figure anywhere on the page.
           - `jrc` — no inland-water layer, because no map. */}
-      <div id="kaynakca" className="scroll-mt-28" tabIndex={-1}>
-        <V2SourcesSection scope="turkiye" omit={["osm", "era5", "acag-pm25", "jrc"]} />
-      </div>
+        <div id="kaynakca" className="scroll-mt-28" tabIndex={-1}>
+          <V2SourcesSection scope="turkiye" omit={["osm", "era5", "acag-pm25", "jrc"]} />
+        </div>
+      </PageContainer>
     </>
   );
 }
