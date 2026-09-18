@@ -27,8 +27,28 @@ import {
 import { Card } from "@/components/ui/card";
 type LinkHref = React.ComponentProps<typeof Link>["href"];
 
+/**
+ * What this view actually needs of a basin — everything except `faq`.
+ *
+ * WHY THE FIELD IS EXCLUDED RATHER THAN IGNORED. This is a Client Component, so every field of
+ * every prop it is handed is serialised into the Flight payload embedded in the page's HTML,
+ * whether the component reads it or not. PR5 moved the FAQ out of this file and onto the `faq`
+ * prop below, and nothing here has read `data.faq` since — but all four basin pages went on
+ * passing the whole `basinData`, so three Turkish question/answer pairs per basin kept shipping
+ * to the browser on every basin page, in BOTH locales. On the EN twins that was untranslated
+ * prose reaching a page whose FAQ block is deliberately hidden; on the TR ones it was simply
+ * weight for a component that never looks at it.
+ *
+ * `Omit` is the whole fix, and it only works because the pages STRIP THE FIELD AT RUNTIME
+ * (`const { faq, ...view } = basinData`). TypeScript's excess-property check fires on object
+ * LITERALS, never on a variable that happens to hold a wider object, so a page passing
+ * `basinData` straight through would still type-check here and still serialise `faq`. The type
+ * states the contract; the destructure is what enforces it.
+ */
+export type SeaBasinViewData = Omit<SeaBasinDetailData, "faq">;
+
 interface V2SeaBasinDetailViewProps {
-  data: SeaBasinDetailData;
+  data: SeaBasinViewData;
   marinePoints: MarinePointData[];
   /**
    * The SAME array the page's own `breadcrumbJsonLd` call is built from — passed in rather

@@ -574,13 +574,21 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
 
         {/* SECTION 11: SIKÇA SORULAN SORULAR (FAQ). Markup and schema from one `continent.faqs`
             identifier, in one place, instead of a `<JsonLd>` at the foot of the file. `"trOnly"`
-            is this page's own surface constant. */}
-        <FaqSection
-          heading={`${continent.nameTr} Hakkında Sıkça Sorulan Sorular`}
-          locale={locale}
-          items={continent.faqs}
-          structuredData="trOnly"
-        />
+            is this page's own surface constant.
+
+            TR-ONLY UNTIL T-040 (owner, 2026-09-19). These questions are Turkish literals with no
+            English counterpart, so the EN twin was rendering Turkish prose under English chrome.
+            `structuredData="trOnly"` already withheld the FAQPage schema there — the markup was
+            the gap. Gating the whole component keeps both halves moving together: no component,
+            no schema. */}
+        {locale === "tr" && (
+          <FaqSection
+            heading={`${continent.nameTr} Hakkında Sıkça Sorulan Sorular`}
+            locale={locale}
+            items={continent.faqs}
+            structuredData="trOnly"
+          />
+        )}
 
         {/* SECTION 12: DİĞER KITALAR GEZİNTİSİ */}
         <section id="diger-kitalar" className="space-y-4 pt-4 border-t border-border">

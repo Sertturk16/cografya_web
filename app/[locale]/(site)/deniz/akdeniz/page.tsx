@@ -41,6 +41,15 @@ export default async function V2AkdenizPage({ params }: PageProps) {
   setRequestLocale(locale);
   const format = await getFormatter();
   const basinData = SEA_BASINS_DETAIL.akdeniz;
+  /* SPLIT AT THE BOUNDARY, not narrowed by the type alone. `V2SeaBasinDetailView` is a
+     Client Component, so whatever object it is handed is serialised into the Flight payload
+     in this page's HTML — every field, read or not. It stopped reading `data.faq` in PR5,
+     so `faq` was being shipped to the browser for nothing, and on `/en/sea/*` that meant
+     untranslated Turkish prose on a page whose FAQ block is deliberately hidden.
+     `data={basinData}` would still type-check against `SeaBasinViewData` — excess-property
+     checking does not apply to a variable — so the field has to be removed for real. `faq`
+     then feeds `<FaqSection>` below, which is the only thing that still wants it. */
+  const { faq: basinFaq, ...basinView } = basinData;
 
   // No layer catalogue read any more. It was fetched for one reason — `MarineAttribution`
   // derives ECMWF's required copyright YEAR from the ingested cycle's künye — and that block
@@ -157,7 +166,7 @@ export default async function V2AkdenizPage({ params }: PageProps) {
 
       <PageContainer>
         <V2SeaBasinDetailView
-          data={basinData}
+          data={basinView}
           marinePoints={marinePoints}
           breadcrumbItems={breadcrumbItems}
           /* The FAQ block is built HERE and handed to the view as a prop. `FaqSection` emits the
@@ -168,14 +177,24 @@ export default async function V2AkdenizPage({ params }: PageProps) {
              `V2SeaBasinDetailView` — that is a Client Component and `FaqSection` reaches
              `server-only` (see the view's `faq` prop docblock). `"trOnly"` is this page's own
              surface constant, the one `generateMetadata` and `breadcrumbListSchema` already
-             pass. */
+             pass.
+
+             TR-ONLY UNTIL T-040 (owner, 2026-09-19). `basinData.faq` is Turkish prose with no
+             English counterpart, so the EN twin was rendering Turkish questions under English
+             chrome. `structuredData="trOnly"` already withheld the FAQPage schema — the markup
+             was the gap. The gate sits HERE, where the element is built, rather than inside the
+             view: the view is a Client Component that only renders whatever node it is handed, so
+             passing `null` is what "no FAQ" means to it. `faq` is typed `React.ReactNode`, which
+             already admits `null`, so nothing had to be widened. */
           faq={
-            <FaqSection
-              heading={`${basinData.nameTr} Hakkında Sıkça Sorulan Sorular`}
-              locale={locale}
-              items={basinData.faq}
-              structuredData="trOnly"
-            />
+            locale === "tr" ? (
+              <FaqSection
+                heading={`${basinData.nameTr} Hakkında Sıkça Sorulan Sorular`}
+                locale={locale}
+                items={basinFaq}
+                structuredData="trOnly"
+              />
+            ) : null
           }
         />
 
