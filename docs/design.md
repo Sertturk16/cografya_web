@@ -168,6 +168,15 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 - **`MetricValue.absent` is required.** There is no safe default. It never renders `0` and
   never a bare dash — a dash sits in the same slot a number would and reads as a measurement.
   This is T-024's defect made impossible rather than re-fixed per page.
+- **`StatTile.value` vs `StatTile.fact`.** `value` is a READING and goes through `MetricValue`,
+  so `absent` is required with it. `fact` is a literal — `WGS84`, `M 1.0 - 7.0+`, `ÖSYM / MEB` —
+  and reaches `MetricValue` not at all. The union exists because widening `MetricValue.value` to
+  `string` would let a page print `"—"` through the component built to forbid it. Colour is the
+  closed `tone` union, never a class: five strips carried `text-teal-600`/`-cyan-600`/`-red-600`/
+  `-blue-600`/`-emerald-600` with no `dark:` pair, measured frozen at one hex in both themes.
+- **`StatGrid` is the shell, `StatTile` the tile, and a grid needs both.** Half-migrating —
+  `StatGrid` around hand-drawn tiles — drops the grid out of BOTH buckets in
+  `components/v2/page-composition.test.ts` and fails `STAT_GRIDS_TOTAL`. That is deliberate.
 - **`MapLegend` requires `bins` on the classed variant**, so an unlabelled classed legend
   cannot be built (data-viz rule 5 below).
 - **`MapAttribution` beside every map** is ODbL compliance, not house style.

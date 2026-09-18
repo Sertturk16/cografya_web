@@ -4460,6 +4460,40 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  *      adoption task is doing — so the fall would arrive looking like progress.
  *      {@link STAT_GRIDS_TOTAL} is the structural answer: see below.
  *
+ * ## THE LONG TAIL, AUDITED — why 49 is where this stops rather than a milestone
+ *
+ * Task 6 migrated the metric-strip FAMILY and nothing else, and the reason is a measurement, not
+ * a budget. The strip was the one population on this surface with a single repeated tile: 56
+ * occurrences of `p-4 rounded-2xl bg-card border border-border shadow-2xs`, identical character
+ * for character across 13 files. 50 are now `<StatTile>`; `grep` finds the exact spelling at
+ * FOUR remaining sites, all of them `kitaplar/[slug]`'s facts sheet.
+ *
+ * The other 49 grids write TWENTY-PLUS distinct tile spellings between them, and the divergence
+ * is geometric rather than cosmetic:
+ *
+ *   - `v2-sea-basin-detail-view` (1 strip, 6-across): `p-3.5`, `text-[10px]` label,
+ *     `text-lg sm:text-xl` value, label ABOVE value.
+ *   - `turkiye/bolge` (1, 4 tiles): the strip's chrome plus `space-y-1`, but inverted — icon
+ *     inside the label, label above, `font-extrabold`, a `text-[11px] text-muted-foreground/80`
+ *     third line, and a TR/EN ternary in three places.
+ *   - `dunya/kita` and `dunya/kita/[slug]`: `bg-card/60 backdrop-blur-sm p-3.5`.
+ *   - `v2-member-hub`, `v2-earthquake-explorer`, `app/page`: `bg-muted/30`, `bg-muted/40`,
+ *     `bg-muted/60`, `rounded-xl` — wells, not cards, by this file's own split.
+ *   - `v2-tool-educational-content` (6 grids, 22 tiles), `v2-tools-hub` (2, 6) and `v2-game-hub`
+ *     (1, 3) are the 31 named prose/feature panels SCOPE note 1 already excludes.
+ *
+ * Absorbing those would mean a `StatTile` variant per geometry, each with exactly one consumer —
+ * which is the thing `components/ui/orphan.test.ts` and T-036 exist to stop — and would change
+ * six more pages' appearance with no colour defect to justify it, unlike the three that had one.
+ * So the remainder is a RATCHET at 49, not a worklist at 49.
+ *
+ * ONE DEFECT WAS FOUND THERE AND DELIBERATELY LEFT. `v2-sea-basin-detail-view.tsx`'s 6-across
+ * strip colours its "Maksimum Derinlik" value `text-cyan-600` with NO dark pair — a sixth
+ * instance of exactly the frozen-colour defect this task fixed five of. It is left because the
+ * same file carries five more raw palette classes outside any stat grid, two of which DO have
+ * `dark:` pairs, so it is a file-level colour job rather than a tile migration; `components/ui/
+ * token-binding.test.ts` scopes that whole population to T-031c by name.
+ *
  * ## THE INVARIANT — read this before reading any number above
  *
  * **Progress is {@link SURFACE_FILES_RENDERING_STATTILE} RISING. A fall in the trio without it is
