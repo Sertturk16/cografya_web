@@ -320,7 +320,7 @@ describe("the sticky navs stay aligned to PageContainer's base", () => {
  *      written for real. WAS FALSE: the first version asked `subtree.some(isContainer)` over a
  *      flat tag list, which says "a container exists somewhere below" — true of
  *      `<div><PageContainer/><section>loose body</section></div>`. The defence stopped one level
- *      above the shape it named. {@link isContained} DESCENDS now: a node is contained when it is
+ *      above the shape it named. {@link containmentOf} DESCENDS now: a node is contained when it is
  *      an unconditional container, or when every element child of it is contained, with a
  *      non-container leaf as the base case.
  *   3. **A dead reference — a container written but not rendered.** WAS FALSE: the first version
@@ -364,7 +364,12 @@ describe("the sticky navs stay aligned to PageContainer's base", () => {
  *   - **Anything inside an out-of-flow branch.** {@link isOutOfFlow} stops the descent at an
  *     `absolute`/`fixed` element, so an absolutely positioned wrapper with real content under it
  *     takes that whole branch out of the walk. It exists because all five heroes write a
- *     decorative glow beside their container and without it the counter reports every hero.
+ *     decorative glow beside their container and without it the counter reports every hero —
+ *     measured: neutering the rule reports exactly 5 nodes, every one of them a hero `<section>`
+ *     flagged for its glow and nothing else. Walking through this door means putting the page body
+ *     in a `position: absolute` element, which contributes no height and overlaps the hero and the
+ *     footer, so it produces a louder defect than the one guarded. Such a node is
+ *     `not-applicable`, not `contained` (Ruling BN), so it cannot certify the subtree it sits in.
  *   - **A body assembled in a helper.** `{renderBody()}` is a call expression, not an element:
  *     one top-level node, and whatever sections the helper writes are invisible. Moving a page's
  *     body into a same-file helper would take it out of this counter's reach without changing a
@@ -523,11 +528,24 @@ function isOutOfFlow(node: RenderTreeNode): boolean {
 }
 
 /**
+ * THREE STATES, because "not applicable" is not "contained" (Ruling BN, L2).
+ *
+ * A `<script>` and an absolutely positioned glow are not evidence that anything is inside a
+ * container; they are evidence that the question does not arise. Collapsing them into `contained`
+ * — which the first version of {@link containmentOf} did with a bare `return true` — let such a node
+ * CERTIFY a subtree: `<div><div className="absolute"/></div>` read as contained on the strength of
+ * a decorative child. No behavioural difference on today's tree, where all five uses are childless
+ * glows, and that is exactly why it is worth separating now rather than the first time someone
+ * nests something under one.
+ */
+type Containment = "contained" | "uncontained" | "not-applicable";
+
+/**
  * DESCENT, not "does my subtree contain one".
  *
- * A node is contained when it IS an unconditional container, when it renders no box at all, or
- * when EVERY element child of it is contained. The recursion is what separates the two shapes a
- * flat `subtree.some(isContainer)` welds together:
+ * A node is contained when it IS an unconditional container, or when every element child of it is
+ * contained and at least one of them answers the question at all. The recursion is what separates
+ * the two shapes a flat `subtree.some(isContainer)` welds together:
  *
  *     <section class="hero"><PageContainer …>…</PageContainer></section>   contained ✓
  *     <div><PageContainer …>side</PageContainer><section>body</section></div>   NOT ✗
@@ -537,22 +555,30 @@ function isOutOfFlow(node: RenderTreeNode): boolean {
  * being written for real, because all five pages this task fixed already render a
  * `<PageContainer space="band">` inside their hero.
  *
- * A LEAF THAT IS NOT A CONTAINER IS NOT CONTAINED. `children.every(…)` over an empty list is
- * vacuously true, which would make every childless top-level node — `<V2SourcesSection />`,
- * `<MarineDataNotice />`, each of which WAS a real offender before this task — read as contained.
- * The base case is the counter, not an edge case in it.
+ * A LEAF THAT IS NOT A CONTAINER IS NOT CONTAINED, and this is the line that stops the whole
+ * recursion being vacuous rather than a refinement of it: `children.every(…)` is vacuously TRUE
+ * over an empty list, so making a leaf "contained" does not merely rescue the childless
+ * `<V2SourcesSection />` — it cascades, and every node whose descendants bottom out in leaves
+ * (which is every node) reads as contained. Measured, not reasoned: see the mutation record on
+ * {@link RENDER_ROOTS_WITH_UNCONTAINED_BODY}, where flipping it takes the counter to 0 of 5.
+ *
+ * AN ALL-NOT-APPLICABLE NODE IS UNCONTAINED, for the same reason one level up. A node whose only
+ * element children are scripts and glows has answered nothing about its own in-flow content, and
+ * the vacuous-truth trap is identical. Loud direction.
  */
-function isContained(file: string, node: RenderTreeNode): boolean {
-  if (certifiesContainment(file, node)) return true;
-  if (isOutsideTheBody(file, node) || isOutOfFlow(node)) return true;
-  if (node.children.length === 0) return false;
-  return node.children.every((child) => isContained(file, child));
+function containmentOf(file: string, node: RenderTreeNode): Containment {
+  if (certifiesContainment(file, node)) return "contained";
+  if (isOutsideTheBody(file, node) || isOutOfFlow(node)) return "not-applicable";
+  if (node.children.length === 0) return "uncontained";
+  const children = node.children.map((child) => containmentOf(file, child));
+  if (children.some((state) => state === "uncontained")) return "uncontained";
+  return children.some((state) => state === "contained") ? "contained" : "uncontained";
 }
 
 /** Every top-level node of `file` that is body content sitting outside any `PageContainer`. */
 function uncontainedNodesIn(file: string): string[] {
   return topLevelRenderNodes(file)
-    .filter((node) => !isContained(file, node) && !isExemptNode(file, node))
+    .filter((node) => containmentOf(file, node) === "uncontained" && !isExemptNode(file, node))
     .map((node) => `<${node.tag}> ${node.spelling ?? "(no className attribute)"}`);
 }
 
@@ -595,23 +621,40 @@ function rootsWithUncontainedBody(): Map<string, string[]> {
  * different implementation proves nothing about this one.
  *
  * RULING BM (2026-09-18) rewrote `isContained` from a flat `subtree.some(isContainer)` to a
- * descent, and added `inExpression` to `certifiesContainment`. **The before-measurement did not
- * move**: the five pages were restored from `20dd8d2` with the new predicate in place and the
- * counter read 5, the same five files. So the stricter rule is strictly better rather than
- * differently scoped — it rejects two shapes that were never on this surface and accepts
- * everything that was.
+ * descent, and added `inExpression` to `certifiesContainment`. RULING BN then split "not
+ * applicable" out of "contained" ({@link containmentOf}). **The before-measurement did not move
+ * across either**: the five pages were restored from `20dd8d2` with the current predicate in place
+ * and the counter read 5 — and not merely five FILES, the same 34 loose nodes, per file
+ * `dunya/[slug]` 5, `kitaplar/[slug]` 3, `turkiye/[slug]` 10, `turkiye/bolge/[slug]` 10,
+ * `turkiye/bolge` 6, matching this docblock's own original list node for node. So the stricter rule
+ * is strictly better rather than differently scoped — it rejects shapes that were never on this
+ * surface and accepts everything that was. Re-verified after Ruling BN, not carried over.
  *
- * TWO MORE MUTATIONS, one per repair, each reverted:
+ * FOUR MORE MUTATIONS, one per moving part, each reverted (counts against the 53 tests in this
+ * file):
  *
  *   - `certifiesContainment` with `!node.inExpression` dropped — RED on "a DEAD container
- *     reference contains nothing" and on "a container in a TERNARY branch or a .map() callback",
- *     2 failed / 50 passed;
+ *     reference contains nothing" (its isolated `zz-dead-only` half) and on "a container in a
+ *     TERNARY branch or a .map() callback", 2 failed / 51 passed;
  *   - `isContained` reverted to `certifiesContainment(n) || n.children.some(flat)`, the flat shape
  *     the review defeated — RED on "a container and a loose body as SIBLINGS INSIDE ONE NODE" and
- *     on the `sm:absolute` half of the out-of-flow control, 2 failed / 50 passed.
+ *     on the `sm:absolute` half of the out-of-flow control, 2 failed / 50 passed (run against the
+ *     51-test file, before Ruling BN's control was added);
+ *   - the `"not-applicable"` state collapsed back into `"contained"` — RED on "an out-of-flow node
+ *     does not CERTIFY a subtree", 1 failed / 52 passed. The same single failure appears if the
+ *     all-not-applicable branch returns `"contained"` instead of `"uncontained"`, which is the
+ *     other half of that state being real;
+ *   - the base case `children.length === 0` flipped to `"contained"`, run against the RESTORED
+ *     pre-fix pages with the pin forced to `-1` — the counter reads **0** with an EMPTY offender
+ *     list (`expected +0 to be -1`), not 5 minus something. 11 assertions red, 10 of them
+ *     behavioural controls. Recorded here because the comment on that control previously said "3
+ *     pages, not 5" from reasoning rather than measurement (Ruling BN, L1); the truth is that the
+ *     base case is what stops the recursion being vacuous, so removing it takes the whole counter
+ *     dark.
  *
- * Neither mutation moved the whole-surface count off 0, which is the point: these are shapes the
- * tree does not contain today and the controls are what keep them from arriving unnoticed.
+ * Only the last of the four moves the whole-surface count, and only because it was deliberately run
+ * against the pre-fix tree. The other three leave it at 0 — they are shapes this tree does not
+ * contain today, and the controls are what keep them from arriving unnoticed.
  */
 export const RENDER_ROOTS_WITH_UNCONTAINED_BODY = 0;
 
@@ -700,10 +743,10 @@ describe("the uncontained-body scan", () => {
    * T-046 REVIEW, ATTACK A — reproduced verbatim from the reviewer's probe.
    *
    * This ran GREEN against the first version of this counter, with the body full-bleed, because
-   * `isContained` asked `node.subtree.some(isContainer)` over a FLAT tag list and a container
+   * the predicate asked `node.subtree.some(isContainer)` over a FLAT tag list and a container
    * anywhere below certified the whole node — including the sibling it does not wrap. The shape
    * named in the docblock as "the defect itself" was reachable one level deeper than the defence
-   * reached. `isContained` descends now; this must be RED, naming the loose sibling only.
+   * reached. `containmentOf` descends now; this must be RED, naming the loose sibling only.
    */
   it("a container and a loose body as SIBLINGS INSIDE ONE NODE is not contained — review attack A", () => {
     expect(
@@ -744,9 +787,17 @@ describe("the uncontained-body scan", () => {
     // The same rule, at the other two shapes the review named. Neither is evaluated — `cond` may
     // be true on every real request — because "sometimes" is not containment and this scanner
     // evaluates nothing.
+    //
+    // BOTH TERNARY BRANCHES ARE CONTAINERS (Ruling BN, L3). The first version wrote
+    // `{cond ? <span>a</span> : <PageContainer>b</PageContainer>}`, which reds whatever
+    // `inExpression` does — the `<span>` is a non-container leaf and the base case catches it — so
+    // it stayed GREEN under the `inExpression` mutation and was not a control for the rule it is
+    // filed under. That is the argument this file already applied to the reviewer's own probe,
+    // pointed at its own control. With both branches containers, nothing but `inExpression` can
+    // make this red.
     expect(
       fixture(
-        '    <section className="zz-ternary">\n      {cond ? <span>a</span> : <PageContainer>b</PageContainer>}\n    </section>',
+        '    <section className="zz-ternary">\n      {cond ? <PageContainer>a</PageContainer> : <PageContainer>b</PageContainer>}\n    </section>',
       ),
     ).toEqual(["<section> zz-ternary"]);
     expect(
@@ -774,10 +825,33 @@ describe("the uncontained-body scan", () => {
     ).toEqual(["<section> hero"]);
   });
 
+  it("an out-of-flow node does not CERTIFY a subtree — the third state, not `contained`", () => {
+    // Ruling BN, L2. `isOutOfFlow` used to `return true` ("contained"), so a node whose only
+    // element child was a decorative glow read as contained on the strength of that glow. It is
+    // `not-applicable` now, and a node with nothing but not-applicable children has answered
+    // nothing about its own in-flow content, so it stays in the offender list. No behavioural
+    // difference on today's tree — every real use is a childless glow — which is why it is worth
+    // pinning before the first time someone nests something under one.
+    expect(
+      fixture(
+        '    <div className="zz-glow-only">\n      <div className="absolute inset-0" />\n    </div>',
+      ),
+    ).toEqual(["<div> zz-glow-only"]);
+  });
+
   it("a childless top-level component is not contained by having no children — base case", () => {
-    // `children.every(…)` over an empty list is vacuously true. Without an explicit base case,
-    // `<V2SourcesSection />` and `<MarineDataNotice />` — both real offenders before this task —
-    // would each have read as contained, and the counter would have measured 3 pages, not 5.
+    // `children.every(…)` over an empty list is vacuously true, so without an explicit base case
+    // a leaf is "contained" — and that does not merely rescue the childless `<V2SourcesSection />`
+    // and `<MarineDataNotice />`, it CASCADES: every node whose descendants bottom out in leaves,
+    // which is every node, reads as contained too.
+    //
+    // RULING BN, L1. This comment used to say "the counter would have measured 3 pages, not 5",
+    // reasoning about the two named components rather than measuring. Re-measured against the
+    // restored `20dd8d2` pages with the pin forced to `-1` so the count printed: **0**, with an
+    // EMPTY offender list (`expected +0 to be -1`). The base case is not a refinement of the
+    // recursion, it is the thing that stops the recursion being vacuous — flip it and the whole
+    // counter goes dark rather than losing two pages. Caught loudly: 11 assertions red, 10 of them
+    // behavioural controls including this one.
     expect(fixture("    <V2SourcesSection />")).toEqual([
       "<V2SourcesSection> (no className attribute)",
     ]);
