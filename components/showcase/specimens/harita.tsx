@@ -14,16 +14,15 @@ export function HaritaSpecimens() {
     <>
       <Specimen
         name="MapAttribution"
-        description="Bu bir stil kuralı değil, lisans uyumu. docs/design.md her haritanın yanında atıf istiyor ve V1'in turkey-map-section'ı taşıyordu; ölçüldü, V2'nin YEDİ harita bileşeninin hiçbirinde yoktu. ODbL türev veritabanı veya üretilmiş eser için atıf şart koşuyor. Belge akışında gerçek bir paragraf — ekran görüntüsünde, baskıda ve haritanın üzerine hiç gelmeyen okurda da duruyor."
+        description="Bu bir stil kuralı değil, lisans uyumu. docs/design.md her haritanın yanında atıf istiyor ve V1'in turkey-map-section'ı taşıyordu; ölçüldü, V2'nin YEDİ harita bileşeninin hiçbirinde yoktu. ODbL türev veritabanı veya üretilmiş eser için atıf şart koşuyor. Belge akışında gerçek bir paragraf — ekran görüntüsünde, baskıda ve haritanın üzerine hiç gelmeyen okurda da duruyor. Katman başına açılır: yüzey neyi çiziyorsa onu, ne eksik ne fazla."
       >
         <div className="max-w-md space-y-3">
           <div className="flex h-24 items-center justify-center rounded-xl border border-border bg-muted text-xs text-muted-foreground">
             harita
           </div>
-          <MapAttribution source="osm" />
-          <MapAttribution source="naturalEarth" />
-          <MapAttribution source="osmAndNaturalEarth" />
-          <MapAttribution source="osm" locale="en" />
+          <MapAttribution />
+          <MapAttribution inlandWater context />
+          <MapAttribution boundaries={false} world />
         </div>
       </Specimen>
 

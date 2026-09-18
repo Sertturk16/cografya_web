@@ -113,7 +113,14 @@ Two directories, and the boundary is operational rather than taxonomic:
 - **`components/ui/`** — output of `shadcn add` (`base-nova` style), Terra-themed. CLI-managed.
 - **`components/patterns/`** — written here: `typography` (with `Kbd`), `stat-tile`, `stat-grid`,
   `metric-value`, `empty-state`, `callout`, `form-field`, `map-attribution`, `map-legend`,
-  `theme-pair`, `page-container`, `page-hero`, `breadcrumbs`, `breadcrumbs-nav`, `faq-section`.
+  `page-container`, `page-hero`, `breadcrumbs`, `breadcrumbs-nav`, `faq-section`.
+- **`components/showcase/`** — the `/design-system` route's own machinery, audited as such and
+  never as patterns: `specimen`, `registry`, the specimen files, and `theme-pair`, which wraps
+  every specimen in its light/dark panel pair.
+
+`map-attribution` is the component TEN map surfaces render, moved into `patterns/` by T-042. The
+66-line file that used to hold that name had no product consumer at all and this list pointed at
+it, which is the failure mode `components/ui/orphan.test.ts` now measures rather than describes.
 
 The reason is concrete: `shadcn add` **overwrites** files in the configured `ui` alias — it
 asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living

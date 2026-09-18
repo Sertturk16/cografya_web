@@ -385,13 +385,21 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *     with `HAND_DRAWN_CARDS` unmoved at 192, so the split still splits.
  *   - a NOVEL SPELLING probe — RED on {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 236 to be
  *     235` with `HAND_DRAWN_CARDS` RED at 193 alongside.
+ *
+ * MOVING AGAIN — T-042, and the reason must not be misread as adoption. Nothing was converted
+ * here: `components/patterns/theme-pair.tsx` moved to `components/showcase/theme-pair.tsx`,
+ * which {@link CARD_SCAN_EXCLUSIONS} excludes, so its two panels left the population without a
+ * single call site changing. **192 → 190 cards, 235 → 233 spellings, 358 → 356 total**, wells
+ * unmoved at 166. The RE-CHECK for these values lands with the deletion commit at the end of
+ * this branch, where the population settles; Ruling AZ's rule is that a control proved at 192
+ * proves nothing at 190, and it is honoured there rather than twice over two commits.
  */
-export const HAND_DRAWN_CARDS = 192;
+export const HAND_DRAWN_CARDS = 190;
 
 export const HAND_DRAWN_WELLS = 166;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 235;
+export const HAND_DRAWN_CARD_SPELLINGS = 233;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -932,8 +940,10 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     }
     expect(strict).toBe(HAND_DRAWN_CARDS + HAND_DRAWN_WELLS);
     // 74 before Task 5, 68 after it, 60 after Task 6: eight more files hold no hand-drawn card
-    // surface at all once their metric strip is a `<StatGrid>` of `<StatTile>`s.
-    expect(handDrawnTotals().files).toBe(60);
+    // surface at all once their metric strip is a `<StatGrid>` of `<StatTile>`s. 59 after T-042,
+    // which is a DELETION rather than an adoption — `theme-pair.tsx` left the scanned surface for
+    // `components/showcase/`, taking the file with it. See {@link HAND_DRAWN_CARDS}.
+    expect(handDrawnTotals().files).toBe(59);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
@@ -1724,8 +1734,8 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
    * after the injection is gone, to prove it was temporary.
    */
   it("a StatGrid reached through a re-export barrel is still the shell", () => {
-    const outer = join(repoRoot, "components/patterns/empty-state.tsx");
-    const middle = join(repoRoot, "components/patterns/theme-pair.tsx");
+    const outer = join(repoRoot, "components/patterns/breadcrumbs-nav.tsx");
+    const middle = join(repoRoot, "components/patterns/form-field.tsx");
     const chase = (
       source: string,
       name: string,
@@ -1743,7 +1753,7 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
     expect(chase('export * from "./stat-grid";\n', "StatGrid")).toBe(true);
     // An alias-of-alias through TWO hops.
     expect(
-      chase('export { Grid as G2 } from "./theme-pair";\n', "G2", [
+      chase('export { Grid as G2 } from "./form-field";\n', "G2", [
         [middle, 'export { StatGrid as Grid } from "./stat-grid";\n'],
       ]),
     ).toBe(true);
@@ -1754,11 +1764,11 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
     // A barrel that re-exports a same-named symbol from somewhere else entirely.
     expect(chase('export { StatGrid } from "./page-hero";\n', "StatGrid")).toBe(false);
     // A barrel exporting nothing relevant.
-    expect(chase('export { Callout } from "./callout";\n', "StatGrid")).toBe(false);
+    expect(chase('export { PageContainer } from "./page-container";\n', "StatGrid")).toBe(false);
     // A CYCLE terminates rather than recursing forever — two barrels re-exporting each other.
     expect(
-      chase('export { StatGrid } from "./theme-pair";\n', "StatGrid", [
-        [middle, 'export { StatGrid } from "./empty-state";\n'],
+      chase('export { StatGrid } from "./form-field";\n', "StatGrid", [
+        [middle, 'export { StatGrid } from "./breadcrumbs-nav";\n'],
       ]),
     ).toBe(false);
 
@@ -1803,7 +1813,7 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
     // ALIASED from the real module: still a tile.
     expect(isStatTileElement(aliased, new Map([["Tile", real]]))).toBe(true);
     // And through a barrel, with the same walk the shell uses.
-    const barrel = join(repoRoot, "components/patterns/empty-state.tsx");
+    const barrel = join(repoRoot, "components/patterns/breadcrumbs-nav.tsx");
     expect(
       withInjectedSource([[barrel, 'export { StatTile as Tile } from "./stat-tile";\n']], () =>
         isStatTileElement(aliased, new Map([["Tile", { file: barrel, name: "Tile" }]])),

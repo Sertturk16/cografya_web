@@ -44,6 +44,15 @@ interface ThemePairProps {
  * draws differently on the two panels, which is the one thing a comparison instrument must
  * not do. It is the same token, chosen for the same "make this shape visible" reason, as the
  * legend swatch outline.
+ *
+ * ## Why it lives here and not in `components/patterns`
+ *
+ * T-042 moved it. `components/showcase/specimen.tsx` wraps EVERY specimen in this component, so
+ * it is the machinery the `/design-system` route is built out of — not a pattern waiting for a
+ * product call site. In `components/patterns` it read as the second thing to a reachability
+ * audit: a pattern nothing outside the showcase imports, which is the shape that gets deleted.
+ * `components/ui/orphan.test.ts` now classifies a file under `components/showcase/` that the
+ * design-system route reaches as live BY that route, which is the true statement about this one.
  */
 export function ThemePair({ children, portals = false, className }: ThemePairProps) {
   return (

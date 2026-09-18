@@ -299,7 +299,7 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
     // surface renders the credit through ONE shared component, so there is one render site for
     // the map half of this rule instead of a list that a new map can silently miss.
     const sites: [string, string][] = [
-      ["../../components/v2/v2-map-attribution.tsx", "attributionJrcEnglish"],
+      ["../../components/patterns/map-attribution.tsx", "attributionJrcEnglish"],
       ["../../app/[locale]/(site)/hakkimizda/page.tsx", "dataJrcEnglish"],
       ["../../app/[locale]/(site)/hakkimizda/page.tsx", "dataJrcCitation"],
     ];
@@ -358,18 +358,18 @@ describe("T10 — the attribution string is verbatim in both locales", () => {
 
     for (const { file, source } of surfaces) {
       const name = file.slice(file.lastIndexOf("/") + 1);
-      expect(source, `${name} draws the JRC layer without <V2MapAttribution>`).toContain(
-        "<V2MapAttribution",
+      expect(source, `${name} draws the JRC layer without <MapAttribution>`).toContain(
+        "<MapAttribution",
       );
       expect(source, `${name} draws the JRC layer but does not declare inlandWater`).toMatch(
-        /<V2MapAttribution[^>]*\binlandWater\b/,
+        /<MapAttribution[^>]*\binlandWater\b/,
       );
     }
 
     // The other direction: the shared component is the only thing that renders the string, and it
     // renders it only when the caller says the layer is drawn.
     const attribution = readFileSync(
-      fileURLToPath(new URL("../../components/v2/v2-map-attribution.tsx", import.meta.url)),
+      fileURLToPath(new URL("../../components/patterns/map-attribution.tsx", import.meta.url)),
       "utf8",
     );
     expect(attribution).toMatch(/inlandWater && \(/);

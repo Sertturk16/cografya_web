@@ -24,7 +24,7 @@ import { stripComments } from "@/lib/test-support/strip-comments";
  * Water), and named neither. So the one artefact that leaves the site credited two institutions
  * that contributed no data and omitted the two whose licences ask to be credited.
  *
- * The on-screen credit was correct the whole time (`V2MapAttribution`, twice in this file), which
+ * The on-screen credit was correct the whole time (`MapAttribution`, twice in this file), which
  * is why nothing caught it: every guard in this repo asks what the PAGE renders.
  *
  * ## What this asserts
@@ -51,7 +51,7 @@ describe("the measurement image's credit", () => {
 
   it("credits the geometry the canvas actually draws", () => {
     // Read through the catalogue rather than written out, so the exported image and
-    // `V2MapAttribution` cannot say different things about the same shapes.
+    // `MapAttribution` cannot say different things about the same shapes.
     expect(watermark).toContain('tMap("attribution")');
     expect(watermark).toContain('tMap("attributionProvinceLabel")');
     expect(watermark).toContain('tMap("attributionJrcEnglish")');

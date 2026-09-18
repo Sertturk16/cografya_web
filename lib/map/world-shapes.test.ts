@@ -299,7 +299,7 @@ describe("world map geometry", () => {
  *
  * Natural Earth is public domain, so this is not a licence breach the way the JRC and ECMWF
  * cases are. It is the OTHER half of the same rule, which this repo states in
- * `V2MapAttribution`'s own docblock: the obligation travels with the material, and a surface
+ * `MapAttribution`'s own docblock: the obligation travels with the material, and a surface
  * that uses a source the reader cannot trace has told them less than it knows.
  *
  * Structural only (`CONVENTIONS.md` §2): imports and props, never copy.
@@ -339,7 +339,7 @@ describe("the Natural Earth world-country credit", () => {
     /**
      * TWO mechanisms are accepted, because the repo genuinely has two and both are correct.
      *
-     *  - `V2MapAttribution ... world` — the inline-SVG surfaces, which draw the polygons
+     *  - `MapAttribution ... world` — the inline-SVG surfaces, which draw the polygons
      *    themselves and own the credit line under the map box.
      *  - `LocatorMap` — the one surface that hands its geometry to a shared figure component.
      *    `/dunya/[slug]` looks up ONE country's `d` out of `COUNTRY_SHAPES` and passes it in;
@@ -349,7 +349,7 @@ describe("the Natural Earth world-country credit", () => {
      *
      * What is NOT accepted is neither, which is what three surfaces shipped.
      */
-    const DRAWS_ITS_OWN = /<V2MapAttribution[^>]*\bworld\b/;
+    const DRAWS_ITS_OWN = /<MapAttribution[^>]*\bworld\b/;
     const DELEGATES_TO_FIGURE = /<LocatorMap\b/;
 
     for (const { name, source } of surfaces) {
@@ -357,7 +357,7 @@ describe("the Natural Earth world-country credit", () => {
       expect(
         credited,
         `${name} uses COUNTRY_SHAPES but names Natural Earth nowhere — ` +
-          "render <V2MapAttribution world /> under the map, or delegate to <LocatorMap>",
+          "render <MapAttribution world /> under the map, or delegate to <LocatorMap>",
       ).toBe(true);
     }
   });
@@ -377,7 +377,7 @@ describe("the Natural Earth world-country credit", () => {
 
   it("renders the line only when the caller says the layer is drawn", () => {
     const attribution = readFileSync(
-      fileURLToPath(new URL("../../components/v2/v2-map-attribution.tsx", import.meta.url)),
+      fileURLToPath(new URL("../../components/patterns/map-attribution.tsx", import.meta.url)),
       "utf8",
     );
     expect(attribution).toMatch(/world && </);

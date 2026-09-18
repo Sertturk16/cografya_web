@@ -4,7 +4,7 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
-import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { MapAttribution } from "@/components/patterns/map-attribution";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -848,7 +848,7 @@ export function V2WorldMapExplorer({
             (`v2-map-credit-placement.test.ts`): a credit inside the box is a credit drawn over
             the map, which two owner rulings removed. `boundaries={false}` because this surface
             draws no OSM geometry — the province layer is a different map. */}
-        <V2MapAttribution boundaries={false} world />
+        <MapAttribution boundaries={false} world />
       </div>
 
       {/* MIDDLE SECTIONS: 7 CONTINENTS GUIDE & GEOGRAPHIC EXTREMES SPOTLIGHT */}

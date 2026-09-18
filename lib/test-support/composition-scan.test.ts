@@ -532,12 +532,19 @@ describe("element spans, containment and the attribute walk", () => {
  * components does — and so the cycle guard, which no counter can reach, has one at all.
  *
  * The two hosts are borrowed PATHS: {@link withInjectedSource} replaces their source entirely for
- * the duration, so nothing here depends on what either file contains.
+ * the duration, so nothing here depends on what either file CONTAINS — but both must EXIST, and
+ * that is not the same freedom. `resolveSpecifier` answers `null` for a path with no file behind
+ * it, so a host that is deleted makes `./<host>` resolve to nothing and the chase silently reads
+ * as "no such re-export" — which is the answer three of these controls expect anyway. The hosts
+ * were `empty-state.tsx` and `theme-pair.tsx`, both of which T-042 deleted or moved; they are now
+ * `breadcrumbs-nav.tsx` and `form-field.tsx`, and the rule is the one PR4 wrote for fixtures one
+ * level up: **no control may be hosted on a file a later task in the plan is contracted to
+ * remove.**
  */
 describe("the binding resolver chases re-exports and terminates on a cycle", () => {
   const TYPOGRAPHY = join(repoRoot, "components/patterns/typography.tsx");
-  const outer = join(repoRoot, "components/patterns/empty-state.tsx");
-  const middle = join(repoRoot, "components/patterns/theme-pair.tsx");
+  const outer = join(repoRoot, "components/patterns/breadcrumbs-nav.tsx");
+  const middle = join(repoRoot, "components/patterns/form-field.tsx");
 
   const chase = (
     source: string,
@@ -562,7 +569,7 @@ describe("the binding resolver chases re-exports and terminates on a cycle", () 
 
   it("follows an alias of an alias through two barrels", () => {
     expect(
-      chase('export { Heading as H } from "./theme-pair";\n', "H", [
+      chase('export { Heading as H } from "./form-field";\n', "H", [
         [middle, 'export { H1 as Heading } from "./typography";\n'],
       ]),
     ).toBe(true);
@@ -574,15 +581,15 @@ describe("the binding resolver chases re-exports and terminates on a cycle", () 
     // A same-named symbol from somewhere else entirely.
     expect(chase('export { H1 } from "./page-hero";\n', "H1")).toBe(false);
     // A barrel exporting nothing relevant.
-    expect(chase('export { Callout } from "./callout";\n', "H1")).toBe(false);
+    expect(chase('export { PageContainer } from "./page-container";\n', "H1")).toBe(false);
   });
 
   it("terminates on a cycle rather than recursing forever — two barrels re-exporting each other", () => {
     // Legal to write and an infinite walk without the `seen` guard. Asserted here because no
     // counter can reach this shape, so nothing else would ever execute the guard.
     expect(
-      chase('export { H1 } from "./theme-pair";\n', "H1", [
-        [middle, 'export { H1 } from "./empty-state";\n'],
+      chase('export { H1 } from "./form-field";\n', "H1", [
+        [middle, 'export { H1 } from "./breadcrumbs-nav";\n'],
       ]),
     ).toBe(false);
   });

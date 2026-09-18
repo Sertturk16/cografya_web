@@ -85,11 +85,15 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
  *
  * An explicit list rather than a pattern: an exemption nobody wrote down is how a coverage
  * test quietly stops covering things. Add to it deliberately, with a reason.
+ *
+ * EMPTY SINCE T-042, and the emptiness is the point. Its one entry was `theme-pair`, exempted
+ * because it is showcase machinery rather than a pattern — which was the right reason to give it
+ * the right home instead. It now lives at `components/showcase/theme-pair.tsx`, beside the
+ * `Specimen` that renders it, so the coverage walk over `components/ui` and `components/patterns`
+ * never sees it and no exemption is needed. An exemption that moves the file is better than one
+ * that describes it.
  */
-export const EXEMPT_FILES: readonly string[] = [
-  // Showcase machinery — it renders the specimens, it is not one.
-  "theme-pair",
-] as const;
+export const EXEMPT_FILES: readonly string[] = [] as const;
 
 export function categoryBySlug(slug: string): ShowcaseCategory | undefined {
   return CATEGORIES.find((category) => category.slug === slug);

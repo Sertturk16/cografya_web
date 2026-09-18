@@ -194,15 +194,25 @@ const verdictsOf = (files: readonly string[], verdict: Verdict): string[] =>
  * ## The five T-042 pins
  *
  * Closing the two holes above turned up five MORE files in this state, none of them ever seen by
- * the old walk. They are pinned here in their defective state first, on their own commit, so the
+ * the old walk. They were pinned here in their defective state first, on their own commit, so the
  * deletion that follows is a measured change and not a claim — the shape T-046 settled on.
+ *
+ * Two of the five left this list without being deleted, because neither was what it looked like:
+ *
+ *   - `patterns/theme-pair.tsx` MOVED to `components/showcase/theme-pair.tsx`.
+ *     `showcase/specimen.tsx` wraps every specimen in it, so it is the machinery the
+ *     `/design-system` route is built out of. Deleting it as a showcase-only pattern would have
+ *     taken the whole design system down;
+ *   - `patterns/map-attribution.tsx` was replaced in place. That file (66 lines) had four
+ *     showcase consumers and no product one, while `components/v2/v2-map-attribution.tsx`
+ *     (102 lines) rendered the same mandatory ODbL credit for TEN product surfaces — and
+ *     `docs/design.md` named the orphan as the patterns component. The live one moved in under
+ *     that name and the orphan died with it.
  */
 const KNOWN_SHOWCASE_ONLY = [
   "components/patterns/callout.tsx",
   "components/patterns/empty-state.tsx",
-  "components/patterns/map-attribution.tsx",
   "components/patterns/map-legend.tsx",
-  "components/patterns/theme-pair.tsx",
   "components/ui/tabs.tsx",
 ];
 

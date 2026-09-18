@@ -93,7 +93,7 @@ interface MarineAttributionProps {
  *
  * NOR DID THE MAP CREDITS, NOR THE CLIMATE AND AIR NOTICES. OpenStreetMap's guidance asks for
  * the credit ON a browsable map, which is a different requirement from CC BY 4.0's, so
- * `V2MapAttribution` is untouched. `ClimateSection` and `AirPollutionSection` keep their inline
+ * `MapAttribution` is untouched. `ClimateSection` and `AirPollutionSection` keep their inline
  * ERA5-Land and ACAG blocks: the decision recorded here was taken about the marine licences and
  * was not extended to them, and the criterion those two files cite from this docblock — visible
  * without a click on the page carrying the values — still governs them.

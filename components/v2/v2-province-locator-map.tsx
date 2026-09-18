@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
-import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { MapAttribution } from "@/components/patterns/map-attribution";
 
 interface V2ProvinceLocatorMapProps {
   plateCode: string;
@@ -22,7 +22,7 @@ interface V2ProvinceLocatorMapProps {
  * at the V2 province page, where it had been guarding `LocatorMap`'s `<figcaption>` all along.
  * The V2 rewrite swapped the component and the obligation went with it.
  *
- * The credit itself lives in `V2MapAttribution`, which every V2 map surface shares — the eight
+ * The credit itself lives in `MapAttribution`, which every V2 map surface shares — the eight
  * of them each drew the JRC inland-water layer and the Natural Earth context with no credit at
  * all, and this one credited only OSM. Reading it from a shared component rather than passing it
  * in is the point `LocatorMap`'s own test records: a caller-supplied credit can be dropped at one
@@ -93,7 +93,7 @@ export async function V2ProvinceLocatorMap({ plateCode, provinceName }: V2Provin
           only `attribution` until the JRC guard was re-derived from the imports; the lakes and
           the neighbouring countries were uncredited. */}
       <figcaption>
-        <V2MapAttribution inlandWater context />
+        <MapAttribution inlandWater context />
       </figcaption>
     </figure>
   );

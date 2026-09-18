@@ -12,7 +12,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2RegionThumb, V2RegionThumbDefs } from "@/components/v2/v2-region-thumb";
-import { V2MapAttribution } from "@/components/v2/v2-map-attribution";
+import { MapAttribution } from "@/components/patterns/map-attribution";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -166,7 +166,7 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
 
             The bibliography below names OpenStreetMap too, but only inside a closed `<details>`;
             per `V2SourcesSection`'s own rule that quote is an echo and never the sole carrier. */}
-        <V2MapAttribution />
+        <MapAttribution />
 
         {/* Sources & Pedagogy Footer Section.
             EXPLICIT `scope`. This call had no props at all, so it fell through to the default
