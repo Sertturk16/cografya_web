@@ -48,11 +48,12 @@ export function FaqSectionServerSpecimen({ locale }: { locale: Locale }) {
     <>
       <Specimen
         name="FaqSection"
-        description={`Altı elle yazılmış SSS bloğunun yerini alan tek bileşen: çapa (\`id\`), \`scroll-mt-28\`, \`tabIndex={-1}\`, erişilebilir ad ve her soruya bir <h3> — hepsi tek yerde. Varsayılan \`list\` mekanizması. Buradaki blok \`structuredData="noindex"\` ile kapılanır: bu sayfanın yüzeyi uçtan uca \`noindex\` olduğundan JSON-LD ÜRETİLMEZ, yani bir iç araç yayına yapılandırılmış veri sızdıramaz.`}
+        description={`Altı elle yazılmış SSS bloğunun yerini alan tek bileşen: çapa (\`id\`), \`scroll-mt-28\`, \`tabIndex={-1}\`, erişilebilir ad ve her soruya bir <h3> — hepsi tek yerde. Varsayılan \`list\` mekanizması. Buradaki blok \`structuredData="noindex"\` ile kapılanır: bu sayfanın yüzeyi uçtan uca \`noindex\` olduğundan JSON-LD ÜRETİLMEZ, yani bir iç araç yayına yapılandırılmış veri sızdıramaz. Başlığın altındaki cümle isteğe bağlı \`lede\` özelliğidir; aşağıdaki akordeon örneğinde verilmediği için orada hiç \`<p>\` basılmaz.`}
       >
         <FaqSection
           id="ornek-sss-liste"
           heading="Sıkça Sorulan Sorular"
+          lede="Bu blokta neyin yanıtlandığını bir cümlede söyleyen isteğe bağlı giriş metni."
           items={ITEMS}
           locale={locale}
           structuredData="noindex"

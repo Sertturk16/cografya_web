@@ -102,6 +102,39 @@ describe("FaqSection", () => {
     expect(renderToStaticMarkup(<FaqSection heading="SSS" items={[]} locale="tr" />)).toBe("");
   });
 
+  /**
+   * RULING CI — the lede, present and absent.
+   *
+   * Task 9's first pass dropped the two `turkiye/bolge` ledes along with the badges, icons and
+   * eyebrows, treating all of it as the shell variance the counters measured. The ornament was
+   * that; a sentence someone wrote about what the block covers is not. `lede` is the one door
+   * this component opens for copy, and it is `string` rather than `ReactNode` so it cannot become
+   * a door for the ornament as well.
+   *
+   * The ABSENT case is the half that matters: an always-rendered `<p>` would be an empty element
+   * in the `space-y-6` rhythm on the four callers that pass no lede, which is a visible gap
+   * nothing would fail on.
+   */
+  it("renders the lede when given, and no empty paragraph when not", () => {
+    const withLede = renderToStaticMarkup(
+      <FaqSection heading="SSS" lede="Bölgesel kavramlar." items={ITEMS} locale="tr" />,
+    );
+    expect(withLede).toContain("Bölgesel kavramlar.");
+    // Under the heading, not above it — the reading order the two restored callers had.
+    expect(withLede.indexOf("SSS")).toBeLessThan(withLede.indexOf("Bölgesel kavramlar."));
+    // Inside the section, so it is part of the block the anchor lands on.
+    expect(withLede.indexOf('id="sss"')).toBeLessThan(withLede.indexOf("Bölgesel kavramlar."));
+    // `PageHero`'s lede treatment, which is the whole point of not inventing a new one.
+    expect(withLede).toContain("text-muted-foreground text-sm sm:text-base leading-relaxed");
+
+    const withoutLede = renderToStaticMarkup(
+      <FaqSection heading="SSS" items={ITEMS} locale="tr" />,
+    );
+    expect(withoutLede).not.toContain("text-muted-foreground text-sm sm:text-base leading-relaxed");
+    // No `<p>` between the heading and the grid at all — not an empty one, not a whitespace one.
+    expect(withoutLede).not.toMatch(/<\/h2>\s*<p[^>]*>\s*<\/p>/);
+  });
+
   it("takes the anchor and the heading id from `id`", () => {
     const html = renderToStaticMarkup(
       <FaqSection id="deniz-sss" heading="SSS" items={ITEMS} locale="tr" />,

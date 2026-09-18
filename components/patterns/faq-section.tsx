@@ -63,6 +63,22 @@ export interface FaqSectionProps {
   /** The anchor. Defaults to `"sss"`, which is what five of the six blocks already used. */
   readonly id?: string;
   readonly heading: string;
+  /**
+   * One sentence under the heading, saying what this block covers. Rendered only when given.
+   *
+   * RULING CI — COPY IS NOT ORNAMENT. Task 9's first pass converged the six blocks and dropped
+   * everything around their headings with the same stroke: the badges, the `HelpCircle` icons, the
+   * "Merak Edilenler" eyebrows, the `1.` `2.` numbering — and the two `turkiye/bolge` ledes. The
+   * first four were the shell variance `page-composition-faq.test.ts` measured and they are
+   * correctly gone. A lede is not that: it is editorial copy someone wrote, it carries information
+   * the questions do not, and no counter ever asked for it. Restoring it needed a prop rather than
+   * a `className` escape hatch, which is the shape this component refuses on purpose.
+   *
+   * `string`, not `ReactNode`, deliberately — narrower than `PageHero`'s `lede`. A block of
+   * questions wants a sentence; widening to `ReactNode` would let a caller pass the badge row back
+   * in through the one door this component leaves open.
+   */
+  readonly lede?: string;
   /** Gates the JSON-LD together with `structuredData`; never a hand-passed boolean. */
   readonly locale: Locale;
   readonly items: readonly FaqEntry[];
@@ -78,7 +94,7 @@ export function FaqSection(props: FaqSectionProps) {
   // Read by name, deliberately — see the `className?: never` note above. Nothing here is a rest
   // object, so nothing here can reach an element.
   const id = props.id ?? "sss";
-  const { heading, locale, items, mechanism = "list", structuredData = false } = props;
+  const { heading, lede, locale, items, mechanism = "list", structuredData = false } = props;
 
   // An empty block is not an empty section with a heading over it: it is no section. The callers
   // that pass a possibly-empty array (`region.faqs`, `continent.faqs`) wrote this guard by hand,
@@ -141,6 +157,15 @@ export function FaqSection(props: FaqSectionProps) {
       >
         {heading}
       </h2>
+      {/* `components/patterns/page-hero.tsx`'s lede treatment, character for character, plus the
+          `max-w-3xl` that component gets from its own wrapper and this one has none of — so the
+          two render the same measure rather than merely carrying the same class list. Undefined
+          renders nothing at all: no empty `<p>`, no stray margin in the `space-y-6` rhythm. */}
+      {lede !== undefined ? (
+        <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-3xl">
+          {lede}
+        </p>
+      ) : null}
       {mechanism === "accordion" ? (
         <Accordion>{entries}</Accordion>
       ) : (

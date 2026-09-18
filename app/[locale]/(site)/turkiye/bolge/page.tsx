@@ -464,17 +464,17 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
           >
             Analitik Kıyaslama
           </a>
-          {/* UNGATED, like every other link in this nav. The `locale === "tr"` that used to wrap
-              this link was there because the FAQ SECTION was TR-only and the target would have
-              been dead on the EN twin. `FaqSection` renders the questions in both locales now and
-              withholds only the FAQPage schema (`structuredData="trOnly"`), so the anchor
-              resolves on `/en` and the gate would only hide a live section from its own nav. */}
-          <a
-            href="#sss"
-            className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
-          >
-            Sıkça Sorulan Sorular
-          </a>
+          {/* Gated WITH the section it points at, which is the whole reason this gate exists: the
+              FAQ block below is TR-only, so on the EN twin this link would scroll to nothing.
+              Task 9's first pass ungated both together and had to put both back together. */}
+          {locale === "tr" && (
+            <a
+              href="#sss"
+              className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+            >
+              Sıkça Sorulan Sorular
+            </a>
+          )}
           <a
             href="#kaynakca"
             className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
@@ -728,20 +728,31 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
           </Card>
         </section>
 
-        {/* SECTION 4: SIKÇA SORULAN SORULAR. The `locale === "tr"` gate that used to be written
-            twice — once around the visible cards and once around the `<JsonLd>` six hundred lines
-            above — is now ONE `structuredData` prop. `"trOnly"` is this page's own surface
-            constant (`generateMetadata` above passes the same one to `buildMetadata`), and
-            `isIndexable("en", "trOnly")` is false, so the EN twin emits no FAQPage exactly as
-            before. The questions themselves are no longer hidden from an EN reader: de-indexing a
-            surface is not a reason to withhold the answers, which is the rule
-            `components/patterns/faq-section.tsx` states. */}
-        <FaqSection
-          heading="Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular"
-          locale={locale}
-          items={bolgelerFaqs}
-          structuredData="trOnly"
-        />
+        {/* SECTION 4: SIKÇA SORULAN SORULAR.
+
+            BOTH HALVES MOVE AS ONE, and the gate is still written here on purpose — Ruling CH.
+            The first pass of Task 9 mapped this page's `locale === "tr"` onto
+            `structuredData="trOnly"` alone, reasoning that de-indexing a surface is no reason to
+            withhold answers from a reader. That is true in general and wrong here: these questions
+            are Turkish literals from `buildBolgelerFaqs`, so it did not give an EN reader the
+            answers, it gave them Turkish prose the EN twin had never shown. `structuredData`
+            withholds the schema; only a gate withholds the markup, and this block needs both.
+
+            So the gate wraps the whole component and `structuredData` carries the page's own
+            surface constant (`generateMetadata` above passes the same `"trOnly"` to
+            `buildMetadata`). The two cannot now disagree: no `<FaqSection>`, no schema, because
+            the schema is emitted from inside it. That is exactly the property the plan asked for
+            — one switch, not two — reached by gating the component rather than by deleting the
+            gate. `/deniz` carries the identical shape for the identical reason. */}
+        {locale === "tr" && (
+          <FaqSection
+            heading="Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular"
+            lede="Coğrafya müfredatı, sınav hazırlığı ve genel kültür açısından en çok merak edilen bölgesel kavramlar."
+            locale={locale}
+            items={bolgelerFaqs}
+            structuredData="trOnly"
+          />
+        )}
 
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex items-center justify-between pt-2">

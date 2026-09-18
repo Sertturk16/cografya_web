@@ -1466,6 +1466,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             `buildMetadata`. */}
         <FaqSection
           heading={`${region.nameTr} Hakkında Sıkça Sorulan Sorular`}
+          lede="Bölgenin coğrafi yapısı, nüfusu, illeri, bölümleri ve iklimi hakkında merak edilen temel sorular ve yanıtları."
           locale={locale}
           items={region.faqs ?? []}
           structuredData="trOnly"
