@@ -120,7 +120,7 @@ export async function AirPollutionSection({
   });
 
   return (
-    <section className="section" aria-labelledby={headingId}>
+    <section className="mt-10" aria-labelledby={headingId}>
       {/* `tabIndex={-1}` makes this permanent deep-link target programmatically focusable,
           so Safari/VoiceOver actually move AT focus to the heading when the fragment is
           followed (the skip-link `<main>` fix, `ENGINEERING.md` §5). `.heading`'s

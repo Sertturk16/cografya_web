@@ -80,7 +80,7 @@ export function FeaturedCards({ headingId, heading, eyebrow, icon, items }: Feat
   if (items.length === 0) return null;
 
   return (
-    <section className="section" aria-labelledby={headingId}>
+    <section className="mt-10" aria-labelledby={headingId}>
       <div className={styles.sectionEyebrow}>
         {icon}
         <span>{eyebrow}</span>

@@ -581,17 +581,24 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
-}
-
 @layer base {
+  /* T-041: these two sat unlayered, before `@layer base` even opened for the first time. Both
+     are the same bug class as the region further down this file — `box-sizing: border-box`
+     on `*`/`*::before`/`*::after` being unlayered meant Tailwind's own `box-content`/
+     `box-border` utilities (currently zero call sites, but real Tailwind utilities all the
+     same) could never win against it, and Tailwind's own preflight already re-establishes the
+     identical reset inside its OWN base layer — so this copy gains nothing by staying outside
+     one. Moved in verbatim, no visual change. */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     margin: 0;
     /* Theme-aware, like every other colour in this layer. These two declarations are in fact
@@ -608,6 +615,19 @@ html {
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
+  }
+
+  /* T-041: moved in from the unlayered region below `@layer base`'s old close. A bare element
+     selector hitting every `<main>` this stylesheet reaches (the `(site)` layout's single
+     landmark, `app/not-found.tsx`'s own root `<main>`, and `v2-game-screen.tsx`'s `<main>` on
+     the three `(play)` screens) — `flex: 1 0 auto` is what lets each grow to fill the space
+     `body`'s own `flex-direction: column` leaves between header and footer. Being unlayered
+     meant no component-level Tailwind utility (`flex-none`, a shrink override, …) could ever
+     win against it; there is no product reason for that, so it moves into `@layer base` beside
+     the `body` rule it completes, where `@layer utilities` still wins the ordinary way if a
+     page ever needs to. */
+  main {
+    flex: 1 0 auto;
   }
 
   /* `--foreground`, not `--color-ink`. Same defect as the `a` rule below and found the same
@@ -715,64 +735,15 @@ html {
   outline: none;
 }
 
-/* ---- Shared layout utilities ---- */
-.container {
-  width: 100%;
-  max-width: var(--container-max);
-  margin-inline: auto;
-  padding-inline: 20px;
-}
-
-main {
-  flex: 1 0 auto;
-}
-
-.section {
-  margin-top: 40px;
-}
-
-.card {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 22px 24px;
-}
-
-/* ---- Buttons ---- */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 0.95rem;
-  border-radius: var(--radius);
-  padding: 11px 18px;
-  border: 1.5px solid transparent;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
-.btn-primary:hover {
-  background: var(--color-primary-dark);
-  color: var(--color-on-primary);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--color-primary-dark);
-  border-color: var(--color-border);
-}
-
-.btn-ghost:hover {
-  background: var(--color-surface);
-  color: var(--color-primary-dark);
-}
+/* T-041 removed the unlayered "shared layout utilities"/"Buttons" region that used to sit here
+   (`.container`, `main` — moved into `@layer base` above — `.section`, `.card`, `.btn`/
+   `.btn-primary`/`.btn-ghost`). Every selector in that region sat outside any `@layer`, which
+   in CSS beats EVERY rule in `@layer utilities` regardless of specificity — so a Tailwind
+   utility added next to one of these classes silently did nothing. `.container` and `.card` had
+   zero product consumers (`components/globals-unlayered-css.test.ts` is the tripwire that keeps
+   it that way); `.section`'s four consumers took `mt-10`; `.btn`/`.btn-primary`/`.btn-ghost`'s
+   consumers moved to `Button`/`buttonVariants` (`components/ui/button.tsx`). See
+   `.superpowers/sdd/t-041-unlayered-css-report.md` for the full audit and migration. */
 
 /* NARROW-WIDTH WRAP FIX (→ round-2 review DFR102-I1, replaces the font-shrinking narrow-band
    override the previous fix round shipped). That override held 320–360px to 4 wrapped lines by

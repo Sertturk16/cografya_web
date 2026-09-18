@@ -98,7 +98,7 @@ export async function ProvinceEarthquakeSection({
   }).format(list.meta.filter.minMagnitude);
 
   return (
-    <section className="section" aria-labelledby={headingId}>
+    <section className="mt-10" aria-labelledby={headingId}>
       <h2 id={headingId}>{t("earthquakeHeading", { name: provinceName })}</h2>
 
       <p className={styles.magnitudeFloorNote}>
