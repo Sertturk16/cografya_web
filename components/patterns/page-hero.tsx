@@ -59,12 +59,21 @@ export interface PageHeroProps {
 export function PageHero({ tier, heading, badges, notice, lede, children }: PageHeroProps) {
   return (
     <div className="relative z-10 max-w-3xl space-y-4">
-      {/* `flex-wrap` is the one token the hub measurement did not see, because it was taken over
-          the 14 hub heroes and all three DETAIL heroes write `flex items-center gap-2 flex-wrap`
-          — `turkiye/[slug]` carries up to 4 badges and `turkiye/bolge/[slug]` up to 6, which
-          cannot sit on one 320px line. Dropping it would clip them against the hero section's
-          own `overflow-hidden`. On the 14 hub rows it can only prevent the clipping that two
-          long `size="sm"` badges already produce at 320px; it never moves a row that fits. */}
+      {/* `flex-wrap` is the one token the hub measurement did not see: it was taken over the 14
+          hub heroes, and all three DETAIL heroes write `flex items-center gap-2 flex-wrap`
+          (`turkiye/[slug]:379`, `turkiye/bolge/[slug]:453`, `dunya/[slug]:326`), carrying 4 to 6
+          badges. MEASURED at 320px with the token removed, rather than predicted: the detail rows
+          CLIP against the hero section's `overflow-hidden` — `turkiye/bolge/marmara` loses 125px,
+          its fifth badge entirely and its fourth mid-word; `dunya/almanya` loses 113px. That is a
+          regression the `className` escape hatch this component refuses would have been the only
+          other way to avoid.
+
+          On the 14 hub rows the effect is different and smaller, and worth stating accurately: a
+          two-badge row does not clip without this token, it COMPRESSES — flex items shrink, so
+          each badge's own text wraps to two lines inside a squeezed pill. With `flex-wrap` the two
+          badges take a line each at their natural width. A row whose badges already fit on one
+          line is untouched at every width (`/turkiye` is the live case: one line at 320 and at
+          1440, with and without). */}
       {badges !== undefined ? (
         <div className="flex items-center gap-2 flex-wrap">{badges}</div>
       ) : null}

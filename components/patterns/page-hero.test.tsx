@@ -76,9 +76,10 @@ describe("PageHero", () => {
     // `flex-wrap` was added in the adoption task, and it is a correction to the MEASUREMENT
     // rather than a preference: the row above was counted over the 14 HUB heroes only, and all
     // three DETAIL heroes (`turkiye/[slug]:379`, `turkiye/bolge/[slug]:453`, `dunya/[slug]:326`)
-    // write `flex items-center gap-2 flex-wrap`, carrying up to 6 badges. A component that could
-    // not wrap would have clipped them against the hero section's `overflow-hidden` at 320px, and
-    // the only alternative was the `className` escape hatch this component exists to refuse.
+    // write `flex items-center gap-2 flex-wrap`, carrying 4 to 6 badges. Measured at 320px with
+    // the token removed: `turkiye/bolge/marmara` clips 125px against the hero section's
+    // `overflow-hidden`, losing its fifth badge entirely; `dunya/almanya` clips 113px. The only
+    // alternative was the `className` escape hatch this component exists to refuse.
     const html = renderToStaticMarkup(
       <PageHero tier="hub" heading="x" badges={<span>b</span>}>
         <span>c</span>
