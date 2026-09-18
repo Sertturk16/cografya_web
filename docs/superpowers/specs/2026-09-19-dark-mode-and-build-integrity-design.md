@@ -145,15 +145,32 @@ which own the token layer.
 
 ## 4. PR0 — measurement layer
 
-**Scope:** `lib/theme/contrast.ts`, new `lib/theme/cvd.ts`, tests for both.
+**Scope:** `lib/theme/contrast.ts`, new `lib/theme/cvd.ts`, new `lib/theme/delta-e.ts`, tests
+for each.
 
 - Extend `contrast.ts` to accept `oklch(L C H)` alongside hex, converting to sRGB. The hex
   path keeps its current behaviour byte for byte; existing callers do not change.
 - `lib/theme/cvd.ts` simulates deuteranopia, protanopia and tritanopia, returning sRGB.
-- A test asserts each of the seven `--region-*` tints stays at least 3:1 from every other
-  under all three simulations, and carries a **positive control**: a known-failing pair that
-  the same assertion rejects. A simulation that silently returns its input would otherwise
-  pass everything.
+- `lib/theme/delta-e.ts` computes CIEDE2000, because **WCAG contrast ratio is the wrong
+  instrument for a categorical set**. Measured before writing this: 20 of the 21 pairs of the
+  seven `--region-*` tints are already below 3:1 today, worst 1.02:1 (`ege` / `akdeniz`).
+  That is not a defect — Okabe-Ito separates by hue and chroma, not luminance, and a
+  luminance-ratio assertion over it could never go green. WCAG ratio stays the instrument for
+  text on a surface and for adjacent steps of an ordered ramp (`--map-1..6`, `--eq-mag-1..5`);
+  categorical separation is measured as colour difference.
+- A test asserts every pair of the seven tints stays at **ΔE00 ≥ 10** under normal vision and
+  all three simulations, and carries a **positive control**: a known-failing pair the same
+  assertion rejects. A simulation that silently returned its input would otherwise pass
+  everything.
+
+Measured floors the test pins, and the numbers T-031d's dark set has to match or beat:
+
+| Vision       | Worst pair ΔE00                | Pairs below 10 |
+| ------------ | ------------------------------ | -------------- |
+| normal       | 21.7 (`ege` / `ic-anadolu`)    | 0 of 21        |
+| protanopia   | 12.2 (`marmara` / `karadeniz`) | 0 of 21        |
+| deuteranopia | 11.6 (`ege` / `ic-anadolu`)    | 0 of 21        |
+| tritanopia   | 10.9 (`ege` / `karadeniz`)     | 0 of 21        |
 
 **TDD:** the first commit feeds `contrastRatio` an oklch value and is red because the current
 implementation throws. No product file is touched in PR0.
@@ -237,8 +254,10 @@ complaint is that nothing held this number while it moved twice; a comment is no
 ### 7.4 T-031d
 
 Dark map surfaces, and a dark-adapted seven-tint region set whose CVD safety is proven with
-PR0's harness rather than asserted. `globals.css`'s WCAG 1.4.11 contrast tables are
-re-measured against the new values.
+PR0's harness rather than asserted: the new set has to hold ΔE00 ≥ 10 across all 21 pairs
+under all three simulations, the floor §4 measured on the light set. `globals.css`'s WCAG
+1.4.11 contrast tables are re-measured against the new values — those tables are about fills
+against labels and against the map surface, which is a luminance question and stays WCAG.
 
 ## 8. Open questions, resolved by spike not assumption
 
