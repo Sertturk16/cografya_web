@@ -64,13 +64,15 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   `lib/api/client.ts` from a client component.
 - Tests are co-located `*.test.ts(x)` under `lib/`, `components/`, `tools/`. Vitest does
   not run anything under `app/`.
-- Visible UI change: check 320, 360, 390 px and desktop, light and dark, before calling it
-  done (Playwright MCP). Take a screenshot when the user asked for a visual fix.
+- Visible UI change: run `pnpm sweep:overflow` (or `-- --filter=<route>`) against a running
+  server before calling it done, and check 320, 360, 390 px and desktop, light and dark
+  (Playwright MCP). Take a screenshot when the user asked for a visual fix.
 - `/impeccable audit|critique|polish` and the `web-design-guidelines` skill are review
   aids; `docs/design.md` overrides them. Never `/impeccable init`.
 
 ## Done means
 
 typecheck + lint + test green, `pnpm build` passes if you touched routing/SEO/config, the
-relevant `generate:*:check` or `codegen:check` is green if you touched an input, and the
-matching `pathnames` entry exists for any new route.
+relevant `generate:*:check` or `codegen:check` is green if you touched an input, the
+matching `pathnames` entry exists for any new route, and `pnpm sweep:overflow` is green if
+anything visible changed.

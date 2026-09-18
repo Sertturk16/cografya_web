@@ -41,6 +41,7 @@ content pages render their empty states.
 | `pnpm codegen:check`                                                                  | fails if the committed `schema.ts` is stale                                             |
 | `pnpm generate:map` / `generate:world-map` / `generate:water` / `generate:tr-context` | rebuild the committed SVG map artifacts in `lib/map/` from `data/*.geojson`             |
 | `pnpm generate:*:check`                                                               | drift gates for the four artifacts above                                                |
+| `pnpm sweep:overflow`                                                                 | Playwright horizontal-overflow check over a running server (see `docs/conventions.md`)  |
 
 ## Layout
 
