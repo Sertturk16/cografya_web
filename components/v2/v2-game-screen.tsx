@@ -675,9 +675,20 @@ export function V2GameScreen({
           on a document whose outline began at level 3 and whose "heading 1" key found nothing.
           A heading answers that; a VISIBLE heading would additionally take a band of vertical
           space above the map on a screen whose whole point is the map, at 320px most of all.
-          `sr-only` is Tailwind's clip-rect utility — `position:absolute; width:1px; height:1px;
-          clip:rect(0,0,0,0)` — NOT `display:none`, so it is in the accessibility tree and
-          reachable by heading navigation, which is the whole requirement.
+
+          `sr-only` is Tailwind's visually-hidden utility, and what THIS project's Tailwind v4
+          emits is worth quoting exactly, because the point of this note is that someone can go
+          and check it. Computed on `/oyun/81-il` in the browser:
+
+            position: absolute;  width: 1px;  height: 1px;  padding: 0px;  margin: -1px;
+            overflow: hidden;  clip-path: inset(50%);  clip: auto;  white-space: nowrap;
+            border-width: 0px;  display: block;  visibility: visible
+
+          `clip-path: inset(50%)`, NOT the older `clip: rect(0,0,0,0)` — `clip` stays `auto` here.
+          What matters is the last two: `display: block` and `visibility: visible`, with no
+          `aria-hidden` and no `hidden` attribute, so the heading is in the accessibility tree and
+          reachable by heading navigation. That is the whole requirement; `display: none` would
+          have failed it.
 
           `modeName` is the same string each page already passes to the breadcrumb trail and to
           its own `<title>`, so the heading cannot drift from either.

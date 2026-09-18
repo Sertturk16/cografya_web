@@ -877,6 +877,7 @@ const fallbacksSeen = new Map<string, string>();
 
 function resetScannerCaches(): void {
   sitesCache.clear();
+  tierWriterCache.clear();
   maskedCache.clear();
   bindingCache.clear();
   declarationCache.clear();
@@ -910,6 +911,7 @@ function withInjectedSource<T>(
       h1Cache.delete(file);
     }
     sitesCache.clear();
+    tierWriterCache.clear();
     fallbacksSeen.clear();
   };
   invalidate();
@@ -1458,16 +1460,84 @@ function moduleScopeFallbacks(): string[] {
  * through this switch" is measured, not assumed. A root reaching the two tiers PLUS any third
  * `<h1>` still reports as an offender, which is the property the collapse must not destroy.
  *
+ * ## THE COLLAPSE IS KEYED ON THE PATH, NOT ON THE TWO KEYS BEING PRESENT (Ruling Z)
+ *
+ * The first version of {@link effectiveH1Sites} fired whenever both tier keys were in a root's site
+ * set, and review proved that narrows the counter. `h1SitesOf` keys by `file#ordinal`, so a SECOND
+ * render of an element already in the set adds no key: a page that renders `PageHero` (contributing
+ * both keys) and ALSO renders `<H1>` or `<H1Display>` directly still holds exactly `{#0, #1}`, the
+ * collapse fired, and the counter read ONE heading for a page that ships TWO. Demonstrated on
+ * `turkiye/page.tsx` with either primitive — 66/66 green both ways — and that same shape WAS
+ * reported as an offender before the collapse existed, so it was a regression in coverage rather
+ * than an inherited limit.
+ *
+ * Narrow, but narrow in the wrong direction. `/hakkimizda` is the one live page that renders `<H1>`
+ * directly (`hakkimizda/page.tsx:99`) and is the obvious next adoption; the day it gains a
+ * `PageHero` without dropping its `<H1>` it would have shipped two headings with every counter
+ * green — the exact failure mode this programme exists to end, arriving through the mechanism built
+ * to prevent it.
+ *
+ * So the collapse now requires that `page-hero.tsx` is the ONLY node in the root's closure that
+ * writes a tier primitive as JSX ({@link tierPrimitiveWriters}). A tier element reached by any
+ * other path keeps its own site and still counts. The two directions are pinned by tests below:
+ * `PageHero` + a direct `<H1>` on the same page is an OFFENDER, and an ordinary `PageHero` page is
+ * still silent.
+ *
  * The runtime half is asserted where it can actually be rendered:
  * `components/patterns/page-hero.test.tsx` renders both tiers and pins `<h1>` at exactly one each.
  */
 const TIER_SWITCH = {
   component: "components/patterns/page-hero.tsx",
   guard: 'tier === "hub" ? <H1>{heading}</H1> : <H1Display>{heading}</H1Display>',
-  /** `H1` and `H1Display`, in `typography.tsx` source order. */
+  /** `H1` and `H1Display`, in `typography.tsx` source order — checked, see the tests below. */
   sites: ["components/patterns/typography.tsx#0", "components/patterns/typography.tsx#1"],
+  /** The module the two tier primitives are declared in. */
+  tierModule: "components/patterns/typography.tsx",
+  /** The exported names of the two tiers, in that module's source order. */
+  tierNames: ["H1", "H1Display"],
   why: "PageHero's `tier` prop selects one of the two heading tiers; the walk cannot evaluate it and reaches both.",
 } as const;
+
+/**
+ * `tierPrimitiveWriters(root)` memo. Keyed by root and dropped wherever {@link sitesCache} is,
+ * because it is a function of the whole graph rather than of one file.
+ */
+const tierWriterCache = new Map<string, string[]>();
+
+/**
+ * Every file in `root`'s render closure that writes `<H1>` or `<H1Display>` as JSX, where the name
+ * really binds to `typography.tsx`.
+ *
+ * This is the provenance {@link effectiveH1Sites} needs and that a set of site KEYS cannot carry:
+ * two different renders of the same element are one key but two writers. A page reaching the tiers
+ * only through `PageHero` yields exactly `["components/patterns/page-hero.tsx"]`.
+ *
+ * Resolved through {@link importBindingsOf} rather than matched on the bare name, so a local
+ * component that happens to be called `H1` is not mistaken for the tier primitive.
+ */
+function tierPrimitiveWriters(root: string): string[] {
+  const hit = tierWriterCache.get(root);
+  if (hit) return hit;
+
+  const writers = new Set<string>();
+  const tierModulePath = join(repoRoot, TIER_SWITCH.tierModule);
+  h1SitesOf(root, (node) => {
+    const span = nodeSpan(node);
+    if (span.kind !== "span") return;
+    const text = maskedSource(node.file).slice(span.from, span.to);
+    const bindings = importBindingsOf(node.file);
+    for (const match of text.matchAll(JSX_ELEMENT)) {
+      const tag = match[1]!;
+      if (!(TIER_SWITCH.tierNames as readonly string[]).includes(tag)) continue;
+      const binding = bindings.get(tag);
+      if (binding && binding.file === tierModulePath) writers.add(label(node.file));
+    }
+  });
+
+  const result = [...writers].sort();
+  tierWriterCache.set(root, result);
+  return result;
+}
 
 /**
  * A root's `<h1>` sites with the tier switch's two alternatives collapsed to the ONE it renders.
@@ -1480,6 +1550,11 @@ function effectiveH1Sites(root: string): H1Site[] {
   const sites = h1SitesOf(root);
   const present = TIER_SWITCH.sites.filter((key) => sites.some((site) => site.key === key));
   if (present.length < TIER_SWITCH.sites.length) return sites;
+  // BOTH tiers are reachable. Collapse ONLY if `PageHero`'s one `tier` switch is the whole reason —
+  // see Ruling Z in the docblock above. Anything else rendering a tier primitive means the page
+  // really does reach a heading by a second path, and that path keeps its site.
+  const writers = tierPrimitiveWriters(root);
+  if (writers.length !== 1 || writers[0] !== TIER_SWITCH.component) return sites;
   return sites.filter((site) => site.key !== TIER_SWITCH.sites[1]);
 }
 
@@ -1700,9 +1775,15 @@ function pagesWithMultipleH1(): string[] {
  * counter nothing: `H1Display`'s spelling is byte-identical to the one they wrote.
  *
  * Then 12 → **13**, because the same task gave the three `(play)/oyun/*` screens the heading they
- * never had, and `sr-only` is a thirteenth spelling. THE NUMBER WENT UP AND THAT IS THE HONEST
- * READING: the adoption removed one spelling and the a11y fix added one. What actually moved is
- * {@link H1_ELEMENTS}, 32 → 17, which is why the two are pinned separately.
+ * never had, and `sr-only` is a thirteenth spelling.
+ *
+ * THE NUMBER DID NOT FALL, AND THE ACCOUNTING IS −2 / +2, NOT −1 / +1. An earlier wording here read
+ * "the adoption removed one spelling and the a11y fix added one", which nets correctly and tells
+ * the wrong story. Two rows LEFT — the 14× hub page literal and the 3× detail page literal, both
+ * written by pages that now render a component instead — and two rows ARRIVED —
+ * `typography.tsx#1` (`H1Display`, which nothing rendered before) and `v2-game-screen.tsx`'s
+ * `sr-only`. 13 − 2 + 2 = 13. What actually moved is {@link H1_ELEMENTS}, 32 → 17, which is why the
+ * two are pinned separately.
  *
  * ## THE THIRTEEN, EACH ONE NAMED
  *
@@ -1736,8 +1817,16 @@ function pagesWithMultipleH1(): string[] {
  *   8. `…text-2xl sm:text-4xl lg:text-5xl font-black …leading-[1.15]` — `dunya/kita`.
  *   9. `…text-3xl sm:text-4xl font-extrabold …` — `oyun/bolge-bolge-il`.
  *  10. `…text-3xl sm:text-4xl lg:text-5xl font-black …leading-[1.15]` — `dunya/kita/[slug]`.
- *  11. `…text-3xl sm:text-5xl font-extrabold …text-primary…` — `turkiye/bolge`. ONE token from the
- *      hub tier (`font-extrabold` where the tier is `font-bold`); the cheapest of the nine.
+ *  11. `…text-3xl sm:text-5xl font-extrabold …text-primary…` — `turkiye/bolge`. TWO tokens from the
+ *      hub tier, not one, and the second is the interesting one:
+ *
+ *        hub  : font-heading  text-[1.9rem]  sm:text-5xl  font-bold       tracking-tight …
+ *        bolge: font-heading  text-3xl       sm:text-5xl  font-extrabold  tracking-tight …
+ *
+ *      `font-bold` vs `font-extrabold` is a rename. `text-[1.9rem]` vs `text-3xl` is the 0.4px
+ *      FLOOR TOKEN Ruling V spent a decision refusing to concede — so converging this page means
+ *      accepting the floor, which is a decision and not a rename. Still the cheapest of the nine;
+ *      not free, and the next task should be told which half is which.
  *  12. `…text-4xl sm:text-5xl lg:text-6xl font-bold …leading-[1.12]` — `v2-hero.tsx`, the home page.
  *  13. `text-xl font-bold tracking-tight text-foreground` ×2 — `profil` and `v2-profile-form`, the
  *      two branches of the `MULTIPLE_H1_EXEMPTIONS` entry below; card headings, not heroes.
@@ -1820,8 +1909,11 @@ export const H1_ELEMENTS = 17;
  *     `v2-game-screen.tsx`, which now renders ONE `sr-only` `<h1>` carrying the `modeName` each
  *     page already passes to its breadcrumb and its title. HIDDEN, because there is no crawler to
  *     give a title to and a visible heading would take a band above the map on a screen whose
- *     whole point is the map; `sr-only` is Tailwind's clip-rect utility, in the accessibility tree
- *     and reachable by heading navigation, never `display: none`.
+ *     whole point is the map. `sr-only` is Tailwind's visually-hidden utility; read in the browser
+ *     on `/oyun/81-il`, this project's Tailwind v4 emits `position: absolute; width: 1px;
+ *     height: 1px; overflow: hidden; clip-path: inset(50%)` (NOT the older `clip: rect(0,0,0,0)`,
+ *     which stays `auto`) with `display: block` and `visibility: visible` — in the accessibility
+ *     tree and reachable by heading navigation, never `display: none`.
  *
  * Not claimed: that these five now have a CORRECT OUTLINE. SCOPE note 7 still holds, and the play
  * screens still step `h1` → `h3`. What is claimed is that no render root on this surface leaves a
@@ -2354,17 +2446,83 @@ describe("the PageHero tier switch", () => {
     ).toContain(TIER_SWITCH.guard);
   });
 
-  it("the two collapsed sites really are typography.tsx's two h1 elements", () => {
-    // Pins the keys against the file rather than trusting two hand-typed strings: if a third
-    // `<h1>` were added to `typography.tsx`, or the two were reordered, `#1` would name a
-    // different element and the collapse would silence the wrong one.
-    const typography = join(repoRoot, "components/patterns/typography.tsx");
+  it("the two collapsed sites are typography.tsx's two h1s, in the tiers' declaration order", () => {
+    // Pins the keys against the file rather than trusting two hand-typed strings.
+    //
+    // THE ORDINAL HALF USED TO BE A TAUTOLOGY. This asserted
+    // `occurrences.map(o => \`…#${o.ordinal}\`)` against `TIER_SWITCH.sites`, and
+    // `h1OccurrencesOf` always yields ordinals `0..n-1` in source order — so for any two-`<h1>`
+    // file it compared `["#0","#1"]` to `["#0","#1"]` and passed whatever the declarations were.
+    // Review swapped `H1` and `H1Display` and this check stayed green (three OTHER tests went
+    // red, so the property was never unguarded — but a tautology inside the mechanism that
+    // records a counter hole is the worst place in the file for one, because it is part of the
+    // evidence that the hole is narrow).
+    //
+    // What actually has to hold is that `sites[0]` is the HUB tier's element and `sites[1]` the
+    // DETAIL tier's, so resolve each `<h1>` to the DECLARATION whose region contains it and
+    // assert those names. Swapping the two declarations now fails here.
+    const typography = join(repoRoot, TIER_SWITCH.tierModule);
     const occurrences = h1OccurrencesOf(typography);
     expect(occurrences).toHaveLength(2);
-    expect(occurrences.map((o) => `components/patterns/typography.tsx#${o.ordinal}`)).toEqual([
+    expect(occurrences.map((o) => `${TIER_SWITCH.tierModule}#${o.ordinal}`)).toEqual([
       ...TIER_SWITCH.sites,
     ]);
+
+    const regions = [...declarationRegions(typography)];
+    const ownerOf = (index: number) =>
+      regions.find(([, [from, to]]) => index >= from && index < to)?.[0] ?? null;
+    expect(
+      occurrences.map((o) => ownerOf(o.index)),
+      "the declaration each collapsed <h1> belongs to, in source order",
+    ).toEqual([...TIER_SWITCH.tierNames]);
   });
+
+  it("does NOT collapse when a page reaches a tier primitive by a second path — Ruling Z", () => {
+    // THE HOLE THIS KEYING CLOSES. `h1SitesOf` keys by `file#ordinal`, so a page rendering
+    // `PageHero` AND a tier primitive directly still holds exactly `{#0, #1}` — under a
+    // presence-only collapse it read as ONE heading while shipping TWO. `/hakkimizda` renders
+    // `<H1>` directly today and is the obvious next adoption, so this is one edit away from live.
+    const target = join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx");
+    const raw = readFileSync(target, "utf8");
+
+    for (const primitive of TIER_SWITCH.tierNames) {
+      const injected = raw
+        .replace(
+          'import { PageHero } from "@/components/patterns/page-hero";',
+          `import { PageHero } from "@/components/patterns/page-hero";\nimport { ${primitive} } from "@/components/patterns/typography";`,
+        )
+        .replace("<PageHero", `<${primitive}>second</${primitive}>\n            <PageHero`);
+      expect(injected).not.toBe(raw);
+
+      const { offenders, writers } = withInjectedSource([[target, injected]], () => ({
+        offenders: pagesWithMultipleH1(),
+        writers: tierPrimitiveWriters(target),
+      }));
+      expect(
+        writers,
+        `${primitive}: the page itself must be recorded as a tier writer beside PageHero`,
+      ).toEqual([TIER_SWITCH.component, "app/[locale]/(site)/turkiye/page.tsx"].sort());
+      expect(
+        offenders,
+        `${primitive} rendered beside PageHero must report as an offender`,
+      ).toHaveLength(1);
+      expect(offenders[0]).toContain("app/[locale]/(site)/turkiye/page.tsx");
+    }
+  }, 20000);
+
+  it("still collapses an ordinary PageHero page — the other half of Ruling Z", () => {
+    // Without this, a collapse that never fired would make the test above pass vacuously and
+    // would take all 17 adopting pages back to being offenders.
+    const target = join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx");
+    expect(tierPrimitiveWriters(target)).toEqual([TIER_SWITCH.component]);
+    expect(
+      h1SitesOf(target)
+        .map((s) => s.key)
+        .sort(),
+    ).toEqual([...TIER_SWITCH.sites]);
+    expect(effectiveH1Sites(target)).toHaveLength(1);
+    expect(pagesWithMultipleH1()).toEqual([]);
+  }, 20000);
 
   it("PageHero is the ONLY surface file rendering both tiers — the collapse's premise, measured", () => {
     // Turns "a root reaching both tiers reached them through PageHero" from an assumption into
