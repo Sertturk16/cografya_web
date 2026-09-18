@@ -261,7 +261,7 @@ import { parseColor } from "./contrast";
  * The floor a categorical set has to clear, pairwise, under normal vision and all three CVD
  * simulations.
  *
- * Chosen from measurement, not convention: the shipped Okabe-Ito set's worst pair is 10.9
+ * Chosen from measurement, not convention: the shipped Okabe-Ito set's worst pair is 11.1
  * under tritanopia, so 10 is the value the current palette actually holds. A dark-adapted set
  * (T-031d) that scores below it is worse than what it replaces, and this constant is what
  * says so.
@@ -573,9 +573,9 @@ const PAIRS: readonly (readonly [string, string])[] = Object.keys(REGION_TINTS).
 /** Worst pair per vision, measured 2026-09-19 on the shipped set. */
 const WORST: Readonly<Record<Vision, number>> = {
   normal: 21.7,
-  protanopia: 12.2,
-  deuteranopia: 11.6,
-  tritanopia: 10.9,
+  protanopia: 12.3,
+  deuteranopia: 11.5,
+  tritanopia: 11.1,
 };
 
 describe("the seven region tints are a usable categorical set", () => {

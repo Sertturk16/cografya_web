@@ -168,9 +168,15 @@ Measured floors the test pins, and the numbers T-031d's dark set has to match or
 | Vision       | Worst pair ΔE00                | Pairs below 10 |
 | ------------ | ------------------------------ | -------------- |
 | normal       | 21.7 (`ege` / `ic-anadolu`)    | 0 of 21        |
-| protanopia   | 12.2 (`marmara` / `karadeniz`) | 0 of 21        |
-| deuteranopia | 11.6 (`ege` / `ic-anadolu`)    | 0 of 21        |
-| tritanopia   | 10.9 (`ege` / `karadeniz`)     | 0 of 21        |
+| protanopia   | 12.3 (`marmara` / `karadeniz`) | 0 of 21        |
+| deuteranopia | 11.5 (`ege` / `ic-anadolu`)    | 0 of 21        |
+| tritanopia   | 11.1 (`ege` / `karadeniz`)     | 0 of 21        |
+
+These three CVD figures were corrected on 2026-09-19 during PR0's execution (they first read
+12.2 / 11.6 / 10.9). The originals came from a reference that kept the simulated colour in
+linear space; `simulate()` returns an 8-bit hex, and that quantisation moves the result by
+about a tenth. The numbers above are what the shipped pipeline actually produces. The floor
+`CATEGORICAL_MIN = 10` is unaffected.
 
 **TDD:** the first commit feeds `contrastRatio` an oklch value and is red because the current
 implementation throws. No product file is touched in PR0.
