@@ -45,12 +45,19 @@ interface BreadcrumbsProps {
  * per-page flag is precisely what produced the 24-file gap, and it would reproduce it the
  * first time someone added a page and left the prop off.
  *
- * `surface` is hand-typed twice on most callers today — once here (or in
- * {@link breadcrumbListSchema} below), once in that same page's `buildMetadata({ surface })` —
- * and nothing asserts the two agree; all 37 pairs were checked by hand at review time and do
- * today. `app/[locale]/(site)/araclar/**` already avoids the duplication with a single shared
- * `TOOLS_SURFACE` constant (`lib/tools/tool-registry.ts`) imported at both call sites — the
- * pattern to reach for if this drifts, not a refactor this module does on its own.
+ * `surface` is hand-typed twice on most callers — once here (or in {@link breadcrumbListSchema}
+ * below), once in that same page's `buildMetadata({ surface })`. There are **33** such pairs: 29
+ * `<Breadcrumbs surface={…}>` props and 4 `breadcrumbListSchema` third arguments, across the 34
+ * `(site)` pages, every one of them but the home page. This docblock used to say 37 and that the
+ * pairs "were checked by hand" — 37 is the PAGE count, three of which are `(play)` screens whose
+ * trail comes from `V2GameScreen` and takes no surface.
+ *
+ * `lib/seo/sitemap-surface-symmetry.test.ts` now reads both sides of every pair, resolves a
+ * constant through the binding resolver rather than comparing its name, and pins both figures —
+ * so the agreement is asserted rather than remembered. `app/[locale]/(site)/araclar/**` and the
+ * seven auth pages avoid the duplication outright, each importing one shared constant at both
+ * call sites (`TOOLS_SURFACE` in `lib/tools/tool-registry.ts`, `AUTH_SURFACE` in
+ * `lib/auth/auth-metadata.ts`) — the pattern to reach for on a page that still types it twice.
  */
 export function Breadcrumbs({ items, locale, surface }: BreadcrumbsProps) {
   const schema = breadcrumbListSchema(items, locale, surface);
