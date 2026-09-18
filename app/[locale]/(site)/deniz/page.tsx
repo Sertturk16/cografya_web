@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getFormatter, setRequestLocale } from "next-intl/server";
+import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { getMarinePointsSafe, getMarineOverviewSafe, getMarineLayersSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import { Link } from "@/i18n/navigation";
@@ -12,7 +12,7 @@ import { V2MarineMapExplorer, type MarinePointData } from "@/components/v2/v2-ma
 import { V2MarineBasinCards } from "@/components/v2/v2-marine-basin-cards";
 import { V2MarineOceanographyGuide } from "@/components/v2/v2-marine-oceanography-guide";
 import { V2MarineLayerCatalogue } from "@/components/v2/v2-marine-layer-catalogue";
-import { V2MarineFaqAccordion } from "@/components/v2/v2-marine-faq-accordion";
+import { FaqSection } from "@/components/patterns/faq-section";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
@@ -55,6 +55,27 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
   const format = await getFormatter();
+  const t = await getTranslations("Deniz");
+
+  /**
+   * The eight FAQ pairs, READ FROM THE CATALOGUE rather than written here.
+   *
+   * `V2MarineFaqAccordion` held seven of these as Turkish string literals in a `FAQ_ITEMS`
+   * constant — the only FAQ block in the tree that was not message-driven, and the thing
+   * `docs/architecture.md` forbids in a file that has a translator to hand. `Deniz.q1..q8` /
+   * `Deniz.a1..a8` are those seven questions, edited, plus an eighth ("geçerlilik anı"), and they
+   * were already in `messages/tr.json` before this change: nothing here was copied into a new
+   * key, and no English was invented.
+   *
+   * The keys are built with a template literal on purpose. `lib/i18n/key-existence.test.ts`
+   * resolves LITERAL keys only and states that a computed one is invisible to it by design, so
+   * this loop is not asking that scanner to certify a `q7` it cannot see — what guarantees the
+   * eight pairs exist is `lib/marine/deniz-faq.test.ts`, which reads the catalogue itself.
+   */
+  const marineFaqs = Array.from({ length: 8 }, (_, i) => ({
+    question: t(`q${i + 1}`),
+    answer: t(`a${i + 1}`),
+  }));
 
   // Fetch points, live overview, layers and provinces
   const [rawPoints, rawOverview, rawLayers, rawProvinces] = await Promise.all([
@@ -274,8 +295,31 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         {/* SECTION 4: MEASUREMENT LAYERS CATALOGUE */}
         <V2MarineLayerCatalogue layers={rawLayers} />
 
-        {/* SECTION 5: PEDAGOGICAL FAQ ACCORDION */}
-        <V2MarineFaqAccordion />
+        {/* SECTION 5: PEDAGOGICAL FAQ ACCORDION.
+
+            GATED TO `tr`, AND THAT IS THE HONEST STATE RATHER THAN A PREFERENCE. The eight pairs
+            below are read from `Deniz.q1..q8` / `Deniz.a1..a8`, which exist in `messages/tr.json`
+            and NOT in `messages/en.json`. Until the English copy is written, rendering this block
+            on `/en/sea` would print eight `Deniz.q1`-shaped key strings as visible page text
+            (next-intl does not throw on a missing key). The previous `V2MarineFaqAccordion`
+            hardcoded the same seven questions as Turkish literals and rendered them UNGATED, so
+            `/en/sea` shipped Turkish prose; the gate is what that defect becomes once the strings
+            are message-driven, not a new restriction. The EN gap is boarded beside T-040.
+
+            `structuredData={false}` IS DELIBERATE, NOT AN OMISSION. This block has never emitted
+            `FAQPage` and nothing here asks it to start: `/deniz` is a `trNarrative` surface, and
+            a schema is a claim about a page, not a decoration. `FaqSection`'s own docblock names
+            this block as the reason its `structuredData` defaults to `false`. */}
+        {locale === "tr" && (
+          <FaqSection
+            id="sss"
+            heading={t("faqHeading")}
+            locale={locale}
+            items={marineFaqs}
+            mechanism="accordion"
+            structuredData={false}
+          />
+        )}
 
         {/* SECTION 6: SAFETY DISCLAIMER, AND THE LINK TO THE LICENCE TEXT
             The ECMWF and Copernicus Marine wording is the LICENCE, not copy. It is published
