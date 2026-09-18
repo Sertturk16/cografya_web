@@ -22,6 +22,38 @@ export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 
 export const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
+/**
+ * THE SURFACE A READER CAN ACTUALLY REACH — the roots every reachability question in this repo
+ * is asked from, so `components/ui/orphan.test.ts` and `components/orphan-stylesheets.test.ts`
+ * cannot answer the same question from two different surfaces.
+ *
+ * Three entries, all of them things Next.js itself renders: the locale layout (the chrome every
+ * product page gets by its directory — it sits ABOVE the two route groups and is where `Toaster`
+ * is mounted, the only thing that makes `sonner.tsx` reachable at all), and the two route groups.
+ *
+ * NOT WIDENED to `app/`, `app/api`, `app/maps`, `app/sitemap.ts` or `middleware.ts`, and that is
+ * a measurement rather than an omission: adding all six changes the verdict of ZERO audited
+ * files. They reach data and route handlers, never components. Every extra root is also one more
+ * directory that can no longer be audited — {@link closureFrom} seeds its queue with every file
+ * under a root, so a root is reachable by definition.
+ */
+export const PRODUCT_ROOTS = [
+  "app/[locale]/layout.tsx",
+  "app/[locale]/(site)",
+  "app/[locale]/(play)",
+] as const;
+
+/**
+ * THE SHOWCASE ROUTE, not the showcase directory.
+ *
+ * `components/showcase` used to be a root beside it, which made every specimen reachable by
+ * being walked rather than by being imported — and meant the directory could not be audited at
+ * all. Rooting at the route alone audits the showcase as showcase: a file under
+ * `components/showcase/` that `/design-system` reaches is LIVE BY THAT ROUTE, and a file
+ * anywhere else that only this closure reaches is showcase-only, which is the defect.
+ */
+export const SHOWCASE_ROUTE = ["app/[locale]/design-system"] as const;
+
 /** A root may name a directory or a single file. Test files (`*.test.*`) are never walked. */
 export function walk(dir: string): string[] {
   if (!existsSync(dir)) return [];
@@ -51,29 +83,35 @@ export function resolveSpecifier(fromFile: string, specifier: string): string | 
   return null;
 }
 
-/** Static `import`/`export … from` and dynamic `import()`. Comments stripped first. */
-const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*)["']([^"']+)["']/g;
-
-/** Every bare import specifier `file` writes, in source order (duplicates included). */
-export function specifiersOf(file: string): string[] {
-  const source = stripComments(readFileSync(file, "utf8"));
-  return [...source.matchAll(SPECIFIER)].map((match) => match[1]!);
-}
-
-/** Every specifier in `file` that resolves to a file on disk (i.e. not a package). */
-export function importsOf(file: string): string[] {
-  return specifiersOf(file)
-    .map((specifier) => resolveSpecifier(file, specifier))
-    .filter((path): path is string => path !== null);
-}
-
-/** Every file reachable from `roots`, following the import graph transitively. */
+/**
+ * Every file reachable from `roots`, following the RUNTIME import graph transitively.
+ *
+ * ## Why the edges are type-erased, and why that is not a refinement
+ *
+ * This walk used to follow every `from "…"` specifier, type-only clauses included, and
+ * {@link isRuntimeClause}'s own docblock defended that: over-following a type-only edge "only
+ * widens a reachability set and can never hide a real orphan". **That is exactly backwards, and
+ * T-042 measured the cost.** An orphan test asks "is this file reachable", so a WIDER set is the
+ * silent-pass direction: every extra edge certifies one more file as live.
+ *
+ * `components/tools/` is the recorded case. `tool-island.tsx` (1226 lines) had exactly two
+ * importers left on the whole tree, both `import type { ProvinceArea } from
+ * "@/components/tools/tool-island"` — a clause that compiles to nothing, builds no bundler edge
+ * and renders no markup. Following it made the island reachable, and through it
+ * `tool-measurement-list.tsx`, `tool-measurement-save.tsx`, `tool-png.ts` and `tools.module.css`,
+ * 2447 lines in total, none of which any page could ever load. `components/home/featured-cards.tsx`
+ * was alive on the same one clause.
+ *
+ * So the walk follows {@link runtimeImportsOf} — the same type erasure
+ * `components/patterns/rsc-boundary.test.ts` needs for the opposite question — and a type-only
+ * import no longer counts as a call site.
+ */
 export function closureFrom(roots: readonly string[]): Set<string> {
   const seen = new Set<string>();
   const queue = roots.flatMap((rel) => walk(join(repoRoot, rel)));
   for (const file of queue) seen.add(file);
   while (queue.length > 0) {
-    for (const next of importsOf(queue.pop()!)) {
+    for (const next of runtimeImportsOf(queue.pop()!)) {
       if (seen.has(next)) continue;
       seen.add(next);
       queue.push(next);
@@ -122,13 +160,17 @@ const IMPORT_OR_EXPORT_FROM = /\b(?:import|export)\s+([^;]*?)\s+from\s*["']([^"'
  * bundler-graph edge.
  *
  * This is what `lib/auth/submit.client.ts`'s `import type { AuthBffCode } from
- * "./transport.server"` needs and the plain {@link importsOf} above does not give: that file is
- * `"use client"` and `./transport.server` carries `import "server-only"`, yet `pnpm build`
- * passes, because a type-only import compiles to NOTHING — no runtime specifier, no module
- * evaluation, no edge. Treating it as a real edge (what {@link importsOf} does, correctly, for
+ * "./transport.server"` needs: that file is `"use client"` and `./transport.server` carries
+ * `import "server-only"`, yet `pnpm build` passes, because a type-only import compiles to
+ * NOTHING — no runtime specifier, no module evaluation, no edge. Treating it as a real edge would
+ * make `components/patterns/rsc-boundary.test.ts` flag it as a violation that `pnpm build`
+ * disagrees with.
+ *
+ * An earlier version of this docblock added that a type-blind reader was still fine "for
  * `orphan.test.ts`'s purpose, where over-following a type-only edge only widens a reachability
- * set and can never hide a real orphan) would make `components/patterns/rsc-boundary.test.ts`
- * flag it as a violation that `pnpm build` disagrees with.
+ * set and can never hide a real orphan". Widening the set is PRECISELY how an orphan hides, and
+ * T-042 measured 2447 lines that hid that way — see {@link closureFrom}, which is why there is
+ * now one reader of this graph rather than two.
  *
  * SCOPE: {@link IMPORT_OR_EXPORT_FROM} no longer merges clauses across a `;` (see its own
  * docblock for the false-negative that used to produce), so `clause` here is always exactly one

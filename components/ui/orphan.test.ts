@@ -1,15 +1,20 @@
-import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { repoRoot, closureFrom } from "@/lib/test-support/import-closure";
+import {
+  repoRoot,
+  walk,
+  closureFrom,
+  PRODUCT_ROOTS,
+  SHOWCASE_ROUTE,
+} from "@/lib/test-support/import-closure";
 
 /**
- * EVERY PRIMITIVE HAS A PRODUCT CALL SITE.
+ * EVERY COMPONENT IN THIS REPO HAS A CALL SITE A READER CAN REACH.
  *
  * ## The rule
  *
  * `components/showcase/registry.test.ts` closes one direction: a primitive that exists must
- * have a specimen. This closes the other: a primitive that exists must be REACHED from a page
+ * have a specimen. This closes the other: a component that exists must be REACHED from a page
  * a reader can open. A file whose only consumer is `/design-system` is a component the design
  * system maintains for the design system's sake, and it costs the same review, the same token
  * audit and the same dark-mode sweep as one that ships.
@@ -23,6 +28,30 @@ import { repoRoot, closureFrom } from "@/lib/test-support/import-closure";
  * would call `skeleton` an orphan and be wrong, and "delete it" would be the worst possible
  * action to take on that answer. So this walks the real import graph from the product surface
  * outward and asks what it reaches.
+ *
+ * ## T-042: THE TWO HOLES THIS TEST SHIPPED WITH, AND WHAT THEY HID
+ *
+ * Both are in the same sentence of the old version — "walk from `PRODUCT_ROOTS` and see what is
+ * reachable" — and each turned a reachability question into a tautology.
+ *
+ *   1. **A ROOT IS NOT AUDITABLE.** `PRODUCT_ROOTS` used to list `components/v2`,
+ *      `components/patterns`, `components/tools` and seven more DIRECTORIES beside the three app
+ *      entries. {@link closureFrom} seeds its queue with every file under a root, so each of
+ *      those 118 files was "reachable" by being walked, never by being imported. The test
+ *      genuinely audited `components/ui` and nothing else — and `components/ui` is the one
+ *      directory whose files a wrong answer would have been noticed in.
+ *
+ *      A directory is now EITHER a root OR audited, never both. The roots are the three entries
+ *      Next.js itself renders from ({@link PRODUCT_ROOTS}); everything under `components/` is
+ *      audited, including `components/showcase` — see {@link SHOWCASE_ROUTE}.
+ *
+ *   2. **A TYPE-ONLY IMPORT IS NOT A CALL SITE.** The walk followed every `from "…"` specifier,
+ *      `import type` included. `components/tools/tool-island.tsx` (1226 lines) had exactly two
+ *      importers left, both `import type { ProvinceArea }` — a clause TypeScript erases, which
+ *      builds no bundler edge and renders nothing. Following it kept the island alive, and
+ *      through it `tool-measurement-list.tsx`, `tool-measurement-save.tsx`, `tool-png.ts` and
+ *      `tools.module.css`: 2447 lines no page could load. `closureFrom` now walks
+ *      `runtimeImportsOf`, and that module's own docblock records the claim this falsified.
  *
  * ## What T-036 measured, and deleted
  *
@@ -86,69 +115,41 @@ import { repoRoot, closureFrom } from "@/lib/test-support/import-closure";
  * button whose explanatory `title` is `aria-describedby` semantics).
  */
 
-/**
- * The surface a reader can actually reach. Route groups and the domain component folders,
- * named explicitly: a pattern like "everything under app" would swallow `design-system` and
- * quietly make this test vacuous.
- */
-const PRODUCT_ROOTS = [
-  // The chrome every product page gets by its directory. It sits ABOVE the two route groups,
-  // so a roots list of groups alone misses it — and it is where `Toaster` is mounted, which
-  // is the only thing that makes `sonner.tsx` reachable at all.
-  "app/[locale]/layout.tsx",
-  "app/[locale]/(site)",
-  "app/[locale]/(play)",
-  "components/v2",
-  "components/patterns",
-  "components/air",
-  "components/book",
-  "components/climate",
-  "components/earthquake",
-  "components/game",
-  "components/home",
-  "components/map",
-  "components/marine",
-  "components/site-search",
-  "components/tools",
-] as const;
+/** Everything under here is audited. Never a root — see hole 1. */
+const AUDITED_ROOT = "components";
 
-/** Reachable only from here does not count as reachable. */
-const SHOWCASE_ROOTS = ["app/[locale]/design-system", "components/showcase"] as const;
-
-const UI_DIR = join(repoRoot, "components/ui");
-const PRIMITIVES = readdirSync(UI_DIR)
-  .filter((name) => name.endsWith(".tsx") && !name.includes(".test."))
-  .map((name) => join(UI_DIR, name));
-
-const productClosure = closureFrom(PRODUCT_ROOTS);
-const showcaseClosure = closureFrom(SHOWCASE_ROOTS);
+/** Showcase infrastructure: audited, but answerable by the design-system route. */
+const SHOWCASE_INFRA = "components/showcase/";
 
 const label = (path: string) => relative(repoRoot, path);
 
-describe("the import closure itself", () => {
-  // ANTI-VACUITY. Every assertion below is "X is in this set"; a set built from a broken
-  // resolver, an empty walk or a typo'd root would fail them all loudly rather than pass
-  // them all silently — but only if something proves the set was really built. These do.
-  it("walked the product surface and reached beyond it", () => {
-    expect(PRIMITIVES.length).toBeGreaterThan(10);
-    expect(productClosure.size).toBeGreaterThan(PRODUCT_ROOTS.length);
-    // A file the closure can only have reached by following an import, not by walking a root.
-    expect([...productClosure].map(label)).toContain("lib/utils.ts");
-  });
+const AUDITED = walk(join(repoRoot, AUDITED_ROOT)).sort();
 
-  it("reaches a primitive only an intermediate module imports — the transitive case", () => {
-    // `skeleton.tsx` has no importer on the product surface at all: `table.tsx` imports it,
-    // and five `components/v2` files import `table.tsx`. A direct-importer check would call
-    // it an orphan. If this ever goes red, the closure stopped being transitive.
-    expect([...productClosure].map(label)).toContain("components/ui/skeleton.tsx");
-  });
+const productClosure = closureFrom(PRODUCT_ROOTS);
+const showcaseClosure = closureFrom(SHOWCASE_ROUTE);
 
-  it("the showcase closure is real and is a different set", () => {
-    expect([...showcaseClosure].map(label)).toContain("components/showcase/registry.ts");
-    expect(showcaseClosure.has(join(repoRoot, "components/showcase/specimen.tsx"))).toBe(true);
-    expect(productClosure.has(join(repoRoot, "components/showcase/specimen.tsx"))).toBe(false);
-  });
-});
+type Verdict = "product" | "showcase-infrastructure" | "showcase-only" | "unreachable";
+
+/**
+ * A PURE function of one path and the two closures, so the controls below can ask it about a
+ * file that does not exist. A classifier that can only be run over the tree cannot be shown to
+ * work: every answer it gives is also the answer the tree happens to want.
+ */
+function classify(
+  file: string,
+  product: ReadonlySet<string>,
+  showcase: ReadonlySet<string>,
+): Verdict {
+  if (product.has(file)) return "product";
+  if (!showcase.has(file)) return "unreachable";
+  return label(file).startsWith(SHOWCASE_INFRA) ? "showcase-infrastructure" : "showcase-only";
+}
+
+const verdictsOf = (files: readonly string[], verdict: Verdict): string[] =>
+  files
+    .filter((file) => classify(file, productClosure, showcaseClosure) === verdict)
+    .map(label)
+    .sort();
 
 /**
  * FOUND BY THIS TEST, NOT DECIDED BY T-036.
@@ -187,35 +188,149 @@ describe("the import closure itself", () => {
  * PR would put a visible, keyboard-behaviour-changing edit somewhere nobody reviews for one.
  *
  * Recorded as an exact list and asserted as an equality, so it ratchets in both directions: a
- * TENTH showcase-only primitive fails here, and so does resolving this one without shortening
+ * further showcase-only file fails here, and so does resolving this one without shortening
  * the list.
+ *
+ * ## The five T-042 pins
+ *
+ * Closing the two holes above turned up five MORE files in this state, none of them ever seen by
+ * the old walk. They are pinned here in their defective state first, on their own commit, so the
+ * deletion that follows is a measured change and not a claim — the shape T-046 settled on.
  */
-const KNOWN_SHOWCASE_ONLY = ["components/ui/tabs.tsx"];
+const KNOWN_SHOWCASE_ONLY = [
+  "components/patterns/callout.tsx",
+  "components/patterns/empty-state.tsx",
+  "components/patterns/map-attribution.tsx",
+  "components/patterns/map-legend.tsx",
+  "components/patterns/theme-pair.tsx",
+  "components/ui/tabs.tsx",
+];
 
-describe("no primitive is reachable only from the showcase", () => {
-  it("the recorded exception list is exactly the set of showcase-only primitives", () => {
-    const showcaseOnly = PRIMITIVES.filter(
-      (path) => !productClosure.has(path) && showcaseClosure.has(path),
-    ).map(label);
-    expect(showcaseOnly.sort()).toEqual([...KNOWN_SHOWCASE_ONLY].sort());
+/**
+ * REACHED FROM NOTHING AT ALL — not the product, not even the showcase.
+ *
+ * Every entry is a file the old walk called live, and each is live for exactly one of the two
+ * reasons above. Pinned in the defective state; the deletion commit drives this list down to
+ * what T-042's ruling leaves standing.
+ *
+ *   - the four `components/tools` files — the island and its three helpers, held up by two
+ *     `import type { ProvinceArea }` clauses;
+ *   - `components/home/featured-cards.tsx` — the same single type-only clause, from
+ *     `app/[locale]/(site)/page.tsx`, which imports `FeaturedCardItem` to shape its own data and
+ *     renders `<FeaturedCards` nowhere;
+ *   - `components/lock-icon.tsx` — its one runtime importer is `tool-measurement-save.tsx`,
+ *     itself on this list.
+ */
+const KNOWN_UNREACHABLE = [
+  "components/home/featured-cards.tsx",
+  "components/lock-icon.tsx",
+  "components/tools/tool-island.tsx",
+  "components/tools/tool-measurement-list.tsx",
+  "components/tools/tool-measurement-save.tsx",
+  "components/tools/tool-png.ts",
+];
+
+describe("the import closure itself", () => {
+  // ANTI-VACUITY. Every assertion below is "X is in this set"; a set built from a broken
+  // resolver, an empty walk or a typo'd root would fail them all loudly rather than pass
+  // them all silently — but only if something proves the set was really built. These do.
+  it("walked the product surface and reached beyond it", () => {
+    expect(AUDITED.length).toBeGreaterThan(100);
+    expect(productClosure.size).toBeGreaterThan(PRODUCT_ROOTS.length);
+    // A file the closure can only have reached by following an import, not by walking a root.
+    expect([...productClosure].map(label)).toContain("lib/utils.ts");
   });
 
-  it("every name on the exception list is a real file", () => {
-    for (const name of KNOWN_SHOWCASE_ONLY) {
-      expect(PRIMITIVES.map(label), `${name} is not a primitive on disk`).toContain(name);
+  it("reaches a primitive only an intermediate module imports — the transitive case", () => {
+    // `skeleton.tsx` has no importer on the product surface at all: `table.tsx` imports it,
+    // and five `components/v2` files import `table.tsx`. A direct-importer check would call
+    // it an orphan. If this ever goes red, the closure stopped being transitive.
+    expect([...productClosure].map(label)).toContain("components/ui/skeleton.tsx");
+  });
+
+  it("the showcase closure is real and is a different set", () => {
+    expect([...showcaseClosure].map(label)).toContain("components/showcase/registry.ts");
+    expect(showcaseClosure.has(join(repoRoot, "components/showcase/specimen.tsx"))).toBe(true);
+    expect(productClosure.has(join(repoRoot, "components/showcase/specimen.tsx"))).toBe(false);
+  });
+
+  it("no audited file is also a root — hole 1, asserted rather than remembered", () => {
+    const rootPaths = [...PRODUCT_ROOTS, ...SHOWCASE_ROUTE].map((rel) => join(repoRoot, rel));
+    const seeded = AUDITED.filter((file) => rootPaths.some((root) => file.startsWith(root)));
+    expect(seeded.map(label), "audited files the walk would seed into the closure").toEqual([]);
+  });
+
+  it("does not count a type-only import as a call site — hole 2", () => {
+    // The live proof, and it outlives the deletion: `app/[locale]/(site)/page.tsx` binds
+    // `FeaturedCardItem` from `components/home/featured-cards.tsx` with `import type`, and that
+    // file is on `KNOWN_UNREACHABLE`. A walk that followed type edges would call it product.
+    const featured = join(repoRoot, "components/home/featured-cards.tsx");
+    expect(classify(featured, productClosure, showcaseClosure)).toBe("unreachable");
+  });
+});
+
+describe("the classifier answers about a file, not about the tree", () => {
+  const ghost = join(repoRoot, "components/__probe__/ghost.tsx");
+
+  it("calls a file in neither closure unreachable", () => {
+    expect(classify(ghost, productClosure, showcaseClosure)).toBe("unreachable");
+  });
+
+  it("calls a showcase-reachable file OUTSIDE components/showcase showcase-only", () => {
+    expect(classify(ghost, new Set(), new Set([ghost]))).toBe("showcase-only");
+  });
+
+  it("calls a showcase-reachable file INSIDE components/showcase infrastructure", () => {
+    const infra = join(repoRoot, "components/showcase/__probe__/ghost.tsx");
+    expect(classify(infra, new Set(), new Set([infra]))).toBe("showcase-infrastructure");
+  });
+
+  it("lets the product closure win over both", () => {
+    expect(classify(ghost, new Set([ghost]), new Set([ghost]))).toBe("product");
+  });
+});
+
+describe("no component is reachable only from the showcase, or from nothing", () => {
+  it("the recorded showcase-only list is exactly the measured set", () => {
+    expect(verdictsOf(AUDITED, "showcase-only")).toEqual([...KNOWN_SHOWCASE_ONLY].sort());
+  });
+
+  it("the recorded unreachable list is exactly the measured set", () => {
+    expect(verdictsOf(AUDITED, "unreachable")).toEqual([...KNOWN_UNREACHABLE].sort());
+  });
+
+  /**
+   * THE PIN IS MUTATION-CHECKED AT ITS VALUE, not merely stated.
+   *
+   * A list pinned by equality is only a ratchet if an added orphan moves it. One file that no
+   * importer names is injected into the audited population, and both equalities above must then
+   * FAIL — which is the property "an orphan cannot be added silently", executed rather than
+   * asserted about.
+   */
+  it("a file under the audited root with no importer breaks both pins — the probe", () => {
+    const ghost = join(repoRoot, "components/__probe__/ghost.tsx");
+    const probed = [...AUDITED, ghost];
+    expect(verdictsOf(probed, "unreachable")).not.toEqual([...KNOWN_UNREACHABLE].sort());
+    expect(verdictsOf(probed, "unreachable")).toContain("components/__probe__/ghost.tsx");
+  });
+
+  it("every name on both lists is a real file", () => {
+    for (const name of [...KNOWN_SHOWCASE_ONLY, ...KNOWN_UNREACHABLE]) {
+      expect(AUDITED.map(label), `${name} is not an audited file on disk`).toContain(name);
     }
   });
 
   it.each(
-    PRIMITIVES.filter((path) => !KNOWN_SHOWCASE_ONLY.includes(label(path))).map(
-      (path) => [label(path), path] as const,
-    ),
-  )("%s is reached from the product surface", (name, path) => {
-    const onlyShowcase = !productClosure.has(path) && showcaseClosure.has(path);
+    AUDITED.filter(
+      (path) =>
+        !KNOWN_SHOWCASE_ONLY.includes(label(path)) && !KNOWN_UNREACHABLE.includes(label(path)),
+    ).map((path) => [label(path), path] as const),
+  )("%s is reached from a route", (name, path) => {
+    const verdict = classify(path, productClosure, showcaseClosure);
     expect(
-      productClosure.has(path),
-      onlyShowcase
-        ? `${name} is reachable ONLY from /design-system. A primitive with no product call ` +
+      verdict === "product" || verdict === "showcase-infrastructure",
+      verdict === "showcase-only"
+        ? `${name} is reachable ONLY from /design-system. A component with no product call ` +
             `site is deleted, not maintained for the showcase's sake (docs/design.md).`
         : `${name} is reachable from nothing at all — delete it.`,
     ).toBe(true);
