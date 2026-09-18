@@ -42,7 +42,11 @@
      simply wider than the column, and the page scrolled sideways. Pre-dates T-046 (325px of
      document on a 320px viewport before the body container landed) and got worse with it, since
      the province body is now 288px rather than the full 320. `min()` keeps the 300px floor
-     wherever the column can hold it and yields to the column where it cannot. */
+     wherever the column can hold it and yields to the column where it cannot — and `100%` here is
+     100% of `.chartLayout`'s content box, this frame's flex container, i.e. the full column once
+     the frame has wrapped to a row of its own. Worth spelling out: `min-width` percentages
+     resolve against the CONTAINING BLOCK's inline size, not against the element's own content or
+     against the viewport, which is the reading that would make this rule do nothing. */
   min-width: min(300px, 100%);
   aspect-ratio: 720 / 340;
   background: #fff;

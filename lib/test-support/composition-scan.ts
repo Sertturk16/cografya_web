@@ -612,6 +612,23 @@ export type ScannedElement = {
   readonly parent: number | null;
   readonly children: number[];
   readonly inProp: boolean;
+  /**
+   * Written from inside a `{…}` EXPRESSION in its parent's children, rather than as a plain JSX
+   * child — `{cond && <X/>}`, `{a ? <X/> : <Y/>}`, `{rows.map(() => <X/>)}`.
+   *
+   * "Might not render." An element written as a plain child always renders when its parent does;
+   * one inside an expression renders only if the expression evaluates that way, and this scanner
+   * does not evaluate anything. It is the difference between "this tag appears in the source" and
+   * "this element is on the page", which is the distinction four separate findings in this
+   * programme have turned on (PR3's Ruling Z/AB, PR4 Task 4's `.map()` blind spot, PR4's Ruling BA
+   * where `cn("grid", …)` behind a `void` satisfied two source pins, and T-046's own review, where
+   * `{false && <PageContainer/>}` certified a full-bleed body as contained).
+   *
+   * A counter that MUST see an element is free to ignore this. A counter that treats an element as
+   * PROOF of something — as "this body is inside a container" does — must not, or a dead reference
+   * is a certificate.
+   */
+  readonly inExpression: boolean;
 };
 
 /**
@@ -769,11 +786,27 @@ export function scanJsx(source: string): ScannedElement[] {
     depth: number,
   ): number => {
     let previous = "";
+    // Depth of `{…}` expressions opened IN THIS parent's children. Local to the call, and each
+    // element's children get their own `scanRange`, so this is exactly "is the element I am about
+    // to record written inside a braced expression of its own parent" — not of some ancestor.
+    let braces = 0;
     while (i < end) {
       const ch = source[i]!;
       if (ch === '"' || ch === "'" || ch === "`") {
         i = skipLiteral(i);
         previous = ch;
+        continue;
+      }
+      if (ch === "{") {
+        braces += 1;
+        previous = ch;
+        i += 1;
+        continue;
+      }
+      if (ch === "}") {
+        if (braces > 0) braces -= 1;
+        previous = ch;
+        i += 1;
         continue;
       }
       if (
@@ -808,6 +841,7 @@ export function scanJsx(source: string): ScannedElement[] {
           parent,
           children: [],
           inProp,
+          inExpression: braces > 0,
         });
         if (parent !== null && !inProp) elements[parent]!.children.push(index);
         scanRange(nameEnd, header.end, index, true, depth + 1);
@@ -1072,19 +1106,30 @@ export function resolvesTo(
  * ------------------------------------------------------------------------------------------ */
 
 /**
- * ONE TOP-LEVEL NODE of what a render root returns — a direct child of the returned fragment, or
- * the returned element itself when the file returns a single element rather than a fragment.
+ * ONE NODE of what a render root returns, with its children — a direct child of the returned
+ * fragment (or the returned element itself when the file returns a single element), and then that
+ * node's own element children, recursively.
  *
- * `subtree` is every tag in this node INCLUDING its own, reached through `children` only.
- * Elements written inside an attribute expression ({@link ScannedElement.inProp}) are deliberately
- * NOT in it: `<Explorer panel={<PageContainer>…</PageContainer>}>` passes a sibling panel, it does
- * not wrap the explorer's body, and a caller asking "is this node's content inside a container"
- * must not be answered yes by a container handed to it as a prop.
+ * A TREE, not a flat tag list. The first version of this type carried `subtree: string[]`, every
+ * tag under the node, and the T-046 review defeated the counter built on it in one move: `some(tag
+ * => isContainer(tag))` over a flat list says "a container exists somewhere below", which is true
+ * of `<div><PageContainer/><section>loose body</section></div>` — a container and an uncontained
+ * body as SIBLINGS. Structure is the whole question a containment counter asks, so the structure
+ * has to survive the walk.
+ *
+ * `children` follows JSX children only. Elements written inside an attribute expression
+ * ({@link ScannedElement.inProp}) are deliberately absent: `<Explorer panel={<PageContainer>…
+ * </PageContainer>}>` passes a sibling panel, it does not wrap the explorer's body, and a caller
+ * asking "is this node's content inside a container" must not be answered yes by a container handed
+ * to it as a prop.
+ *
+ * `inExpression` is {@link ScannedElement.inExpression}, carried through unchanged.
  */
 export type RenderTreeNode = {
   readonly tag: string;
   readonly spelling: string | null;
-  readonly subtree: readonly string[];
+  readonly inExpression: boolean;
+  readonly children: readonly RenderTreeNode[];
 };
 
 /**
@@ -1118,9 +1163,13 @@ const renderTreeCache = perFileCache<RenderTreeNode[]>();
  *   - a file with no `default` region — there is none under `PAGE_ROOTS` today — yields nothing,
  *     which reads downstream as "no uncontained node", the silent-pass direction. The caller is
  *     expected to assert the walk is non-empty rather than trust the zero;
- *   - tags only, never resolved: `subtree` holds the source spelling of each tag. Deciding that a
- *     `PageContainer` in it is THE `PageContainer` is the caller's job, through
- *     {@link importBindingsOf} and {@link resolvesTo}.
+ *   - tags only, never resolved: each node holds the source spelling of its tag. Deciding that a
+ *     `PageContainer` in the tree is THE `PageContainer` is the caller's job, through
+ *     {@link importBindingsOf} and {@link resolvesTo};
+ *   - `inExpression` records that an element is written inside a `{…}`, never whether the
+ *     expression is true. `{false && <X/>}` and `{isLoggedIn && <X/>}` are the same fact here, and
+ *     a caller treating an element as PROOF of something must read the flag and treat both as
+ *     unproven — see {@link ScannedElement.inExpression}.
  */
 export function topLevelRenderNodes(file: string): RenderTreeNode[] {
   const hit = renderTreeCache.get(file);
@@ -1138,18 +1187,17 @@ export function topLevelRenderNodes(file: string): RenderTreeNode[] {
       const elements = scanJsx(source.slice(at + match[0].length, end));
       const root = elements[0];
       if (root === undefined) continue;
-      // A fragment is not a node of its own; a returned element is its own only top-level node.
-      for (const index of root.tag === "" ? root.children : [0]) {
+      const build = (index: number): RenderTreeNode => {
         const element = elements[index]!;
-        const subtree: string[] = [];
-        const stack = [index];
-        while (stack.length > 0) {
-          const current = elements[stack.pop()!]!;
-          subtree.push(current.tag);
-          stack.push(...current.children);
-        }
-        nodes.push({ tag: element.tag, spelling: element.spelling, subtree });
-      }
+        return {
+          tag: element.tag,
+          spelling: element.spelling,
+          inExpression: element.inExpression,
+          children: element.children.map(build),
+        };
+      };
+      // A fragment is not a node of its own; a returned element is its own only top-level node.
+      for (const index of root.tag === "" ? root.children : [0]) nodes.push(build(index));
     }
   }
 

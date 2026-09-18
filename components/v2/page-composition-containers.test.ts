@@ -298,34 +298,73 @@ describe("the sticky navs stay aligned to PageContainer's base", () => {
  * root, does each top-level node of what it returns sit inside a `PageContainer`?** An absent
  * wrapper is not a missing spelling here, it is a node in the offender list.
  *
- * FOUR SHAPES IT IS BUILT NOT TO BE SATISFIED BY — each one something this programme has already
- * been bitten by, each with its own control below:
+ * WHAT IT IS BUILT NOT TO BE SATISFIED BY — each one something this programme has already been
+ * bitten by, each with its own control below, and each stated as a claim about CODE THAT EXISTS
+ * rather than about intent.
+ *
+ * RULING BM. The first version of this list had five items and TWO OF THEM WERE FALSE. The T-046
+ * review defeated both on a real render root, each leaving the counter at 0 with the body
+ * full-bleed, and the finding was not the two bugs but the asymmetry: the limits list below was
+ * exemplary while the guarantees beside it overstated. Both are repaired in code, both attacks are
+ * pinned as controls, and both repairs are mutation-recorded. A guard that overstates itself is
+ * worse than one that understates, because a reader who checks the docblock stops looking.
  *
  *   1. **A container reached through a name the walk does not follow.** The tag is never compared
- *      as text. Every tag in a node's subtree is resolved through {@link importBindingsOf} and
- *      {@link resolvesTo}, so `import { PageContainer as Shell }` and a barrel re-export both
- *      count, and a LOCAL component that merely happens to be called `PageContainer` does not.
- *      This is the door PR4 found open on `StatTile` one component over from `StatGrid`.
+ *      as text. Every tag is resolved through {@link importBindingsOf} and {@link resolvesTo}, so
+ *      `import { PageContainer as Shell }` and a barrel re-export both count, and a LOCAL
+ *      component that merely happens to be called `PageContainer` does not. This is the door PR4
+ *      found open on `StatTile` one component over from `StatGrid`.
  *   2. **A `PageContainer` that renders nothing because the body sits BESIDE it.** That is the
- *      defect itself: all five offenders already render `<PageContainer space="band">` — inside
- *      their hero. The unit of judgement is therefore the top-level node, not the file: a file
- *      containing a container proves nothing about the sibling that does not.
- *   3. **A dead reference.** `<PageContainer>` in the source is evidence that a tag was written,
- *      never that a padded `max-w-7xl` box is rendered — the `StatGrid` lesson, where
- *      `cn("grid", …)` assigned to an unused const satisfied two source pins while collapsing
- *      thirteen metric strips to one column. So the meaning of "inside a PageContainer" is pinned
- *      as RENDERED OUTPUT below ("PageContainer still renders the box this counter is claiming"),
- *      and gutting the component fails that assertion instead of silently emptying this one.
- *   4. **A control anchored on markup a later task will legitimately change.** Every behavioural
+ *      defect itself: all five offenders already render `<PageContainer space="band">` inside
+ *      their hero, so "container and body under one wrapper" is one refactor away from being
+ *      written for real. WAS FALSE: the first version asked `subtree.some(isContainer)` over a
+ *      flat tag list, which says "a container exists somewhere below" — true of
+ *      `<div><PageContainer/><section>loose body</section></div>`. The defence stopped one level
+ *      above the shape it named. {@link isContained} DESCENDS now: a node is contained when it is
+ *      an unconditional container, or when every element child of it is contained, with a
+ *      non-container leaf as the base case.
+ *   3. **A dead reference — a container written but not rendered.** WAS FALSE: the first version
+ *      answered this by pointing at the rendered-output pin in item 4, which proves something
+ *      DIFFERENT — that the component still renders a box, not that this element is ever on the
+ *      page. `{false && <PageContainer/>}` certified a full-bleed body. This is the FOURTH arrival
+ *      in this programme at "a source token is not a rendered thing", after PR3's Ruling Z/AB,
+ *      PR4 Task 4's `.map()` blind spot and PR4's Ruling BA, and the first where the docblock
+ *      cited the earlier three three lines above reproducing them.
+ *      {@link certifiesContainment} now refuses any container written inside a `{…}` expression,
+ *      which covers `&&`, `?:` and a `.map()` callback in one rule.
+ *   4. **A gutted `PageContainer`.** A separate guarantee from item 3, not the same one: this is
+ *      about the component, that one is about the element. "Inside a `PageContainer`" only means
+ *      anything while `PageContainer` renders a padded `max-w-7xl` box, so that is pinned as
+ *      RENDERED OUTPUT below, as the whole class string in emission order — the `StatGrid` lesson,
+ *      where `cn("grid", …)` assigned to an unused const satisfied two source pins while
+ *      collapsing thirteen metric strips to one column.
+ *   5. **A control anchored on markup a later task will legitimately change.** Every behavioural
  *      control runs against injected source at {@link FIXTURE_ROOT}, never against a real page —
  *      T-045's harness exists because PR3's controls were built on `giris/page.tsx` and the task
  *      contracted to give it an `<h1>` would have turned five of them red.
  *
+ * WHERE IT IS DELIBERATELY WRONG, in the loud direction. `certifiesContainment` refuses a
+ * container behind `{isTr && …}` although it renders on most requests, and {@link isOutOfFlow}
+ * accepts only an unconditional `absolute`/`fixed`, not `sm:absolute`. Both cost a false RED that
+ * names the file; the alternative costs a false GREEN over a full-bleed body, which is the defect
+ * this counter exists for.
+ *
  * WHAT IT STILL CANNOT SEE — the honest limits, none of them closed by this file:
  *
- *   - **Anything below the top level.** A node correctly inside a `PageContainer` may nest a
- *     `w-screen`, a `-mx-4` or a `fixed` descendant that breaks back out; this counter reads the
- *     container relationship at depth 1 of the returned tree and says nothing about depth 2.
+ *   - **Geometry. This is the limit, not depth.** Nothing here runs a browser. T-046's own two
+ *     overflow defects were `climate.module.css`'s `min-width: 300px` and a `shrink-0` badge in a
+ *     non-wrapping flex row: neither is in the JSX tree at ANY depth — one is in a stylesheet, the
+ *     other an intrinsic-min-content consequence of two Tailwind classes meeting at one viewport —
+ *     so walking deeper would have found neither, and a later task should not try. The division is
+ *     that **this counter pins the SHAPE that produced the defect; a geometry sweep pins the
+ *     CONSEQUENCE**, and neither substitutes for the other. The sweep that caught both
+ *     (`scrollWidth === clientWidth` at 320/360/390) lives in `t046_shots/shoot.mjs` and is run by
+ *     hand; promoting it to something that runs on its own is recorded as the open follow-up in
+ *     `.superpowers/sdd/t-046-body-container-report.md`.
+ *   - **Anything inside an out-of-flow branch.** {@link isOutOfFlow} stops the descent at an
+ *     `absolute`/`fixed` element, so an absolutely positioned wrapper with real content under it
+ *     takes that whole branch out of the walk. It exists because all five heroes write a
+ *     decorative glow beside their container and without it the counter reports every hero.
  *   - **A body assembled in a helper.** `{renderBody()}` is a call expression, not an element:
  *     one top-level node, and whatever sections the helper writes are invisible. Moving a page's
  *     body into a same-file helper would take it out of this counter's reach without changing a
@@ -336,10 +375,6 @@ describe("the sticky navs stay aligned to PageContainer's base", () => {
  *   - **Layout that a stylesheet, not a wrapper, imposes.** A page whose body were widened by a
  *     CSS Module or a `@layer` rule would read as an offender though it renders correctly, and a
  *     `PageContainer` whose tokens were overridden by a later-layer rule would read as fine.
- *   - **Rendered geometry.** Nothing here runs a browser. That "the body's left inset equals the
- *     hero's" was measured in Playwright, per page, per breakpoint, and written into
- *     `.superpowers/sdd/t-046-body-container-report.md`; this counter only stops the SHAPE that
- *     produced the defect from returning silently.
  *   - **`components/**` render roots.** {@link walkRenderRoots} visits `page.tsx`, `error.tsx` and
  *     `not-found.tsx` under `PAGE_ROOTS` only — the same scope limit `PAGE_BODY_SPELLINGS` has one
  *     walker over, and the reason `V2GameScreen` needs a named exemption below rather than being
@@ -441,20 +476,83 @@ function isExemptNode(file: string, node: RenderTreeNode): boolean {
   );
 }
 
-/** A node is contained when its subtree renders THE `PageContainer`, however it is named here. */
-function isContained(file: string, node: RenderTreeNode): boolean {
-  return node.subtree.some((tag) =>
-    tagResolvesTo(file, tag, PAGE_CONTAINER_MODULE, "PageContainer"),
+/**
+ * Is this element THE `PageContainer`, and is it actually going to be there?
+ *
+ * `inExpression` is half of the predicate, not a detail. `{false && <PageContainer/>}`,
+ * `{cond ? <A/> : <PageContainer/>}` and `{rows.map(() => <PageContainer/>)}` all put the tag in
+ * the source and none of them puts a box on the page unconditionally. A counter that reads a tag
+ * as PROOF must refuse every one of them; the T-046 review certified a full-bleed body with the
+ * first, three lines under a docblock citing the three earlier arrivals at the same bug.
+ *
+ * It is deliberately CRUDE in the safe direction: a container behind `{isTr && …}` renders on most
+ * requests and is still refused, because this scanner evaluates nothing and "sometimes" is not
+ * containment. The cost is a false RED naming the file, which is loud; the alternative is a false
+ * GREEN over a full-bleed body, which is the defect this whole counter exists for.
+ */
+function certifiesContainment(file: string, node: RenderTreeNode): boolean {
+  return (
+    !node.inExpression && tagResolvesTo(file, node.tag, PAGE_CONTAINER_MODULE, "PageContainer")
   );
+}
+
+/**
+ * Out of the flow the body container governs, so not body content in it.
+ *
+ * Every one of the five heroes this task touched writes a decorative glow beside its
+ * `<PageContainer space="band">`:
+ *
+ *     <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl
+ *                     pointer-events-none" />
+ *
+ * That is a real container-with-a-sibling, and it is not the defect: an absolutely positioned box
+ * is out of normal flow, so the width and padding a body container imposes were never going to
+ * reach it. Without this the descent below reports all five heroes and the counter becomes noise,
+ * which is how a counter gets weakened rather than fixed.
+ *
+ * UNCONDITIONAL TOKENS ONLY. A variant-scoped `sm:absolute` is static below `sm` — in flow at
+ * exactly the widths this task's defect was worst — so it is NOT accepted here and such an element
+ * reads as body content. Wrong in the loud direction, on purpose.
+ *
+ * This is also a real hole, named in the limits list: an `absolute` wrapper with genuine content
+ * under it takes that whole branch out of the descent.
+ */
+function isOutOfFlow(node: RenderTreeNode): boolean {
+  const tokens = (node.spelling ?? "").split(/\s+/);
+  return tokens.includes("absolute") || tokens.includes("fixed");
+}
+
+/**
+ * DESCENT, not "does my subtree contain one".
+ *
+ * A node is contained when it IS an unconditional container, when it renders no box at all, or
+ * when EVERY element child of it is contained. The recursion is what separates the two shapes a
+ * flat `subtree.some(isContainer)` welds together:
+ *
+ *     <section class="hero"><PageContainer …>…</PageContainer></section>   contained ✓
+ *     <div><PageContainer …>side</PageContainer><section>body</section></div>   NOT ✗
+ *
+ * Both have a container somewhere below; only the first has one around everything. The second is
+ * "the defect itself, one level deeper" — the review's own words — and is one refactor away from
+ * being written for real, because all five pages this task fixed already render a
+ * `<PageContainer space="band">` inside their hero.
+ *
+ * A LEAF THAT IS NOT A CONTAINER IS NOT CONTAINED. `children.every(…)` over an empty list is
+ * vacuously true, which would make every childless top-level node — `<V2SourcesSection />`,
+ * `<MarineDataNotice />`, each of which WAS a real offender before this task — read as contained.
+ * The base case is the counter, not an edge case in it.
+ */
+function isContained(file: string, node: RenderTreeNode): boolean {
+  if (certifiesContainment(file, node)) return true;
+  if (isOutsideTheBody(file, node) || isOutOfFlow(node)) return true;
+  if (node.children.length === 0) return false;
+  return node.children.every((child) => isContained(file, child));
 }
 
 /** Every top-level node of `file` that is body content sitting outside any `PageContainer`. */
 function uncontainedNodesIn(file: string): string[] {
   return topLevelRenderNodes(file)
-    .filter(
-      (node) =>
-        !isContained(file, node) && !isOutsideTheBody(file, node) && !isExemptNode(file, node),
-    )
+    .filter((node) => !isContained(file, node) && !isExemptNode(file, node))
     .map((node) => `<${node.tag}> ${node.spelling ?? "(no className attribute)"}`);
 }
 
@@ -492,7 +590,28 @@ function rootsWithUncontainedBody(): Map<string, string[]> {
  * `turkiye/bolge/page.tsx` again, leaving its six body nodes as direct fragment children exactly
  * as T-032 left them — RED, `expected 1 to be +0`, the message naming the file and all six loose
  * nodes (`<section> scroll-mt-28` ×4, `<div> flex items-center justify-between pt-2`,
- * `<div> scroll-mt-28`). Restored from a copy taken aside beforehand — GREEN.
+ * `<div> scroll-mt-28`). Restored from a copy taken aside beforehand — GREEN. RE-RUN unchanged
+ * after Ruling BM rewrote the predicate underneath it, because a mutation record made against a
+ * different implementation proves nothing about this one.
+ *
+ * RULING BM (2026-09-18) rewrote `isContained` from a flat `subtree.some(isContainer)` to a
+ * descent, and added `inExpression` to `certifiesContainment`. **The before-measurement did not
+ * move**: the five pages were restored from `20dd8d2` with the new predicate in place and the
+ * counter read 5, the same five files. So the stricter rule is strictly better rather than
+ * differently scoped — it rejects two shapes that were never on this surface and accepts
+ * everything that was.
+ *
+ * TWO MORE MUTATIONS, one per repair, each reverted:
+ *
+ *   - `certifiesContainment` with `!node.inExpression` dropped — RED on "a DEAD container
+ *     reference contains nothing" and on "a container in a TERNARY branch or a .map() callback",
+ *     2 failed / 50 passed;
+ *   - `isContained` reverted to `certifiesContainment(n) || n.children.some(flat)`, the flat shape
+ *     the review defeated — RED on "a container and a loose body as SIBLINGS INSIDE ONE NODE" and
+ *     on the `sm:absolute` half of the out-of-flow control, 2 failed / 50 passed.
+ *
+ * Neither mutation moved the whole-surface count off 0, which is the point: these are shapes the
+ * tree does not contain today and the controls are what keep them from arriving unnoticed.
  */
 export const RENDER_ROOTS_WITH_UNCONTAINED_BODY = 0;
 
@@ -575,6 +694,93 @@ describe("the uncontained-body scan", () => {
         '    <>\n      <section className="hero">\n        <PageContainer space="band">h</PageContainer>\n      </section>\n      <section className="grid grid-cols-12">body</section>\n    </>',
       ),
     ).toEqual(["<section> grid grid-cols-12"]);
+  });
+
+  /**
+   * T-046 REVIEW, ATTACK A — reproduced verbatim from the reviewer's probe.
+   *
+   * This ran GREEN against the first version of this counter, with the body full-bleed, because
+   * `isContained` asked `node.subtree.some(isContainer)` over a FLAT tag list and a container
+   * anywhere below certified the whole node — including the sibling it does not wrap. The shape
+   * named in the docblock as "the defect itself" was reachable one level deeper than the defence
+   * reached. `isContained` descends now; this must be RED, naming the loose sibling only.
+   */
+  it("a container and a loose body as SIBLINGS INSIDE ONE NODE is not contained — review attack A", () => {
+    expect(
+      fixture(
+        '    <div className="zz-sibling">\n      <PageContainer space="default"><span>side</span></PageContainer>\n      <section className="zz-loose-body">uncontained body</section>\n    </div>',
+      ),
+    ).toEqual(["<div> zz-sibling"]);
+  });
+
+  /**
+   * T-046 REVIEW, ATTACK B — reproduced verbatim. Also GREEN before, for a different reason: the
+   * rendered-output pin three assertions up proves `PageContainer` THE COMPONENT still renders a
+   * padded box, and says nothing about whether the `<PageContainer>` found in a page's tree is
+   * ever rendered at all. `{false && …}` is the fourth arrival in this programme at "a source
+   * token is not a rendered thing" — after PR3's Ruling Z/AB, PR4 Task 4's `.map()` blind spot and
+   * PR4's Ruling BA — and the first where the docblock cited the earlier three while reproducing
+   * them. `certifiesContainment` refuses any container written inside a `{…}` expression.
+   */
+  it("a DEAD container reference contains nothing — review attack B", () => {
+    // The reviewer's probe, verbatim.
+    expect(
+      fixture(
+        '    <section className="zz-dead-ref">\n      {false && <PageContainer space="default">never</PageContainer>}\n      <p>loose body</p>\n    </section>',
+      ),
+    ).toEqual(["<section> zz-dead-ref"]);
+    // And the same shape with NOTHING else under the node, which is what isolates the rule being
+    // tested: the probe above is now caught twice over — by `inExpression` AND by the `<p>` that
+    // the descent finds uncontained — so on its own it would stay green if `inExpression` were
+    // dropped. This one goes green the moment it is, and that is the mutation recorded below.
+    expect(
+      fixture(
+        '    <section className="zz-dead-only">\n      {false && <PageContainer space="default">never</PageContainer>}\n    </section>',
+      ),
+    ).toEqual(["<section> zz-dead-only"]);
+  });
+
+  it("a container in a TERNARY branch or a .map() callback contains nothing either", () => {
+    // The same rule, at the other two shapes the review named. Neither is evaluated — `cond` may
+    // be true on every real request — because "sometimes" is not containment and this scanner
+    // evaluates nothing.
+    expect(
+      fixture(
+        '    <section className="zz-ternary">\n      {cond ? <span>a</span> : <PageContainer>b</PageContainer>}\n    </section>',
+      ),
+    ).toEqual(["<section> zz-ternary"]);
+    expect(
+      fixture(
+        '    <section className="zz-mapped">\n      {rows.map((r) => (\n        <PageContainer key={r}>{r}</PageContainer>\n      ))}\n    </section>',
+      ),
+    ).toEqual(["<section> zz-mapped"]);
+  });
+
+  it("an out-of-flow decorative sibling does not make a hero uncontained — and a variant-scoped one does", () => {
+    // All five heroes write an `absolute -z-10 … pointer-events-none` glow beside their
+    // `space="band"` container. An absolutely positioned box is out of the flow a body container
+    // governs, so it is not the sibling defect above; without this the descent reports every hero
+    // and the counter becomes noise. `sm:absolute` is static below `sm` — in flow at exactly the
+    // widths this task's defect was worst — so it is NOT accepted, in the loud direction.
+    expect(
+      fixture(
+        '    <section className="hero">\n      <div className="absolute -z-10 size-96 blur-3xl" />\n      <PageContainer space="band">h</PageContainer>\n    </section>',
+      ),
+    ).toEqual([]);
+    expect(
+      fixture(
+        '    <section className="hero">\n      <div className="sm:absolute -z-10 size-96 blur-3xl" />\n      <PageContainer space="band">h</PageContainer>\n    </section>',
+      ),
+    ).toEqual(["<section> hero"]);
+  });
+
+  it("a childless top-level component is not contained by having no children — base case", () => {
+    // `children.every(…)` over an empty list is vacuously true. Without an explicit base case,
+    // `<V2SourcesSection />` and `<MarineDataNotice />` — both real offenders before this task —
+    // would each have read as contained, and the counter would have measured 3 pages, not 5.
+    expect(fixture("    <V2SourcesSection />")).toEqual([
+      "<V2SourcesSection> (no className attribute)",
+    ]);
   });
 
   it("an ALIASED import still counts — the binding resolver is doing the work", () => {
