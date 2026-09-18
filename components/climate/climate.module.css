@@ -36,7 +36,14 @@
    (CONVENTIONS §6 #9). White plot background matches the fact cards. */
 .chartFrame {
   flex: 1 1 420px;
-  min-width: 300px;
+  /* `min(300px, 100%)`, not a bare 300px. The floor exists for the SHARED row: when the frame
+     sits beside `.summary` it must not be squeezed below a readable plot. On a 320px viewport
+     it has wrapped to its own row and the floor is no longer protecting anything — it was
+     simply wider than the column, and the page scrolled sideways. Pre-dates T-046 (325px of
+     document on a 320px viewport before the body container landed) and got worse with it, since
+     the province body is now 288px rather than the full 320. `min()` keeps the 300px floor
+     wherever the column can hold it and yields to the column where it cannot. */
+  min-width: min(300px, 100%);
   aspect-ratio: 720 / 340;
   background: #fff;
   border: 1px solid var(--color-border);

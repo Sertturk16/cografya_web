@@ -584,7 +584,11 @@ export function V2SourcesSection({
       {regionalNote && (
         <div className="p-3.5 sm:p-4 rounded-2xl bg-muted/30 border border-border/70 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
-            <div className="flex items-center gap-1.5">
+            {/* `flex-wrap` + `min-w-0`: the badge beside this text is `shrink-0`, so without
+                them the pair's min-content width is the badge plus the caption's longest word
+                and the row cannot fit a 288px body column — `/turkiye/bolge/[slug]` scrolled
+                sideways at 320px once T-046 gave that page a body container. */}
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
               <Badge
                 variant="outline"
                 size="sm"
