@@ -8,6 +8,8 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -115,40 +117,17 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
             </PageHero>
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  8.333 km
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Toplam Kıyı Uzunluğu (HGM)
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-teal-600 block">
-                  6 Kıyı Tipi
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Morfogenetik Çeşitlilik
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  28 İl
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Denize Kıyısı Olan Şehir
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-destructive block">
-                  3 Tip Yok
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Fiyort, Skyer &amp; Haliç (Watt)
-                </span>
-              </div>
-            </div>
+            {/* `tone="secondary"` was `text-teal-600`, which is FROZEN: measured #009689 in
+                both themes, 3.67:1 on the light card and 4.64:1 on the dark one, while its
+                three siblings move with the theme and hold ~5-6:1 in each. Same class of
+                defect as the marine attribution notice. `secondary` is the tone the sibling
+                strips write in this slot. */}
+            <StatGrid gutter="hero">
+              <StatTile label="Toplam Kıyı Uzunluğu (HGM)" fact="8.333 km" tone="primary" />
+              <StatTile label="Morfogenetik Çeşitlilik" fact="6 Kıyı Tipi" tone="secondary" />
+              <StatTile label="Denize Kıyısı Olan Şehir" fact="28 İl" tone="accent" />
+              <StatTile label="Fiyort, Skyer & Haliç (Watt)" fact="3 Tip Yok" tone="destructive" />
+            </StatGrid>
           </Card>
         </div>
 

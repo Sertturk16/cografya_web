@@ -8,6 +8,8 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -115,40 +117,23 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             </PageHero>
 
             {/* Quick Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-red-600 block">
-                  1.200 km
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  KAF Toplam Uzunluk
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-blue-600 block">
-                  550 km
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  DAF Toplam Uzunluk
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-emerald-600 block">
-                  8 Graben
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  BAFS Çöküntü Havzası
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  25 mm/yıl
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Batıya Doğru Kaçış
-                </span>
-              </div>
-            </div>
+            {/* THE WORST OF THE FIVE. `text-red-600`, `text-blue-600` and `text-emerald-600`,
+                all frozen — identical hex in both themes — and the blue reads 5.25:1 on the
+                light card but 3.25:1 on the dark one, the lowest figure in the strip family.
+
+                They are not a legend: nothing else on this page or its map draws KAF, DAF or
+                BAFS in those hues, so nothing is severed by re-toning them, and
+                `docs/design.md`'s "brand tokens never encode data" is not engaged. What the
+                hues DO carry is three distinguishable fault systems, so the mapping keeps
+                three distinct ones rather than collapsing onto the sibling strips' rotation:
+                red → destructive (the hazard reading), blue → accent (the water teal, the
+                coolest brand hue), emerald → secondary (the olive, the only green). */}
+            <StatGrid gutter="hero">
+              <StatTile label="KAF Toplam Uzunluk" fact="1.200 km" tone="destructive" />
+              <StatTile label="DAF Toplam Uzunluk" fact="550 km" tone="accent" />
+              <StatTile label="BAFS Çöküntü Havzası" fact="8 Graben" tone="secondary" />
+              <StatTile label="Batıya Doğru Kaçış" fact="25 mm/yıl" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 

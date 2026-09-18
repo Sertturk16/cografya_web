@@ -15,6 +15,8 @@ import { V2TurkeyMapExplorer, type ProvinceItem } from "@/components/v2/v2-turke
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -177,40 +179,27 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
             />
 
             {/* Verified Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  {totalProvinces} İl
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Mülki İdare Birimi
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  7 Bölge
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Coğrafi Bölüm &amp; Havza
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  {totalDistricts}
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Toplam İlçe Sayısı
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  783.562 km²
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Resmî Yüzölçümü (HGM)
-                </span>
-              </div>
-            </div>
+            {/* Two of these four are DATA — `provinces.length` and the summed district count
+                — so they take the measurement branch. The district total is the one that
+                matters: it is a `reduce` over an API payload, and the hand-written version
+                printed `0` for an empty summary with no way to tell that from a real zero. */}
+            <StatGrid gutter="hero">
+              <StatTile
+                label="Mülki İdare Birimi"
+                value={totalProvinces}
+                unit="İl"
+                tone="primary"
+                absent={{ label: "İl listesi yok", hint: "Katalog yüklenemedi" }}
+              />
+              <StatTile label="Coğrafi Bölüm & Havza" fact="7 Bölge" tone="secondary" />
+              <StatTile
+                label="Toplam İlçe Sayısı"
+                value={totalDistricts > 0 ? totalDistricts : null}
+                tone="accent"
+                absent={{ label: "İlçe sayısı yok", hint: "Özet verisi gelmedi" }}
+              />
+              <StatTile label="Resmî Yüzölçümü (HGM)" fact="783.562 km²" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 

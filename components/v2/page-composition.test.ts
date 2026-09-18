@@ -3508,8 +3508,24 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *     latency is now asserted rather than merely disclosed.
  *   - `CARD_PRIMITIVE_TAGS` neutered — RED on its control only, every counter unmoved, which is
  *     SCOPE note 4 measured rather than asserted.
+ *
+ * TASK 6 (2026-09-18) then took the fourth surface Task 5 deliberately did not build. The note
+ * above calls it `rounded-2xl bg-card p-4 shadow-2xs` with 56 occurrences, every one a Metric
+ * Strip tile; 50 of them are now `<StatTile>` and the tile draws the surface inside the component,
+ * so `HAND_DRAWN_CARDS` reads 241 → **191** (−50) and `HAND_DRAWN_WELLS` is unmoved at 168. The
+ * remaining 6 are `kitaplar/[slug]`'s inverted facts sheet (4, deliberately left — a different
+ * component) and the two `turkiye/bolge` grids that add `space-y-1`.
+ *
+ * Re-checked at 191, per Ruling AZ:
+ *
+ *   - the two-tile `rounded-2xl bg-card border border-border` grid probe on `hakkimizda/page.tsx`
+ *     — RED at `expected 193 to be 191` (two cards, so +2), and RED on `STAT_GRIDS_TOTAL` at
+ *     `expected 63 to be 62`, which is correct: the probe CREATES a grid rather than migrating
+ *     one, and creating one is the other thing the total is allowed to notice.
+ *   - the `bg-muted/30` spelling of it — RED on `HAND_DRAWN_WELLS` (`expected 169 to be 168`)
+ *     with `HAND_DRAWN_CARDS` unmoved at 191, so the split still splits after the −50.
  */
-export const HAND_DRAWN_CARDS = 241;
+export const HAND_DRAWN_CARDS = 191;
 
 export const HAND_DRAWN_WELLS = 168;
 
@@ -4185,7 +4201,9 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
       }
     }
     expect(strict).toBe(HAND_DRAWN_CARDS + HAND_DRAWN_WELLS);
-    expect(handDrawnTotals().files).toBe(68);
+    // 74 before Task 5, 68 after it, 60 after Task 6: eight more files hold no hand-drawn card
+    // surface at all once their metric strip is a `<StatGrid>` of `<StatTile>`s.
+    expect(handDrawnTotals().files).toBe(60);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
@@ -4359,8 +4377,11 @@ describe("the three card-shaped populations PR4 must not touch", () => {
 });
 
 /**
- * THE STAT GRID — the thing `components/patterns/stat-tile.tsx` was written for and has never
- * been used by.
+ * THE STAT GRID — the thing `components/patterns/stat-tile.tsx` was written for.
+ *
+ * It had never been used by one until T-035 PR4 Task 6, which moved the 13-strong metric-strip
+ * family onto it. The heading above used to end "and has never been used by"; that sentence is
+ * what the adoption task existed to falsify and it is now false.
  *
  * Operational definition, stated before the number so the number can be checked:
  *
@@ -4370,7 +4391,10 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  *   subtree, both a display VALUE (an element whose classes include `font-bold` and a `text-<size>`
  *   token) and a muted LABEL (an element whose classes include `text-muted-foreground`).
  *
- * That reads **62 grids / 35 files / 159 tiles**, and **0** of them render `<StatTile>`.
+ * That read **62 grids / 35 files / 159 tiles**, with **0** of them rendering `<StatTile>`. After
+ * the metric-strip migration it reads **49 / 26 / 109**, with **13 files** rendering `<StatTile>`
+ * and {@link STAT_GRIDS_TOTAL} UNMOVED at 62 — the two halves of the invariant below, measured
+ * together as it requires.
  *
  * ## WHY ≥1 AND NOT ≥2 — A TILE TEMPLATE IS A TILE
  *
@@ -4390,11 +4414,20 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  * wherever the markup is mapped — the opposite direction from blind spot 1 below, and the two do
  * not cancel.
  *
- * `StatTile` exists, has a contract test (`components/patterns/patterns-contract.test.ts`) and, as
- * of this commit, has exactly one consumer in the whole repo: `components/showcase/specimens/
- * veri.tsx`, a showcase specimen this section does not scan. On the product surface its consumer
- * count is {@link SURFACE_FILES_RENDERING_STATTILE} — zero. That sentence is what the adoption
- * task exists to falsify.
+ * `StatTile` exists, has a contract test (`components/patterns/patterns-contract.test.ts`) and had
+ * exactly one consumer in the whole repo for three tasks: `components/showcase/specimens/veri.tsx`,
+ * a showcase specimen this section does not scan. Its product-surface consumer count is
+ * {@link SURFACE_FILES_RENDERING_STATTILE}, which was zero and is now 13.
+ *
+ * ## WHAT THE ADOPTION FOUND THAT THIS COUNTER COULD NOT SEE
+ *
+ * The strips' values are NOT NUMBERS. "WGS84", "Haversine", "L'Huilier", "M 1.0 - 7.0+",
+ * "ÖSYM / MEB". `MetricValue` takes `value: number`, so `StatTile` as shaped could not render a
+ * single one of the 52 tiles this section had been sizing since PR3. That is a fifth blind spot
+ * and it belongs beside the four below: the predicate reads a bold element in a `text-<size>`
+ * class, which is a statement about TYPOGRAPHY and says nothing about whether the thing set in it
+ * is a quantity. `StatTile` grew a second, literal `fact` branch for them rather than widening
+ * `MetricValue.value` to `string`, which would have reopened T-024's defect.
  *
  * ## SCOPE — this is a SHAPE test, so it over-counts in one direction and under-counts in another
  *
@@ -4443,7 +4476,7 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  * as grids adopt `StatTile`, it will not reach zero (blind spot 1 is a permanent residue), and a
  * rise is a regression to be argued for.
  *
- * MUTATION-CHECKED 2026-09-18 at the values above, reverted after each:
+ * MUTATION-CHECKED 2026-09-18 at 62 / 35 / 159 / 0, reverted after each:
  *
  *   - `hakkimizda/page.tsx` given a literal two-tile grid — RED on all three:
  *     `to have a length of 62 but got 63`, `expected 36 to be 35`, `expected 161 to be 159`, each
@@ -4465,17 +4498,39 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  *     re-pinned — and **`STAT_GRIDS_TOTAL` does NOT appear in the failure list at all.** That
  *     difference is the whole ruling: a migration trades buckets, a refactor loses a grid.
  *
+ * RE-PINNED AND RE-CHECKED at 49 / 26 / 109 / 13 after the metric-strip migration, per Ruling AZ
+ * — a control proved at the old number proves nothing at the new one:
+ *
+ *   - `hakkimizda/page.tsx` given the same literal two-tile grid — RED on all three at the new
+ *     values (`to have a length of 49 but got 50`, `expected 27 to be 26`, `expected 111 to be
+ *     109`). The probe survived the adoption exactly as predicted, because `hakkimizda` holds no
+ *     stat grid and was never in the edit set.
+ *   - **the half-migration, on a real migrated strip**: `oyun/page.tsx`'s `<StatTile>` children
+ *     reverted to hand-drawn tiles inside the `<StatGrid>` that now wraps them. RED on the TOTAL
+ *     (`expected 61 to be 62`) with the trio holding at 49 / 26 / 109 and
+ *     `SURFACE_FILES_RENDERING_STATTILE` falling to 12 — the shell adopted, the tiles not, the
+ *     grid in neither bucket. That is RULING BA's own vector, checked on live markup rather than
+ *     asserted.
+ *   - **the shell removed from a migrated strip**: `araclar/page.tsx`'s `<StatGrid>` replaced by a
+ *     bare `<div>` with no grid classes. RED on the TOTAL (`expected 61 to be 62`) with
+ *     `SURFACE_FILES_RENDERING_STATTILE` unmoved at 13 — so a migrated grid cannot lose its shell
+ *     and keep reading as migrated.
+ *
  * The tile and file counts are separate `it`s for a reason the first run showed: asserted
  * together, the file count failed first and the tile number — the figure the adoption tasks
  * actually drive — never printed.
  */
-export const STAT_GRIDS_WITHOUT_STATTILE = 62;
+export const STAT_GRIDS_WITHOUT_STATTILE = 49;
 
-export const STAT_GRID_FILES = 35;
+export const STAT_GRID_FILES = 26;
 
-export const STAT_TILES_WITHOUT_STATTILE = 159;
+export const STAT_TILES_WITHOUT_STATTILE = 109;
 
-export const SURFACE_FILES_RENDERING_STATTILE = 0;
+/**
+ * The floor that is supposed to RISE. Zero for three tasks; 13 once the metric-strip family
+ * landed. Stated beside the trio every time, because the trio falling on its own is a refactor.
+ */
+export const SURFACE_FILES_RENDERING_STATTILE = 13;
 
 /**
  * Every tile grid on the surface, migrated or not: {@link STAT_GRIDS_WITHOUT_STATTILE} plus the

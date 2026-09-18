@@ -10,6 +10,8 @@ import { V2GamePedagogyGuide } from "@/components/v2/v2-game-pedagogy-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { Gamepad2, Home } from "lucide-react";
@@ -98,40 +100,12 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
             />
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  3 Oyun
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Farklı Sınav &amp; Test Modu
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  81 İl
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Eksiksiz Soru Havuzu
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  7 Bölge
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Bölgesel Harita Tamamlama
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  %100
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Gerçek Zamanlı Geri Bildirim
-                </span>
-              </div>
-            </div>
+            <StatGrid gutter="hero">
+              <StatTile label="Farklı Sınav & Test Modu" fact="3 Oyun" tone="primary" />
+              <StatTile label="Eksiksiz Soru Havuzu" fact="81 İl" tone="secondary" />
+              <StatTile label="Bölgesel Harita Tamamlama" fact="7 Bölge" tone="accent" />
+              <StatTile label="Gerçek Zamanlı Geri Bildirim" fact="%100" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 

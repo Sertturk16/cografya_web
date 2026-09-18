@@ -8,6 +8,8 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -105,40 +107,16 @@ export default async function V2PreparednessPage({ params }: PageProps) {
             </PageHero>
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  %50
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Eşya Sabitlemeyle Önlenebilir Yaralanma
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-destructive block">
-                  72 Saat
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Kendi Kendine Yetebilme Süresi
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  3 Adım
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Çök – Kapan – Tutun
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  112
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Tek Acil Çağrı Numarası
-                </span>
-              </div>
-            </div>
+            {/* Already all bridge tokens — this strip diverges from the sibling rotation in
+                WHICH tone each tile takes, not in whether the tone is themed. Preserved
+                exactly: `destructive` on the 72-hour figure and `secondary` on the drill are
+                the copy's meaning, not an accident of position. */}
+            <StatGrid gutter="hero">
+              <StatTile label="Eşya Sabitlemeyle Önlenebilir Yaralanma" fact="%50" tone="primary" />
+              <StatTile label="Kendi Kendine Yetebilme Süresi" fact="72 Saat" tone="destructive" />
+              <StatTile label="Çök – Kapan – Tutun" fact="3 Adım" tone="secondary" />
+              <StatTile label="Tek Acil Çağrı Numarası" fact="112" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 

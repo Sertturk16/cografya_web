@@ -10,6 +10,8 @@ import { V2GisMethodologyGuide } from "@/components/v2/v2-gis-methodology-guide"
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Compass, Home } from "lucide-react";
@@ -103,40 +105,12 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
             />
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  WGS84
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Küresel Elipsoid Modeli
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  Haversine
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Büyük Daire Eğrilik Hesabı
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  3 Birim
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  km², Hektar, Dönüm Çıktısı
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  UTM + DMS
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Çift Projeksiyon Desteği
-                </span>
-              </div>
-            </div>
+            <StatGrid gutter="hero">
+              <StatTile label="Küresel Elipsoid Modeli" fact="WGS84" tone="primary" />
+              <StatTile label="Büyük Daire Eğrilik Hesabı" fact="Haversine" tone="secondary" />
+              <StatTile label="km², Hektar, Dönüm Çıktısı" fact="3 Birim" tone="accent" />
+              <StatTile label="Çift Projeksiyon Desteği" fact="UTM + DMS" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 

@@ -14,6 +14,8 @@ import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-co
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { MapPin, Home } from "lucide-react";
@@ -109,40 +111,12 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
             />
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  WGS84
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  EPSG:4326 Jeodezik Standart
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  DMS + DD
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Çift Format Koordinat Gösterimi
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  UTM Zonu
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  6° Dilimli Düzlemsel Izgara
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  İl Tespiti
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Otomatik Sınır Eşleme (Polygon)
-                </span>
-              </div>
-            </div>
+            <StatGrid gutter="hero">
+              <StatTile label="EPSG:4326 Jeodezik Standart" fact="WGS84" tone="primary" />
+              <StatTile label="Çift Format Koordinat Gösterimi" fact="DMS + DD" tone="secondary" />
+              <StatTile label="6° Dilimli Düzlemsel Izgara" fact="UTM Zonu" tone="accent" />
+              <StatTile label="Otomatik Sınır Eşleme (Polygon)" fact="İl Tespiti" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 

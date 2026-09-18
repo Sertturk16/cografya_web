@@ -13,6 +13,8 @@ import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-co
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Route, Home } from "lucide-react";
@@ -107,40 +109,18 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
             />
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  Haversine
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Büyük Daire Yayı Denklemi
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  6.371 km
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  WGS84 Ortalama Dünya Yarıçapı
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  800 km/s
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Seyir Hızı Uçuş Simülasyonu
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  %28 Eğim
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Topoğrafik Karayolu Katsayısı
-                </span>
-              </div>
-            </div>
+            <StatGrid gutter="hero">
+              <StatTile label="Büyük Daire Yayı Denklemi" fact="Haversine" tone="primary" />
+              {/* `fact`, not `value={6371}`. THE LINE THIS PR DRAWS: `MetricValue` guards
+                  against a page promising a reading it does not have, which is a statement
+                  about DATA. These four are constants typed into the copy — a documented
+                  radius, a cruising speed — and there is nothing for an `absent` state to
+                  describe. The tiles fed by real data DO take the measurement branch; see
+                  `turkiye`, `dunya` and `kitaplar`. */}
+              <StatTile label="WGS84 Ortalama Dünya Yarıçapı" fact="6.371 km" tone="secondary" />
+              <StatTile label="Seyir Hızı Uçuş Simülasyonu" fact="800 km/s" tone="accent" />
+              <StatTile label="Topoğrafik Karayolu Katsayısı" fact="%28 Eğim" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 

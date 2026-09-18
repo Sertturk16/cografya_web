@@ -16,6 +16,8 @@ import { V2MarineFaqAccordion } from "@/components/v2/v2-marine-faq-accordion";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -208,40 +210,18 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
             />
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  4 Deniz
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Farklı Havza &amp; Akıntı
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-cyan-600 block">
-                  30 Nokta
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  {showValues ? "Saatlik Telemetri İstasyonu" : "Referans İzleme Noktası"}
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  28 İl
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Denize Kıyısı Olan Şehir
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  8.333 km
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Toplam Kıyı Uzunluğu (HGM)
-                </span>
-              </div>
-            </div>
+            {/* `tone="secondary"` was `text-cyan-600` — frozen at #0092b8 in both themes,
+                3.62:1 on the light card, the weakest reading in the whole strip family. */}
+            <StatGrid gutter="hero">
+              <StatTile label="Farklı Havza & Akıntı" fact="4 Deniz" tone="primary" />
+              <StatTile
+                label={showValues ? "Saatlik Telemetri İstasyonu" : "Referans İzleme Noktası"}
+                fact="30 Nokta"
+                tone="secondary"
+              />
+              <StatTile label="Denize Kıyısı Olan Şehir" fact="28 İl" tone="accent" />
+              <StatTile label="Toplam Kıyı Uzunluğu (HGM)" fact="8.333 km" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 

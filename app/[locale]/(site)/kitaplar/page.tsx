@@ -11,6 +11,8 @@ import { V2StudyStrategyGuide } from "@/components/v2/v2-study-strategy-guide";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Home } from "lucide-react";
@@ -134,27 +136,29 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
             />
 
             {/* Dynamic Metric Strip from Real Data. Two of the four tiles carried
-                `videoCount`/`questionCount` — DELETED with the fields (P0 generic-catalogue
-                cut-over, `DEC 2026-09-10c` md.1: no book-level count is published any more).
-                The grid stays byte-identical to the 9 sibling metric strips elsewhere in /v2
-                (`DESIGN.md` §4's established-component-pattern precedent, → PR #103 review
-                DF103-I1) — `sm:col-span-2` on each surviving tile fills all four tracks evenly
-                instead of inventing a page-local two-column variant (fix round, PR #134 review
-                DES134-I1). */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  {books.length} Kitap
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">Yayın Kataloğu</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs sm:col-span-2">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  ÖSYM / MEB
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">Müfredat Uyumu</span>
-              </div>
-            </div>
+                `videoCount`/`questionCount` — DELETED with the fields (no book-level count is
+                published any more).
+
+                The old comment here claimed "9 sibling metric strips". It was wrong, and it
+                was the evidence the whole adoption rested on: there are TWELVE, counted, plus
+                the inverted facts sheet on `kitaplar/[slug]`. All twelve now render
+                `StatGrid` + `StatTile`, so the claim this comment used to make by assertion is
+                made by the type instead.
+
+                `sm:col-span-2` on each surviving tile is what filled all four tracks evenly
+                with only two tiles. `StatGrid` has no per-tile escape hatch and `StatTile` has
+                no `className` worth spending one on, so this grid takes `columns="2"` — two
+                tracks at every width, which is the same rendering by the honest route. */}
+            <StatGrid columns="2" gutter="hero">
+              <StatTile
+                label="Yayın Kataloğu"
+                value={books.length > 0 ? books.length : null}
+                unit="Kitap"
+                tone="primary"
+                absent={{ label: "Katalog boş", hint: "Yayın listesi gelmedi" }}
+              />
+              <StatTile label="Müfredat Uyumu" fact="ÖSYM / MEB" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 

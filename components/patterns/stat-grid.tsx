@@ -25,6 +25,12 @@ import { cn } from "@/lib/utils";
 const COLUMNS = {
   /** The metric strip: two up on a phone, four across from `sm`. 13 files write it. */
   "2-4": "grid-cols-2 sm:grid-cols-4",
+  /**
+   * Two tracks at every width. `kitaplar` reaches this shape today by writing the 2-4 strip and
+   * then `sm:col-span-2` on each of its two surviving tiles, which renders identically and
+   * needs a per-tile escape hatch to say so.
+   */
+  "2": "grid-cols-2",
   /** The sea-basin strip: two, three, then six. */
   "2-3-6": "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6",
   /** The region hub strip: two up until `lg`. */

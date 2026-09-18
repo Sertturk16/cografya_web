@@ -13,6 +13,8 @@ import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-co
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { StatGrid } from "@/components/patterns/stat-grid";
+import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Home, Maximize2 } from "lucide-react";
@@ -108,40 +110,12 @@ export default async function V2AreaToolPage({ params }: V2AreaPageProps) {
             />
 
             {/* Metric Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  4 Birim
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  km², Hektar, Dönüm ve m²
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-secondary block">
-                  L&apos;Huilier
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Küresel Üçgenleme Algoritması
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-accent block">
-                  Çevre (P)
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Kapalı Çevre (Perimeter) Uzunluğu
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
-                  WGS84
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">
-                  Eğri Yüzey Alan Modeli
-                </span>
-              </div>
-            </div>
+            <StatGrid gutter="hero">
+              <StatTile label="km², Hektar, Dönüm ve m²" fact="4 Birim" tone="primary" />
+              <StatTile label="Küresel Üçgenleme Algoritması" fact="L'Huilier" tone="secondary" />
+              <StatTile label="Kapalı Çevre (Perimeter) Uzunluğu" fact="Çevre (P)" tone="accent" />
+              <StatTile label="Eğri Yüzey Alan Modeli" fact="WGS84" tone="primary" />
+            </StatGrid>
           </Card>
         </div>
 
