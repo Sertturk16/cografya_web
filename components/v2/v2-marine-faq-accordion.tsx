@@ -8,7 +8,16 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, Waves, Wind, Thermometer, ShieldAlert, Clock, Compass, Anchor } from "lucide-react";
+import {
+  HelpCircle,
+  Waves,
+  Wind,
+  Thermometer,
+  ShieldAlert,
+  Clock,
+  Compass,
+  Anchor,
+} from "lucide-react";
 
 interface FAQItem {
   id: string;
@@ -87,13 +96,16 @@ export function V2MarineFaqAccordion() {
           </Badge>
           <span className="text-xs text-muted-foreground font-medium">Sıkça Sorulan Sorular</span>
         </div>
-        <h2 id="v2-marine-faq-heading" className="font-heading text-2xl sm:text-3xl font-bold text-foreground">
+        <h2
+          id="v2-marine-faq-heading"
+          className="font-heading text-2xl sm:text-3xl font-bold text-foreground"
+        >
           Deniz Durumu &amp; Dalga Verilerini Okuma Rehberi
         </h2>
       </div>
 
       {/* Accordion Component - Default Closed */}
-      <Accordion type="single" collapsible className="space-y-3">
+      <Accordion className="space-y-3">
         {FAQ_ITEMS.map((item) => (
           <AccordionItem key={item.id} value={item.id}>
             <AccordionTrigger>
