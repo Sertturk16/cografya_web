@@ -50,6 +50,14 @@ const FAQ_JSONLD_MODULE = join(repoRoot, "lib/seo/json-ld.tsx");
 /** Where the delegated-markup exemption's other half lives. See {@link DELEGATED_FAQ_MARKUP}. */
 const SEA_BASIN_VIEW = join(repoRoot, "components/v2/v2-sea-basin-detail-view.tsx");
 
+/**
+ * The shared pattern component that renders a FAQ block AND emits its schema, from one `items`
+ * array. The ONE `faqPageJsonLd` caller that is not a page on {@link surfaceFiles}'s surface — and
+ * not an exemption: it pairs in its own file by the ordinary same-file rule. See the "nine calls"
+ * test below.
+ */
+const FAQ_SECTION_COMPONENT = join(repoRoot, "components/patterns/faq-section.tsx");
+
 /** The roots the `faqPageJsonLd` CALLER walk visits — wider than {@link surfaceFiles} on purpose,
  * so a call made from outside the FAQ surface is a failure rather than an omission. */
 const JSONLD_CALLER_ROOTS = ["app", "components", "lib"] as const;
@@ -830,7 +838,28 @@ describe("every faqPageJsonLd call has visible markup for the same array", () =>
     ).toBe(FAQ_JSONLD_WITHOUT_MARKUP);
   });
 
-  it("the eight calls are exactly the pages that emit FAQPage — anti-vacuity", () => {
+  /**
+   * NINE CALLS, AND THE NINTH IS NOT AN EXEMPTION.
+   *
+   * This listed eight while every `faqPageJsonLd` caller was a page that also wrote its own FAQ
+   * markup, and asserted that every caller sits on {@link surfaceFiles}'s surface. T-035 PR5 Task 8
+   * made that second clause false on purpose: `components/patterns/faq-section.tsx` is a shared
+   * pattern component that takes `items` and emits BOTH the markup and the schema from it.
+   *
+   * It needs no exemption, which is the point. The same-file pairing rule
+   * {@link FAQ_JSONLD_WITHOUT_MARKUP} decides reaches it unchanged — `faqPageJsonLd(items)` beside
+   * a `.map(` over the same `items` identifier in the same file — so the component is the GENERAL
+   * CASE of that rule rather than a hole in it. (`faqPageJsonLd` takes `readonly FaqEntry[]` so the
+   * component can hand over the array it renders instead of a `[...items]` copy, which would read
+   * as "(not an identifier)" here and pair with nothing.) Compare {@link DELEGATED_FAQ_MARKUP},
+   * which IS an exemption, and is one precisely because those four pages emit a schema for markup
+   * written in ANOTHER file.
+   *
+   * The surface clause is kept, narrowed to the one component, and paired with a LIVENESS
+   * assertion: if `FaqSection` ever stops emitting the schema, this test goes red rather than
+   * quietly shrinking back to eight.
+   */
+  it("the nine calls are exactly the pages that emit FAQPage, plus FaqSection — anti-vacuity", () => {
     const calls = faqJsonLdCalls();
     expect(
       calls.map((call) => `${label(call.file)} ${call.array}`),
@@ -844,35 +873,79 @@ describe("every faqPageJsonLd call has visible markup for the same array", () =>
       "app/[locale]/(site)/dunya/kita/page.tsx HUB_FAQS",
       "app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx region.faqs",
       "app/[locale]/(site)/turkiye/bolge/page.tsx bolgelerFaqs",
+      "components/patterns/faq-section.tsx items",
     ]);
     // Every call is written inside a `<JsonLd>` element, which is what makes the conditional test
     // below meaningful: it reads the gate on the element that emits the script tag.
     expect(new Set(calls.map((call) => call.holder))).toEqual(new Set(["JsonLd"]));
-    // The caller walk is wider than the block walk, so this also says no call hides in `lib/` or
-    // outside `components/v2` (SCOPE note 9).
+    // LIVENESS, not decoration: the component's own emission is what the clause below tolerates,
+    // so the clause must not be able to pass on a component that no longer emits anything.
     expect(
-      calls.filter((call) => !surfaceFiles().includes(call.file)),
-      "a faqPageJsonLd caller outside the FAQ block surface",
+      calls.map((call) => call.file),
+      "FaqSection no longer emits FAQPage — the pattern component is the general case, not optional",
+    ).toContain(FAQ_SECTION_COMPONENT);
+    // The caller walk is wider than the block walk, so this also says no call hides in `lib/` or
+    // outside `components/v2` (SCOPE note 9) — bar the one pattern component above, which pairs in
+    // its own file and is named here rather than discovered.
+    expect(
+      calls.filter(
+        (call) => !surfaceFiles().includes(call.file) && call.file !== FAQ_SECTION_COMPONENT,
+      ),
+      "a faqPageJsonLd caller that is neither on the FAQ block surface nor FaqSection",
     ).toEqual([]);
   });
 
-  it("both sides of every pair agree about being written under a condition", () => {
-    // NOT an evaluation of the gate — see SCOPE note 4. What this catches is the asymmetric shape
-    // the plan's finding 2 names: structured data emitted unconditionally beside markup behind a
-    // gate, or the reverse. Two DIFFERENT conditions read as agreement, which is the blind spot.
-    const mismatches = faqJsonLdCalls().flatMap((call) => {
-      const blocks = faqBlocksIn(call.file).filter((block) => block.mapped === call.array);
-      return blocks
-        .filter((block) => block.conditional !== call.conditional)
+  /**
+   * ONE DIRECTION IS A DEFECT; THE OTHER IS THE SAFE SHAPE. This used to demand that both sides of
+   * a pair carry the same conditionality, which was over-strict — it treated a schema gated TIGHTER
+   * than its markup as a failure, and that shape is strictly safer than agreement.
+   *
+   * The defect is asymmetric, because the harm is:
+   *
+   *   - schema UNCONDITIONAL, markup CONDITIONAL → the page can publish `FAQPage` for questions the
+   *     reader is never shown. That is the thing `lib/seo/json-ld.tsx` forbids in prose and the
+   *     shape the plan's finding 2 names. FAILS.
+   *   - schema CONDITIONAL, markup UNCONDITIONAL → the questions are always rendered, and the
+   *     schema is withheld under some further condition. Nothing is published that is not on the
+   *     page. `components/patterns/faq-section.tsx` is exactly this: its `.map(` over `items` is
+   *     unconditional, and its `<JsonLd>` is gated on `isIndexable(locale, structuredData)` —
+   *     de-indexing a surface must not be a reason to hide the answers from the reader. PASSES.
+   *
+   * Still NOT an evaluation of the gate (SCOPE note 4): two DIFFERENT conditions on the two sides
+   * read as "both conditional" here, which remains the blind spot. What is decided is presence.
+   */
+  it("no pair publishes a schema unconditionally for markup written behind a gate", () => {
+    const unsafe = faqJsonLdCalls().flatMap((call) =>
+      faqBlocksIn(call.file)
+        .filter((block) => block.mapped === call.array)
+        .filter((block) => !call.conditional && block.conditional)
+        .map(() => `${label(call.file)}: JSON-LD unconditional, markup conditional`),
+    );
+    expect(unsafe, "structured data published for markup the reader may not be shown").toEqual([]);
+
+    // THE PREMISE, so the assertion above is a fact and not a tautology: the discrimination is live
+    // in both directions and on both sides. Measured on this tree — 9 calls, 3 of them gated
+    // (`turkiye/bolge`, `turkiye/bolge/[slug]` and `FaqSection`), 6 not; and of the 5 pairs that
+    // resolve in-file, 2 gate both sides, 2 gate neither, and 1 — `FaqSection` — gates the schema
+    // alone, i.e. the tolerated direction is genuinely exercised rather than merely permitted.
+    const calls = faqJsonLdCalls();
+    expect(calls.filter((call) => call.conditional)).toHaveLength(3);
+    expect(calls.filter((call) => !call.conditional)).toHaveLength(6);
+    const pairs = calls.flatMap((call) =>
+      faqBlocksIn(call.file)
+        .filter((block) => block.mapped === call.array)
         .map(
           (block) =>
-            `${label(call.file)}: JSON-LD conditional=${call.conditional}, markup conditional=${block.conditional}`,
-        );
-    });
-    expect(mismatches, "a FAQ gate on one side of the pair and not the other").toEqual([]);
-    // The premise: the shapes really do differ across the surface, so agreement is a fact and not
-    // a tautology. Two pages gate both sides, six gate neither.
-    expect(faqJsonLdCalls().filter((call) => call.conditional)).toHaveLength(2);
+            `${call.conditional ? "gated" : "open"}/${block.conditional ? "gated" : "open"}`,
+        ),
+    );
+    expect(pairs.sort()).toEqual([
+      "gated/gated",
+      "gated/gated",
+      "gated/open",
+      "open/open",
+      "open/open",
+    ]);
   });
 
   it("an unpaired call is counted — the counter, not just the scanner", () => {

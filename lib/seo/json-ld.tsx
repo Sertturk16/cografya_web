@@ -123,8 +123,16 @@ export interface FaqEntry {
  * `<details>` block and this markup are built from ONE source of message keys, never two.
  * Answers are plain text (no embedded markup) so the two representations are compared
  * character-for-character rather than approximately.
+ *
+ * `entries` is `readonly` because this function only reads it, and because that is what lets a
+ * caller hand over the SAME array it renders rather than a defensive copy:
+ * `components/patterns/faq-section.tsx` holds `readonly FaqEntry[]` and passes it straight
+ * through, so the schema and the markup are one identifier on both sides — which is the
+ * single-sourcing this docblock demands, and which
+ * `components/v2/page-composition-faq.test.ts` pairs in-file by that identifier. A caller passing
+ * a mutable array is unaffected.
  */
-export function faqPageJsonLd(entries: FaqEntry[]): JsonLdSchema {
+export function faqPageJsonLd(entries: readonly FaqEntry[]): JsonLdSchema {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
