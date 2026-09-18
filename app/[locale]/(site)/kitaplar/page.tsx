@@ -159,7 +159,9 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
                   rendering "Katalog boş / Yayın listesi gelmedi" over it invents a fetch failure
                   that did not happen — T-024's defect with the sign flipped. `dev` printed
                   "0 Kitap" and so does this. See `turkiye/page.tsx` for the rule all four
-                  data-backed tiles now share. */}
+                  data-backed tiles now share — including that the `absent` copy below is
+                  type-required and currently unreachable (`books.length` is a number by
+                  construction), so it is not shipped user-facing text. */}
               <StatTile
                 label="Yayın Kataloğu"
                 value={books.length}

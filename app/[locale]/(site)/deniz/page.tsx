@@ -211,7 +211,16 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
 
             {/* Metric Strip */}
             {/* `tone="secondary"` was `text-cyan-600` — frozen at #0092b8 in both themes,
-                3.62:1 on the light card, the weakest reading in the whole strip family. */}
+                3.62:1 on the light card, the weakest reading in the whole strip family. (Large
+                bold text, 3:1 floor, so it passed AA; the defect was the freeze, not the ratio.)
+
+                CONVERTED BECAUSE OF THE ENTITY, NOT THE PAGE. Cyan is NOT a free hue site-wide —
+                it is Karadeniz (`components/v2/v2-marine-basin-cards.tsx:31`, and this page's own
+                sea cards). What decides it is that nothing anywhere encodes MONITORING POINTS by
+                colour, which is what this tile names. The page-scoped question ("is this hue used
+                on this page") answers yes here and would have blocked a correct conversion; on
+                `deprem/fay-hatlari` it answered no and waved through a wrong one. See
+                `docs/design.md` — the test is the entity. */}
             <StatGrid gutter="hero">
               <StatTile label="Farklı Havza & Akıntı" fact="4 Deniz" tone="primary" />
               <StatTile

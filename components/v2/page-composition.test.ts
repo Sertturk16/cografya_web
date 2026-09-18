@@ -3549,14 +3549,28 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * remaining 6 are `kitaplar/[slug]`'s inverted facts sheet (4, deliberately left — a different
  * component) and the two `turkiye/bolge` grids that add `space-y-1`.
  *
- * Re-checked at 191, per Ruling AZ:
+ * SUPERSEDED — THE 191 ABOVE IS HISTORY, NOT THE PIN. Ruling BG then took
+ * `deprem/fay-hatlari`'s strip back OUT of the migration (its three fault values are categorical
+ * identifiers that must agree with the fault cards on the same page), returning its 4 tiles to the
+ * hand-drawn population: **191 → 195**, wells still 168, files still 60. So 46 of the 56 Metric
+ * Strip tiles are `<StatTile>` and 10 remain — `kitaplar/[slug]`'s 4, `fay-hatlari`'s 4, and the
+ * two `turkiye/bolge` grids that add `space-y-1`.
+ *
+ * RE-CHECKED AT 195 / 168 / 60 / 238, per Ruling AZ — a control proved at 191 proves nothing at
+ * 195, which is the rule this block's own heading states and which an earlier version of it broke
+ * by leaving the 191 evidence standing above a 195 pin:
  *
  *   - the two-tile `rounded-2xl bg-card border border-border` grid probe on `hakkimizda/page.tsx`
- *     — RED at `expected 193 to be 191` (two cards, so +2), and RED on `STAT_GRIDS_TOTAL` at
- *     `expected 63 to be 62`, which is correct: the probe CREATES a grid rather than migrating
- *     one, and creating one is the other thing the total is allowed to notice.
+ *     — RED at `expected 197 to be 195` (two cards, so +2), RED on
+ *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 239 to be 238`, and RED on
+ *     {@link STAT_GRIDS_TOTAL} at `expected 63 to be 62`, which is correct: the probe CREATES a
+ *     grid rather than migrating one, and creating one is the other thing the total may notice.
  *   - the `bg-muted/30` spelling of it — RED on `HAND_DRAWN_WELLS` (`expected 169 to be 168`)
- *     with `HAND_DRAWN_CARDS` unmoved at 191, so the split still splits after the −50.
+ *     with `HAND_DRAWN_CARDS` unmoved, so the split still splits.
+ *   - a NOVEL SPELLING probe (a card class string occurring nowhere else) — RED on
+ *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 239 to be 238` with `HAND_DRAWN_CARDS` RED at
+ *     196 alongside. That is the spelling counter's first mutation check; it had none when it was
+ *     introduced, which is the gap re-review named.
  */
 export const HAND_DRAWN_CARDS = 195;
 
@@ -4231,7 +4245,44 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
   it("the number of distinct spellings is exactly the recorded number", () => {
     // M3: this was prose in a docblock and pinned by nothing. Now it is the docblock's headline
     // and an assertion, so the two cannot disagree again.
-    expect(handDrawnSpellings()).toBe(HAND_DRAWN_CARD_SPELLINGS);
+    //
+    // LR2: with the by-spelling report, not bare. Its three neighbours all print their population
+    // on failure and this one did not, so a reader who tripped it got `expected 239 to be 238`
+    // and no way to find the new spelling. Sorted by occurrence count, because the spelling that
+    // matters is the one carrying many elements — that is the whole reason this figure is watched.
+    const bySpelling = new Map<string, number>();
+    for (const file of walkCardSurface()) {
+      for (const element of jsxElementsOf(file)) {
+        if (cardKind(element) === null || element.spelling === null) continue;
+        bySpelling.set(element.spelling, (bySpelling.get(element.spelling) ?? 0) + 1);
+      }
+    }
+    const report = [...bySpelling]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 20)
+      .map(([spelling, n]) => `  ${n}x ${spelling}`)
+      .join("\n");
+    expect(
+      bySpelling.size,
+      `distinct hand-drawn card spellings (top 20 by occurrence):\n${report}`,
+    ).toBe(HAND_DRAWN_CARD_SPELLINGS);
+    // The two ways of counting must agree — otherwise this `it` could pass while
+    // `handDrawnSpellings()`, the function the docblock names, drifted.
+    expect(bySpelling.size).toBe(handDrawnSpellings());
+  });
+
+  it("a new spelling raises the count — the counter, not just the scanner", () => {
+    // LR2's other half: a relative control of its own, so this figure is driven end to end the
+    // way the cards/wells totals are. The neighbouring control asserts cards and wells only.
+    const file = join(repoRoot, "components/patterns/page-container.tsx");
+    const before = handDrawnSpellings();
+    const novel = `${readFileSync(file, "utf8")}\nconst Probe = () => <div className="rounded-2xl bg-card border border-border p-7 gap-11" />;\n`;
+    expect(withInjectedSource([[file, novel]], () => handDrawnSpellings())).toBe(before + 1);
+    // A SECOND element at an EXISTING spelling must NOT raise it — the figure counts spellings,
+    // not elements, and that distinction is the only reason it is worth a separate counter.
+    const duplicate = `${readFileSync(file, "utf8")}\nconst Probe = () => <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs" />;\n`;
+    expect(withInjectedSource([[file, duplicate]], () => handDrawnSpellings())).toBe(before);
+    expect(handDrawnSpellings()).toBe(before);
   });
 
   it("the two populations are disjoint and cover the whole predicate", () => {
@@ -4587,7 +4638,13 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  *     difference is the whole ruling: a migration trades buckets, a refactor loses a grid.
  *
  * RE-PINNED AND RE-CHECKED at 49 / 26 / 109 / 13 after the metric-strip migration, per Ruling AZ
- * — a control proved at the old number proves nothing at the new one:
+ * — a control proved at the old number proves nothing at the new one.
+ *
+ * **THOSE FOUR NUMBERS ARE HISTORY. The pins below read 50 / 26 / 113 / 12.** Ruling BG took
+ * `deprem/fay-hatlari`'s strip back out of the migration after this block was written, and an
+ * earlier version of it left this heading standing above the superseded figures — which is the
+ * literal violation of the rule the heading states, in the block that states it. The run at the
+ * current values is recorded after these three.
  *
  *   - `hakkimizda/page.tsx` given the same literal two-tile grid — RED on all three at the new
  *     values (`to have a length of 49 but got 50`, `expected 27 to be 26`, `expected 111 to be
@@ -4603,6 +4660,22 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  *     bare `<div>` with no grid classes. RED on the TOTAL (`expected 61 to be 62`) with
  *     `SURFACE_FILES_RENDERING_STATTILE` unmoved at 13 — so a migrated grid cannot lose its shell
  *     and keep reading as migrated.
+ *
+ * RE-PINNED AND RE-CHECKED AGAIN at **50 / 26 / 113 / 12** after Ruling BG, which is what the
+ * constants below now hold:
+ *
+ *   - `hakkimizda/page.tsx` given the same literal two-tile grid — RED on all three at the current
+ *     values (`to have a length of 50 but got 51`, `expected 27 to be 26`, `expected 115 to be
+ *     113`), plus `HAND_DRAWN_CARDS` 197, {@link HAND_DRAWN_CARD_SPELLINGS} 239 and the TOTAL 63.
+ *   - **the full half-migration**, all four of `oyun/page.tsx`'s `<StatTile>` children reverted to
+ *     hand-drawn tiles inside the `<StatGrid>` that still wraps them: RED on the TOTAL
+ *     (`expected 61 to be 62`) with the trio HOLDING at 50 / 26 / 113 and
+ *     `SURFACE_FILES_RENDERING_STATTILE` falling to **11**. Same vector, same answer, at the
+ *     numbers that are actually pinned.
+ *   - a **local `function StatTile()`** shadowing the import inside a real `<StatGrid>`: RED on the
+ *     TOTAL at 61, on the floor at 11, and — the part that points rather than shouts — on the
+ *     per-element anti-vacuity assertion, which names the offender:
+ *     `app/[locale]/(site)/oyun/page.tsx <StatTile>: expected false to be true`.
  *
  * The tile and file counts are separate `it`s for a reason the first run showed: asserted
  * together, the file count failed first and the tile number — the figure the adoption tasks
@@ -5194,13 +5267,17 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
   });
 
   it("the fact scan looked at real fact props — anti-vacuity", () => {
-    // A counter reading 0 because it found nothing to look at is worthless. 46 quoted `fact`
-    // props landed in this task, so assert the population exists before trusting the zero.
+    // A counter reading 0 because it found nothing to look at is worthless, so assert the
+    // population exists before trusting the zero. 42 today (46 landed, then Ruling BG returned
+    // `deprem/fay-hatlari`'s 4 to hand-rolled markup). The floor is 30 rather than 40 for the
+    // reason the tile floor below carries: removing one strip is a legitimate thing a later task
+    // may do — Ruling BG just did — and an anti-vacuity guard that trips on legitimate work stops
+    // being read. A scan that has stopped seeing the surface still fails it.
     const quoted = walkCardSurface().reduce(
       (n, file) => n + [...maskedSource(file).matchAll(/\bfact="/g)].length,
       0,
     );
-    expect(quoted).toBeGreaterThan(40);
+    expect(quoted).toBeGreaterThan(30);
   });
 
   it("the fact pattern fires on an expression and not on a literal — both ways", () => {

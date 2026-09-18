@@ -144,12 +144,63 @@ describe("StatTile inherits that guarantee rather than reimplementing it", () =>
 
   const classesOf = (markup: string) => [...markup.matchAll(/class="([^"]*)"/g)].map((m) => m[1]!);
 
+  const TILE_SURFACE = "flex flex-col rounded-2xl border border-border bg-card p-4 shadow-2xs";
+
   it("renders the site's card spelling on its root, shadow included", () => {
     // Asserted as the whole string in emission order, not "contains the right tokens": a re-theme
     // that kept `bg-card` and changed the radius or dropped the shadow would pass the weaker form,
     // and flattening 50 tiles is precisely what this component was given `shadow-2xs` to avoid.
-    expect(classesOf(tileMarkup())[0]).toBe(
-      "flex flex-col rounded-2xl border border-border bg-card p-4 shadow-2xs",
+    expect(classesOf(tileMarkup())[0]).toBe(TILE_SURFACE);
+  });
+
+  /**
+   * RULING BI. THE SURFACE IS INVARIANT UNDER EVERY OPTIONAL PROP, not just the ones a test
+   * happens to pass.
+   *
+   * Re-review's MR2, demonstrated rather than argued. The assertions above render through one
+   * helper seeded `{ label, fact }`; the tone rows vary `tone` and the measurement row varies
+   * `fact`/`value`/`absent`. **Nothing ever passed `hint` or `icon`.** So
+   *
+   *     className={cn(hint === undefined ? TILE_SURFACE : "flex flex-col p-2")}
+   *
+   * keys the card surface on a prop no test supplies: every tile carrying a hint loses its surface
+   * entirely, and **217 files / 4823 tests stay green**. `token-binding.test.ts` cannot see it (no
+   * raw palette) and `page-composition.test.ts` cannot see it (the class lives inside the
+   * component). Third round running in which "the assertion covers the case we thought of" is the
+   * finding, and the same lesson Ruling BB taught for `StatGrid` — one prop deeper.
+   *
+   * So the surface is asserted over the CROSS-PRODUCT of the optional props rather than at one
+   * point in it. A prop added later without a row here reopens exactly this hole, which is why the
+   * combinations are generated from a list rather than written out.
+   */
+  it.each(
+    [
+      { hint: undefined, icon: undefined },
+      { hint: "ERA5-Land, 1991-2020", icon: undefined },
+      { hint: undefined, icon: "★" },
+      { hint: "ERA5-Land, 1991-2020", icon: "★" },
+      { hint: "", icon: "" },
+    ].flatMap((optional) =>
+      (["foreground", "primary", "secondary", "accent", "destructive"] as const).map((tone) => [
+        `hint=${JSON.stringify(optional.hint)} icon=${JSON.stringify(optional.icon)} tone=${tone}`,
+        { ...optional, tone },
+      ]),
+    ) as ReadonlyArray<readonly [string, Partial<StatTileProps>]>,
+  )("keeps the root surface identical with %s", (_name, props) => {
+    expect(classesOf(tileMarkup(props))[0]).toBe(TILE_SURFACE);
+  });
+
+  it("the cross-product really varies what it claims to vary — anti-vacuity", () => {
+    // A cross-product that rendered the same markup every time would pass the rows above while
+    // proving nothing. Assert the optional props actually reach the output.
+    expect(tileMarkup({ hint: "ERA5-Land" })).toContain("ERA5-Land");
+    expect(tileMarkup({ hint: "ERA5-Land" })).not.toBe(tileMarkup());
+    expect(tileMarkup({ icon: "★" })).toContain("★");
+    expect(tileMarkup({ icon: "★" })).toContain('aria-hidden="true"');
+    expect(tileMarkup({ icon: "★" })).not.toBe(tileMarkup());
+    // And the measurement branch, whose root must also be the same surface.
+    expect(classesOf(tileMarkup({ fact: undefined, value: 12, absent: { label: "Yok" } }))[0]).toBe(
+      TILE_SURFACE,
     );
   });
 

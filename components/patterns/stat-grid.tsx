@@ -40,7 +40,13 @@ import { cn } from "@/lib/utils";
  * itself rendered `flex flex-col` — thirteen strips collapsed to one column, whole suite green.
  */
 const COLUMNS = {
-  /** The metric strip: two up on a phone, four across from `sm`. 13 files write it. */
+  /**
+   * The metric strip: two up on a phone, four across from `sm`. **11 product files render it**
+   * (the 12 that render `<StatGrid>`, less `kitaplar` which takes `"2"`), and **7 more still
+   * hand-write the spelling** — `deprem/fay-hatlari` and `kitaplar/[slug]`, both deliberately out
+   * of the migration, plus five grids outside this family. An earlier version of this line said
+   * "13 files write it", which was wrong under either reading.
+   */
   "2-4": "grid-cols-2 sm:grid-cols-4",
   /**
    * Two tracks at every width. `kitaplar` reached this shape by writing the 2-4 strip and then

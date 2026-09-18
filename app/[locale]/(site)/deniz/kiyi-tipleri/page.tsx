@@ -119,9 +119,18 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
             {/* Metric Strip */}
             {/* `tone="secondary"` was `text-teal-600`, which is FROZEN: measured #009689 in
                 both themes, 3.67:1 on the light card and 4.64:1 on the dark one, while its
-                three siblings move with the theme and hold ~5-6:1 in each. Same class of
-                defect as the marine attribution notice. `secondary` is the tone the sibling
-                strips write in this slot. */}
+                three siblings move with the theme and hold ~5-6:1 in each. (Large bold text,
+                3:1 floor, so it passed AA; the defect was the freeze, not the ratio.)
+                `secondary` is the tone the sibling strips write in this slot.
+
+                CONVERTED BECAUSE OF THE ENTITY, NOT THE PAGE — and this page is the proof that
+                the page-scoped question is the wrong one. Teal IS on this page: the Ege Denizi
+                link card ~180 lines below renders `border-teal-500/30 … text-teal-700
+                dark:text-teal-300`, because teal is the site-wide Aegean encoding. What decides
+                it is that COASTAL TYPES carry no colour anywhere —
+                `lib/marine/coastal-types-detail.ts` has no colour field and the six type articles
+                render `border-border bg-card` — so teal on this tile meant nothing, and sitting
+                it above a teal Ege card was a false signal the conversion removes. */}
             <StatGrid gutter="hero">
               <StatTile label="Toplam Kıyı Uzunluğu (HGM)" fact="8.333 km" tone="primary" />
               <StatTile label="Morfogenetik Çeşitlilik" fact="6 Kıyı Tipi" tone="secondary" />

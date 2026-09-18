@@ -181,18 +181,35 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   `StatGrid` around hand-drawn tiles — drops the grid out of BOTH buckets in
   `components/v2/page-composition.test.ts` and fails `STAT_GRIDS_TOTAL`. That is deliberate.
 - **Decoration on a value vs categorical data encoding — the line that decides whether a raw
-  palette class gets converted, and the test is the SITE, not the file you are editing.** A hue is
-  decoration when nothing else keys off it; it is categorical when the colour says _which one_ and
-  something elsewhere has to agree. Decoration moves to a bridge token; categorical colour stays
-  raw and gets its missing `dark:` half, because putting data categories on brand hues is the
-  data-viz rule below running backwards.
-  T-035 PR4 converted `deniz` and `deniz/kiyi-tipleri` (decoration — checked, nothing on those
-  pages encodes with those hues) and **deliberately did not convert** `/deprem`'s KAF/DAF/BAFS
-  legend **or `/deprem/fay-hatlari`'s strip**, whose three fault values are identifiers re-used on
-  each fault's own card from `lib/earthquake/fault-lines-data.ts`. Both belong to T-031c.
-  **An earlier round of that PR did convert the fay-hatlari strip**, on a written justification
-  that `grep borderClass` falsifies in one command, and shipped a teal DAF tile above a
-  blue-bordered DAF card. So: before converting, grep the repo for the hue, not just the file.
+  palette class gets converted. The test is the ENTITY, not the page and not the hue.** A hue is
+  decoration when nothing encodes _the thing this element names_; it is categorical when the colour
+  says _which one_ and something elsewhere has to agree. Decoration moves to a bridge token;
+  categorical colour stays raw and gets its missing `dark:` half, because putting data categories
+  on brand hues is the data-viz rule below running backwards.
+  **The check is a grep, and this is the command.** Categorical hues are carried as
+  `borderClass` / `badgeClass` / `accentColor` fields on the entity's own record, so
+  `grep -rn "borderClass\|badgeClass\|accentColor" lib components app` finds every encoding on the
+  site — 13 files today: faults (`lib/earthquake/fault-lines-data.ts`), seas
+  (`components/v2/v2-marine-basin-cards.tsx`, `v2-marine-map-explorer.tsx`), regions
+  (`v2-turkey-map-explorer.tsx`, `turkiye/[slug]`, `turkiye/bolge/[slug]`), continents
+  (`lib/map/continent-theme.ts`, `v2-world-continents.tsx`, `v2-world-map-explorer.tsx`,
+  `dunya/[slug]`, `dunya/kita`, `dunya/kita/[slug]`). Then ask whether the entity you are
+  re-colouring is in one of them. Note `app` in that path: an encoding living on a page rather
+  than in `lib/` is exactly what a `lib`-only grep misses.
+  Worked example, both halves of it wrong the first time. T-035 PR4 **converted** `deniz`'s
+  "30 Nokta" and `deniz/kiyi-tipleri`'s "6 Kıyı Tipi": monitoring points and coastal types carry no
+  colour anywhere (`lib/marine/coastal-types-detail.ts` has no colour field), so their cyan and
+  teal were free — even though **cyan and teal are both taken site-wide**, as Karadeniz and Ege,
+  and a teal "6 Kıyı Tipi" tile was sitting 180 lines above a teal "Ege Denizi" card on its own
+  page. The conversion removed that collision. It **deliberately did not convert** `/deprem`'s
+  KAF/DAF/BAFS legend or `/deprem/fay-hatlari`'s strip, whose values name faults that _are_ in a
+  data module. Both belong to T-031c.
+  **An earlier round did convert the fay-hatlari strip**, justified by "nothing else on this page
+  draws those hues" — which `grep borderClass` falsifies in one command — and shipped a teal DAF
+  tile above a blue-bordered DAF card. A later round then defended the two correct conversions with
+  the same page-scoped sentence, which is also false: teal _is_ on `deniz/kiyi-tipleri`. Right
+  answer, wrong test, twice. **A page-scoped check gets this wrong in both directions; only the
+  entity question decides it.**
 - **`MapLegend` requires `bins` on the classed variant**, so an unlabelled classed legend
   cannot be built (data-viz rule 5 below).
 - **`MapAttribution` beside every map** is ODbL compliance, not house style.

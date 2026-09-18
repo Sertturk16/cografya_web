@@ -189,11 +189,17 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                 turned a degraded summary's `0` into "İlçe sayısı yok" — a live copy change on a
                 page this PR claims not to change, and inconsistent with the two sibling tiles that
                 had no such guard. `absent` fires only when the value is genuinely `null`/
-                `undefined`/`NaN`, which for these sources means the build-time branch of
-                `get*Resilient()` (it returns `[]` only during `next build` with the API down, and
-                that page is deferred to on-demand ISR rather than served). So the copy below is
-                required, honest, and not reachable on a served page — which is the accepted cost
-                of making the decision compulsory, not a defect to paper over with a guard. */}
+                `undefined`/`NaN`.
+
+                AND TODAY THAT NEVER HAPPENS. `provinces.length` and a `reduce` are numbers by
+                construction, so every `absent` string in this PR is TYPE-REQUIRED AND CURRENTLY
+                UNREACHABLE — required copy, not shipped copy, and it renders in no state the app
+                can reach. Do not read them in the diff as new user-facing text, and do not
+                describe them as runtime guards: making them live is an UPSTREAM change, in whether
+                an `apiGet` failure surfaces as `null` rather than `[]`. That is the accepted cost
+                of making the decision compulsory — `MetricValue` requires the caller to answer
+                "what if it is not there" even when the honest answer is "it always arrives" — and
+                it is not a defect to paper over with a `> 0` guard that changes live copy. */}
             <StatGrid gutter="hero">
               <StatTile
                 label="Mülki İdare Birimi"

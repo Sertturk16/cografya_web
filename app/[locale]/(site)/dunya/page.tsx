@@ -192,7 +192,8 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
             {/* The first tile is DATA — `countries.length` — so it takes the measurement
                 branch and `absent` becomes a compile-time question the page has to answer.
                 The other three are copy. No `> 0 ? … : null` guard — zero is a reading; see
-                `turkiye/page.tsx` for the one rule all four data-backed tiles in this PR share. */}
+                `turkiye/page.tsx` for the one rule all four data-backed tiles in this PR share,
+                and for why the `absent` copy below is type-required but unreachable today. */}
             <StatGrid gutter="hero">
               <StatTile
                 label="Ülke & Bölge"
