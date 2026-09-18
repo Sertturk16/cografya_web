@@ -21,7 +21,7 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
 - Unlocalized: `app/api/**` (BFF), `app/flags/[flag]`, `app/maps/*.svg`, `app/llms.txt`,
   `robots.ts`, `sitemap.ts`, `manifest.ts`.
 - **V1 IS DELETED** (T-032). There is no `/v2` prefix, no `.v2-app` wrapper and no chrome
-  suppression rule. Ten `*.module.css` files remain, each with live consumers; they are not
+  suppression rule. Nine `*.module.css` files remain; they are not
   frozen — see `CLAUDE.md` on why "do not touch" was itself a defect. The eleventh,
   `components/map/map.module.css`, was 876 lines whose four consumers PR4 deleted; its own orphan
   test could not see it, because a substring match let `locator-map.module.css` answer for it.
@@ -108,7 +108,7 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   frame in `scripts/lib/tr-frame.mjs` into the four `lib/map/*.generated.ts` artifacts.
   `scripts/fetch-*.mjs` are manual network steps, deliberately not pnpm scripts.
 - `lib/map/` holds projection, zoom-pan (`v2-zoom-pan.ts`), measurement and geometry.
-  `components/map/`, `components/game/`, `components/tools/` consume it.
+  `components/map/`, `components/game/` and `components/v2/v2-tool-workbench.tsx` consume it.
 - Flags: `flag-icons` at runtime via `app/flags/[flag]/route.ts`; `assets/flags/qn.svg`
   is a local override. Both are in `outputFileTracingIncludes` and copied by the
   Dockerfile.

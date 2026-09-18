@@ -37,16 +37,17 @@ import { repoRoot, walk, runtimeImportsOf } from "@/lib/test-support/import-clos
  * principle that resolver embodies: one graph walk, not a second copy that can drift from the
  * first.
  *
- * One piece is NOT shared, on purpose: `orphan.test.ts` walks every `import`/`export … from`
- * specifier, `type`-only ones included, because over-following a type import only widens a
- * reachability set and can never hide a real orphan there. This test needs the opposite
- * precision — `lib/auth/submit.client.ts` (`"use client"`) writes `import type { AuthBffCode }
- * from "./transport.server"`, and `transport.server.ts` carries `import "server-only"`, yet
+ * The type-erasure rule this test needed is now the resolver's only rule, and T-042 is why.
+ * `lib/auth/submit.client.ts` (`"use client"`) writes `import type { AuthBffCode } from
+ * "./transport.server"`, and `transport.server.ts` carries `import "server-only"`, yet
  * `pnpm build` passes: a type-only import compiles to nothing, so it is not a real edge in the
- * graph a bundler actually builds. `runtimeImportsOf` (same module) is the type-erasure-aware
- * variant this test uses instead of the plain `importsOf` — measured against the live tree
- * before this existed: swapping it in dropped 21 files this scanner had wrongly flagged, every
- * one of them a type-only `…transport.server` import, none of them a real `pnpm build` failure.
+ * graph a bundler actually builds. `runtimeImportsOf` is the type-erasure-aware reader this test
+ * uses — measured against the live tree before it existed: swapping it in dropped 21 files this
+ * scanner had wrongly flagged, every one of them a type-only `…transport.server` import, none of
+ * them a real `pnpm build` failure. `orphan.test.ts` used to walk type edges too, on the
+ * reasoning that over-following one "only widens a reachability set and can never hide a real
+ * orphan"; that is exactly backwards for a reachability question, and `closureFrom` now walks
+ * the same runtime edges this file does.
  *
  * ## Why the split fix is TWO FILES, not two exports in one
  *
@@ -83,7 +84,6 @@ const PRODUCT_ROOTS = [
   "components/map",
   "components/marine",
   "components/site-search",
-  "components/tools",
 ] as const;
 
 const SHOWCASE_ROOTS = ["app/[locale]/design-system", "components/showcase"] as const;

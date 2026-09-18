@@ -208,37 +208,34 @@ const verdictsOf = (files: readonly string[], verdict: Verdict): string[] =>
  *     (102 lines) rendered the same mandatory ODbL credit for TEN product surfaces — and
  *     `docs/design.md` named the orphan as the patterns component. The live one moved in under
  *     that name and the orphan died with it.
+ *
+ * The other three — `callout`, `empty-state` and `map-legend` — were deleted, with their
+ * specimens, their registry entries and their two `patterns-contract.test.ts` blocks. Each was
+ * a component the design system had argued about at length and no page had ever rendered.
  */
-const KNOWN_SHOWCASE_ONLY = [
-  "components/patterns/callout.tsx",
-  "components/patterns/empty-state.tsx",
-  "components/patterns/map-legend.tsx",
-  "components/ui/tabs.tsx",
-];
+const KNOWN_SHOWCASE_ONLY = ["components/ui/tabs.tsx"];
 
 /**
  * REACHED FROM NOTHING AT ALL — not the product, not even the showcase.
  *
- * Every entry is a file the old walk called live, and each is live for exactly one of the two
- * reasons above. Pinned in the defective state; the deletion commit drives this list down to
- * what T-042's ruling leaves standing.
+ * Six files when this closed, and the four `components/tools` ones — the measurement island and
+ * its three helpers, 2447 lines held up by two `import type { ProvinceArea }` clauses — are
+ * deleted. The two that remain are NOT deleted, and the distinction is the same one T-036 drew
+ * over `tabs.tsx`: T-042's ruling names a list, and a file that turns up outside it is a
+ * MEASUREMENT. Deleting it is a decision, and a decision belongs to whoever takes it.
  *
- *   - the four `components/tools` files — the island and its three helpers, held up by two
- *     `import type { ProvinceArea }` clauses;
- *   - `components/home/featured-cards.tsx` — the same single type-only clause, from
- *     `app/[locale]/(site)/page.tsx`, which imports `FeaturedCardItem` to shape its own data and
- *     renders `<FeaturedCards` nowhere;
- *   - `components/lock-icon.tsx` — its one runtime importer is `tool-measurement-save.tsx`,
- *     itself on this list.
+ *   - `components/home/featured-cards.tsx` — reached by one clause, `import type
+ *     { FeaturedCardItem }` in `app/[locale]/(site)/page.tsx`. That page uses the type to shape
+ *     its own two card arrays and renders `<FeaturedCards` nowhere; nothing else in the tree
+ *     names either symbol. Its stylesheet, `components/home/home.module.css`, is recorded in
+ *     `components/orphan-stylesheets.test.ts` for the same reason and must go with it;
+ *   - `components/lock-icon.tsx` — a CASCADE, and the reason this list cannot be read as
+ *     finished. Its one runtime importer was `components/tools/tool-measurement-save.tsx`,
+ *     deleted above, so it became unreachable through this task rather than before it. It has
+ *     its own byte-identity regression test (`components/lock-icon.test.tsx`), which is the kind
+ *     of thing that should be read before it is thrown away.
  */
-const KNOWN_UNREACHABLE = [
-  "components/home/featured-cards.tsx",
-  "components/lock-icon.tsx",
-  "components/tools/tool-island.tsx",
-  "components/tools/tool-measurement-list.tsx",
-  "components/tools/tool-measurement-save.tsx",
-  "components/tools/tool-png.ts",
-];
+const KNOWN_UNREACHABLE = ["components/home/featured-cards.tsx", "components/lock-icon.tsx"];
 
 describe("the import closure itself", () => {
   // ANTI-VACUITY. Every assertion below is "X is in this set"; a set built from a broken

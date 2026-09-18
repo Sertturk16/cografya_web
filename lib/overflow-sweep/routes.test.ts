@@ -26,9 +26,10 @@ import {
  *
  *  2. A NEW CSS MODULE ARRIVES WITH NO ROUTE. Two of the three defects the sweep exists for
  *     were CSS-Module declarations (`climate.module.css`'s `min-width: 300px`,
- *     `marine-attribution`'s licence notice). The ten surviving modules are therefore the
- *     part of the tree that must stay covered, and coverage is only meaningful if adding an
- *     eleventh forces someone to say which page renders it.
+ *     `marine-attribution`'s licence notice). The nine surviving modules are therefore the
+ *     part of the tree that must stay covered, and coverage is only meaningful if adding a
+ *     tenth forces someone to say which page renders it. Nine, not ten, since T-042 deleted
+ *     `tools.module.css` — 514 lines whose three importers were all unreachable.
  *
  *     WHAT `modules` ACTUALLY CLAIMS is that the route's import graph reaches the stylesheet —
  *     never that a sweep run renders it. `marine.module.css` is the live example: it is claimed

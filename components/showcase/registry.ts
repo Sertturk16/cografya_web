@@ -50,8 +50,8 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
   {
     slug: "geri-bildirim",
     title: "Geri Bildirim",
-    blurb: "Sistem durumu, editoryal not, boş durum ve ipuçları.",
-    components: ["alert", "callout", "sonner", "empty-state", "tooltip", "skeleton"],
+    blurb: "Sistem durumu, geçici yükleme ve ipuçları.",
+    components: ["alert", "sonner", "tooltip", "skeleton"],
   },
   {
     slug: "duzen",
@@ -75,8 +75,8 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
   {
     slug: "harita",
     title: "Harita",
-    blurb: "Harita yanına giren atıf ve lejant bileşenleri.",
-    components: ["map-attribution", "map-legend"],
+    blurb: "Her haritanın yanına giren lisans atfı.",
+    components: ["map-attribution"],
   },
 ] as const;
 

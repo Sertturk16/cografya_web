@@ -102,7 +102,7 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     why:
       "The detail page with the climate table, and the recorded scene of two of the three " +
       "defects this sweep exists for (T-038's licence notice, T-046's `.chartFrame` " +
-      "`min-width`). It renders FOUR of the ten CSS Modules — `marine.module.css` among them, " +
+      "`min-width`). It renders FOUR of the nine CSS Modules — `marine.module.css` among them, " +
       "through `ProvinceMarineSection`, which is where that stylesheet actually reaches a " +
       "swept route rather than on `/deniz`. Both locales: the EN column headers of the " +
       "climate table are materially longer than the TR ones.",
@@ -211,11 +211,13 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "tool",
     pathname: "/araclar/mesafe-olcme",
     locales: ["tr", "en"],
-    modules: ["tools.module.css"],
+    modules: [],
     why:
-      "`tools.module.css`: an interactive map tool that wants all the width it can get, " +
-      "inside site chrome that will not give it any. Both locales: the EN twin omits the " +
-      "narrative blocks, leaving the tool panel alone on the page.",
+      "An interactive map tool that wants all the width it can get, inside site chrome that " +
+      "will not give it any. It claimed `tools.module.css` until T-042 deleted that file with " +
+      "the four dead components that imported it; the live workbench is Tailwind throughout, so " +
+      "the route is swept for its SHAPE rather than for a stylesheet. Both locales: the EN twin " +
+      "omits the narrative blocks, leaving the tool panel alone on the page.",
   },
   {
     id: "game",

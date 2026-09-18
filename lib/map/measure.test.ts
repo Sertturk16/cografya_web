@@ -247,7 +247,7 @@ describe("ringAreaKm2 — the antimeridian guard", () => {
   it("stays simple under ringSelfIntersects, which is what makes the seam branch reachable", () => {
     // A CROSS-MODULE DEPENDENCY WITH NO OTHER GUARD (→ PR #75 review `TEST75-I1`). The area
     // tool asks `ringSelfIntersects` FIRST and returns on `true`
-    // (`components/tools/tool-island.tsx`, the `area` memo), so the seam behaviour AK-38 md.2
+    // (the measurement workbench's `area` memo), so the seam behaviour AK-38 md.2
     // ruled — refuse the area, keep the perimeter — is only reachable while this predicate
     // answers `false` for a seam ring. Nothing tied the two together: `ringSelfIntersects`
     // works in raw lon/lat and knows nothing about the seam, so a future bounding-box or

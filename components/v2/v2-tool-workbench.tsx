@@ -28,8 +28,7 @@ import {
   type ViewBox,
 } from "@/lib/map/zoom-pan";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
-import type { ProvincePoint } from "@/lib/tools/province-points";
-import type { ProvinceArea } from "@/components/tools/tool-island";
+import type { ProvincePoint, ProvinceArea } from "@/lib/tools/province-points";
 import type { MeasurementType } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

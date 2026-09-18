@@ -14,7 +14,7 @@ import { HaritaSpecimens } from "./harita";
  * Maps a category slug to its specimens.
  *
  * A component's specimen is written in the task that builds the component, not here —
- * `harita` has no entry yet because `MapAttribution` and `MapLegend` are Phase D.
+ * `harita` carries `MapAttribution` alone since T-042 deleted `MapLegend`.
  * `components/showcase/registry.test.ts` is what notices the gap.
  *
  * `locale` is threaded through only for `"duzen"`, which is the one category with Server

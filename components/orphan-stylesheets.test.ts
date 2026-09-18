@@ -119,17 +119,14 @@ const orphansAmong = (sheets: readonly string[]): string[] =>
 /**
  * THE MEASURED POPULATION, pinned in its defective state first.
  *
- * `tools.module.css` is T-042's find and goes with the four `components/tools` files that hold
- * it up. `home.module.css` is a SECOND one this fix turned up, and it is NOT on T-042's list:
- * its single importer is `components/home/featured-cards.tsx`, which
- * `components/ui/orphan.test.ts` now records as unreachable for the same type-only-import
- * reason. Deleting a component nobody ruled on is a decision, not a measurement, so it is
- * recorded here and left standing — the same treatment `tabs.tsx` got in T-036.
+ * `tools.module.css` was T-042's find and went with the four `components/tools` files that held
+ * it up. `home.module.css` is a SECOND one this fix turned up and it is NOT on T-042's list: its
+ * single importer is `components/home/featured-cards.tsx`, which `components/ui/orphan.test.ts`
+ * now records as unreachable for the same type-only-import reason. Deleting a component nobody
+ * ruled on is a decision, not a measurement, so it is recorded here and left standing — the same
+ * treatment `tabs.tsx` got in T-036. It goes when `featured-cards.tsx` goes.
  */
-const KNOWN_ORPHAN_STYLESHEETS = [
-  "components/home/home.module.css",
-  "components/tools/tools.module.css",
-];
+const KNOWN_ORPHAN_STYLESHEETS = ["components/home/home.module.css"];
 
 describe("CSS Modules", () => {
   it("finds the stylesheets, the code that could import them, and the routes", () => {

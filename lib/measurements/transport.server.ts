@@ -57,7 +57,7 @@ const measurementPointSchema = z.object({
  * (`measurement-shape.validator.ts`): every existing request-side mirror in this repo
  * only ever mirrors a DTO's own flat per-field bounds, never a business rule the api
  * enforces server-side, and the UI can never construct an under-count payload by
- * construction (`tool-island.tsx`'s own `minExportPoints` gate) — the only caller that
+ * construction (the workbench's own `minExportPoints` gate) — the only caller that
  * could ever reach that cross-field rule is a non-UI client hitting the BFF directly,
  * which the api's own `errors.measurements.invalidShape` 400 already answers correctly.
  */
@@ -190,7 +190,7 @@ async function sendApiRequest(
 /**
  * `GET /api/measurements` — the caller's own saved measurements, every type mixed
  * together (plan §2.2 — the api's own list endpoint carries no `type` filter; the
- * per-tool filter is applied client-side, `tool-island.tsx` §5.4 item 5). No
+ * per-tool filter is applied client-side, SPEC §5.4 item 5). No
  * `cg_access` cookie is a short-circuit (401, no api call), mirroring the established
  * posture: a missing cookie is a normal anonymous answer, not a condition worth
  * spending an outbound request on. No Origin check — read-only, not state-changing.

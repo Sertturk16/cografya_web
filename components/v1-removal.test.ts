@@ -23,10 +23,14 @@ import { stripCssComments } from "@/lib/test-support/strip-comments";
  * ## What it deliberately does NOT assert
  *
  * Directories that survived with live members are absent from the list below — `components/game`
- * still holds `region-labels.ts`, `components/map` still holds `locator-map.tsx`,
- * `components/home` still holds `featured-cards.tsx`, `components/tools` still holds
- * `tool-island.tsx`. Pinning those as empty would fail on correct code, which is the failure mode
- * this repo has paid for before.
+ * still holds `region-labels.ts`, `components/map` still holds `locator-map.tsx`. Pinning those
+ * as empty would fail on correct code, which is the failure mode this repo has paid for before.
+ *
+ * Two of those survivors did NOT survive the next look. `components/tools` kept `tool-island.tsx`
+ * and three helpers, which T-042 measured as reachable from no route at all and deleted — the
+ * directory is empty and is pinned below. `components/home` still holds `featured-cards.tsx`,
+ * which is in the same state and is NOT deleted here: `components/ui/orphan.test.ts` records it
+ * as unreachable and leaves the decision to whoever rules on it.
  */
 
 const repoRoot = fileURLToPath(new URL("../", import.meta.url));
@@ -39,6 +43,11 @@ const DELETED_DIRECTORIES = [
   "components/favorites",
   "components/province",
   "components/site-nav",
+  // T-042, not T-032: `components/tools` outlived V1 by one task. Its four files — the
+  // measurement island, its two panels and the PNG exporter — were held up only by two
+  // `import type` clauses, which compile to nothing. The live tool is
+  // `components/v2/v2-tool-workbench.tsx`.
+  "components/tools",
 ] as const;
 
 /** Individual V1 files deleted out of directories that still have live members. */

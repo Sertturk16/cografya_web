@@ -386,20 +386,39 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *   - a NOVEL SPELLING probe — RED on {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 236 to be
  *     235` with `HAND_DRAWN_CARDS` RED at 193 alongside.
  *
- * MOVING AGAIN — T-042, and the reason must not be misread as adoption. Nothing was converted
- * here: `components/patterns/theme-pair.tsx` moved to `components/showcase/theme-pair.tsx`,
- * which {@link CARD_SCAN_EXCLUSIONS} excludes, so its two panels left the population without a
- * single call site changing. **192 → 190 cards, 235 → 233 spellings, 358 → 356 total**, wells
- * unmoved at 166. The RE-CHECK for these values lands with the deletion commit at the end of
- * this branch, where the population settles; Ruling AZ's rule is that a control proved at 192
- * proves nothing at 190, and it is honoured there rather than twice over two commits.
+ * MOVED AGAIN — T-042, and the reason must not be misread as adoption. NOTHING WAS CONVERTED.
+ * Three files left the scanned surface:
+ *
+ *   - `components/patterns/theme-pair.tsx` moved to `components/showcase/theme-pair.tsx`, which
+ *     {@link CARD_SCAN_EXCLUSIONS} excludes — showcase markup must not answer for product markup;
+ *   - `components/patterns/empty-state.tsx` and `components/patterns/map-legend.tsx` were
+ *     DELETED. Both were reachable only from `/design-system`, so the card surfaces they drew
+ *     were never on a page a reader could open.
+ *
+ * **192 → 188 cards, 235 → 231 spellings, 358 → 354 total, 60 → 57 files**, wells unmoved at 166.
+ * A ratchet that falls because dead code was removed is not progress on the adoption it counts,
+ * which is why the cause is written down beside the number.
+ *
+ * RE-CHECKED AT 188 / 166 / 231 / 354, Ruling AZ again — a control proved at 192 proves nothing
+ * at 188. All three probes on `app/[locale]/(site)/hakkimizda/page.tsx`, each reverted:
+ *
+ *   - the two-tile `rounded-2xl bg-card border border-border` stat grid — RED at `expected 190
+ *     to be 188`, RED on {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 232 to be 231`, and RED
+ *     on {@link STAT_GRIDS_TOTAL} at `expected 59 to be 58`, `STAT_GRID_FILES` at `expected 26
+ *     to be 25` and `STAT_TILES_WITHOUT_STATTILE` at `expected 111 to be 109` — the probe CREATES
+ *     a grid rather than migrating one, which is the other thing those totals may notice.
+ *   - the `bg-muted/30` spelling of it — RED on `HAND_DRAWN_WELLS` at `expected 167 to be 166`
+ *     with `HAND_DRAWN_CARDS` unmoved at 188, so the split still splits.
+ *   - a NOVEL SPELLING probe (a card class string occurring nowhere else) — RED on
+ *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 232 to be 231` with `HAND_DRAWN_CARDS` RED
+ *     at 189 alongside.
  */
-export const HAND_DRAWN_CARDS = 190;
+export const HAND_DRAWN_CARDS = 188;
 
 export const HAND_DRAWN_WELLS = 166;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 233;
+export const HAND_DRAWN_CARD_SPELLINGS = 231;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -448,13 +467,14 @@ export const HAND_DRAWN_CARD_SPELLINGS = 233;
  * constant is invisible here exactly as it is to `HAND_DRAWN_CARDS`, and is watched — as a
  * population, not per element — by {@link COMPUTED_CARD_CLASSNAMES}.
  *
- * MUTATION-CHECKED 2026-09-18, each reverted. All three probes on
- * `components/patterns/theme-pair.tsx`, a file neither Task 5 nor Task 6 touches:
+ * MUTATION-CHECKED, each reverted. All three probes on `components/patterns/page-container.tsx`;
+ * the host was `theme-pair.tsx` until T-042 moved that file off this surface, which is the rule
+ * stated one level up — no control may be hosted on a file a later task is contracted to remove:
  *
  *   - `<Card className="rounded-2xl bg-card border border-border p-4" />` — RED,
  *     `expected [ Array(1) ] to have a length of +0 but got 1`, the message printing
- *     `components/patterns/theme-pair.tsx <Card> :: rounded-2xl bg-card border border-border p-4`,
- *     i.e. the file, the tag AND the spelling to convert;
+ *     `components/patterns/page-container.tsx <Card> :: rounded-2xl bg-card border border-border
+ *     p-4`, i.e. the file, the tag AND the spelling to convert;
  *   - the same probe with `bg-muted/30` in place of `bg-card` — also RED, same shape: it qualifies
  *     through `border-border`, which is the "both kinds" rule above doing its job;
  *   - `<Card className="p-4 max-w-sm" />` — GREEN. A primitive taking an ordinary spacing or width
@@ -530,22 +550,23 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  *
  * ## Why 25 and not 278
  *
- * 278 elements on the surface write a `className` this scanner cannot read. Broken down by the
+ * 222 elements on the surface write a `className` this scanner cannot read. Broken down by the
  * shape of the expression:
  *
  * | shape                                            | n       | can it hide a card?                |
  * | ------------------------------------------------ | ------- | ---------------------------------- |
- * | member expression (`styles.x`, `continentMeta?.badgeClass`) | 250 | no — the CSS-Modules surface   |
+ * | member expression (`styles.x`, `continentMeta?.badgeClass`) | 195 | no — the CSS-Modules surface   |
  * | **single identifier** (`subregionsGridClass`)     | **25**  | **yes — the module-constant hoist** |
  * | ternary (`x ? styles.a : styles.b`)              | 2       | in principle; neither is card-shaped |
- * | call (`cn(calloutVariants({…}))`)                | 1       | in principle                       |
  *
- * The 247 are the ten surviving `*.module.css` consumers. A `styles.x` lookup resolves to a CSS
- * module class, not to Tailwind tokens, so it cannot become the hoist SCOPE note 1 describes —
- * and it churns whenever any of those ten files is touched. Pinning the total would put a +1 hoist
- * inside 278 units of unrelated noise: a smoke alarm in the wrong room. Pinned at the
+ * The member bucket is the surviving `*.module.css` consumers. A `styles.x` lookup resolves to a
+ * CSS module class, not to Tailwind tokens, so it cannot become the hoist SCOPE note 1 describes
+ * — and it churns whenever any of those files is touched. Pinning the total would put a +1 hoist
+ * inside 222 units of unrelated noise: a smoke alarm in the wrong room. Pinned at the
  * single-identifier shape, the counter moves VISIBLY by exactly +1 the day `card.tsx`'s classes
- * are hoisted into a constant.
+ * are hoisted into a constant. (278 before T-042 deleted `components/tools`: the measurement
+ * island and its two panels held 55 `styles.x` lookups into `tools.module.css`, every one of them
+ * unreachable from any route.)
  *
  * The other three shapes are watched too, one door over: {@link UNREADABLE_CLASSNAME_SHAPES} pins
  * the whole breakdown and the buckets are asserted to SUM to the population, so narrowing this
@@ -553,25 +574,30 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * buckets. ({@link computedShape} draws the member/ternary line at optional chaining, which is why
  * the split reads 250/2 where a hand tally read 247/3; the buckets here sum to 278 exactly.)
  *
- * MUTATION-CHECKED 2026-09-18, both halves of the narrowing:
+ * MUTATION-CHECKED, both halves of the narrowing, re-run at T-042's values on
+ * `components/patterns/page-container.tsx` — the previous host, `theme-pair.tsx`, has left this
+ * surface, which is the hazard this repo already named one level up: no control may be hosted on
+ * a file a later task is contracted to remove.
  *
- *   - `<div className={cardShell} />` added to `components/patterns/theme-pair.tsx` — RED,
- *     `expected 26 to be 25`, the message listing the bare-identifier classNames by file. That is
- *     the hoist SCOPE note 1 describes, caught at +1 in 25.
+ *   - `<div className={cardShell} />` added there — RED, `expected 26 to be 25`, the message
+ *     listing the bare-identifier classNames by file. That is the hoist SCOPE note 1 describes,
+ *     caught at +1 in 25.
  *   - `<div className={styles.probe} />` in the same place — this counter stays GREEN at 25 and
- *     only the shape breakdown moves (`member` 250 → 251). CSS-module churn no longer reaches the
- *     hoist counter, which is exactly what narrowing 278 → 25 bought.
+ *     only the shape breakdown moves (`member` 195 → 196). CSS-module churn no longer reaches the
+ *     hoist counter, which is exactly what narrowing the population to 25 bought.
  *
  * Both reverted.
  */
 export const COMPUTED_CARD_CLASSNAMES = 25;
 
-/** The whole unreadable-className population by expression shape — the 253 the counter above
- * deliberately does not watch, kept visible rather than dropped. */
+/** The whole unreadable-className population by expression shape — the 197 the counter above
+ * deliberately does not watch, kept visible rather than dropped. The `call` bucket held exactly
+ * one element, `components/patterns/callout.tsx`'s `cn(calloutVariants({…}))`, and T-042 deleted
+ * that file; an empty bucket is not listed, so a `call` reappearing fails this pin as a NEW
+ * shape rather than as a moved number. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
-  ["call", 1],
   ["identifier", 25],
-  ["member", 250],
+  ["member", 195],
   ["ternary", 2],
 ];
 
@@ -612,9 +638,10 @@ describe("the card scanner itself", () => {
    *
    * Was nine before `components/ui/**` left the walk; `components/ui/accordion.tsx` held four.
    *
-   * MUTATION-CHECKED 2026-09-18: a sixth `{ className = "" }` default added to
-   * `components/patterns/theme-pair.tsx` — RED, the message listing
-   * `1x components/patterns/theme-pair.tsx` at the head of the five. Reverted.
+   * MUTATION-CHECKED: a sixth `{ className = "" }` default added to
+   * `components/patterns/page-container.tsx` — RED, the message listing
+   * `1x components/patterns/page-container.tsx` at the head of the five. Reverted. (The host was
+   * `theme-pair.tsx` until T-042 moved that file out of this surface.)
    */
   it("every className attaches to an element, bar the five destructuring defaults", () => {
     const unattached = new Map<string, number>();
@@ -659,7 +686,7 @@ describe("the card scanner itself", () => {
 
   it("reads a cn() className, fixed fragments only", () => {
     // `cn("a b", className)` yields the fixed part; the caller-supplied argument is a variable and
-    // correctly contributes nothing. `components/patterns/empty-state.tsx` writes this shape today.
+    // correctly contributes nothing. `components/patterns/map-attribution.tsx` writes this shape today.
     const card = fixtureElements(
       '      <div className={cn("rounded-2xl border border-border bg-card p-6", className)} />',
       (elements) => elements.find((el) => cardKind(el) !== null),
@@ -755,11 +782,12 @@ describe("the card scanner itself", () => {
    * programme (a `group/btn` counted as a `group`), and mutating the predicate to
    * `token.includes("bg-card")` fails this control and NOTHING else.
    *
-   * MUTATION-CHECKED 2026-09-18, both halves: the predicate loosened to `token.includes(…)` —
-   * RED here, every counter unmoved; and a real `<div className="rounded-2xl bg-card-foreground
-   * p-4" />` added to `components/patterns/theme-pair.tsx` — RED on the latency assertion below,
+   * MUTATION-CHECKED, both halves: the predicate loosened to `token.includes(…)` — RED here,
+   * every counter unmoved; and a real `<div className="rounded-2xl bg-card-foreground p-4" />`
+   * added to `components/patterns/page-container.tsx` — RED on the latency assertion below,
    * `elements a substring test would count and this predicate does not:
-   * components/patterns/theme-pair.tsx`. Both reverted.
+   * components/patterns/page-container.tsx`. Both reverted. (The host was `theme-pair.tsx` until
+   * T-042 moved that file out of this surface.)
    */
   it("matches whole tokens, never substrings — the group/x trap, one door over", () => {
     // `bg-card-foreground` CONTAINS `bg-card` and is a text colour. A substring test counts it;
@@ -940,10 +968,11 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     }
     expect(strict).toBe(HAND_DRAWN_CARDS + HAND_DRAWN_WELLS);
     // 74 before Task 5, 68 after it, 60 after Task 6: eight more files hold no hand-drawn card
-    // surface at all once their metric strip is a `<StatGrid>` of `<StatTile>`s. 59 after T-042,
+    // surface at all once their metric strip is a `<StatGrid>` of `<StatTile>`s. 57 after T-042,
     // which is a DELETION rather than an adoption — `theme-pair.tsx` left the scanned surface for
-    // `components/showcase/`, taking the file with it. See {@link HAND_DRAWN_CARDS}.
-    expect(handDrawnTotals().files).toBe(59);
+    // `components/showcase/`, and `empty-state.tsx` and `map-legend.tsx` were deleted outright.
+    // See {@link HAND_DRAWN_CARDS}.
+    expect(handDrawnTotals().files).toBe(57);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {

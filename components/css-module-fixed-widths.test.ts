@@ -169,13 +169,12 @@ const EXPECTED: Record<string, string[]> = {
     "width: 1px",
     "width: 420px",
   ],
-  "components/tools/tools.module.css": ["min-width: 44px", "width: 1px"],
 };
 
 describe("fixed-px inline-axis declarations in the surviving CSS Modules", () => {
   it("scans every module, and only modules", () => {
     // Anti-vacuity: a scan that found no files would agree with any expectation.
-    expect(stylesheets.length).toBe(10);
+    expect(stylesheets.length).toBe(9);
     expect(Object.keys(census).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -183,9 +182,9 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
     expect(census).toEqual(EXPECTED);
   });
 
-  it("counts 46 declarations in total", () => {
+  it("counts 44 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(46);
+    expect(total).toBe(44);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {

@@ -254,7 +254,12 @@ const CONSUMER_ROOTS = [
     label: "app/[locale]/(site)/araclar",
     url: new URL("../../app/[locale]/(site)/araclar/", import.meta.url),
   },
-  { label: "components/tools", url: new URL("../../components/tools/", import.meta.url) },
+  // `components/tools/` held the V1 measurement island and its three helpers, all four of them
+  // unreachable from any route and deleted by T-042, so the directory is gone. `components/v2`
+  // replaces it as a root rather than merely dropping it: `v2-related-tools.tsx` opens
+  // `Tools.hub`, and with no root over `components/v2` that live consumer was invisible here —
+  // the namespace read as consumed only because a DEAD file also opened it.
+  { label: "components/v2", url: new URL("../../components/v2/", import.meta.url) },
   // The homepage's tools band (`components/home/tool-cards.tsx`, plan §5.5) — a second,
   // independent consumer of `Tools.hub`'s already-bilingual name/body strings.
   { label: "components/home", url: new URL("../../components/home/", import.meta.url) },
@@ -401,6 +406,10 @@ describe("every Tools key the code asks for exists", () => {
       // and writes its labels inline — the same inline-copy pattern as the three prose namespaces.
       "Tools.map",
       "Tools.mesafe",
+      // `Tools.ui` joined in T-042, and for the same reason one step later: its only consumers
+      // were `components/tools/tool-island.tsx` and its two panels, none of which any route
+      // could reach. `V2ToolWorkbench` draws the same controls with its labels written inline.
+      "Tools.ui",
     ];
     const consumed = [...new Set(bindings.map((entry) => entry.namespace))].sort();
     expect(consumed).toEqual(declared.filter((ns) => !ORPHANED_BY_V2_REWRITE.includes(ns)));

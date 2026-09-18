@@ -103,7 +103,7 @@ comparison run by hand.
   from going INCOMPLETE: **a new route lands in the "not swept" footer and nothing fails.** If
   you add a route, decide out loud whether it is a variant of a listed shape or a new one.
 - `components/css-module-fixed-widths.test.ts` is the half of this that needs no browser: it
-  pins the 46 fixed-`px` inline-axis declarations across the ten CSS Modules by file and by
+  pins the 44 fixed-`px` inline-axis declarations across the nine CSS Modules by file and by
   text, so changing `min-width: min(300px, 100%)` back to `min-width: 300px` reds `pnpm test`.
   It covers one of the three recorded defects, not all three — the other two are a text node
   with no wrapping opportunity and a Tailwind class in JSX.

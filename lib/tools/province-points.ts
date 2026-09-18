@@ -74,3 +74,26 @@ export function findProvincePoint(
 ): ProvincePoint | null {
   return options.find((option) => option.plateCode === plateCode) ?? null;
 }
+
+/**
+ * The provinces a placed coordinate may be reported INSIDE — the other half of the picker's
+ * data, shaped for the point-in-polygon lookup rather than for the option list.
+ *
+ * `slug` is locale-resolved by the caller (`slugEn` on `/en`, `slugTr` otherwise) because the
+ * reverse lookup's whole output is a link to that province's page, and a Turkish slug on the
+ * English route is a 404 rather than a translation.
+ *
+ * DECLARED HERE, beside {@link ProvincePoint}, and that placement is T-042's doing rather than
+ * taste: it used to live in `components/tools/tool-island.tsx`, a dead 1226-line component, and
+ * the two `import type { ProvinceArea }` clauses reaching into it were the ONLY thing left
+ * importing that file. Because a type import compiles to nothing, they kept 2447 lines of dead
+ * code certified as reachable while contributing no markup — see
+ * `lib/test-support/import-closure.ts`. A type belongs with the data it describes, not in a
+ * component that happens to have been the first to render it.
+ */
+export interface ProvinceArea {
+  /** The api's two-digit plaka kodu — the same key {@link ProvincePoint} uses. */
+  readonly plateCode: string;
+  readonly name: string;
+  readonly slug: string;
+}

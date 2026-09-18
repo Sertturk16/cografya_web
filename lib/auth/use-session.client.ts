@@ -137,7 +137,7 @@ const store = createAuthSessionStore();
 /**
  * `useAuthSession()` — the shared session-check hook. Every consumer in the tree
  * (`login-form.tsx`, `video-bench.tsx`, `favorite-button.tsx`, `game-round-save.tsx`,
- * `tool-island.tsx`, `game-history-panel.tsx`, the auth dialog) reads the SAME store through
+ * `v2-tool-workbench.tsx`, `v2-game-history-stats.tsx`, the auth dialog) reads the SAME store through
  * this hook, so a successful modal login propagates to all of them without a page reload
  * (uyelik-auth-redesign plan §5.4/K1).
  *
