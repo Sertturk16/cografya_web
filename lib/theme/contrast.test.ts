@@ -41,7 +41,7 @@ describe("contrastRatio", () => {
   });
 
   it("rejects anything that is not an sRGB hex", () => {
-    expect(() => relativeLuminance("oklch(0.65 0.13 40)")).toThrow(/sRGB hex/);
+    expect(() => relativeLuminance("rebeccapurple")).toThrow(/hex or oklch/);
   });
 });
 
@@ -93,5 +93,35 @@ describe("blendOver", () => {
 
   it("rejects an alpha outside 0-1", () => {
     expect(() => blendOver("#000000", 1.5, "#ffffff")).toThrow(/alpha/);
+  });
+});
+
+describe("oklch input", () => {
+  it("resolves the two achromatic endpoints to pure white and pure black", () => {
+    expect(relativeLuminance("oklch(1 0 0)")).toBeCloseTo(1, 6);
+    expect(relativeLuminance("oklch(0 0 0)")).toBe(0);
+  });
+
+  it("gives the published maximum for oklch white on oklch black", () => {
+    expect(ratio("oklch(1 0 0)", "oklch(0 0 0)")).toBe(21);
+  });
+
+  it("measures a real .dark brand token against a real .dark surface", () => {
+    // --primary and --background, both copied from app/globals.css's .dark block.
+    // This is the query the module could not answer before: one oklch, one hex.
+    expect(ratio("oklch(0.65 0.13 40.65)", "#0b1416")).toBe(5.47);
+  });
+
+  it("measures the warning token on the card surface it is actually used over", () => {
+    expect(ratio("oklch(0.75 0.13 75)", "#121e21")).toBe(7.53);
+  });
+
+  it("still rejects a string that is neither hex nor oklch", () => {
+    expect(() => relativeLuminance("rebeccapurple")).toThrow(/hex or oklch/);
+  });
+
+  it("blends an oklch fill over a hex backdrop", () => {
+    // 100% of the fill is the fill, whatever syntax it arrived in.
+    expect(blendOver("oklch(1 0 0)", 1, "#000000")).toBe("#ffffff");
   });
 });
