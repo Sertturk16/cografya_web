@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionsResilient } from "@/lib/api/regions";
-import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { FaqSection } from "@/components/patterns/faq-section";
 import { tr } from "@/lib/text/format-number";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
@@ -20,7 +20,6 @@ import {
   Home,
   Boxes,
   Table,
-  HelpCircle,
   Landmark,
   Scale,
   ArrowRight,
@@ -300,20 +299,6 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
 
   return (
     <>
-      {/* trOnly surface (`FENB75-I2`, → `lib/seo/indexing.ts`): the FAQ narrative has no
-          English counterpart, so the EN twin carries BreadcrumbList JSON-LD only rather than
-          a translated FAQPage block. */}
-      {locale === "tr" && (
-        <JsonLd
-          schema={faqPageJsonLd(
-            bolgelerFaqs.map((faq) => ({
-              question: faq.question,
-              answer: faq.answer,
-            })),
-          )}
-        />
-      )}
-
       <V2LiveTicker />
 
       {/* HERO SECTION */}
@@ -479,16 +464,17 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
           >
             Analitik Kıyaslama
           </a>
-          {/* The FAQ section itself is TR-only (§9) — the quicknav target would be dead on
-              the EN twin, so the link is gated with it rather than left pointing at nothing. */}
-          {locale === "tr" && (
-            <a
-              href="#sss"
-              className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
-            >
-              Sıkça Sorulan Sorular
-            </a>
-          )}
+          {/* UNGATED, like every other link in this nav. The `locale === "tr"` that used to wrap
+              this link was there because the FAQ SECTION was TR-only and the target would have
+              been dead on the EN twin. `FaqSection` renders the questions in both locales now and
+              withholds only the FAQPage schema (`structuredData="trOnly"`), so the anchor
+              resolves on `/en` and the gate would only hide a live section from its own nav. */}
+          <a
+            href="#sss"
+            className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+          >
+            Sıkça Sorulan Sorular
+          </a>
           <a
             href="#kaynakca"
             className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
@@ -742,46 +728,20 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
           </Card>
         </section>
 
-        {/* SECTION 4: SIKÇA SORULAN SORULAR — trOnly (§9): the FAQ narrative has no English
-            counterpart, so the whole section (visible cards + the JsonLd above) is TR-only. */}
-        {locale === "tr" && (
-          <section id="sss" className="scroll-mt-28" tabIndex={-1}>
-            <Card variant="panel" space="6">
-              <div className="space-y-2 border-b border-border/70 pb-5">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" size="sm">
-                    Rehber &amp; Soru-Cevap
-                  </Badge>
-                </div>
-                <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                  <HelpCircle className="size-6 text-primary shrink-0" />
-                  <span>Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular</span>
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                  Coğrafya müfredatı, sınav hazırlığı ve genel kültür açısından en çok merak edilen
-                  bölgesel kavramlar.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {bolgelerFaqs.map((faq, idx) => (
-                  <div
-                    key={idx}
-                    className="p-5 rounded-2xl bg-muted/30 border border-border/80 space-y-2"
-                  >
-                    <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
-                      <span className="text-primary font-bold text-sm">S:</span>
-                      <span>{faq.question}</span>
-                    </h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-5">
-                      {faq.answer}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </section>
-        )}
+        {/* SECTION 4: SIKÇA SORULAN SORULAR. The `locale === "tr"` gate that used to be written
+            twice — once around the visible cards and once around the `<JsonLd>` six hundred lines
+            above — is now ONE `structuredData` prop. `"trOnly"` is this page's own surface
+            constant (`generateMetadata` above passes the same one to `buildMetadata`), and
+            `isIndexable("en", "trOnly")` is false, so the EN twin emits no FAQPage exactly as
+            before. The questions themselves are no longer hidden from an EN reader: de-indexing a
+            surface is not a reason to withhold the answers, which is the rule
+            `components/patterns/faq-section.tsx` states. */}
+        <FaqSection
+          heading="Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular"
+          locale={locale}
+          items={bolgelerFaqs}
+          structuredData="trOnly"
+        />
 
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex items-center justify-between pt-2">

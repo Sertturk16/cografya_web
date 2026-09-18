@@ -12,7 +12,7 @@ import { routing, type Locale } from "@/i18n/routing";
 import { getAllContinents, getContinentBySlug } from "@/lib/geo/continents";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
-import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMetadata } from "@/lib/seo/metadata";
 import {
   Globe2,
@@ -27,7 +27,6 @@ import {
   ChevronRight,
   Boxes,
   Building2,
-  HelpCircle,
   ArrowUpRight,
   ShieldAlert,
   Coins,
@@ -573,33 +572,15 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
           </Card>
         </section>
 
-        {/* SECTION 11: SIKÇA SORULAN SORULAR (FAQ) */}
-        <section id="sss" className="space-y-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <HelpCircle className="size-4" />
-              <span>Merak Edilenler</span>
-            </div>
-            <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
-              {continent.nameTr} Hakkında Sıkça Sorulan Sorular
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {continent.faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl border border-border bg-card p-5 space-y-2 hover:border-primary/40 transition-colors"
-              >
-                <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
-                  <span className="text-primary font-mono text-xs mt-0.5">{idx + 1}.</span>
-                  <span>{faq.question}</span>
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed pl-4">{faq.answer}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* SECTION 11: SIKÇA SORULAN SORULAR (FAQ). Markup and schema from one `continent.faqs`
+            identifier, in one place, instead of a `<JsonLd>` at the foot of the file. `"trOnly"`
+            is this page's own surface constant. */}
+        <FaqSection
+          heading={`${continent.nameTr} Hakkında Sıkça Sorulan Sorular`}
+          locale={locale}
+          items={continent.faqs}
+          structuredData="trOnly"
+        />
 
         {/* SECTION 12: DİĞER KITALAR GEZİNTİSİ */}
         <section id="diger-kitalar" className="space-y-4 pt-4 border-t border-border">
@@ -650,9 +631,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             was never a citation; it now renders under the künye grid in the hero, beside the
             figures it is about. Still from the catalogue, because `/en/` reaches this surface. */}
       </PageContainer>
-
-      {/* Structured Data JSON-LD */}
-      <JsonLd schema={faqPageJsonLd(continent.faqs)} />
     </>
   );
 }

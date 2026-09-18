@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getAllContinents } from "@/lib/geo/continents";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
-import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
@@ -20,7 +20,6 @@ import {
   ChevronRight,
   Boxes,
   Table,
-  HelpCircle,
   ArrowRight,
   BookOpen,
 } from "lucide-react";
@@ -485,33 +484,16 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
           </div>
         </Card>
 
-        {/* SECTION 4: SIKÇA SORULAN SORULAR (FAQ) */}
-        <section id="sss" className="space-y-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <HelpCircle className="size-4" />
-              <span>Merak Edilenler</span>
-            </div>
-            <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
-              Kıtalar Hakkında Sıkça Sorulan Sorular
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {HUB_FAQS.map((faq, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl border border-border bg-card p-5 space-y-2 hover:border-primary/40 transition-colors"
-              >
-                <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
-                  <span className="text-primary font-mono text-xs mt-0.5">{idx + 1}.</span>
-                  <span>{faq.question}</span>
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed pl-4">{faq.answer}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* SECTION 4: SIKÇA SORULAN SORULAR (FAQ). The `<JsonLd>` that used to sit at the very
+            bottom of this file, six hundred lines from the markup it described, is now emitted by
+            the component that renders the questions — from the same `HUB_FAQS` array, so the two
+            cannot drift. `"trOnly"` is this page's own surface constant. */}
+        <FaqSection
+          heading="Kıtalar Hakkında Sıkça Sorulan Sorular"
+          locale={locale}
+          items={HUB_FAQS}
+          structuredData="trOnly"
+        />
 
         {/* NO SOURCES SECTION. This page reads NO api at all — the figures come from
             `lib/geo/continents.ts`, a hand-written registry — and draws no map, so every one of
@@ -526,9 +508,6 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
             describes. Still read from the catalogue, never written inline, because `/en/` reaches
             this surface and the string it replaced was a Turkish literal. */}
       </PageContainer>
-
-      {/* Structured Data JSON-LD */}
-      <JsonLd schema={faqPageJsonLd(HUB_FAQS)} />
     </>
   );
 }

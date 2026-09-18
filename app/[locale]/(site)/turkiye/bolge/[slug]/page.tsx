@@ -13,8 +13,8 @@ import { V2FavoriteButton } from "@/components/v2/v2-favorite-button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionBySlug, getRegionsResilient } from "@/lib/api/regions";
-import { faqPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { FaqSection } from "@/components/patterns/faq-section";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
   Mountain,
@@ -27,7 +27,6 @@ import {
   TrendingUp,
   Boxes,
   Building2,
-  HelpCircle,
   Table,
   Layers,
   ArrowUpRight,
@@ -417,17 +416,6 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
   return (
     <>
-      {region.faqs?.length > 0 && (
-        <JsonLd
-          schema={faqPageJsonLd(
-            region.faqs.map((faq) => ({
-              question: faq.question,
-              answer: faq.answer,
-            })),
-          )}
-        />
-      )}
-
       <V2LiveTicker />
 
       {/* HERO BANNER SECTION */}
@@ -1469,46 +1457,19 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           </Card>
         </section>
 
-        {/* SECTION 8: SIKÇA SORULAN SORULAR */}
-        {region.faqs?.length > 0 && (
-          <section id="sss" className="scroll-mt-28" tabIndex={-1}>
-            <Card variant="panel" space="6">
-              {/* Header INSIDE the Card */}
-              <div className="space-y-2 border-b border-border/70 pb-5">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" size="sm">
-                    Rehber &amp; Soru-Cevap
-                  </Badge>
-                </div>
-                <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                  <HelpCircle className="size-6 text-primary shrink-0" />
-                  <span>{region.nameTr} Hakkında Sıkça Sorulan Sorular</span>
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                  Bölgenin coğrafi yapısı, nüfusu, illeri, bölümleri ve iklimi hakkında merak edilen
-                  temel sorular ve yanıtları.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {region.faqs.map((faq, i) => (
-                  <div
-                    key={i}
-                    className="p-5 rounded-2xl bg-muted/30 border border-border/80 space-y-2"
-                  >
-                    <h3 className="font-heading font-bold text-sm text-foreground flex items-start gap-2">
-                      <span className="text-primary font-bold text-sm">S:</span>
-                      <span>{faq.question}</span>
-                    </h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-5">
-                      {faq.answer}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </section>
-        )}
+        {/* SECTION 8: SIKÇA SORULAN SORULAR. The `region.faqs?.length > 0` guard that used to be
+            written twice — once here and once around the `<JsonLd>` a thousand lines above — is
+            gone: `FaqSection` returns null for an empty `items`, which is the same decision made
+            once instead of in two spellings (and one of those spellings was `?.length` on a field
+            that is not optional). `?? []` because the API type allows the field to be absent;
+            `"trOnly"` is this page's own surface constant, the one `generateMetadata` passes to
+            `buildMetadata`. */}
+        <FaqSection
+          heading={`${region.nameTr} Hakkında Sıkça Sorulan Sorular`}
+          locale={locale}
+          items={region.faqs ?? []}
+          structuredData="trOnly"
+        />
 
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex items-center justify-between pt-2">
