@@ -141,8 +141,11 @@ describe("uncoveredPathnames", () => {
 });
 
 describe("sweep matrix", () => {
-  it("checks the three phone widths the repo commits to, plus desktop", () => {
-    expect(SWEEP_VIEWPORTS.map((v) => v.width)).toEqual([320, 360, 390, 1440]);
+  it("checks the three phone widths the repo commits to, plus 768 and desktop", () => {
+    // 768 is not decoration: without it `md:min-w-[900px] lg:min-w-0` passes all eight
+    // checks, inactive below 768 and harmless at 1440. See the docblock on SWEEP_VIEWPORTS
+    // for which band it closes and which two remain.
+    expect(SWEEP_VIEWPORTS.map((v) => v.width)).toEqual([320, 360, 390, 768, 1440]);
   });
 
   it("checks both themes", () => {

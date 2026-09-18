@@ -237,11 +237,29 @@ export type SweepViewport = {
  * `min-width: 300px` inside a 320-wide column overflows while the same rule at 360 does not,
  * and a two-column grid that survives 320 by collapsing can still break at 390 where it does
  * not collapse. 1440 is the desktop check.
+ *
+ * 768 CLOSES THE WIDEST PART OF A 1050px BLIND BAND. With only 320/360/390/1440, a review
+ * demonstrated that `md:min-w-[900px] lg:min-w-0` passes all eight checks: it is inactive
+ * below 768 and harmless at 1440, so nothing measured it where it bites. Every one of
+ * Tailwind's four used breakpoints sits inside that band — `sm:` 640 (608 utilities in this
+ * repo), `md:` 768 (61), `lg:` 1024 (119), `xl:` 1280 (6).
+ *
+ * One width at 768 catches more than its own breakpoint, because a breakpoint-scoped utility
+ * is active at every width AT OR ABOVE it: any `sm:`- or `md:`-scoped fixed width wider than
+ * 768 now overflows a swept viewport. What remains is two narrower bands, and they are worth
+ * naming rather than leaving as "the gap":
+ *   - 390–768, which holds a width active ONLY in [640, 768) — an `sm:` rule cancelled at
+ *     `md:` — and wider than the viewport it lives on;
+ *   - 768–1440, which holds a `lg:`- or `xl:`-scoped width that exceeds 1024 or 1280 but
+ *     still fits 1440.
+ * Closing either costs another 44 checks and ~10s; neither has a recorded defect behind it
+ * yet, which is the only reason they are still open.
  */
 export const SWEEP_VIEWPORTS: readonly SweepViewport[] = [
   { name: "320", width: 320, height: 900 },
   { name: "360", width: 360, height: 900 },
   { name: "390", width: 390, height: 900 },
+  { name: "768", width: 768, height: 1000 },
   { name: "desktop", width: 1440, height: 1000 },
 ];
 
