@@ -97,7 +97,8 @@ export function PageHero({ tier, heading, badges, notice, lede, children }: Page
 
       {/* WRITTEN AS TWO JSX ELEMENTS, NOT `const Heading = tier === "hub" ? H1 : H1Display`.
           That indirection reads identically to React and is INVISIBLE to the render walk in
-          `components/v2/page-composition.test.ts`: `Heading` is neither an import binding nor a
+          `components/v2/page-composition-headings.test.ts`: `Heading` is neither an import binding nor
+          a
           top-level declaration, so the walk resolved it to nothing and every page adopting this
           component reported NO `<h1>` at all (measured — `PAGES_WITHOUT_H1` went 5 → 6 on the
           first page converted). That is SCOPE note 1 of that file arriving on the very component

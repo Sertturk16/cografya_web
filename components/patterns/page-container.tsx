@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * `space` is a closed union rather than a `className` passthrough on purpose. The six tails
  * this replaces (`space-y-8` through `space-y-16`, with and without `pb-20`) grew because
  * each page could write its own; a passthrough would reproduce them through the prop and the
- * counter in `components/v2/page-composition.test.ts` would stop meaning anything.
+ * counter in `components/v2/page-composition-containers.test.ts` would stop meaning anything.
  *
  * Page-level vertical padding (`pt-6 pb-20 sm:pt-10`) lives in the rhythm map, not the base
  * className, because `band` is for callers whose body sits inside a full-bleed

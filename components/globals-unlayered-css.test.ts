@@ -19,7 +19,8 @@ import { stripCssComments } from "@/lib/test-support/strip-comments";
  * going to zero and staying there quietly — see the mutation check recorded in
  * `.superpowers/sdd/t-041-unlayered-css-report.md`, which is the manual counterpart to the
  * automated positive controls in "the scanner itself" below (the same split
- * `components/v2/page-composition.test.ts` uses: automated checks that the SCANNER works,
+ * the three `components/v2/page-composition-*.test.ts` suites use: automated checks that the
+ * SCANNER works,
  * a manual mutation check recorded in prose that the ASSERTION would actually go red).
  *
  * ## What "a rule" means here
@@ -236,7 +237,7 @@ const EXEMPT_LABELS = new Set(EXEMPTIONS.map((e) => e.label));
 const NON_EXEMPT = ALL_RULES.filter((r) => !EXEMPT_LABELS.has(r.label));
 
 /**
- * EXACT, not a ceiling — `docs/design.md` and `components/v2/page-composition.test.ts` both
+ * EXACT, not a ceiling — `docs/design.md` and the `components/v2/page-composition-*.test.ts` suites both
  * record what a ceiling is worth here: a count that only ever gets checked against "not more
  * than before" lets a number drift upward one small change at a time with nobody noticing,
  * which is exactly how this file grew to ~360 unlayered lines in the first place.

@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
  * `className` is `never`, for `PageContainer`'s reason: the six vertical rhythms that component
  * replaced grew because every page could write its own. A passthrough would let the same
  * divergence back in through the prop, and the counters in
- * `components/v2/page-composition.test.ts` would stop meaning anything — they read source
+ * `components/v2/page-composition-cards.test.ts` would stop meaning anything — they read source
  * spellings, and a spelling smuggled through a prop is invisible to them.
  *
  * WHY THE GRID CLASSES STAY LEGIBLE TO THE SCANNER. `statGridsUsingStatTile()` recognises a

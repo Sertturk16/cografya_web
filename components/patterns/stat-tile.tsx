@@ -41,7 +41,7 @@ interface StatTileBase {
    * No escape hatch, for `StatGrid`'s and the `Card` variant branch's reason — and this component
    * needs it more than either, because a re-spelled tile is INVISIBLE to every counter:
    * `<StatTile className="rounded-3xl bg-muted/40 p-6" />` has no `bg-card` and no `border-border`,
-   * so `components/v2/page-composition.test.ts` files it as neither a card nor a well and the
+   * so `components/v2/page-composition-cards.test.ts` files it as neither a card nor a well and the
    * divergence this component exists to collapse comes back unmeasured. It was open through the
    * first five commits with no consumer: `kitaplar`, the one site that wanted a per-tile hatch,
    * took `columns="2"` on the grid instead, which is the same geometry by the honest route.

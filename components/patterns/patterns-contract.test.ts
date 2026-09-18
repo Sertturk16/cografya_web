@@ -165,7 +165,7 @@ describe("StatTile inherits that guarantee rather than reimplementing it", () =>
    *
    * keys the card surface on a prop no test supplies: every tile carrying a hint loses its surface
    * entirely, and **217 files / 4823 tests stay green**. `token-binding.test.ts` cannot see it (no
-   * raw palette) and `page-composition.test.ts` cannot see it (the class lives inside the
+   * raw palette) and `page-composition-cards.test.ts` cannot see it (the class lives inside the
    * component). Third round running in which "the assertion covers the case we thought of" is the
    * finding, and the same lesson Ruling BB taught for `StatGrid` — one prop deeper.
    *
@@ -261,7 +261,7 @@ describe("StatGrid is the shell and nothing else", () => {
   it("offers no className escape hatch", () => {
     // PageContainer's reason: the divergence this collapses grew because every page could write
     // its own spelling, and a passthrough lets it straight back in — invisibly, because the
-    // counters in components/v2/page-composition.test.ts read source spellings.
+    // counters in components/v2/page-composition-cards.test.ts read source spellings.
     expect(source).toMatch(/className\?: never/);
   });
 
@@ -269,7 +269,8 @@ describe("StatGrid is the shell and nothing else", () => {
    * RULING BB. THE RENDERED CLASS STRING, NOT THE SOURCE THAT IS SUPPOSED TO PRODUCE IT.
    *
    * This assertion used to be `toContain('cn("grid"')` plus a `/grid-cols-2 sm:grid-cols-4/`
-   * match on the file's text, and `components/v2/page-composition.test.ts` leaned on it: the tag
+   * match on the file's text, and `components/v2/page-composition-cards.test.ts` leaned on it: the
+   * tag
    * `<StatGrid>` counts as a grid shell for `STAT_GRIDS_TOTAL`, "so the shell cannot quietly stop
    * being one". Review demonstrated that it can. Replacing the render with
    *
@@ -482,7 +483,7 @@ describe("Typography reproduces the documented scale", () => {
    * now read off `H1`'s own region.
    *
    * A region runs from its `export function` to the next one, which is all the precision this
-   * file needs; `components/v2/page-composition.test.ts`'s `declarationRegions` is the general
+   * file needs; `lib/test-support/composition-scan.ts`'s `declarationRegions` is the general
    * version, and it lives there because that scanner walks arbitrary modules. This one walks
    * exactly one file whose shape it also asserts.
    */
