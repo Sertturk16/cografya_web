@@ -604,12 +604,19 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           >
             7 Bölge Kıyaslama
           </a>
-          <a
-            href="#sss"
-            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
-          >
-            SSS
-          </a>
+          {/* Gated on the SAME emptiness the section is. `FaqSection` returns null for an empty
+              `items`, so a region with no `faqs` renders no `#sss` at all and this pill would
+              scroll to nothing — the dead-anchor shape the sibling `turkiye/bolge` page gates its
+              own pill against, there for the locale reason and here for the data one. Pre-existing;
+              the two pages now agree. */}
+          {(region.faqs?.length ?? 0) > 0 && (
+            <a
+              href="#sss"
+              className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+            >
+              SSS
+            </a>
+          )}
           <a
             href="#kaynakca"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"

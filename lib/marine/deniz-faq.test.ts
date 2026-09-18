@@ -1,87 +1,76 @@
 import { describe, expect, it } from "vitest";
-import en from "@/messages/en.json";
-import tr from "@/messages/tr.json";
+import trMessages from "@/messages/tr.json";
+import { MARINE_EXPLAINER_KEYS, buildMarineExplainers } from "./explainers";
 
 /**
- * THE EIGHT `/deniz` FAQ PAIRS EXIST, AND THE ENGLISH GAP IS PINNED RATHER THAN ASSUMED.
+ * RULING CE — THE EIGHT `/deniz` QUESTIONS RESOLVE TO EIGHT DISTINCT STRINGS.
  *
- * `app/[locale]/(site)/deniz/page.tsx` builds its FAQ items in a loop — `t(`q${i + 1}`)` — because
- * eight hand-written `t("q1")`…`t("q8")` pairs would be sixteen lines of noise. The cost of that
- * loop is stated in `lib/i18n/key-existence.test.ts`'s own docblock: it resolves LITERAL keys only,
- * and a computed key is invisible to it **by design**. So the repo-wide guarantee "every key the
- * code asks for exists in both catalogues" does not cover these sixteen keys, and a typo'd or
- * deleted `a7` would ship as the visible string `Deniz.a7` on the page with the whole suite green —
- * exactly the `Game.mode3PickerMetaDescription` failure that made that scanner exist.
+ * ## What this does NOT assert, and where those guarantees already live
  *
- * This file is that coverage, bought back by reading the catalogue directly.
+ * Everything else about these keys is already covered, derived from the same declaration:
  *
- * ## The EN assertion is a TRIPWIRE, not a preference
+ *   - `lib/marine/messages.test.ts` asserts every `Deniz.q*`/`a*` pair is a non-empty string in
+ *     `tr`, one `it` per entry of {@link MARINE_EXPLAINER_KEYS}; carries the EN-absence tripwire
+ *     with the "the render gate has to open in the same commit" note; and — through its
+ *     chrome-keys loop, which covers every `Deniz` key that is not an explainer — asserts
+ *     `Deniz.faqHeading` is a non-empty string in BOTH catalogues.
+ *   - `lib/marine/explainers.test.ts` asserts the set is eight entries, that the ids and the
+ *     question/answer KEYS are distinct, and that a question key is never reused as an answer key.
  *
- * The block is gated to `locale === "tr"` on the page, and the gate's whole justification is that
- * `messages/en.json` has no `Deniz.q*`/`Deniz.a*`. That justification is a FACT ABOUT THE
- * CATALOGUE, and facts rot silently. Asserting the absence means the day someone writes the
- * English copy (T-040), this test goes red and names the thing to do — remove the gate — instead
- * of leaving an `/en/sea` reader with no FAQ and a page-level gate nobody remembers the reason for.
+ * The first version of this file re-bought all of that and claimed in its docblock that the gap
+ * existed, because the page was reading `q${i}` in a hand-written loop and the author checked
+ * `lib/i18n/key-existence.test.ts` (which genuinely cannot see a computed key) without checking
+ * whether the marine surface had its own guard. It did. The page now calls
+ * `buildMarineExplainers`, so the computed-key problem is gone at the source rather than covered
+ * by a second test.
  *
- * Read the failure message, not just the diff: red here is "the EN copy landed", which is good
- * news and a two-line change on the page, never a reason to delete this assertion.
+ * ## What is genuinely new
+ *
+ * `explainers.test.ts` proves the eight KEYS are distinct. Two distinct keys can still hold the
+ * same STRING, and that is the failure this file exists for: `FaqSection` uses `item.question` as
+ * its React key AND, in the accordion mechanism, as the Base UI `value` that tracks which panel is
+ * open. Two identical questions in one block therefore collide twice over — React warns about
+ * duplicate keys, and opening one panel opens the other. The component cannot defend itself
+ * because the array is the caller's, so the guarantee lives with the resolved copy.
+ *
+ * Resolved through the real catalogue rather than an echo translator: a duplicate that matters is
+ * one an editor introduces in `messages/tr.json`, and an echo translator returns the key names,
+ * which are distinct by `explainers.test.ts`'s own assertion and so can never collide.
  */
 
-const INDEXES = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+// `Record<string, unknown>` per level, like `lib/marine/messages.test.ts`: the catalogue nests
+// (`Climate.notice` is an object), so a `Record<string, Record<string, string>>` cast does not
+// describe it and `tsc` rejects the conversion outright.
+const deniz = ((trMessages as Record<string, unknown>).Deniz ?? {}) as Record<string, unknown>;
 
-type Catalogue = Record<string, Record<string, unknown>>;
+/** The resolved copy for one key, or a marker the assertion below can recognise. */
+const copyOf = (key: string): string => {
+  const value = deniz[key];
+  return typeof value === "string" ? value : `(missing ${key})`;
+};
 
-const denizOf = (catalogue: unknown): Record<string, unknown> =>
-  ((catalogue as Catalogue).Deniz ?? {}) as Record<string, unknown>;
+describe("the /deniz FAQ questions (Ruling CE)", () => {
+  it("resolves to as many distinct question texts as there are blocks", () => {
+    const built = buildMarineExplainers(copyOf);
+    const questions = built.map((entry) => entry.question);
 
-describe("the /deniz FAQ pairs", () => {
-  it("has all eight Turkish question/answer pairs, each a non-empty string", () => {
-    const deniz = denizOf(tr);
-    for (const i of INDEXES) {
-      for (const field of [`q${i}`, `a${i}`]) {
-        const value = deniz[field];
-        expect(typeof value, `messages/tr.json Deniz.${field} is missing or not a string`).toBe(
-          "string",
-        );
-        expect((value as string).trim().length, `Deniz.${field} is empty`).toBeGreaterThan(0);
-      }
-    }
-  });
+    // Anti-vacuity: the set really was resolved from the catalogue, not from key names or from
+    // an empty list. A `(missing …)` here would be `messages.test.ts`'s failure, not this one's.
+    expect(questions).toHaveLength(MARINE_EXPLAINER_KEYS.length);
+    expect(questions.every((question) => !question.startsWith("(missing "))).toBe(true);
 
-  it("gives the eight questions eight distinct texts — Ruling CE, at the source", () => {
-    // `FaqSection` keys its items and tracks each accordion panel's open state BY THE QUESTION
-    // STRING (`value={item.question}`), so two identical questions in one block would collide:
-    // React would warn about duplicate keys and Base UI would open both panels together. The
-    // component cannot defend against it — the array is the caller's — so the guarantee lives
-    // where the strings do.
-    const deniz = denizOf(tr);
-    const questions = INDEXES.map((i) => deniz[`q${i}`] as string);
-    expect(new Set(questions).size, `duplicate question text:\n  ${questions.join("\n  ")}`).toBe(
-      questions.length,
-    );
-  });
-
-  it("has the heading the page renders, in BOTH catalogues", () => {
-    // `Deniz.faqHeading` is the one string in this block that is NOT gated to `tr` by its own
-    // absence — the page reads it through the same `t` and it is translated. Pinned in both so the
-    // gate's removal does not trip over the heading.
-    for (const [name, catalogue] of [
-      ["tr", tr],
-      ["en", en],
-    ] as const) {
-      const value = denizOf(catalogue).faqHeading;
-      expect(typeof value, `messages/${name}.json Deniz.faqHeading is missing`).toBe("string");
-    }
-  });
-
-  it("still has NO English copy — the reason the block is gated to tr", () => {
-    const deniz = denizOf(en);
-    const present = INDEXES.flatMap((i) => [`q${i}`, `a${i}`]).filter((key) => key in deniz);
     expect(
-      present,
-      "English FAQ copy has landed in messages/en.json. That is good news, and it means the " +
-        '`locale === "tr"` gate around the FAQ block in app/[locale]/(site)/deniz/page.tsx is ' +
-        "now wrong: remove it, and delete this assertion with it.",
-    ).toEqual([]);
+      new Set(questions).size,
+      `two blocks resolve to the same question text, which collides on FaqSection's React key and on the accordion's open-panel value:\n  ${questions.join("\n  ")}`,
+    ).toBe(questions.length);
+  });
+
+  it("would catch a duplicate — the control, not just the scan", () => {
+    // The same predicate over a translator that returns one string for two different keys, which
+    // is exactly what a copy-paste in `messages/tr.json` looks like.
+    const collided = buildMarineExplainers(() => "aynı soru");
+    const questions = collided.map((entry) => entry.question);
+    expect(new Set(questions).size).toBe(1);
+    expect(questions.length).toBeGreaterThan(1);
   });
 });

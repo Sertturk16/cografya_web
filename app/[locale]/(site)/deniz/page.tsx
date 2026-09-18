@@ -13,6 +13,7 @@ import { V2MarineBasinCards } from "@/components/v2/v2-marine-basin-cards";
 import { V2MarineOceanographyGuide } from "@/components/v2/v2-marine-oceanography-guide";
 import { V2MarineLayerCatalogue } from "@/components/v2/v2-marine-layer-catalogue";
 import { FaqSection } from "@/components/patterns/faq-section";
+import { buildMarineExplainers } from "@/lib/marine/explainers";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
@@ -58,24 +59,27 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
   const t = await getTranslations("Deniz");
 
   /**
-   * The eight FAQ pairs, READ FROM THE CATALOGUE rather than written here.
+   * The eight FAQ pairs, from `lib/marine/explainers.ts` — THE DECLARED SINGLE SOURCE for this
+   * set, not a loop over `q1..q8` written here.
    *
    * `V2MarineFaqAccordion` held seven of these as Turkish string literals in a `FAQ_ITEMS`
-   * constant — the only FAQ block in the tree that was not message-driven, and the thing
-   * `docs/architecture.md` forbids in a file that has a translator to hand. `Deniz.q1..q8` /
-   * `Deniz.a1..a8` are those seven questions, edited, plus an eighth ("geçerlilik anı"), and they
-   * were already in `messages/tr.json` before this change: nothing here was copied into a new
-   * key, and no English was invented.
+   * constant — the only FAQ block in the tree that was not message-driven. The catalogue already
+   * had the eight pairs AND a module declaring which keys they are and in what order, so the
+   * only correct thing to read is that module.
    *
-   * The keys are built with a template literal on purpose. `lib/i18n/key-existence.test.ts`
-   * resolves LITERAL keys only and states that a computed one is invisible to it by design, so
-   * this loop is not asking that scanner to certify a `q7` it cannot see — what guarantees the
-   * eight pairs exist is `lib/marine/deniz-faq.test.ts`, which reads the catalogue itself.
+   * THE ORDER IS EDITORIAL AND IS NOT `q1…q8`. `MARINE_EXPLAINER_KEYS` is
+   * `q1 q2 q3 q4 q5 q8 q6 q7`: the owner-approved eighth block (`dataFreshness`) sits SIXTH,
+   * immediately after `q5`, because both answer the same fact — each provider's own publication
+   * cadence — from two angles. Its key stayed `q8` rather than being renumbered so the two
+   * entries that shift down keep their copy byte-identical. That module's docblock records all
+   * of it. A hand-written numeric loop cannot express any of it: it ships `dataFreshness` last,
+   * and it would silently drop a ninth block the day one is added.
+   *
+   * `MarineExplainer` carries an `id` alongside `question`/`answer`; `FaqEntry` needs only the
+   * latter two, and a wider object satisfies it, so the array is passed through untouched rather
+   * than projected — a projection here would be a second place for the order to drift.
    */
-  const marineFaqs = Array.from({ length: 8 }, (_, i) => ({
-    question: t(`q${i + 1}`),
-    answer: t(`a${i + 1}`),
-  }));
+  const marineFaqs = buildMarineExplainers(t);
 
   // Fetch points, live overview, layers and provinces
   const [rawPoints, rawOverview, rawLayers, rawProvinces] = await Promise.all([

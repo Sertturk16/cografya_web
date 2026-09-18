@@ -69,6 +69,8 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   (Playwright MCP). Take a screenshot when the user asked for a visual fix.
 - `/impeccable audit|critique|polish` and the `web-design-guidelines` skill are review
   aids; `docs/design.md` overrides them. Never `/impeccable init`.
+- Never `git worktree add` or symlink `node_modules` here (a worktree once destroyed the
+  dependency tree). Establish a baseline with `git show <sha>:<path>` or `git stash`.
 
 ## Done means
 
