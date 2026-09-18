@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
 import { StatGrid, type StatGridProps } from "./stat-grid";
+import { StatTile, type StatTileProps } from "./stat-tile";
 
 /** Comments stripped — a docblock explaining why something is NOT `role="alert"` contains it. */
 const read = (name: string) =>
@@ -115,13 +116,91 @@ describe("StatTile inherits that guarantee rather than reimplementing it", () =>
     expect(source).toContain("TONE[tone]");
   });
 
-  it("wears the site's card spelling, shadow included", () => {
-    // The strips write `rounded-2xl bg-card border border-border shadow-2xs`. The component was
-    // that minus the shadow, so adopting it anywhere would have flattened 52 tiles.
-    expect(source).toContain("rounded-2xl");
-    expect(source).toContain("border border-border");
-    expect(source).toContain("bg-card");
-    expect(source).toContain("shadow-2xs");
+  /**
+   * RULING BB, APPLIED TO THE TILE — whole-branch review's M2, and the fourth occurrence of this
+   * shape in the programme (PR3's Ruling Z/AB, Task 4's `.map()` blind spot, Ruling BA on
+   * `StatGrid`). `StatGrid` was taught to prove itself by rendering and `StatTile` was left on
+   * `expect(source).toContain(…)` **in the same commit**, so every guarantee below was satisfiable
+   * by a dead string:
+   *
+   *     const surface = cn("rounded-2xl border border-border bg-card p-4 shadow-2xs");
+   *     void surface;
+   *     const t = TONE[tone]; void t;
+   *     return <div className="flex flex-col p-2"><span className="text-primary">…
+   *
+   * — 50 tiles across 12 pages lose their surface and collapse to one hue, and "wears the site's
+   * card spelling" and "colours the value through a closed tone union" both stay green. A raw
+   * PALETTE hardcode would still be caught by `components/ui/token-binding.test.ts`; a bridge-token
+   * hardcode and a dead surface string are exactly what it cannot see.
+   *
+   * MUTATION-CHECKED at these values, reverted after each: the dead-surface rewrite above — RED on
+   * the surface row; `TONE.accent` re-pointed at `text-primary` — RED on the accent row only;
+   * `order-2` dropped from the label — RED on the DOM/visual order row.
+   */
+  const tileMarkup = (props: Partial<StatTileProps> = {}) =>
+    renderToStaticMarkup(
+      createElement(StatTile, { label: "L", fact: "V", ...props } as StatTileProps),
+    );
+
+  const classesOf = (markup: string) => [...markup.matchAll(/class="([^"]*)"/g)].map((m) => m[1]!);
+
+  it("renders the site's card spelling on its root, shadow included", () => {
+    // Asserted as the whole string in emission order, not "contains the right tokens": a re-theme
+    // that kept `bg-card` and changed the radius or dropped the shadow would pass the weaker form,
+    // and flattening 50 tiles is precisely what this component was given `shadow-2xs` to avoid.
+    expect(classesOf(tileMarkup())[0]).toBe(
+      "flex flex-col rounded-2xl border border-border bg-card p-4 shadow-2xs",
+    );
+  });
+
+  it.each([
+    ["foreground", "text-foreground"],
+    ["primary", "text-primary"],
+    ["secondary", "text-secondary"],
+    ["accent", "text-accent"],
+    ["destructive", "text-destructive"],
+  ] as const)("renders tone=%s as %s on the value", (tone, expected) => {
+    const value = classesOf(tileMarkup({ tone })).find((c) => c.includes("font-heading"));
+    expect(value).toBe(`order-1 block font-heading text-2xl font-bold sm:text-3xl ${expected}`);
+  });
+
+  it("defaults to the hueless tone", () => {
+    expect(classesOf(tileMarkup()).find((c) => c.includes("font-heading"))).toContain(
+      "text-foreground",
+    );
+  });
+
+  it("renders the label after the value in the DOM and before it on screen", () => {
+    // Both halves, on the rendered output rather than on source indices. The label's wrapper
+    // carries the LATER order and appears FIRST in the markup; that pair is the whole trick, and
+    // asserting only one of them is how it gets silently undone.
+    const markup = tileMarkup();
+    const labelBlock = markup.indexOf("order-2");
+    const valueBlock = markup.indexOf("order-1");
+    expect(labelBlock).toBeGreaterThan(-1);
+    expect(labelBlock).toBeLessThan(valueBlock);
+    expect(classesOf(markup)).toContain("text-xs font-medium leading-5 text-muted-foreground");
+  });
+
+  it("routes a measurement through MetricValue, and an absent one to words", () => {
+    // The `fact`/`value` split, proved by what comes out rather than by the type alone.
+    expect(tileMarkup({ fact: undefined, value: 1234, absent: { label: "Yok" } })).toContain(
+      "tabular-nums",
+    );
+    expect(tileMarkup({ fact: undefined, value: null, absent: { label: "Okuma yok" } })).toContain(
+      "Okuma yok",
+    );
+    // Never a zero for an absent reading, never a bare dash — T-024, end to end.
+    expect(
+      tileMarkup({ fact: undefined, value: null, absent: { label: "Okuma yok" } }),
+    ).not.toMatch(/>\s*[-–—]\s*</);
+  });
+
+  it("offers no className escape hatch either", () => {
+    // L6: `StatGrid` and the `Card` variant branch both close it, and this component's own
+    // docblock argues at length that a passthrough lets divergence back in. It was open, with no
+    // consumer — `kitaplar`, the one site that wanted a per-tile hatch, took `columns="2"` instead.
+    expect(source).toMatch(/className\?: never/);
   });
 });
 

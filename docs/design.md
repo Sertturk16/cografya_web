@@ -119,7 +119,7 @@ The reason is concrete: `shadcn add` **overwrites** files in the configured `ui`
 asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living
 there is one CLI run away from being silently clobbered. Two files now carry hand-added variants
 and must survive a CLI run: `button.tsx` and `card.tsx`. Card's are guarded by
-`components/ui/card-variants.test.ts`, which asserts the exact class strings, because an overwrite
+`components/ui/card-variants.test.tsx`, which asserts the exact class strings, because an overwrite
 would revert 77 adopted sites to the stock `rounded-xl ring-1` card and nothing else would see it.
 
 `Card` has two forms. Without `variant` it is the CLI's card, `className` and all. With one it is
@@ -172,19 +172,27 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   so `absent` is required with it. `fact` is a literal — `WGS84`, `M 1.0 - 7.0+`, `ÖSYM / MEB` —
   and reaches `MetricValue` not at all. The union exists because widening `MetricValue.value` to
   `string` would let a page print `"—"` through the component built to forbid it. Colour is the
-  closed `tone` union, never a class: five strips carried `text-teal-600`/`-cyan-600`/`-red-600`/
-  `-blue-600`/`-emerald-600` with no `dark:` pair, measured frozen at one hex in both themes.
+  closed `tone` union, never a class: strips carried `text-teal-600`/`-cyan-600` with no `dark:`
+  pair, measured frozen at one hex in both themes. **This was a theme-freeze fix, not an AA
+  repair** — those values render `text-2xl sm:text-3xl font-bold`, i.e. WCAG LARGE text with a 3:1
+  floor, and every one of them already passed. What was wrong is that they did not follow the
+  theme; the contrast improvement is a consequence, not the defect.
 - **`StatGrid` is the shell, `StatTile` the tile, and a grid needs both.** Half-migrating —
   `StatGrid` around hand-drawn tiles — drops the grid out of BOTH buckets in
   `components/v2/page-composition.test.ts` and fails `STAT_GRIDS_TOTAL`. That is deliberate.
 - **Decoration on a value vs categorical data encoding — the line that decides whether a raw
-  palette class gets converted.** T-035 PR4 re-toned `/deprem/fay-hatlari`'s strip off
-  `text-red-600`/`-blue-600`/`-emerald-600` and left `/deprem`'s KAF/DAF/BAFS legend on
-  `text-red-700 dark:text-red-300` and its siblings, which looks inconsistent and is not. The
-  strip's hues were decoration with **no `dark:` pair** — frozen at one hex in both themes — and
-  decoration belongs on bridge tokens. The legend's swatch **is** the claim, so converting it
-  would put three data categories on three brand hues, which the data-viz rule below forbids; it
-  also already has its `dark:` pairs. Do not "finish the job" by converting a legend.
+  palette class gets converted, and the test is the SITE, not the file you are editing.** A hue is
+  decoration when nothing else keys off it; it is categorical when the colour says _which one_ and
+  something elsewhere has to agree. Decoration moves to a bridge token; categorical colour stays
+  raw and gets its missing `dark:` half, because putting data categories on brand hues is the
+  data-viz rule below running backwards.
+  T-035 PR4 converted `deniz` and `deniz/kiyi-tipleri` (decoration — checked, nothing on those
+  pages encodes with those hues) and **deliberately did not convert** `/deprem`'s KAF/DAF/BAFS
+  legend **or `/deprem/fay-hatlari`'s strip**, whose three fault values are identifiers re-used on
+  each fault's own card from `lib/earthquake/fault-lines-data.ts`. Both belong to T-031c.
+  **An earlier round of that PR did convert the fay-hatlari strip**, on a written justification
+  that `grep borderClass` falsifies in one command, and shipped a teal DAF tile above a
+  blue-bordered DAF card. So: before converting, grep the repo for the hue, not just the file.
 - **`MapLegend` requires `bins` on the classed variant**, so an unlabelled classed legend
   cannot be built (data-viz rule 5 below).
 - **`MapAttribution` beside every map** is ODbL compliance, not house style.

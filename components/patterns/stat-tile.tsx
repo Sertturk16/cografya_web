@@ -5,12 +5,20 @@ import { MetricValue, type MetricValueProps } from "./metric-value";
 /**
  * Value colour, as a closed union over bridge tokens.
  *
- * It exists because the thirteen metric strips are NOT identical: five of them coloured a tile
- * with a RAW Tailwind palette class — `text-teal-600`, `text-cyan-600`, `text-red-600`,
- * `text-blue-600`, `text-emerald-600` — none of which has a `dark:` counterpart, so all five were
- * frozen at their light value on a night-sea background. That is the same class of defect as
- * `marine-attribution.module.css` shipping a licence notice at 2.34:1. A `className` passthrough
- * would have carried those five straight into the shared component; a union cannot.
+ * It exists because the thirteen metric strips are NOT identical: five tiles coloured their value
+ * with a RAW Tailwind palette class, none of which has a `dark:` counterpart, so all five were
+ * frozen at their light value on a night-sea background. A `className` passthrough would have
+ * carried them straight into the shared component; a union cannot.
+ *
+ * TWO of the five moved onto this union (`deniz`, `deniz/kiyi-tipleri` — decoration, nothing else
+ * on those pages encodes with those hues). THREE did not: `deprem/fay-hatlari`'s fault values are
+ * categorical identifiers that must agree with the fault cards on the same page, so that strip
+ * stays hand-rolled and belongs to T-031c. See Ruling BG in that file and `docs/design.md`.
+ *
+ * AND IT WAS NOT AN ACCESSIBILITY REPAIR. The value renders `text-2xl sm:text-3xl font-bold` —
+ * 24/30px bold, WCAG LARGE text, floor 3:1 — and all five already cleared it. The defect was that
+ * they did not follow the theme; the contrast gain is a consequence of fixing that, not the thing
+ * that was broken. Stated plainly because the opposite framing is easy to reach for and wrong.
  */
 const TONE = {
   /** The default. No hue — the tile states a fact, it does not classify one. */
@@ -29,7 +37,16 @@ interface StatTileBase {
   readonly hint?: string;
   readonly icon?: React.ReactNode;
   readonly tone?: StatTone;
-  readonly className?: string;
+  /**
+   * No escape hatch, for `StatGrid`'s and the `Card` variant branch's reason — and this component
+   * needs it more than either, because a re-spelled tile is INVISIBLE to every counter:
+   * `<StatTile className="rounded-3xl bg-muted/40 p-6" />` has no `bg-card` and no `border-border`,
+   * so `components/v2/page-composition.test.ts` files it as neither a card nor a well and the
+   * divergence this component exists to collapse comes back unmeasured. It was open through the
+   * first five commits with no consumer: `kitaplar`, the one site that wanted a per-tile hatch,
+   * took `columns="2"` on the grid instead, which is the same geometry by the honest route.
+   */
+  readonly className?: never;
 }
 
 /** A reading. Goes through `MetricValue`, so `absent` is required and `Intl` does the formatting. */

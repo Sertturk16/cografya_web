@@ -55,7 +55,11 @@ const CARD_ELEVATIONS = {
   xl: "shadow-xl",
 } as const;
 
-/** The rhythm, mirroring the measured `space-y-*` settings. `none` is 17 of the 77 adopted sites. */
+/**
+ * The rhythm, mirroring the measured `space-y-*` settings. Across the 77 adopted sites:
+ * `none` 30, `6` 14, `4` 13, `1` 12, `3` 5, `5` 3. (An earlier version of this line said `none`
+ * was 17; whole-branch review counted 30. Every other figure in this file reproduced.)
+ */
 const CARD_SPACE = {
   none: "",
   "1": "space-y-1",

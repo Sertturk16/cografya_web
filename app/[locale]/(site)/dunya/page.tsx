@@ -191,7 +191,8 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
             {/* Verified Metric Strip */}
             {/* The first tile is DATA — `countries.length` — so it takes the measurement
                 branch and `absent` becomes a compile-time question the page has to answer.
-                The other three are copy. */}
+                The other three are copy. No `> 0 ? … : null` guard — zero is a reading; see
+                `turkiye/page.tsx` for the one rule all four data-backed tiles in this PR share. */}
             <StatGrid gutter="hero">
               <StatTile
                 label="Ülke & Bölge"

@@ -179,10 +179,21 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
             />
 
             {/* Verified Metric Strip */}
-            {/* Two of these four are DATA — `provinces.length` and the summed district count
-                — so they take the measurement branch. The district total is the one that
-                matters: it is a `reduce` over an API payload, and the hand-written version
-                printed `0` for an empty summary with no way to tell that from a real zero. */}
+            {/* Two of these four are DATA — `provinces.length` and the summed district count —
+                so they take the measurement branch and `absent` becomes a compile-time question
+                the page has to answer.
+
+                ONE RULE FOR ALL FOUR DATA-BACKED TILES IN THIS PR, and it is `MetricValue`'s own
+                first doctrine: ZERO IS A READING. No tile converts a 0 into the absent state.
+                An earlier round guarded this one with `totalDistricts > 0 ? … : null`, which
+                turned a degraded summary's `0` into "İlçe sayısı yok" — a live copy change on a
+                page this PR claims not to change, and inconsistent with the two sibling tiles that
+                had no such guard. `absent` fires only when the value is genuinely `null`/
+                `undefined`/`NaN`, which for these sources means the build-time branch of
+                `get*Resilient()` (it returns `[]` only during `next build` with the API down, and
+                that page is deferred to on-demand ISR rather than served). So the copy below is
+                required, honest, and not reachable on a served page — which is the accepted cost
+                of making the decision compulsory, not a defect to paper over with a guard. */}
             <StatGrid gutter="hero">
               <StatTile
                 label="Mülki İdare Birimi"
@@ -194,7 +205,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
               <StatTile label="Coğrafi Bölüm & Havza" fact="7 Bölge" tone="secondary" />
               <StatTile
                 label="Toplam İlçe Sayısı"
-                value={totalDistricts > 0 ? totalDistricts : null}
+                value={totalDistricts}
                 tone="accent"
                 absent={{ label: "İlçe sayısı yok", hint: "Özet verisi gelmedi" }}
               />

@@ -140,22 +140,32 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
                 published any more).
 
                 The old comment here claimed "9 sibling metric strips". It was wrong, and it
-                was the evidence the whole adoption rested on: there are TWELVE, counted, plus
-                the inverted facts sheet on `kitaplar/[slug]`. All twelve now render
-                `StatGrid` + `StatTile`, so the claim this comment used to make by assertion is
-                made by the type instead.
+                was the evidence the whole adoption rested on: there are THIRTEEN, counted, plus
+                the inverted facts sheet on `kitaplar/[slug]`. TWELVE of the thirteen now render
+                `StatGrid` + `StatTile`; `deprem/fay-hatlari`'s is deliberately left hand-rolled
+                under Ruling BG, because its three fault values are colour-coded identifiers that
+                have to agree with the fault cards further down that page. So the claim this
+                comment used to make by assertion is now made by the type, and the one exception
+                is written down in the file that carries it.
 
                 `sm:col-span-2` on each surviving tile is what filled all four tracks evenly
                 with only two tiles. `StatGrid` has no per-tile escape hatch and `StatTile` has
                 no `className` worth spending one on, so this grid takes `columns="2"` — two
                 tracks at every width, which is the same rendering by the honest route. */}
             <StatGrid columns="2" gutter="hero">
+              {/* NO `books.length > 0 ? … : null`. An earlier round had one, and it was the
+                  clearest case against the whole idea: this page deliberately does NOT
+                  `notFound()` on an empty catalogue, so zero books is a LEGITIMATE READING, and
+                  rendering "Katalog boş / Yayın listesi gelmedi" over it invents a fetch failure
+                  that did not happen — T-024's defect with the sign flipped. `dev` printed
+                  "0 Kitap" and so does this. See `turkiye/page.tsx` for the rule all four
+                  data-backed tiles now share. */}
               <StatTile
                 label="Yayın Kataloğu"
-                value={books.length > 0 ? books.length : null}
+                value={books.length}
                 unit="Kitap"
                 tone="primary"
-                absent={{ label: "Katalog boş", hint: "Yayın listesi gelmedi" }}
+                absent={{ label: "Katalog okunamadı", hint: "Yayın listesi gelmedi" }}
               />
               <StatTile label="Müfredat Uyumu" fact="ÖSYM / MEB" tone="primary" />
             </StatGrid>

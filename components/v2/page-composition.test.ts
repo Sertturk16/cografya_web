@@ -2868,8 +2868,9 @@ describe("the PageHero tier switch", () => {
  * THE SURFACE THIS SECTION SCANS — wider than `PAGE_ROOTS` on purpose, and a THIRD walker rather
  * than a widening of either existing one.
  *
- * A card is not a page-level thing. 252 of the 409 elements counted below live under
- * `components/`, 157 under `app/[locale]/`; `components/v2/v2-member-hub.tsx` alone holds 29 and
+ * A card is not a page-level thing. The clear majority of the elements counted below live under
+ * `components/` rather than `app/[locale]/` (252 of 409 when this was written, before Tasks 5 and
+ * 6 removed 141 of them); `components/v2/v2-member-hub.tsx` alone holds 29 and
  * `components/v2/v2-tool-educational-content.tsx` 26, neither of them reachable by a `page.tsx`
  * scan. Widening `walkPages()` or `walkRenderRoots()` to reach them would move PR1/PR2/PR3's
  * pinned counters, which is the failure this file exists to prevent — so this is its own
@@ -3342,6 +3343,29 @@ function handDrawnTotals(): { cards: number; wells: number; files: number } {
   return { cards, wells, files: byFile.size };
 }
 
+/**
+ * How many DISTINCT spellings the hand-drawn population writes.
+ *
+ * Whole-branch review's M3: this figure lived only as prose in the docblock above ("239 distinct
+ * spellings"), so nothing in the suite would ever have noticed it drifting — in a file whose whole
+ * argument is that its numbers are measured rather than asserted. It is the figure that says
+ * whether the population is a long tail of one-offs (fine) or a handful of spellings carrying most
+ * of the occurrences (a variant waiting to be built), so it is the one most worth watching.
+ */
+function handDrawnSpellings(): number {
+  const spellings = new Set<string>();
+  for (const file of walkCardSurface()) {
+    for (const element of jsxElementsOf(file)) {
+      // `spelling` is nullable on a `ScannedElement` (an element with no className attribute).
+      // Such an element never satisfies `cardKind`, so the guard is belt-and-braces — but the
+      // alternative is a `!` that would silently start counting `null` as a spelling if the
+      // predicate ever widened.
+      if (cardKind(element) !== null && element.spelling !== null) spellings.add(element.spelling);
+    }
+  }
+  return spellings.size;
+}
+
 function handDrawnReport(pick: (counts: { cards: number; wells: number }) => number): string {
   return [...handDrawnByFile()]
     .map(([file, counts]) => [label(file), pick(counts)] as const)
@@ -3364,13 +3388,22 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * element written `cn("rounded-2xl bg-card", condition && "border-border")` is one card whose
  * spelling is the ordered join of its literal fragments.
  *
- * 409 elements across 68 files (239 distinct spellings) satisfy that predicate today, and that
- * single number hides two different design problems, so it is pinned as two:
+ * **363 elements across 60 files, at 238 distinct spellings**, satisfy that predicate today, and
+ * that single number hides two different design problems, so it is pinned as two:
  *
- * | population                                                      | n       |
- * | --------------------------------------------------------------- | ------- |
- * | {@link HAND_DRAWN_CARDS} — a real `bg-card` surface              | **241** |
- * | {@link HAND_DRAWN_WELLS} — no `bg-card`, qualifying via the edge | **168** |
+ * | population                                                      | n       | pinned by |
+ * | --------------------------------------------------------------- | ------- | --------- |
+ * | {@link HAND_DRAWN_CARDS} — a real `bg-card` surface              | **195** | its own `it` |
+ * | {@link HAND_DRAWN_WELLS} — no `bg-card`, qualifying via the edge | **168** | its own `it` |
+ * | files holding either                                             | **60**  | the disjointness `it` |
+ * | {@link HAND_DRAWN_CARD_SPELLINGS}                                | **238** | its own `it` |
+ *
+ * EVERY FIGURE IN THIS TABLE IS ASSERTED. Whole-branch review's M3 caught it reading 409/68/239
+ * with `HAND_DRAWN_CARDS` at 241 — a task out of date, three screens above the pin that said 191,
+ * in a file whose whole argument is that its numbers are measured. The spelling figure was the
+ * worst of it: prose in a docblock, pinned by nothing, so nothing would ever have noticed it
+ * drift. A stale headline above a correct pin is worse than no headline, so the rule now is that
+ * this table may only contain numbers something fails on.
  *
  * Of the 168: 124 are `bg-muted*`, 20 `bg-gradient-to-b`, 7 carry no background token at all, and
  * 17 carry something else (5 `bg-background`, 5 other gradient directions, 7 arbitrary map colours
@@ -3388,8 +3421,8 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * to: 181 of the 239 spellings occur exactly once, and a one-off panel written inline is not a
  * defect. What is a defect is a handful of spellings carrying a large share of the occurrences.
  * That was 21 spellings carrying 197 of 486 when Task 4 pinned these; Task 5 took 77 of them
- * (see below) and it is now 13 spellings carrying 126 of the 409, the largest being the Metric
- * Strip tile at 52 — which is Task 6's, not a `Card` variant's. That is what a variant is for,
+ * (see below) and Task 6 took 50 of the Metric Strip tile's 56, leaving that spelling at 6
+ * (`kitaplar/[slug]`'s facts sheet and `deprem/fay-hatlari`'s deliberately-unmigrated strip). That is what a variant is for,
  * and that is what these numbers are here to make visible when it lands.
  *
  * So: lower is progress, a rise is a regression that has to be argued for, and "0" is not the
@@ -3525,9 +3558,12 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *   - the `bg-muted/30` spelling of it — RED on `HAND_DRAWN_WELLS` (`expected 169 to be 168`)
  *     with `HAND_DRAWN_CARDS` unmoved at 191, so the split still splits after the −50.
  */
-export const HAND_DRAWN_CARDS = 191;
+export const HAND_DRAWN_CARDS = 195;
 
 export const HAND_DRAWN_WELLS = 168;
+
+/** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
+export const HAND_DRAWN_CARD_SPELLINGS = 238;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -4192,6 +4228,12 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     ).toBe(HAND_DRAWN_WELLS);
   });
 
+  it("the number of distinct spellings is exactly the recorded number", () => {
+    // M3: this was prose in a docblock and pinned by nothing. Now it is the docblock's headline
+    // and an assertion, so the two cannot disagree again.
+    expect(handDrawnSpellings()).toBe(HAND_DRAWN_CARD_SPELLINGS);
+  });
+
   it("the two populations are disjoint and cover the whole predicate", () => {
     // The split is the claim; this is what stops it drifting into two overlapping counters.
     let strict = 0;
@@ -4392,9 +4434,18 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  *   token) and a muted LABEL (an element whose classes include `text-muted-foreground`).
  *
  * That read **62 grids / 35 files / 159 tiles**, with **0** of them rendering `<StatTile>`. After
- * the metric-strip migration it reads **49 / 26 / 109**, with **13 files** rendering `<StatTile>`
+ * the metric-strip migration it reads **50 / 26 / 113**, with **12 files** rendering `<StatTile>`
  * and {@link STAT_GRIDS_TOTAL} UNMOVED at 62 — the two halves of the invariant below, measured
  * together as it requires.
+ *
+ * TWELVE strips, not thirteen. `deprem/fay-hatlari`'s was migrated and then taken back out under
+ * RULING BG: its three fault values are coloured `text-red-600`/`-blue-600`/`-emerald-600`, and
+ * those hues are FAULT IDENTIFIERS that the same page re-uses on each fault's own card from
+ * `lib/earthquake/fault-lines-data.ts`. Re-toning them onto bridge tokens severed a live
+ * correspondence — a teal DAF tile above a blue-bordered DAF card — and the comment justifying it
+ * asserted the opposite of what `grep borderClass` returns. It is categorical data encoding with
+ * a `dark:`-paired other half, so it belongs to T-031c beside `/deprem`'s legend, and the strip is
+ * deliberately left hand-rolled like `kitaplar/[slug]`'s inverted facts sheet.
  *
  * ## WHY ≥1 AND NOT ≥2 — A TILE TEMPLATE IS A TILE
  *
@@ -4557,17 +4608,17 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  * together, the file count failed first and the tile number — the figure the adoption tasks
  * actually drive — never printed.
  */
-export const STAT_GRIDS_WITHOUT_STATTILE = 49;
+export const STAT_GRIDS_WITHOUT_STATTILE = 50;
 
 export const STAT_GRID_FILES = 26;
 
-export const STAT_TILES_WITHOUT_STATTILE = 109;
+export const STAT_TILES_WITHOUT_STATTILE = 113;
 
 /**
  * The floor that is supposed to RISE. Zero for three tasks; 13 once the metric-strip family
  * landed. Stated beside the trio every time, because the trio falling on its own is a refactor.
  */
-export const SURFACE_FILES_RENDERING_STATTILE = 13;
+export const SURFACE_FILES_RENDERING_STATTILE = 12;
 
 /**
  * Every tile grid on the surface, migrated or not: {@link STAT_GRIDS_WITHOUT_STATTILE} plus the
@@ -4714,19 +4765,44 @@ function statGrids(): { file: string; tiles: number }[] {
  */
 const STAT_GRID_MODULE = join(repoRoot, "components/patterns/stat-grid.tsx");
 
+const STAT_TILE_MODULE = join(repoRoot, "components/patterns/stat-tile.tsx");
+
 /**
- * Does this binding lead to `stat-grid.tsx`'s `StatGrid`, through however many re-export hops?
+ * Does this binding lead to `module`'s `name`, through however many re-export hops?
  *
  * `seen` is a cycle guard: two barrels re-exporting each other is a legal thing to write and an
  * infinite walk otherwise. The depth cap is belt-and-braces on the same hazard.
+ *
+ * PARAMETERISED OVER THE TARGET because whole-branch review caught the obvious omission: Rulings
+ * BB and BF were applied to `StatGrid` and skipped for `StatTile` in the same commit, one line
+ * apart, and the previous round's own report named it "the same door one component over" without
+ * walking through it. Both directions were reachable for the tile — a local or barrelled
+ * `StatTile` counted a grid as migrated while rendering no tile (a phantom, which nets against a
+ * real removal, the hiding Ruling BB called unacceptable for the shell), and an aliased
+ * `import { StatTile as Tile }` dropped its grid out of the migrated bucket entirely.
  */
-function resolvesToStatGrid(node: RenderNode, seen: Set<string> = new Set()): boolean {
-  if (node.file === STAT_GRID_MODULE) return node.name === "StatGrid";
+function resolvesTo(
+  node: RenderNode,
+  module: string,
+  name: string,
+  seen: Set<string> = new Set(),
+): boolean {
+  if (node.file === module) return node.name === name;
   if (node.name === null) return false;
   const key = `${node.file}#${node.name}`;
   if (seen.has(key) || seen.size > 8) return false;
   seen.add(key);
-  return reexportTargetsOf(node.file, node.name).some((target) => resolvesToStatGrid(target, seen));
+  return reexportTargetsOf(node.file, node.name).some((target) =>
+    resolvesTo(target, module, name, seen),
+  );
+}
+
+const resolvesToStatGrid = (node: RenderNode) => resolvesTo(node, STAT_GRID_MODULE, "StatGrid");
+
+/** The tile half of the same rule, by binding rather than by tag. See {@link resolvesTo}. */
+function isStatTileElement(element: ScannedElement, bindings: Map<string, RenderNode>): boolean {
+  const bound = bindings.get(element.tag);
+  return bound !== undefined && resolvesTo(bound, STAT_TILE_MODULE, "StatTile");
 }
 
 function isGridShell(element: ScannedElement, bindings: Map<string, RenderNode>): boolean {
@@ -4739,6 +4815,7 @@ function isGridShell(element: ScannedElement, bindings: Map<string, RenderNode>)
 /** What a file that really imports `StatGrid` binds. The fixtures below pass it explicitly. */
 const STAT_GRID_BINDING: Map<string, RenderNode> = new Map([
   ["StatGrid", { file: STAT_GRID_MODULE, name: "StatGrid" }],
+  ["StatTile", { file: STAT_TILE_MODULE, name: "StatTile" }],
 ]);
 
 /**
@@ -4756,7 +4833,9 @@ function statGridsUsingStatTile(): { file: string; tiles: number }[] {
     const bindings = importBindingsOf(file);
     elements.forEach((element, index) => {
       if (!isGridShell(element, bindings)) return;
-      const tiles = elements[index]!.children.filter((i) => elements[i]!.tag === "StatTile");
+      const tiles = elements[index]!.children.filter((i) =>
+        isStatTileElement(elements[i]!, bindings),
+      );
       if (tiles.length > 0) grids.push({ file: label(file), tiles: tiles.length });
     });
   }
@@ -4860,7 +4939,7 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
       const hand = statGridTiles(elements, 0) === null ? 0 : 1;
       const uses =
         isGridShell(elements[0]!, STAT_GRID_BINDING) &&
-        elements[0]!.children.some((i) => elements[i]!.tag === "StatTile")
+        elements[0]!.children.some((i) => isStatTileElement(elements[i]!, STAT_GRID_BINDING))
           ? 1
           : 0;
       return { hand, uses, total: hand + uses };
@@ -4891,7 +4970,7 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
       const hand = statGridTiles(elements, 0) === null ? 0 : 1;
       const uses =
         isGridShell(elements[0]!, STAT_GRID_BINDING) &&
-        elements[0]!.children.some((i) => elements[i]!.tag === "StatTile")
+        elements[0]!.children.some((i) => isStatTileElement(elements[i]!, STAT_GRID_BINDING))
           ? 1
           : 0;
       return { hand, uses, total: hand + uses };
@@ -5004,6 +5083,71 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
     expect(resolvesToStatGrid({ file: outer, name: "StatGrid" })).toBe(false);
   });
 
+  /**
+   * The SAME two rulings, on the TILE. Whole-branch review's M4: `tag === "StatTile"` sat one line
+   * under `isGridShell` while that function was being taught to resolve a binding and chase
+   * re-exports, and the previous round's report named the gap without closing it.
+   *
+   * Both directions are asserted because both are reachable and they fail opposite ways: a
+   * phantom tile counts a grid as migrated that renders nothing (it ADDS, and nets against a real
+   * removal), while an unrecognised alias drops a real migrated grid out of the bucket (it
+   * SUBTRACTS, and reads as a lost grid).
+   */
+  it("a StatTile is resolved by binding too — phantom in, alias not out", () => {
+    const tile = scanJsx('<StatTile fact="1" label="x" />')[0]!;
+    const aliased = scanJsx('<Tile fact="1" label="x" />')[0]!;
+    const real = { file: STAT_TILE_MODULE, name: "StatTile" };
+
+    expect(isStatTileElement(tile, new Map([["StatTile", real]]))).toBe(true);
+    // Locally declared — the phantom. Not a tile.
+    expect(isStatTileElement(tile, new Map())).toBe(false);
+    // Same name, different module. Not a tile.
+    expect(
+      isStatTileElement(
+        tile,
+        new Map([
+          ["StatTile", { file: join(repoRoot, "components/v2/v2-hero.tsx"), name: "StatTile" }],
+        ]),
+      ),
+    ).toBe(false);
+    // A different export of the real module. Not a tile.
+    expect(
+      isStatTileElement(
+        tile,
+        new Map([["StatTile", { file: STAT_TILE_MODULE, name: "StatTone" }]]),
+      ),
+    ).toBe(false);
+    // ALIASED from the real module: still a tile.
+    expect(isStatTileElement(aliased, new Map([["Tile", real]]))).toBe(true);
+    // And through a barrel, with the same walk the shell uses.
+    const barrel = join(repoRoot, "components/patterns/empty-state.tsx");
+    expect(
+      withInjectedSource([[barrel, 'export { StatTile as Tile } from "./stat-tile";\n']], () =>
+        isStatTileElement(aliased, new Map([["Tile", { file: barrel, name: "Tile" }]])),
+      ),
+    ).toBe(true);
+  });
+
+  it("every product StatTile resolves to the real module — anti-vacuity for the rule above", () => {
+    // If `resolvesTo` started answering false for everything, the migrated bucket would empty and
+    // the TOTAL would fall — loudly, but only after someone re-pinned it. Assert the premise on
+    // the live surface: every `<StatTile>` element resolves, over a population that is really
+    // there. 46 today; the floor is 30 so that removing one strip (a legitimate thing a later
+    // task may do, as Ruling BG just did) does not trip an anti-vacuity guard, while a scan that
+    // has stopped seeing the surface still does.
+    let resolved = 0;
+    for (const file of walkCardSurface()) {
+      if (file === STAT_TILE_MODULE) continue;
+      const bindings = importBindingsOf(file);
+      for (const element of jsxElementsOf(file)) {
+        if (element.tag !== "StatTile") continue;
+        expect(isStatTileElement(element, bindings), `${label(file)} <StatTile>`).toBe(true);
+        resolved += 1;
+      }
+    }
+    expect(resolved).toBeGreaterThan(30);
+  });
+
   it("the direct binding still short-circuits without touching the re-export walk", () => {
     // The common path — 13 files import `StatGrid` directly — must not depend on `readSource`
     // being able to open anything. Asserted on a node that names a file with no source at all.
@@ -5030,7 +5174,10 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
     const primitive = join(repoRoot, "components/patterns/stat-tile.tsx");
     const consumers = walkCardSurface()
       .filter((file) => file !== primitive)
-      .filter((file) => jsxElementsOf(file).some((element) => element.tag === "StatTile"))
+      .filter((file) => {
+        const bindings = importBindingsOf(file);
+        return jsxElementsOf(file).some((element) => isStatTileElement(element, bindings));
+      })
       .map(label);
     expect(consumers, `files rendering <StatTile>:\n${consumers.join("\n")}`).toHaveLength(
       SURFACE_FILES_RENDERING_STATTILE,

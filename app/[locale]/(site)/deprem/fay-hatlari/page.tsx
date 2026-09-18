@@ -8,8 +8,6 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
-import { StatGrid } from "@/components/patterns/stat-grid";
-import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -117,41 +115,68 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             </PageHero>
 
             {/* Quick Metrics */}
-            {/* THE WORST OF THE FIVE. `text-red-600`, `text-blue-600` and `text-emerald-600`,
-                all frozen — identical hex in both themes — and the blue reads 5.25:1 on the
-                light card but 3.25:1 on the dark one, the lowest figure in the strip family.
+            {/* DELIBERATELY NOT MIGRATED — RULING BG. The other twelve metric strips render
+                `StatGrid` + `StatTile`; this one stays hand-rolled, for a reason of the same kind
+                that keeps `kitaplar/[slug]` out: it is not the same thing as the other strips.
 
-                They are not a legend HERE: nothing else on this page or its map draws KAF, DAF
-                or BAFS in those hues, so nothing is severed by re-toning them. What the hues DO
-                carry is three distinguishable fault systems, so the mapping keeps three distinct
-                ones rather than collapsing onto the sibling strips' rotation: red → destructive
-                (the hazard reading), blue → accent (the water teal, the coolest brand hue),
-                emerald → secondary (the olive, the only green).
+                Its first three values are coloured `text-red-600`, `text-blue-600` and
+                `text-emerald-600`, and those hues are FAULT IDENTIFIERS, not decoration. The same
+                page renders each fault's own card a few screens below from
+                `lib/earthquake/fault-lines-data.ts` — `borderClass` `border-red-500/40`,
+                `badgeClass` `bg-red-500/15 text-red-700 dark:text-red-300`, `accentColor`
+                `text-red-600 dark:text-red-400`, and the blue and emerald equivalents. The tile
+                colour says WHICH FAULT, and it has to agree with the card below it.
 
-                RULING BD — AND THE REAL LEGEND ONE ROUTE OVER MUST NOT FOLLOW.
-                `app/[locale]/(site)/deprem/page.tsx` carries a KAF/DAF/BAFS legend in
-                `text-red-700 dark:text-red-300` / `blue` / `emerald`, so after this change
-                /deprem says DAF-is-blue while this page renders DAF in accent-teal. That reads
-                like an unfinished job and it is not one. The two are different KINDS of colour:
+                An earlier round of this task re-toned these three onto `destructive` / `accent` /
+                `secondary` and justified it with the sentence "nothing else on this page or its map
+                draws KAF, DAF or BAFS in those hues". `grep borderClass` falsifies that in one
+                command. The result shipped a teal DAF tile above a blue-bordered DAF card.
 
-                  - THIS strip's hues were DECORATION on a value — three figures that happened to
-                    be tinted, with nothing keying off the tint, and no `dark:` pair, so they were
-                    frozen at their light appearance on a night-sea card. Decoration belongs on
-                    bridge tokens, and that is why it moved.
-                  - /deprem's legend is CATEGORICAL DATA ENCODING: the swatch IS the claim, and
-                    `docs/design.md` is explicit that brand tokens never encode data on maps and
-                    charts. Re-toning it would push three data categories onto three brand hues,
-                    which is the rule running the other way. It also already carries `dark:`
-                    pairs, so it is not frozen. It belongs to T-031c's categorical palette work.
+                Apply Ruling BD's own test and it decides the other way: the cards key off the tint
+                and DO carry `dark:` pairs, so these tiles are the frozen half of a categorical
+                pair. The correct fix is to give the tile hues their `dark:` counterparts alongside
+                the family in `fault-lines-data.ts` — one change, both halves, still categorical —
+                and that belongs to T-031c with the rest of the categorical palette, exactly like
+                `/deprem`'s KAF/DAF/BAFS legend. Re-toning these onto brand tokens would push three
+                data categories onto three brand hues, which is the data-viz rule running backwards.
 
-                So: do NOT "finish the job" by converting the legend. One moved because it was
-                decoration without a dark pair; the other stays because it is data with one. */}
-            <StatGrid gutter="hero">
-              <StatTile label="KAF Toplam Uzunluk" fact="1.200 km" tone="destructive" />
-              <StatTile label="DAF Toplam Uzunluk" fact="550 km" tone="accent" />
-              <StatTile label="BAFS Çöküntü Havzası" fact="8 Graben" tone="secondary" />
-              <StatTile label="Batıya Doğru Kaçış" fact="25 mm/yıl" tone="primary" />
-            </StatGrid>
+                So: the frozen colour here is real and is NOT fixed by this PR. Do not carry it
+                through `StatTile.tone` either — `components/ui/token-binding.test.ts` forbids raw
+                palette in `components/patterns` and is right to. */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-red-600 block">
+                  1.200 km
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  KAF Toplam Uzunluk
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-blue-600 block">
+                  550 km
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  DAF Toplam Uzunluk
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-emerald-600 block">
+                  8 Graben
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  BAFS Çöküntü Havzası
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
+                <span className="font-heading text-2xl sm:text-3xl font-bold text-primary block">
+                  25 mm/yıl
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Batıya Doğru Kaçış
+                </span>
+              </div>
+            </div>
           </Card>
         </div>
 
