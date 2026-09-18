@@ -64,7 +64,46 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   a bare `new Map()` cache fails `composition-scan.test.ts`.
 - Fixtures: `test/fixtures/{marine,books}`. Do not add network calls to tests.
 - Playwright is a library here, not a runner: no `playwright.config`, no e2e suite. Ad-hoc
-  audits live in `scripts/` and `tools/dev-fixtures/`; do not wire them into CI.
+  audits live in `scripts/` and `tools/dev-fixtures/`. One of them is not ad-hoc —
+  `pnpm sweep:overflow`, below — and it is still not in CI.
+
+## The overflow sweep (`pnpm sweep:overflow`)
+
+`scripts/sweep-overflow.mjs` asserts `documentElement.scrollWidth <= clientWidth` on one route
+per SHAPE, at 320/360/390/desktop, in light and dark, and exits non-zero naming the route, the
+viewport, the theme, the overflow in pixels and the offending element with its computed
+`min-width` / `flex-shrink` / `white-space`.
+
+It exists because every other tripwire in this repo counts SOURCE TEXT, and the defect class
+that keeps recurring is not in the JSX tree at any depth: the ECMWF licence notice overflowing
+at 320 (T-038), `climate.module.css`'s bare `min-width: 300px` (T-046), and a `shrink-0` badge
+row on seven region routes (T-046). Two CSS-Module declarations and a flex child's shrink
+behaviour — no scanner would ever have found them, and all three were caught by this
+comparison run by hand.
+
+- **Point it at a production server.** `pnpm build` then `pnpm start`, and
+  `pnpm sweep:overflow -- --base-url=http://localhost:3000`. A `pnpm dev` server works and
+  will usually be what you have, but it re-renders every navigation — so it is slower, it
+  holds the API open for the whole run (the recorded `ECONNRESET` flake), and it can serve a
+  404 for a route that exists after enough HMR. The sweep checks HTTP status for exactly that
+  reason; a `LOAD FAILURE` line is not a pass.
+- **Done means, for any task with a visible UI change:** `pnpm sweep:overflow` green, or the
+  filtered run covering the routes you touched (`-- --filter=turkiye`). Never widen the
+  tolerance to get there — a tolerance that hides a real overflow is worse than no sweep.
+- The route list is `lib/overflow-sweep/routes.ts`, and `routes.test.ts` holds it to two rules
+  in plain vitest: every entry is a live key of `routing.pathnames` (a renamed route must not
+  leave the sweep measuring 404s), and every surviving `*.module.css` is named by at least one
+  route (a new module must not arrive uncovered).
+- Report goes to `.tmp-scratch/overflow-sweep.json` as well as stdout. 22 URLs × 4 viewports ×
+  2 themes = 176 checks in **52s** against a production build (four browser contexts in
+  parallel; `-- --concurrency=1` for 198s and a stable order).
+- **It is not a CI job, and the reason is the API, not the 52s.** CI has no API on :3001, and
+  `lib/env.server.ts` makes a build with no API reachable degrade to on-demand ISR rather than
+  fail — so CI's `pnpm build` prerenders no data page (18s instead of 110s), and a server
+  started from it answers **HTTP 500 on 8 of the 22 URLs**, including `/turkiye/istanbul`,
+  `/dunya/almanya` and both book routes: every route the three recorded defects actually live
+  on. A fourth CI job would be permanently red, or green over the fourteen static pages that
+  were never where the bug was. Wire it up the day CI gets an API service container.
 
 ## Generated artifacts
 
