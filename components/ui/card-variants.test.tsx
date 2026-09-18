@@ -11,11 +11,11 @@ import { Card, cardVariants, type CardVariant } from "./card";
  * `docs/design.md` records the concrete risk this file exists for: `shadcn add` **overwrites**
  * files in the configured `ui` alias, and it asked to overwrite `button.tsx` during T-034. The
  * three surfaces below are not the CLI's card — they are the site's own card language, measured
- * off 76 real elements and adopted at all 76 (see `components/v2/page-composition.test.ts`, the
+ * off 77 real elements and adopted at all 77 (see `components/v2/page-composition.test.ts`, the
  * card section). An overwrite would restore the stock `rounded-xl ring-1 ring-foreground/10` card,
  * and **no other test in this repo would notice**: `page-composition.test.ts` excludes
  * `components/ui/**` from its walk, and the adopted sites would keep compiling and keep rendering
- * — in the wrong shape, on 28 files, in a diff nobody reviews because it touches one file.
+ * — in the wrong shape, on 29 files, in a diff nobody reviews because it touches one file.
  *
  * So the assertions are on the exact CLASS STRINGS, not on "a variant exists". A rewrite that
  * kept the prop names and changed the tokens is the same failure as a rewrite that deleted them.
@@ -73,7 +73,7 @@ describe("the Card variants survive a CLI overwrite", () => {
   );
 
   it("the elevation axis exists and overrides the default", () => {
-    // The axis is what let 16 panels (10 at `shadow-xs`, 6 at `shadow-xl`) be adopted without
+    // The axis is what let 17 panels (10 at `shadow-xs`, 7 at `shadow-xl`) be adopted without
     // inventing `panel-xs` and `panel-xl` as separate surfaces.
     expect(cardVariants({ variant: "panel", elevation: "xs" })).toContain("shadow-xs");
     expect(cardVariants({ variant: "panel", elevation: "xl" })).toContain("shadow-xl");

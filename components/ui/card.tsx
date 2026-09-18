@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
  * variant would have had zero consumers that are not strip tiles.
  */
 const CARD_SURFACES = {
-  /** The section panel: 54 measured occurrences, 51 of them adopted. */
+  /** The section panel: 54 measured occurrences, 52 of them adopted. */
   panel: "rounded-3xl border border-border bg-card p-6 sm:p-8",
   /** The translucent hero strip, over a page's own gradient band: 12 occurrences. */
   glass: "rounded-2xl border border-border bg-card/85 backdrop-blur-md p-4 sm:p-5",
@@ -55,7 +55,7 @@ const CARD_ELEVATIONS = {
   xl: "shadow-xl",
 } as const;
 
-/** The rhythm, mirroring the measured `space-y-*` settings. `none` is 17 of the 76 adopted sites. */
+/** The rhythm, mirroring the measured `space-y-*` settings. `none` is 17 of the 77 adopted sites. */
 const CARD_SPACE = {
   none: "",
   "1": "space-y-1",

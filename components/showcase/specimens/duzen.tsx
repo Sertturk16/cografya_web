@@ -65,7 +65,7 @@ const RHYTHMS = ["band", "tight", "default", "loose"] as const;
  * `glass`/`space="1"` all 12, `feature` with no rhythm all 13.
  */
 const CARD_SURFACE_SPECIMENS = [
-  ["panel", "4", "Bölüm paneli — 51 site."],
+  ["panel", "4", "Bölüm paneli — 52 site."],
   ["glass", "1", "Hero şeridi, kendi degrade bandının üstünde — 12 site."],
   ["feature", "none", "Hub hero levhası, PageHero'yu taşır — 13 site."],
 ] as const satisfies ReadonlyArray<readonly [CardVariant, CardSpace, string]>;

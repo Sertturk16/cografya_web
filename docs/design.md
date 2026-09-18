@@ -120,7 +120,7 @@ asked to overwrite `button.tsx` during T-034 and was declined. A hand-written co
 there is one CLI run away from being silently clobbered. Two files now carry hand-added variants
 and must survive a CLI run: `button.tsx` and `card.tsx`. Card's are guarded by
 `components/ui/card-variants.test.ts`, which asserts the exact class strings, because an overwrite
-would revert 76 adopted sites to the stock `rounded-xl ring-1` card and nothing else would see it.
+would revert 77 adopted sites to the stock `rounded-xl ring-1` card and nothing else would see it.
 
 `Card` has two forms. Without `variant` it is the CLI's card, `className` and all. With one it is
 the site's measured card language and `className` is `never`: `variant` (`panel` | `glass` |
