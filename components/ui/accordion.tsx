@@ -70,9 +70,17 @@ function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {
   );
 }
 
+/**
+ * `m-0` on the Header is load-bearing, not tidiness. `Accordion.Header` renders an `<h3>`, and
+ * `app/globals.css`'s base layer gives every `h1`–`h4` `margin: 0 0 0.5em` — so the moment this
+ * component started supplying the heading the document outline needs, every accordion item also
+ * gained ~8px of dead space between its trigger and its panel. The hand-rolled trigger this
+ * replaced was a bare `<button>` and never met that rule, which is why the margin arrived with
+ * the rebuild rather than having always been there.
+ */
 function AccordionTrigger({ className, children, ...props }: AccordionPrimitive.Trigger.Props) {
   return (
-    <AccordionPrimitive.Header data-slot="accordion-header" className="font-heading">
+    <AccordionPrimitive.Header data-slot="accordion-header" className="m-0 font-heading">
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
@@ -91,16 +99,46 @@ function AccordionTrigger({ className, children, ...props }: AccordionPrimitive.
   );
 }
 
-function AccordionContent({ className, ...props }: AccordionPrimitive.Panel.Props) {
+/**
+ * THE PADDING IS ON AN INNER `<div>`, NOT ON THE PANEL, and that is a layout fix rather than a
+ * stylistic preference.
+ *
+ * `Accordion.Panel` is the element Base UI hides, and it is hidden two different ways over the
+ * life of one page. The server ships `hidden=""` — the boolean, whose UA rule is
+ * `display: none`, so the element has no box and its padding costs nothing. A layout effect then
+ * upgrades it to `hidden="until-found"`, whose UA rule is `content-visibility: hidden`: that
+ * skips the element's CONTENTS but keeps its own box, so padding written on the panel becomes a
+ * strip of blank space on every closed item the moment the page hydrates — and a layout shift as
+ * it appears. Eight closed items on `/deniz` is eight of them.
+ *
+ * So the panel carries only what must be on the hidden element (the animated height and its
+ * `overflow-hidden`), and everything with a size — padding, type, colour — sits on a wrapper
+ * inside it. That is also the shape Base UI's own accordion example uses, and the reason it does.
+ *
+ * A caller's `className` lands on the INNER element for the same reason: it is the visible box.
+ *
+ * The transition is Base UI's documented one: `h-[var(--accordion-panel-height)]` with
+ * `data-starting-style:h-0` / `data-ending-style:h-0`, which animates between 0 and the measured
+ * height without either end being hard-coded. `prefers-reduced-motion: reduce` disables it with
+ * every other transition, globally, in `app/globals.css` (`docs/design.md`).
+ */
+function AccordionContent({ className, children, ...props }: AccordionPrimitive.Panel.Props) {
   return (
     <AccordionPrimitive.Panel
       data-slot="accordion-content"
-      className={cn(
-        "px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-muted-foreground leading-relaxed",
-        className,
-      )}
+      className="h-[var(--accordion-panel-height)] overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0"
       {...props}
-    />
+    >
+      <div
+        data-slot="accordion-content-inner"
+        className={cn(
+          "px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-muted-foreground leading-relaxed",
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </AccordionPrimitive.Panel>
   );
 }
 

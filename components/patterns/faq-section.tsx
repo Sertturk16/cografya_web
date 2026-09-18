@@ -94,6 +94,9 @@ export function FaqSection(props: FaqSectionProps) {
   // classes of its own, so the arms' order decided whether this component counted as a FAQ block
   // at all. That was a property of the scanner, not of this component, and T-035 PR5 fixed it
   // there: any read in any arm now qualifies the block. Nothing here depends on the order.
+  // The accordion's `value` is the QUESTION, not the index: `value` is what Base UI tracks a
+  // panel's open state by, so a reordered or filtered list keeps each panel attached to its own
+  // question instead of to the slot it happened to sit in.
   const entries = items.map((item, index) =>
     mechanism === "list" ? (
       /* THE PRIMITIVE, not a hand-drawn card. All four live item spellings draw their own surface
@@ -116,7 +119,7 @@ export function FaqSection(props: FaqSectionProps) {
       /* The accordion carries no classes of its own: `components/ui/accordion.tsx` owns the look,
          its `AccordionTrigger` supplies the `<h3>` through `Accordion.Header`, and its panel keeps
          a closed answer in the document so this branch can honestly carry the same schema. */
-      <AccordionItem key={index} value={String(index)}>
+      <AccordionItem key={index} value={item.question}>
         <AccordionTrigger>{item.question}</AccordionTrigger>
         <AccordionContent>{item.answer}</AccordionContent>
       </AccordionItem>

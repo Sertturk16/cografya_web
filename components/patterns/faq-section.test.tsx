@@ -24,6 +24,10 @@ describe("FaqSection", () => {
     expect(html).toContain('id="sss"');
     expect(html).toContain("aria-labelledby");
     expect(html).toContain("scroll-mt-28");
+    // The focus target, named in the component's docblock alongside the anchor and the scroll
+    // offset: a quicknav link to `#sss` must land focus on the section, not merely scroll past it.
+    // Two of the six blocks this replaces had the anchor and not this.
+    expect(html).toContain('tabindex="-1"');
   });
 
   it("renders no structured data unless asked", () => {
@@ -71,6 +75,12 @@ describe("FaqSection", () => {
    * remembers to pass. `components/patterns/breadcrumbs.tsx` carries the same gate for the same
    * reason: a per-page flag is precisely what left 24 pages showing a trail to a reader and
    * nothing to a crawler.
+   *
+   * There is no positive `en` counterpart, and that is a property of the tree rather than an
+   * omission: `lib/seo/indexing.ts` gates every surface's English half on `EN_CONTENT_READY`,
+   * which is `false`, so NO surface is indexable in `en` today. A passing `en` case could only be
+   * written by flipping that production flag from inside a test, which would assert against a
+   * tree that does not exist. `lib/seo/indexing.test.ts` owns the flag's own behaviour.
    */
   it("emits no structured data for a locale the surface is not indexable in", () => {
     const html = renderToStaticMarkup(
@@ -120,18 +130,5 @@ describe("FaqSection", () => {
       );
       expect(html, mechanism).not.toContain("zz-evil");
     }
-  });
-
-  it("forces no client boundary on its consumers, and cannot be rendered from one", async () => {
-    const { readFileSync } = await import("node:fs");
-    const { fileURLToPath } = await import("node:url");
-    const source = readFileSync(
-      fileURLToPath(new URL("./faq-section.tsx", import.meta.url)),
-      "utf8",
-    );
-    // It imports `lib/seo/json-ld` (`server-only`), so a `"use client"` here would break
-    // `pnpm build` for every consumer — `components/patterns/rsc-boundary.test.ts` is the
-    // whole-tree form of this check; this is the local one, on the file that must never grow one.
-    expect(source.trimStart().startsWith('"use client"')).toBe(false);
   });
 });

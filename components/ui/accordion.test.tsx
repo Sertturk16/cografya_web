@@ -27,9 +27,9 @@ import {
 const OPEN_BODY = "Acik panelin govdesi.";
 const CLOSED_BODY = "Kapali panelin govdesi.";
 
-function markup() {
+function markup(open: readonly string[] = ["open"]) {
   return renderToStaticMarkup(
-    <Accordion defaultValue={["open"]}>
+    <Accordion defaultValue={open.length === 0 ? undefined : [...open]}>
       <AccordionItem value="open">
         <AccordionTrigger>Acik soru?</AccordionTrigger>
         <AccordionContent>{OPEN_BODY}</AccordionContent>
@@ -42,11 +42,21 @@ function markup() {
   );
 }
 
-/** The opening tag of the element that directly wraps `text` — i.e. the panel's own `<div`. */
-function openTagBefore(html: string, text: string): string {
+/**
+ * The opening tag of the element carrying `slot` that most closely precedes `text`.
+ *
+ * Two slots matter here and they are two different elements: `accordion-content` is the PANEL,
+ * the element Base UI hides, and `accordion-content-inner` is the wrapper that holds the padding.
+ * Matching on the slot with its closing quote keeps `accordion-content` from also matching
+ * `accordion-content-inner`.
+ */
+function tagBefore(html: string, text: string, slot: string): string {
   const upTo = html.slice(0, html.indexOf(text));
-  return upTo.slice(upTo.lastIndexOf("<div"));
+  const at = upTo.lastIndexOf(`data-slot="${slot}"`);
+  return upTo.slice(upTo.lastIndexOf("<div", at), upTo.indexOf(">", at) + 1);
 }
+
+const HIDDEN_ATTR = /\shidden=/;
 
 describe("Accordion", () => {
   it("keeps a closed panel's text in the server-rendered HTML", () => {
@@ -60,14 +70,54 @@ describe("Accordion", () => {
     // `\shidden=` and not `toContain("hidden")`: the item wrapper carries `data-hidden` and the
     // class list carries `overflow-hidden`, either of which would satisfy a substring check on a
     // component that had dropped the panel entirely.
-    const HIDDEN_ATTR = /\shidden=/;
-    expect(openTagBefore(html, CLOSED_BODY)).toMatch(HIDDEN_ATTR);
+    expect(tagBefore(html, CLOSED_BODY, "accordion-content")).toMatch(HIDDEN_ATTR);
     // And the OPEN one is not hidden: without this the assertion above would pass on a
     // component that hid every panel unconditionally.
-    expect(openTagBefore(html, OPEN_BODY)).not.toMatch(HIDDEN_ATTR);
+    expect(tagBefore(html, OPEN_BODY, "accordion-content")).not.toMatch(HIDDEN_ATTR);
+  });
+
+  it("keeps every panel closed when no defaultValue is given", () => {
+    const html = markup([]);
+    // Both bodies still ship — the whole point — and both panels are hidden.
+    expect(html).toContain(OPEN_BODY);
+    expect(html).toContain(CLOSED_BODY);
+    expect(tagBefore(html, OPEN_BODY, "accordion-content")).toMatch(HIDDEN_ATTR);
+    expect(tagBefore(html, CLOSED_BODY, "accordion-content")).toMatch(HIDDEN_ATTR);
+    // Zero open: `data-open` marks an open item, and the all-closed default must produce none.
+    // This is the shape every live caller uses — `/deniz`'s eight items open nothing by default.
+    expect(html.match(/data-open=""/g)).toBeNull();
+    expect(html.match(/data-closed=""/g)).toHaveLength(6);
   });
 
   it("gives every trigger a heading, so the questions reach the document outline", () => {
     expect(markup().match(/<h3/g)).toHaveLength(2);
+  });
+
+  /**
+   * THE HIDDEN ELEMENT'S OWN BOX MUST BE EMPTY, and this is the assertion that says why.
+   *
+   * `hidden=""` and `hidden="until-found"` are not the same hiding. The boolean resolves to
+   * `display: none` — no box, so padding on the element costs nothing. `until-found` resolves to
+   * `content-visibility: hidden`, which skips the element's CONTENTS but keeps its own box: any
+   * padding written on the panel becomes a visible strip on every closed item, appearing at
+   * hydration as the attribute is upgraded. Since the server renders the boolean and the client
+   * renders `until-found`, that defect is invisible in SSR output and invisible in a static
+   * review — it only shows up in a browser, after hydration, as blank space and a layout shift.
+   *
+   * So the panel carries the animated height and nothing with a size, and the padding lives on
+   * the inner wrapper. Measured on `/deniz` after the fix: eight closed panels, all
+   * `hidden="until-found"`, all 0px tall.
+   */
+  it("puts no padding on the panel Base UI hides, only on the wrapper inside it", () => {
+    const html = markup();
+    const panel = tagBefore(html, CLOSED_BODY, "accordion-content");
+    expect(panel, "a padding utility on the hidden panel").not.toMatch(/\sp[xybtlre]?-\d/);
+    expect(panel, "the animated height belongs on the panel").toContain("--accordion-panel-height");
+    const inner = tagBefore(html, CLOSED_BODY, "accordion-content-inner");
+    expect(inner).toContain("px-4");
+    expect(inner).toContain("pb-4");
+    expect(inner, "the wrapper is inside the hidden element, never hidden itself").not.toMatch(
+      HIDDEN_ATTR,
+    );
   });
 });
