@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
-import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
+import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2LoginCard } from "@/components/v2/v2-login-card";
@@ -48,7 +48,7 @@ export default async function V2LoginPage({ params }: V2LoginPageProps) {
       <V2LiveTicker />
 
       <PageContainer>
-        <Breadcrumbs items={breadcrumbItems} locale={locale} surface="noindex" />
+        <Breadcrumbs items={breadcrumbItems} locale={locale} surface={AUTH_SURFACE} />
 
         {/* The page's own heading. `V2LoginCard`'s standalone header starts at `<h2>`
             (`v2-login-card.tsx:169`) and this page had NO `<h1>` at all, so a screen-reader user

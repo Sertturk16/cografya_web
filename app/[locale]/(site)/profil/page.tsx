@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Home, AlertCircle, RefreshCw, GraduationCap } from "lucide-react";
 import { Link, getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { buildAuthMetadata } from "@/lib/auth/auth-metadata";
+import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { readProfileForPage } from "@/lib/profile/profile.server";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
@@ -56,7 +56,7 @@ export default async function V2ProfilePage({ params }: V2ProfilePageProps) {
       <V2LiveTicker />
 
       <PageContainer space="tight">
-        <Breadcrumbs items={breadcrumbItems} locale={locale} surface="noindex" />
+        <Breadcrumbs items={breadcrumbItems} locale={locale} surface={AUTH_SURFACE} />
 
         {/* Main Content Area */}
         <div>

@@ -4,6 +4,14 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { TOOLS_SURFACE } from "@/lib/tools/tool-registry";
 import { AUTH_SURFACE } from "@/lib/auth/auth-metadata";
+import { stripComments } from "@/lib/test-support/strip-comments";
+import {
+  declarationRegions,
+  importBindingsOf,
+  jsxElementsOf,
+  readSource,
+  withInjectedSource,
+} from "@/lib/test-support/composition-scan";
 
 /**
  * A PAGE IN THE SITEMAP IS NOT `noindex`, AND IT CARRIES THE SURFACE ITS ROW WAS BUILT WITH.
@@ -74,11 +82,19 @@ const PAGE_FOR: Record<string, string> = {
   "/deprem/hazirlik": "app/[locale]/(site)/deprem/hazirlik/page.tsx",
 };
 
+/** Every `ContentSurface` the tree writes — one list, used by the spread pin and the resolver. */
+const KNOWN_SURFACES = ["localized", "noindex", "trNarrative", "trOnly"] as const;
+
 /**
  * The surface a page file declares: the literal in its `buildMetadata` call, the tool tier's
  * shared constant, or — when it passes none — `buildMetadata`'s own default.
+ *
+ * COMMENTS ARE STRIPPED FIRST (`docs/conventions.md`). A docblock explaining why a page is
+ * `surface: "noindex"` is prose that satisfies the pattern, and this function's answer feeds the
+ * pair check below, where a wrong answer reads as agreement rather than as a parse failure.
  */
-const declaredSurface = (source: string): string => {
+const declaredSurface = (raw: string): string => {
+  const source = stripComments(raw);
   const literal = /surface: "([^"]+)"/.exec(source);
   if (literal !== null) return literal[1]!;
   if (/surface: TOOLS_SURFACE/.test(source)) return TOOLS_SURFACE;
@@ -192,7 +208,7 @@ describe("every indexable page is advertised somewhere", () => {
     // the assertion below would demand a sitemap row for all thirty-nine — loud, but for the
     // wrong reason. Pinning the spread keeps the parser honest.
     const bySurface = new Set(pages.map((page) => page.surface));
-    expect([...bySurface].sort()).toEqual(["localized", "noindex", "trNarrative", "trOnly"]);
+    expect([...bySurface].sort()).toEqual([...KNOWN_SURFACES].sort());
   });
 
   it("has a sitemap row, a dynamic tier, or a noindex surface — never nothing", () => {
@@ -211,5 +227,190 @@ describe("every indexable page is advertised somewhere", () => {
     const real = new Set(pages.map((page) => page.pathname));
     const phantom = Object.keys(DYNAMIC_TIERS).filter((pathname) => !real.has(pathname));
     expect(phantom, "DYNAMIC_TIERS names a route that does not exist").toEqual([]);
+  });
+});
+
+/* -------------------------------------------------------------------------------------------
+ * THE SECOND PLACE A PAGE TYPES ITS SURFACE
+ * ---------------------------------------------------------------------------------------- */
+
+/**
+ * A PAGE'S `buildMetadata` SURFACE AND ITS BREADCRUMB SURFACE ARE THE SAME SURFACE.
+ *
+ * ## What was unguarded
+ *
+ * Everything above reads `surface: "…"` — the object property. The same value is typed a SECOND
+ * time on the same page as a JSX prop, `<Breadcrumbs … surface="…">`, and nothing compared the
+ * two. `components/patterns/breadcrumbs.tsx` said so in its own docblock and offered the only
+ * assurance available at the time: the pairs "were checked by hand at review time". A hand check
+ * is a measurement, not a guarantee — it says nothing about the next page.
+ *
+ * The consequence of a disagreement is not cosmetic. `Breadcrumbs` computes `isIndexable` from
+ * the surface it is handed, so a page whose metadata says `noindex` and whose breadcrumb says
+ * `trOnly` emits BreadcrumbList JSON-LD for a URL it has asked crawlers to drop — structured
+ * data advertising a page that de-indexes itself, the same contradiction the sitemap half of
+ * this file exists to catch, one argument over.
+ *
+ * ## Derived, not listed
+ *
+ * The population is every `page.tsx` under `app/[locale]/(site)`. A page with no `<Breadcrumbs>`
+ * has no pair and drops out by derivation: the three `(play)` game screens live outside the
+ * walk (their trail is rendered by `V2GameScreen`, which takes no surface), and `(site)/page.tsx`
+ * is inside it and simply renders no trail. Neither is written down as an exemption, so neither
+ * can quietly cover a page that grows one.
+ *
+ * ## The constant is resolved, not compared as text
+ *
+ * `araclar/**` writes `TOOLS_SURFACE` on both sides and the seven auth pages write `AUTH_SURFACE`
+ * on the JSX side against a `buildAuthMetadata()` call with no literal at all on the other. A
+ * text comparison would read those as disagreements and the cheapest green would be to stop
+ * checking them — so an identifier is resolved through `composition-scan.ts`'s binding resolver
+ * (import clause → declaration region → the string it initialises) and the RESOLVED values are
+ * compared. {@link surfaceOfToken} refuses to invent one: a token that resolves to nothing outside
+ * {@link KNOWN_SURFACES} fails the suite rather than comparing equal to itself.
+ */
+const SITE_ROOT = join(ROUTE_ROOT, "(site)");
+
+const sitePages = walkPages(SITE_ROOT).sort();
+
+const relative = (file: string) => file.slice(fileURLToPath(repoRoot).length);
+
+/**
+ * An identifier resolved to the string it names, or the token itself when it names nothing.
+ *
+ * Both hops are `composition-scan.ts`'s, so this is the same resolver the composition counters
+ * walk imports with — not a second one written here, which is the shape T-045 exists to prevent.
+ */
+const surfaceOfToken = (file: string, token: string): string => {
+  const binding = importBindingsOf(file).get(token);
+  const target = binding?.name != null ? binding : { file, name: token };
+  const region = declarationRegions(target.file).get(target.name!);
+  if (region === undefined) return token;
+  const initialiser = /=\s*"([^"]*)"/.exec(readSource(target.file).slice(region[0], region[1]));
+  return initialiser === null ? token : initialiser[1]!;
+};
+
+type SurfacePair = { readonly file: string; readonly jsx: string; readonly metadata: string };
+
+/**
+ * Every place a `(site)` page writes a breadcrumb surface beside a metadata surface.
+ *
+ * TWO SPELLINGS, because the tree has two. Most pages render `<Breadcrumbs surface={…}>`; the four
+ * `deniz/{akdeniz,ege,karadeniz,marmara}` pages cannot — their view is a Client Component — and
+ * call `breadcrumbListSchema(items, locale, …)` instead, which takes the identical surface as its
+ * third POSITIONAL argument. Reading only the JSX prop would leave those four unguarded while this
+ * docblock claimed otherwise.
+ *
+ * Read through `readSource`/`jsxElementsOf` rather than `readFileSync` so the injection harness
+ * can put a disagreeing page in front of it — see the control below.
+ */
+const SCHEMA_CALL = /breadcrumbListSchema\([^()]*,\s*([A-Za-z0-9_$]+|"[^"]*")\s*\)/g;
+
+const pairsIn = (file: string): SurfacePair[] => {
+  const source = readSource(file);
+  const metadata = declaredSurface(source);
+  const jsxProps = jsxElementsOf(file)
+    .filter((element) => element.tag === "Breadcrumbs")
+    .map((element) => element.attributes.get("surface"));
+  const schemaArgs = [...source.matchAll(SCHEMA_CALL)].map((match) => match[1]!.replace(/"/g, ""));
+  return [...jsxProps, ...schemaArgs].map((token) => ({
+    file,
+    jsx: token === undefined ? "(no surface prop)" : surfaceOfToken(file, token),
+    metadata,
+  }));
+};
+
+const pairs = sitePages.flatMap(pairsIn);
+
+/**
+ * MEASURED, not predicted — 29 `<Breadcrumbs>` props plus 4 `breadcrumbListSchema` arguments over
+ * the 34 `(site)` pages, leaving `(site)/page.tsx` as the only one declaring no breadcrumb surface.
+ *
+ * The plan said 33 and `breadcrumbs.tsx` said 37. 37 was the page COUNT (it still is, and three of
+ * those are `(play)`); 33 subtracted the three `(play)` screens and the home page from it and
+ * assumed every remaining page renders `<Breadcrumbs>`. Four do not — the `deniz` basin pages go
+ * through `breadcrumbListSchema` — so the JSX-prop figure is 29 and the total is 33 only because
+ * the four come back in through the other spelling.
+ */
+const BREADCRUMB_SURFACE_PAIRS = 29;
+const SCHEMA_SURFACE_PAIRS = 4;
+
+describe("the page's metadata surface and its breadcrumb surface", () => {
+  it("found both spellings on a derived page list, and nothing else", () => {
+    expect(sitePages.length, "page.tsx files under app/[locale]/(site)").toBeGreaterThan(30);
+    const jsx = sitePages.flatMap((file) =>
+      jsxElementsOf(file).filter((element) => element.tag === "Breadcrumbs"),
+    );
+    expect(jsx.length, "<Breadcrumbs> elements").toBe(BREADCRUMB_SURFACE_PAIRS);
+    expect(pairs.length - jsx.length, "breadcrumbListSchema call sites").toBe(SCHEMA_SURFACE_PAIRS);
+  });
+
+  it("leaves exactly one (site) page declaring no breadcrumb surface", () => {
+    // The derivation, stated as the identity it is: every reading page carries a trail, so a page
+    // with no pair is news. `(play)` is not listed as an exemption — it is outside the walk.
+    const silent = sitePages.filter((file) => pairsIn(file).length === 0).map(relative);
+    expect(silent, "a (site) page that declares no breadcrumb surface").toEqual([
+      "app/[locale]/(site)/page.tsx",
+    ]);
+  });
+
+  it("never reads a surface it cannot classify", () => {
+    // Anti-vacuity. An unresolved identifier would compare equal to itself on both sides of a
+    // pair and pass forever; here it fails on the token.
+    const known: readonly string[] = KNOWN_SURFACES;
+    const unknown = pairs
+      .filter((pair) => !known.includes(pair.jsx))
+      .map((pair) => `${relative(pair.file)}: ${pair.jsx}`);
+    expect(unknown, "breadcrumb surface that is not a ContentSurface").toEqual([]);
+  });
+
+  it("hands the head and the trail the SAME surface", () => {
+    const disagreeing = pairs
+      .filter((pair) => pair.jsx !== pair.metadata)
+      .map((pair) => `${relative(pair.file)}: breadcrumb ${pair.jsx} vs metadata ${pair.metadata}`);
+    expect(disagreeing, "a page whose breadcrumb and metadata surfaces disagree").toEqual([]);
+  });
+
+  it("resolves a constant instead of comparing its name — the mixed-spelling control", () => {
+    // The live mixed case, and the reason text comparison is not an option: the auth pages write
+    // an identifier on one side and nothing at all on the other, and they agree.
+    const auth = join(SITE_ROOT, "giris/page.tsx");
+    const crumb = jsxElementsOf(auth).find((element) => element.tag === "Breadcrumbs");
+    expect(crumb?.attributes.get("surface")).toBe("AUTH_SURFACE");
+    expect(surfaceOfToken(auth, "AUTH_SURFACE")).toBe(AUTH_SURFACE);
+    expect(surfaceOfToken(join(SITE_ROOT, "araclar/page.tsx"), "TOOLS_SURFACE")).toBe(
+      TOOLS_SURFACE,
+    );
+    // A bare literal is not an identifier that names anything, and comes back untouched.
+    expect(surfaceOfToken(auth, "trOnly")).toBe("trOnly");
+  });
+
+  it("goes RED when the two sides disagree — the liveness control", () => {
+    // Derived victim, not a named one: the first page in the walk, mutated on its JSX side only
+    // so the metadata side still says what it said. `docs/conventions.md`: an assertion that has
+    // never failed has not been shown to work.
+    const victim = sitePages.find((file) =>
+      jsxElementsOf(file).some((element) => element.tag === "Breadcrumbs"),
+    )!;
+    const before = pairsIn(victim)[0]!;
+    const replacement = before.metadata === "noindex" ? "localized" : "noindex";
+    // The element's own span, not a regex over the tag: a `<Home …/>` icon written inside the
+    // `items` prop is a `<` between `<Breadcrumbs` and `surface=`, which is enough to defeat one.
+    const element = jsxElementsOf(victim).find((item) => item.tag === "Breadcrumbs")!;
+    const token = element.attributes.get("surface")!;
+    const source = readSource(victim);
+    const tag = source.slice(element.start, element.end);
+    const written = tag.includes(`surface={${token}}`)
+      ? `surface={${token}}`
+      : `surface="${token}"`;
+    expect(tag, "the surface attribute must be found before it can be mutated").toContain(written);
+    const mutated =
+      source.slice(0, element.start) +
+      tag.replace(written, `surface="${replacement}"`) +
+      source.slice(element.end);
+    expect(mutated, "the mutation must actually change the page").not.toBe(source);
+    const after = withInjectedSource([[victim, mutated]], () => pairsIn(victim));
+    expect(after[0]!.jsx).toBe(replacement);
+    expect(after.filter((pair) => pair.jsx !== pair.metadata)).not.toEqual([]);
   });
 });
