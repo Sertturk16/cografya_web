@@ -145,7 +145,10 @@ export function VeriSpecimens() {
         name="StatTile — fact kanalı ve tone"
         description="Şeritlerin taşıdığı değerlerin çoğu sayı değil: 'WGS84', 'Haversine', 'M 1.0 - 7.0+'. Bunlar için fact kanalı var — MetricValue'ya hiç uğramaz, çünkü value'yu string'e açmak T-024'ün imkânsız kıldığı şeyi (bir tire ya da sıfırı ölçüm gibi basmayı) geri getirirdi. Renk kapalı bir tone birleşimiyle geliyor: beş şerit ham Tailwind palet sınıfları taşıyordu ve hiçbirinin karanlık modda karşılığı yoktu."
       >
-        <StatGrid gap="tight">
+        {/* `columns="2"`, not the strips' `2-4`: ThemePair renders two half-width panes, so a
+            four-across grid gives each tile ~100px here and clips a `text-3xl` value. The real
+            pages give the strip the full page width — measured down to 320px. */}
+        <StatGrid columns="2" gap="tight">
           <StatTile label="Küresel Elipsoid Modeli" fact="WGS84" tone="primary" />
           <StatTile label="Büyük Daire Eğrilik Hesabı" fact="Haversine" tone="secondary" />
           <StatTile label="Morfogenetik Çeşitlilik" fact="6 Kıyı Tipi" tone="accent" />
@@ -157,6 +160,7 @@ export function VeriSpecimens() {
         name="StatGrid"
         description="Yalnızca duyarlı ızgara kabuğu — sütunlar, boşluk ve üstteki ayrım. className yok: PageContainer ile aynı gerekçe, geçirgen bir prop dağınıklığı tekrar içeri alır ve sayaçlar kaynak yazımını okuduğu için bunu göremez."
       >
+        {/* Short values, so the six-across spelling is legible even at pane width. */}
         <StatGrid columns="2-3-6" gap="tight">
           <StatTile label="İl" fact="81" tone="primary" />
           <StatTile label="Bölge" fact="7" tone="secondary" />
