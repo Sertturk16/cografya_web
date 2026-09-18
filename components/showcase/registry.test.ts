@@ -89,6 +89,14 @@ describe("showcase coverage", () => {
    * imperative `toast()` call that raises one, and `typography.tsx` is a module of several
    * small components with no single wrapper. Named here so the rule stays strict; a guess
    * dressed up as a convention would just move the blind spot.
+   *
+   * A needle beginning with `<` is a JSX TAG and is matched with {@link rendersJsxTag}, not with
+   * `String.includes` — the same prefix collision that rule was written for, one door along.
+   * `"<H1Display".includes("<H1")` is `true`, so once `typography.tsx` grew a second heading tier
+   * (T-035 PR3) a specimen rendering only `<H1Display` would have satisfied the `"<H1"` needle and
+   * the hub tier could have gone unrendered with this green. Not live — `duzen.tsx` renders both —
+   * and closed here rather than left as a note, because the collision arrived with this branch.
+   * `sonner`'s needles are call expressions rather than tags and keep plain substring matching.
    */
   const SYMBOL_OVERRIDES: Readonly<Record<string, readonly string[]>> = {
     sonner: ["toast.success(", "toast.info(", "toast.error("],
@@ -125,6 +133,19 @@ describe("showcase coverage", () => {
   it("the tag-boundary matcher rejects a prefix collision — regression control", () => {
     // The exact shape of the bug this closes: `<BreadcrumbsNav` must NOT satisfy `Breadcrumbs`.
     expect(rendersJsxTag("<BreadcrumbsNav items={x} />", "Breadcrumbs")).toBe(false);
+    // And the pair this repo actually grew: `<H1Display` must NOT satisfy the `"<H1"` override.
+    // `"<H1Display".includes("<H1")` is `true`, which is why the override needles are matched with
+    // this rule rather than with `String.includes`.
+    expect(rendersJsxTag("<H1Display>x</H1Display>", "H1")).toBe(false);
+    expect(rendersJsxTag("<H1>x</H1>", "H1")).toBe(true);
+  });
+
+  it("both typography heading tiers are rendered by a specimen, not just the prefix", () => {
+    // The override list carries `"<H1"` only, and `H1Display` is a separate exported tier with its
+    // own `<h1>` spelling — `components/v2/page-composition.test.ts` pins both. A specimen
+    // rendering neither would leave the showcase claiming to demonstrate a module it does not.
+    expect(rendersJsxTag(SPECIMENS, "H1")).toBe(true);
+    expect(rendersJsxTag(SPECIMENS, "H1Display")).toBe(true);
   });
 
   it("the tag-boundary matcher accepts every real boundary a tag can end on", () => {
@@ -138,7 +159,12 @@ describe("showcase coverage", () => {
     (name) => {
       const overrides = SYMBOL_OVERRIDES[name];
       const found = overrides
-        ? overrides.some((needle) => SPECIMENS.includes(needle))
+        ? overrides.some((needle) =>
+            // A tag needle gets the boundary rule; a call-expression needle stays a substring.
+            needle.startsWith("<")
+              ? rendersJsxTag(SPECIMENS, needle.slice(1))
+              : SPECIMENS.includes(needle),
+          )
         : rendersJsxTag(SPECIMENS, pascal(name));
       expect(
         found,

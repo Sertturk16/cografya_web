@@ -33,8 +33,14 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
 - Fluid scale in `app/globals.css`'s base layer: h1 `clamp(1.9rem, 1.2rem + 2.6vw, 2.6rem)`,
   h2 `clamp(1.4rem, 1rem + 1.4vw, 1.8rem)`. Use Tailwind sizes on the page but keep the same
   hierarchy: one `h1` per page, headings in document order.
-- The page `h1` has exactly TWO tiers, both in `components/patterns/typography.tsx`, and a third
-  spelling is a defect. `H1` is the hub tier, 14 of the 17 heroes —
+- A HERO `h1` has exactly TWO tiers, both in `components/patterns/typography.tsx`; a third HERO
+  spelling is a defect. The site as a whole ships more, and they are named and justified one by one
+  in `components/v2/page-composition.test.ts` (`H1_SPELLINGS`, pinned exact): the two tiers, two
+  deliberate non-tiers — the shared `(site)/error.tsx` + `not-found.tsx` shell spelling, and the
+  `sr-only` heading on the three `(play)` game screens — and nine pre-existing spellings on pages
+  no adoption has reached yet. An ADDITIONAL spelling that is not named there is the defect; a shell
+  or a hidden heading is not a hero and must not be converged onto a hero tier without a decision.
+  `H1` is the hub tier, 14 of the 17 heroes —
   `font-heading text-[1.9rem] sm:text-5xl font-bold tracking-tight text-primary leading-tight`.
   `H1Display` is the detail tier (one province, one country, one sea) —
   `font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground`.
@@ -42,6 +48,10 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
   is not negotiable and `text-3xl` is 0.4px under it; an arbitrary size carries no paired
   line-height, so `leading-tight` is load-bearing. `PageHero` renders the tier plus the measured
   hero shape (badges, h1, notice, lede, tail).
+- Retuning `H1` to the hub tier is a VISIBLE change to `/hakkimizda`, the one page outside the 17
+  heroes that renders `<H1>` directly: its heading becomes terracotta and grows 6.4px on desktop.
+  Recorded here because that page is not covered by the hero adoption and the change is easy to
+  make again by accident.
 
 ## Dark mode — "Night Sea"
 

@@ -711,6 +711,16 @@ describe("the breadcrumb owner exemptions", () => {
  * PR3 — the page heading. Three counters, pinned at what the scanner below actually found.
  * ---------------------------------------------------------------------------------------- */
 
+/*
+ * EVIDENCE LIVES HERE, NOT IN A `task-*.md`. The mutation checks below state what was mutated, what
+ * the assertion printed, and that reverting went green — inline. The task reports those checks were
+ * originally run in live under `.superpowers/sdd/`, whose `.gitignore` is `*`, so `git ls-files`
+ * returns nothing for them: on a fresh clone every such citation resolves to no file at all. That
+ * is the `ENGINEERING.md §N` pattern the workspace `CLAUDE.md` tells us not to recreate, and it is
+ * worse here than there, because these citations were the evidence for the branch's headline
+ * numbers rather than background rationale.
+ */
+
 /**
  * THE RENDER GRAPH. A heading is credited to a render root only where it is RENDERED, never
  * merely where its module is reachable.
@@ -1304,13 +1314,39 @@ function h1OccurrencesOf(file: string): readonly H1Occurrence[] {
 /** A single `<h1>` element in the tree: the file that writes it and its ordinal within that file. */
 type H1Site = { readonly key: string; readonly file: string; readonly spelling: string };
 
+/** A node's identity in the walk: file plus declaration, `*whole*` for a whole-module node. */
+function nodeKey(node: RenderNode): string {
+  return `${node.file}::${node.name ?? "*whole*"}`;
+}
+
+/**
+ * How one node reached another. `jsx` is a component NAME written as an element in the parent's
+ * span — a render. `forward` is the walk chasing a bare `export default X` or an
+ * `export { X } from "…"` re-export, which renders nothing itself and merely relays.
+ *
+ * The distinction exists for {@link tierPrimitiveWriters}: the file that WRITES `<H1>` is the one
+ * at the tail of a `jsx` edge, and any `forward` edges after it are plumbing, not a second render.
+ */
+type RenderEdge = (from: RenderNode, to: RenderNode, kind: "jsx" | "forward") => void;
+
 /**
  * Every `<h1>` element a render root actually RENDERS, found by walking the render graph described
  * above. The `key` is `file#ordinal`, so one element reached from four pages stays one element.
+ *
+ * `onEdge` reports every edge the walk traverses, at the moment it traverses it. It exists so that
+ * a caller needing PROVENANCE — which file rendered a given element — reads the walk's own
+ * resolution instead of re-deriving it. A parallel resolver is exactly what review found wrong in
+ * the first Ruling Z fix: it was weaker than this walk (no `as` aliases, no re-exports), and a
+ * resolver weaker than the walk it explains hides the cases the walk can see.
  */
-function h1SitesOf(root: string, onVisit?: (node: RenderNode) => void): H1Site[] {
-  // The memo is bypassed when a caller wants the traversal itself (`renderNodesVisited`).
-  const memo = onVisit ? undefined : sitesCache.get(root);
+function h1SitesOf(
+  root: string,
+  onVisit?: (node: RenderNode) => void,
+  onEdge?: RenderEdge,
+): H1Site[] {
+  // The memo is bypassed when a caller wants the traversal itself (`renderNodesVisited`) or its
+  // edges (`tierPrimitiveWriters`) — neither is reconstructible from the returned site list.
+  const memo = onVisit || onEdge ? undefined : sitesCache.get(root);
   if (memo) return memo;
   const sites = new Map<string, H1Site>();
   const visited = new Set<string>();
@@ -1326,14 +1362,17 @@ function h1SitesOf(root: string, onVisit?: (node: RenderNode) => void): H1Site[]
 
   while (queue.length > 0) {
     const node = queue.shift()!;
-    const visitKey = `${node.file}::${node.name ?? "*whole*"}`;
+    const visitKey = nodeKey(node);
     if (visited.has(visitKey)) continue;
     visited.add(visitKey);
     onVisit?.(node);
 
     const span = nodeSpan(node);
     if (span.kind === "forward") {
-      queue.push(...span.nodes);
+      for (const next of span.nodes) {
+        onEdge?.(node, next, "forward");
+        queue.push(next);
+      }
       continue;
     }
     const { from, to } = span;
@@ -1353,8 +1392,17 @@ function h1SitesOf(root: string, onVisit?: (node: RenderNode) => void): H1Site[]
     for (const match of masked.matchAll(JSX_ELEMENT)) {
       const tag = match[1]!;
       const imported = bindings.get(tag);
-      if (imported) queue.push(imported);
-      else if (locals.has(tag)) queue.push({ file: node.file, name: tag });
+      // `importBindingsOf` has already folded `as` aliases away, so `<Heading>` from
+      // `import { H1 as Heading }` resolves to `{ typography.tsx, H1 }` here — the reason
+      // provenance has to be read off THIS edge rather than off the tag's spelling.
+      if (imported) {
+        onEdge?.(node, imported, "jsx");
+        queue.push(imported);
+      } else if (locals.has(tag)) {
+        const local = { file: node.file, name: tag };
+        onEdge?.(node, local, "jsx");
+        queue.push(local);
+      }
     }
     // Dynamic imports are followed only from a NAMED node's span, never from a whole-file one.
     // `const Heavy = dynamic(() => import("…"))` is reached because `<Heavy>` is rendered, which
@@ -1365,13 +1413,18 @@ function h1SitesOf(root: string, onVisit?: (node: RenderNode) => void): H1Site[]
       for (const match of slice.matchAll(DYNAMIC_IMPORT)) {
         if (!masked.startsWith("import", match.index)) continue; // inside a string literal
         const target = resolveSpecifier(node.file, match[1]!);
-        if (target !== null) queue.push({ file: target, name: "default" });
+        if (target !== null) {
+          const lazy = { file: target, name: "default" };
+          // A `jsx` edge: `<Heavy/>` IS the render, the `dynamic()` call only names the module.
+          onEdge?.(node, lazy, "jsx");
+          queue.push(lazy);
+        }
       }
     }
   }
 
   const result = [...sites.values()];
-  if (!onVisit) sitesCache.set(root, result);
+  if (!onVisit && !onEdge) sitesCache.set(root, result);
   return result;
 }
 
@@ -1505,34 +1558,82 @@ const TIER_SWITCH = {
 const tierWriterCache = new Map<string, string[]>();
 
 /**
- * Every file in `root`'s render closure that writes `<H1>` or `<H1Display>` as JSX, where the name
- * really binds to `typography.tsx`.
+ * Every file in `root`'s render closure that RENDERS one of the two tier primitives.
  *
  * This is the provenance {@link effectiveH1Sites} needs and that a set of site KEYS cannot carry:
  * two different renders of the same element are one key but two writers. A page reaching the tiers
  * only through `PageHero` yields exactly `["components/patterns/page-hero.tsx"]`.
  *
- * Resolved through {@link importBindingsOf} rather than matched on the bare name, so a local
- * component that happens to be called `H1` is not mistaken for the tier primitive.
+ * ## READ OFF THE WALK'S OWN EDGES, NOT RE-DERIVED (Ruling AB)
+ *
+ * The first version compared the JSX TAG'S SPELLING to `TIER_SWITCH.tierNames` and used
+ * `importBindingsOf` only to reject a local shadow. That is strictly weaker than the walk it
+ * exists to explain, and review reproduced the gap twice on the real tree with the whole suite
+ * green — a page rendering `PageHero` plus either
+ *
+ *   - `import { H1 as Heading }` + `<Heading>`, or
+ *   - `import { H1 }` from a module that re-exports `./typography`,
+ *
+ * yielded `writers = ["page-hero.tsx"]`, so the collapse fired and a page shipping TWO `<h1>` read
+ * as one. The walk resolves both of those correctly — `importBindingsOf` folds `as` aliases away
+ * (so the tag may be spelled anything) and `nodeSpan` chases re-exports through
+ * `reexportTargetsOf`. Comparing spellings could never see either.
+ *
+ * Both failures are one edit from live. `/hakkimizda` is named below as the obvious next adoption,
+ * and an alias is the NATURAL way to write that import once `PageHero` is also imported; and
+ * `reexportTargetsOf` is deliberately kept alive against the day a heading component is
+ * barrel-exported — on that day a spelling comparison is the mechanism that hides it.
+ *
+ * So provenance is now read from {@link h1SitesOf}'s own `onEdge` stream. A file is a tier writer
+ * when it sits at the tail of a `jsx` edge whose head reaches a tier declaration through zero or
+ * more `forward` edges. `forward` edges are excluded from the tail because a re-export barrel
+ * relays a component, it does not render one. By construction this cannot drift from the walk: it
+ * IS the walk's resolution, not a copy of it.
+ *
+ * Still correctly EXCLUDED, both verified: a local `function H1()` in the page (it resolves to
+ * that page's own declaration, not to `typography.tsx`, and its own `<h1>` is a third site that
+ * keeps the page an offender anyway), and a component that legitimately renders both tiers (it is
+ * recorded as a second writer, so the collapse does not fire).
  */
 function tierPrimitiveWriters(root: string): string[] {
   const hit = tierWriterCache.get(root);
   if (hit) return hit;
 
-  const writers = new Set<string>();
   const tierModulePath = join(repoRoot, TIER_SWITCH.tierModule);
-  h1SitesOf(root, (node) => {
-    const span = nodeSpan(node);
-    if (span.kind !== "span") return;
-    const text = maskedSource(node.file).slice(span.from, span.to);
-    const bindings = importBindingsOf(node.file);
-    for (const match of text.matchAll(JSX_ELEMENT)) {
-      const tag = match[1]!;
-      if (!(TIER_SWITCH.tierNames as readonly string[]).includes(tag)) continue;
-      const binding = bindings.get(tag);
-      if (binding && binding.file === tierModulePath) writers.add(label(node.file));
-    }
+  const isTier = (node: RenderNode) =>
+    node.file === tierModulePath &&
+    node.name !== null &&
+    (TIER_SWITCH.tierNames as readonly string[]).includes(node.name);
+
+  const jsxEdges: Array<{ fromFile: string; toKey: string; toIsTier: boolean }> = [];
+  /** `forward` edges, head-key → tail-keys, so a relay chain can be walked backwards. */
+  const forwardedBy = new Map<string, string[]>();
+  const tierKeys = new Set<string>();
+
+  h1SitesOf(root, undefined, (from, to, kind) => {
+    const toKey = nodeKey(to);
+    if (isTier(to)) tierKeys.add(toKey);
+    if (kind === "jsx") jsxEdges.push({ fromFile: label(from.file), toKey, toIsTier: isTier(to) });
+    else forwardedBy.set(toKey, [...(forwardedBy.get(toKey) ?? []), nodeKey(from)]);
   });
+
+  // Every node key that RELAYS to a tier declaration: the tier nodes themselves, plus anything
+  // that forwards (transitively) to one. A `jsx` edge landing on any of these is a real render.
+  const relaysToTier = new Set(tierKeys);
+  const pending = [...tierKeys];
+  while (pending.length > 0) {
+    const key = pending.shift()!;
+    for (const tail of forwardedBy.get(key) ?? []) {
+      if (relaysToTier.has(tail)) continue;
+      relaysToTier.add(tail);
+      pending.push(tail);
+    }
+  }
+
+  const writers = new Set<string>();
+  for (const edge of jsxEdges) {
+    if (edge.toIsTier || relaysToTier.has(edge.toKey)) writers.add(edge.fromFile);
+  }
 
   const result = [...writers].sort();
   tierWriterCache.set(root, result);
@@ -1647,7 +1748,7 @@ function pagesWithMultipleH1(): string[] {
  *   2. A COMPUTED HEADING LEVEL. `const Tag = level === 1 ? "h1" : "h2"; return <Tag …>` renders
  *      an `h1` whose source contains no `<h1` at all. So does `React.createElement("h1", …)` and
  *      any `as`/`asChild`-style level prop. `components/ui/*` primitives that take a heading level
- *      as a prop would land here. None of the 32 elements found today is of this shape — every one
+ *      as a prop would land here. None of the 17 elements found today is of this shape — every one
  *      is a literal `<h1` — but nothing below would notice the first one that is.
  *
  *   3. A className ASSEMBLED FROM VARIABLES. {@link classNameOfTag} reads the LITERAL parts of an
@@ -1664,14 +1765,31 @@ function pagesWithMultipleH1(): string[] {
  *      render necessarily produces. No live `<h1>` is of that second shape today.
  *
  *   4. WHICH BRANCH ACTUALLY RENDERS. This is a REACHABILITY count, not an occurrence count, and
- *      `PAGES_WITH_MULTIPLE_H1` is where that bites. `/profil` is the only render root reaching
- *      two, and its two `<h1>`s are MUTUALLY EXCLUSIVE at runtime (`accountRole === "TEACHER"` vs
- *      `=== "STUDENT"`, both verified in the source — see `MULTIPLE_H1_EXEMPTIONS` above for the
- *      line-by-line reading). The rendered DOM carries exactly one. The scan sees two, because it
- *      cannot evaluate a condition, so the difference is recorded as a NAMED EXEMPTION with a
- *      liveness check rather than folded into the number: a page that genuinely ships two `<h1>`s
- *      in one DOM and a page that merely holds two branches look identical from here, and the
- *      exemption is where a human tells them apart once. Any OTHER page reaching two goes red.
+ *      `PAGES_WITH_MULTIPLE_H1` is where that bites — HARD. **23 of the 39 render roots reach two
+ *      `<h1>` sites** on today's tree. Not one: 23. A page that genuinely ships two headings and a
+ *      page that merely holds two branches look identical from here, so every one of those 23 is
+ *      reconciled by a named mechanism rather than by the counter, and there are TWO of them:
+ *
+ *        · 22 roots reach BOTH heading tiers because they render `PageHero`, whose
+ *          `tier === "hub" ? <H1> : <H1Display>` the walk cannot evaluate. Reconciled by
+ *          {@link TIER_SWITCH} / {@link effectiveH1Sites} — see that block for the mechanism, its
+ *          six checks, and the provenance keying that stops it collapsing a page which reaches a
+ *          tier by a SECOND path. This is by far the largest reachability-vs-render gap on the
+ *          surface and it governs 56% of the roots; a reader who takes
+ *          `PAGES_WITH_MULTIPLE_H1 = 0` to rest on one named exemption has the wrong picture.
+ *        · 1 root, `/profil`, reaches two DIFFERENT headings on mutually exclusive `accountRole`
+ *          branches (`=== "TEACHER"` vs `=== "STUDENT"`, both verified in the source — see
+ *          `MULTIPLE_H1_EXEMPTIONS` above for the line-by-line reading). Reconciled by that named
+ *          exemption with its own liveness check.
+ *
+ *      WHAT EACH WOULD HIDE IF IT WERE WRONG. The exemption would hide exactly one page shipping
+ *      two headings. The collapse would hide one heading on any of the 22 — and, before the
+ *      provenance keying, did exactly that for a page that rendered `PageHero` plus a tier
+ *      primitive of its own. That is the failure this file exists to prevent, arriving through the
+ *      mechanism built to prevent it, which is why the collapse carries six checks and four
+ *      injected second-render shapes rather than a docblock. Any root reaching two that neither
+ *      mechanism accounts for still goes red.
+ *
  *      The mirror of this is `PAGES_WITHOUT_H1`: a page with a conditionally-rendered heading that
  *      is absent on every real request still counts as HAVING one.
  *
@@ -1762,7 +1880,7 @@ function pagesWithMultipleH1(): string[] {
  * MUTATION-CHECKED 2026-09-18 AT THIS VALUE, not at the 12 it was first pinned to, and re-checked
  * after the render-graph rebuild rather than carried over: a fourteenth spelling introduced on
  * `app/[locale]/(site)/araclar/page.tsx` takes it RED with the spelling AND its file printed;
- * reverted, GREEN. See `task-1-report.md` for the verbatim output of all three rounds.
+ * reverted, GREEN.
  *
  * TASK 3 (2026-09-18) moved the 14 hub heroes onto `PageHero tier="hub"`, deleting all 14 of their
  * literal `<h1>`s: 13 → **12**. The spelling they carried
@@ -1777,21 +1895,33 @@ function pagesWithMultipleH1(): string[] {
  * Then 12 → **13**, because the same task gave the three `(play)/oyun/*` screens the heading they
  * never had, and `sr-only` is a thirteenth spelling.
  *
- * THE NUMBER DID NOT FALL, AND THE ACCOUNTING IS −2 / +2, NOT −1 / +1. An earlier wording here read
- * "the adoption removed one spelling and the a11y fix added one", which nets correctly and tells
- * the wrong story. Two rows LEFT — the 14× hub page literal and the 3× detail page literal, both
- * written by pages that now render a component instead — and two rows ARRIVED —
- * `typography.tsx#1` (`H1Display`, which nothing rendered before) and `v2-game-screen.tsx`'s
- * `sr-only`. 13 − 2 + 2 = 13. What actually moved is {@link H1_ELEMENTS}, 32 → 17, which is why the
- * two are pinned separately.
+ * THE NUMBER DID NOT FALL, AND THE ACCOUNTING IS −1 / +1. Exactly one row LEFT — the 14× hub page
+ * literal, whose spelling no element carries any more — and exactly one ARRIVED,
+ * `v2-game-screen.tsx`'s `sr-only`. The other two moves cost this counter nothing and are the
+ * reason it is easy to miscount: `typography.tsx#0` was ALREADY in the map, from `/hakkimizda`, so
+ * the hub tier did not arrive; and the detail literal never LEFT the map, because `H1Display`'s
+ * spelling is byte-identical to the one the three detail pages wrote, so that row only changed
+ * owner from three page elements to one `typography.tsx#1` element. 13 − 1 + 1 = 13.
+ *
+ * A fix round briefly rewrote this as −2 / +2 on review feedback; a later review checked the three
+ * detail pages at `a2b3d61` against `typography.tsx`'s `H1Display` byte for byte and showed −1 / +1
+ * was right, and that −2 / +2 contradicted the paragraph six lines above. Recorded so the same
+ * correction is not made a third time. What actually moved is {@link H1_ELEMENTS}, 32 → 17, which is
+ * why the two are pinned separately.
  *
  * ## THE THIRTEEN, EACH ONE NAMED
  *
  * TWO TIERS — the ruled end state, this counter's floor, never 1:
- *   1. `…text-[1.9rem] sm:text-5xl font-bold …text-primary…`  `typography.tsx#0`, the hub tier,
- *      rendered by 16 render roots (14 hub heroes + `giris` + `kayit`) and `/hakkimizda`.
- *   2. `…text-4xl sm:text-6xl font-extrabold …text-foreground` `typography.tsx#1`, the detail tier,
- *      rendered by the three detail heroes.
+ *   1. `…text-[1.9rem] sm:text-5xl font-bold …text-primary…`  `typography.tsx#0`, the hub tier.
+ *      REACHED BY 23 RENDER ROOTS — the 22 that render `PageHero` (either tier reaches both, see
+ *      {@link TIER_SWITCH}) plus `/hakkimizda`, which renders `<H1>` directly. Counting hero CALL
+ *      SITES instead gives 16 and is wrong twice over: it misses the four `deniz/*` basin pages
+ *      behind one call site, and it misses the three detail roots that reach this element through
+ *      the same unevaluable ternary. "Reaches" is not "renders", which is the distinction this
+ *      whole file exists to keep, so it is not one to be loose about here of all places.
+ *   2. `…text-4xl sm:text-6xl font-extrabold …text-foreground` `typography.tsx#1`, the detail tier.
+ *      REACHED BY 22 RENDER ROOTS — every `PageHero` adopter, for the same reason. RENDERED by the
+ *      three detail heroes; the other 19 reach it and render the hub tier instead.
  *
  * TWO DELIBERATE NON-TIERS — decided in this task, not left over:
  *   3. `font-heading text-3xl font-bold text-foreground` — `(site)/error.tsx` and
@@ -1831,8 +1961,13 @@ function pagesWithMultipleH1(): string[] {
  *  13. `text-xl font-bold tracking-tight text-foreground` ×2 — `profil` and `v2-profile-form`, the
  *      two branches of the `MULTIPLE_H1_EXEMPTIONS` entry below; card headings, not heroes.
  *
- * MUTATION-CHECKED 2026-09-18 AT 13, not carried over from 12 or from the original 13 — see
- * `task-3-report.md` for the verbatim output.
+ * MUTATION-CHECKED 2026-09-18 AT 13, not carried over from 12 nor from the original 13. A
+ * fourteenth spelling (`<h1 className="zz-fourteenth-spelling">`) added to
+ * `app/[locale]/(site)/turkiye/page.tsx` — a `PageHero` adopter, so the mutation lands inside the
+ * collapse's reach — takes this RED naming the spelling and the file
+ * (`1x zz-fourteenth-spelling / app/[locale]/(site)/turkiye/page.tsx`), takes {@link H1_ELEMENTS}
+ * RED at 18, and takes {@link PAGES_WITH_MULTIPLE_H1} RED too, which is the property the collapse
+ * must not destroy. Reverted: GREEN.
  */
 export const H1_SPELLINGS = 13;
 
@@ -1889,8 +2024,8 @@ export const H1_ELEMENTS = 17;
  * survive this number finally moving.
  *
  * MUTATION-CHECKED 2026-09-18 at this value, including once on `(site)/not-found.tsx` — a file the
- * pre-Ruling-F walk could not see — and re-checked after the render-graph rebuild. See
- * `task-1-report.md`.
+ * pre-Ruling-F walk could not see — and re-checked after the render-graph rebuild: deleting a
+ * render root's heading takes this RED and prints that root's path.
  *
  * TASK 3 (2026-09-18): 5 → **0**. Each of the five was decided on its own evidence, and the SEO
  * half of the argument turned out not to apply to ANY of them — all five are `noindex` in both
@@ -1920,7 +2055,10 @@ export const H1_ELEMENTS = 17;
  * reader with no level-1 heading.
  *
  * RE-MUTATION-CHECKED 2026-09-18 AT 0 — a zero target that has never failed has not been shown to
- * work, the doctrine `PAGE_BODY_SPELLINGS` records. See `task-3-report.md`.
+ * work, the doctrine `PAGE_BODY_SPELLINGS` records. Turning `v2-game-screen.tsx`'s `sr-only`
+ * `<h1>` into a `<p>` takes this RED and names all three `(play)` screens
+ * (`oyun/81-il`, `oyun/bolge-bolge-il/[bolge]`, `oyun/bolge-bulma`) — one component, three roots,
+ * which is also the proof the three share it. Reverted: GREEN.
  */
 export const PAGES_WITHOUT_H1 = 0;
 
@@ -1928,14 +2066,33 @@ export const PAGES_WITHOUT_H1 = 0;
  * NON-EXEMPT render roots whose closure holds more than one `<h1>` element. Measured 2026-09-18:
  * **0**.
  *
- * Exactly one render root reaches two — `app/[locale]/(site)/profil/page.tsx` — and it is a NAMED
- * EXEMPTION (`MULTIPLE_H1_EXEMPTIONS` above), not a defect: its two headings sit on mutually
- * exclusive `accountRole` branches, read line by line out of the source there, so the rendered DOM
- * carries one. Pinning at 0 rather than at 1 is what makes the counter mean "no page ships two
- * headings" instead of "the number of pages that happen to contain two `<h1>` literals" — and the
- * exemption's own liveness test is what stops that reasoning outliving the code it describes.
+ * **23 OF THE 39 RENDER ROOTS REACH TWO `<h1>` SITES.** The zero is what is left after two named
+ * mechanisms reconcile them, and stating it as "one exemption" — as this docblock and SCOPE note 4
+ * both did until review measured it — describes a tree that stopped existing when `PageHero` was
+ * adopted:
  *
- * MUTATION-CHECKED 2026-09-18 at this value — see `task-1-report.md`.
+ *   · **22 roots** reach both heading TIERS because they render `PageHero`, and the walk cannot
+ *     evaluate its `tier` prop. Reconciled by {@link TIER_SWITCH} / {@link effectiveH1Sites}: the
+ *     13 hub `page.tsx` files, the four `deniz/*` basin pages served by one call site in
+ *     `v2-sea-basin-detail-view.tsx`, the three detail pages, `giris` and `kayit`. Six dedicated
+ *     checks, including four injected second-render shapes and a positive control that the
+ *     collapse still fires on an ordinary page.
+ *   · **1 root**, `app/[locale]/(site)/profil/page.tsx`, reaches two DIFFERENT headings on mutually
+ *     exclusive `accountRole` branches, read line by line out of the source in
+ *     `MULTIPLE_H1_EXEMPTIONS` above, so the rendered DOM carries one. Reconciled by that named
+ *     exemption and its liveness check.
+ *
+ * Pinning at 0 rather than at 23 is what makes the counter mean "no page ships two headings"
+ * instead of "the number of pages that happen to reach two `<h1>` literals" — and the two
+ * mechanisms' own tests are what stop that reasoning outliving the code it describes. What each
+ * would hide if it were wrong is spelled out in SCOPE note 4.
+ *
+ * RE-MUTATION-CHECKED 2026-09-18 AT 0 AGAINST THE CURRENT MECHANISM. The earlier citation pointed
+ * at Task 1's check, which predates `PageHero` and therefore ran on a tree where the collapse did
+ * not exist — evidence for a different counter. Redone here: a second `<h1>` added to
+ * `turkiye/page.tsx` (a `PageHero` adopter, i.e. inside the collapse's reach) takes this RED,
+ * naming the page and both sites; reverted, GREEN. The collapse is separately mutation-checked in
+ * its own describe block, in both directions and in all four second-render spellings.
  */
 export const PAGES_WITH_MULTIPLE_H1 = 0;
 
@@ -2477,37 +2634,109 @@ describe("the PageHero tier switch", () => {
     ).toEqual([...TIER_SWITCH.tierNames]);
   });
 
-  it("does NOT collapse when a page reaches a tier primitive by a second path — Ruling Z", () => {
-    // THE HOLE THIS KEYING CLOSES. `h1SitesOf` keys by `file#ordinal`, so a page rendering
-    // `PageHero` AND a tier primitive directly still holds exactly `{#0, #1}` — under a
-    // presence-only collapse it read as ONE heading while shipping TWO. `/hakkimizda` renders
-    // `<H1>` directly today and is the obvious next adoption, so this is one edit away from live.
-    const target = join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx");
-    const raw = readFileSync(target, "utf8");
+  /**
+   * THE HOLE THE PROVENANCE KEYING CLOSES, in all four spellings a second render can take.
+   *
+   * `h1SitesOf` keys by `file#ordinal`, so a page rendering `PageHero` AND a tier primitive
+   * directly still holds exactly `{#0, #1}` — under a presence-only collapse it read as ONE
+   * heading while shipping TWO. `/hakkimizda` renders `<H1>` directly today and is the obvious
+   * next adoption, so this is one edit from live.
+   *
+   * The first two rows were closed by Ruling Z. The ALIAS and BARREL rows are Ruling AB: the
+   * first fix compared the JSX tag's SPELLING to `TIER_SWITCH.tierNames`, which neither of them
+   * matches, so both slipped through with the whole suite green — the same defect one door along.
+   * Provenance now comes off the walk's own `jsx`/`forward` edges, which resolve aliases and
+   * re-exports by construction, so all four are one case rather than four.
+   */
+  const SECOND_RENDER_SHAPES: ReadonlyArray<{
+    readonly name: string;
+    readonly imports: string;
+    readonly markup: string;
+    readonly barrel?: string;
+  }> = [
+    {
+      name: "the hub primitive, imported plainly",
+      imports: 'import { H1 } from "@/components/patterns/typography";',
+      markup: "<H1>second</H1>",
+    },
+    {
+      name: "the detail primitive, imported plainly",
+      imports: 'import { H1Display } from "@/components/patterns/typography";',
+      markup: "<H1Display>second</H1Display>",
+    },
+    {
+      name: "an ALIASED import — the natural way to write it beside a PageHero import",
+      imports: 'import { H1 as Heading } from "@/components/patterns/typography";',
+      markup: "<Heading>second</Heading>",
+    },
+    {
+      name: "a RE-EXPORT BARREL — the case reexportTargetsOf is kept alive for",
+      imports: 'import { H1 } from "@/lib/game/target";',
+      markup: "<H1>second</H1>",
+      barrel: 'export { H1 } from "@/components/patterns/typography";',
+    },
+  ];
 
-    for (const primitive of TIER_SWITCH.tierNames) {
+  it.each(SECOND_RENDER_SHAPES.map((s) => [s.name, s] as const))(
+    "does NOT collapse a second render via %s",
+    (_name, shape) => {
+      const target = join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx");
+      const barrelPath = join(repoRoot, "lib/game/target.ts");
+      const raw = readFileSync(target, "utf8");
+
       const injected = raw
         .replace(
           'import { PageHero } from "@/components/patterns/page-hero";',
-          `import { PageHero } from "@/components/patterns/page-hero";\nimport { ${primitive} } from "@/components/patterns/typography";`,
+          `import { PageHero } from "@/components/patterns/page-hero";\n${shape.imports}`,
         )
-        .replace("<PageHero", `<${primitive}>second</${primitive}>\n            <PageHero`);
+        .replace("<PageHero", `${shape.markup}\n            <PageHero`);
       expect(injected).not.toBe(raw);
 
-      const { offenders, writers } = withInjectedSource([[target, injected]], () => ({
+      const overrides: Array<readonly [string, string]> = [[target, injected]];
+      if (shape.barrel) {
+        overrides.push([barrelPath, `${readFileSync(barrelPath, "utf8")}\n${shape.barrel}\n`]);
+      }
+
+      const { offenders, writers } = withInjectedSource(overrides, () => ({
         offenders: pagesWithMultipleH1(),
         writers: tierPrimitiveWriters(target),
       }));
-      expect(
-        writers,
-        `${primitive}: the page itself must be recorded as a tier writer beside PageHero`,
-      ).toEqual([TIER_SWITCH.component, "app/[locale]/(site)/turkiye/page.tsx"].sort());
-      expect(
-        offenders,
-        `${primitive} rendered beside PageHero must report as an offender`,
-      ).toHaveLength(1);
+      expect(writers, "the page itself must be recorded as a tier writer beside PageHero").toEqual(
+        [TIER_SWITCH.component, "app/[locale]/(site)/turkiye/page.tsx"].sort(),
+      );
+      expect(offenders, "a second render beside PageHero must report as an offender").toHaveLength(
+        1,
+      );
       expect(offenders[0]).toContain("app/[locale]/(site)/turkiye/page.tsx");
-    }
+    },
+    20000,
+  );
+
+  it("a LOCAL component named H1 is not a tier writer — the exclusion, still correct", () => {
+    // The mirror of the four above: resolution must not fire on the NAME. A page-local
+    // `function H1()` resolves to that page's own declaration, so it is not a tier writer — and
+    // the page is still an offender, because its own `<h1>` is a genuine THIRD site. Getting this
+    // wrong in the other direction would make every page with a local `H1` stop collapsing.
+    const target = join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx");
+    const raw = readFileSync(target, "utf8");
+    const injected = raw
+      .replace(
+        "export default async function",
+        'function H1() {\n  return <h1 className="zz-local-shadow">x</h1>;\n}\n\nexport default async function',
+      )
+      .replace("<PageHero", "<H1 />\n            <PageHero");
+    expect(injected).not.toBe(raw);
+
+    const { offenders, writers, sites } = withInjectedSource([[target, injected]], () => ({
+      offenders: pagesWithMultipleH1(),
+      writers: tierPrimitiveWriters(target),
+      sites: h1SitesOf(target).map((s) => s.key),
+    }));
+    expect(writers, "a local H1 must NOT be recorded as rendering the tier primitive").toEqual([
+      TIER_SWITCH.component,
+    ]);
+    expect(sites).toHaveLength(3);
+    expect(offenders).toHaveLength(1);
   }, 20000);
 
   it("still collapses an ordinary PageHero page — the other half of Ruling Z", () => {

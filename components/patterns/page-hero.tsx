@@ -18,8 +18,25 @@ import { H1, H1Display } from "./typography";
  *   `<div className="pt-2">` … cta                             3 / 14
  *
  * The wrapper itself, `relative z-10 max-w-3xl space-y-4`, appears 14 times with no variant at
- * all. The three detail pages differ only in the heading treatment and in writing `max-w-3xl`
- * on their lede by hand, because they have no wrapper supplying it.
+ * all.
+ *
+ * ## What adopting the wrapper CHANGES on the three detail pages
+ *
+ * Their old wrapper was `<div className="space-y-3">` inside a `flex flex-col lg:flex-row` row,
+ * with NO width cap; only the `<p>` lede carried `max-w-3xl`, written by hand. An earlier wording
+ * here said they "differ only in the heading treatment and in writing `max-w-3xl` on their lede by
+ * hand", which reads as though adopting the wrapper changes nothing for them. It changes three
+ * things, and two are visible:
+ *
+ *   - the `sm:text-6xl` heading and the 4-to-6-badge row are now capped at 768px on desktop, where
+ *     both previously ran the full flex width. A long name — "Doğu Anadolu Bölgesi", "Birleşik
+ *     Arap Emirlikleri" — wraps a line earlier than it did;
+ *   - the rhythm moves `space-y-3` → `space-y-4`, 4px;
+ *   - the lede renders identically, because the wrapper supplies the cap the lede wrote itself.
+ *
+ * Deliberate rather than incidental: the cap is what keeps the measure readable on a 1440px screen
+ * and it is the same cap all 14 hub heroes have always had. Recorded because it is a visible change
+ * to three live pages that the five-slot measurement above does not otherwise account for.
  *
  * ## Why `notice` is its own slot and not more `children`
  *
