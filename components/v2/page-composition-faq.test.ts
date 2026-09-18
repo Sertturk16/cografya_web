@@ -1398,6 +1398,35 @@ describe("the FAQ item sources", () => {
     ).toEqual([]);
   });
 
+  it("the schema text is the item text, at the value level", () => {
+    // THE ONE ASSERTION HERE THAT IS A PURE FUNCTION rather than a source shape, and the only
+    // check anywhere that the published `FAQPage` really carries the SAME STRINGS the page
+    // renders. Everything in the pairing section above decides identifier identity — that the
+    // schema and the markup come from one array — which is a structural guarantee and says
+    // nothing about what `faqPageJsonLd` does with that array.
+    //
+    // It used to live in the delegated-markup block, asserting it for the four basins because
+    // that exemption needed it. The exemption is gone; this is not, and it is now run over both
+    // live sources rather than one, because it never depended on the delegation.
+    const sources = [
+      ...Object.values(SEA_BASINS_DETAIL).map((basin) => basin.faq),
+      ...getAllContinents().map((continent) => continent.faqs),
+      CONTINENT_HUB_FAQS,
+    ];
+    expect(sources).toHaveLength(12);
+    for (const items of sources) {
+      const schema = faqPageJsonLd(items) as unknown as {
+        mainEntity: { name: string; acceptedAnswer: { text: string } }[];
+      };
+      expect(schema.mainEntity.map((entry) => entry.name)).toEqual(
+        items.map((entry) => entry.question),
+      );
+      expect(schema.mainEntity.map((entry) => entry.acceptedAnswer.text)).toEqual(
+        items.map((entry) => entry.answer),
+      );
+    }
+  });
+
   it("the uniqueness check would catch a duplicate — the control, not just the scan", () => {
     const withDuplicate = [
       { question: "aynı soru", answer: "a" },
