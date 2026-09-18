@@ -33,6 +33,15 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
 - Fluid scale in `app/globals.css`'s base layer: h1 `clamp(1.9rem, 1.2rem + 2.6vw, 2.6rem)`,
   h2 `clamp(1.4rem, 1rem + 1.4vw, 1.8rem)`. Use Tailwind sizes on the page but keep the same
   hierarchy: one `h1` per page, headings in document order.
+- The page `h1` has exactly TWO tiers, both in `components/patterns/typography.tsx`, and a third
+  spelling is a defect. `H1` is the hub tier, 14 of the 17 heroes —
+  `font-heading text-[1.9rem] sm:text-5xl font-bold tracking-tight text-primary leading-tight`.
+  `H1Display` is the detail tier (one province, one country, one sea) —
+  `font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground`.
+  The hub tier writes `text-[1.9rem]` rather than the pages' `text-3xl` because the 1.9rem floor
+  is not negotiable and `text-3xl` is 0.4px under it; an arbitrary size carries no paired
+  line-height, so `leading-tight` is load-bearing. `PageHero` renders the tier plus the measured
+  hero shape (badges, h1, notice, lede, tail).
 
 ## Dark mode — "Night Sea"
 

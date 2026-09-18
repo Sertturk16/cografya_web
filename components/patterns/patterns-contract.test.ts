@@ -167,7 +167,29 @@ describe("Typography reproduces the documented scale", () => {
   it("keeps the h1 floor docs/design.md pins at 1.9rem", () => {
     // app/globals.css records that a fix round once lowered this to solve a 320px wrap, and
     // that the lowering was itself the defect the next review caught.
-    expect(source).toContain("clamp(1.9rem,1.2rem+2.6vw,2.6rem)");
+    //
+    // The CLAMP is gone and the FLOOR is not. T-035 PR3 retuned `H1` to the hub tier the other
+    // 14 heroes on the site already write, which differs from the clamp in everything a reader
+    // can perceive — brand colour, weight, tracking, and 48px against 41.6px at desktop. The
+    // one place it is sub-perceptual is the mobile size: the pages write `text-3xl` (1.875rem),
+    // 0.4px under the floor, so the component writes `text-[1.9rem]` instead. That is what this
+    // assertion now holds, and it is the same rule, not a weaker one.
+    expect(source).toContain("text-[1.9rem]");
+    expect(source).not.toContain("text-3xl");
+  });
+
+  it("ships the two heading tiers and no third", () => {
+    // 14 hub heroes and 3 detail heroes, measured. A third spelling is a defect, not a variant.
+    expect(source).toContain("export function H1(");
+    expect(source).toContain("export function H1Display(");
+    expect(source).toContain("text-4xl sm:text-6xl font-extrabold");
+    expect((source.match(/<h1/g) ?? []).length).toBe(2);
+  });
+
+  it("gives the arbitrary-value h1 a line-height, because the size no longer carries one", () => {
+    // `text-3xl` ships a paired line-height; `text-[1.9rem]` does not. Without this the hub
+    // heading sets solid and wraps into itself at 320px.
+    expect(source).toMatch(/text-\[1\.9rem\][^"]*leading-tight/);
   });
 
   it("keeps the h2 clamp too", () => {

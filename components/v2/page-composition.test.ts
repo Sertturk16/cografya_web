@@ -1945,7 +1945,14 @@ describe("the heading scanner itself", () => {
       const keys = h1SitesOf(FIXTURE_ROOT).map((site) => site.key);
       return { keys, fallbacks: [...fallbacksSeen.keys()] };
     });
-    expect(result.keys).toEqual(["components/patterns/typography.tsx#0"]);
+    // TWO sites, not one, since T-035 PR3 added the detail-tier `H1Display` beside `H1` in the
+    // same module: "credits every <h1> in the module" is exactly what the fallback promises, and
+    // the module now holds two. The counters are untouched — nothing on the real surface imports
+    // this module as a namespace (see `MODULE_SCOPE_FALLBACKS`, pinned below).
+    expect(result.keys).toEqual([
+      "components/patterns/typography.tsx#0",
+      "components/patterns/typography.tsx#1",
+    ]);
     expect(result.fallbacks).toEqual(["components/patterns/typography.tsx — *"]);
   });
 
@@ -1973,7 +1980,16 @@ describe("the heading scanner itself", () => {
   it("isolates one declaration inside a multi-export module — H2's region holds no h1", () => {
     const typography = join(repoRoot, "components/patterns/typography.tsx");
     const regions = declarationRegions(typography);
-    expect([...regions.keys()]).toEqual(["H1", "H2", "H3", "H4", "Lede", "Muted", "Kbd"]);
+    expect([...regions.keys()]).toEqual([
+      "H1",
+      "H1Display",
+      "H2",
+      "H3",
+      "H4",
+      "Lede",
+      "Muted",
+      "Kbd",
+    ]);
     const source = readSource(typography);
     const [h1From, h1To] = regions.get("H1")!;
     const [h2From, h2To] = regions.get("H2")!;
@@ -2012,8 +2028,13 @@ describe("the heading scanner itself", () => {
     // The `H1` component `hakkimizda` renders. A literal-only scan reads NOTHING here, which is
     // how a page loses its heading from the count entirely.
     const typography = sourceOf(join(repoRoot, "components/patterns/typography.tsx"));
+    // Two entries since T-035 PR3: `H1` is the hub tier and `H1Display` the detail tier, the two
+    // spellings the 17 live heroes actually write. The extractor's job here is unchanged — read
+    // a `cn()` className out of a real file — and the fixture moved because the file did, not
+    // because any counter did.
     expect(classNamesOf(typography, "h1")).toEqual([
-      "font-heading text-[clamp(1.9rem,1.2rem+2.6vw,2.6rem)] font-bold leading-[1.15] tracking-[-0.01em] text-foreground",
+      "font-heading text-[1.9rem] sm:text-5xl font-bold tracking-tight text-primary leading-tight",
+      "font-heading text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground",
     ]);
   });
 
