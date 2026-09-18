@@ -1696,9 +1696,56 @@ function pagesWithMultipleH1(): string[] {
  * `text-3xl`) and is identical everywhere else — the 1.9rem floor `typography.tsx` records, kept in
  * the one place it is sub-perceptual. That spelling was already counted, from `/hakkimizda`, so the
  * distribution changed from "one spelling covering 14 elements" to "one spelling covering the ONE
- * element those 14 pages share".
+ * element those 14 pages share". The three DETAIL heroes moved in the same task and cost this
+ * counter nothing: `H1Display`'s spelling is byte-identical to the one they wrote.
+ *
+ * Then 12 → **13**, because the same task gave the three `(play)/oyun/*` screens the heading they
+ * never had, and `sr-only` is a thirteenth spelling. THE NUMBER WENT UP AND THAT IS THE HONEST
+ * READING: the adoption removed one spelling and the a11y fix added one. What actually moved is
+ * {@link H1_ELEMENTS}, 32 → 17, which is why the two are pinned separately.
+ *
+ * ## THE THIRTEEN, EACH ONE NAMED
+ *
+ * TWO TIERS — the ruled end state, this counter's floor, never 1:
+ *   1. `…text-[1.9rem] sm:text-5xl font-bold …text-primary…`  `typography.tsx#0`, the hub tier,
+ *      rendered by 16 render roots (14 hub heroes + `giris` + `kayit`) and `/hakkimizda`.
+ *   2. `…text-4xl sm:text-6xl font-extrabold …text-foreground` `typography.tsx#1`, the detail tier,
+ *      rendered by the three detail heroes.
+ *
+ * TWO DELIBERATE NON-TIERS — decided in this task, not left over:
+ *   3. `font-heading text-3xl font-bold text-foreground` — `(site)/error.tsx` and
+ *      `(site)/not-found.tsx`. THEY KEEP THEIR OWN, and the reason is the one
+ *      `walkRenderRoots()`'s docblock already gives for their app-ROOT siblings: a last-resort
+ *      shell is not a reading page. `typography.tsx` defines the two tiers as "the h1 of a section
+ *      landing page" and "the h1 of one province, country or sea"; neither describes "something
+ *      went wrong" or "this does not exist", and the hub tier would additionally paint an error
+ *      heading in the brand terracotta. They already agree with EACH OTHER on one spelling, so
+ *      there is no drift here to remove — this is the shells' tier, one spelling for the two files
+ *      that are shells, and a third shell joining it would be right to use it.
+ *   4. `sr-only` — `v2-game-screen.tsx`, serving the three `(play)` screens. A heading that is
+ *      never painted cannot carry a type treatment, so giving it a tier's className would be dead
+ *      tokens inside a 1px clip rect written only to hold this number down. See the element's own
+ *      comment for why the play surface gets a hidden heading rather than a visible one.
+ *
+ * NINE REMAINDERS, all OUTSIDE the 17 heroes this task adopts — the drift the paragraph above has
+ * always said a later task removes, listed so "a later task" has the list:
+ *   5. `…text-2xl font-bold text-foreground mb-2` ×3 — `e-posta-dogrulama`, `sifre-sifirlama`,
+ *      `sifre-sifirlama/yeni`. Three transactional auth screens already converged on ONE spelling.
+ *   6. `…text-2xl sm:text-3xl font-bold …` — `v2-member-hub.tsx` (`/hesabim`).
+ *   7. `…text-2xl sm:text-4xl font-extrabold …leading-tight` — `kitaplar/[slug]`.
+ *   8. `…text-2xl sm:text-4xl lg:text-5xl font-black …leading-[1.15]` — `dunya/kita`.
+ *   9. `…text-3xl sm:text-4xl font-extrabold …` — `oyun/bolge-bolge-il`.
+ *  10. `…text-3xl sm:text-4xl lg:text-5xl font-black …leading-[1.15]` — `dunya/kita/[slug]`.
+ *  11. `…text-3xl sm:text-5xl font-extrabold …text-primary…` — `turkiye/bolge`. ONE token from the
+ *      hub tier (`font-extrabold` where the tier is `font-bold`); the cheapest of the nine.
+ *  12. `…text-4xl sm:text-5xl lg:text-6xl font-bold …leading-[1.12]` — `v2-hero.tsx`, the home page.
+ *  13. `text-xl font-bold tracking-tight text-foreground` ×2 — `profil` and `v2-profile-form`, the
+ *      two branches of the `MULTIPLE_H1_EXEMPTIONS` entry below; card headings, not heroes.
+ *
+ * MUTATION-CHECKED 2026-09-18 AT 13, not carried over from 12 or from the original 13 — see
+ * `task-3-report.md` for the verbatim output.
  */
-export const H1_SPELLINGS = 12;
+export const H1_SPELLINGS = 13;
 
 /**
  * The denominator: how many distinct `<h1>` ELEMENTS those spellings cover. Pinned separately so
@@ -1719,8 +1766,15 @@ export const H1_SPELLINGS = 12;
  * `<h1>` elements (−3). `H1_SPELLINGS` does NOT move with them: `H1Display`'s spelling is
  * byte-identical to the one those three pages wrote, so the spelling survives with a new owner
  * while three elements collapse into the one they now share.
+ *
+ * Step 4 of the same task: 16 → **17**. `v2-game-screen.tsx` gained the `sr-only` `<h1>` the three
+ * `(play)` screens had never had. `giris` and `kayit` gained a heading too and added NO element:
+ * they render `PageHero tier="hub"`, i.e. the tier element 16 other roots already reach.
+ *
+ * 32 → 17 across the task. This is the counter that carries the result — 17 heroes that each wrote
+ * their own heading now share two, and five render roots that rendered none now render one.
  */
-export const H1_ELEMENTS = 16;
+export const H1_ELEMENTS = 17;
 
 /**
  * Render roots whose entire closure holds no `<h1>` element. Measured 2026-09-18 over
@@ -1748,8 +1802,35 @@ export const H1_ELEMENTS = 16;
  * MUTATION-CHECKED 2026-09-18 at this value, including once on `(site)/not-found.tsx` — a file the
  * pre-Ruling-F walk could not see — and re-checked after the render-graph rebuild. See
  * `task-1-report.md`.
+ *
+ * TASK 3 (2026-09-18): 5 → **0**. Each of the five was decided on its own evidence, and the SEO
+ * half of the argument turned out not to apply to ANY of them — all five are `noindex` in both
+ * locales, which is why each entry below leads with what it checked:
+ *
+ *   - `giris` and `kayit`. `AUTH_PATHNAMES` members, so `buildAuthMetadata` ships `AUTH_SURFACE`
+ *     = `"noindex"` in both locales (`lib/auth/auth-metadata.ts`, resolved through
+ *     `lib/seo/indexing.ts`) — NOT the indexable pages the brief assumed. The a11y defect is
+ *     untouched by that: both are ordinary reading-surface pages with a breadcrumb trail, and both
+ *     began their outline at `<h2>` inside a card. Each now renders `PageHero tier="hub"` with the
+ *     string its own `<title>` already uses, so the page's heading matches the site's every other
+ *     reading page and cannot drift from its title. VISIBLE, because a de-indexed page is still a
+ *     document a person reads.
+ *   - the three `(play)/oyun/*` screens. `surface: "noindex"` in each page's own `buildMetadata`
+ *     call (DEC 2026-07-30p: "application screens, not documents"). They share
+ *     `v2-game-screen.tsx`, which now renders ONE `sr-only` `<h1>` carrying the `modeName` each
+ *     page already passes to its breadcrumb and its title. HIDDEN, because there is no crawler to
+ *     give a title to and a visible heading would take a band above the map on a screen whose
+ *     whole point is the map; `sr-only` is Tailwind's clip-rect utility, in the accessibility tree
+ *     and reachable by heading navigation, never `display: none`.
+ *
+ * Not claimed: that these five now have a CORRECT OUTLINE. SCOPE note 7 still holds, and the play
+ * screens still step `h1` → `h3`. What is claimed is that no render root on this surface leaves a
+ * reader with no level-1 heading.
+ *
+ * RE-MUTATION-CHECKED 2026-09-18 AT 0 — a zero target that has never failed has not been shown to
+ * work, the doctrine `PAGE_BODY_SPELLINGS` records. See `task-3-report.md`.
  */
-export const PAGES_WITHOUT_H1 = 5;
+export const PAGES_WITHOUT_H1 = 0;
 
 /**
  * NON-EXEMPT render roots whose closure holds more than one `<h1>` element. Measured 2026-09-18:
