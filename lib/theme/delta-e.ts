@@ -11,6 +11,13 @@
  *
  * Use `contrast.ts` for text, for focus rings, and for adjacent steps of an ordered ramp.
  * Use this for categorical sets.
+ *
+ * ## Implementation note: hue wrapping
+ *
+ * The hue-difference calculation must handle wrap-around at the 360° boundary. JavaScript's
+ * `%` operator is truncated (preserves dividend sign), not floored like Python, so the naive
+ * `((h2p - h1p + 180) % 360) - 180` fails when the subtraction is < -180. The correct form
+ * checks the sign explicitly.
  */
 import { parseColor } from "./contrast";
 
@@ -54,12 +61,8 @@ const rad = (deg: number): number => (deg * Math.PI) / 180;
 
 /** CIEDE2000 between two CSS colours, rounded to one decimal — the form it gets written down in. */
 export function deltaE00(a: string, b: string): number {
-  const lab1 = toLab(a);
-  const lab2 = toLab(b);
-
-  // Ensure canonical ordering for numerical stability; symmetric by design
-  const [l1, a1, b1] = lab1[0] <= lab2[0] ? lab1 : lab2;
-  const [l2, a2, b2] = lab1[0] <= lab2[0] ? lab2 : lab1;
+  const [l1, a1, b1] = toLab(a);
+  const [l2, a2, b2] = toLab(b);
 
   const c1 = Math.hypot(a1, b1);
   const c2 = Math.hypot(a2, b2);
@@ -74,7 +77,11 @@ export function deltaE00(a: string, b: string): number {
 
   const dLp = l2 - l1;
   const dCp = c2p - c1p;
-  const dhp = c1p * c2p === 0 ? 0 : ((h2p - h1p + 180) % 360) - 180;
+  let dhp: number;
+  if (c1p * c2p === 0) dhp = 0;
+  else if (h2p - h1p > 180) dhp = h2p - h1p - 360;
+  else if (h2p - h1p < -180) dhp = h2p - h1p + 360;
+  else dhp = h2p - h1p;
   const dHp = 2 * Math.sqrt(c1p * c2p) * Math.sin(rad(dhp) / 2);
 
   const lBar = (l1 + l2) / 2;

@@ -23,4 +23,11 @@ describe("deltaE00", () => {
     // Colour difference is the instrument that sees them as distinct.
     expect(deltaE00("#e69f00", "#56b4e9")).toBeGreaterThan(CATEGORICAL_MIN);
   });
+
+  it("correctly handles hue difference wrap-around past -180°", () => {
+    // marmara (#0072b2) and karadeniz (#e69f00) have a hue difference that wraps past -180°.
+    // This tests the bug fix for truncated vs floored modulo in JavaScript.
+    expect(deltaE00("#0072b2", "#e69f00")).toBe(55.3);
+    expect(deltaE00("#0072b2", "#e69f00")).toBe(deltaE00("#e69f00", "#0072b2"));
+  });
 });
