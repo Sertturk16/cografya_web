@@ -4544,7 +4544,33 @@ function statGrids(): { file: string; tiles: number }[] {
 }
 
 /**
- * The other bucket: a `grid` + `grid-cols-*` element whose direct children include a `<StatTile>`.
+ * RULING BA. What counts as the GRID SHELL of a migrated grid.
+ *
+ * A hand-rolled grid writes `grid` and `grid-cols-*` in the caller's own className, and that is
+ * how {@link statGridTiles} finds it. `components/patterns/stat-grid.tsx` moves those tokens
+ * INTO a component, which is the entire point of having one — and which, read literally by the
+ * rule above, removes the grid from both buckets and lowers {@link STAT_GRIDS_TOTAL}. That is
+ * the exact signature of a grid refactored out of sight, so adopting `StatGrid` would have
+ * arrived looking like the failure the invariant exists to catch.
+ *
+ * It is not that failure: the tiles are still the grid's direct children and the grid is still a
+ * grid on screen. So `<StatGrid>` is recognised as a shell BY TAG, here, in the migrated bucket
+ * only. Deliberately not in {@link statGridTiles}: a `<StatGrid>` filled with hand-drawn tiles is
+ * a HALF migration — the shell adopted, the tiles left — and it lowers the total and goes red,
+ * which is the correct answer for it.
+ *
+ * The tag is not a free pass either. `StatGrid` writes `className?: never` and
+ * `components/patterns/patterns-contract.test.ts` pins that it still spells `grid grid-cols-*`,
+ * so the shell cannot quietly stop being one.
+ */
+function isGridShell(element: ScannedElement): boolean {
+  if (element.tag === "StatGrid") return true;
+  const tokens = tokensOf(element.spelling);
+  return tokens.includes("grid") && tokens.some((token) => token.startsWith("grid-cols-"));
+}
+
+/**
+ * The other bucket: a grid shell whose direct children include a `<StatTile>`.
  *
  * No value/label check, and none is possible — the tile's content lives inside the component, not
  * in the grid's markup, which is the entire benefit of migrating. So a migrated grid qualifies on
@@ -4556,10 +4582,7 @@ function statGridsUsingStatTile(): { file: string; tiles: number }[] {
   for (const file of walkCardSurface()) {
     const elements = jsxElementsOf(file);
     elements.forEach((element, index) => {
-      const tokens = tokensOf(element.spelling);
-      if (!tokens.includes("grid") || !tokens.some((token) => token.startsWith("grid-cols-"))) {
-        return;
-      }
+      if (!isGridShell(element)) return;
       const tiles = elements[index]!.children.filter((i) => elements[i]!.tag === "StatTile");
       if (tiles.length > 0) grids.push({ file: label(file), tiles: tiles.length });
     });
@@ -4628,13 +4651,56 @@ describe("stat grids hand-roll the tile StatTile was written for", () => {
     const buckets = (source: string) => {
       const elements = scanJsx(source);
       const hand = statGridTiles(elements, 0) === null ? 0 : 1;
-      const uses = elements[0]!.children.some((i) => elements[i]!.tag === "StatTile") ? 1 : 0;
+      const uses =
+        isGridShell(elements[0]!) &&
+        elements[0]!.children.some((i) => elements[i]!.tag === "StatTile")
+          ? 1
+          : 0;
       return { hand, uses, total: hand + uses };
     };
     expect(buckets(shell(handRolled + handRolled))).toEqual({ hand: 1, uses: 0, total: 1 });
     expect(buckets(shell(migrated + migrated))).toEqual({ hand: 0, uses: 1, total: 1 });
     // …and the refactor that reads as progress: tiles wrapped in a fragment, nothing migrated.
     expect(buckets(shell(`<>${handRolled}${handRolled}</>`))).toEqual({
+      hand: 0,
+      uses: 0,
+      total: 0,
+    });
+  });
+
+  /**
+   * RULING BA on a fixture, both ways. The shell moved into `<StatGrid>` and the tiles into
+   * `<StatTile>` is the FULL migration and must read exactly like the hand-rolled grid did —
+   * total 1, in the migrated bucket. The shell adopted with hand-drawn tiles left behind is the
+   * HALF migration and must read 0, because that is a grid whose tiles are no longer countable
+   * from source and which arrived in neither bucket.
+   */
+  it("a <StatGrid> is a grid shell — but only once its tiles are StatTiles too", () => {
+    const handRolled =
+      '<div className="rounded-2xl bg-card border-border"><span className="text-2xl font-bold">1</span><span className="text-xs text-muted-foreground">x</span></div>';
+    const tile = '<StatTile fact="1" label="x" />';
+    const buckets = (source: string) => {
+      const elements = scanJsx(source);
+      const hand = statGridTiles(elements, 0) === null ? 0 : 1;
+      const uses =
+        isGridShell(elements[0]!) &&
+        elements[0]!.children.some((i) => elements[i]!.tag === "StatTile")
+          ? 1
+          : 0;
+      return { hand, uses, total: hand + uses };
+    };
+    expect(buckets(`<StatGrid>${tile}${tile}</StatGrid>`)).toEqual({
+      hand: 0,
+      uses: 1,
+      total: 1,
+    });
+    expect(buckets(`<StatGrid>${handRolled}${handRolled}</StatGrid>`)).toEqual({
+      hand: 0,
+      uses: 0,
+      total: 0,
+    });
+    // And the tag rule is a tag rule, not a name-contains rule: a neighbour does not qualify.
+    expect(buckets(`<StatGridHeader>${tile}${tile}</StatGridHeader>`)).toEqual({
       hand: 0,
       uses: 0,
       total: 0,

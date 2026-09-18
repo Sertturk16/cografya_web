@@ -62,10 +62,18 @@ export function MetricValue({
 
   return (
     <span className={cn("inline-flex items-baseline gap-1", className)}>
-      {/* `tabular-nums` so a column of these lines up digit by digit. */}
-      <span className="font-heading text-2xl font-bold tabular-nums text-foreground">
-        {formatted}
-      </span>
+      {/*
+        `tabular-nums` so a column of these lines up digit by digit.
+
+        NO COLOUR CLASS, on purpose. The number INHERITS, which is what lets `StatTile`'s `tone`
+        union reach it from the wrapper — a `text-foreground` here would win on the element
+        itself and the five raw palette colours this migration replaced would have had nowhere
+        to land. Standalone, the inherited colour is the page's `text-foreground` anyway.
+
+        `sm:text-3xl` is the metric strips' own scale, which 13 files wrote by hand; matching it
+        is what keeps the migration from shrinking every hero number by 6px at desktop.
+      */}
+      <span className="font-heading text-2xl font-bold tabular-nums sm:text-3xl">{formatted}</span>
       {unit !== undefined ? (
         <span className="text-sm font-medium text-muted-foreground">{unit}</span>
       ) : null}

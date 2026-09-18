@@ -45,7 +45,7 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
     slug: "veri",
     title: "Veri",
     blurb: "Tablolar ve sayısal göstergeler.",
-    components: ["table", "stat-tile", "metric-value", "progress"],
+    components: ["table", "stat-grid", "stat-tile", "metric-value", "progress"],
   },
   {
     slug: "geri-bildirim",

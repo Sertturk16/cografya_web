@@ -56,10 +56,94 @@ describe("StatTile inherits that guarantee rather than reimplementing it", () =>
   });
 
   it("puts the label before the number in the DOM", () => {
-    // Hearing "18,2 °C" with no idea what it measures is being told nothing; the visual
-    // hierarchy is carried by type size, not by source order.
-    // The JSX render, not the `Omit<MetricValueProps, …>` in the props type above it.
-    expect(source.indexOf("{label}")).toBeLessThan(source.indexOf("<MetricValue {...metric}"));
+    // Hearing "18,2 °C" with no idea what it measures is being told nothing.
+    //
+    // A REAL TAG BOUNDARY, not a substring: `"<MetricValueProps".startsWith("<MetricValue")` is
+    // true, so a bare `indexOf("<MetricValue")` finds the `Omit<MetricValueProps, …>` in the
+    // props type — which sits ABOVE the render and made this assertion fail on correct source.
+    // Same prefix collision `components/showcase/registry.test.ts` documents for `<H1`.
+    const render = /<MetricValue[\s/>]/.exec(source);
+    expect(render, "stat-tile.tsx no longer renders <MetricValue>").not.toBeNull();
+    expect(source.indexOf("{label}")).toBeLessThan(render!.index);
+  });
+
+  /**
+   * The other half of that, and it needs its own assertion because the two pull opposite ways.
+   *
+   * 13 metric strips and the book facts sheet render the VALUE on top. Source order is the
+   * reading order and must stay label-first; screen order is set with `order-*` instead. Without
+   * this, the obvious way to restore the site's look is to move the JSX — which satisfies the
+   * eye, passes every visual check, and silently deletes the guarantee above.
+   */
+  it("flips the two visually with order utilities, never by reordering the DOM", () => {
+    expect(source).toMatch(/order-1/);
+    expect(source).toMatch(/order-2/);
+    // The label carries the LATER order, the value the earlier one — the flip, not just a pair
+    // of utilities sitting in the file.
+    const labelBlock = source.slice(source.indexOf("order-2"), source.indexOf("{label}"));
+    expect(labelBlock).not.toContain("<MetricValue");
+  });
+
+  /**
+   * RULING — why `fact` is not a hole in T-024's guarantee.
+   *
+   * The strips hold `"WGS84"`, `"Haversine"`, `"M 1.0 - 7.0+"`. The alternative to a second
+   * channel was widening `MetricValue.value` to `string`, which would have let any page print
+   * `"—"` or `"0"` through the component built to make exactly that impossible. So: `absent`
+   * stays required on the branch that renders a number, and the literal branch cannot reach
+   * `MetricValue` at all.
+   */
+  it("keeps the measurement branch's absent prop required, and gives the literal branch none", () => {
+    expect(source).toMatch(/interface StatTileMeasurement[^}]*extends[^{]*Omit<MetricValueProps/);
+    expect(source).toMatch(/readonly absent\?: never/);
+    expect(source).not.toMatch(/absent\?:\s*\{/);
+    // The two branches are mutually exclusive in the type, not merely by convention.
+    expect(source).toMatch(/readonly fact\?: never/);
+    expect(source).toMatch(/readonly value\?: never/);
+  });
+
+  it("colours the value through a closed tone union, never a raw class", () => {
+    // Five strips carried `text-teal-600`/`text-cyan-600`/`text-red-600`/`text-blue-600`/
+    // `text-emerald-600`, none with a dark counterpart. `components/ui/token-binding.test.ts`
+    // forbids those here; this pins the thing that replaced them.
+    for (const tone of ["foreground", "primary", "secondary", "accent", "destructive"]) {
+      expect(source).toMatch(new RegExp(`\\b${tone}: "text-${tone}"`));
+    }
+    expect(source).toContain("TONE[tone]");
+  });
+
+  it("wears the site's card spelling, shadow included", () => {
+    // The strips write `rounded-2xl bg-card border border-border shadow-2xs`. The component was
+    // that minus the shadow, so adopting it anywhere would have flattened 52 tiles.
+    expect(source).toContain("rounded-2xl");
+    expect(source).toContain("border border-border");
+    expect(source).toContain("bg-card");
+    expect(source).toContain("shadow-2xs");
+  });
+});
+
+describe("StatGrid is the shell and nothing else", () => {
+  const source = read("stat-grid");
+
+  it("offers no className escape hatch", () => {
+    // PageContainer's reason: the divergence this collapses grew because every page could write
+    // its own spelling, and a passthrough lets it straight back in — invisibly, because the
+    // counters in components/v2/page-composition.test.ts read source spellings.
+    expect(source).toMatch(/className\?: never/);
+  });
+
+  it("writes the grid tokens the scanner recognises", () => {
+    // `statGridsUsingStatTile()` finds a migrated grid by `grid` + `grid-cols-*`. If this
+    // component stopped writing them the grids would leave BOTH buckets and STAT_GRIDS_TOTAL
+    // would fall — the signature of a grid refactored out of sight.
+    expect(source).toContain('cn("grid"');
+    expect(source).toMatch(/grid-cols-2 sm:grid-cols-4/);
+  });
+
+  it("carries no tile styling of its own", () => {
+    // It is the shell. A surface token here would mean two components drawing one card.
+    expect(source).not.toContain("bg-card");
+    expect(source).not.toContain("rounded-2xl");
   });
 });
 

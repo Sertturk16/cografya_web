@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress";
 import { StatTile } from "@/components/patterns/stat-tile";
+import { StatGrid } from "@/components/patterns/stat-grid";
 import { MetricValue } from "@/components/patterns/metric-value";
 import { Specimen } from "../specimen";
 
@@ -119,7 +120,7 @@ export function VeriSpecimens() {
 
       <Specimen
         name="StatTile"
-        description="48 V2 dosyasının elle yazdığı desen. Etiket DOM'da önce gelir — ekran okuyucuya '18,2 °C' deyip neyi ölçtüğünü söylememek hiçbir şey söylememektir; görsel hiyerarşiyi punto taşır, kaynak sırası değil."
+        description="35 dosyanın elle yazdığı desen. Etiket DOM'da ÖNCE gelir — ekran okuyucuya '18,2 °C' deyip neyi ölçtüğünü söylememek hiçbir şey söylememektir. Ekranda ise değer üstte durur; sitenin on üç metrik şeridinin dili bu. İkisi ayrı ayarlanıyor: erişilebilir sıra kaynak sırası, görsel sıra order-* yardımcılarıyla."
       >
         <div className="grid gap-3 sm:grid-cols-3">
           <StatTile
@@ -138,6 +139,32 @@ export function VeriSpecimens() {
             absent={{ label: "Veri bağlı değil", hint: "MARINE_ENABLED kapalı" }}
           />
         </div>
+      </Specimen>
+
+      <Specimen
+        name="StatTile — fact kanalı ve tone"
+        description="Şeritlerin taşıdığı değerlerin çoğu sayı değil: 'WGS84', 'Haversine', 'M 1.0 - 7.0+'. Bunlar için fact kanalı var — MetricValue'ya hiç uğramaz, çünkü value'yu string'e açmak T-024'ün imkânsız kıldığı şeyi (bir tire ya da sıfırı ölçüm gibi basmayı) geri getirirdi. Renk kapalı bir tone birleşimiyle geliyor: beş şerit ham Tailwind palet sınıfları taşıyordu ve hiçbirinin karanlık modda karşılığı yoktu."
+      >
+        <StatGrid gap="tight">
+          <StatTile label="Küresel Elipsoid Modeli" fact="WGS84" tone="primary" />
+          <StatTile label="Büyük Daire Eğrilik Hesabı" fact="Haversine" tone="secondary" />
+          <StatTile label="Morfogenetik Çeşitlilik" fact="6 Kıyı Tipi" tone="accent" />
+          <StatTile label="Fiyort, Skyer &amp; Haliç" fact="3 Tip Yok" tone="destructive" />
+        </StatGrid>
+      </Specimen>
+
+      <Specimen
+        name="StatGrid"
+        description="Yalnızca duyarlı ızgara kabuğu — sütunlar, boşluk ve üstteki ayrım. className yok: PageContainer ile aynı gerekçe, geçirgen bir prop dağınıklığı tekrar içeri alır ve sayaçlar kaynak yazımını okuduğu için bunu göremez."
+      >
+        <StatGrid columns="2-3-6" gap="tight">
+          <StatTile label="İl" fact="81" tone="primary" />
+          <StatTile label="Bölge" fact="7" tone="secondary" />
+          <StatTile label="İlçe" fact="973" tone="accent" />
+          <StatTile label="Deniz" fact="4" />
+          <StatTile label="Kıyı ili" fact="28" tone="primary" />
+          <StatTile label="Kıta" fact="7" tone="secondary" />
+        </StatGrid>
       </Specimen>
 
       <Specimen
