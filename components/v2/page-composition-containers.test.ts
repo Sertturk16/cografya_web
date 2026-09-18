@@ -478,11 +478,23 @@ function rootsWithUncontainedBody(): Map<string, string[]> {
  * arrived at independently by this scan rather than read off that document — and `kitaplar/[slug]`,
  * the one the original plan text missed, is in the list on its own evidence.
  *
- * PINNED AT THE DEFECT, on purpose. This commit adds the counter and changes no page, so it lands
- * GREEN at 5 — which is the only state in which the counter can be shown to SEE the thing it is
- * for. The adoption commit that follows drives it to 0 and mutation-checks it there.
+ * It was PINNED AT THE DEFECT first, on purpose: `20dd8d2` added this counter and changed no page,
+ * so it landed GREEN at 5, which is the only state in which a counter can be shown to SEE the
+ * thing it is for. T-046 then wrapped each of those five bodies in one `PageContainer`, opening
+ * after the sticky nav on the three pages that have one (Ruling BL): 5 → **0**. All five took
+ * `default` (Ruling BK); `turkiye/bolge` lost `space-y-14` and so is an exact restore, the other
+ * four lost `space-y-12` and gain 8px they do not get a fifth union member for.
+ *
+ * MUTATION-CHECKED AT ZERO, which is the only value worth checking it at (`docs/conventions.md`:
+ * a source-text assertion that has never failed has not been shown to work; and
+ * `PAGE_BODY_SPELLINGS` records the cost of re-pinning 17 → 0 across three tasks with no
+ * re-check). Removed the body `<PageContainer space="default">` wrapper from
+ * `turkiye/bolge/page.tsx` again, leaving its six body nodes as direct fragment children exactly
+ * as T-032 left them — RED, `expected 1 to be +0`, the message naming the file and all six loose
+ * nodes (`<section> scroll-mt-28` ×4, `<div> flex items-center justify-between pt-2`,
+ * `<div> scroll-mt-28`). Restored from a copy taken aside beforehand — GREEN.
  */
-export const RENDER_ROOTS_WITH_UNCONTAINED_BODY = 5;
+export const RENDER_ROOTS_WITH_UNCONTAINED_BODY = 0;
 
 describe("every render root's body sits inside a PageContainer", () => {
   it("the count of roots with body content outside any container is exactly the recorded number", () => {

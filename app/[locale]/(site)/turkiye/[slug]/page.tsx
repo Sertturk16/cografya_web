@@ -510,304 +510,334 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
         </PageContainer>
       </section>
 
-      {/* BODY CONTENT CONTAINER */}
-      {/* GEOGRAPHY & LOCATOR SPLIT ROW */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left 7 Columns: Prose & Physical Highlights */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Overview Card */}
-          {showLandform && (
-            <Card variant="panel" space="4">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm">
-                  Coğrafi Konum &amp; Yapı
-                </Badge>
-              </div>
-              <h2 className="font-heading text-2xl font-bold text-foreground">
-                {sectionHeading("landform")} Fiziki Coğrafyası ve Arazi Özellikleri
-              </h2>
-              {landformNote && (
-                <p className="text-sm text-muted-foreground leading-relaxed">{landformNote}</p>
-              )}
-
-              {/* Hydrography & Water Bodies */}
-              {showHydrography && (
-                <div className="pt-4 border-t border-border space-y-3">
-                  {province.hydrographyNoteTr && (
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                        <Droplets className="size-3.5 text-cyan-600" />
-                        <span>{sectionHeading("hydrography")} Su Kaynakları ve Havzaları</span>
-                      </span>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {province.hydrographyNoteTr}
-                      </p>
-                    </div>
-                  )}
-
-                  {hydrographyFeatures && hydrographyFeatures.length > 0 && (
-                    <div className="space-y-2 pt-1">
-                      <span className="text-xs font-semibold text-muted-foreground block">
-                        Önemli Su Kaynakları:
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {hydrographyFeatures.map((feat, idx) => (
-                          <Badge
-                            key={idx}
-                            variant="outline"
-                            className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20 text-xs py-1"
-                          >
-                            <Droplets className="size-3 mr-1" />
-                            <span>{feat.name}</span>
-                            <span className="opacity-70 text-[10px] ml-1">({feat.type})</span>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
-          )}
-
-          {/* Demographics & Socio-Economic Indicators Card */}
-          {(showSettlement || showEconomy) && (
-            <Card variant="panel" space="5">
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  size="sm"
-                  className="bg-primary/10 text-primary border-primary/30"
-                >
-                  Sosyo-Ekonomik Göstergeler
-                </Badge>
-              </div>
-              <h3 className="font-heading text-xl font-bold text-foreground">
-                {sectionHeading("settlement")} Nüfus, Yerleşme ve Ekonomik Yapı
-              </h3>
-
-              {/* Settlement Prose Note */}
-              {province.settlementNoteTr && (
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {province.settlementNoteTr}
-                </p>
-              )}
-
-              {/* Demographics Metrics */}
-              {(province.urbanizationRate !== null || province.netMigrationRate !== null) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  {province.urbanizationRate !== null && (
-                    <div className="p-3.5 rounded-2xl bg-muted/50 space-y-1">
-                      <span className="text-muted-foreground block">Şehirleşme Oranı</span>
-                      <span className="font-heading font-bold text-lg text-foreground">
-                        %{province.urbanizationRate.toFixed(1)}
-                      </span>
-                    </div>
-                  )}
-                  {province.netMigrationRate !== null && (
-                    <div className="p-3.5 rounded-2xl bg-muted/50 space-y-1">
-                      <span className="text-muted-foreground block">Net Göç Hızı</span>
-                      <span className="font-heading font-bold text-lg text-primary">
-                        ‰{province.netMigrationRate.toFixed(2)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Economic Geography Indicator (TÜİK GSYH Payı) */}
-              {showEconomy && economyIndicator && (
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                      <Activity className="size-3.5" /> {economyIndicator.label}
-                    </span>
-                    <span className="font-mono text-[11px] text-muted-foreground">
-                      {economyIndicator.year}
-                    </span>
-                  </div>
-                  <div className="font-heading font-extrabold text-2xl text-amber-900 dark:text-amber-200">
-                    {economyIndicator.value}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    Kaynak: {economyIndicator.source}
-                  </div>
-                </div>
-              )}
-            </Card>
-          )}
-        </div>
-
-        {/* Right 5 Columns: Clean Mini Locator & Neighbor Provinces */}
-        <div className="lg:col-span-5 space-y-6">
-          {/* Locator Mini Map Container (Edge-to-Edge, Zero Margin Padding) */}
-          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Compass className="size-4 text-primary" />
-                <h3 className="font-heading font-bold text-base text-foreground">
-                  Türkiye Haritasındaki Konumu
-                </h3>
-              </div>
-              <Badge variant="outline" size="sm" className="font-mono text-[11px]">
-                TR-{province.plateCode}
-              </Badge>
-            </div>
-
-            {/* Ultra-crisp Clean V2 Province Locator Map */}
-            <V2ProvinceLocatorMap plateCode={province.plateCode} provinceName={name} />
-
-            {/* Region Association Reference */}
-            <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
-              <span className="text-muted-foreground font-medium">Bağlı Olduğu Coğrafi Bölge:</span>
-              <Link
-                href={{
-                  pathname: "/turkiye/bolge/[slug]",
-                  params: { slug: regionTheme.slug },
-                }}
-                className="text-primary hover:underline font-semibold inline-flex items-center gap-1 group"
-              >
-                <span>{region}</span>
-                <ArrowUpRight className="size-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </Link>
-            </div>
-
-            {/* Neighboring Provinces Chips */}
-            {neighbors.length > 0 && (
-              <div className="pt-3 border-t border-border space-y-2.5">
-                <span className="text-xs font-semibold text-muted-foreground block">
-                  Komşu İller ({neighbors.length} İl):
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {neighbors.map((nb) => (
-                    <Link
-                      key={nb.plateCode}
-                      href={{
-                        pathname: "/turkiye/[slug]",
-                        params: { slug: slugForLocale(nb, locale) },
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-primary/15 hover:text-primary border border-border transition-colors group cursor-pointer"
-                    >
-                      <span className="font-mono text-[10px] opacity-70">#{nb.plateCode}</span>
-                      <span>{nb.nameTr}</span>
-                      <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Similar Climate Provinces Chips */}
-            {climate.showSection && similarClimate.length > 0 && (
-              <div className="pt-3 border-t border-border space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground block">
-                    Benzer İklimli İller ({province.climateKoppen || "Köppen"}):
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] bg-primary/10 text-primary border-primary/20"
-                  >
-                    {province.climateKoppen}
-                  </Badge>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {similarClimate.map((sc) => (
-                    <Link
-                      key={sc.plateCode}
-                      href={{
-                        pathname: "/turkiye/[slug]",
-                        params: { slug: slugForLocale(sc, locale) },
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-teal-500/15 hover:text-teal-700 dark:hover:text-teal-300 border border-border transition-colors group cursor-pointer"
-                    >
-                      <span className="font-mono text-[10px] opacity-70">#{sc.plateCode}</span>
-                      <span>{sc.nameTr}</span>
-                      {sc.climateAnnualMeanTempC !== null && (
-                        <span className="font-mono text-[10px] font-semibold text-teal-700 dark:text-teal-300">
-                          ·{" "}
-                          {format.number(sc.climateAnnualMeanTempC, {
-                            minimumFractionDigits: 1,
-                            maximumFractionDigits: 1,
-                          })}{" "}
-                          °C
-                        </span>
-                      )}
-                      <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* CLIMATE SECTION */}
-      {climateSeries && (
-        <Card as="section" variant="panel" space="6">
-          <div>
-            <h2 className="font-heading text-2xl font-bold text-foreground">
-              {`${sectionHeading("climate")} İklim Özellikleri & Yağış Grafiği`}
-            </h2>
-          </div>
-
-          {/* MEB Müfredat ve MGM Köppen Açıklama Rehberi */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-muted/40 border border-border space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2.5">
-              {climate.showClass && (
+      {/* BODY CONTENT CONTAINER — empty since T-046 filled it in. T-032 (`d2039b6`) de-nested
+          the `<main>` landmark into `(site)/layout.tsx` and deleted the
+          `<main className="container mx-auto px-4 max-w-7xl py-10 space-y-12">` that wrapped
+          everything below, without replacing the width, the padding or the rhythm: only this
+          marker survived, and the body rendered edge-to-edge at viewport width with no gutter on
+          all 81 province routes. `default` is 56px between sections where the deleted wrapper was
+          48px — `PageContainer`'s rhythm union is closed on purpose and has no 48px member, and
+          reopening it for 8px would reopen the passthrough it exists to close. */}
+      <PageContainer space="default">
+        {/* GEOGRAPHY & LOCATOR SPLIT ROW */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left 7 Columns: Prose & Physical Highlights */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* Overview Card */}
+            {showLandform && (
+              <Card variant="panel" space="4">
                 <div className="flex items-center gap-2">
                   <Badge variant="primary" size="sm">
-                    {province.climateCurriculumNameTr || province.climateClassTr}
+                    Coğrafi Konum &amp; Yapı
                   </Badge>
-                  <span className="text-xs font-mono font-bold text-foreground">
-                    Köppen: {province.climateKoppen}
-                  </span>
                 </div>
-              )}
-              <span className="text-[11px] text-muted-foreground italic">
-                Ders kitabı adı ile Köppen kodu illerin çoğunda örtüşmez.
-              </span>
-            </div>
+                <h2 className="font-heading text-2xl font-bold text-foreground">
+                  {sectionHeading("landform")} Fiziki Coğrafyası ve Arazi Özellikleri
+                </h2>
+                {landformNote && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">{landformNote}</p>
+                )}
 
-            {climate.showCurriculumNote && (
-              <p className="text-xs sm:text-sm text-foreground leading-relaxed">
-                {province.climateCurriculumNoteTr}
-              </p>
+                {/* Hydrography & Water Bodies */}
+                {showHydrography && (
+                  <div className="pt-4 border-t border-border space-y-3">
+                    {province.hydrographyNoteTr && (
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                          <Droplets className="size-3.5 text-cyan-600" />
+                          <span>{sectionHeading("hydrography")} Su Kaynakları ve Havzaları</span>
+                        </span>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {province.hydrographyNoteTr}
+                        </p>
+                      </div>
+                    )}
+
+                    {hydrographyFeatures && hydrographyFeatures.length > 0 && (
+                      <div className="space-y-2 pt-1">
+                        <span className="text-xs font-semibold text-muted-foreground block">
+                          Önemli Su Kaynakları:
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {hydrographyFeatures.map((feat, idx) => (
+                            <Badge
+                              key={idx}
+                              variant="outline"
+                              className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20 text-xs py-1"
+                            >
+                              <Droplets className="size-3 mr-1" />
+                              <span>{feat.name}</span>
+                              <span className="opacity-70 text-[10px] ml-1">({feat.type})</span>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Card>
             )}
 
-            {province.climateNoteTr && (
-              <details className="text-xs text-muted-foreground group" open>
-                <summary className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors select-none py-1">
-                  ▼ MGM Sınıflandırma ve Metodoloji Notu
-                </summary>
-                <p className="mt-2 pl-3 border-l-2 border-primary/40 text-muted-foreground leading-relaxed">
-                  {province.climateNoteTr}
-                </p>
-              </details>
+            {/* Demographics & Socio-Economic Indicators Card */}
+            {(showSettlement || showEconomy) && (
+              <Card variant="panel" space="5">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    size="sm"
+                    className="bg-primary/10 text-primary border-primary/30"
+                  >
+                    Sosyo-Ekonomik Göstergeler
+                  </Badge>
+                </div>
+                <h3 className="font-heading text-xl font-bold text-foreground">
+                  {sectionHeading("settlement")} Nüfus, Yerleşme ve Ekonomik Yapı
+                </h3>
+
+                {/* Settlement Prose Note */}
+                {province.settlementNoteTr && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {province.settlementNoteTr}
+                  </p>
+                )}
+
+                {/* Demographics Metrics */}
+                {(province.urbanizationRate !== null || province.netMigrationRate !== null) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    {province.urbanizationRate !== null && (
+                      <div className="p-3.5 rounded-2xl bg-muted/50 space-y-1">
+                        <span className="text-muted-foreground block">Şehirleşme Oranı</span>
+                        <span className="font-heading font-bold text-lg text-foreground">
+                          %{province.urbanizationRate.toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+                    {province.netMigrationRate !== null && (
+                      <div className="p-3.5 rounded-2xl bg-muted/50 space-y-1">
+                        <span className="text-muted-foreground block">Net Göç Hızı</span>
+                        <span className="font-heading font-bold text-lg text-primary">
+                          ‰{province.netMigrationRate.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Economic Geography Indicator (TÜİK GSYH Payı) */}
+                {showEconomy && economyIndicator && (
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                        <Activity className="size-3.5" /> {economyIndicator.label}
+                      </span>
+                      <span className="font-mono text-[11px] text-muted-foreground">
+                        {economyIndicator.year}
+                      </span>
+                    </div>
+                    <div className="font-heading font-extrabold text-2xl text-amber-900 dark:text-amber-200">
+                      {economyIndicator.value}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Kaynak: {economyIndicator.source}
+                    </div>
+                  </div>
+                )}
+              </Card>
             )}
           </div>
 
-          {/* climate-dark-scope: components/climate/climate.module.css is a frozen V1
+          {/* Right 5 Columns: Clean Mini Locator & Neighbor Provinces */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Locator Mini Map Container (Edge-to-Edge, Zero Margin Padding) */}
+            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Compass className="size-4 text-primary" />
+                  <h3 className="font-heading font-bold text-base text-foreground">
+                    Türkiye Haritasındaki Konumu
+                  </h3>
+                </div>
+                <Badge variant="outline" size="sm" className="font-mono text-[11px]">
+                  TR-{province.plateCode}
+                </Badge>
+              </div>
+
+              {/* Ultra-crisp Clean V2 Province Locator Map */}
+              <V2ProvinceLocatorMap plateCode={province.plateCode} provinceName={name} />
+
+              {/* Region Association Reference */}
+              <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">
+                  Bağlı Olduğu Coğrafi Bölge:
+                </span>
+                <Link
+                  href={{
+                    pathname: "/turkiye/bolge/[slug]",
+                    params: { slug: regionTheme.slug },
+                  }}
+                  className="text-primary hover:underline font-semibold inline-flex items-center gap-1 group"
+                >
+                  <span>{region}</span>
+                  <ArrowUpRight className="size-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </Link>
+              </div>
+
+              {/* Neighboring Provinces Chips */}
+              {neighbors.length > 0 && (
+                <div className="pt-3 border-t border-border space-y-2.5">
+                  <span className="text-xs font-semibold text-muted-foreground block">
+                    Komşu İller ({neighbors.length} İl):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {neighbors.map((nb) => (
+                      <Link
+                        key={nb.plateCode}
+                        href={{
+                          pathname: "/turkiye/[slug]",
+                          params: { slug: slugForLocale(nb, locale) },
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-primary/15 hover:text-primary border border-border transition-colors group cursor-pointer"
+                      >
+                        <span className="font-mono text-[10px] opacity-70">#{nb.plateCode}</span>
+                        <span>{nb.nameTr}</span>
+                        <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Similar Climate Provinces Chips */}
+              {climate.showSection && similarClimate.length > 0 && (
+                <div className="pt-3 border-t border-border space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground block">
+                      Benzer İklimli İller ({province.climateKoppen || "Köppen"}):
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] bg-primary/10 text-primary border-primary/20"
+                    >
+                      {province.climateKoppen}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {similarClimate.map((sc) => (
+                      <Link
+                        key={sc.plateCode}
+                        href={{
+                          pathname: "/turkiye/[slug]",
+                          params: { slug: slugForLocale(sc, locale) },
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-teal-500/15 hover:text-teal-700 dark:hover:text-teal-300 border border-border transition-colors group cursor-pointer"
+                      >
+                        <span className="font-mono text-[10px] opacity-70">#{sc.plateCode}</span>
+                        <span>{sc.nameTr}</span>
+                        {sc.climateAnnualMeanTempC !== null && (
+                          <span className="font-mono text-[10px] font-semibold text-teal-700 dark:text-teal-300">
+                            ·{" "}
+                            {format.number(sc.climateAnnualMeanTempC, {
+                              minimumFractionDigits: 1,
+                              maximumFractionDigits: 1,
+                            })}{" "}
+                            °C
+                          </span>
+                        )}
+                        <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* CLIMATE SECTION */}
+        {climateSeries && (
+          <Card as="section" variant="panel" space="6">
+            <div>
+              <h2 className="font-heading text-2xl font-bold text-foreground">
+                {`${sectionHeading("climate")} İklim Özellikleri & Yağış Grafiği`}
+              </h2>
+            </div>
+
+            {/* MEB Müfredat ve MGM Köppen Açıklama Rehberi */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-muted/40 border border-border space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+                {climate.showClass && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="primary" size="sm">
+                      {province.climateCurriculumNameTr || province.climateClassTr}
+                    </Badge>
+                    <span className="text-xs font-mono font-bold text-foreground">
+                      Köppen: {province.climateKoppen}
+                    </span>
+                  </div>
+                )}
+                <span className="text-[11px] text-muted-foreground italic">
+                  Ders kitabı adı ile Köppen kodu illerin çoğunda örtüşmez.
+                </span>
+              </div>
+
+              {climate.showCurriculumNote && (
+                <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                  {province.climateCurriculumNoteTr}
+                </p>
+              )}
+
+              {province.climateNoteTr && (
+                <details className="text-xs text-muted-foreground group" open>
+                  <summary className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors select-none py-1">
+                    ▼ MGM Sınıflandırma ve Metodoloji Notu
+                  </summary>
+                  <p className="mt-2 pl-3 border-l-2 border-primary/40 text-muted-foreground leading-relaxed">
+                    {province.climateNoteTr}
+                  </p>
+                </details>
+              )}
+            </div>
+
+            {/* climate-dark-scope: components/climate/climate.module.css is a frozen V1
                 CSS Module whose text/surface colours are the raw (never dark-adapted)
                 --color-* Terra tokens; this wrapper shadows just those four custom
                 properties for dark mode (see app/globals.css) without touching the
                 frozen file or affecting V1's own /turkiye/[slug] page. */}
-          <div className="climate-dark-scope">
-            <ClimateSection
-              locale={locale}
-              provinceName={name}
-              plateCode={province.plateCode}
-              climate={climateSeries}
-            />
-          </div>
-        </Card>
-      )}
+            <div className="climate-dark-scope">
+              <ClimateSection
+                locale={locale}
+                provinceName={name}
+                plateCode={province.plateCode}
+                climate={climateSeries}
+              />
+            </div>
+          </Card>
+        )}
 
-      {/* AIR QUALITY & MARINE ENVIRONMENT ROW */}
-      {pm25Annual && showMarine ? (
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card variant="panel">
+        {/* AIR QUALITY & MARINE ENVIRONMENT ROW */}
+        {pm25Annual && showMarine ? (
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Card variant="panel">
+              <AirPollutionSection
+                locale={locale}
+                provinceName={name}
+                headingName={sectionHeading("airPollution")}
+                plateCode={province.plateCode}
+                pm25={pm25Annual}
+              />
+            </Card>
+            <Card variant="panel">
+              <ProvinceMarineSection
+                locale={locale}
+                provinceName={name}
+                blocks={marineBlocks}
+                layers={marineLayers}
+                headingId="province-marine"
+              />
+            </Card>
+          </section>
+        ) : pm25Annual ? (
+          <Card as="section" variant="panel">
             <AirPollutionSection
               locale={locale}
               provinceName={name}
@@ -816,7 +846,8 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               pm25={pm25Annual}
             />
           </Card>
-          <Card variant="panel">
+        ) : showMarine ? (
+          <Card as="section" variant="panel">
             <ProvinceMarineSection
               locale={locale}
               provinceName={name}
@@ -825,60 +856,39 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               headingId="province-marine"
             />
           </Card>
-        </section>
-      ) : pm25Annual ? (
-        <Card as="section" variant="panel">
-          <AirPollutionSection
-            locale={locale}
-            provinceName={name}
-            headingName={sectionHeading("airPollution")}
-            plateCode={province.plateCode}
-            pm25={pm25Annual}
-          />
-        </Card>
-      ) : showMarine ? (
-        <Card as="section" variant="panel">
-          <ProvinceMarineSection
-            locale={locale}
-            provinceName={name}
-            blocks={marineBlocks}
-            layers={marineLayers}
-            headingId="province-marine"
-          />
-        </Card>
-      ) : null}
+        ) : null}
 
-      {/* EARTHQUAKE MONITORING SECTION */}
-      {provinceEarthquakes !== null && earthquakeMeta !== null && (
-        <Card as="section" variant="panel" space="4">
-          <ProvinceEarthquakeSection
-            locale={locale}
-            provinceName={name}
-            plateCode={province.plateCode}
-            list={provinceEarthquakes}
-            headingId="province-earthquake"
-          />
-          {/* The disclaimer used to be repeated here as an amber callout. It now renders
+        {/* EARTHQUAKE MONITORING SECTION */}
+        {provinceEarthquakes !== null && earthquakeMeta !== null && (
+          <Card as="section" variant="panel" space="4">
+            <ProvinceEarthquakeSection
+              locale={locale}
+              provinceName={name}
+              plateCode={province.plateCode}
+              list={provinceEarthquakes}
+              headingId="province-earthquake"
+            />
+            {/* The disclaimer used to be repeated here as an amber callout. It now renders
                 exactly once, in `EarthquakeAttribution` at the foot of the page, alongside the
                 provider notices it belongs with — one mandated string, one render site. */}
-        </Card>
-      )}
+          </Card>
+        )}
 
-      {/* BOTTOM NAVIGATION ACTIONS */}
-      <div className="flex items-center justify-between pt-2">
-        <Link href="/turkiye">
-          <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
-            ← Türkiye Atlası&apos;na Dön (Tüm İller)
-          </Button>
-        </Link>
-        <Link href="/">
-          <Button variant="ghost" size="sm" leftIcon={<Home className="size-4" />}>
-            Ana Sayfa
-          </Button>
-        </Link>
-      </div>
+        {/* BOTTOM NAVIGATION ACTIONS */}
+        <div className="flex items-center justify-between pt-2">
+          <Link href="/turkiye">
+            <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
+              ← Türkiye Atlası&apos;na Dön (Tüm İller)
+            </Button>
+          </Link>
+          <Link href="/">
+            <Button variant="ghost" size="sm" leftIcon={<Home className="size-4" />}>
+              Ana Sayfa
+            </Button>
+          </Link>
+        </div>
 
-      {/* The marine safety disclaimer, beside this province's values, plus a link to the
+        {/* The marine safety disclaimer, beside this province's values, plus a link to the
             licence text — the SAME component `/deniz`, the four basin pages and the home page
             render (`components/marine/marine-data-notice.tsx`).
 
@@ -891,22 +901,22 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
             Still gated on the same `showMarine` signal as the values themselves, so the two
             cannot come apart in either direction. */}
-      {showMarine && <MarineDataNotice />}
+        {showMarine && <MarineDataNotice />}
 
-      {/* AFAD's own required notice, from the PROVINCE payload's attributions — not the
+        {/* AFAD's own required notice, from the PROVINCE payload's attributions — not the
             global meta's — because this section shows this province's events. The disclaimer
             comes from the global meta, which is where it is published. Gated on the same pair
             the section itself is gated on. */}
-      {provinceEarthquakes !== null && earthquakeMeta !== null && (
-        <EarthquakeAttribution
-          attributions={provinceEarthquakes.meta.attributions}
-          disclaimerTr={earthquakeMeta.disclaimerTr}
-          headingId="province-earthquake-sources"
-          heading={t("earthquakeSourcesHeading")}
-        />
-      )}
+        {provinceEarthquakes !== null && earthquakeMeta !== null && (
+          <EarthquakeAttribution
+            attributions={provinceEarthquakes.meta.attributions}
+            disclaimerTr={earthquakeMeta.disclaimerTr}
+            headingId="province-earthquake-sources"
+            heading={t("earthquakeSourcesHeading")}
+          />
+        )}
 
-      {/* UNIFIED COMPREHENSIVE DATA SOURCES (KAYNAKÇA)
+        {/* UNIFIED COMPREHENSIVE DATA SOURCES (KAYNAKÇA)
             Bound to the SAME signals the sections above are gated on, so the bibliography
             cites what this province actually shows and nothing else.
             - `include`: the marine block renders CMEMS/ECMWF-derived sea-surface values, and
@@ -922,11 +932,12 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               all 81 of them, for a section that is not there. It is bound to `climateSeries`
               rather than to `isTr` because that is the expression the section itself reads: a
               TR province the api publishes no series for is the same case. */}
-      <V2SourcesSection
-        scope="turkiye"
-        include={showMarine ? ["cmems", "ecmwf-marine"] : []}
-        omit={[...(pm25Annual ? [] : ["acag-pm25"]), ...(climateSeries ? [] : ["era5"])]}
-      />
+        <V2SourcesSection
+          scope="turkiye"
+          include={showMarine ? ["cmems", "ecmwf-marine"] : []}
+          omit={[...(pm25Annual ? [] : ["acag-pm25"]), ...(climateSeries ? [] : ["era5"])]}
+        />
+      </PageContainer>
     </>
   );
 }

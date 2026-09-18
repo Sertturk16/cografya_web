@@ -287,142 +287,150 @@ export default async function V2BookDetailPage({ params }: PageProps) {
         </PageContainer>
       </section>
 
-      {/* MAIN WORKBENCH SECTION */}
-      <section className="space-y-6">
-        <div className="border-b border-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm" icon={<Video className="size-3.5" />}>
-                İnteraktif Video Çözüm Merkezi
-              </Badge>
+      {/* BODY. T-046: this page carried no body container at all. T-032 (`d2039b6`) de-nested
+          the `<main>` landmark into `(site)/layout.tsx` and deleted the
+          `<main className="container mx-auto px-4 max-w-7xl py-10 space-y-12">` that used to
+          wrap everything below the hero, without replacing the width, the padding or the
+          rhythm — so the body rendered edge-to-edge at viewport width with no gutter. `default`
+          is 56px between sections where the deleted wrapper was 48px: `PageContainer`'s rhythm
+          union is closed on purpose and has no 48px member, and reopening it for 8px would
+          reopen the passthrough it exists to close. */}
+      <PageContainer space="default">
+        {/* MAIN WORKBENCH SECTION */}
+        <section className="space-y-6">
+          <div className="border-b border-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Badge variant="primary" size="sm" icon={<Video className="size-3.5" />}>
+                  İnteraktif Video Çözüm Merkezi
+                </Badge>
+              </div>
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-1">
+                Soru Bazlı Video Çözüm &amp; Zaman Çizelgesi
+              </h2>
             </div>
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-1">
-              Soru Bazlı Video Çözüm &amp; Zaman Çizelgesi
-            </h2>
           </div>
-        </div>
 
-        {/* Jump Strip Navigation */}
-        <nav id="denemeye-atla" className={styles.jump} aria-labelledby="denemeye-atla-heading">
-          <h3 id="denemeye-atla-heading" className={styles.jumpHeading}>
-            {t("jumpHeading")}
-          </h3>
-          <ul role="list" className={styles.jumpList}>
-            {jumpNumbers.map((no) => (
-              <li key={no}>
-                <a className={styles.jumpItem} href={`#${videoFragment(no)}`}>
-                  <span className={styles.srOnly}>{t("videoFallbackHeading", { no })}</span>
-                  <span aria-hidden="true">{no}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+          {/* Jump Strip Navigation */}
+          <nav id="denemeye-atla" className={styles.jump} aria-labelledby="denemeye-atla-heading">
+            <h3 id="denemeye-atla-heading" className={styles.jumpHeading}>
+              {t("jumpHeading")}
+            </h3>
+            <ul role="list" className={styles.jumpList}>
+              {jumpNumbers.map((no) => (
+                <li key={no}>
+                  <a className={styles.jumpItem} href={`#${videoFragment(no)}`}>
+                    <span className={styles.srOnly}>{t("videoFallbackHeading", { no })}</span>
+                    <span aria-hidden="true">{no}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-        {/* Video Bench Player and Question Matrix (With Auth Gating) */}
-        {defaultOrderNo !== null && (
-          <VideoBench
-            className={styles.workbench}
-            indexClassName={styles.index}
-            videos={benchVideos}
-            defaultOrderNo={defaultOrderNo}
-            bookSlug={book.slugTr}
-          >
-            {videoStates.map(({ video, state }) => {
-              const playable = isPlayable(state);
-              return (
-                <article
-                  key={video.orderNo}
-                  className={styles.deneme}
-                  aria-labelledby={videoFragment(video.orderNo)}
-                  data-deneme={video.orderNo}
-                >
-                  <div className={styles.denemeHead}>
-                    <h3 id={videoFragment(video.orderNo)} className={styles.denemeHeading}>
-                      {videoTitle(t, locale, video)}
-                    </h3>
-                    <span className={styles.denemeFacts}>
-                      <span>{t("videoTagCount", { count: video.tags.length })}</span>
-                      {state.kind === "rich" && (
-                        <>
-                          <span className={styles.factSeparator} aria-hidden="true">
-                            ·
-                          </span>
-                          <DenemeMeta state={state} />
-                        </>
-                      )}
-                    </span>
-                  </div>
+          {/* Video Bench Player and Question Matrix (With Auth Gating) */}
+          {defaultOrderNo !== null && (
+            <VideoBench
+              className={styles.workbench}
+              indexClassName={styles.index}
+              videos={benchVideos}
+              defaultOrderNo={defaultOrderNo}
+              bookSlug={book.slugTr}
+            >
+              {videoStates.map(({ video, state }) => {
+                const playable = isPlayable(state);
+                return (
+                  <article
+                    key={video.orderNo}
+                    className={styles.deneme}
+                    aria-labelledby={videoFragment(video.orderNo)}
+                    data-deneme={video.orderNo}
+                  >
+                    <div className={styles.denemeHead}>
+                      <h3 id={videoFragment(video.orderNo)} className={styles.denemeHeading}>
+                        {videoTitle(t, locale, video)}
+                      </h3>
+                      <span className={styles.denemeFacts}>
+                        <span>{t("videoTagCount", { count: video.tags.length })}</span>
+                        {state.kind === "rich" && (
+                          <>
+                            <span className={styles.factSeparator} aria-hidden="true">
+                              ·
+                            </span>
+                            <DenemeMeta state={state} />
+                          </>
+                        )}
+                      </span>
+                    </div>
 
-                  <ul role="list" className={styles.questionGrid}>
-                    {video.tags.map((tag) => {
-                      const fragment = tagFragment(video.orderNo, tag, video.tags);
-                      return (
-                        <li key={tag.orderNo}>
-                          <a
-                            id={fragment}
-                            href={`#${fragment}`}
-                            className={styles.questionLink}
-                            data-second={tag.startSecond}
-                            aria-label={
-                              playable
-                                ? t("tagLabelAria", {
-                                    no: tag.orderNo,
-                                    time: formatDuration(tag.startSecond),
-                                  })
-                                : undefined
-                            }
-                          >
-                            {t("tagLabel", { no: tag.orderNo })}
-                          </a>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </article>
-              );
-            })}
-          </VideoBench>
-        )}
-      </section>
+                    <ul role="list" className={styles.questionGrid}>
+                      {video.tags.map((tag) => {
+                        const fragment = tagFragment(video.orderNo, tag, video.tags);
+                        return (
+                          <li key={tag.orderNo}>
+                            <a
+                              id={fragment}
+                              href={`#${fragment}`}
+                              className={styles.questionLink}
+                              data-second={tag.startSecond}
+                              aria-label={
+                                playable
+                                  ? t("tagLabelAria", {
+                                      no: tag.orderNo,
+                                      time: formatDuration(tag.startSecond),
+                                    })
+                                  : undefined
+                              }
+                            >
+                              {t("tagLabel", { no: tag.orderNo })}
+                            </a>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </article>
+                );
+              })}
+            </VideoBench>
+          )}
+        </section>
 
-      {/* OFFICIAL ATTRIBUTION AND PARTNER NOTICES */}
-      {attributionRows.length > 0 && (
-        <div className="p-4 rounded-2xl bg-card border border-border/80 text-xs text-muted-foreground flex flex-wrap items-center gap-3">
-          <span className="font-semibold text-foreground">{t("sourcesLabel")}:</span>
-          {attributionRows.map((row, index) => (
-            <Fragment key={row.providerId}>
-              {index > 0 && <span aria-hidden="true"> &bull; </span>}
-              {row.providerId === "youtube" && row.channelUrl !== null ? (
-                <a
-                  className="inline-flex items-center gap-1.5 text-foreground hover:text-primary transition-colors"
-                  href={row.channelUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Image
-                    src="/marka/yt_icon_red_digital.png"
-                    alt=""
-                    width={1255}
-                    height={1075}
-                    sizes="24px"
-                    className="w-4 h-auto inline-block"
-                  />
+        {/* OFFICIAL ATTRIBUTION AND PARTNER NOTICES */}
+        {attributionRows.length > 0 && (
+          <div className="p-4 rounded-2xl bg-card border border-border/80 text-xs text-muted-foreground flex flex-wrap items-center gap-3">
+            <span className="font-semibold text-foreground">{t("sourcesLabel")}:</span>
+            {attributionRows.map((row, index) => (
+              <Fragment key={row.providerId}>
+                {index > 0 && <span aria-hidden="true"> &bull; </span>}
+                {row.providerId === "youtube" && row.channelUrl !== null ? (
+                  <a
+                    className="inline-flex items-center gap-1.5 text-foreground hover:text-primary transition-colors"
+                    href={row.channelUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Image
+                      src="/marka/yt_icon_red_digital.png"
+                      alt=""
+                      width={1255}
+                      height={1075}
+                      sizes="24px"
+                      className="w-4 h-auto inline-block"
+                    />
+                    <span lang="tr">{row.requiredNoticeTr}</span>
+                    <ExternalLink className="size-3 opacity-60 ml-0.5" />
+                  </a>
+                ) : (
                   <span lang="tr">{row.requiredNoticeTr}</span>
-                  <ExternalLink className="size-3 opacity-60 ml-0.5" />
-                </a>
-              ) : (
-                <span lang="tr">{row.requiredNoticeTr}</span>
-              )}
-            </Fragment>
-          ))}
-        </div>
-      )}
+                )}
+              </Fragment>
+            ))}
+          </div>
+        )}
 
-      {/* SCIENTIFIC DATA SOURCES & CITATIONS (KAYNAKÇA) */}
-      <V2SourcesSection scope="kitaplar" />
-
-      {/* Modern V2 Footer */}
+        {/* SCIENTIFIC DATA SOURCES & CITATIONS (KAYNAKÇA) */}
+        <V2SourcesSection scope="kitaplar" />
+      </PageContainer>
     </>
   );
 }
