@@ -1489,7 +1489,7 @@ function moduleScopeFallbacks(): string[] {
 }
 
 /**
- * THE TIER SWITCH — ONE component-level ambiguity, recorded once instead of on 17 pages.
+ * THE TIER SWITCH — ONE component-level ambiguity, recorded once instead of on 22 render roots.
  *
  * `components/patterns/page-hero.tsx` picks its heading with
  * `tier === "hub" ? <H1>…</H1> : <H1Display>…</H1Display>`. Both names are written as JSX, so the
@@ -1500,8 +1500,8 @@ function moduleScopeFallbacks(): string[] {
  * `const Heading = tier === "hub" ? H1 : H1Display;` + `<Heading>`, which is invisible to this
  * walk — `Heading` is neither an import binding nor a top-level declaration — and measured
  * `PAGES_WITHOUT_H1` UP, 5 → 6, on the first page converted, with the heading rendering perfectly
- * well in a browser. That direction is the one this programme cannot afford in reverse: 17 pages
- * would have read "no h1" while shipping one. Naming both components makes the heading countable,
+ * well in a browser. That direction is the one this programme cannot afford in reverse: MEASURED,
+ * 22 render roots read "no h1" while shipping one under the alias form. Naming both components makes the heading countable,
  * and trades an under-count the walk cannot see for an OVER-count it can, which is then resolved
  * here, in the open.
  *
@@ -1552,6 +1552,29 @@ const TIER_SWITCH = {
 } as const;
 
 /**
+ * THE SPLIT, PINNED — how many render roots reach two `<h1>` sites, and which mechanism accounts
+ * for each. Measured 2026-09-18 over `walkRenderRoots()`.
+ *
+ * These exist because `PAGES_WITH_MULTIPLE_H1 = 0` is a number AFTER two reconciliations, and until
+ * now nothing observed the number BEFORE them. That is the same defect the reconciliation itself was
+ * written to correct, one level up: SCOPE note 4 and `PAGES_WITH_MULTIPLE_H1`'s docblock were both
+ * rewritten from "`/profil` is the only root reaching two" to the measured 23/22/1 — and left as
+ * PROSE THAT NO TEST OBSERVED. Adopting `PageHero` on a page that has no heading (the `giris` /
+ * `kayit` shape this branch shipped twice) moves the raw count and nothing else: `H1_ELEMENTS` does
+ * not move, because both tier elements are already in the set; `PAGES_WITHOUT_H1` does not move once
+ * it is 0; `PAGES_WITH_MULTIPLE_H1` does not move, because the collapse correctly fires. The
+ * paragraph correcting the false number would have gone stale inside itself.
+ *
+ * `RECONCILED_BY_TIER_SWITCH + RECONCILED_BY_EXEMPTION === REACHING_TWO` is asserted too, so the
+ * three cannot be re-pinned independently into a set that does not add up.
+ */
+const ROOTS_REACHING_TWO_H1 = 23;
+/** Roots reaching both TIER elements through `PageHero`'s one unevaluable `tier` switch. */
+const ROOTS_RECONCILED_BY_TIER_SWITCH = 22;
+/** Roots reaching two DIFFERENT headings on branches the walk cannot evaluate — `MULTIPLE_H1_EXEMPTIONS`. */
+const ROOTS_RECONCILED_BY_EXEMPTION = 1;
+
+/**
  * `tierPrimitiveWriters(root)` memo. Keyed by root and dropped wherever {@link sitesCache} is,
  * because it is a function of the whole graph rather than of one file.
  */
@@ -1590,10 +1613,23 @@ const tierWriterCache = new Map<string, string[]>();
  * relays a component, it does not render one. By construction this cannot drift from the walk: it
  * IS the walk's resolution, not a copy of it.
  *
- * Still correctly EXCLUDED, both verified: a local `function H1()` in the page (it resolves to
- * that page's own declaration, not to `typography.tsx`, and its own `<h1>` is a third site that
- * keeps the page an offender anyway), and a component that legitimately renders both tiers (it is
- * recorded as a second writer, so the collapse does not fire).
+ * Still correctly EXCLUDED, all three verified — and the list is three, not two, because a list
+ * that sounds exhaustive and is not is the same defect as a docblock overstating a guarantee:
+ *
+ *   1. a local `function H1()` in the page. It resolves to that page's OWN declaration, not to
+ *      `typography.tsx`, so it is not a tier writer — and its own `<h1>` is a third site that keeps
+ *      the page an offender anyway. Pinned by its own test below.
+ *   2. a component that legitimately renders BOTH tiers. It is recorded as a second writer, so the
+ *      collapse does not fire. Pinned by check 3.
+ *   3. `import * as T from "…/typography"` + `<T.H1>` beside a `PageHero`. This one IS outside the
+ *      writer list — `JSX_ELEMENT` yields the namespace `T`, which binds to the whole module rather
+ *      than to a tier declaration — so `writers` reads `["page-hero.tsx"]` and the collapse fires.
+ *      NOT SILENT, which is why it is an exclusion rather than a hole: `nodeSpan` cannot isolate a
+ *      declaration in a namespace binding, so the same resolution records
+ *      `components/patterns/typography.tsx — *` in `fallbacksSeen`, and
+ *      {@link MODULE_SCOPE_FALLBACKS} is pinned exact-EMPTY. The suite goes red naming the file
+ *      before this collapse is ever consulted. Closed by a different mechanism, on purpose:
+ *      namespace-importing a component module is the thing to stop, not a case to special-case here.
  */
 function tierPrimitiveWriters(root: string): string[] {
   const hit = tierWriterCache.get(root);
@@ -2580,14 +2616,48 @@ describe("the multiple-h1 exemptions", () => {
     // `pagesWithMultipleH1()` filters by exact label, so a second offender elsewhere is still
     // reported. Proven by asking for the unfiltered list and confirming profil is really in it.
     //
-    // Read off `effectiveH1Sites`, not `h1SitesOf`: since the adoption task, 17 roots reach
-    // BOTH heading tiers through `PageHero`'s one `tier` switch, which the tier-switch block
-    // below collapses and separately proves. The property this control exists for is unchanged
-    // and is about the FILE exemption — that naming `profil` silences `profil` and nothing else.
+    // Read off `effectiveH1Sites`, not `h1SitesOf`: since the adoption task, 22 render roots
+    // reach BOTH heading tiers through `PageHero`'s one `tier` switch, which the tier-switch
+    // block below collapses and separately proves. The property this control exists for is
+    // unchanged and is about the FILE exemption — that naming `profil` silences `profil` and
+    // nothing else. The number this control no longer observes is pinned by "the 23/22/1 split"
+    // immediately below, which reads the UNCOLLAPSED list.
     const allWithTwo = walkRenderRoots().filter((page) => effectiveH1Sites(page).length > 1);
     expect(allWithTwo.map(label)).toEqual(["app/[locale]/(site)/profil/page.tsx"]);
     expect(pagesWithMultipleH1()).toEqual([]);
   });
+
+  it("the 23/22/1 split is exactly what both docblocks claim — the uncollapsed number", () => {
+    // THE ONE ASSERTION THAT READS `h1SitesOf` RATHER THAN `effectiveH1Sites`. Without it the raw
+    // count is observed nowhere: a later task adopting `PageHero` on a headingless page moves it
+    // and no other counter notices, so SCOPE note 4 and `PAGES_WITH_MULTIPLE_H1`'s docblock — both
+    // rewritten from a false "only `/profil`" to this measured split — would go stale in silence.
+    const reachingTwo = walkRenderRoots().filter((page) => h1SitesOf(page).length > 1);
+    expect(
+      reachingTwo.map(label),
+      `render roots reaching two <h1> sites BEFORE either reconciliation:\n${reachingTwo
+        .map((p) => `  ${label(p)}`)
+        .join("\n")}`,
+    ).toHaveLength(ROOTS_REACHING_TWO_H1);
+
+    // Which mechanism accounts for each. `effectiveH1Sites` collapsing to one means the tier
+    // switch took it; still holding two means only the named exemption can.
+    const byTierSwitch = reachingTwo.filter((page) => effectiveH1Sites(page).length === 1);
+    const byExemption = reachingTwo.filter((page) => effectiveH1Sites(page).length > 1);
+    expect(byTierSwitch, "roots reconciled by the tier switch").toHaveLength(
+      ROOTS_RECONCILED_BY_TIER_SWITCH,
+    );
+    expect(byExemption.map(label), "roots left for the named exemption").toEqual(
+      MULTIPLE_H1_EXEMPTIONS.map((exemption) => exemption.file),
+    );
+    expect(byExemption).toHaveLength(ROOTS_RECONCILED_BY_EXEMPTION);
+
+    // The three pins must account for each other, so they cannot be re-pinned one at a time into
+    // a set that does not add up.
+    expect(ROOTS_RECONCILED_BY_TIER_SWITCH + ROOTS_RECONCILED_BY_EXEMPTION).toBe(
+      ROOTS_REACHING_TWO_H1,
+    );
+  }, 20000);
 });
 
 describe("the PageHero tier switch", () => {
@@ -2741,7 +2811,7 @@ describe("the PageHero tier switch", () => {
 
   it("still collapses an ordinary PageHero page — the other half of Ruling Z", () => {
     // Without this, a collapse that never fired would make the test above pass vacuously and
-    // would take all 17 adopting pages back to being offenders.
+    // would take all 22 adopting render roots back to being offenders.
     const target = join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx");
     expect(tierPrimitiveWriters(target)).toEqual([TIER_SWITCH.component]);
     expect(
