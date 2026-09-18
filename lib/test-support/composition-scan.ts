@@ -1066,3 +1066,93 @@ export function resolvesTo(
     resolvesTo(target, module, name, seen),
   );
 }
+
+/* ---------------------------------------------------------------------------------------------
+ * WHAT A RENDER ROOT ACTUALLY RETURNS
+ * ------------------------------------------------------------------------------------------ */
+
+/**
+ * ONE TOP-LEVEL NODE of what a render root returns — a direct child of the returned fragment, or
+ * the returned element itself when the file returns a single element rather than a fragment.
+ *
+ * `subtree` is every tag in this node INCLUDING its own, reached through `children` only.
+ * Elements written inside an attribute expression ({@link ScannedElement.inProp}) are deliberately
+ * NOT in it: `<Explorer panel={<PageContainer>…</PageContainer>}>` passes a sibling panel, it does
+ * not wrap the explorer's body, and a caller asking "is this node's content inside a container"
+ * must not be answered yes by a container handed to it as a prop.
+ */
+export type RenderTreeNode = {
+  readonly tag: string;
+  readonly spelling: string | null;
+  readonly subtree: readonly string[];
+};
+
+/**
+ * A `return` that begins a render root's OWN output.
+ *
+ * COLUMN 2, not "any `return` followed by `<`", and the indent is the whole rule. A `return
+ * <li …/>` inside a `.map(…)` callback is a list item, not a page: counting it as a top-level
+ * render node would credit every row of every table with whatever container its callback happens
+ * to sit in. Prettier (`docs/conventions.md`) indents a top-level function's own statements by
+ * exactly two spaces and anything nested deeper by more, which is the same guarantee — one level
+ * in — that {@link TOP_LEVEL_BOUNDARY}'s column-0 rule leans on, and it is read off
+ * {@link maskedSource} for the same reason: Prettier does not reindent template-literal interiors,
+ * so a `  return <` inside a backtick would otherwise open a phantom render tree.
+ *
+ * EVERY matching `return` inside the `default` declaration contributes, not just the last one: an
+ * early `return` renders a whole screen to a reader exactly as the final one does.
+ */
+const RETURNED_JSX = /^ {2}return\s*(?:\(\s*)?(?=<)/gm;
+
+const renderTreeCache = perFileCache<RenderTreeNode[]>();
+
+/**
+ * The top-level nodes of every JSX a render root's DEFAULT export returns.
+ *
+ * SCOPE, stated because a counter built on this inherits all of it:
+ *
+ *   - the `default` declaration only, located through {@link declarationRegions}. A page whose
+ *     body is assembled in a named helper in the same file and rendered as `{renderBody()}` has
+ *     its body nodes counted as ONE node (the call expression is not an element at all), not as
+ *     the sections the helper writes;
+ *   - a file with no `default` region — there is none under `PAGE_ROOTS` today — yields nothing,
+ *     which reads downstream as "no uncontained node", the silent-pass direction. The caller is
+ *     expected to assert the walk is non-empty rather than trust the zero;
+ *   - tags only, never resolved: `subtree` holds the source spelling of each tag. Deciding that a
+ *     `PageContainer` in it is THE `PageContainer` is the caller's job, through
+ *     {@link importBindingsOf} and {@link resolvesTo}.
+ */
+export function topLevelRenderNodes(file: string): RenderTreeNode[] {
+  const hit = renderTreeCache.get(file);
+  if (hit) return hit;
+
+  const source = readSource(file);
+  const region = declarationRegions(file).get("default");
+  const nodes: RenderTreeNode[] = [];
+
+  if (region) {
+    const [start, end] = region;
+    for (const match of maskedSource(file).matchAll(RETURNED_JSX)) {
+      const at = match.index;
+      if (at < start || at >= end) continue;
+      const elements = scanJsx(source.slice(at + match[0].length, end));
+      const root = elements[0];
+      if (root === undefined) continue;
+      // A fragment is not a node of its own; a returned element is its own only top-level node.
+      for (const index of root.tag === "" ? root.children : [0]) {
+        const element = elements[index]!;
+        const subtree: string[] = [];
+        const stack = [index];
+        while (stack.length > 0) {
+          const current = elements[stack.pop()!]!;
+          subtree.push(current.tag);
+          stack.push(...current.children);
+        }
+        nodes.push({ tag: element.tag, spelling: element.spelling, subtree });
+      }
+    }
+  }
+
+  renderTreeCache.set(file, nodes);
+  return nodes;
+}

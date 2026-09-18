@@ -1,15 +1,25 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { PageContainer } from "@/components/patterns/page-container";
 import { stripComments } from "@/lib/test-support/strip-comments";
 import {
   BREADCRUMB_OWNERS,
+  FIXTURE_ROOT,
+  importBindingsOf,
   label,
   pageRootFiles,
   repoRoot,
+  resolvesTo,
   sourceOf,
   surfaceFiles,
+  topLevelRenderNodes,
   walkPages,
+  walkRenderRoots,
+  withInjectedSource,
+  type RenderTreeNode,
 } from "@/lib/test-support/composition-scan";
 
 /* -------------------------------------------------------------------------------------------
@@ -267,6 +277,380 @@ describe("the sticky navs stay aligned to PageContainer's base", () => {
     for (const token of CONTAINER_BASE_TOKENS) {
       expect(words, `${file}: missing "${token}" from PageContainer's base`).toContain(token);
     }
+  });
+});
+
+/* =============================================================================================
+ * T-046 — THE COUNTER `PAGE_BODY_SPELLINGS` CANNOT BE
+ * ========================================================================================== */
+
+/**
+ * `PAGE_BODY_SPELLINGS` counts body-wrapper SPELLINGS. A page with **no wrapper at all**
+ * contributes no spelling, so it reads 0 and certifies the surface — which is exactly what
+ * happened. T-032 (`d2039b6`) de-nested the `<main>` landmark into `(site)/layout.tsx` and deleted
+ * five pages' `<main className="container mx-auto px-4 max-w-7xl py-10 space-y-12|14">` without
+ * replacing the width, the padding or the rhythm. Their body content became a direct child of the
+ * route fragment inside a `<main>` whose only rule is `flex: 1 0 auto`, so it rendered edge to
+ * edge at viewport width with zero horizontal padding and zero space between sections, on ~96
+ * routes, for four PRs, under a green counter.
+ *
+ * So this counter asks the question the spelling scan structurally cannot: **for every render
+ * root, does each top-level node of what it returns sit inside a `PageContainer`?** An absent
+ * wrapper is not a missing spelling here, it is a node in the offender list.
+ *
+ * FOUR SHAPES IT IS BUILT NOT TO BE SATISFIED BY — each one something this programme has already
+ * been bitten by, each with its own control below:
+ *
+ *   1. **A container reached through a name the walk does not follow.** The tag is never compared
+ *      as text. Every tag in a node's subtree is resolved through {@link importBindingsOf} and
+ *      {@link resolvesTo}, so `import { PageContainer as Shell }` and a barrel re-export both
+ *      count, and a LOCAL component that merely happens to be called `PageContainer` does not.
+ *      This is the door PR4 found open on `StatTile` one component over from `StatGrid`.
+ *   2. **A `PageContainer` that renders nothing because the body sits BESIDE it.** That is the
+ *      defect itself: all five offenders already render `<PageContainer space="band">` — inside
+ *      their hero. The unit of judgement is therefore the top-level node, not the file: a file
+ *      containing a container proves nothing about the sibling that does not.
+ *   3. **A dead reference.** `<PageContainer>` in the source is evidence that a tag was written,
+ *      never that a padded `max-w-7xl` box is rendered — the `StatGrid` lesson, where
+ *      `cn("grid", …)` assigned to an unused const satisfied two source pins while collapsing
+ *      thirteen metric strips to one column. So the meaning of "inside a PageContainer" is pinned
+ *      as RENDERED OUTPUT below ("PageContainer still renders the box this counter is claiming"),
+ *      and gutting the component fails that assertion instead of silently emptying this one.
+ *   4. **A control anchored on markup a later task will legitimately change.** Every behavioural
+ *      control runs against injected source at {@link FIXTURE_ROOT}, never against a real page —
+ *      T-045's harness exists because PR3's controls were built on `giris/page.tsx` and the task
+ *      contracted to give it an `<h1>` would have turned five of them red.
+ *
+ * WHAT IT STILL CANNOT SEE — the honest limits, none of them closed by this file:
+ *
+ *   - **Anything below the top level.** A node correctly inside a `PageContainer` may nest a
+ *     `w-screen`, a `-mx-4` or a `fixed` descendant that breaks back out; this counter reads the
+ *     container relationship at depth 1 of the returned tree and says nothing about depth 2.
+ *   - **A body assembled in a helper.** `{renderBody()}` is a call expression, not an element:
+ *     one top-level node, and whatever sections the helper writes are invisible. Moving a page's
+ *     body into a same-file helper would take it out of this counter's reach without changing a
+ *     pixel — see {@link topLevelRenderNodes}'s own SCOPE note.
+ *   - **What the container is around.** It counts containment, not correctness: a body wrapped in
+ *     `space="band"` (no page padding, `space-y-6`) passes exactly as `default` does. Ruling BK's
+ *     rhythm choice is a review judgement, not something measured here.
+ *   - **Layout that a stylesheet, not a wrapper, imposes.** A page whose body were widened by a
+ *     CSS Module or a `@layer` rule would read as an offender though it renders correctly, and a
+ *     `PageContainer` whose tokens were overridden by a later-layer rule would read as fine.
+ *   - **Rendered geometry.** Nothing here runs a browser. That "the body's left inset equals the
+ *     hero's" was measured in Playwright, per page, per breakpoint, and written into
+ *     `.superpowers/sdd/t-046-body-container-report.md`; this counter only stops the SHAPE that
+ *     produced the defect from returning silently.
+ *   - **`components/**` render roots.** {@link walkRenderRoots} visits `page.tsx`, `error.tsx` and
+ *     `not-found.tsx` under `PAGE_ROOTS` only — the same scope limit `PAGE_BODY_SPELLINGS` has one
+ *     walker over, and the reason `V2GameScreen` needs a named exemption below rather than being
+ *     read directly.
+ */
+const PAGE_CONTAINER_MODULE = join(repoRoot, "components/patterns/page-container.tsx");
+
+/** The tag's own name, with a member expression (`Foo.Bar`) reduced to the binding it starts at. */
+const bindingNameOf = (tag: string) => tag.split(".")[0] ?? tag;
+
+/** Does `tag`, as `file` binds it, resolve to `name` exported by `module`? */
+function tagResolvesTo(file: string, tag: string, module: string, name: string): boolean {
+  const binding = importBindingsOf(file).get(bindingNameOf(tag));
+  return binding !== undefined && resolvesTo(binding, module, name);
+}
+
+/**
+ * Top-level nodes that are not body content at all, named by the component they resolve to.
+ *
+ * Each row carries EVIDENCE — a pattern its module's source must still match — rather than only a
+ * path, so an exemption cannot outlive its reason. `existsSync` alone would keep certifying
+ * `V2GameScreen` as "owns its own width wrapper" long after that wrapper was deleted; the four
+ * patterns below are the sentence each row is actually claiming.
+ */
+const OUTSIDE_THE_BODY: ReadonlyArray<readonly [string, string, RegExp, string]> = [
+  [
+    "JsonLd",
+    "lib/seo/json-ld.tsx",
+    /<script type="application\/ld\+json"/,
+    "Renders a <script>; structured data has no box and no width.",
+  ],
+  [
+    "V2LiveTicker",
+    "components/v2/v2-live-ticker.tsx",
+    /className="w-full border-b/,
+    "Full-bleed telemetry bar. Site chrome above the reading body, edge-to-edge by design.",
+  ],
+  [
+    "V2RegionThumbDefs",
+    "components/v2/v2-region-thumb.tsx",
+    /<svg className="hidden"/,
+    "An <svg> defs sprite rendered `hidden`. No box.",
+  ],
+  [
+    "V2GameScreen",
+    "components/v2/v2-game-screen.tsx",
+    /<main className="max-w-7xl mx-auto/,
+    "The (play) fullscreen shell. It owns the width wrapper for all three game screens itself.",
+  ],
+];
+
+/**
+ * Per-file top-level nodes that are deliberately NOT inside the body container, with the exact
+ * spelling fragment that keeps each row honest.
+ *
+ * The three sticky bars are DERIVED from {@link BODY_WRAPPER_EXEMPTIONS} rather than retyped, so
+ * the two tables cannot name different files. Ruling BL: the body container opens AFTER the nav.
+ * Wrapping a sticky section-index bar in a padded container changes what it sticks to and makes
+ * that exemption's own stated reason ("they align to the body's edges and so still carry
+ * max-w-7xl/mx-auto") false — the bar carries its own aligned row precisely because it is
+ * full-bleed.
+ */
+const NOT_BODY_CONTENT: ReadonlyArray<readonly [string, string, string, string]> = [
+  ...BODY_WRAPPER_EXEMPTIONS.map(
+    ([file]) =>
+      [
+        file,
+        "nav",
+        "sticky top-",
+        "Sticky section-index bar (Ruling BL). Full-bleed, with its own PageContainer-aligned row inside it; the body container opens after it.",
+      ] as const,
+  ),
+  [
+    "app/[locale]/(site)/error.tsx",
+    "div",
+    "max-w-2xl mx-auto px-4",
+    "Last-resort message column, deliberately narrower than the reading body. PageContainer's width is closed at max-w-7xl and has no narrow member.",
+  ],
+  [
+    "app/[locale]/(site)/not-found.tsx",
+    "div",
+    "max-w-2xl mx-auto px-4",
+    "Same narrow message column as error.tsx, for the same reason.",
+  ],
+];
+
+function isOutsideTheBody(file: string, node: RenderTreeNode): boolean {
+  return OUTSIDE_THE_BODY.some(([name, module]) =>
+    tagResolvesTo(file, node.tag, join(repoRoot, module), name),
+  );
+}
+
+function isExemptNode(file: string, node: RenderTreeNode): boolean {
+  return NOT_BODY_CONTENT.some(
+    ([exemptFile, tag, evidence]) =>
+      exemptFile === label(file) &&
+      tag === node.tag &&
+      (node.spelling ?? "").replace(/\s+/g, " ").includes(evidence),
+  );
+}
+
+/** A node is contained when its subtree renders THE `PageContainer`, however it is named here. */
+function isContained(file: string, node: RenderTreeNode): boolean {
+  return node.subtree.some((tag) =>
+    tagResolvesTo(file, tag, PAGE_CONTAINER_MODULE, "PageContainer"),
+  );
+}
+
+/** Every top-level node of `file` that is body content sitting outside any `PageContainer`. */
+function uncontainedNodesIn(file: string): string[] {
+  return topLevelRenderNodes(file)
+    .filter(
+      (node) =>
+        !isContained(file, node) && !isOutsideTheBody(file, node) && !isExemptNode(file, node),
+    )
+    .map((node) => `<${node.tag}> ${node.spelling ?? "(no className attribute)"}`);
+}
+
+function rootsWithUncontainedBody(): Map<string, string[]> {
+  const found = new Map<string, string[]>();
+  for (const file of walkRenderRoots()) {
+    const loose = uncontainedNodesIn(file);
+    if (loose.length > 0) found.set(label(file), loose);
+  }
+  return found;
+}
+
+/**
+ * EXACT, and it is a number about RENDER ROOTS, not about nodes: a page is an offender once, no
+ * matter how many of its sections are loose, because the fix is one container per page.
+ *
+ * Measured 2026-09-18 on `feature/t-046-body-container` at `67771af`, BEFORE any page was edited:
+ * **5** — `turkiye/[slug]` (10 loose nodes), `turkiye/bolge/[slug]` (10), `turkiye/bolge` (6),
+ * `dunya/[slug]` (5), `kitaplar/[slug]` (3), 34 loose nodes in all. Exactly the five the T-035
+ * PR5/PR6 measurement named,
+ * arrived at independently by this scan rather than read off that document — and `kitaplar/[slug]`,
+ * the one the original plan text missed, is in the list on its own evidence.
+ *
+ * PINNED AT THE DEFECT, on purpose. This commit adds the counter and changes no page, so it lands
+ * GREEN at 5 — which is the only state in which the counter can be shown to SEE the thing it is
+ * for. The adoption commit that follows drives it to 0 and mutation-checks it there.
+ */
+export const RENDER_ROOTS_WITH_UNCONTAINED_BODY = 5;
+
+describe("every render root's body sits inside a PageContainer", () => {
+  it("the count of roots with body content outside any container is exactly the recorded number", () => {
+    const offenders = rootsWithUncontainedBody();
+    expect(
+      offenders.size,
+      `render roots whose body content sits outside any PageContainer:\n${[...offenders]
+        .map(([file, nodes]) => `  ${file}\n${nodes.map((n) => `      ${n}`).join("\n")}`)
+        .join("\n")}`,
+    ).toBe(RENDER_ROOTS_WITH_UNCONTAINED_BODY);
+  });
+
+  it("PageContainer still renders the box this counter is claiming — rendered, not grepped", () => {
+    // The counter's whole meaning is "this node is inside a padded max-w-7xl box". A source scan
+    // can only ever prove the TAG was written. `StatGrid` is the recorded case where that gap was
+    // exploitable: `cn("grid", COLUMNS[columns])` assigned to an unused const satisfied both
+    // source pins while the element rendered `flex flex-col`. So the claim is pinned where it is
+    // actually made, on the rendered element, as the whole class string in emission order.
+    // `children` travels in the props bag rather than as `createElement`'s third argument because
+    // `PageContainerProps.children` is REQUIRED and the third-argument form leaves it missing from
+    // the props type, failing `tsc` — the same constraint `patterns-contract.test.ts` hits on
+    // `StatGrid`. Passing the bag as a variable also keeps `react/no-children-prop` (a rule about
+    // JSX authoring; there is no JSX in this `.ts` file) from firing, so no disable is needed.
+    const classOf = (props: Parameters<typeof PageContainer>[0]) => {
+      const markup = renderToStaticMarkup(createElement(PageContainer, props));
+      return /class="([^"]*)"/.exec(markup)?.[1] ?? "(no class attribute rendered)";
+    };
+    expect(classOf({ children: "x" })).toBe(
+      "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-20 sm:pt-10 space-y-14",
+    );
+    expect(classOf({ space: "band", children: "x" })).toBe(
+      "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6",
+    );
+  });
+
+  it("the walk found every render root and read a tree out of each — positive control", () => {
+    // Guards the silent-pass direction. `topLevelRenderNodes` returns [] for a file whose `default`
+    // region it cannot locate, and [] reads downstream as "no uncontained node". A broken walk, a
+    // renamed export or a `return` Prettier stopped indenting at two spaces would all read as a
+    // clean surface rather than as a failure, which is this programme's own founding mistake.
+    const roots = walkRenderRoots();
+    expect(roots.length).toBe(39);
+    const empty = roots.filter((file) => topLevelRenderNodes(file).length === 0).map(label);
+    expect(
+      empty,
+      `render roots whose returned JSX could not be read:\n${empty.join("\n")}`,
+    ).toEqual([]);
+  });
+});
+
+/* ---------------------------------------------------------------------------------------------
+ * THE CONTROLS — all four shapes, on injected fixture source, never on a real page.
+ * ------------------------------------------------------------------------------------------ */
+
+const FIXTURE_IMPORT = 'import { PageContainer } from "@/components/patterns/page-container";\n';
+
+const fixture = (body: string, head = FIXTURE_IMPORT) =>
+  withInjectedSource(
+    [[FIXTURE_ROOT, `${head}export default function Page() {\n  return (\n${body}\n  );\n}\n`]],
+    () => uncontainedNodesIn(FIXTURE_ROOT),
+  );
+
+describe("the uncontained-body scan", () => {
+  it("a body INSIDE the container is contained — negative control", () => {
+    expect(
+      fixture(
+        '    <PageContainer>\n      <section className="grid">x</section>\n    </PageContainer>',
+      ),
+    ).toEqual([]);
+  });
+
+  it("a body BESIDE the container is not — the defect's own shape", () => {
+    // The five offenders all render `<PageContainer space="band">` INSIDE their hero and then put
+    // the body next to it. A file-level "does this page import/render PageContainer" check reads
+    // every one of them as fine; only a per-node check sees the sibling.
+    expect(
+      fixture(
+        '    <>\n      <section className="hero">\n        <PageContainer space="band">h</PageContainer>\n      </section>\n      <section className="grid grid-cols-12">body</section>\n    </>',
+      ),
+    ).toEqual(["<section> grid grid-cols-12"]);
+  });
+
+  it("an ALIASED import still counts — the binding resolver is doing the work", () => {
+    expect(
+      fixture(
+        "    <Shell>\n      <section>x</section>\n    </Shell>",
+        'import { PageContainer as Shell } from "@/components/patterns/page-container";\n',
+      ),
+    ).toEqual([]);
+  });
+
+  it("a LOCAL component merely named PageContainer does not count — positive control", () => {
+    // The tag is never compared as text. With no import binding it to the real module, this is an
+    // unrelated local wrapper of unknown width, and the node stays in the offender list.
+    expect(
+      fixture("    <PageContainer>\n      <section>x</section>\n    </PageContainer>", ""),
+    ).toEqual(["<PageContainer> (no className attribute)"]);
+  });
+
+  it("an import of a DIFFERENT module's PageContainer does not count — positive control", () => {
+    expect(
+      fixture(
+        "    <PageContainer>\n      <section>x</section>\n    </PageContainer>",
+        'import { PageContainer } from "@/components/patterns/page-hero";\n',
+      ),
+    ).toEqual(["<PageContainer> (no className attribute)"]);
+  });
+
+  it("a container handed to a node as a PROP does not contain it", () => {
+    // `subtree` follows children only. A container passed in an attribute expression is a sibling
+    // panel the node renders somewhere of its own choosing, not a wrapper around its body.
+    expect(
+      fixture('    <section className="body" panel={<PageContainer>p</PageContainer>}>x</section>'),
+    ).toEqual(["<section> body"]);
+  });
+
+  it("a commented-out container does not contain anything — comment stripping applied", () => {
+    expect(
+      fixture('    <section className="body">{/* <PageContainer>x</PageContainer> */}y</section>'),
+    ).toEqual(["<section> body"]);
+  });
+
+  it("a `return` inside a callback is not a render tree — the column-2 rule", () => {
+    // Without the indent rule every `.map(… => { return <li/> })` in the tree would enter the
+    // count as a top-level node, and every table row on the surface would read as uncontained.
+    expect(
+      withInjectedSource(
+        [
+          [
+            FIXTURE_ROOT,
+            `${FIXTURE_IMPORT}export default function Page() {\n  return (\n    <PageContainer>\n      {rows.map((r) => {\n        return <li className="row">{r}</li>;\n      })}\n    </PageContainer>\n  );\n}\n`,
+          ],
+        ],
+        () => uncontainedNodesIn(FIXTURE_ROOT),
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("the uncontained-body exemptions", () => {
+  it.each(OUTSIDE_THE_BODY)(
+    "%s is still what the exemption says it is",
+    (_name, module, evidence) => {
+      const path = join(repoRoot, module);
+      expect(existsSync(path), `${module} no longer exists; drop the exemption`).toBe(true);
+      expect(
+        evidence.test(sourceOf(path)),
+        `${module} no longer matches ${evidence}; the exemption's reason is now false`,
+      ).toBe(true);
+    },
+  );
+
+  it.each(NOT_BODY_CONTENT)("%s's <%s> is still a live top-level node", (file, tag, evidence) => {
+    const nodes = topLevelRenderNodes(join(repoRoot, file));
+    const match = nodes.some(
+      (node) => node.tag === tag && (node.spelling ?? "").replace(/\s+/g, " ").includes(evidence),
+    );
+    expect(
+      match,
+      `${file}: no top-level <${tag}> carrying "${evidence}" any more; drop or restate the exemption`,
+    ).toBe(true);
+  });
+
+  it("every exempted file is one the walk actually visits", () => {
+    // A row naming a path outside `walkRenderRoots()` would sit there forever exempting nothing.
+    const visited = new Set(walkRenderRoots().map(label));
+    for (const [file] of NOT_BODY_CONTENT)
+      expect(visited, `${file} is not a render root`).toContain(file);
   });
 });
 
