@@ -395,8 +395,13 @@ function isDelegated(call: FaqJsonLdCall): boolean {
   const passes = rendered.some((element) => {
     const index = elements.indexOf(element);
     if (writtenUnderCondition(elements, index)) return false;
-    // The prop's own recorded value — `data={basinData}` is `basinData`, `data={{ ...basinData }}`
-    // is `{ ...basinData }`, and `data="x"` is `x`. Only a bare identifier can equal `root`.
+    // The prop's own recorded value — `data={basinData}` is `basinData` and
+    // `data={{ ...basinData }}` is `{ ...basinData }`, so a wrapped or rebuilt object does not
+    // match. `ScannedElement.attributes` does NOT distinguish a braced identifier from the STRING
+    // `data="basinData"`, which records the same `basinData`; what rules that out is `tsc`, since
+    // the prop is typed `SeaBasinDetailData` and a string does not compile. Stated because this
+    // used to claim "only a bare identifier can equal root", which the attribute map alone does
+    // not give.
     return element.attributes.get(DELEGATED_FAQ_MARKUP.prop) === root;
   });
   if (!passes) return false;
@@ -526,7 +531,7 @@ function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
  *
  * MUTATION-CHECKED 2026-09-18, each counter AT THE VALUE IT IS PINNED AT — never at some earlier
  * number — each edit reverted from a copy and the suite re-run green. Seven breakages on the real
- * tree, each RED naming the files:
+ * tree in the first round, each RED naming the files:
  *
  *   - `dunya/kita/page.tsx`'s item wrapper re-spelled `p-5 space-y-2` → `p-6 space-y-3` — RED,
  *     `expected 5 to be 4`, the message listing all five spellings with their files;
@@ -549,6 +554,27 @@ function jsonLdWithoutMarkup(): FaqJsonLdCall[] {
  * `data={{ ...basinData }}` — RED, the page dropping out of the exempt four and into the counter;
  * `data.faq.map(` in the delegate changed to `data.faqs.map(` — RED on all four pages at once
  * (`expected 4 to be 0`) plus the delegate's own liveness row.
+ *
+ * TWO MORE ROUNDS, each control driven at the value it guards:
+ *
+ *   - ROUND 1, Ruling CA. The attribution rule reverted to "the FIRST `.question` read" — RED on
+ *     `swapping the arms of a two-mechanism block changes nothing`, `expected [] to deeply equal
+ *     [ { mapped: 'items', …(3) } ]`: with the old rule the swapped component is not a FAQ block at
+ *     all, which is the defect that put an ordering comment in a product file.
+ *   - ROUND 1, the zero pin's split. `dunya/kita/[slug]`'s `<JsonLd schema={faqPageJsonLd(
+ *     continent.faqs)} />` DELETED — orphans stay 0, so the old pin stayed green, and the split
+ *     went RED: `calls paired by the same-file identifier rule: expected [ …(4) ] to have a length
+ *     of 5 but got 4`. That is the whole reason the split is asserted.
+ *   - ROUND 1, FaqSection's own pairing. `items.map(` → `items.slice().map(` — the caller list is
+ *     untouched and RED lands only on the claim it does not entail: `FaqSection's schema and its
+ *     markup are no longer one identifier in one file: expected [ '(not an identifier)' ] to
+ *     include 'items'`.
+ *   - ROUND 2, Ruling CD. The arms are now located by balanced parentheses rather than by the
+ *     literals `<Card key={index}` / `<AccordionItem key={index}`, and the product change that
+ *     lock forbade was made: both React keys are `item.question`. Re-running round 1's Ruling CA
+ *     mutation against the NEW component shows the old rule failing on the UNSWAPPED file too
+ *     (`FaqSection is not being read as a FAQ block at all`) — the key rename alone would have
+ *     broken it, one door over from the swap.
  *
  * WHERE THE PROBES LIVE. Every control that adds markup rather than breaking it injects into
  * `app/[locale]/(site)/hakkimizda/page.tsx`, which renders no FAQ and which neither Task 8 nor
@@ -665,7 +691,7 @@ describe("the FAQ block scanner", () => {
       const qualifying = [...masked.matchAll(/\.map\s*\(/g)].filter((match) => {
         const open = match.index + match[0].length - 1;
         const body = masked.slice(open, matchingParen(masked, open));
-        return body.includes(".question") && body.includes(".answer");
+        return memberRead("question").test(body) && memberRead("answer").test(body);
       });
       expect(qualifying, `${label(file)}: expected a projection map and a markup map`).toHaveLength(
         2,
@@ -691,30 +717,78 @@ describe("the FAQ block scanner", () => {
    * exchanged — and the assertion is that everything the counters read stays identical.
    */
   it("swapping the arms of a two-mechanism block changes nothing", () => {
-    const source = readFileSync(FAQ_SECTION_COMPONENT, "utf8");
-    const listArm = source.slice(
-      source.indexOf("      <Card key={index}"),
-      source.indexOf("    ) : ("),
-    );
-    const accordionArm = source.slice(
-      source.indexOf("      <AccordionItem key={index}"),
-      source.indexOf("    ),\n  );"),
-    );
-    // Anti-vacuity: the two arms were really found, and they really differ in the way that matters
-    // — one writes a className and the other writes none.
-    expect(listArm, "the list arm was not located").toContain("className=");
-    expect(accordionArm, "the accordion arm was not located").not.toContain("className=");
+    // BOTH ARMS ARE LOCATED STRUCTURALLY — Ruling CD. The first version sliced them by the exact
+    // literals `<Card key={index}` and `<AccordionItem key={index}`, which is a PREFIX LOCK on a
+    // product file: renaming a prop there would have broken this control, which is the leak Ruling
+    // CA closed arriving from the other side. Nothing below names a prop, a component or a class.
+    //
+    // The shape found is `<test> ? ( <armA> ) : ( <armB> )` inside the FAQ `.map(`'s callback, and
+    // the parentheses are balanced with `matchingParen` over masked text — the same reader the
+    // block predicate uses, so a `)` inside a string or a template hole cannot end an arm early.
+    const source = readSource(FAQ_SECTION_COMPONENT);
+    const masked = maskedSource(FAQ_SECTION_COMPONENT);
+    const skipSpace = (at: number) => {
+      let i = at;
+      while (i < masked.length && /\s/.test(masked[i]!)) i += 1;
+      return i;
+    };
 
-    const swapped = source
-      .replace(listArm, " LIST ")
-      .replace(accordionArm, listArm)
-      .replace(" LIST ", accordionArm)
-      .replace('mechanism === "list" ? (', 'mechanism !== "list" ? (');
+    // The FAQ map itself, by the block predicate's own two clauses rather than by position.
+    const map = [...masked.matchAll(/\.map\s*\(/g)].find((match) => {
+      const open = match.index + match[0].length - 1;
+      const body = masked.slice(open, matchingParen(masked, open));
+      return memberRead("question").test(body) && memberRead("answer").test(body);
+    });
+    expect(map, "FaqSection no longer maps a question/answer array").toBeDefined();
+    const mapOpen = map!.index + map![0].length - 1;
+    const mapClose = matchingParen(masked, mapOpen);
 
-    // The swap really happened, and in the direction that used to break: the unstyled arm now comes
-    // first. Without this the whole control could pass on a no-op replacement.
-    expect(source.indexOf("<AccordionItem")).toBeGreaterThan(source.indexOf("<Card key={index}"));
-    expect(swapped.indexOf("<AccordionItem")).toBeLessThan(swapped.indexOf("<Card key={index}"));
+    // `(item, index) =>` then the ternary. The arrow ends the parameter list, so the first `?`
+    // after it is the conditional's.
+    const arrow = masked.indexOf("=>", mapOpen);
+    const testStart = skipSpace(arrow + 2);
+    const question = masked.indexOf("?", testStart);
+    const armAOpen = skipSpace(question + 1);
+    expect(masked[armAOpen], "the callback is no longer `<test> ? ( … ) : ( … )`").toBe("(");
+    const armAClose = matchingParen(masked, armAOpen);
+    const colon = skipSpace(armAClose + 1);
+    expect(masked[colon], "the conditional has no else arm").toBe(":");
+    const armBOpen = skipSpace(colon + 1);
+    expect(masked[armBOpen], "the else arm is not a parenthesised expression").toBe("(");
+    const armBClose = matchingParen(masked, armBOpen);
+    expect(armBClose, "the two arms are not inside the map call").toBeLessThan(mapClose);
+
+    const test = source.slice(testStart, question);
+    const armA = source.slice(armAOpen + 1, armAClose);
+    const armB = source.slice(armBOpen + 1, armBClose);
+
+    // Anti-vacuity: the two arms were really found, and really differ in the way that matters —
+    // one writes a className and the other delegates every class to the primitive it renders.
+    expect(armA, "the styled arm was not located").toContain("className=");
+    expect(armB, "the delegating arm was not located").not.toContain("className=");
+
+    // Rebuilt by concatenation, so there is no sentinel string to substitute — the shape that put
+    // four raw NUL bytes into this file and made it binary to `rg` (`lib/source-hygiene.test.ts`
+    // is the check that now catches that). The test is NEGATED rather than rewritten, so the
+    // swapped source still selects the same arm for the same mechanism without this control
+    // knowing what the test says.
+    const swapped =
+      source.slice(0, testStart) +
+      `!(${test})` +
+      source.slice(question, armAOpen + 1) +
+      armB +
+      source.slice(armAClose, armBOpen + 1) +
+      armA +
+      source.slice(armBClose);
+
+    // The swap really happened, and in the direction that used to break: the arm whose classes the
+    // primitive owns now comes first. Without this the whole control could pass on a no-op.
+    const first = (text: string) =>
+      text.indexOf("<AccordionItem") < text.indexOf("<Card") ? "accordion" : "list";
+    expect(first(source), "the component no longer writes the styled arm first").toBe("list");
+    expect(first(swapped), "the swap did not move the delegating arm to the front").toBe(
+      "accordion",
+    );
 
     const read = () =>
       faqBlocksIn(FAQ_SECTION_COMPONENT).map((block) => ({

@@ -97,7 +97,7 @@ export function FaqSection(props: FaqSectionProps) {
   // The accordion's `value` is the QUESTION, not the index: `value` is what Base UI tracks a
   // panel's open state by, so a reordered or filtered list keeps each panel attached to its own
   // question instead of to the slot it happened to sit in.
-  const entries = items.map((item, index) =>
+  const entries = items.map((item) =>
     mechanism === "list" ? (
       /* THE PRIMITIVE, not a hand-drawn card. All four live item spellings draw their own surface
          — `rounded-2xl border border-border bg-card p-5 space-y-2` and three near-misses — and
@@ -111,7 +111,7 @@ export function FaqSection(props: FaqSectionProps) {
          carried no shadow at all, and the union's floor is `xs`. `as="article"` because a
          question-with-its-answer is self-contained; `space="3"` because `space-y-2` is not in the
          union and 4px would run the question into the answer at these sizes. */
-      <Card key={index} as="article" variant="panel" elevation="xs" space="3">
+      <Card key={item.question} as="article" variant="panel" elevation="xs" space="3">
         <h3 className="font-heading font-bold text-sm text-foreground">{item.question}</h3>
         <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
       </Card>
@@ -119,7 +119,7 @@ export function FaqSection(props: FaqSectionProps) {
       /* The accordion carries no classes of its own: `components/ui/accordion.tsx` owns the look,
          its `AccordionTrigger` supplies the `<h3>` through `Accordion.Header`, and its panel keeps
          a closed answer in the document so this branch can honestly carry the same schema. */
-      <AccordionItem key={index} value={item.question}>
+      <AccordionItem key={item.question} value={item.question}>
         <AccordionTrigger>{item.question}</AccordionTrigger>
         <AccordionContent>{item.answer}</AccordionContent>
       </AccordionItem>

@@ -463,16 +463,37 @@ describe("element spans, containment and the attribute walk", () => {
     // INERT on today's tree, so the rule is a guard rather than a fix: no element anywhere writes
     // `className` immediately after a name character. Asserted, because an inert rule that nobody
     // checks is how a guard quietly starts mattering.
-    const offenders = walkCardSurface().filter((file) =>
-      /[A-Za-z0-9_$:.-]className\s*=/.test(maskedSource(file)),
-    );
+    //
+    // OVER EVERY `.tsx` IN THE REPO, not over a walker. `walkCardSurface()` excludes
+    // `components/ui/**`, and `components/ui/breadcrumb.tsx` is one of the files the container and
+    // heading counters DO feed to `classNameOfTag` — so a walker-shaped sweep would have declared
+    // the rule inert over a population narrower than the one the rule protects. The hazard is a
+    // byte in a source file; the sweep is every source file.
+    const offenders = walkSources(repoRoot)
+      .filter((file) => file.endsWith(".tsx"))
+      .filter((file) => /[A-Za-z0-9_$:.-]className\s*=/.test(maskedSource(file)));
     expect(offenders.map(label)).toEqual([]);
+    // Anti-vacuity for the sweep itself: it really visited the excluded directory the narrower
+    // walk would have missed.
+    const swept = walkSources(repoRoot)
+      .filter((file) => file.endsWith(".tsx"))
+      .map(label);
+    expect(swept).toContain("components/ui/breadcrumb.tsx");
+    expect(swept.length).toBeGreaterThan(walkCardSurface().length);
   });
 
   it("spelling is the className attribute read by the one extractor — never a second reading", () => {
-    // The relationship, on the live surface: wherever an element has a `className` attribute at
-    // all, `spelling` is what `literalsIn` makes of that attribute's own text, and wherever it has
-    // none, `spelling` is null. A second attribute reader could satisfy neither half by accident.
+    // THE VALUE RELATION, not merely null-ness. `attributes` records the attribute's own source
+    // and `spelling` is what the one extractor makes of it, and the two written forms reduce
+    // differently, so the relation is a disjunction rather than an equality:
+    //
+    //   - `className="a b"` records the CONTENTS `a b`, and the spelling is that string;
+    //   - `className={…}` records the EXPRESSION, and the spelling is `literalsIn`'s join of its
+    //     literals, or `COMPUTED_CLASSNAME` where it writes none.
+    //
+    // Asserting only "not null" would pass on a spelling read by some other rule entirely, which
+    // is exactly the drift this field exists to make impossible.
+    let checked = 0;
     for (const file of walkCardSurface()) {
       for (const element of jsxElementsOf(file)) {
         const written = element.attributes.get("className");
@@ -480,9 +501,21 @@ describe("element spans, containment and the attribute walk", () => {
           expect(element.spelling, `${label(file)}: <${element.tag}>`).toBeNull();
           continue;
         }
-        expect(element.spelling, `${label(file)}: <${element.tag}>`).not.toBeNull();
+        const literals = literalsIn(written, true);
+        const braced = literals.length > 0 ? literals.join(" ") : COMPUTED_CLASSNAME;
+        expect(
+          element.spelling === written || element.spelling === braced,
+          `${label(file)}: <${element.tag}> spelling ${JSON.stringify(
+            element.spelling,
+          )} is neither the quoted contents nor the extractor's reading of ${JSON.stringify(
+            written,
+          )}`,
+        ).toBe(true);
+        checked += 1;
       }
     }
+    // The loop really ran over a real population, not over zero elements with a className.
+    expect(checked).toBeGreaterThan(1000);
   });
 });
 
