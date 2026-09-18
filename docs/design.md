@@ -122,6 +122,10 @@ Two directories, and the boundary is operational rather than taxonomic:
 66-line file that used to hold that name had no product consumer at all and this list pointed at
 it, which is the failure mode `components/orphan.test.ts` now measures rather than describes.
 
+The patterns list above is reconciled against the directory in both directions by
+`components/showcase/registry.test.ts`: a file it omits and a name with no file both fail
+`pnpm test`.
+
 The reason is concrete: `shadcn add` **overwrites** files in the configured `ui` alias — it
 asked to overwrite `button.tsx` during T-034 and was declined. A hand-written component living
 there is one CLI run away from being silently clobbered. Two files now carry hand-added variants
