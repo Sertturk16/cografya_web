@@ -70,9 +70,9 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
 ## The overflow sweep (`pnpm sweep:overflow`)
 
 `scripts/sweep-overflow.mjs` asserts `documentElement.scrollWidth <= clientWidth` on one route
-per SHAPE, at 320/360/390/desktop, in light and dark, and exits non-zero naming the route, the
-viewport, the theme, the overflow in pixels and the offending element with its computed
-`min-width` / `flex-shrink` / `white-space`.
+per SHAPE, at 320/360/390/**768**/desktop, in light and dark, and exits non-zero naming the
+route, the viewport, the theme, the overflow in pixels and the offending element with its
+computed `min-width` / `flex-shrink` / `white-space`.
 
 It exists because every other tripwire in this repo counts SOURCE TEXT, and the defect class
 that keeps recurring is not in the JSX tree at any depth: the ECMWF licence notice overflowing
@@ -81,29 +81,54 @@ row on seven region routes (T-046). Two CSS-Module declarations and a flex child
 behaviour — no scanner would ever have found them, and all three were caught by this
 comparison run by hand.
 
-- **Point it at a production server.** `pnpm build` then `pnpm start`, and
+- **Point it at a production server, and REBUILD FIRST.** `pnpm build` then `pnpm start`, and
   `pnpm sweep:overflow -- --base-url=http://localhost:3000`. A `pnpm dev` server works and
   will usually be what you have, but it re-renders every navigation — so it is slower, it
   holds the API open for the whole run (the recorded `ECONNRESET` flake), and it can serve a
   404 for a route that exists after enough HMR. The sweep checks HTTP status for exactly that
   reason; a `LOAD FAILURE` line is not a pass.
+  The rebuild is not ceremony: a `.next` left from someone else's probe reports a defect that
+  is not in the tree. T-047's own five-viewport run went red on `/hakkimizda` at four
+  viewports naming `div.dark:min-w-[900px]` — a class absent from source and baked into a
+  build made two rounds earlier. Stale dev serves a false NEGATIVE (a 404 has no overflow);
+  stale production serves a false POSITIVE. Check the selector against the source before you
+  believe either.
 - **Done means, for any task with a visible UI change:** `pnpm sweep:overflow` green, or the
   filtered run covering the routes you touched (`-- --filter=turkiye`). Never widen the
   tolerance to get there — a tolerance that hides a real overflow is worse than no sweep.
 - The route list is `lib/overflow-sweep/routes.ts`, and `routes.test.ts` holds it to two rules
   in plain vitest: every entry is a live key of `routing.pathnames` (a renamed route must not
   leave the sweep measuring 404s), and every surviving `*.module.css` is named by at least one
-  route (a new module must not arrive uncovered).
-- Report goes to `.tmp-scratch/overflow-sweep.json` as well as stdout. 22 URLs × 4 viewports ×
-  2 themes = 176 checks in **52s** against a production build (four browser contexts in
-  parallel; `-- --concurrency=1` for 198s and a stable order).
-- **It is not a CI job, and the reason is the API, not the 52s.** CI has no API on :3001, and
-  `lib/env.server.ts` makes a build with no API reachable degrade to on-demand ISR rather than
-  fail — so CI's `pnpm build` prerenders no data page (18s instead of 110s), and a server
-  started from it answers **HTTP 500 on 8 of the 22 URLs**, including `/turkiye/istanbul`,
-  `/dunya/almanya` and both book routes: every route the three recorded defects actually live
-  on. A fourth CI job would be permanently red, or green over the fourteen static pages that
-  were never where the bug was. Wire it up the day CI gets an API service container.
+  route (a new module must not arrive uncovered). Those keep the list from going BROKEN, not
+  from going INCOMPLETE: **a new route lands in the "not swept" footer and nothing fails.** If
+  you add a route, decide out loud whether it is a variant of a listed shape or a new one.
+- `components/css-module-fixed-widths.test.ts` is the half of this that needs no browser: it
+  pins the 46 fixed-`px` inline-axis declarations across the ten CSS Modules by file and by
+  text, so changing `min-width: min(300px, 100%)` back to `min-width: 300px` reds `pnpm test`.
+  It covers one of the three recorded defects, not all three — the other two are a text node
+  with no wrapping opportunity and a Tailwind class in JSX.
+- 768 is in the list because without it `md:min-w-[900px] lg:min-w-0` passes every check —
+  inactive below 768, harmless at 1440. It closes the widest part of that band (any `sm:`- or
+  `md:`-scoped width above 768 now overflows a swept viewport); 390–768 and 768–1440 stay
+  open, and `SWEEP_VIEWPORTS`' docblock says what lives in each.
+- Report goes to `.tmp-scratch/overflow-sweep.json` as well as stdout. 22 URLs × 5 viewports ×
+  2 themes = 220 checks in **85s** against a production build, four browser contexts in
+  parallel. `-- --concurrency=1` gives a stable order at roughly 3.5× the wall clock (measured
+  at four viewports: 198s against 57s).
+- **It is not a CI job, and the reason is the API, not the 85s.** CI has no API on :3001. The
+  degradation is not in `lib/env.server.ts` (that file throws; it only carries a comment
+  pointing here) — it is the 16 `*Resilient`/`*Safe` wrappers in `lib/api/*.ts`, each gated on
+  `isProductionBuild()` (`NEXT_PHASE === PHASE_PRODUCTION_BUILD`): swallow to `[]` during
+  `next build`, re-throw at runtime. That asymmetry is what produces the 500s. Measured:
+  `API_BASE_URL` pointed at a dead port builds **136 pages instead of 992**, exit 0, in 19s
+  instead of 110 — and several of the 136 bake an empty state rather than being absent, which
+  `docs/architecture.md` calls the worse failure. A server from that build answers **HTTP 500
+  on 8 of the 22 URLs**: `/turkiye`, `/turkiye/istanbul` (both locales), `/turkiye/bolge/
+marmara`, `/dunya`, `/dunya/almanya` and both book routes. Note what is NOT in that set —
+  `/deniz/karadeniz` and `/en/sea/black-sea` answer 200 and still carry the ECMWF notice, so
+  the T-038 surface would still be measured. A fourth CI job would be permanently red, or
+  green over fourteen pages of which only five render what production renders. Wire it up the
+  day CI's build step gets an API service.
 
 ## Generated artifacts
 
