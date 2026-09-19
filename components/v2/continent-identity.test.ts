@@ -8,6 +8,7 @@ import {
   type ContinentSlug,
 } from "@/lib/theme/continent-identity";
 import { CONTINENT_KEY_TO_SLUG } from "@/lib/geo/continents";
+import { stripComments } from "@/lib/test-support/strip-comments";
 import type { Continent } from "@/lib/api/types";
 
 const SLUGS = Object.keys(CONTINENT_TINTS) as ContinentSlug[];
@@ -280,7 +281,11 @@ describe("a continent wears one colour, not two", () => {
    * and the badge inside THAT is what has to be opaque.
    */
   it("the hovered country row's badge is the opaque member, not the tinted one", () => {
-    const explorer = read("./v2-world-map-explorer.tsx");
+    // Stripped, the same defence its region sibling needed. This pin already survived a planted
+    // decoy because it slices the row before matching, but "survives today" is not the property —
+    // a decoy inside the row would still be inside the slice, and the region pin is the proof
+    // that the comment route is the one a future edit actually takes.
+    const explorer = stripComments(read("./v2-world-map-explorer.tsx"));
     const at = explorer.indexOf('className="hover:bg-muted/50 transition-colors"');
     // Positive control on the premise: the row really does carry a hover that moves its
     // background. If that hover is ever removed, this guard is measuring the wrong thing and
@@ -302,6 +307,15 @@ describe("a continent wears one colour, not two", () => {
         "or re-measure every continent on the hovered row and re-record app/globals.css.",
     ).toBe(true);
     expect(row.includes("identity.badge}"), "the tinted member is back on this row").toBe(false);
+
+    // And exactly one continent badge in the whole file names the opaque member, so a second
+    // spelling of this chip elsewhere cannot hide behind the one this test located.
+    const opaque = explorer.match(/identity\.badgeOpaque/g) ?? [];
+    expect(
+      opaque.length,
+      `identity.badgeOpaque appears ${opaque.length} times. This pin names ONE consumer; a second ` +
+        "is either a decoy or a chip nobody has measured on its own backdrop.",
+    ).toBe(1);
   });
 
   it("the world map paints countries from the module, not from a table of its own", () => {

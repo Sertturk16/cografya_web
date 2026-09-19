@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { REGION_TINTS } from "@/lib/theme/region-palette.test";
 import { REGION_IDENTITY, regionIdentityOf, type RegionSlug } from "@/lib/theme/region-identity";
 import { REGION_KEYS, regionSlug } from "@/lib/game/region-slug";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * A region wears ONE colour.
@@ -494,21 +495,64 @@ describe("the /turkiye map and the game map wear the same colour as the pages th
    * doing (5.42-7.36 light, 5.50-9.21 dark).
    *
    * Found while measuring the identical shape on `/dunya`'s country table in T-031c Task 5, and
-   * pinned here the same way: on the FIELD that feeds the chip rather than file-wide, because a
-   * `toContain` anywhere in a 1300-line component is satisfied by a comment.
+   * pinned here the same way: SLICE FIRST, then assert inside the slice.
+   *
+   * ## The decoy this survives, and the first version that did not
+   *
+   * The first version of this test computed a `REGION_DATA` slice and then ran its field regex
+   * over the WHOLE FILE, taking the first match. Reverting the real field to `badge` and planting
+   * `badgeClass: regMeta.identity.badgeOpaque` inside a line comment at the top left it GREEN —
+   * the exact failure the docblock at the top of this file warns about, one test lower down. The
+   * continent sibling survived the same decoy because it sliced before matching, and when two
+   * pins guard one shape and only one survives a decoy, the difference IS the bug.
+   *
+   * Three defences now, because slicing alone is not enough — a decoy planted INSIDE the block
+   * would still be inside the slice:
+   *
+   *   1. Comments are stripped, through `lib/test-support/strip-comments.ts` rather than a pair
+   *      of `String.replace` calls, because a naive strip eats live code (that module says how).
+   *      A planted comment is then not text this test can see at all.
+   *   2. The match runs against the block that PRODUCES the field, not the file. That block is
+   *      NOT `REGION_DATA` — `badgeClass` is assembled in the `filteredProvinces` memo, so a
+   *      slice of the identity table would have matched nothing and failed for a reason that
+   *      reads like the bug without being it.
+   *   3. Exactly ONE `badgeClass:` assignment may exist in the stripped file. A second one
+   *      anywhere — decoy, copy-paste, a real second spelling — reds this regardless of which
+   *      one the regex would have reached first.
    */
   it("the province table's region chip is the opaque member, not the tinted one", () => {
-    const table = tableOf(explorer, "export const REGION_DATA");
+    // Defence 1. Everything below reads the stripped source, so no comment can satisfy it.
+    const bare = stripComments(explorer);
+
     // Positive control on the premise: the row that consumes this field really does carry a hover
     // that moves its background. If that hover goes, this guard is measuring the wrong thing.
-    expect(
-      explorer.includes('className="hover:bg-muted/50 transition-colors"'),
-      "no <TableRow> with hover:bg-muted/50 — re-anchor this guard",
-    ).toBe(true);
-    // And the field really is what the chip reads.
-    expect(explorer).toContain("className={province.badgeClass}");
+    const at = bare.indexOf('className="hover:bg-muted/50 transition-colors"');
+    expect(at, "no <TableRow> with hover:bg-muted/50 — re-anchor this guard").toBeGreaterThan(0);
+    // And the field really is what the HOVERED row's chip reads — asserted inside that row, so a
+    // `province.badgeClass` somewhere else in the file cannot stand in for it.
+    const rowStart = bare.lastIndexOf("<TableRow", at);
+    const rowEnd = bare.indexOf("</TableRow>", at);
+    expect(rowEnd, "the hovered row is not closed — re-anchor this guard").toBeGreaterThan(
+      rowStart,
+    );
+    expect(bare.slice(rowStart, rowEnd)).toContain("className={province.badgeClass}");
 
-    const field = /badgeClass:\s*regMeta\.identity\.(\w+)/.exec(explorer);
+    // Defence 3, before the slice: one producer, file-wide.
+    const assignments = bare.match(/badgeClass:/g) ?? [];
+    expect(
+      assignments.length,
+      `badgeClass is assigned ${assignments.length} times in this file. This pin names ONE ` +
+        "producer; a second is either a decoy or a real second spelling, and both have to be seen.",
+    ).toBe(1);
+
+    // Defence 2: the block that produces the field, brace-matched.
+    const memoAt = bare.indexOf("const filteredProvinces");
+    expect(memoAt, "the filteredProvinces memo is gone — re-anchor this guard").toBeGreaterThan(0);
+    const producer = matchBraces(bare, bare.indexOf("{", memoAt));
+    // Anti-vacuity on the slice: it really is the block that assigns the field.
+    expect(producer).toContain("badgeClass:");
+
+    const field = /badgeClass:\s*regMeta\.identity\.(\w+)/.exec(producer);
     expect(
       field,
       "badgeClass is no longer fed from the region identity — re-anchor this guard",
@@ -519,9 +563,9 @@ describe("the /turkiye map and the game map wear the same colour as the pages th
         "--card measures 4.41:1 for Marmara in dark, under the 4.5:1 floor. Use badgeOpaque, or " +
         "re-measure every region on the hovered row and re-record app/globals.css.",
     ).toBe("badgeOpaque");
-    // Anti-vacuity on the table itself, so a REGION_DATA that had been emptied could not pass the
+    // Anti-vacuity on REGION_DATA itself, so a table that had been emptied could not pass the
     // no-raw-hue assertions above by containing nothing.
-    expect(table).toContain("identity:");
+    expect(tableOf(explorer, "export const REGION_DATA")).toContain("identity:");
   });
 
   it.each(SLUGS)("%s's opaque badge draws its own label and edge, and no tint", (slug) => {
