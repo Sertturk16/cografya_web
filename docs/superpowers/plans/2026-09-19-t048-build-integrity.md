@@ -379,8 +379,9 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 # The build PRERENDERS ~980 data routes, so it needs the API. Supplied by
-# docker-compose.prod.yml's web.build.args; the default keeps a bare `docker build` working
-# against a locally running API.
+# docker-compose.prod.yml's web.build.args; the default serves `docker build --network host`
+# against a locally running API. (As-landed note: a BARE `docker build` cannot use it — the
+# default RUN network gives the build step its own loopback. See the Dockerfile as shipped.)
 ARG API_BASE_URL=http://127.0.0.1:3001
 ENV API_BASE_URL=${API_BASE_URL}
 # INTERNAL_REQUEST_TOKEN is deliberately NOT an ARG: build args land in image history. It is

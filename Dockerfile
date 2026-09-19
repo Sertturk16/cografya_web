@@ -14,15 +14,21 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 # The build PRERENDERS ~980 data routes, so it needs the API. Supplied by
-# docker-compose.prod.yml's web.build.args; the default keeps a bare `docker build` working
-# against a locally running API. Deliberate, considered-and-kept default (not overlooked):
-# a wrong/absent API at :3001 during a bare `docker build` is NOT a silent failure mode —
-# the prerender floor guard below (scripts/assert-prerender-floor.mjs, chained into `pnpm
-# build`) fails loud on every route family that comes up short, and for that guard to miss
-# a wrong API, the wrong service on :3001 would have to return well-formed data for ~980
-# distinct routes, which does not happen by accident. Removing the default, or poisoning it
-# with a fail-fast placeholder, would trade away the everyday convenience of building
-# against a local API for a failure mode the guard already closes.
+# docker-compose.prod.yml's web.build.args, alongside `network: host` on the same build block.
+# The default is for `docker build --network host` against a locally running API, and ONLY for
+# that: under BuildKit's default RUN network the build step gets its own bridge namespace, so
+# `127.0.0.1:3001` there is the build container's own loopback and reaches nothing. A bare
+# `docker build` with no `--network host` therefore does NOT work against a local API on this
+# default — measured while choosing the network mechanism, and the reason every recorded build
+# invocation for this image passes `--network host`.
+# Deliberate, considered-and-kept default (not overlooked): with `--network host` it resolves
+# to the host's own API, and a wrong/absent API at :3001 is NOT a silent failure mode — the
+# prerender floor guard below (scripts/assert-prerender-floor.mjs, chained into `pnpm build`)
+# fails loud on every route family that comes up short, and for that guard to miss a wrong API,
+# the wrong service on :3001 would have to return well-formed data for ~980 distinct routes,
+# which does not happen by accident. Removing the default, or poisoning it with a fail-fast
+# placeholder, would only lengthen the documented `--network host` invocation without closing
+# a failure mode the guard leaves open.
 ARG API_BASE_URL=http://127.0.0.1:3001
 ENV API_BASE_URL=${API_BASE_URL}
 # INTERNAL_REQUEST_TOKEN is deliberately NOT an ARG: build args land in image history. It is
