@@ -58,6 +58,13 @@ const WORST_PAIR: Readonly<Record<Vision, readonly [string, string]>> = {
  *
  * Identical to `FAULT_TINTS`, and that identity is the POINT: it is asserted below rather than
  * left implicit, so "the binding restyled the fault zones" is answerable with a comparison.
+ *
+ * WHAT THIS TABLE IS AND IS NOT ABOUT. The four files agreed on the FAMILY, not on the shade:
+ * text was `-600` / `-700`, borders and washes were `-500`. One token cannot be two shades, so
+ * binding deepened every border and wash by one step. That is a real appearance change and
+ * `app/globals.css` says so; it is not what this table measures. These three values are the
+ * identity — the hue a reader is asked to associate with a fault zone — and it is the identity
+ * that did not move.
  */
 const SHIPPED_BEFORE: Readonly<Record<string, string>> = {
   kaf: "#e7000b", // red-600

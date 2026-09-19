@@ -350,7 +350,15 @@ describe("every var() fallback in the product tree still equals its token", () =
  * build, so the first report of the breakage would have come from a pipeline rather than from
  * the machine that wrote the comment.
  *
- * THIS GUARD IS AN INTERIM. It catches ONE shape. **T-056** is the real fix — running
+ * THIS GUARD IS AN INTERIM, AND FIX ROUND 1 IS THE THIRD PIECE OF EVIDENCE FOR THAT. It catches
+ * ONE shape, and the shape has now been re-spelled past it twice in two tasks — once by dropping
+ * the wildcard, once by dropping the utility name. Both were found by a person reading the
+ * regex, not by the suite. **T-056 now carries this fourth spelling, the non-fatal negative
+ * results below, and one operational note: the dev server does NOT recover from a CSS parse
+ * failure on the next edit — it keeps serving 500 with a stale trace, which produced four false
+ * positives before the port was freed and `.next` deleted.**
+ *
+ * **T-056** is the real fix — running
  * `app/globals.css` through the project's own PostCSS/Tailwind pipeline against the real source
  * set, in seconds, which catches the whole class of stylesheet-breaking source text rather than
  * this one spelling. **When T-056 lands, this block becomes redundant and should be deleted**
@@ -421,22 +429,46 @@ describe("no source comment can compile into an invalid Tailwind utility", () =>
   );
   const files = candidates.filter((f) => !ignored.has(f)).map((f) => join(ROOT, f));
   /**
-   * A bracketed utility whose `var()` names something that is not a custom property.
+   * ANY bracket whose `var()` names something that is not a custom property.
    *
    * The negative lookahead is the whole rule: a real binding is `var(--token)` or
    * `var(--token, fallback)`, so anything that does not open with `--name` followed by `,` or
    * `)` is prose that has been dressed as markup. Keyed on that rather than on the `*` the
    * first incident happened to contain, because the second incident contained no `*`.
    *
+   * ANCHORED ON `[`, NOT ON `-[`, AND THAT WAS A REAL HOLE. Tailwind v4 also has an
+   * arbitrary-PROPERTY syntax with no utility name in front of the bracket at all. A comment
+   * spelling one of those around a bad `var()` took `/`, `/deprem` and `/deprem/fay-hatlari` to
+   * 500 with the identical `Parsing CSS source code failed … Unexpected token` while this file
+   * passed 313 of 313 — build-verified in fix round 1, planted in `i18n/routing.ts` against a
+   * fresh `.next`. The Task 6 wildcard shape is missed the same way when it is written in that
+   * syntax. One character of anchor was the whole difference.
+   *
+   * WHAT DOES **NOT** BREAK THE BUILD, recorded because it is what shows the premise is sound
+   * and only the anchor was narrow. All of these emit an odd declaration and the stylesheet
+   * still compiles, because CSS error recovery drops an unparseable declaration VALUE, whereas
+   * a malformed first argument to `var()` is fatal to the parse:
+   *
+   *   a bracketed stroke utility around a bad value, a bracketed hex, a bracketed oklch,
+   *   and a bracket naming a token without the `var()`
+   *
+   * and these emit nothing at all: a parenthesised shorthand token reference, and a bracketed
+   * `var()` that DOES name a real token with a fallback. So this guard is narrow on purpose —
+   * it names the one shape that is fatal rather than every shape that is unusual.
+   *
    * A TEMPLATE HOLE IS EXCLUDED, and that is a decision rather than an oversight. Four modules
    * and two tests describe the assembled-class trap by quoting a bracketed utility with an
    * interpolation where the token name goes. Those have shipped for three tasks and the
    * stylesheet compiles: Tailwind's candidate extractor stops at the brace, so no rule is
-   * emitted. Excluding them is also what lets the positive control below assemble its two
+   * emitted. Excluding them is also what lets the positive controls below assemble their
    * offenders through an interpolation — the source text stays legal while the runtime string
-   * is the real defect.
+   * is the real defect. The exclusion is `${` specifically, not a bare `$`: a lone `$` inside a
+   * bracket is not a hole and must not disarm the guard.
+   *
+   * The token-name class is `[A-Za-z0-9_-]`, not `[a-z0-9-]`. A custom property may carry
+   * uppercase and underscores, so the narrower class reported a legal binding as fatal.
    */
-  const NON_TOKEN_VAR_UTILITY = /-\[(?![^\]]*\$)[^\]]*var\(\s*(?!--[a-z0-9-]+\s*[,)])[^)\]]*/g;
+  const NON_TOKEN_VAR_UTILITY = /\[(?![^\]]*\$\{)[^\]]*var\(\s*(?!--[A-Za-z0-9_-]+\s*[,)])[^)\]]*/g;
 
   it("walked the whole scanned project, not a hand-picked subset — positive control", () => {
     expect(files.length).toBeGreaterThan(400);
@@ -479,15 +511,37 @@ describe("no source comment can compile into an invalid Tailwind utility", () =>
     // version of this guard was green on it while every route returned 500.
     const second = `the ripple is a \`stroke-[var(${dot.repeat(3)})]\` class now`;
     expect(second).toMatch(NON_TOKEN_VAR_UTILITY);
-    // And the safe spellings this repo uses all around it stay legal.
+    // Fix round 1: the SAME two payloads in Tailwind's arbitrary-PROPERTY syntax, which has no
+    // utility name before the bracket. Build-verified as fatal, and invisible to the `-[`
+    // anchor this guard used until now.
+    const third = `the ripple is a \`[stroke:var(${dot.repeat(3)})]\` class now`;
+    expect(third).toMatch(NON_TOKEN_VAR_UTILITY);
+    const fourth = `the family is \`[color:var(--fault-${star})]\` here`;
+    expect(fourth).toMatch(NON_TOKEN_VAR_UTILITY);
+    // And the safe spellings stay legal. The first five are what this repo writes; the rest are
+    // the shapes fix round 1 BUILD-VERIFIED as non-fatal, so that widening the anchor did not
+    // quietly turn "unusual" into "forbidden". A guard that reds on things that compile is a
+    // guard people learn to route around.
     for (const safe of [
       "bg-[var(--sst-band-cool)]",
       "fill-[var(--region-marmara)]/80",
       "bg-[var(--map-sea,#dbe7e8)]",
       "w-[calc(100%*2)]",
       `the --sst-band-${String.fromCharCode(42)} family`,
+      // A custom property may carry uppercase and underscores; it is still a custom property.
+      "bg-[var(--Fault-KAF_text)]",
+      // Bad VALUE, good property: CSS error recovery drops the declaration, the sheet compiles.
+      `stroke-[${dot.repeat(3)}]`,
+      "bg-[#ea580c]",
+      "text-[oklch(0.5 0.11 27.325)]",
+      "bg-[--fault-kaf]",
+      // These emit no rule at all.
+      "bg-(--fault-kaf)",
+      "text-[var(--fault-kaf, #e7000b)]",
     ]) {
       expect(safe, `${safe} must stay legal`).not.toMatch(NON_TOKEN_VAR_UTILITY);
     }
+    // A lone `$` inside the bracket is NOT a template hole and must not disarm the guard.
+    expect(`bg-[var(--sst-band-${star})$]`).toMatch(NON_TOKEN_VAR_UTILITY);
   });
 });

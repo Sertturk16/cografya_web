@@ -772,10 +772,18 @@
      "hazard" on a card that carries a `text-destructive` risk level two elements away. The
      fault zones get their own set; hazard keeps the semantic family.
 
-     WHAT SHIPPED, AND WHAT MOVED: NOTHING. Four files agreed on red / blue / emerald
+     WHAT SHIPPED, AND WHAT MOVED: NO HUE. Four files agreed on red / blue / emerald
      (`lib/earthquake/fault-lines-data.ts` and both `/deprem` routes), and unlike the basin set
-     the shipped identity PASSES on measurement, so no member moves. Values are the v4 `-600` of
-     those three families, the shade the text spellings already used. Worst pair per vision:
+     the shipped identity PASSES on measurement, so no member changes family. Values are the v4
+     `-600` of those three families, the shade the TEXT spellings already used.
+
+     One shade DID move on the way, and saying "nothing moved" would flatter it: the four files
+     agreed on the family, not the shade. Borders and washes were spelled at `-500`
+     (`border-red-500/30 bg-red-500/5` on the `/deprem` cards, `-500` tints and `/40` edges in
+     `fault-lines-data.ts`) while the text was `-600` / `-700`. One token cannot be two shades,
+     so the borders and washes now composite `-600`. The contrast tables below are measured on
+     that new state, and the painted verification ran against it, so nothing here is stale —
+     but the painted border and wash are a shade deeper than before. Worst pair per vision:
      normal 48.5 kaf/daf · protanopia 23.1 kaf/bafs · deuteranopia 17.2 kaf/bafs ·
      tritanopia 16.5 daf/bafs. All three pairs clear ΔE00 10 under all four.
      `lib/theme/fault-palette.test.ts` measures it and compares this block against its own table
@@ -789,8 +797,16 @@
          `/deprem`'s map paints provinces `fill-card/90`, never a region tint, and no continent
          surface exists on either route.
      Moving a member that clears its own floor, to dodge a collision that cannot be painted,
-     would be restyling a standard scale for tidiness. Both figures are pinned instead, so a
-     page that later renders two of these sets together has to be looked at.
+     would be restyling a standard scale for tidiness. Both figures are pinned in
+     `lib/theme/fault-palette.test.ts` instead — the value equality and the ΔE00 — so a change
+     to EITHER SET has to walk past a failing test with this reasoning in front of it.
+
+     What no test can tell you is that a page has started rendering two of these sets together:
+     the pins compare values, not screens, and they would stay green on such a page. That claim
+     rests on a check rather than on a guard, and the check is recorded so it can be repeated —
+     the rendered DOM of both `/deprem` routes carries `fault-` 10 and 16 times and `sst-band-`,
+     `region-`, `continent-` and `basin-` zero times. Re-run it before adding a data set to
+     either route.
 
      CONTRAST. Figures for `-text`, WITH THE BACKDROP EACH IS A RATIO TO, sit below the `-text`
      declarations. Nothing restates them elsewhere. */

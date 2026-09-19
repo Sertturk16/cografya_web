@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { stripComments, stripCssComments } from "@/lib/test-support/strip-comments";
 import { magnitudeBucket, type MagnitudeBucket } from "@/lib/earthquake/magnitude";
-import { ratio } from "./contrast";
+import { GRAPHICAL_MIN, ratio } from "./contrast";
 import {
   bucketFor,
   MAGNITUDE_BUCKETS,
@@ -12,6 +12,30 @@ import {
 } from "./magnitude-identity";
 
 const CLASS_MEMBERS = ["mark", "ripple", "badge", "swatch"] as const;
+
+/** The two card surfaces every figure below is a ratio TO. Neither is "the background". */
+const LIGHT_CARD = "#ffffff";
+const DARK_CARD = "#121e21";
+
+/**
+ * The five ramp steps as `app/globals.css` declares them, PARSED rather than transcribed.
+ *
+ * This matters more here than in the palette tests, because this file pins a FAILURE. A
+ * transcribed copy would keep asserting 3.63 / 2.65 / … about five literals while the stylesheet
+ * said something else entirely, and the test that exists to say "T-031d has not happened yet"
+ * would be green after T-031d happened. Comments are stripped first: the token block's own
+ * docblock quotes contrast figures and bucket ranges in prose.
+ */
+const SHIPPED: Readonly<Record<number, string>> = (() => {
+  const css = stripCssComments(
+    readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8"),
+  );
+  const out: Record<number, string> = {};
+  for (const m of css.matchAll(/--eq-mag-([1-5]):\s*(#[0-9a-fA-F]{6})\s*;/g)) {
+    out[Number(m[1])] = m[2]!.toLowerCase();
+  }
+  return out;
+})();
 
 describe("the magnitude identity table", () => {
   it("covers exactly the five buckets the token set declares", () => {
@@ -106,13 +130,11 @@ describe("the magnitude identity table", () => {
   });
 
   it("names only tokens app/globals.css actually declares", () => {
-    const css = stripCssComments(
-      readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8"),
-    );
-    const declared = new Set([...css.matchAll(/(--eq-mag-[1-5])\s*:/g)].map((m) => m[1]!));
-    expect(declared.size).toBe(5);
+    expect(Object.keys(SHIPPED)).toHaveLength(5);
     for (const bucket of MAGNITUDE_BUCKETS) {
-      expect(declared.has(`--eq-mag-${bucket}`)).toBe(true);
+      expect(SHIPPED[bucket], `--eq-mag-${bucket} is not declared in app/globals.css`).toMatch(
+        /^#[0-9a-f]{6}$/,
+      );
     }
   });
 
@@ -131,16 +153,24 @@ describe("the magnitude identity table", () => {
   });
 
   it("does NOT re-light the ramp — the dark-mode failure stays T-031d's", () => {
-    // Confirmed here rather than taken on trust, and confirmed as a FAILURE: on the dark
-    // `--card` (#121e21) the five steps measure 3.63 / 2.65 / 1.89 / 1.29 / 1.01 against a 3:1
-    // graphical floor. Four of five are under it. Binding to the ramp is still correct — the
-    // alternative is a second ramp — but this file must not be where somebody quietly fixes it,
-    // because a change to those five values is a change to a public-safety scale and belongs in
-    // one reviewed place. If these figures move, T-031d has landed and this test is its record.
-    const DARK_CARD = "#121e21";
-    const STEPS = ["#aa4cbd", "#9236a1", "#772281", "#521457", "#2e0e2f"] as const;
-    expect(STEPS.map((hex) => ratio(hex, DARK_CARD))).toEqual([3.63, 2.65, 1.89, 1.29, 1.01]);
+    // A pin that RECORDS A FAILURE, so it has to be measured on the values that ship rather than
+    // on transcribed literals. The first version of this read five hexes written out here, which
+    // would have stayed green through any edit to `--eq-mag-3`; `SHIPPED` is parsed out of
+    // `app/globals.css`, the way `fault-palette.test.ts` parses its own set.
+    const steps = MAGNITUDE_BUCKETS.map((b) => SHIPPED[b]!);
+    expect(steps.map((hex) => ratio(hex, DARK_CARD))).toEqual([3.63, 2.65, 1.89, 1.29, 1.01]);
     // The same five on the LIGHT card, which is where the ramp works and why it shipped.
-    expect(STEPS.map((hex) => ratio(hex, "#ffffff"))).toEqual([4.69, 6.43, 9.01, 13.15, 17.21]);
+    expect(steps.map((hex) => ratio(hex, LIGHT_CARD))).toEqual([4.69, 6.43, 9.01, 13.15, 17.21]);
+
+    // …and the FAILURE itself is asserted, against the floor the repo exports, not described in
+    // prose beside a number. Four of five steps are under `GRAPHICAL_MIN` on the dark card. If a
+    // future change fixes that, this reds and T-031d has landed; if a future change makes it
+    // worse, this reds too.
+    const failing = steps.filter((hex) => ratio(hex, DARK_CARD) < GRAPHICAL_MIN);
+    expect(
+      failing,
+      `on the dark --card the ramp is supposed to be FAILING; this pin exists to record that`,
+    ).toHaveLength(4);
+    expect(steps.filter((hex) => ratio(hex, LIGHT_CARD) < GRAPHICAL_MIN)).toHaveLength(0);
   });
 });
