@@ -818,6 +818,14 @@ Every occurrence here is one of the five meanings; nothing in this file is decor
    fill draws no line; inverting a panel inverts its rim. The now-dead `backdrop-blur-md` on
    the opaque panel went with it.
 
+   **Both options were painted, because this trap is the one the branch keeps getting wrong.**
+   The toast renders only after four map clicks a headless run could not land, so the two class
+   strings were injected as a probe into the live page — its own compiled CSS, Chromium's own
+   compositing, only the trigger synthetic. The rejected `bg-card` pill reproduces **3.04 rest /
+   2.53 hovered** in light to two decimals; the shipped inversion paints 5.54 / 4.84 light and
+   7.46 / 6.27 dark, label and shape alike. `blendOver` and paint agree to one byte at the
+   pill's 90% hover alpha (#322718 modelled, #322618 painted).
+
 ### lib/marine/sea-basins-detail.ts (16)
 
 The definition behind `--basin-*`. Its four hues agree, exactly, with `v2-marine-basin-cards.tsx`'s

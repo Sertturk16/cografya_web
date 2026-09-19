@@ -163,7 +163,16 @@ import {
  * **2.53:1** once it hovers to `--muted`, under the 3:1 graphical floor -- the sixth time on
  * this branch that a chip measured fine at rest and failed hovered. `--warning-foreground` as
  * the fill with `--warning` as the label measures 5.54 / 7.46 at rest and 4.80 / 6.27 hovered,
- * so it is authored against the worst state rather than patched after it. The toast's rim is
+ * so it is authored against the worst state rather than patched after it.
+ *
+ * BOTH OPTIONS WERE THEN PAINTED, because the trap is the thing this branch keeps getting
+ * wrong. The toast renders only after four map clicks a headless run could not land, so the two
+ * class strings were injected as a probe into the live page -- the page's own compiled CSS,
+ * Chromium's own compositing, only the trigger synthetic. Painted, the rejected `--card` pill
+ * separates 3.04 rest / **2.53 hovered** in light, reproducing the model to two decimals; the
+ * shipped inversion separates 5.54 / 4.84 light and 7.46 / 6.27 dark, and its label carries
+ * the same figures. `blendOver` and paint agree to one byte at the pill's 90% hover alpha
+ * (#322718 modelled, #322618 painted). The toast's rim is
  * `--warning-foreground/25` rather than the inventory's literal `border-warning`, because a rim
  * the same value as its own fill draws no line at all; inverting the panel inverts the rim.
  *
