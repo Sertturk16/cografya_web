@@ -11,10 +11,17 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Dummy or build-time defaults for static generation
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN pnpm build
+# The build PRERENDERS ~980 data routes, so it needs the API. Supplied by
+# docker-compose.prod.yml's web.build.args; the default keeps a bare `docker build` working
+# against a locally running API.
+ARG API_BASE_URL=http://127.0.0.1:3001
+ENV API_BASE_URL=${API_BASE_URL}
+# INTERNAL_REQUEST_TOKEN is deliberately NOT an ARG: build args land in image history. It is
+# mounted as a BuildKit secret for the duration of this one command and is not in any layer.
+RUN --mount=type=secret,id=internal_request_token \
+    INTERNAL_REQUEST_TOKEN="$(cat /run/secrets/internal_request_token)" pnpm build
 
 FROM node:24-alpine AS runner
 WORKDIR /app
