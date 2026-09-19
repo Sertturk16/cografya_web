@@ -170,9 +170,47 @@ import {
  * The arbitrary arm does not move: 72 before, 72 after. The ten bracketed map hexes in this
  * file are the dark map surface and stay T-031d's.
  *
+ * 221 -> 202 is T-031c Task 9's third file: `components/v2/v2-header.tsx` 19 -> 0, and it is
+ * the one file on this branch that renders on EVERY route.
+ *
+ * The file settles a question the inventory could not see from a row: its hue population was
+ * ALREADY bridge-bound, with three stragglers. Fourteen of its sixteen icon glyphs wear
+ * `--primary`, `--accent`, `--secondary` or `--destructive`; seven of its eight mega-menu icon
+ * plates wear a 10% tint of one of those. The raw classes were the leftovers -- one emerald
+ * plate, one emerald glyph, two amber glyphs. Removing them, which is what `decoration` says
+ * literally, would have left a bare plate beside three tinted ones and two bare glyphs in a row
+ * of tinted ones: that deletes a convention rather than a meaningless hue. They join the set
+ * instead, and the inventory rows record it.
+ *
+ * FIGURES, EACH WITH THE SURFACE IT IS A RATIO TO, and hovered where the surface moves:
+ *
+ *   - The plate is a 16px glyph on a 10% tint, i.e. a graphical object at the 3:1 floor. On
+ *     `--card` it measures 5.12 light / 4.69 dark; the row hovers to `--muted`, and over that
+ *     it is 4.33 / 4.04. The three plates already shipping measure 4.45-5.32 rest and
+ *     3.77-4.46 hovered, so the new member is not the worst of its own set -- it is the
+ *     second best. It replaces a raw pairing that measured 3.43 light.
+ *   - The active Kitaplar link is on the nav bar, which is `--background/90` over whatever
+ *     scrolls beneath: #faf7f1 to #fbf9f4 light, #0b1416 to #0d1619 dark. THE INVENTORY'S
+ *     `text-primary` on a 15% tint measures 3.93 to 3.99 there and would have shipped a new
+ *     failure. The spelling every other active nav item already uses -- `--primary-strong` on
+ *     a 10% tint -- measures 6.89 to 6.96 light and 7.91 to 8.09 dark, against 4.03 to 4.10
+ *     for the raw amber pairing it replaces.
+ *   - The signed-in dot is a solid fill inside a pill that hovers from `--card` to a 50% muted
+ *     wash: 5.82 rest / 5.32 hovered light, 5.49 / 5.09 dark. The raw emerald-500 measured
+ *     2.54 / 2.32 in light, under the 3:1 graphical floor in both states.
+ *   - The "Aktif" badge sits on that same moving row: 6.56 rest / 6.02 hovered light, 7.61 /
+ *     7.03 dark, against 3.43 / 3.15 for the raw emerald.
+ *
+ * One row IS removed as written: the mobile Kitaplar row's amber surface. There the set argues
+ * the other way -- its two sibling rows carry no surface at all, so the tint was the odd one
+ * out and dropping it joins the convention. Its `Badge variant="primary"` still marks it.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The wordmark's one bracketed hex is
+ * the dark brand tone and is not this task's row.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 221;
+const RAW_PALETTE_BUDGET = 202;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

@@ -232,11 +232,11 @@ export function V2Header() {
                   onClick={() => setActiveDropdown(null)}
                   className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
                 >
-                  <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center mr-2 shrink-0 group-hover:scale-105 transition-transform">
+                  <div className="size-7 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center mr-2 shrink-0 group-hover:scale-105 transition-transform">
                     <Compass className="size-4" />
                   </div>
                   <div>
-                    <span className="font-bold text-xs block text-foreground group-hover:text-emerald-600 transition-colors">
+                    <span className="font-bold text-xs block text-foreground group-hover:text-secondary transition-colors">
                       Kıtalar Atlası
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
@@ -383,11 +383,11 @@ export function V2Header() {
             href="/kitaplar"
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
               isKitaplarActive
-                ? "bg-amber-600/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30"
+                ? "bg-primary/10 text-primary-strong font-bold border border-primary/20"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
             }`}
           >
-            <BookOpen className="size-3.5 text-amber-600 dark:text-amber-400" />
+            <BookOpen className="size-3.5 text-primary" />
             <span>Kitaplar</span>
             <Badge variant="warning" className="text-[9px] py-0 px-1 font-bold">
               Video Çözümlü
@@ -417,7 +417,7 @@ export function V2Header() {
                 aria-label="Hesabım"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold shadow-2xs hover:bg-muted/50 transition-colors"
               >
-                <span className="size-2 rounded-full bg-emerald-500" />
+                <span className="size-2 rounded-full bg-success" />
                 <User className="size-3.5 text-primary" />
                 <span>Hesabım</span>
               </Link>
@@ -570,7 +570,7 @@ export function V2Header() {
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
                         <div className="flex items-center gap-2.5">
-                          <Compass className="size-4 text-emerald-600" />
+                          <Compass className="size-4 text-secondary" />
                           <span className="text-sm font-semibold text-foreground">
                             Kıtalar Atlası
                           </span>
@@ -650,11 +650,13 @@ export function V2Header() {
                       <Link
                         href="/kitaplar"
                         onClick={() => setMobileOpen(false)}
-                        className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 font-semibold"
+                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
                         <div className="flex items-center gap-2.5">
-                          <BookOpen className="size-4 text-amber-600" />
-                          <span className="text-sm">Video Çözümlü Kitaplar</span>
+                          <BookOpen className="size-4 text-primary" />
+                          <span className="text-sm font-semibold text-foreground">
+                            Video Çözümlü Kitaplar
+                          </span>
                         </div>
                         <Badge variant="primary" size="sm">
                           20 Deneme
@@ -713,7 +715,7 @@ export function V2Header() {
                         <Badge
                           variant="outline"
                           size="sm"
-                          className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                          className="bg-success/10 text-success-strong border-success/30"
                         >
                           Aktif
                         </Badge>

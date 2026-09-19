@@ -644,6 +644,41 @@ Every page renders this file. Screenshot `/tr` and one deep route when it is app
 
 **Totals:** data 0, semantic 8, decoration 11.
 
+**APPLIED, Task 9 — all 19, with five rows corrected before applying.**
+
+**The correction is one fact, found by reading the whole file instead of the rows.** This file's
+hue population is ALREADY bridge-bound: 14 of its 16 icon glyphs wear `--primary`, `--accent`,
+`--secondary` or `--destructive` (167, 266, 331, 421, 514, 534, 547, 560, 595, 608, 630, 643,
+708), and 7 of its 8 mega-menu icon plates wear a 10% tint of one of those (184, 201, 218, 283,
+300, 348, 365). The raw classes below were the three leftovers of that set, not a tint set of
+their own. Applying `decoration → removed` literally would have left one bare plate beside three
+tinted ones and two bare glyphs in a row of tinted ones — deleting a convention, not a
+meaningless hue. Those rows join the set instead:
+
+| Row      | Was                                 | Applied                                              | Why not removed                                                                      |
+| -------- | ----------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 235, 239 | the one raw plate of eight          | `bg-secondary/10 text-secondary` + the hover heading | `variant="emerald"` already resolves to `bg-secondary` in `components/ui/button.tsx` |
+| 390      | desktop `BookOpen`, one glyph of 16 | `text-primary`                                       | matches the Map/Waves/Gamepad2 glyphs beside it and the link's own active state      |
+| 573      | mobile `Compass`                    | `text-secondary`                                     | its three dropdown-mates are primary / accent / secondary                            |
+| 656      | mobile `BookOpen`                   | `text-primary`                                       | the same link as 390, and its own `Badge variant="primary"`                          |
+
+**Row 386 named a target that fails on the surface the page paints.** The `Becomes` column says
+`bg-primary/15 text-primary border-primary/30`. The nav bar is `--background/90` over whatever
+scrolls beneath it (#faf7f1 to #fbf9f4 light, #0b1416 to #0d1619 dark), and on a 15% primary tint
+over that, `--primary` measures **3.93 to 3.99 in light** — a new failure, where the raw amber
+pairing it replaces measured 4.03 to 4.10. The spelling every other active nav item already uses
+(`v2-header.tsx:160`) is `bg-primary/10 text-primary-strong font-bold border border-primary/20`,
+which measures **6.89 to 6.96 light and 7.91 to 8.09 dark**. That spelling is what shipped, so the
+active state is single-sourced as well as legible.
+
+**Rows 420, 653 and 716 applied as written.** The signed-in dot and the "Aktif" badge both sit on
+a row that hovers from `--card` to a 50% muted wash, so both are recorded in both states: the dot
+5.82 rest / 5.32 hovered light and 5.49 / 5.09 dark (raw emerald-500 was 2.54 / 2.32 light, under
+the 3:1 graphical floor in BOTH states); the badge 6.56 / 6.02 light and 7.61 / 7.03 dark (raw
+3.43 / 3.15). The mobile Kitaplar row's amber surface is genuinely removed — there the set argues
+the other way, because its two sibling rows carry no surface at all, so it takes their
+`hover:bg-muted` and its label takes their `text-foreground`.
+
 ### components/v2/v2-tool-workbench.tsx (16)
 
 Every occurrence here is one of the five meanings; nothing in this file is decorative.
