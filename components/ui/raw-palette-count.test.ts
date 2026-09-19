@@ -633,6 +633,20 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
+ * A NOTE THE PAINT ADDED, AFTER THE COUNT HAD ALREADY REACHED 15. The learning-path header's
+ * title did not inherit the plate's colour the way its spans did: `app/globals.css`'s base
+ * layer sets a colour on `h3` and `h4` directly, so a heading reaches that rule rather than its
+ * parent's utility. Modelled, the title was 5.13; PAINTED with the explicit class removed it
+ * was **2.88** light and **2.92** dark, on a wash the model said was fine. The `<h3>` carries
+ * the class itself now, and painted it reads 5.20 / 5.01 at the from-end and 6.97 / 7.02 at the
+ * to-end, with the eyebrow at 5.20 / 5.01, the badge at 5.13 / 4.94 and the play glyph at
+ * 4.37 / 4.64 on its 20% plate.
+ *
+ * The same rule is why the educational panel's heading row never carried its hue on the
+ * HEADING: painted, the `<h4>` is `--foreground` at 14.97 / 14.73 and only the glyph beside it
+ * takes the rotation token, 6.13 / 5.44. That was true of the amber it replaces too, so the row
+ * moved exactly one mark.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
 const RAW_PALETTE_BUDGET = 15;

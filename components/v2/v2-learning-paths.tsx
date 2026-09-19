@@ -104,7 +104,9 @@ export function V2LearningPaths() {
 
               <div className="relative z-10">
                 <span className="text-[11px] font-mono block">Resmî Yayın</span>
-                <h3 className="font-heading font-bold text-lg leading-tight">{item.title}</h3>
+                <h3 className="font-heading font-bold text-lg text-primary-foreground leading-tight">
+                  {item.title}
+                </h3>
               </div>
             </div>
 
