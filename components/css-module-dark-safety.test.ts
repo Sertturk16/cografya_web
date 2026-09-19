@@ -17,10 +17,21 @@ export const SURVIVING_MODULES: readonly string[] = [
 ].sort();
 
 /**
- * Steps down as T-033 converts each module. The count is the POSITIVE CONTROL: without it, a
- * walk that found nothing would satisfy the raw-token assertion perfectly.
+ * Steps down as T-033 converts each module, and is now ZERO — the walk finds nothing because
+ * nothing is left. It started as the POSITIVE CONTROL for the raw-token assertion below (a walk
+ * that found nothing would satisfy that assertion perfectly); at zero it is the opposite
+ * instrument, and the more important one. A count of zero over a population that is built by
+ * WALKING the tree is the one assertion on this surface that can still fail: it reds the day a
+ * `*.module.css` comes back anywhere under `app/` or `components/`.
+ *
+ * That is deliberately the ONLY place that guard lives. `components/orphan-stylesheets.test.ts`
+ * (reachability, basename uniqueness) and `components/css-module-fixed-widths.test.ts` (the
+ * fixed-px census) both went vacuous with their subject and were deleted in task 9 rather than
+ * stepped to a floor of zero; `lib/overflow-sweep/routes.test.ts` lost its "every surviving
+ * module has a route" case and the `modules` field it read. Task 10 retires the two assertions
+ * below that a zero population makes trivially true, and keeps this one.
  */
-const EXPECTED_MODULE_COUNT = 1;
+const EXPECTED_MODULE_COUNT = 0;
 
 /**
  * Raw Terra tokens are frozen at their light values — `.dark` redefines not one of the 13
@@ -122,13 +133,41 @@ const EXPECTED_MODULE_COUNT = 1;
  * `components/book/book-detail-floors.test.ts`, which reads the page's source from a directory
  * vitest does run. Mutation-checked in five directions.
  *
+ * 0 once `locator-map.module.css` went, taking the last 7 — the eighth and final module. It
+ * reads SEVEN, not the six the plan's table predicted, and that error carried through every
+ * running total from Task 3 onward (`--color-surface` and `--color-bg` share one line, which a
+ * line-counting grep collapses into one read).
+ *
+ * Its readings were the smallest population of the eight and the only ones a bridge token could
+ * NOT simply absorb, because half the figure is an isolated `<img>` document that cannot see the
+ * page's CSS. The two that were page chrome moved and are measured against the `--card` this
+ * figure sits on: the visible ODbL credit went from `--color-slate` at 7.92 light / **2.15** dark
+ * to `text-muted-foreground` at 7.92 / **7.79**, and the frame hairline from `--color-border`,
+ * which at its frozen light value drew a **12.85:1** bright line around the figure on the night
+ * page, to `border-border` at 1.37 / 1.68 on `--background` — a decorative boundary, which WCAG
+ * 1.4.11's 3:1 does not ask of.
+ *
+ * The other FIVE are deliberately still frozen, and measured rather than waved through: the
+ * highlight's fill and stroke and the locator ring's stroke are painted onto the artifact's own
+ * white land (8.36:1) and its own painted sea (6.61:1), neither of which follows the theme, and a
+ * lifted primary measures **2.08** and **1.64** on those same two backdrops in dark. The frame's
+ * ground is frozen to `--map-sea` for the same reason — a theme-aware ground under that frozen
+ * ink reads 2.23 against the highlight's seaward edge and 2.15 against the credit drawn inside
+ * the Türkiye file. A dark-adapted ARTIFACT is the fix and it is T-031d's, with the other map
+ * surfaces `components/ui/token-binding.test.ts` exempts.
+ *
+ * `LocatorMap` also has ONE call site — the country detail page, `kind="country"`. The plan named
+ * `/tr/turkiye/istanbul` for this task and that page renders `V2ProvinceLocatorMap` instead, so
+ * the module's `province` half is reachable code no route renders, the same shape task 5 found in
+ * the header combobox. `components/map/locator-map-floors.test.ts` carries the pins.
+ *
  * What did NOT move is `magnitude-badge.tsx`'s `--eq-mag-1`…`-5` ramp. It is a data token set
  * encoding a public-safety scale, so it is absent from the bridge mapping by design — and it is
  * measured rather than assumed: **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1** on dark `--card`, four of
  * five under 3:1. That is T-031d's to re-derive with the other dark data surfaces; the reading is
  * recorded in the badge's own docblock rather than left silent.
  */
-const TOTAL_RAW_READS = 7;
+const TOTAL_RAW_READS = 0;
 
 describe("CSS modules cannot read a colour that dark mode never redefines", () => {
   it("found the modules it claims to check", () => {

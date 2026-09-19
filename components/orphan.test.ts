@@ -259,6 +259,12 @@ describe("the import closure itself", () => {
   it("walked the product surface and reached beyond it", () => {
     expect(AUDITED.length).toBeGreaterThan(100);
     expect(productClosure.size).toBeGreaterThan(PRODUCT_ROOTS.length);
+    // THE PARSER ANCHOR, inherited from `components/orphan-stylesheets.test.ts` when T-033 task 9
+    // deleted that file with the last `*.module.css`. It is a floor on the RESOLVER, not on this
+    // file's population: a closure that resolved nothing would still be "bigger than the root
+    // list" and every reachability verdict below would then be an accident. This is now the only
+    // place the graph is read, so the anchor lives here.
+    expect(productClosure.size, "files reachable from a route").toBeGreaterThan(100);
     // A file the closure can only have reached by following an import, not by walking a root.
     expect([...productClosure].map(label)).toContain("lib/utils.ts");
   });

@@ -770,8 +770,26 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * for the reason those notes already give for the same spelling — it is the deleted stylesheet's
  * own `var(--radius)` at 10px, not a card radius. A 44×44 fragment tile is a control, not a
  * panel. The `ternary` and `call` figures do not move; this conversion introduced neither.
+ *
+ * T-033 task 9: **193 -> 198**, `member` 14 -> 9. The LAST CSS Module in the tree.
+ * `locator-map.module.css` had 7 `className={styles.x}` sites, all in its one consumer
+ * (`components/map/locator-map.tsx`), and every one left the member bucket. FIVE became bare
+ * identifiers (`BASE`, `OVERLAY`, `HIGHLIGHT`, `RING`, `CREDIT`); the other two — the figure and
+ * the frame — are `{ province, country }` records read as `FIGURE[kind]` and `FRAME[kind]`, which
+ * this scanner's own member regex still calls `member`. So the member bucket loses 7 and regains
+ * 2, and the identifier bucket gains 5. The two records are a computed lookup rather than a
+ * ternary because only ONE kind renders on any route and a ternary lets the unrendered branch
+ * drift silently; `components/map/locator-map-floors.test.ts` asserts the two rows differ in the
+ * aspect ratio and in nothing else.
+ *
+ * NO NEW HAND-DRAWN CARD, measured the same way as the four notes above. The one surface-ish
+ * constant is the frame, `rounded-[var(--radius-lg)] border border-border bg-[var(--map-sea)]`,
+ * and it is outside {@link CARD_ROUNDING} on both counts: the radius is the retired stylesheet's
+ * own `var(--radius-lg)` rather than a card radius, and the fill is the map's frozen sea rather
+ * than a themed surface. A map figure is an illustration, not a panel. The `ternary` and `call`
+ * figures do not move; this conversion introduced neither.
  */
-export const COMPUTED_CARD_CLASSNAMES = 193;
+export const COMPUTED_CARD_CLASSNAMES = 198;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -783,11 +801,12 @@ export const COMPUTED_CARD_CLASSNAMES = 193;
  * `video-progress-controls.tsx`'s watched toggle, whose checked fill is additive over a base the
  * control keeps in both states. See {@link COMPUTED_CARD_CLASSNAMES}'s note for why that is a
  * composition rather than a ternary, and for the whole 154 -> 181 / 57 -> 27 arithmetic, and the
- * 181 -> 193 / 27 -> 14 one that task 8 added on top of it. */
+ * 181 -> 193 / 27 -> 14 one that task 8 added on top of it, and the 193 -> 198 / 14 -> 9 one
+ * task 9 closed the programme with. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   ["call", 1],
-  ["identifier", 193],
-  ["member", 14],
+  ["identifier", 198],
+  ["member", 9],
   ["ternary", 2],
 ];
 

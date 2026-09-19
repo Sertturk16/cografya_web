@@ -183,11 +183,21 @@ describe("sticky-header anchor offsets", () => {
     }
   });
 
-  it("scans both stylesheet roots", () => {
+  it("scans both stylesheet roots, and one of them has nothing left to scan", () => {
     // Guards the widening itself: a move of either root would otherwise shrink the scanned
-    // set in silence, which is the failure mode of the version this replaced.
+    // set in silence, which is the failure mode of the version this replaced. `readdirSync`
+    // throws on a root that has moved, so BOTH roots are still walked or this file does not
+    // load at all — that half of the guard is structural and needs no assertion.
     expect(cssFiles.some(({ file }) => file.includes("/app/"))).toBe(true);
-    expect(cssFiles.some(({ file }) => file.includes("/components/"))).toBe(true);
+    // The `components` root was the CSS-Module half of this scan. T-033 task 9 retired the last
+    // `*.module.css` and "at least one stylesheet here" became an assertion with no subject —
+    // which is the one shape that cannot fail. RE-AIMED AT ABSENCE rather than dropped: a `.css`
+    // arriving under `components/` reds here, where someone still has to say whether it declares
+    // an offset token, instead of joining the scan unnoticed.
+    expect(
+      cssFiles.filter(({ file }) => file.includes("/components/")).map(({ file }) => file),
+      "stylesheets under components/, where the CSS-Module era ended",
+    ).toEqual([]);
   });
 
   it("scans component sources in both roots too, with comments stripped", () => {

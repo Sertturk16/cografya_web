@@ -243,12 +243,26 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * utility; where the stylesheet painted `#fff` on 210 tiles it is `bg-card` now, for the same
    * reason the timeline card is — there is no data token on it that needs a fixed ground.
    *
-   * The tempting move is to widen this to every feature directory at once. Do NOT. The six
-   * unconverted modules' consumers carry exactly the defects T-033 exists to remove, so a
-   * blanket widening reds immediately and the only way back to green is an exemption list —
-   * a list that then has to be pruned six times, by six tasks, each of which could
-   * silently prune one row too many. Growing the scan in step with the conversion needs no
-   * bookkeeping and cannot go stale: a directory is either converted and scanned, or neither.
+   * `components/map` is here because T-033 task 9 converted `locator-map.module.css`, the LAST
+   * of the eight. It is the one directory added to this list whose component deliberately keeps
+   * a FROZEN colour, and it is here rather than in `MAP_SURFACE_FILES` because the freeze needs
+   * no escape: the overlay reads `fill-primary-dark` / `stroke-primary-dark`, utilities the
+   * `@theme inline` block exports, so there is no `var(--color-*, #hex)` for this `describe` to
+   * find. The reason for the freeze is the same one the exempt files carry — the base map is an
+   * isolated `<img>` document whose land and sea are literal hex that no theme redefines, so the
+   * ink on top of it is measured against a fixed backdrop: **8.36:1** on that white land and
+   * **6.61:1** on that sea, against a lifted primary's **2.08** and **1.64** there in dark. The
+   * page chrome around the artifact is bridged normally (`border-border`,
+   * `text-muted-foreground`), and `components/map/locator-map-floors.test.ts` asserts the split
+   * in both directions. Dark maps, artifact included, remain T-031d's.
+   *
+   * THE LIST IS NOW COMPLETE for T-033: all eight converted directories are scanned, and no
+   * exemption row was ever needed. The tempting move was to widen this to every feature
+   * directory at once. Do NOT, for whatever comes next either: a blanket widening reds
+   * immediately and the only way back to green is an exemption list — a list that then has to be
+   * pruned once per task, each time by someone who could silently prune one row too many.
+   * Growing the scan in step with the conversion needs no bookkeeping and cannot go stale: a
+   * directory is either converted and scanned, or neither.
    */
   const V2_DIRS = [
     fileURLToPath(new URL("../v2", import.meta.url)),
@@ -258,6 +272,7 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
     fileURLToPath(new URL("../site-search", import.meta.url)),
     fileURLToPath(new URL("../earthquake", import.meta.url)),
     fileURLToPath(new URL("../book", import.meta.url)),
+    fileURLToPath(new URL("../map", import.meta.url)),
     fileURLToPath(new URL("../../app/[locale]", import.meta.url)),
   ];
 

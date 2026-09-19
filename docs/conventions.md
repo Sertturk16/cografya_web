@@ -98,17 +98,23 @@ comparison run by hand.
 - **Done means, for any task with a visible UI change:** `pnpm sweep:overflow` green, or the
   filtered run covering the routes you touched (`-- --filter=turkiye`). Never widen the
   tolerance to get there — a tolerance that hides a real overflow is worse than no sweep.
-- The route list is `lib/overflow-sweep/routes.ts`, and `routes.test.ts` holds it to two rules
+- The route list is `lib/overflow-sweep/routes.ts`, and `routes.test.ts` holds it to one rule
   in plain vitest: every entry is a live key of `routing.pathnames` (a renamed route must not
-  leave the sweep measuring 404s), and every surviving `*.module.css` is named by at least one
-  route (a new module must not arrive uncovered). Those keep the list from going BROKEN, not
-  from going INCOMPLETE: **a new route lands in the "not swept" footer and nothing fails.** If
-  you add a route, decide out loud whether it is a variant of a listed shape or a new one.
-- `components/css-module-fixed-widths.test.ts` is the half of this that needs no browser: it
-  pins the 37 fixed-`px` inline-axis declarations across the eight CSS Modules by file and by
-  text, so changing `min-width: min(300px, 100%)` back to `min-width: 300px` reds `pnpm test`.
-  It covers one of the three recorded defects, not all three — the other two are a text node
-  with no wrapping opportunity and a Tailwind class in JSX.
+  leave the sweep measuring 404s). It had a second — every surviving `*.module.css` is named by
+  at least one route — which T-033 deleted along with `SweepShape.modules` when the last
+  stylesheet went, because a coverage claim over an empty population cannot fail. That keeps the
+  list from going BROKEN, not from going INCOMPLETE: **a new route lands in the "not swept"
+  footer and nothing fails.** If you add a route, decide out loud whether it is a variant of a
+  listed shape or a new one.
+- The browser-free half of this used to be `components/css-module-fixed-widths.test.ts`, a census
+  of every fixed-`px` inline-axis declaration in the CSS Modules, so changing
+  `min-width: min(300px, 100%)` back to `min-width: 300px` would red `pnpm test`. T-033 retired the
+  last module and deleted the census with it. The rule it stood for did not go: when a conversion
+  deletes a pinned CSS value, the pin moves to the consumer's own test rather than evaporating
+  into the sweep. `lib/test-support/converted-floor.ts` carries it, and `book-detail-floors`,
+  `bench.structure`, `earthquake.structure` and `locator-map-floors` are the tests that hold the
+  values. It covered one of the three recorded defects, not all three — the other two are a text
+  node with no wrapping opportunity and a Tailwind class in JSX.
 - 768 is in the list because without it `md:min-w-[900px] lg:min-w-0` passes every check —
   inactive below 768, harmless at 1440. It closes the widest part of that band (any `sm:`- or
   `md:`-scoped width above 768 now overflows a swept viewport); 390–768 and 768–1440 stay
