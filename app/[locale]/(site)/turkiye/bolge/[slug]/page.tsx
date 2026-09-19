@@ -45,6 +45,20 @@ interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
+/**
+ * One colour per region, and it is the colour the map paints.
+ *
+ * Every value here now derives from that region's own `--region-*` token. It did not used to:
+ * `mapFill` read the token while `badgeClass`, `gradient`, `accentColor` and `borderAccent`
+ * were written in unrelated raw Tailwind hues, so this page told the reader Marmara was amber
+ * and painted it blue two elements away, and Ege was teal beside an orange shape. Six of the
+ * seven disagreed; İç Anadolu agreed only because yellow happened to land near yellow.
+ *
+ * `-tint` is a 15% wash of the fill and `-text` is the label that sits on it, both derived and
+ * measured in `app/globals.css` (worst case 4.61:1 in either theme). Because `-text` carries
+ * its own value in `.dark`, none of these strings needs a hand-written `dark:` variant — the
+ * pairs that used to be here were the symptom of binding to a hue instead of to a token.
+ */
 const REGION_THEMES: Record<
   string,
   {
@@ -59,64 +73,71 @@ const REGION_THEMES: Record<
 > = {
   MARMARA: {
     nameTr: "Marmara Bölgesi",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-    gradient: "from-amber-500/10 via-background to-background",
-    accentColor: "text-amber-600 dark:text-amber-400",
-    borderAccent: "border-amber-500/30",
+    badgeClass:
+      "bg-[var(--region-marmara-tint)] text-[var(--region-marmara-text)] border-[var(--region-marmara)]/30",
+    gradient: "from-[var(--region-marmara-tint)] via-background to-background",
+    accentColor: "text-[var(--region-marmara-text)]",
+    borderAccent: "border-[var(--region-marmara)]/30",
     mapFill: "var(--region-marmara, #0072b2)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   EGE: {
     nameTr: "Ege Bölgesi",
-    badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
-    gradient: "from-teal-500/10 via-background to-background",
-    accentColor: "text-teal-600 dark:text-teal-400",
-    borderAccent: "border-teal-500/30",
+    badgeClass:
+      "bg-[var(--region-ege-tint)] text-[var(--region-ege-text)] border-[var(--region-ege)]/30",
+    gradient: "from-[var(--region-ege-tint)] via-background to-background",
+    accentColor: "text-[var(--region-ege-text)]",
+    borderAccent: "border-[var(--region-ege)]/30",
     mapFill: "var(--region-ege, #e69f00)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   AKDENIZ: {
     nameTr: "Akdeniz Bölgesi",
-    badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    gradient: "from-emerald-500/10 via-background to-background",
-    accentColor: "text-emerald-600 dark:text-emerald-400",
-    borderAccent: "border-emerald-500/30",
+    badgeClass:
+      "bg-[var(--region-akdeniz-tint)] text-[var(--region-akdeniz-text)] border-[var(--region-akdeniz)]/30",
+    gradient: "from-[var(--region-akdeniz-tint)] via-background to-background",
+    accentColor: "text-[var(--region-akdeniz-text)]",
+    borderAccent: "border-[var(--region-akdeniz)]/30",
     mapFill: "var(--region-akdeniz, #56b4e9)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   IC_ANADOLU: {
     nameTr: "İç Anadolu Bölgesi",
-    badgeClass: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30",
-    gradient: "from-yellow-500/10 via-background to-background",
-    accentColor: "text-yellow-600 dark:text-yellow-400",
-    borderAccent: "border-yellow-500/30",
+    badgeClass:
+      "bg-[var(--region-ic-anadolu-tint)] text-[var(--region-ic-anadolu-text)] border-[var(--region-ic-anadolu)]/30",
+    gradient: "from-[var(--region-ic-anadolu-tint)] via-background to-background",
+    accentColor: "text-[var(--region-ic-anadolu-text)]",
+    borderAccent: "border-[var(--region-ic-anadolu)]/30",
     mapFill: "var(--region-ic-anadolu, #f0e442)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   KARADENIZ: {
     nameTr: "Karadeniz Bölgesi",
-    badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
-    gradient: "from-cyan-500/10 via-background to-background",
-    accentColor: "text-cyan-600 dark:text-cyan-400",
-    borderAccent: "border-cyan-500/30",
+    badgeClass:
+      "bg-[var(--region-karadeniz-tint)] text-[var(--region-karadeniz-text)] border-[var(--region-karadeniz)]/30",
+    gradient: "from-[var(--region-karadeniz-tint)] via-background to-background",
+    accentColor: "text-[var(--region-karadeniz-text)]",
+    borderAccent: "border-[var(--region-karadeniz)]/30",
     mapFill: "var(--region-karadeniz, #cc79a7)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   DOGU_ANADOLU: {
     nameTr: "Doğu Anadolu Bölgesi",
-    badgeClass: "bg-stone-500/15 text-stone-700 dark:text-stone-300 border-stone-500/30",
-    gradient: "from-stone-500/10 via-background to-background",
-    accentColor: "text-stone-600 dark:text-stone-400",
-    borderAccent: "border-stone-500/30",
+    badgeClass:
+      "bg-[var(--region-dogu-anadolu-tint)] text-[var(--region-dogu-anadolu-text)] border-[var(--region-dogu-anadolu)]/30",
+    gradient: "from-[var(--region-dogu-anadolu-tint)] via-background to-background",
+    accentColor: "text-[var(--region-dogu-anadolu-text)]",
+    borderAccent: "border-[var(--region-dogu-anadolu)]/30",
     mapFill: "var(--region-dogu-anadolu, #009e73)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   GUNEYDOGU_ANADOLU: {
     nameTr: "Güneydoğu Anadolu Bölgesi",
-    badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
-    gradient: "from-orange-500/10 via-background to-background",
-    accentColor: "text-orange-600 dark:text-orange-400",
-    borderAccent: "border-orange-500/30",
+    badgeClass:
+      "bg-[var(--region-guneydogu-anadolu-tint)] text-[var(--region-guneydogu-anadolu-text)] border-[var(--region-guneydogu-anadolu)]/30",
+    gradient: "from-[var(--region-guneydogu-anadolu-tint)] via-background to-background",
+    accentColor: "text-[var(--region-guneydogu-anadolu-text)]",
+    borderAccent: "border-[var(--region-guneydogu-anadolu)]/30",
     mapFill: "var(--region-guneydogu-anadolu, #d55e00)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },

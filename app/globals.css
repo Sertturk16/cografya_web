@@ -349,6 +349,63 @@
   --region-dogu-anadolu: #009e73; /* bluish green */
   --region-guneydogu-anadolu: #d55e00; /* vermillion */
 
+  /* ---- Region identity off the map: the tint and the text member (T-031c Task 3) ----
+     The seven hues above are map FILLS — shapes, with a stroke, at whatever size the map
+     draws them. A page that names a region in prose needs the same identity at text size on
+     a card, and that is a different problem: #f0e442 as a label on white measures 1.09:1.
+     Before this block existed, `turkiye/bolge/[slug]` solved it by inventing a SECOND colour
+     per region out of the raw Tailwind palette — Marmara badged amber while its map fill
+     painted blue, Ege badged teal while its fill painted orange, six of seven disagreeing.
+     A region wears one colour; these two members are how it wears it off the map.
+
+     `-tint`  the chip/banner surface, a 15% wash of the region's own fill. Translucent on
+              purpose: it composites over whatever card it lands on, so one value serves both
+              themes and no `dark:` variant is needed.
+     `-text`  the label ON that tint. Derived from the region's own oklch hue with the hue
+              angle held EXACTLY and only the lightness moved — away from the fill until it
+              carries text, and no further, so the label still reads as the region's colour.
+              Chroma is then the most sRGB allows at that lightness (fitted per region rather
+              than shared, so a hue is never asked for saturation its lightness cannot hold,
+              and no value here depends on how a browser gamut-maps).
+              Per-region lightness, not one shared L like the `-strong` family: these seven
+              are a CATEGORICAL set, and flattening them to a common lightness is exactly
+              what would blur two of them together.
+
+     MEASURED (lib/theme/contrast.ts, `ratio` + `blendOver`; the tint column is the real
+     one — a label sits on the blend, not on the token). `.dark` carries its own `-text`
+     values and its own half of this table.
+                          light               dark
+                        --card  on tint    --card  on tint
+       marmara            5.72    4.63       5.31    4.61
+       ege                5.36    4.77       6.01    4.66
+       akdeniz            5.19    4.62       6.28    4.75
+       ic-anadolu         4.82    4.61       6.97    4.74
+       karadeniz          5.38    4.64       5.79    4.67
+       dogu-anadolu       5.68    4.76       5.60    4.61
+       guneydogu-anadolu  5.58    4.64       5.56    4.76
+     Worst case 4.61:1 in each theme, against the 4.5:1 floor of WCAG 1.4.3.
+     The tint also carries body text where the region hero gradient fades into
+     --background: --foreground on that blend measures 11.48-13.60 light and 11.33-14.21
+     dark, so the hero is not a second case to watch. */
+  --region-marmara-tint: color-mix(in srgb, var(--region-marmara) 15%, transparent);
+  --region-ege-tint: color-mix(in srgb, var(--region-ege) 15%, transparent);
+  --region-akdeniz-tint: color-mix(in srgb, var(--region-akdeniz) 15%, transparent);
+  --region-ic-anadolu-tint: color-mix(in srgb, var(--region-ic-anadolu) 15%, transparent);
+  --region-karadeniz-tint: color-mix(in srgb, var(--region-karadeniz) 15%, transparent);
+  --region-dogu-anadolu-tint: color-mix(in srgb, var(--region-dogu-anadolu) 15%, transparent);
+  --region-guneydogu-anadolu-tint: color-mix(
+    in srgb,
+    var(--region-guneydogu-anadolu) 15%,
+    transparent
+  );
+  --region-marmara-text: oklch(0.51 0.125 244);
+  --region-ege-text: oklch(0.53 0.11 76.8);
+  --region-akdeniz-text: oklch(0.53 0.11 236.2);
+  --region-ic-anadolu-text: oklch(0.55 0.115 105);
+  --region-karadeniz-text: oklch(0.54 0.115 346.3);
+  --region-dogu-anadolu-text: oklch(0.5 0.1 165.5);
+  --region-guneydogu-anadolu-text: oklch(0.53 0.145 47.5);
+
   /* ---- Map-game answer states (UI STATE, not a data scale) ----
      These mark what the PLAYER just did, so they are semantic UI colours (the
      success/danger family), not an encoding of any geographic value. Each is paired in
@@ -972,6 +1029,21 @@
      so a `-strong` member reads as one family whatever its hue. */
   --primary-strong: oklch(0.78 0.11 40.65);
   --secondary-strong: oklch(0.78 0.085 130.85);
+  /* The region label, lifted for the dark card the same way the `-strong` members above are.
+     Only `-text` flips: `--region-*-tint` is translucent and composites over whichever card
+     it lands on, and the seven fills themselves NEVER flip — they are a measured categorical
+     set (lib/theme/region-palette.test.ts), and a theme-dependent data encoding would mean
+     the map paints one colour and the legend another.
+     Hue angle is the region's own, unchanged from the light block; lightness moves UP here
+     instead of down, because the label sits on a dark surface. Measurements are in the light
+     block's table, `dark` columns — worst case 4.61:1 on the 15% tint over --card. */
+  --region-marmara-text: oklch(0.65 0.13 244);
+  --region-ege-text: oklch(0.69 0.14 76.8);
+  --region-akdeniz-text: oklch(0.69 0.115 236.2);
+  --region-ic-anadolu-text: oklch(0.72 0.15 105);
+  --region-karadeniz-text: oklch(0.69 0.115 346.3);
+  --region-dogu-anadolu-text: oklch(0.65 0.125 165.5);
+  --region-guneydogu-anadolu-text: oklch(0.68 0.17 47.5);
   /* A bare `<a>`. Light mode's link colour is a Terra token the `.dark` block cannot reach, so
      the base rule reads `--link` and this is the value it gets here. */
   --link: oklch(0.78 0.11 40.65);

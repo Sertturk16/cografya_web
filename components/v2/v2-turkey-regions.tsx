@@ -33,7 +33,11 @@ export interface RegionInfo {
   id: string;
   name: string;
   badgeVariant: "primary" | "secondary" | "info" | "warning" | "default" | "outline";
-  color: string;
+  /** The region's own identity, bound to its `--region-*` token — surface, label and edge.
+   *  Named for the job rather than for the property: the previous `color` held a two-stop
+   *  raw-palette gradient that had nothing to do with the colour this region is painted on
+   *  any map in the product (Marmara amber against a blue fill, Ege teal against orange). */
+  identityClass: string;
   provincesCount: number;
   climate: string;
   description: string;
@@ -45,7 +49,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "marmara",
     name: "Marmara Bölgesi",
     badgeVariant: "primary",
-    color: "from-amber-700 to-amber-900",
+    identityClass:
+      "bg-[var(--region-marmara-tint)] text-[var(--region-marmara-text)] border-b-2 border-[var(--region-marmara)]",
     provincesCount: 11,
     climate: "Geçiş İklimi (Akdeniz - Karadeniz - Karasal)",
     description:
@@ -62,7 +67,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "ege",
     name: "Ege Bölgesi",
     badgeVariant: "info",
-    color: "from-teal-700 to-teal-900",
+    identityClass:
+      "bg-[var(--region-ege-tint)] text-[var(--region-ege-text)] border-b-2 border-[var(--region-ege)]",
     provincesCount: 8,
     climate: "Tipik Akdeniz İklimi",
     description:
@@ -79,7 +85,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "akdeniz",
     name: "Akdeniz Bölgesi",
     badgeVariant: "secondary",
-    color: "from-emerald-700 to-emerald-900",
+    identityClass:
+      "bg-[var(--region-akdeniz-tint)] text-[var(--region-akdeniz-text)] border-b-2 border-[var(--region-akdeniz)]",
     provincesCount: 8,
     climate: "Sıcak & Kurak Yazlar, Ilık Kışlar",
     description:
@@ -96,7 +103,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "icanadolu",
     name: "İç Anadolu Bölgesi",
     badgeVariant: "warning",
-    color: "from-yellow-800 to-amber-950",
+    identityClass:
+      "bg-[var(--region-ic-anadolu-tint)] text-[var(--region-ic-anadolu-text)] border-b-2 border-[var(--region-ic-anadolu)]",
     provincesCount: 13,
     climate: "Step (Karasal) İklimi",
     description:
@@ -113,7 +121,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "karadeniz",
     name: "Karadeniz Bölgesi",
     badgeVariant: "info",
-    color: "from-cyan-800 to-slate-900",
+    identityClass:
+      "bg-[var(--region-karadeniz-tint)] text-[var(--region-karadeniz-text)] border-b-2 border-[var(--region-karadeniz)]",
     provincesCount: 18,
     climate: "Her Mevsim Yağışlı Ilıman İklim",
     description:
@@ -130,7 +139,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "doguanadolu",
     name: "Doğu Anadolu Bölgesi",
     badgeVariant: "default",
-    color: "from-stone-700 to-stone-900",
+    identityClass:
+      "bg-[var(--region-dogu-anadolu-tint)] text-[var(--region-dogu-anadolu-text)] border-b-2 border-[var(--region-dogu-anadolu)]",
     provincesCount: 14,
     climate: "Sert Karasal & Uzun Kışlar",
     description:
@@ -147,7 +157,8 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "guneydogu",
     name: "Güneydoğu Anadolu",
     badgeVariant: "outline",
-    color: "from-orange-800 to-orange-950",
+    identityClass:
+      "bg-[var(--region-guneydogu-anadolu-tint)] text-[var(--region-guneydogu-anadolu-text)] border-b-2 border-[var(--region-guneydogu-anadolu)]",
     provincesCount: 9,
     climate: "Şiddetli Yaz Kuraklığı & Karasal",
     description:
@@ -201,26 +212,29 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
               key={region.id}
               className="flex flex-col justify-between hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-card overflow-hidden group"
             >
-              {/* Header Banner */}
-              <div
-                className={`p-4 bg-gradient-to-r ${region.color} text-white flex items-center justify-between`}
-              >
+              {/* Header Banner — the region's colour, the one the map paints it. The wash
+                  carries the identity and the rule under it states it at full strength; the
+                  heading takes the measured `-text` member, which is why nothing here needs a
+                  `dark:` variant or a white override. */}
+              <div className={`p-4 ${region.identityClass} flex items-center justify-between`}>
                 <div>
-                  <span className="text-[10px] text-white/80 font-mono block">Bölge Profili</span>
-                  <h3 className="font-heading font-bold text-lg text-white leading-tight">
+                  <span className="text-[10px] text-muted-foreground font-mono block">
+                    Bölge Profili
+                  </span>
+                  <h3 className="font-heading font-bold text-lg leading-tight">
                     <Link
                       href={
                         `/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
                           typeof Link
                         >["href"]
                       }
-                      className="hover:underline inline-flex items-center gap-1 text-white"
+                      className="hover:underline inline-flex items-center gap-1"
                     >
                       {region.name}
                     </Link>
                   </h3>
                 </div>
-                <Badge className="bg-white/20 text-white backdrop-blur-xs border-white/30 text-xs">
+                <Badge variant="outline" className="text-xs">
                   {region.provincesCount} İl
                 </Badge>
               </div>
