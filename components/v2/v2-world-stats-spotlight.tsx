@@ -213,20 +213,18 @@ export function V2WorldStatsSpotlight() {
           <CardContent className="space-y-2.5 pt-0 text-xs">
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Mountain className="size-4 text-amber-500 shrink-0" />
+                <Mountain className="size-4 shrink-0" />
                 <div>
                   <span className="font-bold block text-foreground">En Yüksek Nokta: Everest</span>
                   <span className="text-[10px] text-muted-foreground">Nepal / Çin Sınırı</span>
                 </div>
               </div>
-              <span className="font-mono font-bold text-xs text-amber-600 dark:text-amber-400">
-                +8.848 m
-              </span>
+              <span className="font-mono font-bold text-xs">+8.848 m</span>
             </div>
 
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Waves className="size-4 text-blue-500 shrink-0" />
+                <Waves className="size-4 shrink-0" />
                 <div>
                   <span className="font-bold block text-foreground">En Derin Çukur: Mariana</span>
                   <span className="text-[10px] text-muted-foreground">
@@ -234,27 +232,23 @@ export function V2WorldStatsSpotlight() {
                   </span>
                 </div>
               </div>
-              <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400">
-                -10.994 m
-              </span>
+              <span className="font-mono font-bold text-xs">-10.994 m</span>
             </div>
 
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Waves className="size-4 text-teal-500 shrink-0" />
+                <Waves className="size-4 shrink-0" />
                 <div>
                   <span className="font-bold block text-foreground">En Alçak Kara: Lut Gölü</span>
                   <span className="text-[10px] text-muted-foreground">Lut Gölü Kıyısı</span>
                 </div>
               </div>
-              <span className="font-mono font-bold text-xs text-teal-600 dark:text-teal-400">
-                -440 m
-              </span>
+              <span className="font-mono font-bold text-xs">-440 m</span>
             </div>
 
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Flame className="size-4 text-red-500 shrink-0" />
+                <Flame className="size-4 shrink-0" />
                 <div>
                   <span className="font-bold block text-foreground">En Sıcak Yer: Ölüm Vadisi</span>
                   <span className="text-[10px] text-muted-foreground">
@@ -262,14 +256,12 @@ export function V2WorldStatsSpotlight() {
                   </span>
                 </div>
               </div>
-              <span className="font-mono font-bold text-xs text-red-600 dark:text-red-400">
-                +56.7 °C
-              </span>
+              <span className="font-mono font-bold text-xs">+56.7 °C</span>
             </div>
 
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Snowflake className="size-4 text-cyan-500 shrink-0" />
+                <Snowflake className="size-4 shrink-0" />
                 <div>
                   <span className="font-bold block text-foreground">
                     En Soğuk Yer: Vostok İstasyonu
@@ -277,9 +269,7 @@ export function V2WorldStatsSpotlight() {
                   <span className="text-[10px] text-muted-foreground">Doğu Antarktika Platosu</span>
                 </div>
               </div>
-              <span className="font-mono font-bold text-xs text-cyan-600 dark:text-cyan-400">
-                -89.2 °C
-              </span>
+              <span className="font-mono font-bold text-xs">-89.2 °C</span>
             </div>
           </CardContent>
         </Card>

@@ -122,9 +122,25 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after.
  *
+ * 252 -> 237 is T-031c Task 9's first file: `components/v2/v2-world-stats-spotlight.tsx`
+ * 15 -> 0, all fifteen decoration, all removed rather than re-tokenised. Five superlative rows
+ * -- highest point, deepest trench, lowest land, hottest and coldest record -- each wore its own
+ * hue on a glyph and again on the reading beside it, and each row already names itself in full
+ * next to a distinct glyph. No scale, no map and no chart reads any of the five.
+ *
+ * THE BACKDROP IS THE ROW PANEL, NOT THE CARD. All five rows sit inside a 40% muted panel over
+ * `--card`, which resolves to #f9f6f2 light and #162327 dark. Measured against that panel the
+ * readings were 2.96 (amber-600), 3.42 (cyan-600), 3.48 (teal-600), 4.48 (red-600) and 4.80
+ * (blue-600) in light -- four of the five under the 4.5:1 floor -- and the five icon tints were
+ * 1.99 to 3.49, three of them under even the 3:1 graphical floor. Inheriting `--foreground`
+ * instead measures 13.89 light and 13.93 dark on the same panel. The readings deleted their
+ * `dark:` pairs; the icons never had one, so their light figures were what dark rendered too.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 252;
+const RAW_PALETTE_BUDGET = 237;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
