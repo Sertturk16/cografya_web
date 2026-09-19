@@ -8,25 +8,21 @@ export function V2StudyStrategyGuide() {
       title: "1. Doğal Sistemler & İklim Bilgisi (En Çok Soru Çıkan Alan)",
       desc: "Basınç merkezleri, rüzgârlar, Türkiye'de ve dünyada iklim tipleri, yağış rejimleri ve bitki örtüsü dağılımı her yıl garanti 2 soru getirir.",
       weight: "%35 Ağırlık",
-      color: "text-primary",
     },
     {
       title: "2. Beşeri Yapı & Nüfus Piramitleri",
       desc: "Nüfus artış hızı, göç türleri, yerleşme tipleri ve nüfus piramitlerinin analizi grafik ve tablo yorumlama yeteneği gerektirir.",
       weight: "%25 Ağırlık",
-      color: "text-secondary",
     },
     {
       title: "3. Ekonomik Coğrafya & Madenler/Enerji",
       desc: "Türkiye'nin maden yatakları, enerji kaynakları (jeotermal, rüzgâr, hidroelektrik) ve sanayi kollarının mekânsal dağılışı.",
       weight: "%20 Ağırlık",
-      color: "text-accent",
     },
     {
       title: "4. Harita Okuryazarlığı & Küresel Boğazlar/Kanallar",
       desc: "Hürmüz, Malakka, Süveyş, Panama, Babülmendep gibi kritik deniz ticaret geçitleri dilsiz dünya haritası üzerinden mutlaka çalışılmalıdır.",
       weight: "%20 Ağırlık",
-      color: "text-purple-600",
     },
   ];
 

@@ -1024,11 +1024,11 @@ distinct glyph. No scale, no comparison, no map or chart reads these.
 
 ### components/v2/v2-tool-educational-content.tsx (3)
 
-| Line | Class(es)          | #   | Verdict    | Becomes | Note                                                                             |
-| ---- | ------------------ | --- | ---------- | ------- | -------------------------------------------------------------------------------- |
-| 206  | `text-amber-600`   | 1   | decoration | removed | a section heading with its own icon and words                                    |
-| 307  | `text-emerald-600` | 1   | decoration | removed | the "Koordinat" tool's sub-label — the same tool tint ruled on in `v2-tools-hub` |
-| 317  | `text-sky-600`     | 1   | decoration | removed | the "Alan" tool's sub-label, same set                                            |
+| Line | Class(es)          | #   | Verdict    | Becomes          | Note                                                                                                                                                                                                                                                                                                                                                        |
+| ---- | ------------------ | --- | ---------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 206  | `text-amber-600`   | 1   | decoration | `text-accent`    | a section heading with its own icon and words. **Bound, not deleted (Task 10):** all FOURTEEN other headings of this shape in the file already rotate `--primary` / `--secondary` / `--accent`, and this one is the third of a group of three whose first two are primary and secondary. On `--card`: 6.13 light / 5.44 dark, from amber-600's 3.20 / 5.32. |
+| 307  | `text-emerald-600` | 1   | decoration | `text-secondary` | the "Koordinat" tool's sub-label — the same tool tint ruled on in `v2-tools-hub`, and bound the same way. These are three audience plates in one row and the FIRST is already `text-primary`. On the plate's 30% muted wash: 5.57 light / 5.20 dark, from 3.45 / 4.47.                                                                                      |
+| 317  | `text-sky-600`     | 1   | decoration | `text-accent`    | the "Alan" tool's sub-label, same set, third plate. 5.80 light / 5.21 dark, from sky-600's 3.80 / 4.06.                                                                                                                                                                                                                                                     |
 
 **Totals:** data 0, semantic 0, decoration 3.
 
@@ -1059,25 +1059,25 @@ distinct glyph. No scale, no comparison, no map or chart reads these.
 
 ### components/v2/v2-game-pedagogy-guide.tsx (1)
 
-| Line | Class(es)         | #   | Verdict    | Becomes | Note                                     |
-| ---- | ----------------- | --- | ---------- | ------- | ---------------------------------------- |
-| 25   | `text-purple-600` | 1   | decoration | removed | a `Brain` glyph on a titled section card |
+| Line | Class(es)         | #   | Verdict    | Becomes        | Note                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---- | ----------------- | --- | ---------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 25   | `text-purple-600` | 1   | decoration | `text-primary` | a `Brain` glyph on a titled section card — the fourth icon of a four-item array whose other three are already `--primary`, `--secondary` and `--accent`. **Bound, not deleted (Task 10):** the rotation wraps rather than leaving one grey glyph in a row of four. On the 60% muted plate: 4.61 light (from 4.98) and 4.57 dark (from purple-600's 2.82, which was under the 3:1 graphical floor). |
 
 **Totals:** decoration 1.
 
 ### components/v2/v2-gis-methodology-guide.tsx (1)
 
-| Line | Class(es)         | #   | Verdict    | Becomes | Note                                       |
-| ---- | ----------------- | --- | ---------- | ------- | ------------------------------------------ |
-| 25   | `text-purple-600` | 1   | decoration | removed | a `Compass` glyph on a titled section card |
+| Line | Class(es)         | #   | Verdict    | Becomes        | Note                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---- | ----------------- | --- | ---------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 25   | `text-purple-600` | 1   | decoration | `text-primary` | a `Compass` glyph on a titled section card — the fourth icon of a four-item array whose other three are already `--primary`, `--secondary` and `--accent`. **Bound, not deleted (Task 10):** the rotation wraps rather than leaving one grey glyph in a row of four. On the 60% muted plate: 4.61 light (from 4.98) and 4.57 dark (from purple-600's 2.82, which was under the 3:1 graphical floor). |
 
 **Totals:** decoration 1.
 
 ### components/v2/v2-study-strategy-guide.tsx (1)
 
-| Line | Class(es)         | #   | Verdict    | Becomes | Note                                                                                                                                   |
-| ---- | ----------------- | --- | ---------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 29   | `text-purple-600` | 1   | decoration | removed | the fourth study topic's tint; its three siblings already use bridge tokens, and each topic carries a title and a "%20 Ağırlık" weight |
+| Line | Class(es)         | #   | Verdict    | Becomes                          | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---- | ----------------- | --- | ---------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 29   | `text-purple-600` | 1   | decoration | the whole `color` field, deleted | **CORRECTED ON CONTACT (Task 10): this class renders on no surface.** The row assumed a tint like the two guides above; it is not. `topics[].color` is never read by this component's JSX — the card draws a title, a `Badge` and a paragraph and never touches the field — so all four values, the three bridge tokens included, are dead data. There is no backdrop to name and no ratio to quote, computed or painted. The field is removed entirely rather than the fourth value being rebound, which would have left three dead strings beside it. |
 
 **Totals:** decoration 1.
 

@@ -603,9 +603,39 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
+ * 21 -> 15 is Task 10's tenth and last step, the TOPIC TINTS:
+ * `components/v2/v2-tool-educational-content.tsx` 3 -> 0 and the three one-occurrence guides,
+ * `v2-game-pedagogy-guide`, `v2-gis-methodology-guide` and `v2-study-strategy-guide`, 1 -> 0
+ * each. All six decoration, and five of the six are the same shape one more time: a rotation of
+ * `--primary` / `--secondary` / `--accent` with a single raw straggler in it. The educational
+ * panel already rotates those three across FOURTEEN other headings of the same shape, and its
+ * three audience plates already begin with the brand one; both guides hold a four-item array
+ * whose first three are the rotation. In each case the straggler joins rather than being
+ * deleted, because deleting it leaves one grey mark in a row of coloured ones.
+ *
+ * Figures, on the surface each sits on. The heading, on `--card`: 6.13 light / 5.44 dark, from
+ * 3.20 / 5.32. The two plates, on a 30% muted wash: 5.57 / 5.20 and 5.80 / 5.21, from 3.45 /
+ * 4.47 and 3.80 / 4.06 -- both failing 4.5 in light. The two guide glyphs, on a 60% muted
+ * plate: 4.61 light, down from purple-600's 4.98 but well clear of the 3:1 a glyph is held to,
+ * and 4.57 dark, up from 2.82, which was under it.
+ *
+ * THE SIXTH RENDERS NOWHERE, and that is the fourth time on this branch that a row had to be
+ * checked against what actually paints before it could be baselined.
+ * `v2-study-strategy-guide`'s `topics[].color` is never read by the component: the card draws a
+ * title, a badge and a paragraph and never touches the field. There is no backdrop to name and
+ * no ratio to quote, computed or painted. The whole field goes, all four values, because
+ * rebinding the fourth would have left three dead strings beside it. The inventory row is
+ * corrected rather than annotated.
+ *
+ * WITH THIS THE COUNT IS THE DEFERRAL. All 15 remaining occurrences are the dark map surfaces
+ * in `components/v2/v2-world-map-explorer.tsx`, confirmed and recorded for T-031d by Task 9 and
+ * unchanged by this task. No product file outside that one carries a raw palette class.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 21;
+const RAW_PALETTE_BUDGET = 15;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

@@ -22,7 +22,7 @@ export function V2GamePedagogyGuide() {
     {
       title: "4. Aktif Geri Çağırma (Active Recall)",
       desc: "Dilsiz haritada konum tahmin etmek, pasif harita okumaya göre %300 daha kalıcı sinaptik bağlar kurarak görsel hafızayı pekiştirir.",
-      icon: <Brain className="size-5 text-purple-600" />,
+      icon: <Brain className="size-5 text-primary" />,
     },
   ];
 
