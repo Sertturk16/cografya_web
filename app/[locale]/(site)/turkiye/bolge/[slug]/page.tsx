@@ -55,7 +55,7 @@ interface PageProps {
  * seven disagreed; İç Anadolu agreed only because yellow happened to land near yellow.
  *
  * `-tint` is a 15% wash of the fill and `-text` is the label that sits on it, both derived and
- * measured in `app/globals.css` (worst case 4.60:1 in either theme). Because `-text` carries
+ * measured in `app/globals.css` (worst case 4.60:1 light, 4.59:1 dark). Because `-text` carries
  * its own value in `.dark`, none of these strings needs a hand-written `dark:` variant — the
  * pairs that used to be here were the symptom of binding to a hue instead of to a token.
  *
@@ -435,8 +435,20 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
       <section
         className={`relative isolate border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-12 overflow-hidden`}
       >
-        {/* Glow backdrop */}
-        <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Glow backdrop, desktop only. `size-96` is 384px and `blur-3xl` spreads it further,
+            so below `md` this stops being a glow in the corner and becomes a full-bleed wash
+            across the whole viewport — including the badge row in the left column. Measured at
+            320px it took the region badge to 4.22-4.36 light and 4.27-4.49 dark, i.e. a
+            DECORATIVE `bg-primary/10` was the thing deciding whether the region label cleared
+            4.5:1. Bounding the decoration is the fix; darkening all seven `--region-*-text`
+            members to survive a blur would spend contrast at every width to pay for an effect
+            that only exists below `md`. Bounded here, the same widths measure 4.72-4.90 light
+            and 4.82-5.43 dark. Painted interior minimum of the badge across the full sweep,
+            both themes: 320 4.73/4.82 · 360 4.75/4.82 · 390 4.72/4.82 · 414 4.72/4.82 ·
+            768 4.75/4.82 · 1024 4.79/4.84 · 1280 4.79/4.86 (light/dark) — every one at or
+            above the figure `app/globals.css` records for it. Re-measure this row, not just
+            the token, if this glow ever moves or grows. */}
+        <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none hidden md:block" />
 
         <PageContainer space="band">
           {/* Breadcrumb Bar */}

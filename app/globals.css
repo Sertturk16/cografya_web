@@ -386,16 +386,29 @@
                both themes.
        BANNER  `components/v2/v2-turkey-regions.tsx`'s card header. One 15% tint over --card,
                because a Card is opaque.
+     EVERY FIGURE BELOW IS ROUNDED DOWN, not to nearest, so no number here can overstate what
+     was measured. Dark marmara is the case that makes the rule worth stating: it measures
+     4.5962 and is recorded 4.59, because rounding to 4.60 in the direction that flatters the
+     result is the habit this branch exists to break.
                           light             dark
                          hero   banner    hero   banner
-       marmara            4.69    5.97     4.60    4.78
-       ege                4.70    5.43     4.66    5.59
-       akdeniz            4.71    5.49     4.66    5.47
-       ic-anadolu         4.77    5.18     4.73    6.26
-       karadeniz          4.64    5.53     4.67    5.24
-       dogu-anadolu       4.68    5.70     4.76    5.33
-       guneydogu-anadolu  4.60    5.72     4.60    4.95
-     Worst case 4.60:1 in each theme, against the 4.5:1 floor of WCAG 1.4.3. On the bare
+       marmara            4.69    5.97     4.59    4.77
+       ege                4.69    5.42     4.65    5.58
+       akdeniz            4.70    5.48     4.65    5.46
+       ic-anadolu         4.76    5.18     4.72    6.26
+       karadeniz          4.64    5.53     4.66    5.24
+       dogu-anadolu       4.67    5.70     4.75    5.33
+       guneydogu-anadolu  4.60    5.71     4.60    4.95
+     Worst case 4.60:1 light and 4.59:1 dark, against the 4.5:1 floor of WCAG 1.4.3.
+
+     WHAT `HERO` DOES NOT INCLUDE, and why that is now safe. The hero also paints a decorative
+     `bg-primary/10 blur-3xl` glow. A blurred overlay is not a blend this or any analytic model
+     can express, and below `md` that glow is wider than the viewport, so it landed on the badge
+     row and took these same members to 4.22-4.36 light and 4.27-4.49 dark — the table was
+     conservative for the surfaces it NAMES while the page painted one it did not name. The glow
+     is now `hidden md:block` (`bolge/[slug]`), bounding the decoration rather than darkening
+     seven data colours to survive it. Painted interior minimums across 320/360/390/414/768/
+     1024/1280 in both themes are recorded in that component's comment and all clear 4.5. On the bare
      surfaces, which nothing paints these labels on but which bound nothing anyway, every
      member measures higher still: 5.42-7.37 on light --card and 5.51-9.22 on dark --card.
      The hero band also carries ordinary body text, and that is not a second case to watch:
@@ -1049,7 +1062,7 @@
      the map paints one colour and the legend another.
      Hue angle is the region's own, unchanged from the light block; lightness moves UP here
      instead of down, because the label sits on a dark surface. Measurements are in the light
-     block's table, `dark` columns — worst case 4.60:1, on the HERO backdrop (tint over tint
+     block's table, `dark` columns — worst case 4.59:1, on the HERO backdrop (tint over tint
      over --background), which is the binding one in this theme too. */
   --region-marmara-text: oklch(0.66 0.13 244);
   --region-ege-text: oklch(0.74 0.155 76.8);

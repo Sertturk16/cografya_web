@@ -227,7 +227,12 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
                   happened when the `text-white` that had been winning was removed. Utilities
                   outrank `@layer base` whatever the specificity, so these win, and the token
                   stays single-sourced in `identityClass` instead of being respelled per
-                  region on the anchor. */}
+                  region on the anchor.
+                  They also outrank `a:hover { color: var(--primary) }` at `globals.css:752`,
+                  so this heading deliberately keeps its region colour on hover instead of
+                  turning terracotta. That is the point, not a casualty: a hover recolour to
+                  the brand would contradict the one-colour-per-region identity this banner
+                  exists to state. `hover:underline` on the Link carries the affordance. */}
               <div
                 className={`p-4 ${region.identityClass} [&_h3]:text-inherit [&_a]:text-inherit flex items-center justify-between`}
               >
