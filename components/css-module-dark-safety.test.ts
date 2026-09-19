@@ -20,7 +20,7 @@ export const SURVIVING_MODULES: readonly string[] = [
  * Steps down as T-033 converts each module. The count is the POSITIVE CONTROL: without it, a
  * walk that found nothing would satisfy the raw-token assertion perfectly.
  */
-const EXPECTED_MODULE_COUNT = 8;
+const EXPECTED_MODULE_COUNT = 7;
 
 /**
  * Raw Terra tokens are frozen at their light values — `.dark` redefines not one of the 13
@@ -29,9 +29,10 @@ const EXPECTED_MODULE_COUNT = 8;
  * `--card` #121e21). Every read below is one of those failures waiting to render.
  *
  * 179 when pinned; 147 once T-033 deleted `marine.module.css`'s 42 classes with no call
- * site, which took 32 of those reads with them without moving a pixel.
+ * site, which took 32 of those reads with them without moving a pixel; 128 once the file's
+ * four consumers moved to bridge tokens and the file itself was deleted, taking the last 19.
  */
-const TOTAL_RAW_READS = 147;
+const TOTAL_RAW_READS = 128;
 
 describe("CSS modules cannot read a colour that dark mode never redefines", () => {
   it("found the modules it claims to check", () => {

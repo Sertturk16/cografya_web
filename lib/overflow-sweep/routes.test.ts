@@ -26,20 +26,21 @@ import {
  *
  *  2. A NEW CSS MODULE ARRIVES WITH NO ROUTE. Two of the three defects the sweep exists for
  *     were CSS-Module declarations (`climate.module.css`'s `min-width: 300px`,
- *     `marine-attribution`'s licence notice). The eight surviving modules are therefore the
- *     part of the tree that must stay covered, and coverage is only meaningful if adding a
- *     ninth forces someone to say which page renders it. Eight, not ten, since T-042 deleted
+ *     `marine-attribution`'s licence notice). The seven surviving modules are therefore the
+ *     part of the tree that must stay covered, and coverage is only meaningful if adding an
+ *     eighth forces someone to say which page renders it. Seven, not ten, since T-042 deleted
  *     `tools.module.css` (514 lines, three importers, none reachable) and `home.module.css`
- *     (one importer, itself unreachable). The second was CLAIMED by the `home` shape below, so
+ *     (one importer, itself unreachable), and T-033 deleted `marine.module.css`. The second was CLAIMED by the `home` shape below, so
  *     this map asserted coverage of a file that route never loaded — which is why the claim
  *     went with the file rather than being quietly left to pass.
  *
  *     WHAT `modules` ACTUALLY CLAIMS is that the route's import graph reaches the stylesheet —
- *     never that a sweep run renders it. `marine.module.css` is the live example: it is claimed
- *     by `home` and `province`, which genuinely import it, but both marine blocks are gated on
- *     `MARINE_ENABLED`, false in production today, so no current run measures those rules. The
- *     map is honest about reachability and silent about rendering; a flag-gated module is
- *     covered on paper and unmeasured in fact.
+ *     never that a sweep run renders it. `marine.module.css` was the live example: it was
+ *     claimed by `home` and `province`, which genuinely imported it, but both marine blocks
+ *     are gated on `MARINE_ENABLED`, false in production today, so no run ever measured those
+ *     rules. T-033 converted its four consumers to Tailwind and deleted it, which is why the
+ *     count below is seven. The map is honest about reachability and silent about rendering;
+ *     a flag-gated module is covered on paper and unmeasured in fact.
  *
  * Neither assertion needs a browser, which is the point: the sweep's aim is checkable even on
  * a run where nobody starts a server.

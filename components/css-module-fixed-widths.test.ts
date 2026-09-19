@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { stripCssComments } from "@/lib/test-support/strip-comments";
 
 /**
- * A CENSUS OF EVERY FIXED-`px` INLINE-AXIS DECLARATION IN THE TEN SURVIVING CSS MODULES.
+ * A CENSUS OF EVERY FIXED-`px` INLINE-AXIS DECLARATION IN THE SURVIVING CSS MODULES.
  *
  * ## What this is for
  *
@@ -34,7 +34,7 @@ import { stripCssComments } from "@/lib/test-support/strip-comments";
  * three recorded defects this census would have fired on exactly ONE:
  *   - `.chartFrame`'s `min-width: 300px` — caught, proven by mutation below;
  *   - T-038's ECMWF licence notice — NOT caught. It overflowed because a mandated string had
- *     no wrapping opportunity, not because of any declaration; `marine.module.css` has no px
+ *     no wrapping opportunity, not because of any declaration; the marine stylesheet had no px
  *     rule behind it;
  *   - T-046's `shrink-0` badge row — NOT caught. It is a Tailwind class in JSX and not in a
  *     CSS Module at all.
@@ -144,13 +144,6 @@ const EXPECTED: Record<string, string[]> = {
   ],
   "components/earthquake/earthquake.module.css": ["min-width: 520px"],
   "components/map/locator-map.module.css": ["width: min(100%, 460px)", "width: min(100%, 560px)"],
-  "components/marine/marine.module.css": [
-    // The remaining floor sits on a table inside an `overflow-x: auto` container, which is
-    // what `docs/design.md` permits and what keeps it off the document's scroll width.
-    "min-width: 860px",
-    "grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 520px))",
-    "width: 1px",
-  ],
   "components/site-search/site-search.module.css": [
     "min-width: 28px",
     "min-width: 32px",
@@ -162,7 +155,7 @@ const EXPECTED: Record<string, string[]> = {
 describe("fixed-px inline-axis declarations in the surviving CSS Modules", () => {
   it("scans every module, and only modules", () => {
     // Anti-vacuity: a scan that found no files would agree with any expectation.
-    expect(stylesheets.length).toBe(8);
+    expect(stylesheets.length).toBe(7);
     expect(Object.keys(census).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -173,15 +166,22 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
   /**
    * 46 across ten modules when this was pinned; 44 across nine after T-042 deleted
    * `tools.module.css` (`min-width: 44px`, `width: 1px`), 37 across EIGHT after fix round 1
-   * deleted `home.module.css` — seven of its own, the largest single block in the census — and
+   * deleted `home.module.css` — seven of its own, the largest single block in the census —
    * 34 after T-033 deleted `marine.module.css`'s 42 classes with no call site (the `/deniz`
-   * hub's `.basinGrid` and `.valuesTable` floors and the explainer chevron's `width: 9px`).
-   * Every step down is a DELETION of rules no route reached, not a narrowing that was fixed;
-   * the population is what it measures, so it is re-measured rather than carried.
+   * hub's `.basinGrid` and `.valuesTable` floors and the explainer chevron's `width: 9px`),
+   * and 31 across SEVEN once that file went too. Every step down is a DELETION of rules no
+   * route reached, not a narrowing that was fixed; the population is what it measures, so it
+   * is re-measured rather than carried.
+   *
+   * The three that left with the file are NOT gone from the product: the `11ch 1fr` value
+   * grid and the `minmax(min(280px, 100%), 520px)` block track are now Tailwind arbitrary
+   * values in `province-marine-section.tsx`, where this census cannot see them. That is the
+   * coverage note below, restated: a Tailwind class in JSX is not in a CSS Module at all, and
+   * `pnpm sweep:overflow` is what still covers it.
    */
-  it("counts 34 declarations in total", () => {
+  it("counts 31 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(34);
+    expect(total).toBe(31);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {

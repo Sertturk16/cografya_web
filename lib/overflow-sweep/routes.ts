@@ -58,7 +58,7 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "home",
     pathname: "/",
     locales: ["tr", "en"],
-    modules: ["site-search.module.css", "marine.module.css"],
+    modules: ["site-search.module.css"],
     why:
       "The homepage: the densest single composition on the site (hero, live ticker, card " +
       "grids). It claimed `home.module.css` too, and that claim was the clearest thing this " +
@@ -66,10 +66,10 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "a component the homepage stopped rendering when it took the card grids inline, so the " +
       "route reached the file through nothing. T-042 deleted both. Both locales — every string " +
       "on it is translated, and TR and EN copy differ in length on the same fixed-width cards. " +
-      "`marine.module.css` is listed here because `VintageLine` renders it on this page; the " +
-      "`/deniz` routes used to claim it and never imported it. Flag-gated (`MARINE_ENABLED`), " +
-      "so the measurement is real only on a render where the marine block appears — which is " +
-      "still strictly more coverage than the route that never loaded the file.",
+      "It also claimed `marine.module.css`, through `VintageLine`; T-033 converted that " +
+      "component to Tailwind and deleted the stylesheet, so the claim went with the file " +
+      "rather than being left to pass vacuously. The marine block on this page is still " +
+      "flag-gated (`MARINE_ENABLED`) and is still swept as markup, just no longer as a module.",
   },
   {
     id: "about",
@@ -96,19 +96,16 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     pathname: "/turkiye/[slug]",
     params: { slug: "istanbul" },
     locales: ["tr", "en"],
-    modules: [
-      "climate.module.css",
-      "air-pollution.module.css",
-      "locator-map.module.css",
-      "marine.module.css",
-    ],
+    modules: ["climate.module.css", "air-pollution.module.css", "locator-map.module.css"],
     why:
       "The detail page with the climate table, and the recorded scene of two of the three " +
       "defects this sweep exists for (T-038's licence notice, T-046's `.chartFrame` " +
-      "`min-width`). It renders FOUR of the eight CSS Modules — `marine.module.css` among them, " +
-      "through `ProvinceMarineSection`, which is where that stylesheet actually reaches a " +
-      "swept route rather than on `/deniz`. Both locales: the EN column headers of the " +
-      "climate table are materially longer than the TR ones.",
+      "`min-width`). It renders THREE of the seven surviving CSS Modules. It rendered a " +
+      "fourth, `marine.module.css`, through `ProvinceMarineSection` — the only place that " +
+      "stylesheet ever reached a swept route — until T-033 converted that section to Tailwind " +
+      "and deleted it. The section itself is still swept here, and this is still the route " +
+      "that measures its `11ch 1fr` value grid at 320px. Both locales: the EN column headers " +
+      "of the climate table are materially longer than the TR ones.",
   },
   {
     id: "region-index",
@@ -168,10 +165,10 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "the TR-only explainer blocks, so it is a different composition rather than a " +
       "translation of this one. " +
       "NO `marine.module.css`: this entry claimed it and never rendered it. Its only importers " +
-      "are `components/marine/{vintage-line,value-cell,direction-arrow,province-marine-" +
-      "section}.tsx`, and the import chain reaches exactly two routes — `/` (VintageLine) and " +
-      "`/turkiye/[slug]` (ProvinceMarineSection). The claim moved to those two entries, where " +
-      "the stylesheet is actually on the page.",
+      "were `components/marine/{vintage-line,value-cell,direction-arrow,province-marine-" +
+      "section}.tsx`, and the import chain reached exactly two routes — `/` (VintageLine) and " +
+      "`/turkiye/[slug]` (ProvinceMarineSection). The claim moved to those two entries, and " +
+      "T-033 then converted all four components and deleted the stylesheet outright.",
   },
   {
     id: "sea-hub",
@@ -183,9 +180,10 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       'onto `FaqSection`\'s `mechanism="accordion"`, and an accordion trigger is the one FAQ ' +
       "shape with a horizontal budget: an unbroken Turkish question and a chevron on one row, " +
       "inside a button that must still fit at 320. The `sea` route ABOVE measures the licence " +
-      "notice, which does not reach this page's accordion. Neither route measures " +
-      "`marine.module.css`: no `deniz` route imports it — the claim moved to `home` and " +
-      "`province`, which do. `tr` only — the block is gated to Turkish because " +
+      "notice, which does not reach this page's accordion. Neither route ever measured " +
+      "`marine.module.css`: no `deniz` route imported it — the claim moved to `home` and " +
+      "`province`, and T-033 has since deleted the stylesheet. `tr` only — the block is " +
+      "gated to Turkish because " +
       "`messages/en.json` has no `Deniz.q*`, so an EN visit would measure a page with no FAQ " +
       "on it at all.",
   },

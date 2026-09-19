@@ -399,7 +399,8 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * A ratchet that falls because dead code was removed is not progress on the adoption it counts,
  * which is why the cause is written down beside the number.
  *
- * RE-CHECKED AT 188 / 166 / 231 / 354, Ruling AZ again — a control proved at 192 proves nothing
+ * RE-CHECKED AT 188 / 166 / 231 / 354 (T-033's arrival then took cards, spellings and the
+ * total to 189 / 232 / 355 — see the docblock on {@link HAND_DRAWN_CARDS}), Ruling AZ again — a control proved at 192 proves nothing
  * at 188. All three probes on `app/[locale]/(site)/hakkimizda/page.tsx`, each reverted:
  *
  *   - the two-tile `rounded-2xl bg-card border border-border` stat grid — RED at `expected 190
@@ -413,12 +414,30 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 232 to be 231` with `HAND_DRAWN_CARDS` RED
  *     at 189 alongside.
  */
-export const HAND_DRAWN_CARDS = 188;
+/**
+ * T-033: **188 → 189 cards, 231 → 232 spellings, 354 → 355 total**, wells unmoved at 166.
+ *
+ * ONE element, and it is an ARRIVAL, not a migration: `components/marine/province-marine-
+ * section.tsx`'s reference-point block. It was a hand-drawn card all along — `.provinceBlock`
+ * in `marine.module.css`, `background: #fff` plus a `--color-border` hairline — and this
+ * census could not see it, because a `styles.x` lookup resolves to a CSS-Module class and
+ * never to Tailwind tokens. Retiring that stylesheet made the surface legible to the scanner
+ * for the first time, so the number goes UP while the tree gets smaller. That is the census
+ * working: the population it measures is "hand-drawn cards the scanner can read", and one
+ * just stopped hiding behind a module.
+ *
+ * It is written INLINE at `rounded-2xl`, not hoisted into a constant and not left at the
+ * module's own 10px `--radius`, precisely so it lands here rather than in
+ * {@link COMPUTED_CARD_CLASSNAMES}'s invisible population or outside {@link CARD_ROUNDING}
+ * altogether. Both of those spellings were available and both would have kept this counter
+ * at 188 while the element existed.
+ */
+export const HAND_DRAWN_CARDS = 189;
 
 export const HAND_DRAWN_WELLS = 166;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 231;
+export const HAND_DRAWN_CARD_SPELLINGS = 232;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -596,7 +615,18 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  *
  * Both reverted.
  */
-export const COMPUTED_CARD_CLASSNAMES = 23;
+/**
+ * T-033: **23 → 44**, and `member` 186 → 164 one door down. The same 22 elements, re-spelled:
+ * `marine.module.css` was retired, so `components/marine/{province-marine-section,value-cell}
+ * .tsx` stopped writing `className={styles.x}` (member) and started writing
+ * `className={ROW}` (identifier) over a hoisted Tailwind string. Nothing was hidden that was
+ * visible before — a `styles.x` lookup was already unreadable to this scanner, which is the
+ * whole reason the member bucket exists. The two buckets moved by equal and opposite 22.
+ *
+ * The one element of that conversion that IS a card surface was deliberately NOT hoisted, so
+ * it lands in {@link HAND_DRAWN_CARDS} instead of here. See that docblock.
+ */
+export const COMPUTED_CARD_CLASSNAMES = 44;
 
 /** The whole unreadable-className population by expression shape — the 188 the counter above
  * deliberately does not watch, kept visible rather than dropped. The `call` bucket held exactly
@@ -604,8 +634,8 @@ export const COMPUTED_CARD_CLASSNAMES = 23;
  * that file; an empty bucket is not listed, so a `call` reappearing fails this pin as a NEW
  * shape rather than as a moved number. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
-  ["identifier", 23],
-  ["member", 186],
+  ["identifier", 44],
+  ["member", 164],
   ["ternary", 2],
 ];
 
@@ -979,8 +1009,10 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // surface at all once their metric strip is a `<StatGrid>` of `<StatTile>`s. 57 after T-042,
     // which is a DELETION rather than an adoption — `theme-pair.tsx` left the scanned surface for
     // `components/showcase/`, and `empty-state.tsx` and `map-legend.tsx` were deleted outright.
+    // 58 after T-033: `province-marine-section.tsx` joins the surface, holding a card that was
+    // always there and was only ever invisible because it was drawn from a CSS Module.
     // See {@link HAND_DRAWN_CARDS}.
-    expect(handDrawnTotals().files).toBe(57);
+    expect(handDrawnTotals().files).toBe(58);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
