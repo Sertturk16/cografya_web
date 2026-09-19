@@ -239,8 +239,11 @@ API_BASE_URL=http://127.0.0.1:9 NODE_ENV=production pnpm exec next build
 node scripts/assert-prerender-floor.mjs
 ```
 
-Expected: `next build` exits 0 (that is the defect), then the guard prints `FAIL` for
-`provinces`, `regions`, `countries`, `continents`, `books` and `total`, and exits 1.
+Measured: `next build` exits 0 (that is the defect), then the guard prints `FAIL` for five
+families — `total`, `provinces`, `regions`, `countries`, `books` — and exits 1. `continents`
+and `design-system` stay `ok`: their `generateStaticParams` are non-async over local
+constants (`app/[locale]/(site)/dunya/kita/[slug]/page.tsx:43` and
+`app/[locale]/design-system/[category]/page.tsx:13`), so they never touch the API.
 
 Record the exact printed block in the PR body. A guard that has never been seen red is a
 guard nobody has checked.

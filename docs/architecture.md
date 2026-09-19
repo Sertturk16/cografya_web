@@ -201,7 +201,9 @@ Details and the open dark-mode bugs: `docs/design.md`.
 - Prod is plain HTTP on a bare IP; the internal token rides every web→api call in clear.
 - `pnpm build` against a live local API fails at random — a different province or country page
   each run, fetch aborts / 500s — under Next's ~19 parallel prerender workers. Reproduces at
-  commits predating this work, so it is not a regression of anything landed here.
-  `experimental.cpus: 4` in `next.config.ts` makes it disappear. CI never hits it: the CI
-  runner has no API service, so every `generateStaticParams` degrades to `[]` and the throwing
-  code path is never reached.
+  commits predating this work, so it is not a regression of anything landed here. CI now
+  reaches this: since T-048, `ci.yml` stands up a real API from the committed seeds before
+  `pnpm build`, and `scripts/assert-prerender-floor.mjs` runs on every build, so a build that
+  cannot reach the API (or loses it mid-build) fails loudly instead of shipping partial output.
+  Three consecutive local builds against a live API on 2026-09-19 (post-T-048) all passed with
+  every guard row `ok`; the flake did not reproduce, so no worker count is pinned.
