@@ -402,9 +402,37 @@ import {
  * 16 after. Nothing here was rewritten as a bracketed literal, an SVG attribute or an inline
  * style, and nothing gained a `var()` fallback.
  *
+ * 113 -> 100 is Task 10's second file: `components/v2/v2-leaderboard-modal.tsx` 13 -> 0, all
+ * thirteen decoration. Nine of them are the gold/silver/bronze tints on ranks 1-3, and each of
+ * those cells renders a medal emoji AND sits in a column whose other rows spell the rank as a
+ * number -- the hue restates a glyph that is already the message. With the tints gone the three
+ * branches differ only by which emoji they print, so they collapse into one.
+ *
+ * SELECTED AND HOVERED, NOT REST, AND BOTH WERE WORSE. A leaderboard row is `--primary`/10 when
+ * it is the reader's own row and `--muted`/40 when hovered, so the rank chip's real backdrop is
+ * a tint over a tint. Rank 1 measured 4.48 light on a bare card but 4.01 on the reader's own
+ * row -- under the floor only in the state a reader is most likely to look at. Inheriting
+ * `--foreground` measures 14.97 on `--card`, 13.89 hovered and 12.18 on the reader's own row.
+ * The dark pairs were not the failing half here (7.61 / 8.12 / 8.40) and go with their light
+ * halves.
+ *
+ * The badge is a VARIANT SWAP, not a deletion: a hand-drawn tinted badge standing beside a
+ * declared `variant="secondary"` one. Deleting its three classes would leave an untinted badge
+ * where a tinted one was and keep a hand-drawn spelling in the census. The declared default
+ * badge is the same shape -- a 12% brand tint carrying the strong member -- at 7.10 rest and
+ * 6.32 hovered, against 2.96 light for the amber it replaces. The inventory row records it.
+ *
+ * The trigger's `Trophy` is the clearest hovered case in the file and the smallest. Its button
+ * is the outline variant in both call sites, so the glyph sat on `--card` at rest and `--muted`
+ * hovered: amber-500 measured 2.13 and then **1.77** in light, under the 3:1 graphical floor in
+ * both states and worse in the one that involves a pointer. It inherits `--foreground`: 14.97
+ * and 12.44.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 113;
+const RAW_PALETTE_BUDGET = 100;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
