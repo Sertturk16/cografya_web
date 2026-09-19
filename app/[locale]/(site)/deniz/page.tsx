@@ -244,7 +244,7 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
             />
 
             {/* Metric Strip */}
-            {/* `tone="secondary"` was `text-cyan-600` — frozen at #0092b8 in both themes,
+            {/* `tone="secondary"` was a raw cyan-600 text class — frozen at #0092b8 in both themes,
                 3.62:1 on the light card, the weakest reading in the whole strip family. (Large
                 bold text, 3:1 floor, so it passed AA; the defect was the freeze, not the ratio.)
 
@@ -278,9 +278,9 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         <V2MarineOceanographyGuide />
 
         {/* SUBMARINE FAULTS CALLOUT BANNER */}
-        <div className="p-5 rounded-3xl border border-red-500/30 bg-gradient-to-r from-red-500/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-5 rounded-3xl border border-destructive/30 bg-gradient-to-r from-destructive/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="size-10 rounded-2xl bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
+            <div className="size-10 rounded-2xl bg-destructive/10 text-destructive-strong flex items-center justify-center shrink-0">
               <Layers className="size-5" />
             </div>
             <div>

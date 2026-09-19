@@ -571,9 +571,41 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
+ * 33 -> 21 is Task 10's ninth step, the three remaining SITE PAGES:
+ * `app/[locale]/(site)/deniz/page.tsx` 5 -> 0, `app/[locale]/(site)/deprem/hazirlik/page.tsx`
+ * 5 -> 0 and `app/[locale]/(site)/turkiye/bolge/page.tsx` 2 -> 0. Nine semantic, three
+ * decoration, one of which is prose.
+ *
+ * The sea page's submarine-fault banner is the same markup `v2-sea-basin-detail-view` already
+ * carries and takes the same destructive family: the glyph measures 6.14 light and 6.83 dark on
+ * a 10% tint over the banner, against red-600's 3.86 and **3.19**, failing both. The banner's
+ * own 30% edge is 1.49 after and was 1.44 before -- a decorative rim on a card whose heading
+ * identifies it, under 3:1 in both spellings, recorded rather than claimed as a fix.
+ *
+ * The page's fifth is not markup at all: a comment recording why a metric tile was converted
+ * quoted the raw class name literally. The literal spelling goes and the ruling stays, which is
+ * what the inventory's comment rows say -- and Tailwind scans comment text, so the quote was
+ * compiling into a real rule as well as sitting in the count.
+ *
+ * The preparedness page's caution is a warning, not a band: it is advice on a public-safety
+ * page, not a value on the AQI, MMI or SST scales that stay standard. On a 10% tint over
+ * `--card` it measures 6.18 light and 8.18 dark. The pair it replaces was doing half the job
+ * in each theme -- amber-900 8.39 light but **1.60** dark, its amber-200 partner 11.65 dark but
+ * **1.15** light -- and the glyph beside them 2.96 light, under the graphical floor.
+ *
+ * The region index's two dots are the smallest rows in the task and the only ones where the
+ * figure falls. They are `aria-hidden` bullets with the word beside them, and the ternary's
+ * THIRD arm was already the neutral bullet, so the other two take that value rather than being
+ * deleted -- deleting a fill leaves an 8px invisible box. 1.95 light and 2.36 dark, against
+ * teal-500's 2.42 and amber-500's 2.13: all three spellings are under 3:1, and a mark that is
+ * `aria-hidden` next to its own label is not held to it. With the fills equal the three arms
+ * differ only by label and collapse into one.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 33;
+const RAW_PALETTE_BUDGET = 21;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

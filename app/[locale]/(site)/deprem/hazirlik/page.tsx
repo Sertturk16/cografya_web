@@ -182,8 +182,8 @@ export default async function V2PreparednessPage({ params }: PageProps) {
 
                     {/* Callout Notice if present */}
                     {sub.callout && (
-                      <div className="ml-10 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
-                        <AlertOctagon className="size-4 shrink-0 text-amber-600 mt-0.5" />
+                      <div className="ml-10 p-4 rounded-2xl bg-warning/10 border border-warning/30 text-xs text-warning-strong flex items-start gap-2.5">
+                        <AlertOctagon className="size-4 shrink-0 mt-0.5" />
                         <span className="leading-relaxed">{sub.callout}</span>
                       </div>
                     )}
