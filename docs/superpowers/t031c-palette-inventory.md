@@ -95,6 +95,18 @@ re-pin.
 | `--fault-*`     | kaf, daf, bafs                                                            | 48   | `lib/earthquake/fault-lines-data.ts` (24) | `fault-lines-data` 24 + `deprem/page` 21 + `deprem/fay-hatlari` 3                                                              |
 | `--sst-band-*`  | cool (<25 °C), warm (25-28 °C), hot (≥28 °C)                              | 12   | nowhere — inline in the component         | `v2-marine-map-explorer` 12                                                                                                    |
 
+**Correction to the `--sst-band-*` row, made while applying it (Task 6).** "Nowhere — inline in
+the component" undercounts the problem, and the `Rows` figure of 12 is right only because the
+other two spellings are invisible to the raw-palette collector. The ramp shipped **three** times
+inside `v2-marine-map-explorer.tsx`: the 12 rows above (the table chips, as utility classes), the
+map station pins (raw SVG `fill` attributes `#2563eb` / `#0d9488` / `#ea580c` — Tailwind v3 hexes
+the repo stopped shipping at the v4 upgrade, counted by NEITHER arm because a bare hex in a TS
+string is not a class), and the legend strip that tells the reader what the pin colours mean
+(`bg-[#ea580c]`, `bg-[#0d9488]`, `bg-[#2563eb]` — counted by the arbitrary arm, and named in
+`raw-palette-count.test.ts`'s `LAUNDERED` list). All three carried the same two thresholds
+independently. Task 6 binds all three to `lib/theme/sst-band.ts`; the arbitrary arm moves 75 → 72
+for the legend's three.
+
 Three of the four have their definition in `lib/`, which is why widening the roots mattered:
 each set had a source file spelling the hue and a call site re-spelling it, and a count that saw
 only the call site would have gone to zero while the definition still held the raw class.
@@ -360,6 +372,25 @@ deeper, and it is the reason a count that saw only call sites would have been mi
 | 1003,1010   | `text-teal-600` ×2                                                                         | 2   | decoration | removed                                               | wind measure in the same card, labelled                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 **Totals:** data 32, semantic 7, decoration 22.
+
+**LEFT FOR T-031d, unchanged and deliberately so.** This component also carries 11 arbitrary map
+hexes that the raw-palette arm never sees and the arbitrary arm counts: the dark sea
+(`bg-[#152228]`, `fill-[#152228]`), the province and neighbour-land fills (`fill-[#f1ece3]`,
+`fill-[#2d2822]`, `fill-[#201c18]`), their hairlines (`stroke-[#b8aea0]`, `stroke-[#50473e]`),
+the inland water (`fill-[#6ec7d1]`) and the coastline pair (`fill-[#635a4e]`, `fill-[#a89e92]`).
+They are the same dark map surface `/turkiye` and `/dunya` draw, the binding cases are already
+measured — **Türkiye's provinces vs neighbour land 1.17:1, neighbour land vs inland water
+1.01:1**, both against a 3:1 floor — and the fix is a retune of `--map-*` / `--province-*`, which
+is T-031d's work. Binding them here would move lines whose justification is a measurement T-031d
+is about to redo.
+
+One more hex stays for a different reason: `#f59e0b` on the SELECTED station pin, and `#ffffff`
+on its stroke. Selection is UI state rather than a temperature, it has to win over whatever SST
+band the station is in, and it is not part of the ramp this task binds. Task 6 left it as the
+only literal in that block after `sstBandStyleOf` took the three band branches; the dead
+`#0284c7` default it used to sit beside is gone, because the if/else chain overwrote it on every
+path. The `#0284c7` that remains in the file is a `<stop>` in the decorative `marine-pulse`
+radial gradient and encodes nothing.
 
 ### components/v2/v2-world-continents.tsx (55)
 
