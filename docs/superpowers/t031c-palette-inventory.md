@@ -1,6 +1,6 @@
 # T-031c — raw palette inventory
 
-**787 occurrences across 38 product files, one verdict each.** This table is the decision.
+**939 occurrences across 41 product files, one verdict each.** This table is the decision.
 Tasks 3-N apply it; they do not re-open it. A row applied differently from its verdict means
 the row is edited first and the change explained.
 
@@ -16,32 +16,46 @@ console.log('total', all.length);
 "
 ```
 
-Measured 2026-09-19, over `components/**` and `app/**`, `.ts` and `.tsx`:
+Measured 2026-09-19, over `components/**`, `app/**` and `lib/**`, `.ts` and `.tsx`:
 
 | Set                                                 | Occurrences | Files  |
 | --------------------------------------------------- | ----------- | ------ |
-| Everything the regex matches                        | 865         | 43     |
+| Everything the regex matches                        | 1017        | 46     |
 | minus test files (`*.test.*`)                       | −13         | −4     |
 | minus `app/[locale]/(site)/turkiye/[slug]/page.tsx` | −65         | −1     |
-| **this branch's scope**                             | **787**     | **38** |
+| **this branch's scope**                             | **939**     | **41** |
 
 The four test files are `components/patterns/patterns-contract.test.ts` (5),
 `components/v2/v2-map-pan-bounds.test.ts` (4), `components/v2/page-composition-cards.test.ts` (2)
 and `components/v2/v2-batch6-a11y-polish.test.ts` (2) — assertions about the palette, not uses
-of it. The excluded page is T-033's; its 65 occurrences are cleared there, not here.
+of it. `lib/theme/*.test.ts` is filtered by the same rule. The excluded page is T-033's; its 65
+occurrences are cleared there, not here.
 
-By hue: amber 204, emerald 143, cyan 90, teal 86, rose 56, orange 39, red 31, sky 30, yellow 23,
-stone 23, blue 23, purple 14, slate 14, indigo 9, green 1, violet 1.
+**`lib/` is in the roots, and that is the whole of fix round 1.** The first cut scanned only
+`components/**` and `app/**` and found 787 in 38 files. Three `lib/` modules hold the
+**definitions** of hues those files merely spend: `lib/map/continent-theme.ts` (112),
+`lib/earthquake/fault-lines-data.ts` (24) and `lib/marine/sea-basins-detail.ts` (16) — 152 more.
+The first draft of this document named them in an aside as a blind spot the counter would never
+see. An aside is a number living in a document, which is the exact defect this branch exists to
+remove ("it moved 749 → 895 → 865 while living only in a comment"). They are in the count.
 
-By line: 415 source lines carry them. 117 of those also carry a hand-written `dark:`; 298 do not,
-so roughly three quarters of the affected lines have no dark-mode treatment at all.
+By hue: amber 223, emerald 167, teal 106, cyan 95, rose 76, sky 45, orange 40, red 39, blue 32,
+purple 30, indigo 24, yellow 23, stone 23, slate 14, green 1, violet 1.
+
+By line: 499 source lines carry them. 161 of those also carry a hand-written `dark:`; 338 do not,
+so roughly two thirds of the affected lines have no dark-mode treatment at all. **Measured against
+the full source line, not the collector's truncated `context` field** — `context` stops at 120
+characters, and a `dark:` past that point reads as absent. The first cut of this document made
+exactly that mistake and reported 117/298 over the 787-row scope where the real split was 123/292.
+Every `semantic` row deletes its `dark:` pair in the same edit, so an applier working from the
+wrong split leaves strays behind.
 
 ## The three verdicts
 
 - **`data`** — encodes a value, a category or a safety band. Binds to a **data token set**
   (`--region-*`, `--eq-mag-1..5`, `--game-*`, `--map-*`, `--chart-*`, or one of the four sets
   named below that do not exist yet). Never to a bridge token: brand chrome does not encode data
-  (`docs/design.md` rule 1). 348 rows.
+  (`docs/design.md` rule 1). 500 rows.
 - **`semantic`** — means success, warning, danger, information or brand accent. Binds to the
   matching bridge token (`--success` / `--warning` / `--destructive` / `--info` / `--primary` and
   their `-strong` members), and its hand-written `dark:` pair is deleted in the same edit.
@@ -68,19 +82,22 @@ so roughly three quarters of the affected lines have no dark-mode treatment at a
 Four sets are named by `data` rows below and have to be created before those rows can be applied.
 None of them is a bridge token, and none may be satisfied by one:
 
-| Set             | Members                                                                   | Rows | Where                                                                                   |
-| --------------- | ------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------- |
-| `--basin-*`     | karadeniz, marmara, ege, akdeniz                                          | 49   | `v2-marine-basin-cards`, `v2-marine-map-explorer`, `deniz/kiyi-tipleri`, `bolge/[slug]` |
-| `--continent-*` | avrupa, asya, afrika, kuzey-amerika, guney-amerika, okyanusya, antarktika | 49   | `v2-world-continents` (and `CONTINENT_META` is read by `v2-world-map-explorer`)         |
-| `--fault-*`     | kaf, daf, bafs                                                            | 24   | `deprem/page`, `deprem/fay-hatlari`, and `lib/earthquake/fault-lines-data.ts`           |
-| `--sst-band-*`  | cool (<25 °C), warm (25-28 °C), hot (≥28 °C)                              | 12   | `v2-marine-map-explorer`                                                                |
+| Set             | Members                                                                   | Rows | Definition lives in                       | Also spent by                                                                           |
+| --------------- | ------------------------------------------------------------------------- | ---- | ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| `--continent-*` | avrupa, asya, afrika, kuzey-amerika, guney-amerika, okyanusya, antarktika | 161  | `lib/map/continent-theme.ts` (112)        | `v2-world-continents` (49), and five files read `CONTINENT_META` without re-spelling it |
+| `--basin-*`     | karadeniz, marmara, ege, akdeniz                                          | 65   | `lib/marine/sea-basins-detail.ts` (16)    | `v2-marine-basin-cards`, `v2-marine-map-explorer`, `deniz/kiyi-tipleri`, `bolge/[slug]` |
+| `--fault-*`     | kaf, daf, bafs                                                            | 48   | `lib/earthquake/fault-lines-data.ts` (24) | `deprem/page` (21), `deprem/fay-hatlari` (3)                                            |
+| `--sst-band-*`  | cool (<25 °C), warm (25-28 °C), hot (≥28 °C)                              | 12   | nowhere — inline in the component         | `v2-marine-map-explorer`                                                                |
 
-`--region-*-tint` and `--region-*-text` are the fifth and are already Task 3's; 165 rows below
-depend on them. The `--fault-*` set has a fourth consumer the collector never sees:
-`lib/earthquake/fault-lines-data.ts` holds `borderClass` / `badgeClass` / `accentColor` strings in
-the same raw hues. It is outside `components/**` and `app/**`, so it is **not** in the 787 and the
-counter will not catch it — but the fault stat tiles have to agree with those cards, so that file
-moves in the same task.
+Three of the four have their definition in `lib/`, which is why widening the roots mattered:
+each set had a source file spelling the hue and a call site re-spelling it, and a count that saw
+only the call site would have gone to zero while the definition still held the raw class.
+
+`--region-*-tint` and `--region-*-text` are the fifth and are already Task 3's; 161 rows below
+depend on them (`bolge/[slug]` 56, `v2-turkey-map-explorer` 70, `v2-game-screen` 21,
+`v2-turkey-regions` 14). The region set is the one whose definition is **already** a token —
+`--region-*` is in `app/globals.css` — which is exactly why its four call sites contradict it and
+the continent set does not.
 
 ## Measured figures the notes quote
 
@@ -184,6 +201,56 @@ is a hue unrelated to the `--region-*` token its own map fill uses. Six of seven
 
 **Totals:** data 60, semantic 13, decoration 40.
 
+### lib/map/continent-theme.ts (112)
+
+The single heaviest definition in the branch, and the reason `lib/` is in the roots. `CONTINENT_META`
+is the continent palette; five product files import it (`v2-world-map-explorer`, `v2-member-hub`,
+`dunya/[slug]`, `dunya/kita/page`, `dunya/kita/[slug]`) and spend it without re-spelling a hue, so
+every one of the 112 is a definition, not a use. All 112 are `data` → `--continent-*`.
+
+Nine fields per continent, 16 occurrences each, identical in shape across all seven:
+
+| Field         | Paints                                         | Occ. |
+| ------------- | ---------------------------------------------- | ---- |
+| `color`       | the country fill on `/dunya`'s map (+ `dark:`) | 2    |
+| `hoverColor`  | its hover fill (+ `dark:`)                     | 2    |
+| `strokeColor` | the country outline                            | 1    |
+| `badgeClass`  | the continent badge (+ `dark:` text)           | 4    |
+| `headerClass` | the card header gradient                       | 2    |
+| `borderClass` | the card edge                                  | 1    |
+| `textClass`   | continent text (+ `dark:`)                     | 2    |
+| `gradient`    | the `/dunya/[slug]` hero wash                  | 1    |
+| `glowColor`   | the hero glow backdrop                         | 1    |
+
+`gradient` and `glowColor` are `data` rather than `decoration` on the file's own evidence: its type
+comments say both are "derived from the hue above", so they are the continent's identity at low
+alpha, not ornament. They bind to a `--continent-*` tint; deleting them would leave the hero with
+no continent signal but the badge.
+
+Five of the nine fields carry a hand-written `dark:` (31 of the 112 occurrences are the dark half
+of a pair). Those pairs do not survive the binding: a data token is redefined per theme in
+`app/globals.css`, which is where the light/dark decision belongs. Removing them is the normal
+outcome of binding correctly.
+
+| Line    | Class(es)                    | #   | Verdict | Becomes                          | Note                                                                                                                                                                                                                              |
+| ------- | ---------------------------- | --- | ------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 39-48   | the nine indigo/blue fields  | 16  | data    | `--continent-avrupa` + tint/text | AVRUPA. `v2-world-continents.tsx:45-47` spells the same identity a second time in the same hue family but different stops (`from-indigo-600 to-blue-700` against this file's `from-indigo-700 to-blue-900`). One token ends both. |
+| 53-62   | the nine amber/orange fields | 16  | data    | `--continent-asya`               | ASYA                                                                                                                                                                                                                              |
+| 67-76   | the nine emerald fields      | 16  | data    | `--continent-afrika`             | AFRIKA                                                                                                                                                                                                                            |
+| 81-90   | the nine sky/cyan fields     | 16  | data    | `--continent-kuzey-amerika`      | KUZEY_AMERIKA                                                                                                                                                                                                                     |
+| 95-104  | the nine rose fields         | 16  | data    | `--continent-guney-amerika`      | GUNEY_AMERIKA                                                                                                                                                                                                                     |
+| 109-118 | the nine purple fields       | 16  | data    | `--continent-okyanusya`          | OKYANUSYA                                                                                                                                                                                                                         |
+| 123-132 | the nine teal fields         | 16  | data    | `--continent-antarktika`         | ANTARKTIKA. The seven-hue set must clear ΔE00 ≥ 10 pairwise under normal vision and all three CVD simulations before it is authored, the floor `--region-*` holds at 21.7.                                                        |
+
+**Totals:** data 112, semantic 0, decoration 0.
+
+**The bug this file already fixed once, one level up.** Its own docblock records `DES133-I1`: the
+`[slug]` page used to keep a second, independently chosen continent palette whose hues disagreed
+with the map's on six of seven continents. The fix was to move `CONTINENT_META` here and have both
+consumers read it. `v2-world-continents.tsx` still holds a third spelling (49 rows, same hue
+families, different stops). Binding the definition to a token is the same fix applied one level
+deeper, and it is the reason a count that saw only call sites would have been misleading.
+
 ### components/v2/v2-turkey-map-explorer.tsx (78)
 
 | Line    | Class(es)                                                                | #   | Verdict  | Becomes                                               | Note                                                                                                                                                                |
@@ -203,26 +270,26 @@ is a hue unrelated to the `--region-*` token its own map fill uses. Six of seven
 
 ### components/v2/v2-marine-map-explorer.tsx (61)
 
-| Line        | Class(es)                                                                                  | #   | Verdict    | Becomes                                               | Note                                                                                                                                                                             |
-| ----------- | ------------------------------------------------------------------------------------------ | --- | ---------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 82-83       | `fill-cyan-600`, `bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30`      | 5   | data       | `--basin-karadeniz` + tint/text                       | map fill and badge for one basin, exactly the region pattern one level down. `--basin-*` does not exist yet.                                                                     |
-| 89-90       | the amber pair                                                                             | 5   | data       | `--basin-marmara`                                     |                                                                                                                                                                                  |
-| 96-97       | the teal pair                                                                              | 5   | data       | `--basin-ege`                                         | teal is the site-wide Aegean encoding (recorded in `deniz/kiyi-tipleri/page.tsx`'s comment)                                                                                      |
-| 103-104     | the rose pair                                                                              | 5   | data       | `--basin-akdeniz`                                     |                                                                                                                                                                                  |
-| 337         | `text-cyan-600`                                                                            | 1   | decoration | removed                                               | `Waves` in the floating mode indicator; the basin name and the station count sit in the same pill.                                                                               |
-| 551-552     | `bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200`, `text-amber-600` | 5   | semantic   | `bg-warning/10 border-warning/30 text-warning-strong` | `ShieldAlert` advisory about model data; a caution. 6.18 light / 8.18 dark on its own /10 tint.                                                                                  |
-| 572,574,583 | `bg-cyan-500/10 border-cyan-500/20`, `text-cyan-600` ×2                                    | 4   | decoration | removed                                               | the "Dalga Boyu" panel. The heading names the measure; the panel beside it is identical in teal for wind, so the hue is panel variety, not an encoding.                          |
-| 589,591,602 | `bg-teal-500/10 border-teal-500/20`, `text-teal-600` ×2                                    | 4   | decoration | removed                                               | the "10m Rüzgâr" panel, same shape                                                                                                                                               |
-| 700,707     | `text-cyan-600` ×2                                                                         | 2   | decoration | removed                                               | the same two measures repeated in the hover tooltip, labelled again                                                                                                              |
-| 717,724     | `text-teal-600` ×2                                                                         | 2   | decoration | removed                                               | as above                                                                                                                                                                         |
-| 891         | `bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30`                       | 4   | data       | `--sst-band-cool` + text                              | sea-surface temperature **under 25 °C**. A geophysical ramp: stays standard, never restyled to Terra.                                                                            |
-| 894         | the orange set                                                                             | 4   | data       | `--sst-band-hot`                                      | ≥ 28 °C                                                                                                                                                                          |
-| 897         | the teal set                                                                               | 4   | data       | `--sst-band-warm`                                     | 25-28 °C. Note the collision the set has to resolve: this teal is also the Ege basin hue two hundred lines up, in the same component.                                            |
-| 934         | `bg-amber-500 ring-2 ring-amber-400`                                                       | 2   | semantic   | `bg-primary ring-primary/50`                          | the **selected** station dot. Selection is brand accent; the row already carries `aria-selected` and `bg-primary/10`, so the dot joins them instead of inventing a third colour. |
-| 934         | `bg-cyan-500`                                                                              | 1   | decoration | removed                                               | the resting dot on the same line — a bullet before the station name. Split from the row above because the verdicts differ.                                                       |
-| 942         | `bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30`                   | 4   | decoration | removed                                               | the "Boğaz" badge; the badge's own word is the whole content.                                                                                                                    |
-| 984,990     | `text-cyan-600` ×2                                                                         | 2   | decoration | removed                                               | wave measure in the selected-station card, labelled                                                                                                                              |
-| 1003,1010   | `text-teal-600` ×2                                                                         | 2   | decoration | removed                                               | wind measure in the same card, labelled                                                                                                                                          |
+| Line        | Class(es)                                                                                  | #   | Verdict    | Becomes                                               | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------ | --- | ---------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 82-83       | `fill-cyan-600`, `bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30`      | 5   | data       | `--basin-karadeniz` + tint/text                       | map fill and badge for one basin, exactly the region pattern one level down. `--basin-*` does not exist yet.                                                                                                                                                                                                                                                                                                                                                                         |
+| 89-90       | the amber pair                                                                             | 5   | data       | `--basin-marmara`                                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 96-97       | the teal pair                                                                              | 5   | data       | `--basin-ege`                                         | teal is the site-wide Aegean encoding (recorded in `deniz/kiyi-tipleri/page.tsx`'s comment)                                                                                                                                                                                                                                                                                                                                                                                          |
+| 103-104     | the rose pair                                                                              | 5   | data       | `--basin-akdeniz`                                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 337         | `text-cyan-600`                                                                            | 1   | decoration | removed                                               | `Waves` in the floating mode indicator; the basin name and the station count sit in the same pill.                                                                                                                                                                                                                                                                                                                                                                                   |
+| 551-552     | `bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200`, `text-amber-600` | 5   | semantic   | `bg-warning/10 border-warning/30 text-warning-strong` | `ShieldAlert` advisory about model data; a caution. 6.18 light / 8.18 dark on its own /10 tint.                                                                                                                                                                                                                                                                                                                                                                                      |
+| 572,574,583 | `bg-cyan-500/10 border-cyan-500/20`, `text-cyan-600` ×2                                    | 4   | decoration | removed                                               | the "Dalga Boyu" panel. The heading names the measure; the panel beside it is identical in teal for wind, so the hue is panel variety, not an encoding.                                                                                                                                                                                                                                                                                                                              |
+| 589,591,602 | `bg-teal-500/10 border-teal-500/20`, `text-teal-600` ×2                                    | 4   | decoration | removed                                               | the "10m Rüzgâr" panel, same shape                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 700,707     | `text-cyan-600` ×2                                                                         | 2   | decoration | removed                                               | the same two measures repeated in the hover tooltip, labelled again                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 717,724     | `text-teal-600` ×2                                                                         | 2   | decoration | removed                                               | the wind measure in the same tooltip, carried by its own `"10m Rüzgâr:"` label and the `Wind` glyph on line 717                                                                                                                                                                                                                                                                                                                                                                      |
+| 891         | `bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30`                       | 4   | data       | `--sst-band-cool` + text                              | sea-surface temperature **under 25 °C**. A geophysical ramp: stays standard, never restyled to Terra.                                                                                                                                                                                                                                                                                                                                                                                |
+| 894         | the orange set                                                                             | 4   | data       | `--sst-band-hot`                                      | ≥ 28 °C                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 897         | the teal set                                                                               | 4   | data       | `--sst-band-warm`                                     | 25-28 °C. Note the collision the set has to resolve: this teal is also the Ege basin hue two hundred lines up, in the same component.                                                                                                                                                                                                                                                                                                                                                |
+| 934         | `bg-amber-500 ring-2 ring-amber-400`                                                       | 2   | semantic   | `bg-primary ring-primary/50`                          | the **selected** station dot. Selection is brand accent; the row already carries `aria-selected` and `bg-primary/10`, so the dot joins them instead of inventing a third colour.                                                                                                                                                                                                                                                                                                     |
+| 934         | `bg-cyan-500`                                                                              | 1   | decoration | removed                                               | the resting dot on the same line. Split from the row above because the verdicts differ. **Removed means the class goes, not the `<span>`:** this is a `size-2 rounded-full` element whose only visible content is its background, so the unselected station is left with an invisible dot and its name alone. That is the intended outcome — the dot never said anything the name did not — but an applier must not delete the element, because the selected branch still paints it. |
+| 942         | `bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30`                   | 4   | decoration | removed                                               | the "Boğaz" badge; the badge's own word is the whole content.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 984,990     | `text-cyan-600` ×2                                                                         | 2   | decoration | removed                                               | wave measure in the selected-station card, labelled                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 1003,1010   | `text-teal-600` ×2                                                                         | 2   | decoration | removed                                               | wind measure in the same card, labelled                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 **Totals:** data 32, semantic 7, decoration 22.
 
@@ -283,16 +350,26 @@ is a hue unrelated to the `--region-*` token its own map fill uses. Six of seven
 
 ### components/v2/v2-tools-hub.tsx (42)
 
-The three tools are identified by emerald / sky / `primary`. One member of the set is **already** a
-brand token, which is the tell: this is card variety, not a data set. Nothing on the page compares
-the three hues, no map or chart paints them, and every occurrence sits beside the tool's name.
+The three tools are identified by emerald / sky / `primary` across **three** surfaces that must
+agree with one another: the cards (93-129, 151-187), the compact-list icon plates (258, 283) and
+the comparison-table column headers (330, 331). That agreement is real, and it is not what decides
+this.
+
+Two things decide it. First, every one of those surfaces names the tool in adjacent text — the
+card heading, the list row's title, the `<th>` cell's own words — so nothing here is carried by
+colour alone and removing the hue removes nothing. Second, the set already contains brand tokens:
+the third column and the third card are `text-primary`, and the two CTAs spell `variant="emerald"`
+and `variant="sky"`, which resolve to `bg-secondary` and `bg-info` in `components/ui/button.tsx`.
+A data set cannot have brand members — `docs/design.md` rule 1 — so a set with three of them is
+not a data set, it is card variety that grew a convention. All three surfaces collapse onto the
+same treatment together, which is what keeps them agreeing.
 
 | Line                                            | Class(es)                                                                   | #   | Verdict    | Becomes               | Note                                                                                                                                                                                                                                                     |
 | ----------------------------------------------- | --------------------------------------------------------------------------- | --- | ---------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 93, 96, 102, 109, 121, 125, 129                 | card wash, icon plate, badge, hover heading, three `CheckCircle2` — emerald | 12  | decoration | removed               | the "Koordinat & Konum Bulucu" card. Heading, icon and the three feature lines all carry text.                                                                                                                                                           |
 | 151, 154, 160, 167, 179, 183, 187               | the same seven slots in sky                                                 | 12  | decoration | removed               | the "Çokgen Alan Hesaplama" card. The third card in this row is already `primary`, unchanged.                                                                                                                                                            |
 | 258                                             | `bg-emerald-600/15 text-emerald-600`                                        | 2   | decoration | removed               | icon plate in the compact list below                                                                                                                                                                                                                     |
-| 283                                             | `bg-sky-600/15 text-sky-600`                                                | 2   | decoration | removed               | as above                                                                                                                                                                                                                                                 |
+| 283                                             | `bg-sky-600/15 text-sky-600`                                                | 2   | decoration | removed               | the same icon plate for the area tool; the row's tool name and its glyph sit immediately beside it                                                                                                                                                       |
 | 330, 331                                        | `text-emerald-600`, `text-sky-600`                                          | 2   | decoration | removed               | comparison-table column headers; the header cell names the tool                                                                                                                                                                                          |
 | 355,358,361,369,370,371,375,378,381,389,392,395 | `text-emerald-600` ×12                                                      | 12  | semantic   | `text-success-strong` | the "✓ Var" cells. Here emerald is constant across all three columns and means **yes** — affirmative, not tool identity. The ✓ glyph carries it too; `semantic` wins because the meaning is one of the five. 3.77:1 today on the light card, 6.56 after. |
 
@@ -323,6 +400,22 @@ the three hues, no map or chart paints them, and every occurrence sits beside th
 | 346, 348    | the rose pair                                                                                | 5   | data       | `--basin-akdeniz`               |                                                                                                                                                                                                                            |
 
 **Totals:** data 20, semantic 0, decoration 4.
+
+### lib/earthquake/fault-lines-data.ts (24)
+
+The definition behind `deprem/page.tsx` (21) and `deprem/fay-hatlari/page.tsx` (3). Red, blue and
+emerald here are **fault identifiers**, not danger/information/success — `fay-hatlari/page.tsx`
+carries a ruling in its own comment saying exactly that, and the stat tiles on that page have to
+match these cards. Binding them to `destructive` / `info` / `success` would push three data
+categories onto three semantic hues, the data-viz rule run backwards.
+
+| Line    | Class(es)                                                                                                                                       | #   | Verdict | Becomes                    | Note                                                     |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- | -------------------------- | -------------------------------------------------------- |
+| 37-39   | `bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30`, `border-red-500/40 hover:border-red-500/60`, `text-red-600 dark:text-red-400` | 8   | data    | `--fault-kaf` + tint/text  | KAF. Two hand-written `dark:` pairs go with the binding. |
+| 140-142 | the blue equivalents                                                                                                                            | 8   | data    | `--fault-daf` + tint/text  | DAF                                                      |
+| 236-238 | the emerald equivalents                                                                                                                         | 8   | data    | `--fault-bafs` + tint/text | BAFS                                                     |
+
+**Totals:** data 24, semantic 0, decoration 0.
 
 ### components/v2/v2-sea-basin-detail-view.tsx (22)
 
@@ -431,6 +524,21 @@ Every occurrence here is one of the five meanings; nothing in this file is decor
 
 **Totals:** data 0, semantic 16, decoration 0.
 
+### lib/marine/sea-basins-detail.ts (16)
+
+The definition behind `--basin-*`. Its four hues agree, exactly, with `v2-marine-basin-cards.tsx`'s
+(cyan / amber / teal / rose) — so unlike the continent and region sets this one is not
+self-contradicting today, and the binding is a consolidation rather than a fix.
+
+| Line    | Class(es)                                                                                                 | #   | Verdict | Becomes                         | Note                                                                                                        |
+| ------- | --------------------------------------------------------------------------------------------------------- | --- | ------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 82-84   | `text-cyan-700 dark:text-cyan-300`, `from-cyan-500/10 via-background to-background`, `border-cyan-500/30` | 4   | data    | `--basin-karadeniz` + tint/text | Karadeniz. `themeColor` is the basin's text member, `gradientClass` its hero wash, `borderAccent` its edge. |
+| 244-246 | the amber equivalents                                                                                     | 4   | data    | `--basin-marmara` + tint/text   | Marmara Denizi                                                                                              |
+| 386-388 | the teal equivalents                                                                                      | 4   | data    | `--basin-ege` + tint/text       | Ege Denizi                                                                                                  |
+| 524-526 | the rose equivalents                                                                                      | 4   | data    | `--basin-akdeniz` + tint/text   | Akdeniz                                                                                                     |
+
+**Totals:** data 16, semantic 0, decoration 0.
+
 ### components/v2/v2-world-stats-spotlight.tsx (15)
 
 Five superlative rows, five hues, each row labelled in full ("En Yüksek Nokta: Everest") with a
@@ -456,12 +564,12 @@ distinct glyph. No scale, no comparison, no map or chart reads these.
 
 ### components/v2/v2-favorite-button.tsx (13)
 
-| Line     | Class(es)                                                                                                      | #   | Verdict    | Becomes | Note                                                                                                                                                                                       |
-| -------- | -------------------------------------------------------------------------------------------------------------- | --- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 123, 124 | `bg-rose-600 hover:bg-rose-700 ring-rose-500/30`, `hover:border-rose-400`                                      | 4   | decoration | removed | the icon-only favourited state. The button **already** carries `role="switch"`, `aria-checked`, a filled `Heart` and a `variant` — the rose overrides a variant that encodes it correctly. |
-| 159, 160 | `from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 ring-rose-500/30`, `hover:border-rose-400/60` | 6   | decoration | removed | the labelled variant of the same button: `variant={favorited ? "primary" : "outline"}` is one line above it, and the text flips to "Favorilerde".                                          |
-| 168, 171 | `text-rose-500` ×2                                                                                             | 2   | decoration | removed | the un-favourited `Heart`; 3.67:1 on the light card                                                                                                                                        |
-| 179      | `text-amber-300`                                                                                               | 1   | decoration | removed | a `Sparkles` that spins for a moment after a toggle. Pure ornament.                                                                                                                        |
+| Line     | Class(es)                                                                                                      | #   | Verdict    | Becomes | Note                                                                                                                                                                                                                                |
+| -------- | -------------------------------------------------------------------------------------------------------------- | --- | ---------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 123, 124 | `bg-rose-600 hover:bg-rose-700 ring-rose-500/30`, `hover:border-rose-400`                                      | 4   | decoration | removed | the icon-only favourited state. The button **already** carries `role="switch"`, `aria-checked`, a filled `Heart` and a `variant` — the rose overrides a variant that encodes it correctly.                                          |
+| 159, 160 | `from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 ring-rose-500/30`, `hover:border-rose-400/60` | 6   | decoration | removed | the labelled variant of the same button: `variant={favorited ? "primary" : "outline"}` is one line above it, and the text flips to "Favorilerde".                                                                                   |
+| 168, 171 | `text-rose-500` ×2                                                                                             | 2   | decoration | removed | the un-favourited `Heart`. The state is carried by the glyph itself — outline here against `fill-white text-white` at :166 — and by the button's label, which reads "Favoriye Ekle" versus "Favorilerde". 3.67:1 on the light card. |
+| 179      | `text-amber-300`                                                                                               | 1   | decoration | removed | a `Sparkles` that spins for a moment after a toggle. Pure ornament.                                                                                                                                                                 |
 
 **Totals:** data 0, semantic 0, decoration 13.
 
@@ -506,9 +614,9 @@ distinct glyph. No scale, no comparison, no map or chart reads these.
 | Line     | Class(es)             | #   | Verdict    | Becomes | Note                                                                                                                                  |
 | -------- | --------------------- | --- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | 43       | `text-amber-500`      | 1   | decoration | removed | `Sparkles` inside a labelled badge                                                                                                    |
-| 74, 78   | `text-emerald-600` ×2 | 2   | decoration | removed | feature ticks on the first mode card                                                                                                  |
+| 74, 78   | `text-emerald-600` ×2 | 2   | decoration | removed | feature ticks on the first mode card; the `CheckCircle2` glyph and the feature sentence beside it carry the "included" meaning        |
 | 122, 126 | `text-teal-600` ×2    | 2   | decoration | removed | the same ticks on the second card — **in teal**. A tick that meant "yes" would not change hue between cards, so this is card variety. |
-| 170, 174 | `text-cyan-600` ×2    | 2   | decoration | removed | and cyan on the third                                                                                                                 |
+| 170, 174 | `text-cyan-600` ×2    | 2   | decoration | removed | and cyan on the third, with the same `CheckCircle2` and the same feature sentence carrying it                                         |
 | 205      | `text-purple-600`     | 1   | decoration | removed | a `Brain` glyph beside its heading                                                                                                    |
 
 **Totals:** data 0, semantic 0, decoration 8.
@@ -639,12 +747,18 @@ distinct glyph. No scale, no comparison, no map or chart reads these.
 
 | Verdict      | Rows    | Share |
 | ------------ | ------- | ----- |
-| `data`       | 348     | 44.2% |
-| `semantic`   | 170     | 21.6% |
-| `decoration` | 269     | 34.2% |
-| **Total**    | **787** |       |
+| `data`       | 500     | 53.2% |
+| `semantic`   | 170     | 18.1% |
+| `decoration` | 269     | 28.6% |
+| **Total**    | **939** |       |
 
-Per-file totals, heaviest first, summing to 787:
+Per-file totals, heaviest first, summing to 939:
 
-113, 78, 61, 55, 51, 51, 42, 27, 24, 22, 21, 21, 21, 20, 19, 16, 15, 14, 13, 13, 10, 9, 9, 8, 8,
-7, 7, 5, 5, 5, 4, 3, 3, 2, 2, 1, 1, 1.
+113, 112, 78, 61, 55, 51, 51, 42, 27, 24, 24, 22, 21, 21, 21, 20, 19, 16, 16, 15, 14, 13, 13, 10,
+9, 9, 8, 8, 7, 7, 5, 5, 5, 4, 3, 3, 2, 2, 1, 1, 1.
+
+The three `lib/` sections added in fix round 1 are all `data` — 152 rows, no `semantic` and no
+`decoration` among them, which is what a file of definitions should look like: a module that exists
+to say which colour a continent, a fault or a basin **is** has no warnings and no ornament in it.
+The verdict split moved with them, from 348/170/269 to 500/170/269: widening the roots added no
+judgement calls, only more of the one verdict that was already the majority.

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Drive 787 raw Tailwind palette classes to zero — each one decided case by case as data, semantic or pure decoration — and close the correctness bug underneath them: a region's badge and its map fill are currently unrelated colours.
+**Goal:** Drive 939 raw Tailwind palette classes to zero — each one decided case by case as data, semantic or pure decoration — and close the correctness bug underneath them: a region's badge and its map fill are currently unrelated colours.
 
-**Architecture:** An inventory lands first as a reviewable document, so 787 scattered judgements become one artefact a reviewer can disagree with in a single pass. A counter test is pinned red beside it. Then the inventory is applied in batches, each batch driving the counter down, ending at zero with named exemptions.
+**Architecture:** An inventory lands first as a reviewable document, so 939 scattered judgements become one artefact a reviewer can disagree with in a single pass. A counter test is pinned red beside it. Then the inventory is applied in batches, each batch driving the counter down, ending at zero with named exemptions.
 
 **Tech Stack:** Tailwind v4 (CSS-first), bridge tokens in `app/globals.css`, vitest (node env), Playwright MCP for the visual round.
 
@@ -24,17 +24,20 @@
 
 ## The measurements this plan is built on
 
-Measured 2026-09-19 with `scripts/palette-inventory.mjs`: **865 occurrences across 43 files**. Of those, 4 are test files (13 occurrences) and one is T-033's file (65 occurrences), leaving **787 in 38 product files** for this branch.
+Measured 2026-09-19 with `scripts/palette-inventory.mjs` over `components/**`, `app/**` and `lib/**`: **1017 occurrences across 46 files**. Of those, 4 are test files (13 occurrences) and one is T-033's file (65 occurrences), leaving **939 in 41 product files** for this branch.
 
-By hue: amber 204, emerald 143, cyan 90, teal 86, rose 56, orange 39, red 31, sky 30, yellow 23, stone 23, blue 23, purple 14, slate 14, indigo 9, green 1, violet 1.
+`lib/` is in the roots as of fix round 1. Three modules there hold the DEFINITIONS of hues the product files merely spend — `lib/map/continent-theme.ts` (112), `lib/earthquake/fault-lines-data.ts` (24), `lib/marine/sea-basins-detail.ts` (16), 152 in all. Scanning only call sites would have let the count reach zero while the definition still held the raw class, and recording them in an annex instead would have put the number back in a document, which is the defect this branch exists to remove.
 
-By line: of the 415 source lines carrying them, 117 also carry a hand-written `dark:` and 298 do not — so roughly three quarters have no dark-mode treatment at all.
+By hue: amber 223, emerald 167, teal 106, cyan 95, rose 76, sky 45, orange 40, red 39, blue 32, purple 30, indigo 24, yellow 23, stone 23, slate 14, green 1, violet 1.
 
-The ten heaviest files carry 524 of the 787:
+By line: of the 499 source lines carrying them, 161 also carry a hand-written `dark:` and 338 do not — so roughly two thirds have no dark-mode treatment at all. Measured against the full source line; the collector's `context` field truncates at 120 characters and a first cut measured off it reported 117/298 where the truth was 123/292 on the same scope.
+
+The ten heaviest files carry 636 of the 939:
 
 | File                                                | Count |
 | --------------------------------------------------- | ----- |
 | `app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx` | 113   |
+| `lib/map/continent-theme.ts`                        | 112   |
 | `components/v2/v2-turkey-map-explorer.tsx`          | 78    |
 | `components/v2/v2-marine-map-explorer.tsx`          | 61    |
 | `components/v2/v2-world-continents.tsx`             | 55    |
@@ -43,9 +46,8 @@ The ten heaviest files carry 524 of the 787:
 | `components/v2/v2-tools-hub.tsx`                    | 42    |
 | `components/v2/v2-world-map-explorer.tsx`           | 27    |
 | `app/[locale]/(site)/deniz/kiyi-tipleri/page.tsx`   | 24    |
-| `components/v2/v2-sea-basin-detail-view.tsx`        | 22    |
 
-Task 1's inventory classifies all 787: **348 `data`, 170 `semantic`, 269 `decoration`** — see `docs/superpowers/t031c-palette-inventory.md`. It also names four data token sets that do not exist yet and that `data` rows depend on: `--basin-*` (4 members, 49 rows), `--continent-*` (7 members, 49 rows), `--fault-*` (3 members, 24 rows) and `--sst-band-*` (3 members, 12 rows). They are data sets, not bridge tokens, and none may be satisfied by one.
+Task 1's inventory classifies all 939: **500 `data`, 170 `semantic`, 269 `decoration`** — see `docs/superpowers/t031c-palette-inventory.md`. It also names four data token sets that do not exist yet and that `data` rows depend on: `--continent-*` (7 members, 161 rows), `--basin-*` (4 members, 65 rows), `--fault-*` (3 members, 48 rows) and `--sst-band-*` (3 members, 12 rows). Three of the four have their definition in `lib/`. They are data sets, not bridge tokens, and none may be satisfied by one.
 
 **Nothing holds this number.** `components/ui/token-binding.test.ts` enforces only the escape rule; the count lives in a comment. It moved 749 → 895 → 865 without any test noticing.
 
@@ -69,7 +71,7 @@ Six of seven disagree, and one (İç Anadolu) agrees by coincidence. The page te
 
 ### Task 1: The inventory
 
-787 individual judgements are not reviewable as 787 diffs. They are reviewable as one table.
+939 individual judgements are not reviewable as 939 diffs. They are reviewable as one table.
 
 **Files:**
 
@@ -93,6 +95,16 @@ Create `scripts/palette-inventory.mjs`:
  * that one stays; this is the reader for the COUNT, and Task 2's counter imports it rather
  * than writing a second pattern. Two scanners of one notation that nothing compares is
  * exactly the shape T-045 was created to remove.
+ *
+ * LINE-BASED, and knowingly so: it matches literal class text one source line at a time, so a
+ * class split across two lines by the formatter, or assembled at runtime (a `text-${hue}-600`
+ * template literal), is invisible to it. Today's exposure is zero outside test files. The nearest
+ * thing to it is `v2-tools-hub.tsx`'s `variant="emerald"` / `variant="sky"`, which are benign:
+ * they resolve to `bg-secondary` / `bg-info` in `components/ui/button.tsx`, not to raw classes.
+ *
+ * `lib/` is in the default roots because the definitions live there. `lib/map/continent-theme.ts`
+ * alone holds 112 occurrences and is imported by five product files; scanning only the call sites
+ * would have let the source of the hues sit outside the count.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -126,7 +138,7 @@ function walk(dir) {
 }
 
 /** @returns {{ file: string, line: number, cls: string, context: string }[]} */
-export function collectPaletteOccurrences(roots = ["components", "app"]) {
+export function collectPaletteOccurrences(roots = ["components", "app", "lib"]) {
   return roots
     .flatMap(walk)
     .filter((file) => !EXCLUDED.some((e) => file.endsWith(e)))
@@ -158,7 +170,7 @@ for (const [f, n] of Object.entries(byFile).sort((a,b)=>b[1]-a[1])) console.log(
 "
 ```
 
-Expected: `total 787` across 38 files. If it disagrees, find out why before writing the
+Expected: `total 939` across 41 files. If it disagrees, find out why before writing the
 inventory — the number is the thing this branch is accountable to.
 
 - [ ] **Step 3: Classify every occurrence**
@@ -200,9 +212,9 @@ Rules while classifying:
 
 ```bash
 git add docs/superpowers/t031c-palette-inventory.md scripts/palette-inventory.mjs
-git commit -m "docs(t031c): classify all 787 raw palette occurrences
+git commit -m "docs(t031c): classify all 939 raw palette occurrences
 
-One reviewable table instead of 787 diffs to re-litigate. Three verdicts:
+One reviewable table instead of 939 diffs to re-litigate. Three verdicts:
 data binds to a data token set, semantic to a bridge token, decoration is
 removed. One collector, reused by the counter, so the branch has a single
 reader of this notation."
@@ -249,7 +261,7 @@ import { collectPaletteOccurrences, EXCLUDED } from "../../scripts/palette-inven
  * Listing it here rather than silently skipping it is deliberate: when T-033 merges, this
  * test fails on the exclusion being stale, which is the reminder to delete it.
  */
-const RAW_PALETTE_BUDGET = 787;
+const RAW_PALETTE_BUDGET = 939;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
@@ -287,14 +299,14 @@ describe("the raw palette is being retired, and the number is held", () => {
 
 Run: `pnpm vitest run components/ui/raw-palette-count.test.ts`
 
-Expected: PASS at 787 — the budget starts where reality is. It goes red only if someone adds
+Expected: PASS at 939 — the budget starts where reality is. It goes red only if someone adds
 a raw class, and it is stepped down by every task below.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add components/ui/raw-palette-count.test.ts
-git commit -m "test(ui): hold the raw palette count at 787
+git commit -m "test(ui): hold the raw palette count at 939
 
 The number moved 749 -> 895 -> 865 while living only in a comment."
 ```
@@ -398,7 +410,7 @@ derive from the region's own token."
 
 ### Tasks 4-N: Apply the inventory, file by file
 
-Work the 38 files heaviest-first, in the order of the table in "The measurements this plan is
+Work the 41 files heaviest-first, in the order of the table in "The measurements this plan is
 built on". Group them into commits of one file each for the ten heaviest, and into thematic
 batches for the long tail.
 
@@ -419,6 +431,7 @@ Files needing particular care, with the reason:
 - **`v2-sea-basin-detail-view.tsx` (22)** — the sixth frozen colour from T-044(3). 22 occurrences on 12 lines, **10 of them on the eight lines with no `dark:` pair** (147, 191, 279, 281, 359, 394, 410, 419).
 - **`v2-marine-map-explorer.tsx` (61)** and **`v2-marine-basin-cards.tsx` (21)** — SST and similar geophysical ramps stay standard.
 - **`v2-header.tsx` (19)** — every page. Screenshot `/tr` and one deep route.
+- **`lib/map/continent-theme.ts` (112)**, **`lib/earthquake/fault-lines-data.ts` (24)** and **`lib/marine/sea-basins-detail.ts` (16)** — all `data`, and all DEFINITIONS. Each must land in the same commit as the call sites that spend it (`v2-world-continents` 49, `deprem/page` 21 + `deprem/fay-hatlari` 3, and the four basin consumers), or the two spellings of one identity will disagree mid-branch. No visual round of their own: they render nothing; screenshot the consumers.
 
 ---
 
@@ -465,7 +478,7 @@ pnpm sweep:overflow
 git add -A
 git commit -m "test(ui): the raw palette count is zero and held
 
-787 occurrences across 38 files, each classified before it was touched."
+939 occurrences across 41 files, each classified before it was touched."
 ```
 
 ---

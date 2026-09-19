@@ -5,6 +5,16 @@
  * that one stays; this is the reader for the COUNT, and Task 2's counter imports it rather
  * than writing a second pattern. Two scanners of one notation that nothing compares is
  * exactly the shape T-045 was created to remove.
+ *
+ * LINE-BASED, and knowingly so: it matches literal class text one source line at a time, so a
+ * class split across two lines by the formatter, or assembled at runtime (a `text-${hue}-600`
+ * template literal), is invisible to it. Today's exposure is zero outside test files. The nearest
+ * thing to it is `v2-tools-hub.tsx`'s `variant="emerald"` / `variant="sky"`, which are benign:
+ * they resolve to `bg-secondary` / `bg-info` in `components/ui/button.tsx`, not to raw classes.
+ *
+ * `lib/` is in the default roots because the definitions live there. `lib/map/continent-theme.ts`
+ * alone holds 112 occurrences and is imported by five product files; scanning only the call sites
+ * would have let the source of the hues sit outside the count.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -38,7 +48,7 @@ function walk(dir) {
 }
 
 /** @returns {{ file: string, line: number, cls: string, context: string }[]} */
-export function collectPaletteOccurrences(roots = ["components", "app"]) {
+export function collectPaletteOccurrences(roots = ["components", "app", "lib"]) {
   return roots
     .flatMap(walk)
     .filter((file) => !EXCLUDED.some((e) => file.endsWith(e)))
