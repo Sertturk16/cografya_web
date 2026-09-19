@@ -647,7 +647,7 @@ export function V2WorldMapExplorer({
                     dx="0"
                     dy="0"
                     stdDeviation="3"
-                    floodColor="#f59e0b"
+                    floodColor="var(--primary)"
                     floodOpacity="0.8"
                   />
                 </filter>

@@ -1375,8 +1375,7 @@ export function V2ToolWorkbench({
             {activeTool === "area" && points.length >= 3 && (
               <polygon
                 points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
-                fill="rgba(5, 150, 105, 0.25)"
-                stroke="#059669"
+                className="fill-accent/25 stroke-accent"
                 strokeWidth={2.5 / zoomLevel}
                 strokeDasharray="4 2"
               />

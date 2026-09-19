@@ -360,12 +360,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           className="w-full h-full select-none block"
           aria-label="Türkiye Deniz Telemetrisi ve Kıyılar Haritası"
         >
-          <defs>
-            <radialGradient id="marine-pulse" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#0284c7" stopOpacity="0" />
-            </radialGradient>
-          </defs>
+          <defs></defs>
 
           {/* 1. Surrounding Foreign Countries */}
           <g className="fill-[#f1ece3] dark:fill-[#2d2822] stroke-[#b8aea0] dark:stroke-[#50473e] stroke-[1] stroke-linejoin-round pointer-events-none">
@@ -445,10 +440,20 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                  thresholds, same three families, two different shades, nothing keeping them
                  in step. Both now read `lib/theme/sst-band.ts`.
                  The selected pin stays its own colour: selection is UI state, not a
-                 temperature, and it has to win over whatever band the station is in. */
+                 temperature, and it has to win over whatever band the station is in. It reads
+                 `--primary`, the interaction token this product already uses for a selected
+                 map shape, rather than the raw amber-500 it used to inline: that hex measured
+                 **1.70:1** against the light sea, under WCAG 1.4.11's 3:1 graphical floor,
+                 where the token measures 4.06 light and 4.77 dark. It is `--primary` and not
+                 `--color-primary` because only the bridge token is emitted per theme --
+                 `@theme inline` does not emit its own, so `var(--color-primary)` resolves to
+                 the light #b0522e in BOTH themes and drops this pin to 3.17 on the dark sea.
+                 Verified in the browser, not assumed. The pin is still nothing like a band:
+                 deltaE00 13.6 to the nearest one, over CATEGORICAL_MIN 10 -- narrower than
+                 amber-500's 25.3, which is the price paid for clearing the floor. */
               const sst = point.sst ?? 25;
               const strokeCol = "#ffffff";
-              const pinFill = isSelected ? "#f59e0b" : sstBandStyleOf(sst).fillValue;
+              const pinFill = isSelected ? "var(--primary)" : sstBandStyleOf(sst).fillValue;
 
               if (!matchesBasin) {
                 return null;
@@ -499,7 +504,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                         width={32}
                         height={13}
                         rx={4}
-                        fill="rgba(15, 23, 42, 0.85)"
+                        className="fill-[var(--color-ink-dark)]/85"
                         stroke="rgba(255, 255, 255, 0.3)"
                         strokeWidth={0.5}
                       />

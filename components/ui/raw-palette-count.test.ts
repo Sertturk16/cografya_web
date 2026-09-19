@@ -606,18 +606,38 @@ describe("the palette cannot be laundered into brackets", () => {
  *
  * ## The last step
  *
- * 23 -> 16 is T-031c Task 9 fix round 1: the seven launderings above, closed. Five of them move
- * to a `var(--token, #hex)` fallback, which is a token reference rather than a value and joins
- * the per-token census in `components/ui/token-binding.test.ts` — a census that is an exact map,
- * so the move had to be re-recorded there rather than absorbed. Two of them are DELETED with the
- * `marine-pulse` radial gradient that held them, which nothing in the tree references.
+ * 23 -> 16 is T-031c Task 9 fix round 1: the seven launderings above, closed, and NONE of them
+ * closed with a `var(--token, #hex)` fallback.
+ *
+ * That was the first attempt and this repo's own guards refused it, correctly. Two of the three
+ * files are on the V2 surface where `token-binding.test.ts` forbids exactly that escape, and its
+ * `MAP_SURFACE_FILES` exemption would have had to be widened to admit them; the same change also
+ * reddened the per-token fallback census (`--color-accent` 0 -> 2, `--color-ink-dark` 7 -> 8,
+ * `--color-primary` 4 -> 6). Widening an exemption and re-recording a census to land a fix that
+ * has a cheaper form is how an exemption goes stale. The cheaper form:
+ *
+ *   - two Tailwind classes where the value is static -- the workbench's drawn area polygon takes
+ *     `fill-accent/25 stroke-accent`, the marine temperature plate a bracketed utility around
+ *     `--color-ink-dark`. A class is not a value, so neither other arm sees it either.
+ *   - a BARE `var()` where the value is dynamic -- the marine selected pin and the world map's
+ *     hover glow are one arm of a ternary and a `floodColor` prop. `var(--x)` with no fallback
+ *     is not an escape, joins no census, and was verified IN THE BROWSER rather than assumed:
+ *     `flood-color` on the live `#country-glow` resolves to rgb(176, 82, 46) in light and
+ *     lab(58.43 36.17 36.80) in dark, and a probe `fill="var(--primary)"` on the live page does
+ *     the same.
+ *   - two DELETED with the `marine-pulse` radial gradient that held them, which nothing in the
+ *     tree references.
+ *
+ * `--primary` AND NOT `--color-primary`, and the browser is why. `@theme inline` does not emit
+ * its own custom properties, so `var(--color-primary)` resolves to the light #b0522e in BOTH
+ * themes; that drops the marine selected pin to 3.17:1 on the dark sea where the bridge token
+ * gives 4.77. The raw amber-500 it replaces measured 1.70:1 on the LIGHT sea, under the 3:1
+ * graphical floor, so this closes a contrast failure as well as a laundering.
  *
  * A FALL here with a rise in either other arm would be the failure this trio exists to catch.
- * Neither moved: the raw-palette budget is unchanged at 126 and the arbitrary budget at 72,
- * because a `var()` fallback is stripped before both arms count and a deleted element is counted
- * by none of them.
+ * Neither moved: the raw-palette budget is unchanged at 126 and the arbitrary budget at 72.
  */
-const INLINE_COLOR_BUDGET = 23;
+const INLINE_COLOR_BUDGET = 16;
 
 describe("a colour cannot hide outside a class either", () => {
   const found = collectInlineColorOccurrences();
