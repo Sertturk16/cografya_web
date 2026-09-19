@@ -433,6 +433,12 @@ import {
  * both states and worse in the one that involves a pointer. It inherits `--foreground`: 14.97
  * and 12.44.
  *
+ * THE TRIGGER IS PAINTABLE AND THE TASK REPORT SAID IT WAS NOT. `Computed, not painted -- the
+ * modal needs a session` is true of the modal's own rows and false of the trigger, which renders
+ * on `/oyun` to a logged-out visitor. Painted at branch close it reads 14.97 rest / 12.44 hovered
+ * in light and 14.73 / 12.67 in dark, matching the computed light pair to the decimal. The
+ * figures were right; the label was not.
+ *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
  * 100 -> 90 is Task 10's third file: `components/v2/v2-marine-layer-catalogue.tsx` 10 -> 0,
@@ -488,6 +494,13 @@ import {
  * does not buy that -- the BFF answers 401, so the signed-in branch is reachable in the model
  * and not on a headless route. The register card's password rules are the exception and are
  * painted. Every figure below says which it is.
+ *
+ * TWO OF THEM WERE MISLABELLED, and the label was the only thing wrong. `V2AuthBenefitsPlate`
+ * renders on `/kayit` to a LOGGED-OUT visitor, so its glyphs never needed a session; painted on
+ * the real page at branch close they read 5.13 light / 4.99 dark, the computed figures exactly.
+ * Its trust-footer shield paints 13.78 light / 15.17 dark against a computed 14.15 light -- the
+ * 0.37 is where on the 30% wash the backdrop is sampled, and the dark half was never recorded.
+ * Both are far above every floor that binds them.
  *
  * The alert, COMPUTED, on a 10% success tint over the auth card (itself `--card`/95 over
  * `--background`): `--success-strong` 6.56 light and 7.62 dark, against emerald-700's 4.87 and
@@ -602,8 +615,10 @@ import {
  * The region index's two dots are the smallest rows in the task and the only ones where the
  * figure falls. They are `aria-hidden` bullets with the word beside them, and the ternary's
  * THIRD arm was already the neutral bullet, so the other two take that value rather than being
- * deleted -- deleting a fill leaves an 8px invisible box. 1.95 light and 2.36 dark, against
- * teal-500's 2.42 and amber-500's 2.13: all three spellings are under 3:1, and a mark that is
+ * deleted -- deleting a fill leaves an 8px invisible box. 1.95 light and 2.36 dark -- RE-PAINTED
+ * at branch close and confirmed, against the 2.34 in Task 10's report, which had labelled the
+ * same pair `rest / hovered` instead of `light / dark`; painted, the hovered pair is 1.93 / 2.33
+ * -- against teal-500's 2.42 and amber-500's 2.13: all three spellings are under 3:1, and a mark that is
  * `aria-hidden` next to its own label is not held to it. With the fills equal the three arms
  * differ only by label and collapse into one.
  *
@@ -644,9 +659,17 @@ import {
  * layer sets a colour on `h3` and `h4` directly, so a heading reaches that rule rather than its
  * parent's utility. Modelled, the title was 5.13; PAINTED with the explicit class removed it
  * was **2.88** light and **2.92** dark, on a wash the model said was fine. The `<h3>` carries
- * the class itself now, and painted it reads 5.20 / 5.01 at the from-end and 6.97 / 7.02 at the
- * to-end, with the eyebrow at 5.20 / 5.01, the badge at 5.13 / 4.94 and the play glyph at
+ * the class itself now, and painted it reads **5.13** / 5.01 at the from-end and 7.03 / 7.05 at
+ * the to-end, with the eyebrow the same, the badge at 5.13 / 4.94 and the play glyph at
  * 4.37 / 4.64 on its 20% plate.
+ *
+ * TWO CORRECTIONS HERE AT BRANCH CLOSE, both re-painted. The from-end is **5.13**, not the 5.20
+ * that drifted into the record: 5.13 is the exact `--primary-foreground` on `--primary` pair,
+ * which is why the badge -- the same pair, inverted -- reads 5.13 too, and a sample taken a few
+ * pixels into a `to-br` gradient reads slightly higher because the gradient has already moved.
+ * And the PRE-FIX pair was recorded only at the from-end. The title sits at the TO-end, where
+ * the base layer's `--foreground` measured **2.13 light / 2.07 dark** -- the worse half, and it
+ * was not in the record at all.
  *
  * The same rule is why the educational panel's heading row never carried its hue on the
  * HEADING: painted, the `<h4>` is `--foreground` at 14.97 / 14.73 and only the glyph beside it
