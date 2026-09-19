@@ -167,7 +167,7 @@ import {
  * why. On a solid `--warning` panel a `--card` pill separates by 3.04:1 at rest but only
  * **2.53:1** once it hovers to `--muted`, under the 3:1 graphical floor -- the sixth time on
  * this branch that a chip measured fine at rest and failed hovered. `--warning-foreground` as
- * the fill with `--warning` as the label measures 5.54 / 7.46 at rest and 4.80 / 6.27 hovered,
+ * the fill with `--warning` as the label measures 5.54 / 7.46 at rest and 4.84 / 6.27 hovered,
  * so it is authored against the worst state rather than patched after it.
  *
  * BOTH OPTIONS WERE THEN PAINTED, because the trap is the thing this branch keeps getting
@@ -209,6 +209,16 @@ import {
  *     failure. The spelling every other active nav item already uses -- `--primary-strong` on
  *     a 10% tint -- measures 6.89 to 6.96 light and 7.91 to 8.09 dark, against 4.03 to 4.10
  *     for the raw amber pairing it replaces.
+ *
+ *     THE NAV BAR IS NOT ONE SURFACE, so that range needs its conditions. It is
+ *     `--background/90` over whatever is scrolled beneath it, so the figure moves with the
+ *     page and the scroll position. The range above is the model over the three surfaces this
+ *     site puts there (`--card`, `--muted`, `--background`); painted on `/kitaplar` at 1280 it
+ *     is 6.95 to 6.96 light and 8.04 to 8.11 dark, stable across scroll-top, 400px and 1200px.
+ *     A review of this branch painted 9.54 in dark at scroll-top on its own run and this
+ *     implementer could not reproduce it at any of those three positions; the difference is
+ *     what sat behind the bar, every observed value is far above the 4.5:1 floor, and the
+ *     verdict does not turn on which end of the range is right.
  *   - The signed-in dot is a solid fill inside a pill that hovers from `--card` to a 50% muted
  *     wash: 5.82 rest / 5.32 hovered light, 5.49 / 5.09 dark. The raw emerald-500 measured
  *     2.54 / 2.32 in light, under the 3:1 graphical floor in both states.
@@ -292,8 +302,13 @@ import {
  * those three stops, which is a deliberate recede; `--land-inert`, the token the inventory
  * names, is an alias of `--province-fill` (#ffffff) and at the same 65% would read 5.62 to
  * 8.63, making the countries with no page the most prominent objects on the map.
- * `--province-inert` in its dark value reads 1.12 to 1.21, i.e. invisible. Neither is an
- * application of a token; both are a redesign of the surface.
+ * `--province-inert` reads 6.77 to 4.83 to 7.26 and does the same thing one shade down. Neither
+ * is an application of a token; both are a redesign of the surface. (An earlier draft gave
+ * `--province-inert` as 1.12 to 1.21 on the grounds that it is #1b2b2f in dark. It is not: the
+ * `--color-surface: var(--muted)` remapping that would make it so is scoped to
+ * `.dark .climate-dark-scope`, whose only consumer is the one file this branch excludes, so the
+ * token is #f1e9de in both themes. The conclusion is unchanged; the discarded half of the
+ * argument was a scoped override read as a global one.)
  *
  * None of the 17 is a graticule line either, and the hover/selected row carries a worse
  * problem: the highlight has a SECOND spelling that neither arm counts. `floodColor="#f59e0b"`
