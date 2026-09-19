@@ -183,24 +183,6 @@ const EXEMPTIONS: readonly UnlayeredExemption[] = [
     liveness: (rule) => expect(isOnlyCustomProperties(rule.body)).toBe(true),
   },
   {
-    label: ":focus-visible",
-    reason:
-      "Deliberately unlayered, not an oversight — the file's own comment above this rule and " +
-      'above :where([tabindex="-1"]):focus-visible works out the specificity math against ' +
-      "`@layer base`'s `outline-ring/50` and against module-level focus rings. Moving it into a " +
-      "layer would let ANY component utility silently defeat the site's one guaranteed " +
-      "keyboard-focus ring — a worse regression than the bug this tripwire exists to catch.",
-    liveness: (rule) => expect(rule.body).toContain("outline"),
-  },
-  {
-    label: ':where([tabindex="-1"]):focus-visible',
-    reason:
-      "Sibling of :focus-visible above, same reasoning: `:where()` is used specifically to hold " +
-      "this rule's specificity at zero while staying unlayered, a combination a layer cannot " +
-      "reproduce.",
-    liveness: (rule) => expect(rule.body).toContain("outline"),
-  },
-  {
     label: "@media (prefers-reduced-motion: reduce) > *",
     reason:
       "Every declaration inside carries !important. Per the CSS Cascade Layers spec, unlayered " +
@@ -232,6 +214,27 @@ const EXEMPTIONS: readonly UnlayeredExemption[] = [
   },
 ];
 
+/**
+ * T-053 RETIRED TWO EXEMPTIONS FROM THE LIST ABOVE, AND THE REASON IS WORTH KEEPING.
+ *
+ * `:focus-visible` and its `:where([tabindex="-1"])` companion were exempted here by T-041 on
+ * this reasoning: "Moving it into a layer would let ANY component utility silently defeat the
+ * site's one guaranteed keyboard-focus ring — a worse regression than the bug this tripwire
+ * exists to catch."
+ *
+ * The risk was real. What the exemption did not weigh is what the guarantee cost: unlayered, the
+ * rule beat every `@layer utilities` rule regardless of specificity, so all 26 `outline-none`
+ * class strings in this repo were inert. A component that declared its own ring rendered two,
+ * concentrically, and the rule's `border-radius: 4px` reached every focused element on the site
+ * — `site-search`'s trigger measured `rounded-lg` 10px unfocused and 4px focused. The cascade
+ * was guaranteeing the WRONG rendering.
+ *
+ * Both rules now live in `@layer base`, and `components/ui/focus-suppression.test.ts` holds the
+ * guarantee instead: a declaration may not suppress the outline without replacing it. That is
+ * strictly stronger than the cascade version, because it also catches the case the cascade never
+ * could — a component that suppresses AND declares nothing, which unlayered CSS silently
+ * rescued and thereby hid.
+ */
 const ALL_RULES = findUnlayeredRules(CSS);
 const EXEMPT_LABELS = new Set(EXEMPTIONS.map((e) => e.label));
 const NON_EXEMPT = ALL_RULES.filter((r) => !EXEMPT_LABELS.has(r.label));
