@@ -24,9 +24,10 @@ import { stripComments } from "@/lib/test-support/strip-comments";
  * gets Left/Right, Home/End or the roving tabindex right — this file cannot render anything, let
  * alone dispatch a keydown, so that guarantee has to come from `components/ui/tabs.tsx`'s own
  * behaviour (inherited from Base UI) rather than from a test in this file. It also says nothing
- * about the two `viewMode` switchers below: they carry no tab semantics at all today, so they are
- * invisible to this scan on purpose, and staying invisible after Task 15 would be silent
- * regression, not success — the follow-up guard for "adopted `Tabs`" belongs to Task 15, not here.
+ * about the two `viewMode` switchers: they never carried tab semantics at all, so they are
+ * invisible to the two scans on purpose, and staying invisible would be silent regression, not
+ * success. The positive counterpart — "these two files DID adopt `Tabs`" — is the third describe
+ * block below, in the shape `v2-member-hub.test.ts` uses for the hub.
  *
  * ## The discovery blind spot
  *
@@ -74,12 +75,47 @@ describe("tab widgets come from components/ui/tabs.tsx", () => {
   it("the walk covers a real population of components/v2 sources -- anti-vacuity", () => {
     // A broken walk -- a wrong ROOT, an extension filter that excludes every file, or a
     // `.test.` exclusion that swallows real components too -- would make both assertions above
-    // pass for free by finding nothing left to fail on. The floor is set well below today's
-    // count (comfortably in the dozens) so ordinary file churn does not make this brittle, and
-    // well above what an empty or accidentally-narrow walk could produce by accident, so a walk
-    // that stops working fails here first and loudly rather than laundering silence into the
-    // two assertions above.
+    // pass for free by finding nothing left to fail on. The floor sits just under today's 47
+    // rather than far below it: a walk that quietly lost a third of the directory is already a
+    // broken walk, and a floor loose enough to survive that launders silence into the two
+    // assertions above. Raise it with the directory when a handful of files are added.
     const found = sources(ROOT);
-    expect(found.length).toBeGreaterThan(30);
+    expect(found.length).toBeGreaterThan(40);
+    // A floor alone still passes for a walk that silently lost a third of the directory, so
+    // name a file too: `unnamed-icon-button.test.ts` does the same. This one is here because
+    // it is one of the two explorers the third block below asserts against, so a walk that
+    // stops reaching it makes THAT block's premise false as well.
+    expect(found.some((file) => file.endsWith("v2-turkey-map-explorer.tsx"))).toBe(true);
+  });
+});
+
+describe("the two viewMode switchers adopted the shared Tabs primitive", () => {
+  // The counterpart to the two scans above, which are negative by construction and would stay
+  // green if either explorer went back to `<button onClick={() => setViewMode(...)}>` — a plain
+  // button writes no `role="tab"` for them to find, which is the original defect exactly.
+  const explorers = ["v2-turkey-map-explorer.tsx", "v2-world-map-explorer.tsx"] as const;
+
+  for (const file of explorers) {
+    it(`${file} renders its view switcher through components/ui/tabs.tsx`, () => {
+      const source = stripComments(readFileSync(join(ROOT, file), "utf8"));
+      expect(source, `${file} no longer imports the shared Tabs primitive`).toContain(
+        'from "@/components/ui/tabs"',
+      );
+      expect(source, `${file} no longer renders a TabsList`).toContain("<TabsList");
+      expect(source, `${file} no longer renders a TabsTrigger`).toContain("<TabsTrigger");
+    });
+  }
+});
+
+describe("components/ui/tabs.tsx keeps automatic activation", () => {
+  const primitive = readFileSync(new URL("../ui/tabs.tsx", import.meta.url), "utf8");
+
+  it("TabsList defaults activateOnFocus to true, against Base UI's false", () => {
+    // The whole keyboard argument for this conversion rests on this one value: with Base UI's
+    // `false`, Left/Right moves focus while the selection and the panel stay put until a
+    // separate Enter, which is the defect the conversion exists to fix. It lives in a defaulted
+    // destructure, so an ordinary `{ className, ...props }` tidy-up would delete it in silence
+    // and nothing else in the suite would notice.
+    expect(stripComments(primitive)).toMatch(/activateOnFocus\s*=\s*true/);
   });
 });

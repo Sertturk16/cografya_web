@@ -893,18 +893,21 @@ export function V2WorldMapExplorer({
       {middleSections && <div key="middle-sections-container">{middleSections}</div>}
 
       {/* 2. WORLD COUNTRIES CATALOGUE & CONTROLS */}
-      <section className="space-y-6">
+      <section>
         {/*
           A control switching between three renderings of the same catalogue, so `pills`
-          (T-034 rationale, components/ui/tabs.tsx). `className="contents"` keeps this
-          context provider out of the box model so it does not disturb the section's own
-          flex/spacing between the toolbar and the panels.
+          (T-034 rationale, components/ui/tabs.tsx). The section's vertical rhythm lives on the
+          `Tabs` root itself, NOT on the `<section>` with a `contents` root under it: Tailwind v4
+          compiles the space-y utility to a direct-child selector, and `display: contents` does
+          not change selector matching, so a `contents` root left the section with exactly one
+          element child, nothing matched `:not(:last-child)`, and every gap in here computed to
+          zero. The root is a real box in the flow and spaces its own children.
         */}
         <Tabs
           value={viewMode}
           onValueChange={(value) => setViewMode(value as "continent" | "table" | "fihrist")}
           variant="pills"
-          className="contents"
+          className="space-y-6"
         >
           <div className="border-b border-border pb-4 flex flex-wrap items-center justify-between gap-4">
             <div>

@@ -50,15 +50,31 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
     // components/ui/tabs.tsx (Base UI Tabs), which supplies every role, aria-* and the roving
     // tabindex/arrow-key behaviour at runtime; this test checks the hub still routes through it
     // rather than re-inlining the tablist, and that none of the five panels was dropped.
+    const PANELS = ["favorites", "videos", "games", "measurements", "profile"] as const;
+
     it("routes its five member panels through the shared Tabs primitive", () => {
       expect(hubSource).toContain('from "@/components/ui/tabs"');
       expect(hubSource).toContain("<TabsList");
-      expect(hubSource).toContain("<TabsTrigger");
-      expect(hubSource).toContain("<TabsContent");
       expect(hubSource).toContain("onValueChange=");
-      for (const panel of ["favorites", "videos", "games", "measurements", "profile"]) {
-        expect(hubSource).toContain(`value="${panel}"`);
-      }
+    });
+
+    // A bare `toContain('value="favorites"')` is satisfied by the TRIGGER alone, and a bare
+    // `toContain("<TabsContent")` by any one panel, so four of the five could be deleted and
+    // this block would stay green. Each half of each pair is therefore matched on its own tag.
+    it.each(PANELS)("keeps both the trigger and the panel for %s", (panel) => {
+      expect(hubSource, `the ${panel} trigger is gone`).toMatch(
+        new RegExp(`<TabsTrigger\\s+value="${panel}"`),
+      );
+      expect(hubSource, `the ${panel} panel is gone`).toMatch(
+        new RegExp(`<TabsContent\\s+value="${panel}"`),
+      );
+    });
+
+    it("keeps the games panel mounted while it is deselected", () => {
+      // Base UI's Tabs.Panel unmounts a deselected panel by default. V2GameHistoryStats fetches
+      // /game-rounds from a mount effect into its own state, so without this the panel refetches
+      // on every selection — once per keypress while an arrow key repeats across the tablist.
+      expect(hubSource).toMatch(/<TabsContent\s+value="games"[^>]*\skeepMounted/);
     });
 
     it("contains an aria-live polite status announcement region", () => {

@@ -481,7 +481,20 @@ export function V2MemberHub({
         onValueChange={(value) => setActiveTab(value as TabKey)}
         variant="line"
       >
-        <TabsList aria-label="Üyelik Panelleri" className="flex w-full overflow-x-auto pb-0">
+        {/*
+          Five Turkish labels do not fit at 390px, so this list scrolls. That is why the height
+          is released back to `auto` instead of the `line` variant's fixed 44px and why the
+          bottom padding is back: on a platform with persistent scrollbars the bar renders
+          inside the box, and in a fixed 44px box with no bottom padding it sits on top of the
+          labels. `scrollbar-none` stays here rather than on the `line` variant — the variant
+          sets no overflow of its own, so a non-scrolling `line` list has no scrollbar to hide,
+          and hiding one costs a scroll affordance that each scrolling consumer should give up
+          deliberately.
+        */}
+        <TabsList
+          aria-label="Üyelik Panelleri"
+          className="flex h-auto w-full overflow-x-auto pb-2 scrollbar-none"
+        >
           <TabsTrigger value="favorites" className="gap-2">
             <Heart className="size-3.5" />
             <span>Favorilerim</span>
@@ -823,7 +836,14 @@ export function V2MemberHub({
         </TabsContent>
 
         {/* Tab 3: Sınav & Skor Geçmişim Panel */}
-        <TabsContent value="games" className="space-y-6">
+        {/*
+          `keepMounted`, against Base UI's default: the child below fetches /game-rounds from a
+          mount effect into its OWN state, so an unmount throws that state away and the next
+          selection refetches. Combined with `activateOnFocus`, holding ArrowRight across the
+          tablist would fire one request per keypress. The other four panels read hub-level
+          state that lives above this Tabs root and hold no unsaved input, so they can unmount.
+        */}
+        <TabsContent value="games" className="space-y-6" keepMounted>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">

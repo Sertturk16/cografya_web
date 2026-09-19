@@ -50,7 +50,9 @@ function TabsList({ className, activateOnFocus = true, ...props }: TabsPrimitive
       // where moving focus without moving the selection just means Left/Right does nothing
       // visible until a separate Enter/Space, which is exactly what a keyboard user hit before
       // this prop was added. A future consumer whose panel is expensive to render can still opt
-      // back into manual activation with `activateOnFocus={false}`.
+      // back into manual activation with `activateOnFocus={false}`. Pinned by
+      // components/v2/tablist-adoption.test.ts: it is a defaulted destructure, so an ordinary
+      // `{ className, ...props }` tidy-up would delete the whole keyboard argument in silence.
       activateOnFocus={activateOnFocus}
       className={cn(listVariants[React.useContext(TabsVariantContext)], className)}
       {...props}
