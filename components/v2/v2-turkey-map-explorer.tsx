@@ -545,7 +545,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               setMousePos(null);
             }
           }}
-          className={`relative rounded-2xl bg-[var(--map-sea,#dbe7e8)] dark:bg-[#1a2529] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full select-none ${
+          className={`relative rounded-2xl bg-[var(--map-sea)] dark:bg-[#1a2529] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full select-none ${
             zoomLevel > 1
               ? `touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`
               : "cursor-crosshair"
@@ -742,7 +742,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               </g>
 
               {/* 4. Inland Lakes */}
-              <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#1a2529] stroke-accent/40 stroke-[0.5] pointer-events-none">
+              <g className="fill-[var(--map-sea)] dark:fill-[#1a2529] stroke-accent/40 stroke-[0.5] pointer-events-none">
                 {INLAND_WATER_SHAPES.map((lake) => (
                   <path key={lake.id} d={lake.d} />
                 ))}

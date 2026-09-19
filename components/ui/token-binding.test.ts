@@ -4,6 +4,7 @@ import { join, relative } from "node:path";
 import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
+import { tokensIn } from "@/lib/test-support/css-tokens";
 
 /**
  * `../showcase/specimens` is scanned for the same reason the other two are. It was left out
@@ -425,10 +426,13 @@ describe("every var() fallback in the product tree still equals its token", () =
   it("found the fallbacks and the declarations — positive control", () => {
     // Neither half may be empty: a pin over nothing is green and means nothing, which is the
     // hollow-pass shape this repo keeps paying for.
+    // Was >20 with room to spare (35) while --map-sea's ten fallbacks were still live; T-031d
+    // Task 3 deleted all ten (see "no fallback names a token .dark also declares" below for
+    // why), which drops the true count to 25. Still clears this floor unchanged — recorded
+    // here so the next removal knows what moved it and by how much, rather than just seeing a
+    // smaller number and wondering if the walk broke.
     expect(fallbacks.length).toBeGreaterThan(20);
     expect(declared.size).toBeGreaterThan(20);
-    // The ten this guard was written for are really in the population.
-    expect(fallbacks.filter((f) => f.token === "--map-sea")).toHaveLength(10);
   });
 
   it.each([...new Set(fallbacks.map((f) => `${f.token} ${f.hex}`))])(
@@ -459,7 +463,6 @@ describe("every var() fallback in the product tree still equals its token", () =
       "--color-ink-dark": 7,
       "--color-primary": 4,
       "--color-primary-dark": 4,
-      "--map-sea": 10,
       "--region-akdeniz": 1,
       "--region-dogu-anadolu": 1,
       "--region-ege": 1,
@@ -473,6 +476,75 @@ describe("every var() fallback in the product tree still equals its token", () =
       "--sst-band-cool": 1,
       "--sst-band-hot": 1,
       "--sst-band-warm": 1,
+    });
+  });
+
+  /**
+   * A THEMED TOKEN CANNOT CARRY ONE HONEST FALLBACK HEX, so a fallback naming one must not
+   * exist at all — not "must still match", the check the two `it`s above already run.
+   *
+   * WHAT HAPPENED. `--map-sea` shipped ten `var(--map-sea, #dbe7e8)` fallbacks, one per literal
+   * reference across six map components, every one copying its light-mode value. That was
+   * silently fine for as long as `.dark` left `--map-sea` undeclared: `var()`'s second argument
+   * only ever paints when the token is MISSING, and `--map-sea` was declared everywhere it was
+   * read, so ten dead hexes sat there matching nothing and breaking nothing. T-031d Task 3 gave
+   * every map surface a dark half, `.dark` now declares `--map-sea` too, and every one of those
+   * ten fallbacks instantly became a light value hard-coded into a dark surface — wrong in
+   * exactly the theme where `--map-sea` differs from it, which is the whole reason `.dark`
+   * redefines it. The fix was not to weaken this file to tolerate the case (a token-shaped
+   * exemption here would have to keep excusing every future themed token, which is the census
+   * this repo has already refused once) but to delete the ten fallbacks outright: `--map-sea`
+   * is unconditionally declared in both blocks, so `var(--map-sea)` alone paints correctly in
+   * either theme and the fallback carried no signal beyond a light value already duplicated
+   * wrongly.
+   *
+   * WHY THIS IS A STANDING GUARD, not a one-off cleanup. The trap is structural, not a stale
+   * hex: a fallback naming a token `.dark` also declares is wrong in some theme by
+   * CONSTRUCTION, because a fallback can only ever encode one colour and a themed token has
+   * two. Keeping the literal in sync with `:root` (which the two `it`s above already enforce)
+   * cannot fix it — it would still be silently wrong under `.dark`. So the only correct state
+   * for a themed token's fallback is absent, and this checks for exactly that, generalised
+   * over every token rather than named at `--map-sea` alone. It already covers three tokens
+   * with no fallback today and no reason to ever grow one carelessly: `--map-land`,
+   * `--map-context-land` and `--map-tectonic` — all three real, `.dark`-declared T-031d
+   * tokens — so PR2's component work trips this the moment it reaches for one instead of
+   * discovering the same defect a second time by hand.
+   */
+  describe("no fallback names a token .dark also declares", () => {
+    const darkTokens = new Set(
+      Object.keys(
+        tokensIn(
+          stripComments(
+            readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8"),
+          ),
+          ".dark {",
+        ),
+      ),
+    );
+
+    it("positive control — .dark declares tokens, and the guard's own logic still fires", () => {
+      // The population side: .dark must actually declare something, or the check below is
+      // vacuous.
+      expect(darkTokens.size).toBeGreaterThan(20);
+      expect(darkTokens.has("--map-sea")).toBe(true);
+      // The mechanism side, exercised directly rather than only through the live file walk:
+      // a synthetic fallback naming a real .dark token must be caught by the same `.has` test
+      // the assertion below runs, so a change to `darkTokens` itself cannot go unnoticed by
+      // silently changing what "planted" means.
+      const planted = { path: "synthetic.tsx", token: "--map-sea", hex: "#dbe7e8" };
+      expect([planted].filter((f) => darkTokens.has(f.token))).toHaveLength(1);
+    });
+
+    it("no live fallback names a token .dark also declares", () => {
+      const offenders = fallbacks.filter((f) => darkTokens.has(f.token));
+      expect(
+        offenders,
+        offenders.length === 0
+          ? ""
+          : `these fallbacks name a token .dark redefines, so each is wrong in one theme — ` +
+              `remove the fallback (var(--token) alone), do not retune the hex:\n` +
+              offenders.map((f) => `  ${f.path}: var(${f.token}, ${f.hex})`).join("\n"),
+      ).toEqual([]);
     });
   });
 });

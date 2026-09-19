@@ -264,16 +264,25 @@
      #b3a795 was 2.37:1 / 1.97:1 — sub-3:1.) */
   --province-stroke: var(--color-taupe);
   /* ---- `/turkiye` geographic CONTEXT (turkiye-yenileme PR-B, plan §5.5) ---- */
-  /* Neighbour-country fill. vs --map-sea 1.31:1 (matches the world map's own white-land-vs-sea
-     step of 1.26:1 — both maps deliberately do NOT carry the land/sea distinction on contrast
-     alone; see --map-sea above for why that floor is as high as this palette's fills can go).
-     vs --province-fill (#fff, Türkiye's own tone) 1.65:1 — the figure/ground step that
-     separates the map's subject from its backdrop. */
-  --map-context-land: #d2c8ba;
-  /* Neighbour border/coast hairline. vs --map-context-land 3.42:1 · vs --map-sea 4.46:1 — both
-     clear WCAG 1.4.11's 3:1 graphical-object floor (re-measured here; plan §5.5 recorded
-     ≈3.42/≈4.43, this file's own re-run rounds the second figure up half a point). */
-  --map-context-line: #6f6659;
+  /* Neighbour-country fill. RE-RECORDED in T-031d: the old value (#d2c8ba) had no consumer
+     anywhere in the tree — nine components painting this exact surface all spelled #f1ece3
+     instead, so this token was tracking a tone the site never actually rendered. Adopted
+     verbatim from what they shipped, not retuned.
+     Measured (lib/theme/contrast.ts): vs --map-sea 1.07:1, vs --map-land 1.18:1 — both far
+     below any legibility floor, same as the old value, because this is a figure/ground step
+     carried on the border it wears (--map-context-line below) and on being a visibly separate
+     shape, not on tone difference from the surfaces it sits between (see --map-sea's own
+     doctrine on how little luminance this palette has to spend). */
+  --map-context-land: #f1ece3;
+  /* Neighbour border/coast hairline. RE-RECORDED in T-031d: the old value (#6f6659) was also
+     untouched by any consumer — the nine components spelled #b8aea0 for this line, which
+     measured only 1.86:1 against the neighbour land it outlines and 1.73:1 against the sea,
+     both well under WCAG 1.4.11's 3:1 graphical-object floor.
+     Rather than re-record a second literal, this is now an ALIAS of --province-stroke: the
+     same tone the Türkiye coastline right beside it already draws in, and it clears the floor
+     with room to spare where the old value failed it outright.
+     Measured: --province-stroke vs --map-context-land 3.28:1 · vs --map-sea 3.05:1. */
+  --map-context-line: var(--province-stroke);
   /* The Türkiye "casing" band that closes the NE↔OSM seam (plan §5.0-3/§5.4) reused
      `--color-border` directly (FIX ROUND, PR #108 review DF108-I1) instead of the
      `--map-land-casing: #ded6ca` token this line originally defined: measured against
@@ -294,6 +303,61 @@
      NE↔OSM source disagreement itself is UNCHANGED by this — see `map.module.css` for why an
      epsilon retune was tried and measured not to help, and why a true geometric snap is a
      bigger fix than this task's scope. */
+  /* ---- MAP SURFACES, dark half added T-031d (see the .dark block for the dark table) ----
+     Before this task nine components each spelled these tones inline, dark mode included
+     nowhere: 72 bracketed colour values and 15 raw palette classes across them, four
+     different spellings of one sea. The seven tokens below plus the two re-recorded just
+     above and the two that already shipped (--map-sea, --map-water) are the full set. */
+  /* The panel the map itself is drawn on. An ALIAS of --map-sea in light, where the plate and
+     the water are one tone; --map-plate only earns a value of its own in .dark, where the
+     panel is deliberately LIGHTER than the page under it (owner direction 2026-09-17, "koyu
+     masa üzerinde ışıklı harita masası" — a lit table on a dark desk). It absorbs #dbe8ee,
+     which v2-game-screen and v2-tool-workbench spelled inline for this exact surface and
+     which measures 1.01:1 against --map-sea — a difference nobody can see, so no separate
+     literal survives here. */
+  --map-plate: var(--map-sea);
+  /* Tectonic-plate context fill on the world's sea basins (v2-earthquake-explorer.tsx:524,
+     `fill-[#537b93] dark:fill-[#5a86a0]` before this task) — a real third surface, neither
+     land nor water: it sits ON --map-sea, like a label would, but it is not a label
+     (--map-label's job is text on land/sea/neighbour-land, this is a fill under the sea's own
+     surface) and not neighbour land (--map-context-land is a warm tan family; this is the
+     cool plate-line blue the sea itself is drawn in, just deeper). Promoted to a token rather
+     than repainted: the component's shipped values already clear the 3:1 graphical floor
+     against their own sea unchanged.
+     Measured (lib/theme/contrast.ts): vs --map-sea 3.59:1 light. See .dark for the dark
+     figure. */
+  --map-tectonic: #537b93;
+  /* Türkiye's own land — the country fill itself, distinct from --province-fill (the il-map
+     base tone, still white but a separate token for a separate map) and from --land-inert
+     (the world map's Greenland/Antarctica/unseeded backdrop, above). WARM against the cool
+     --map-sea: see --map-sea's own doctrine for why the land/sea split is carried on hue,
+     not luminance, in a palette this luminance-starved.
+     #ffffff is what `fill-card` already resolved to on this surface in light; six of the
+     eight Türkiye maps this task touches were already spelling a warm brown inline for the
+     dark case, which is what .dark's --map-land now carries as a real token instead. */
+  --map-land: #ffffff;
+  /* Drawn map LABELS — province and sea names painted INTO the svg as text, not page chrome.
+     Measured against every surface a label can land on (lib/theme/contrast.ts):
+       vs --map-sea 5.35:1 · vs --map-land 6.77:1 · vs --map-context-land 5.75:1
+     all clear TEXT_MIN (4.5:1); see .dark for the dark table. */
+  --map-label: #635a4e;
+  /* THE WORLD MAP'S OCEAN, and it is dark in BOTH themes: /dunya is a night atlas, the one
+     surface on the site whose light mode is dark on purpose.
+     FLAT, for the same reason --map-sea is flat: a gradient makes every continent's contrast
+     LATITUDE-DEPENDENT. The three-stop gradient this replaces (#0b192c -> #1e3e62 -> #000000)
+     measured the worst continent, Avrupa, at 2.33 / 1.44 / 2.77 from top to bottom of the
+     map — under GRAPHICAL_MIN for two of the three stops. Flat, with the continents at full
+     strength, the worst case is Avrupa at 3.35:1 light and it is the same figure at every
+     point on the map. */
+  --map-ocean: #0d1b2a;
+  /* The world map's latitude/longitude grid. One tone at one opacity, replacing three
+     sky-400/sky-500 opacities that measured nothing in particular against the old gradient
+     ocean. Measured: 4.03:1 on --map-ocean. */
+  --map-graticule: #4d7ea8;
+  /* World-map land the continent table does not name (unclaimed territory, ice shelves).
+     Replaces slate-600/65, which measured 1.67:1 on the ocean — invisible, on exactly the
+     shapes a reader is most likely to be hunting for. Measured: 3.66:1 on --map-ocean. */
+  --map-unknown-land: #64748b;
   --province-hover: rgba(176, 82, 46, 0.16); /* terracotta wash of --color-primary */
   /* NAVIGATION-MAP hover/focus border weight (/turkiye + /dunya). One number, because it
      is the tunable the owner rules on from rendered samples; the colour is
@@ -1610,6 +1674,51 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* ---- MAP SURFACES (T-031d) -------------------------------------------------------
+     Before this block `.dark` redefined NO map token, so every dark map surface was spelled
+     inline in nine components: 72 bracketed colour values and 15 raw palette classes, with
+     four different spellings of the same sea.
+
+     WHAT IS NOT REDEFINED HERE, and why. `--province-stroke` stays at --color-taupe
+     (#8a8078): it measures 4.38:1 on --map-land and 4.21:1 on --map-sea here, clear of WCAG
+     1.4.11's 3:1, so redefining it would buy nothing and would split the one tone the
+     coastline is drawn in across two themes. `--region-*` and `--continent-*` are not
+     redefined either (see the region table further up this block): the Okabe-Ito set clears
+     3:1 on these dark surfaces on all seven, binding at Marmara, and a second categorical
+     table is the defect T-031c spent 939 occurrences closing.
+
+     `--map-water` and `--map-graticule` and `--map-unknown-land` are declared here at the
+     SAME value they'd inherit from `:root` — not left to inherit. `map-surface.test.ts`
+     reads this block directly, and a token missing from it is indistinguishable from a token
+     somebody forgot; repeating the value is the cheaper of the two mistakes.
+
+     MEASURED (lib/theme/contrast.ts), every figure below held by map-surface.test.ts:
+       --province-stroke  vs --map-land 4.38 · vs --map-sea 4.21 · vs --map-context-land 3.78
+       --map-context-line vs --map-context-land 3.18 · vs --map-sea 3.54
+       --map-water-line   vs --map-sea 4.71 · vs --map-land 4.91
+       --map-label        vs --map-sea 6.17 · vs --map-land 6.42 · vs --map-context-land 5.54
+       --map-tectonic     vs --map-sea 4.14
+       --map-plate        vs --background 1.15 · vs --card 1.05  (lighter than both, on purpose)
+       --map-land vs --map-sea 1.04, and that is CORRECT: the distinction is warm against
+         cool, exactly as in light, where the same pair measures 1.26:1. */
+  --map-plate: #152228;
+  --map-sea: #152228;
+  --map-water: var(--map-sea);
+  --map-land: #201c18;
+  --map-context-land: #2d2822;
+  /* NOT an alias of --province-stroke here, unlike light: taupe measures 3.78:1 on the dark
+     neighbour land, which holds, but this is the one hairline drawn AGAINST the sea as well,
+     and the cooler, darker member keeps the neighbour receding behind Türkiye's own coast. */
+  --map-context-line: #7d7468;
+  /* The near-black light value (#002337) measures 1.00:1 on the dark sea — the reservoirs
+     this token alone carries (see :root) would have vanished entirely. */
+  --map-water-line: #5d8fb8;
+  --map-label: #a89e92;
+  --map-tectonic: #5a86a0;
+  --map-ocean: #070e17;
+  --map-graticule: #4d7ea8;
+  --map-unknown-land: #64748b;
 }
 
 /* T-018: `components/climate/climate.module.css` is a frozen V1 CSS Module — it reads the
