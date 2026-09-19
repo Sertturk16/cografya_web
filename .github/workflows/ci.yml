@@ -119,12 +119,65 @@ jobs:
       - name: Test
         run: pnpm test
 
+  # Every CI build this repo had ever run, until this job, was a BROKEN build. With no API
+  # reachable the 16 `*Resilient`/`*Safe` wrappers swallow their fetch failures to `[]`, every
+  # `generateStaticParams` returns zero rows, and `next build` writes 124 prerendered routes
+  # instead of 980 — and exits 0. Nothing downstream noticed, including this file.
+  #
+  # Why a full API and not a `services:` entry: `cografya_api` publishes no image anywhere (its
+  # deploy builds on the host), so there is nothing for a service container to pull. What makes
+  # standing one up affordable is that the seed corpus is committed in-repo behind five seed
+  # CLIs. Accepted cost: roughly 3-5 minutes per PR (owner decision, 2026-09-19).
   build:
     name: Build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cografya
+          POSTGRES_PASSWORD: cografya_ci
+          POSTGRES_DB: cografya
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cografya -d cografya"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      # Not strictly required — verified 2026-09-19 that the API boots and serves every route
+      # this build reads with REDIS_URL unset, falling back to an in-process LRU with a WARN.
+      # Kept so the CI API runs in the same cache mode as production, for the cost of one
+      # alpine container: a build-time difference should never be traceable to a mode only CI
+      # runs in. Drop it first if this job's wall clock ever needs trimming.
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://cografya:cografya_ci@127.0.0.1:5432/cografya
+      REDIS_URL: redis://127.0.0.1:6379
+      # CI-local only. Not a production secret: it guards a throwaway API that exists for the
+      # length of this job. It is here rather than in `secrets` so the job is reproducible by
+      # anyone reading it. Both sides read it — the API grants the trusted-client throttle
+      # exemption, `lib/api/client.ts` presents it — which is what keeps ~980 prerenders off
+      # the global rate limit.
+      INTERNAL_REQUEST_TOKEN: ci-internal-request-token-at-least-32-chars
+      API_BASE_URL: http://127.0.0.1:3001
     steps:
-      - name: Checkout
+      - name: Checkout web
         uses: actions/checkout@v7
+
+      # `Sertturk16/cografya_api` is public, so the default GITHUB_TOKEN reads it and no PAT is
+      # needed. `dev` is the branch the web's own `dev` is contracted against; api `dev` and
+      # `main` are the same commit today.
+      - name: Checkout api
+        uses: actions/checkout@v7
+        with:
+          repository: Sertturk16/cografya_api
+          ref: dev
+          path: .api
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -135,8 +188,69 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      - name: Install api dependencies
+        working-directory: .api
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrate
+        working-directory: .api
+        run: pnpm migration:run
+
+      - name: Seed
+        working-directory: .api
+        run: |
+          pnpm db:seed:geography
+          pnpm db:seed:regions
+          pnpm db:seed:world
+          pnpm db:seed:books
+          pnpm db:seed:reference
+
+      # NODE_ENV is set HERE and nowhere else, deliberately. The API's boot schema
+      # (`src/config/env.schema.ts`) declares it `z.enum([...])` with NO default, so the Nest
+      # app refuses to start without it. The steps above never load that schema — the migration
+      # CLI and all five seed CLIs run outside Nest's DI and read `DATABASE_URL` straight from
+      # `process.env` — and were verified green with NODE_ENV unset. At job level it would also
+      # reach the web's `pnpm install` and `pnpm build`, which is not the environment we want to
+      # build in.
+      - name: Boot api
+        working-directory: .api
+        env:
+          NODE_ENV: development
+          PORT: 3001
+        run: |
+          # No `pnpm build` here: `migration:run` and every `db:seed:*` script begins with one,
+          # so the Seed step left `dist/` freshly compiled from this same checkout. A seventh
+          # identical `nest build` costs ~10s (measured) and buys nothing; a compile error
+          # already fails the Migrate step, and if the API ever drops that prefix this step
+          # fails loudly on a missing `dist/main.js` rather than quietly.
+          #
+          # Logs to a FILE, not to this step's stdout: that pipe closes when the step ends, and
+          # the API would then take a SIGPIPE on its first request-time log line — mid-build,
+          # where it would look like a prerender collapse rather than a dead process.
+          node dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
+          # The probe is a SEEDED DATA route, not `/health`: a process that listens but answers
+          # nothing from the database would still produce the 124-route build this job exists to
+          # catch. No `continue-on-error`, no `|| true` — an API that never answers fails here.
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3001/api/provinces/istanbul > /dev/null; then
+              echo "api up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "api did not come up in 60s"
+          tail -n 50 "$RUNNER_TEMP/api.log"
+          exit 1
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build
+        id: build
         run: pnpm build
+
+      # If the build failed, the API is the first suspect: a process that died mid-prerender
+      # (OOM, an unhandled rejection, a drained pool) shows up only as the floor guard's FAIL
+      # rows. Scoped to a Build failure so the log is guaranteed to exist by then.
+      - name: API log
+        if: failure() && steps.build.outcome == 'failure'
+        run: tail -n 100 "$RUNNER_TEMP/api.log"
