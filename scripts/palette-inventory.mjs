@@ -190,16 +190,6 @@ export const ARBITRARY_PINNED = [
     why: "the workbench canvas plate in both themes, plus the same land/hairline/sea set the play screen draws",
   },
   {
-    file: "components/v2/v2-province-locator-map.tsx",
-    count: 8,
-    why: "the province locator mini-map: plate, land and hairline, two inland-water tones and the sea",
-  },
-  {
-    file: "components/v2/v2-region-locator-map.tsx",
-    count: 8,
-    why: "the region locator mini-map, the same surface set as the province one",
-  },
-  {
     file: "components/v2/v2-world-map-explorer.tsx",
     count: 2,
     why: "the world map's two-stop dark ocean plate, deferred to T-031d with that file's raw-palette rows",
