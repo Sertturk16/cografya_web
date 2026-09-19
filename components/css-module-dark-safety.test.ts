@@ -27,8 +27,11 @@ const EXPECTED_MODULE_COUNT = 8;
  * these files use. Measured 2026-09-19 on /tr/turkiye/istanbul in dark: 111 of 181 text
  * elements carrying a module class fell below 3:1, worst 1.14:1 (`--color-ink` #2b2622 on
  * `--card` #121e21). Every read below is one of those failures waiting to render.
+ *
+ * 179 when pinned; 147 once T-033 deleted `marine.module.css`'s 42 classes with no call
+ * site, which took 32 of those reads with them without moving a pixel.
  */
-const TOTAL_RAW_READS = 179;
+const TOTAL_RAW_READS = 147;
 
 describe("CSS modules cannot read a colour that dark mode never redefines", () => {
   it("found the modules it claims to check", () => {

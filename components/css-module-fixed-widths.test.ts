@@ -145,13 +145,10 @@ const EXPECTED: Record<string, string[]> = {
   "components/earthquake/earthquake.module.css": ["min-width: 520px"],
   "components/map/locator-map.module.css": ["width: min(100%, 460px)", "width: min(100%, 560px)"],
   "components/marine/marine.module.css": [
-    "grid-template-columns: repeat(auto-fit, minmax(240px, 1fr))",
-    // Both floors sit on a table inside an `overflow-x: auto` container, which is what
-    // `docs/design.md` permits and what keeps them off the document's scroll width.
+    // The remaining floor sits on a table inside an `overflow-x: auto` container, which is
+    // what `docs/design.md` permits and what keeps it off the document's scroll width.
     "min-width: 860px",
-    "min-width: 720px",
     "grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 520px))",
-    "width: 9px",
     "width: 1px",
   ],
   "components/site-search/site-search.module.css": [
@@ -175,14 +172,16 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
 
   /**
    * 46 across ten modules when this was pinned; 44 across nine after T-042 deleted
-   * `tools.module.css` (`min-width: 44px`, `width: 1px`), and 37 across EIGHT after fix round 1
-   * deleted `home.module.css` — seven of its own, the largest single block in the census. Every
-   * step down is a DELETION of a stylesheet no route reached, not a narrowing that was fixed;
+   * `tools.module.css` (`min-width: 44px`, `width: 1px`), 37 across EIGHT after fix round 1
+   * deleted `home.module.css` — seven of its own, the largest single block in the census — and
+   * 34 after T-033 deleted `marine.module.css`'s 42 classes with no call site (the `/deniz`
+   * hub's `.basinGrid` and `.valuesTable` floors and the explainer chevron's `width: 9px`).
+   * Every step down is a DELETION of rules no route reached, not a narrowing that was fixed;
    * the population is what it measures, so it is re-measured rather than carried.
    */
-  it("counts 37 declarations in total", () => {
+  it("counts 34 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(37);
+    expect(total).toBe(34);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {
