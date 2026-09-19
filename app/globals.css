@@ -750,6 +750,88 @@
   --sst-band-warm-text: oklch(0.45 0.11 184.704);
   --sst-band-hot-text: oklch(0.485 0.11 41.116);
 
+  /* ---- Fault-zone palette (GEOPHYSICAL CLASSIFICATION — stays standard) ----
+     A BINDING of what this product already ships, not a palette anybody designed here. The
+     three members are the three fault zones `/deprem` and `/deprem/fay-hatlari` publish, and
+     what separates them is a real classification rather than an editorial choice: each zone's
+     `type` field in `lib/earthquake/fault-lines-data.ts` names its faulting kinematics, and the
+     three are the three kinematic classes an active-fault map legend is built on —
+
+       kaf   Kuzey Anadolu   "Sağ Yanal Doğrultu Atımlı Fay Zonu"      dextral strike-slip
+       daf   Doğu Anadolu    "Sol Yanal Doğrultu Atımlı Fay Zonu"      sinistral strike-slip
+       bafs  Batı Anadolu    "Normal Faylanma ve Horst-Graben ..."     normal / extensional
+
+     So the AXIS is standard and is not restyled to Terra, exactly as the magnitude ramp above
+     and the SST bands below are not. No institution is named for it: this repo already ruled
+     that citing a published fault map for prose it did not read is an unearned claim
+     (`components/v2/v2-sources-section.tsx`, and `components/v2/v2-earthquake-a11y.test.ts`
+     holds it), and the classification is legible from the product's own data.
+
+     NOT `destructive` / `info` / `success`. Three data categories on three semantic hues is the
+     data-viz rule run backwards (`docs/design.md` rule 1): red would then mean both "KAF" and
+     "hazard" on a card that carries a `text-destructive` risk level two elements away. The
+     fault zones get their own set; hazard keeps the semantic family.
+
+     WHAT SHIPPED, AND WHAT MOVED: NOTHING. Four files agreed on red / blue / emerald
+     (`lib/earthquake/fault-lines-data.ts` and both `/deprem` routes), and unlike the basin set
+     the shipped identity PASSES on measurement, so no member moves. Values are the v4 `-600` of
+     those three families, the shade the text spellings already used. Worst pair per vision:
+     normal 48.5 kaf/daf · protanopia 23.1 kaf/bafs · deuteranopia 17.2 kaf/bafs ·
+     tritanopia 16.5 daf/bafs. All three pairs clear ΔE00 10 under all four.
+     `lib/theme/fault-palette.test.ts` measures it and compares this block against its own table
+     in both directions.
+
+     TWO CROSS-SET NEIGHBOURS, MEASURED AND LEFT ALONE, because neither pair can share a screen:
+       daf is the SAME VALUE as `--sst-band-cool` (ΔE00 0) — both are blue-600. The SST bands
+         paint only `/deniz`; the fault set paints only the two `/deprem` routes. Nothing in
+         either tree renders both.
+       bafs and `--region-dogu-anadolu` / `--continent-afrika` measure ΔE00 2.9. Same argument:
+         `/deprem`'s map paints provinces `fill-card/90`, never a region tint, and no continent
+         surface exists on either route.
+     Moving a member that clears its own floor, to dodge a collision that cannot be painted,
+     would be restyling a standard scale for tidiness. Both figures are pinned instead, so a
+     page that later renders two of these sets together has to be looked at.
+
+     CONTRAST. Figures for `-text`, WITH THE BACKDROP EACH IS A RATIO TO, sit below the `-text`
+     declarations. Nothing restates them elsewhere. */
+  --fault-kaf: #e7000b; /* red */
+  --fault-daf: #155dfc; /* blue */
+  --fault-bafs: #009966; /* emerald */
+  --fault-kaf-tint: color-mix(in srgb, var(--fault-kaf) 15%, transparent);
+  --fault-daf-tint: color-mix(in srgb, var(--fault-daf) 15%, transparent);
+  --fault-bafs-tint: color-mix(in srgb, var(--fault-bafs) 15%, transparent);
+  /* The fault label. Solved against the WORST surface it is ever painted on, so one value per
+     fault per theme covers every call site.
+
+     FIVE NAMED BACKDROPS, every one of them a surface a page actually paints. The `/deprem`
+     cards sit inside a section whose own background is a gradient (from-card via-card to
+     `--muted`/20 over `--background`), so both ends of it are measured — a gradient has no
+     single backdrop, and the three cards sit at its lower end.
+       TILE   the bare `--card` — the `fay-hatlari` metric strip, the only unwashed case
+       BADGE  the 15% tint over `--card` — the fault-type badge on each `fay-hatlari` article
+       PANEL  `--muted`/20 over `--card` — the accent glyph in the formation/mechanism panels
+       DECK   the 5% wash over the `/deprem` section gradient, at both ends
+       CHIP   the 10% wash over that 5% wash, at both ends — the mechanism chip, and the
+              BINDING case in light, where its lower-gradient end is the darkest backdrop any
+              fault label is painted on
+
+     LIGHT   TILE · BADGE · PANEL · DECK(top/bottom) · CHIP(top/bottom)
+       kaf    6.35 · 4.85 · 6.13 · 5.81/5.37 · 4.90/4.54
+       daf    6.08 · 4.89 · 5.87 · 5.66/5.21 · 4.94/4.56
+       bafs   5.90 · 4.93 · 5.70 · 5.56/5.12 · 4.95/4.57
+     Worst 4.54 (kaf on CHIP, lower end) against the 4.5 floor.
+
+     NO MOVING BACKDROP CARRIES A FAULT LABEL, and it was checked rather than assumed — this is
+     the shape that took `--region-*`, `--continent-*` and the SST chip to 4.41:1. The only
+     hovering surfaces on these two routes are the historical-earthquake table rows, which
+     carry `text-destructive` and `text-foreground` and no fault label at all, and the province
+     links, which are neutral. The `/deprem` cards declare no hover state, and the article's
+     own hover changes its border alpha only. So `lib/theme/fault-identity.ts` carries no
+     opaque-badge member: there is nothing for it to protect. */
+  --fault-kaf-text: oklch(0.5 0.11 27.325);
+  --fault-daf-text: oklch(0.5 0.11 262.881);
+  --fault-bafs-text: oklch(0.49 0.11 163.225);
+
   /* ---- Map-game answer states (UI STATE, not a data scale) ----
      These mark what the PLAYER just did, so they are semantic UI colours (the
      success/danger family), not an encoding of any geographic value. Each is paired in
@@ -1430,6 +1512,19 @@
   --sst-band-cool-text: oklch(0.695 0.13 262.881);
   --sst-band-warm-text: oklch(0.69 0.13 184.704);
   --sst-band-hot-text: oklch(0.72 0.13 41.116);
+  /* The fault label, lifted for the dark card exactly as the three sets above are, and for the
+     same reason: only `-text` flips. The tints are translucent and composite over whatever
+     surface they land on, and the fills themselves must not flip, because they are the three
+     values the categorical measurement was made on.
+             TILE · BADGE · PANEL · DECK(top/bottom) · CHIP(top/bottom)
+       kaf    4.97 · 4.71 · 4.82 · 4.91/5.17 · 4.73/4.93
+       daf    5.19 · 4.59 · 5.03 · 5.01/5.28 · 4.60/4.84
+       bafs   5.58 · 4.65 · 5.40 · 5.28/5.58 · 4.65/4.95
+     Worst 4.59 (daf on BADGE) against the 4.5 floor. BADGE binds in dark where CHIP binds in
+     light, so both had to be solved for and neither could be inferred from the other. */
+  --fault-kaf-text: oklch(0.65 0.13 27.325);
+  --fault-daf-text: oklch(0.65 0.13 262.881);
+  --fault-bafs-text: oklch(0.65 0.13 163.225);
   /* A bare `<a>`. Light mode's link colour is a Terra token the `.dark` block cannot reach, so
      the base rule reads `--link` and this is the value it gets here. */
   --link: oklch(0.78 0.11 40.65);
